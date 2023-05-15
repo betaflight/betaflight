@@ -85,13 +85,13 @@ typedef struct {
     float rollAngleLimitDeg;
     float descentDistanceM;
     int8_t secondsFailing;
-    float descentRateBooster; // value proportional to relative altitude, to max of 1 at 50m
+    float throttleDMultiplier;
     float yawAttenuator;
     float disarmThreshold;
     float velocityITermAccumulator;
     float velocityPidCutoff;
     float velocityPidCutoffModifier;
-    float proximityToLandingArea;
+    float velocityItermAttenuator;
     float velocityItermRelax;
 } rescueIntent_s;
 
@@ -264,14 +264,14 @@ static void rescueAttainPosition(void)
     // up to 20% increase in throttle from I alone
 
     // D component is error based, so includes positive boost when climbing and negative boost on descent
-    float verticalSpeed = ((altitudeError - previousAltitudeError) / rescueState.sensor.altitudeDataIntervalSeconds);
+    float throttleD = ((altitudeError - previousAltitudeError) / rescueState.sensor.altitudeDataIntervalSeconds);
     previousAltitudeError = altitudeError;
-    verticalSpeed += rescueState.intent.descentRateBooster * verticalSpeed;
-    // up to 2x D when descent rate is faster
-
-    float throttleD = pt2FilterApply(&throttleDLpf, verticalSpeed);
-
-    throttleD = gpsRescueConfig()->throttleD * throttleD;
+    // increase by up to 2x when descent rate is faster
+    throttleD *= rescueState.intent.throttleDMultiplier;
+    // apply user's throttle D gain
+    throttleD *= gpsRescueConfig()->throttleD;
+    // smooth
+    throttleD = pt2FilterApply(&throttleDLpf, throttleD);
 
     // acceleration component not currently implemented - was needed previously due to GPS lag, maybe not needed now.
 
@@ -337,14 +337,15 @@ static void rescueAttainPosition(void)
         // I component
         velocityI += 0.01f * gpsRescueConfig()->velI * velocityError * sampleIntervalNormaliseFactor * rescueState.intent.velocityItermRelax;
         // velocityItermRelax is a time-based factor, 0->1 with time constant of 1s from when we start to fly home
-        // avoids excess iTerm during the initial acceleration phase.
-        velocityI *= rescueState.intent.proximityToLandingArea;
-        // reduce iTerm sharply when velocity decreases in landing phase, to minimise overshoot during deceleration
+        // it avoids excess iTerm accumulation during the initial acceleration phase and decreases it during descent.
+
+        // force iTerm to zero, to minimise overshoot during deceleration with descent
+        velocityI *= rescueState.intent.velocityItermAttenuator;
 
         const float pitchAngleLimit = rescueState.intent.pitchAngleLimitDeg * 100.0f;
         const float velocityILimit = 0.5f * pitchAngleLimit;
-        velocityI = constrainf(velocityI, -velocityILimit, velocityILimit);
         // I component alone cannot exceed half the max pitch angle
+        velocityI = constrainf(velocityI, -velocityILimit, velocityILimit);
 
         // D component
         float velocityD = ((velocityError - previousVelocityError) / sampleIntervalNormaliseFactor);
@@ -359,8 +360,8 @@ static void rescueAttainPosition(void)
         velocityD = pt1FilterApply(&velocityDLpf, velocityD);
 
         pitchAdjustment = velocityP + velocityI + velocityD;
-        pitchAdjustment = constrainf(pitchAdjustment, -pitchAngleLimit, pitchAngleLimit);
         // limit to maximum allowed angle
+        pitchAdjustment = constrainf(pitchAdjustment, -pitchAngleLimit, pitchAngleLimit);
 
         // pitchAdjustment is the absolute Pitch angle adjustment value in degrees * 100
         // it gets added to the normal level mode Pitch adjustments in pid.c
@@ -577,13 +578,20 @@ static void sensorUpdate(void)
         // 2 if moving backwards (away from home) at 10 m/s
         // 4 if moving backwards (away from home) at 20 m/s
 
+        const float pitchAngleFactor = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] * 0.001f : 0.0f;
+        // increase IMU COG Gain with higher positive pitch angles, which arise early in a rescue when the IMU is in error
+        // this will be particularly useful if the IMU is error and there is little drift, the initial pitch angle will be high
+        // positive pitch angles should associate with a nose forward ground course
+        // gpsRescueAngle angle is in degrees * 100
+        // pitchAngleFactor is 1 if pitch angle is 10 degrees
+        // pitchAngleFactor is 2 if pitch angle is 20 degrees
         if ((rescueState.phase == RESCUE_ATTAIN_ALT) || (rescueState.phase == RESCUE_ROTATE)) {
-            // prevent IMU disorientation arising from drift during climb or rotate phases
             rescueState.sensor.imuYawCogGain = 0;
+            // prevent IMU disorientation arising from drift during climb or rotate phases
         } else {
             // only enhance imuYawCogGain during fly home
-            rescueState.sensor.imuYawCogGain =  constrainf(1.0f + (2.0f * groundspeedErrorRatio), 1.0f, 6.0f);
-            // increase IMU Yaw gain by up to 6x (faster IMU yaw adjustment to GPS groundspeed) when groundspeed error is high
+            rescueState.sensor.imuYawCogGain =  constrainf(1.0f + pitchAngleFactor + (2.0f * groundspeedErrorRatio), 1.0f, 6.0f);
+            // up to 6x increase in CoG IMU Yaw gain, with inputs from groundspeed error and pitch angle
         }
 
         rescueState.sensor.groundspeedPitchAttenuator = 1.0f / constrainf(1.0f + groundspeedErrorRatio, 1.0f, 3.0f);
@@ -665,33 +673,45 @@ void descend(void)
     if (newGPSData) {
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
         const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (rescueState.intent.targetLandingAltitudeCm / 200.0f);
-        rescueState.intent.proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
-        // multiplier for velocity step filter cutoff; 1.5 when starting descent, 2.5 when almost landed
+        const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
+        // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home
         rescueState.intent.velocityPidCutoffModifier = 2.5f - rescueState.intent.proximityToLandingArea;
+        // 1.5x when starting descent, 2.5x (smoother) when almost landed
+
         // reduce target velocity as we get closer to home. Zero within 2m of home, reducing risk of overshooting.
-        rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed * rescueState.intent.proximityToLandingArea;
-        // if quad drifts further than 2m away from home, should by then have rotated towards home, so pitch is allowed
+        rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed * proximityToLandingArea;
+
+        // attenuate velocity iterm towards zero as we get closer to the landing area
+        rescueState.intent.velocityItermAttenuator = proximityToLandingArea;
+
+        // reduce pitch angle limit if there is a significant groundspeed error - eg on overshooting home
         rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
-        // reduce roll capability when closer to home, keeping a little bit within final 2m to prevent endless yaw spin at 2m
-        // limit roll angle from GPS Rescue code to half the max pitch angle; earth referenced yaw may add more roll via angle code
-        rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * fmaxf(rescueState.sensor.distanceToHomeM / rescueState.intent.descentDistanceM, 1.0f);
+
+        // limit roll angle to half the allowed pitch angle and attenuate when closer to home
+        // keep some roll when at the landing circle distance to avoid endless circling
+        const float proximityToHome = constrainf(rescueState.sensor.distanceToHomeM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
+        rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * proximityToHome;
     }
 
-    rescueState.intent.yawAttenuator = 1.0f; // just in case entered descend phase before yaw authority was complete
+    // ensure we have full yaw authority in case we entered descent mode without enough time in fly home to acquire it gracefully
+    rescueState.intent.yawAttenuator = 1.0f;
 
-    float altitudeStep = rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->descendRate;
     // set the altitude step, considering the interval between altitude readings and the descent rate
+    float altitudeStep = rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->descendRate;
 
+    // descend more slowly if the return home altitude was less than 20m
     const float descentRateAttenuator = constrainf (rescueState.intent.returnAltitudeCm / 2000.0f, 0.25f, 1.0f);
     altitudeStep *= descentRateAttenuator;
-    // descend more slowly if the intended return altitude (not the current altitude) is less than 20m
     // slowest descent rate will be 1/4 of normal when we start descending at or below 5m above take-off point.
     // otherwise a rescue initiated very low and close may not get all the way home
 
-    rescueState.intent.descentRateBooster = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
-    // increase descent rate to max of 3x default above 50m, 2x above 25m, 1.2 at 5m, default by ground level
-    // also boosts altitude D for better control at higher descent rates
-    altitudeStep *= 1.0f + (2.0f * rescueState.intent.descentRateBooster); 
+    // descend faster while the quad is at higher altitudes
+    const float descentRateMultiplier = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
+    altitudeStep *= 1.0f + (2.0f * descentRateMultiplier); 
+    // maximum descent rate increase is 3x default above 50m, 2x above 25m, 1.2x at 5m, default by ground level
+
+    // also increase throttle D up to 2x in the descent phase when altitude descent rate is faster, for better control
+    rescueState.intent.throttleDMultiplier = 1.0f + descentRateMultiplier;
 
     rescueState.intent.targetAltitudeCm -= altitudeStep;
 }
@@ -740,9 +760,9 @@ void gpsRescueUpdate(void)
                 // Otherwise, attempted the Rescue initiation inside the minimum activation distance
                 // don't climb, yaw quickly, enter descend mode and land
                 rescueState.intent.yawAttenuator = 1.0f; // yaw quickly to point to home
-                rescueState.intent.pitchAngleLimitDeg = 15.0f; // limited ability to pitch and roll
+
+                rescueState.intent.pitchAngleLimitDeg = 15.0f; // limited ability to pitch
                 rescueState.intent.targetAltitudeCm = rescueState.sensor.currentAltitudeCm + (0.5f * rescueState.intent.targetLandingAltitudeCm);
-                // climb a meter or two
                 rescueState.intent.returnAltitudeCm = rescueState.intent.targetAltitudeCm;
                 // this is the intended altitude for the return also
                 rescueState.intent.descentDistanceM = rescueState.sensor.distanceToHomeM;
@@ -758,9 +778,9 @@ void gpsRescueUpdate(void)
             rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
             rescueState.intent.pitchAngleLimitDeg = 0.0f; // no pitch
             rescueState.intent.rollAngleLimitDeg = 0.0f; // no roll until flying home
-            rescueState.intent.descentRateBooster = 0.0f;
+            rescueState.intent.throttleDMultiplier = 1.0f;
             rescueState.intent.velocityPidCutoffModifier = 1.0f; // normal cutoff until descending when increases 150->250% during descent
-            rescueState.intent.proximityToLandingArea = 0.0f; // force velocity iTerm to zero
+            rescueState.intent.velocityItermAttenuator = 0.0f; // force velocity iTerm to zero
             rescueState.intent.velocityItermRelax = 0.0f; // and don't accumulate any
         }
         break;
@@ -792,7 +812,7 @@ void gpsRescueUpdate(void)
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
             rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
-            rescueState.intent.proximityToLandingArea = 1.0f; // velocity iTerm activated, initialise proximity for descent phase at 1.0
+            rescueState.intent.velocityItermRelax = 1.0f; // velocity iTerm activated
         }
         initialVelocityLow = rescueState.sensor.velocityToHomeCmS < gpsRescueConfig()->rescueGroundspeed; // used to set direction of velocity target change
         rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
@@ -813,20 +833,18 @@ void gpsRescueUpdate(void)
             rescueState.intent.targetVelocityCmS += velocityTargetStep;
         }
 
-        rescueState.intent.velocityItermRelax += 0.5f * rescueState.sensor.gpsRescueTaskIntervalSeconds * (1.0f - rescueState.intent.velocityItermRelax);
         // slowly introduce velocity iTerm accumulation at start, goes 0 ->1 with time constant 2.0s
-        // there is always a lot of lag at the start
+        rescueState.intent.velocityItermRelax += 0.5f * rescueState.sensor.gpsRescueTaskIntervalSeconds * (1.0f - rescueState.intent.velocityItermRelax);
+        // there is always a lot of lag at the start, this gradual start avoids excess iTerm accumulation
 
         rescueState.intent.velocityPidCutoffModifier = 2.0f - rescueState.intent.velocityItermRelax; 
-        // higher velocity cutoff for initial few seconds to improve accuracy; can be smoother later
-
-        rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.velocityItermRelax * gpsRescueConfig()->maxRescueAngle;
-        // gradually gain roll capability to max of half of max pitch angle
-        // limit roll angle from GPS Rescue code to half the max pitch angle; earth referenced yaw may add more roll via angle code
+        // higher velocity filter cutoff for initial few seconds to improve accuracy; can be smoother later
 
         if (newGPSData) {
             // cut back on allowed angle if there is a high groundspeed error
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
+            // introduce roll slowly and limit to half the max pitch angle; earth referenced yaw may add more roll via angle code
+            rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * rescueState.intent.velocityItermRelax; 
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
                 rescueState.phase = RESCUE_DESCENT;
                 rescueState.intent.secondsFailing = 0; // reset sanity timer for descent
