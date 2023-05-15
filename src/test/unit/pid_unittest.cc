@@ -64,7 +64,7 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/pid_init.h"
 
-    #include "io/gps/gps.h"
+    #include "io/gps.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"

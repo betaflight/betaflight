@@ -43,7 +43,7 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
-    #include "io/gps/gps.h"
+    #include "io/gps.h"
     #include "io/ledstrip.h"
 
     #include "rx/rx.h"

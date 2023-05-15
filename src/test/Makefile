@@ -112,7 +112,7 @@ cli_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/config/feature.c \
-		$(USER_DIR)/io/gps/gps.c \
+		$(USER_DIR)/io/gps.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/drivers/serial.c \

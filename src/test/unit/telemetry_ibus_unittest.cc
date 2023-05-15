@@ -25,7 +25,7 @@ extern "C" {
 #include "pg/pg_ids.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
-#include "io/gps/gps.h"
+#include "io/gps.h"
 #include "flight/imu.h"
 #include "config/config.h"
 #include "fc/rc_controls.h"

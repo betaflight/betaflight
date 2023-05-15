@@ -536,12 +536,23 @@ void gpsInitNmea(void)
 #endif // USE_GPS_NMEA
 
 #ifdef USE_GPS_UBLOX
-const uint8_t * const ubloxUTCStandardConfig_int = {
+const uint8_t ubloxUTCStandardConfig_int[5] = {
         UBLOX_UTC_STANDARD_AUTO,
         UBLOX_UTC_STANDARD_USNO,
         UBLOX_UTC_STANDARD_EU,
         UBLOX_UTC_STANDARD_SU,
         UBLOX_UTC_STANDARD_NTSC
+};
+
+char * ubloxVersion_str[] =
+{
+        [UBX_VERSION_UNDEF] = "UNKNOWN",
+        [UBX_VERSION_M5] = "M5",
+        [UBX_VERSION_M6] = "M6",
+        [UBX_VERSION_M7]  = "M7",
+        [UBX_VERSION_M8]  = "M8",
+        [UBX_VERSION_M9]  = "M9",
+        [UBX_VERSION_M10]  = "M10",
 };
 
 static void ubloxSendByteUpdateChecksum(const uint8_t data, uint8_t *checksumA, uint8_t *checksumB)
@@ -634,7 +645,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
         tx_buffer.payload.cfg_nav5m10.reserved1[3] = 0;
         tx_buffer.payload.cfg_nav5m10.reserved1[4] = 0;
 
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5m10_t));
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5m8_t));
         return;
     }
     tx_buffer.payload.cfg_nav5m8.mask = 0xFFFF;
