@@ -4771,7 +4771,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #ifdef USE_GPS
     cliPrint("GPS: ");
     if (featureIsEnabled(FEATURE_GPS)) {
-        if (gpsIsHealthy()) {
+        if (gpsData.state > GPS_STATE_CHANGE_BAUD) {
             cliPrint("connected, ");
         } else {
             cliPrint("NOT CONNECTED, ");
@@ -4792,7 +4792,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrint("), ");
             }
         }
-        if (!gpsIsHealthy()) {
+        if (gpsData.state < GPS_STATE_RECEIVING_DATA) {
             cliPrint("NOT CONFIGURED");
         } else {
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
@@ -4800,13 +4800,13 @@ static void cliStatus(const char *cmdName, char *cmdline)
             } else {
                 cliPrint("configured");
             }
-            if (gpsData.acquiredMonVer) {
-                cliPrintLinefeed();
-                cliPrintf("     Ublox HW Version: %s, SW Version: %s", ubloxVersion_str[gpsData.unitVersion]);
-            } else {
-                cliPrintLinefeed();
-                cliPrintf("     Ublox HW Version: NULL, SW Version: NULL");
-            }
+        }
+        if (gpsData.acquiredMonVer) {
+            cliPrintLinefeed();
+            cliPrintf("     Ublox HW Version: %s, SW Version: %s", ubloxVersion_str[gpsData.unitVersion], gpsData.monVer.swVersion);
+        } else {
+            cliPrintLinefeed();
+            cliPrintf("     Ublox HW Version: NULL, SW Version: NULL");
         }
     } else {
         cliPrint("NOT ENABLED");
