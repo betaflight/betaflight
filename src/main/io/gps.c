@@ -256,29 +256,7 @@ typedef struct ubxCfgNav5m8_s {
     uint16_t staticHoldMaxDist;
     uint8_t utcStandard;
     uint8_t reserved1[5];
-} ubxCfgNav5m8_t;
-
-typedef struct ubxCfgNav5m10_s {
-    uint16_t mask;
-    uint8_t dynModel;
-    uint8_t fixMode;
-    int32_t fixedAlt;
-    uint32_t fixedAltVar;
-    int8_t minElev;
-    uint8_t drLimit;
-    uint16_t pDOP;
-    uint16_t tDOP;
-    uint16_t pAcc;
-    uint16_t tAcc;
-    uint8_t staticHoldThresh;
-    uint8_t dgnssTimeout;
-    uint8_t cnoThreshNumSVs;
-    uint8_t cnoThresh;
-    uint8_t reserved0[2];
-    uint16_t staticHoldMaxDist;
-    uint8_t utcStandard;
-    uint8_t reserved1[5];
-} ubxCfgNav5m10_t;
+} ubxCfgNav5_t;
 
 typedef struct ubxCfgNav5x_s {
     uint16_t version;
@@ -309,8 +287,7 @@ typedef union ubxPayload_s {
     ubxPollMsg_t poll_msg;
     ubxCfgMsg_t cfg_msg;
     ubxCfgRate_t cfg_rate;
-    ubxCfgNav5m8_t cfg_nav5m8;
-    ubxCfgNav5m10_t cfg_nav5m10;
+    ubxCfgNav5_t cfg_nav5;
     ubxCfgNav5x_t cfg_nav5x;
     ubxCfgSbas_t cfg_sbas;
     ubxCfgGnss_t cfg_gnss;
@@ -607,7 +584,7 @@ static void ubloxSendPollMessage(uint8_t msg_id)
 
 static void ubloxSendNAV5Message(uint8_t model) {
     ubxMessage_t tx_buffer;
-    if (gpsData.unitVersion == UBX_VERSION_M10) {
+    /*if (gpsData.unitVersion == UBX_VERSION_M10) {
         tx_buffer.payload.cfg_nav5m10.mask = 0xFFFF;
         tx_buffer.payload.cfg_nav5m10.dynModel = model == 0 ? model : model + 1; //no model with value 1
         tx_buffer.payload.cfg_nav5m10.fixMode = 3;
@@ -635,33 +612,33 @@ static void ubloxSendNAV5Message(uint8_t model) {
 
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5m10_t));
         return;
-    }
-    tx_buffer.payload.cfg_nav5m8.mask = 0xFFFF;
-    tx_buffer.payload.cfg_nav5m8.dynModel = model == 0 ? model : model + 1; //no model with value 1
-    tx_buffer.payload.cfg_nav5m8.fixMode = 3;
-    tx_buffer.payload.cfg_nav5m8.fixedAlt = 0;
-    tx_buffer.payload.cfg_nav5m8.fixedAltVar = 10000;
-    tx_buffer.payload.cfg_nav5m8.minElev = 5;
-    tx_buffer.payload.cfg_nav5m8.drLimit = 0;
-    tx_buffer.payload.cfg_nav5m8.pDOP = 250;
-    tx_buffer.payload.cfg_nav5m8.tDOP = 250;
-    tx_buffer.payload.cfg_nav5m8.pAcc = 100;
-    tx_buffer.payload.cfg_nav5m8.tAcc = 300;
-    tx_buffer.payload.cfg_nav5m8.staticHoldThresh = 0;
-    tx_buffer.payload.cfg_nav5m8.dgnssTimeout = 60;
-    tx_buffer.payload.cfg_nav5m8.cnoThreshNumSVs = 0;
-    tx_buffer.payload.cfg_nav5m8.cnoThresh = 0;
-    tx_buffer.payload.cfg_nav5m8.reserved0[0] = 0;
-    tx_buffer.payload.cfg_nav5m8.reserved0[1] = 0;
-    tx_buffer.payload.cfg_nav5m8.staticHoldMaxDist = 200;
-    tx_buffer.payload.cfg_nav5m8.utcStandard = ubloxUTCStandardConfig_int[gpsConfig()->gps_ublox_utc_standard];
-    tx_buffer.payload.cfg_nav5m8.reserved1[0] = 0;
-    tx_buffer.payload.cfg_nav5m8.reserved1[1] = 0;
-    tx_buffer.payload.cfg_nav5m8.reserved1[2] = 0;
-    tx_buffer.payload.cfg_nav5m8.reserved1[3] = 0;
-    tx_buffer.payload.cfg_nav5m8.reserved1[4] = 0;
+    }*/
+    tx_buffer.payload.cfg_nav5.mask = 0xFFFF;
+    tx_buffer.payload.cfg_nav5.dynModel = model == 0 ? model : model + 1; //no model with value 1
+    tx_buffer.payload.cfg_nav5.fixMode = 3;
+    tx_buffer.payload.cfg_nav5.fixedAlt = 0;
+    tx_buffer.payload.cfg_nav5.fixedAltVar = 10000;
+    tx_buffer.payload.cfg_nav5.minElev = 5;
+    tx_buffer.payload.cfg_nav5.drLimit = 0;
+    tx_buffer.payload.cfg_nav5.pDOP = 250;
+    tx_buffer.payload.cfg_nav5.tDOP = 250;
+    tx_buffer.payload.cfg_nav5.pAcc = 100;
+    tx_buffer.payload.cfg_nav5.tAcc = 300;
+    tx_buffer.payload.cfg_nav5.staticHoldThresh = 0;
+    tx_buffer.payload.cfg_nav5.dgnssTimeout = 60;
+    tx_buffer.payload.cfg_nav5.cnoThreshNumSVs = 0;
+    tx_buffer.payload.cfg_nav5.cnoThresh = 0;
+    tx_buffer.payload.cfg_nav5.reserved0[0] = 0;
+    tx_buffer.payload.cfg_nav5.reserved0[1] = 0;
+    tx_buffer.payload.cfg_nav5.staticHoldMaxDist = 200;
+    tx_buffer.payload.cfg_nav5.utcStandard = ubloxUTCStandardConfig_int[gpsConfig()->gps_ublox_utc_standard];
+    tx_buffer.payload.cfg_nav5.reserved1[0] = 0;
+    tx_buffer.payload.cfg_nav5.reserved1[1] = 0;
+    tx_buffer.payload.cfg_nav5.reserved1[2] = 0;
+    tx_buffer.payload.cfg_nav5.reserved1[3] = 0;
+    tx_buffer.payload.cfg_nav5.reserved1[4] = 0;
 
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5m8_t));
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5_t));
 }
 
 static void ubloxSendNav5XMessage(void) {
@@ -859,9 +836,9 @@ void gpsInitUblox(void)
 
                         break;
                     case UBLOX_CFG_ANA:
-                        if (gpsData.unitVersion == UBX_VERSION_M10) {
+                        if (gpsData.unitVersion > UBX_VERSION_M7) {
                             ubloxSendNav5XMessage();
-                            //break;
+                            break;
                         }
                         gpsData.state_position++;
                         break;
