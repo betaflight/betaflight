@@ -51,6 +51,17 @@ extern char * ubloxVersion_str[];
 #endif
 
 typedef enum {
+    GPS_STATE_UNKNOWN = 0,
+    GPS_STATE_INITIALIZING,
+    GPS_STATE_INITIALIZED,
+    GPS_STATE_CHANGE_BAUD,
+    GPS_STATE_CONFIGURE,
+    GPS_STATE_RECEIVING_DATA,
+    GPS_STATE_LOST_COMMUNICATION,
+    GPS_STATE_COUNT
+} gpsState_e;
+
+typedef enum {
     GPS_LATITUDE,
     GPS_LONGITUDE
 } gpsCoordinateType_e;
