@@ -21,7 +21,6 @@
 #include "ctype.h"
 #include <string.h>
 #include <math.h>
-#include "gps.h"
 
 #include "platform.h"
 
@@ -42,7 +41,7 @@
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
-#include "gps.h"
+#include "io/gps.h"
 #include "io/serial.h"
 
 #include "config/config.h"
@@ -989,9 +988,6 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
 
 void gpsUpdate(timeUs_t currentTimeUs)
 {
-    debug[2] = gpsData.state;
-    debug[3] = gpsData.state_position;
-
     static gpsState_e gpsStateDurationUs[GPS_STATE_COUNT];
     timeUs_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
@@ -1752,9 +1748,6 @@ void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
 static bool UBLOX_parse_gps(void)
 {
     uint32_t i;
-
-    debug[0] = _class;
-    debug[1] = _msg_id;
 
     *gpsPacketLogChar = LOG_IGNORED;
     switch (_msg_id) {
