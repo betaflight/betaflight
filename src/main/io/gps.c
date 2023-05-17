@@ -104,7 +104,7 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
-#define GPS_BAUDRATE_CHANGE_DELAY (1000)
+#define GPS_BAUDRATE_CHANGE_DELAY (200)
 // Timeout for waiting ACK/NAK in GPS task cycles (0.25s at 100Hz)
 #define UBLOX_ACK_TIMEOUT_MAX_COUNT (25)
 
@@ -322,6 +322,7 @@ typedef enum {
 } ubloxStatePosition_e;
 
 baudRate_e initBaudRateIndex = BAUD_COUNT;
+static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_e msg_id, uint16_t length);
 
 #endif // USE_GPS_UBLOX
 
@@ -763,6 +764,7 @@ void gpsInitUblox(void)
 
                 // serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
                 gpsData.state_position++;
+                gpsData.state_position %= GPS_INIT_ENTRIES;
             }
             break;
 
