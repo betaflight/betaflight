@@ -253,14 +253,14 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"servo",       5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)},
 
 #ifdef USE_DSHOT_TELEMETRY
-    {"RPM",         0, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_1_HAS_RPM)},
-    {"RPM",         1, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_2_HAS_RPM)},
-    {"RPM",         2, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_3_HAS_RPM)},
-    {"RPM",         3, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_4_HAS_RPM)},
-    {"RPM",         4, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_5_HAS_RPM)},
-    {"RPM",         5, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_6_HAS_RPM)},
-    {"RPM",         6, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
-    {"RPM",         7, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
+    {"eRPM(/100)",  0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_1_HAS_RPM)},
+    {"eRPM(/100)",  1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_2_HAS_RPM)},
+    {"eRPM(/100)",  2, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_3_HAS_RPM)},
+    {"eRPM(/100)",  3, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_4_HAS_RPM)},
+    {"eRPM(/100)",  4, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_5_HAS_RPM)},
+    {"eRPM(/100)",  5, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_6_HAS_RPM)},
+    {"eRPM(/100)",  6, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
+    {"eRPM(/100)",  7, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
 #endif /* USE_DSHOT_TELEMETRY */
 };
 
@@ -329,7 +329,7 @@ typedef struct blackboxMainState_s {
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];
 #ifdef USE_DSHOT_TELEMETRY
-    int16_t rpm[MAX_SUPPORTED_MOTORS];
+    int16_t erpm[MAX_SUPPORTED_MOTORS];
 #endif
 
     uint16_t vbatLatest;
@@ -689,8 +689,8 @@ static void writeIntraframe(void)
     if (isFieldEnabled(FIELD_SELECT(RPM))) {
         const int motorCount = getMotorCount();
         for (int x = 0; x < motorCount; x++) {
-            if(testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
-                blackboxWriteSignedVB(blackboxCurrent->rpm[x]);
+            if (testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
+                blackboxWriteUnsignedVB(blackboxCurrent->erpm[x]);
             }
         }
     }
@@ -838,7 +838,12 @@ static void writeInterframe(void)
     }
 #ifdef USE_DSHOT_TELEMETRY
     if (isFieldEnabled(FIELD_SELECT(RPM))) {
-        blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, rpm), getMotorCount());
+        const int motorCount = getMotorCount();
+        for (int x = 0; x < motorCount; x++) {
+            if (testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
+                blackboxWriteSignedVB(blackboxCurrent->erpm[x] - blackboxLast->erpm[x]);
+            }
+        }
     }
 #endif
 
@@ -1144,7 +1149,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #ifdef USE_DSHOT_TELEMETRY
     for (int i = 0; i < motorCount; i++) {
-        blackboxCurrent->rpm[i] = getDshotTelemetry(i);
+        blackboxCurrent->erpm[i] = getDshotTelemetry(i);
     }
 #endif
 
