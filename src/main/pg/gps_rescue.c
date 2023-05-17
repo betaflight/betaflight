@@ -33,7 +33,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCU
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
-    .minRescueDth = 30,
+    .minRescueDth = 15,
     .altitudeMode = GPS_RESCUE_ALT_MODE_MAX,
     .rescueAltitudeBufferM = 10,
     .ascendRate = 750,          // cm/s, for altitude corrections on ascent
