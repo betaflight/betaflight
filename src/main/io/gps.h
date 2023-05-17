@@ -44,7 +44,7 @@ typedef enum {
     UBX_VERSION_M8,
     UBX_VERSION_M9,
     UBX_VERSION_M10,
-    UBX_VERSION_COUNT
+    UBX_VERSION_COUNT,
 } ubloxVersion_e;
 
 extern char * ubloxVersion_str[];
