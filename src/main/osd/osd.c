@@ -549,7 +549,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
 }
 
 #ifdef USE_GPS_LAP_TIMER
-void printLapTime(char *buffer, uint32_t timeMs) {
+void printLapTime(char *buffer, const uint32_t timeMs) {
     if (timeMs != 0) {
         const uint32_t timeRoundMs = timeMs + 5;
         const int timeSeconds = timeRoundMs / 1000;
