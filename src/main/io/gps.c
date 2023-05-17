@@ -730,8 +730,6 @@ void gpsInitUblox(void)
                 return;
             }
 
-            debug[3] = gpsData.ackState;
-
             if (gpsData.ackState != UBLOX_ACK_WAITING && gpsData.unitVersion > UBX_VERSION_UNDEF) {
                 // print our FIXED init string for the baudrate we want to be at
                 serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
