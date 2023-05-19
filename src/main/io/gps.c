@@ -440,8 +440,8 @@ void gpsInitNmea(void)
 
                     if (*cmd) {
                         // Send the current command to the GPS
-                        serialWriteBuf(gpsPort, (uint8_t *) cmd, commandLen);
-                        serialWriteBuf(gpsPort, (uint8_t *) "\r\n", 2);
+                        serialWriteBuf(gpsPort, (uint8_t *)cmd, commandLen);
+                        serialWriteBuf(gpsPort, (uint8_t *)"\r\n", 2);
 
                         // Move to the next command
                         cmd += commandLen;
