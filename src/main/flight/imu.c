@@ -493,14 +493,12 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            cogYawGain = gpsRescueGetImuYawCogGain(); // do not modify IMU yaw gain unless in a rescue
-        }
+        cogYawGain = (FLIGHT_MODE(GPS_RESCUE_MODE)) ? gpsRescueGetImuYawCogGain() : 1.0f;
+        // normally update yaw heading with GPS data, but when in a Rescue, modify the IMU yaw gain dynamically
         if (shouldInitializeGPSHeading()) {
             // Reset our reference and reinitialize quaternion.
             // shouldInitializeGPSHeading() returns true only once.
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-
             cogYawGain = 0.0f; // Don't use the COG when we first initialize
         }
     }
