@@ -47,7 +47,10 @@ typedef enum {
     UBX_VERSION_COUNT,
 } ubloxVersion_e;
 
-extern char * ubloxVersion_str[];
+extern struct ubloxVersion_t {
+    uint32_t hw;
+    const char* str;
+} ubloxVersion_map[];
 #endif
 
 typedef enum {
@@ -166,10 +169,25 @@ typedef struct gpsSolutionData_s {
     uint32_t time;                  // GPS msToW
 } gpsSolutionData_t;
 
+typedef struct ubxSwVersion_s {
+    uint16_t firmwareVersion;
+    uint16_t protocolVersion;
+} ubxSwVersion_t;
+
+typedef enum {
+    UBX_CAP_SAT_NONE = 0x0,
+    UBX_CAP_SAT_GPS = 0x0001,
+    UBX_CAP_SAT_GLO = 0x0002,
+    UBX_CAP_SAT_GAL = 0x0004,
+    UBX_CAP_SAT_BDS = 0x0008,
+    UBX_CAP_SAT_SBAS = 0x0010,
+    UBX_CAP_SAT_QZSS = 0x0020,
+} ubxCapabilities_e;
+
 typedef struct ubxMonVer_s {
-    char swVersion[30];
-    char hwVersion[10];
-    char extension[10 * 30];
+    ubxSwVersion_t swVersion;
+    uint32_t hwVersion;
+    uint32_t extension;
 } ubxMonVer_t;
 
 typedef struct gpsData_s {
@@ -255,7 +273,10 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 #define TASK_GPS_RATE       100
 #define TASK_GPS_RATE_FAST  1000
 
-ubloxVersion_e ubloxDetectVersion(const char * szBuf, const uint8_t nBufSize);
+#ifdef USE_GPS_UBLOX
+ubloxVersion_e ubloxParseVersion(const uint32_t version);
+char* formatVersion(uint16_t version);
+#endif
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);

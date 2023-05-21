@@ -412,6 +412,7 @@ void gpsInit(void)
 
     // signal GPS "thread" to initialize when it gets to it
     gpsSetState(GPS_STATE_INITIALIZING);
+    gpsData.state_position = GPS_BAUDRATE_MAX;
 }
 
 #ifdef USE_GPS_NMEA
@@ -513,15 +514,14 @@ const uint8_t ubloxUTCStandardConfig_int[5] = {
         UBLOX_UTC_STANDARD_NTSC
 };
 
-char * ubloxVersion_str[] =
-{
-        [UBX_VERSION_UNDEF] = "UNKNOWN",
-        [UBX_VERSION_M5] = "M5",
-        [UBX_VERSION_M6] = "M6",
-        [UBX_VERSION_M7]  = "M7",
-        [UBX_VERSION_M8]  = "M8",
-        [UBX_VERSION_M9]  = "M9",
-        [UBX_VERSION_M10]  = "M10",
+struct ubloxVersion_t ubloxVersion_map[] = {
+        [UBX_VERSION_UNDEF] = {~0, "UNKNOWN"},
+        [UBX_VERSION_M5] = {0x00040005, "M5"},
+        [UBX_VERSION_M6] = {0x00040007, "M6"},
+        [UBX_VERSION_M7] = {0x00070000, "M7"},
+        [UBX_VERSION_M8] = {0x00080000, "M8"},
+        [UBX_VERSION_M9] = {0x00190000, "M9"},
+        [UBX_VERSION_M10] = {0x000A0000, "M10"},
 };
 
 static void ubloxSendByteUpdateChecksum(const uint8_t data, uint8_t *checksumA, uint8_t *checksumB)
@@ -742,27 +742,27 @@ void gpsInitUblox(void)
             if (now - gpsData.state_ts < GPS_BAUDRATE_CHANGE_DELAY)
                 return;
 
-            if (gpsData.state_position < GPS_INIT_ENTRIES) {
-                // try different speed to INIT
-                baudRate_e newBaudRateIndex = gpsInitData[gpsData.state_position].baudrateIndex;
+            // try different speed to INIT
+            baudRate_e newBaudRateIndex = gpsInitData[gpsData.state_position].baudrateIndex;
 
-                gpsData.state_ts = now;
+            gpsData.state_ts = now;
 
-                if (lookupBaudRateIndex(serialGetBaudRate(gpsPort)) != newBaudRateIndex) {
-                    // change the rate if needed and wait a little
-                    serialSetBaudRate(gpsPort, baudRates[newBaudRateIndex]);
+            if (lookupBaudRateIndex(serialGetBaudRate(gpsPort)) != newBaudRateIndex) {
+                // change the rate if needed and wait a little
+                serialSetBaudRate(gpsPort, baudRates[newBaudRateIndex]);
 #if DEBUG_SERIAL_BAUD
-                    debug[0] = baudRates[newBaudRateIndex] / 100;
+                debug[0] = baudRates[newBaudRateIndex] / 100;
 #endif
-                    ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
-                    gpsData.ackState = UBLOX_ACK_WAITING;
-                    return;
-                }
+                ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
+                gpsData.ackState = UBLOX_ACK_WAITING;
+                return;
+            }
 
 
-                // serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
-                gpsData.state_position++;
-                gpsData.state_position %= GPS_INIT_ENTRIES;
+            if (gpsData.state_position == 0) {
+                gpsData.state_position = GPS_BAUDRATE_MAX;
+            } else {
+                gpsData.state_position--;
             }
             break;
 
@@ -792,7 +792,7 @@ void gpsInitUblox(void)
                         break;
                     case UBLOX_INITIALIZE:
                         if (gpsData.acquiredMonVer && gpsData.unitVersion == UBX_VERSION_UNDEF) {
-                            gpsData.unitVersion = ubloxDetectVersion(gpsData.monVer.hwVersion, sizeof(gpsData.monVer.hwVersion));
+                            gpsData.unitVersion = ubloxParseVersion(gpsData.monVer.hwVersion);
                         }
 
                         gpsData.ubloxUsePVT = true;
@@ -1105,26 +1105,47 @@ static void gpsNewData(uint16_t c)
 }
 
 #ifdef USE_GPS_UBLOX
-ubloxVersion_e ubloxDetectVersion(const char * szBuf, const uint8_t nBufSize) {
-    UNUSED(nBufSize);
 
-    uint32_t version = strtoul(szBuf, NULL, 16);
+void reverse(char* arr, int length) {
+    int start = 0;
+    int end = length - 1;
 
-    switch (version) {
-        case 0x00040005:
-            return UBX_VERSION_M5;
-        case 0x00040007:
-            return UBX_VERSION_M6;
-        case 0x00070000:
-            return UBX_VERSION_M7;
-        case 0x00080000:
-            return UBX_VERSION_M8;
-        case 0x00190000:
-            return UBX_VERSION_M9;
-        case 0x000A0000:
-            return UBX_VERSION_M10;
-        default:
-            break;
+    while (start < end) {
+        char temp = arr[start];
+        arr[start] = arr[end];
+        arr[end] = temp;
+
+        start++;
+        end--;
+    }
+}
+
+char* formatVersion(uint16_t version) {
+    char * buffer = malloc(5);
+    char * ret = malloc(6);
+    memset(ret, 0, 6);
+    itoa(version, buffer, 10);
+    reverse(buffer, strlen(buffer));
+    for(size_t i = 0; i < strlen(buffer) + 1; ++i) {
+        if (i == 2) {
+            ret[i] = '.';
+            i++;
+        }
+        if (i >= 2) {
+            ret[i] = buffer[i - 1];
+        } else {
+            ret[i] = buffer[i];
+        }
+    }
+    reverse(ret, strlen(ret));
+    return ret;
+}
+
+ubloxVersion_e ubloxParseVersion(const uint32_t version) {
+    for (size_t i = 0; i < UBX_VERSION_COUNT; ++i) {
+        if ((version ^ ubloxVersion_map[i].hw) == 0x0) {
+            return (ubloxVersion_e) i;
+        }
     }
 
     return UBX_VERSION_UNDEF;// (ubloxVersion_e) version;
@@ -1707,7 +1728,7 @@ static union {
     ubxNavSat_t sat;
     ubxCfgGnss_t gnss;
     ubxAck_t ack;
-    ubxMonVer_t ver;
+    char ver[340];
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
@@ -1744,9 +1765,38 @@ static bool UBLOX_parse_gps(void)
     //case MSG_MON_VER:
     case MSG_NAV_DOP:
         if (_class == CLASS_MON) {
-            memcpy(&gpsData.monVer, &_buffer.ver.swVersion, 40 + 10 * 30);
+            //memcpy(&gpsData.monVer, &_buffer.ver, 40 + 10 * 30);
+            char swVersion[30];
+            memcpy(&swVersion, &_buffer.ver[0], 30);
+            char * token = strtok(swVersion, " ");
+            float f;
+            while (token != NULL) {
+                f = strtof(token, NULL);
+                if (f > 0.0f) {
+                    gpsData.monVer.swVersion.firmwareVersion = (uint16_t) (f * 100);
+                    break;
+                }
+                token = strtok(NULL, " ");
+            }
+            size_t i = 0;
+            while(i < 10) {
+                if (_buffer.ver[40 + (i * 10)] == '\0') {
+                    break;
+                }
+                token = strtok(&_buffer.ver[40 + (i++ * 30)], "=");
+                while (token != NULL) {
+                    if (strcmp(token, "PROTVER") == 0) {
+                        token = strtok(NULL, "=");
+                        f = strtof(token, NULL);
+                        gpsData.monVer.swVersion.protocolVersion = (uint16_t) (f * 100);
+                    }
+                    token = strtok(NULL, "=");
+                }
+            }
+
+            gpsData.monVer.hwVersion = strtoul(&_buffer.ver[30], NULL, 16);
+            gpsData.unitVersion = ubloxParseVersion(gpsData.monVer.hwVersion);
             gpsData.acquiredMonVer = true;
-            gpsData.unitVersion = ubloxDetectVersion(gpsData.monVer.hwVersion, sizeof(gpsData.monVer.hwVersion));
             gpsData.ackState = UBLOX_ACK_GOT_ACK;
         } else {
             *gpsPacketLogChar = LOG_UBLOX_DOP;
