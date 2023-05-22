@@ -132,6 +132,8 @@ static const gpsInitData_t gpsInitData[] = {
 #define DEFAULT_BAUD_RATE_INDEX 0
 
 #ifdef USE_GPS_UBLOX
+#define MAX_VALSET_SIZE 32
+
 typedef enum {
     PREAMBLE1 = 0xB5,
     PREAMBLE2 = 0x62,
@@ -216,7 +218,7 @@ typedef struct ubxCfgValSet_s {
     uint8_t version;
     uint8_t layers;
     uint8_t reserved[2];
-    uint8_t cfgData[8];
+    uint8_t cfgData[MAX_VALSET_SIZE];
 } ubxCfgValSet_t;
 
 typedef struct ubxCfgSbas_s {
@@ -636,6 +638,40 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubxCfgMsg_t));
 }
 
+
+static uint8_t ubloxValSet(ubxMessage_t * tx_buffer, ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, ubloxValLayer_e layer) {
+    tx_buffer->payload.cfg_valset.version = 0;
+    tx_buffer->payload.cfg_valset.layers = layer;
+    tx_buffer->payload.cfg_valset.reserved[0] = 0;
+    tx_buffer->payload.cfg_valset.reserved[1] = 0;
+
+    memset(tx_buffer->payload.cfg_valset.cfgData, 0, 32);
+
+    tx_buffer->payload.cfg_valset.cfgData[0] = (uint8_t)(key >> (8 * 0));
+    tx_buffer->payload.cfg_valset.cfgData[1] = (uint8_t)(key >> (8 * 1));
+    tx_buffer->payload.cfg_valset.cfgData[2] = (uint8_t)(key >> (8 * 2));
+    tx_buffer->payload.cfg_valset.cfgData[3] = (uint8_t)(key >> (8 * 3));
+
+    for (size_t i = 0; i < len; ++i) {
+        tx_buffer->payload.cfg_valset.cfgData[4 + i] = payload[i];
+    }
+
+    return 4 + len;
+}
+
+static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, const uint8_t offset) {
+    tx_buffer->payload.cfg_valset.cfgData[offset + 0] = (uint8_t)(key >> (8 * 0));
+    tx_buffer->payload.cfg_valset.cfgData[offset + 1] = (uint8_t)(key >> (8 * 1));
+    tx_buffer->payload.cfg_valset.cfgData[offset + 2] = (uint8_t)(key >> (8 * 2));
+    tx_buffer->payload.cfg_valset.cfgData[offset + 3] = (uint8_t)(key >> (8 * 3));
+
+    for (size_t i = 0; i < len; ++i) {
+        tx_buffer->payload.cfg_valset.cfgData[offset + 4 + i] = payload[i];
+    }
+
+    return 4 + len;
+}
+
 static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef)
 {
     ubxMessage_t tx_buffer;
@@ -645,70 +681,24 @@ static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef
         tx_buffer.payload.cfg_rate.timeRef = timeRef;
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_RATE, sizeof(ubxCfgRate_t));
     } else {
-        tx_buffer.payload.cfg_valset.version = 0;
-        tx_buffer.payload.cfg_valset.layers = UBX_VAL_LAYER_RAM; // set in ram
-        tx_buffer.payload.cfg_valset.reserved[0] = 0;
-        tx_buffer.payload.cfg_valset.reserved[1] = 0;
-
-        tx_buffer.payload.cfg_valset.cfgData[0] = (uint8_t)(CFG_RATE_MEAS >> 8 * 0);
-        tx_buffer.payload.cfg_valset.cfgData[1] = (uint8_t)(CFG_RATE_MEAS >> 8 * 1);
-        tx_buffer.payload.cfg_valset.cfgData[2] = (uint8_t)(CFG_RATE_MEAS >> 8 * 2);
-        tx_buffer.payload.cfg_valset.cfgData[3] = (uint8_t)(CFG_RATE_MEAS >> 8 * 3);
-        tx_buffer.payload.cfg_valset.cfgData[4] = (uint8_t)(measRate >> 8 * 0);
-        tx_buffer.payload.cfg_valset.cfgData[5] = (uint8_t)(measRate >> 8 * 1);
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, sizeof(ubxCfgValSet_t) - 8 + 6);
-
-        //uint8_t payload[2];
-        /*payload[0] =(uint8_t)(measRate >> (8 * 0));
-        payload[1] =(uint8_t)(measRate >> (8 * 1));
-
-        ubloxValSet(CFG_RATE_MEAS, payload, 2, UBX_VAL_LAYER_RAM);*/
-
-        tx_buffer.payload.cfg_valset.cfgData[0] = (uint8_t)(CFG_RATE_NAV >> 8 * 0);
-        tx_buffer.payload.cfg_valset.cfgData[1] = (uint8_t)(CFG_RATE_NAV >> 8 * 1);
-        tx_buffer.payload.cfg_valset.cfgData[2] = (uint8_t)(CFG_RATE_NAV >> 8 * 2);
-        tx_buffer.payload.cfg_valset.cfgData[3] = (uint8_t)(CFG_RATE_NAV >> 8 * 3);
-        tx_buffer.payload.cfg_valset.cfgData[4] = (uint8_t)(navRate >> 8 * 0);
-        tx_buffer.payload.cfg_valset.cfgData[5] = (uint8_t)(navRate >> 8 * 1);
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, sizeof(ubxCfgValSet_t) - 8 + 6);
-
-        /*payload[0] = (uint8_t)(measRate >> (8 * 0));
+        uint8_t offset = 0;
+        uint8_t payload[2];
+        payload[0] = (uint8_t)(measRate >> (8 * 0));
         payload[1] = (uint8_t)(measRate >> (8 * 1));
+        //rate meas is U2
+        offset = ubloxValSet(&tx_buffer, CFG_RATE_MEAS, payload, 2, UBX_VAL_LAYER_RAM);
 
-        ubloxValSet(CFG_RATE_NAV, payload, 2, UBX_VAL_LAYER_RAM);*/
+        payload[0] = (uint8_t)(navRate >> (8 * 0));
+        payload[1] = (uint8_t)(navRate >> (8 * 1));
+        //rate nav is U2
+        offset += ubloxAddValSet(&tx_buffer, CFG_RATE_NAV, payload, 2, 6);
 
-        tx_buffer.payload.cfg_valset.cfgData[0] = (uint8_t)(CFG_RATE_TIMEREF >> 8 * 0);
-        tx_buffer.payload.cfg_valset.cfgData[1] = (uint8_t)(CFG_RATE_TIMEREF >> 8 * 1);
-        tx_buffer.payload.cfg_valset.cfgData[2] = (uint8_t)(CFG_RATE_TIMEREF >> 8 * 2);
-        tx_buffer.payload.cfg_valset.cfgData[3] = (uint8_t)(CFG_RATE_TIMEREF >> 8 * 3);
-        tx_buffer.payload.cfg_valset.cfgData[4] = timeRef;
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, sizeof(ubxCfgValSet_t) - 8 + 5);
+        payload[0] = timeRef;
+        //rate timeref is E1 = U1
+        offset += ubloxAddValSet(&tx_buffer, CFG_RATE_TIMEREF, payload, 1, 12);
 
-        /*payload[0] = timeRef;
-
-        ubloxValSet(CFG_RATE_NAV, payload, 1, UBX_VAL_LAYER_RAM);*/
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, sizeof(ubxCfgValSet_t) - MAX_VALSET_SIZE + offset);
     }
-}
-
-void ubloxValSet(const ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, ubloxValLayer_e layer) {
-    ubxMessage_t tx_buffer;
-    tx_buffer.payload.cfg_valset.version = 0;
-    tx_buffer.payload.cfg_valset.layers = layer;
-    tx_buffer.payload.cfg_valset.reserved[0] = 0;
-    tx_buffer.payload.cfg_valset.reserved[1] = 0;
-
-    memset(tx_buffer.payload.cfg_valset.cfgData, 0, 8);
-
-    tx_buffer.payload.cfg_valset.cfgData[0] = (uint8_t)(key >> (8 * 0));
-    tx_buffer.payload.cfg_valset.cfgData[1] = (uint8_t)(key >> (8 * 1));
-    tx_buffer.payload.cfg_valset.cfgData[2] = (uint8_t)(key >> (8 * 2));
-    tx_buffer.payload.cfg_valset.cfgData[3] = (uint8_t)(key >> (8 * 3));
-
-    for (size_t i = 0; i < len; ++i) {
-        tx_buffer.payload.cfg_valset.cfgData[4 + i] = payload[i];
-    }
-
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, sizeof(ubxCfgValSet_t) - 8 + 4 + len);
 }
 
 static void ubloxSetSbas(void)
