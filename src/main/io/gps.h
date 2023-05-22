@@ -47,10 +47,23 @@ typedef enum {
     UBX_VERSION_COUNT,
 } ubloxVersion_e;
 
-extern struct ubloxVersion_t {
+typedef enum {
+    CFG_RATE_MEAS = 0x30210001,
+    CFG_RATE_NAV = 0x30210002,
+    CFG_RATE_TIMEREF = 0x20210003,
+} ubxValsetBytes_e;
+
+typedef enum {
+    UBX_VAL_LAYER_RAM = 0x01,
+    UBX_VAL_LAYER_BBR = 0x02,
+    UBX_VAL_LAYER_FLASH = 0x04,
+} ubloxValLayer_e;
+
+struct ubloxVersion_s {
     uint32_t hw;
     const char* str;
-} ubloxVersion_map[];
+};
+extern struct ubloxVersion_s ubloxVersion_map[];
 #endif
 
 typedef enum {
@@ -169,9 +182,14 @@ typedef struct gpsSolutionData_s {
     uint32_t time;                  // GPS msToW
 } gpsSolutionData_t;
 
+typedef struct ubxVersion_s {
+    uint8_t major;
+    uint8_t minor;
+} ubxVersion_t;
+
 typedef struct ubxSwVersion_s {
-    float firmwareVersion;
-    float protocolVersion;
+    ubxVersion_t firmwareVersion;
+    ubxVersion_t protocolVersion;
 } ubxSwVersion_t;
 
 typedef enum {
@@ -274,9 +292,8 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 #define TASK_GPS_RATE_FAST  1000
 
 #ifdef USE_GPS_UBLOX
-char* stringPadLeft(const char* original, char padding_char, int desired_length);
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
-char* formatVersion(float version);
+void ubloxValSet(const ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, ubloxValLayer_e layer);
 #endif
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);

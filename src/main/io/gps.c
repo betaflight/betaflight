@@ -171,12 +171,6 @@ typedef enum {
     MSG_NMEA_VTG = 0x05,
 } ubxProtocolBytes_e;
 
-typedef enum {
-    CFG_RATE_MEAS = 0x30210001,
-    CFG_RATE_NAV = 0x30210002,
-    CFG_RATE_TIMEREF = 0x20210003,
-} ubxValsetBytes_e;
-
 #define UBLOX_MODE_ENABLED    0x1
 #define UBLOX_MODE_TEST       0x2
 
@@ -224,7 +218,7 @@ typedef struct ubxCfgValSet_s {
     uint8_t version;
     uint8_t layers;
     uint8_t reserved[2];
-    uint8_t cfgData[6];
+    uint8_t cfgData[8];
 } ubxCfgValSet_t;
 
 typedef struct ubxCfgSbas_s {
@@ -532,7 +526,7 @@ const uint8_t ubloxUTCStandardConfig_int[5] = {
         UBLOX_UTC_STANDARD_NTSC
 };
 
-struct ubloxVersion_t ubloxVersion_map[] = {
+struct ubloxVersion_s ubloxVersion_map[] = {
         [UBX_VERSION_UNDEF] = {~0, "UNKNOWN"},
         [UBX_VERSION_M5] = {0x00040005, "M5"},
         [UBX_VERSION_M6] = {0x00040007, "M6"},
@@ -675,7 +669,6 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubxCfgMsg_t));
 }
 
-
 static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef)
 {
     uint16_t measRateMilliseconds = 1000 / measRate;
@@ -708,6 +701,7 @@ static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, false);
     }
 }
+
 static void ubloxSetSbas(void)
 {
     ubxMessage_t tx_buffer;
@@ -1160,52 +1154,6 @@ static void gpsNewData(uint16_t c)
 }
 
 #ifdef USE_GPS_UBLOX
-
-char* stringPadLeft(const char* original, char padding_char, int desired_length) {
-    int original_length = strlen(original);
-
-    // Allocate memory for the padded array
-    char* padded_array = (char*)malloc((original_length + desired_length + 1) * sizeof(char));
-    if (padded_array == NULL) {
-        return NULL;
-    }
-
-    // Initialize padding characters
-    for (int i = 0; i < desired_length; i++) {
-        padded_array[i] = padding_char;
-    }
-
-    // Copy the original array
-    strcpy(padded_array + desired_length, original);
-
-    return padded_array;
-}
-
-void reverse(char* arr, int length) {
-    int start = 0;
-    int end = length - 1;
-
-    while (start < end) {
-        char temp = arr[start];
-        arr[start] = arr[end];
-        arr[end] = temp;
-
-        start++;
-        end--;
-    }
-}
-
-char* formatVersion(float version) {
-    int mal = 5;
-    if (version > 10.0f) {
-        mal = 6;
-    }
-    char * buffer = malloc(mal);
-    ftoa(version, buffer);
-    buffer[strlen(buffer) - 1] = '\0';
-    return buffer;
-}
-
 ubloxVersion_e ubloxParseVersion(const uint32_t version) {
     for (size_t i = 0; i < UBX_VERSION_COUNT; ++i) {
         if ((version ^ ubloxVersion_map[i].hw) == 0x0) {
@@ -1793,7 +1741,11 @@ static union {
     ubxNavSat_t sat;
     ubxCfgGnss_t gnss;
     ubxAck_t ack;
-    char ver[340];
+    struct {
+        char swVersion[30];
+        char hwVersion[10];
+        char extension[300];
+    } ver;
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
@@ -1811,8 +1763,47 @@ static bool UBLOX_parse_gps(void)
     uint32_t i;
 
     *gpsPacketLogChar = LOG_IGNORED;
-    switch (_msg_id) {
-    case MSG_NAV_POSLLH:
+#define CLSMSG(cls, msg) (((cls) << 8) | (msg))
+    switch (CLSMSG(_class, _msg_id)) {
+    case CLSMSG(CLASS_MON, MSG_MON_VER): {
+        char *token = strtok(_buffer.ver.swVersion, " ");
+        while (token != NULL) {
+            float f = fastA2F(token);
+            if (f > 0.0f) {
+                int major = strtol(token, NULL, 10);
+                int minor = strtol(&token[major > 9 ? 3 : 2], NULL, 10);
+                gpsData.monVer.swVersion.firmwareVersion.major = major;
+                gpsData.monVer.swVersion.firmwareVersion.minor = minor;
+                break;
+            }
+            token = strtok(NULL, " ");
+        }
+        size_t j = 0;
+        while (j < 10) {
+            if (_buffer.ver.extension[(j * 30)] == '\0') {
+                break;
+            }
+            token = strtok(&_buffer.ver.extension[(j++ * 30)], "=");
+            while (token != NULL) {
+                if (strcmp(token, "PROTVER") == 0) {
+                    token = strtok(NULL, "=");
+                    int major = strtol(token, NULL, 10);
+                    int minor = strtol(&token[major > 9 ? 3 : 2], NULL, 10);
+                    gpsData.monVer.swVersion.protocolVersion.major = major;
+                    gpsData.monVer.swVersion.protocolVersion.minor = minor;
+                    break;
+                }
+                token = strtok(NULL, "=");
+            }
+        }
+
+        gpsData.monVer.hwVersion = strtoul(_buffer.ver.hwVersion, NULL, 16);
+        gpsData.unitVersion = ubloxParseVersion(gpsData.monVer.hwVersion);
+        gpsData.acquiredMonVer = true;
+        gpsData.ackState = UBLOX_ACK_GOT_ACK;
+    }
+        break;
+    case CLSMSG(CLASS_NAV, MSG_NAV_POSLLH):
         *gpsPacketLogChar = LOG_UBLOX_POSLLH;
         //i2c_dataset.time                = _buffer.posllh.time;
         gpsSol.llh.lon = _buffer.posllh.longitude;
@@ -1821,56 +1812,19 @@ static bool UBLOX_parse_gps(void)
         gpsSetFixState(next_fix);
         _new_position = true;
         break;
-    case MSG_NAV_STATUS:
+    case CLSMSG(CLASS_NAV, MSG_NAV_STATUS):
         *gpsPacketLogChar = LOG_UBLOX_STATUS;
         next_fix = (_buffer.status.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.status.fix_type == FIX_3D);
         if (!next_fix)
             DISABLE_STATE(GPS_FIX);
         break;
-    //case MSG_MON_VER:
-    case MSG_NAV_DOP:
-        if (_class == CLASS_MON) {
-            //memcpy(&gpsData.monVer, &_buffer.ver, 40 + 10 * 30);
-            char swVersion[30];
-            memcpy(&swVersion, &_buffer.ver[0], 30);
-            char * token = strtok(swVersion, " ");
-            float f;
-            while (token != NULL) {
-                f = fastA2F(token);
-                if (f > 0.0f) {
-                    gpsData.monVer.swVersion.firmwareVersion = f;
-                    break;
-                }
-                token = strtok(NULL, " ");
-            }
-            size_t i = 0;
-            while(i < 10) {
-                if (_buffer.ver[40 + (i * 10)] == '\0') {
-                    break;
-                }
-                token = strtok(&_buffer.ver[40 + (i++ * 30)], "=");
-                while (token != NULL) {
-                    if (strcmp(token, "PROTVER") == 0) {
-                        token = strtok(NULL, "=");
-                        f = fastA2F(token);
-                        gpsData.monVer.swVersion.protocolVersion = f;
-                    }
-                    token = strtok(NULL, "=");
-                }
-            }
-
-            gpsData.monVer.hwVersion = strtoul(&_buffer.ver[30], NULL, 16);
-            gpsData.unitVersion = ubloxParseVersion(gpsData.monVer.hwVersion);
-            gpsData.acquiredMonVer = true;
-            gpsData.ackState = UBLOX_ACK_GOT_ACK;
-        } else {
-            *gpsPacketLogChar = LOG_UBLOX_DOP;
-            gpsSol.dop.pdop = _buffer.dop.pdop;
-            gpsSol.dop.hdop = _buffer.dop.hdop;
-            gpsSol.dop.vdop = _buffer.dop.vdop;
-        }
+    case CLSMSG(CLASS_NAV, MSG_NAV_DOP):
+        *gpsPacketLogChar = LOG_UBLOX_DOP;
+        gpsSol.dop.pdop = _buffer.dop.pdop;
+        gpsSol.dop.hdop = _buffer.dop.hdop;
+        gpsSol.dop.vdop = _buffer.dop.vdop;
         break;
-    case MSG_NAV_SOL:
+    case CLSMSG(CLASS_NAV, MSG_NAV_SOL):
         *gpsPacketLogChar = LOG_UBLOX_SOL;
         next_fix = (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.solution.fix_type == FIX_3D);
         if (!next_fix)
@@ -1885,14 +1839,14 @@ static bool UBLOX_parse_gps(void)
         }
 #endif
         break;
-    case MSG_NAV_VELNED:
+    case CLSMSG(CLASS_NAV, MSG_NAV_VELNED):
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
         gpsSol.speed3d = _buffer.velned.speed_3d;       // cm/s
         gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         _new_speed = true;
         break;
-    case MSG_NAV_PVT:
+    case CLSMSG(CLASS_NAV, MSG_NAV_PVT):
         *gpsPacketLogChar = LOG_UBLOX_SOL;
         next_fix = (_buffer.pvt.flags & NAV_STATUS_FIX_VALID) && (_buffer.pvt.fixType == FIX_3D);
         gpsSol.llh.lon = _buffer.pvt.lon;
@@ -1923,7 +1877,7 @@ static bool UBLOX_parse_gps(void)
         }
 #endif
         break;
-    case MSG_NAV_SVINFO:
+    case CLSMSG(CLASS_NAV, MSG_NAV_SVINFO):
         *gpsPacketLogChar = LOG_UBLOX_SVINFO;
         GPS_numCh = _buffer.svinfo.numCh;
         // If we're getting NAV-SVINFO is because we're dealing with an old receiver that does not support NAV-SAT, so we'll only
@@ -1944,7 +1898,7 @@ static bool UBLOX_parse_gps(void)
         }
         GPS_svInfoReceivedCount++;
         break;
-    case MSG_NAV_SAT:
+    case CLSMSG(CLASS_NAV, MSG_NAV_SAT):
         *gpsPacketLogChar = LOG_UBLOX_SVINFO; // The logger won't show this is NAV-SAT instead of NAV-SVINFO
         GPS_numCh = _buffer.sat.numSvs;
         // We can receive here upto GPS_SV_MAXSATS_M9N channels, but since the majority of receivers currently in use are M8N or older,
@@ -1971,7 +1925,7 @@ static bool UBLOX_parse_gps(void)
         GPS_numCh = GPS_SV_MAXSATS_M8N;
         GPS_svInfoReceivedCount++;
         break;
-    case MSG_CFG_GNSS:
+    case CLSMSG(CLASS_CFG, MSG_CFG_GNSS):
         {
             bool isSBASenabled = false;
             bool isM8NwithDefaultConfig = false;
@@ -2010,12 +1964,12 @@ static bool UBLOX_parse_gps(void)
             ubloxSendConfigMessage(&tx_buffer, MSG_CFG_GNSS, messageSize);
         }
         break;
-    case MSG_ACK_ACK:
+    case CLSMSG(CLASS_ACK, MSG_ACK_ACK):
         if ((gpsData.ackState == UBLOX_ACK_WAITING) && (_buffer.ack.msgId == gpsData.ackWaitingMsgId)) {
             gpsData.ackState = UBLOX_ACK_GOT_ACK;
         }
         break;
-    case MSG_ACK_NACK:
+    case CLSMSG(CLASS_ACK, MSG_ACK_NACK):
         if ((gpsData.ackState == UBLOX_ACK_WAITING) && (_buffer.ack.msgId == gpsData.ackWaitingMsgId)) {
             gpsData.ackState = UBLOX_ACK_GOT_NACK;
         }
@@ -2023,6 +1977,7 @@ static bool UBLOX_parse_gps(void)
     default:
         return false;
     }
+#undef CLSMSG
 
     // we only return true when we get new position and speed data
     // this ensures we don't use stale data

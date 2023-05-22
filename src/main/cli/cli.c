@@ -3604,20 +3604,16 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
 
         cliPrintLinef("swVersion: ");
         cliPrint(" ");
-        cliPrintLinef("FW=%s, PROTO=%s", formatVersion(gpsData.monVer.swVersion.firmwareVersion),
-                      formatVersion(gpsData.monVer.swVersion.protocolVersion));
+        cliPrintLinef("FW=%d.%d, PROTO=%d.%d",
+                      gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
+                      gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
+        );
 
         cliPrintLinef("hwVersion: ");
         cliPrint(" ");
         cliPrint(ubloxVersion_map[gpsData.unitVersion].str);
         cliPrint(" (");
-        char * hwVersionBuffer = malloc(9);
-        uli2a(gpsData.monVer.hwVersion, 16, 1, hwVersionBuffer);
-        if (strlen(hwVersionBuffer) < 8) {
-            hwVersionBuffer = stringPadLeft(hwVersionBuffer, '0', 8 - strlen(hwVersionBuffer));
-        }
-        cliPrint(hwVersionBuffer);
-        free(hwVersionBuffer);
+        cliPrintf("%08X", gpsData.monVer.hwVersion);
         cliPrintLine(")");
 
         cliPrintLinef("extension: ");
@@ -4863,10 +4859,10 @@ if (buildKey) {
         }
         if (gpsData.acquiredMonVer) {
             cliPrintLinefeed();
-            cliPrintf("     Ublox HW Version: %s, SW Version:%s, Proto Version:%s",
+            cliPrintf("     Ublox HW Version: %s, SW Version: %d.%d, Proto Version: %d.%d",
                       ubloxVersion_map[gpsData.unitVersion].str,
-                      formatVersion(gpsData.monVer.swVersion.firmwareVersion),
-                      formatVersion(gpsData.monVer.swVersion.protocolVersion)
+                      gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
+                      gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
           );
         } else {
             cliPrintLinefeed();

@@ -226,7 +226,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 
     addGPSCoordinates(hottGPSMessage, gpsSol.llh.lat, gpsSol.llh.lon);
 
-    // GPS Speed is returned in cm/s (from io/gps/gps.c) and must be sent in km/h (Hott requirement)
+    // GPS Speed is returned in cm/s (from io/gps.c) and must be sent in km/h (Hott requirement)
     const uint16_t speed = (gpsSol.groundSpeed * 36) / 1000;
     hottGPSMessage->gps_speed_L = speed & 0x00FF;
     hottGPSMessage->gps_speed_H = speed >> 8;
