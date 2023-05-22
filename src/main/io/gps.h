@@ -293,7 +293,6 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
-void ubloxValSet(const ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, ubloxValLayer_e layer);
 #endif
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
