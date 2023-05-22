@@ -170,8 +170,8 @@ typedef struct gpsSolutionData_s {
 } gpsSolutionData_t;
 
 typedef struct ubxSwVersion_s {
-    uint16_t firmwareVersion;
-    uint16_t protocolVersion;
+    float firmwareVersion;
+    float protocolVersion;
 } ubxSwVersion_t;
 
 typedef enum {
@@ -274,8 +274,9 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 #define TASK_GPS_RATE_FAST  1000
 
 #ifdef USE_GPS_UBLOX
+char* stringPadLeft(const char* original, char padding_char, int desired_length);
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
-char* formatVersion(uint16_t version);
+char* formatVersion(float version);
 #endif
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);

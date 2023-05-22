@@ -3611,7 +3611,13 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
         cliPrint(" ");
         cliPrint(ubloxVersion_map[gpsData.unitVersion].str);
         cliPrint(" (");
-        cliPrintf("0x%X", gpsData.monVer.hwVersion);
+        char * hwVersionBuffer = malloc(9);
+        uli2a(gpsData.monVer.hwVersion, 16, 1, hwVersionBuffer);
+        if (strlen(hwVersionBuffer) < 8) {
+            hwVersionBuffer = stringPadLeft(hwVersionBuffer, '0', 8 - strlen(hwVersionBuffer));
+        }
+        cliPrint(hwVersionBuffer);
+        free(hwVersionBuffer);
         cliPrintLine(")");
 
         cliPrintLinef("extension: ");
@@ -4857,7 +4863,11 @@ if (buildKey) {
         }
         if (gpsData.acquiredMonVer) {
             cliPrintLinefeed();
-            cliPrintf("     Ublox HW Version: %s, SW Version: %s", ubloxVersion_map[gpsData.unitVersion].str, formatVersion(gpsData.monVer.swVersion.firmwareVersion));
+            cliPrintf("     Ublox HW Version: %s, SW Version:%s, Proto Version:%s",
+                      ubloxVersion_map[gpsData.unitVersion].str,
+                      formatVersion(gpsData.monVer.swVersion.firmwareVersion),
+                      formatVersion(gpsData.monVer.swVersion.protocolVersion)
+          );
         } else {
             cliPrintLinefeed();
             cliPrintf("     Ublox HW Version: NULL, SW Version: NULL");
