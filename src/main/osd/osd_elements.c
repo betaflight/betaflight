@@ -235,6 +235,9 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 #define IS_BLINK(item) (blinkBits[(item) / 32] & (1 << ((item) % 32)))
 #define BLINK(item) (IS_BLINK(item) && blinkState)
 
+// Return whether element is a SYS element and needs special handling
+#define IS_SYS_OSD_ELEMENT(item) (item >= OSD_SYS_GOGGLE_VOLTAGE) && (item <= OSD_SYS_FAN_SPEED)
+
 enum {UP, DOWN};
 
 static int osdDisplayWrite(osdElementParms_t *element, uint8_t x, uint8_t y, uint8_t attr, const char *s)
@@ -2017,7 +2020,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element drawing function
-    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item <= OSD_SYS_FAN_SPEED)) {
+    if (IS_SYS_OSD_ELEMENT(item)) {
         displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
     } else {
         osdElementDrawFunction[item](&element);
