@@ -144,6 +144,8 @@ typedef enum {
     SBAS_SEARCH_PRN158,
 } ubxSbasPrnScan_e;
 
+#define UBXSBASPRNMASK(i) (1 << (i - 1))
+
 typedef enum {
     UBX_VAL_LAYER_RAM = 0x01,
     UBX_VAL_LAYER_BBR = 0x02,
