@@ -210,7 +210,7 @@ static const char * const lookupTableGPSUBLOXModels[] = {
     "PORTABLE", "STATIONARY", "PEDESTRIAN", "AUTOMOTIVE", "AT_SEA", "AIRBORNE_1G", "AIRBORNE_2G", "AIRBORNE_4G"
 };
 
-static const char * const lookupTableGPSUBLOXUtcStandard[] = {
+static const char * const lookupTableGpsUbloxUtcStandard[] = {
         "AUTO", "USNO", "EU", "SU", "NTSC"
 };
 #endif
@@ -540,7 +540,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableGPSProvider),
     LOOKUP_TABLE_ENTRY(lookupTableGPSSBASMode),
     LOOKUP_TABLE_ENTRY(lookupTableGPSUBLOXModels),
-    LOOKUP_TABLE_ENTRY(lookupTableGPSUBLOXUtcStandard),
+    LOOKUP_TABLE_ENTRY(lookupTableGpsUbloxUtcStandard),
 #ifdef USE_GPS_RESCUE
     LOOKUP_TABLE_ENTRY(lookupTableRescueSanityType),
     LOOKUP_TABLE_ENTRY(lookupTableRescueAltitudeMode),

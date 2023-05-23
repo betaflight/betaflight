@@ -347,45 +347,6 @@ typedef enum {
     UBLOX_MSG_CFG_GNSS  // 16. For not SBAS or GALILEO otherwise GPS_STATE_REVEIVING_DATA
 } ubloxStatePosition_e;
 
-uint64_t ubxSbasPrnScan_map[] = {
-        0x0000000000000000,
-        0x0000000000000001,
-        0x0000000000000002,
-        0x0000000000000004,
-        0x0000000000000008,
-        0x0000000000000010,
-        0x0000000000000020,
-        0x0000000000000040,
-        0x0000000000000080,
-        0x0000000000000100,
-        0x0000000000002000,
-        0x0000000000004000,
-        0x0000000000008000,
-        0x0000000000010000,
-        0x0000000000020000,
-        0x0000000000040000,
-        0x0000000000080000,
-        0x0000000000100000,
-        0x0000000000200000,
-        0x0000000000400000,
-        0x0000000000800000,
-        0x0000000001000000,
-        0x0000000002000000,
-        0x0000000004000000,
-        0x0000000008000000,
-        0x0000000010000000,
-        0x0000000020000000,
-        0x0000000040000000,
-        0x0000000080000000,
-        0x0000000100000000,
-        0x0000000200000000,
-        0x0000000400000000,
-        0x0000000800000000,
-        0x0000001000000000,
-        0x0000002000000000,
-        0x0000004000000000,
-};
-
 baudRate_e initBaudRateIndex = BAUD_COUNT;
 static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_e msg_id, uint16_t length);
 
@@ -960,24 +921,25 @@ static void ubloxSetSbas(void)
             offset += ubloxAddValSet(&tx_buffer, CFG_SBAS_USE_INTEGRITY, payload, 1, offset);
         }
 
-        uint64_t mask = ubxSbasPrnScan_map[SBAS_SEARCH_ALL];
+        uint64_t mask = 0x0;
         switch (gpsConfig()->sbasMode) {
             case SBAS_EGNOS:
-                mask = ubxSbasPrnScan_map[SBAS_SEARCH_PRN123] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN126] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN136];
+                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN123) | UBXSBASPRNMASK(SBAS_SEARCH_PRN126) | UBXSBASPRNMASK(SBAS_SEARCH_PRN136);
                 break;
             case SBAS_WAAS:
-                mask = ubxSbasPrnScan_map[SBAS_SEARCH_PRN131] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN133] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN135] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN138];
+                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN131) | UBXSBASPRNMASK(SBAS_SEARCH_PRN133) | UBXSBASPRNMASK(SBAS_SEARCH_PRN135) | UBXSBASPRNMASK(SBAS_SEARCH_PRN138);
                 break;
             case SBAS_MSAS:
-                mask = ubxSbasPrnScan_map[SBAS_SEARCH_PRN129] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN137];
+                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN129) | UBXSBASPRNMASK(SBAS_SEARCH_PRN137);
                 break;
             case SBAS_GAGAN:
-                mask = ubxSbasPrnScan_map[SBAS_SEARCH_PRN127] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN128] | ubxSbasPrnScan_map[SBAS_SEARCH_PRN132];
+                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN127) | UBXSBASPRNMASK(SBAS_SEARCH_PRN128) | UBXSBASPRNMASK(SBAS_SEARCH_PRN132);
                 break;
             case SBAS_AUTO:
             default:
                 break;
         }
+
         payload[0] = (uint8_t)(mask >> (8 * 0));
         payload[1] = (uint8_t)(mask >> (8 * 1));
         payload[2] = (uint8_t)(mask >> (8 * 2));
@@ -986,6 +948,7 @@ static void ubloxSetSbas(void)
         payload[5] = (uint8_t)(mask >> (8 * 5));
         payload[6] = (uint8_t)(mask >> (8 * 6));
         payload[7] = (uint8_t)(mask >> (8 * 7));
+
         offset += ubloxAddValSet(&tx_buffer, CFG_SBAS_PRNSCANMASK, payload, 8, offset);
 
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, sizeof(ubxCfgValSet_t) - MAX_VALSET_SIZE + offset);
