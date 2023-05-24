@@ -27,8 +27,6 @@
 
 #ifdef USE_GPS
 
-#include <assert.h>
-
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -579,29 +577,11 @@ static bool ubloxHasValSetGet(void) {
     ubloxSendMessage((const uint8_t *) &tx_buffer, sizeof(ubxCfgValGet_t) - MAX_VALSET_SIZE + 4 + 6);
 }*/
 
-
-static uint8_t ubloxValSet(ubxMessage_t * tx_buffer, ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, ubloxValLayer_e layer) {
-    tx_buffer->payload.cfg_valset.version = 0;
-    tx_buffer->payload.cfg_valset.layer = layer;
-    tx_buffer->payload.cfg_valset.reserved[0] = 0;
-    tx_buffer->payload.cfg_valset.reserved[1] = 0;
-
-    memset(tx_buffer->payload.cfg_valset.cfgData, 0, MAX_VALSET_SIZE);
-
-    tx_buffer->payload.cfg_valset.cfgData[0] = (uint8_t)(key >> (8 * 0));
-    tx_buffer->payload.cfg_valset.cfgData[1] = (uint8_t)(key >> (8 * 1));
-    tx_buffer->payload.cfg_valset.cfgData[2] = (uint8_t)(key >> (8 * 2));
-    tx_buffer->payload.cfg_valset.cfgData[3] = (uint8_t)(key >> (8 * 3));
-
-    for (size_t i = 0; i < len; ++i) {
-        tx_buffer->payload.cfg_valset.cfgData[4 + i] = payload[i];
+static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValsetBytes_e key, const uint8_t * payload, const uint8_t len, const uint8_t offset) {
+    if (offset + 4 + len > MAX_VALSET_SIZE)
+    {
+        return 0;
     }
-
-    return 4 + len;
-}
-
-static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, const uint8_t offset) {
-    assert(offset + 4 + len < MAX_VALSET_SIZE);
 
     tx_buffer->payload.cfg_valset.cfgData[offset + 0] = (uint8_t)(key >> (8 * 0));
     tx_buffer->payload.cfg_valset.cfgData[offset + 1] = (uint8_t)(key >> (8 * 1));
@@ -613,6 +593,17 @@ static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValsetBytes_e key, ui
     }
 
     return 4 + len;
+}
+
+static uint8_t ubloxValSet(ubxMessage_t * tx_buffer, ubxValsetBytes_e key, uint8_t * payload, const uint8_t len, ubloxValLayer_e layer) {
+    memset(tx_buffer->payload.cfg_valset.cfgData, 0, MAX_VALSET_SIZE);
+
+    // tx_buffer->payload.cfg_valset.version = 0;
+    tx_buffer->payload.cfg_valset.layer = layer;
+    // tx_buffer->payload.cfg_valset.reserved[0] = 0;
+    // tx_buffer->payload.cfg_valset.reserved[1] = 0;
+
+    return ubloxAddValSet(tx_buffer, key, payload, len, 0);
 }
 
 static void ubloxSendByteUpdateChecksum(const uint8_t data, uint8_t *checksumA, uint8_t *checksumB)
