@@ -1147,10 +1147,11 @@ static void osdElementEfficiency(osdElementParms_t *element)
 #endif // USE_GPS
 
 #ifdef USE_GPS_LAP_TIMER
-static void osdFormatLapTime(osdElementParms_t *element, uint32_t timeMS, uint8_t symbol)
+static void osdFormatLapTime(osdElementParms_t *element, uint32_t timeMs, uint8_t symbol)
 {
-    uint32_t seconds = timeMS / 1000;
-    uint32_t decimals = (timeMS % 1000) / 10;
+    timeMs += 5;  // round to nearest centisecond (+/- 5ms)
+    uint32_t seconds = timeMs / 1000;
+    uint32_t decimals = (timeMs % 1000) / 10;
     tfp_sprintf(element->buff, "%c%3u.%02u", symbol, seconds, decimals);
 }
 
