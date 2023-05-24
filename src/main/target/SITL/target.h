@@ -92,9 +92,6 @@
 #define USE_UART7
 #define USE_UART8
 
-//#define USE_SOFTSERIAL1
-//#define USE_SOFTSERIAL2
-
 #define SERIAL_PORT_COUNT 8
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_MSP

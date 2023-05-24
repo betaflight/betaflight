@@ -91,6 +91,7 @@ typedef struct serialPort_s {
 } serialPort_t;
 
 #define SERIAL_PORT_MAX_INDEX 11
+
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
     ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
@@ -99,12 +100,9 @@ typedef struct serialPinConfig_s {
 
 PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
-# ifdef USE_SOFTSERIAL2
-#  define SOFTSERIAL_COUNT 2
-# else
-#  define SOFTSERIAL_COUNT 1
-# endif
+#if defined(USE_SOFTSERIAL)
+#define SOFTSERIAL_COUNT 2
+
 typedef struct softSerialPinConfig_s {
     ioTag_t ioTagTx[SOFTSERIAL_COUNT];
     ioTag_t ioTagRx[SOFTSERIAL_COUNT];
