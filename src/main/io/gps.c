@@ -45,6 +45,8 @@
 #include "io/serial.h"
 
 #include "config/config.h"
+
+#include "fc/gps_lap_timer.h"
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
@@ -577,7 +579,12 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
 static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint16_t timeRef)
 {
     ubxMessage_t tx_buffer;
-    tx_buffer.payload.cfg_rate.measRate = measRate;
+
+    uint16_t measRateMilliseconds = 1000 / measRate;
+    // Testing has  revealed this is the max rate common modules can achieve
+    if (measRateMilliseconds < 53) measRateMilliseconds = 53;
+
+    tx_buffer.payload.cfg_rate.measRate = measRateMilliseconds;
     tx_buffer.payload.cfg_rate.navRate = navRate;
     tx_buffer.payload.cfg_rate.timeRef = timeRef;
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_RATE, sizeof(ubxCfgRate_t));
@@ -743,7 +750,7 @@ void gpsInitUblox(void)
                         ubloxSetMessageRate(CLASS_NAV, MSG_DOP, 1); // set DOP MSG rate
                         break;
                     case UBLOX_SET_NAV_RATE:
-                        ubloxSetNavRate(0x64, 1, 1); // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle) (for 5Hz use 0xC8)
+                        ubloxSetNavRate(gpsConfig()->gps_update_rate_hz, 1, 1);
                         break;
                     case UBLOX_SET_SBAS:
                         ubloxSetSbas();
@@ -1579,6 +1586,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
         gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
+        gpsSol.time = _buffer.posllh.time;
         gpsSetFixState(next_fix);
         _new_position = true;
         break;
@@ -1999,6 +2007,9 @@ void onGpsNewData(void)
 #ifdef USE_GPS_RESCUE
     gpsRescueNewGpsData();
 #endif
+#ifdef USE_GPS_LAP_TIMER
+    gpsLapTimerNewGpsData();
+#endif // USE_GPS_LAP_TIMER
 }
 
 void gpsSetFixState(bool state)
