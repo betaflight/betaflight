@@ -47,6 +47,8 @@
 #include "io/serial.h"
 
 #include "config/config.h"
+
+#include "fc/gps_lap_timer.h"
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
@@ -475,6 +477,7 @@ void gpsInitNmea(void)
                return;
            }
            gpsData.state_ts = now;
+
            if (gpsData.state_position < GPS_STATE_INITIALIZING) {
                serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
                gpsData.state_position++;
@@ -484,9 +487,39 @@ void gpsInitNmea(void)
                if (!atgmRestartDone) {
                    atgmRestartDone = true;
                    serialPrint(gpsPort, "$PCAS02,100*1E\r\n");  // 10Hz refresh rate
-                   serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart 
+                   serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart
+               } else {
+                    // NMEA custom commands after ATGM336 initialization
+                    static int commandOffset = 0;
+                    const char *commands = gpsConfig()->nmeaCustomCommands;
+                    const char *cmd = commands + commandOffset;
+
+                    // skip leading whitespaces and get first command length
+                    int commandLen;
+                    while (*cmd && (commandLen = strcspn(cmd, " \0")) == 0) {
+                        cmd++;  // skip separators
+                    }
+
+                    if (*cmd) {
+                        // Send the current command to the GPS
+                        serialWriteBuf(gpsPort, (uint8_t *)cmd, commandLen);
+                        serialWriteBuf(gpsPort, (uint8_t *)"\r\n", 2);
+
+                        // Move to the next command
+                        cmd += commandLen;
+                    }
+
+                    // skip trailing whitespaces
+                    while (*cmd && strcspn(cmd, " \0") == 0) cmd++;
+
+                    if (*cmd) {
+                        // more commands to send
+                        commandOffset = cmd - commands;
+                    } else {
+                        gpsData.state_position++;
+                        commandOffset = 0;
+                    }
                }
-               gpsData.state_position++;
            } else
 #else
            {
@@ -846,17 +879,21 @@ static void ubloxDisableNMEAValSet(void)
 
 static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef)
 {
+    uint16_t measRateMilliseconds = 1000 / measRate;
+    // Testing has  revealed this is the max rate common modules can achieve
+    if (measRateMilliseconds < 53) measRateMilliseconds = 53;
+
     ubxMessage_t tx_buffer;
     if (!ubloxHasValSetGet()) {
-        tx_buffer.payload.cfg_rate.measRate = measRate;
+        tx_buffer.payload.cfg_rate.measRate = measRateMilliseconds;
         tx_buffer.payload.cfg_rate.navRate = navRate;
         tx_buffer.payload.cfg_rate.timeRef = timeRef;
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_RATE, sizeof(ubxCfgRate_t));
     } else {
         uint8_t offset = 0;
         uint8_t payload[2];
-        payload[0] = (uint8_t)(measRate >> (8 * 0));
-        payload[1] = (uint8_t)(measRate >> (8 * 1));
+        payload[0] = (uint8_t)(measRateMilliseconds >> (8 * 0));
+        payload[1] = (uint8_t)(measRateMilliseconds >> (8 * 1));
         //rate meas is U2
         offset = ubloxValSet(&tx_buffer, CFG_RATE_MEAS, payload, UBX_VAL_LAYER_RAM);
 
@@ -1154,11 +1191,7 @@ void gpsInitUblox(void)
                         ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1); // set DOP MSG rate
                         break;
                     case UBLOX_SET_NAV_RATE:
-                        if (gpsData.unitVersion < UBX_VERSION_M8) {
-                            ubloxSetNavRate(0xC8, 1, 1); // set rate to 5Hz (measurement period: 200ms, navigation rate: 1 cycle)
-                        } else {
-                            ubloxSetNavRate(0x64, 1, 1); // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle)
-                        }
+                        ubloxSetNavRate(gpsConfig()->gps_update_rate_hz, 1, 1);
                         break;
                     case UBLOX_SET_SBAS:
                         ubloxSetSbas();
@@ -2060,6 +2093,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
         gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
+        gpsSol.time = _buffer.posllh.time;
         gpsSetFixState(next_fix);
         _new_position = true;
         break;
@@ -2484,6 +2518,9 @@ void onGpsNewData(void)
 #ifdef USE_GPS_RESCUE
     gpsRescueNewGpsData();
 #endif
+#ifdef USE_GPS_LAP_TIMER
+    gpsLapTimerNewGpsData();
+#endif // USE_GPS_LAP_TIMER
 }
 
 void gpsSetFixState(bool state)

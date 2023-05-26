@@ -514,6 +514,11 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
                 // uin32_t array
                 cliPrintf("%u", ((uint32_t *)valuePointer)[i]);
                 break;
+
+            case VAR_INT32:
+                // in32_t array
+                cliPrintf("%d", ((int32_t *)valuePointer)[i]);
+                break;
             }
 
             if (i < var->config.array.length - 1) {
@@ -544,6 +549,10 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
             value = *(uint32_t *)valuePointer;
 
             break;
+        case VAR_INT32:
+            value = *(int32_t *)valuePointer;
+
+            break;
         }
 
         bool valueIsCorrupted = false;
@@ -552,6 +561,13 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
             if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
                 cliPrintf("%u", (uint32_t)value);
                 if ((uint32_t)value > var->config.u32Max) {
+                    valueIsCorrupted = true;
+                } else if (full) {
+                    cliPrintf(" 0 %u", var->config.u32Max);
+                }
+            } else if ((var->type & VALUE_TYPE_MASK) == VAR_INT32) {
+                cliPrintf("%d", (int32_t)value);
+                if ((int32_t)value > var->config.d32Max || (int32_t)value < -var->config.d32Max) {
                     valueIsCorrupted = true;
                 } else if (full) {
                     cliPrintf(" 0 %u", var->config.u32Max);
@@ -626,6 +642,9 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
             break;
         case VAR_UINT32:
             result = result && (((uint32_t *)ptr)[i] & mask) == (((uint32_t *)ptrDefault)[i] & mask);
+            break;
+        case VAR_INT32:
+            result = result && (((int32_t *)ptr)[i] & mask) == (((int32_t *)ptrDefault)[i] & mask);
             break;
         }
     }
@@ -793,6 +812,10 @@ static void cliPrintVarRange(const clivalue_t *var)
             cliPrintLinef("Allowed range: 0 - %u", var->config.u32Max);
 
             break;
+        case VAR_INT32:
+            cliPrintLinef("Allowed range: %d - %d", -var->config.d32Max, var->config.d32Max);
+
+            break;
         case VAR_UINT8:
         case VAR_UINT16:
             cliPrintLinef("Allowed range: %d - %d", var->config.minmaxUnsigned.min, var->config.minmaxUnsigned.max);
@@ -873,6 +896,16 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
             }
             *(uint32_t *)ptr = workValue;
             break;
+
+        case VAR_INT32:
+            mask = 1 << var->config.bitpos;
+            if (value) {
+                workValue = *(int32_t *)ptr | mask;
+            } else {
+                workValue = *(int32_t *)ptr & ~mask;
+            }
+            *(int32_t *)ptr = workValue;
+            break;
         }
     } else {
         switch (var->type & VALUE_TYPE_MASK) {
@@ -894,6 +927,10 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
 
         case VAR_UINT32:
             *(uint32_t *)ptr = value;
+            break;
+
+        case VAR_INT32:
+            *(int32_t *)ptr = value;
             break;
         }
     }
@@ -4440,6 +4477,14 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                         cliSetVar(val, value);
                         valueChanged = true;
                     }
+                } else if ((val->type & VALUE_TYPE_MASK) == VAR_INT32) {
+                    int32_t value = strtol(eqptr, NULL, 10);
+
+                    // INT32s are limited to being symmetric, so we test both bounds with the same magnitude
+                    if (value <= val->config.d32Max && value >= -val->config.d32Max) {
+                        cliSetVar(val, value);
+                        valueChanged = true;
+                    }
                 } else {
                     int value = atoi(eqptr);
 
@@ -4535,7 +4580,16 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                             uint32_t *data = (uint32_t *)cliGetValuePointer(val) + i;
                             // store value
                             *data = (uint32_t)strtoul((const char*) valPtr, NULL, 10);
-                       }
+                        }
+
+                        break;
+                    case VAR_INT32:
+                        {
+                            // fetch data pointer
+                            int32_t *data = (int32_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (int32_t)strtol((const char*) valPtr, NULL, 10);
+                        }
 
                         break;
                     }
