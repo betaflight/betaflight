@@ -6,6 +6,9 @@ on:
       - master
       - '*-maintenance'
 
+permissions:
+  pull-requests: write
+
 jobs:
   comment-pr:
     runs-on: ubuntu-22.04
