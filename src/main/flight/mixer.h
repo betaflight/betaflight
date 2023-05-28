@@ -20,10 +20,15 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "platform.h"
 
 #include "common/time.h"
+
 #include "pg/pg.h"
+
 #include "drivers/io_types.h"
 #include "drivers/pwm_output.h"
 
@@ -90,6 +95,13 @@ typedef struct mixerConfig_s {
     uint8_t crashflip_motor_percent;
     uint8_t crashflip_expo;
     uint8_t mixer_type;
+#ifdef USE_RPM_LIMIT
+    bool rpm_limit;
+    uint16_t rpm_limit_p;
+    uint16_t rpm_limit_i;
+    uint16_t rpm_limit_d;
+    uint16_t rpm_limit_value;
+#endif
 } mixerConfig_t;
 
 PG_DECLARE(mixerConfig_t, mixerConfig);
@@ -104,12 +116,13 @@ struct rxConfig_s;
 uint8_t getMotorCount(void);
 float getMotorMixRange(void);
 bool areMotorsRunning(void);
+bool areMotorsSaturated(void);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void initEscEndpoints(void);
 void mixerInit(mixerMode_e mixerMode);
 void mixerInitProfile(void);
-
+void mixerResetRpmLimiter(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(timeUs_t currentTimeUs);
 void stopMotors(void);

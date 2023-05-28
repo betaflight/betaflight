@@ -109,4 +109,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "GPS_DOP",
     "FAILSAFE",
     "DSHOT_TELEMETRY_COUNTS"
+    "RPM_LIMIT",
 };

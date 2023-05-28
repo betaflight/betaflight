@@ -18,8 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
@@ -66,6 +64,12 @@
 
 #define DYN_LPF_THROTTLE_STEPS           100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
+
+#ifdef USE_RPM_LIMIT
+#define RPM_LIMIT_ACTIVE mixerConfig()->rpm_limit
+#else
+#define RPM_LIMIT_ACTIVE false
+#endif
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -218,7 +222,6 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     } else {
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = PWM_RANGE;
-
 #ifdef USE_DYN_IDLE
         if (mixerRuntime.dynIdleMinRps > 0.0f) {
             const float maxIncrease = isAirmodeActivated() ? mixerRuntime.dynIdleMaxIncrease : 0.05f;
@@ -346,6 +349,43 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
+#ifdef USE_RPM_LIMIT
+static void applyRpmLimiter(mixerRuntime_t *mixer)
+{
+    static float prevError = 0.0f;
+    static float i = 0.0f;
+    const float unsmoothedAverageRpm = getDshotAverageRpm();
+    const float averageRpm = pt1FilterApply(&mixer->averageRpmFilter, unsmoothedAverageRpm);
+    const float error = averageRpm - mixer->rpmLimiterRpmLimit;
+
+    // PID
+    const float p = error * mixer->rpmLimiterPGain;
+    const float d = (error - prevError) * mixer->rpmLimiterDGain; // rpmLimiterDGain already adjusted for looprate (see mixer_init.c)
+    i += error * mixer->rpmLimiterIGain;                          // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
+    i = MAX(0.0f, i);
+    float pidOutput = p + i + d;
+
+    // Throttle limit learning
+    if (error > 0.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
+        mixer->rpmLimiterThrottleScale *= 1.0f - 4.8f * pidGetDT();
+    } else if (pidOutput < -400 * pidGetDT() && rcCommand[THROTTLE] >= rxConfig()->maxcheck && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
+        mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
+    }
+    mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
+    throttle *= mixer->rpmLimiterThrottleScale;
+
+    // Output
+    pidOutput = MAX(0.0f, pidOutput);
+    throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
+    prevError = error;
+
+    DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(unsmoothedAverageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
+}
+#endif // USE_RPM_LIMIT
+
 static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
@@ -353,7 +393,9 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
         float motorOutput = motorOutputMixSign * motorMix[i] + throttle * activeMixer[i].throttle;
 #ifdef USE_THRUST_LINEARIZATION
+    if (!RPM_LIMIT_ACTIVE) {
         motorOutput = pidApplyThrustLinearization(motorOutput);
+    }
 #endif
         motorOutput = motorOutputMin + motorOutputRange * motorOutput;
 
@@ -385,7 +427,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
 
 static float applyThrottleLimit(float throttle)
 {
-    if (currentControlRateProfile->throttle_limit_percent < 100) {
+    if (currentControlRateProfile->throttle_limit_percent < 100 && !RPM_LIMIT_ACTIVE) {
         const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
         switch (currentControlRateProfile->throttle_limit_type) {
             case THROTTLE_LIMIT_TYPE_SCALE:
@@ -498,7 +540,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     if (isFlipOverAfterCrashActive()) {
         applyFlipOverAfterCrashModeToMotors();
-
         return;
     }
 
@@ -572,12 +613,17 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     throttle = pidCompensateThrustLinearization(throttle);
 #endif
 
+#ifdef USE_RPM_LIMIT
+    if (RPM_LIMIT_ACTIVE && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
+        applyRpmLimiter(&mixerRuntime);
+    }
+#endif
+
     // Find roll/pitch/yaw desired output
     // ??? Where is the optimal location for this code?
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
-
         float mix =
             scaledAxisPidRoll  * activeMixer[i].roll +
             scaledAxisPidPitch * activeMixer[i].pitch +

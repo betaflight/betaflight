@@ -24,7 +24,6 @@
 
 #include "flight/mixer.h"
 
-
 typedef struct mixerRuntime_s {
     uint8_t motorCount;
     motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -52,6 +51,14 @@ typedef struct mixerRuntime_s {
     float vbatSagCompensationFactor;
     float vbatFull;
     float vbatRangeToCompensate;
+#endif
+#if defined(USE_RPM_LIMIT)
+    float rpmLimiterRpmLimit;
+    float rpmLimiterThrottleScale;
+    float rpmLimiterPGain;
+    float rpmLimiterIGain;
+    float rpmLimiterDGain;
+    pt1Filter_t averageRpmFilter;
 #endif
 } mixerRuntime_t;
 
