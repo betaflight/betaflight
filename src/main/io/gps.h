@@ -102,6 +102,15 @@ typedef enum {
 } ubxValsetBytes_e;
 
 typedef enum {
+    CFG_SIGNAL_GPS_ENA = 0x1031001f, // L
+    CFG_SIGNAL_SBAS_ENA = 0x10310020, // L
+    CFG_SIGNAL_GAL_ENA = 0x10310021, // L
+    CFG_SIGNAL_BDS_ENA = 0x10310022, // L
+    CFG_SIGNAL_QZSS_ENA = 0x10310024, // L
+    CFG_SIGNAL_GLO_ENA = 0x10310025, // L
+} ubxValgetBytes_e;
+
+typedef enum {
     SBAS_SEARCH_ALL,
     SBAS_SEARCH_PRN120,
     SBAS_SEARCH_PRN121,
@@ -314,7 +323,8 @@ typedef struct gpsData_s {
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
     uint8_t ackTimeoutCounter;      // Ack timeout counter
-    ubloxAckState_e ackState;
+    ubloxAckState_e ackState;       // Ack State
+    uint8_t updateRate;
     bool ubloxUsePVT;
     bool ubloxUseSAT;
 #ifdef USE_GPS
