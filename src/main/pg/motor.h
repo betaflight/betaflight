@@ -56,9 +56,10 @@ typedef struct motorConfig_s {
     motorDevConfig_t dev;
     uint16_t digitalIdleOffsetValue;        // Idle value for DShot protocol, full motor output = 10000
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
-    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
+    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power. This value can be increased up to 2000
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
-    uint8_t motorPoleCount;                // Magnetic poles in the motors for calculating actual RPM from eRPM provided by ESC telemetry
+    uint16_t kv;                            // Motor velocity constant (Kv) to estimate RPM under no load (unloadedRpm = Kv * batteryVoltage)
+    uint8_t motorPoleCount;                 // Number of magnetic poles in the motor bell for calculating actual RPM from eRPM provided by ESC telemetry
 } motorConfig_t;
 
 PG_DECLARE(motorConfig_t, motorConfig);

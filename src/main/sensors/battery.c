@@ -40,6 +40,7 @@
 #include "fc/rc_controls.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_init.h"
 
 #include "io/beeper.h"
 
@@ -243,7 +244,6 @@ static bool isVoltageFromBat(void)
 
 void batteryUpdatePresence(void)
 {
-
     if ((voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()) {
         // Battery has just been connected - calculate cells, warning voltages and reset state
         consumptionState = voltageState = BATTERY_OK;
@@ -261,11 +261,17 @@ void batteryUpdatePresence(void)
                 changePidProfileFromCellCount(batteryCellCount);
             }
         }
+<<<<<<< HEAD
         BATTERY_MIN_VOLTAGE  = batteryConfig()->cellMinVoltSOC * batteryCellCount;
         BATTERY_MAX_VOLTAGE = batteryConfig()->cellMaxVoltSOC * batteryCellCount;
         lastFilteredVoltage = voltageMeter.displayFiltered;
         lastTimeVol = micros();
 
+=======
+#ifdef USE_RPM_LIMIT
+        mixerResetRpmLimiter();
+#endif
+>>>>>>> 26701f063 (RPM Limiter (#12054))
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
         batteryWarningHysteresisVoltage = (batteryWarningVoltage > batteryConfig()->vbathysteresis) ? batteryWarningVoltage - batteryConfig()->vbathysteresis : 0;
@@ -286,7 +292,7 @@ void batteryUpdatePresence(void)
     }
 }
 
-void batteryUpdateWhDrawn(void) 
+void batteryUpdateWhDrawn(void)
 {
     static int32_t mAhDrawnPrev = 0;
     const int32_t mAhDrawnCurrent = getMAhDrawn();
