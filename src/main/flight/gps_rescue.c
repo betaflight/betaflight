@@ -592,10 +592,11 @@ static void sensorUpdate(void)
         // increase IMU COG Gain in proportion to positive pitch angle
         // pitch angle is positive early in a rescue, and associates with a nose forward ground course
         float pitchAngleImuGain = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] / 2000.0f : 0.0f;
-        // note: gpsRescueAngle angle is in degrees * 100
-        // pitchAngleImuGain is 1 if pitch angle is 20 degrees
-        // pitchAngleImuGain is 2 if pitch angle is 40 degrees
-        // pitchAngleImuGain is 3 if pitch angle is 60 degrees (current max allowed)
+        // note: gpsRescueAngle[AI_PITCH] is in degrees * 100, and is halved when the IMU is 180 wrong
+        // pitchAngleImuGain is 0 when flat
+        // pitchAngleImuGain is 0.75 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
+        // pitchAngleImuGain is 1.5 if pitch angle is 30 degrees (ie with rescue angle of 60 and 180deg IMU error)
+        // pitchAngleImuGain is 3.0 if pitch angle is 60 degrees towards home (unlikely to be sustained at that angle)
 
         if (rescueState.phase != RESCUE_FLY_HOME) {
             // prevent IMU disorientation arising from drift during climb, rotate or do nothing phases, which have zero pitch angle
@@ -604,8 +605,8 @@ static void sensorUpdate(void)
         } else {
             // during fly home phase also consider the whether the quad is flying towards or away from home
             // no additional increase in pitch related IMU gain when flying directly towards home
-            // max possible initial IMU gain is 6.75x with default 45 degree max angle, 9x at 60 degree set max angle
-            rescueState.sensor.imuYawCogGain = pitchAngleImuGain * groundspeedErrorRatio;
+            // max initial IMU gain with 180 degree disorientation is 5x at 60 deg set, and 3.75x at 30 deg set
+            rescueState.sensor.imuYawCogGain = fminf((0.5f + pitchAngleImuGain) * groundspeedErrorRatio, 5.0f);
         }
 
         // cut pitch angle by up to half when groundspeed error is high
