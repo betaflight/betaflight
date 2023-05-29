@@ -146,6 +146,7 @@
 #include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_init.h"
 #include "flight/pid.h"
 
 #include "io/gps.h"
@@ -1270,10 +1271,13 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
         {
             uint8_t remainingCapacityBars = 0;
 
-            if (batteryConfig()->batteryCapacity) {
-                const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
-                remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
-            }
+            //if (batteryConfig()->batteryCapacity) {
+            //const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
+            //remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            const float maxBoost = 100.0f;
+            const float batteryRemaining = constrain(mixerRuntime.afterburnerTankPercent, 0, maxBoost);
+            remainingCapacityBars = ceilf((batteryRemaining / (maxBoost / MAIN_BATT_USAGE_STEPS)));
+            //}
 
             // Create empty battery indicator bar
             element->buff[0] = SYM_PB_START;
@@ -1284,7 +1288,12 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             if (remainingCapacityBars > 0 && remainingCapacityBars < MAIN_BATT_USAGE_STEPS) {
                 element->buff[1 + remainingCapacityBars] = SYM_PB_END;
             }
-            element->buff[MAIN_BATT_USAGE_STEPS+2] = '\0';
+            //tfp_sprintf(element->buff, element->buff+"%d", mixerRuntime.afterburnerTanksRemaining);
+            char tanksRemainingStr[1];
+            tfp_sprintf(tanksRemainingStr, "%d", mixerRuntime.afterburnerTanksRemaining);
+            element->buff[MAIN_BATT_USAGE_STEPS+2] = tanksRemainingStr[0];
+            element->buff[MAIN_BATT_USAGE_STEPS+3] = '\0';    
+            
             break;
         }
     }

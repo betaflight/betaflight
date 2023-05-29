@@ -361,7 +361,7 @@ static void applyRPMLimiter(void)
         //if drone is armed
         if (ARMING_FLAG(ARMED)) {
             //if the afterburner switch is enguaged
-            if(IS_RC_MODE_ACTIVE(BOXUSER4)) {
+            if(IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
                 //if the afterburner isn't initiated
                 if(mixerRuntime.afterburnerInitiated == false) {
                     //if there's charge in the tank
@@ -382,8 +382,10 @@ static void applyRPMLimiter(void)
                 //if the tank is empty, reset
                 if(mixerRuntime.afterburnerTankPercent<=0.0f) {
                     mixerRuntime.afterburnerInitiated = false;
-                    mixerRuntime.afterburnerTankPercent = 100.0f;
                     mixerRuntime.afterburnerTanksRemaining -= 1;  
+                    if(mixerRuntime.afterburnerTanksRemaining>0) {
+                        mixerRuntime.afterburnerTankPercent = 100.0f;
+                    }
                 } 
             }
 
@@ -425,15 +427,15 @@ static void applyRPMLimiter(void)
 
         //get the rpm averaged across the motors
         bool motorsSaturated = false;
-        //bool motorsDesaturated = false;
+        bool motorsDesaturated = false;
         for (int i = 0; i < getMotorCount(); i++) {
             averageRPM += getDshotTelemetry(i);
             if (motor[i] >= motorConfig()->maxthrottle) {
                 motorsSaturated = true;
             }
-            /*if (motor[i] <= motorConfig()->minthrottle) {
-                motorsDesaturated = true;
-            }*/
+            if (motor[i] <= motorConfig()->minthrottle) {
+                motorsDesaturated = false;
+            }
         }
         averageRPM = 100 * averageRPM / (getMotorCount()*mixerRuntime.motorPoleCount/2.0f);
 
@@ -459,13 +461,15 @@ static void applyRPMLimiter(void)
 
             //don't let I term wind up if throttle is below the motor idle
             if (rcCommandThrottle < motorConfig()->digitalIdleOffsetValue / 10000.0f) {
-                //mixerRuntime.govenorI *= 1.0f/(1.0f+(pidGetDT()*10.0f)); //slowly ramp down i term instead of resetting to avoid throttle pulsing cheats
-                mixerRuntime.govenorI = 0.0f;
+                mixerRuntime.govenorI *= 1.0f/(1.0f+(pidGetDT()*10.0f)); //slowly ramp down i term
+                //mixerRuntime.govenorI = 0.0f;
             } else {
                 //don't let I term wind up if motors are saturated. Otherwise, motors may stay at high throttle even after low throttle is commanded
-                if(!motorsSaturated)
+                if(!motorsSaturated && !motorsDesaturated)
                 {
                     mixerRuntime.govenorI += smoothedRPMError * mixerRuntime.govenorIGain; // + when overspeed
+                }else{
+                    mixerRuntime.govenorI *= 1.0f/(1.0f+(pidGetDT()*10.0f)); //slowly ramp down i term
                 }
             }
 
@@ -488,13 +492,18 @@ static void applyRPMLimiter(void)
             PIDOutput = MAX(PIDOutput,0.0f);
             
         }
-        if (mixerRuntime.govenor_init) {
-            if (mixerRuntime.rpmLinearization) {
-                throttle = constrainf(-PIDOutput, 0.0f, 1.0f);
-            } else {
-                throttle = constrainf(throttle-PIDOutput, 0.0f, 1.0f);
+        if (motorConfig()->dev.useDshotTelemetry) {
+            if (mixerRuntime.govenor_init) {
+                if (mixerRuntime.rpmLinearization) {
+                    throttle = constrainf(-PIDOutput, 0.0f, 1.0f);
+                } else {
+                    throttle = constrainf(throttle-PIDOutput, 0.0f, 1.0f);
+                }
             }
+        } else {    //if dshot telemetry isn't enabled. Keep the throttle at zero
+            throttle = 0.0f;
         }
+
         mixerRuntime.govenor_init = true;
 
         //update previous values for next loop
