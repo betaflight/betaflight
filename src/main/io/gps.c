@@ -77,6 +77,11 @@
 #define DEBUG_UBLOX_INIT   0 // set to 1 to debug ublox initialization
 #define DEBUG_UBLOX_FRAMES 0 // set to 1 to debug ublox received frames
 
+#ifdef DEBUG_SERIAL_BAUD
+uint8_t gpsPackageCounter = 0;
+timeMs_t gpsPackageCounterTime = 0;
+#endif
+
 char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
@@ -401,6 +406,11 @@ void gpsInit(void)
 
     memset(gpsPacketLog, 0x00, sizeof(gpsPacketLog));
     memset(&gpsData.monVer, 0x00, sizeof(gpsData.monVer));
+
+#ifdef DEBUG_SERIAL_BAUD
+    gpsPackageCounter = millis();
+#endif
+
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_STATE_UNKNOWN);
@@ -1095,9 +1105,9 @@ void gpsInitUblox(void)
 
         case GPS_STATE_CHANGE_BAUD:
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
-#if DEBUG_SERIAL_BAUD
+/*#if DEBUG_SERIAL_BAUD
             debug[1] = baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex] / 100;
-#endif
+#endif*/
             gpsSetState(GPS_STATE_CONFIGURE);
             break;
 
@@ -1347,7 +1357,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         gpsLastTimeReceived = currentTimeUs;
     }
 
-    if (currentTimeUs - gpsLastTimeReceived > 100000 && gpsData.state == GPS_STATE_RECEIVING_DATA) {
+    if (currentTimeUs - gpsLastTimeReceived > 200000 && gpsData.state == GPS_STATE_RECEIVING_DATA) {
         gpsSetState(GPS_STATE_LOST_COMMUNICATION);
 #ifdef DEBUG_SERIAL_BAUD
         debug[3] += 1;
@@ -1356,7 +1366,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 
 #ifdef DEBUG_SERIAL_BAUD
-    debug[2] = (currentTimeUs - gpsLastTimeReceived) / 100;
+    debug[2] = (int16_t)((currentTimeUs - gpsLastTimeReceived) / 100);
 #endif
 
     // read out available GPS bytes
@@ -1411,7 +1421,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         case GPS_STATE_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
             if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
-                gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+                //gpsSetState(GPS_STATE_LOST_COMMUNICATION);
 #ifdef USE_GPS_UBLOX
             } else {
                 if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) { // Only if autoconfig is enabled
@@ -1493,6 +1503,15 @@ static void gpsNewData(uint16_t c)
     if (!gpsNewFrame(c)) {
         return;
     }
+
+#ifdef DEBUG_SERIAL_BAUD
+    gpsPackageCounter += 1;
+    if (millis() - gpsPackageCounterTime >= 1000) {
+        gpsPackageCounterTime = millis();
+        debug[1] = gpsPackageCounter;
+        gpsPackageCounter = 0;
+    }
+#endif
 
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
         // new data received and parsed, we're in business
