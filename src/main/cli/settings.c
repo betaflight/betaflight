@@ -1032,6 +1032,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_RESCUE_MAX_RESCUE_ANGLE, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 30, 60 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, maxRescueAngle) },
     { PARAM_NAME_GPS_RESCUE_ROLL_MIX,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, rollMix) },
     { PARAM_NAME_GPS_RESCUE_PITCH_CUTOFF,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 255 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, pitchCutoffHz) },
+    { PARAM_NAME_GPS_RESCUE_IMU_YAW_GAIN,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 20 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, imuYawGain) },
 
     { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
     { PARAM_NAME_GPS_RESCUE_DESCEND_RATE,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 25, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descendRate) },
