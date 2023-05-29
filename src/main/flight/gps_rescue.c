@@ -581,38 +581,38 @@ static void sensorUpdate(void)
 
     // when there is a flyaway due to IMU disorientation, increase IMU yaw CoG gain, and reduce max pitch angle
     if (gpsRescueConfig()->rescueGroundspeed) {
-        const float rescueGroundspeed = 1000.0f; // in cm/s, fixed 10 m/s groundspeed
-        // rescueGroundspeed sets how aggressively the IMU COG Gain increases as velocity error increases
+        // calculate a factor that can reduce pitch angle when flying away
+        const float rescueGroundspeed = 1000.0f; // in cm/s, meaning a 10 m/s groundspeed
+        // rescueGroundspeed is effectively a normalising gain factor for the magnitude of the groundspeed error
 
         const float groundspeedErrorRatio = 1.0f + fminf(fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeed, 2.0f);
         // 1 if groundspeed = velocity to home, or both are zero
         // 2 if forward velocity is zero but sideways speed is 10m/s
-        // 3 if moving backwards at 10m/s.  3 is the maximum allowed value
+        // 3 if moving backwards at 10m/s, 5 if moving backwards at 20m/s, etc
+        // 2 is the maximum allowed value at present
 
-        // increase IMU COG Gain in proportion to positive pitch angle
-        // pitch angle is positive early in a rescue, and associates with a nose forward ground course
-        float pitchAngleImuGain = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] / 2000.0f : 0.0f;
+        // cut pitch angle by up to half when groundspeed error is high
+        rescueState.sensor.groundspeedPitchAttenuator = 1.0f / groundspeedErrorRatio;
+
+        // pitchForwardAngle is positive early in a rescue, and associates with a nose forward ground course
+        const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] / 1000.0f : 0.0f;
         // note: gpsRescueAngle[AI_PITCH] is in degrees * 100, and is halved when the IMU is 180 wrong
-        // pitchAngleImuGain is 0 when flat
-        // pitchAngleImuGain is 0.75 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
-        // pitchAngleImuGain is 1.5 if pitch angle is 30 degrees (ie with rescue angle of 60 and 180deg IMU error)
-        // pitchAngleImuGain is 3.0 if pitch angle is 60 degrees towards home (unlikely to be sustained at that angle)
+        // pitchForwardAngle is 0 when flat
+        // pitchForwardAngle is 1.5 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
+        // pitchForwardAngle is 3.0 if pitch angle is 30 degrees (ie with rescue angle of 60 and 180deg IMU error)
+        // pitchForwardAngle is 6.0 if pitch angle is 60 degrees and flying towards home (unlikely to be sustained at that angle)
 
         if (rescueState.phase != RESCUE_FLY_HOME) {
             // prevent IMU disorientation arising from drift during climb, rotate or do nothing phases, which have zero pitch angle
             // in descent, or too close, increase IMU yaw gain as pitch angle increases
-            rescueState.sensor.imuYawCogGain = pitchAngleImuGain;
+            rescueState.sensor.imuYawCogGain = pitchForwardAngle;
         } else {
-            // during fly home phase also consider the whether the quad is flying towards or away from home
-            // no additional increase in pitch related IMU gain when flying directly towards home
-            // max initial IMU gain with 180 degree disorientation is 5x at 60 deg set, and 3.75x at 30 deg set
-            rescueState.sensor.imuYawCogGain = fminf((0.5f + pitchAngleImuGain) * groundspeedErrorRatio, 5.0f);
+            // during the fly home phase, the pitch forward angle is halved when flying away.
+            // There should be a simple relationship between pitch angle (forward velocity) and IMU yaw-Cog time constant
+            // If that's true, we should see twice as much time to fix an IMU error, and with twice the radius, at half the IMU gain?
+            // this PR lets us accept the user's IMU gain value for this phase, for testing purposes
+            rescueState.sensor.imuYawCogGain = gpsRescueConfig()->imuYawCogGain;
         }
-
-        // cut pitch angle by up to half when groundspeed error is high
-        // minimises flyaway velocity, but reduces ability to handle high wind
-        // groundspeedErrorRatio falls towards zero as the forward speed vector matches the correct path
-        rescueState.sensor.groundspeedPitchAttenuator = 1.0f / fminf(groundspeedErrorRatio, 2.0f);
     }
 
     rescueState.sensor.velocityToHomeCmS = ((prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) / rescueState.sensor.gpsDataIntervalSeconds);
