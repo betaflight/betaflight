@@ -1047,7 +1047,6 @@ void gpsInitUblox(void)
         case GPS_STATE_INITIALIZING:
             if (initBaudRateCycleCount > BAUD_COUNT * 2) {
                 initBaudRateIndex = gpsInitData[gpsData.baudrateIndex].baudrateIndex;
-                return;
             }
 
             if (initBaudRateIndex < BAUD_COUNT) {
@@ -1272,7 +1271,9 @@ void gpsInitUblox(void)
                     break;
                 case UBLOX_ACK_WAITING:
                     if ((++gpsData.ackTimeoutCounter) == UBLOX_ACK_TIMEOUT_MAX_COUNT / gpsData.updateRate) {
-                        gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+                        // gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+                        // treat it like receiving ack
+                        gpsData.ackState = UBLOX_ACK_GOT_ACK;
                     }
                     break;
                 case UBLOX_ACK_GOT_ACK:
@@ -1338,8 +1339,25 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
 void gpsUpdate(timeUs_t currentTimeUs)
 {
     static gpsState_e gpsStateDurationUs[GPS_STATE_COUNT];
+    static timeUs_t gpsLastTimeReceived;
     timeUs_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
+
+    if (gpsLastTimeReceived == 0) {
+        gpsLastTimeReceived = currentTimeUs;
+    }
+
+    if (currentTimeUs - gpsLastTimeReceived > 100000 && gpsData.state == GPS_STATE_RECEIVING_DATA) {
+        gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+#ifdef DEBUG_SERIAL_BAUD
+        debug[3] += 1;
+#endif
+        return;
+    }
+
+#ifdef DEBUG_SERIAL_BAUD
+    debug[2] = (currentTimeUs - gpsLastTimeReceived) / 100;
+#endif
 
     // read out available GPS bytes
     if (gpsPort) {
@@ -1349,6 +1367,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
                 return;
             }
+            gpsLastTimeReceived = currentTimeUs;
             gpsNewData(serialRead(gpsPort));
         }
         // Restore default task rate
@@ -1465,6 +1484,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (executeTimeUs > gpsStateDurationUs[gpsCurrentState]) {
         gpsStateDurationUs[gpsCurrentState] = executeTimeUs;
     }
+
     schedulerSetNextStateTime(gpsStateDurationUs[gpsData.state]);
 }
 
