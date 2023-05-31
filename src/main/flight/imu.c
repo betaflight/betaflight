@@ -166,7 +166,7 @@ static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value)
 {
-    imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
+    imu RuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
@@ -241,6 +241,10 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         ex += rMat[2][0] * ez_ef;
         ey += rMat[2][1] * ez_ef;
         ez += rMat[2][2] * ez_ef;
+
+        DEBUG_SET(DEBUG_ATTITUDE, 2, ez_ef);
+        DEBUG_SET(DEBUG_ATTITUDE, 3, dcmKpGain);
+
     }
 
 #ifdef USE_MAG
@@ -518,6 +522,17 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 
+
+
+
+
+    DEBUG_SET(DEBUG_ATTITUDE, 0, cogYawGain);
+
+
+
+
+
+
 #if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC)
     UNUSED(imuMahonyAHRSupdate);
     UNUSED(imuIsAccelerometerHealthy);
@@ -595,8 +610,19 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         schedulerIgnoreTaskStateTime();
     }
 
-    DEBUG_SET(DEBUG_ATTITUDE, X, acc.accADC[X]);
-    DEBUG_SET(DEBUG_ATTITUDE, Y, acc.accADC[Y]);
+
+
+
+
+
+//    DEBUG_SET(DEBUG_ATTITUDE, X, acc.accADC[X]); // roll
+//    DEBUG_SET(DEBUG_ATTITUDE, Y, acc.accADC[Y]); // pitch
+    DEBUG_SET(DEBUG_ATTITUDE, 1, acc.accADC[Y]); // pitch attitude
+
+
+
+
+
 }
 #endif // USE_ACC
 
