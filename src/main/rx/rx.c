@@ -646,6 +646,10 @@ STATIC_UNIT_TESTED float applyRxChannelRangeConfiguraton(float sample, const rxC
 
 static void readRxChannelsApplyRanges(void)
 {
+#if defined(USE_RX_MSP_OVERWRITE)
+    bool mspOverwriteState = IS_RC_MODE_ACTIVE(BOXMSPOVERWRITE);
+#endif
+
     for (int channel = 0; channel < rxChannelCount; channel++) {
 
         const uint8_t rawChannel = channel < RX_MAPPABLE_CHANNEL_COUNT ? rxConfig()->rcmap[channel] : channel;
@@ -657,9 +661,16 @@ static void readRxChannelsApplyRanges(void)
             sample = rxMspOverrideReadRawRc(&rxRuntimeState, rxConfig(), rawChannel);
         } else
 #endif
-        {
+
+        do {
+#if defined(USE_RX_MSP_OVERWRITE)
+            if (mspOverwriteState && (channel < NON_AUX_CHANNEL_COUNT)) {
+                sample = rxMspReadRawRC(&rxRuntimeState, rawChannel);
+                break;
+            }
+#endif
             sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, rawChannel);
-        }
+        } while (0);
 
         // apply the rx calibration
         if (channel < NON_AUX_CHANNEL_COUNT) {

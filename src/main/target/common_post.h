@@ -266,6 +266,10 @@
 #undef USE_RX_MSP_OVERRIDE
 #endif
 
+#if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERWRITE)
+#undef USE_RX_MSP_OVERWRITE
+#endif
+
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
