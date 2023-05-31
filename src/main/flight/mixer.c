@@ -344,6 +344,15 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
+int getAfterburnerTanksRemaining(void)
+{
+    return mixerRuntime.afterburnerTanksRemaining;
+}
+
+float getAfterburnerTankPercent(void)
+{
+    return mixerRuntime.afterburnerTankPercent;
+}
 
 static void applyRPMLimiter(void)
 {

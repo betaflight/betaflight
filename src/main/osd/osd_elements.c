@@ -1275,7 +1275,7 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             //const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
             //remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
             const float maxBoost = 100.0f;
-            const float batteryRemaining = constrain(mixerRuntime.afterburnerTankPercent, 0, maxBoost);
+            const float batteryRemaining = constrainf(getAfterburnerTankPercent(), 0, maxBoost);
             remainingCapacityBars = ceilf((batteryRemaining / (maxBoost / MAIN_BATT_USAGE_STEPS)));
             //}
 
@@ -1290,9 +1290,9 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             }
             //tfp_sprintf(element->buff, element->buff+"%d", mixerRuntime.afterburnerTanksRemaining);
             char tanksRemainingStr[1];
-            tfp_sprintf(tanksRemainingStr, "%d", mixerRuntime.afterburnerTanksRemaining);
+            tfp_sprintf(tanksRemainingStr, "%d", getAfterburnerTanksRemaining());
             element->buff[MAIN_BATT_USAGE_STEPS+2] = tanksRemainingStr[0];
-            element->buff[MAIN_BATT_USAGE_STEPS+3] = '\0';    
+            element->buff[MAIN_BATT_USAGE_STEPS+3] = '\0';
             
             break;
         }
