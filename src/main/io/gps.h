@@ -99,16 +99,13 @@ typedef enum {
     CFG_SBAS_USE_DIFFCORR = 0x10360004, // L
     CFG_SBAS_USE_INTEGRITY = 0x10360005, // L
     CFG_SBAS_PRNSCANMASK = 0x50360006, // X8
-} ubxValsetBytes_e;
-
-typedef enum {
     CFG_SIGNAL_GPS_ENA = 0x1031001f, // L
     CFG_SIGNAL_SBAS_ENA = 0x10310020, // L
     CFG_SIGNAL_GAL_ENA = 0x10310021, // L
     CFG_SIGNAL_BDS_ENA = 0x10310022, // L
     CFG_SIGNAL_QZSS_ENA = 0x10310024, // L
     CFG_SIGNAL_GLO_ENA = 0x10310025, // L
-} ubxValgetBytes_e;
+} ubxValgetsetBytes_e;
 
 typedef enum {
     SBAS_SEARCH_ALL,
@@ -327,7 +324,7 @@ typedef struct gpsData_s {
     uint8_t updateRate;
     bool ubloxUsePVT;
     bool ubloxUseSAT;
-#ifdef USE_GPS
+#ifdef USE_GPS_UBLOX
     ubloxVersion_e unitVersion;     // detected UNIT version
     bool acquiredMonVer;            // MON-VER aquired
     ubxMonVer_t monVer;             // MON-VER response
