@@ -78,6 +78,7 @@
 #define DEBUG_UBLOX_FRAMES 0 // set to 1 to debug ublox received frames
 
 uint8_t gpsPackageCounter = 0;
+bool gpsPackageReachedUpdateRate = false;
 timeMs_t gpsPackageCounterTime = 0;
 
 char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
@@ -381,7 +382,7 @@ static bool gpsNewFrameNMEA(char c);
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
 static bool ubloxHasValSetGet(void);
-static void ubloxSendMessage(const uint8_t *data, size_t len);
+static void ubloxSendMessage(const uint8_t *data, uint8_t len);
 #endif
 
 static void gpsSetState(gpsState_e state)
@@ -649,7 +650,7 @@ static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_
     }
 }
 
-static void ubloxSendMessage(const uint8_t *data, size_t len)
+static void ubloxSendMessage(const uint8_t *data, uint8_t len)
 {
     uint8_t checksumA = 0, checksumB = 0;
     serialWrite(gpsPort, data[0]);
@@ -1086,6 +1087,10 @@ void gpsInitUblox(void)
                         gpsData.state_position++;
                         break;
                     case UBLOX_INITIALIZE:
+                        gpsData.updateRate = gpsConfig()->gps_update_rate_hz;
+
+                        ubloxSetNavRate(1, 1, 1);
+
                         gpsData.ubloxUsePVT = gpsData.unitVersion > UBX_VERSION_M6;
                         gpsData.ubloxUseSAT = true;
 
@@ -1100,7 +1105,7 @@ void gpsInitUblox(void)
                         gpsData.state_position++;
                         break;
                     case UBLOX_MSG_DISABLE_NMEA:
-                        if (!ubloxHasValSetGet()) {
+                        if (ubloxHasValSetGet()) {
                             gpsData.state_position++;
                             break;
                         }
@@ -1196,7 +1201,6 @@ void gpsInitUblox(void)
                         ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1); // set DOP MSG rate
                         break;
                     case UBLOX_SET_NAV_RATE:
-                        gpsData.updateRate = gpsConfig()->gps_update_rate_hz;
                         ubloxSetNavRate(gpsData.updateRate, 1, 1);
                         break;
                     case UBLOX_SET_SBAS:
@@ -1463,8 +1467,20 @@ static void gpsNewData(uint16_t c)
         DEBUG_SET(DEBUG_GPS_FLIGHT_STATISTICS, 1, gpsPackageCounter);
 
         // reconfigure update rate if not matching
-        if (gpsData.updateRate > gpsPackageCounter + 2 || gpsData.updateRate < gpsPackageCounter - 2) {
-            gpsSetState(GPS_STATE_CONFIGURE);
+        if (
+            gpsData.state == GPS_STATE_RECEIVING_DATA
+        )
+        {
+            if (gpsPackageCounter > gpsData.updateRate - 1) {
+                gpsPackageReachedUpdateRate = true;
+            }
+            if (
+                gpsPackageReachedUpdateRate &&
+                (gpsData.updateRate > gpsPackageCounter + 1 || gpsData.updateRate < gpsPackageCounter - 1)
+            )
+            {
+                gpsSetState(GPS_STATE_CONFIGURE);
+            }
         }
 
         gpsPackageCounterTime = millis();
@@ -2078,7 +2094,7 @@ static union {
     struct {
         char swVersion[30];
         char hwVersion[10];
-        char extension[10][40];
+        char extension[10][30];
     } ver;
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
