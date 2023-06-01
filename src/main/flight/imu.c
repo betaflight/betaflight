@@ -242,8 +242,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         ey += rMat[2][1] * ez_ef;
         ez += rMat[2][2] * ez_ef;
 
-        DEBUG_SET(DEBUG_ATTITUDE, 2, ez_ef);
-        DEBUG_SET(DEBUG_ATTITUDE, 3, dcmKpGain);
+        DEBUG_SET(DEBUG_ATTITUDE, 2, (ez_ef * 100));
+        DEBUG_SET(DEBUG_ATTITUDE, 3, (dcmKpGain * 100));
 
     }
 
