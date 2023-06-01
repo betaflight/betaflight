@@ -26,7 +26,7 @@
 #include "platform.h"
 
 #ifdef USE_CMS
-#ifdef USE_RPM_LIMITER
+#ifdef USE_RPM_LIMIT
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -37,17 +37,17 @@
 
 #include "flight/mixer.h"
 
-uint16_t rpm_limiter_rpm_limit;
+uint16_t rpm_limit_value;
 uint16_t motor_kv;
-bool rpm_limiter;
+bool rpm_limit;
 
 static const void *cmsx_RpmLimit_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    rpm_limiter_rpm_limit = mixerConfig()->rpm_limiter_rpm_limit;
-    motor_kv = mixerConfig()->motor_kv;
-    rpm_limiter = mixerConfig()->rpm_limiter;
+    rpm_limit_value = mixerConfig()->rpm_limit_value;
+    motor_kv = motorConfig()->kv;
+    rpm_limit = mixerConfig()->rpm_limit;
 
     return NULL;
 }
@@ -57,9 +57,9 @@ static const void *cmsx_RpmLimit_onExit(displayPort_t *pDisp, const OSD_Entry *s
     UNUSED(pDisp);
     UNUSED(self);
 
-    mixerConfigMutable()->rpm_limiter_rpm_limit = rpm_limiter_rpm_limit;
-    mixerConfigMutable()->motor_kv = motor_kv;
-    mixerConfigMutable()->rpm_limiter = rpm_limiter;
+    mixerConfigMutable()->rpm_limit_value = rpm_limit_value;
+    motorConfigMutable()->kv = motor_kv;
+    mixerConfigMutable()->rpm_limit = rpm_limit;
 
     return NULL;
 }
@@ -67,8 +67,8 @@ static const void *cmsx_RpmLimit_onExit(displayPort_t *pDisp, const OSD_Entry *s
 static const OSD_Entry cmsx_menuRpmLimitEntries[] =
 {
     {"-- RPM LIMIT --", OME_Label, NULL, NULL},
-    { "ACTIVE",   OME_Bool | REBOOT_REQUIRED,  NULL, &rpm_limiter },
-    {"MAX RPM", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limiter_rpm_limit, 0, UINT16_MAX, 100}},
+    { "ACTIVE",   OME_Bool | REBOOT_REQUIRED,  NULL, &rpm_limit },
+    {"MAX RPM", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limit_value, 0, UINT16_MAX, 100}},
     {"KV", OME_UINT16, NULL, &(OSD_UINT16_t){ &motor_kv, 0, UINT16_MAX, 1}},
 
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
@@ -88,4 +88,4 @@ CMS_Menu cmsx_menuRpmLimit = {
 };
 
 #endif
-#endif // USE_RPM_LIMITER
+#endif // USE_RPM_LIMIT

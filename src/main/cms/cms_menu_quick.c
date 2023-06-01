@@ -122,7 +122,7 @@ static const OSD_Entry menuMainEntries[] =
 {
     {"-- QUICK --",  OME_Label, NULL, NULL},
 
-#if defined(USE_RPM_LIMITER)
+#if defined(USE_RPM_LIMIT)
     {"RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit},
 #endif
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
