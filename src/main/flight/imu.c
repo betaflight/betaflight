@@ -617,7 +617,8 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 
 //    DEBUG_SET(DEBUG_ATTITUDE, X, acc.accADC[X]); // roll
 //    DEBUG_SET(DEBUG_ATTITUDE, Y, acc.accADC[Y]); // pitch
-    DEBUG_SET(DEBUG_ATTITUDE, 1, acc.accADC[Y]); // pitch attitude
+    DEBUG_SET(DEBUG_ATTITUDE, 2, acc.accADC[Y]); // pitch attitude
+    DEBUG_SET(DEBUG_ATTITUDE, 3, acc.accADC[Z]); // yaw attitude
 
 
 
