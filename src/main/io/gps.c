@@ -371,7 +371,7 @@ static void shiftPacketLog(void)
 
 static bool isConfiguratorConnected(void)
 {
-    return !(getArmingDisableFlags() & ARMING_DISABLED_MSP);
+    return (getArmingDisableFlags() & ARMING_DISABLED_MSP);
 }
 
 static void gpsNewData(uint16_t c);
