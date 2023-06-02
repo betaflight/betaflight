@@ -1001,6 +1001,10 @@ static void osdElementFlymode(osdElementParms_t *element)
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         strcpy(element->buff, "RESC");
     } else if (FLIGHT_MODE(HEADFREE_MODE)) {
+#if defined(USE_RX_MSP_OVERWRITE)
+    } else if (IS_RC_MODE_ACTIVE(BOXMSPOVERWRITE)) {
+        strcpy(element->buff, "MSP RC");
+#endif
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         strcpy(element->buff, "ANGL");
