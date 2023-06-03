@@ -114,9 +114,9 @@ unsigned motorDeviceCount(void)
     return motorDevice->count;
 }
 
-motorVTable_t motorGetVTable(void)
+motorVTable_t *motorGetVTable(void)
 {
-    return motorDevice->vTable;
+    return &motorDevice->vTable;
 }
 
 // This is not motor generic anymore; should be moved to analog pwm module
