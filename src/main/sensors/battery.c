@@ -261,17 +261,15 @@ void batteryUpdatePresence(void)
                 changePidProfileFromCellCount(batteryCellCount);
             }
         }
-<<<<<<< HEAD
+      
         BATTERY_MIN_VOLTAGE  = batteryConfig()->cellMinVoltSOC * batteryCellCount;
         BATTERY_MAX_VOLTAGE = batteryConfig()->cellMaxVoltSOC * batteryCellCount;
         lastFilteredVoltage = voltageMeter.displayFiltered;
         lastTimeVol = micros();
 
-=======
 #ifdef USE_RPM_LIMIT
         mixerResetRpmLimiter();
 #endif
->>>>>>> 26701f063 (RPM Limiter (#12054))
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
         batteryWarningHysteresisVoltage = (batteryWarningVoltage > batteryConfig()->vbathysteresis) ? batteryWarningVoltage - batteryConfig()->vbathysteresis : 0;

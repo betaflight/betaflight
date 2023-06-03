@@ -113,10 +113,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ANGLE_TARGET",
     "CURRENT_ANGLE",
     "DSHOT_TELEMETRY_COUNTS",
-<<<<<<< HEAD
     "DEBUG_FILT_VOLTAGE",
     "DEBUG_UNFILT_VOLTAGE",
-=======
-    "RPM_LIMIT",
->>>>>>> 26701f063 (RPM Limiter (#12054))
+    "RPM_LIMIT"
 };
