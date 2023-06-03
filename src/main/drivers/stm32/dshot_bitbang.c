@@ -101,16 +101,16 @@ FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 const timerHardware_t bbTimerHardware[] = {
 #if defined(STM32F4) || defined(STM32F7)
 #if !defined(STM32F411xE)
-    DEF_TIM(TIM8,  CH1, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM8,  CH2, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM8,  CH3, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM8,  CH4, NONE,  TIM_USE_NONE, 0, 0),
+    DEF_TIM(TIM8,  CH1, NONE,   0, 1),
+    DEF_TIM(TIM8,  CH2, NONE,   0, 1),
+    DEF_TIM(TIM8,  CH3, NONE,   0, 1),
+    DEF_TIM(TIM8,  CH4, NONE,   0, 0),
 #endif
-    DEF_TIM(TIM1,  CH1, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM1,  CH1, NONE,  TIM_USE_NONE, 0, 2),
-    DEF_TIM(TIM1,  CH2, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM1,  CH3, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM1,  CH4, NONE,  TIM_USE_NONE, 0, 0),
+    DEF_TIM(TIM1,  CH1, NONE,   0, 1),
+    DEF_TIM(TIM1,  CH1, NONE,   0, 2),
+    DEF_TIM(TIM1,  CH2, NONE,   0, 1),
+    DEF_TIM(TIM1,  CH3, NONE,   0, 1),
+    DEF_TIM(TIM1,  CH4, NONE,   0, 0),
 
 #elif defined(STM32G4) || defined(STM32H7)
     // XXX TODO: STM32G4 and STM32H7 can use any timer for pacing
@@ -121,14 +121,14 @@ const timerHardware_t bbTimerHardware[] = {
     //     4 motors scattered across 4 different GPIO ports.
     //   - For hexas (and larger), more channels may become necessary,
     //     in which case the DMA request numbers should be modified.
-    DEF_TIM(TIM8,  CH1, NONE,  TIM_USE_NONE, 0, 0, 0),
-    DEF_TIM(TIM8,  CH2, NONE,  TIM_USE_NONE, 0, 1, 0),
-    DEF_TIM(TIM8,  CH3, NONE,  TIM_USE_NONE, 0, 2, 0),
-    DEF_TIM(TIM8,  CH4, NONE,  TIM_USE_NONE, 0, 3, 0),
-    DEF_TIM(TIM1,  CH1, NONE,  TIM_USE_NONE, 0, 0, 0),
-    DEF_TIM(TIM1,  CH2, NONE,  TIM_USE_NONE, 0, 1, 0),
-    DEF_TIM(TIM1,  CH3, NONE,  TIM_USE_NONE, 0, 2, 0),
-    DEF_TIM(TIM1,  CH4, NONE,  TIM_USE_NONE, 0, 3, 0),
+    DEF_TIM(TIM8,  CH1, NONE,   0, 0, 0),
+    DEF_TIM(TIM8,  CH2, NONE,   0, 1, 0),
+    DEF_TIM(TIM8,  CH3, NONE,   0, 2, 0),
+    DEF_TIM(TIM8,  CH4, NONE,   0, 3, 0),
+    DEF_TIM(TIM1,  CH1, NONE,   0, 0, 0),
+    DEF_TIM(TIM1,  CH2, NONE,   0, 1, 0),
+    DEF_TIM(TIM1,  CH3, NONE,   0, 2, 0),
+    DEF_TIM(TIM1,  CH4, NONE,   0, 3, 0),
 
 #else
 #error MCU dependent code required

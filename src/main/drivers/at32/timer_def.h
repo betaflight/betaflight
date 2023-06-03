@@ -138,11 +138,10 @@
         @dmaopt dma channel index used for timer channel data transmit
         @upopt  USE_DSHOT_DMAR  timeup dma channel index
 */
-#define DEF_TIM(tim, chan, pin, flags, out, dmaopt, upopt) {            \
+#define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
     tim,                                                                \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
-    flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \

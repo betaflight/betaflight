@@ -145,11 +145,10 @@
 
 #if defined(STM32F4)
 
-#define DEF_TIM(tim, chan, pin, flags, out, dmaopt) {           \
+#define DEF_TIM(tim, chan, pin, out, dmaopt) {                  \
     tim,                                                        \
     TIMER_GET_IO_TAG(pin),                                      \
     DEF_TIM_CHANNEL(CH_ ## chan),                               \
-    flags,                                                      \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                        \
     DEF_TIM_AF(TIM_ ## tim)                                     \
     DEF_TIM_DMA_COND(/* add comma */ ,                          \
@@ -250,11 +249,10 @@
 #define DEF_TIM_DMA__BTCH_TIM14_UP    NONE
 
 #elif defined(STM32F7)
-#define DEF_TIM(tim, chan, pin, flags, out, dmaopt) {                   \
+#define DEF_TIM(tim, chan, pin, out, dmaopt) {                          \
     tim,                                                                \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
-    flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
@@ -476,11 +474,10 @@
 #define DEF_TIM_AF__PI7__TCH_TIM8_CH3     D(3, 8)
 
 #elif defined(STM32H7)
-#define DEF_TIM(tim, chan, pin, flags, out, dmaopt, upopt) {            \
+#define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
     tim,                                                                \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
-    flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
@@ -829,11 +826,10 @@
 // Missing from FW1.0.0 library?
 #define GPIO_AF12_TIM1         ((uint8_t)0x0B)  /* TIM1 Alternate Function mapping    */
 
-#define DEF_TIM(tim, chan, pin, flags, out, dmaopt, upopt) {            \
+#define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
     tim,                                                                \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
-    flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \

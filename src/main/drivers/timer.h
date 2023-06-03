@@ -43,19 +43,6 @@ typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
 
-typedef enum {
-    TIM_USE_ANY            = 0x0,
-    TIM_USE_NONE           = 0x0,
-    TIM_USE_PPM            = 0x1,
-    TIM_USE_PWM            = 0x2,
-    TIM_USE_MOTOR          = 0x4,
-    TIM_USE_SERVO          = 0x8,
-    TIM_USE_LED            = 0x10,
-    TIM_USE_TRANSPONDER    = 0x20,
-    TIM_USE_BEEPER         = 0x40,
-    TIM_USE_CAMERA_CONTROL = 0x80,
-} timerUsageFlag_e;
-
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
 struct timerCCHandlerRec_s;
 struct timerOvrHandlerRec_s;
@@ -81,12 +68,10 @@ typedef struct timerHardware_s {
     TIM_TypeDef *tim;
     ioTag_t tag;
     uint8_t channel;
-    timerUsageFlag_e usageFlags;
     uint8_t output;
     uint8_t alternateFunction;
 
 #if defined(USE_TIMER_DMA)
-
 #if defined(USE_DMA_SPEC)
     dmaResource_t *dmaRefConfigured;
     uint32_t dmaChannelConfigured;
@@ -195,7 +180,6 @@ const resourceOwner_t *timerGetOwner(const timerHardware_t *timer);
 const timerHardware_t *timerGetConfiguredByTag(ioTag_t ioTag);
 const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex);
 const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex);
-ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index);
 
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
