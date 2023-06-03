@@ -599,7 +599,7 @@ static void sensorUpdate(void)
 
 
         // pitchForwardAngle is positive early in a rescue, and associates with a nose forward ground course
-        const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] / 1000.0f : 0.0f;
+        const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] / 1000.0f : 0.01f;
         // note: gpsRescueAngle[AI_PITCH] is in degrees * 100, and is halved when the IMU is 180 wrong
         // pitchForwardAngle is 0 when flat
         // pitchForwardAngle is 1.5 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
