@@ -382,7 +382,7 @@ static bool gpsNewFrameNMEA(char c);
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
 static bool ubloxHasValSetGet(void);
-static void ubloxSendMessage(const uint8_t *data, uint8_t len);
+static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skip_acc);
 #endif
 
 static void gpsSetState(gpsState_e state)
@@ -650,7 +650,7 @@ static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_
     }
 }
 
-static void ubloxSendMessage(const uint8_t *data, uint8_t len)
+static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skip_acc)
 {
     uint8_t checksumA = 0, checksumB = 0;
     serialWrite(gpsPort, data[0]);
@@ -662,7 +662,7 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len)
     // Save state for ACK waiting
     gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
     gpsData.ackTimeoutCounter = 0;
-    gpsData.ackState = UBLOX_ACK_WAITING;
+    gpsData.ackState = skip_acc ? UBLOX_ACK_GOT_ACK : UBLOX_ACK_WAITING;
 }
 
 static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_e msg_id, uint16_t length)
@@ -673,17 +673,17 @@ static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_
     tx_buffer.header.msg_class = class_id;
     tx_buffer.header.msg_id = msg_id;
     tx_buffer.header.length = length;
-    ubloxSendMessage((const uint8_t *) &tx_buffer, length + 6);
+    ubloxSendMessage((const uint8_t *) &tx_buffer, length + 6, false);
 }
 
-static void ubloxSendConfigMessage(ubxMessage_t *message, uint8_t msg_id, uint8_t length)
+static void ubloxSendConfigMessage(ubxMessage_t *message, uint8_t msg_id, uint8_t length, bool skip_acc)
 {
     message->header.preamble1 = PREAMBLE1;
     message->header.preamble2 = PREAMBLE2;
     message->header.msg_class = CLASS_CFG;
     message->header.msg_id = msg_id;
     message->header.length = length;
-    ubloxSendMessage((const uint8_t *) message, length + 6);
+    ubloxSendMessage((const uint8_t *) message, length + 6, skip_acc);
 }
 
 static void ubloxSendPollMessage(uint8_t msg_id)
@@ -694,7 +694,7 @@ static void ubloxSendPollMessage(uint8_t msg_id)
     tx_buffer.header.msg_class = CLASS_CFG;
     tx_buffer.header.msg_id = msg_id;
     tx_buffer.header.length = 0;
-    ubloxSendMessage((const uint8_t *) &tx_buffer, 6);
+    ubloxSendMessage((const uint8_t *) &tx_buffer, 6, false);
 }
 
 static void ubloxSendNAV5Message(uint8_t model) {
@@ -758,7 +758,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
         payload[0] = (uint8_t)(0 >> (8 * 0));
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_INFIL_CNOTHRS, payload, offset); // 86
 
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset);
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
     } else {
         memset(&tx_buffer, 0, sizeof(ubxMessage_t));
         tx_buffer.payload.cfg_nav5.mask = 0xFFFF;
@@ -779,7 +779,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
         tx_buffer.payload.cfg_nav5.staticHoldMaxDist = 200;
         tx_buffer.payload.cfg_nav5.utcStandard = ubloxUTCStandardConfig_int[gpsConfig()->gps_ublox_utc_standard];
 
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5_t));
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5_t), false);
     }
 }
 
@@ -791,7 +791,7 @@ static void ubloxSendNav5XMessage(void) {
         payload[0] = (uint8_t)(1 >> (8 * 0));
         size_t offset = ubloxValSet(&tx_buffer, CFG_ANA_USE_ANA, payload, UBX_VAL_LAYER_RAM); // 5
 
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset);
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
     } else {
         memset(&tx_buffer, 0, sizeof(ubxMessage_t));
 
@@ -813,7 +813,7 @@ static void ubloxSendNav5XMessage(void) {
 
         tx_buffer.payload.cfg_nav5x.useAdr = 0;
 
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAVX_SETTINGS, sizeof(ubxCfgNav5x_t));
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAVX_SETTINGS, sizeof(ubxCfgNav5x_t), false);
     }
 }
 
@@ -826,7 +826,7 @@ static void ubloxSendPowerMode(void)
     tx_buffer.payload.cfg_pms.onTime = 0;
     tx_buffer.payload.cfg_pms.reserved1[0] = 0;
     tx_buffer.payload.cfg_pms.reserved1[1] = 0;
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_PMS, sizeof(ubxCfgPms_t));
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_PMS, sizeof(ubxCfgPms_t), false);
 }
 
 static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t rate)
@@ -835,7 +835,7 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
     tx_buffer.payload.cfg_msg.msgClass = messageClass;
     tx_buffer.payload.cfg_msg.msgID = messageID;
     tx_buffer.payload.cfg_msg.rate = rate;
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubxCfgMsg_t));
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubxCfgMsg_t), false);
 }
 
 static void ubloxSetMessageRateValSet(ubxValgetsetBytes_e msgClass, uint8_t rate)
@@ -847,7 +847,7 @@ static void ubloxSetMessageRateValSet(ubxValgetsetBytes_e msgClass, uint8_t rate
 
     size_t offset = ubloxValSet(&tx_buffer, msgClass, payload, UBX_VAL_LAYER_RAM);
 
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset);
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
 }
 
 static void ubloxDisableNMEAValSet(void)
@@ -882,7 +882,7 @@ static void ubloxDisableNMEAValSet(void)
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_UART1, payload, offset);
 
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset);
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
 }
 
 static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef)
@@ -914,7 +914,7 @@ static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef
         //rate timeref is E1 = U1
         offset += ubloxAddValSet(&tx_buffer, CFG_RATE_TIMEREF, payload, 12);
 
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, false);
     }
 }
 
@@ -966,7 +966,7 @@ static void ubloxSetSbas(void)
 
         offset += ubloxAddValSet(&tx_buffer, CFG_SBAS_PRNSCANMASK, payload, offset);
 
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset);
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
     } else {
         //NOTE: default ublox config for sbas mode is: UBLOX_MODE_ENABLED, test is disabled
         tx_buffer.payload.cfg_sbas.mode = UBLOX_MODE_TEST;
@@ -1002,7 +1002,7 @@ static void ubloxSetSbas(void)
                 tx_buffer.payload.cfg_sbas.scanmode1 = 0;
                 break;
         }
-        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_SBAS, sizeof(ubxCfgSbas_t));
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_SBAS, sizeof(ubxCfgSbas_t), false);
     }
 }
 
@@ -1224,7 +1224,7 @@ void gpsInitUblox(void)
                                 /*length += ubloxValGet(&tx_buffer, CFG_SIGNAL_SBAS_ENA, length);
                                 length += ubloxValGet(&tx_buffer, CFG_SIGßNAL_GAL_ENA, length);*/
 
-                                ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALGET, offsetof(ubxCfgValSet_t, cfgData) + length);
+                                ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALGET, offsetof(ubxCfgValSet_t, cfgData) + length, true);
                                 //ubloxSendMessage((const uint8_t *) &tx_buffer, offsetof(ubxCfgValGet_t, keys) + length);
                             } else {
                                 ubloxSendPollMessage(MSG_CFG_GNSS);
@@ -2316,7 +2316,7 @@ static bool UBLOX_parse_gps(void)
                 tx_buffer.payload.cfg_gnss.configblocks[2].flags |= UBLOX_GNSS_ENABLE; //Enable Galileo
             }
 
-            ubloxSendConfigMessage(&tx_buffer, MSG_CFG_GNSS, messageSize);
+            ubloxSendConfigMessage(&tx_buffer, MSG_CFG_GNSS, messageSize, false);
         }
         break;
     case CLSMSG(CLASS_ACK, MSG_ACK_ACK):
