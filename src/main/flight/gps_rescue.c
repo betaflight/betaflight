@@ -579,27 +579,40 @@ static void sensorUpdate(void)
     rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
     // Range from 10ms (100hz) to 1000ms (1Hz). Intended to cover common GPS data rates and exclude unusual values.
 
+    rescueState.sensor.velocityToHomeCmS = ((prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) / rescueState.sensor.gpsDataIntervalSeconds);
+    // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.
+    prevDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
+
+
+
+
+    DEBUG_SET(DEBUG_ATTITUDE, 4, rescueState.sensor.velocityToHomeCmS); // velocity to home
+
+
+
+
+
     // when there is a flyaway due to IMU disorientation, increase IMU yaw CoG gain, and reduce max pitch angle
     if (gpsRescueConfig()->rescueGroundspeed) {
         // calculate a factor that can reduce pitch angle when flying away
         const float rescueGroundspeed = 1000.0f; // in cm/s, meaning a 10 m/s groundspeed
         // rescueGroundspeed is effectively a normalising gain factor for the magnitude of the groundspeed error
 
-        const float groundspeedErrorRatio = 1.0f + fminf(fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeed, 2.0f);
-        // 1 if groundspeed = velocity to home, or both are zero
-        // 2 if forward velocity is zero but sideways speed is 10m/s
-        // 3 if moving backwards at 10m/s, 5 if moving backwards at 20m/s, etc
-        // 2 is the maximum allowed value at present
+        const float groundspeedErrorRatio = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeed;
+        // 0 if groundspeed = velocity to home, or both are zero
+        // 1 if forward velocity is zero but sideways speed is 10m/s
+        // 2 if moving backwards at 10m/s, 5 if moving backwards at 20m/s, etc
 
 
         DEBUG_SET(DEBUG_ATTITUDE, 2, groundspeedErrorRatio * 100); // pitch attitude
 
-        // cut pitch angle by up to half when groundspeed error is high
-        rescueState.sensor.groundspeedPitchAttenuator = 1.0f / groundspeedErrorRatio;
+        // cut pitch angle by up to half when groundspeed error is above zero
+        const float limitedGroundspeedError = fminf(1.0f + groundspeedErrorRatio, 2.0f);
+        rescueState.sensor.groundspeedPitchAttenuator = 1.0f / limitedGroundspeedError;
 
 
         // pitchForwardAngle is positive early in a rescue, and associates with a nose forward ground course
-        const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] / 1000.0f : 0.01f;
+        const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? fminf(gpsRescueAngle[AI_PITCH] / 3000.0f, 1.0f) : 0.0f;
         // note: gpsRescueAngle[AI_PITCH] is in degrees * 100, and is halved when the IMU is 180 wrong
         // pitchForwardAngle is 0 when flat
         // pitchForwardAngle is 1.5 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
@@ -607,7 +620,7 @@ static void sensorUpdate(void)
         // pitchForwardAngle is 6.0 if pitch angle is 60 degrees and flying towards home (unlikely to be sustained at that angle)
 
 
-        DEBUG_SET(DEBUG_ATTITUDE, 3, pitchForwardAngle * 100); // yaw attitude
+        DEBUG_SET(DEBUG_ATTITUDE, 3, pitchForwardAngle * 100.0f); // yaw attitude
 
 
 
@@ -620,13 +633,9 @@ static void sensorUpdate(void)
             // There should be a simple relationship between pitch angle (forward velocity) and IMU yaw-Cog time constant
             // If that's true, we should see twice as much time to fix an IMU error, and with twice the radius, at half the IMU gain?
             // this PR lets us accept the user's IMU gain value for this phase, for testing purposes
-            rescueState.sensor.imuYawCogGain = gpsRescueConfig()->imuYawCogGain;
+            rescueState.sensor.imuYawCogGain = pitchForwardAngle + fminf(groundspeedErrorRatio, 2.5f);
         }
     }
-
-    rescueState.sensor.velocityToHomeCmS = ((prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) / rescueState.sensor.gpsDataIntervalSeconds);
-    // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.
-    prevDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
 
     DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(rescueState.sensor.velocityToHomeCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(rescueState.sensor.velocityToHomeCmS));

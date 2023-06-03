@@ -526,7 +526,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
 
 
-    DEBUG_SET(DEBUG_ATTITUDE, 0, cogYawGain * 10);
+    DEBUG_SET(DEBUG_ATTITUDE, 0, cogYawGain * 100.0f);
 
 
 
