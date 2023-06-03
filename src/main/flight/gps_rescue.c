@@ -591,8 +591,12 @@ static void sensorUpdate(void)
         // 3 if moving backwards at 10m/s, 5 if moving backwards at 20m/s, etc
         // 2 is the maximum allowed value at present
 
+
+        DEBUG_SET(DEBUG_ATTITUDE, 2, groundspeedErrorRatio * 100); // pitch attitude
+
         // cut pitch angle by up to half when groundspeed error is high
         rescueState.sensor.groundspeedPitchAttenuator = 1.0f / groundspeedErrorRatio;
+
 
         // pitchForwardAngle is positive early in a rescue, and associates with a nose forward ground course
         const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] / 1000.0f : 0.0f;
@@ -601,6 +605,11 @@ static void sensorUpdate(void)
         // pitchForwardAngle is 1.5 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
         // pitchForwardAngle is 3.0 if pitch angle is 30 degrees (ie with rescue angle of 60 and 180deg IMU error)
         // pitchForwardAngle is 6.0 if pitch angle is 60 degrees and flying towards home (unlikely to be sustained at that angle)
+
+
+        DEBUG_SET(DEBUG_ATTITUDE, 3, pitchForwardAngle * 100); // yaw attitude
+
+
 
         if (rescueState.phase != RESCUE_FLY_HOME) {
             // prevent IMU disorientation arising from drift during climb, rotate or do nothing phases, which have zero pitch angle
