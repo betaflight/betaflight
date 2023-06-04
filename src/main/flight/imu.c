@@ -247,6 +247,14 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
     }
 
+
+
+
+    DEBUG_SET(DEBUG_ATTITUDE, 6, (dcmKpGain * 100));
+
+
+
+
 #ifdef USE_MAG
     // Use measured magnetic field vector
     fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
