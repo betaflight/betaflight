@@ -40,6 +40,7 @@ typedef struct pilotConfig_s {
     char extraTurtleModeWarning[MAX_NAME_LENGTH + 1];
     char extraLowBatteryWarning[MAX_NAME_LENGTH + 1];
     char extraArmedWarning[MAX_NAME_LENGTH + 1];
+    char extraLandNowWarning[MAX_NAME_LENGTH + 1];
 } pilotConfig_t;
 
 PG_DECLARE(pilotConfig_t, pilotConfig);

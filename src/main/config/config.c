@@ -119,6 +119,7 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .extraTurtleModeWarning = "SORRY BRYAN",
     .extraLowBatteryWarning = "AINT LEAVING",
     .extraArmedWarning = "LETS GO",
+    .extraLandNowWarning = ">> LAND NOW <<",
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
