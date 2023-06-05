@@ -31,6 +31,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/vector.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -198,7 +199,7 @@ static float invSqrt(float x)
     return 1.0f / sqrtf(x);
 }
 
-static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
+STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag,
                                 float cogYawGain, float courseOverGround, const float dcmKpGain)
@@ -212,27 +213,25 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     float ex = 0, ey = 0, ez = 0;
     if (cogYawGain != 0.0f) {
         // Used in a GPS Rescue to boost IMU yaw gain when course over ground and velocity to home differ significantly
-        while (courseOverGround >  M_PIf) {
-            courseOverGround -= (2.0f * M_PIf);
-        }
-        while (courseOverGround < -M_PIf) {
-            courseOverGround += (2.0f * M_PIf);
-        }
-        // Compute heading vector in EF from scalar CoG,x axis of accelerometer is pointing backwards. (as in iNav)
-        const float cog_ef[2] = { -cos_approx(courseOverGround), sin_approx(courseOverGround)};
-        const float heading_ef[2] = { rMat[0][0], rMat[1][0] };  // body X axis. Projected vector magnitude is reduced as pitch increases
-        // cross product = 1 * |heading| * sin(angle)
-        const float cross = (cog_ef[X] * heading_ef[Y] - cog_ef[Y] * heading_ef[X]);
-        // dot product, |heading| * cos(angle)
-        const float dot = cog_ef[X] * heading_ef[X] + cog_ef[Y] * heading_ef[Y];
-        // use cross product / sin when error < 90deg (cos > 0), |heading| if error is larger (cos < 0)
+
+        // Compute heading vector in EF from scalar CoG. CoG is clockwise from North
+        // Note that Earth frame X is pointing north and sin/cos argument is anticlockwise
+        const fpVector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
+        const fpVector2_t heading_ef = {.x = rMat[0][0], .y = rMat[1][0]};  // body X axis. Projected vector magnitude is reduced as pitch increases
+        // cross product = 1 * |heading| * sin(angle) (magnitude of Z vector in 3D)
+        // order operands so that rotation is in direction of zero error
+        const float cross = vector2Cross(&heading_ef, &cog_ef);
+        // dot product, 1 * |heading| * cos(angle)
+        const float dot = vector2Dot(&heading_ef, &cog_ef);
+        // use cross product / sin(angle) when error < 90deg (cos > 0),
+        //   |heading| if error is larger (cos < 0)
         // |heading| will reduce gain with high roll / pitch
-        float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * sqrtf(sq(heading_ef[X]) + sq(heading_ef[Y]));
+        float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * vector2Mag(&heading_ef);
         ez_ef *= cogYawGain;          // apply gain parameter
         // covert to body frame
-        ex = rMat[2][0] * ez_ef;
-        ey = rMat[2][1] * ez_ef;
-        ez = rMat[2][2] * ez_ef;
+        ex += rMat[2][0] * ez_ef;
+        ey += rMat[2][1] * ez_ef;
+        ez += rMat[2][2] * ez_ef;
     }
 
 #ifdef USE_MAG
