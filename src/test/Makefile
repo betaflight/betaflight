@@ -558,7 +558,7 @@ C_FLAGS = $(COMMON_FLAGS) \
 
 # Flags passed to the C++ compiler.
 CXX_FLAGS = $(COMMON_FLAGS) \
-	-std=gnu++11
+	-std=gnu++14
 
 # Compiler flags for coverage instrumentation
 ifdef USE_COVERAGE
