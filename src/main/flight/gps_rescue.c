@@ -465,7 +465,7 @@ static void performSanityChecks(void)
         previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
         rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.1f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 15);
-        if (rescueState.intent.secondsFailing == 15) {
+        if (rescueState.intent.secondsFailing == 30) {
 #ifdef USE_MAG
             //If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
             if (sensors(SENSOR_MAG) && gpsRescueConfig()->useMag && !magForceDisable) {
