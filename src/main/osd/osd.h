@@ -351,6 +351,7 @@ typedef struct osdConfig_s {
     #ifdef USE_QUICK_OSD_MENU
     uint8_t osd_use_quick_menu;               // use QUICK menu YES/NO
     #endif // USE_QUICK_OSD_MENU
+    uint8_t extra_osd_show_spec;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

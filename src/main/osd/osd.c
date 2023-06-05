@@ -336,7 +336,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // Enable the default stats
     osdConfig->enabled_stats = 0; // reset all to off and enable only a few initially
-    osdStatSetState(OSD_STAT_MAX_SPEED, false;
+    osdStatSetState(OSD_STAT_MAX_SPEED, false);
     osdStatSetState(OSD_STAT_MIN_BATTERY, true);
     osdStatSetState(OSD_STAT_MIN_RSSI, false);
     osdStatSetState(OSD_STAT_MAX_CURRENT, false);
@@ -430,6 +430,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_QUICK_OSD_MENU
     osdConfig->osd_use_quick_menu = true;
 #endif // USE_QUICK_OSD_MENU
+    osdConfig->extra_osd_show_spec = true;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -1579,6 +1580,9 @@ void osdUpdate(timeUs_t currentTimeUs)
             if (moreElements) {
                 // There are more elements to draw
                 break;
+            }
+            else {
+                osdDrawSpec(osdDisplayPort);
             }
 
             osdElementGroup = 0;

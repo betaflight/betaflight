@@ -170,6 +170,14 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
     return enabled;
 }
 
+bool isProtocolBidirectionalDshot(const motorDevConfig_t *motorDevConfig)
+{
+    bool motorProtocolDshot = false;
+    const bool motorProtocolEnabled = checkMotorProtocolEnabled(motorDevConfig, &motorProtocolDshot);
+    const bool isBidir = motorDevConfig->useDshotTelemetry;
+    return motorProtocolEnabled && motorProtocolDshot && isBidir;
+}
+
 static void checkMotorProtocol(const motorDevConfig_t *motorDevConfig)
 {
     motorProtocolEnabled = checkMotorProtocolEnabled(motorDevConfig, &motorProtocolDshot);
