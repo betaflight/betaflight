@@ -105,3 +105,5 @@ bool isDshotBitbangActive(const motorDevConfig_t *motorConfig);
 #endif
 
 float getDigitalIdleOffset(const motorConfig_t *motorConfig);
+
+bool isProtocolBidirectionalDshot(const motorDevConfig_t *motorDevConfig);

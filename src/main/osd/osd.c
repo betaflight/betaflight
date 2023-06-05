@@ -418,6 +418,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #endif
 
     osdConfig->extra_osd_use_quick_menu = true;
+    osdConfig->extra_osd_show_spec = true;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -1564,6 +1565,9 @@ void osdUpdate(timeUs_t currentTimeUs)
             if (moreElements) {
                 // There are more elements to draw
                 break;
+            }
+            else {
+                osdDrawSpec(osdDisplayPort);
             }
 
             osdElementGroup = 0;
