@@ -50,17 +50,3 @@ const char *const TEST_PIN_NAMES[TEST_PIN_SIZE] = {
     "PH0", "PH1", "PH2", "PH3", "PH4", "PH5", "PH6", "PH7", "PH8", "PH9",
     "PH10", "PH11", "PH12", "PH13", "PH14", "PH15",
 };
-
-enum TestTimUseEnum {
-    TIM_USE_ANY,
-    TIM_USE_BEEPER,
-    TIM_USE_CAMERA_CONTROL,
-    TIM_USE_LED,
-    TIM_USE_MOTOR,
-    TIM_USE_NONE,
-    TIM_USE_PPM,
-    TIM_USE_PWM,
-    TIM_USE_SERVO,
-    TIM_USE_TRANSPONDER,
-    TEST_TIM_USE_SIZE,
-};
