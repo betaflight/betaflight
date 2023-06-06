@@ -322,6 +322,8 @@ typedef struct pidRuntime_s {
     bool zeroThrottleItermReset;
     bool levelRaceMode;
     float tpaFactor;
+    float tpaBreakpoint;
+    float tpaMultiplier;
 
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];

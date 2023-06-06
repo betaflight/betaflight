@@ -44,7 +44,7 @@
 #define DEFAULT_DSHOT_BURST DSHOT_DMAR_OFF
 #endif
 
-PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 2);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
@@ -68,6 +68,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffsetValue = 550;
+    motorConfig->kv = 1960;
 
 #ifdef USE_TIMER
 #ifdef MOTOR1_PIN
@@ -96,7 +97,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #endif
 #endif
 
-    motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
+    motorConfig->motorPoleCount = 14;   // Most brushless motors that we use are 14 poles
 
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         motorConfig->dev.motorOutputReordering[i] = i;

@@ -40,6 +40,8 @@
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
+#include "rx/rx.h"
+
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
@@ -273,7 +275,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
         pidRuntime.pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
         pidRuntime.pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
-        pidRuntime.pidCoefficient[axis].Kf = FEEDFORWARD_SCALE * (pidProfile->pid[axis].F / 100.0f);
+        pidRuntime.pidCoefficient[axis].Kf = FEEDFORWARD_SCALE * (pidProfile->pid[axis].F * 0.01f);
     }
 #ifdef USE_INTEGRATED_YAW_CONTROL
     if (!pidProfile->use_integrated_yaw)
@@ -423,6 +425,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
+    pidRuntime.tpaBreakpoint = constrainf((pidProfile->tpa_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, 0.99f);
+    // default of 1350 returns 0.35. range limited to 0 to 0.99
+    pidRuntime.tpaMultiplier = (pidProfile->tpa_rate / 100.0f) / (1.0f - pidRuntime.tpaBreakpoint);
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
