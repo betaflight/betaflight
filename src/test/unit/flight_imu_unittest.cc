@@ -26,6 +26,7 @@ extern "C" {
 
     #include "common/axis.h"
     #include "common/maths.h"
+    #include "common/vector.h"
 
     #include "config/feature.h"
     #include "pg/pg.h"
@@ -57,7 +58,10 @@ extern "C" {
 
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
-
+    void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
+                             bool useAcc, float ax, float ay, float az,
+                             bool useMag,
+                             float cogYawGain, float courseOverGround, const float dcmKpGain);
     extern quaternion q;
     extern float rMat[3][3];
     extern bool attitudeIsEstablished;
@@ -75,6 +79,15 @@ extern "C" {
 #include "gtest/gtest.h"
 
 const float sqrt2over2 = sqrtf(2) / 2.0f;
+
+void quaternion_from_axis_angle(quaternion* q, float angle, float x, float y, float z) {
+    fpVector3_t a = {{x, y, z}};
+    vectorNormalize(&a, &a);
+    q->w = cos(angle / 2);
+    q->x = a.x * sin(angle / 2);
+    q->y = a.y * sin(angle / 2);
+    q->z = a.z * sin(angle / 2);
+}
 
 TEST(FlightImuTest, TestCalculateRotationMatrix)
 {
@@ -200,6 +213,55 @@ TEST(FlightImuTest, TestSmallAngle)
     // expect
     EXPECT_FALSE(isUpright());
 }
+
+class MahonyFixture : public ::testing::TestWithParam<float> {
+protected:
+    void SetUp() override {
+        imuConfigure(0, 0);
+        // level, poiting north
+        quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(0), 1, 0, 0);
+        imuComputeRotationMatrix();          // identity
+    }
+    float wrap(float angle) {
+        angle = fmod(angle, 360);
+        if (angle < 0) angle += 360;
+        return angle;
+    }
+};
+
+TEST_P(MahonyFixture, TestMahonyCog)
+{
+    float cogDeg = GetParam();
+    float expect = wrap(cogDeg) * 10;
+
+    float dt = 1e-2;
+    float alignTime = -1;
+    for (float t = 0; t < 30.0; t += dt) {  // it takes about 26s to get within 1 deg tolerance from 180deg error
+        imuMahonyAHRSupdate(dt,
+                            0, 0, 0,
+                            false, 0, 0, 0,
+                            false,
+                            1.0, DEGREES_TO_RADIANS(cogDeg),   // use Cog, param direction
+                            .25);                              // default dcm_kp
+        imuUpdateEulerAngles();
+        // remember how long it took
+        if (alignTime < 0 && fabs(attitude.values.yaw - expect) < 10)
+            alignTime = t;
+    }
+    imuUpdateEulerAngles();
+    // quad stays level
+    EXPECT_NEAR(attitude.values.roll, 0, 0);
+    EXPECT_NEAR(attitude.values.pitch, 0, 0);
+    // yaw is close to CoG direction
+    EXPECT_NEAR(attitude.values.yaw, expect, 10);  // error < 1 deg
+    printf("[          ] Aligned to %.f in %.2fs\n", cogDeg, alignTime);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  TestAngles, MahonyFixture,
+  ::testing::Values(
+      0, 45, -45, 90, 180, 270, 720+45
+      ));
 
 // STUBS
 
