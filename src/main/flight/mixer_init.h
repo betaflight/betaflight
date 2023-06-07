@@ -65,7 +65,7 @@ typedef struct mixerRuntime_s {
     float afterburnerDuration;
     float afterburnerTankPercent;
     bool afterburnerInitiated;
-    int afterburnerTanksRemaining;
+    uint8_t afterburnerTanksRemaining;
     bool rpmLinearization;
     float RPMLimit;
     int motorPoleCount;

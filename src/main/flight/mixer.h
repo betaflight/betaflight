@@ -141,5 +141,5 @@ bool isFixedWing(void);
 float getMotorOutputLow(void);
 float getMotorOutputHigh(void);
 
-int getAfterburnerTanksRemaining(void);
+uint8_t getAfterburnerTanksRemaining(void);
 float getAfterburnerTankPercent(void);

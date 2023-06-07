@@ -344,7 +344,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-int getAfterburnerTanksRemaining(void)
+uint8_t getAfterburnerTanksRemaining(void)
 {
     return mixerRuntime.afterburnerTanksRemaining;
 }
@@ -369,7 +369,7 @@ static void applyRPMLimiter(void)
         //afterburner code
         //if drone is armed
         if (ARMING_FLAG(ARMED)) {
-            //if the afterburner switch is enguaged
+            //if the afterburner switch is engaged
             if(IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
                 //if the afterburner isn't initiated
                 if(mixerRuntime.afterburnerInitiated == false) {
@@ -382,27 +382,33 @@ static void applyRPMLimiter(void)
                     }
                     
                 }
-            //if the afterburner switch is NOT enguaged
+            //if the afterburner switch is NOT engaged
             } else {
                 //if hold to boost is enabled
                 if(mixerRuntime.afterburnerHoldToBoost) {
                     mixerRuntime.afterburnerInitiated = false;
                 }
-                //if the tank is empty, reset
-                if(mixerRuntime.afterburnerTankPercent<=0.0f) {
-                    mixerRuntime.afterburnerInitiated = false;
-                    mixerRuntime.afterburnerTanksRemaining -= 1;  
-                    if(mixerRuntime.afterburnerTanksRemaining>0) {
-                        mixerRuntime.afterburnerTankPercent = 100.0f;
-                    }
-                } 
             }
 
             //use afterburner
             if(mixerRuntime.afterburnerInitiated) {
+                //if the tank is empty, reset
+                if(mixerRuntime.afterburnerTankPercent<=0.0f) {
+                    mixerRuntime.afterburnerInitiated = false;
+                    //only refil the tank if we have one remaining
+                    if(mixerRuntime.afterburnerTanksRemaining>0) {
+                        mixerRuntime.afterburnerTanksRemaining -= 1;
+                    }
+                    if(mixerRuntime.afterburnerTanksRemaining>0) {
+                        mixerRuntime.afterburnerTankPercent = 100.0f;
+                    }
+
+                } 
                 //tank percent decreases linearly
                 mixerRuntime.afterburnerTankPercent -= (pidGetDT()/(mixerRuntime.afterburnerDuration))*100.0f;
                 //tank percent can never be above 100%
+                mixerRuntime.afterburnerTankPercent = MIN(mixerRuntime.afterburnerTankPercent,100.0f);
+                //tank percent can never be below 0%
                 mixerRuntime.afterburnerTankPercent = MAX(mixerRuntime.afterburnerTankPercent,0.0f);
                 //increase the rpm limit
                 maxRPMLimit = mixerRuntime.RPMLimit+(mixerRuntime.afterburnerRPM*mixerRuntime.afterburnerTankPercent*0.01f);
