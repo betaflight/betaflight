@@ -160,6 +160,10 @@
 #endif
 #endif
 
+#if defined(USE_TELEMETRY_IBUS_EXTENDED) && !defined(USE_TELEMETRY_IBUS)
+#define USE_TELEMETRY_IBUS
+#endif
+
 #if !defined(USE_SERIALRX_CRSF)
 #undef USE_TELEMETRY_CRSF
 #undef USE_CRSF_LINK_STATISTICS
