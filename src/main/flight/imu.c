@@ -514,6 +514,8 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
         if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
             cogYawGain = gpsRescueGetImuYawCogGain(); // do not modify IMU yaw gain unless in a rescue
+        } else {
+            cogYawGain = 1.0f; // Normal yaw correction for GPS Course over Ground
         }
         if (shouldInitializeGPSHeading()) {
             // Reset our reference and reinitialize quaternion.
