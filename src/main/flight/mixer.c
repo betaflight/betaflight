@@ -398,9 +398,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
         float motorOutput = motorOutputMixSign * motorMix[i] + throttle * activeMixer[i].throttle;
 #ifdef USE_THRUST_LINEARIZATION
-    if (!RPM_LIMIT_ACTIVE) {
         motorOutput = pidApplyThrustLinearization(motorOutput);
-    }
 #endif
         motorOutput = motorOutputMin + motorOutputRange * motorOutput;
 
