@@ -41,12 +41,26 @@ typedef union {
     };
 } fpVector3_t;
 
+typedef struct {
+    float m[3][3];
+} fpMat33_t;
+
 static inline fpVector3_t * vectorZero(fpVector3_t *v)
 {
     v->x = 0.0f;
     v->y = 0.0f;
     v->z = 0.0f;
     return v;
+}
+
+static inline float vectorNormSquared(const fpVector3_t * v)
+{
+    return sq(v->x) + sq(v->y) + sq(v->z);
+}
+
+static inline float vectorNorm(const fpVector3_t * v)
+{
+    return sqrtf(vectorNormSquared(v));
 }
 
 static inline fpVector3_t * vectorCrossProduct(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b)
@@ -85,11 +99,6 @@ static inline fpVector3_t * vectorScale(fpVector3_t *result, const fpVector3_t *
     return result;
 }
 
-static inline float vectorNormSquared(const fpVector3_t *v)
-{
-    return sq(v->x) + sq(v->y) + sq(v->z);
-}
-
 static inline fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3_t *v)
 {
     float normSq = vectorNormSquared(v);
@@ -98,6 +107,30 @@ static inline fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3
     } else {
         return vectorZero(result);
     }
+}
+
+static inline fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
+{
+    fpVector3_t r;
+
+    r.x = mat->m[0][0] * a->x + mat->m[0][1] * a->y + mat->m[0][2] * a->z;
+    r.y = mat->m[1][0] * a->x + mat->m[1][1] * a->y + mat->m[1][2] * a->z;
+    r.z = mat->m[2][0] * a->x + mat->m[2][1] * a->y + mat->m[2][2] * a->z;
+
+    *result = r;
+    return result;
+}
+
+static inline fpVector3_t * matrixTrnVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
+{
+    fpVector3_t r;
+
+    r.x = mat->m[0][0] * a->x + mat->m[1][0] * a->y + mat->m[2][0] * a->z;
+    r.y = mat->m[0][1] * a->x + mat->m[1][1] * a->y + mat->m[2][1] * a->z;
+    r.z = mat->m[0][2] * a->x + mat->m[1][2] * a->y + mat->m[2][2] * a->z;
+
+    *result = r;
+    return result;
 }
 
 static inline float vector2Cross(const fpVector2_t *a, const fpVector2_t *b)

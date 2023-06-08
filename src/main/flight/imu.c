@@ -236,29 +236,27 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
-    float mx = mag.magADC[X];
-    float my = mag.magADC[Y];
-    float mz = mag.magADC[Z];
-    float recipMagNorm = sq(mx) + sq(my) + sq(mz);
+    fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
+    float recipMagNorm = vectorNormSquared(&mag_bf);
     if (useMag && recipMagNorm > 0.01f) {
         // Normalise magnetometer measurement
-        recipMagNorm = invSqrt(recipMagNorm);
-        mx *= recipMagNorm;
-        my *= recipMagNorm;
-        mz *= recipMagNorm;
+        vectorNormalize(&mag_bf, &mag_bf);
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles
 
-        // (hx; hy; 0) - measured mag field vector in EF (assuming Z-component is zero)
+        // (hx; hy; 0) - measured mag field vector in EF (forcing Z-component to zero)
         // (bx; 0; 0) - reference mag field vector heading due North in EF (assuming Z-component is zero)
-        const float hx = rMat[0][0] * mx + rMat[0][1] * my + rMat[0][2] * mz;
-        const float hy = rMat[1][0] * mx + rMat[1][1] * my + rMat[1][2] * mz;
-        const float bx = sqrtf(hx * hx + hy * hy);
+        fpVector3_t mag_ef;
+        matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf);  // BF->EF
+        mag_ef.z = 0.0f;                // project to XY plane (optimized away)
 
+        fpVector2_t north_ef = {{ 1.0f, 0.0f }};
         // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
-        const float ez_ef = -(hy * bx);
-
+        // increase gain on large misalignment
+        const float dot = vector2Dot((fpVector2_t*)&mag_ef, &north_ef);
+        const float cross = vector2Cross((fpVector2_t*)&mag_ef, &north_ef);
+        const float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * vector2Mag((fpVector2_t*)&mag_ef);
         // Rotate mag error vector back to BF and accumulate
         ex += rMat[2][0] * ez_ef;
         ey += rMat[2][1] * ez_ef;
