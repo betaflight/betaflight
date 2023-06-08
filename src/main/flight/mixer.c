@@ -276,11 +276,6 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         motorOutputMixSign = 1;
     }
 
-    if (mixerConfig()->mixer_type == MIXER_EZLANDING_CLIP) {
-        const float motorRange = motorRangeMax - mixerRuntime.motorOutputLow;
-        const float throttlePercentage = throttle/1000.f;
-        motorRangeMax -= calcEzLandStrength(throttlePercentage, getMaxRcDeflectionAbs()) * motorRange;
-    }
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
 }
 
@@ -740,7 +735,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     case MIXER_EZLANDING_THROTTLE:
         applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax);
         break;
-    case MIXER_EZLANDING_CLIP:
     default:
         applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
         break;

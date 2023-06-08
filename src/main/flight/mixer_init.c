@@ -366,15 +366,8 @@ void mixerInitProfile(void)
     mixerResetRpmLimiter();
 #endif
 
-    // Hack to make setings for CLIP and THROTTLE versions
-    // roughly equivalent while testing, remove if integrated in main
-    if (mixerConfig()->mixer_type == MIXER_EZLANDING_THROTTLE) {
-        mixerRuntime.ezLandingThreshold = (currentPidProfile->ez_landing_threshold / 100.0f) * 2.0f;
-        mixerRuntime.ezLandingLimit = 1.0f - (currentPidProfile->ez_landing_limit / 100.0f) * 0.5f;
-    } else { // This part should remain if integrated in main
-        mixerRuntime.ezLandingThreshold = currentPidProfile->ez_landing_threshold / 100.0f;
-        mixerRuntime.ezLandingLimit = 1.0f - currentPidProfile->ez_landing_limit / 100.0f;
-    }
+    mixerRuntime.ezLandingThreshold = currentPidProfile->ez_landing_threshold / 100.0f;
+    mixerRuntime.ezLandingLimit = 1.0f - currentPidProfile->ez_landing_limit / 100.0f;
 }
 
 #ifdef USE_RPM_LIMIT
