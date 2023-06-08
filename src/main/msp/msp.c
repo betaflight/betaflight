@@ -2545,9 +2545,15 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     textVar = buildKey;
                     break;
 
+                case MSP2TEXT_RELEASENAME:
+                    textVar = releaseName;
+                    break;
+
                 default:
                     return MSP_RESULT_ERROR;
             }
+
+            if (!textVar) return MSP_RESULT_ERROR;
 
             const uint8_t textLength = strlen(textVar);
 

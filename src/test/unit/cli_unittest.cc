@@ -66,7 +66,8 @@ extern "C" {
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
     const char * const lookupTableOsdDisplayPortDevice[] = {};
-
+    const char * const buildKey = NULL;
+    const char * const releaseName = NULL;
 
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);

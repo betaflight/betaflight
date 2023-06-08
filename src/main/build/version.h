@@ -44,3 +44,4 @@ extern const char* const buildTime;  // "HH:MM:SS"
 #define MSP_API_VERSION_STRING STR(API_VERSION_MAJOR) "." STR(API_VERSION_MINOR)
 
 extern const char* const buildKey;
+extern const char* const releaseName;
