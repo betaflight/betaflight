@@ -211,6 +211,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
     // Use raw heading error (from GPS or whatever else)
     float ex = 0, ey = 0, ez = 0;
+    float ez_ef = 0.0f;
     if (cogYawGain != 0.0f) {
         // Used in a GPS Rescue to boost IMU yaw gain when course over ground and velocity to home differ significantly
 
@@ -246,7 +247,11 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         DEBUG_SET(DEBUG_ATTITUDE, 3, (dcmKpGain * 100));
     }
 
+    DEBUG_SET(DEBUG_ATTITUDE, 0, cogYawGain * 100.0f);
+    DEBUG_SET(DEBUG_ATTITUDE, 1, (ez_ef * cogYawGain * 100)); // with gain adjustment
+    DEBUG_SET(DEBUG_ATTITUDE, 5, (ez_ef * 100)); // before gain adjustment
     DEBUG_SET(DEBUG_ATTITUDE, 6, (dcmKpGain * 100));
+
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
@@ -513,9 +518,9 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
         if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            cogYawGain = gpsRescueGetImuYawCogGain(); // do not modify IMU yaw gain unless in a rescue
+            cogYawGain = gpsRescueGetImuYawCogGain(); // dynamic modification of heading gain factor while in a GPS Rescue
         } else {
-            cogYawGain = 1.0f; // Normal yaw correction for GPS Course over Ground
+            cogYawGain = 1.0f; // Heading correction gain factor in normal flight - to do: adjust by pitch angle
         }
         if (shouldInitializeGPSHeading()) {
             // Reset our reference and reinitialize quaternion.
@@ -526,8 +531,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         }
     }
 #endif
-
-    DEBUG_SET(DEBUG_ATTITUDE, 0, cogYawGain * 100.0f);
 
 #if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC)
     UNUSED(imuMahonyAHRSupdate);
