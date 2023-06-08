@@ -248,8 +248,6 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     }
 
     DEBUG_SET(DEBUG_ATTITUDE, 0, cogYawGain * 100.0f);
-    DEBUG_SET(DEBUG_ATTITUDE, 1, (ez_ef * cogYawGain * 100)); // with gain adjustment
-    DEBUG_SET(DEBUG_ATTITUDE, 5, (ez_ef * 100)); // before gain adjustment
     DEBUG_SET(DEBUG_ATTITUDE, 6, (dcmKpGain * 100));
 
 
