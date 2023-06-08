@@ -217,7 +217,12 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // Compute heading vector in EF from scalar CoG. CoG is clockwise from North
         // Note that Earth frame X is pointing north and sin/cos argument is anticlockwise
         const fpVector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
+#define THRUST_COG 1
+#if THRUST_COG
+        const fpVector2_t heading_ef = {.x = rMat[X][Z], .y = rMat[Y][Z]};  // body Z axis (up) - direction of thrust vector
+#else
         const fpVector2_t heading_ef = {.x = rMat[0][0], .y = rMat[1][0]};  // body X axis. Projected vector magnitude is reduced as pitch increases
+#endif
         // cross product = 1 * |heading| * sin(angle) (magnitude of Z vector in 3D)
         // order operands so that rotation is in direction of zero error
         const float cross = vector2Cross(&heading_ef, &cog_ef);
@@ -225,8 +230,12 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         const float dot = vector2Dot(&heading_ef, &cog_ef);
         // use cross product / sin(angle) when error < 90deg (cos > 0),
         //   |heading| if error is larger (cos < 0)
-        // |heading| will reduce gain with high roll / pitch
-        float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * vector2Mag(&heading_ef);
+        const float heading_mag = vector2Mag(&heading_ef);
+        float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * heading_mag;
+#if THRUST_COG
+        // increase gain for small tilt (just heuristic; sqrt is cheap on F4+)
+        ez_ef /= sqrtf(heading_mag);
+#endif
         ez_ef *= cogYawGain;          // apply gain parameter
         // covert to body frame
         ex += rMat[2][0] * ez_ef;

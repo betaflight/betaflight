@@ -261,9 +261,13 @@ protected:
 
         imuConfigure(0, 0);
         // level, poiting north
-        quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(0), 1, 0, 0);
-        imuComputeRotationMatrix();          // identity
+        setOrientationAA(0, {{1,0,0}});        // identity
     }
+    virtual void setOrientationAA(float angleDeg, fpVector3_t axis) {
+        quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(angleDeg), axis.x, axis.y, axis.z);
+        imuComputeRotationMatrix();
+    }
+
     float wrap(float angle) {
         angle = fmod(angle, 360);
         if (angle < 0) angle += 360;
@@ -312,14 +316,16 @@ TEST_P(YawTest, TestCogAlign)
 {
     cogGain = 1.0;
     cogDeg = GetParam();
-    fpVector3_t expect = {{0, 0, wrap(cogDeg)}};
+    const float rollDeg = 30;    // 30deg pitch forward
+    setOrientationAA(rollDeg, {{0, 1, 0}});
+    fpVector3_t expect = {{0, rollDeg, wrap(cogDeg)}};
     // integrate IMU. about 25s is enough in worst case
-    float alignTime = imuIntegrate(30, &expect);
+    float alignTime = imuIntegrate(80, &expect);
 
     imuUpdateEulerAngles();
     // quad stays level
-    EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, TOL);
-    EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, TOL);
+    EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, .1);
+    EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, .1);
     // yaw is close to CoG direction
     EXPECT_NEAR_DEG(attitude.values.yaw / 10.0, expect.z, 1);  // error < 1 deg
     if (alignTime >= 0) {
