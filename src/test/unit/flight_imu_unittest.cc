@@ -214,9 +214,51 @@ TEST(FlightImuTest, TestSmallAngle)
     EXPECT_FALSE(isUpright());
 }
 
-class MahonyFixture : public ::testing::TestWithParam<float> {
+testing::AssertionResult DoubleNearWrapPredFormat(const char* expr1, const char* expr2,
+                                                  const char* abs_error_expr, const char* wrap_expr, double val1,
+                                                  double val2, double abs_error, double wrap) {
+    const double diff = remainder(val1 - val2, wrap);
+    if (fabs(diff) <= abs_error) return testing::AssertionSuccess();
+
+    return testing::AssertionFailure()
+        << "The difference between " << expr1 << " and " << expr2 << " is "
+        << diff << " (wrapped to 0 .. " << wrap_expr << ")"
+        << ", which exceeds " << abs_error_expr << ", where\n"
+        << expr1 << " evaluates to " << val1 << ",\n"
+        << expr2 << " evaluates to " << val2 << ", and\n"
+        << abs_error_expr << " evaluates to " << abs_error << ".";
+}
+
+#define EXPECT_NEAR_DEG(val1, val2, abs_error)                \
+    EXPECT_PRED_FORMAT4(DoubleNearWrapPredFormat, val1, val2, \
+                        abs_error, 360.0)
+
+#define EXPECT_NEAR_RAD(val1, val2, abs_error)                \
+    EXPECT_PRED_FORMAT4(DoubleNearWrapPredFormat, val1, val2, \
+                        abs_error, 2 * M_PI)
+
+
+
+class MahonyFixture : public ::testing::Test {
 protected:
+    fpVector3_t gyro;
+    bool useAcc;
+    fpVector3_t acc;
+    bool useMag;
+    fpVector3_t magEF;
+    float cogGain;
+    float cogDeg;
+    float dcmKp;
+    float dt;
     void SetUp() override {
+        vectorZero(&gyro);
+        useAcc = false;
+        vectorZero(&acc);
+        cogGain = 0.0;   // no cog
+        cogDeg  = 0.0;
+        dcmKp = .25;     // default dcm_kp
+        dt = 1e-2;       // 100Hz update
+
         imuConfigure(0, 0);
         // level, poiting north
         quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(0), 1, 0, 0);
@@ -227,38 +269,96 @@ protected:
         if (angle < 0) angle += 360;
         return angle;
     }
+    float angleDiffNorm(fpVector3_t *a, fpVector3_t* b, fpVector3_t weight = {{1,1,1}}) {
+        fpVector3_t tmp;
+        vectorScale(&tmp, b, -1);
+        vectorAdd(&tmp, &tmp, a);
+        for (int i = 0; i < 3; i++)
+            tmp.v[i] *= weight.v[i];
+        for (int i = 0; i < 3; i++)
+            tmp.v[i] = std::remainder(tmp.v[i], 360.0);
+        return vectorNorm(&tmp);
+    }
+    // run Mahony for some time
+    // return time it took to get within 1deg from target
+    float imuIntegrate(float runTime, fpVector3_t * target) {
+        float alignTime = -1;
+        for (float t = 0; t < runTime; t += dt) {
+            //     if (fmod(t, 1) < dt) printf("MagBF=%.2f %.2f %.2f\n", magBF.x, magBF.y, magBF.z);
+            imuMahonyAHRSupdate(dt,
+                                gyro.x, gyro.y, gyro.z,
+                                useAcc, acc.x, acc.y, acc.z,
+                                useMag,                             // no mag now
+                                cogGain, DEGREES_TO_RADIANS(cogDeg),   // use Cog, param direction
+                                dcmKp);
+            imuUpdateEulerAngles();
+            // if (fmod(t, 1) < dt) printf("%3.1fs - %3.1f %3.1f %3.1f\n", t, attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f);
+            // remember how long it took
+            if (alignTime < 0) {
+                fpVector3_t rpy = {{attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f}};
+                float error = angleDiffNorm(&rpy, target);
+                if (error < 1)
+                    alignTime = t;
+            }
+        }
+        return alignTime;
+    }
 };
 
-TEST_P(MahonyFixture, TestMahonyCog)
-{
-    float cogDeg = GetParam();
-    float expect = wrap(cogDeg) * 10;
+class YawTest: public MahonyFixture, public testing::WithParamInterface<float> {
+};
 
-    float dt = 1e-2;
-    float alignTime = -1;
-    for (float t = 0; t < 30.0; t += dt) {  // it takes about 26s to get within 1 deg tolerance from 180deg error
-        imuMahonyAHRSupdate(dt,
-                            0, 0, 0,
-                            false, 0, 0, 0,
-                            false,
-                            1.0, DEGREES_TO_RADIANS(cogDeg),   // use Cog, param direction
-                            .25);                              // default dcm_kp
-        imuUpdateEulerAngles();
-        // remember how long it took
-        if (alignTime < 0 && fabs(attitude.values.yaw - expect) < 10)
-            alignTime = t;
-    }
+TEST_P(YawTest, TestCogAlign)
+{
+    cogGain = 1.0;
+    cogDeg = GetParam();
+    fpVector3_t expect = {{0, 0, wrap(cogDeg)}};
+    // integrate IMU. about 25s is enough in worst case
+    float alignTime = imuIntegrate(30, &expect);
+
     imuUpdateEulerAngles();
     // quad stays level
-    EXPECT_NEAR(attitude.values.roll, 0, 0);
-    EXPECT_NEAR(attitude.values.pitch, 0, 0);
+    EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, TOL);
+    EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, TOL);
     // yaw is close to CoG direction
-    EXPECT_NEAR(attitude.values.yaw, expect, 10);  // error < 1 deg
-    printf("[          ] Aligned to %.f in %.2fs\n", cogDeg, alignTime);
+    EXPECT_NEAR_DEG(attitude.values.yaw / 10.0, expect.z, 1);  // error < 1 deg
+    if (alignTime >= 0) {
+        printf("[          ] Aligned to %.f deg in %.2fs\n", cogDeg, alignTime);
+    }
+}
+
+TEST_P(YawTest, TestMagAlign)
+{
+    float initialAngle = GetParam();
+
+    // level, rotate to param heading
+    quaternion_from_axis_angle(&q, -DEGREES_TO_RADIANS(initialAngle), 0, 0, 1);
+    imuComputeRotationMatrix();
+
+    fpVector3_t expect = {{0, 0, 0}};    // expect zero yaw
+
+    fpVector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
+
+    for (int i = 0; i < 3; i++)
+        mag.magADC[i] = magBF.v[i];
+
+    useMag = true;
+    // integrate IMU. about 25s is enough in worst case
+    float alignTime = imuIntegrate(30, &expect);
+
+    imuUpdateEulerAngles();
+    // quad stays level
+    EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, .1);
+    EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, .1);
+    // yaw is close to north (0 deg)
+    EXPECT_NEAR_DEG(attitude.values.yaw / 10.0, expect.z, 1.0);  // error < 1 deg
+    if (alignTime >= 0) {
+        printf("[          ] Aligned from %.f deg in %.2fs\n", initialAngle, alignTime);
+    }
 }
 
 INSTANTIATE_TEST_SUITE_P(
-  TestAngles, MahonyFixture,
+  TestAngles, YawTest,
   ::testing::Values(
       0, 45, -45, 90, 180, 270, 720+45
       ));
