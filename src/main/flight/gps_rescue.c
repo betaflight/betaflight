@@ -635,7 +635,7 @@ static void sensorUpdate(void)
             // There should be a simple relationship between pitch angle (forward velocity) and IMU yaw-Cog time constant
             // If that's true, we should see twice as much time to fix an IMU error, and with twice the radius, at half the IMU gain?
             // this PR lets us accept the user's IMU gain value for this phase, for testing purposes
-            rescueState.sensor.imuYawCogGain = pitchForwardAngle + fminf(groundspeedErrorRatio, 2.5f); // max around 3-4x
+            rescueState.sensor.imuYawCogGain = pitchForwardAngle + fminf(groundspeedErrorRatio, 3.5f); // max around 4.5x
         }
     }
 
