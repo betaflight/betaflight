@@ -2522,7 +2522,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             // type byte, then length byte followed by the actual characters
             const uint8_t textType = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
 
-            char* textVar;
+            const char *textVar;
 
             switch (textType) {
                 case MSP2TEXT_PILOT_NAME:
@@ -2541,9 +2541,19 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     textVar = currentControlRateProfile->profileName;
                     break;
 
+                case MSP2TEXT_BUILDKEY:
+                    textVar = buildKey;
+                    break;
+
+                case MSP2TEXT_RELEASENAME:
+                    textVar = releaseName;
+                    break;
+
                 default:
                     return MSP_RESULT_ERROR;
             }
+
+            if (!textVar) return MSP_RESULT_ERROR;
 
             const uint8_t textLength = strlen(textVar);
 

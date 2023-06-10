@@ -4813,13 +4813,13 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinef("OSD: %s (%u x %u)", lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort->cols, osdDisplayPort->rows);
 #endif
 
-#ifdef BUILD_KEY
-    cliPrintf("BUILD KEY: %s", STR(BUILD_KEY));
-#ifdef RELEASE_NAME
-    cliPrintf(" (%s)", STR(RELEASE_NAME));
-#endif
+if (buildKey) {
+    cliPrintf("BUILD KEY: %s", buildKey);
+    if (releaseName) {
+        cliPrintf(" (%s)", releaseName);
+    }
     cliPrintLinefeed();
-#endif
+}
 
     // Uptime and wall clock
 
