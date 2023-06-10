@@ -595,19 +595,20 @@ static void sensorUpdate(void)
     // when there is a flyaway due to IMU disorientation, increase IMU yaw CoG gain, and reduce max pitch angle
     if (gpsRescueConfig()->rescueGroundspeed) {
         // calculate a factor that can reduce pitch angle when flying away
-        const float rescueGroundspeed = 1500.0f; // in cm/s, meaning a 15 m/s groundspeed
+        const float rescueGroundspeed = gpsRescueConfig()->imuYawCogGain * 100.0f; // in cm/s, imuYawCogGain is m/s groundspeed
         // rescueGroundspeed is effectively a normalising gain factor for the magnitude of the groundspeed error
+        // a higher value reduces groundspeedErrorRatio, making the radius wider and reducing the circling behaviour
 
         const float groundspeedErrorRatio = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeed;
         // 0 if groundspeed = velocity to home, or both are zero
-        // 1 if forward velocity is zero but sideways speed is 15m/s
-        // 2 if moving backwards at 15m/s, 4 if moving backwards at 30m/s, etc
+        // 1 if forward velocity is zero but sideways speed is imuYawCogGain in m/s
+        // 2 if moving backwards at imuYawCogGain m/s, 4 if moving backwards at 2* imuYawCogGain m/s, etc
 
 
         DEBUG_SET(DEBUG_ATTITUDE, 2, groundspeedErrorRatio * 100); // pitch attitude
 
         // cut pitch angle by up to half when groundspeed error is above zero
-        // maximum angle reduction to 1/2 of normal max occurs at a groundspeed error of 30 m/s, ie 15m/s away
+        // maximum angle reduction to 2/3 of normal max occurs when flying backwards at imuYawCogGain m/s
         const float limitedGroundspeedError = fminf(1.0f + (groundspeedErrorRatio / 4.0f), 1.5f);
         rescueState.sensor.groundspeedPitchAttenuator = 1.0f / limitedGroundspeedError;
 

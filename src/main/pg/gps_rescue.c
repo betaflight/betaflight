@@ -43,7 +43,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .maxRescueAngle = 45,
     .rollMix = 150,
     .pitchCutoffHz = 75,
-    .imuYawCogGain = 3,
+    .imuYawCogGain = 10,
 
     .descentDistanceM = 20,
     .descendRate = 150,         // cm/s, minimum for descent and landing phase, or for descending if starting high ascent
