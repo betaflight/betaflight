@@ -80,14 +80,14 @@ uint8_t bbPuPdMode;
 FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
 const timerHardware_t bbTimerHardware[] = {
-    DEF_TIM(TMR8,  CH1, NONE,  TIM_USE_NONE, 0, 0, 0),
-    DEF_TIM(TMR8,  CH2, NONE,  TIM_USE_NONE, 0, 1, 0),
-    DEF_TIM(TMR8,  CH3, NONE,  TIM_USE_NONE, 0, 2, 0),
-    DEF_TIM(TMR8,  CH4, NONE,  TIM_USE_NONE, 0, 3, 0),
-    DEF_TIM(TMR1,  CH1, NONE,  TIM_USE_NONE, 0, 0, 0),
-    DEF_TIM(TMR1,  CH2, NONE,  TIM_USE_NONE, 0, 1, 0),
-    DEF_TIM(TMR1,  CH3, NONE,  TIM_USE_NONE, 0, 2, 0),
-    DEF_TIM(TMR1,  CH4, NONE,  TIM_USE_NONE, 0, 3, 0),
+    DEF_TIM(TMR8,  CH1, NONE, 0, 0, 0),
+    DEF_TIM(TMR8,  CH2, NONE, 0, 1, 0),
+    DEF_TIM(TMR8,  CH3, NONE, 0, 2, 0),
+    DEF_TIM(TMR8,  CH4, NONE, 0, 3, 0),
+    DEF_TIM(TMR1,  CH1, NONE, 0, 0, 0),
+    DEF_TIM(TMR1,  CH2, NONE, 0, 1, 0),
+    DEF_TIM(TMR1,  CH3, NONE, 0, 2, 0),
+    DEF_TIM(TMR1,  CH4, NONE, 0, 3, 0),
 };
 
 static FAST_DATA_ZERO_INIT motorDevice_t bbDevice;
