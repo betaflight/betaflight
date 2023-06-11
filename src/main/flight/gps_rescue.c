@@ -111,7 +111,6 @@ typedef struct {
     float alitutudeStepCm;
     float maxPitchStep;
     float absErrorAngle;
-    float groundspeedPitchAttenuator;
     float imuYawCogGain;
 } rescueSensorData_s;
 
@@ -607,24 +606,19 @@ static void sensorUpdate(void)
 
         DEBUG_SET(DEBUG_ATTITUDE, 2, groundspeedErrorRatio * 100); // pitch attitude
 
-        const float invGroundspeedError = 1.0f / (1.0f + (groundspeedErrorRatio / 4.0f));
-        // 1 if groundspeedErrorRatio = 0, falling to 2/3 if groundspeedErrorRatio = 2, 0.5 if groundspeedErrorRatio = 4, etc
-        rescueState.sensor.groundspeedPitchAttenuator = fmaxf(invGroundspeedError, 0.66);
-        // pitch angle limit reduced to minimise speed away in >90 degree IMU error states
-        // max reduction to 2/3 of normal when flying backwards at imuYawCogGain m/s
-        // TO DO: if we can prevent IMU error states we may be able to remove this limit altogether
 
-        rescueState.intent.velocityItermAttenuator = invGroundspeedError;
+        rescueState.intent.velocityItermAttenuator = 1.0f / (1.0f + (groundspeedErrorRatio / 4.0f));
+        // 1 if groundspeedErrorRatio = 0, falling to 2/3 if groundspeedErrorRatio = 2, 0.5 if groundspeedErrorRatio = 4, etc
         // limit (essentially prevent) velocity iTerm accumulation whenever there is a meaningful groundspeed error
-        // this is a crude but simple way to prevent iTerm windup when flying backwards
+        // this is a crude but simple way to prevent iTerm windup when recovering from an IMU error
         // the magnitude of the effect will be less at low GPS data rates, since there will be fewer multiplications per second
         // but for our purposes this should not matter much, our intent is to severely attenuate iTerm
         // if, for example, we had a 90 degree attitude error, groundspeedErrorRatio = 1, invGroundspeedError = 0.8,
         // after 10 iterations, iTerm is 0.1 of what it would have been
         // also is useful in blocking iTerm accumulation if we overshoot the landing point
 
-        // pitchForwardAngle is positive early in a rescue, and associates with a nose forward ground course
         const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? fminf(gpsRescueAngle[AI_PITCH] / 3000.0f, 2.0f) : 0.0f;
+        // pitchForwardAngle is positive early in a rescue, and associates with a nose forward ground course
         // note: gpsRescueAngle[AI_PITCH] is in degrees * 100, and is halved when the IMU is 180 wrong
         // pitchForwardAngle is 0 when flat
         // pitchForwardAngle is 0.5 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
@@ -729,7 +723,7 @@ void descend(void)
         rescueState.intent.velocityItermAttenuator = fminf(proximityToLandingArea, rescueState.intent.velocityItermAttenuator);
 
         // reduce pitch angle limit if there is a significant groundspeed error - eg on overshooting home
-        rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
+        rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
 
         // limit roll angle to half the allowed pitch angle and attenuate when closer to home
         // keep some roll when at the landing circle distance to avoid endless circling
@@ -856,7 +850,7 @@ void gpsRescueUpdate(void)
         }
         if (rescueState.sensor.absErrorAngle < 30.0f) {
             // allow pitch, limiting allowed angle if we are drifting away from home
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
+            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
             rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
         }
@@ -888,7 +882,7 @@ void gpsRescueUpdate(void)
 
         if (newGPSData) {
             // cut back on allowed angle if there is a high groundspeed error
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
+            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
             // introduce roll slowly and limit to half the max pitch angle; earth referenced yaw may add more roll via angle code
             rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * rescueState.intent.velocityItermRelax; 
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
