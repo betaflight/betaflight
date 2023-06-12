@@ -16,9 +16,9 @@
 #
 
 # The target to build, see BASE_TARGETS below
-DEFAULT_TARGET    ?= STM32F405
+DEFAULT_TARGET ?= STM32F405
 TARGET    ?=
-CONFIG    ?= AIRBOTF4
+CONFIG    ?=
 
 # Compile-time options
 OPTIONS   ?=
