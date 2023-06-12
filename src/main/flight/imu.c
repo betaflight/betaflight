@@ -211,7 +211,6 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
     // Use raw heading error (from GPS or whatever else)
     float ex = 0, ey = 0, ez = 0;
-    float ez_ef = 0.0f;
     if (cogYawGain != 0.0f) {
         // Used in a GPS Rescue to boost IMU yaw gain when course over ground and velocity to home differ significantly
 
@@ -515,16 +514,12 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            cogYawGain = gpsRescueGetImuYawCogGain(); // dynamic modification of heading gain factor while in a GPS Rescue
-        } else {
-            cogYawGain = 1.0f; // Heading correction gain factor in normal flight - to do: adjust by pitch angle
-        }
-        if (shouldInitializeGPSHeading()) {
+         cogYawGain = (FLIGHT_MODE(GPS_RESCUE_MODE)) ? gpsRescueGetImuYawCogGain() : 1.0f;
+        // normally update yaw heading with GPS data, but when in a Rescue, modify the IMU yaw gain dynamically
+       if (shouldInitializeGPSHeading()) {
             // Reset our reference and reinitialize quaternion.
             // shouldInitializeGPSHeading() returns true only once.
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-
             cogYawGain = 0.0f; // Don't use the COG when we first initialize
         }
     }
