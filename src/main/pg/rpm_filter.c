@@ -34,7 +34,8 @@ PG_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig,
     .rpm_filter_min_hz = 100,
     .rpm_filter_fade_range_hz = 50,
     .rpm_filter_q = 500,
-    .rpm_filter_lpf_hz = 150
+    .rpm_filter_lpf_hz = 150,
+    .rpm_filter_weights = { 100, 100, 100 },
 );
 
 #endif // USE_RPM_FILTER

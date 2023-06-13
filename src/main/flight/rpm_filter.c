@@ -44,7 +44,6 @@
 
 #include "rpm_filter.h"
 
-#define RPM_FILTER_HARMONICS_MAX 3
 #define RPM_FILTER_DURATION_S    0.001f  // Maximum duration allowed to update all RPM notches once
 #define SECONDS_PER_MINUTE       60.0f
 #define ERPM_PER_LSB             100.0f
@@ -53,6 +52,7 @@
 typedef struct rpmFilter_s {
 
     int numHarmonics;
+    float weights[RPM_FILTER_HARMONICS_MAX];
     float minHz;
     float maxHz;
     float fadeRangeHz;
@@ -109,6 +109,10 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     rpmFilter.q = config->rpm_filter_q / 100.0f;
     rpmFilter.looptimeUs = looptimeUs;
 
+    for (int n = 0; n < RPM_FILTER_HARMONICS_MAX; n++) {
+        rpmFilter.weights[n] = constrainf(config->rpm_filter_weights[n] / 100.0f, 0.0f, 1.0f);
+    }
+
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         for (int motor = 0; motor < getMotorCount(); motor++) {
             for (int i = 0; i < rpmFilter.numHarmonics; i++) {
@@ -145,30 +149,37 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
     // update RPM notches
     for (int i = 0; i < notchUpdatesPerIteration; i++) {
 
-        // select current notch on ROLL
-        biquadFilter_t *template = &rpmFilter.notch[0][motorIndex][harmonicIndex];
+        // Only bother updating notches which can have an effect on filtered output
+        if (rpmFilter.weights[harmonicIndex] > 0.0f) {
 
-        const float frequencyHz = constrainf((harmonicIndex + 1) * motorFrequencyHz[motorIndex], rpmFilter.minHz, rpmFilter.maxHz);
-        const float marginHz = frequencyHz - rpmFilter.minHz;
-        
-        // fade out notch when approaching minHz (turn it off)
-        float weight = 1.0f;
-        if (marginHz < rpmFilter.fadeRangeHz) {
-            weight = marginHz / rpmFilter.fadeRangeHz;
-        }
+            // select current notch on ROLL
+            biquadFilter_t *template = &rpmFilter.notch[0][motorIndex][harmonicIndex];
 
-        // update notch
-        biquadFilterUpdate(template, frequencyHz, rpmFilter.looptimeUs, rpmFilter.q, FILTER_NOTCH, weight);
+            const float frequencyHz = constrainf((harmonicIndex + 1) * motorFrequencyHz[motorIndex], rpmFilter.minHz, rpmFilter.maxHz);
+            const float marginHz = frequencyHz - rpmFilter.minHz;
+            float weight = 1.0f;
 
-        // copy notch properties to corresponding notches on PITCH and YAW
-        for (int axis = 1; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilter_t *dest = &rpmFilter.notch[axis][motorIndex][harmonicIndex];
-            dest->b0 = template->b0;
-            dest->b1 = template->b1;
-            dest->b2 = template->b2;
-            dest->a1 = template->a1;
-            dest->a2 = template->a2;
-            dest->weight = template->weight;
+            // fade out notch when approaching minHz (turn it off)
+            if (marginHz < rpmFilter.fadeRangeHz) {
+                weight *= marginHz / rpmFilter.fadeRangeHz;
+            }
+
+            // attenuate notches per harmonics group
+            weight *= rpmFilter.weights[harmonicIndex];
+
+            // update notch
+            biquadFilterUpdate(template, frequencyHz, rpmFilter.looptimeUs, rpmFilter.q, FILTER_NOTCH, weight);
+
+            // copy notch properties to corresponding notches on PITCH and YAW
+            for (int axis = 1; axis < XYZ_AXIS_COUNT; axis++) {
+                biquadFilter_t *dest = &rpmFilter.notch[axis][motorIndex][harmonicIndex];
+                dest->b0 = template->b0;
+                dest->b1 = template->b1;
+                dest->b2 = template->b2;
+                dest->a1 = template->a1;
+                dest->a2 = template->a2;
+                dest->weight = template->weight;
+            }
         }
 
         // cycle through all notches on ROLL (takes RPM_FILTER_DURATION_S at max.)
@@ -184,6 +195,11 @@ FAST_CODE float rpmFilterApply(const int axis, float value)
     // Iterate over all notches on axis and apply each one to value.
     // Order of application doesn't matter because biquads are linear time-invariant filters.
     for (int i = 0; i < rpmFilter.numHarmonics; i++) {
+
+        if (rpmFilter.weights[i] <= 0.0f) {
+            continue;  // skip harmonics which have no effect on filtered output
+        }
+
         for (int motor = 0; motor < getMotorCount(); motor++) {
             value = biquadFilterApplyDF1Weighted(&rpmFilter.notch[axis][motor][i], value);
         }
