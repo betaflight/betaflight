@@ -358,10 +358,6 @@ void timerInit(void)
     printf("[timer]Init...\n");
 }
 
-void timerIOInit(void)
-{
-}
-
 void timerStart(void)
 {
 }
