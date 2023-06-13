@@ -3955,15 +3955,43 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     textVar = currentControlRateProfile->profileName;
                     break;
 
+                case MSP2TEXT_CUSTOM_MSG:
+                    {   //handle custom msg from msp
+                        char customRawMessage[MAX_CUSTOM_MSG_LENGTH*3];
+                        const uint8_t msgLength = MIN(MAX_CUSTOM_MSG_LENGTH*3, sbufReadU8(src));
+                        memset(customRawMessage, 0, msgLength);
+
+                        for (unsigned int i = 0; i < msgLength; i++) {
+                            customRawMessage[i] = sbufReadU8(src);
+                        }
+
+                        uint8_t spliter_pos = 0;
+                        uint8_t msg_cnt = 0;
+                        uint8_t i = 0;
+                        for(msg_cnt = 0;msg_cnt < 3;msg_cnt++)
+                        {
+                            for(i = spliter_pos;i < 20;i++)
+                            {
+                                if(customRawMessage[i] != CUSTOM_MSG_SPLITER)
+                                    customMsgConfigMutable()->message[msg_cnt][i-spliter_pos] = customRawMessage[i];
+                                else
+                                    break;
+                            }
+                            spliter_pos = i + 1;
+                        }
+                    }
+                    break;
+
                 default:
                     return MSP_RESULT_ERROR;
             }
 
-            memset(textVar, 0, strlen(textVar));
-            for (unsigned int i = 0; i < textLength; i++) {
-                textVar[i] = sbufReadU8(src);
+            if (textType != MSP2TEXT_CUSTOM_MSG) {
+                memset(textVar, 0, strlen(textVar));
+                for (unsigned int i = 0; i < textLength; i++) {
+                    textVar[i] = sbufReadU8(src);
+                }
             }
-
 #ifdef USE_OSD
             if (textType == MSP2TEXT_PILOT_NAME || textType == MSP2TEXT_CRAFT_NAME) {
                 osdAnalyzeActiveElements();
@@ -3971,7 +3999,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         }
         break;
-
+    
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;
