@@ -671,6 +671,10 @@ _TIM_IRQ_HANDLER(TMR20_CH_IRQnHandler, 20);
 #endif
 
 
+void timerIOInit(void)
+{
+}
+
 void timerInit(void)
 {
     memset(timerConfig, 0, sizeof(timerConfig));
