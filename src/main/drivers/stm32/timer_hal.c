@@ -1028,14 +1028,6 @@ void timerInit(void)
         RCC_ClockCmd(timerRCC(TIMER_HARDWARE[i].tim), ENABLE);
     }
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    for (unsigned timerIndex = 0; timerIndex < TIMER_CHANNEL_COUNT; timerIndex++) {
-        const timerHardware_t *timerHardwarePtr = &TIMER_HARDWARE[timerIndex];
-        // XXX IOConfigGPIOAF in timerInit should eventually go away.
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
-    }
-#endif
-
     /* enable the timer peripherals */
     for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         RCC_ClockCmd(timerRCC(TIMER_HARDWARE[i].tim), ENABLE);
@@ -1049,6 +1041,17 @@ void timerInit(void)
     for (unsigned i = 0; i < USED_TIMER_COUNT; i++) {
         timerInfo[i].priority = ~0;
     }
+}
+
+void timerIOInit(void)
+{
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+    for (unsigned timerIndex = 0; timerIndex < TIMER_CHANNEL_COUNT; timerIndex++) {
+        const timerHardware_t *timerHardwarePtr = &TIMER_HARDWARE[timerIndex];
+        // XXX IOConfigGPIOAF in timerInit should eventually go away.
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
+    }
+#endif
 }
 
 // finish configuring timers after allocation phase
