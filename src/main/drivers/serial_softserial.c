@@ -219,13 +219,11 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
-    int pinCfgIndex = portIndex + RESOURCE_SOFT_OFFSET;
+    ioTag_t tagRx = softSerialPinConfig()->ioTagRx[portIndex];
+    ioTag_t tagTx = softSerialPinConfig()->ioTagTx[portIndex];
 
-    ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
-    ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
-
-    const timerHardware_t *timerTx = timerAllocate(tagTx, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
-    const timerHardware_t *timerRx = (tagTx == tagRx) ? timerTx : timerAllocate(tagRx, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+    const timerHardware_t *timerTx = timerAllocate(tagTx, OWNER_SOFTSERIAL_TX, RESOURCE_INDEX(portIndex));
+    const timerHardware_t *timerRx = (tagTx == tagRx) ? timerTx : timerAllocate(tagRx, OWNER_SOFTSERIAL_RX, RESOURCE_INDEX(portIndex));
 
     IO_t rxIO = IOGetByTag(tagRx);
     IO_t txIO = IOGetByTag(tagTx);
@@ -241,7 +239,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         softSerial->timerHardware = timerTx;
         softSerial->txIO = txIO;
         softSerial->rxIO = txIO;
-        IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+        IOInit(txIO, OWNER_SOFTSERIAL_TX, RESOURCE_INDEX(portIndex));
     } else {
         if (mode & MODE_RX) {
             // Need a pin & a timer on RX. Channel should not be N-Channel.
@@ -252,7 +250,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
             softSerial->rxIO = rxIO;
             softSerial->timerHardware = timerRx;
             if (!((mode & MODE_TX) && rxIO == txIO)) {
-                IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+                IOInit(rxIO, OWNER_SOFTSERIAL_RX, RESOURCE_INDEX(portIndex));
             }
         }
 
@@ -272,7 +270,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
                 // Duplex
                 softSerial->exTimerHardware = timerTx;
             }
-            IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+            IOInit(txIO, OWNER_SOFTSERIAL_TX, RESOURCE_INDEX(portIndex));
         }
     }
 

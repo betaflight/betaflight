@@ -67,11 +67,11 @@
 #ifndef UART5_RX_DMA_CHANNEL
 #define UART5_RX_DMA_CHANNEL NULL
 #endif
-#ifndef UART9_TX_DMA_CHANNEL
-#define UART9_TX_DMA_CHANNEL NULL
+#ifndef LPUART1_TX_DMA_CHANNEL
+#define LPUART1_TX_DMA_CHANNEL NULL
 #endif
-#ifndef UART9_RX_DMA_CHANNEL
-#define UART9_RX_DMA_CHANNEL NULL
+#ifndef LPUART1_RX_DMA_CHANNEL
+#define LPUART1_RX_DMA_CHANNEL NULL
 #endif
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
@@ -228,9 +228,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = LPUART1,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_LPUART1_RX,
-        .rxDMAResource = (dmaResource_t *)UART9_RX_DMA_CHANNEL,
+        .rxDMAResource = (dmaResource_t *)LPUART1_RX_DMA_CHANNEL,
         .txDMAChannel = DMA_REQUEST_LPUART1_TX,
-        .txDMAResource = (dmaResource_t *)UART9_TX_DMA_CHANNEL,
+        .txDMAResource = (dmaResource_t *)LPUART1_TX_DMA_CHANNEL,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA3),  GPIO_AF12_LPUART1 },

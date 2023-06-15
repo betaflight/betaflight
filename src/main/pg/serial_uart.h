@@ -27,7 +27,9 @@
 #include "drivers/io_types.h"
 #include "drivers/dma_reqmap.h"
 
-#define UARTDEV_CONFIG_MAX 8 // Alternative to UARTDEV_COUNT_MAX, which requires serial_uart_imp.h
+
+// TODO(hertz@): this alternative got out of sync
+#define UARTDEV_CONFIG_MAX 11 // Alternative to UARTDEV_COUNT_MAX, which requires serial_uart_imp.h
 
 typedef struct serialUartConfig_s {
     int8_t txDmaopt;
