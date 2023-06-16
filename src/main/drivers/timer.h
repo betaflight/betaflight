@@ -127,7 +127,6 @@ void timerConfigure(const timerHardware_t *timHw, uint16_t period, uint32_t hz);
 // Initialisation
 //
 void timerInit(void);
-void timerIOInit(void);
 void timerStart(void);
 
 //

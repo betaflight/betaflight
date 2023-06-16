@@ -851,10 +851,6 @@ void timerInit(void)
     }
 }
 
-void timerIOInit(void)
-{
-    // No-op
-}
 // finish configuring timers after allocation phase
 // start timers
 // TODO - Work in progress - initialization routine must be modified/verified to start correctly without timers
