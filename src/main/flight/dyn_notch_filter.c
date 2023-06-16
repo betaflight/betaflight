@@ -213,7 +213,7 @@ FAST_CODE void dynNotchPush(const int axis, const float sample)
 static void dynNotchProcess(void);
 
 // Downsample and analyse gyro data
-FAST_CODE void dynNotchUpdate(void)
+FAST_CODE_NOINLINE void dynNotchUpdate(void)
 {
     // samples should have been pushed by `dynNotchPush`
     // if gyro sampling is > 1kHz, accumulate and average multiple gyro samples

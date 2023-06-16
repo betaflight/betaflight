@@ -112,6 +112,8 @@ typedef struct gyro_s {
     filterApplyFnPtr notchFilter2ApplyFn;
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
+    phaseComp_t llcGyro[XYZ_AXIS_COUNT];
+
     uint16_t accSampleRateHz;
     uint8_t gyroToUse;
     uint8_t gyroDebugMode;
@@ -169,6 +171,9 @@ typedef struct gyroConfig_s {
     uint8_t gyro_hardware_lpf;                // gyro DLPF setting
     uint8_t gyro_high_fsr;
     uint8_t gyro_to_use;
+
+    uint16_t gyro_llc_freq_hz;
+    int8_t gyro_llc_phase;
 
     uint16_t gyro_lpf1_static_hz;
     uint16_t gyro_lpf2_static_hz;

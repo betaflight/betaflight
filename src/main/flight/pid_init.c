@@ -81,6 +81,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     const uint32_t pidFrequencyNyquist = pidRuntime.pidFrequency / 2; // No rounding needed
 
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        phaseCompInit(&pidRuntime.llcP[axis], pidProfile->pterm_llc_freq_hz, pidProfile->pterm_llc_phase, targetPidLooptime);
+        phaseCompInit(&pidRuntime.llcD[axis], pidProfile->dterm_llc_freq_hz, pidProfile->dterm_llc_phase, targetPidLooptime);
+    }
+
     uint16_t dTermNotchHz;
     if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
         dTermNotchHz = pidProfile->dterm_notch_hz;

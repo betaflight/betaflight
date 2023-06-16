@@ -144,6 +144,7 @@ typedef enum {
     TABLE_FREQ_DOMAIN,
     TABLE_SWITCH_MODE,
 #endif
+    TABLE_PHASECOMP_APPLY,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

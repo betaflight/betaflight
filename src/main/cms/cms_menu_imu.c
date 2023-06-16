@@ -733,6 +733,12 @@ static CMS_Menu cmsx_menuProfileOther = {
     .entries = cmsx_menuProfileOtherEntries,
 };
 
+static uint16_t gyroConfig_gyro_llc_freq_hz;
+static int8_t   gyroConfig_gyro_llc_phase;
+static uint16_t pterm_llc_freq_hz;
+static int8_t   pterm_llc_phase;
+static uint16_t dterm_llc_freq_hz;
+static int8_t   dterm_llc_phase;
 
 static uint16_t gyroConfig_gyro_lpf1_static_hz;
 static uint16_t gyroConfig_gyro_lpf2_static_hz;
@@ -746,13 +752,22 @@ static const void *cmsx_menuGyro_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    gyroConfig_gyro_lpf1_static_hz =  gyroConfig()->gyro_lpf1_static_hz;
-    gyroConfig_gyro_lpf2_static_hz =  gyroConfig()->gyro_lpf2_static_hz;
-    gyroConfig_gyro_soft_notch_hz_1 = gyroConfig()->gyro_soft_notch_hz_1;
+    gyroConfig_gyro_llc_freq_hz = gyroConfig()->gyro_llc_freq_hz;
+    gyroConfig_gyro_llc_phase   = gyroConfig()->gyro_llc_phase;
+
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    pterm_llc_freq_hz = pidProfile->pterm_llc_freq_hz;
+    pterm_llc_phase   = pidProfile->pterm_llc_phase;
+    dterm_llc_freq_hz = pidProfile->dterm_llc_freq_hz;
+    dterm_llc_phase   = pidProfile->dterm_llc_phase;
+
+    gyroConfig_gyro_lpf1_static_hz      = gyroConfig()->gyro_lpf1_static_hz;
+    gyroConfig_gyro_lpf2_static_hz      = gyroConfig()->gyro_lpf2_static_hz;
+    gyroConfig_gyro_soft_notch_hz_1     = gyroConfig()->gyro_soft_notch_hz_1;
     gyroConfig_gyro_soft_notch_cutoff_1 = gyroConfig()->gyro_soft_notch_cutoff_1;
-    gyroConfig_gyro_soft_notch_hz_2 = gyroConfig()->gyro_soft_notch_hz_2;
+    gyroConfig_gyro_soft_notch_hz_2     = gyroConfig()->gyro_soft_notch_hz_2;
     gyroConfig_gyro_soft_notch_cutoff_2 = gyroConfig()->gyro_soft_notch_cutoff_2;
-    gyroConfig_gyro_to_use = gyroConfig()->gyro_to_use;
+    gyroConfig_gyro_to_use              = gyroConfig()->gyro_to_use;
 
     return NULL;
 }
@@ -761,6 +776,15 @@ static const void *cmsx_menuGyro_onExit(displayPort_t *pDisp, const OSD_Entry *s
 {
     UNUSED(pDisp);
     UNUSED(self);
+
+    gyroConfigMutable()->gyro_llc_freq_hz = gyroConfig_gyro_llc_freq_hz;
+    gyroConfigMutable()->gyro_llc_phase   = gyroConfig_gyro_llc_phase;
+
+    pidProfile_t *pidProfile = currentPidProfile;
+    pidProfile->pterm_llc_freq_hz = pterm_llc_freq_hz;
+    pidProfile->pterm_llc_phase   = pterm_llc_phase;
+    pidProfile->dterm_llc_freq_hz = dterm_llc_freq_hz;
+    pidProfile->dterm_llc_phase   = dterm_llc_phase;
 
     gyroConfigMutable()->gyro_lpf1_static_hz =  gyroConfig_gyro_lpf1_static_hz;
     gyroConfigMutable()->gyro_lpf2_static_hz =  gyroConfig_gyro_lpf2_static_hz;
@@ -776,6 +800,13 @@ static const void *cmsx_menuGyro_onExit(displayPort_t *pDisp, const OSD_Entry *s
 static const OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL },
+
+    { "LLC G FREQ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_llc_freq_hz,   1, LPF_MAX_HZ, 1 } },
+    { "LLC G PHASE",  OME_INT8,   NULL, &(OSD_INT8_t)   { &gyroConfig_gyro_llc_phase,   -90,         90, 1 } },
+    { "LLC P FREQ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &pterm_llc_freq_hz,             1, LPF_MAX_HZ, 1 } },
+    { "LLC P PHASE",  OME_INT8,   NULL, &(OSD_INT8_t)   { &pterm_llc_phase,             -90,         90, 1 } },
+    { "LLC D FREQ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dterm_llc_freq_hz,             1, LPF_MAX_HZ, 1 } },
+    { "LLC D PHASE",  OME_INT8,   NULL, &(OSD_INT8_t)   { &dterm_llc_phase,             -90,         90, 1 } },
 
     { "GYRO LPF1",  OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_lpf1_static_hz, 0, LPF_MAX_HZ, 1 } },
 #ifdef USE_GYRO_LPF2

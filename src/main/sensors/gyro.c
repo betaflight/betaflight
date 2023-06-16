@@ -96,7 +96,7 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyro.gyroSensor1.gyroDev;
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
 
-PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 9);
+PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 10);
 
 #ifndef DEFAULT_GYRO_TO_USE
 #define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_1
@@ -113,6 +113,8 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
         // overridden and the static lowpass 1 is disabled. We can't set this
         // value to 0 otherwise Configurator versions 10.4 and earlier will also
         // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+    gyroConfig->gyro_llc_freq_hz = 100;
+    gyroConfig->gyro_llc_phase = 0;
     gyroConfig->gyro_lpf2_type = FILTER_PT1;
     gyroConfig->gyro_lpf2_static_hz = GYRO_LPF2_HZ_DEFAULT;
     gyroConfig->gyro_high_fsr = false;

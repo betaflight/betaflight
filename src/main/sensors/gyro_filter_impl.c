@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
+static FAST_CODE_NOINLINE void GYRO_FILTER_FUNCTION_NAME(void)
 {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // DEBUG_GYRO_RAW records the raw value read from the sensor (not zero offset, not scaled)
@@ -81,6 +81,17 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
             }
         }
 #endif
+
+        if (axis == gyro.gyroDebugAxis) {
+            DEBUG_SET(DEBUG_LLC_GYRO, 0, lrintf(gyro.gyroADC[axis] * 100.0f));
+            DEBUG_SET(DEBUG_LLC_GYRO, 1, lrintf(gyroADCf * 100.0f));
+        }
+        if (gyroConfig()->gyro_llc_phase != 0) {
+            gyroADCf = phaseCompApply(&gyro.llcGyro[axis], gyroADCf);
+        }
+        if (axis == gyro.gyroDebugAxis) {
+            DEBUG_SET(DEBUG_LLC_GYRO, 2, lrintf(gyroADCf * 100.0f));
+        }
 
         // DEBUG_GYRO_FILTERED records the scaled, filtered, after all software filtering has been applied.
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_FILTERED, axis, lrintf(gyroADCf));
