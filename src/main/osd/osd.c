@@ -1271,6 +1271,7 @@ void osdProcessStats2(timeUs_t currentTimeUs)
 void osdProcessStats3(void)
 {
 #if defined(USE_ACC)
+    osdGForce = 0.0f;
     if (sensors(SENSOR_ACC)
        && (VISIBLE(osdElementConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE))) {
             // only calculate the G force if the element is visible or the stat is enabled
