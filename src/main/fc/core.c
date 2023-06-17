@@ -1077,7 +1077,7 @@ void processRxModes(timeUs_t currentTimeUs)
 #endif // USE_ACRO_TRAINER
 
 #ifdef USE_RC_SMOOTHING_FILTER
-    if (ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
+    if (ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete() && rxConfig()->rc_smoothing_mode) {
         beeper(BEEPER_RC_SMOOTHING_INIT_FAIL);
     }
 #endif
