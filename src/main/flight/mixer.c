@@ -97,21 +97,6 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
-static float calcEzLandStrength(float throttlePercent, float maxDeflection)
-{
-    // easy landing code, limits motor output when sticks and throttle are below threshold
-    float ezLandAttenuator = 0.0f;
-    if (throttlePercent < mixerRuntime.ezLandingThreshold
-            && maxDeflection < mixerRuntime.ezLandingThreshold) { // throttle low
-        // all sticks, including throttle, under threshold
-        ezLandAttenuator = fmaxf(maxDeflection, throttlePercent); // value range 0 -> threshold
-        ezLandAttenuator /= mixerRuntime.ezLandingThreshold; // normalised 0 - 1
-        ezLandAttenuator = 1.0f - ezLandAttenuator; // 1 -> 0
-        ezLandAttenuator *= mixerRuntime.ezLandingLimit; // eg 0.9 -> 0.0 if limit is 10
-    }
-    return constrainf(ezLandAttenuator, 0.0f, 1.0f);
-}
-
 static FAST_DATA_ZERO_INIT float throttle = 0;
 static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
 static FAST_DATA_ZERO_INIT float motorOutputMin;
@@ -518,6 +503,18 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
 }
 
+static float calcEzLandLimit(float maxDeflection)
+{
+    // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
+    // 0.0 = no increas allowed, 1.0 = 100% increase allowed
+    float ezLandLimit = 1.0f;
+    if (maxDeflection < mixerRuntime.ezLandingThreshold) { // roll, pitch and yaw sticks under threshold
+        ezLandLimit = maxDeflection / mixerRuntime.ezLandingThreshold; // normalised 0 - 1
+        ezLandLimit = fmaxf(ezLandLimit, mixerRuntime.ezLandingLimit); // stay above the minimum
+    }
+    return ezLandLimit;
+}
+
 static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
 {
     // Calculate factor for normalizing motor mix range to <= 1.0
@@ -526,8 +523,8 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     const float normalizedMotorMixMax = motorMixMax * baseNormalizationFactor;
 
     // Upper throttle limit
-    // range default 0.1 - 1.0 with ezLandingLimit = 10, no stick deflection -> 0.1
-    const float ezLandLimit = 1.0f - calcEzLandStrength(0.0f, getMaxRcDeflectionAbs());
+    // range default 0.05 - 1.0 with ezLandingLimit = 5, no stick deflection -> 0.05
+    const float ezLandLimit = calcEzLandLimit(getMaxRcDeflectionAbs());
     // use the largest of throttle and limit calculated from RPY stick positions
     float upperLimit = fmaxf(ezLandLimit, throttle);
     // limit throttle to avoid clipping the highest motor output
