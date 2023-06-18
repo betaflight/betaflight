@@ -34,7 +34,7 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
+#if defined(USE_SOFTSERIAL)
 #include "drivers/serial_softserial.h"
 #endif
 
@@ -99,10 +99,8 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_UART10
     SERIAL_PORT_USART10,
 #endif
-#ifdef USE_SOFTSERIAL1
+#ifdef USE_SOFTSERIAL
     SERIAL_PORT_SOFTSERIAL1,
-#endif
-#ifdef USE_SOFTSERIAL2
     SERIAL_PORT_SOFTSERIAL2,
 #endif
 #ifdef USE_LPUART1
@@ -358,7 +356,7 @@ serialPort_t *openSerialPort(
     portMode_e mode,
     portOptions_e options)
 {
-#if !(defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
+#if !(defined(USE_UART) || defined(USE_SOFTSERIAL))
     UNUSED(rxCallback);
     UNUSED(rxCallbackData);
     UNUSED(baudRate);
@@ -424,12 +422,10 @@ serialPort_t *openSerialPort(
             break;
 #endif
 
-#ifdef USE_SOFTSERIAL1
+#ifdef USE_SOFTSERIAL
         case SERIAL_PORT_SOFTSERIAL1:
             serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, rxCallbackData, baudRate, mode, options);
             break;
-#endif
-#ifdef USE_SOFTSERIAL2
         case SERIAL_PORT_SOFTSERIAL2:
             serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, rxCallbackData, baudRate, mode, options);
             break;
@@ -467,7 +463,7 @@ void closeSerialPort(serialPort_t *serialPort)
 
 void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
 {
-#if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
+#if !defined(USE_SOFTSERIAL)
     UNUSED(softserialEnabled);
 #endif
 
@@ -496,17 +492,12 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             }
         }
 #endif
-        else if ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
-#ifdef USE_SOFTSERIAL1
-            && !(softserialEnabled && (softSerialPinConfig()->ioTagTx[SOFTSERIAL1] ||
-                softSerialPinConfig()->ioTagRx[SOFTSERIAL1]))
+#ifdef USE_SOFTSERIAL
+        else if (!softserialEnabled &&
+            ((softSerialPinConfig()->ioTagTx[SOFTSERIAL1] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) ||
+            (softSerialPinConfig()->ioTagTx[SOFTSERIAL2] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2)))
 #endif
-           ) || (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
-#ifdef USE_SOFTSERIAL2
-            && !(softserialEnabled && (softSerialPinConfig()->ioTagTx[SOFTSERIAL2] ||
-                softSerialPinConfig()->ioTagRx[SOFTSERIAL2]))
-#endif
-            )) {
+        {
             serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
             serialPortCount--;
         }

@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
+#if defined(USE_SOFTSERIAL)
 
 #include "build/build_config.h"
 #include "build/atomic.h"
@@ -47,11 +47,7 @@
 #define RX_TOTAL_BITS 10
 #define TX_TOTAL_BITS 10
 
-#if defined(USE_SOFTSERIAL1) && defined(USE_SOFTSERIAL2)
 #define MAX_SOFTSERIAL_PORTS 2
-#else
-#define MAX_SOFTSERIAL_PORTS 1
-#endif
 
 typedef enum {
     TIMER_MODE_SINGLE,

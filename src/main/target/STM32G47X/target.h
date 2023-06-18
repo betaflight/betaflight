@@ -63,8 +63,7 @@
 
 #define USE_VCP
 
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
+#define USE_SOFTSERIAL
 
 #define UNIFIED_SERIAL_PORT_COUNT       3
 

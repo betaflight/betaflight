@@ -170,16 +170,14 @@
 # endif
 #endif
 
-#ifdef USE_SOFTSERIAL1
+#ifdef USE_SOFTSERIAL
 # if !defined(SOFTSERIAL1_RX_PIN)
 #  define SOFTSERIAL1_RX_PIN NONE
 # endif
 # if !defined(SOFTSERIAL1_TX_PIN)
 #  define SOFTSERIAL1_TX_PIN NONE
 # endif
-#endif
 
-#ifdef USE_SOFTSERIAL2
 # if !defined(SOFTSERIAL2_RX_PIN)
 #  define SOFTSERIAL2_RX_PIN NONE
 # endif
@@ -188,7 +186,7 @@
 # endif
 #endif
 
-#if defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL1)
+#if defined(USE_UART) || defined(USE_SOFTSERIAL)
 typedef struct serialDefaultPin_s {
     serialPortIdentifier_e ident;
     ioTag_t rxIO, txIO, inverterIO;
@@ -242,17 +240,15 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
     }
 }
 
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL1)
+#if defined(USE_SOFTSERIAL)
 typedef struct softSerialDefaultPin_s {
     serialPortIdentifier_e ident;
     ioTag_t rxIO, txIO;
 } softSerialDefaultPin_t;
 
 static const softSerialDefaultPin_t softSerialDefaultPin[SOFTSERIAL_COUNT] = {
-#ifdef USE_SOFTSERIAL1
+#ifdef USE_SOFTSERIAL
     { SERIAL_PORT_SOFTSERIAL1, IO_TAG(SOFTSERIAL1_RX_PIN), IO_TAG(SOFTSERIAL1_TX_PIN) },
-#endif
-#ifdef USE_SOFTSERIAL2
     { SERIAL_PORT_SOFTSERIAL2, IO_TAG(SOFTSERIAL2_RX_PIN), IO_TAG(SOFTSERIAL2_TX_PIN) },
 #endif
 };

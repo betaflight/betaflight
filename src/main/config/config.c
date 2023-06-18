@@ -423,7 +423,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_RX_SERIAL);
 #endif
 
-#if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
+#if !defined(USE_SOFTSERIAL)
     featureDisableImmediate(FEATURE_SOFTSERIAL);
 #endif
 

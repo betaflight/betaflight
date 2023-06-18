@@ -666,7 +666,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef USE_VCP
         targetCapabilities |= BIT(TARGET_HAS_VCP);
 #endif
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
+#if defined(USE_SOFTSERIAL)
         targetCapabilities |= BIT(TARGET_HAS_SOFTSERIAL);
 #endif
         targetCapabilities |= BIT(TARGET_IS_UNIFIED);
