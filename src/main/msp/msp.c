@@ -1530,6 +1530,10 @@ case MSP_NAME:
         sbufWriteU16(dst, GPS_distanceToHome);
         sbufWriteU16(dst, GPS_directionToHome / 10); // resolution increased in Betaflight 4.4 by factor of 10, this maintains backwards compatibility for DJI OSD
         sbufWriteU8(dst, GPS_update & 1);
+        // Added in API version 1.46
+        // report GPS home position
+        sbufWriteU32(dst, GPS_home[GPS_LATITUDE]);
+        sbufWriteU32(dst, GPS_home[GPS_LONGITUDE]);
         break;
 
     case MSP_GPSSVINFO:
