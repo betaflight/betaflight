@@ -104,6 +104,7 @@ int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, co
 
 int displayWriteCentered(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *text)
 {
+    UNUSED(x);
     uint8_t midCol = instance->cols / 2;
     return displayWrite(instance, midCol - (strlen(text) / 2), y, attr, text);
 }
