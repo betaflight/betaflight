@@ -31,6 +31,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/vector.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -198,7 +199,7 @@ static float invSqrt(float x)
     return 1.0f / sqrtf(x);
 }
 
-static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
+STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag,
                                 float cogYawGain, float courseOverGround, const float dcmKpGain)
@@ -212,43 +213,59 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     float ex = 0, ey = 0, ez = 0;
     if (cogYawGain != 0.0f) {
         // Used in a GPS Rescue to boost IMU yaw gain when course over ground and velocity to home differ significantly
-        while (courseOverGround >  M_PIf) {
-            courseOverGround -= (2.0f * M_PIf);
-        }
-        while (courseOverGround < -M_PIf) {
-            courseOverGround += (2.0f * M_PIf);
-        }
-        const float ez_ef = cogYawGain * (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
-        ex = rMat[2][0] * ez_ef;
-        ey = rMat[2][1] * ez_ef;
-        ez = rMat[2][2] * ez_ef;
+
+        // Compute heading vector in EF from scalar CoG. CoG is clockwise from North
+        // Note that Earth frame X is pointing north and sin/cos argument is anticlockwise
+        const fpVector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
+#define THRUST_COG 1
+#if THRUST_COG
+        const fpVector2_t heading_ef = {.x = rMat[X][Z], .y = rMat[Y][Z]};  // body Z axis (up) - direction of thrust vector
+#else
+        const fpVector2_t heading_ef = {.x = rMat[0][0], .y = rMat[1][0]};  // body X axis. Projected vector magnitude is reduced as pitch increases
+#endif
+        // cross product = 1 * |heading| * sin(angle) (magnitude of Z vector in 3D)
+        // order operands so that rotation is in direction of zero error
+        const float cross = vector2Cross(&heading_ef, &cog_ef);
+        // dot product, 1 * |heading| * cos(angle)
+        const float dot = vector2Dot(&heading_ef, &cog_ef);
+        // use cross product / sin(angle) when error < 90deg (cos > 0),
+        //   |heading| if error is larger (cos < 0)
+        const float heading_mag = vector2Mag(&heading_ef);
+        float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * heading_mag;
+#if THRUST_COG
+        // increase gain for small tilt (just heuristic; sqrt is cheap on F4+)
+        ez_ef /= sqrtf(heading_mag);
+#endif
+        ez_ef *= cogYawGain;          // apply gain parameter
+        // covert to body frame
+        ex += rMat[2][0] * ez_ef;
+        ey += rMat[2][1] * ez_ef;
+        ez += rMat[2][2] * ez_ef;
     }
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
-    float mx = mag.magADC[X];
-    float my = mag.magADC[Y];
-    float mz = mag.magADC[Z];
-    float recipMagNorm = sq(mx) + sq(my) + sq(mz);
+    fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
+    float recipMagNorm = vectorNormSquared(&mag_bf);
     if (useMag && recipMagNorm > 0.01f) {
         // Normalise magnetometer measurement
-        recipMagNorm = invSqrt(recipMagNorm);
-        mx *= recipMagNorm;
-        my *= recipMagNorm;
-        mz *= recipMagNorm;
+        vectorNormalize(&mag_bf, &mag_bf);
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles
 
-        // (hx; hy; 0) - measured mag field vector in EF (assuming Z-component is zero)
+        // (hx; hy; 0) - measured mag field vector in EF (forcing Z-component to zero)
         // (bx; 0; 0) - reference mag field vector heading due North in EF (assuming Z-component is zero)
-        const float hx = rMat[0][0] * mx + rMat[0][1] * my + rMat[0][2] * mz;
-        const float hy = rMat[1][0] * mx + rMat[1][1] * my + rMat[1][2] * mz;
-        const float bx = sqrtf(hx * hx + hy * hy);
+        fpVector3_t mag_ef;
+        matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf);  // BF->EF
+        mag_ef.z = 0.0f;                // project to XY plane (optimized away)
 
+        fpVector2_t north_ef = {{ 1.0f, 0.0f }};
         // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
-        const float ez_ef = -(hy * bx);
-
+        // increase gain on large misalignment
+        const float dot = vector2Dot((fpVector2_t*)&mag_ef, &north_ef);
+        const float cross = vector2Cross((fpVector2_t*)&mag_ef, &north_ef);
+        const float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * vector2Mag((fpVector2_t*)&mag_ef);
         // Rotate mag error vector back to BF and accumulate
         ex += rMat[2][0] * ez_ef;
         ey += rMat[2][1] * ez_ef;
