@@ -66,7 +66,8 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .velD = 12,
     .yawP = 20,
 
-    .useMag = GPS_RESCUE_USE_MAG
+    .useMag = GPS_RESCUE_USE_MAG,
+    .imuYawGain = 10
 );
 
 #endif // USE_GPS_RESCUE

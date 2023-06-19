@@ -49,7 +49,7 @@ typedef struct gpsRescue_s {
     uint8_t  rollMix;
     uint8_t  disarmThreshold;
     uint8_t  pitchCutoffHz;
-    uint8_t  imuYawCogGain;
+    uint8_t  imuYawGain;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
