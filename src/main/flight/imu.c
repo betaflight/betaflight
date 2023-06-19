@@ -382,61 +382,58 @@ static bool imuIsAccelerometerHealthy(float *accAverage)
 //   - reset the gain back to the standard setting
 static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
 {
-    static bool lastArmState = false;
-    static timeUs_t gyroQuietPeriodTimeEnd = 0;
-    static timeUs_t attitudeResetTimeEnd = 0;
-    static bool attitudeResetCompleted = false;
-    float ret;
-    bool attitudeResetActive = false;
+    static enum {
+        stArmed,
+        stRestart,
+        stQuiet,
+        stReset,
+        stDisarmed
+    } arState = stDisarmed;
+
+    static timeUs_t stateTimeout;
 
     const bool armState = ARMING_FLAG(ARMED);
 
     if (!armState) {
-        if (lastArmState) {   // Just disarmed; start the gyro quiet period
-            gyroQuietPeriodTimeEnd = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
-            attitudeResetTimeEnd = 0;
-            attitudeResetCompleted = false;
-        }
-
         // If gyro activity exceeds the threshold then restart the quiet period.
         // Also, if the attitude reset has been complete and there is subsequent gyro activity then
-        // start the reset cycle again. This addresses the case where the pilot rights the craft after a crash.
-        if ((attitudeResetTimeEnd > 0) || (gyroQuietPeriodTimeEnd > 0) || attitudeResetCompleted) {
-            if ((fabsf(gyroAverage[X]) > ATTITUDE_RESET_GYRO_LIMIT)
-                || (fabsf(gyroAverage[Y]) > ATTITUDE_RESET_GYRO_LIMIT)
-                || (fabsf(gyroAverage[Z]) > ATTITUDE_RESET_GYRO_LIMIT)
-                || (!useAcc)) {
-
-                gyroQuietPeriodTimeEnd = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
-                attitudeResetTimeEnd = 0;
-            }
+        //  start the reset cycle again. This addresses the case where the pilot rights the craft after a crash.
+        if (   (fabsf(gyroAverage[X]) > ATTITUDE_RESET_GYRO_LIMIT)  // gyro axis limit exceeded
+            || (fabsf(gyroAverage[Y]) > ATTITUDE_RESET_GYRO_LIMIT)
+            || (fabsf(gyroAverage[Z]) > ATTITUDE_RESET_GYRO_LIMIT)
+            || !useAcc                                              // acc reading out of range
+            ) {
+            arState = stRestart;
         }
-        if (attitudeResetTimeEnd > 0) {        // Resetting the attitude estimation
-            if (currentTimeUs >= attitudeResetTimeEnd) {
-                gyroQuietPeriodTimeEnd = 0;
-                attitudeResetTimeEnd = 0;
-                attitudeResetCompleted = true;
-            } else {
-                attitudeResetActive = true;
-            }
-        } else if ((gyroQuietPeriodTimeEnd > 0) && (currentTimeUs >= gyroQuietPeriodTimeEnd)) {
-            // Start the high gain period to bring the estimation into convergence
-            attitudeResetTimeEnd = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
-            gyroQuietPeriodTimeEnd = 0;
-        }
-    }
-    lastArmState = armState;
 
-    if (attitudeResetActive) {
-        ret = ATTITUDE_RESET_KP_GAIN;
+        switch (arState) {
+        default: // should not happen, safeguard only
+        case stArmed:
+        case stRestart:
+            stateTimeout = currentTimeUs + ATTITUDE_RESET_QUIET_TIME;
+            arState = stQuiet;
+            // fallthrough
+        case stQuiet:
+            if (cmpTimeUs(currentTimeUs, stateTimeout) >= 0) {
+                stateTimeout = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
+                arState = stReset;
+            }
+            // low gain during quiet phase
+            return imuRuntimeConfig.dcm_kp;
+        case stReset:
+            if (cmpTimeUs(currentTimeUs, stateTimeout) >= 0) {
+                arState = stDisarmed;
+            }
+            // high gain after quiet period
+            return ATTITUDE_RESET_KP_GAIN;
+        case stDisarmed:
+            // Scale the kP to generally converge faster when disarmed.
+            return imuRuntimeConfig.dcm_kp * 10.0f;
+        }
     } else {
-        ret = imuRuntimeConfig.dcm_kp;
-        if (!armState) {
-            ret *= 10.0f; // Scale the kP to generally converge faster when disarmed.
-        }
+        arState = stArmed;
+        return imuRuntimeConfig.dcm_kp;
     }
-
-    return ret;
 }
 
 #if defined(USE_GPS)
