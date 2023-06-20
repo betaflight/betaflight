@@ -182,7 +182,6 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 
     uint8_t repeats = 1;
     timeUs_t delayAfterCommandUs = DSHOT_COMMAND_DELAY_US;
-    motorVTable_t vTable = motorGetVTable();
 
     switch (command) {
     case DSHOT_CMD_SPIN_DIRECTION_1:
@@ -217,29 +216,18 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
         for (; repeats; repeats--) {
             delayMicroseconds(DSHOT_COMMAND_DELAY_US);
 
-            // Initialise the output buffers
-            if (vTable.updateInit) {
-                vTable.updateInit();
-            }
-
+#ifdef USE_DSHOT_TELEMETRY
+            timeUs_t timeoutUs = micros() + 1000;
+            while (!motorGetVTable().decodeTelemetry() &&
+                   cmpTimeUs(timeoutUs, micros()) > 0);
+#endif
             for (uint8_t i = 0; i < motorDeviceCount(); i++) {
                 motorDmaOutput_t *const motor = getMotorDmaOutput(i);
                 motor->protocolControl.requestTelemetry = true;
-                vTable.writeInt(i, (i == index || index == ALL_MOTORS) ? command : DSHOT_CMD_MOTOR_STOP);
+                motorGetVTable().writeInt(i, (i == index || index == ALL_MOTORS) ? command : DSHOT_CMD_MOTOR_STOP);
             }
 
-            // Don't attempt to write commands to the motors if telemetry is still being received
-            if (vTable.telemetryWait) {
-                (void)vTable.telemetryWait();
-            }
-
-            vTable.updateComplete();
-
-            // Perform the decode of the last data received
-            // New data will be received once the send of motor data, triggered above, completes
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-            vTable.decodeTelemetry();
-#endif
+            motorGetVTable().updateComplete();
         }
         delayMicroseconds(delayAfterCommandUs);
 
