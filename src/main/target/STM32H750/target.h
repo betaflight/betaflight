@@ -66,6 +66,12 @@
 
 #define USE_SPI_DMA_ENABLE_LATE
 
+#define USE_VCP
+
+#define USE_SOFTSERIAL
+
+#define UNIFIED_SERIAL_PORT_COUNT       3
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -86,12 +92,6 @@
 #define TARGET_IO_PORTF 0xffff
 
 #define USE_BEEPER
-
-#define USE_VCP
-
-#define USE_SOFTSERIAL
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
 
 #define USE_USB_DETECT
 
