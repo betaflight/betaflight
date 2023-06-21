@@ -3594,13 +3594,14 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
     gpsEnablePassthrough(cliPort);
 }
 
+#ifdef USE_GPS_DEBUG
 static void cliGpsInfo(const char *cmdName, char *cmdLine) {
     UNUSED(cmdName);
     UNUSED(cmdLine);
 
-    cliPrintLinef("# MON-VER acquired: %s", gpsData.acquiredMonVer ? "true" : "false");
+    cliPrintLinef("# MON-VER acquired: %s", gpsData.unitVersion != UBX_VERSION_UNDEF ? "true" : "false");
 
-    if (gpsData.acquiredMonVer) {
+    if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
 
         cliPrintLinef("swVersion: ");
         cliPrint(" ");
@@ -3620,7 +3621,7 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
 
         /*for (size_t i = 0; i < 10; ++i) {
             cliPrint(" ");
-            for(size_t j = i * 30; j < i * 30 + 30; ++j) {
+            for (size_t j = i * 30; j < i * 30 + 30; ++j) {
                 if (j == i * 30 && gpsData.monVer.extension[j] == 0) {
                     return;
                 }
@@ -3633,6 +3634,7 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
         }*/
     }
 }
+#endif // USE_GPS_DEBUG
 #endif
 
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
@@ -4857,7 +4859,7 @@ if (buildKey) {
                 cliPrint("configured");
             }
         }
-        if (gpsData.acquiredMonVer) {
+        if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
             cliPrintLinefeed();
             cliPrintf("     Ublox HW Version: %s, SW Version: %d.%d, Proto Version: %d.%d",
                       ubloxVersion_map[gpsData.unitVersion].str,
@@ -6565,7 +6567,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
+#ifdef USE_GPS_DEBUG
     CLI_COMMAND_DEF("gps_info", "shows the boot screen from device init", NULL, cliGpsInfo),
+#endif
 #endif
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),

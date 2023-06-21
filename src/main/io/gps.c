@@ -399,7 +399,7 @@ static void gpsSetState(gpsState_e state)
 void gpsInit(void)
 {
     gpsPackageCounter = 0;
-    DEBUG_SET(DEBUG_GPS_FLIGHT_STATISTICS, 1, gpsPackageCounter);
+    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
     gpsDataIntervalSeconds = 0.1f;
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
@@ -698,7 +698,7 @@ static void ubloxSendPollMessage(uint8_t msg_id)
 }
 
 static void ubloxSendNAV5Message(uint8_t model) {
-    DEBUG_SET(DEBUG_GPS_FLIGHT_STATISTICS, 0, model);
+    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 0, model);
     ubxMessage_t tx_buffer;
     if (ubloxHasValSetGet()) {
         uint8_t payload[4];
@@ -923,6 +923,7 @@ static void ubloxSetSbas(void)
     ubxMessage_t tx_buffer;
 
     if (ubloxHasValSetGet()) {
+
         uint8_t payload[8];
         payload[0] = (uint8_t) ((gpsConfig()->sbasMode != SBAS_NONE) >> (8 * 0));
 
@@ -936,19 +937,19 @@ static void ubloxSetSbas(void)
             offset += ubloxAddValSet(&tx_buffer, CFG_SBAS_USE_INTEGRITY, payload, offset);
         }
 
-        uint64_t mask = 0x0;
+        uint64_t mask = SBAS_SEARCH_ALL;
         switch (gpsConfig()->sbasMode) {
             case SBAS_EGNOS:
-                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN123) | UBXSBASPRNMASK(SBAS_SEARCH_PRN126) | UBXSBASPRNMASK(SBAS_SEARCH_PRN136);
+                mask = SBAS_SEARCH_PRN(123) | SBAS_SEARCH_PRN(126) | SBAS_SEARCH_PRN(136);
                 break;
             case SBAS_WAAS:
-                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN131) | UBXSBASPRNMASK(SBAS_SEARCH_PRN133) | UBXSBASPRNMASK(SBAS_SEARCH_PRN135) | UBXSBASPRNMASK(SBAS_SEARCH_PRN138);
+                mask = SBAS_SEARCH_PRN(131) | SBAS_SEARCH_PRN(133) | SBAS_SEARCH_PRN(135) | SBAS_SEARCH_PRN(138);
                 break;
             case SBAS_MSAS:
-                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN129) | UBXSBASPRNMASK(SBAS_SEARCH_PRN137);
+                mask = SBAS_SEARCH_PRN(129) | SBAS_SEARCH_PRN(137);
                 break;
             case SBAS_GAGAN:
-                mask = UBXSBASPRNMASK(SBAS_SEARCH_PRN127) | UBXSBASPRNMASK(SBAS_SEARCH_PRN128) | UBXSBASPRNMASK(SBAS_SEARCH_PRN132);
+                mask = SBAS_SEARCH_PRN(127) | SBAS_SEARCH_PRN(128) | SBAS_SEARCH_PRN(132);
                 break;
             case SBAS_AUTO:
             default:
@@ -1080,7 +1081,7 @@ void gpsInitUblox(void)
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
                 switch (gpsData.state_position) {
                     case UBLOX_DETECT_UNIT:
-                        if (!gpsData.acquiredMonVer) {
+                        if (gpsData.unitVersion == UBX_VERSION_UNDEF) {
                             ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
                             break;
                         }
@@ -1092,7 +1093,7 @@ void gpsInitUblox(void)
                         ubloxSetNavRate(1, 1, 1);
 
                         gpsData.ubloxUsePVT = gpsData.unitVersion > UBX_VERSION_M6;
-                        gpsData.ubloxUseSAT = true;
+                        gpsData.ubloxUseSAT = gpsData.unitVersion > UBX_VERSION_M8;
 
                         ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
 
@@ -1131,7 +1132,7 @@ void gpsInitUblox(void)
                         ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_RMC, 0); // RMC: Recommended Minimum data
                         break;
                     case UBLOX_MSG_SOL:
-                        if (gpsData.unitVersion > UBX_VERSION_M8) {
+                        if (gpsData.unitVersion >= UBX_VERSION_M8) {
                             gpsData.state_position++;
                             break;
                         }
@@ -1179,7 +1180,7 @@ void gpsInitUblox(void)
                         if (ubloxHasValSetGet()) {
                             ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_I2C, 0);
                             ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_SPI, 0);
-                            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+                            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_UART1, 5);
                             break;
                         }
                         ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SAT, 5); // set SAT MSG rate (every 5 cycles)
@@ -1369,18 +1370,18 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_STATE_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
-            DEBUG_SET(DEBUG_GPS_FLIGHT_STATISTICS, 2, millis() - gpsData.lastMessage);
+            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastMessage);
             if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
-                DEBUG_SET(DEBUG_GPS_FLIGHT_STATISTICS, 3, debug[3] + 1);
+                DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, debug[3] + 1);
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
                 gpsPackageCounter = 0;
-                DEBUG_SET(DEBUG_GPS_FLIGHT_STATISTICS, 1, gpsPackageCounter);
+                DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
 #ifdef USE_GPS_UBLOX
             } else {
                 if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) { // Only if autoconfig is enabled
                     switch (gpsData.state_position) {
                         case UBLOX_DETECT_UNIT:
-                            gpsData.state_position = (uint8_t)UBLOX_INITIALIZE;
+                            gpsData.state_position = UBLOX_INITIALIZE;
                             break;
                         case UBLOX_INITIALIZE:
                             if (!isConfiguratorConnected()) {
@@ -1464,19 +1465,19 @@ static void gpsNewData(uint16_t c)
 
     gpsPackageCounter += 1;
     if (millis() - gpsPackageCounterTime >= 1000) {
-        DEBUG_SET(DEBUG_GPS_FLIGHT_STATISTICS, 1, gpsPackageCounter);
+        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
 
         // reconfigure update rate if not matching
         if (
             gpsData.state == GPS_STATE_RECEIVING_DATA
         )
         {
-            if (gpsPackageCounter > gpsData.updateRate - 1) {
+            if (gpsPackageCounter > gpsData.updateRate - 2) {
                 gpsPackageReachedUpdateRate = true;
             }
             if (
                 gpsPackageReachedUpdateRate &&
-                (gpsData.updateRate > gpsPackageCounter + 1 || gpsData.updateRate < gpsPackageCounter - 1)
+                gpsData.updateRate > gpsPackageCounter + 2
             )
             {
                 gpsSetState(GPS_STATE_CONFIGURE);
@@ -2149,7 +2150,6 @@ static bool UBLOX_parse_gps(void)
 
         gpsData.monVer.hwVersion = strtoul(_buffer.ver.hwVersion, NULL, 16);
         gpsData.unitVersion = ubloxParseVersion(gpsData.monVer.hwVersion);
-        gpsData.acquiredMonVer = true;
         gpsData.ackState = UBLOX_ACK_GOT_ACK;
     }
         break;

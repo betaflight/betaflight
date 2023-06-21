@@ -107,8 +107,10 @@ typedef enum {
     CFG_SIGNAL_GLO_ENA = 0x10310025, // L
 } ubxValgetsetBytes_e;
 
+/*
+ * replaced by macro, to save space
 typedef enum {
-    SBAS_SEARCH_ALL,
+    SBAS_SEARCH_ALL = 0,
     SBAS_SEARCH_PRN120,
     SBAS_SEARCH_PRN121,
     SBAS_SEARCH_PRN122,
@@ -149,8 +151,10 @@ typedef enum {
     SBAS_SEARCH_PRN157,
     SBAS_SEARCH_PRN158,
 } ubxSbasPrnScan_e;
+*/
 
-#define UBXSBASPRNMASK(i) (1 << (i - 1))
+#define SBAS_SEARCH_ALL    0x0
+#define SBAS_SEARCH_PRN(i) (1 << (i - 120))
 
 typedef enum {
     UBX_VAL_LAYER_RAM = 0x01,
@@ -291,6 +295,7 @@ typedef struct ubxSwVersion_s {
     ubxVersion_t protocolVersion;
 } ubxSwVersion_t;
 
+/*
 typedef enum {
     UBX_CAP_SAT_NONE = 0x0,
     UBX_CAP_SAT_GPS = 0x0001,
@@ -300,11 +305,12 @@ typedef enum {
     UBX_CAP_SAT_SBAS = 0x0010,
     UBX_CAP_SAT_QZSS = 0x0020,
 } ubxCapabilities_e;
+*/
 
 typedef struct ubxMonVer_s {
     ubxSwVersion_t swVersion;
     uint32_t hwVersion;
-    uint32_t extension;
+    /*uint32_t extension;*/
 } ubxMonVer_t;
 
 typedef struct gpsData_s {
@@ -326,7 +332,6 @@ typedef struct gpsData_s {
     bool ubloxUseSAT;
 #ifdef USE_GPS_UBLOX
     ubloxVersion_e unitVersion;     // detected UNIT version
-    bool acquiredMonVer;            // MON-VER aquired
     ubxMonVer_t monVer;             // MON-VER response
 #endif
 } gpsData_t;
