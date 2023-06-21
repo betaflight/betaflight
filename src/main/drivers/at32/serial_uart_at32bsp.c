@@ -30,6 +30,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #ifdef USE_UART
 
 #include "build/build_config.h"
@@ -312,6 +314,9 @@ void uartIrqHandler(uartPort_t *s)
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
             usart_interrupt_enable(s->USARTx, USART_TDBE_INT, FALSE);
+
+            // Switch TX to an input with pullup so it's state can be monitored
+            uartTxMonitor(s);
         }
     }
 

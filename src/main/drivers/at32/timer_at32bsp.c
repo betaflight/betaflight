@@ -54,8 +54,6 @@
 
 #define TIM_IT_CCx(ch) (TMR_C1_INT << ((ch)-1))
 
-#define TIM_CH_TO_SELCHANNEL(ch)  (( ch -1)*2)
-
 typedef struct timerConfig_s {
     timerOvrHandlerRec_t *updateCallback;
 
@@ -144,6 +142,9 @@ static uint8_t lookupTimerIndex(const tmr_type *tim)
 #endif
 #if USED_TIMERS & TIM_N(17)
         _CASE(17);
+#endif
+#if USED_TIMERS & TIM_N(20)
+        _CASE(20);
 #endif
     default:  return ~1;  // make sure final index is out of range
     }
@@ -508,13 +509,13 @@ void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
 
-    if(timHw->channel ==1)
+    if(timHw->channel == 1)
         return (volatile timCCR_t*)(&timHw->tim->c1dt);
-    else if(timHw->channel ==2)
+    else if(timHw->channel == 2)
         return (volatile timCCR_t*)(&timHw->tim->c2dt);
-    else if(timHw->channel ==3)
+    else if(timHw->channel == 3)
         return (volatile timCCR_t*)(&timHw->tim->c3dt);
-    else if(timHw->channel ==4)
+    else if(timHw->channel == 4)
         return (volatile timCCR_t*)(&timHw->tim->c4dt);
     else
         return (volatile timCCR_t*)((volatile char*)&timHw->tim->c1dt + (timHw->channel-1)*0x04); //for 32bit need to debug

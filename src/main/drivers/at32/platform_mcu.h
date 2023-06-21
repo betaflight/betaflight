@@ -42,6 +42,11 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define USART_TypeDef       usart_type
 #define TIM_OCInitTypeDef   tmr_output_config_type
 #define TIM_ICInitTypeDef   tmr_input_config_type
+#define TIM_OCStructInit    tmr_output_default_para_init
+#define TIM_Cmd             tmr_counter_enable
+#define TIM_CtrlPWMOutputs  tmr_output_enable
+#define TIM_TimeBaseInit    tmr_base_init
+#define TIM_ARRPreloadConfig tmr_period_buffer_enable
 #define SystemCoreClock     system_core_clock
 #define EXTI_TypeDef        exint_type
 #define EXTI_InitTypeDef    exint_init_type
@@ -82,7 +87,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define SCHEDULER_DELAY_LIMIT           100
 
 #define DEFAULT_CPU_OVERCLOCK 0
-#define FAST_IRQ_HANDLER
+#define FAST_IRQ_HANDLER FAST_CODE
 
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
@@ -95,3 +100,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_RAM_RW
 
 #define USE_LATE_TASK_STATISTICS
+
+#define USE_RPM_FILTER
+#define USE_DYN_IDLE
+#define USE_DYN_NOTCH_FILTER
