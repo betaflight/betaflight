@@ -492,12 +492,17 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             }
         }
 #endif
+        else if ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
 #ifdef USE_SOFTSERIAL
-        else if (!softserialEnabled &&
-            ((softSerialPinConfig()->ioTagTx[SOFTSERIAL1] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) ||
-            (softSerialPinConfig()->ioTagTx[SOFTSERIAL2] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2)))
+            && !(softserialEnabled && (softSerialPinConfig()->ioTagTx[SOFTSERIAL1] ||
+                softSerialPinConfig()->ioTagRx[SOFTSERIAL1]))
 #endif
-        {
+           ) || (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
+#ifdef USE_SOFTSERIAL
+            && !(softserialEnabled && (softSerialPinConfig()->ioTagTx[SOFTSERIAL2] ||
+                softSerialPinConfig()->ioTagRx[SOFTSERIAL2]))
+#endif
+        )) {
             serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
             serialPortCount--;
         }
