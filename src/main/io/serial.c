@@ -499,7 +499,7 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
 #else
         else if (
             (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) ||
-            (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1)
+            (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2)
         )
 #endif
         {
