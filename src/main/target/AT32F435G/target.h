@@ -34,6 +34,10 @@
 #define HANG_ON_ERRORS
 #endif
 
+#define USE_VCP
+
+#define UNIFIED_SERIAL_PORT_COUNT       1
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -43,7 +47,7 @@
 #define USE_UART7
 #define USE_UART8
 
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 8)
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
@@ -68,9 +72,6 @@
 
 #define USE_USB_DETECT
 #define USE_PERSISTENT_MSC_RTC
-#define USE_VCP
-
-#define UNIFIED_SERIAL_PORT_COUNT       6
 
 #define USE_ADC
 
