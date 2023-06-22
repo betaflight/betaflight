@@ -496,6 +496,11 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
         else if (!softserialEnabled &&
             ((softSerialPinConfig()->ioTagTx[SOFTSERIAL1] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) ||
             (softSerialPinConfig()->ioTagTx[SOFTSERIAL2] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2)))
+#else
+        else if (
+            (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) ||
+            (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2)
+        )
 #endif
         {
             serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
