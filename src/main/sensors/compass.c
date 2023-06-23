@@ -42,6 +42,7 @@
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
 #include "drivers/compass/compass_qmc5883l.h"
+#include "drivers/compass/compass_ist8310.h"
 
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -92,7 +93,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
-#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883) || defined(USE_MAG_AK8975) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
+#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883) || defined(USE_MAG_AK8975) || defined(USE_MAG_IST8310) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
     compassConfig->mag_busType = BUS_TYPE_I2C;
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(MAG_I2C_INSTANCE);
     compassConfig->mag_i2c_address = MAG_I2C_ADDRESS;
@@ -271,6 +272,22 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 #endif
         FALLTHROUGH;
 
+    case MAG_IST8310:
+#ifdef USE_MAG_IST8310
+        if (dev->bus->busType == BUS_TYPE_I2C) {
+            dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (ist8310Detect(magDev)) {
+#ifdef MAG_IST8310_ALIGN
+            *alignment = MAG_IST8310_ALIGN;
+#endif
+            magHardware = MAG_IST8310;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
     case MAG_NONE:
         magHardware = MAG_NONE;
         break;
@@ -279,7 +296,7 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
     // MAG_MPU925X_AK8963 is an MPU925x configured as I2C passthrough to the built-in AK8963 magnetometer
     // Passthrough mode disables the gyro/acc part of the MPU, so we only want to detect this sensor if mag_hardware was explicitly set to MAG_MPU925X_AK8963
 #ifdef USE_MAG_MPU925X_AK8963
-    if(compassConfig()->mag_hardware == MAG_MPU925X_AK8963){
+    if (compassConfig()->mag_hardware == MAG_MPU925X_AK8963){
         if (mpu925Xak8963CompassDetect(magDev)) {
             magHardware = MAG_MPU925X_AK8963;
         } else {
