@@ -40,6 +40,8 @@
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
 
+#include "mixer.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
@@ -331,7 +333,7 @@ void mixerInitProfile(void)
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     mixerRuntime.vbatSagCompensationFactor = 0.0f;
-    if (currentPidProfile->vbat_sag_compensation > 0) {
+    if (currentPidProfile->vbat_sag_compensation > 0 && !RPM_LIMIT_ACTIVE) {
         //TODO: Make this voltage user configurable
         mixerRuntime.vbatFull = CELL_VOLTAGE_FULL_CV;
         mixerRuntime.vbatRangeToCompensate = mixerRuntime.vbatFull - batteryConfig()->vbatwarningcellvoltage;
