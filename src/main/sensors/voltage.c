@@ -35,6 +35,7 @@
 
 #include "drivers/adc.h"
 
+#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "pg/pg.h"
@@ -235,7 +236,7 @@ void voltageMeterGenericInit(void)
     sagCompensationConfigured = false;
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-        if (pidProfiles(i)->vbat_sag_compensation > 0) {
+        if (pidProfiles(i)->vbat_sag_compensation > 0 && !RPM_LIMIT_ACTIVE) {
             sagCompensationConfigured = true;
         }
     }
