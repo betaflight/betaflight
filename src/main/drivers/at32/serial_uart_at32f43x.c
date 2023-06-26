@@ -256,7 +256,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA5),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PA12), GPIO_MUX_8 },
             { DEFIO_TAG_E(PC7),  GPIO_MUX_8 },
-            { DEFIO_TAG_E(PG9), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PG9),  GPIO_MUX_8 },
         },
         .txPins = {
             { DEFIO_TAG_E(PA4),  GPIO_MUX_8 },
