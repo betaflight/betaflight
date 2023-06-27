@@ -1,27 +1,22 @@
 /*
- * This file is part of Cleanflight, Betaflight and INAV.
+ * This file is part of Betaflight.
  *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Alternatively, the contents of this file may be used under the terms
- * of the GNU General Public License Version 3, as described below:
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * This file is free software: you may copy, redistribute and/or modify
- * it under the terms of the GNU General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
+ * See the GNU General Public License for more details.
  *
- * This file is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see http://www.gnu.org/licenses/.
- *
- * Copyright: INAVFLIGHT OU
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -97,6 +92,11 @@
 #define IST8310_REG_DATA 0x03
 #define IST8310_REG_WHOAMI 0x00
 
+#define IST8310_REG_STAT1 0x02
+#define IST8310_REG_STAT2 0x09
+
+#define IST8310_DRDY_MASK 0x01
+
 // I2C Control Register
 #define IST8310_REG_CNTRL1 0x0A
 #define IST8310_REG_CNTRL2 0x0B
@@ -133,49 +133,91 @@ static bool ist8310Init(magDev_t *magDev)
     ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL2, regTemp);
     delay(30);
 
-    // ODR mode
-    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_50_HZ);
-    delay(5);
-
     // Init setting : avg16 / pulse mode
     ack = ack && busWriteRegister(dev, IST8310_REG_AVERAGE, IST8310_AVG_16);
     delay(5);
     ack = ack && busWriteRegister(dev, IST8310_REG_PDCNTL, IST8310_PULSE_DURATION_NORMAL);
     delay(5);
 
+    // DRDY enable
+    ack = ack && busReadRegisterBuffer(dev, IST8310_REG_CNTRL2, &regTemp, 1);
+    regTemp |= IST8310_CNTRL2_DRENA;
+    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL2, regTemp);
+    delay(5);
+
+    // DRDY polarity
+    ack = ack && busReadRegisterBuffer(dev, IST8310_REG_CNTRL2, &regTemp, 1);
+    regTemp &= ~IST8310_CNTRL2_DRPOL;
+    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL2, regTemp);
+    delay(5);
+
     return ack;
 }
 
-
 static bool ist8310Read(magDev_t * magDev, int16_t *magData)
 {
-    uint8_t buf[6];
-    uint8_t LSB2FSV = 3; // 3mG - 14 bit
-
     extDevice_t *dev = &magDev->dev;
 
-    // write 0x01 to register 0x0A to set single measure mode
-    busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
-    delay(5);
+    uint8_t buf[6];
+    // uint8_t LSB2FSV = 3; // 3mG - 14 bit
+    static uint8_t status;
+    static enum {
+        STATE_INIT_DATA,
+        STATE_REQUEST_DATA,
+        STATE_READ_STATUS,
+        STATE_WAIT_STATUS,
+        STATE_WAIT_READ,
+    } state = STATE_INIT_DATA;
 
-    // read 6 bytes from register 0x03
-    if (!busReadRegisterBuffer(dev, IST8310_REG_DATA, buf, 6)) {
-        // set magData to zero for case of failed read
-        magData[X] = 0;
-        magData[Y] = 0;
-        magData[Z] = 0;
+    switch (state) {
+        default:
+        case STATE_INIT_DATA:
+            magData[X] = 0;
+            magData[Y] = 0;
+            magData[Z] = 0;
 
-        return false;
+            state = STATE_REQUEST_DATA;
+
+            return false;
+        case STATE_REQUEST_DATA:
+            busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
+            delay(6);
+            state = STATE_READ_STATUS;
+
+            return false;
+        case STATE_READ_STATUS:
+            busReadRegisterBufferStart(dev, IST8310_REG_STAT1, &status, sizeof(status));
+            state = STATE_WAIT_STATUS;
+
+            return false;
+        case STATE_WAIT_STATUS:
+            if ((status & IST8310_DRDY_MASK) == 0) {
+                state = STATE_READ_STATUS;
+                return false;
+            }
+
+            busReadRegisterBufferStart(dev, IST8310_REG_DATA, buf, sizeof(buf));
+            state = STATE_WAIT_READ;
+
+            return false;
+        case STATE_WAIT_READ:
+            // Looks like datasheet is incorrect and we need to invert Y axis to conform to right hand rule
+            // magData[X] =  (int16_t)(buf[1] << 8 | buf[0]) * LSB2FSV;
+            // magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
+            // magData[Z] =  (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
+
+            magData[X] = (int16_t)(buf[1] << 8 | buf[0]);
+            magData[Y] = (int16_t)(buf[3] << 8 | buf[2]);
+            magData[Z] = (int16_t)(buf[5] << 8 | buf[4]);
+
+            state = STATE_READ_STATUS;
+
+            return true;
     }
-
-    // Looks like datasheet is incorrect and we need to invert Y axis to conform to right hand rule
-    magData[X] =  (int16_t)(buf[1] << 8 | buf[0]) * LSB2FSV;
-    magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
-    magData[Z] =  (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
 
     // TODO: do cross axis compensation
 
-    return true;
+    return false;
 }
 
 static bool deviceDetect(magDev_t * magDev)
@@ -184,8 +226,6 @@ static bool deviceDetect(magDev_t * magDev)
 
     uint8_t sig = 0;
     bool ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
-    ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
-    ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
 
     if (ack && sig == IST8310_CHIP_ID) {
         // TODO: set device in standby mode
