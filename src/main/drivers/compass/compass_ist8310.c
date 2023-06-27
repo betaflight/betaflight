@@ -97,7 +97,7 @@
 #define IST8310_REG_DATA 0x03
 #define IST8310_REG_WHOAMI 0x00
 
-// I2C Contorl Register
+// I2C Control Register
 #define IST8310_REG_CNTRL1 0x0A
 #define IST8310_REG_CNTRL2 0x0B
 #define IST8310_REG_AVERAGE 0x41
@@ -123,20 +123,29 @@
 static bool ist8310Init(magDev_t *magDev)
 {
     extDevice_t *dev = &magDev->dev;
+    uint8_t regTemp;
 
     busDeviceRegister(dev);
 
-    busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_100_HZ);
+    // soft-Reset
+    bool ack = busReadRegisterBuffer(dev, IST8310_REG_CNTRL2, &regTemp, 1);
+    regTemp |= IST8310_CNTRL2_RESET;
+    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL2, regTemp);
+    delay(30);
+
+    // ODR mode
+    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_50_HZ);
     delay(5);
 
-    busWriteRegister(dev, IST8310_REG_AVERAGE, IST8310_AVG_16);
+    // Init setting : avg16 / pulse mode
+    ack = ack && busWriteRegister(dev, IST8310_REG_AVERAGE, IST8310_AVG_16);
+    delay(5);
+    ack = ack && busWriteRegister(dev, IST8310_REG_PDCNTL, IST8310_PULSE_DURATION_NORMAL);
     delay(5);
 
-    busWriteRegister(dev, IST8310_REG_PDCNTL, IST8310_PULSE_DURATION_NORMAL);
-    delay(5);
-
-    return true;
+    return ack;
 }
+
 
 static bool ist8310Read(magDev_t * magDev, int16_t *magData)
 {
@@ -145,6 +154,11 @@ static bool ist8310Read(magDev_t * magDev, int16_t *magData)
 
     extDevice_t *dev = &magDev->dev;
 
+    // write 0x01 to register 0x0A to set single measure mode
+    busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
+    delay(5);
+
+    // read 6 bytes from register 0x03
     if (!busReadRegisterBuffer(dev, IST8310_REG_DATA, buf, 6)) {
         // set magData to zero for case of failed read
         magData[X] = 0;
@@ -159,23 +173,23 @@ static bool ist8310Read(magDev_t * magDev, int16_t *magData)
     magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
     magData[Z] =  (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
 
+    // TODO: do cross axis compensation
+
     return true;
 }
 
-#define DETECTION_MAX_RETRY_COUNT 10
 static bool deviceDetect(magDev_t * magDev)
 {
     extDevice_t *dev = &magDev->dev;
 
-    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
-        delay(10);
+    uint8_t sig = 0;
+    bool ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
+    ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
+    ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
 
-        uint8_t sig = 0;
-        bool ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
-
-        if (ack && sig == IST8310_CHIP_ID) {
-            return true;
-        }
+    if (ack && sig == IST8310_CHIP_ID) {
+        // TODO: set device in standby mode
+        return true;
     }
 
     return false;
