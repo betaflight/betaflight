@@ -36,11 +36,6 @@
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_busdev.h"
-#include "drivers/bus_spi.h"
-#include "drivers/exti.h"
-#include "drivers/io.h"
-#include "drivers/light_led.h"
-#include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
@@ -90,7 +85,8 @@
  */
 
 #define IST8310_REG_DATA 0x03
-#define IST8310_REG_WHOAMI 0x00
+#define IST8310_REG_WAI 0x00
+#define IST8310_REG_WAI_VALID 0x10
 
 #define IST8310_REG_STAT1 0x02
 #define IST8310_REG_STAT2 0x09
@@ -111,8 +107,6 @@
 #define IST8310_ODR_50_HZ 0x07
 #define IST8310_ODR_100_HZ 0x06
 
-// Device ID (ist8310 -> 0x10)
-#define IST8310_CHIP_ID 0x10
 #define IST8310_AVG_16  0x24
 #define IST8310_PULSE_DURATION_NORMAL 0xC0
 
@@ -123,33 +117,15 @@
 static bool ist8310Init(magDev_t *magDev)
 {
     extDevice_t *dev = &magDev->dev;
-    uint8_t regTemp;
 
     busDeviceRegister(dev);
 
-    // soft-Reset
-    bool ack = busReadRegisterBuffer(dev, IST8310_REG_CNTRL2, &regTemp, 1);
-    regTemp |= IST8310_CNTRL2_RESET;
-    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL2, regTemp);
-    delay(30);
-
-    // Init setting : avg16 / pulse mode
-    ack = ack && busWriteRegister(dev, IST8310_REG_AVERAGE, IST8310_AVG_16);
-    delay(5);
+    // Init setting
+    bool ack = busWriteRegister(dev, IST8310_REG_AVERAGE, IST8310_AVG_16);
+    delay(6);
     ack = ack && busWriteRegister(dev, IST8310_REG_PDCNTL, IST8310_PULSE_DURATION_NORMAL);
-    delay(5);
-
-    // DRDY enable
-    ack = ack && busReadRegisterBuffer(dev, IST8310_REG_CNTRL2, &regTemp, 1);
-    regTemp |= IST8310_CNTRL2_DRENA;
-    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL2, regTemp);
-    delay(5);
-
-    // DRDY polarity
-    ack = ack && busReadRegisterBuffer(dev, IST8310_REG_CNTRL2, &regTemp, 1);
-    regTemp &= ~IST8310_CNTRL2_DRPOL;
-    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL2, regTemp);
-    delay(5);
+    delay(6); 
+    ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
 
     return ack;
 }
@@ -158,59 +134,32 @@ static bool ist8310Read(magDev_t * magDev, int16_t *magData)
 {
     extDevice_t *dev = &magDev->dev;
 
-    uint8_t buf[6];
-    // uint8_t LSB2FSV = 3; // 3mG - 14 bit
-    static uint8_t status;
+    static uint8_t buf[6];
+    const int LSB2FSV = 3; // 3mG - 14 bit
+
     static enum {
-        STATE_INIT_DATA,
         STATE_REQUEST_DATA,
-        STATE_READ_STATUS,
-        STATE_WAIT_STATUS,
-        STATE_WAIT_READ,
-    } state = STATE_INIT_DATA;
+        STATE_FETCH_DATA,
+    } state = STATE_REQUEST_DATA;
 
     switch (state) {
         default:
-        case STATE_INIT_DATA:
-            magData[X] = 0;
-            magData[Y] = 0;
-            magData[Z] = 0;
+        case STATE_REQUEST_DATA:
+            busReadRegisterBufferStart(dev, IST8310_REG_DATA, buf, sizeof(buf));
+
+            state = STATE_FETCH_DATA;
+
+            return false;
+        case STATE_FETCH_DATA:
+            // Looks like datasheet is incorrect and we need to invert Y axis to conform to right hand rule
+            magData[X] =  (int16_t)(buf[1] << 8 | buf[0]) * LSB2FSV;
+            magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
+            magData[Z] =  (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
+
+            // Force single measurement mode for next read
+            busWriteRegisterStart(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
 
             state = STATE_REQUEST_DATA;
-
-            return false;
-        case STATE_REQUEST_DATA:
-            busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
-            delay(6);
-            state = STATE_READ_STATUS;
-
-            return false;
-        case STATE_READ_STATUS:
-            busReadRegisterBufferStart(dev, IST8310_REG_STAT1, &status, sizeof(status));
-            state = STATE_WAIT_STATUS;
-
-            return false;
-        case STATE_WAIT_STATUS:
-            if ((status & IST8310_DRDY_MASK) == 0) {
-                state = STATE_READ_STATUS;
-                return false;
-            }
-
-            busReadRegisterBufferStart(dev, IST8310_REG_DATA, buf, sizeof(buf));
-            state = STATE_WAIT_READ;
-
-            return false;
-        case STATE_WAIT_READ:
-            // Looks like datasheet is incorrect and we need to invert Y axis to conform to right hand rule
-            // magData[X] =  (int16_t)(buf[1] << 8 | buf[0]) * LSB2FSV;
-            // magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
-            // magData[Z] =  (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
-
-            magData[X] = (int16_t)(buf[1] << 8 | buf[0]);
-            magData[Y] = (int16_t)(buf[3] << 8 | buf[2]);
-            magData[Z] = (int16_t)(buf[5] << 8 | buf[4]);
-
-            state = STATE_READ_STATUS;
 
             return true;
     }
@@ -222,17 +171,10 @@ static bool ist8310Read(magDev_t * magDev, int16_t *magData)
 
 static bool deviceDetect(magDev_t * magDev)
 {
-    extDevice_t *dev = &magDev->dev;
+    uint8_t result = 0;
+    bool ack = busReadRegisterBuffer(&magDev->dev, IST8310_REG_WAI, &result, 1);
 
-    uint8_t sig = 0;
-    bool ack = busReadRegisterBuffer(dev, IST8310_REG_WHOAMI, &sig, 1);
-
-    if (ack && sig == IST8310_CHIP_ID) {
-        // TODO: set device in standby mode
-        return true;
-    }
-
-    return false;
+    return ack && result == IST8310_REG_WAI_VALID;
 }
 
 bool ist8310Detect(magDev_t * magDev)
