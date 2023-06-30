@@ -28,12 +28,12 @@
 
 #include <math.h>
 
-#include "camera_control_impl.h"
+#include "drivers/camera_control_impl.h"
 #include "drivers/rcc.h"
-#include "io.h"
-#include "nvic.h"
-#include "pwm_output.h"
-#include "time.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
+#include "drivers/pwm_output.h"
+#include "drivers/time.h"
 #include "pg/pg_ids.h"
 
 #define CAMERA_CONTROL_PWM_RESOLUTION   128
@@ -51,7 +51,7 @@
 #endif
 
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
-#include "timer.h"
+#include "drivers/timer.h"
 
 #ifdef USE_OSD
 #include "osd/osd.h"
