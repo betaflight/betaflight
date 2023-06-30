@@ -28,7 +28,7 @@
 
 #include <math.h>
 
-#include "camera_control.h"
+#include "camera_control_impl.h"
 #include "drivers/rcc.h"
 #include "io.h"
 #include "nvic.h"
@@ -106,22 +106,14 @@ static void cameraControlLo(void)
 void TIM6_DAC_IRQHandler(void)
 {
     cameraControlHi();
-#ifdef AT32F435
-    tmr_flag_clear(TMR6, TMR_OVF_FLAG);
-#else
     TIM6->SR = 0;
-#endif
 }
 
 void TIM7_IRQHandler(void)
 {
     cameraControlLo();
 
-#ifdef AT32F435
-    tmr_flag_clear(TMR7, TMR_OVF_FLAG);
-#else
     TIM7->SR = 0;
-#endif
 }
 #endif
 
@@ -144,11 +136,7 @@ void cameraControlInit(void)
 
         IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
 
-#ifdef AT32F435
-        pwmOutConfig(&cameraControlRuntime.channel, timerHardware, timerClock(TMR6), CAMERA_CONTROL_PWM_RESOLUTION, 0, cameraControlRuntime.inverted);
-#else
         pwmOutConfig(&cameraControlRuntime.channel, timerHardware, timerClock(TIM6), CAMERA_CONTROL_PWM_RESOLUTION, 0, cameraControlRuntime.inverted);
-#endif
 
         cameraControlRuntime.period = CAMERA_CONTROL_PWM_RESOLUTION;
         *cameraControlRuntime.channel.ccr = cameraControlRuntime.period;
@@ -164,15 +152,6 @@ void cameraControlInit(void)
         cameraControlRuntime.enabled = true;
 
 
-# ifdef AT32F435
-        nvic_irq_enable(TMR6_DAC_GLOBAL_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
-        RCC_ClockCmd(RCC_APB1(TMR6), ENABLE);
-        tmr_div_value_set(TMR6, 0);
-
-        nvic_irq_enable(TMR7_GLOBAL_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
-        RCC_ClockCmd(RCC_APB1(TMR7), ENABLE);
-        tmr_div_value_set(TMR7, 0);
-# else
         NVIC_InitTypeDef nvicTIM6 = {
             TIM6_DAC_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE
         };
@@ -185,7 +164,6 @@ void cameraControlInit(void)
         RCC->APB1ENR |= RCC_APB1Periph_TIM6 | RCC_APB1Periph_TIM7;
         TIM6->PSC = 0;
         TIM7->PSC = 0;
-# endif
 #endif
     } else if (CAMERA_CONTROL_MODE_DAC == cameraControlConfig()->mode) {
         // @todo not yet implemented
@@ -253,21 +231,6 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             delay(cameraControlConfig()->keyDelayMs + holdDurationMs);
             cameraControlHi();
         } else {
-#ifdef AT32F435
-            tmr_counter_value_set(TMR6, hiTime);
-            tmr_period_value_set(TMR6, cameraControlRuntime.period);
-
-            tmr_counter_value_set(TMR7, 0);
-            tmr_period_value_set(TMR7, cameraControlRuntime.period);
-
-            ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-                tmr_counter_enable(TMR6, TRUE);
-                tmr_counter_enable(TMR7, TRUE);
-            }
-
-            tmr_interrupt_enable(TMR6, TMR_OVF_INT, TRUE);
-            tmr_interrupt_enable(TMR7, TMR_OVF_INT, TRUE);
-#else
             TIM6->CNT = hiTime;
             TIM6->ARR = cameraControlRuntime.period;
 
@@ -283,7 +246,6 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             // Enable interrupt generation
             TIM6->DIER = TIM_IT_Update;
             TIM7->DIER = TIM_IT_Update;
-#endif
 
             const uint32_t endTime = millis() + cameraControlConfig()->keyDelayMs + holdDurationMs;
 
@@ -291,20 +253,10 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             while (millis() < endTime);
 
             // Disable timers and interrupt generation
-#ifdef AT32F435
-            ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-                tmr_counter_enable(TMR6, FALSE);
-                tmr_counter_enable(TMR7, FALSE);
-            }
-
-            tmr_interrupt_enable(TMR6, TMR_OVF_INT, FALSE);
-            tmr_interrupt_enable(TMR7, TMR_OVF_INT, FALSE);
-#else
             TIM6->CR1 &= ~TIM_CR1_CEN;
             TIM7->CR1 &= ~TIM_CR1_CEN;
             TIM6->DIER = 0;
             TIM7->DIER = 0;
-#endif
 
             // Reset to idle state
             IOHi(cameraControlRuntime.io);

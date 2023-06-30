@@ -73,7 +73,6 @@ COMMON_SRC = \
             target/config_helper.c \
             fc/init.c \
             fc/controlrate_profile.c \
-            drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
             drivers/rx/rx_spi.c \
             drivers/rx/rx_xn297.c \
