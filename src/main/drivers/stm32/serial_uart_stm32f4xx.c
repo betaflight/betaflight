@@ -245,9 +245,10 @@ bool checkUsartTxOutput(uartPort_t *s)
 void uartTxMonitor(uartPort_t *s)
 {
     uartDevice_t *uart = container_of(s, uartDevice_t, port);
-    IO_t txIO = IOGetByTag(uart->tx.pin);
 
     if (uart->txPinState == TX_PIN_ACTIVE) {
+        IO_t txIO = IOGetByTag(uart->tx.pin);
+
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
         IOConfigGPIO(txIO, IOCFG_IPU);
@@ -334,7 +335,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
 
-            if ((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) {
+            if (((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) && !(options & SERIAL_BIDIR_PP_PD)) {
                 uart->txPinState = TX_PIN_ACTIVE;
                 // Switch TX to an input with pullup so it's state can be monitored
                 uartTxMonitor(s);
