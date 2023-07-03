@@ -60,11 +60,11 @@ extern "C" {
 
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
-    void imuMahonyAHRSupdate(float dt,
+    void imuMahonyAHRSupdate(float dt, const imuRuntimeConfig_t* config,
                              float gx, float gy, float gz,
-                             bool useAcc, float ax, float ay, float az,
-                             float headingErrMag, float headingErrCog,
-                             const float dcmKpGain);
+                             float* rpEstimateCovariance, const float durationSaturated,
+                             float ax, float ay, float az,
+                             float headingErrMag, float headingErrCog);
     float imuCalcMagErr(void);
     float imuCalcCourseErr(float courseOverGround);
     extern quaternion q;
@@ -242,12 +242,18 @@ testing::AssertionResult DoubleNearWrapPredFormat(const char* expr1, const char*
     EXPECT_PRED_FORMAT4(DoubleNearWrapPredFormat, val1, val2, \
                         abs_error, 2 * M_PI)
 
-
+static const imuRuntimeConfig_t DEFAULT_RUNTIME_CONFIG = {
+    .imuDcmKi = 0.0,
+    .imuDcmKp = 0.25,
+    .gyro_noise_psd = 0.5f,
+    .acc_covariance = 5.0f,
+};
 
 class MahonyFixture : public ::testing::Test {
 protected:
     vector3_t gyro;
-    bool useAcc;
+    float rpEstimateCovariance;
+    float timeSaturated;
     vector3_t acc;
     bool useMag;
     vector3_t magEF;
@@ -255,15 +261,17 @@ protected:
     float cogDeg;
     float dcmKp;
     float dt;
+    imuRuntimeConfig_t config;
     void SetUp() override {
         vector3Zero(&gyro);
-        useAcc = false;
+        rpEstimateCovariance = sq(DEGREES_TO_RADIANS(180.0f));
+        timeSaturated = 0.0f;
         vector3Zero(&acc);
         cogGain = 0.0;   // no cog
         cogDeg  = 0.0;
         dcmKp = .25;     // default dcm_kp
         dt = 1e-2;       // 100Hz update
-
+        config = DEFAULT_RUNTIME_CONFIG;
         imuConfigure(0, 0);
         // level, poiting north
         setOrientationAA(0, {{1,0,0}});        // identity
@@ -303,11 +311,11 @@ protected:
                 headingErrCog = imuCalcCourseErr(DEGREES_TO_RADIANS(cogDeg)) * cogGain;
             }
 
-            imuMahonyAHRSupdate(dt,
+            imuMahonyAHRSupdate(dt, &config,
                                 gyro.x, gyro.y, gyro.z,
-                                useAcc, acc.x, acc.y, acc.z,
-                                headingErrMag, headingErrCog,
-                                dcmKp);
+                                &rpEstimateCovariance, timeSaturated,
+                                acc.x, acc.y, acc.z,
+                                headingErrMag, headingErrCog);
             imuUpdateEulerAngles();
             // if (fmod(t, 1) < dt) printf("%3.1fs - %3.1f %3.1f %3.1f\n", t, attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f);
             // remember how long it took
@@ -438,6 +446,8 @@ extern "C" {
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }
+    float gyroGetDurationSpentSaturated(void) { return 0.0f; }
+    bool gyroIsCalibrationComplete(void) { return true; }
 
     void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
         UNUSED(baroDerivativeLpf);

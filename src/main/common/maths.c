@@ -141,6 +141,15 @@ float fapplyDeadband(const float value, const float deadband)
     return value >= 0 ? value - deadband : value + deadband;
 }
 
+float tent(const float x, const float width)
+{
+    const float absX = fabsf(x);
+    if (absX >= width) {
+        return 0.0f;
+    }
+    return 1.0f - absX / width;
+}
+
 void devClear(stdev_t *dev)
 {
     dev->m_n = 0;

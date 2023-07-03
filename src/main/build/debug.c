@@ -122,4 +122,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     [DEBUG_SPA] = "SPA",
     [DEBUG_TASK] = "TASK",
     [DEBUG_ALTHOLD] = "ALTHOLD",
+    [DEBUG_IMU_GAIN] = "IMU_GAIN",
 };

@@ -92,6 +92,10 @@ int gcd(int num, int denom);
 int32_t applyDeadband(int32_t value, int32_t deadband);
 float fapplyDeadband(float value, float deadband);
 
+// tent function, aka triangular or tent function
+// 1.0 when x == 0.0, and delines linearly so that the value is 0 when x >= width
+float tent(const float x, const float width);
+
 void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);

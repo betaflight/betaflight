@@ -717,6 +717,8 @@ const clivalue_t valueTable[] = {
     { "gyro_lpf1_dyn_expo",         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf1_dyn_expo) },
 #endif
     { "gyro_filter_debug_axis",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_FILTER_DEBUG }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_filter_debug_axis) },
+    { "gyro_scaling_adjustment",    VAR_INT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = XYZ_AXIS_COUNT, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_scaling_adjustment) },
+
 
 // PG_ACCELEROMETER_CONFIG
 #if defined(USE_ACC)
@@ -1024,6 +1026,8 @@ const clivalue_t valueTable[] = {
 #ifdef USE_MAG
     { PARAM_NAME_IMU_MAG_DECLINATION, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0,  3599 }, PG_IMU_CONFIG, offsetof(imuConfig_t, mag_declination) },
 #endif
+    { "imu_gyro_noise_asd",         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_IMU_CONFIG, offsetof(imuConfig_t, gyro_noise_asd) },
+    { "imu_acc_noise_std",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_IMU_CONFIG, offsetof(imuConfig_t, acc_noise_std) },
 
 // PG_ARMING_CONFIG
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 60 }, PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay) },
