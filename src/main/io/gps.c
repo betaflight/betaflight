@@ -106,14 +106,18 @@ uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];
 uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 
+#define GPS_UPDATE_RATE_TO_MS(update_rate) (timeMs_t)(1000 / update_rate)
+#define GPS_TICKS_TO_MS(update_rate, ticks) (GPS_UPDATE_RATE_TO_MS(update_rate) * (ticks))
+
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
-#define GPS_TIMEOUT (2500)
+#define GPS_TIMEOUT_MAX_COUNT (10)
+#define GPS_TIMEOUT_MS(update_rate) GPS_TICKS_TO_MS(update_rate, GPS_TIMEOUT_MAX_COUNT)
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
 // Timeout for waiting ACK/NAK in GPS task cycles relative to update_rate
 #define UBLOX_ACK_TIMEOUT_MAX_COUNT (5)
-#define UBLOX_ACK_TIMEOUT_MAX_MS(update_rate) (timeMs_t)(1000 / update_rate * UBLOX_ACK_TIMEOUT_MAX_COUNT)
+#define UBLOX_ACK_TIMEOUT_MAX_MS(update_rate) GPS_TICKS_TO_MS(update_rate, UBLOX_ACK_TIMEOUT_MAX_COUNT)
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
@@ -1374,7 +1378,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         case GPS_STATE_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
             DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastMessage);
-            if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
+            if (millis() - gpsData.lastMessage > GPS_TIMEOUT_MS(gpsData.updateRate)) {
                 DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, debug[3] + 1);
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
                 gpsPackageCounter = 0;
