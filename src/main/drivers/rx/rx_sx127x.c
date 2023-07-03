@@ -287,14 +287,17 @@ void sx127xStartReceiving(void)
     sx127xSetMode(SX127x_OPMODE_RXCONTINUOUS);
 }
 
-void sx127xConfig(const sx127xBandwidth_e bw, const sx127xSpreadingFactor_e sf, const sx127xCodingRate_e cr, 
-                  const uint32_t freq, const uint8_t preambleLen, const bool iqInverted)
+void sx127xConfig(const uint8_t bw, const uint8_t sfbt, const uint8_t cr,
+    const uint32_t freq, const uint8_t preambleLength, const bool iqInverted,
+    const uint32_t flrcSyncWord, const uint16_t flrcCrcSeed, const bool isFlrc)
 {
+    UNUSED(flrcSyncWord); UNUSED(flrcCrcSeed); UNUSED(isFlrc);
+
     sx127xConfigLoraDefaults(iqInverted);
-    sx127xSetPreambleLength(preambleLen);
+    sx127xSetPreambleLength(preambleLength);
     sx127xSetOutputPower(SX127x_MAX_POWER);
-    sx127xSetSpreadingFactor(sf);
-    sx127xSetBandwidthCodingRate(bw, cr, sf, false, false);
+    sx127xSetSpreadingFactor(sfbt);
+    sx127xSetBandwidthCodingRate(bw, cr, sfbt, false, false);
     sx127xSetFrequencyReg(freq);
 }
 
@@ -384,22 +387,22 @@ int32_t sx127xGetFrequencyError(const sx127xBandwidth_e bw)
     return fErrorHZ;
 }
 
-void sx127xAdjustFrequency(int32_t offset, const uint32_t freq)
+void sx127xAdjustFrequency(int32_t *offset, const uint32_t freq)
 {
     if (sx127xGetFrequencyErrorbool()) { //logic is flipped compared to original code
-        if (offset > SX127x_FREQ_CORRECTION_MIN) {
-            offset -= 1;
+        if (*offset > SX127x_FREQ_CORRECTION_MIN) {
+            *offset -= 1;
         } else {
-            offset = 0; //reset because something went wrong
+            *offset = 0; //reset because something went wrong
         }
     } else {
-        if (offset < SX127x_FREQ_CORRECTION_MAX) {
-            offset += 1;
+        if (*offset < SX127x_FREQ_CORRECTION_MAX) {
+            *offset += 1;
         } else {
-            offset = 0; //reset because something went wrong
+            *offset = 0; //reset because something went wrong
         }
     }
-    sx127xSetPPMoffsetReg(offset, freq); //as above but corrects a different PPM offset based on freq error
+    sx127xSetPPMoffsetReg(*offset, freq); //as above but corrects a different PPM offset based on freq error
 }
 
 uint8_t sx127xUnsignedGetLastPacketRSSI(void)
