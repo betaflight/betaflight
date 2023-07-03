@@ -142,7 +142,6 @@ typedef enum {
 #endif
 #ifdef USE_RX_EXPRESSLRS
     TABLE_FREQ_DOMAIN,
-    TABLE_SWITCH_MODE,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
