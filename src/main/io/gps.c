@@ -111,8 +111,9 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
-// Timeout for waiting ACK/NAK in GPS task cycles relative to update_rate (250 / 10hz = 25 ack waits)
-#define UBLOX_ACK_TIMEOUT_MAX_COUNT (250)
+// Timeout for waiting ACK/NAK in GPS task cycles relative to update_rate
+#define UBLOX_ACK_TIMEOUT_MAX_COUNT (5)
+#define UBLOX_ACK_TIMEOUT_MAX_MS(update_rate) (timeMs_t)(1000 / update_rate * UBLOX_ACK_TIMEOUT_MAX_COUNT)
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
@@ -569,7 +570,7 @@ static bool ubloxHasValSetGet(void) {
 
 static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValgetsetBytes_e key, const uint8_t * payload, const uint8_t offset) {
     size_t len;
-    switch((uint8_t)(key >> (8 * 3))) {
+    switch((key >> (8 * 3)) & 0xff) {
         case 0x10:
         case 0x20:
             len = 1;
@@ -1106,7 +1107,7 @@ void gpsInitUblox(void)
                         gpsData.state_position++;
                         break;
                     case UBLOX_MSG_DISABLE_NMEA:
-                        if (ubloxHasValSetGet()) {
+                        if (!ubloxHasValSetGet()) {
                             gpsData.state_position++;
                             break;
                         }
@@ -1243,7 +1244,9 @@ void gpsInitUblox(void)
                 case UBLOX_ACK_IDLE:
                     break;
                 case UBLOX_ACK_WAITING:
-                    if ((++gpsData.ackTimeoutCounter) >= UBLOX_ACK_TIMEOUT_MAX_COUNT / gpsData.updateRate) {
+                    // 1000ms / hz = time per tick
+                    // wait 5 ticks = (1000 / hz) * 5)
+                    if (millis() - gpsData.lastMessage > UBLOX_ACK_TIMEOUT_MAX_MS(gpsData.updateRate)) {
                         // gpsSetState(GPS_STATE_LOST_COMMUNICATION);
                         // treat it like receiving ack
                         gpsData.ackState = UBLOX_ACK_GOT_ACK;
