@@ -464,7 +464,7 @@ static void performSanityChecks(void)
         previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
         rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.1f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 30);
-        if (rescueState.intent.secondsFailing == 30) {
+        if (rescueState.intent.secondsFailing >= 30) {
 #ifdef USE_MAG
             //If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
             if (sensors(SENSOR_MAG) && gpsRescueConfig()->useMag && !magForceDisable) {
@@ -498,7 +498,7 @@ static void performSanityChecks(void)
     case RESCUE_LANDING:
         rescueState.intent.secondsFailing += ratio > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 10);
-        if (rescueState.intent.secondsFailing == 10) {
+        if (rescueState.intent.secondsFailing >= 10) {
             rescueState.phase = RESCUE_ABORT;
             // Landing mode shouldn't take more than 10s
         }
@@ -507,7 +507,7 @@ static void performSanityChecks(void)
     case RESCUE_DESCENT:
         rescueState.intent.secondsFailing += ratio > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 10);
-        if (rescueState.intent.secondsFailing == 10) {
+        if (rescueState.intent.secondsFailing >= 10) {
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0;
             // if can't climb, or slow descending, enable impact detection and time out in 10s
@@ -515,7 +515,7 @@ static void performSanityChecks(void)
         break;
     case RESCUE_DO_NOTHING:
         secondsDoingNothing = MIN(secondsDoingNothing + 1, 20);
-        if (secondsDoingNothing == 20) {
+        if (secondsDoingNothing >= 20) {
             rescueState.phase = RESCUE_ABORT;
             // time-limited semi-controlled fall with impact detection
         }

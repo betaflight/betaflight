@@ -82,6 +82,7 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
 
     gpsRescueConfig_pitchCutoffHz = gpsRescueConfig()->pitchCutoffHz;
     gpsRescueConfig_imuYawGain = gpsRescueConfig()->imuYawGain;
+
     return NULL;
 }
 
