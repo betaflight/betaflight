@@ -525,7 +525,7 @@ void tryArm(void)
             if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
                 // Set motor spin direction
                 if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
-                    if (cmpTimeUs(currentTimeUs, lastDisarmTimeUs) < 200000 && flipOverAfterCrashWasActiveLast) {
+                    if (cmpTimeUs(currentTimeUs, lastDisarmTimeUs) < 450000 && flipOverAfterCrashWasActiveLast) {
                         tryingToArm = ARMING_DELAYED_NORMAL;
                         return;
                     }
@@ -534,7 +534,7 @@ void tryArm(void)
                         dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
                     }
                 } else {
-                    if (cmpTimeUs(currentTimeUs, lastDisarmTimeUs) < 200000 && !flipOverAfterCrashWasActiveLast) {
+                    if (cmpTimeUs(currentTimeUs, lastDisarmTimeUs) < 450000 && !flipOverAfterCrashWasActiveLast) {
                         tryingToArm = ARMING_DELAYED_CRASHFLIP;
                         return;
                     }
