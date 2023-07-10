@@ -70,7 +70,7 @@ bool cliMode = false;
 #include "drivers/dshot_command.h"
 #include "drivers/dshot_dpwm.h"
 #include "drivers/pwm_output_dshot_shared.h"
-#include "drivers/camera_control.h"
+#include "drivers/camera_control_impl.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"

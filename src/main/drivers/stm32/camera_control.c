@@ -28,11 +28,12 @@
 
 #include <math.h>
 
-#include "camera_control.h"
-#include "io.h"
-#include "nvic.h"
-#include "pwm_output.h"
-#include "time.h"
+#include "drivers/camera_control_impl.h"
+#include "drivers/rcc.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
+#include "drivers/pwm_output.h"
+#include "drivers/time.h"
 #include "pg/pg_ids.h"
 
 #define CAMERA_CONTROL_PWM_RESOLUTION   128
@@ -50,7 +51,7 @@
 #endif
 
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
-#include "timer.h"
+#include "drivers/timer.h"
 
 #ifdef USE_OSD
 #include "osd/osd.h"
@@ -105,7 +106,6 @@ static void cameraControlLo(void)
 void TIM6_DAC_IRQHandler(void)
 {
     cameraControlHi();
-
     TIM6->SR = 0;
 }
 
@@ -150,6 +150,7 @@ void cameraControlInit(void)
 
         cameraControlRuntime.period = CAMERA_CONTROL_SOFT_PWM_RESOLUTION;
         cameraControlRuntime.enabled = true;
+
 
         NVIC_InitTypeDef nvicTIM6 = {
             TIM6_DAC_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE
