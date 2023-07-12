@@ -24,7 +24,7 @@ README.pdf
 /tools/
 /build/
 # local changes only
-mk/local.mk
+make/local.mk
 
 # artefacts for VisualGDB (running in Visual Studio)
 mcu.mak

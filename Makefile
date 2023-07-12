@@ -64,24 +64,23 @@ INCLUDE_DIRS    := $(SRC_DIR) \
                    $(ROOT)/src/main/target \
                    $(ROOT)/src/main/startup
 LINKER_DIR      := $(ROOT)/src/link
-MAKE_SCRIPT_DIR := $(ROOT)/mk
 
 ## V                 : Set verbosity level based on the V= parameter
 ##                     V=0 Low
 ##                     V=1 High
-include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
+include $(ROOT)/make/build_verbosity.mk
 
 # Build tools, so we all share the same versions
 # import macros common to all supported build systems
-include $(MAKE_SCRIPT_DIR)/system-id.mk
+include $(ROOT)/make/system-id.mk
 
 # developer preferences, edit these at will, they'll be gitignored
-ifneq ($(wildcard $(MAKE_SCRIPT_DIR)/local.mk),)
-include $(MAKE_SCRIPT_DIR)/local.mk
+ifneq ($(wildcard $(ROOT)/make/local.mk),)
+include $(ROOT)/make/local.mk
 endif
 
 # pre-build sanity checks
-include $(MAKE_SCRIPT_DIR)/checks.mk
+include $(ROOT)/make/checks.mk
 
 # basic target list
 BASE_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
@@ -98,10 +97,10 @@ DIRECTORIES := $(DL_DIR) $(TOOLS_DIR)
 export RM := rm
 
 # import macros that are OS specific
-include $(MAKE_SCRIPT_DIR)/$(OSFAMILY).mk
+include $(ROOT)/make/$(OSFAMILY).mk
 
 # include the tools makefile
-include $(MAKE_SCRIPT_DIR)/tools.mk
+include $(ROOT)/make/tools.mk
 
 # Search path for sources
 VPATH           := $(SRC_DIR):$(SRC_DIR)/startup
@@ -116,7 +115,7 @@ FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk 
 FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
 # import config handling
-include $(MAKE_SCRIPT_DIR)/config.mk
+include $(ROOT)/make/config.mk
 
 ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
@@ -158,8 +157,8 @@ OPTIMISE_SIZE         := -Os
 LTO_FLAGS             := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
 
-VPATH 			:= $(VPATH):$(MAKE_SCRIPT_DIR)/mcu
-VPATH 			:= $(VPATH):$(MAKE_SCRIPT_DIR)
+VPATH 			:= $(VPATH):$(ROOT)/make/mcu
+VPATH 			:= $(VPATH):$(ROOT)/make
 
 # start specific includes
 ifeq ($(TARGET_MCU),)
@@ -176,10 +175,10 @@ ifneq ($(CONFIG),)
 TARGET_FLAGS  	:= $(TARGET_FLAGS) -DUSE_CONFIG
 endif
 
-include $(MAKE_SCRIPT_DIR)/mcu/$(TARGET_MCU_FAMILY).mk
+include $(ROOT)/make/mcu/$(TARGET_MCU_FAMILY).mk
 
 # openocd specific includes
-include $(MAKE_SCRIPT_DIR)/openocd.mk
+include $(ROOT)/make/openocd.mk
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(TARGET_FLASH_SIZE),)
@@ -209,7 +208,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
-include $(MAKE_SCRIPT_DIR)/source.mk
+include $(ROOT)/make/source.mk
 
 ###############################################################################
 # Things that might need changing to use different tools
@@ -579,7 +578,7 @@ version:
 	@echo $(FC_VER)
 
 ## help              : print this help message and exit
-help: Makefile mk/tools.mk
+help: Makefile make/tools.mk
 	@echo ""
 	@echo "Makefile for the $(FORKNAME) firmware"
 	@echo ""

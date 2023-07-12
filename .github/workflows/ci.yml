@@ -26,7 +26,7 @@ jobs:
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
 
       - name: Download and install toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -56,7 +56,7 @@ jobs:
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
 
       - name: Hydrate configuration
         id: get-config

@@ -14,11 +14,10 @@
 USER_DIR = ../main
 TEST_DIR = unit
 ROOT = ../..
-OBJECT_DIR = $(ROOT)/obj/test
+OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
-MAKE_SCRIPT_DIR := $(ROOT)/mk
 
-include $(MAKE_SCRIPT_DIR)/system-id.mk
+include $(ROOT)/make/system-id.mk
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
@@ -593,7 +592,7 @@ GTEST_HEADERS = $(GTEST_DIR)/inc/gtest/*.h
 ## V                 : Set verbosity level based on the V= parameter
 ##                     V=0 Low
 ##                     V=1 High
-include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
+include ../../make/build_verbosity.mk
 
 # House-keeping build targets.
 
