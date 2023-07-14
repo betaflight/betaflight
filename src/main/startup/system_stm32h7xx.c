@@ -298,8 +298,13 @@ pllConfig_t pll1Config7A3 = {
 #elif defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 
 // Nominal max 550MHz, but >520Mhz requires ECC to be disabled, CPUFREQ_BOOST set in option bytes and prevents OCTOSPI clock from running at the correct clock speed.
-// 4.9.24 FLASH option status register 2 (FLASH_OPTSR2_CUR)
-// "Bit 2CPUFREQ_BOOST: CPU frequency boost status bitThis bit indicates whether the CPU frequency can be boosted or not. When it is set, the ECC on ITCM and DTCM are no more used"
+// Unless CPUFREQ_BOOST in option bytes is enabled maximum CPU speed is limited to 520Mhz in VOS0.  VOS1 is limited to 400Mhz
+// References:
+// RM0468 Rev 3 "6.6.2 Voltage scaling".
+// RM0468 Rev 3 "4.9.24 FLASH option status register 2 (FLASH_OPTSR2_CUR)"
+// DS13312 Rev 2 "Table 13. General operating conditions (continued)"
+//
+// "Bit 2CPUFREQ_BOOST: CPU frequency boost status bit. This bit indicates whether the CPU frequency can be boosted or not. When it is set, the ECC on ITCM and DTCM are no more used"
 // ...
 // So use 520Mhz so that OCTOSPI clk can be 200Mhz with OCTOPSI prescaler 2 via PLL2R or 130Mhz with OCTOPSI prescaler 1 via PLL1Q
 
