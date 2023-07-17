@@ -26,6 +26,8 @@
 #include "pg/pg.h"
 
 #define MAX_NAME_LENGTH 16u
+#define MAX_CUSTOM_MSG_LENGTH 16u
+#define CUSTOM_MSG_SPLITER 0x23 //Use # as a separator for the received message to split out 3 contents
 
 typedef enum {
     CONFIGURATION_STATE_DEFAULTS_BARE = 0,
@@ -39,6 +41,12 @@ typedef struct pilotConfig_s {
 } pilotConfig_t;
 
 PG_DECLARE(pilotConfig_t, pilotConfig);
+
+typedef struct customMsgConfig_s {
+    char message[3][MAX_CUSTOM_MSG_LENGTH + 1];
+} customMsgConfig_t;
+
+PG_DECLARE(customMsgConfig_t, customMsgConfig);
 
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
