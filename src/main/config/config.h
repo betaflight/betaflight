@@ -27,7 +27,7 @@
 
 #define MAX_NAME_LENGTH 16u
 #define MAX_CUSTOM_MSG_LENGTH 16u
-#define CUSTOM_MSG_SPLITER 0x23 //'#'作为分隔符
+#define CUSTOM_MSG_SPLITER 0x23 //Use # as a separator for the received message to split out 3 contents
 
 typedef enum {
     CONFIGURATION_STATE_DEFAULTS_BARE = 0,

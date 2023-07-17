@@ -779,7 +779,6 @@ static void osdElementCompassBar(osdElementParms_t *element)
 }
 
 //display custom message from MSPv2
-//自定义信息初始化
 static void osdElementCustomMsg1(osdElementParms_t *element)
 {
     if (strlen(customMsgConfig()->message[0]) == 0) {
