@@ -37,66 +37,50 @@ float vector2Cross(const fpVector2_t *a, const fpVector2_t *b)
     return a->x * b->y - a->y * b->x;
 }
 
-float vector2Mag(const fpVector2_t *a)
+float vector2Mag(const fpVector2_t *v)
 {
-    return sqrtf(sq(a->x) + sq(a->y));
+    return sqrtf(sq(v->x) + sq(v->y));
 }
 
-fpVector3_t * vectorZero(fpVector3_t *v)
+void vectorZero(fpVector3_t *v)
 {
     v->x = 0.0f;
     v->y = 0.0f;
     v->z = 0.0f;
-    return v;
 }
 
-fpVector3_t * vectorAdd(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b)
+void vectorAdd(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b)
 {
-    fpVector3_t ab;
-
-    ab.x = a->x + b->x;
-    ab.y = a->y + b->y;
-    ab.z = a->z + b->z;
-
-    *result = ab;
-    return result;
+    result->x = a->x + b->x;
+    result->y = a->y + b->y;
+    result->z = a->z + b->z;
 }
 
-fpVector3_t * vectorScale(fpVector3_t *result, const fpVector3_t *a, const float b)
+void vectorScale(fpVector3_t *result, const fpVector3_t *a, const float k)
 {
-    fpVector3_t ab;
-
-    ab.x = a->x * b;
-    ab.y = a->y * b;
-    ab.z = a->z * b;
-
-    *result = ab;
-    return result;
+    result->x = a->x * k;
+    result->y = a->y * k;
+    result->z = a->z * k;
 }
 
-fpVector3_t * vectorCrossProduct(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b)
+void vectorCrossProduct(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b)
 {
-    fpVector3_t ab;
-
-    ab.x = a->y * b->z - a->z * b->y;
-    ab.y = a->z * b->x - a->x * b->z;
-    ab.z = a->x * b->y - a->y * b->x;
-
-    *result = ab;
-    return result;
+    result->x = a->y * b->z - a->z * b->y;
+    result->y = a->z * b->x - a->x * b->z;
+    result->z = a->x * b->y - a->y * b->x;
 }
 
-float vectorNormSquared(const fpVector3_t * v)
+float vectorNormSquared(const fpVector3_t *v)
 {
     return sq(v->x) + sq(v->y) + sq(v->z);
 }
 
-float vectorNorm(const fpVector3_t * v)
+float vectorNorm(const fpVector3_t *v)
 {
     return sqrtf(vectorNormSquared(v));
 }
 
-fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3_t *v)
+void vectorNormalize(fpVector3_t *result, const fpVector3_t *v)
 {
     float normSq = vectorNormSquared(v);
     if (normSq > 0) {              // Hopefully sqrt(nonzero) is quite large
@@ -106,26 +90,16 @@ fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3_t *v)
     }
 }
 
-fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
+void matrixVectorMul(fpVector3_t *result, const fpMat33_t *mat, const fpVector3_t *v)
 {
-    fpVector3_t r;
-
-    r.x = mat->m[0][0] * a->x + mat->m[0][1] * a->y + mat->m[0][2] * a->z;
-    r.y = mat->m[1][0] * a->x + mat->m[1][1] * a->y + mat->m[1][2] * a->z;
-    r.z = mat->m[2][0] * a->x + mat->m[2][1] * a->y + mat->m[2][2] * a->z;
-
-    *result = r;
-    return result;
+    result->x = mat->m[0][0] * v->x + mat->m[0][1] * v->y + mat->m[0][2] * v->z;
+    result->y = mat->m[1][0] * v->x + mat->m[1][1] * v->y + mat->m[1][2] * v->z;
+    result->z = mat->m[2][0] * v->x + mat->m[2][1] * v->y + mat->m[2][2] * v->z;
 }
 
-fpVector3_t * matrixTrnVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
+void matrixTrnVectorMul(fpVector3_t *result, const fpMat33_t *mat, const fpVector3_t *v)
 {
-    fpVector3_t r;
-
-    r.x = mat->m[0][0] * a->x + mat->m[1][0] * a->y + mat->m[2][0] * a->z;
-    r.y = mat->m[0][1] * a->x + mat->m[1][1] * a->y + mat->m[2][1] * a->z;
-    r.z = mat->m[0][2] * a->x + mat->m[1][2] * a->y + mat->m[2][2] * a->z;
-
-    *result = r;
-    return result;
+    result->x = mat->m[0][0] * v->x + mat->m[1][0] * v->y + mat->m[2][0] * v->z;
+    result->y = mat->m[0][1] * v->x + mat->m[1][1] * v->y + mat->m[2][1] * v->z;
+    result->z = mat->m[0][2] * v->x + mat->m[1][2] * v->y + mat->m[2][2] * v->z;
 }

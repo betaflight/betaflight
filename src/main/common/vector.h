@@ -46,15 +46,15 @@ typedef struct {
 
 float vector2Dot(const fpVector2_t *a, const fpVector2_t *b);
 float vector2Cross(const fpVector2_t *a, const fpVector2_t *b);
-float vector2Mag(const fpVector2_t *a);
+float vector2Mag(const fpVector2_t *v);
 
-fpVector3_t * vectorZero(fpVector3_t *v);
-fpVector3_t * vectorAdd(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b);
-fpVector3_t * vectorScale(fpVector3_t *result, const fpVector3_t *a, const float b);
-fpVector3_t * vectorCrossProduct(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b);
-float vectorNormSquared(const fpVector3_t * v);
-float vectorNorm(const fpVector3_t * v);
-fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3_t *v);
+void vectorZero(fpVector3_t *v);
+void vectorAdd(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b);
+void vectorScale(fpVector3_t *result, const fpVector3_t *a, const float k);
+void vectorCrossProduct(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b);
+float vectorNormSquared(const fpVector3_t *v);
+float vectorNorm(const fpVector3_t *v);
+void vectorNormalize(fpVector3_t *result, const fpVector3_t *v);
 
-fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a);
-fpVector3_t * matrixTrnVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a);
+void matrixVectorMul(fpVector3_t *result, const fpMat33_t *mat, const fpVector3_t *v);
+void matrixTrnVectorMul(fpVector3_t *result, const fpMat33_t *mat, const fpVector3_t *v);
