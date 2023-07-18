@@ -87,7 +87,7 @@ const float sqrt2over2 = sqrtf(2) / 2.0f;
 
 void quaternion_from_axis_angle(quaternion* q, float angle, float x, float y, float z) {
     vector3_t a = {{x, y, z}};
-    vectorNormalize(&a, &a);
+    vector3Normalize(&a, &a);
     q->w = cos(angle / 2);
     q->x = a.x * sin(angle / 2);
     q->y = a.y * sin(angle / 2);
@@ -256,9 +256,9 @@ protected:
     float dcmKp;
     float dt;
     void SetUp() override {
-        vectorZero(&gyro);
+        vector3Zero(&gyro);
         useAcc = false;
-        vectorZero(&acc);
+        vector3Zero(&acc);
         cogGain = 0.0;   // no cog
         cogDeg  = 0.0;
         dcmKp = .25;     // default dcm_kp
@@ -280,13 +280,13 @@ protected:
     }
     float angleDiffNorm(vector3_t *a, vector3_t* b, vector3_t weight = {{1,1,1}}) {
         vector3_t tmp;
-        vectorScale(&tmp, b, -1);
-        vectorAdd(&tmp, &tmp, a);
+        vector3Scale(&tmp, b, -1);
+        vector3Add(&tmp, &tmp, a);
         for (int i = 0; i < 3; i++)
             tmp.v[i] *= weight.v[i];
         for (int i = 0; i < 3; i++)
             tmp.v[i] = std::remainder(tmp.v[i], 360.0);
-        return vectorNorm(&tmp);
+        return vector3Norm(&tmp);
     }
     // run Mahony for some time
     // return time it took to get within 1deg from target
