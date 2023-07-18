@@ -26,6 +26,7 @@
 #include "common/maths.h"
 #include "common/sensor_alignment.h"
 #include "common/time.h"
+#include "common/vector.h"
 
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/bus.h"
@@ -125,7 +126,7 @@ typedef struct gyroDev_s {
     ioTag_t mpuIntExtiTag;
     uint8_t gyroHasOverflowProtection;
     gyroHardware_e gyroHardware;
-    fp_rotationMatrix_t rotationMatrix;
+    matrix33_t rotationMatrix;
     uint16_t gyroSampleRateHz;
     uint16_t accSampleRateHz;
     uint8_t accDataReg;
@@ -148,7 +149,7 @@ typedef struct accDev_s {
     bool acc_high_fsr;
     char revisionCode;                                      // a revision code for the sensor, if known
     uint8_t filler[2];
-    fp_rotationMatrix_t rotationMatrix;
+    matrix33_t rotationMatrix;
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)

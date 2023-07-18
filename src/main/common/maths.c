@@ -188,7 +188,7 @@ float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float des
     return (a / b) + destFrom;
 }
 
-void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation)
+void buildRotationMatrix(fp_angles_t *delta, matrix33_t *rotation)
 {
     float cosx, sinx, cosy, siny, cosz, sinz;
     float coszcosx, sinzcosx, coszsinx, sinzsinx;
@@ -216,7 +216,7 @@ void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation)
     rotation->m[2][Z] = cosy * cosx;
 }
 
-void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix)
+void applyMatrixRotation(float *v, matrix33_t *rotationMatrix)
 {
     struct fp_vector *vDest = (struct fp_vector *)v;
     struct fp_vector vTmp = *vDest;

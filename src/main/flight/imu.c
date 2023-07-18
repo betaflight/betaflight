@@ -30,9 +30,6 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "common/axis.h"
-#include "common/vector.h"
-
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -837,20 +834,20 @@ void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *res
     result->z = D + (+ E - F - G + H) / 2.0f;
 }
 
-void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v)
+void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v)
 {
     quaternionProducts buffer;
 
     imuQuaternionMultiplication(&offset, &q, &headfree);
     imuQuaternionComputeProducts(&headfree, &buffer);
 
-    const float x = (buffer.ww + buffer.xx - buffer.yy - buffer.zz) * v->X + 2.0f * (buffer.xy + buffer.wz) * v->Y + 2.0f * (buffer.xz - buffer.wy) * v->Z;
-    const float y = 2.0f * (buffer.xy - buffer.wz) * v->X + (buffer.ww - buffer.xx + buffer.yy - buffer.zz) * v->Y + 2.0f * (buffer.yz + buffer.wx) * v->Z;
-    const float z = 2.0f * (buffer.xz + buffer.wy) * v->X + 2.0f * (buffer.yz - buffer.wx) * v->Y + (buffer.ww - buffer.xx - buffer.yy + buffer.zz) * v->Z;
+    const float x = (buffer.ww + buffer.xx - buffer.yy - buffer.zz) * v->x + 2.0f * (buffer.xy + buffer.wz) * v->y + 2.0f * (buffer.xz - buffer.wy) * v->z;
+    const float y = 2.0f * (buffer.xy - buffer.wz) * v->x + (buffer.ww - buffer.xx + buffer.yy - buffer.zz) * v->y + 2.0f * (buffer.yz + buffer.wx) * v->z;
+    const float z = 2.0f * (buffer.xz + buffer.wy) * v->x + 2.0f * (buffer.yz - buffer.wx) * v->y + (buffer.ww - buffer.xx - buffer.yy + buffer.zz) * v->z;
 
-    v->X = x;
-    v->Y = y;
-    v->Z = z;
+    v->x = x;
+    v->y = y;
+    v->z = z;
 }
 
 bool isUpright(void)

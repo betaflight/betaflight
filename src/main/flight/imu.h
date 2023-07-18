@@ -23,6 +23,8 @@
 #include "common/axis.h"
 #include "common/time.h"
 #include "common/maths.h"
+#include "common/vector.h"
+
 #include "pg/pg.h"
 
 // Exported symbols
@@ -85,6 +87,6 @@ void imuSetHasNewData(uint32_t dt);
 #endif
 
 bool imuQuaternionHeadfreeOffsetSet(void);
-void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def * v);
+void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v);
 bool shouldInitializeGPSHeading(void);
 bool isUpright(void);

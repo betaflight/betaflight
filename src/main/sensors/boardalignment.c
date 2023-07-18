@@ -26,8 +26,6 @@
 #include "platform.h"
 
 #include "common/utils.h"
-#include "common/maths.h"
-#include "common/axis.h"
 #include "common/sensor_alignment.h"
 
 #include "pg/pg.h"
@@ -38,7 +36,7 @@
 #include "boardalignment.h"
 
 static bool standardBoardAlignment = true;     // board orientation correction
-static fp_rotationMatrix_t boardRotation;
+static matrix33_t boardRotation;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 1);
 
@@ -84,7 +82,7 @@ static void alignBoard(float *vec)
     applyMatrixRotation(vec, &boardRotation);
 }
 
-FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* sensorRotationMatrix)
+FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, matrix33_t* sensorRotationMatrix)
 {
     applyMatrixRotation(dest, sensorRotationMatrix);
 

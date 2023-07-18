@@ -24,6 +24,7 @@ extern "C" {
 #include "common/sensor_alignment.h"
 #include "common/sensor_alignment_impl.h"
 #include "common/utils.h"
+#include "common/vector.h"
 #include "drivers/sensor.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -103,7 +104,7 @@ static void initZAxisRotation(int32_t mat[][3], int32_t angle)
 
 static void alignSensorViaMatrixFromRotation(float *dest, sensor_align_e alignment)
 {
-    fp_rotationMatrix_t sensorRotationMatrix;
+    matrix33_t sensorRotationMatrix;
 
     sensorAlignment_t sensorAlignment;
 
