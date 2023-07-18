@@ -58,3 +58,6 @@ void vectorNormalize(vector3_t *result, const vector3_t *v);
 
 void matrixVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *v);
 void matrixTrnVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *v);
+
+void buildRotationMatrix(matrix33_t *result, const fp_angles_t *delta);
+void applyRotationMatrix(float *v, const matrix33_t *rotationMatrix);

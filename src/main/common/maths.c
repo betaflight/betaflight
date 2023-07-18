@@ -26,7 +26,8 @@
 
 #include "build/build_config.h"
 
-#include "axis.h"
+#include "common/axis.h"
+
 #include "maths.h"
 
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
@@ -186,44 +187,6 @@ float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float des
     float a = (destTo - destFrom) * (x - srcFrom);
     float b = srcTo - srcFrom;
     return (a / b) + destFrom;
-}
-
-void buildRotationMatrix(fp_angles_t *delta, matrix33_t *rotation)
-{
-    float cosx, sinx, cosy, siny, cosz, sinz;
-    float coszcosx, sinzcosx, coszsinx, sinzsinx;
-
-    cosx = cos_approx(delta->angles.roll);
-    sinx = sin_approx(delta->angles.roll);
-    cosy = cos_approx(delta->angles.pitch);
-    siny = sin_approx(delta->angles.pitch);
-    cosz = cos_approx(delta->angles.yaw);
-    sinz = sin_approx(delta->angles.yaw);
-
-    coszcosx = cosz * cosx;
-    sinzcosx = sinz * cosx;
-    coszsinx = sinx * cosz;
-    sinzsinx = sinx * sinz;
-
-    rotation->m[0][X] = cosz * cosy;
-    rotation->m[0][Y] = -cosy * sinz;
-    rotation->m[0][Z] = siny;
-    rotation->m[1][X] = sinzcosx + (coszsinx * siny);
-    rotation->m[1][Y] = coszcosx - (sinzsinx * siny);
-    rotation->m[1][Z] = -sinx * cosy;
-    rotation->m[2][X] = (sinzsinx) - (coszcosx * siny);
-    rotation->m[2][Y] = (coszsinx) + (sinzcosx * siny);
-    rotation->m[2][Z] = cosy * cosx;
-}
-
-void applyMatrixRotation(float *v, matrix33_t *rotationMatrix)
-{
-    struct fp_vector *vDest = (struct fp_vector *)v;
-    struct fp_vector vTmp = *vDest;
-
-    vDest->X = (rotationMatrix->m[0][X] * vTmp.X + rotationMatrix->m[1][X] * vTmp.Y + rotationMatrix->m[2][X] * vTmp.Z);
-    vDest->Y = (rotationMatrix->m[0][Y] * vTmp.X + rotationMatrix->m[1][Y] * vTmp.Y + rotationMatrix->m[2][Y] * vTmp.Z);
-    vDest->Z = (rotationMatrix->m[0][Z] * vTmp.X + rotationMatrix->m[1][Z] * vTmp.Y + rotationMatrix->m[2][Z] * vTmp.Z);
 }
 
 // Quick median filter implementation

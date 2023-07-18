@@ -74,17 +74,17 @@ void initBoardAlignment(const boardAlignment_t *boardAlignment)
     rotationAngles.angles.pitch = degreesToRadians(boardAlignment->pitchDegrees);
     rotationAngles.angles.yaw   = degreesToRadians(boardAlignment->yawDegrees  );
 
-    buildRotationMatrix(&rotationAngles, &boardRotation);
+    buildRotationMatrix(&boardRotation, &rotationAngles);
 }
 
 static void alignBoard(float *vec)
 {
-    applyMatrixRotation(vec, &boardRotation);
+    applyRotationMatrix(vec, &boardRotation);
 }
 
-FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, matrix33_t* sensorRotationMatrix)
+FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, matrix33_t *sensorRotationMatrix)
 {
-    applyMatrixRotation(dest, sensorRotationMatrix);
+    applyRotationMatrix(dest, sensorRotationMatrix);
 
     if (!standardBoardAlignment) {
         alignBoard(dest);

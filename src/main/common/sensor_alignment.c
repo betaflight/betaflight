@@ -27,15 +27,16 @@
 
 #include "common/sensor_alignment.h"
 #include "common/sensor_alignment_impl.h"
+#include "common/vector.h"
 
-void buildRotationMatrixFromAlignment(const sensorAlignment_t* sensorAlignment, matrix33_t* rm)
+void buildRotationMatrixFromAlignment(const sensorAlignment_t *sensorAlignment, matrix33_t *rm)
 {
     fp_angles_t rotationAngles;
     rotationAngles.angles.roll  = DECIDEGREES_TO_RADIANS(sensorAlignment->roll);
     rotationAngles.angles.pitch = DECIDEGREES_TO_RADIANS(sensorAlignment->pitch);
     rotationAngles.angles.yaw   = DECIDEGREES_TO_RADIANS(sensorAlignment->yaw);
 
-    buildRotationMatrix(&rotationAngles, rm);
+    buildRotationMatrix(rm, &rotationAngles);
 }
 
 
