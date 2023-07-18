@@ -86,7 +86,7 @@ extern "C" {
 const float sqrt2over2 = sqrtf(2) / 2.0f;
 
 void quaternion_from_axis_angle(quaternion* q, float angle, float x, float y, float z) {
-    fpVector3_t a = {{x, y, z}};
+    vector3_t a = {{x, y, z}};
     vectorNormalize(&a, &a);
     q->w = cos(angle / 2);
     q->x = a.x * sin(angle / 2);
@@ -246,11 +246,11 @@ testing::AssertionResult DoubleNearWrapPredFormat(const char* expr1, const char*
 
 class MahonyFixture : public ::testing::Test {
 protected:
-    fpVector3_t gyro;
+    vector3_t gyro;
     bool useAcc;
-    fpVector3_t acc;
+    vector3_t acc;
     bool useMag;
-    fpVector3_t magEF;
+    vector3_t magEF;
     float cogGain;
     float cogDeg;
     float dcmKp;
@@ -268,7 +268,7 @@ protected:
         // level, poiting north
         setOrientationAA(0, {{1,0,0}});        // identity
     }
-    virtual void setOrientationAA(float angleDeg, fpVector3_t axis) {
+    virtual void setOrientationAA(float angleDeg, vector3_t axis) {
         quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(angleDeg), axis.x, axis.y, axis.z);
         imuComputeRotationMatrix();
     }
@@ -278,8 +278,8 @@ protected:
         if (angle < 0) angle += 360;
         return angle;
     }
-    float angleDiffNorm(fpVector3_t *a, fpVector3_t* b, fpVector3_t weight = {{1,1,1}}) {
-        fpVector3_t tmp;
+    float angleDiffNorm(vector3_t *a, vector3_t* b, vector3_t weight = {{1,1,1}}) {
+        vector3_t tmp;
         vectorScale(&tmp, b, -1);
         vectorAdd(&tmp, &tmp, a);
         for (int i = 0; i < 3; i++)
@@ -290,7 +290,7 @@ protected:
     }
     // run Mahony for some time
     // return time it took to get within 1deg from target
-    float imuIntegrate(float runTime, fpVector3_t * target) {
+    float imuIntegrate(float runTime, vector3_t * target) {
         float alignTime = -1;
         for (float t = 0; t < runTime; t += dt) {
             //     if (fmod(t, 1) < dt) printf("MagBF=%.2f %.2f %.2f\n", magBF.x, magBF.y, magBF.z);
@@ -312,7 +312,7 @@ protected:
             // if (fmod(t, 1) < dt) printf("%3.1fs - %3.1f %3.1f %3.1f\n", t, attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f);
             // remember how long it took
             if (alignTime < 0) {
-                fpVector3_t rpy = {{attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f}};
+                vector3_t rpy = {{attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f}};
                 float error = angleDiffNorm(&rpy, target);
                 if (error < 1)
                     alignTime = t;
@@ -331,7 +331,7 @@ TEST_P(YawTest, TestCogAlign)
     cogDeg = GetParam();
     const float rollDeg = 30;    // 30deg pitch forward
     setOrientationAA(rollDeg, {{0, 1, 0}});
-    fpVector3_t expect = {{0, rollDeg, wrap(cogDeg)}};
+    vector3_t expect = {{0, rollDeg, wrap(cogDeg)}};
     // integrate IMU. about 25s is enough in worst case
     float alignTime = imuIntegrate(80, &expect);
 
@@ -354,9 +354,9 @@ TEST_P(YawTest, TestMagAlign)
     quaternion_from_axis_angle(&q, -DEGREES_TO_RADIANS(initialAngle), 0, 0, 1);
     imuComputeRotationMatrix();
 
-    fpVector3_t expect = {{0, 0, 0}};    // expect zero yaw
+    vector3_t expect = {{0, 0, 0}};    // expect zero yaw
 
-    fpVector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
+    vector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
 
     for (int i = 0; i < 3; i++)
         mag.magADC[i] = magBF.v[i];
