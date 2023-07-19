@@ -198,20 +198,20 @@ static const char * const lookupTableGyro[] = {
 #endif
 
 #ifdef USE_GPS
-static const char * const lookupTableGPSProvider[] = {
+static const char * const lookupTableGpsProvider[] = {
     "NMEA", "UBLOX", "MSP"
 };
 
-static const char * const lookupTableGPSSBASMode[] = {
+static const char * const lookupTableGpsSbasMode[] = {
     "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN", "NONE"
 };
 
-static const char * const lookupTableGPSUBLOXModels[] = {
+static const char * const lookupTableGpsUbloxModels[] = {
     "PORTABLE", "STATIONARY", "PEDESTRIAN", "AUTOMOTIVE", "AT_SEA", "AIRBORNE_1G", "AIRBORNE_2G", "AIRBORNE_4G"
 };
 
 static const char * const lookupTableGpsUbloxUtcStandard[] = {
-        "AUTO", "USNO", "EU", "SU", "NTSC"
+    "AUTO", "USNO", "EU", "SU", "NTSC"
 };
 #endif
 
@@ -537,9 +537,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableUnit),
     LOOKUP_TABLE_ENTRY(lookupTableAlignment),
 #ifdef USE_GPS
-    LOOKUP_TABLE_ENTRY(lookupTableGPSProvider),
-    LOOKUP_TABLE_ENTRY(lookupTableGPSSBASMode),
-    LOOKUP_TABLE_ENTRY(lookupTableGPSUBLOXModels),
+    LOOKUP_TABLE_ENTRY(lookupTableGpsProvider),
+    LOOKUP_TABLE_ENTRY(lookupTableGpsSbasMode),
+    LOOKUP_TABLE_ENTRY(lookupTableGpsUbloxModels),
     LOOKUP_TABLE_ENTRY(lookupTableGpsUbloxUtcStandard),
 #ifdef USE_GPS_RESCUE
     LOOKUP_TABLE_ENTRY(lookupTableRescueSanityType),
