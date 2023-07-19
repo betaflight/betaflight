@@ -390,9 +390,6 @@ void uartIrqHandler(uartPort_t *s)
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
             USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
-
-            // Switch TX to an input with pullup so it's state can be monitored
-            uartTxMonitor(s);
         }
     }
 
