@@ -107,19 +107,13 @@ uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];
 uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 
-#define GPS_UPDATE_RATE_TO_MS(update_rate) ((int32_t)(1000 / update_rate))
-#define GPS_TICKS_TO_MS(update_rate, ticks) GPS_UPDATE_RATE_TO_MS(update_rate) * (ticks)
-
-// GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
-#define GPS_TIMEOUT_MAX_COUNT (10)
-#define GPS_TIMEOUT_MS(update_rate) GPS_TICKS_TO_MS(update_rate, GPS_TIMEOUT_MAX_COUNT)
-// How many entries in gpsInitData array below
-// #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
-// commented out since not needed with this PR
-#define GPS_BAUDRATE_CHANGE_DELAY (350)
-// Timeout for waiting ACK/NAK in GPS task cycles relative to update_rate
-#define UBLOX_ACK_TIMEOUT_MAX_COUNT (5)
-#define UBLOX_ACK_TIMEOUT_MAX_MS(update_rate) GPS_TICKS_TO_MS(update_rate, UBLOX_ACK_TIMEOUT_MAX_COUNT)
+#define GPS_CYCLES_TO_MS(update_rate, cycles) ((cycles) * (int32_t)(1000 / (update_rate)))
+// GPS LOST_COMMUNICATION timeout in ms (default 1000ms at 10Hz)
+#define GPS_TIMEOUT_MS(update_rate) GPS_CYCLES_TO_MS((update_rate), 10)
+// Timeout for waiting ACK/NAK in ms (default of 500ms at 5Hz)
+#define UBLOX_ACK_TIMEOUT_MAX_MS(update_rate) GPS_CYCLES_TO_MS((update_rate), 5)
+// Time allowed for module to respond to baud rate change during initial configuration
+#define GPS_BAUDRATE_CHANGE_DELAY_MS(update_rate) GPS_CYCLES_TO_MS((update_rate), 3)
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
@@ -475,7 +469,7 @@ void gpsInitNmea(void)
         case GPS_STATE_INITIALIZING:
 #if !defined(GPS_NMEA_TX_ONLY)
            now = millis();
-           if (now - gpsData.state_ts < 1000) {
+           if (cmp32(now, gpsData.state_ts) < 1000) {
                return;
            }
            gpsData.state_ts = now;
@@ -495,7 +489,7 @@ void gpsInitNmea(void)
         case GPS_STATE_CHANGE_BAUD:
 #if !defined(GPS_NMEA_TX_ONLY)
            now = millis();
-           if (now - gpsData.state_ts < 1000) {
+           if (cmp32(now, gpsData.state_ts) < 1000) {
                return;
            }
            gpsData.state_ts = now;
@@ -1033,9 +1027,6 @@ static void ubloxSetSbas(void)
 
 void gpsInitUblox(void)
 {
-    uint32_t now;
-    // UBX will run at the serial port's baudrate, it shouldn't be "autodetected". So here we force it to that rate
-
     // Wait until GPS transmit buffer is empty
     if (!isSerialTransmitBufferEmpty(gpsPort))
         return;
@@ -1078,8 +1069,8 @@ void gpsInitUblox(void)
             }
 
             // delay to give time to respond
-            now = millis();
-            if (now - gpsData.state_ts < GPS_BAUDRATE_CHANGE_DELAY) {
+            uint32_t now = millis();
+            if (cmp32(now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS(gpsData.updateRate)) {
                 return;
             }
             gpsData.state_ts = now;
@@ -1281,14 +1272,11 @@ void gpsInitUblox(void)
                 case UBLOX_ACK_IDLE:
                     break;
                 case UBLOX_ACK_WAITING:
-                    // 1000ms / hz = time per tick
-                    // wait 5 ticks = (1000 / hz) * 5)
+                    // wait 5 cycles
                     if (cmp32(millis(), gpsData.lastMessage) > UBLOX_ACK_TIMEOUT_MAX_MS(gpsData.updateRate)){
-                        // gpsSetState(GPS_STATE_LOST_COMMUNICATION);
-                        // treat it like receiving ack
+                        // then give up, treat it like receiving ack
                         gpsData.ackState = UBLOX_ACK_GOT_ACK;
                     }
-                    // stay at current position
                     break;
                 case UBLOX_ACK_GOT_ACK:
                     if (gpsData.state_position == UBLOX_MSG_CFG_GNSS) {
