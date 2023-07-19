@@ -2242,7 +2242,7 @@ static bool UBLOX_parse_gps(void)
         for (i = 0; i < GPS_numCh; i++) {
             GPS_svinfo_chn[i] = _buffer.svinfo.channel[i].chn;
             GPS_svinfo_svid[i] = _buffer.svinfo.channel[i].svid;
-            GPS_svinfo_quality[i] =_buffer.svinfo.channel[i].quality;
+            GPS_svinfo_quality[i] = _buffer.svinfo.channel[i].quality;
             GPS_svinfo_cno[i] = _buffer.svinfo.channel[i].cno;
         }
         for (i = GPS_numCh; i < GPS_SV_MAXSATS_LEGACY; i++) {
@@ -2265,7 +2265,7 @@ static bool UBLOX_parse_gps(void)
             GPS_svinfo_chn[i] = _buffer.sat.svs[i].gnssId;
             GPS_svinfo_svid[i] = _buffer.sat.svs[i].svId;
             GPS_svinfo_cno[i] = _buffer.sat.svs[i].cno;
-            GPS_svinfo_quality[i] =_buffer.sat.svs[i].flags;
+            GPS_svinfo_quality[i] = _buffer.sat.svs[i].flags;
         }
         for (i = GPS_numCh; i < GPS_SV_MAXSATS_M8N; i++) {
             GPS_svinfo_chn[i] = 255;
