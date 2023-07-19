@@ -411,6 +411,7 @@ void gpsInit(void)
     gpsData.timeouts = 0;
     gpsData.satInfoRequired = false;
     gpsData.state_ts = millis();
+    gpsData.ubloxUsingFlightModel = false;
 
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
@@ -1120,6 +1121,7 @@ void gpsInitUblox(void)
                         break;
                     case UBLOX_ACQUIRE_MODEL:
                         ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
+                        gpsData.ubloxUsingFlightModel = false;
                         break;
                     case UBLOX_CFG_ANA:
                         if (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5, not sure where we should start using it?
@@ -1420,6 +1422,10 @@ void gpsUpdate(timeUs_t currentTimeUs)
                         gpsData.satInfoRequired = false;
                         }
                     }
+                }
+                if (gpsData.ubloxUsingFlightModel == false && STATE(GPS_FIX)) {
+                    ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
+                    gpsData.ubloxUsingFlightModel = true;
                 }
 #endif //USE_GPS_UBLOX
             }

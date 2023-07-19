@@ -333,6 +333,7 @@ typedef struct gpsData_s {
     bool ubloxM8orAbove;
     bool ubloxM9orAbove;
     bool satInfoRequired;
+    bool ubloxUsingFlightModel;    // false = Acquire model, true = Flight model
 #ifdef USE_GPS_UBLOX
     ubloxVersion_e unitVersion;     // detected UNIT version
     ubxMonVer_t monVer;             // MON-VER response
