@@ -73,11 +73,6 @@
 #define LOG_UBLOX_POSLLH 'P'
 #define LOG_UBLOX_VELNED 'V'
 
-// not used... set by Tony Blit in Added m9n support #10921
-// #define DEBUG_SERIAL_BAUD  0 // set to 1 to debug serial port baud config (/100)
-// #define DEBUG_UBLOX_INIT   0 // set to 1 to debug ublox initialization
-// #define DEBUG_UBLOX_FRAMES 0 // set to 1 to debug ublox received frames
-
 uint8_t gpsPackageCounter = 0;
 bool gpsPackageReachedUpdateRate = false;
 timeMs_t gpsPackageCounterTime = 0;
@@ -404,7 +399,6 @@ static void gpsSetState(gpsState_e state)
 void gpsInit(void)
 {
     gpsPackageCounter = 0;
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
     gpsDataIntervalSeconds = 0.1f;
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
@@ -1355,11 +1349,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
     timeUs_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
 
-// not used - set by Tony Blit in Added m9n support #10921
-// #if DEBUG_SERIAL_BAUD
-//     debug[2] = (int16_t)((currentTimeUs - gpsData.lastMessage) / 100);
-// #endif
-
     // read out available GPS bytes
     if (gpsPort) {
         while (serialRxBytesWaiting(gpsPort)) {
@@ -1377,13 +1366,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
         onGpsNewData();
         GPS_update &= ~GPS_MSP_UPDATE;
     }
-
-// not used - set by Tony Blit in Added m9n support #10921
-// #if DEBUG_UBLOX_INIT
-//     debug[0] = gpsData.state;
-//     debug[1] = gpsData.state_position;
-//     debug[2] = gpsData.ackState;
-// #endif
 
     DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, gpsData.satInfoRequired);
 
@@ -1408,11 +1390,15 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_STATE_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
+
             DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastMessage);
+
             if (cmp32(millis(), gpsData.lastMessage) > GPS_TIMEOUT_MS(gpsData.updateRate)) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
                 gpsPackageCounter = 20;
+
                 DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
+
 #ifdef USE_GPS_UBLOX
             } else {
                 if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
@@ -1472,8 +1458,8 @@ static void gpsNewData(uint16_t c)
         return;
     }
 
-    gpsPackageCounter += 1;
     DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
+    gpsPackageCounter += 1;
 
     if (cmp32(millis(), gpsPackageCounterTime) >= 1000) {
 
@@ -1490,7 +1476,6 @@ static void gpsNewData(uint16_t c)
 
         gpsPackageCounterTime = millis();
         gpsPackageCounter = 0;
-        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
     }
 
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
@@ -1501,11 +1486,6 @@ static void gpsNewData(uint16_t c)
     }
 
     GPS_update ^= GPS_DIRECT_TICK;
-
-// not used - set by Tony Blit in Added m9n support #10921
-// #if DEBUG_UBLOX_INIT
-//     debug[3] = GPS_update;
-// #endif
 
     onGpsNewData();
 }
@@ -2377,21 +2357,11 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             _class = data;
             _ck_b = _ck_a = data;   // reset the checksum accumulators
 
-// not used - set by Tony Blit in Added m9n support #10921
-// #if DEBUG_UBLOX_FRAMES
-//     debug[1] = _class;
-// #endif
-
             break;
         case 3: // Id
             _step++;
             _ck_b += (_ck_a += data);       // checksum byte
             _msg_id = data;
-
-// not used - set by Tony Blit in Added m9n support #10921
-// #if DEBUG_UBLOX_FRAMES
-//     debug[2] = _msg_id;
-// #endif
 
             break;
         case 4: // Payload length (part 1)
@@ -2403,11 +2373,6 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             _step++;
             _ck_b += (_ck_a += data);       // checksum byte
             _payload_length += (uint16_t)(data << 8);
-
-// not used - set by Tony Blit in Added m9n support #10921
-// #if DEBUG_UBLOX_FRAMES
-//     debug[3] = _payload_length;
-// #endif
 
             if (_payload_length > UBLOX_PAYLOAD_SIZE) {
                 _skip_packet = true;

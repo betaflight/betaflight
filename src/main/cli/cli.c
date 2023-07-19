@@ -3618,20 +3618,6 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
         cliPrintLine(")");
 
         cliPrintLinef("extension: ");
-
-        /*for (size_t i = 0; i < 10; ++i) {
-            cliPrint(" ");
-            for (size_t j = i * 30; j < i * 30 + 30; ++j) {
-                if (j == i * 30 && gpsData.monVer.extension[j] == 0) {
-                    return;
-                }
-                if (gpsData.monVer.extension[j] == 0) {
-                    cliPrintLinefeed();
-                    break;
-                }
-                cliPrintf("%c", gpsData.monVer.extension[j]);
-            }
-        }*/
     }
 }
 #endif // USE_GPS_DEBUG
