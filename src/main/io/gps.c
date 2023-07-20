@@ -102,13 +102,13 @@ uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];
 uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 
-#define GPS_CYCLES_TO_MS(update_rate, cycles) ((cycles) * (int32_t)(1000 / (update_rate)))
-// GPS LOST_COMMUNICATION timeout in ms (default 1000ms at 10Hz)
-#define GPS_TIMEOUT_MS(update_rate) GPS_CYCLES_TO_MS((update_rate), 10)
-// Timeout for waiting ACK/NAK in ms (default of 500ms at 5Hz)
-#define UBLOX_ACK_TIMEOUT_MAX_MS(update_rate) GPS_CYCLES_TO_MS((update_rate), 5)
+// GPS LOST_COMMUNICATION timeout in ms (max time between received nav solutions)
+#define GPS_TIMEOUT_MS (2500)
+// Timeout for waiting for an ACK or NAK response to a configuration command
+#define UBLOX_ACK_TIMEOUT_MS (250)
 // Time allowed for module to respond to baud rate change during initial configuration
-#define GPS_BAUDRATE_CHANGE_DELAY_MS(update_rate) GPS_CYCLES_TO_MS((update_rate), 3)
+#define GPS_BAUDRATE_CHANGE_DELAY_MS (350)
+// dev note: the suggestion to use a multiple of the configured nav rate could result in very short or very long timeout intervals
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
@@ -388,7 +388,7 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skip_acc);
 
 static void gpsSetState(gpsState_e state)
 {
-    gpsData.lastMessage = millis();
+    gpsData.lastNavMessage = millis();
     sensorsClear(SENSOR_GPS);
     gpsData.state = state;
     gpsData.state_position = 0;
@@ -406,6 +406,7 @@ void gpsInit(void)
     gpsData.satInfoRequired = false;
     gpsData.state_ts = millis();
     gpsData.ubloxUsingFlightModel = false;
+    gpsData.updateRate = 10; // initialise at 10hz
 
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
@@ -1063,9 +1064,9 @@ void gpsInitUblox(void)
                 return;
             }
 
-            // delay to give time to respond
+            // delay to give time for the FC serial port to settle, and the GPS to respond
             uint32_t now = millis();
-            if (cmp32(now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS(gpsData.updateRate)) {
+            if (cmp32(now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS) {
                 return;
             }
             gpsData.state_ts = now;
@@ -1111,14 +1112,14 @@ void gpsInitUblox(void)
                         gpsData.state_position++;
                         break;
                     case UBLOX_INITIALIZE:
-                        ubloxSetNavRate(1, 1, 1); // once per second nav updates for now
+                        ubloxSetNavRate(1, 1, 1); // throttle nav data rate to once per second, until configured
                         break;
                     case UBLOX_ACQUIRE_MODEL:
                         ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
                         gpsData.ubloxUsingFlightModel = false;
                         break;
                     case UBLOX_CFG_ANA:
-                        if (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5, not sure where we should start using it?
+                        if (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
                             ubloxSendNavX5Message();
                         } else {
                             gpsData.state_position++;
@@ -1233,7 +1234,7 @@ void gpsInitUblox(void)
                         gpsData.satInfoRequired = false;
                         break;
                     case UBLOX_SET_NAV_RATE:
-                        // leave this till the end to avoid swamping until configured
+                        // set the nav solution rate to the user's configured update rate
                         gpsData.updateRate = gpsConfig()->gps_update_rate_hz;
                         ubloxSetNavRate(gpsData.updateRate, 1, 1);
                         break;
@@ -1269,7 +1270,7 @@ void gpsInitUblox(void)
                     break;
                 case UBLOX_ACK_WAITING:
                     // wait 5 cycles
-                    if (cmp32(millis(), gpsData.lastMessage) > UBLOX_ACK_TIMEOUT_MAX_MS(gpsData.updateRate)){
+                    if (cmp32(millis(), gpsData.lastNavMessage) > UBLOX_ACK_TIMEOUT_MS){
                         // then give up, treat it like receiving ack
                         gpsData.ackState = UBLOX_ACK_GOT_ACK;
                     }
@@ -1389,11 +1390,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
 
         case GPS_STATE_RECEIVING_DATA:
-            // check for no data/gps timeout/cable disconnection etc
 
-            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastMessage);
-
-            if (cmp32(millis(), gpsData.lastMessage) > GPS_TIMEOUT_MS(gpsData.updateRate)) {
+            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastNavMessage); // 
+ 
+            // check for no data/gps timeout/cable disconnection etc; delay is 10 times the nav rate interval
+            if (cmp32(millis(), gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
                 gpsPackageCounter = 20;
 
@@ -1479,9 +1480,9 @@ static void gpsNewData(uint16_t c)
     }
 
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-        // new data received and parsed, we're in business
-        gpsData.lastLastMessage = gpsData.lastMessage;
-        gpsData.lastMessage = millis();
+        // new speed and position data received, and successfully parsed.  Other commands ignored.
+        gpsData.lastLastNavMessage = gpsData.lastNavMessage;
+        gpsData.lastNavMessage = millis();
         sensorsSet(SENSOR_GPS);
     }
 
