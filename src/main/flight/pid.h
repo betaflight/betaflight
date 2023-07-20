@@ -236,6 +236,7 @@ typedef struct pidProfile_s {
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
     uint8_t angle_feedforward_smoothing_ms; // Smoothing factor for angle feedforward as time constant in milliseconds
     uint8_t angle_earth_ref;         // Control amount of "co-ordination" from yaw into roll while pitched forward in angle mode
+    uint16_t horizon_delay_ms;           // delay when Horizon Strength increases, 50 = 500ms time constant
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -303,7 +304,7 @@ typedef struct pidRuntime_s {
     float horizonLimitSticksInv;
     float horizonLimitDegrees;
     float horizonLimitDegreesInv;
-    uint8_t horizonIgnoreSticks;
+    float horizonIgnoreSticks;
     float maxVelocity[XYZ_AXIS_COUNT];
     float itermWindupPointInv;
     bool inCrashRecoveryMode;
@@ -321,6 +322,8 @@ typedef struct pidRuntime_s {
     bool zeroThrottleItermReset;
     bool levelRaceMode;
     float tpaFactor;
+    float tpaBreakpoint;
+    float tpaMultiplier;
 
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
@@ -390,15 +393,19 @@ typedef struct pidRuntime_s {
 #ifdef USE_FEEDFORWARD
     feedforwardAveraging_t feedforwardAveraging;
     float feedforwardSmoothFactor;
-    float feedforwardJitterFactor;
+    uint8_t feedforwardJitterFactor;
+    float feedforwardJitterFactorInv;
     float feedforwardBoostFactor;
-    float feedforwardTransitionFactor;
-    float feedforwardMaxRateLimit;
+    float feedforwardTransition;
+    float feedforwardTransitionInv;
+    uint8_t feedforwardMaxRateLimit;
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_ACC
     pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
+    pt1Filter_t horizonSmoothingPt1;
+    uint16_t horizonDelayMs;
     float angleYawSetpoint;
     float angleEarthRef;
     float angleTarget[2];
@@ -459,13 +466,5 @@ void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
 float pidGetDT();
 float pidGetPidFrequency();
-
-float pidGetFeedforwardBoostFactor();
-float pidGetFeedforwardSmoothFactor();
-float pidGetFeedforwardJitterFactor();
-float pidGetFeedforwardAveraging();
-float pidGetFeedforwardTransitionFactor();
-float pidGetFeedforwardMaxRateLimit();
-float pidGetFeedforwardPidKp(int axis);
 
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);

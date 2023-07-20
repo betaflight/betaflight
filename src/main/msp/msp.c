@@ -53,7 +53,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "drivers/camera_control.h"
+#include "drivers/camera_control_impl.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dshot.h"
@@ -666,7 +666,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef USE_VCP
         targetCapabilities |= BIT(TARGET_HAS_VCP);
 #endif
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
+#if defined(USE_SOFTSERIAL)
         targetCapabilities |= BIT(TARGET_HAS_SOFTSERIAL);
 #endif
         targetCapabilities |= BIT(TARGET_IS_UNIFIED);
@@ -1318,7 +1318,7 @@ case MSP_NAME:
             const uint8_t warningsLen = strlen(warningsBuffer);
 
             if (isBlinking) {
-                displayAttr |= DISPLAYPORT_ATTR_BLINK;
+                displayAttr |= DISPLAYPORT_BLINK;
             }
             sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
             sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
@@ -2551,9 +2551,15 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     textVar = buildKey;
                     break;
 
+                case MSP2TEXT_RELEASENAME:
+                    textVar = releaseName;
+                    break;
+
                 default:
                     return MSP_RESULT_ERROR;
             }
+
+            if (!textVar) return MSP_RESULT_ERROR;
 
             const uint8_t textLength = strlen(textVar);
 

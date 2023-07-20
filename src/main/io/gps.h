@@ -26,6 +26,8 @@
 #include "common/axis.h"
 #include "common/time.h"
 
+#include "io/serial.h"
+
 #include "pg/gps.h"
 
 #define GPS_DEGREES_DIVIDER 10000000L
@@ -127,6 +129,7 @@ typedef struct gpsSolutionData_s {
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
     uint8_t numSat;
+    uint32_t time;                  // GPS msToW
 } gpsSolutionData_t;
 
 typedef struct gpsData_s {
@@ -219,3 +222,4 @@ void GPS_calc_longitude_scaling(int32_t lat);
 void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
 void gpsSetFixState(bool state);
 float getGpsDataIntervalSeconds(void);
+baudRate_e getGpsPortActualBaudRateIndex(void);

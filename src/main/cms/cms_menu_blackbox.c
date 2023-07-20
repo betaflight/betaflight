@@ -170,7 +170,7 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
     }
 
     displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
-    displayWrite(pDisplay, 5, 3, DISPLAYPORT_ATTR_INFO, "ERASING FLASH...");
+    displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "ERASING FLASH...");
     displayRedraw(pDisplay);
 
     flashfsEraseCompletely();

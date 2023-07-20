@@ -1,0 +1,6 @@
+TARGET_MCU        := STM32H725xx
+TARGET_MCU_FAMILY := STM32H7
+
+ifneq ($(EXST),yes)
+CUSTOM_DEFAULTS_EXTENDED = yes
+endif

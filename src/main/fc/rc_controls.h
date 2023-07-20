@@ -84,13 +84,6 @@ typedef enum {
 
 extern float rcCommand[4];
 
-// typedef struct rcSmoothingFilterTraining_s {
-//     float sum;
-//     int count;
-//     uint16_t min;
-//     uint16_t max;
-// } rcSmoothingFilterTraining_t;
-
 typedef struct rcSmoothingFilter_s {
     bool filterInitialized;
     pt3Filter_t filterSetpoint[4];
@@ -105,7 +98,7 @@ typedef struct rcSmoothingFilter_s {
     uint16_t throttleCutoffFrequency;
     uint16_t feedforwardCutoffFrequency;
 
-    float smoothedRxFrequencyHz;
+    float smoothedRxRateHz;
     uint8_t sampleCount;
     uint8_t debugAxis;
 

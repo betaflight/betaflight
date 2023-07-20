@@ -32,10 +32,6 @@
 #include "config.h"
 #endif
 
-#if defined(SYSTEM_HSE_MHZ) && !defined(HSE_VALUE)
-#define HSE_VALUE (SYSTEM_HSE_MHZ * 1000000)
-#endif
-
 // MCU specific platform from drivers/XX
 #include "platform_mcu.h"
 

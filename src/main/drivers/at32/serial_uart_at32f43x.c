@@ -67,6 +67,18 @@
 #ifndef UART5_RX_DMA_CHANNEL
 #define UART5_RX_DMA_CHANNEL NULL
 #endif
+#ifndef UART6_RX_DMA_CHANNEL
+#define UART6_RX_DMA_CHANNEL NULL
+#endif
+#ifndef UART6_TX_DMA_CHANNEL
+#define UART6_TX_DMA_CHANNEL NULL
+#endif
+#ifndef UART7_RX_DMA_CHANNEL
+#define UART7_RX_DMA_CHANNEL NULL
+#endif
+#ifndef UART7_TX_DMA_CHANNEL
+#define UART7_TX_DMA_CHANNEL NULL
+#endif
 #ifndef UART8_TX_DMA_CHANNEL
 #define UART8_TX_DMA_CHANNEL NULL
 #endif
@@ -92,7 +104,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         },
         .txPins = {
             { DEFIO_TAG_E(PA9),  GPIO_MUX_7 },
-            { DEFIO_TAG_E(PA15),  GPIO_MUX_7 },
+            { DEFIO_TAG_E(PA15), GPIO_MUX_7 },
             { DEFIO_TAG_E(PB6),  GPIO_MUX_7 },
         },
         .rcc = RCC_APB2(USART1),
@@ -117,14 +129,14 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART2_TX_DMA_CHANNEL,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA3), GPIO_MUX_7 },
-            { DEFIO_TAG_E(PA15),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PA3),  GPIO_MUX_7 },
+            { DEFIO_TAG_E(PA15), GPIO_MUX_8 },
             { DEFIO_TAG_E(PB0),  GPIO_MUX_6 },
         },
         .txPins = {
             { DEFIO_TAG_E(PA2),  GPIO_MUX_7 },
             { DEFIO_TAG_E(PA8),  GPIO_MUX_8 },
-            { DEFIO_TAG_E(PA14),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PA14), GPIO_MUX_8 },
         },
         .rcc = RCC_APB1(USART2),
         .irqn = USART2_IRQn,
@@ -149,12 +161,12 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PB11), GPIO_MUX_7 },
-            { DEFIO_TAG_E(PC5 ), GPIO_MUX_7 },
+            { DEFIO_TAG_E(PC5),  GPIO_MUX_7 },
             { DEFIO_TAG_E(PC11), GPIO_MUX_7 },
         },
         .txPins = {
             { DEFIO_TAG_E(PB10), GPIO_MUX_7 },
-            { DEFIO_TAG_E(PC4 ), GPIO_MUX_7 },
+            { DEFIO_TAG_E(PC4),  GPIO_MUX_7 },
             { DEFIO_TAG_E(PC10), GPIO_MUX_7 },
         },
         .rcc = RCC_APB1(USART3),
@@ -179,11 +191,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART4_TX_DMA_CHANNEL,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA1), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PA1),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PC11), GPIO_MUX_8 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PA0), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PA0),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PC10), GPIO_MUX_8 },
         },
         .rcc = RCC_APB1(UART4),
@@ -208,16 +220,16 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART5_TX_DMA_CHANNEL,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PB5), GPIO_MUX_8 },
-            { DEFIO_TAG_E(PB8), GPIO_MUX_8 },
-            { DEFIO_TAG_E(PD2), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PB5),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PB8),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PD2),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PE11), GPIO_MUX_8 },
         },
         .txPins = {
-                { DEFIO_TAG_E(PB6), GPIO_MUX_8 },
-                { DEFIO_TAG_E(PB9), GPIO_MUX_8 },
-                { DEFIO_TAG_E(PC12), GPIO_MUX_8 },
-                { DEFIO_TAG_E(PE10), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PB6),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PB9),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PC12), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PE10), GPIO_MUX_8 },
         },
         .rcc = RCC_APB1(UART5),
         .irqn = UART5_IRQn,
@@ -227,6 +239,72 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxBuffer = uart5RxBuffer,
         .txBufferSize = sizeof(uart5TxBuffer),
         .rxBufferSize = sizeof(uart5RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART6
+    {
+        .device = UARTDEV_6,
+        .reg = USART6,
+#ifdef USE_DMA
+        .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART6_RX,
+        .rxDMAResource = (dmaResource_t *)UART6_RX_DMA_CHANNEL,
+        .txDMAMuxId = DMAMUX_DMAREQ_ID_USART6_RX,
+        .txDMAResource = (dmaResource_t *)UART6_TX_DMA_CHANNEL,
+#endif
+        .rxPins = {
+            { DEFIO_TAG_E(PA5),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PA12), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PC7),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PG9),  GPIO_MUX_8 },
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PA4),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PA11), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PC6),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PG4),  GPIO_MUX_8 },
+        },
+        .rcc = RCC_APB2(USART6),
+        .irqn = USART6_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART6,
+        .txBuffer = uart6TxBuffer,
+        .rxBuffer = uart6RxBuffer,
+        .txBufferSize = sizeof(uart6TxBuffer),
+        .rxBufferSize = sizeof(uart6RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART7
+    {
+        .device = UARTDEV_7,
+        .reg = UART7,
+#ifdef USE_DMA
+        .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART7_RX,
+        .rxDMAResource = (dmaResource_t *)UART7_RX_DMA_CHANNEL,
+        .txDMAMuxId = DMAMUX_DMAREQ_ID_UART7_TX,
+        .txDMAResource = (dmaResource_t *)UART7_TX_DMA_CHANNEL,
+#endif
+        .rxPins = {
+            { DEFIO_TAG_E(PB3),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PC0),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PE7),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PF6),  GPIO_MUX_8 },
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PB4),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PC1),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PE8),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PF7),  GPIO_MUX_8 },
+        },
+        .rcc = RCC_APB1(UART7),
+        .irqn = UART7_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART7_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART7,
+        .txBuffer = uart7TxBuffer,
+        .rxBuffer = uart7RxBuffer,
+        .txBufferSize = sizeof(uart7TxBuffer),
+        .rxBufferSize = sizeof(uart7RxBuffer),
     },
 #endif
 
@@ -286,6 +364,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
     s->port.rxBufferSize = hardware->rxBufferSize;
     s->port.txBufferSize = hardware->txBufferSize;
 
+    s->checkUsartTxOutput = checkUsartTxOutput;
+
 #ifdef USE_DMA
     uartConfigureDma(uartdev);
 #endif
@@ -296,6 +376,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+
+    uartdev->txPinState = TX_PIN_IGNORE;
 
     if ((options & SERIAL_BIDIR) && txIO) {
         //mode,speed,otype,pupd
@@ -310,7 +392,14 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
     } else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
+
+            if (((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) && !(options & SERIAL_BIDIR_PP_PD)) {
+                uartdev->txPinState = TX_PIN_ACTIVE;
+                // Switch TX to an input with pullup so it's state can be monitored
+                uartTxMonitor(s);
+            } else {
+                IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
+            }
         }
 
         if ((mode & MODE_RX) && rxIO) {

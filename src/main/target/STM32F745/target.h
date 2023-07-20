@@ -33,6 +33,12 @@
 #define USE_I2C_DEVICE_3
 #define USE_I2C_DEVICE_4
 
+#define USE_VCP
+
+#define USE_SOFTSERIAL
+
+#define UNIFIED_SERIAL_PORT_COUNT       3
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -69,13 +75,6 @@
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
 #define USE_SPI_DMA_ENABLE_EARLY
-
-#define USE_VCP
-
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
 
 #define USE_USB_DETECT
 

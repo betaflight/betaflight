@@ -61,6 +61,7 @@
 #include "drivers/time.h"
 
 #include "fc/core.h"
+#include "fc/gps_lap_timer.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -193,6 +194,8 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
     OSD_STAT_WATT_HOURS_DRAWN,
+    OSD_STAT_BEST_3_CONSEC_LAPS,
+    OSD_STAT_BEST_LAP,
 };
 
 // Group elements in a number of groups to reduce task scheduling overhead
@@ -449,7 +452,7 @@ static void osdDrawLogo(int x, int y)
     for (int row = 0; row < OSD_LOGO_ROWS; row++) {
         for (int column = 0; column < OSD_LOGO_COLS; column++) {
             if (fontOffset <= SYM_END_OF_FONT)
-                displayWriteChar(osdDisplayPort, x + column, y + row, DISPLAYPORT_ATTR_NORMAL, fontOffset++);
+                displayWriteChar(osdDisplayPort, x + column, y + row, DISPLAYPORT_SEVERITY_NORMAL, fontOffset++);
         }
     }
 }
@@ -473,17 +476,17 @@ static void osdCompleteInitialization(void)
 
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
-    displayWrite(osdDisplayPort, midCol + 5, midRow, DISPLAYPORT_ATTR_NORMAL, string_buffer);
+    displayWrite(osdDisplayPort, midCol + 5, midRow, DISPLAYPORT_SEVERITY_NORMAL, string_buffer);
 #ifdef USE_CMS
-    displayWrite(osdDisplayPort, midCol - 8, midRow + 2,  DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT1);
-    displayWrite(osdDisplayPort, midCol - 4, midRow + 3, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT2);
-    displayWrite(osdDisplayPort, midCol - 4, midRow + 4, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT3);
+    displayWrite(osdDisplayPort, midCol - 8, midRow + 2,  DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, midCol - 4, midRow + 3, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, midCol - 4, midRow + 4, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT3);
 #endif
 
 #ifdef USE_RTC_TIME
     char dateTimeBuffer[FORMATTED_DATE_TIME_BUFSIZE];
     if (osdFormatRtcDateTime(&dateTimeBuffer[0])) {
-        displayWrite(osdDisplayPort, midCol - 10, midRow + 6, DISPLAYPORT_ATTR_NORMAL, dateTimeBuffer);
+        displayWrite(osdDisplayPort, midCol - 10, midRow + 6, DISPLAYPORT_SEVERITY_NORMAL, dateTimeBuffer);
     }
 #endif
 
@@ -544,6 +547,19 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
         }
     }
 }
+
+#ifdef USE_GPS_LAP_TIMER
+void printLapTime(char *buffer, const uint32_t timeMs) {
+    if (timeMs != 0) {
+        const uint32_t timeRoundMs = timeMs + 5; // round value in division by 10
+        const int timeSeconds = timeRoundMs / 1000;
+        const int timeDecimals = (timeRoundMs % 1000) / 10;
+        tfp_sprintf(buffer, "%3u.%02u", timeSeconds, timeDecimals);
+    } else {
+        tfp_sprintf(buffer, "  -.--");
+    }
+}
+#endif // USE_GPS_LAP_TIMER
 
 static void osdResetStats(void)
 {
@@ -732,9 +748,9 @@ static void osdGetBlackboxStatusString(char * buff)
 
 static void osdDisplayStatisticLabel(uint8_t x, uint8_t y, const char * text, const char * value)
 {
-    displayWrite(osdDisplayPort, x - 13, y, DISPLAYPORT_ATTR_NORMAL, text);
-    displayWrite(osdDisplayPort, x + 5, y, DISPLAYPORT_ATTR_NORMAL, ":");
-    displayWrite(osdDisplayPort, x + 7, y, DISPLAYPORT_ATTR_NORMAL, value);
+    displayWrite(osdDisplayPort, x - 13, y, DISPLAYPORT_SEVERITY_NORMAL, text);
+    displayWrite(osdDisplayPort, x + 5, y, DISPLAYPORT_SEVERITY_NORMAL, ":");
+    displayWrite(osdDisplayPort, x + 7, y, DISPLAYPORT_SEVERITY_NORMAL, value);
 }
 
 /*
@@ -767,7 +783,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             tfp_sprintf(buff, "NO RTC");
         }
 
-        displayWrite(osdDisplayPort, midCol - 13, displayRow, DISPLAYPORT_ATTR_NORMAL, buff);
+        displayWrite(osdDisplayPort, midCol - 13, displayRow, DISPLAYPORT_SEVERITY_NORMAL, buff);
         return true;
     }
 
@@ -951,6 +967,20 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         return true;
 #endif
 
+#ifdef USE_GPS_LAP_TIMER
+    case OSD_STAT_BEST_3_CONSEC_LAPS: {
+        printLapTime(buff, gpsLapTimerData.best3Consec);
+        osdDisplayStatisticLabel(midCol, displayRow, "BEST 3 CON", buff);
+        return true;
+    }
+
+    case OSD_STAT_BEST_LAP: {
+        printLapTime(buff, gpsLapTimerData.bestLapTime);
+        osdDisplayStatisticLabel(midCol, displayRow, "BEST LAP", buff);
+        return true;
+    }
+#endif // USE_GPS_LAP_TIMER
+
 #ifdef USE_PERSISTENT_STATS
     case OSD_STAT_TOTAL_FLIGHTS:
         itoa(statsConfig()->stats_total_flights, buff, 10);
@@ -1021,7 +1051,7 @@ static bool osdRenderStatsContinue(void)
         }
 
         if (displayLabel) {
-            displayWrite(osdDisplayPort, midCol - (strlen("--- STATS ---") / 2), osdStatsRenderingState.row++, DISPLAYPORT_ATTR_NORMAL, "--- STATS ---");
+            displayWrite(osdDisplayPort, midCol - (strlen("--- STATS ---") / 2), osdStatsRenderingState.row++, DISPLAYPORT_SEVERITY_NORMAL, "--- STATS ---");
             return false;
         }
     }
@@ -1128,10 +1158,10 @@ static timeDelta_t osdShowArmed(void)
     } else {
         ret = (REFRESH_1S / 2);
     }
-    displayWrite(osdDisplayPort, midCol - (strlen("ARMED") / 2), midRow, DISPLAYPORT_ATTR_NORMAL, "ARMED");
+    displayWrite(osdDisplayPort, midCol - (strlen("ARMED") / 2), midRow, DISPLAYPORT_SEVERITY_NORMAL, "ARMED");
 
     if (isFlipOverAfterCrashActive()) {
-        displayWrite(osdDisplayPort, midCol - (strlen(CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_ATTR_NORMAL, CRASH_FLIP_WARNING);
+        displayWrite(osdDisplayPort, midCol - (strlen(CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_SEVERITY_NORMAL, CRASH_FLIP_WARNING);
     }
 
     return ret;
@@ -1241,6 +1271,7 @@ void osdProcessStats2(timeUs_t currentTimeUs)
 void osdProcessStats3(void)
 {
 #if defined(USE_ACC)
+    osdGForce = 0.0f;
     if (sensors(SENSOR_ACC)
        && (VISIBLE(osdElementConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE))) {
             // only calculate the G force if the element is visible or the stat is enabled

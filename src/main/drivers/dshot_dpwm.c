@@ -140,7 +140,7 @@ static motorVTable_t dshotPwmVTable = {
     .enable = dshotPwmEnableMotors,
     .disable = dshotPwmDisableMotors,
     .isMotorEnabled = dshotPwmIsMotorEnabled,
-    .updateStart = motorUpdateStartNull, // May be updated after copying
+    .decodeTelemetry = motorDecodeTelemetryNull, // May be updated after copying
     .write = dshotWrite,
     .writeInt = dshotWriteInt,
     .updateComplete = pwmCompleteDshotMotorUpdate,
@@ -160,7 +160,7 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
 
 #ifdef USE_DSHOT_TELEMETRY
     useDshotTelemetry = motorConfig->useDshotTelemetry;
-    dshotPwmDevice.vTable.updateStart = pwmStartDshotMotorUpdate;
+    dshotPwmDevice.vTable.decodeTelemetry = pwmTelemetryDecode;
 #endif
 
     switch (motorConfig->motorPwmProtocol) {

@@ -35,6 +35,7 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
+// TODO(hertz@): UARTDEV_CONFIG_MAX is measured to be exactly 8, which cannot accomodate even all the UARTs below
 PG_REGISTER_ARRAY_WITH_RESET_FN(serialUartConfig_t, UARTDEV_CONFIG_MAX, serialUartConfig, PG_SERIAL_UART_CONFIG, 0);
 
 typedef struct uartDmaopt_s {
@@ -74,13 +75,16 @@ static uartDmaopt_t uartDmaopt[] = {
 #ifdef USE_UART10
     { UARTDEV_10, UART10_TX_DMA_OPT, UART10_RX_DMA_OPT },
 #endif
+#ifdef USE_LPUART1
+    { LPUARTDEV_1, DMA_OPT_UNUSED, DMA_OPT_UNUSED },
+#endif
 };
 
 void pgResetFn_serialUartConfig(serialUartConfig_t *config)
 {
     for (unsigned i = 0; i < UARTDEV_CONFIG_MAX; i++) {
-        config[i].txDmaopt = -1;
-        config[i].rxDmaopt = -1;
+        config[i].txDmaopt = DMA_OPT_UNUSED;
+        config[i].rxDmaopt = DMA_OPT_UNUSED;
     }
 
     for (unsigned i = 0; i < ARRAYLEN(uartDmaopt); i++) {

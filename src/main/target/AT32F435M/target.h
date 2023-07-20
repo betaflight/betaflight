@@ -34,20 +34,26 @@
 #define HANG_ON_ERRORS
 #endif
 
+#define USE_VCP
+
+#define UNIFIED_SERIAL_PORT_COUNT       1
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
+#define USE_UART4
+#define USE_UART5
+#define USE_UART6
+#define USE_UART7
+#define USE_UART8
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 8)
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
-#define TARGET_IO_PORTE         0xffff
-#define TARGET_IO_PORTF         0xffff
-#define TARGET_IO_PORTG         0xffff
 #define TARGET_IO_PORTH         0xffff
-
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -66,9 +72,6 @@
 
 #define USE_USB_DETECT
 #define USE_PERSISTENT_MSC_RTC
-#define USE_VCP
-
-#define UNIFIED_SERIAL_PORT_COUNT       1
 
 #define USE_ADC
 
@@ -76,18 +79,17 @@
 
 // Remove these undefines as support is added
 //#undef USE_BEEPER
-#undef USE_LED_STRIP
+//#undef USE_LED_STRIP
 #undef USE_TRANSPONDER
 
 // #undef USE_DSHOT
 // #undef USE_DSHOT_TELEMETRY
 // bitbang not implemented yet
-#undef USE_DSHOT_BITBANG
+// #undef USE_DSHOT_BITBANG
 // burst mode not implemented yet
 #undef USE_DSHOT_DMAR
 
-
-#undef USE_CAMERA_CONTROL
+#define USE_BEEPER
 #undef USE_RX_PPM
 #undef USE_RX_PWM
 #undef USE_RX_SPI

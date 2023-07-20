@@ -33,3 +33,4 @@
 #define MSP2TEXT_PID_PROFILE_NAME                3
 #define MSP2TEXT_RATE_PROFILE_NAME               4
 #define MSP2TEXT_BUILDKEY                        5
+#define MSP2TEXT_RELEASENAME                     6

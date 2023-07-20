@@ -86,16 +86,39 @@
 */
 
 #if defined(USE_MAG) && !defined(USE_VIRTUAL_MAG)
+
+#ifndef USE_MAG_DATA_READY_SIGNAL
 #define USE_MAG_DATA_READY_SIGNAL
+#endif
+#ifndef USE_MAG_HMC5883
 #define USE_MAG_HMC5883
+#endif
+#ifndef USE_MAG_SPI_HMC5883
 #define USE_MAG_SPI_HMC5883
+#endif
+#ifndef USE_MAG_QMC5883
 #define USE_MAG_QMC5883
+#endif
+#ifndef USE_MAG_LIS3MDL
 #define USE_MAG_LIS3MDL
+#endif
+#ifndef USE_MAG_AK8963
 #define USE_MAG_AK8963
+#endif
+#ifndef USE_MAG_MPU925X_AK8963
 #define USE_MAG_MPU925X_AK8963
+#endif
+#ifndef USE_MAG_SPI_AK8963
 #define USE_MAG_SPI_AK8963
+#endif
+#ifndef USE_MAG_AK8975
 #define USE_MAG_AK8975
 #endif
+#ifndef USE_MAG_IST8310
+#define USE_MAG_IST8310
+#endif
+
+#endif // END MAG HW defines
 
 #if defined(USE_RX_CC2500)
 
@@ -368,11 +391,15 @@
 
 // Generate USE_SPI_GYRO or USE_I2C_GYRO
 #if defined(USE_GYRO_L3G4200D) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6000) || defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU6500)
+#ifndef USE_I2C_GYRO
 #define USE_I2C_GYRO
+#endif
 #endif
 
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270)
+#ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
+#endif
 #endif
 
 #ifndef SIMULATOR_BUILD
@@ -579,4 +606,9 @@ extern uint8_t __config_end;
 
 #ifndef USE_GPS
 #undef USE_GPS_PLUS_CODES
+#undef USE_GPS_LAP_TIMER
+#endif
+
+#ifdef USE_GPS_LAP_TIMER
+#define USE_CMS_GPS_LAP_TIMER_MENU
 #endif

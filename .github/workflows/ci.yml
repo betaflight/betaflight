@@ -21,19 +21,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Get all official build targets
-        id: get-targets
-        run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
       - name: Cache build toolchain
         uses: actions/cache@v3
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
+          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
 
       - name: Download and install toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make arm_sdk_install
+
+      - name: Hydrate configuration
+        id: get-config
+        run: make configs
+
+      - name: Get all official build targets
+        id: get-targets
+        run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
 
   build:
     name: Build
@@ -51,12 +56,16 @@ jobs:
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
+          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+
+      - name: Hydrate configuration
+        id: get-config
+        run: make configs
 
       - name: Build target (without revision)
         if: inputs.release_build == true
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
-        
+
       - name: Build target (with revision)
         if: inputs.release_build == false
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev

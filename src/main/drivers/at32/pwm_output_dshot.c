@@ -112,7 +112,7 @@ tmr_channel_select_type toCHSelectType(const uint8_t bfChannel, const bool useNC
  * Enable the timer channels for all motors
  * 
  *   Called once for every dshot update if telemetry is being used (not just enabled by #def)
- *   Called from pwm_output_dshot_shared.c pwmStartDshotMotorUpdate
+ *   Called from pwm_output_dshot_shared.c pwmTelemetryDecode
 */
 void dshotEnableChannels(uint8_t motorCount)
 {
@@ -130,7 +130,7 @@ void dshotEnableChannels(uint8_t motorCount)
  * Set the timer and dma of the specified motor for use as an output
  * 
  * Called from pwmDshotMotorHardwareConfig in this file and also from
- * pwmStartDshotMotorUpdate in src/main/drivers/pwm_output_dshot_shared.c
+ * pwmTelemetryDecode in src/main/drivers/pwm_output_dshot_shared.c
 */
 FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor

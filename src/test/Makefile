@@ -14,10 +14,11 @@
 USER_DIR = ../main
 TEST_DIR = unit
 ROOT = ../..
-OBJECT_DIR = ../../obj/test
+OBJECT_DIR = $(ROOT)/obj/test
 TARGET_DIR = $(USER_DIR)/target
+MAKE_SCRIPT_DIR := $(ROOT)/mk
 
-include $(ROOT)/make/system-id.mk
+include $(MAKE_SCRIPT_DIR)/system-id.mk
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
@@ -558,7 +559,7 @@ C_FLAGS = $(COMMON_FLAGS) \
 
 # Flags passed to the C++ compiler.
 CXX_FLAGS = $(COMMON_FLAGS) \
-	-std=gnu++11
+	-std=gnu++14
 
 # Compiler flags for coverage instrumentation
 ifdef USE_COVERAGE
@@ -592,7 +593,7 @@ GTEST_HEADERS = $(GTEST_DIR)/inc/gtest/*.h
 ## V                 : Set verbosity level based on the V= parameter
 ##                     V=0 Low
 ##                     V=1 High
-include ../../make/build_verbosity.mk
+include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
 
 # House-keeping build targets.
 

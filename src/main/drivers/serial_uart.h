@@ -41,7 +41,10 @@ typedef enum {
     UARTDEV_9 = 8,
     UARTDEV_10 = 9,
     LPUARTDEV_1 = 10,
+    UARTDEV_COUNT
 } UARTDevice_e;
+
+STATIC_ASSERT(UARTDEV_COUNT == SERIAL_PORT_MAX_INDEX, serial_pinconfig_does_not_match_uartdevs);
 
 typedef struct uartPort_s {
     serialPort_t port;
@@ -76,6 +79,8 @@ typedef struct uartPort_s {
 #endif
     USART_TypeDef *USARTx;
     bool txDMAEmpty;
+
+    bool (* checkUsartTxOutput)(struct uartPort_s *s);
 } uartPort_t;
 
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig);

@@ -423,7 +423,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_RX_SERIAL);
 #endif
 
-#if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
+#if !defined(USE_SOFTSERIAL)
     featureDisableImmediate(FEATURE_SOFTSERIAL);
 #endif
 
@@ -498,6 +498,9 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
 #ifdef USE_SERVOS
     featureEnableImmediate(FEATURE_CHANNEL_FORWARDING);
     featureEnableImmediate(FEATURE_SERVO_TILT);
+#endif
+#if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
+    featureEnableImmediate(FEATURE_SOFTSERIAL);
 #endif
 #ifdef USE_TELEMETRY
     featureEnableImmediate(FEATURE_TELEMETRY);
@@ -598,7 +601,7 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
 
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
-        if (mac->modeId == BOXMSPOVERRIDE && ((1 << (mac->auxChannelIndex) & (rxConfig()->msp_override_channels_mask)))) {
+        if (mac->modeId == BOXMSPOVERRIDE && ((1 << (mac->auxChannelIndex + NON_AUX_CHANNEL_COUNT) & (rxConfig()->msp_override_channels_mask)))) {
             rxConfigMutable()->msp_override_channels_mask &= ~(1 << (mac->auxChannelIndex + NON_AUX_CHANNEL_COUNT));
         }
     }
@@ -670,8 +673,8 @@ void validateAndFixGyroConfig(void)
         // check for looptime restrictions based on motor protocol. Motor times have safety margin
         float motorUpdateRestriction;
 
-#if defined(STM32F411xE)
-        /* If bidirectional DSHOT is being used on an F411 then force DSHOT300. The motor update restrictions then applied
+#if defined(STM32F4) || defined(STM32G4)
+        /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
          */
         if (motorConfig()->dev.useDshotTelemetry && (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600)) {
