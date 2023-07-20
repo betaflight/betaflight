@@ -701,7 +701,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
     ubxMessage_t tx_buffer;
     if (gpsData.ubloxM9orAbove) {
         uint8_t payload[4];
-        payload[0] = (model == 0 ? 0 : model + 1) >> (8 * 0);
+        payload[0] = (model == 0 ? 0 : model + 1);
         size_t offset = ubloxValSet(&tx_buffer, CFG_NAVSPG_DYNMODEL, payload, UBX_VAL_LAYER_RAM); // 5
 
         payload[0] = (3 >> (8 * 0));
