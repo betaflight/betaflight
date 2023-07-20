@@ -383,7 +383,7 @@ static bool gpsNewFrameNMEA(char c);
 #endif
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
-static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skip_acc);
+static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skipAck);
 #endif
 
 static void gpsSetState(gpsState_e state)
@@ -649,7 +649,7 @@ static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_
     }
 }
 
-static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skip_acc)
+static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skipAck)
 {
     uint8_t checksumA = 0, checksumB = 0;
     serialWrite(gpsPort, data[0]);
@@ -661,7 +661,7 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skip_acc)
     // Save state for ACK waiting
     gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
     gpsData.ackTimeoutCounter = 0;
-    gpsData.ackState = skip_acc ? UBLOX_ACK_GOT_ACK : UBLOX_ACK_WAITING;
+    gpsData.ackState = skipAck ? UBLOX_ACK_GOT_ACK : UBLOX_ACK_WAITING;
 }
 
 static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_e msg_id, uint16_t length)
@@ -675,14 +675,14 @@ static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_
     ubloxSendMessage((const uint8_t *) &tx_buffer, length + 6, false);
 }
 
-static void ubloxSendConfigMessage(ubxMessage_t *message, uint8_t msg_id, uint8_t length, bool skip_acc)
+static void ubloxSendConfigMessage(ubxMessage_t *message, uint8_t msg_id, uint8_t length, bool skipAck)
 {
     message->header.preamble1 = PREAMBLE1;
     message->header.preamble2 = PREAMBLE2;
     message->header.msg_class = CLASS_CFG;
     message->header.msg_id = msg_id;
     message->header.length = length;
-    ubloxSendMessage((const uint8_t *) message, length + 6, skip_acc);
+    ubloxSendMessage((const uint8_t *) message, length + 6, skipAck);
 }
 
 static void ubloxSendPollMessage(uint8_t msg_id)
@@ -1240,20 +1240,7 @@ void gpsInitUblox(void)
                         break;
                     case UBLOX_MSG_CFG_GNSS:
                         if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
-                            if (false && gpsData.ubloxM9orAbove) {
-                                uint8_t payload[4];
-                                memset(payload, 0, 4);
-                                ubxMessage_t tx_buffer;
-                                size_t length = ubloxValSet(&tx_buffer, (uint32_t)CFG_SIGNAL_GPS_ENA, payload, UBX_VAL_LAYER_RAM); //0x1031001f
-                                tx_buffer.payload.cfg_valset.version = 1;
-                                /*length += ubloxValGet(&tx_buffer, CFG_SIGNAL_SBAS_ENA, length);
-                                length += ubloxValGet(&tx_buffer, CFG_SIGßNAL_GAL_ENA, length);*/
-
-                                ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALGET, offsetof(ubxCfgValSet_t, cfgData) + length, true);
-                                //ubloxSendMessage((const uint8_t *) &tx_buffer, offsetof(ubxCfgValGet_t, keys) + length);
-                            } else {
-                                ubloxSendPollMessage(MSG_CFG_GNSS);
-                            }
+                            ubloxSendPollMessage(MSG_CFG_GNSS);
                         } else {
                             gpsSetState(GPS_STATE_RECEIVING_DATA);
                         }
