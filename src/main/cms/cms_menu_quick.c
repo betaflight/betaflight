@@ -98,10 +98,10 @@ static const char * const osdTableThrottleLimitType[] = {
 
 static const OSD_Entry menuMainEntries[] =
 {
-    {"-- QUICK --",  OME_Label, NULL, NULL},
+    { "-- QUICK --",  OME_Label, NULL, NULL },
 
 #if defined(USE_RPM_LIMIT)
-    {"RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit},
+    { "RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit },
 #endif
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
@@ -112,7 +112,7 @@ static const OSD_Entry menuMainEntries[] =
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
-    {"MAIN",     OME_Submenu,  NULL, &cmsx_menuMain},
+    { "MAIN",            OME_Submenu,  NULL, &cmsx_menuMain },
     { "EXIT",            OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT},
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
     {NULL, OME_END, NULL, NULL},

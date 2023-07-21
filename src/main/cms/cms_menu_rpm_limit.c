@@ -65,13 +65,13 @@ static const void *cmsx_RpmLimit_onExit(displayPort_t *pDisp, const OSD_Entry *s
 
 static const OSD_Entry cmsx_menuRpmLimitEntries[] =
 {
-    {"-- RPM LIMIT --", OME_Label, NULL, NULL},
-    { "ACTIVE",   OME_Bool | REBOOT_REQUIRED,  NULL, &rpm_limit },
-    {"MAX RPM", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limit_value, 0, UINT16_MAX, 100}},
-    {"KV", OME_UINT16, NULL, &(OSD_UINT16_t){ &kv, 0, UINT16_MAX, 1}},
+    { "-- RPM LIMIT --", OME_Label, NULL, NULL },
+    {  "ACTIVE",   OME_Bool | REBOOT_REQUIRED,  NULL, &rpm_limit },
+    { "MAX RPM", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limit_value, 0, UINT16_MAX, 100} },
+    { "KV", OME_UINT16, NULL, &(OSD_UINT16_t){ &kv, 0, UINT16_MAX, 1} },
 
-    { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
-    {"BACK", OME_Back, NULL, NULL},
+    { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT },
+    { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
 };
 
