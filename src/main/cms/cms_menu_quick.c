@@ -28,49 +28,27 @@
 #include "platform.h"
 
 #ifdef USE_CMS
+#ifdef USE_QUICK_OSD_MENU
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
-
-// Sub menus
-
-#include "cms/cms_menu_imu.h"
-#include "cms/cms_menu_blackbox.h"
-#include "cms/cms_menu_failsafe.h"
-#include "cms/cms_menu_firmware.h"
-#include "cms/cms_menu_ledstrip.h"
-#include "cms/cms_menu_misc.h"
-#include "cms/cms_menu_osd.h"
-#include "cms/cms_menu_power.h"
-#include "cms/cms_menu_saveexit.h"
 #include "cms/cms_menu_main.h"
-
-#ifdef USE_PERSISTENT_STATS
-#include "cms/cms_menu_persistent_stats.h"
-#endif
-
-// VTX supplied menus
-
 #include "cms/cms_menu_vtx_common.h"
 #include "cms/cms_menu_rpm_limit.h"
-
 #include "common/printf.h"
-#include "fc/controlrate_profile.h"
 #include "config/config.h"
 
+#include "drivers/pwm_output.h"
+
+#include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/runtime_config.h"
-
-#include "sensors/acceleration.h"
-
-#include "cms_menu_quick.h"
-
-#include "sensors/battery.h"
-
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 
-#include "drivers/pwm_output.h"
+#include "sensors/battery.h"
+
+#include "cms_menu_quick.h"
 
 // Features
 
@@ -151,4 +129,5 @@ CMS_Menu cmsx_menuQuick = {
     .entries = menuMainEntries,
 };
 
-#endif
+#endif // USE_QUICK_OSD_MENU
+#endif // USE_CMS
