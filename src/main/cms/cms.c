@@ -41,9 +41,9 @@
 #include "build/version.h"
 
 #include "cms/cms.h"
-#include "cms/cms_menu_quick.h"
 #include "cms/cms_menu_main.h"
 #include "cms/cms_menu_saveexit.h"
+#include "cms/cms_menu_quick.h"
 #include "cms/cms_types.h"
 
 #include "common/maths.h"
@@ -899,8 +899,7 @@ void cmsMenuOpen(void)
         startMenu = &cmsx_menuMain;
 
 #ifdef USE_QUICK_OSD_MENU
-        if (osdConfig()->osd_use_quick_menu)
-        {
+        if (osdConfig()->osd_use_quick_menu) {
             startMenu = &cmsx_menuQuick;
         }
 #endif // USE_QUICK_OSD_MENU
