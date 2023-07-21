@@ -92,6 +92,7 @@
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
 
+#include "rx/rc_stats.h"
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
@@ -553,6 +554,10 @@ void tryArm(void)
         osdSuppressStats(false);
 #endif
         ENABLE_ARMING_FLAG(ARMED);
+
+#ifdef USE_RC_STATS
+        NotifyRcStatsArming();
+#endif
 
         resetTryingToArm();
 

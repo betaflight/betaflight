@@ -105,6 +105,7 @@ COMMON_SRC = \
             rx/msp.c \
             rx/pwm.c \
             rx/frsky_crc.c \
+            rx/rc_stats.c \
             rx/rx.c \
             rx/rx_bind.c \
             rx/rx_spi.c \
@@ -324,6 +325,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/pid.c \
             flight/rpm_filter.c \
             rx/ibus.c \
+            rx/rc_stats.c \
             rx/rx.c \
             rx/rx_spi.c \
             rx/crsf.c \
