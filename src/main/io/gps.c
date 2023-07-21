@@ -74,9 +74,6 @@
 #define LOG_UBLOX_VELNED 'V'
 
 uint8_t gpsPackageCounter = 0;
-bool gpsPackageReachedUpdateRate = false;
-timeMs_t gpsPackageCounterTime = 0;
-
 char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
@@ -398,10 +395,10 @@ static void gpsSetState(gpsState_e state)
 
 void gpsInit(void)
 {
-    gpsPackageCounter = 0;
     gpsDataIntervalSeconds = 0.1f;
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
+    gpsPackageCounter = 0;
     gpsData.timeouts = 0;
     gpsData.satInfoRequired = false;
     gpsData.state_ts = millis();
@@ -461,6 +458,9 @@ void gpsInitNmea(void)
 #if !defined(GPS_NMEA_TX_ONLY)
     uint32_t now;
 #endif
+
+    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 4, gpsData.state);
+
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
 #if !defined(GPS_NMEA_TX_ONLY)
@@ -541,9 +541,6 @@ void gpsInitNmea(void)
                gpsSetState(GPS_STATE_RECEIVING_DATA);
             break;
     }
-
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 4, gpsData.state);
-
 }
 #endif // USE_GPS_NMEA
 
@@ -1027,6 +1024,8 @@ void gpsInitUblox(void)
     if (!isSerialTransmitBufferEmpty(gpsPort))
         return;
 
+        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 4, gpsData.state);
+
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
 
@@ -1088,7 +1087,10 @@ void gpsInitUblox(void)
         case GPS_STATE_CHANGE_BAUD:
             // set the FC's serial port to the configured rate
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+
             DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex] / 100);
+            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, initBaudRateCycleCount);
+
             gpsSetState(GPS_STATE_CONFIGURE); // sets gpsData.state_position = 0;
             break;
 
@@ -1393,7 +1395,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                     if (isConfiguratorConnected()) {
                         if (gpsData.satInfoRequired) {
                             requestSatelliteInfo();
-                        gpsData.satInfoRequired = false;
+                            gpsData.satInfoRequired = false;
                         }
                     }
                 }
@@ -1447,28 +1449,16 @@ static void gpsNewData(uint16_t c)
     }
 
     DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
-    gpsPackageCounter += 1;
-
-    if (cmp32(millis(), gpsPackageCounterTime) >= 1000) {
-
-        // reconfigure update rate if not matching
-        if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-            if (gpsPackageCounter > gpsData.updateRate - 2) {
-                gpsPackageReachedUpdateRate = true;
-                gpsData.satInfoRequired = true; // set to true every second, to send the satellite info request message
-            }
-            if (gpsPackageReachedUpdateRate && gpsData.updateRate < gpsPackageCounter - 2){
-                gpsSetState(GPS_STATE_CONFIGURE);
-            }
-        }
-
-        gpsPackageCounterTime = millis();
-        gpsPackageCounter = 0;
-    }
-
+    gpsPackageCounter++;
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
+        // count the number of packets received in one second
+        if (cmp32(millis(), gpsData.lastNavMessage) >= 1000) {
+            // set the condition for requesting new satellite info while connected to Configurator
+            gpsData.satInfoRequired = true;
+            gpsPackageCounter = 0;
+        }
         // new speed and position data received, and successfully parsed.  Other commands ignored.
-        gpsData.lastLastNavMessage = gpsData.lastNavMessage;
+        gpsData.lastLastNavMessage = gpsData.lastNavMessage; // used only for a delta time in dashboard.c
         gpsData.lastNavMessage = millis();
         sensorsSet(SENSOR_GPS);
     }
@@ -2405,6 +2395,7 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             }
 
             if (UBLOX_parse_gps()) {
+                // true when we have new GPS speed and position data
                 parsed = true;
             }
     }
