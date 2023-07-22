@@ -399,6 +399,7 @@ void gpsInit(void)
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
     gpsPackageCounter = 0;
+    gpsData.navFrameCounterReset = millis();
     gpsData.timeouts = 0;
     gpsData.satInfoRequired = false;
     gpsData.state_ts = millis();
@@ -900,8 +901,6 @@ static void ubloxDisableNMEAValSet(void)
 static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef)
 {
     uint16_t measRateMilliseconds = 1000 / measRate;
-    // Testing has  revealed this is the max rate common modules can achieve
-    // if (measRateMilliseconds < 53) measRateMilliseconds = 53;
 
     ubxMessage_t tx_buffer;
     if (gpsData.ubloxM9orAbove) {
@@ -1258,9 +1257,8 @@ void gpsInitUblox(void)
                 case UBLOX_ACK_IDLE:
                     break;
                 case UBLOX_ACK_WAITING:
-                    // wait 5 cycles
                     if (cmp32(millis(), gpsData.lastNavMessage) > UBLOX_ACK_TIMEOUT_MS){
-                        // then give up, treat it like receiving ack
+                        // give up, treat it like receiving ack
                         gpsData.ackState = UBLOX_ACK_GOT_ACK;
                     }
                     break;
@@ -1357,6 +1355,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         GPS_update &= ~GPS_MSP_UPDATE;
     }
 
+    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 4, gpsData.state);
     DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, gpsData.satInfoRequired);
 
     switch (gpsData.state) {
@@ -1380,9 +1379,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_STATE_RECEIVING_DATA:
 
-            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastNavMessage); // 
+            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastNavMessage); // interval between receiving data
  
-            // check for no data/gps timeout/cable disconnection etc; delay is 10 times the nav rate interval
+            // check for no data/gps timeout/cable disconnection etc
             if (cmp32(millis(), gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
                 gpsPackageCounter = 20;
@@ -1391,8 +1390,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
 #ifdef USE_GPS_UBLOX
             } else {
+                // only request satellites if auto config is on
                 if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
+                    // and only if configurator is connected
                     if (isConfiguratorConnected()) {
+                        // and only once a second
                         if (gpsData.satInfoRequired) {
                             requestSatelliteInfo();
                             gpsData.satInfoRequired = false;
@@ -1449,17 +1451,23 @@ static void gpsNewData(uint16_t c)
     }
 
     DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
-    gpsPackageCounter++;
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
+        gpsPackageCounter++;
+        uint32_t now = millis();
         // count the number of packets received in one second
-        if (cmp32(millis(), gpsData.lastNavMessage) >= 1000) {
+        if (cmp32(now, gpsData.navFrameCounterReset) >= 1000) {
             // set the condition for requesting new satellite info while connected to Configurator
             gpsData.satInfoRequired = true;
             gpsPackageCounter = 0;
+            gpsData.navFrameCounterReset = now;
         }
-        // new speed and position data received, and successfully parsed.  Other commands ignored.
+
+        // TO DO: use packet interval to detect and maybe report a frame count that differs significantly from expected.
+        // this could be due to a transient disconnect/reconnect where the module returns to internal defaults despite same baud rate
+        // a bit like a sanity check for the package rate
+
         gpsData.lastLastNavMessage = gpsData.lastNavMessage; // used only for a delta time in dashboard.c
-        gpsData.lastNavMessage = millis();
+        gpsData.lastNavMessage = now;
         sensorsSet(SENSOR_GPS);
     }
 

@@ -318,6 +318,7 @@ typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
     uint32_t lastNavMessage;        // last time valid GPS speed and position data was received (millis)
+    uint32_t navFrameCounterReset;  // time that the last nav frame counter was reset
     uint32_t lastLastNavMessage;    // last-last valid GPS message. Used to calculate message delta, but only by dashboard.c for oled uni
 
     uint32_t state_position;        // incremental variable for loops
