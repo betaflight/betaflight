@@ -415,7 +415,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #endif
 
 #ifdef USE_QUICK_OSD_MENU
-    osdConfig->osd_use_quick_menu = false;
+    osdConfig->osd_use_quick_menu = true;
 #endif // USE_QUICK_OSD_MENU
 }
 
