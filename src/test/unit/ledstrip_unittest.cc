@@ -74,7 +74,7 @@ extern "C" {
 TEST(LedStripTest, parseLedStripConfig)
 {
     // given
-    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_STRIP_MAX_LENGTH);
 
     // and
     static const ledConfig_t expectedLedStripConfig[WS2811_LED_STRIP_LENGTH] = {
@@ -195,7 +195,7 @@ TEST(LedStripTest, parseLedStripConfig)
 TEST(LedStripTest, smallestGridWithCenter)
 {
     // given
-    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_STRIP_MAX_LENGTH);
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -223,7 +223,7 @@ TEST(LedStripTest, smallestGridWithCenter)
 TEST(LedStripTest, smallestGrid)
 {
     // given
-    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_MAX_STRIP_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_STRIP_MAX_LENGTH);
 
     // and
     static const ledConfig_t testLedConfigs[] = {

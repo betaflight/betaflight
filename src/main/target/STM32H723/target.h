@@ -96,3 +96,7 @@
 #define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
+
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
+#define USE_LED_STRIP_CACHE_MGMT
+#endif

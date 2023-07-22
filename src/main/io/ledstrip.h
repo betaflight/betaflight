@@ -184,7 +184,7 @@ PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
 #if defined(USE_LED_STRIP_STATUS_MODE)
 typedef struct ledStripStatusModeConfig_s {
-    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
+    ledConfig_t ledConfigs[LED_STRIP_MAX_LENGTH];
     hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
     modeColorIndexes_t modeColors[LED_MODE_COUNT];
     specialColorIndexes_t specialColors;
