@@ -380,7 +380,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
 
     // Modes that are only relevant when disarmed
     if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
-        flightMode = "!ERR";
+        flightMode = "GND";
     } else
 
 #if defined(USE_GPS)
