@@ -181,6 +181,13 @@ typedef enum {
     GPS_STATE_COUNT
 } gpsState_e;
 
+// typedef enum {
+//     GPS_UPDATE_HW_IDLE = 0,
+//     GPS_SAT_UPDATE,
+//     GPS_FLIGHT_MODEL_UPDATE,
+//     GPS_UPDATE_HW_DONE
+// } gpsUpdateHwState_e;
+
 typedef enum {
     GPS_LATITUDE,
     GPS_LONGITUDE
@@ -333,8 +340,8 @@ typedef struct gpsData_s {
     bool ubloxM7orAbove;
     bool ubloxM8orAbove;
     bool ubloxM9orAbove;
-    bool satInfoRequired;
     bool ubloxUsingFlightModel;    // false = Acquire model, true = Flight model
+    bool satMessagesDisabled;
 #ifdef USE_GPS_UBLOX
     ubloxVersion_e unitVersion;     // detected UNIT version
     ubxMonVer_t monVer;             // MON-VER response
