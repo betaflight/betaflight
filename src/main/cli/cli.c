@@ -3606,8 +3606,8 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
         cliPrintLinef("swVersion: ");
         cliPrint(" ");
         cliPrintLinef("FW=%d.%d, PROTO=%d.%d",
-                      gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
-                      gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
+            gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
+            gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
         );
 
         cliPrintLinef("hwVersion: ");
@@ -4848,9 +4848,9 @@ if (buildKey) {
         if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
             cliPrintLinefeed();
             cliPrintf("     Ublox HW Version: %s, SW Version: %d.%d, Proto Version: %d.%d",
-                      ubloxVersion_map[gpsData.unitVersion].str,
-                      gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
-                      gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
+                ubloxVersion_map[gpsData.unitVersion].str,
+                gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
+                gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
           );
         } else {
             cliPrintLinefeed();
@@ -4903,15 +4903,15 @@ static void cliTasks(const char *cmdName, char *cmdline)
             if (systemConfig()->task_statistics) {
 #if defined(USE_LATE_TASK_STATISTICS)
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
-                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
-                        taskInfo.totalExecutionTimeUs / 1000,
-                        taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
+                    taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                    taskInfo.totalExecutionTimeUs / 1000,
+                    taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
 #else
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
-                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
-                        taskInfo.totalExecutionTimeUs / 1000);
+                    taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                    taskInfo.totalExecutionTimeUs / 1000);
 #endif
             } else {
                 cliPrintLinef("%6d", taskFrequency);

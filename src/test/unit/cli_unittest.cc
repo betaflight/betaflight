@@ -290,6 +290,7 @@ void mixerResetDisarmedMotors(void) {}
 typedef enum {
     DUMMY
 } pageId_e;
+
 void dashboardShowFixedPage(pageId_e){}
 void dashboardUpdate(timeUs_t) {}
 

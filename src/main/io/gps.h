@@ -109,7 +109,7 @@ typedef enum {
 } ubxValgetsetBytes_e;
 
 /*
- * replaced by macro, to save space
+ * replaced by macro, to save space; keeping for reference
 typedef enum {
     SBAS_SEARCH_ALL = 0,
     SBAS_SEARCH_PRN120,
@@ -304,6 +304,7 @@ typedef struct ubxSwVersion_s {
 } ubxSwVersion_t;
 
 /*
+* keeping this table for reference
 typedef enum {
     UBX_CAP_SAT_NONE = 0x0,
     UBX_CAP_SAT_GPS = 0x0001,
