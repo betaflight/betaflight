@@ -163,6 +163,20 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
+#ifdef MSP_UART
+    serialPortConfig_t *uart2Config = serialFindPortConfigurationMutable(MSP_UART);
+    if (uart2Config) {
+        uart2Config->functionMask = FUNCTION_MSP;
+    }
+#endif
+
+#ifdef ESC_SENSOR_UART
+    serialPortConfig_t *escSensorUartConfig = serialFindPortConfigurationMutable(ESC_SENSOR_UART);
+    if (escSensorUartConfig) {
+        escSensorUartConfig->functionMask = FUNCTION_ESC_SENSOR;
+    }
+#endif
+
     serialConfig->reboot_character = 'R';
     serialConfig->serial_update_rate_hz = 100;
 }
