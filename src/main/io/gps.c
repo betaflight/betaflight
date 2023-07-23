@@ -701,13 +701,13 @@ static void ubloxSendNAV5Message(uint8_t model) {
         payload[0] = (model == 0 ? 0 : model + 1);
         size_t offset = ubloxValSet(&tx_buffer, CFG_NAVSPG_DYNMODEL, payload, UBX_VAL_LAYER_RAM); // 5
 
-        payload[0] = (3 >> (8 * 0));
+        payload[0] = 3;
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_FIXMODE, payload, offset); // 10
 
-        payload[0] = (ubloxUTCStandardConfig_int[gpsConfig()->gps_ublox_utc_standard] >> (8 * 0));
+        payload[0] = ubloxUTCStandardConfig_int[gpsConfig()->gps_ublox_utc_standard];
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_UTCSTANDARD, payload, offset); // 15
 
-        payload[0] = (uint8_t)(0 >> (8 * 0));
+        payload[0] = 0;
         payload[1] = (uint8_t)(0 >> (8 * 1));
         payload[2] = (uint8_t)(0 >> (8 * 2));
         payload[3] = (uint8_t)(0 >> (8 * 3));
@@ -719,7 +719,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
         payload[3] = (uint8_t)(10000 >> (8 * 3));
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_CONSTR_ALTVAR, payload, offset); // 31
 
-        payload[0] = (int8_t)(5 >> (8 * 0));
+        payload[0] = 5;
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_INFIL_MINELEV, payload, offset); // 36
 
         payload[0] = (uint8_t)(250 >> (8 * 0));
@@ -738,7 +738,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
         payload[1] = (uint8_t)(300 >> (8 * 1));
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_OUTFIL_TACC, payload, offset); // 60
 
-        payload[0] = (uint8_t)(0 >> (8 * 0));
+        payload[0] = 0;
         offset += ubloxAddValSet(&tx_buffer, CFG_MOT_GNSSSPEED_THRS, payload, offset); // 65
 
         payload[0] = (uint8_t)(200 >> (8 * 0));
@@ -748,10 +748,10 @@ static void ubloxSendNAV5Message(uint8_t model) {
         payload[0] = (uint8_t)(60 >> (8 * 0));
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_CONSTR_DGNSSTO, payload, offset); // 76
 
-        payload[0] = (uint8_t)(0 >> (8 * 0));
+        payload[0] = 0;
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_INFIL_NCNOTHRS, payload, offset); // 81
 
-        payload[0] = (uint8_t)(0 >> (8 * 0));
+        payload[0] = 0;
         offset += ubloxAddValSet(&tx_buffer, CFG_NAVSPG_INFIL_CNOTHRS, payload, offset); // 86
 
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
@@ -785,7 +785,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
 // 
 //     if (gpsData.ubloxM9orAbove) {
 //         uint8_t payload[1];
-//         payload[0] = (uint8_t)(1 >> (8 * 0));
+//         payload[0] = 1;
 //         size_t offset = ubloxValSet(&tx_buffer, CFG_ANA_USE_ANA, payload, UBX_VAL_LAYER_RAM); // 5
 // 
 //         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
@@ -819,7 +819,7 @@ static void ubloxSetPowerModeValSet(uint8_t powerSetupValue)
     ubxMessage_t tx_buffer;
 
     uint8_t payload[1];
-    payload[0] = (uint8_t)(powerSetupValue >> (8 * 0));
+    payload[0] = powerSetupValue;
 
     size_t offset = ubloxValSet(&tx_buffer, CFG_PM_OPERATEMODE, payload, UBX_VAL_LAYER_RAM);
 
@@ -856,7 +856,7 @@ static void ubloxSetMessageRateValSet(ubxValgetsetBytes_e msgClass, uint8_t rate
     ubxMessage_t tx_buffer;
 
     uint8_t payload[1];
-    payload[0] = (uint8_t)(rate >> (8 * 0));
+    payload[0] = rate;
 
     size_t offset = ubloxValSet(&tx_buffer, msgClass, payload, UBX_VAL_LAYER_RAM);
 
@@ -869,7 +869,7 @@ static void ubloxDisableNMEAValSet(void)
 
     uint8_t payload[1];
 
-    payload[0] = (uint8_t)(0 >> (8 * 0));
+    payload[0] = 0;
 
     size_t offset = ubloxValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_I2C, payload, UBX_VAL_LAYER_RAM);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_SPI, payload, offset);
@@ -935,11 +935,11 @@ static void ubloxSetSbas(void)
 
     if (gpsData.ubloxM9orAbove) {
         uint8_t payload[8];
-        payload[0] = (uint8_t) ((gpsConfig()->sbasMode != SBAS_NONE) >> (8 * 0));
+        payload[0] = gpsConfig()->sbasMode != SBAS_NONE;
 
         size_t offset = ubloxValSet(&tx_buffer, CFG_SBAS_USE_TESTMODE, payload, UBX_VAL_LAYER_RAM);
 
-        payload[0] = (uint8_t) (1 >> (8 * 0));
+        payload[0] = 1;
         offset += ubloxAddValSet(&tx_buffer, CFG_SBAS_USE_RANGING, payload, offset);
         offset += ubloxAddValSet(&tx_buffer, CFG_SBAS_USE_DIFFCORR, payload, offset);
 
@@ -1227,18 +1227,14 @@ void gpsInitUblox(void)
                     }
                     break;
                 case UBLOX_MSG_DOP:
-                    if (gpsData.ubloxM7orAbove) {
+                    if (gpsData.ubloxM7orAbove) { // nav-pvt has what we need and is available M7 and above
                         if (gpsData.ubloxM9orAbove) {
                             ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_DOP_UART1, 0);
                         } else {
                             ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 0);
                         }
                     } else {
-                        if (gpsData.ubloxM9orAbove) {
-                            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_DOP_UART1, 1);
-                        } else {
                             ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1);
-                        }
                     }
                     break;
                 case UBLOX_SAT_INFO:
