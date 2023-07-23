@@ -320,7 +320,7 @@ typedef struct gpsData_s {
     uint32_t timeouts;
     uint32_t lastNavMessage;        // last time valid GPS speed and position data was received (millis)
     uint32_t navFrameCounterReset;  // time that the last nav frame counter was reset
-    uint32_t lastLastNavMessage;    // last-last valid GPS message. Used to calculate message delta, but only by dashboard.c for oled uni
+    uint32_t navMessageIntervalMs;    // last-last valid Nav message was evaluated.
 
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
@@ -337,6 +337,8 @@ typedef struct gpsData_s {
     bool ubloxUsingFlightModel;    // false = Acquire model, true = Flight model
     bool satMessagesDisabled;
 #ifdef USE_GPS_UBLOX
+    uint32_t gpsNavSolIntervalMs;    // interval between successive UBX nav solutions in ms
+    uint32_t lastNavSolTs;      // time stamp of last UBCX message.  Used to calculate message delta
     ubloxVersion_e unitVersion;     // detected UNIT version
     ubxMonVer_t monVer;             // MON-VER response
 #endif

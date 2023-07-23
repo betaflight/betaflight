@@ -73,7 +73,6 @@
 #define LOG_UBLOX_POSLLH 'P'
 #define LOG_UBLOX_VELNED 'V'
 
-uint8_t gpsPackageCounter = 0;
 char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
@@ -398,7 +397,6 @@ void gpsInit(void)
     gpsDataIntervalSeconds = 0.1f;
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
-    gpsPackageCounter = 0;
     gpsData.navFrameCounterReset = millis();
     gpsData.timeouts = 0;
     gpsData.satMessagesDisabled = false;
@@ -1099,7 +1097,6 @@ void gpsInitUblox(void)
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
 
             DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex] / 100);
-            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, initBaudRateCycleCount);
 
             gpsSetState(GPS_STATE_CONFIGURE); // sets gpsData.state_position = 0;
             break;
@@ -1428,31 +1425,33 @@ void gpsUpdate(timeUs_t currentTimeUs)
 static void gpsNewData(uint16_t c)
 {
     if (!gpsNewFrame(c)) {
+        // no new nav solution data
         return;
     }
 
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsPackageCounter);
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-        gpsPackageCounter++;
-        uint32_t now = millis();
-        // count the number of packets received in one second
-        if (cmp32(now, gpsData.navFrameCounterReset) >= 1000) {
-            // set the condition for requesting new satellite info while connected to Configurator
-            gpsPackageCounter = 0;
-            gpsData.navFrameCounterReset = now;
-        }
-
-        // TO DO: use packet interval to detect and maybe report a frame count that differs significantly from expected.
-        // this could be due to a transient disconnect/reconnect where the module returns to internal defaults despite same baud rate
-        // a bit like a sanity check for the package rate
-
-        gpsData.lastLastNavMessage = gpsData.lastNavMessage; // used only for a delta time in dashboard.c
+        // set the time interval between when we last processed a Nav message.
+        // necessary for NMEA since we do not get a millisecond accurate time stamp with NMEA
+        const uint32_t now = millis();
+        gpsData.navMessageIntervalMs = now - gpsData.lastNavMessage;
         gpsData.lastNavMessage = now;
+
+#ifdef USE_GPS_UBLOX
+        // Use gpsSol time stamp value from UBX nav solution packets when we get a valid nav solution to process
+        // calculate the interval, handling iTow wraparound at the end of the week
+        const uint32_t weekDurationMs = 604800000; // Number of milliseconds in a week
+        gpsData.gpsNavSolIntervalMs = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
+        gpsData.lastNavSolTs = gpsSol.time;
+        // constrain the interval to 20hz or a value around where we would get a connection failure
+        gpsData.gpsNavSolIntervalMs = constrain(gpsData.gpsNavSolIntervalMs, 50, 2500);
+        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsData.gpsNavSolIntervalMs);
+#endif
+
         sensorsSet(SENSOR_GPS);
+        // use the baud rate debug once receiving data
+        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, gpsData.navMessageIntervalMs);
     }
-
     GPS_update ^= GPS_DIRECT_TICK;
-
     onGpsNewData();
 }
 
