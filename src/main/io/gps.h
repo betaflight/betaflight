@@ -181,13 +181,6 @@ typedef enum {
     GPS_STATE_COUNT
 } gpsState_e;
 
-// typedef enum {
-//     GPS_UPDATE_HW_IDLE = 0,
-//     GPS_SAT_UPDATE,
-//     GPS_FLIGHT_MODEL_UPDATE,
-//     GPS_UPDATE_HW_DONE
-// } gpsUpdateHwState_e;
-
 typedef enum {
     GPS_LATITUDE,
     GPS_LONGITUDE
