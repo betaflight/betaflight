@@ -3602,14 +3602,12 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
     cliPrintLinef("# MON-VER acquired: %s", gpsData.unitVersion != UBX_VERSION_UNDEF ? "true" : "false");
 
     if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
-
         cliPrintLinef("swVersion: ");
         cliPrint(" ");
         cliPrintLinef("FW=%d.%d, PROTO=%d.%d",
             gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
             gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
         );
-
         cliPrintLinef("hwVersion: ");
         cliPrint(" ");
         cliPrint(ubloxVersion_map[gpsData.unitVersion].str);
@@ -3617,7 +3615,6 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
         cliPrintf("%08X", gpsData.monVer.hwVersion);
         cliPrintLine(")");
 
-        cliPrintLinef("extension: ");
     }
 }
 #endif // USE_GPS_DEBUG
@@ -4846,12 +4843,14 @@ if (buildKey) {
             }
         }
         if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
+#ifdef USE_GPS_DEBUG
             cliPrintLinefeed();
             cliPrintf("     Ublox HW Version: %s, SW Version: %d.%d, Proto Version: %d.%d",
                 ubloxVersion_map[gpsData.unitVersion].str,
                 gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
                 gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
           );
+#endif
         } else {
             cliPrintLinefeed();
             cliPrintf("     Ublox HW Version: NULL, SW Version: NULL");

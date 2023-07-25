@@ -1039,7 +1039,7 @@ void gpsInitUblox(void)
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
 
-        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, initBaudRateCycleCount);
+            // DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, initBaudRateCycleCount);
 
             if (initBaudRateCycleCount > BAUD_COUNT * 2) {
                 // Give up after 32 connection attempts ??
@@ -1057,12 +1057,12 @@ void gpsInitUblox(void)
                 return;
             }
 
-            // spam the module with class message requests :-)
+            // spam the module with class message requests to test the connection :-)
             ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
 
-            // action a response
+            // action a response, if we get it
             if (gpsData.unitVersion > UBX_VERSION_UNDEF) {
-                // set the gps module to the configured rate
+                // set the gps module to the configured rate               // there was a response at this baud rate!
                 serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
                 // remember this baud rate in case we re-connect
                 initBaudRateIndex = gpsInitData[gpsData.state_position].baudrateIndex;
@@ -1071,14 +1071,14 @@ void gpsInitUblox(void)
                 return;
             }
 
-            // delay to give time for the FC serial port to settle, and the GPS to respond
+            // no response yet, keep trying...
             uint32_t now = millis();
             if (cmp32(now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS) {
                 return;
             }
             gpsData.state_ts = now;
 
-            // *** not connected at that rate ***
+            // *** failed to connect at that rate ***
             // try other GPS baudrates, starting at 9600 and moving up
             if (gpsData.state_position == 0) {
                 gpsData.state_position = GPS_BAUDRATE_MAX; // slowest baud rate 9600
@@ -1125,9 +1125,9 @@ void gpsInitUblox(void)
                 case UBLOX_DETECT_UNIT:
                     if (gpsData.unitVersion == UBX_VERSION_UNDEF) {
                         ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
-                        break;
+                    } else {
+                        gpsData.state_position++;
                     }
-                    gpsData.state_position++;
                     break;
                 case UBLOX_INITIALIZE:
                     ubloxSetNavRate(1, 1, 1); // throttle nav data rate to once per second, until configured
@@ -1332,6 +1332,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     // read out available GPS bytes
     if (gpsPort) {
+        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         while (serialRxBytesWaiting(gpsPort)) {
             if (cmpTimeUs(micros(), currentTimeUs) > GPS_MAX_WAIT_DATA_RX) {
                 // Wait 1ms and come back
@@ -1958,7 +1959,7 @@ typedef struct ubxNavSvinfo_s {
     uint8_t numCh;              // Number of channels
     uint8_t globalFlags;        // Bitmask, Chip hardware generation 0:Antaris, 1:u-blox 5, 2:u-blox 6
     uint16_t reserved2;         // Reserved
-    ubxNavSvinfoChannel_t channel[GPS_SV_MAXSATS_M8N];         // 32 satellites * 12 byte
+    ubxNavSvinfoChannel_t channel[GPS_SV_MAXSATS_M8N];         // 48 satellites * 12 byte
 } ubxNavSvinfo_t;
 
 typedef struct ubxNavSat_s {
@@ -1966,7 +1967,7 @@ typedef struct ubxNavSat_s {
     uint8_t version;
     uint8_t numSvs;
     uint8_t reserved0[2];
-    ubxNavSatSv_t svs[GPS_SV_MAXSATS_M9N];
+    ubxNavSatSv_t svs[GPS_SV_MAXSATS_M8N]; // in effect, 48
 } ubxNavSat_t;
 
 typedef struct ubxAck_s {
@@ -2028,7 +2029,8 @@ static bool _new_speed;
 
 // from the UBlox9 document, the largest payout we receive is the NAV-SAT and the payload size
 // is calculated as 8 + 12*numCh.  numCh in the case of a M9N is 42.
-#define UBLOX_PAYLOAD_SIZE (8 + 12 * 42)
+// max reported sats can be up to 56
+#define UBLOX_PAYLOAD_SIZE (8 + 12 * GPS_SV_MAXSATS_M8N)
 
 
 // Receive buffer
@@ -2046,7 +2048,9 @@ static union {
     struct {
         char swVersion[30];
         char hwVersion[10];
+#ifdef USE_GPS_DEBUG
         char extension[10][30];
+#endif
     } ver;
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
@@ -2080,6 +2084,9 @@ static bool UBLOX_parse_gps(void)
             }
             token = strtok(NULL, " ");
         }
+
+#ifdef USE_GPS_DEBUG
+        // get software protocol version details
         size_t j = 0;
         while (j < 10) {
             if (_buffer.ver.extension[j][0] == '\0') {
@@ -2098,6 +2105,7 @@ static bool UBLOX_parse_gps(void)
                 token = strtok(NULL, "=");
             }
         }
+#endif
 
         gpsData.monVer.hwVersion = strtoul(_buffer.ver.hwVersion, NULL, 16);
         gpsData.unitVersion = ubloxParseVersion(gpsData.monVer.hwVersion);

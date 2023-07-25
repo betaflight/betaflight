@@ -365,7 +365,7 @@ extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
 #define GPS_SV_MAXSATS_LEGACY   16U
-#define GPS_SV_MAXSATS_M8N      32U
+#define GPS_SV_MAXSATS_M8N      48U
 #define GPS_SV_MAXSATS_M9N      42U
 
 extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
