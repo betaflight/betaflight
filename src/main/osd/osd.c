@@ -413,6 +413,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->canvas_cols = OSD_SD_COLS;
     osdConfig->canvas_rows = OSD_SD_ROWS;
 #endif
+
+#ifdef USE_QUICK_OSD_MENU
+    osdConfig->osd_use_quick_menu = true;
+#endif // USE_QUICK_OSD_MENU
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)

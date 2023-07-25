@@ -345,6 +345,9 @@ typedef struct osdConfig_s {
     uint8_t aux_symbol;
     uint8_t canvas_cols;                      // Canvas dimensions for HD display
     uint8_t canvas_rows;
+    #ifdef USE_QUICK_OSD_MENU
+    uint8_t osd_use_quick_menu;               // use QUICK menu YES/NO
+    #endif // USE_QUICK_OSD_MENU
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
