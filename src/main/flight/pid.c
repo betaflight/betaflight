@@ -964,13 +964,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].P = pidRuntime.ptermYawLowpassApplyFn((filter_t *) &pidRuntime.ptermYawLowpass, pidData[axis].P);
         }
         if (axis == gyro.gyroDebugAxis) {
-            DEBUG_SET(DEBUG_LLC_PTERM, 0, lrintf(pidData[axis].P * 100.0f));
+            DEBUG_SET(DEBUG_LEAD_LAG_COMP, 3, lrintf(pidData[axis].P));
         }
         if (pidProfile->pterm_llc_phase != 0) {
             pidData[axis].P = phaseCompApply(&pidRuntime.llcP[axis], pidData[axis].P);
         }
         if (axis == gyro.gyroDebugAxis) {
-            DEBUG_SET(DEBUG_LLC_PTERM, 1, lrintf(pidData[axis].P * 100.0f));
+            DEBUG_SET(DEBUG_LEAD_LAG_COMP, 4, lrintf(pidData[axis].P));
         }
 
 
@@ -1025,14 +1025,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
             if (axis == gyro.gyroDebugAxis) {
-                DEBUG_SET(DEBUG_LLC_DTERM, 0, lrintf(delta * 100.0f));
-                DEBUG_SET(DEBUG_LLC_DTERM, 1, lrintf(preTpaD * 100.0f));
+                DEBUG_SET(DEBUG_LEAD_LAG_COMP, 5, lrintf(delta));
+                DEBUG_SET(DEBUG_LEAD_LAG_COMP, 6, lrintf(preTpaD));
             }
             if (pidProfile->dterm_llc_phase != 0) {
                 preTpaD = phaseCompApply(&pidRuntime.llcD[axis], preTpaD);
             }
             if (axis == gyro.gyroDebugAxis) {
-                DEBUG_SET(DEBUG_LLC_DTERM, 2, lrintf(preTpaD * 100.0f));
+                DEBUG_SET(DEBUG_LEAD_LAG_COMP, 7, lrintf(preTpaD));
             }
 
 #if defined(USE_ACC)

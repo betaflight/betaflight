@@ -115,7 +115,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "DSHOT_TELEMETRY_COUNTS",
     "RPM_LIMIT",
     "RC_STATS",
-    "LLC_GYRO",
-    "LLC_PTERM",
-    "LLC_DTERM",
+    "LEAD_LAG_COMP",
 };

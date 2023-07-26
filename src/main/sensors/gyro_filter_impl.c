@@ -83,14 +83,14 @@ static FAST_CODE_NOINLINE void GYRO_FILTER_FUNCTION_NAME(void)
 #endif
 
         if (axis == gyro.gyroDebugAxis) {
-            DEBUG_SET(DEBUG_LLC_GYRO, 0, lrintf(gyro.gyroADC[axis] * 100.0f));
-            DEBUG_SET(DEBUG_LLC_GYRO, 1, lrintf(gyroADCf * 100.0f));
+            DEBUG_SET(DEBUG_LEAD_LAG_COMP, 0, lrintf(gyro.gyroADC[axis]));
+            DEBUG_SET(DEBUG_LEAD_LAG_COMP, 1, lrintf(gyroADCf));
         }
         if (gyroConfig()->gyro_llc_phase != 0) {
             gyroADCf = phaseCompApply(&gyro.llcGyro[axis], gyroADCf);
         }
         if (axis == gyro.gyroDebugAxis) {
-            DEBUG_SET(DEBUG_LLC_GYRO, 2, lrintf(gyroADCf * 100.0f));
+            DEBUG_SET(DEBUG_LEAD_LAG_COMP, 2, lrintf(gyroADCf));
         }
 
         // DEBUG_GYRO_FILTERED records the scaled, filtered, after all software filtering has been applied.
