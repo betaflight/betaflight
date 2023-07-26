@@ -78,7 +78,6 @@
 #define USE_SDCARD_SDIO
 #endif
 
-
 #define USE_VCP
 
 #define USE_SOFTSERIAL1
@@ -91,6 +90,10 @@
 #define USE_ESCSERIAL
 
 #define USE_ADC
+
+#if defined(USE_LED_STRIP) && !defined(USE_LEDSTRIP_CACHE_MGMT)
+#define USE_LEDSTRIP_CACHE_MGMT
+#endif
 
 #if !defined(USE_EXST)
 #define USE_CUSTOM_DEFAULTS

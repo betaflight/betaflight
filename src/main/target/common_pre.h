@@ -429,9 +429,6 @@ extern uint8_t _dmaram_end__;
 #endif // # !defined(LED_MAX_STRIP_LENGTH)
 
 #if defined(USE_LED_STRIP)
-#if defined(STM32H7) && !defined(USE_LEDSTRIP_CACHE_MGMT)
-#define USE_LEDSTRIP_CACHE_MGMT
-#endif
 #define USE_LED_STRIP_STATUS_MODE
 #endif
 

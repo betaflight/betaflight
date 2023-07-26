@@ -103,6 +103,10 @@
 
 #define USE_ADC
 
+#if defined(USE_LED_STRIP) && !defined(USE_LEDSTRIP_CACHE_MGMT)
+#define USE_LEDSTRIP_CACHE_MGMT
+#endif
+
 // Provide a default so that this target builds on the build server.
 #if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
 #define CONFIG_IN_RAM
