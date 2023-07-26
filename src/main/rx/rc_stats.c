@@ -55,8 +55,7 @@ void rcStatsUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) && throttleEverRaisedAfterArming)
-    {
+    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) && throttleEverRaisedAfterArming) {
         counter++;
         totalTrottleNumber += throttlePercent;
 
