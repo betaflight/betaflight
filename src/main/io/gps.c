@@ -467,77 +467,86 @@ void gpsInitNmea(void)
                return;
            }
            gpsData.state_ts = now;
-           if (gpsData.state_position < 1) { // first run after bootup
-               serialSetBaudRate(gpsPort, 4800);
-               gpsData.state_position++;
-           } else if (gpsData.state_position < 2) {
-               // print our FIXED init string for the baudrate we want to be at
-               serialPrint(gpsPort, "$PSRF100,1,115200,8,1,0*05\r\n");
-               gpsData.state_position++;
-           } else {
-               // we're now (hopefully) at the correct rate, next state will switch to it
-               gpsSetState(GPS_STATE_CHANGE_BAUD);
-           }
-           break;
+            switch (gpsData.state_position) {
+                case 0: // first run after bootup
+                    serialSetBaudRate(gpsPort, 4800);
+                    gpsData.state_position++;
+                    break;
+                case 1: // second run
+                    // print the init string for the baudrate we want to be at
+                    serialPrint(gpsPort, "$PSRF100,1,115200,8,1,0*05\r\n");
+                    gpsData.state_position++;
+                    break;
+                default: 
+                    // we're now (hopefully) at the correct rate, next state should switch to it
+                    // TO DO: Check that this actually works, it seems broken at present
+                    gpsData.state_position = 0;
+                    gpsSetState(GPS_STATE_CHANGE_BAUD);
+                    break;
+            }
+            break;
 #endif
         case GPS_STATE_CHANGE_BAUD:
 #if !defined(GPS_NMEA_TX_ONLY)
-           now = millis();
-           if (cmp32(now, gpsData.state_ts) < 1000) {
-               return;
-           }
-           gpsData.state_ts = now;
+            now = millis();
+            if (cmp32(now, gpsData.state_ts) < 1000) {
+                return;
+            }
+            gpsData.state_ts = now;
 
-           if (gpsData.state_position < 1) { // first run after boot up 
-               serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
-               gpsData.state_position++;
-           } else if (gpsData.state_position < 2) {
-               serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n");
+            if (gpsData.state_position < 1) { // first run after boot up 
+                serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+                gpsData.state_position++;
+            } else if (gpsData.state_position < 2) {
+                serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n"); // set GGA rate to 5Hz
+                gpsData.state_position++;
+            } else if (gpsData.state_position < 3) {
                 // special initialization for NMEA ATGM336 and similar GPS recivers - should be done only once
-               if (!atgmRestartDone) {
-                   atgmRestartDone = true;
-                   serialPrint(gpsPort, "$PCAS02,100*1E\r\n");  // 10Hz refresh rate
-                   serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart
-               } else {
-                    // NMEA custom commands after ATGM336 initialization
-                    static int commandOffset = 0;
-                    const char *commands = gpsConfig()->nmeaCustomCommands;
-                    const char *cmd = commands + commandOffset;
+                if (!atgmRestartDone) {
+                    atgmRestartDone = true;
+                    serialPrint(gpsPort, "$PCAS02,100*1E\r\n");  // 10Hz refresh rate
+                    serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart
+                }
+                gpsData.state_position++;
+            } else if (gpsData.state_position < 4) {
+                // NMEA custom commands after ATGM336 initialization
+                static int commandOffset = 0;
+                const char *commands = gpsConfig()->nmeaCustomCommands;
+                const char *cmd = commands + commandOffset;
 
-                    // skip leading whitespaces and get first command length
-                    int commandLen;
-                    while (*cmd && (commandLen = strcspn(cmd, " \0")) == 0) {
-                        cmd++;  // skip separators
-                    }
+                // skip leading whitespaces and get first command length
+                int commandLen;
+                while (*cmd && (commandLen = strcspn(cmd, " \0")) == 0) {
+                    cmd++;  // skip separators
+                }
 
-                    if (*cmd) {
-                        // Send the current command to the GPS
-                        serialWriteBuf(gpsPort, (uint8_t *)cmd, commandLen);
-                        serialWriteBuf(gpsPort, (uint8_t *)"\r\n", 2);
+                if (*cmd) {
+                    // Send the current command to the GPS
+                    serialWriteBuf(gpsPort, (uint8_t *)cmd, commandLen);
+                    serialWriteBuf(gpsPort, (uint8_t *)"\r\n", 2);
 
-                        // Move to the next command
-                        cmd += commandLen;
-                    }
+                    // Move to the next command
+                    cmd += commandLen;
+                }
 
-                    // skip trailing whitespaces
-                    while (*cmd && strcspn(cmd, " \0") == 0) cmd++;
+                // skip trailing whitespaces
+                while (*cmd && strcspn(cmd, " \0") == 0) cmd++;
 
-                    if (*cmd) {
-                        // more commands to send
-                        commandOffset = cmd - commands;
-                    } else {
-                        gpsData.state_position++;
-                        commandOffset = 0;
-                    }
-               }
-           } else
+                if (*cmd) {
+                    // more commands to send
+                    commandOffset = cmd - commands;
+                } else {
+                    gpsData.state_position++;
+                    commandOffset = 0;
+                }
+            } else
 #else
-           {
-               serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
-           }
+            {
+                serialSetBaudRate (gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+            }
 #endif
-               gpsSetState(GPS_STATE_RECEIVING_DATA);
-            break;
+            gpsSetState(GPS_STATE_RECEIVING_DATA);
+        break;
     }
 }
 #endif // USE_GPS_NMEA
@@ -1057,7 +1066,7 @@ void gpsInitUblox(void)
                 return;
             }
 
-            // spam the module with class message requests to test the connection :-)
+            // spam the module with class message requests every GPS task interval (100ms) to test the connection :-)
             ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
 
             // action a response, if we get it
@@ -1108,10 +1117,10 @@ void gpsInitUblox(void)
                 break;
             }
 
-            // allow 3s for configurator to connect, to ensure the check will be correct when enabling satInfo messages
-            // this is an arbitrary time at present, maybe should be defined or user adjustable.
-            // It delays the appearance of GPS data in OSD when not connected to configurator by 3s.
-            // state_ts is set to millis() on the previous gpsSetState(GPS_STATE_CONFIGURE) command
+            // allow 3s for the Configurator connection to stabilise, to get the correct answer when we test the state of the connection.
+            // 3s is an arbitrary time at present, maybe should be defined or user adjustable.
+            // This delays the appearance of GPS data in OSD when not connected to configurator by 3s.
+            // Note that state_ts is set to millis() on the previous gpsSetState(GPS_STATE_CONFIGURE) command
             now = millis();
             if (!isConfiguratorConnected()) {
                if (cmp32(now, gpsData.state_ts) < 3000) {
@@ -1440,11 +1449,11 @@ static void gpsNewData(uint16_t c)
 #ifdef USE_GPS_UBLOX
         // Use gpsSol time stamp value from UBX nav solution packets when we get a valid nav solution to process
         // calculate the interval, handling iTow wraparound at the end of the week
-        const uint32_t weekDurationMs = 604800000; // Number of milliseconds in a week
-        gpsData.gpsNavSolIntervalMs = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
+        const uint32_t weekDurationMs = 7 * 24 * 3600 * 1000;
+        int delta = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
         gpsData.lastNavSolTs = gpsSol.time;
-        // constrain the interval to 20hz or a value around where we would get a connection failure
-        gpsData.gpsNavSolIntervalMs = constrain(gpsData.gpsNavSolIntervalMs, 50, 2500);
+        // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
+        gpsData.gpsNavSolIntervalMs = constrain(delta, 50, 2500);
         DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsData.gpsNavSolIntervalMs);
 #endif
 
@@ -2072,6 +2081,7 @@ static bool UBLOX_parse_gps(void)
     *gpsPacketLogChar = LOG_IGNORED;
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
     switch (CLSMSG(_class, _msg_id)) {
+
     case CLSMSG(CLASS_MON, MSG_MON_VER): {
 #ifdef USE_GPS_DEBUG
         char *token = strtok(_buffer.ver.swVersion, " ");
@@ -2086,7 +2096,6 @@ static bool UBLOX_parse_gps(void)
             }
             token = strtok(NULL, " ");
         }
-
 
         // get software protocol version details
         #define TAG "PROTVER="
@@ -2521,6 +2530,7 @@ void onGpsNewData(void)
 
     // calculate GPS solution interval
     // !!! TOO MUCH JITTER TO BE USEFUL - need an exact time !!!
+    
     const float gpsDataIntervalS = cmpTimeUs(timeUs, lastTimeUs) / 1e6f;
     // dirty hack to remove jitter from interval
     if (gpsDataIntervalS < 0.15f) {
