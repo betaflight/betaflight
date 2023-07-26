@@ -2046,10 +2046,11 @@ static union {
     ubxCfgGnss_t gnss;
     ubxAck_t ack;
     struct {
+        //we cant remove swVersion, because of memory spacing, but we dont need it
         char swVersion[30];
         char hwVersion[10];
 #ifdef USE_GPS_DEBUG
-        char extension[10][30];
+        char extension[300];
 #endif
     } ver;
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
@@ -2072,6 +2073,7 @@ static bool UBLOX_parse_gps(void)
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
     switch (CLSMSG(_class, _msg_id)) {
     case CLSMSG(CLASS_MON, MSG_MON_VER): {
+#ifdef USE_GPS_DEBUG
         char *token = strtok(_buffer.ver.swVersion, " ");
         while (token != NULL) {
             float f = fastA2F(token);
@@ -2085,26 +2087,23 @@ static bool UBLOX_parse_gps(void)
             token = strtok(NULL, " ");
         }
 
-#ifdef USE_GPS_DEBUG
+
         // get software protocol version details
-        size_t j = 0;
-        while (j < 10) {
-            if (_buffer.ver.extension[j][0] == '\0') {
-                break;
-            }
-            token = strtok(&_buffer.ver.extension[j++][0], "=");
-            while (token != NULL) {
-                if (strcmp(token, "PROTVER") == 0) {
-                    token = strtok(NULL, "=");
-                    int major = strtol(token, NULL, 10);
-                    int minor = strtol(&token[major > 9 ? 3 : 2], NULL, 10);
+        #define TAG "PROTVER="
+        for(unsigned j = 0; j < 10; j++) {
+            const char* p = (&_buffer.ver.extension[j * 30]);
+                if (!strncmp(p, TAG, strlen(TAG))) {
+                    p += strlen(TAG);
+                    int major = strtol(p, &p, 10);
+                    p++;   // skip `.`
+                    int minor = strtol(p, &p, 10);
                     gpsData.monVer.swVersion.protocolVersion.major = major;
                     gpsData.monVer.swVersion.protocolVersion.minor = minor;
-                    break;
+                    continue;
                 }
-                token = strtok(NULL, "=");
             }
         }
+        #undef TAG
 #endif
 
         gpsData.monVer.hwVersion = strtoul(_buffer.ver.hwVersion, NULL, 16);

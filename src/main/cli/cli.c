@@ -3602,19 +3602,12 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
     cliPrintLinef("# MON-VER acquired: %s", gpsData.unitVersion != UBX_VERSION_UNDEF ? "true" : "false");
 
     if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
-        cliPrintLinef("swVersion: ");
-        cliPrint(" ");
-        cliPrintLinef("FW=%d.%d, PROTO=%d.%d",
+        cliPrintLinef("swVersion:\r\n FW=%d.%d, PROTO=%d.%d\r\nhwVersion:\r\n %s (%08X)",
             gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
-            gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
+            gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor,
+            ubloxVersion_map[gpsData.unitVersion].str,
+            gpsData.monVer.hwVersion
         );
-        cliPrintLinef("hwVersion: ");
-        cliPrint(" ");
-        cliPrint(ubloxVersion_map[gpsData.unitVersion].str);
-        cliPrint(" (");
-        cliPrintf("%08X", gpsData.monVer.hwVersion);
-        cliPrintLine(")");
-
     }
 }
 #endif // USE_GPS_DEBUG
