@@ -696,11 +696,9 @@ void timerInit(void)
     }
 }
 
-// finish configuring timers after allocation phase
-// start timers
-void timerStart(void)
+void timerStart(tmr_type *tim)
 {
-
+    tmr_counter_enable(tim, TRUE);
 }
 
 /**
