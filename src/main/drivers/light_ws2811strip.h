@@ -24,7 +24,7 @@
 
 #include "drivers/io_types.h"
 
-#define WS2811_LED_STRIP_LENGTH    LED_MAX_STRIP_LENGTH
+#define WS2811_LED_STRIP_LENGTH    LED_STRIP_MAX_LENGTH
 
 #define WS2811_BITS_PER_LED_MAX    32
 
@@ -41,7 +41,7 @@
 #define WS2811_DMA_BUFFER_SIZE     (WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED_MAX + WS2811_DELAY_BUFFER_LENGTH)
 #endif
 
-#ifdef USE_LEDSTRIP_CACHE_MGMT
+#ifdef USE_LED_STRIP_CACHE_MGMT
 // WS2811_DMA_BUFFER_SIZE is multiples of uint32_t
 // Number of bytes required for buffer
 #define WS2811_DMA_BUF_BYTES              (WS2811_DMA_BUFFER_SIZE * sizeof(uint32_t))

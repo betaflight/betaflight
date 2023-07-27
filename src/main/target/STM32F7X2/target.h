@@ -70,7 +70,9 @@
 
 #define USE_USB_DETECT
 
-#define USE_ESCSERIAL
+#ifdef USE_ESCSERIAL
+#undef USE_ESCSERIAL
+#endif
 
 #define USE_ADC
 #define USE_EXTI
