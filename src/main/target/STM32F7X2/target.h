@@ -70,10 +70,6 @@
 
 #define USE_USB_DETECT
 
-#ifdef USE_ESCSERIAL
-#undef USE_ESCSERIAL
-#endif
-
 #define USE_ADC
 #define USE_EXTI
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
