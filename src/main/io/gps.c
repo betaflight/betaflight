@@ -404,7 +404,7 @@ void gpsInit(void)
 #ifdef USE_GPS_UBLOX
     gpsData.ubloxUsingFlightModel = false;
 #endif
-    gpsData.updateRate = 10; // initialise at 10hz
+    gpsData.updateRateHz = 10; // initialise at 10hz
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
 
@@ -460,7 +460,7 @@ const uint8_t ubloxUTCStandardConfig_int[5] = {
         UBLOX_UTC_STANDARD_NTSC
 };
 
-struct ubloxVersion_s ubloxVersion_map[] = {
+struct ubloxVersion_s ubloxVersionMap[] = {
         [UBX_VERSION_UNDEF] = {~0, "UNKNOWN"},
         [UBX_VERSION_M5] = {0x00040005, "M5"},
         [UBX_VERSION_M6] = {0x00040007, "M6"},
@@ -601,7 +601,7 @@ static void ubloxSendPollMessage(uint8_t msg_id)
 }
 
 static void ubloxSendNAV5Message(uint8_t model) {
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 0, model);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 0, model);
     ubxMessage_t tx_buffer;
     if (gpsData.ubloxM9orAbove) {
         uint8_t payload[4];
@@ -948,8 +948,8 @@ void gpsInitNmea(void)
 #if !defined(GPS_NMEA_TX_ONLY)
     uint32_t now;
 #endif
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 4, gpsData.state);
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 5, gpsData.state_position);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, gpsData.state);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, gpsData.state_position);
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
 #if !defined(GPS_NMEA_TX_ONLY)
@@ -1079,7 +1079,7 @@ void gpsInitUblox(void)
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
 
-            // DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, initBaudRateCycleCount);
+            // DEBUG_SET(DEBUG_GPS_CONNECTION, 7, initBaudRateCycleCount);
 
             if (initBaudRateCycleCount > BAUD_COUNT * 2) {
                 // Give up after 32 connection attempts ??
@@ -1129,14 +1129,14 @@ void gpsInitUblox(void)
             serialSetBaudRate(gpsPort, baudRates[newBaudRateIndex]);
             initBaudRateCycleCount++;
 
-            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, baudRates[newBaudRateIndex] / 100);
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[newBaudRateIndex] / 100);
             break;
 
         case GPS_STATE_CHANGE_BAUD:
             // set the FC's serial port to the configured rate
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
 
-            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex] / 100);
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex] / 100);
 
             gpsSetState(GPS_STATE_CONFIGURE); // sets gpsData.state_position = 0;
             break;
@@ -1151,7 +1151,7 @@ void gpsInitUblox(void)
             // allow 3s for the Configurator connection to stabilise, to get the correct answer when we test the state of the connection.
             // 3s is an arbitrary time at present, maybe should be defined or user adjustable.
             // This delays the appearance of GPS data in OSD when not connected to configurator by 3s.
-            // Note that state_ts is set to millis() on the previous gpsSetState(GPS_STATE_CONFIGURE) command
+            // Note that state_ts is set to millis() on the previous gpsSetState(GPS_STATE_CONFIGURED) command
             now = millis();
             if (!isConfiguratorConnected()) {
                if (cmp32(now, gpsData.state_ts) < 3000) {
@@ -1280,8 +1280,8 @@ void gpsInitUblox(void)
                     break;
                 case UBLOX_SET_NAV_RATE:
                     // set the nav solution rate to the user's configured update rate
-                    gpsData.updateRate = gpsConfig()->gps_update_rate_hz;
-                    ubloxSetNavRate(gpsData.updateRate, 1, 1);
+                    gpsData.updateRateHz = gpsConfig()->gps_update_rate_hz;
+                    ubloxSetNavRate(gpsData.updateRateHz, 1, 1);
                     break;
                 case UBLOX_MSG_CFG_GNSS:
                     if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
@@ -1372,7 +1372,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     // read out available GPS bytes
     if (gpsPort) {
-        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         while (serialRxBytesWaiting(gpsPort)) {
             if (cmpTimeUs(micros(), currentTimeUs) > GPS_MAX_WAIT_DATA_RX) {
                 // Wait 1ms and come back
@@ -1418,7 +1418,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 } 
             }
 #endif
-            DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 2, millis() - gpsData.lastNavMessage); // interval between receiving data
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, millis() - gpsData.lastNavMessage); // interval between receiving data
 
             // check for no data/gps timeout/cable disconnection etc
             if (cmp32(millis(), gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
@@ -1427,9 +1427,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
     }
 
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 4, gpsData.state);
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 5, gpsData.state_position);
-    DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 6, gpsData.ackState);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, gpsData.state);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, gpsData.state_position);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);
 
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
@@ -1485,12 +1485,12 @@ static void gpsNewData(uint16_t c)
         gpsData.lastNavSolTs = gpsSol.time;
         // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
         gpsData.gpsNavSolIntervalMs = constrain(delta, 50, 2500);
-        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 1, gpsData.gpsNavSolIntervalMs);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsData.gpsNavSolIntervalMs);
 #endif
 
         sensorsSet(SENSOR_GPS);
         // use the baud rate debug once receiving data
-        DEBUG_SET(DEBUG_GPS_UNIT_CONNECTION, 3, gpsData.navMessageIntervalMs);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.navMessageIntervalMs);
     }
     GPS_update ^= GPS_DIRECT_TICK;
     onGpsNewData();
@@ -1498,8 +1498,8 @@ static void gpsNewData(uint16_t c)
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version) {
-    for (size_t i = 0; i < ARRAYLEN(ubloxVersion_map); ++i) {
-        if (version == ubloxVersion_map[i].hw) {
+    for (size_t i = 0; i < ARRAYLEN(ubloxVersionMap); ++i) {
+        if (version == ubloxVersionMap[i].hw) {
             return (ubloxVersion_e) i;
         }
     }
@@ -2332,6 +2332,7 @@ static bool UBLOX_parse_gps(void)
             gpsData.ackState = UBLOX_ACK_GOT_NACK;
         }
         break;
+
     default:
         return false;
     }

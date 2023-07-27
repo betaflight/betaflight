@@ -3605,7 +3605,7 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
         cliPrintLinef("swVersion:\r\n FW=%d.%d, PROTO=%d.%d\r\nhwVersion:\r\n %s (%08X)",
             gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
             gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor,
-            ubloxVersion_map[gpsData.unitVersion].str,
+            ubloxVersionMap[gpsData.unitVersion].str,
             gpsData.monVer.hwVersion
         );
     }
@@ -4839,7 +4839,7 @@ if (buildKey) {
 #ifdef USE_GPS_DEBUG
             cliPrintLinefeed();
             cliPrintf("     Ublox HW Version: %s, SW Version: %d.%d, Proto Version: %d.%d",
-                ubloxVersion_map[gpsData.unitVersion].str,
+                ubloxVersionMap[gpsData.unitVersion].str,
                 gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
                 gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
           );

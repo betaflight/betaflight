@@ -44,7 +44,7 @@ typedef enum {
     UBX_VERSION_M8,
     UBX_VERSION_M9,
     UBX_VERSION_M10,
-    UBX_VERSION_COUNT,
+    UBX_VERSION_COUNT
 } ubloxVersion_e;
 
 typedef enum {
@@ -167,7 +167,7 @@ struct ubloxVersion_s {
     uint32_t hw;
     const char* str;
 };
-extern struct ubloxVersion_s ubloxVersion_map[];
+extern struct ubloxVersion_s ubloxVersionMap[];
 #endif
 
 typedef enum {
@@ -330,7 +330,7 @@ typedef struct gpsData_s {
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
     uint8_t ackTimeoutCounter;      // Ack timeout counter
     ubloxAckState_e ackState;       // Ack State
-    uint8_t updateRate;
+    uint8_t updateRateHz;
     bool ubloxM7orAbove;
     bool ubloxM8orAbove;
     bool ubloxM9orAbove;
