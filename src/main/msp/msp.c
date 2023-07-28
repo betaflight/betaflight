@@ -1762,6 +1762,12 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, ledStripStatusModeConfig()->ledstrip_aux_channel);
         break;
+
+    case MSP_LED_STRIP_CONFIG_VALUES:
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_brightness);
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_rainbow_delta);
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_rainbow_freq);
+        break;
 #endif
 
     case MSP_DATAFLASH_SUMMARY:
@@ -3852,6 +3858,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             if (!setModeColor(modeIdx, funIdx, color)) {
                 return MSP_RESULT_ERROR;
             }
+        }
+        break;
+    case MSP_SET_LED_STRIP_CONFIG_VALUES:
+        {
+            ledStripConfigMutable()->ledstrip_brightness = sbufReadU8(src);
+            ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU8(src);
+            ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU8(src);
         }
         break;
 #endif

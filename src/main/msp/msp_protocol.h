@@ -324,6 +324,8 @@
 #define MSP_SET_GPS_RESCUE_PIDS  226    //in message          GPS Rescues's throttleP and velocity PIDS + yaw P
 #define MSP_SET_VTXTABLE_BAND    227    //in message          set vtxTable band/channel data (one band at a time)
 #define MSP_SET_VTXTABLE_POWERLEVEL 228 //in message          set vtxTable powerLevel data (one powerLevel at a time)
+#define MSP_SET_LED_STRIP_CONFIG_VALUES 231 //in  message     Set LED strip config values
+#define MSP_LED_STRIP_CONFIG_VALUES     232 //out  message    Get LED strip config vaéues
 
 // #define MSP_BIND                 240    //in message          no param
 // #define MSP_ALARMS               242
