@@ -254,7 +254,6 @@ void setPrintfSerialPort(struct serialPort_s) {}
 static const box_t boxes[] = { { "DUMMYBOX", 0, 0 } };
 const box_t *findBoxByPermanentId(uint8_t) { return &boxes[0]; }
 const box_t *findBoxByBoxId(boxId_e) { return &boxes[0]; }
-void cliGpsInfo(const char *, char *) {}
 
 int8_t unitTestDataArray[3];
 

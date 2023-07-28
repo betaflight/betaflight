@@ -3593,24 +3593,6 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 
     gpsEnablePassthrough(cliPort);
 }
-
-#ifdef USE_GPS_DEBUG
-static void cliGpsInfo(const char *cmdName, char *cmdLine) {
-    UNUSED(cmdName);
-    UNUSED(cmdLine);
-
-    cliPrintLinef("# MON-VER acquired: %s", gpsData.unitVersion != UBX_VERSION_UNDEF ? "true" : "false");
-
-    if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
-        cliPrintLinef("swVersion:\r\n FW=%d.%d, PROTO=%d.%d\r\nhwVersion:\r\n %s (%08X)",
-            gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
-            gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor,
-            ubloxVersionMap[gpsData.unitVersion].str,
-            gpsData.monVer.hwVersion
-        );
-    }
-}
-#endif // USE_GPS_DEBUG
 #endif
 
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
@@ -4835,18 +4817,11 @@ if (buildKey) {
                 cliPrint("configured");
             }
         }
-        if (gpsData.unitVersion != UBX_VERSION_UNDEF) {
-#ifdef USE_GPS_DEBUG
-            cliPrintLinefeed();
-            cliPrintf("     Ublox HW Version: %s, SW Version: %d.%d, Proto Version: %d.%d",
-                ubloxVersionMap[gpsData.unitVersion].str,
-                gpsData.monVer.swVersion.firmwareVersion.major, gpsData.monVer.swVersion.firmwareVersion.minor,
-                gpsData.monVer.swVersion.protocolVersion.major, gpsData.monVer.swVersion.protocolVersion.minor
-          );
-#endif
+        if (gpsData.platformVersion != UBX_VERSION_UNDEF) {
+            cliPrint(", version = ");
+            cliPrintf("%s", ubloxVersionMap[gpsData.platformVersion].str);
         } else {
-            cliPrintLinefeed();
-            cliPrintf("     Ublox HW Version: NULL, SW Version: NULL");
+            cliPrint("unknown");
         }
     } else {
         cliPrint("NOT ENABLED");
@@ -6545,9 +6520,6 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
-#ifdef USE_GPS_DEBUG
-    CLI_COMMAND_DEF("gps_info", "shows the boot screen from device init", NULL, cliGpsInfo),
-#endif
 #endif
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),

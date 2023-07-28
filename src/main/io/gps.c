@@ -72,6 +72,7 @@
 #define LOG_UBLOX_SVINFO 'I'
 #define LOG_UBLOX_POSLLH 'P'
 #define LOG_UBLOX_VELNED 'V'
+#define LOG_UBLOX_MONVER 'M'
 
 char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 static char *gpsPacketLogChar = gpsPacketLog;
@@ -405,11 +406,11 @@ void gpsInit(void)
     gpsData.ubloxUsingFlightModel = false;
 #endif
     gpsData.updateRateHz = 10; // initialise at 10hz
+    gpsData.platformVersion = UBX_VERSION_UNDEF;
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
 
     memset(gpsPacketLog, 0x00, sizeof(gpsPacketLog));
-    memset(&gpsData.monVer, 0x00, sizeof(gpsData.monVer));
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_STATE_UNKNOWN);
@@ -686,7 +687,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
     }
 }
 
-// *** temporarily disabled for testing ***
+// *** Assist Now Autonomous temporarily disabled for testing ***
 // static void ubloxSendNavX5Message(void) {
 //     ubxMessage_t tx_buffer;
 // 
@@ -735,9 +736,9 @@ static void ubloxSetPowerModeValSet(uint8_t powerSetupValue)
 
 static void ubloxSendPowerMode(void)
 {
-    if (gpsData.unitVersion >= UBX_VERSION_M10) {
+    if (gpsData.ubloxM9orAbove) {
         ubloxSetPowerModeValSet(UBX_POWER_MODE_FULL);
-    } else {
+    } else if (gpsData.ubloxM8orAbove) {
         ubxMessage_t tx_buffer;
         tx_buffer.payload.cfg_pms.version = 0;
         tx_buffer.payload.cfg_pms.powerSetupValue = UBX_POWER_MODE_FULL;
@@ -747,6 +748,7 @@ static void ubloxSendPowerMode(void)
         tx_buffer.payload.cfg_pms.reserved1[1] = 0;
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_PMS, sizeof(ubxCfgPms_t), false);
     }
+    // M7 and below do not support this type of power mode, so we leave at default.
 }
 
 static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t rate)
@@ -1101,7 +1103,7 @@ void gpsInitUblox(void)
             ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
 
             // action a response, if we get it
-            if (gpsData.unitVersion > UBX_VERSION_UNDEF) {
+            if (gpsData.platformVersion > UBX_VERSION_UNDEF) {
                 // set the gps module to the configured rate               // there was a response at this baud rate!
                 serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
                 // remember this baud rate in case we re-connect
@@ -1163,7 +1165,7 @@ void gpsInitUblox(void)
             switch (gpsData.state_position) {
                 // if a UBX command is sent, ack is supposed to give position++ once the reply happens
                 case UBLOX_DETECT_UNIT:
-                    if (gpsData.unitVersion == UBX_VERSION_UNDEF) {
+                    if (gpsData.platformVersion == UBX_VERSION_UNDEF) {
                         ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
                     } else {
                         gpsData.state_position++;
@@ -2067,7 +2069,7 @@ static bool _new_speed;
 //15:17:55  R -> UBX NAV,  Size 100,  'Navigation'
 //15:17:55  R -> UBX NAV-SVINFO,  Size 328,  'Satellite Status and Information'
 
-// from the UBlox9 document, the largest payout we receive is the NAV-SAT and the payload size
+// from the UBlox9 document, the largest payload we receive is NAV-SAT, which
 // is calculated as 8 + 12*numCh.  numCh in the case of a M9N is 42.
 // max reported sats can be up to 56
 #define UBLOX_PAYLOAD_SIZE (8 + 12 * GPS_SV_MAXSATS_M8N)
@@ -2084,15 +2086,8 @@ static union {
     ubxNavSvinfo_t svinfo;
     ubxNavSat_t sat;
     ubxCfgGnss_t gnss;
+    ubxMonVer_t ver;
     ubxAck_t ack;
-    struct {
-        //we cant remove swVersion, because of memory spacing, but we dont need it
-        char swVersion[30];
-        char hwVersion[10];
-#ifdef USE_GPS_DEBUG
-        char extension[300];
-#endif
-    } ver;
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
@@ -2113,46 +2108,13 @@ static bool UBLOX_parse_gps(void)
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
     switch (CLSMSG(_class, _msg_id)) {
 
-    case CLSMSG(CLASS_MON, MSG_MON_VER): {
-#ifdef USE_GPS_DEBUG
-        char *token = strtok(_buffer.ver.swVersion, " ");
-        while (token != NULL) {
-            float f = fastA2F(token);
-            if (f > 0.0f) {
-                int major = strtol(token, NULL, 10);
-                int minor = strtol(&token[major > 9 ? 3 : 2], NULL, 10);
-                gpsData.monVer.swVersion.firmwareVersion.major = major;
-                gpsData.monVer.swVersion.firmwareVersion.minor = minor;
-                break;
-            }
-            token = strtok(NULL, " ");
-        }
-
-        // get software protocol version details
-        #define TAG "PROTVER="
-        for(unsigned j = 0; j < 10; j++) {
-            const char* p = (&_buffer.ver.extension[j * 30]);
-                if (!strncmp(p, TAG, strlen(TAG))) {
-                    p += strlen(TAG);
-                    int major = strtol(p, &p, 10);
-                    p++;   // skip `.`
-                    int minor = strtol(p, &p, 10);
-                    gpsData.monVer.swVersion.protocolVersion.major = major;
-                    gpsData.monVer.swVersion.protocolVersion.minor = minor;
-                    continue;
-                }
-            }
-        }
-        #undef TAG
-#endif
-
-        gpsData.monVer.hwVersion = strtoul(_buffer.ver.hwVersion, NULL, 16);
-        gpsData.unitVersion = ubloxParseVersion(gpsData.monVer.hwVersion);
-        gpsData.ubloxM7orAbove = gpsData.unitVersion >= UBX_VERSION_M7;
-        gpsData.ubloxM8orAbove = gpsData.unitVersion >= UBX_VERSION_M8;
-        gpsData.ubloxM9orAbove = gpsData.unitVersion >= UBX_VERSION_M9;
+    case CLSMSG(CLASS_MON, MSG_MON_VER):
+        *gpsPacketLogChar = LOG_UBLOX_MONVER;
+        gpsData.platformVersion = ubloxParseVersion(strtoul(_buffer.ver.hwVersion, NULL, 16));
+        gpsData.ubloxM7orAbove = gpsData.platformVersion >= UBX_VERSION_M7;
+        gpsData.ubloxM8orAbove = gpsData.platformVersion >= UBX_VERSION_M8;
+        gpsData.ubloxM9orAbove = gpsData.platformVersion >= UBX_VERSION_M9;
         gpsData.ackState = UBLOX_ACK_GOT_ACK;
-    }
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_POSLLH):
         *gpsPacketLogChar = LOG_UBLOX_POSLLH;

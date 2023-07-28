@@ -286,16 +286,6 @@ typedef struct gpsSolutionData_s {
     uint32_t time;                  // GPS msToW
 } gpsSolutionData_t;
 
-typedef struct ubxVersion_s {
-    uint8_t major;
-    uint8_t minor;
-} ubxVersion_t;
-
-typedef struct ubxSwVersion_s {
-    ubxVersion_t firmwareVersion;
-    ubxVersion_t protocolVersion;
-} ubxSwVersion_t;
-
 /*
 * keeping this table for reference
 typedef enum {
@@ -310,9 +300,9 @@ typedef enum {
 */
 
 typedef struct ubxMonVer_s {
-    ubxSwVersion_t swVersion;
-    uint32_t hwVersion;
-    /*uint32_t extension;*/
+        char swVersion[30];
+        char hwVersion[10];
+        char extension[300];
 } ubxMonVer_t;
 
 typedef struct gpsData_s {
@@ -320,7 +310,7 @@ typedef struct gpsData_s {
     uint32_t timeouts;
     uint32_t lastNavMessage;        // last time valid GPS speed and position data was received (millis)
     uint32_t navFrameCounterReset;  // time that the last nav frame counter was reset
-    uint32_t navMessageIntervalMs;    // last-last valid Nav message was evaluated.
+    uint32_t navMessageIntervalMs;  // time since last Nav message was evaluated.
 
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
@@ -334,13 +324,12 @@ typedef struct gpsData_s {
     bool ubloxM7orAbove;
     bool ubloxM8orAbove;
     bool ubloxM9orAbove;
-    bool ubloxUsingFlightModel;    // false = Acquire model, true = Flight model
+    bool ubloxUsingFlightModel;     // false = Acquire model, true = Flight model
     bool satMessagesDisabled;
 #ifdef USE_GPS_UBLOX
-    uint32_t gpsNavSolIntervalMs;    // interval between successive UBX nav solutions in ms
-    uint32_t lastNavSolTs;      // time stamp of last UBCX message.  Used to calculate message delta
-    ubloxVersion_e unitVersion;     // detected UNIT version
-    ubxMonVer_t monVer;             // MON-VER response
+    uint32_t gpsNavSolIntervalMs;   // interval between successive UBX nav solutions in ms
+    uint32_t lastNavSolTs;          // time stamp of last UBCX message.  Used to calculate message delta
+    ubloxVersion_e platformVersion; // module platform version, mapped from reported hardware version
 #endif
 } gpsData_t;
 

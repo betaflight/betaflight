@@ -29,7 +29,7 @@
 
 #include "gps.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 3);
 
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .provider = GPS_UBLOX,
