@@ -321,6 +321,11 @@ void timerNVICConfigure(uint8_t irq)
     NVIC_Init(&NVIC_InitStructure);
 }
 
+void timerReconfigureTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
+{
+    configTimeBase(tim, period, hz);
+}
+
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
 {
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
