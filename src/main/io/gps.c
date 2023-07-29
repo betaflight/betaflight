@@ -99,12 +99,12 @@ uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 
 // GPS LOST_COMMUNICATION timeout in ms (max time between received nav solutions)
-#define GPS_TIMEOUT_MS (2500)
+#define GPS_TIMEOUT_MS 2500
 // Timeout for waiting for an ACK or NAK response to a configuration command
-#define UBLOX_ACK_TIMEOUT_MS (250)
+#define UBLOX_ACK_TIMEOUT_MS 250
 // Time allowed for module to respond to baud rate change during initial configuration
-#define GPS_BAUDRATE_CHANGE_DELAY_MS (350)
-// dev note: the suggestion to use a multiple of the configured nav rate could result in very short or very long timeout intervals
+#define GPS_BAUDRATE_CHANGE_DELAY_MS 350
+// note: using a multiple of the configured nav rate could result in very short or very long timeout intervals
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
