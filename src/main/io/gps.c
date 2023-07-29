@@ -397,7 +397,6 @@ void gpsInit(void)
     gpsDataIntervalSeconds = 0.1f;
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
-    gpsData.navFrameCounterReset = millis();
     gpsData.timeouts = 0;
     gpsData.satMessagesDisabled = false;
     gpsData.state_ts = millis();
@@ -1419,8 +1418,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 } 
             }
 #endif
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, millis() - gpsData.lastNavMessage); // interval between receiving data
-
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, millis() - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
             // check for no data/gps timeout/cable disconnection etc
             if (cmp32(millis(), gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
@@ -1466,32 +1464,17 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
 static void gpsNewData(uint16_t c)
 {
+    const uint32_t now = millis();
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);
     if (!gpsNewFrame(c)) {
         // no new nav solution data
         return;
     }
-
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-        // set the time interval between when we last processed a Nav message.
-        // necessary for NMEA since we do not get a millisecond accurate time stamp with NMEA
-        const uint32_t now = millis();
-        gpsData.navMessageIntervalMs = now - gpsData.lastNavMessage;
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, now - gpsData.lastNavMessage); // interval since last Nav data was received
         gpsData.lastNavMessage = now;
-
-#ifdef USE_GPS_UBLOX
-        // Use gpsSol time stamp value from UBX nav solution packets when we get a valid nav solution to process
-        // calculate the interval, handling iTow wraparound at the end of the week
-        const uint32_t weekDurationMs = 7 * 24 * 3600 * 1000;
-        int delta = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
-        gpsData.lastNavSolTs = gpsSol.time;
-        // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
-        gpsData.gpsNavSolIntervalMs = constrain(delta, 50, 2500);
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsData.gpsNavSolIntervalMs);
-#endif
-
         sensorsSet(SENSOR_GPS);
         // use the baud rate debug once receiving data
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.navMessageIntervalMs);
     }
     GPS_update ^= GPS_DIRECT_TICK;
     onGpsNewData();
@@ -1639,6 +1622,7 @@ typedef struct gpsDataNmea_s {
     uint16_t ground_course;
     uint32_t time;
     uint32_t date;
+    uint16_t secondsInTenths;
 } gpsDataNmea_t;
 
 static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
@@ -1650,8 +1634,9 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
 
         case FRAME_GGA:        //************* GPGGA FRAME parsing
             switch (idx) {
-    //          case 1:             // Time information
-    //              break;
+                case 1:
+                    data->secondsInTenths = (uint8_t)(str[5]) * 10 + (uint8_t)(str[7]);
+                    break;
                 case 2:
                     data->latitude = GPS_coord_to_degrees(str);
                     break;
@@ -1757,6 +1742,8 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
 
 static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *data, uint8_t gpsFrame)
 {
+    int navDeltaTimeMs = 100;
+    const uint32_t tenthsInTenSeconds = 100;
     switch (gpsFrame) {
 
         case FRAME_GGA:
@@ -1767,6 +1754,10 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
                 sol->numSat = data->numSat;
                 sol->llh.altCm = data->altitudeCm;
             }
+             navDeltaTimeMs = (tenthsInTenSeconds + data->secondsInTenths - gpsData.lastNavSolTs) % tenthsInTenSeconds;
+             gpsData.lastNavSolTs = data->secondsInTenths;
+             navDeltaTimeMs *= 100;
+             sol->navIntervalMs = constrain(navDeltaTimeMs, 100, 2500);
             // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
             return true;
 
@@ -2102,6 +2093,8 @@ void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
 static bool UBLOX_parse_gps(void)
 {
     uint32_t i;
+    const uint32_t weekDurationMs = 7 * 24 * 3600 * 1000;
+    int navDeltaTimeMs = 0;
 
     *gpsPacketLogChar = LOG_IGNORED;
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
@@ -2122,6 +2115,13 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lat = _buffer.posllh.latitude;
         gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
         gpsSol.time = _buffer.posllh.time;
+
+        // calculate the interval between nav packets, handling iTow wraparound at the end of the week
+        navDeltaTimeMs = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
+        gpsData.lastNavSolTs = gpsSol.time;
+        // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
+        gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
+
         gpsSetFixState(next_fix);
         _new_position = true;
         break;
@@ -2163,6 +2163,13 @@ static bool UBLOX_parse_gps(void)
         *gpsPacketLogChar = LOG_UBLOX_SOL;
         next_fix = (_buffer.pvt.flags & NAV_STATUS_FIX_VALID) && (_buffer.pvt.fixType == FIX_3D);
         gpsSol.time = _buffer.pvt.time;
+
+        // calculate the interval between nav packets, handling iTow wraparound at the end of the week
+        navDeltaTimeMs = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
+        gpsData.lastNavSolTs = gpsSol.time;
+        // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
+        gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
+
         gpsSol.llh.lon = _buffer.pvt.lon;
         gpsSol.llh.lat = _buffer.pvt.lat;
         gpsSol.llh.altCm = _buffer.pvt.hMSL / 10;  //alt in cm
@@ -2515,28 +2522,12 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 
 void onGpsNewData(void)
 {
-    static timeUs_t lastTimeUs = 0;
-    const timeUs_t timeUs = micros();
-
-    // calculate GPS solution interval
-    // !!! TOO MUCH JITTER TO BE USEFUL - need an exact time !!!
-    
-    const float gpsDataIntervalS = cmpTimeUs(timeUs, lastTimeUs) / 1e6f;
-    // dirty hack to remove jitter from interval
-    if (gpsDataIntervalS < 0.15f) {
-        gpsDataIntervalSeconds = 0.1f;
-    } else if (gpsDataIntervalS < 0.4f) {
-        gpsDataIntervalSeconds = 0.2f;
-    } else {
-        gpsDataIntervalSeconds = 1.0f;
-    }
-
-    lastTimeUs = timeUs;
-
     if (!STATE(GPS_FIX)) {
         // if we don't have a 3D fix don't give data to GPS rescue
         return;
     }
+
+    gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {

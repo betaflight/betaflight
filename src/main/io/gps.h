@@ -285,6 +285,7 @@ typedef struct gpsSolutionData_s {
     uint16_t groundCourse;          // degrees * 10
     uint8_t numSat;
     uint32_t time;                  // GPS msToW
+    uint32_t navIntervalMs;         // interval between nav solutions in ms
 } gpsSolutionData_t;
 
 /*
@@ -309,9 +310,7 @@ typedef struct ubxMonVer_s {
 typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
-    uint32_t lastNavMessage;        // last time valid GPS speed and position data was received (millis)
-    uint32_t navFrameCounterReset;  // time that the last nav frame counter was reset
-    uint32_t navMessageIntervalMs;  // time since last Nav message was evaluated.
+    uint32_t lastNavMessage;        // time of last valid GPS speed and position data
 
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
@@ -328,7 +327,6 @@ typedef struct gpsData_s {
     bool ubloxUsingFlightModel;     // false = Acquire model, true = Flight model
     bool satMessagesDisabled;
 #ifdef USE_GPS_UBLOX
-    uint32_t gpsNavSolIntervalMs;   // interval between successive UBX nav solutions in ms
     uint32_t lastNavSolTs;          // time stamp of last UBCX message.  Used to calculate message delta
     ubloxVersion_e platformVersion; // module platform version, mapped from reported hardware version
 #endif
