@@ -2349,9 +2349,6 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             _ck_b += (_ck_a += data);       // checksum byte
             _payload_length += (uint16_t)(data << 8);
 
-            if (_payload_length > UBLOX_PAYLOAD_SIZE) {
-                _skip_packet = true;
-            }
             _payload_counter = 0;   // prepare to receive payload
             if (_payload_length == 0) {
                 _step = 7;
