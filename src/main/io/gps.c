@@ -2086,11 +2086,19 @@ void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
     }
 }
 
+static void calculateNavInterval (void)
+{
+    // calculate the interval between nav packets, handling iTow wraparound at the end of the week
+    const uint32_t weekDurationMs = 7 * 24 * 3600 * 1000;
+    const uint32_t navDeltaTimeMs = (weekDurationMs + gpsSol.time - gpsData.lastNavSolTs) % weekDurationMs;
+    gpsData.lastNavSolTs = gpsSol.time;
+    // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
+    gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
+}
+
 static bool UBLOX_parse_gps(void)
 {
     uint32_t i;
-    const uint32_t weekDurationMs = 7 * 24 * 3600 * 1000;
-    int navDeltaTimeMs = 0;
 
     *gpsPacketLogChar = LOG_IGNORED;
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
@@ -2111,13 +2119,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lat = _buffer.posllh.latitude;
         gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
         gpsSol.time = _buffer.posllh.time;
-
-        // calculate the interval between nav packets, handling iTow wraparound at the end of the week
-        navDeltaTimeMs = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
-        gpsData.lastNavSolTs = gpsSol.time;
-        // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
-        gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
-
+        calculateNavInterval();
         gpsSetFixState(next_fix);
         _new_position = true;
         break;
@@ -2159,13 +2161,7 @@ static bool UBLOX_parse_gps(void)
         *gpsPacketLogChar = LOG_UBLOX_SOL;
         next_fix = (_buffer.pvt.flags & NAV_STATUS_FIX_VALID) && (_buffer.pvt.fixType == FIX_3D);
         gpsSol.time = _buffer.pvt.time;
-
-        // calculate the interval between nav packets, handling iTow wraparound at the end of the week
-        navDeltaTimeMs = (gpsSol.time - gpsData.lastNavSolTs + weekDurationMs) % weekDurationMs;
-        gpsData.lastNavSolTs = gpsSol.time;
-        // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
-        gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
-
+        calculateNavInterval();
         gpsSol.llh.lon = _buffer.pvt.lon;
         gpsSol.llh.lat = _buffer.pvt.lat;
         gpsSol.llh.altCm = _buffer.pvt.hMSL / 10;  //alt in cm
