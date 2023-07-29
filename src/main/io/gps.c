@@ -2351,12 +2351,14 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             if (_payload_length == 0) {
                 _step = 7;
             }
+            _buffer.bytes[_payload_counter] = data;
+            if (_payload_length > UBLOX_PAYLOAD_SIZE) {
+                _payload_length = UBLOX_PAYLOAD_SIZE;
+            }
             break;
         case 6:
             _ck_b += (_ck_a += data);       // checksum byte
-            if (_payload_counter < UBLOX_PAYLOAD_SIZE) {
-                _buffer.bytes[_payload_counter] = data;
-            }
+            _buffer.bytes[_payload_counter] = data;
             if (++_payload_counter >= _payload_length) {
                 _step++;
             }
