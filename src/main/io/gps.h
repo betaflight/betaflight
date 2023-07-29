@@ -354,7 +354,7 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 #define GPS_DBHZ_MAX 55 // used only in dashboard / oled display
 
 #define TASK_GPS_RATE       100     // default update rate of GPS task
-#define TASK_GPS_RATE_FAST  1000    // update rate of GPS task while Rx buffer is not empty
+#define TASK_GPS_RATE_FAST  500    // update rate of GPS task while Rx buffer is not empty
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version);

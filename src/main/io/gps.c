@@ -103,8 +103,9 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 // Timeout for waiting for an ACK or NAK response to a configuration command
 #define UBLOX_ACK_TIMEOUT_MS 250
 // Time allowed for module to respond to baud rate change during initial configuration
-#define GPS_BAUDRATE_CHANGE_DELAY_MS 350
-// note: using a multiple of the configured nav rate could result in very short or very long timeout intervals
+#define GPS_BAUDRATE_CHANGE_DELAY_MS 500
+#define GPS_BAUDRATE_TEST_INTERVAL 120
+#define BYTES_MAX 20
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
@@ -354,9 +355,8 @@ static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_
 
 #endif // USE_GPS_UBLOX
 
-// Max time to wait for received data
+// Max time to wait for received data in us
 #define GPS_MAX_WAIT_DATA_RX 30
-
 gpsData_t gpsData;
 
 static void shiftPacketLog(void)
@@ -1094,9 +1094,15 @@ void gpsInitUblox(void)
                 gpsSetState(GPS_STATE_CHANGE_BAUD);
                 return;
             }
+            uint32_t now = millis();
 
-            // spam the module with class message requests every GPS task interval (100ms) to test the connection :-)
-            ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
+            // send class message requests every 120ms to test the connection.
+            // cannot assume that the GPS update rate is 100hz, can be 1000hz if the buffer is full
+            static uint32_t delay = 0;
+            if (cmp32(now, delay) > GPS_BAUDRATE_TEST_INTERVAL) {
+                ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
+                delay = now;
+            }
 
             // action a response, if we get it
             if (gpsData.platformVersion > UBX_VERSION_UNDEF) {
@@ -1110,7 +1116,6 @@ void gpsInitUblox(void)
             }
 
             // no response yet, keep trying...
-            uint32_t now = millis();
             if (cmp32(now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS) {
                 return;
             }
@@ -1369,17 +1374,31 @@ void gpsUpdate(timeUs_t currentTimeUs)
     // read out available GPS bytes
     if (gpsPort) {
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
+        static uint8_t wait = 0;
+        static bool isFast = false;
         while (serialRxBytesWaiting(gpsPort)) {
-            if (cmpTimeUs(micros(), currentTimeUs) > GPS_MAX_WAIT_DATA_RX) {
-                // Wait 1ms and come back
-                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
+            int bytes_processed = 0;
+            if ((++bytes_processed % BYTES_MAX) == 0 && cmpTimeUs(micros(), currentTimeUs) > GPS_MAX_WAIT_DATA_RX) {
                 return;
             }
+            wait = 0;
             gpsNewData(serialRead(gpsPort));
+            if (!isFast) {
+                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
+                isFast = true;
+            }
         }
-        // Restore default task rate
-        rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
-   } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+
+        if (wait < 1) {
+            wait++;
+        } else if (wait == 1) {
+            wait++;
+            // wait one iteration be sure the buffer is empty, then reset to the slower task interval
+            isFast = false;
+            rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
+        }
+
+    } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
         gpsSetState(GPS_STATE_RECEIVING_DATA);
         onGpsNewData();
         GPS_update &= ~GPS_MSP_UPDATE;
