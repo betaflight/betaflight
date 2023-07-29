@@ -4787,7 +4787,7 @@ if (buildKey) {
 #ifdef USE_GPS
     cliPrint("GPS: ");
     if (featureIsEnabled(FEATURE_GPS)) {
-        if (gpsData.state > GPS_STATE_CHANGE_BAUD) {
+        if (gpsData.state >= GPS_STATE_CONFIGURE) {
             cliPrint("connected, ");
         } else {
             cliPrint("NOT CONNECTED, ");
@@ -4808,7 +4808,7 @@ if (buildKey) {
                 cliPrint("), ");
             }
         }
-        if (gpsData.state < GPS_STATE_RECEIVING_DATA) {
+        if (gpsData.state <= GPS_STATE_CONFIGURE) {
             cliPrint("NOT CONFIGURED");
         } else {
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {

@@ -928,12 +928,10 @@ void setSatInfoMessageRate(uint8_t divisor)
 {
     // enable satInfoMessage at 1:5 of the nav rate if configurator is connected
     divisor = (isConfiguratorConnected()) ? 5 : 0;
-    if (gpsData.ubloxM8orAbove) {
-        if (gpsData.ubloxM9orAbove) {
-            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_UART1, divisor);
-        } else {
-            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SAT, divisor);
-        }
+    if (gpsData.ubloxM9orAbove) {
+         ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_UART1, divisor);
+    } else if (gpsData.ubloxM8orAbove) {
+        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SAT, divisor);
     } else {
         ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SVINFO, divisor);
     }
@@ -1220,26 +1218,25 @@ void gpsInitUblox(void)
                     }
                     break;
                 case UBLOX_MSG_NAV_PVT: //Enable NAV-PVT Messages
-                    if (gpsData.ubloxM7orAbove) {
-                        if (gpsData.ubloxM9orAbove) {
-                            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_PVT_UART1, 1);
-                        } else {
-                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_PVT, 1);
-                        }
+                    if (gpsData.ubloxM9orAbove) {
+                        ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_PVT_UART1, 1);
+                    } else if (gpsData.ubloxM7orAbove) {
+                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_PVT, 1);
                     } else {
                         gpsData.state_position++;
                     }
                     break;
                 // if NAV-PVT is enabled, we don't need the older nav messages
-                case UBLOX_MSG_SOL: // deprecated above M8
-                    if (!gpsData.ubloxM9orAbove) {
-                        if (gpsData.ubloxM7orAbove) {
-                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 0);
-                        } else {
-                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 1);
-                        }
-                    } else {
+                case UBLOX_MSG_SOL:
+                    if (gpsData.ubloxM9orAbove) {
+                        // SOL is deprecated above M8
                         gpsData.state_position++;
+                    } else if (gpsData.ubloxM7orAbove) {
+                        // use NAV-PVT, so don't use NAV-SOL
+                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 0);
+                    } else {
+                        // Only use NAV-SOL below M7
+                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 1);
                     }
                     break;
                 case UBLOX_MSG_POSLLH:
@@ -1264,14 +1261,13 @@ void gpsInitUblox(void)
                     }
                     break;
                 case UBLOX_MSG_DOP:
-                    if (gpsData.ubloxM7orAbove) { // nav-pvt has what we need and is available M7 and above
-                        if (gpsData.ubloxM9orAbove) {
-                            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_DOP_UART1, 0);
-                        } else {
-                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 0);
-                        }
+                    // nav-pvt has what we need and is available M7 and above
+                    if (gpsData.ubloxM9orAbove) {
+                        ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_DOP_UART1, 0);
+                    } else if (gpsData.ubloxM7orAbove) {
+                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 0);
                     } else {
-                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1);
+                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1);
                     }
                     break;
                 case UBLOX_SAT_INFO:
