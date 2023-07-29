@@ -84,7 +84,6 @@ uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint32_t GPS_distanceToHomeCm;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees * 10
 uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
-int16_t nav_takeoff_bearing;
 
 #define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 0.54 km/h 0.335 mph
 

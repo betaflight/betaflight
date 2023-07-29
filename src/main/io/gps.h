@@ -163,12 +163,32 @@ typedef enum {
     UBX_VAL_LAYER_FLASH = 0x04,
 } ubloxValLayer_e;
 
+typedef enum {
+    UBLOX_MODEL_PORTABLE = 0,
+    UBLOX_MODEL_STATIONARY,
+    UBLOX_MODEL_PEDESTRIAN,
+    UBLOX_MODEL_AUTOMOTIVE,
+    UBLOX_MODEL_AT_SEA,
+    UBLOX_MODEL_AIRBORNE_1G,
+    UBLOX_MODEL_AIRBORNE_2G,
+    UBLOX_MODEL_AIRBORNE_4G,
+} ubloxModel_e;
+
+typedef enum {
+    UBLOX_UTC_STANDARD_AUTO = 0,
+    UBLOX_UTC_STANDARD_USNO = 3,
+    UBLOX_UTC_STANDARD_EU = 5,
+    UBLOX_UTC_STANDARD_SU = 6,
+    UBLOX_UTC_STANDARD_NTSC = 7,
+} ubloxUtcStandard_e;
+
 struct ubloxVersion_s {
     uint32_t hw;
     const char* str;
 };
 extern struct ubloxVersion_s ubloxVersionMap[];
-#endif
+
+#endif // USE_GPS_UBLOX
 
 typedef enum {
     GPS_STATE_UNKNOWN = 0,
@@ -202,25 +222,6 @@ typedef enum {
 } sbasMode_e;
 
 #define SBAS_MODE_MAX SBAS_GAGAN
-
-typedef enum {
-    UBLOX_MODEL_PORTABLE = 0,
-    UBLOX_MODEL_STATIONARY,
-    UBLOX_MODEL_PEDESTRIAN,
-    UBLOX_MODEL_AUTOMOTIVE,
-    UBLOX_MODEL_AT_SEA,
-    UBLOX_MODEL_AIRBORNE_1G,
-    UBLOX_MODEL_AIRBORNE_2G,
-    UBLOX_MODEL_AIRBORNE_4G,
-} ubloxModel_e;
-
-typedef enum {
-    UBLOX_UTC_STANDARD_AUTO = 0,
-    UBLOX_UTC_STANDARD_USNO = 3,
-    UBLOX_UTC_STANDARD_EU = 5,
-    UBLOX_UTC_STANDARD_SU = 6,
-    UBLOX_UTC_STANDARD_NTSC = 7,
-} ubloxUtcStandard_e;
 
 typedef enum {
     GPS_BAUDRATE_115200 = 0,
@@ -334,16 +335,15 @@ typedef struct gpsData_s {
 } gpsData_t;
 
 #define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
-extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
+extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT]; // OLED display of packet log values
 
 extern int32_t GPS_home[2];
-extern uint16_t GPS_distanceToHome;        // distance to home point in meters
-extern uint32_t GPS_distanceToHomeCm;      // distance to home point in cm
-extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
-extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
-extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
-extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
-extern int16_t nav_takeoff_bearing;
+extern uint16_t GPS_distanceToHome;             // distance to home point in meters
+extern uint32_t GPS_distanceToHomeCm;           // distance to home point in cm
+extern int16_t GPS_directionToHome;             // direction to home or hol point in degrees
+extern uint32_t GPS_distanceFlownInCm;          // distance flown since armed in centimeters
+extern int16_t GPS_angle[ANGLE_INDEX_COUNT];    // it's the angles that must be applied for GPS correction
+extern float GPS_scaleLonDown;                  // this is used to offset the shrinking longitude as we go towards the poles
 
 typedef enum {
     GPS_DIRECT_TICK = 1 << 0,
@@ -357,9 +357,9 @@ extern gpsSolutionData_t gpsSol;
 #define GPS_SV_MAXSATS_M8N      32U
 #define GPS_SV_MAXSATS_M9N      42U
 
-extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
-extern uint32_t GPS_packetCount;
-extern uint32_t GPS_svInfoReceivedCount;
+extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
+extern uint32_t GPS_packetCount;                        // used only in dashboard / oled display
+extern uint32_t GPS_svInfoReceivedCount;                // used only in dashboard / oled display
 extern uint8_t GPS_numCh;                               // Number of channels
 extern uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];      // When NumCh is 16 or less: Channel number
                                                         // When NumCh is more than 16: GNSS Id
@@ -387,11 +387,11 @@ extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or l
                                                         //     1 = carrier smoothed pseudorange used
 extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Ratio (Signal Strength)
 
-#define GPS_DBHZ_MIN 0
-#define GPS_DBHZ_MAX 55
+#define GPS_DBHZ_MIN 0  // used only in dashboard / oled display
+#define GPS_DBHZ_MAX 55 // used only in dashboard / oled display
 
-#define TASK_GPS_RATE       100
-#define TASK_GPS_RATE_FAST  1000
+#define TASK_GPS_RATE       100     // default update rate of GPS task
+#define TASK_GPS_RATE_FAST  1000    // update rate of GPS task while Rx buffer is not empty
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
@@ -399,7 +399,7 @@ ubloxVersion_e ubloxParseVersion(const uint32_t version);
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
-bool gpsIsHealthy(void); // Check for healthy communications
+bool gpsIsHealthy(void); // Returns true when the gps state is RECEIVING_DATA
 struct serialPort_s;
 void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);
@@ -407,5 +407,5 @@ void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
 void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
 void gpsSetFixState(bool state);
-float getGpsDataIntervalSeconds(void);
+float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue
 baudRate_e getGpsPortActualBaudRateIndex(void);
