@@ -384,7 +384,6 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skipAck);
 
 static void gpsSetState(gpsState_e state)
 {
-    gpsData.lastNavMessage = millis();
     sensorsClear(SENSOR_GPS);
     gpsData.state = state;
     gpsData.state_position = 0;
@@ -564,7 +563,12 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skipAck)
     // Save state for ACK waiting
     gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
     gpsData.ackTimeoutCounter = 0;
-    gpsData.ackState = skipAck ? UBLOX_ACK_GOT_ACK : UBLOX_ACK_WAITING;
+    if (skipAck) {
+        gpsData.ackState = UBLOX_ACK_GOT_ACK;
+    } else {
+        gpsData.lastSentMessage = millis();
+        gpsData.ackState = UBLOX_ACK_WAITING;
+    }
 }
 
 static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_e msg_id, uint16_t length)
@@ -1298,8 +1302,9 @@ void gpsInitUblox(void)
             case UBLOX_ACK_IDLE:
                 break;
             case UBLOX_ACK_WAITING:
-                if (cmp32(millis(), gpsData.lastNavMessage) > UBLOX_ACK_TIMEOUT_MS){
-                    // give up, treat it like receiving ack
+                if (cmp32(millis(), gpsData.lastSentMessage) > UBLOX_ACK_TIMEOUT_MS){
+                    // In the GPS developer community, there are multiple reports that modules may not send ACKs all the time.
+                    // Rather than getting into a loop resetting back to start over, we ignore the timeout and assume the command succeeded.
                     gpsData.ackState = UBLOX_ACK_GOT_ACK;
                 }
                 break;
@@ -1414,9 +1419,10 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 } 
             }
 #endif
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, millis() - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+            const uint32_t now = millis();
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, now - gpsData.lastPollMessage); // time since last received polled message, updated each GPS task interval
             // check for no data/gps timeout/cable disconnection etc
-            if (cmp32(millis(), gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
+            if (cmp32(now, gpsData.lastPollMessage) > GPS_TIMEOUT_MS) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
             }
             break;
@@ -1460,15 +1466,15 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
 static void gpsNewData(uint16_t c)
 {
-    const uint32_t now = millis();
     DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);
     if (!gpsNewFrame(c)) {
         // no new nav solution data
         return;
     }
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, now - gpsData.lastNavMessage); // interval since last Nav data was received
-        gpsData.lastNavMessage = now;
+        const uint32_t now = millis();
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, now - gpsData.lastPollMessage); // interval since last received polled message
+        gpsData.lastPollMessage = now;
         sensorsSet(SENSOR_GPS);
         // use the baud rate debug once receiving data
     }

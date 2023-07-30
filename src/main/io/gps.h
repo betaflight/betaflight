@@ -275,7 +275,8 @@ typedef struct ubxMonVer_s {
 typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
-    uint32_t lastNavMessage;        // time of last valid GPS speed and position data
+    uint32_t lastSentMessage;       // time of last sent message, used for ACK/NAK timeout
+    uint32_t lastPollMessage;       // time of last recevied polled message, used for loss of comm timeout
 
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
