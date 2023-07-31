@@ -106,7 +106,7 @@ typedef enum {
     CFG_SIGNAL_QZSS_ENA = 0x10310024, // L
     CFG_SIGNAL_GLO_ENA = 0x10310025, // L
     CFG_PM_OPERATEMODE = 0x20d00001, // E1
-} ubxValgetsetBytes_e;
+} ubxValGetSetBytes_e;
 
 /*
  * replaced by following macro, to save space; keeping for reference
@@ -269,7 +269,7 @@ typedef enum {
 typedef struct ubxMonVer_s {
         char swVersion[30];
         char hwVersion[10];
-        char extension[300];
+        char extension[300]; // variable size but not more than 300 values
 } ubxMonVer_t;
 
 typedef struct gpsData_s {

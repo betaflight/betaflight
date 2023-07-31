@@ -469,7 +469,7 @@ struct ubloxVersion_s ubloxVersionMap[] = {
         [UBX_VERSION_M10] = {0x000A0000, "M10"},
 };
 
-static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValgetsetBytes_e key, const uint8_t * payload, const uint8_t offset) {
+static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, const uint8_t * payload, const uint8_t offset) {
     size_t len;
     switch((key >> (8 * 3)) & 0xff) {
         case 0x10:
@@ -505,28 +505,28 @@ static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValgetsetBytes_e key,
     return 4 + len;
 }
 
-static size_t ubloxAddValGet(ubxMessage_t * tx_buffer, ubxValgetsetBytes_e key, size_t offset) {
-    const uint8_t zeroes[8] = {0};
+// the following lines are commented out because we are not currently sending ubloxValGet messages
+// static size_t ubloxAddValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, size_t offset) {
+//     const uint8_t zeroes[8] = {0};
+// 
+//     return ubloxAddValSet(tx_buffer, key, zeroes, offset);
+// }
+// 
+// static size_t ubloxValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, ubloxValLayer_e layer)
+// {
+//     tx_buffer->header.preamble1 = PREAMBLE1;
+//     tx_buffer->header.preamble2 = PREAMBLE2;
+//     tx_buffer->header.msg_class = CLASS_CFG;
+//     tx_buffer->header.msg_id = MSG_CFG_VALGET;
+// 
+//     tx_buffer->payload.cfg_valget.version = 1;
+//     tx_buffer->payload.cfg_valget.layer = layer;
+//     tx_buffer->payload.cfg_valget.position = 0;
+// 
+//     return ubloxAddValGet(tx_buffer, key, 0);
+// }
 
-    return ubloxAddValSet(tx_buffer, key, zeroes, offset);
-}
-
-static size_t ubloxValGet(ubxMessage_t * tx_buffer, ubxValgetsetBytes_e key, ubloxValLayer_e layer)
-{
-    tx_buffer->header.preamble1 = PREAMBLE1;
-    tx_buffer->header.preamble2 = PREAMBLE2;
-    tx_buffer->header.msg_class = CLASS_CFG;
-    tx_buffer->header.msg_id = MSG_CFG_VALGET;
-
-    tx_buffer->payload.cfg_valget.version = 1;
-    tx_buffer->payload.cfg_valget.layer = layer;
-    tx_buffer->payload.cfg_valget.position = 0;
-
-    return ubloxAddValGet(tx_buffer, key, 0);
-}
-
-static uint8_t ubloxValSet(ubxMessage_t * tx_buffer, ubxValgetsetBytes_e key, uint8_t * payload, ubloxValLayer_e layer) {
-    UNUSED(ubloxValGet);
+static uint8_t ubloxValSet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, uint8_t * payload, ubloxValLayer_e layer) {
     memset(&tx_buffer->payload.cfg_valset, 0, sizeof(ubxCfgValSet_t));
 
     // tx_buffer->payload.cfg_valset.version = 0;
@@ -685,7 +685,7 @@ static void ubloxSendNAV5Message(uint8_t model) {
     }
 }
 
-// *** Assist Now Autonomous temporarily disabled for testing ***
+// *** Assist Now Autonomous temporarily disabled until a subsequent PR either includes, or removes it ***
 // static void ubloxSendNavX5Message(void) {
 //     ubxMessage_t tx_buffer;
 // 
@@ -758,7 +758,7 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubxCfgMsg_t), false);
 }
 
-static void ubloxSetMessageRateValSet(ubxValgetsetBytes_e msgClass, uint8_t rate)
+static void ubloxSetMessageRateValSet(ubxValGetSetBytes_e msgClass, uint8_t rate)
 {
     ubxMessage_t tx_buffer;
 
@@ -1618,7 +1618,6 @@ typedef struct gpsDataNmea_s {
     uint16_t ground_course;
     uint32_t time;
     uint32_t date;
-    uint16_t secondsInTenths;
 } gpsDataNmea_t;
 
 static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
@@ -1631,7 +1630,7 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
         case FRAME_GGA:        //************* GPGGA FRAME parsing
             switch (idx) {
                 case 1:
-                    data->secondsInTenths = (uint8_t)(str[5]) * 10 + (uint8_t)(str[7]);
+                    data->time = ((uint8_t)(str[5]) * 10 + (uint8_t)(str[7])) * 100;
                     break;
                 case 2:
                     data->latitude = GPS_coord_to_degrees(str);
@@ -1739,7 +1738,7 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
 static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *data, uint8_t gpsFrame)
 {
     int navDeltaTimeMs = 100;
-    const uint32_t tenthsInTenSeconds = 100;
+    const uint32_t msInTenSeconds = 10000;
     switch (gpsFrame) {
 
         case FRAME_GGA:
@@ -1750,9 +1749,8 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
                 sol->numSat = data->numSat;
                 sol->llh.altCm = data->altitudeCm;
             }
-             navDeltaTimeMs = (tenthsInTenSeconds + data->secondsInTenths - gpsData.lastNavSolTs) % tenthsInTenSeconds;
-             gpsData.lastNavSolTs = data->secondsInTenths;
-             navDeltaTimeMs *= 100;
+             navDeltaTimeMs = (msInTenSeconds + data->time - gpsData.lastNavSolTs) % msInTenSeconds;
+             gpsData.lastNavSolTs = data->time;
              sol->navIntervalMs = constrain(navDeltaTimeMs, 100, 2500);
             // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
             return true;
@@ -1987,7 +1985,7 @@ typedef struct ubxNavSvinfo_s {
     uint8_t numCh;              // Number of channels
     uint8_t globalFlags;        // Bitmask, Chip hardware generation 0:Antaris, 1:u-blox 5, 2:u-blox 6
     uint16_t reserved2;         // Reserved
-    ubxNavSvinfoChannel_t channel[GPS_SV_MAXSATS_M8N];         // 48 satellites * 12 byte
+    ubxNavSvinfoChannel_t channel[GPS_SV_MAXSATS_M8N]; // 32 satellites * 12 bytes
 } ubxNavSvinfo_t;
 
 typedef struct ubxNavSat_s {
@@ -1995,7 +1993,7 @@ typedef struct ubxNavSat_s {
     uint8_t version;
     uint8_t numSvs;
     uint8_t reserved0[2];
-    ubxNavSatSv_t svs[GPS_SV_MAXSATS_M8N]; // in effect, 48
+    ubxNavSatSv_t svs[GPS_SV_MAXSATS_M8N];
 } ubxNavSat_t;
 
 typedef struct ubxAck_s {
@@ -2203,7 +2201,7 @@ static bool UBLOX_parse_gps(void)
             GPS_svinfo_quality[i] = _buffer.svinfo.channel[i].quality;
             GPS_svinfo_cno[i] = _buffer.svinfo.channel[i].cno;
         }
-        for (i = GPS_numCh; i < GPS_SV_MAXSATS_LEGACY; i++) {
+        for (; i < GPS_SV_MAXSATS_LEGACY; i++) {
             GPS_svinfo_chn[i] = 0;
             GPS_svinfo_svid[i] = 0;
             GPS_svinfo_quality[i] = 0;
@@ -2225,7 +2223,7 @@ static bool UBLOX_parse_gps(void)
             GPS_svinfo_cno[i] = _buffer.sat.svs[i].cno;
             GPS_svinfo_quality[i] = _buffer.sat.svs[i].flags;
         }
-        for (i = GPS_numCh; i < GPS_SV_MAXSATS_M8N; i++) {
+        for (; i < GPS_SV_MAXSATS_M8N; i++) {
             GPS_svinfo_chn[i] = 255;
             GPS_svinfo_svid[i] = 0;
             GPS_svinfo_quality[i] = 0;
