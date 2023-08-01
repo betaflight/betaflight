@@ -160,10 +160,6 @@ bool spiInit(SPIDevice device)
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev)
 {
-    if (dev->bus->csLockDevice && (dev->bus->csLockDevice != dev)) {
-        // If CS is still asserted, but not by the current device, the bus is busy
-        return true;
-    }
     return (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
 }
 
@@ -172,6 +168,13 @@ void spiWait(const extDevice_t *dev)
 {
     // Wait for completion
     while (spiIsBusy(dev));
+}
+
+// Negate CS if held asserted after a transfer
+void spiRelease(const extDevice_t *dev)
+{
+    // Negate Chip Select
+    IOHi(dev->busType_u.spi.csnPin);
 }
 
 // Wait for bus to become free, then read/write block of data
@@ -440,11 +443,6 @@ FAST_IRQ_HANDLER static void spiIrqHandler(const extDevice_t *dev)
             spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
-            if (bus->curSegment->negateCS) {
-                bus->csLockDevice = (extDevice_t *)NULL;
-             } else {
-                bus->csLockDevice = (extDevice_t *)dev;
-            }
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
         }
     } else {
@@ -763,11 +761,6 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
             // Safe to discard the volatile qualifier as we're in an atomic block
             busSegment_t *endCmpSegment = (busSegment_t *)bus->curSegment;
 
-            /* It is possible that the endCmpSegment may be NULL as the bus is held busy by csLockDevice.
-             * If this is the case this transfer will be silently dropped. Therefore holding CS low after a transfer,
-             * as is done with the SD card, MUST not be done on a bus where interrupts may trigger a transfer
-             * on an idle bus, such as would be the case with a gyro. This would be result in skipped gyro transfers.
-             */
             if (endCmpSegment) {
                 while (true) {
                     // Find the last segment of the current transfer

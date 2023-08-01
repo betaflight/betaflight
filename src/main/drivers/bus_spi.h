@@ -128,6 +128,8 @@ void spiDmaEnable(const extDevice_t *dev, bool enable);
 void spiSequence(const extDevice_t *dev, busSegment_t *segments);
 // Wait for DMA completion
 void spiWait(const extDevice_t *dev);
+// Negate CS if held asserted after a transfer
+void spiRelease(const extDevice_t *dev);
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev);
 
