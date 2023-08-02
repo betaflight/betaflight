@@ -2191,6 +2191,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
         gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        gpsSol.dop.pdop = _buffer.dop.pdop;
         _new_speed = true;
 #ifdef USE_RTC_TIME
         //set clock, when gps time is available
