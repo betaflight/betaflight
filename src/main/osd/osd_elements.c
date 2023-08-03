@@ -1498,13 +1498,18 @@ static void osdElementRtcTime(osdElementParms_t *element)
 static void osdElementRssiDbm(osdElementParms_t *element)
 {
     const int8_t antenna = getActiveAntenna();
+    const int16_t osdRssiDbm = getRssiDbm();
     static bool diversity = false;
+
+    if (osdRssiDbm < osdConfig()->rssi_dbm_alarm) {
+        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+    }
 
     if (antenna || diversity) {
         diversity = true;
-        tfp_sprintf(element->buff, "%c%3d:%d", SYM_RSSI, getRssiDbm(), antenna + 1);
+        tfp_sprintf(element->buff, "%c%3d:%d", SYM_RSSI, osdRssiDbm, antenna + 1);
     } else {
-        tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbm());
+        tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, osdRssiDbm);
     }
 }
 #endif // USE_RX_RSSI_DBM
@@ -2143,6 +2148,14 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
     }
+
+#ifdef USE_RX_RSSI_DBM
+    if (getRssiDbm() < osdConfig()->rssi_dbm_alarm) {
+        SET_BLINK(OSD_RSSI_DBM_VALUE);
+    } else {
+        CLR_BLINK(OSD_RSSI_DBM_VALUE);
+    }
+#endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
