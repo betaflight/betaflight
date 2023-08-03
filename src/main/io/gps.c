@@ -103,9 +103,10 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 // Timeout for waiting for an ACK or NAK response to a configuration command
 #define UBLOX_ACK_TIMEOUT_MS 250
 // Time allowed for module to respond to baud rate change during initial configuration
-#define GPS_BAUDRATE_CHANGE_DELAY_MS 500
-#define GPS_BAUDRATE_TEST_INTERVAL 120
-#define BYTES_MAX 20
+#define GPS_BAUDRATE_TEST_INTERVAL 120 // Time to wait, in us, after sending a 'test this baud rate' message, before repeating the test
+#define GPS_BAUDRATE_CHANGE_DELAY_MS 500    // Number of times to repeat the test message when setting baudrate
+#define GPS_RECV_CHUNK_SIZE 20 // Max number of bytes to receive before checking the time taken to do so
+#define GPS_RECV_TIME_MAX 30   // Max permitted time per scheduler call, to receive GPS data, in us
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
@@ -346,7 +347,7 @@ typedef enum {
     UBLOX_MSG_DOP,          // 18. MSG_NAV_DOP
     UBLOX_SAT_INFO,         // 19. MSG_NAV_SAT message
     UBLOX_SET_NAV_RATE,     // 20. set to user requested GPS sample rate
-    UBLOX_MSG_CFG_GNSS      // 21. For not SBAS or GALILEO otherwise GPS_STATE_REVEIVING_DATA
+    UBLOX_MSG_CFG_GNSS     // 21. For not SBAS or GALILEO
 } ubloxStatePosition_e;
 
 baudRate_e initBaudRateIndex;
@@ -355,8 +356,6 @@ static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_
 
 #endif // USE_GPS_UBLOX
 
-// Max time to wait for received data in us
-#define GPS_MAX_WAIT_DATA_RX 30
 gpsData_t gpsData;
 
 static void shiftPacketLog(void)
@@ -505,26 +504,28 @@ static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key,
     return 4 + len;
 }
 
-// the following lines are commented out because we are not currently sending ubloxValGet messages
-// static size_t ubloxAddValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, size_t offset) {
-//     const uint8_t zeroes[8] = {0};
-// 
-//     return ubloxAddValSet(tx_buffer, key, zeroes, offset);
-// }
-// 
-// static size_t ubloxValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, ubloxValLayer_e layer)
-// {
-//     tx_buffer->header.preamble1 = PREAMBLE1;
-//     tx_buffer->header.preamble2 = PREAMBLE2;
-//     tx_buffer->header.msg_class = CLASS_CFG;
-//     tx_buffer->header.msg_id = MSG_CFG_VALGET;
-// 
-//     tx_buffer->payload.cfg_valget.version = 1;
-//     tx_buffer->payload.cfg_valget.layer = layer;
-//     tx_buffer->payload.cfg_valget.position = 0;
-// 
-//     return ubloxAddValGet(tx_buffer, key, 0);
-// }
+// the following lines are not being used, because we are not currently sending ubloxValGet messages
+#if 0
+static size_t ubloxAddValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, size_t offset) {
+    const uint8_t zeroes[8] = {0};
+
+    return ubloxAddValSet(tx_buffer, key, zeroes, offset);
+}
+
+static size_t ubloxValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, ubloxValLayer_e layer)
+{
+    tx_buffer->header.preamble1 = PREAMBLE1;
+    tx_buffer->header.preamble2 = PREAMBLE2;
+    tx_buffer->header.msg_class = CLASS_CFG;
+    tx_buffer->header.msg_id = MSG_CFG_VALGET;
+
+    tx_buffer->payload.cfg_valget.version = 1;
+    tx_buffer->payload.cfg_valget.layer = layer;
+    tx_buffer->payload.cfg_valget.position = 0;
+
+    return ubloxAddValGet(tx_buffer, key, 0);
+}
+#endif // not used
 
 static uint8_t ubloxValSet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, uint8_t * payload, ubloxValLayer_e layer) {
     memset(&tx_buffer->payload.cfg_valset, 0, sizeof(ubxCfgValSet_t));
@@ -951,11 +952,11 @@ void gpsInitNmea(void)
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
 #if !defined(GPS_NMEA_TX_ONLY)
-           now = millis();
-           if (cmp32(now, gpsData.state_ts) < 1000) {
-               return;
-           }
-           gpsData.state_ts = now;
+            now = millis();
+            if (cmp32(now, gpsData.state_ts) < 1000) {
+                return;
+            }
+            gpsData.state_ts = now;
             switch (gpsData.state_position) {
                 case 0: // first run after bootup
                     serialSetBaudRate(gpsPort, 4800);
@@ -1002,15 +1003,19 @@ void gpsInitNmea(void)
                 }
                 gpsData.state_position++;
             } else if (gpsData.state_position < 4) {
-                // try to disable UBX NAV-PVT and NAV-SAT messages via ValSet
+#ifdef USE_GPS_UBLOX
+                // try to disable UBlox NAV-PVT and NAV-SAT, using ValSet, to which M9 or above should respond
                 ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_PVT_UART1, 0);
                 ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_UART1, 0);
+#endif
                 gpsData.state_position++;
             } else if (gpsData.state_position < 5) {
-                // try to disable UBX NAV-PVT and NAV-SAT messages via UBX
+#ifdef USE_GPS_UBLOX
+                // try to disable UBX NAV-PVT, NAV-SAT and NAV_SVINFO, to which M7 and M8 should respond
                 ubloxSetMessageRate(CLASS_NAV, MSG_NAV_PVT, 0);
                 ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SAT, 0);
                 ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SVINFO, 0);
+#endif
                 gpsData.state_position++;
             } else if (gpsData.state_position < 6) {
                 if (!(isConfiguratorConnected())) {
@@ -1080,22 +1085,22 @@ void gpsInitUblox(void)
             // DEBUG_SET(DEBUG_GPS_CONNECTION, 7, initBaudRateCycleCount);
 
             if (initBaudRateCycleCount > BAUD_COUNT * 2) {
-                // Give up after 32 connection attempts ??
+                // Give up and start again after 32 connection attempts ??
                 initBaudRateIndex = gpsInitData[gpsData.baudrateIndex].baudrateIndex;
             }
 
             if (initBaudRateIndex < BAUD_COUNT) {
                 // initBaudRateIndex is initialised to BAUD_COUNT of 16, so this falls through at the start
-                // but if there has been a connection, it gets set to gpsData.state_position
-                // this performs a reconnection attempt at the last successful value if we reconnect
+                // if there has been a connection, initBaudRateIndex gets set to gpsData.state_position
+                // this baud rate is used for a reconnection attempt if we reconnect
                 serialSetBaudRate(gpsPort, baudRates[initBaudRateIndex]);
                 serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
                 // should this be set to the same initBaudRateIndex value ??
                 gpsSetState(GPS_STATE_CHANGE_BAUD);
                 return;
             }
-            uint32_t now = millis();
 
+            uint32_t now = millis();
             // send class message requests every 120ms to test the connection.
             // cannot assume that the GPS update rate is 100hz, can be 1000hz if the buffer is full
             static uint32_t delay = 0;
@@ -1119,8 +1124,8 @@ void gpsInitUblox(void)
             if (cmp32(now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS) {
                 return;
             }
-            gpsData.state_ts = now;
 
+            gpsData.state_ts = now;
             // *** failed to connect at that rate ***
             // try other GPS baudrates, starting at 9600 and moving up
             if (gpsData.state_position == 0) {
@@ -1163,141 +1168,141 @@ void gpsInitUblox(void)
             }
 
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
-            switch (gpsData.state_position) {
-                // if a UBX command is sent, ack is supposed to give position++ once the reply happens
-                case UBLOX_DETECT_UNIT:
-                    if (gpsData.platformVersion == UBX_VERSION_UNDEF) {
-                        ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
-                    } else {
-                        gpsData.state_position++;
-                    }
-                    break;
-                case UBLOX_INITIALIZE:
-                    ubloxSetNavRate(1, 1, 1); // throttle nav data rate to once per second, until configured
-                    break;
-                case UBLOX_ACQUIRE_MODEL:
-                    ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
-                    break;
-// *** temporarily disabled
-//                 case UBLOX_CFG_ANA:
-//                     if (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
-//                         ubloxSendNavX5Message();
-//                     } else {
-//                         gpsData.state_position++;
-//                     }
-//                     break;
-                case UBLOX_MSG_DISABLE_NMEA:
-                    if (gpsData.ubloxM9orAbove) {
-                        ubloxDisableNMEAValSet();
-                        gpsData.state_position = UBLOX_MSG_RMC; // skip UBX NMEA entries - goes to RMC plus one, or SBAS
-                    } else {
-                        gpsData.state_position++;
-                    }
-                    break;
-                case UBLOX_MSG_VGS: //Disable NMEA Messages
-                    ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_VTG, 0); // VGS: Course over ground and Ground speed
-                    break;
-                case UBLOX_MSG_GSV:
-                    ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GSV, 0); // GSV: GNSS Satellites in View
-                    break;
-                case UBLOX_MSG_GLL:
-                    ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GLL, 0); // GLL: Latitude and longitude, with time of position fix and status
-                    break;
-                case UBLOX_MSG_GGA:
-                    ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GGA, 0); // GGA: Global positioning system fix data
-                    break;
-                case UBLOX_MSG_GSA:
-                    ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GSA, 0); // GSA: GNSS DOP and Active Satellites
-                    break;
-                case UBLOX_MSG_RMC:
-                    ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_RMC, 0); // RMC: Recommended Minimum data
-                    break;
-                case UBLOX_SET_SBAS:
-                    ubloxSetSbas();
-                    break;
-                case UBLOX_SET_PMS:
-                    if (gpsData.ubloxM8orAbove) {
-                        ubloxSendPowerMode();
-                    } else {
-                        gpsData.state_position++;
-                    }
-                    break;
-                case UBLOX_MSG_NAV_PVT: //Enable NAV-PVT Messages
-                    if (gpsData.ubloxM9orAbove) {
-                        ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_PVT_UART1, 1);
-                    } else if (gpsData.ubloxM7orAbove) {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_PVT, 1);
-                    } else {
-                        gpsData.state_position++;
-                    }
-                    break;
-                // if NAV-PVT is enabled, we don't need the older nav messages
-                case UBLOX_MSG_SOL:
-                    if (gpsData.ubloxM9orAbove) {
-                        // SOL is deprecated above M8
-                        gpsData.state_position++;
-                    } else if (gpsData.ubloxM7orAbove) {
-                        // use NAV-PVT, so don't use NAV-SOL
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 0);
-                    } else {
-                        // Only use NAV-SOL below M7
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 1);
-                    }
-                    break;
-                case UBLOX_MSG_POSLLH:
-                    if (gpsData.ubloxM7orAbove) {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_POSLLH, 0);
-                    } else {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_POSLLH, 1);
-                    }
-                    break;
-                case UBLOX_MSG_STATUS:
-                    if (gpsData.ubloxM7orAbove) {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_STATUS, 0);
-                    } else {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_STATUS, 1);
-                    }
-                    break;
-                case UBLOX_MSG_VELNED:
-                    if (gpsData.ubloxM7orAbove) {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_VELNED, 0);
-                    } else {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_VELNED, 1);
-                    }
-                    break;
-                case UBLOX_MSG_DOP:
-                    // nav-pvt has what we need and is available M7 and above
-                    if (gpsData.ubloxM9orAbove) {
-                        ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_DOP_UART1, 0);
-                    } else if (gpsData.ubloxM7orAbove) {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 0);
-                    } else {
-                        ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1);
-                    }
-                    break;
-                case UBLOX_SAT_INFO:
-                    // enable by default, turned off when armed and receiving data to reduce in-flight traffic
-                    setSatInfoMessageRate(5);
-                    break;
-                case UBLOX_SET_NAV_RATE:
-                    // set the nav solution rate to the user's configured update rate
-                    gpsData.updateRateHz = gpsConfig()->gps_update_rate_hz;
-                    ubloxSetNavRate(gpsData.updateRateHz, 1, 1);
-                    break;
-                case UBLOX_MSG_CFG_GNSS:
-                    if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
-                        ubloxSendPollMessage(MSG_CFG_GNSS);
-                    } else {
-                        gpsSetState(GPS_STATE_RECEIVING_DATA);
-                    }
-                    break;
+                switch (gpsData.state_position) {
+                    // if a UBX command is sent, ack is supposed to give position++ once the reply happens
+                    case UBLOX_DETECT_UNIT:
+                        if (gpsData.platformVersion == UBX_VERSION_UNDEF) {
+                            ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
+                        } else {
+                            gpsData.state_position++;
+                        }
+                        break;
+                    case UBLOX_INITIALIZE:
+                        ubloxSetNavRate(1, 1, 1); // throttle nav data rate to once per second, until configured
+                        break;
+                    case UBLOX_ACQUIRE_MODEL:
+                        ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
+                        break;
+//                   *** temporarily disabled
+//                   case UBLOX_CFG_ANA:
+//                      i f (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
+//                           ubloxSendNavX5Message();
+//                       } else {
+//                           gpsData.state_position++;
+//                       }
+//                       break;
+                     case UBLOX_MSG_DISABLE_NMEA:
+                        if (gpsData.ubloxM9orAbove) {
+                            ubloxDisableNMEAValSet();
+                            gpsData.state_position = UBLOX_MSG_RMC; // skip UBX NMEA entries - goes to RMC plus one, or SBAS
+                        } else {
+                            gpsData.state_position++;
+                        }
+                        break;
+                    case UBLOX_MSG_VGS: //Disable NMEA Messages
+                        ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_VTG, 0); // VGS: Course over ground and Ground speed
+                        break;
+                    case UBLOX_MSG_GSV:
+                        ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GSV, 0); // GSV: GNSS Satellites in View
+                        break;
+                    case UBLOX_MSG_GLL:
+                        ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GLL, 0); // GLL: Latitude and longitude, with time of position fix and status
+                        break;
+                    case UBLOX_MSG_GGA:
+                        ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GGA, 0); // GGA: Global positioning system fix data
+                        break;
+                    case UBLOX_MSG_GSA:
+                        ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GSA, 0); // GSA: GNSS DOP and Active Satellites
+                        break;
+                    case UBLOX_MSG_RMC:
+                        ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_RMC, 0); // RMC: Recommended Minimum data
+                        break;
+                    case UBLOX_SET_SBAS:
+                        ubloxSetSbas();
+                        break;
+                    case UBLOX_SET_PMS:
+                        if (gpsData.ubloxM8orAbove) {
+                            ubloxSendPowerMode();
+                        } else {
+                            gpsData.state_position++;
+                        }
+                        break;
+                    case UBLOX_MSG_NAV_PVT: //Enable NAV-PVT Messages
+                        if (gpsData.ubloxM9orAbove) {
+                            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_PVT_UART1, 1);
+                        } else if (gpsData.ubloxM7orAbove) {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_PVT, 1);
+                        } else {
+                            gpsData.state_position++;
+                        }
+                        break;
+                    // if NAV-PVT is enabled, we don't need the older nav messages
+                    case UBLOX_MSG_SOL:
+                        if (gpsData.ubloxM9orAbove) {
+                            // SOL is deprecated above M8
+                            gpsData.state_position++;
+                        } else if (gpsData.ubloxM7orAbove) {
+                            // use NAV-PVT, so don't use NAV-SOL
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 0);
+                        } else {
+                            // Only use NAV-SOL below M7
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SOL, 1);
+                        }
+                        break;
+                    case UBLOX_MSG_POSLLH:
+                        if (gpsData.ubloxM7orAbove) {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_POSLLH, 0);
+                        } else {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_POSLLH, 1);
+                        }
+                        break;
+                    case UBLOX_MSG_STATUS:
+                        if (gpsData.ubloxM7orAbove) {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_STATUS, 0);
+                        } else {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_STATUS, 1);
+                        }
+                        break;
+                    case UBLOX_MSG_VELNED:
+                        if (gpsData.ubloxM7orAbove) {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_VELNED, 0);
+                        } else {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_VELNED, 1);
+                        }
+                        break;
+                    case UBLOX_MSG_DOP:
+                        // nav-pvt has what we need and is available M7 and above
+                        if (gpsData.ubloxM9orAbove) {
+                            ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_DOP_UART1, 0);
+                        } else if (gpsData.ubloxM7orAbove) {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 0);
+                        } else {
+                            ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1);
+                        }
+                        break;
+                    case UBLOX_SAT_INFO:
+                        // enable by default, turned off when armed and receiving data to reduce in-flight traffic
+                        setSatInfoMessageRate(5);
+                        break;
+                    case UBLOX_SET_NAV_RATE:
+                        // set the nav solution rate to the user's configured update rate
+                        gpsData.updateRateHz = gpsConfig()->gps_update_rate_hz;
+                        ubloxSetNavRate(gpsData.updateRateHz, 1, 1);
+                        break;
+                    case UBLOX_MSG_CFG_GNSS:
+                        if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
+                            ubloxSendPollMessage(MSG_CFG_GNSS);
+                        } else {
+                            gpsData.state_position++;
+                        }
+                        break;
                     // TO DO: (separate PR) add steps that remove I2C or SPI data on ValSet aware units, eg
                     // ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_I2C, 0);
                     // ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_SPI, 0);
-                default:
-                    break;
+                    default:
+                        break;
+                }
             }
-        }
 
         switch (gpsData.ackState) {
             case UBLOX_ACK_IDLE:
@@ -1376,9 +1381,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         static uint8_t wait = 0;
         static bool isFast = false;
+        int bytes_processed = 0;
         while (serialRxBytesWaiting(gpsPort)) {
-            int bytes_processed = 0;
-            if ((++bytes_processed % BYTES_MAX) == 0 && cmpTimeUs(micros(), currentTimeUs) > GPS_MAX_WAIT_DATA_RX) {
+            if ((++bytes_processed % GPS_RECV_CHUNK_SIZE) == 0 && cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
                 return;
             }
             wait = 0;
@@ -1649,7 +1654,7 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
         case FRAME_GGA:        //************* GPGGA FRAME parsing
             switch (idx) {
                 case 1:
-                    data->time = ((uint8_t)(str[5]) * 10 + (uint8_t)(str[7])) * 100;
+                    data->time = ((uint8_t)(str[5] - '0') * 10 + (uint8_t)(str[7] - '0')) * 100;
                     break;
                 case 2:
                     data->latitude = GPS_coord_to_degrees(str);
