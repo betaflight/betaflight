@@ -276,7 +276,7 @@ typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
     uint32_t lastNavMessage;        // time of last valid GPS speed and position data
-
+    uint32_t now;
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices

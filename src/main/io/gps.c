@@ -383,11 +383,11 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len, bool skipAck);
 
 static void gpsSetState(gpsState_e state)
 {
-    gpsData.lastNavMessage = millis();
+    gpsData.lastNavMessage = gpsData.now;
     sensorsClear(SENSOR_GPS);
     gpsData.state = state;
     gpsData.state_position = 0;
-    gpsData.state_ts = millis();
+    gpsData.state_ts = gpsData.now;
     gpsData.ackState = UBLOX_ACK_IDLE;
 }
 
@@ -945,18 +945,16 @@ void gpsInitNmea(void)
 {
     static bool atgmRestartDone = false;
 #if !defined(GPS_NMEA_TX_ONLY)
-    uint32_t now;
 #endif
     DEBUG_SET(DEBUG_GPS_CONNECTION, 4, gpsData.state);
     DEBUG_SET(DEBUG_GPS_CONNECTION, 5, gpsData.state_position);
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
 #if !defined(GPS_NMEA_TX_ONLY)
-            now = millis();
-            if (cmp32(now, gpsData.state_ts) < 1000) {
+            if (cmp32(gpsData.now, gpsData.state_ts) < 1000) {
                 return;
             }
-            gpsData.state_ts = now;
+            gpsData.state_ts = gpsData.now;
             switch (gpsData.state_position) {
                 case 0: // first run after bootup
                     serialSetBaudRate(gpsPort, 4800);
@@ -980,11 +978,10 @@ void gpsInitNmea(void)
 #if !defined(GPS_NMEA_TX_ONLY)
             // wait a short time between sending commands
             // note that no commands are sent to request the packets we need
-            now = millis();
-            if (cmp32(now, gpsData.state_ts) < 500) {
+            if (cmp32(gpsData.now, gpsData.state_ts) < 500) {
                 return;
             }
-            gpsData.state_ts = now;
+            gpsData.state_ts = gpsData.now;
 
             if (gpsData.state_position < 1) { // first run after boot up 
                 serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
@@ -1100,13 +1097,12 @@ void gpsInitUblox(void)
                 return;
             }
 
-            uint32_t now = millis();
             // send class message requests every 120ms to test the connection.
             // cannot assume that the GPS update rate is 100hz, can be 1000hz if the buffer is full
             static uint32_t delay = 0;
-            if (cmp32(now, delay) > GPS_BAUDRATE_TEST_INTERVAL) {
+            if (cmp32(gpsData.now, delay) > GPS_BAUDRATE_TEST_INTERVAL) {
                 ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
-                delay = now;
+                delay = gpsData.now;
             }
 
             // action a response, if we get it
@@ -1121,11 +1117,11 @@ void gpsInitUblox(void)
             }
 
             // no response yet, keep trying...
-            if (cmp32(now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS) {
+            if (cmp32(gpsData.now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS) {
                 return;
             }
 
-            gpsData.state_ts = now;
+            gpsData.state_ts = gpsData.now;
             // *** failed to connect at that rate ***
             // try other GPS baudrates, starting at 9600 and moving up
             if (gpsData.state_position == 0) {
@@ -1160,9 +1156,8 @@ void gpsInitUblox(void)
             // 3s is an arbitrary time at present, maybe should be defined or user adjustable.
             // This delays the appearance of GPS data in OSD when not connected to configurator by 3s.
             // Note that state_ts is set to millis() on the previous gpsSetState(GPS_STATE_CONFIGURED) command
-            now = millis();
             if (!isConfiguratorConnected()) {
-               if (cmp32(now, gpsData.state_ts) < 3000) {
+               if (cmp32(gpsData.now, gpsData.state_ts) < 3000) {
                    return;
                }
             }
@@ -1308,7 +1303,7 @@ void gpsInitUblox(void)
             case UBLOX_ACK_IDLE:
                 break;
             case UBLOX_ACK_WAITING:
-                if (cmp32(millis(), gpsData.lastNavMessage) > UBLOX_ACK_TIMEOUT_MS){
+                if (cmp32(gpsData.now, gpsData.lastNavMessage) > UBLOX_ACK_TIMEOUT_MS){
                     // give up, treat it like receiving ack
                     gpsData.ackState = UBLOX_ACK_GOT_ACK;
                 }
@@ -1375,6 +1370,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     static gpsState_e gpsStateDurationUs[GPS_STATE_COUNT];
     timeUs_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
+    gpsData.now = millis();
 
     // read out available GPS bytes
     if (gpsPort) {
@@ -1438,9 +1434,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 } 
             }
 #endif
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, millis() - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
             // check for no data/gps timeout/cable disconnection etc
-            if (cmp32(millis(), gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
+            if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
             }
             break;
@@ -1484,15 +1480,14 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
 static void gpsNewData(uint16_t c)
 {
-    const uint32_t now = millis();
     DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);
     if (!gpsNewFrame(c)) {
         // no new nav solution data
         return;
     }
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, now - gpsData.lastNavMessage); // interval since last Nav data was received
-        gpsData.lastNavMessage = now;
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
+        gpsData.lastNavMessage = gpsData.now;
         sensorsSet(SENSOR_GPS);
         // use the baud rate debug once receiving data
     }
