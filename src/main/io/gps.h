@@ -157,7 +157,7 @@ extern struct ubloxVersion_s ubloxVersionMap[];
 
 typedef enum {
     GPS_STATE_UNKNOWN = 0,
-    GPS_STATE_INITIALIZING,
+    GPS_STATE_DETECT_BAUD,
     GPS_STATE_INITIALIZED,
     GPS_STATE_CHANGE_BAUD,
     GPS_STATE_CONFIGURE,
@@ -278,14 +278,13 @@ typedef struct gpsData_s {
     uint32_t timeouts;
     uint32_t lastNavMessage;        // time of last valid GPS speed and position data
     uint32_t now;
+    uint32_t lastMessageSent;       // time last message was sent
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
     uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
-    uint8_t timeoutCounter;         // General timeout counter
-    uint8_t ackTimeoutCounter;      // Ack timeout counter
     ubloxAckState_e ackState;       // Ack State
     uint8_t updateRateHz;
     bool ubloxM7orAbove;
