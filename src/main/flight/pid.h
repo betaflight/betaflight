@@ -142,6 +142,7 @@ typedef struct pidProfile_s {
     pidf_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_lpf1_type;                // Filter type for dterm lowpass 1
+    uint8_t dterm_lpf1_q;                   // Q-factor (x100) for dterm lowpass 1, if type is biquad
     uint8_t itermWindupPointPercent;        // iterm windup threshold, percent motor saturation
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
@@ -181,6 +182,7 @@ typedef struct pidProfile_s {
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
     uint8_t abs_control_cutoff;             // Cutoff frequency for path estimation in abs control
     uint8_t dterm_lpf2_type;                // Filter type for 2nd dterm lowpass
+    uint8_t dterm_lpf2_q;                  // Q-factor (x100) for 2nd dterm lowpass, if type is biquad
     uint16_t dterm_lpf1_dyn_min_hz;         // Dterm lowpass filter 1 min hz when in dynamic mode
     uint16_t dterm_lpf1_dyn_max_hz;         // Dterm lowpass filter 1 max hz when in dynamic mode
     uint8_t launchControlMode;              // Whether launch control is limited to pitch only (launch stand or top-mount) or all axes (on battery)
@@ -285,8 +287,10 @@ typedef struct pidRuntime_s {
     biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpassApplyFn;
     dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
+    float dtermLowpassQ;
     filterApplyFnPtr dtermLowpass2ApplyFn;
     dtermLowpass_t dtermLowpass2[XYZ_AXIS_COUNT];
+    float dtermLowpass2Q;
     filterApplyFnPtr ptermYawLowpassApplyFn;
     pt1Filter_t ptermYawLowpass;
     bool antiGravityEnabled;

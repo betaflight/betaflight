@@ -98,10 +98,12 @@ typedef struct gyro_s {
     gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
 
     // lowpass gyro soft filter
+    float lowpassFilterQ;              // Q-factor (x100) for gyro lowpass 1, if type is biquad
     filterApplyFnPtr lowpassFilterApplyFn;
     gyroLowpassFilter_t lowpassFilter[XYZ_AXIS_COUNT];
 
     // lowpass2 gyro soft filter
+    float lowpass2FilterQ;             // Q-factor (x100) for gyro lowpass 2, if type is biquad
     filterApplyFnPtr lowpass2FilterApplyFn;
     gyroLowpassFilter_t lowpass2Filter[XYZ_AXIS_COUNT];
 
@@ -183,6 +185,10 @@ typedef struct gyroConfig_s {
     // Lowpass primary/secondary
     uint8_t gyro_lpf1_type;
     uint8_t gyro_lpf2_type;
+
+    // Q-factor (x100) to use if LPF type is biquad
+    uint8_t gyro_lpf1_q;
+    uint8_t gyro_lpf2_q;
 
     uint8_t yaw_spin_recovery;
     int16_t yaw_spin_threshold;

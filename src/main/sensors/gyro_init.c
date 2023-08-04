@@ -136,20 +136,25 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz)
     }
 }
 
-static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_t looptime)
+static bool gyroInitFilterLowpass(int slot, int type, uint16_t lpfHz, uint32_t looptime)
 {
     filterApplyFnPtr *lowpassFilterApplyFn;
     gyroLowpassFilter_t *lowpassFilter = NULL;
+    float q = 0.71f;  // default Q-factor for biquad (= butterworth)
 
     switch (slot) {
     case FILTER_LPF1:
         lowpassFilterApplyFn = &gyro.lowpassFilterApplyFn;
         lowpassFilter = gyro.lowpassFilter;
+        gyro.lowpassFilterQ = gyroConfig()->gyro_lpf1_q / 100.0f;
+        q = gyro.lowpassFilterQ;
         break;
 
     case FILTER_LPF2:
         lowpassFilterApplyFn = &gyro.lowpass2FilterApplyFn;
         lowpassFilter = gyro.lowpass2Filter;
+        gyro.lowpass2FilterQ = gyroConfig()->gyro_lpf2_q / 100.0f;
+        q = gyro.lowpass2FilterQ;
         break;
 
     default:
@@ -187,7 +192,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
                 *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApply;
 #endif
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime);
+                    biquadFilterInit(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime, q, FILTER_LPF, 1.0f);
                 }
                 ret = true;
             }
@@ -251,14 +256,14 @@ void gyroInitFilters(void)
     }
 #endif
 
-    gyroInitLowpassFilterLpf(
+    gyroInitFilterLowpass(
       FILTER_LPF1,
       gyroConfig()->gyro_lpf1_type,
       gyro_lpf1_init_hz,
       gyro.targetLooptime
     );
 
-    gyro.downsampleFilterEnabled = gyroInitLowpassFilterLpf(
+    gyro.downsampleFilterEnabled = gyroInitFilterLowpass(
       FILTER_LPF2,
       gyroConfig()->gyro_lpf2_type,
       gyroConfig()->gyro_lpf2_static_hz,
