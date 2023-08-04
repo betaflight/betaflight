@@ -898,26 +898,26 @@ static void applyLedThrustRingLayer(bool updateNow, timeUs_t *timer)
 
 static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
 {
+    //use offset as a fixed point number
     static int offset = 0;
 
     if (updateNow) {
-        *timer += HZ_TO_US(ledStripConfig()->ledstrip_rainbow_freq);
+        offset += ledStripConfig()->ledstrip_rainbow_freq;
+        *timer += HZ_TO_US(100);
     }
-
     uint8_t rainbowLedIndex = 0;
 
     for (unsigned i = 0; i < ledCounts.count; i++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_RAINBOW)) {
             hsvColor_t ledColor;
-            ledColor.h = (offset + (rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta)) % HSV_HUE_MAX;
+            ledColor.h = (offset / 100  + (rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta)) % (HSV_HUE_MAX + 1);
             ledColor.s = 0;
             ledColor.v = HSV_VALUE_MAX;
             setLedHsv(i, &ledColor);
             rainbowLedIndex++;
         }
     }
-    offset++;
 }
 
 typedef struct larsonParameters_s {
