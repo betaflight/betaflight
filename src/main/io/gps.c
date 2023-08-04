@@ -1392,20 +1392,21 @@ void gpsUpdate(timeUs_t currentTimeUs)
             static bool isFast = false;
             int bytes_processed = 0;
             while (serialRxBytesWaiting(gpsPort)) {
-                if ((++bytes_processed % GPS_RECV_CHUNK_SIZE) == 0 && cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
-                    return;
-                }
                 wait = 0;
                 if (!isFast) {
                     rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
                     isFast = true;
                 }
 
+                if ((++bytes_processed % GPS_RECV_CHUNK_SIZE) == 0 && cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
+                    break;
+                }
+
                 // Add every byte to the buffer, accept good packets when enough bytes are received, and utimately convert data to values
                 if (gpsNewData(serialRead(gpsPort))) {
                     gpsPreprocessState = gpsCurrentState;
                     // There is a packet to process so handle that on the next cycle
-                    gpsSetState(GPS_STATE_PROCESS_DATA);
+                    gpsData.state = GPS_STATE_PROCESS_DATA;
                     break;
                 }
             }
@@ -1421,7 +1422,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
         } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
             gpsPreprocessState = gpsCurrentState;
-            gpsSetState(GPS_STATE_PROCESS_DATA);
+            gpsData.state = GPS_STATE_PROCESS_DATA;
             onGpsNewData();
             GPS_update &= ~GPS_MSP_UPDATE;
         }
@@ -1478,8 +1479,10 @@ void gpsUpdate(timeUs_t currentTimeUs)
 #endif
                 }
 
-                // Go back to what we were doing
-                gpsSetState(gpsPreprocessState);
+                if (gpsData.state == GPS_STATE_PROCESS_DATA) {
+                    // Go back to what we were doing if there's been no state transition
+                    gpsData.state = gpsPreprocessState;
+                }
                 break;
         }
     }
