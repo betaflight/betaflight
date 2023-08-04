@@ -104,7 +104,7 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 #define UBLOX_ACK_TIMEOUT_MS 250
 // Time allowed for module to respond to baud rate change during initial configuration
 #define GPS_BAUDRATE_TEST_INTERVAL 120 // Time to wait, in us, after sending a 'test this baud rate' message, before repeating the test
-#define GPS_BAUDRATE_CHANGE_DELAY_MS 500    // Number of times to repeat the test message when setting baudrate
+#define GPS_BAUDRATE_TEST_COUNT 5    // Number of times to repeat the test message when setting baudrate
 #define GPS_RECV_CHUNK_SIZE 20 // Max number of bytes to receive before checking the time taken to do so
 #define GPS_RECV_TIME_MAX 30   // Max permitted time per scheduler call, to receive GPS data, in us
 
@@ -389,6 +389,7 @@ static void gpsSetState(gpsState_e state)
     gpsData.state_position = 0;
     gpsData.state_ts = gpsData.now;
     gpsData.ackState = UBLOX_ACK_IDLE;
+    gpsData.timeoutCounter = 0;
 }
 
 void gpsInit(void)
@@ -399,6 +400,7 @@ void gpsInit(void)
     gpsData.timeouts = 0;
     gpsData.satMessagesDisabled = false;
     gpsData.state_ts = millis();
+    gpsData.timeoutCounter = 0;
 #ifdef USE_GPS_UBLOX
     gpsData.ubloxUsingFlightModel = false;
 #endif
@@ -1097,32 +1099,35 @@ void gpsInitUblox(void)
                 return;
             }
 
-            // send class message requests every 120ms to test the connection.
-            // cannot assume that the GPS update rate is 100hz, can be 1000hz if the buffer is full
-            static uint32_t delay = 0;
-            if (cmp32(gpsData.now, delay) > GPS_BAUDRATE_TEST_INTERVAL) {
-                ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
-                delay = gpsData.now;
-            }
-
-            // action a response, if we get it
+            // check to see if there has been a response to the version command
             if (gpsData.platformVersion > UBX_VERSION_UNDEF) {
-                // set the gps module to the configured rate               // there was a response at this baud rate!
                 serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
                 // remember this baud rate in case we re-connect
                 initBaudRateIndex = gpsInitData[gpsData.state_position].baudrateIndex;
-                //  we're done here, let's move the the next state
+                // we're done here, let's move the the next state
                 gpsSetState(GPS_STATE_CHANGE_BAUD);
                 return;
             }
 
-            // no response yet, keep trying...
-            if (cmp32(gpsData.now, gpsData.state_ts) < GPS_BAUDRATE_CHANGE_DELAY_MS) {
+            // Send the version request five times at GPS_BAUDRATE_TEST_INTERVAL
+            static bool messageSent = false;
+            static uint8_t messageCounter = 0;
+            if (messageCounter < GPS_BAUDRATE_TEST_COUNT) {
+                if (!messageSent) {
+                    ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
+                    messageSent = true;
+                }
+                if (cmp32(gpsData.now, gpsData.state_ts) > GPS_BAUDRATE_TEST_INTERVAL) {
+                    gpsData.state_ts = gpsData.now;
+                    messageSent = false;
+                    ++ messageCounter;
+                }
                 return;
             }
-
+            messageCounter = 0;
             gpsData.state_ts = gpsData.now;
-            // *** failed to connect at that rate ***
+
+            // failed to connect at that rate after five attempts
             // try other GPS baudrates, starting at 9600 and moving up
             if (gpsData.state_position == 0) {
                 gpsData.state_position = GPS_BAUDRATE_MAX; // slowest baud rate 9600
@@ -1372,7 +1377,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     gpsState_e gpsCurrentState = gpsData.state;
     gpsData.now = millis();
 
-    // read out available GPS bytes
+    // read out available GPS bytes and parse them
     if (gpsPort) {
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         static uint8_t wait = 0;
@@ -1382,13 +1387,15 @@ void gpsUpdate(timeUs_t currentTimeUs)
             if ((++bytes_processed % GPS_RECV_CHUNK_SIZE) == 0 && cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
                 return;
             }
-            wait = 0;
+            // Add every byte to the buffer, accept good packets when enough bytes are received, and utimately convert data to values 
             gpsNewData(serialRead(gpsPort));
+            wait = 0;
             if (!isFast) {
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
                 isFast = true;
             }
         }
+
 
         if (wait < 1) {
             wait++;
@@ -1450,13 +1457,12 @@ void gpsUpdate(timeUs_t currentTimeUs)
         updateGpsIndicator(currentTimeUs);
     }
 
-    if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
-        // clear the home fix icon between arms if the user configuration is to reset home point between arms
-        DISABLE_STATE(GPS_FIX_HOME);
-    }
-
     static bool hasBeeped = false;
     if (!ARMING_FLAG(ARMED)) {
+        if (!gpsConfig()->gps_set_home_point_once) {
+        // clear the home fix icon between arms if the user configuration is to reset home point between arms
+            DISABLE_STATE(GPS_FIX_HOME);
+        }
         // while disarmed, beep when requirements for a home fix are met
         // ?? should we also beep if home fix requirements first appear after arming?
         if (!hasBeeped && STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
@@ -2404,8 +2410,9 @@ static bool gpsNewFrameUBLOX(uint8_t data)
                 break;
             }
 
+            // parse the values in the array of bytes in _buffer
             if (UBLOX_parse_gps()) {
-                // true when we have new GPS speed and position data
+                // true only when we have new GPS speed and position data
                 parsed = true;
             }
     }

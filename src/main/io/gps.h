@@ -283,6 +283,7 @@ typedef struct gpsData_s {
     uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
+    uint8_t timeoutCounter;         // General timeout counter
     uint8_t ackTimeoutCounter;      // Ack timeout counter
     ubloxAckState_e ackState;       // Ack State
     uint8_t updateRateHz;
