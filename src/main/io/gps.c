@@ -1379,6 +1379,7 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
 void gpsUpdate(timeUs_t currentTimeUs)
 {
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
+    static gpsState_e gpsPreprocessState = GPS_STATE_UNKNOWN;
     timeDelta_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
     gpsData.now = millis();
@@ -1386,7 +1387,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if ( gpsData.state != GPS_STATE_PROCESS_DATA) {
         // read out available GPS bytes and parse them
         if (gpsPort) {
-    //        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
             static uint8_t wait = 0;
             static bool isFast = false;
             int bytes_processed = 0;
@@ -1402,6 +1403,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
                 // Add every byte to the buffer, accept good packets when enough bytes are received, and utimately convert data to values
                 if (gpsNewData(serialRead(gpsPort))) {
+                    gpsPreprocessState = gpsCurrentState;
                     // There is a packet to process so handle that on the next cycle
                     gpsSetState(GPS_STATE_PROCESS_DATA);
                     break;
@@ -1418,6 +1420,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
             }
         } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+            gpsPreprocessState = gpsCurrentState;
             gpsSetState(GPS_STATE_PROCESS_DATA);
             onGpsNewData();
             GPS_update &= ~GPS_MSP_UPDATE;
@@ -1475,8 +1478,8 @@ void gpsUpdate(timeUs_t currentTimeUs)
 #endif
                 }
 
-                // Go back to receiving data
-                gpsSetState(GPS_STATE_RECEIVING_DATA);
+                // Go back to what we were doing
+                gpsSetState(gpsPreprocessState);
                 break;
         }
     }
@@ -1516,8 +1519,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
         // Slowly decay the max time
         gpsStateDurationFractionUs[gpsCurrentState]--;
     }
-
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 7, gpsStateDurationFractionUs[gpsCurrentState]);
 
     schedulerSetNextStateTime(gpsStateDurationFractionUs[gpsData.state] >> GPS_TASK_DECAY_SHIFT);
 }
