@@ -28,7 +28,6 @@
 
 #include "build/debug.h"
 
-#include "common/axis.h"
 #include "common/filter.h"
 #include "common/utils.h"
 
@@ -36,6 +35,7 @@
 
 #include "sensors/acceleration_init.h"
 #include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
 
 #include "acceleration.h"
 
@@ -48,15 +48,33 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
     acc.accADC.z -= accelerationTrims->raw[Z];
 }
 
+static void postProcessAccelerometer(void)
+{
+    static vector3_t accAdcPrev;
+
+    for (unsigned axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+
+        // Apply anti-alias filter for attitude task (if enabled)
+        if (accelerationRuntime.accLpfCutHz) {
+            acc.accADC.v[axis] = pt2FilterApply(&accelerationRuntime.accFilter[axis], acc.accADC.v[axis]);
+        }
+
+        // Calculate derivative of acc (jerk)
+        acc.jerk.v[axis] = (acc.accADC.v[axis] - accAdcPrev.v[axis]) * acc.sampleRateHz;
+        accAdcPrev.v[axis] = acc.accADC.v[axis];
+    }
+
+    acc.accMagnitude = vector3Norm(&acc.accADC) * acc.dev.acc_1G_rec;
+    acc.jerkMagnitude = vector3Norm(&acc.jerk) * acc.dev.acc_1G_rec;
+}
+
 void accUpdate(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
-    static float previousAccMagnitude;
 
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
-    acc.isAccelUpdatedAtLeastOnce = true;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         const int16_t val =  acc.dev.ADCRaw[axis];
@@ -79,15 +97,9 @@ void accUpdate(timeUs_t currentTimeUs)
 
     applyAccelerationTrims(accelerationRuntime.accelerationTrims);
 
-    float accAdcSquaredSum = 0.0f;
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        const float val = acc.accADC.v[axis];
-        acc.accADC.v[axis] = accelerationRuntime.accLpfCutHz ? pt2FilterApply(&accelerationRuntime.accFilter[axis], val) : val;
-        accAdcSquaredSum += sq(acc.accADC.v[axis]);
-    }
-    acc.accMagnitude = sqrtf(accAdcSquaredSum) * acc.dev.acc_1G_rec; // normally 1.0; used for disarm on impact detection
-    acc.accDelta = (acc.accMagnitude - previousAccMagnitude) * acc.sampleRateHz;
-    previousAccMagnitude = acc.accMagnitude;
+    postProcessAccelerometer();
+
+    acc.isAccelUpdatedAtLeastOnce = true;
 }
 
-#endif
+#endif // USE_ACC

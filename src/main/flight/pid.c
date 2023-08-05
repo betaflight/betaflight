@@ -857,8 +857,8 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
 #ifdef USE_ALT_HOLD_MODE
         lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isBelowLandingAltitude()) ? 1.5f : 1.0f;
 #endif
-        // and disarm if accelerometer jerk exceeds threshold...
-        if ((fabsf(acc.accDelta) * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
+        // and disarm if jerk exceeds threshold...
+        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
             // then disarm
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
             disarm(DISARM_REASON_LANDING);
@@ -866,7 +866,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         }
     }
     DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
-    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));
+    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.jerkMagnitude * 1e3f));
 }
 
 #ifdef USE_LAUNCH_CONTROL
