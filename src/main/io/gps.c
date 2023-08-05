@@ -361,6 +361,9 @@ gpsData_t gpsData;
 // Decay the estimated max task duration by 1/(1 << GPS_TASK_DECAY_SHIFT) on every invocation
 #define GPS_TASK_DECAY_SHIFT 9
 
+// SCEDEBUG Limit the predicted process state time until we figure out why we sometimes see peaks of ~70us
+#define GPS_TASK_MAX_PROCESS 20
+
 static void shiftPacketLog(void)
 {
     uint32_t i;
@@ -1405,6 +1408,10 @@ void gpsUpdate(timeUs_t currentTimeUs)
                     gpsPreprocessState = gpsCurrentState;
                     // There is a packet to process so handle that on the next cycle
                     gpsData.state = GPS_STATE_PROCESS_DATA;
+                    // Reschedule immediately
+                    rescheduleTask(TASK_SELF, 0);
+                    // Reset the scheduling rate when next receiving data
+                    isFast = false;
                     break;
                 }
             }
@@ -1519,6 +1526,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
     } else {
         // Slowly decay the max time
         gpsStateDurationFractionUs[gpsCurrentState]--;
+    }
+
+    // FIXME Bodge to get round ocassional very slow processing until we figure it out
+    if ((executeTimeUs > GPS_TASK_MAX_PROCESS) && (gpsCurrentState == GPS_STATE_PROCESS_DATA)) {
+        gpsStateDurationFractionUs[GPS_STATE_PROCESS_DATA] = GPS_TASK_MAX_PROCESS << GPS_TASK_DECAY_SHIFT;
     }
 
     schedulerSetNextStateTime(gpsStateDurationFractionUs[gpsData.state] >> GPS_TASK_DECAY_SHIFT);
@@ -2168,9 +2180,16 @@ static void calculateNavInterval (void)
     gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
 }
 
+// SCEDEBUG To help debug which message is slow to process
+static uint8_t last_class;
+static uint8_t last_msg_id;
+
 static bool UBLOX_parse_gps(void)
 {
     uint32_t i;
+
+    last_class = _class;
+    last_msg_id = _msg_id;
 
     *gpsPacketLogChar = LOG_IGNORED;
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
