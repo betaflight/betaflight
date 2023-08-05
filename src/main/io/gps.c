@@ -105,7 +105,6 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 // Time allowed for module to respond to baud rate change during initial configuration
 #define GPS_BAUDRATE_TEST_INTERVAL 120 // Time to wait, in us, after sending a 'test this baud rate' message, before repeating the test
 #define GPS_BAUDRATE_TEST_COUNT 5    // Number of times to repeat the test message when setting baudrate
-#define GPS_RECV_CHUNK_SIZE 20 // Max number of bytes to receive before checking the time taken to do so
 #define GPS_RECV_TIME_MAX 30   // Max permitted time per scheduler call, to receive GPS data, in us
 
 static serialPort_t *gpsPort;
@@ -1390,7 +1389,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
             static uint8_t wait = 0;
             static bool isFast = false;
-            int bytes_processed = 0;
             while (serialRxBytesWaiting(gpsPort)) {
                 wait = 0;
                 if (!isFast) {
@@ -1398,7 +1396,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                     isFast = true;
                 }
 
-                if ((++bytes_processed % GPS_RECV_CHUNK_SIZE) == 0 && cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
+                if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
                     break;
                 }
 
