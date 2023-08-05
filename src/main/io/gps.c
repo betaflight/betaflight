@@ -1386,6 +1386,8 @@ void gpsUpdate(timeUs_t currentTimeUs)
     gpsState_e gpsCurrentState = gpsData.state;
     gpsData.now = millis();
 
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 2, MIN((uint32_t)200, gpsData.now - gpsData.lastNavMessage)); // interval since last Nav data was received
+
     if ( gpsData.state != GPS_STATE_PROCESS_DATA) {
         // read out available GPS bytes and parse them
         if (gpsPort) {
@@ -1493,8 +1495,8 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 
     DEBUG_SET(DEBUG_GPS_CONNECTION, 4, gpsData.state);
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, gpsData.state_position);
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);
+//     DEBUG_SET(DEBUG_GPS_CONNECTION, 5, gpsData.state_position);
+//     DEBUG_SET(DEBUG_GPS_CONNECTION, 6, gpsData.ackState);
 
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
@@ -1534,6 +1536,10 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 
     schedulerSetNextStateTime(gpsStateDurationFractionUs[gpsData.state] >> GPS_TASK_DECAY_SHIFT);
+
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 5, executeTimeUs);
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, (gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT));
+
 }
 
 static bool gpsNewData(uint16_t c)
