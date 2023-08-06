@@ -682,9 +682,16 @@ void validateAndFixGyroConfig(void)
         }
 #endif
 
-#if defined(USE_GYRO_DENOM_CHECK) && (defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270))
-        if (gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI270) {
+#ifdef USE_GYRO_DENOM_CHECK
+        bool bmiDetected = gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI270
+            || gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI270;
+
+        if (bmiDetected) {
             pidConfigMutable()->pid_process_denom = 1;
+        }
+
+        if (motorConfig()->dev.useDshotTelemetry && rxRuntimeState.rxProvider == RX_PROVIDER_SPI) {
+            pidConfigMutable()->pid_process_denom = bmiDetected ? 2 : 4;
         }
 #endif
 
