@@ -329,6 +329,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     case GYRO_MPU9250:
     case GYRO_LSM6DSO:
     case GYRO_LSM6DSV16X:
+    case GYRO_ICM42688P:
         gyroSensor->gyroDev.gyroHasOverflowProtection = true;
         break;
 
@@ -336,6 +337,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     case GYRO_ICM20602:
     case GYRO_ICM20608G:
     case GYRO_ICM20649:  // we don't actually know if this is affected, but as there are currently no flight controllers using it we err on the side of caution
+    case GYRO_ICM42605:  // we don't actually know if this is affected
     case GYRO_ICM20689:
         gyroSensor->gyroDev.gyroHasOverflowProtection = false;
         break;
