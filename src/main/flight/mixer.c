@@ -729,7 +729,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     case MIXER_DYNAMIC:
         applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
         break;
-    case MIXER_EZLANDING_THROTTLE:
+    case MIXER_EZLANDING:
         applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax);
         break;
     default:
