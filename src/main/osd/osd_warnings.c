@@ -173,7 +173,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // RSSI
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         tfp_sprintf(warningText, "RSSI LOW");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
@@ -181,7 +181,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // rssi dbm
     if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() < osdConfig()->rssi_dbm_alarm)) {
         tfp_sprintf(warningText, "RSSI DBM");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
@@ -190,7 +190,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // rsnr
     if (osdWarnGetState(OSD_WARNING_RSNR) && (getRsnr() < osdConfig()->rsnr_alarm)) {
         tfp_sprintf(warningText, "RSNR LOW");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
@@ -200,7 +200,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // Link Quality
     if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
         tfp_sprintf(warningText, "LINK QUALITY");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
