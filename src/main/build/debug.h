@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #define DEBUG16_VALUE_COUNT 8
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
@@ -112,6 +114,7 @@ typedef enum {
     DEBUG_CURRENT_ANGLE,
     DEBUG_DSHOT_TELEMETRY_COUNTS,
     DEBUG_RPM_LIMIT,
+    DEBUG_RC_STATS,
     DEBUG_COUNT
 } debugType_e;
 

@@ -89,6 +89,7 @@
 #include "pg/stats.h"
 
 #include "rx/crsf.h"
+#include "rx/rc_stats.h"
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
@@ -196,6 +197,9 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_WATT_HOURS_DRAWN,
     OSD_STAT_BEST_3_CONSEC_LAPS,
     OSD_STAT_BEST_LAP,
+    OSD_STAT_FULL_THROTTLE_TIME,
+    OSD_STAT_FULL_THROTTLE_COUNTER,
+    OSD_STAT_AVG_THROTTLE,
 };
 
 // Group elements in a number of groups to reduce task scheduling overhead
@@ -354,6 +358,12 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdWarnSetState(OSD_WARNING_RSNR, false);
     // turn off the over mah capacity warning
     osdWarnSetState(OSD_WARNING_OVER_CAP, false);
+
+#ifdef USE_RC_STATS
+    osdStatSetState(OSD_STAT_FULL_THROTTLE_TIME, true);
+    osdStatSetState(OSD_STAT_FULL_THROTTLE_COUNTER, true);
+    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);    
+#endif
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
@@ -1009,6 +1019,28 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         osdDisplayStatisticLabel(midCol, displayRow, "TOTAL DISTANCE", buff);
         return true;
 #endif
+#ifdef USE_RC_STATS
+    case OSD_STAT_FULL_THROTTLE_TIME: {
+        int seconds = RcStatsGetFullThrottleTimeUs() / 1000000;
+        const int minutes = seconds / 60;
+        seconds = seconds % 60;
+        tfp_sprintf(buff, "%02d:%02d", minutes, seconds);
+        osdDisplayStatisticLabel(midCol, displayRow, "100% THRT TIME", buff);
+        return true;
+    }
+
+    case OSD_STAT_FULL_THROTTLE_COUNTER: {
+        itoa(RcStatsGetFullThrottleCounter(), buff, 10);
+        osdDisplayStatisticLabel(midCol, displayRow, "100% THRT COUNT", buff);
+        return true;
+    }
+
+    case OSD_STAT_AVG_THROTTLE: {
+        itoa(RcStatsGetAverageThrottle(), buff, 10);
+        osdDisplayStatisticLabel(midCol, displayRow, "AVG THROTTLE", buff);
+        return true;
+    }
+#endif // USE_RC_STATS
     }
     return false;
 }
