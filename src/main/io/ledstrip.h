@@ -177,7 +177,7 @@ typedef struct ledStripConfig_s {
     colorId_e ledstrip_visual_beeper_color;
     uint8_t ledstrip_brightness;
     uint8_t ledstrip_rainbow_delta;
-    uint8_t ledstrip_rainbow_freq;
+    uint16_t ledstrip_rainbow_freq;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);

@@ -1766,7 +1766,7 @@ case MSP_NAME:
     case MSP_LED_STRIP_CONFIG_VALUES:
         sbufWriteU8(dst, ledStripConfig()->ledstrip_brightness);
         sbufWriteU8(dst, ledStripConfig()->ledstrip_rainbow_delta);
-        sbufWriteU8(dst, ledStripConfig()->ledstrip_rainbow_freq);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_freq);
         break;
 #endif
 
@@ -3864,7 +3864,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         {
             ledStripConfigMutable()->ledstrip_brightness = sbufReadU8(src);
             ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU8(src);
-            ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU8(src);
+            ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
         }
         break;
 #endif
