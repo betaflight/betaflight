@@ -683,8 +683,9 @@ void validateAndFixGyroConfig(void)
 #endif
 
 #ifdef USE_GYRO_DENOM_CHECK
-        bool bmiDetected = gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI270
-            || gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI270;
+        bool bmiDetected = gyro.gyroToUse == 0
+            ? gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI270
+            : gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI270;
 
         if (bmiDetected) {
             pidConfigMutable()->pid_process_denom = 1;
