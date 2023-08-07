@@ -673,6 +673,7 @@ void validateAndFixGyroConfig(void)
         // check for looptime restrictions based on motor protocol. Motor times have safety margin
         float motorUpdateRestriction;
 
+#ifdef USE_DSHOT
 #if defined(STM32F4) || defined(STM32G4)
         /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
@@ -682,20 +683,20 @@ void validateAndFixGyroConfig(void)
         }
 #endif
 
-#ifdef USE_GYRO_DENOM_CHECK
-        bool bmiDetected = gyro.gyroToUse == 0
-            ? gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI270
-            : gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor2.gyroDev.gyroHardware == GYRO_BMI270;
-
-        if (bmiDetected) {
-            pidConfigMutable()->pid_process_denom = 1;
-        }
-
-        if (motorConfig()->dev.useDshotTelemetry && rxRuntimeState.rxProvider == RX_PROVIDER_SPI) {
-            pidConfigMutable()->pid_process_denom = bmiDetected ? 2 : 4;
+#ifdef USE_PID_DENOM_CHECK
+        if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT300 || motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600) {
+            if (gyro.sampleRateHz == 8000) {
+                if (featureIsEnabled(FEATURE_RX_SPI)) {
+                    pidConfigMutable()->pid_process_denom = motorConfig()->dev.useDshotTelemetry ? 4: 2;
+                } else {
+                    pidConfigMutable()->pid_process_denom = motorConfig()->dev.useDshotTelemetry ? 2: 1;
+                }
+            } else if (gyro.sampleRateHz == 3200 && motorConfig()->dev.useDshotTelemetry) {
+                pidConfigMutable()->pid_process_denom = featureIsEnabled(FEATURE_RX_SPI) ? 2: 1;
+            }
         }
 #endif
-
+#endif
         switch (motorConfig()->dev.motorPwmProtocol) {
         case PWM_TYPE_STANDARD:
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
