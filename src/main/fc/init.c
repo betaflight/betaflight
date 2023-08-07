@@ -855,12 +855,6 @@ void init(void)
 
 #endif // VTX_CONTROL
 
-#ifdef USE_TIMER
-    // start all timers
-    // TODO - not implemented yet
-    timerStart();
-#endif
-
     batteryInit(); // always needs doing, regardless of features.
 
 #ifdef USE_RCDEVICE
