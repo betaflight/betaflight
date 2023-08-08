@@ -903,7 +903,7 @@ static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
 
     if (updateNow) {
         offset += ledStripConfig()->ledstrip_rainbow_freq;
-        *timer += HZ_TO_US(100);
+        *timer += HZ_TO_US(TASK_LEDSTRIP_RATE_HZ);
     }
     uint8_t rainbowLedIndex = 0;
 
@@ -911,7 +911,7 @@ static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_RAINBOW)) {
             hsvColor_t ledColor;
-            ledColor.h = (offset / 100  + (rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta)) % (HSV_HUE_MAX + 1);
+            ledColor.h = (offset / TASK_LEDSTRIP_RATE_HZ + rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta) % (HSV_HUE_MAX + 1);
             ledColor.s = 0;
             ledColor.v = HSV_VALUE_MAX;
             setLedHsv(i, &ledColor);

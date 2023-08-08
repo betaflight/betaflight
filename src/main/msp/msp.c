@@ -3861,11 +3861,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         break;
     case MSP_SET_LED_STRIP_CONFIG_VALUES:
-        {
-            ledStripConfigMutable()->ledstrip_brightness = sbufReadU8(src);
-            ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU8(src);
-            ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
-        }
+        ledStripConfigMutable()->ledstrip_brightness = sbufReadU8(src);
+        ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU8(src);
+        ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
         break;
 #endif
 
