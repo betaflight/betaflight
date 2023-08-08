@@ -1114,7 +1114,7 @@ void gpsConfigureUblox(void)
             // Send the version request five times at GPS_CONFIG_BAUD_CHANGE_INTERVAL
             static bool messageSent = false;
             static uint8_t messageCounter = 0;
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 7, initBaudRateCycleCount * 100 + messageCounter);
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, initBaudRateCycleCount * 100 + messageCounter);
 
             if (messageCounter < GPS_BAUDRATE_TEST_COUNT) {
                 if (!messageSent) {
@@ -1386,9 +1386,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
     timeDelta_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
     gpsData.now = millis();
-    if (gpsData.state >= GPS_STATE_CONFIGURE) {
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, MIN((uint32_t)200, gpsData.now - gpsData.lastNavMessage)); // interval since last Nav data was received
-    }
 
     if (gpsPort) {
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
