@@ -49,7 +49,7 @@
 #endif
 
 #ifndef SERIALRX_HALFDUPLEX
-#if !defined(USE_SERIALRX_SBUS) && (defined(USE_SERIALRX_FPORT) || defined(USE_SERIALRX_SRXL2))
+#if (defined(USE_SERIALRX_FPORT) || defined(USE_SERIALRX_SRXL2)) && !(defined(USE_SERIALRX_CRSF) && defined(USE_SERIALRX_GHST) && defined(USE_SERIALRX_IBUS) && defined(USE_SERIALRX_SBUS) && defined(USE_SERIALRX_SPEKTRUM) && defined(USE_SERIALRX_XBUS))
 #define SERIALRX_HALFDUPLEX 1
 #else
 #define SERIALRX_HALFDUPLEX 0
