@@ -1441,6 +1441,12 @@ static bool blackboxWriteSysinfo(void)
 #endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF2_TYPE, "%d",        currentPidProfile->dterm_lpf2_type);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF2_STATIC_HZ, "%d",   currentPidProfile->dterm_lpf2_static_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_LLC_FREQ_HZ, "%d",       gyroConfig()->gyro_llc_freq_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_LLC_PHASE, "%d",         gyroConfig()->gyro_llc_phase);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LLC_FREQ_HZ, "%d",      currentPidProfile->dterm_llc_freq_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LLC_PHASE, "%d",        currentPidProfile->dterm_llc_phase);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PTERM_LLC_FREQ_HZ, "%d",      currentPidProfile->pterm_llc_freq_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PTERM_LLC_PHASE, "%d",        currentPidProfile->pterm_llc_phase);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_LOWPASS_HZ, "%d",         currentPidProfile->yaw_lowpass_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH_HZ, "%d",         currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH_CUTOFF, "%d",     currentPidProfile->dterm_notch_cutoff);

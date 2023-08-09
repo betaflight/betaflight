@@ -677,8 +677,8 @@ const clivalue_t valueTable[] = {
     { "gyro_notch1_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_1) },
     { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz_2) },
     { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_2) },
-    { "gyro_llc_freq_hz",           VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, LPF_MAX_HZ }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_llc_freq_hz) },
-    { "gyro_llc_phase",             VAR_INT8   | MASTER_VALUE, .config.minmax =         { -90, 90 },       PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_llc_phase) },
+    { PARAM_NAME_GYRO_LLC_FREQ_HZ,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, LPF_MAX_HZ }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_llc_freq_hz) },
+    { PARAM_NAME_GYRO_LLC_PHASE,    VAR_INT8   | MASTER_VALUE, .config.minmax =         { -90, 90 },       PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_llc_phase) },
 
     { "gyro_calib_duration",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50,  3000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroCalibrationDuration) },
     { "gyro_calib_noise_limit",     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold) },
@@ -1102,10 +1102,10 @@ const clivalue_t valueTable[] = {
     { "dterm_lpf1_dyn_max_hz",      VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, DYN_LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_dyn_max_hz) },
     { "dterm_lpf1_dyn_expo",        VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 10 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_dyn_expo) },
 #endif
-    { "dterm_llc_freq_hz",          VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_llc_freq_hz) },
-    { "dterm_llc_phase",            VAR_INT8   | PROFILE_VALUE, .config.minmax =         { -90, 90 },       PG_PID_PROFILE, offsetof(pidProfile_t, dterm_llc_phase) },
-    { "pterm_llc_freq_hz",          VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, pterm_llc_freq_hz) },
-    { "pterm_llc_phase",            VAR_INT8   | PROFILE_VALUE, .config.minmax =         { -90, 90 },       PG_PID_PROFILE, offsetof(pidProfile_t, pterm_llc_phase) },
+    { PARAM_NAME_DTERM_LLC_FREQ_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_llc_freq_hz) },
+    { PARAM_NAME_DTERM_LLC_PHASE,   VAR_INT8   | PROFILE_VALUE, .config.minmax =         { -90, 90 },       PG_PID_PROFILE, offsetof(pidProfile_t, dterm_llc_phase) },
+    { PARAM_NAME_PTERM_LLC_FREQ_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, pterm_llc_freq_hz) },
+    { PARAM_NAME_PTERM_LLC_PHASE,   VAR_INT8   | PROFILE_VALUE, .config.minmax =         { -90, 90 },       PG_PID_PROFILE, offsetof(pidProfile_t, pterm_llc_phase) },
 
     { PARAM_NAME_DTERM_LPF1_TYPE,       VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DTERM_LPF_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_type) },
     { PARAM_NAME_DTERM_LPF1_STATIC_HZ,  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_static_hz) },
