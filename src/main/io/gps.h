@@ -282,7 +282,8 @@ typedef struct gpsData_s {
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
-    uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
+    uint8_t userBaudRateIndex;          // index into auto-detecting or current baudrate
+    uint8_t tempBaudRateIndex;          // index into auto-detecting or current baudrate
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
     ubloxAckState_e ackState;       // Ack State

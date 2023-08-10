@@ -101,12 +101,12 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 // GPS LOST_COMMUNICATION timeout in ms (max time between received nav solutions)
 #define GPS_TIMEOUT_MS 2500
 // Timeout for waiting for an ACK or NAK response to a configuration command
-#define UBLOX_ACK_TIMEOUT_MS 500
+#define UBLOX_ACK_TIMEOUT_MS 150
 // Time allowed for module to respond to baud rate change during initial configuration
-#define GPS_CONFIG_BAUD_CHANGE_INTERVAL 250 // Time to wait, in us, between 'test this baud rate' messages
-#define GPS_CONFIG_CHANGE_INTERVAL 120       // Time to wait, in us, between CONFIG steps
-#define GPS_BAUDRATE_TEST_COUNT 5      // Number of times to repeat the test message when setting baudrate
-#define GPS_RECV_TIME_MAX 25           // Max permitted time per scheduler call, to receive GPS data, in us
+#define GPS_CONFIG_BAUD_CHANGE_INTERVAL 330  // Time to wait, in ms, between 'test this baud rate' messages
+#define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
+#define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
+#define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the Receive Data process
 // Decay the estimated max task duration by 1/(1 << GPS_TASK_DECAY_SHIFT) on every invocation
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
 
@@ -396,7 +396,6 @@ static void gpsSetState(gpsState_e state)
 void gpsInit(void)
 {
     gpsDataIntervalSeconds = 0.1f;
-    gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
     gpsData.timeouts = 0;
     gpsData.satMessagesDisabled = false;
@@ -406,8 +405,6 @@ void gpsInit(void)
 #endif
     gpsData.updateRateHz = 10; // initialise at 10hz
     gpsData.platformVersion = UBX_VERSION_UNDEF;
-    initBaudRateIndex = BAUD_COUNT;
-    initBaudRateCycleCount = 0;
 
     memset(gpsPacketLog, 0x00, sizeof(gpsPacketLog));
 
@@ -424,13 +421,19 @@ void gpsInit(void)
         return;
     }
 
-    while (gpsInitData[gpsData.baudrateIndex].baudrateIndex != gpsPortConfig->gps_baudrateIndex) {
-        gpsData.baudrateIndex++;
-        if (gpsData.baudrateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
-            gpsData.baudrateIndex = DEFAULT_BAUD_RATE_INDEX; // 0, or fastest
+    // set the user's intended baud rate
+    gpsData.userBaudRateIndex = 0;
+    initBaudRateIndex = BAUD_COUNT;
+    initBaudRateCycleCount = 0;
+    while (gpsInitData[gpsData.userBaudRateIndex].baudrateIndex != gpsPortConfig->gps_baudrateIndex) {
+        gpsData.userBaudRateIndex++;
+        if (gpsData.userBaudRateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
+            gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX; // 0, or fastest
             break;
         }
     }
+    // the user's intended baud rate will be used as the initial baud rate when connecting
+    gpsData.tempBaudRateIndex = gpsData.userBaudRateIndex;
 
     portMode_e mode = MODE_RXTX;
 
@@ -441,7 +444,7 @@ void gpsInit(void)
 #endif
 
     // no callback - buffer will be consumed in gpsUpdate()
-    gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex], mode, SERIAL_NOT_INVERTED);
+    gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex], mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
         return;
     }
@@ -785,10 +788,9 @@ static void ubloxDisableNMEAValSet(void)
 //    size_t offset = ubloxValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_I2C, payload, UBX_VAL_LAYER_RAM);
 //    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_SPI, payload, offset);
 //    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_UART1, payload, offset);
+    size_t offset = ubloxValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_UART1, payload, UBX_VAL_LAYER_RAM);
 
-    size_t offset = ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_I2C, payload, UBX_VAL_LAYER_RAM);
-
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_UART1, payload, offset);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_I2C, payload, offset);
 //    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_UART1, payload, offset);
 
@@ -988,7 +990,7 @@ void gpsConfigureNmea(void)
             gpsData.state_ts = gpsData.now;
 
             if (gpsData.state_position < 1) { // first run after boot up 
-                serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+                serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
                 gpsData.state_position++;
             } else if (gpsData.state_position < 2) {
                 // *** this message also appears to fail ***//
@@ -1063,7 +1065,7 @@ void gpsConfigureNmea(void)
             } else
 #else
             {
-                serialSetBaudRate (gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
+                serialSetBaudRate (gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
             }
 #endif
             gpsSetState(GPS_STATE_RECEIVING_DATA);
@@ -1085,40 +1087,30 @@ void gpsConfigureUblox(void)
     switch (gpsData.state) {
         case GPS_STATE_DETECT_BAUD:
 
-            if (initBaudRateCycleCount > BAUD_COUNT * 2) {
-                // Give up and start again after 32 connection attempts ??
-                initBaudRateIndex = gpsInitData[gpsData.baudrateIndex].baudrateIndex;
-            }
-
-            if (initBaudRateIndex < BAUD_COUNT) {
-                // initBaudRateIndex is initialised to BAUD_COUNT of 16, so this falls through at the start
-                // if there has been a connection, initBaudRateIndex gets set to gpsData.state_position
-                // this baud rate is used for a reconnection attempt if we reconnect
-                serialSetBaudRate(gpsPort, baudRates[initBaudRateIndex]);
-                serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
-                // should this be set to the same initBaudRateIndex value ??
-                gpsSetState(GPS_STATE_CHANGE_BAUD);
-                return;
-            }
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex] / 100);
 
             // check to see if there has been a response to the version command
+            // initially the FC will be at the user-configured baud rate.
             if (gpsData.platformVersion > UBX_VERSION_UNDEF) {
-                serialPrint(gpsPort, gpsInitData[gpsData.baudrateIndex].ubx);
-                // remember this baud rate in case we re-connect
-                initBaudRateIndex = gpsInitData[gpsData.state_position].baudrateIndex;
+                // set the GPS module's serial port to the user's intended baud rate
+                serialPrint(gpsPort, gpsInitData[gpsData.userBaudRateIndex].ubx);
+                // use this baud rate for re-connections
+                gpsData.tempBaudRateIndex = gpsData.userBaudRateIndex;
                 // we're done here, let's move the the next state
                 gpsSetState(GPS_STATE_CHANGE_BAUD);
                 return;
             }
 
-            // Send the version request five times at GPS_CONFIG_BAUD_CHANGE_INTERVAL
+            // Send MON-VER messages at GPS_CONFIG_BAUD_CHANGE_INTERVAL for GPS_BAUDRATE_TEST_COUNT times
             static bool messageSent = false;
             static uint8_t messageCounter = 0;
             DEBUG_SET(DEBUG_GPS_CONNECTION, 2, initBaudRateCycleCount * 100 + messageCounter);
 
             if (messageCounter < GPS_BAUDRATE_TEST_COUNT) {
                 if (!messageSent) {
+                    gpsData.platformVersion = UBX_VERSION_UNDEF;
                     ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
+                    gpsData.ackState = UBLOX_ACK_IDLE; // ignore ACK for this message
                     messageSent = true;
                 }
                 if (cmp32(gpsData.now, gpsData.state_ts) > GPS_CONFIG_BAUD_CHANGE_INTERVAL) {
@@ -1133,25 +1125,29 @@ void gpsConfigureUblox(void)
 
             // failed to connect at that rate after five attempts
             // try other GPS baudrates, starting at 9600 and moving up
-            if (gpsData.state_position == 0) {
-                gpsData.state_position = GPS_BAUDRATE_MAX; // slowest baud rate 9600
+            if (gpsData.tempBaudRateIndex == 0) {
+                gpsData.tempBaudRateIndex = GPS_BAUDRATE_MAX; // slowest baud rate 9600
             } else {
-                gpsData.state_position--; 
+                gpsData.tempBaudRateIndex--; 
             }
-            baudRate_e newBaudRateIndex = gpsInitData[gpsData.state_position].baudrateIndex;
-            serialSetBaudRate(gpsPort, baudRates[newBaudRateIndex]);
+            // set the FC baud rate to the new temp baud rate
+            serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
             initBaudRateCycleCount++;
 
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[newBaudRateIndex] / 100);
             break;
 
         case GPS_STATE_CHANGE_BAUD:
+            // give time for the GPS module's serial port to settle
+            // very important for M8 to give the module a lot of time before sending commands
+            // M10 only need about 200ms but M8 and below sometimes need as long as 1000ms
+            if (cmp32(gpsData.now, gpsData.state_ts) < (3 * GPS_CONFIG_BAUD_CHANGE_INTERVAL)) {
+                return;
+            }
             // set the FC's serial port to the configured rate
-            serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
-
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex] / 100);
-
-            gpsSetState(GPS_STATE_CONFIGURE); // sets gpsData.state_position = 0;
+            serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex] / 100);
+            // then start sending configuration settings
+            gpsSetState(GPS_STATE_CONFIGURE);
             break;
 
         case GPS_STATE_CONFIGURE:
@@ -1164,7 +1160,7 @@ void gpsConfigureUblox(void)
             // allow 3s for the Configurator connection to stabilise, to get the correct answer when we test the state of the connection.
             // 3s is an arbitrary time at present, maybe should be defined or user adjustable.
             // This delays the appearance of GPS data in OSD when not connected to configurator by 3s.
-            // Note that state_ts is set to millis() on the previous gpsSetState(GPS_STATE_CONFIGURED) command
+            // Note that state_ts is set to millis() on the previous gpsSetState() command
             if (!isConfiguratorConnected()) {
                if (cmp32(gpsData.now, gpsData.state_ts) < 3000) {
                    return;
@@ -1173,7 +1169,11 @@ void gpsConfigureUblox(void)
 
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
 
+                // short delay before between commands, including the first command
                 static uint32_t last_state_position_time = 0;
+                if (last_state_position_time == 0) {
+                     last_state_position_time = gpsData.now;
+                }
                 if (cmp32(gpsData.now, last_state_position_time) < GPS_CONFIG_CHANGE_INTERVAL) {
                     return;
                 }
@@ -2150,7 +2150,6 @@ static bool UBLOX_parse_gps(void)
         gpsData.ubloxM7orAbove = gpsData.platformVersion >= UBX_VERSION_M7;
         gpsData.ubloxM8orAbove = gpsData.platformVersion >= UBX_VERSION_M8;
         gpsData.ubloxM9orAbove = gpsData.platformVersion >= UBX_VERSION_M9;
-        gpsData.ackState = UBLOX_ACK_GOT_ACK;
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_POSLLH):
         *gpsPacketLogChar = LOG_UBLOX_POSLLH;
@@ -2214,7 +2213,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
         gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
-        gpsSol.dop.pdop = _buffer.dop.pdop;
+        gpsSol.dop.pdop = _buffer.pvt.pDOP;
         _new_speed = true;
 #ifdef USE_RTC_TIME
         //set clock, when gps time is available
