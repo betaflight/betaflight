@@ -42,7 +42,9 @@
 #include "drivers/time.h"
 
 #include "io/beeper.h"
+#ifdef USE_DASHBOARD
 #include "io/dashboard.h"
+#endif
 #include "io/gps.h"
 #include "io/serial.h"
 
@@ -60,22 +62,6 @@
 #include "sensors/sensors.h"
 #include "common/typeconversion.h"
 
-#define LOG_ERROR        '?'
-#define LOG_IGNORED      '!'
-#define LOG_SKIPPED      '>'
-#define LOG_NMEA_GGA     'g'
-#define LOG_NMEA_GSA     's'
-#define LOG_NMEA_RMC     'r'
-#define LOG_UBLOX_DOP    'D'
-#define LOG_UBLOX_SOL    'O'
-#define LOG_UBLOX_STATUS 'S'
-#define LOG_UBLOX_SVINFO 'I'
-#define LOG_UBLOX_POSLLH 'P'
-#define LOG_UBLOX_VELNED 'V'
-#define LOG_UBLOX_MONVER 'M'
-
-char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
-static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
 // GPS
 // **********************
@@ -88,8 +74,6 @@ uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 #define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 0.54 km/h 0.335 mph
 
 gpsSolutionData_t gpsSol;
-uint32_t GPS_packetCount = 0;
-uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
 uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                              // Details on numCh/svinfo in gps.h
@@ -361,14 +345,31 @@ static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_
 
 gpsData_t gpsData;
 
+#ifdef USE_DASHBOARD
+// Functions & data used *only* in support of the dashboard device (OLED display).
+// Note this should be refactored to move dashboard functionality to the dashboard module, and only have generic hooks in the gps module...
+
+char dashboardGpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];             // OLED display of a char for each packet type/event received.
+char *dashboardGpsPacketLogCurrentChar = dashboardGpsPacketLog;     // Current character of log being updated.
+uint32_t dashboardGpsPacketCount = 0;                               // Packet received count.
+uint32_t dashboardGpsNavSvInfoRcvCount = 0;                         // Count of times sat info updated.
+
 static void shiftPacketLog(void)
 {
     uint32_t i;
 
-    for (i = ARRAYLEN(gpsPacketLog) - 1; i > 0 ; i--) {
-        gpsPacketLog[i] = gpsPacketLog[i-1];
+    for (i = ARRAYLEN(dashboardGpsPacketLog) - 1; i > 0 ; i--) {
+        dashboardGpsPacketLog[i] = dashboardGpsPacketLog[i-1];
     }
 }
+
+static void logErrorToPacketLog(void)
+{
+    shiftPacketLog();
+    *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_ERROR;
+    gpsData.errors++;
+}
+#endif  // USE_DASHBOARD
 
 static bool isConfiguratorConnected(void)
 {
@@ -396,7 +397,7 @@ static void gpsSetState(gpsState_e state)
 void gpsInit(void)
 {
     gpsDataIntervalSeconds = 0.1f;
-    gpsData.errors = 0;
+    gpsData.userBaudRateIndex = 0;
     gpsData.timeouts = 0;
     gpsData.satMessagesDisabled = false;
     gpsData.state_ts = millis();
@@ -406,7 +407,10 @@ void gpsInit(void)
     gpsData.updateRateHz = 10; // initialise at 10hz
     gpsData.platformVersion = UBX_VERSION_UNDEF;
 
-    memset(gpsPacketLog, 0x00, sizeof(gpsPacketLog));
+#ifdef USE_DASHBOARD
+    gpsData.errors = 0;
+    memset(dashboardGpsPacketLog, 0x00, sizeof(dashboardGpsPacketLog));
+#endif
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_STATE_UNKNOWN);
@@ -1751,7 +1755,9 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
                     break;
             }
 
-            GPS_svInfoReceivedCount++;
+#ifdef USE_DASHBOARD
+            dashboardGpsNavSvInfoRcvCount++;
+#endif
             break;
 
         case FRAME_GSA:
@@ -1777,7 +1783,9 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
     switch (gpsFrame) {
 
         case FRAME_GGA:
-            *gpsPacketLogChar = LOG_NMEA_GGA;
+#ifdef USE_DASHBOARD
+            *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GGA;
+#endif
             if (STATE(GPS_FIX)) {
                 sol->llh.lat = data->latitude;
                 sol->llh.lon = data->longitude;
@@ -1791,14 +1799,18 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
             return true;
 
         case FRAME_GSA:
-            *gpsPacketLogChar = LOG_NMEA_GSA;
+#ifdef USE_DASHBOARD
+            *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GSA;
+#endif
             sol->dop.pdop = data->pdop;
             sol->dop.hdop = data->hdop;
             sol->dop.vdop = data->vdop;
             return false;
 
         case FRAME_RMC:
-            *gpsPacketLogChar = LOG_NMEA_RMC;
+#ifdef USE_DASHBOARD
+            *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_RMC;
+#endif
             sol->groundSpeed = data->speed;
             sol->groundCourse = data->ground_course;
 #ifdef USE_RTC_TIME
@@ -1868,15 +1880,22 @@ static bool gpsNewFrameNMEA(char c)
         case '\r':
         case '\n':
             if (checksum_param) {   //parity checksum
+#ifdef USE_DASHBOARD
                 shiftPacketLog();
+#endif
                 uint8_t checksum = 16 * ((string[0] >= 'A') ? string[0] - 'A' + 10 : string[0] - '0') + ((string[1] >= 'A') ? string[1] - 'A' + 10 : string[1] - '0');
                 if (checksum == parity) {
-                    *gpsPacketLogChar = LOG_IGNORED;
-                    GPS_packetCount++;
+#ifdef USE_DASHBOARD
+                    *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_IGNORED;
+                    dashboardGpsPacketCount++;
+#endif
                     receivedNavMessage = writeGpsSolutionNmea(&gpsSol, &gps_msg, gps_frame);  // // write gps_msg into gpsSol
-                } else {
-                    *gpsPacketLogChar = LOG_ERROR;
                 }
+#ifdef USE_DASHBOARD
+                  else {
+                    *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_ERROR;
+                }
+#endif
             }
             checksum_param = 0;
             break;
@@ -1926,7 +1945,7 @@ typedef struct ubxNavDop_s {
     uint16_t edop;              // Easting DOP
 } ubxNavDop_t;
 
-typedef struct ubxNavSolution_s {
+typedef struct ubxNavSol_s {
     uint32_t time;
     int32_t time_nsec;
     int16_t week;
@@ -1944,7 +1963,7 @@ typedef struct ubxNavSolution_s {
     uint8_t res;
     uint8_t satellites;
     uint32_t res2;
-} ubxNavSolution_t;
+} ubxNavSol_t;
 
 typedef struct ubxNavPvt_s {
     uint32_t time;
@@ -2056,68 +2075,65 @@ typedef enum {
     NAV_VALID_TIME = 2
 } ubxNavPvtValid_e;
 
-// Packet checksum accumulators
-static uint8_t _ck_a;
-static uint8_t _ck_b;
+// Do we have a new valid fix?
+static bool ubxHaveNewValidFix = false;
 
-// State machine state
-static bool _skip_packet;
-static uint8_t _step = 0;
-static uint8_t _msg_id;
-static uint16_t _payload_length;
-static uint16_t _payload_counter;
+// Do we have new position information?
+static bool ubxHaveNewPosition = false;
 
-static bool next_fix = false;
-static uint8_t _class;
+// Do we have new speed information?
+static bool ubxHaveNewSpeed = false;
 
-// do we have new position information?
-static bool _new_position;
-
-// do we have new speed information?
-static bool _new_speed;
-
-// Example packet sizes from UBlox u-center from a Glonass capable GPS receiver.
-//15:17:55  R -> UBX NAV-STATUS,  Size  24,  'Navigation Status'
-//15:17:55  R -> UBX NAV-POSLLH,  Size  36,  'Geodetic Position'
-//15:17:55  R -> UBX NAV-VELNED,  Size  44,  'Velocity in WGS 84'
-//15:17:55  R -> UBX NAV-CLOCK,  Size  28,  'Clock Status'
-//15:17:55  R -> UBX NAV-AOPSTATUS,  Size  24,  'AOP Status'
-//15:17:55  R -> UBX 03-09,  Size 208,  'Unknown'
-//15:17:55  R -> UBX 03-10,  Size 336,  'Unknown'
-//15:17:55  R -> UBX NAV-SOL,  Size  60,  'Navigation Solution'
-//15:17:55  R -> UBX NAV,  Size 100,  'Navigation'
-//15:17:55  R -> UBX NAV-SVINFO,  Size 328,  'Satellite Status and Information'
-
-// from the UBlox9 document, the largest payload we receive is NAV-SAT, which
-// is calculated as 8 + 12*numCh.  numCh in the case of a M9N is 42.
-// max reported sats can be up to 56
+// From the UBX protocol docs, the largest payload we receive is NAV-SAT, which
+// is calculated as 8 + 12*numCh. Max reported sats can be up to 56.
+// We're using the max for M8 (32) for our sizing, since Configurator only
+// supports a max of 32 sats and we want to limit the payload buffer space used.
 #define UBLOX_PAYLOAD_SIZE (8 + 12 * GPS_SV_MAXSATS_M8N)
+#define UBLOX_MAX_PAYLOAD_SANITY_SIZE 776   // Any returned payload length greater than a 64 sat NAV-SAT is considered unreasonable, and probably corrupted data.
 
-
-// Receive buffer
+// Received message frame fields.
+// - Preamble sync character 1 & 2 are not saved, only detected for parsing.
+// - Message class & message ID indicate the type of message receieved.
+static uint8_t ubxRcvMsgClass;
+static uint8_t ubxRcvMsgID;
+// - Payload length assembled from the length LSB & MSB bytes.
+static uint16_t ubxRcvMsgPayloadLength;
+// - Payload, each message type has its own payload field layout, represented by the elements of this union.
+//   Note that the size of the buffer is determined by the longest possible payload, currently UBX-NAV-SAT.
+//   See size define comments above. Warning, this is fragile! If another message type becomes the largest
+//   payload instead of UBX-NAV-SAT, UBLOX_PAYLOAD_SIZE above needs to be adjusted!
 static union {
-    ubxNavPosllh_t posllh;
-    ubxNavStatus_t status;
-    ubxNavDop_t dop;
-    ubxNavSolution_t solution;
-    ubxNavVelned_t velned;
-    ubxNavPvt_t pvt;
-    ubxNavSvinfo_t svinfo;
-    ubxNavSat_t sat;
-    ubxCfgGnss_t gnss;
-    ubxMonVer_t ver;
-    ubxAck_t ack;
-    uint8_t bytes[UBLOX_PAYLOAD_SIZE];
-} _buffer;
+    ubxNavPosllh_t ubxNavPosllh;
+    ubxNavStatus_t ubxNavStatus;
+    ubxNavDop_t ubxNavDop;
+    ubxNavSol_t ubxNavSol;
+    ubxNavVelned_t ubxNavVelned;
+    ubxNavPvt_t ubxNavPvt;
+    ubxNavSvinfo_t ubxNavSvinfo;
+    ubxNavSat_t ubxNavSat;
+    ubxCfgGnss_t ubxCfgGnss;
+    ubxMonVer_t ubxMonVer;
+    ubxAck_t ubxAck;
+    uint8_t rawBytes[UBLOX_PAYLOAD_SIZE];  // Used for adding raw bytes to the payload. WARNING: This byte array must be as large as the largest payload for any message type above!
+} ubxRcvMsgPayload;
+// - Checksum A & B. Uses the 8-bit Fletcher algorithm (TCP standard RFC 1145).
+static uint8_t ubxRcvMsgChecksumA;
+static uint8_t ubxRcvMsgChecksumB;
 
-void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
-{
-    while (len--) {
-        *ck_a += *data;
-        *ck_b += *ck_a;
-        data++;
-    }
-}
+// Message frame parsing state machine control.
+typedef enum {
+    UBX_PARSE_PREAMBLE_SYNC_1,
+    UBX_PARSE_PREAMBLE_SYNC_2,
+    UBX_PARSE_MESSAGE_CLASS,
+    UBX_PARSE_MESSAGE_ID,
+    UBX_PARSE_PAYLOAD_LENGTH_LSB,
+    UBX_PARSE_PAYLOAD_LENGTH_MSB,
+    UBX_PARSE_PAYLOAD_CONTENT,
+    UBX_PARSE_CHECKSUM_A,
+    UBX_PARSE_CHECKSUM_B
+} ubxFrameParseState_e;
+static ubxFrameParseState_e ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
+static uint16_t ubxFrameParsePayloadCounter;
 
 static void calculateNavInterval (void)
 {
@@ -2130,118 +2146,142 @@ static void calculateNavInterval (void)
 }
 
 // SCEDEBUG To help debug which message is slow to process
-// static uint8_t last_class;
-// static uint8_t last_msg_id;
+// static uint8_t lastUbxRcvMsgClass;
+// static uint8_t lastUbxRcvMsgID;
+
+// Combines message class & ID for a single value to switch on.
+#define CLSMSG(cls, msg) (((cls) << 8) | (msg))
 
 static bool UBLOX_parse_gps(void)
 {
     uint32_t i;
 
-//    last_class = _class;
-//    last_msg_id = _msg_id;
+//    lastUbxRcvMsgClass = ubxRcvMsgClass;
+//    lastUbxRcvMsgID = ubxRcvMsgID;
 
-    *gpsPacketLogChar = LOG_IGNORED;
-#define CLSMSG(cls, msg) (((cls) << 8) | (msg))
-    switch (CLSMSG(_class, _msg_id)) {
+#ifdef USE_DASHBOARD
+    *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_IGNORED;
+#endif
+    switch (CLSMSG(ubxRcvMsgClass, ubxRcvMsgID)) {
 
     case CLSMSG(CLASS_MON, MSG_MON_VER):
-        *gpsPacketLogChar = LOG_UBLOX_MONVER;
-        gpsData.platformVersion = ubloxParseVersion(strtoul(_buffer.ver.hwVersion, NULL, 16));
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_MONVER;
+#endif
+        gpsData.platformVersion = ubloxParseVersion(strtoul(ubxRcvMsgPayload.ubxMonVer.hwVersion, NULL, 16));
         gpsData.ubloxM7orAbove = gpsData.platformVersion >= UBX_VERSION_M7;
         gpsData.ubloxM8orAbove = gpsData.platformVersion >= UBX_VERSION_M8;
         gpsData.ubloxM9orAbove = gpsData.platformVersion >= UBX_VERSION_M9;
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_POSLLH):
-        *gpsPacketLogChar = LOG_UBLOX_POSLLH;
-        //i2c_dataset.time                = _buffer.posllh.time;
-        gpsSol.llh.lon = _buffer.posllh.longitude;
-        gpsSol.llh.lat = _buffer.posllh.latitude;
-        gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
-        gpsSol.time = _buffer.posllh.time;
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_POSLLH;
+#endif
+        //i2c_dataset.time                = _buffer.ubxNavPosllh.time;
+        gpsSol.llh.lon = ubxRcvMsgPayload.ubxNavPosllh.longitude;
+        gpsSol.llh.lat = ubxRcvMsgPayload.ubxNavPosllh.latitude;
+        gpsSol.llh.altCm = ubxRcvMsgPayload.ubxNavPosllh.altitudeMslMm / 10;  //alt in cm
+        gpsSol.time = ubxRcvMsgPayload.ubxNavPosllh.time;
         calculateNavInterval();
-        gpsSetFixState(next_fix);
-        _new_position = true;
+        gpsSetFixState(ubxHaveNewValidFix);
+        ubxHaveNewPosition = true;
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_STATUS):
-        *gpsPacketLogChar = LOG_UBLOX_STATUS;
-        next_fix = (_buffer.status.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.status.fix_type == FIX_3D);
-        if (!next_fix)
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_STATUS;
+#endif
+        ubxHaveNewValidFix = (ubxRcvMsgPayload.ubxNavStatus.fix_status & NAV_STATUS_FIX_VALID) && (ubxRcvMsgPayload.ubxNavStatus.fix_type == FIX_3D);
+        if (!ubxHaveNewValidFix)
             DISABLE_STATE(GPS_FIX);
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_DOP):
-        *gpsPacketLogChar = LOG_UBLOX_DOP;
-        gpsSol.dop.pdop = _buffer.dop.pdop;
-        gpsSol.dop.hdop = _buffer.dop.hdop;
-        gpsSol.dop.vdop = _buffer.dop.vdop;
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_DOP;
+#endif
+        gpsSol.dop.pdop = ubxRcvMsgPayload.ubxNavDop.pdop;
+        gpsSol.dop.hdop = ubxRcvMsgPayload.ubxNavDop.hdop;
+        gpsSol.dop.vdop = ubxRcvMsgPayload.ubxNavDop.vdop;
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SOL):
-        *gpsPacketLogChar = LOG_UBLOX_SOL;
-        next_fix = (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.solution.fix_type == FIX_3D);
-        if (!next_fix)
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SOL;
+#endif
+        ubxHaveNewValidFix = (ubxRcvMsgPayload.ubxNavSol.fix_status & NAV_STATUS_FIX_VALID) && (ubxRcvMsgPayload.ubxNavSol.fix_type == FIX_3D);
+        if (!ubxHaveNewValidFix)
             DISABLE_STATE(GPS_FIX);
-        gpsSol.numSat = _buffer.solution.satellites;
+        gpsSol.numSat = ubxRcvMsgPayload.ubxNavSol.satellites;
 #ifdef USE_RTC_TIME
         //set clock, when gps time is available
-        if (!rtcHasTime() && (_buffer.solution.fix_status & NAV_STATUS_TIME_SECOND_VALID) && (_buffer.solution.fix_status & NAV_STATUS_TIME_WEEK_VALID)) {
+        if (!rtcHasTime() && (ubxRcvMsgPayload.ubxNavSol.fix_status & NAV_STATUS_TIME_SECOND_VALID) && (ubxRcvMsgPayload.ubxNavSol.fix_status & NAV_STATUS_TIME_WEEK_VALID)) {
             //calculate rtctime: week number * ms in a week + ms of week + fractions of second + offset to UNIX reference year - 18 leap seconds
-            rtcTime_t temp_time = (((int64_t) _buffer.solution.week) * 7 * 24 * 60 * 60 * 1000) + _buffer.solution.time + (_buffer.solution.time_nsec / 1000000) + 315964800000LL - 18000;
+            rtcTime_t temp_time = (((int64_t) ubxRcvMsgPayload.ubxNavSol.week) * 7 * 24 * 60 * 60 * 1000) + ubxRcvMsgPayload.ubxNavSol.time + (ubxRcvMsgPayload.ubxNavSol.time_nsec / 1000000) + 315964800000LL - 18000;
             rtcSet(&temp_time);
         }
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_VELNED):
-        *gpsPacketLogChar = LOG_UBLOX_VELNED;
-        gpsSol.speed3d = _buffer.velned.speed_3d;       // cm/s
-        gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
-        gpsSol.groundCourse = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
-        _new_speed = true;
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_VELNED;
+#endif
+        gpsSol.speed3d = ubxRcvMsgPayload.ubxNavVelned.speed_3d;       // cm/s
+        gpsSol.groundSpeed = ubxRcvMsgPayload.ubxNavVelned.speed_2d;    // cm/s
+        gpsSol.groundCourse = (uint16_t) (ubxRcvMsgPayload.ubxNavVelned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        ubxHaveNewSpeed = true;
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_PVT):
-        *gpsPacketLogChar = LOG_UBLOX_SOL;
-        next_fix = (_buffer.pvt.flags & NAV_STATUS_FIX_VALID) && (_buffer.pvt.fixType == FIX_3D);
-        gpsSol.time = _buffer.pvt.time;
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SOL;
+#endif
+        ubxHaveNewValidFix = (ubxRcvMsgPayload.ubxNavPvt.flags & NAV_STATUS_FIX_VALID) && (ubxRcvMsgPayload.ubxNavPvt.fixType == FIX_3D);
+        gpsSol.time = ubxRcvMsgPayload.ubxNavPvt.time;
         calculateNavInterval();
-        gpsSol.llh.lon = _buffer.pvt.lon;
-        gpsSol.llh.lat = _buffer.pvt.lat;
-        gpsSol.llh.altCm = _buffer.pvt.hMSL / 10;  //alt in cm
-        gpsSetFixState(next_fix);
-        _new_position = true;
-        gpsSol.numSat = _buffer.pvt.numSV;
-        gpsSol.acc.hAcc = _buffer.pvt.hAcc;
-        gpsSol.acc.vAcc = _buffer.pvt.vAcc;
-        gpsSol.acc.sAcc = _buffer.pvt.sAcc;
-        gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
-        gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
-        gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
-        gpsSol.dop.pdop = _buffer.pvt.pDOP;
-        _new_speed = true;
+        gpsSol.llh.lon = ubxRcvMsgPayload.ubxNavPvt.lon;
+        gpsSol.llh.lat = ubxRcvMsgPayload.ubxNavPvt.lat;
+        gpsSol.llh.altCm = ubxRcvMsgPayload.ubxNavPvt.hMSL / 10;  //alt in cm
+        gpsSetFixState(ubxHaveNewValidFix);
+        ubxHaveNewPosition = true;
+        gpsSol.numSat = ubxRcvMsgPayload.ubxNavPvt.numSV;
+        gpsSol.acc.hAcc = ubxRcvMsgPayload.ubxNavPvt.hAcc;
+        gpsSol.acc.vAcc = ubxRcvMsgPayload.ubxNavPvt.vAcc;
+        gpsSol.acc.sAcc = ubxRcvMsgPayload.ubxNavPvt.sAcc;
+        gpsSol.speed3d = (uint16_t) sqrtf(powf(ubxRcvMsgPayload.ubxNavPvt.gSpeed / 10, 2.0f) + powf(ubxRcvMsgPayload.ubxNavPvt.velD / 10, 2.0f));
+        gpsSol.groundSpeed = ubxRcvMsgPayload.ubxNavPvt.gSpeed / 10;    // cm/s
+        gpsSol.groundCourse = (uint16_t) (ubxRcvMsgPayload.ubxNavPvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        gpsSol.dop.pdop = ubxRcvMsgPayload.ubxNavPvt.pDOP;
+        ubxHaveNewSpeed = true;
 #ifdef USE_RTC_TIME
         //set clock, when gps time is available
-        if (!rtcHasTime() && (_buffer.pvt.valid & NAV_VALID_DATE) && (_buffer.pvt.valid & NAV_VALID_TIME)) {
+        if (!rtcHasTime() && (ubxRcvMsgPayload.ubxNavPvt.valid & NAV_VALID_DATE) && (ubxRcvMsgPayload.ubxNavPvt.valid & NAV_VALID_TIME)) {
             dateTime_t dt;
-            dt.year = _buffer.pvt.year;
-            dt.month = _buffer.pvt.month;
-            dt.day = _buffer.pvt.day;
-            dt.hours = _buffer.pvt.hour;
-            dt.minutes = _buffer.pvt.min;
-            dt.seconds = _buffer.pvt.sec;
-            dt.millis = (_buffer.pvt.nano > 0) ? _buffer.pvt.nano / 1000 : 0; //up to 5ms of error
+            dt.year = ubxRcvMsgPayload.ubxNavPvt.year;
+            dt.month = ubxRcvMsgPayload.ubxNavPvt.month;
+            dt.day = ubxRcvMsgPayload.ubxNavPvt.day;
+            dt.hours = ubxRcvMsgPayload.ubxNavPvt.hour;
+            dt.minutes = ubxRcvMsgPayload.ubxNavPvt.min;
+            dt.seconds = ubxRcvMsgPayload.ubxNavPvt.sec;
+            dt.millis = (ubxRcvMsgPayload.ubxNavPvt.nano > 0) ? ubxRcvMsgPayload.ubxNavPvt.nano / 1000 : 0; //up to 5ms of error
             rtcSetDateTime(&dt);
         }
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SVINFO):
-        *gpsPacketLogChar = LOG_UBLOX_SVINFO;
-        GPS_numCh = _buffer.svinfo.numCh;
-        // If we're getting NAV-SVINFO is because we're dealing with an old receiver that does not support NAV-SAT, so we'll only
-        // save up to GPS_SV_MAXSATS_LEGACY channels so the BF Configurator knows it's receiving the old sat list info format.
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SVINFO;
+#endif
+        GPS_numCh = ubxRcvMsgPayload.ubxNavSvinfo.numCh;
+        // If we're receiving UBX-NAV-SVINFO messages, we detected a module version M7 or older.
+        // We can receive far more sats than we can handle for Configurator, which is the primary consumer for sat info.
+        // We're using the max for legacy (16) for our sizing, this smaller sizing triggers Configurator to know it's
+        // an M7 or earlier module and to use the older sat list format.
+        // We simply ignore any sats above that max, the down side is we may not see sats used for the solution, but
+        // the intent in Configurator is to see if sats are being acquired and their strength, so this is not an issue.
         if (GPS_numCh > GPS_SV_MAXSATS_LEGACY)
             GPS_numCh = GPS_SV_MAXSATS_LEGACY;
         for (i = 0; i < GPS_numCh; i++) {
-            GPS_svinfo_chn[i] = _buffer.svinfo.channel[i].chn;
-            GPS_svinfo_svid[i] = _buffer.svinfo.channel[i].svid;
-            GPS_svinfo_quality[i] = _buffer.svinfo.channel[i].quality;
-            GPS_svinfo_cno[i] = _buffer.svinfo.channel[i].cno;
+            GPS_svinfo_chn[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].chn;
+            GPS_svinfo_svid[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].svid;
+            GPS_svinfo_quality[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].quality;
+            GPS_svinfo_cno[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].cno;
         }
         for (; i < GPS_SV_MAXSATS_LEGACY; i++) {
             GPS_svinfo_chn[i] = 0;
@@ -2249,21 +2289,28 @@ static bool UBLOX_parse_gps(void)
             GPS_svinfo_quality[i] = 0;
             GPS_svinfo_cno[i] = 0;
         }
-        GPS_svInfoReceivedCount++;
+#ifdef USE_DASHBOARD
+        dashboardGpsNavSvInfoRcvCount++;
+#endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SAT):
-        *gpsPacketLogChar = LOG_UBLOX_SVINFO; // The logger won't show this is NAV-SAT instead of NAV-SVINFO
-        GPS_numCh = _buffer.sat.numSvs;
-        // We can receive here upto GPS_SV_MAXSATS_M9N channels, but since the majority of receivers currently in use are M8N or older,
-        // it would be a waste of RAM to size the arrays that big. For now, they're sized GPS_SV_MAXSATS_M8N which means M9N won't show
-        // all their channel information on BF Configurator. When M9N's are more widespread it would be a good time to increase those arrays.
+#ifdef USE_DASHBOARD
+        *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SVINFO; // The display log only shows SVINFO for both SVINFO and SAT.
+#endif
+        GPS_numCh = ubxRcvMsgPayload.ubxNavSat.numSvs;
+        // If we're receiving UBX-NAV-SAT messages, we detected a module M8 or newer.
+        // We can receive far more sats than we can handle for Configurator, which is the primary consumer for sat info.
+        // We're using the max for M8 (32) for our sizing, since Configurator only supports a max of 32 sats and we
+        // want to limit the payload buffer space used.
+        // We simply ignore any sats above that max, the down side is we may not see sats used for the solution, but
+        // the intent in Configurator is to see if sats are being acquired and their strength, so this is not an issue.
         if (GPS_numCh > GPS_SV_MAXSATS_M8N)
             GPS_numCh = GPS_SV_MAXSATS_M8N;
         for (i = 0; i < GPS_numCh; i++) {
-            GPS_svinfo_chn[i] = _buffer.sat.svs[i].gnssId;
-            GPS_svinfo_svid[i] = _buffer.sat.svs[i].svId;
-            GPS_svinfo_cno[i] = _buffer.sat.svs[i].cno;
-            GPS_svinfo_quality[i] = _buffer.sat.svs[i].flags;
+            GPS_svinfo_chn[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].gnssId;
+            GPS_svinfo_svid[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].svId;
+            GPS_svinfo_cno[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].cno;
+            GPS_svinfo_quality[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].flags;
         }
         for (; i < GPS_SV_MAXSATS_M8N; i++) {
             GPS_svinfo_chn[i] = 255;
@@ -2276,40 +2323,37 @@ static bool UBLOX_parse_gps(void)
         // enhanced sat list info without changing the MSP protocol. Also, we're sending the complete list each time even if it's empty, so
         // BF Conf can erase old entries shown on screen when channels are removed from the list.
         GPS_numCh = GPS_SV_MAXSATS_M8N;
-        GPS_svInfoReceivedCount++;
+#ifdef USE_DASHBOARD
+        dashboardGpsNavSvInfoRcvCount++;
+#endif
         break;
-    case CLSMSG(CLASS_CFG, MSG_CFG_VALGET):
-        {
-            UNUSED(_buffer);
-            break;
-        }
     case CLSMSG(CLASS_CFG, MSG_CFG_GNSS):
         {
             bool isSBASenabled = false;
             bool isM8NwithDefaultConfig = false;
 
-            if ((_buffer.gnss.numConfigBlocks >= 2) &&
-                (_buffer.gnss.configblocks[1].gnssId == 1) && //SBAS
-                (_buffer.gnss.configblocks[1].flags & UBLOX_GNSS_ENABLE)) { //enabled
+            if ((ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks >= 2) &&
+                (ubxRcvMsgPayload.ubxCfgGnss.configblocks[1].gnssId == 1) && //SBAS
+                (ubxRcvMsgPayload.ubxCfgGnss.configblocks[1].flags & UBLOX_GNSS_ENABLE)) { //enabled
 
                 isSBASenabled = true;
             }
 
-            if ((_buffer.gnss.numTrkChHw == 32) &&  //M8N
-                (_buffer.gnss.numTrkChUse == 32) &&
-                (_buffer.gnss.numConfigBlocks == 7) &&
-                (_buffer.gnss.configblocks[2].gnssId == 2) && //Galileo
-                (_buffer.gnss.configblocks[2].resTrkCh == 4) && //min channels
-                (_buffer.gnss.configblocks[2].maxTrkCh == 8) && //max channels
-                !(_buffer.gnss.configblocks[2].flags & UBLOX_GNSS_ENABLE)) { //disabled
+            if ((ubxRcvMsgPayload.ubxCfgGnss.numTrkChHw == 32) &&  //M8N
+                (ubxRcvMsgPayload.ubxCfgGnss.numTrkChUse == 32) &&
+                (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks == 7) &&
+                (ubxRcvMsgPayload.ubxCfgGnss.configblocks[2].gnssId == 2) && //Galileo
+                (ubxRcvMsgPayload.ubxCfgGnss.configblocks[2].resTrkCh == 4) && //min channels
+                (ubxRcvMsgPayload.ubxCfgGnss.configblocks[2].maxTrkCh == 8) && //max channels
+                !(ubxRcvMsgPayload.ubxCfgGnss.configblocks[2].flags & UBLOX_GNSS_ENABLE)) { //disabled
 
                 isM8NwithDefaultConfig = true;
             }
 
-            const uint16_t messageSize = 4 + (_buffer.gnss.numConfigBlocks * sizeof(ubxConfigblock_t));
+            const uint16_t messageSize = 4 + (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks * sizeof(ubxConfigblock_t));
 
             ubxMessage_t tx_buffer;
-            memcpy(&tx_buffer.payload, &_buffer, messageSize);
+            memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, messageSize);
 
             if (isSBASenabled && (gpsConfig()->sbasMode == SBAS_NONE)) {
                 tx_buffer.payload.cfg_gnss.configblocks[1].flags &= ~UBLOX_GNSS_ENABLE; //Disable SBAS
@@ -2323,12 +2367,12 @@ static bool UBLOX_parse_gps(void)
         }
         break;
     case CLSMSG(CLASS_ACK, MSG_ACK_ACK):
-        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (_buffer.ack.msgId == gpsData.ackWaitingMsgId)) {
+        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (ubxRcvMsgPayload.ubxAck.msgId == gpsData.ackWaitingMsgId)) {
             gpsData.ackState = UBLOX_ACK_GOT_ACK;
         }
         break;
     case CLSMSG(CLASS_ACK, MSG_ACK_NACK):
-        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (_buffer.ack.msgId == gpsData.ackWaitingMsgId)) {
+        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (ubxRcvMsgPayload.ubxAck.msgId == gpsData.ackWaitingMsgId)) {
             gpsData.ackState = UBLOX_ACK_GOT_NACK;
         }
         break;
@@ -2340,8 +2384,8 @@ static bool UBLOX_parse_gps(void)
 
     // we only return true when we get new position and speed data
     // this ensures we don't use stale data
-    if (_new_position && _new_speed) {
-        _new_speed = _new_position = false;
+    if (ubxHaveNewPosition && ubxHaveNewSpeed) {
+        ubxHaveNewSpeed = ubxHaveNewPosition = false;
         return true;
     }
     return false;
@@ -2349,90 +2393,129 @@ static bool UBLOX_parse_gps(void)
 
 static bool gpsNewFrameUBLOX(uint8_t data)
 {
-    bool parsed = false;
+    bool newPositionDataReceived = false;
 
-    switch (_step) {
-        case 0: // Sync char 1 (0xB5)
+    switch (ubxFrameParseState) {
+        case UBX_PARSE_PREAMBLE_SYNC_1:
             if (PREAMBLE1 == data) {
-                _skip_packet = false;
-                _step++;
-            }
-            break;
-        case 1: // Sync char 2 (0x62)
-            if (PREAMBLE2 != data) {
-                _step = 0;
+                // Might be a new UBX message, go on to look for next preamble byte.
+                ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_2;
                 break;
             }
-            _step++;
+            // Not a new UBX message, stay in this state for the next incoming byte.
             break;
-        case 2: // Class
-            _step++;
-            _class = data;
-            _ck_b = _ck_a = data;   // reset the checksum accumulators
-
-            break;
-        case 3: // Id
-            _step++;
-            _ck_b += (_ck_a += data);       // checksum byte
-            _msg_id = data;
-
-            break;
-        case 4: // Payload length (part 1)
-            _step++;
-            _ck_b += (_ck_a += data);       // checksum byte
-            _payload_length = data; // payload length low byte
-            break;
-        case 5: // Payload length (part 2)
-            _step++;
-            _ck_b += (_ck_a += data);       // checksum byte
-            _payload_length += (uint16_t)(data << 8);
-
-            _payload_counter = 0;   // prepare to receive payload
-            if (_payload_length == 0) {
-                _step = 7;
-            }
-            break;
-        case 6:
-            _ck_b += (_ck_a += data);       // checksum byte
-            if (_payload_counter < UBLOX_PAYLOAD_SIZE) {
-                _buffer.bytes[_payload_counter] = data;
-            }
-            if (++_payload_counter >= _payload_length) {
-                _step++;
-            }
-            break;
-        case 7:
-            _step++;
-            if (_ck_a != data) {
-                _skip_packet = true;          // bad checksum
-                gpsData.errors++;
-            }
-            break;
-        case 8:
-            _step = 0;
-
-            shiftPacketLog();
-
-            if (_ck_b != data) {
-                *gpsPacketLogChar = LOG_ERROR;
-                gpsData.errors++;
-                break;              // bad checksum
-            }
-
-            GPS_packetCount++;
-
-            if (_skip_packet) {
-                *gpsPacketLogChar = LOG_SKIPPED;
+        case UBX_PARSE_PREAMBLE_SYNC_2:
+            if (PREAMBLE2 == data) {
+                // Matches the two-byte preamble, seems to be a legit message, go on to process the rest of the message.
+                ubxFrameParseState = UBX_PARSE_MESSAGE_CLASS;
                 break;
             }
-
-            // parse the values in the array of bytes in _buffer
-            if (UBLOX_parse_gps()) {
-                // true only when we have new GPS speed and position data
-                parsed = true;
+            // False start, if this byte is not a preamble 1, restart new message parsing.
+            // If this byte is a preamble 1, we might have gotten two in a row, so stay here and look for preamble 2 again.
+            if (PREAMBLE1 != data) {
+                ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
             }
-    }
-    return parsed;
+            break;
+        case UBX_PARSE_MESSAGE_CLASS:
+            ubxRcvMsgChecksumB = ubxRcvMsgChecksumA = data;   // Reset & start the checksum A & B accumulators.
+            ubxRcvMsgClass = data;
+            ubxFrameParseState = UBX_PARSE_MESSAGE_ID;
+            break;
+        case UBX_PARSE_MESSAGE_ID:
+            ubxRcvMsgChecksumB += (ubxRcvMsgChecksumA += data);   // Accumulate both checksums.
+            ubxRcvMsgID = data;
+            ubxFrameParseState = UBX_PARSE_PAYLOAD_LENGTH_LSB;
+            break;
+        case UBX_PARSE_PAYLOAD_LENGTH_LSB:
+            ubxRcvMsgChecksumB += (ubxRcvMsgChecksumA += data);
+            ubxRcvMsgPayloadLength = data; // Payload length LSB.
+            ubxFrameParseState = UBX_PARSE_PAYLOAD_LENGTH_MSB;
+            break;
+        case UBX_PARSE_PAYLOAD_LENGTH_MSB:
+            ubxRcvMsgChecksumB += (ubxRcvMsgChecksumA += data);   // Accumulate both checksums.
+            ubxRcvMsgPayloadLength += (uint16_t)(data << 8);   //Payload length MSB.
+            if (ubxRcvMsgPayloadLength == 0) {
+                // No payload for this message, skip to checksum checking.
+                ubxFrameParseState = UBX_PARSE_CHECKSUM_A;
+                break;
+            }
+            if (ubxRcvMsgPayloadLength > UBLOX_MAX_PAYLOAD_SANITY_SIZE) {
+                // Payload length is not reasonable, treat as a bad packet, restart new message parsing.
+                // Note that we do not parse the rest of the message, better to leave it and look for a new message.
+#ifdef USE_DASHBOARD
+                logErrorToPacketLog();
+#endif
+                if (PREAMBLE1 == data) {
+                    // If this byte is a preamble 1 value, it might be a new message, so look for preamble 2 instead of starting over.
+                    ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_2;
+                } else {
+                    ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
+                }
+                break;
+            }
+            // Payload length seems legit, go on to receive the payload content.
+            ubxFrameParsePayloadCounter = 0;
+            ubxFrameParseState = UBX_PARSE_PAYLOAD_CONTENT;
+            break;
+        case UBX_PARSE_PAYLOAD_CONTENT:
+            ubxRcvMsgChecksumB += (ubxRcvMsgChecksumA += data);   // Accumulate both checksums.
+            if (ubxFrameParsePayloadCounter < UBLOX_PAYLOAD_SIZE) {
+                // Only add bytes to the buffer if we haven't reached the max supported payload size.
+                // Note that we still read & checksum every byte so the checksum calculates correctly.
+                ubxRcvMsgPayload.rawBytes[ubxFrameParsePayloadCounter] = data;
+            }
+            if (++ubxFrameParsePayloadCounter >= ubxRcvMsgPayloadLength) {
+                // All bytes for payload length processed.
+                ubxFrameParseState = UBX_PARSE_CHECKSUM_A;
+                break;
+            }
+            // More payload content left, stay in this state.
+            break;
+        case UBX_PARSE_CHECKSUM_A:
+            if (ubxRcvMsgChecksumA == data) {
+                // Checksum A matches, go on to checksum B.
+                ubxFrameParseState = UBX_PARSE_CHECKSUM_B;
+                break;
+            }
+            // Bad checksum A, restart new message parsing.
+            // Note that we do not parse checksum B, new message processing will handle skipping it if needed.
+#ifdef USE_DASHBOARD
+            logErrorToPacketLog();
+#endif
+            if (PREAMBLE1 == data) {
+                // If this byte is a preamble 1 value, it might be a new message, so look for preamble 2 instead of starting over.
+                ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_2;
+            } else {
+                ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
+            }
+            break;
+        case UBX_PARSE_CHECKSUM_B:
+            if (ubxRcvMsgChecksumB == data) {
+                // Checksum B also matches, successfully received a new full packet!
+#ifdef USE_DASHBOARD
+                dashboardGpsPacketCount++;  // Packet counter used by dashboard device.
+                shiftPacketLog();           // Make space for message handling to add the message type char to the dashboard device packet log.
+#endif
+                // Handle the parsed message. Note this is a questionable inverted call dependency, but something for a later refactoring.
+                newPositionDataReceived = UBLOX_parse_gps();     // True only when we have new position data from the parsed message.
+                ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;  // Restart new message parsing.
+                break;
+            }
+            // Bad checksum B, restart new message parsing.
+#ifdef USE_DASHBOARD
+            logErrorToPacketLog();
+#endif
+            if (PREAMBLE1 == data) {
+                // If this byte is a preamble 1 value, it might be a new message, so look for preamble 2 instead of starting over.
+                ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_2;
+            } else {
+                ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
+            }
+            break;
+        }
+
+    // Note this function returns if UBLOX_parse_gps() found new position data, NOT whether this function successfully parsed the frame or not.
+    return newPositionDataReceived;
 }
 #endif // USE_GPS_UBLOX
 
@@ -2441,6 +2524,7 @@ static void gpsHandlePassthrough(uint8_t data)
     gpsNewData(data);
 #ifdef USE_DASHBOARD
     if (featureIsEnabled(FEATURE_DASHBOARD)) {
+        // Should be handled via a generic callback hook, so the GPS module doesn't have to be coupled to the dashboard module.
         dashboardUpdate(micros());
     }
 #endif
@@ -2456,6 +2540,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 
 #ifdef USE_DASHBOARD
     if (featureIsEnabled(FEATURE_DASHBOARD)) {
+        // Should be handled via a generic callback hook, so the GPS module doesn't have to be coupled to the dashboard module.
         dashboardShowFixedPage(PAGE_GPS);
     }
 #endif

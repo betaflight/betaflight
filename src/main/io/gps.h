@@ -299,9 +299,6 @@ typedef struct gpsData_s {
 #endif
 } gpsData_t;
 
-#define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
-extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT]; // OLED display of packet log values
-
 extern int32_t GPS_home[2];
 extern uint16_t GPS_distanceToHome;             // distance to home point in meters
 extern uint32_t GPS_distanceToHomeCm;           // distance to home point in cm
@@ -323,8 +320,6 @@ extern gpsSolutionData_t gpsSol;
 #define GPS_SV_MAXSATS_M9N      42U
 
 extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
-extern uint32_t GPS_packetCount;                        // used only in dashboard / oled display
-extern uint32_t GPS_svInfoReceivedCount;                // used only in dashboard / oled display
 extern uint8_t GPS_numCh;                               // Number of channels
 extern uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];      // When NumCh is 16 or less: Channel number
                                                         // When NumCh is more than 16: GNSS Id
@@ -352,11 +347,38 @@ extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or l
                                                         //     1 = carrier smoothed pseudorange used
 extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Ratio (Signal Strength)
 
-#define GPS_DBHZ_MIN 0  // used only in dashboard / oled display
-#define GPS_DBHZ_MAX 55 // used only in dashboard / oled display
-
 #define TASK_GPS_RATE       100     // default update rate of GPS task
 #define TASK_GPS_RATE_FAST  500    // update rate of GPS task while Rx buffer is not empty
+
+
+#ifdef USE_DASHBOARD
+// Data used *only* by the dashboard device (OLED display).
+// Note this data should probably be in the dashboard module, not here. On the refactor list...
+
+// OLED display shows a scrolling string of chars for each packet type/event received.
+#define DASHBOARD_LOG_ERROR        '?'
+#define DASHBOARD_LOG_IGNORED      '!'
+#define DASHBOARD_LOG_SKIPPED      '>'
+#define DASHBOARD_LOG_NMEA_GGA     'g'
+#define DASHBOARD_LOG_NMEA_GSA     's'
+#define DASHBOARD_LOG_NMEA_RMC     'r'
+#define DASHBOARD_LOG_UBLOX_DOP    'D'
+#define DASHBOARD_LOG_UBLOX_SOL    'O'
+#define DASHBOARD_LOG_UBLOX_STATUS 'S'
+#define DASHBOARD_LOG_UBLOX_SVINFO 'I'
+#define DASHBOARD_LOG_UBLOX_POSLLH 'P'
+#define DASHBOARD_LOG_UBLOX_VELNED 'V'
+#define DASHBOARD_LOG_UBLOX_MONVER 'M'
+
+#define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
+extern char dashboardGpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];  // OLED display of a char for each packet type/event received.
+extern uint32_t dashboardGpsPacketCount;                        // Packet received count.
+extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of times sat info received & updated.
+
+#define GPS_DBHZ_MIN 0
+#define GPS_DBHZ_MAX 55
+#endif  // USE_DASHBOARD
+
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
