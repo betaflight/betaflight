@@ -287,13 +287,13 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PB3),  GPIO_MUX_8 },
-            { DEFIO_TAG_E(PC0),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PC1),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PE7),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PF6),  GPIO_MUX_8 },
         },
         .txPins = {
             { DEFIO_TAG_E(PB4),  GPIO_MUX_8 },
-            { DEFIO_TAG_E(PC1),  GPIO_MUX_8 },
+            { DEFIO_TAG_E(PC0),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PE8),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PF7),  GPIO_MUX_8 },
         },
@@ -322,10 +322,14 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxPins = {
             { DEFIO_TAG_E(PC3),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PC9),  GPIO_MUX_7 },
+            { DEFIO_TAG_E(PD14), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PE0),  GPIO_MUX_8 },
         },
         .txPins = {
             { DEFIO_TAG_E(PC2),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PC8),  GPIO_MUX_7 },
+            { DEFIO_TAG_E(PD13), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PE1),  GPIO_MUX_8 },
         },
         .rcc = RCC_APB1(UART8),
         .irqn = UART8_IRQn,
