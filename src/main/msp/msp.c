@@ -1130,24 +1130,10 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 
     case MSP_RAW_IMU:
         {
-#if defined(USE_ACC)
-            // Hack scale due to choice of units for sensor data in multiwii
-
-            uint8_t scale;
-            if (acc.dev.acc_1G > 512 * 4) {
-                scale = 8;
-            } else if (acc.dev.acc_1G > 512 * 2) {
-                scale = 4;
-            } else if (acc.dev.acc_1G >= 512) {
-                scale = 2;
-            } else {
-                scale = 1;
-            }
-#endif
 
             for (int i = 0; i < 3; i++) {
 #if defined(USE_ACC)
-                sbufWriteU16(dst, lrintf(acc.accADC[i] / scale));
+                sbufWriteU16(dst, lrintf(acc.accADC[i]));
 #else
                 sbufWriteU16(dst, 0);
 #endif
