@@ -1114,7 +1114,7 @@ static void osdElementGpsSats(osdElementParms_t *element)
         int pos = tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
         if (osdConfig()->gps_sats_show_hdop) { // add on the GPS module HDOP estimate
             element->buff[pos++] = ' ';
-            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.dop.hdop / 100.0f, "", 1, true, SYM_NONE);
+            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.dop.pdop / 100.0f, "", 1, true, SYM_NONE);
         }
     }
 }
