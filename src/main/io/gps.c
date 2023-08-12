@@ -426,15 +426,14 @@ void gpsInit(void)
     }
 
     // set the user's intended baud rate
-    gpsData.userBaudRateIndex = 0;
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
-    while (gpsInitData[gpsData.userBaudRateIndex].baudrateIndex != gpsPortConfig->gps_baudrateIndex) {
-        gpsData.userBaudRateIndex++;
-        if (gpsData.userBaudRateIndex >= GPS_INIT_DATA_ENTRY_COUNT) {
-            gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX; // 0, or fastest
-            break;
-        }
+    gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
+    for (unsigned i = 0; i < GPS_INIT_DATA_ENTRY_COUNT; i++) {
+      if (gpsInitData[i].baudrateIndex == gpsPortConfig->gps_baudrateIndex) {
+        gpsData.userBaudRateIndex = i;
+        break;
+      }
     }
     // the user's intended baud rate will be used as the initial baud rate when connecting
     gpsData.tempBaudRateIndex = gpsData.userBaudRateIndex;
