@@ -18,6 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  * Author: jflyper
+ *
+ * Follows the extended dshot telemetry documentation found at https://github.com/bird-sanctuary/extended-dshot-telemetry
  */
 
 #include <stdbool.h>
