@@ -372,7 +372,7 @@ TEST(ArmingPreventionTest, RadioTurnedOnAtAnyTimeArmed)
     // expect
     EXPECT_FALSE(isUsingSticksForArming());
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_BAD_RX_RECOVERY | ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_NOT_DISARMED | ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
 
     // given
     // arm switch turned off by user
@@ -1083,7 +1083,7 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
-    bool failsafeIsReceivingRxData(void) { return false; }
+    bool failsafeIsReceivingRxData(void) { return true; }
     bool rxAreFlightChannelsValid(void) { return false; }
     void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}

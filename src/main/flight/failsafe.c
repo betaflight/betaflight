@@ -165,20 +165,16 @@ void failsafeOnValidDataReceived(void)
 // rxLinkState will go RXLINK_UP immediately if BOXFAILSAFE goes back ON since receivingRxDataPeriodPreset is set to zero in that case
 // otherwise RXLINK_UP is delayed for the recovery period (failsafe_recovery_delay, default 1s, 0-20, min 0.2s)
 {
-    unsetArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
-    // clear RXLOSS in OSD immediately we get a good packet, and un-set its arming block
-
     failsafeState.validRxDataReceivedAt = millis();
 
     if (failsafeState.validRxDataFailedAt == 0) {
-        // after initialisation, we sometimes only receive valid packets,
-        // then we don't know how long the signal has been valid for
-        // in this setting, the time the signal first valid is also time it was last valid, so
+        // after initialisation, we sometimes only receive valid packets, so validRxDataFailedAt will remain unset (0)
+        // in this setting, the time the signal is first valid is also time it was last valid, so
         // initialise validRxDataFailedAt to the time of the first valid data
         failsafeState.validRxDataFailedAt = failsafeState.validRxDataReceivedAt;
-        setArmingDisabled(ARMING_DISABLED_BST);
         // prevent arming until we have valid data for rxDataRecoveryPeriod after initialisation
-        // using the BST flag since no other suitable name....
+        // show RXLOSS in OSD to indicate reason we cannot arm
+        setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
     }
 
     if (cmp32(failsafeState.validRxDataReceivedAt, failsafeState.validRxDataFailedAt) > (int32_t)failsafeState.receivingRxDataPeriodPreset) {
@@ -186,7 +182,8 @@ void failsafeOnValidDataReceived(void)
         // rxDataRecoveryPeriod defaults to 1.0s with minimum of PERIOD_RXDATA_RECOVERY (200ms)
         // link is not considered 'up', after it has been 'down', until that recovery period has expired
         failsafeState.rxLinkState = FAILSAFE_RXLINK_UP;
-        unsetArmingDisabled(ARMING_DISABLED_BST);
+        // after the rxDataRecoveryPeriod, typically 1s after receiving valid data, clear RXLOSS in OSD and permit arming
+        unsetArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
     }
 }
 
@@ -196,7 +193,7 @@ void failsafeOnValidDataFailed(void)
 // if failsafe is configured to go direct to stage 2, this is emulated immediately in failsafeUpdateState()
 {
     setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
-    //  set RXLOSS in OSD and block arming after 100ms of signal loss (is restored in rx.c immediately signal returns)
+    //  set RXLOSS in OSD and block arming after 100ms of signal loss
 
     failsafeState.validRxDataFailedAt = millis();
     if ((cmp32(failsafeState.validRxDataFailedAt, failsafeState.validRxDataReceivedAt) > (int32_t)failsafeState.rxDataFailurePeriod)) {
