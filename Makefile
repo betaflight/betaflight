@@ -474,6 +474,8 @@ $(BASE_TARGETS):
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
+CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
+
 ## clean             : clean up temporary / machine-generated files
 clean:
 	@echo "Cleaning $(TARGET_NAME)"
@@ -491,6 +493,10 @@ test_clean:
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN):
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
+
+## <CONFIG>_clean    : clean up one specific target (alias for above)
+$(CONFIGS_CLEAN):
+	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
