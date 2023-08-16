@@ -369,8 +369,9 @@ void mixerInitProfile(void)
 #ifdef USE_RPM_LIMIT
 void mixerResetRpmLimiter(void)
 {
-    const float maxExpectedRpm = MAX(1.0f, motorConfig()->kv * getBatteryCellCount() * 3.9f * 0.01f);
-    mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / maxExpectedRpm, 0.0f, 1.0f);
+    const float maxExpectedRpm = MAX(1.0f, motorConfig()->kv * getBatteryVoltage() * 0.01f);
+    const float rpm_derating = -5.44e-6 * maxExpectedRpm + 0.944;
+    mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / (maxExpectedRpm * rpm_derating), 0.0f, 1.0f);
 }
 #endif // USE_RPM_LIMIT
 
