@@ -729,7 +729,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
     const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
 
-    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
+    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
         float psiB; // psi from body frame to zenith/nadir
         char *symbol[2] = {"U", "D"}; // character buffer
@@ -1018,7 +1018,7 @@ static void osdElementFlymode(osdElementParms_t *element)
 static void osdElementReadyMode(osdElementParms_t *element)
 {
     if (IS_RC_MODE_ACTIVE(BOXREADY) && !ARMING_FLAG(ARMED)) {
-        strcpy(element->buff, "READY"); 
+        strcpy(element->buff, "READY");
     }
 }
 
@@ -1270,7 +1270,7 @@ static void osdElementWattHoursDrawn(osdElementParms_t *element)
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (wattHoursDrawn < 1.0f) {        
+    if (wattHoursDrawn < 1.0f) {
         tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
     } else {
         int wattHourWholeNumber = (int)wattHoursDrawn;
@@ -1593,8 +1593,14 @@ static void osdElementTimer(osdElementParms_t *element)
 static void osdElementVtxChannel(osdElementParms_t *element)
 {
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
-    const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, vtxSettingsConfig()->band);
-    const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, vtxSettingsConfig()->channel);
+    uint8_t band = vtxSettingsConfigMutable()->band;
+    uint8_t channel = vtxSettingsConfig()->channel;
+    if (band == 0) {
+        /* Direct frequency set is used */
+        vtxCommonLookupBandChan(vtxDevice, vtxSettingsConfig()->freq, &band, &channel);
+    }
+    const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, band);
+    const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, channel);
     unsigned vtxStatus = 0;
     uint8_t vtxPower = vtxSettingsConfig()->power;
     if (vtxDevice) {
