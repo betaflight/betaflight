@@ -415,6 +415,18 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
 
+    osdConfig->car_channel = 7;  //CAR 'Camera Angle Reference' Values.  CAR Channel controlling servo/gimbal
+    osdConfig->car_scale = 13;   //CAR Scale for adjusting vertical scale / sesitivity
+    osdConfig->car_dots = 7;     //CAR Dots for adjusting number of dots on each side
+    osdConfig->car_width = 18;   //CAR Width for adjusting witdh between dots
+
+    osdConfig->car_sbar_scale = 2;  //CAR Sidebar Values.  CAR Sidebar Scale for adjusting vertical scale
+    osdConfig->car_sbar_low = 30;   //CAR Sidebar angle 1/5
+    osdConfig->car_sbar_mid_low = 15;     //CAR Sidebar angle 2/5
+    osdConfig->car_sbar_mid = 0;   //CAR Sidebar angle 3/5
+    osdConfig->car_sbar_mid_high = 15;   //CAR Sidebar angle 4/5
+    osdConfig->car_sbar_high = 30;   //CAR Sidebar angle 5/5
+
     // Make it obvious on the configurator that the FC doesn't support HD
 #ifdef USE_OSD_HD
     osdConfig->canvas_cols = OSD_HD_COLS;

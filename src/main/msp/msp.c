@@ -1050,6 +1050,19 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdConfig()->camera_frame_width);
         sbufWriteU8(dst, osdConfig()->camera_frame_height);
 
+        // API >= 1.46
+        sbufWriteU8(dst, osdConfig()->car_scale);
+        sbufWriteU8(dst, osdConfig()->car_width);        
+        sbufWriteU8(dst, osdConfig()->car_channel);        
+        sbufWriteU8(dst, osdConfig()->car_dots);
+
+        sbufWriteU8(dst, osdConfig()->car_sbar_scale);
+        sbufWriteU8(dst, osdConfig()->car_sbar_low);        
+        sbufWriteU8(dst, osdConfig()->car_sbar_mid_low);        
+        sbufWriteU8(dst, osdConfig()->car_sbar_mid);
+        sbufWriteU8(dst, osdConfig()->car_sbar_mid_high);
+        sbufWriteU8(dst, osdConfig()->car_sbar_high);
+
         break;
     }
 #endif // USE_OSD
@@ -4123,6 +4136,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                 sbufReadU16(src); // Skip unused (previously fly timer)
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
 
+
                 if (sbufBytesRemaining(src) >= 2) {
                     /* Enabled warnings */
                     // API < 1.41 supports only the low 16 bits
@@ -4162,6 +4176,22 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                     osdConfigMutable()->camera_frame_width = sbufReadU8(src);
                     osdConfigMutable()->camera_frame_height = sbufReadU8(src);
                 }
+
+                if (sbufBytesRemaining(src) >= 10) {
+                    // API >= 1.46
+                    osdConfigMutable()->car_scale = sbufReadU8(src);
+                    osdConfigMutable()->car_width = sbufReadU8(src);
+                    osdConfigMutable()->car_channel = sbufReadU8(src);
+                    osdConfigMutable()->car_dots = sbufReadU8(src);
+                    
+                    osdConfigMutable()->car_sbar_scale = sbufReadU8(src);
+                    osdConfigMutable()->car_sbar_low = sbufReadU8(src);
+                    osdConfigMutable()->car_sbar_mid_low = sbufReadU8(src);
+                    osdConfigMutable()->car_sbar_mid = sbufReadU8(src);
+                    osdConfigMutable()->car_sbar_mid_high = sbufReadU8(src);
+                    osdConfigMutable()->car_sbar_high = sbufReadU8(src);
+                }
+                
             } else if ((int8_t)addr == -2) {
                 // Timers
                 uint8_t index = sbufReadU8(src);

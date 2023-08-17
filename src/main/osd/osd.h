@@ -189,6 +189,8 @@ typedef enum {
     OSD_GPS_LAP_TIME_CURRENT,
     OSD_GPS_LAP_TIME_PREVIOUS,
     OSD_GPS_LAP_TIME_BEST3,
+    OSD_CAM_ANGLE_REFERENCE,
+    OSD_CAM_ANGLE_REFERENCE_SBAR,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -348,6 +350,18 @@ typedef struct osdConfig_s {
     uint8_t aux_symbol;
     uint8_t canvas_cols;                      // Canvas dimensions for HD display
     uint8_t canvas_rows;
+    uint8_t car_channel;                      //CAR 'Camera Angle Reference' Values.  CAR Channel controlling servo/gimbal
+    int8_t car_scale;                         //CAR Scale for adjusting vertical scale / sesitivity
+    uint8_t car_dots;                         //CAR Dots for adjusting number of dots on each side
+    uint8_t car_width;                        //CAR Width for adjusting witdh between dots 
+    uint8_t car_sbar_scale;                   //CAR Sidebar Values.  CAR Sidebar Scale for adjusting vertical scale
+    int8_t car_sbar_low;                      //CAR Sidebar angle 1/5
+    int8_t car_sbar_mid_low;                  //CAR Sidebar angle 2/5
+    int8_t car_sbar_mid;                      //CAR Sidebar angle 3/5
+    int8_t car_sbar_mid_high;                 //CAR Sidebar angle 4/5
+    int8_t car_sbar_high;                     //CAR Sidebar angle 5/5
+
+
     #ifdef USE_QUICK_OSD_MENU
     uint8_t osd_use_quick_menu;               // use QUICK menu YES/NO
     #endif // USE_QUICK_OSD_MENU

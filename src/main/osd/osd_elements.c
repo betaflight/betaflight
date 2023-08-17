@@ -175,11 +175,19 @@
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
+#define CAR_SIDEBAR_WIDTH_POS 16
+#define CAR_SIDEBAR_POSITIONS_FROM_CENTER 2
+
 // Stick overlay size
 #define OSD_STICK_OVERLAY_WIDTH 7
 #define OSD_STICK_OVERLAY_HEIGHT 5
 #define OSD_STICK_OVERLAY_SPRITE_HEIGHT 3
 #define OSD_STICK_OVERLAY_VERTICAL_POSITIONS (OSD_STICK_OVERLAY_HEIGHT * OSD_STICK_OVERLAY_SPRITE_HEIGHT)
+
+#define OSD_CAM_ANGLE_REFERENCE_HEIGHT 10
+#define OSD_CAM_ANGLE_REFERENCE_SPRITE_HEIGHT 3
+#define OSD_CAM_ANGLE_REFERENCE_VERTICAL_POSITIONS (OSD_CAM_ANGLE_REFERENCE_HEIGHT * OSD_CAM_ANGLE_REFERENCE_SPRITE_HEIGHT)
+
 
 #define FULL_CIRCLE 360
 #define EFFICIENCY_MINIMUM_SPEED_CM_S 100
@@ -729,7 +737,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
     const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
 
-    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
+    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
         float thetaB; // pitch from body frame to zenith/nadir
         float psiB; // psi from body frame to zenith/nadir
         char *symbol[2] = {"U", "D"}; // character buffer
@@ -776,6 +784,74 @@ static void osdElementCompassBar(osdElementParms_t *element)
 {
     memcpy(element->buff, compassBar + osdGetHeadingIntoDiscreteDirections(DECIDEGREES_TO_DEGREES(attitude.values.yaw), 16), 9);
     element->buff[9] = 0;
+}
+
+//Here we programatically draw a camera angle reference / artificial prop line / artificial cockpit (open to renaming down the line)
+static void osdElementCamAngleReference(osdElementParms_t *element)
+{	 
+    const uint8_t xpos = element->elemPosX;
+    const uint8_t ypos = element->elemPosY;
+    
+    //We use cli values to allow customization 
+    const uint8_t auxChannel =osdConfig()->car_channel; //Aux channel controlling the line
+    const uint8_t dots = osdConfig()->car_dots;
+    const uint8_t width = osdConfig()->car_width;
+    //Scale can be between -20 and 20
+    const int8_t carScale =osdConfig()->car_scale;
+    const int8_t scale = (OSD_CAM_ANGLE_REFERENCE_HEIGHT * carScale) / 10;
+
+    int8_t scaledRange = (scale * OSD_CAM_ANGLE_REFERENCE_VERTICAL_POSITIONS/ OSD_CAM_ANGLE_REFERENCE_HEIGHT);
+    const int8_t cursorY =  scaleRange(constrain(rcData[auxChannel - 1], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 1, scaledRange + 1);
+
+    //The extremely confusing cursor / sprite.  There are three dot sprites: high,medium, and low. 
+    //We cycle through those when moving positions and and every cycle actually change root position.
+    int8_t cursorShift = ((cursorY<0)?-cursorY:cursorY) % OSD_CAM_ANGLE_REFERENCE_SPRITE_HEIGHT;
+    int8_t negativeCursorShift = (cursorY<=0) ? -(cursorShift - (OSD_CAM_ANGLE_REFERENCE_SPRITE_HEIGHT-1)): 0;
+    const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + ((cursorY>=0)? cursorShift : negativeCursorShift);
+    
+    //Loop through and for each 'dot' we draw 
+    const int8_t yScaledPos = ypos + (cursorY/ OSD_CAM_ANGLE_REFERENCE_SPRITE_HEIGHT) - (scaledRange /(2 * OSD_CAM_ANGLE_REFERENCE_SPRITE_HEIGHT) + 1);
+    for (int i = 0; i < dots ; i++) {
+        osdDisplayWriteChar(element, xpos + 5 + (width/2) + i, yScaledPos, DISPLAYPORT_SEVERITY_NORMAL, cursor);
+        osdDisplayWriteChar(element, xpos + 4 - (width/2) - i, yScaledPos, DISPLAYPORT_SEVERITY_NORMAL,  cursor);
+    }
+
+   element->drawElement = false;  // element already drawn
+
+}
+
+//Sidebar for CAR (CamAngleReference)
+static void osdBackgroundCarSidebar(osdElementParms_t *element)
+{
+    const uint8_t xpos = element->elemPosX;
+    const uint8_t ypos = element->elemPosY;
+    // Draw CAR sidebar
+    const int8_t width = CAR_SIDEBAR_WIDTH_POS;
+    const int8_t posFromCenter = CAR_SIDEBAR_POSITIONS_FROM_CENTER;
+    //scale to adjust ditance between points
+    const uint8_t scale = osdConfig()->car_sbar_scale;
+    //array of angle values 
+    int8_t vals[5];
+    vals[0] = osdConfig()->car_sbar_low;
+    vals[1] = osdConfig()->car_sbar_mid_low;
+    vals[2] = osdConfig()->car_sbar_mid;
+    vals[3] = osdConfig()->car_sbar_mid_high;
+    vals[4] = osdConfig()->car_sbar_high;
+
+    int pos = 0; //position in array
+    for (int y = -posFromCenter; y <= posFromCenter; y++) {
+        //display dash
+        osdDisplayWriteChar(element, xpos + width, ypos + (scale* y), DISPLAYPORT_SEVERITY_NORMAL, SYM_AH_DECORATION);
+        //whatever confusing thing is happening in the renderOsdEscRpmOrFreq to let the numeric value display correctly
+        char str[3];
+        const int temp = vals[pos];
+        const int len = tfp_sprintf(str, "%d", temp);
+        str[len] = '\0';
+        //display angle value
+        osdDisplayWrite(element, xpos + width + 1, ypos  + (scale* y), DISPLAYPORT_SEVERITY_NORMAL, str);
+        pos++;
+    }
+    element->drawElement = false;  // element already drawn
 }
 
 #ifdef USE_ADC_INTERNAL
@@ -1018,7 +1094,7 @@ static void osdElementFlymode(osdElementParms_t *element)
 static void osdElementReadyMode(osdElementParms_t *element)
 {
     if (IS_RC_MODE_ACTIVE(BOXREADY) && !ARMING_FLAG(ARMED)) {
-        strcpy(element->buff, "READY");
+        strcpy(element->buff, "READY"); 
     }
 }
 
@@ -1270,7 +1346,7 @@ static void osdElementWattHoursDrawn(osdElementParms_t *element)
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (wattHoursDrawn < 1.0f) {
+    if (wattHoursDrawn < 1.0f) {        
         tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
     } else {
         int wattHourWholeNumber = (int)wattHoursDrawn;
@@ -1593,14 +1669,8 @@ static void osdElementTimer(osdElementParms_t *element)
 static void osdElementVtxChannel(osdElementParms_t *element)
 {
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
-    uint8_t band = vtxSettingsConfigMutable()->band;
-    uint8_t channel = vtxSettingsConfig()->channel;
-    if (band == 0) {
-        /* Direct frequency set is used */
-        vtxCommonLookupBandChan(vtxDevice, vtxSettingsConfig()->freq, &band, &channel);
-    }
-    const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, band);
-    const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, channel);
+    const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, vtxSettingsConfig()->band);
+    const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, vtxSettingsConfig()->channel);
     unsigned vtxStatus = 0;
     uint8_t vtxPower = vtxSettingsConfig()->power;
     if (vtxDevice) {
@@ -1730,6 +1800,8 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_DISARMED,
     OSD_NUMERICAL_HEADING,
     OSD_READY_MODE,
+    OSD_CAM_ANGLE_REFERENCE,
+    OSD_CAM_ANGLE_REFERENCE_SBAR,
 #ifdef USE_VARIO
     OSD_NUMERICAL_VARIO,
 #endif
@@ -1811,6 +1883,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_FLYMODE]                 = osdElementFlymode,
     [OSD_CRAFT_NAME]              = NULL,  // only has background
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
+    [OSD_CAM_ANGLE_REFERENCE]     = osdElementCamAngleReference,  
+    [OSD_CAM_ANGLE_REFERENCE_SBAR]= NULL,  // only has background
 #ifdef USE_VTX_COMMON
     [OSD_VTX_CHANNEL]             = osdElementVtxChannel,
 #endif
@@ -1939,6 +2013,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
     [OSD_CAMERA_FRAME]            = osdBackgroundCameraFrame,
     [OSD_HORIZON_SIDEBARS]        = osdBackgroundHorizonSidebars,
+    [OSD_CAM_ANGLE_REFERENCE_SBAR]= osdBackgroundCarSidebar,
     [OSD_CRAFT_NAME]              = osdBackgroundCraftName,
 #ifdef USE_OSD_STICK_OVERLAY
     [OSD_STICK_OVERLAY_LEFT]      = osdBackgroundStickOverlay,

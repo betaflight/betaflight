@@ -1412,6 +1412,8 @@ const clivalue_t valueTable[] = {
     { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_GPS_SPEED]) },
     { "osd_gps_lon_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_GPS_LON]) },
     { "osd_gps_lat_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_GPS_LAT]) },
+    { "osd_car_pos",                VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_CAM_ANGLE_REFERENCE]) },
+    { "osd_car__sbar_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_CAM_ANGLE_REFERENCE_SBAR]) },
 #ifdef USE_GPS_LAP_TIMER
     { "osd_gps_lap_curr_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_GPS_LAP_TIME_CURRENT]) },
     { "osd_gps_lap_prev_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_GPS_LAP_TIME_PREVIOUS]) },
@@ -1513,6 +1515,16 @@ const clivalue_t valueTable[] = {
     { "osd_aux_symbol",             VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 },  PG_OSD_CONFIG, offsetof(osdConfig_t, aux_symbol) },
     { "osd_canvas_width",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 63 }, PG_OSD_CONFIG, offsetof(osdConfig_t, canvas_cols) },
     { "osd_canvas_height",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 31 }, PG_OSD_CONFIG, offsetof(osdConfig_t, canvas_rows) },
+    { "osd_car_channel",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, MAX_SUPPORTED_RC_CHANNEL_COUNT }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_channel)},
+    { "osd_car_scale",              VAR_INT8   | MASTER_VALUE, .config.minmax         = { -22, 22 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_scale)},
+    { "osd_car_dots",               VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 20 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_dots)},
+    { "osd_car_width",              VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 46}, PG_OSD_CONFIG, offsetof(osdConfig_t, car_width)},
+    { "osd_car_sbar_scale",         VAR_UINT8  | MASTER_VALUE, .config.minmax         = { 1, 4 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_sbar_scale)},
+    { "osd_car_sbar_low",           VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { -99, 99 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_sbar_low)},
+    { "osd_car_sbar_mid_low",       VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { -99, 99 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_sbar_mid_low)},
+    { "osd_car_sbar_mid",           VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { -99, 99 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_sbar_mid)},
+    { "osd_car_sbar_mid_high",      VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { -99, 99 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_sbar_mid_high)},
+    { "osd_car_sbar_high",          VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { -99, 99 }, PG_OSD_CONFIG, offsetof(osdConfig_t, car_sbar_high)},
 #ifdef USE_CRAFTNAME_MSGS
     { "osd_craftname_msgs",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_craftname_msgs) },
 #endif //USE_CRAFTNAME_MSGS

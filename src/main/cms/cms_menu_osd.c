@@ -92,6 +92,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #endif // GPS
     {"CROSSHAIRS",         OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS]},
     {"HORIZON",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON]},
+    {"CAM ANGLE REFERENCE",OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CAM_ANGLE_REFERENCE]},
+    {"CAR SIDEBAR",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CAM_ANGLE_REFERENCE_SBAR]},
+
     {"HORIZON SIDEBARS",   OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS]},
     {"UP/DOWN REFERENCE",  OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_UP_DOWN_REFERENCE]},
     {"TIMER 1",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1]},
@@ -195,6 +198,20 @@ static int16_t osdConfig_rssi_dbm_alarm;
 static int16_t osdConfig_rsnr_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
+
+static int8_t osdConfig_car_scale;
+static uint8_t osdConfig_car_width;
+static uint8_t osdConfig_car_channel;
+static uint8_t osdConfig_car_dots;
+
+static uint8_t osdConfig_car_sbar_scale;
+static uint8_t osdConfig_car_sbar_low;
+static uint8_t osdConfig_car_sbar_mid_low;
+static uint8_t osdConfig_car_sbar_mid;
+static uint8_t osdConfig_car_sbar_mid_high;
+static uint8_t osdConfig_car_sbar_high;
+
+
 static uint16_t osdConfig_distance_alarm;
 static uint8_t batteryConfig_vbatDurationForWarning;
 static uint8_t batteryConfig_vbatDurationForCritical;
@@ -215,6 +232,7 @@ static const void *menuAlarmsOnEnter(displayPort_t *pDisp)
 
     return NULL;
 }
+
 
 static const void *menuAlarmsOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
@@ -259,6 +277,72 @@ static CMS_Menu menuAlarms = {
     .onExit = menuAlarmsOnExit,
     .onDisplayUpdate = NULL,
     .entries = menuAlarmsEntries,
+};
+
+static const void *menuCarOnEnter(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    osdConfig_car_scale = osdConfig()->car_scale;
+    osdConfig_car_width = osdConfig()->car_width;
+    osdConfig_car_channel = osdConfig()->car_channel;
+    osdConfig_car_dots = osdConfig()->car_dots;
+
+    osdConfig_car_sbar_scale = osdConfig()->car_sbar_scale;
+    osdConfig_car_sbar_low = osdConfig()->car_sbar_low;
+    osdConfig_car_sbar_mid_low = osdConfig()->car_sbar_mid_low;
+    osdConfig_car_sbar_mid = osdConfig()->car_sbar_mid;
+    osdConfig_car_sbar_mid_high = osdConfig()->car_sbar_mid_high;
+    osdConfig_car_sbar_high = osdConfig()->car_sbar_high;
+   
+    return NULL;
+}
+static const void *menuCarOnExit(displayPort_t *pDisp, const OSD_Entry *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    osdConfigMutable()->car_scale = osdConfig_car_scale;
+    osdConfigMutable()->car_width = osdConfig_car_width;
+    osdConfigMutable()->car_channel = osdConfig_car_channel;
+    osdConfigMutable()->car_dots = osdConfig_car_dots;
+
+    osdConfigMutable()->car_sbar_scale = osdConfig_car_sbar_scale;
+    osdConfigMutable()->car_sbar_low = osdConfig_car_sbar_low;
+    osdConfigMutable()->car_sbar_mid_low = osdConfig_car_sbar_mid_low;
+    osdConfigMutable()->car_sbar_mid = osdConfig_car_sbar_mid;
+    osdConfigMutable()->car_sbar_mid_high = osdConfig_car_sbar_mid_high;
+    osdConfigMutable()->car_sbar_high = osdConfig_car_sbar_high;
+
+    
+    return NULL;
+}
+
+const OSD_Entry menuCarEntries[] =
+{
+    {"--- CAR ---", OME_Label, NULL, NULL},
+    {"SCALE",     OME_INT8,  NULL, &(OSD_INT8_t){&osdConfig_car_scale, -22, 22, 13}},
+    {"WIDTH",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_width, 5, 46, 13}},
+    {"CHANNEL", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_channel, 1, 18, 7}},
+    {"DOTS", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_dots, 1, 20, 7}},
+    {"SBAR_SCALE", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_sbar_scale, 1, 4, 2}},
+    {"SBAR_LOW", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_sbar_low, -99, 99, 30}},
+    {"SBAR_MID_LOW", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_sbar_mid_low, -99, 99, 15}},
+    {"SBAR_MID", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_sbar_mid, -99, 99, 0}},
+    {"SBAR_MID_HIGH", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_sbar_mid_high, -99, 99, 15}},
+    {"SBAR_HIGH", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_car_sbar_high, -99, 99, 30}},
+    {NULL, OME_END, NULL, NULL,}
+};
+
+static CMS_Menu menuCar = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "MENUCAR",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = menuCarOnEnter,
+    .onExit = menuCarOnExit,
+    .onDisplayUpdate = menuCarOnExit,
+    .entries = menuCarEntries,
 };
 
 osd_timer_source_e timerSource[OSD_TIMER_COUNT];
@@ -393,6 +477,8 @@ const OSD_Entry cmsx_menuOsdEntries[] =
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems},
     {"TIMERS",      OME_Submenu, cmsMenuChange, &menuTimers},
     {"ALARMS",      OME_Submenu, cmsMenuChange, &menuAlarms},
+    {"CAR",         OME_Submenu, cmsMenuChange, &menuCar},
+
 #endif
 #ifdef USE_MAX7456
     {"INVERT",    OME_Bool,  cmsx_max7456Update, &displayPortProfileMax7456_invert},
