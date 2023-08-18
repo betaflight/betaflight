@@ -178,7 +178,7 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_beacon_armed_only;
     colorId_e ledstrip_visual_beeper_color;
     uint8_t ledstrip_brightness;
-    uint8_t ledstrip_rainbow_delta;
+    uint16_t ledstrip_rainbow_delta;
     uint16_t ledstrip_rainbow_freq;
 } ledStripConfig_t;
 
