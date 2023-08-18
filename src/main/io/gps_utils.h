@@ -1,3 +1,3 @@
 #pragma once
 
-int nmeaPrintf(const char *format, ...);
+int nmeaPrintf(serialPort_t *port, const char *format, ...);

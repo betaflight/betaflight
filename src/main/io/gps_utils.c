@@ -26,6 +26,7 @@ static void nmeaPrintfva_raw(struct nmea_putp* putp, const char *format, va_list
     tfp_format(putp, nmea_putcf, format, va);
 }
 
+// tfp_prinf shall replace this
 static void nmeaPrintf_raw(struct nmea_putp* putp, const char *format, ...)
 {
     va_list va;
