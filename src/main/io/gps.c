@@ -441,7 +441,7 @@ void gpsInit(void)
 
     portMode_e mode = MODE_RXTX;
 
-#if defined(USE_GPS_NMEA_TX_ONLY)
+#ifdef USE_GPS_NMEA_TX_ONLY
     if (gpsConfig()->provider == GPS_NMEA) {
         mode &= ~MODE_TX;
     }
@@ -960,7 +960,7 @@ void gpsConfigureNmea(void)
 
     switch (gpsData.state) {
         case GPS_STATE_DETECT_BAUD:
-#if !defined(USE_GPS_NMEA_TX_ONLY)
+#ifndef USE_GPS_NMEA_TX_ONLY
             if (cmp32(gpsData.now, gpsData.state_ts) < 1000) {
                 return;
             }
@@ -972,9 +972,13 @@ void gpsConfigureNmea(void)
                     break;
                 case 1: // second run
                     // print the init string for the baudrate we want to be at
-                    serialPrint(gpsPort, gpsInitData[gpsData.userBaudRateIndex].ubx);
+#ifdef USE_GPS_MTK
                     serialPrint(gpsPort, gpsInitData[gpsData.userBaudRateIndex].mtk);
+#endif
+#ifdef USE_GPS_SIRF
                     serialPrint(gpsPort, gpsInitData[gpsData.userBaudRateIndex].sirf);
+#endif
+                    serialPrint(gpsPort, gpsInitData[gpsData.userBaudRateIndex].ubx);
 
                     gpsData.state_position++;
                     break;
@@ -988,7 +992,7 @@ void gpsConfigureNmea(void)
             break;
 #endif
         case GPS_STATE_CHANGE_BAUD:
-#if !defined(USE_GPS_NMEA_TX_ONLY)
+#ifndef USE_GPS_NMEA_TX_ONLY
             // wait a short time between sending commands
             // note that no commands are sent to request the packets we need
             if (cmp32(gpsData.now, gpsData.state_ts) < 500) {
@@ -1002,8 +1006,12 @@ void gpsConfigureNmea(void)
             } else if (gpsData.state_position < 2) {
                 // *** this message also appears to fail ***//
                 // NMEA reports back at whatever speed the module is configured to send at, not 5Hz
+#ifdef USE_GPS_MTK
                 serialPrint(gpsPort, GPS_PMTK_GGA_RATE_5HZ);
+#endif
+#ifdef USE_GPS_SIRF
                 serialPrint(gpsPort, GPS_PSRF_GGA_RATE_5HZ); // set GGA rate to 5Hz
+#endif
                 gpsData.state_position++;
             } else if (gpsData.state_position < 3) {
                 // special initialization for NMEA ATGM336 and similar GPS recivers - should be done only once
@@ -1029,11 +1037,16 @@ void gpsConfigureNmea(void)
 #endif
                 gpsData.state_position++;
             } else if (gpsData.state_position < 6) {
-                if (!(isConfiguratorConnected())) {
+                if (!isConfiguratorConnected()) {
                     // disable GSV MESSAGES
                     // *** THIS COMMAND FAILS TO DISABLE GSV MESSAGES WHEN SENT ****
                     // bug?? why??
-                    serialPrint(gpsPort, GPS_PSRF_DISABLE_GSV);  // disable GSV (Sat info) messages
+#ifdef USE_GPS_MTK
+                    serialPrint(gpsPort, GPS_PMTK_GSV_DISABLE);  // disable GSV (Sat info) messages
+#endif
+#ifdef USE_GPS_SIRF
+                    serialPrint(gpsPort, GPS_PSRF_GSV_DISABLE);  // disable GSV (Sat info) messages
+#endif
                     // *** BUT THE UBLOX EQUIVALENT WORKS ****
                     // so I'll send both for now...
                     ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GSV, 0);

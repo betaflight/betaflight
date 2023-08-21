@@ -394,6 +394,7 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 #define GPS_PMTK_9600           "$PMTK251,9600*17\r\n"
 
 #define GPS_PMTK_GGA_RATE_5HZ   "$PMTK220,200*2C\r\n"
+#define GPS_PMTK_GSV_DISABLE    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
 
 // SIRF NMEA message types
 #define GPS_PSRF_NMEA_115200    "$PSRF100,1,115200,8,1,0*05\r\n"
@@ -404,7 +405,7 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 
 #define GPS_PSRF_GGA_RATE_1HZ   "$PSRF103,00,00,01,01*25\r\n"
 #define GPS_PSRF_GGA_RATE_5HZ   "$PSRF103,00,00,05,01*21\r\n"
-#define GPS_PSRF_DISABLE_GSV    "$PSRF103,03,00,00,01*27\r\n"
+#define GPS_PSRF_GSV_DISABLE    "$PSRF103,03,00,00,01*27\r\n"
 
 // ATGM336 message types
 #define GPS_ATGM336_RATE_10HZ   "$PCAS02,100*1E\r\n"
