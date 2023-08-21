@@ -82,6 +82,7 @@
 #include "pg/motor.h"
 
 #include "rx/rx.h"
+#include "rx/rc_stats.h"
 
 #include "scheduler/scheduler.h"
 
@@ -250,8 +251,6 @@ static void taskGpsRescue(timeUs_t currentTimeUs)
 
     if (gpsRescueIsConfigured()) {
         gpsRescueUpdate();
-    } else {
-        schedulerIgnoreTaskStateTime();
     }
 }
 #endif
@@ -450,6 +449,11 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #ifdef USE_CRSF_V3
     [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, speedNegotiationProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
+
+#ifdef USE_RC_STATS
+    [TASK_RC_STATS] = DEFINE_TASK("RC_STATS", NULL, NULL, rcStatsUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
+#endif
+
 };
 
 task_t *getTask(unsigned taskId)
@@ -620,5 +624,9 @@ void tasksInit(void)
 
 #ifdef SIMULATOR_MULTITHREAD
     rescheduleTask(TASK_RX, 1);
+#endif
+
+#ifdef USE_RC_STATS
+    setTaskEnabled(TASK_RC_STATS, true);
 #endif
 }

@@ -378,11 +378,6 @@ void crsfFrameFlightMode(sbuf_t *dst)
     // Acro is the default mode
     const char *flightMode = "ACRO";
 
-    // Modes that are only relevant when disarmed
-    if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
-        flightMode = "!ERR";
-    } else
-
 #if defined(USE_GPS)
     if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
         flightMode = "WAIT"; // Waiting for GPS lock

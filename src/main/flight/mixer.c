@@ -65,12 +65,6 @@
 #define DYN_LPF_THROTTLE_STEPS           100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
-#ifdef USE_RPM_LIMIT
-#define RPM_LIMIT_ACTIVE mixerConfig()->rpm_limit
-#else
-#define RPM_LIMIT_ACTIVE false
-#endif
-
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
 float FAST_DATA_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];

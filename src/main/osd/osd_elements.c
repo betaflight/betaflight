@@ -729,7 +729,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
     const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
 
-    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
+    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
         float psiB; // psi from body frame to zenith/nadir
         char *symbol[2] = {"U", "D"}; // character buffer
@@ -1068,7 +1068,7 @@ static void osdElementFlymode(osdElementParms_t *element)
 static void osdElementReadyMode(osdElementParms_t *element)
 {
     if (IS_RC_MODE_ACTIVE(BOXREADY) && !ARMING_FLAG(ARMED)) {
-        strcpy(element->buff, "READY"); 
+        strcpy(element->buff, "READY");
     }
 }
 
@@ -1164,7 +1164,7 @@ static void osdElementGpsSats(osdElementParms_t *element)
         int pos = tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
         if (osdConfig()->gps_sats_show_hdop) { // add on the GPS module HDOP estimate
             element->buff[pos++] = ' ';
-            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.dop.hdop / 100.0f, "", 1, true, SYM_NONE);
+            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.dop.pdop / 100.0f, "", 1, true, SYM_NONE);
         }
     }
 }
@@ -1320,7 +1320,7 @@ static void osdElementWattHoursDrawn(osdElementParms_t *element)
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (wattHoursDrawn < 1.0f) {        
+    if (wattHoursDrawn < 1.0f) {
         tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
     } else {
         int wattHourWholeNumber = (int)wattHoursDrawn;
@@ -1548,13 +1548,18 @@ static void osdElementRtcTime(osdElementParms_t *element)
 static void osdElementRssiDbm(osdElementParms_t *element)
 {
     const int8_t antenna = getActiveAntenna();
+    const int16_t osdRssiDbm = getRssiDbm();
     static bool diversity = false;
+
+    if (osdRssiDbm < osdConfig()->rssi_dbm_alarm) {
+        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+    }
 
     if (antenna || diversity) {
         diversity = true;
-        tfp_sprintf(element->buff, "%c%3d:%d", SYM_RSSI, getRssiDbm(), antenna + 1);
+        tfp_sprintf(element->buff, "%c%3d:%d", SYM_RSSI, osdRssiDbm, antenna + 1);
     } else {
-        tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbm());
+        tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, osdRssiDbm);
     }
 }
 #endif // USE_RX_RSSI_DBM
@@ -1638,8 +1643,14 @@ static void osdElementTimer(osdElementParms_t *element)
 static void osdElementVtxChannel(osdElementParms_t *element)
 {
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
-    const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, vtxSettingsConfig()->band);
-    const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, vtxSettingsConfig()->channel);
+    uint8_t band = vtxSettingsConfigMutable()->band;
+    uint8_t channel = vtxSettingsConfig()->channel;
+    if (band == 0) {
+        /* Direct frequency set is used */
+        vtxCommonLookupBandChan(vtxDevice, vtxSettingsConfig()->freq, &band, &channel);
+    }
+    const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, band);
+    const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, channel);
     unsigned vtxStatus = 0;
     uint8_t vtxPower = vtxSettingsConfig()->power;
     if (vtxDevice) {
@@ -2199,6 +2210,14 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
     }
+
+#ifdef USE_RX_RSSI_DBM
+    if (getRssiDbm() < osdConfig()->rssi_dbm_alarm) {
+        SET_BLINK(OSD_RSSI_DBM_VALUE);
+    } else {
+        CLR_BLINK(OSD_RSSI_DBM_VALUE);
+    }
+#endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {

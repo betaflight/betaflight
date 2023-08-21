@@ -104,6 +104,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "GPS_RESCUE_VELOCITY",
     "GPS_RESCUE_HEADING",
     "GPS_RESCUE_TRACKING",
+    "GPS_CONNECTION",
     "ATTITUDE",
     "VTX_MSP",
     "GPS_DOP",
@@ -114,4 +115,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "CURRENT_ANGLE",
     "DSHOT_TELEMETRY_COUNTS",
     "RPM_LIMIT",
+    "RC_STATS",
 };

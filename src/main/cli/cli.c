@@ -1910,7 +1910,7 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     char ledConfigBuffer[20];
     char ledConfigDefaultBuffer[20];
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
-    for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
+    for (uint32_t i = 0; i < LED_STRIP_MAX_LENGTH; i++) {
         ledConfig_t ledConfig = ledConfigs[i];
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
         bool equalsDefault = false;
@@ -1937,7 +1937,7 @@ static void cliLed(const char *cmdName, char *cmdline)
     } else {
         ptr = cmdline;
         i = atoi(ptr);
-        if (i >= 0 && i < LED_MAX_STRIP_LENGTH) {
+        if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
             if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
@@ -1946,7 +1946,7 @@ static void cliLed(const char *cmdName, char *cmdline)
                 cliShowParseError(cmdName);
             }
         } else {
-            cliShowArgumentRangeError(cmdName, "INDEX", 0, LED_MAX_STRIP_LENGTH - 1);
+            cliShowArgumentRangeError(cmdName, "INDEX", 0, LED_STRIP_MAX_LENGTH - 1);
         }
     }
 }
@@ -4787,7 +4787,7 @@ if (buildKey) {
 #ifdef USE_GPS
     cliPrint("GPS: ");
     if (featureIsEnabled(FEATURE_GPS)) {
-        if (gpsIsHealthy()) {
+        if (gpsData.state >= GPS_STATE_CONFIGURE) {
             cliPrint("connected, ");
         } else {
             cliPrint("NOT CONNECTED, ");
@@ -4808,7 +4808,7 @@ if (buildKey) {
                 cliPrint("), ");
             }
         }
-        if (!gpsIsHealthy()) {
+        if (gpsData.state <= GPS_STATE_CONFIGURE) {
             cliPrint("NOT CONFIGURED");
         } else {
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
@@ -4816,6 +4816,12 @@ if (buildKey) {
             } else {
                 cliPrint("configured");
             }
+        }
+        if (gpsData.platformVersion != UBX_VERSION_UNDEF) {
+            cliPrint(", version = ");
+            cliPrintf("%s", ubloxVersionMap[gpsData.platformVersion].str);
+        } else {
+            cliPrint("unknown");
         }
     } else {
         cliPrint("NOT ENABLED");
@@ -4864,15 +4870,15 @@ static void cliTasks(const char *cmdName, char *cmdline)
             if (systemConfig()->task_statistics) {
 #if defined(USE_LATE_TASK_STATISTICS)
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
-                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
-                        taskInfo.totalExecutionTimeUs / 1000,
-                        taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
+                    taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                    taskInfo.totalExecutionTimeUs / 1000,
+                    taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
 #else
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
-                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
-                        taskInfo.totalExecutionTimeUs / 1000);
+                    taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                    taskInfo.totalExecutionTimeUs / 1000);
 #endif
             } else {
                 cliPrintLinef("%6d", taskFrequency);

@@ -358,10 +358,6 @@ void timerInit(void)
     printf("[timer]Init...\n");
 }
 
-void timerStart(void)
-{
-}
-
 void failureMode(failureMode_e mode)
 {
     printf("[failureMode]!!! %d\n", mode);

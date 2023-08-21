@@ -30,7 +30,14 @@
 
 #if defined(USE_MSP_DISPLAYPORT)
 
-PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CONFIG, 1);
+
+void pgResetFn_displayPortProfileMsp(displayPortProfile_t *displayPortProfile)
+{
+    for (uint8_t font = 0; font < DISPLAYPORT_SEVERITY_COUNT; font++) {
+        displayPortProfile->fontSelection[font] = font;
+    }
+}
 
 #endif
 

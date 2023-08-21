@@ -31,7 +31,7 @@
 #include "max7456.h"
 
 #ifndef MAX7456_CLOCK_CONFIG_DEFAULT
-#define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_OC
+#define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_NOMINAL
 #endif
 
 #ifndef MAX7456_SPI_CS_PIN
@@ -46,7 +46,7 @@ PG_REGISTER_WITH_RESET_FN(max7456Config_t, max7456Config, PG_MAX7456_CONFIG, 0);
 
 void pgResetFn_max7456Config(max7456Config_t *config)
 {
-    config->clockConfig = MAX7456_CLOCK_CONFIG_NOMINAL;
+    config->clockConfig = MAX7456_CLOCK_CONFIG_DEFAULT;
     config->csTag = IO_TAG(MAX7456_SPI_CS_PIN);
     config->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(MAX7456_SPI_INSTANCE));
     config->preInitOPU = false;

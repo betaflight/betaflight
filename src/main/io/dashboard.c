@@ -379,8 +379,8 @@ static void showGpsPage(void)
 
     static uint8_t gpsTicker = 0;
     static uint32_t lastGPSSvInfoReceivedCount = 0;
-    if (GPS_svInfoReceivedCount != lastGPSSvInfoReceivedCount) {
-        lastGPSSvInfoReceivedCount = GPS_svInfoReceivedCount;
+    if (dashboardGpsNavSvInfoRcvCount != lastGPSSvInfoReceivedCount) {
+        lastGPSSvInfoReceivedCount = dashboardGpsNavSvInfoRcvCount;
         gpsTicker++;
         gpsTicker = gpsTicker % TICKER_CHARACTER_COUNT;
     }
@@ -419,7 +419,7 @@ static void showGpsPage(void)
     i2c_OLED_set_xy(dev, HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
 
-    tfp_sprintf(lineBuffer, "RX: %d", GPS_packetCount);
+    tfp_sprintf(lineBuffer, "RX: %d", dashboardGpsPacketCount);
     padHalfLineBuffer();
     i2c_OLED_set_line(dev, rowIndex);
     i2c_OLED_send_string(dev, lineBuffer);
@@ -429,7 +429,7 @@ static void showGpsPage(void)
     i2c_OLED_set_xy(dev, HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Dt: %d", gpsData.lastMessage - gpsData.lastLastMessage);
+    tfp_sprintf(lineBuffer, "Dt: %d", gpsSol.navIntervalMs);
     padHalfLineBuffer();
     i2c_OLED_set_line(dev, rowIndex);
     i2c_OLED_send_string(dev, lineBuffer);
@@ -439,7 +439,7 @@ static void showGpsPage(void)
     i2c_OLED_set_xy(dev, HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
 
-    strncpy(lineBuffer, gpsPacketLog, GPS_PACKET_LOG_ENTRY_COUNT);
+    strncpy(lineBuffer, dashboardGpsPacketLog, GPS_PACKET_LOG_ENTRY_COUNT);
     padHalfLineBuffer();
     i2c_OLED_set_line(dev, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);

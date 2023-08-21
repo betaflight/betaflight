@@ -142,6 +142,20 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
 
+#ifdef MSP_UART
+    serialPortConfig_t *uart2Config = serialFindPortConfigurationMutable(MSP_UART);
+    if (uart2Config) {
+        uart2Config->functionMask = FUNCTION_MSP;
+    }
+#endif
+
+#if defined(USE_GPS) && defined(GPS_UART)
+    serialPortConfig_t *gpsUartConfig = serialFindPortConfigurationMutable(GPS_UART);
+    if (gpsUartConfig) {
+        gpsUartConfig->functionMask = FUNCTION_GPS;
+    }
+#endif
+
 #ifdef SERIALRX_UART
     serialPortConfig_t *serialRxUartConfig = serialFindPortConfigurationMutable(SERIALRX_UART);
     if (serialRxUartConfig) {
@@ -150,9 +164,46 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 #endif
 
 #ifdef SBUS_TELEMETRY_UART
-    serialPortConfig_t *serialTlemetryUartConfig = serialFindPortConfigurationMutable(SBUS_TELEMETRY_UART);
-    if (serialTlemetryUartConfig) {
-        serialTlemetryUartConfig->functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    serialPortConfig_t *serialTelemetryUartConfig = serialFindPortConfigurationMutable(SBUS_TELEMETRY_UART);
+    if (serialTelemetryUartConfig) {
+        serialTelemetryUartConfig->functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    }
+#endif
+
+#ifdef ESC_SENSOR_UART
+    serialPortConfig_t *escSensorUartConfig = serialFindPortConfigurationMutable(ESC_SENSOR_UART);
+    if (escSensorUartConfig) {
+        escSensorUartConfig->functionMask = FUNCTION_ESC_SENSOR;
+    }
+#endif
+
+#ifdef USE_VTX
+#ifdef VTX_SMARTAUDIO_UART
+    serialPortConfig_t *vtxSmartAudioUartConfig = serialFindPortConfigurationMutable(VTX_SMARTAUDIO_UART);
+    if (vtxSmartAudioUartConfig) {
+        vtxSmartAudioUartConfig->functionMask = FUNCTION_VTX_SMARTAUDIO;
+    }
+#endif
+
+#ifdef VTX_TRAMP_UART
+    serialPortConfig_t *vtxTrampUartConfig = serialFindPortConfigurationMutable(VTX_TRAMP_UART);
+    if (vtxTrampUartConfig) {
+        vtxTrampUartConfig->functionMask = FUNCTION_VTX_TRAMP;
+    }
+#endif
+
+#ifdef VTX_MSP_UART
+    serialPortConfig_t *vtxMspUartConfig = serialFindPortConfigurationMutable(VTX_MSP_UART);
+    if (vtxMspUartConfig) {
+        vtxMspUartConfig->functionMask = FUNCTION_VTX_MSP;
+    }
+#endif
+#endif // USE_VTX
+
+#ifdef MSP_DISPLAYPORT_UART
+    serialPortConfig_t *displayPortUartConfig = serialFindPortConfigurationMutable(MSP_DISPLAYPORT_UART);
+    if (displayPortUartConfig) {
+        displayPortUartConfig->functionMask = FUNCTION_VTX_MSP | FUNCTION_MSP;
     }
 #endif
 

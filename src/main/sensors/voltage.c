@@ -35,6 +35,7 @@
 
 #include "drivers/adc.h"
 
+#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "pg/pg.h"
@@ -101,12 +102,12 @@ void voltageMeterReset(voltageMeter_t *meter)
 #define DEFAULT_VOLTAGE_METER_SCALE 110
 #endif
 
-#ifndef VBAT_RESDIVVAL_DEFAULT
-#define VBAT_RESDIVVAL_DEFAULT 10
+#ifndef DEFAULT_VOLTAGE_METER_DIVIDER
+#define DEFAULT_VOLTAGE_METER_DIVIDER 10
 #endif
 
-#ifndef VBAT_RESDIVMULTIPLIER_DEFAULT
-#define VBAT_RESDIVMULTIPLIER_DEFAULT 1
+#ifndef DEFAULT_VOLTAGE_METER_MULTIPLIER
+#define DEFAULT_VOLTAGE_METER_MULTIPLIER 1
 #endif
 
 typedef struct voltageMeterADCState_s {
@@ -135,8 +136,8 @@ void pgResetFn_voltageSensorADCConfig(voltageSensorADCConfig_t *instance)
     for (int i = 0; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
         RESET_CONFIG(voltageSensorADCConfig_t, &instance[i],
             .vbatscale = DEFAULT_VOLTAGE_METER_SCALE,
-            .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
-            .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
+            .vbatresdivval = DEFAULT_VOLTAGE_METER_DIVIDER,
+            .vbatresdivmultiplier = DEFAULT_VOLTAGE_METER_MULTIPLIER,
         );
     }
 }
@@ -235,7 +236,7 @@ void voltageMeterGenericInit(void)
     sagCompensationConfigured = false;
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-        if (pidProfiles(i)->vbat_sag_compensation > 0) {
+        if (pidProfiles(i)->vbat_sag_compensation > 0 && !RPM_LIMIT_ACTIVE) {
             sagCompensationConfigured = true;
         }
     }

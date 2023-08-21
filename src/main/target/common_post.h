@@ -364,10 +364,6 @@
 #define USE_USB_ADVANCED_PROFILES
 #endif
 
-#if defined(USE_VTX) && !defined(DEFAULT_FEATURES)
-#define DEFAULT_FEATURES FEATURE_VTX
-#endif
-
 #if !defined(USE_OSD)
 #undef USE_RX_LINK_QUALITY_INFO
 #undef USE_OSD_PROFILES
@@ -529,10 +525,6 @@
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
 
-// TODO: Remove this once HAL support is fixed for ESCSERIAL
-#ifdef STM32F7
-#undef USE_ESCSERIAL
-#endif
 
 #if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
 #ifndef EEPROM_SIZE
