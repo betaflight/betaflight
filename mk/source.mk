@@ -172,7 +172,7 @@ COMMON_SRC = \
             io/rcdevice_cam.c \
             io/rcdevice.c \
             io/gps.c \
-	    io/gps_utils.c \
+            io/gps_utils.c \
             io/ledstrip.c \
             io/pidaudio.c \
             osd/osd.c \

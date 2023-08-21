@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -27,7 +28,7 @@
 
 void serialPrint(serialPort_t *instance, const char *str)
 {
-    serialWriteBuf(instance, str, strlen(str);
+    serialWriteBuf(instance, (const uint8_t*)str, strlen(str));
 }
 
 uint32_t serialGetBaudRate(serialPort_t *instance)
