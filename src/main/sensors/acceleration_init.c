@@ -86,7 +86,7 @@
 
 #include "acceleration_init.h"
 
-#if !defined(USE_ACC_MPU6000) && !defined(USE_ACC_SPI_MPU6000) && !defined(USE_ACC_MPU6500) && \
+#if !defined(USE_ACC_MPU6000) && !defined(USE_ACC_SPI_MPU6000) && !defined(USE_ACC_MPU6050) && !defined(USE_ACC_MPU6500) && \
     !defined(USE_ACC_SPI_MPU6500) && !defined(USE_ACC_SPI_MPU9250) && !defined(USE_ACC_SPI_ICM20602) && \
     !defined(USE_ACC_SPI_ICM20689) && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_BMI160) && \
     !defined(USE_ACCGYRO_BMI270) && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) && \
