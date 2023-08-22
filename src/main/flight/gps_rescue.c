@@ -194,11 +194,11 @@ static void setReturnAltitude(void)
         // Set this to the user's intended descent distance, but not more than half the distance to home to ensure some fly home time
         rescueState.intent.descentDistanceM = fminf(0.5f * rescueState.sensor.distanceToHomeM, gpsRescueConfig()->descentDistanceM);
  
-        const float initialAltitudeCm = gpsRescueConfig()->initialAltitudeM * 100.0f;
-        const float rescueAltitudeBufferCm = gpsRescueConfig()->rescueAltitudeBufferM * 100.0f;
+        const float returnAltitudeCm = gpsRescueConfig()->returnAltitudeM * 100.0f;
+        const float rescueAltitudeBufferCm = gpsRescueConfig()->initialClimbM * 100.0f;
         switch (gpsRescueConfig()->altitudeMode) {
             case GPS_RESCUE_ALT_MODE_FIXED:
-                rescueState.intent.returnAltitudeCm = initialAltitudeCm;
+                rescueState.intent.returnAltitudeCm = returnAltitudeCm;
                 break;
             case GPS_RESCUE_ALT_MODE_CURRENT:
                 rescueState.intent.returnAltitudeCm = rescueState.sensor.currentAltitudeCm + rescueAltitudeBufferCm;
@@ -798,7 +798,7 @@ void gpsRescueUpdate(void)
                 // attempted initiation within minimum rescue distance requires us to fly out to at least that distance
                 if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minRescueDth) {
                     // climb above current height by buffer height, to at least 10m altitude
-                    rescueState.intent.returnAltitudeCm = fmaxf(1000.0f, rescueState.sensor.currentAltitudeCm + (gpsRescueConfig()->rescueAltitudeBufferM * 100.0f));
+                    rescueState.intent.returnAltitudeCm = fmaxf(1000.0f, rescueState.sensor.currentAltitudeCm + (gpsRescueConfig()->initialClimbM * 100.0f));
                     // note that the pitch controller will pitch forward to fly out to minRescueDth
                     // set the descent distance to half the minimum rescue distance. which we should have moved out to in the climb phase
                     rescueState.intent.descentDistanceM = 0.5f * gpsRescueConfig()->minRescueDth;
