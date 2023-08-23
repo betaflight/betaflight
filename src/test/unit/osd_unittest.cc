@@ -29,6 +29,7 @@ extern "C" {
     #include "blackbox/blackbox_io.h"
 
     #include "common/time.h"
+    #include "common/vector.h"
 
     #include "config/config.h"
     #include "config/feature.h"
@@ -1197,7 +1198,7 @@ TEST_F(OsdTest, TestGpsElements)
 
     sensorsSet(SENSOR_GPS);
     osdAnalyzeActiveElements();
-    
+
     // when
     simulationGpsHealthy = false;
     gpsSol.numSat = 0;

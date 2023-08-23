@@ -32,6 +32,7 @@ extern "C" {
     #include "common/streambuf.h"
     #include "common/time.h"
     #include "common/utils.h"
+    #include "common/vector.h"
 
     #include "config/config.h"
 
