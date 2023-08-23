@@ -405,7 +405,7 @@ bool compassInit(void)
 
 bool compassIsHealthy(void)
 {
-    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
+    return (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
 }
 
 void compassStartCalibration(void)
@@ -449,15 +449,15 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
 
     // if we get here, we have new data to parse
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC[axis] = magADCRaw[axis];
+        mag.magADC.v[axis] = magADCRaw[axis];
     }
     // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
     mag.isNewMagADCFlag = true;
 
     if (magDev.magAlignment == ALIGN_CUSTOM) {
-        alignSensorViaMatrix(mag.magADC, &magDev.rotationMatrix);
+        alignSensorViaMatrix(&mag.magADC, &magDev.rotationMatrix);
     } else {
-        alignSensorViaRotation(mag.magADC, magDev.magAlignment);
+        alignSensorViaRotation(&mag.magADC, magDev.magAlignment);
     }
 
     // get stored cal/bias values
@@ -486,7 +486,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             if (didMovementStart) {
                 // LED will flash at task rate while calibrating, looks like 'ON' all the time.
                 LED0_ON;
-                compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
+                compassBiasEstimatorApply(&compassBiasEstimator, &mag.magADC);
             }
         } else {
             // mag cal process is not complete until the new cal values are saved
@@ -578,13 +578,13 @@ void compassBiasEstimatorUpdate(compassBiasEstimator_t *cBE, const float lambda_
 }
 
 // apply one estimation step of the compass bias estimator
-void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag)
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, vector3_t *mag)
 {
     // update phi
     float phi[4];
-    phi[0] = sq(mag[0]) + sq(mag[1]) + sq(mag[2]);
+    phi[0] = sq(mag->x) + sq(mag->y) + sq(mag->z);
     for (unsigned i = 0; i < 3; i++) {
-        phi[i + 1] = mag[i];
+        phi[i + 1] = mag->v[i];
     }
 
     // update e

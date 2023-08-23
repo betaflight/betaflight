@@ -358,8 +358,7 @@ TEST_P(YawTest, TestMagAlign)
 
     vector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
 
-    for (int i = 0; i < 3; i++)
-        mag.magADC[i] = magBF.v[i];
+    mag.magADC = magBF;
 
     useMag = true;
     // integrate IMU. about 25s is enough in worst case

@@ -45,7 +45,7 @@ typedef enum {
 
 typedef struct mag_s {
     bool isNewMagADCFlag;
-    float magADC[XYZ_AXIS_COUNT];
+    vector3_t magADC;
 } mag_t;
 
 extern mag_t mag;
@@ -81,4 +81,4 @@ void compassStartCalibration(void);
 bool compassIsCalibrationComplete(void);
 void compassBiasEstimatorInit(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
 void compassBiasEstimatorUpdate(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
-void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag);
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, vector3_t *mag);

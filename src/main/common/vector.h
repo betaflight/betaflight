@@ -70,4 +70,4 @@ void matrixVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *
 void matrixTrnVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *v);
 
 void buildRotationMatrix(matrix33_t *result, const fp_angles_t *rpy);
-void applyRotationMatrix(float *v, const matrix33_t *rotationMatrix);
+void applyRotationMatrix(vector3_t *v, const matrix33_t *rotationMatrix);

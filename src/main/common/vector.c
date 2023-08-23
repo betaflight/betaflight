@@ -186,7 +186,7 @@ void buildRotationMatrix(matrix33_t *result, const fp_angles_t *rpy)
     result->m[2][Z] = cosy * cosx;
 }
 
-void applyRotationMatrix(float *v, const matrix33_t *rotationMatrix)
+void applyRotationMatrix(vector3_t *v, const matrix33_t *rotationMatrix)
 {
-    matrixTrnVectorMul((vector3_t *)v, rotationMatrix, (vector3_t *)v);
+    matrixTrnVectorMul(v, rotationMatrix, v);
 }

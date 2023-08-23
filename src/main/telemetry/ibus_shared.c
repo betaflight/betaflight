@@ -275,7 +275,7 @@ static uint16_t getMode(void)
 #if defined(USE_ACC)
 static int16_t getACC(uint8_t index)
 {
-    return (int16_t)((acc.accADC[index] * acc.dev.acc_1G_rec) * 1000);
+    return (int16_t)((acc.accADC.v[index] * acc.dev.acc_1G_rec) * 1000);
 }
 #endif
 
