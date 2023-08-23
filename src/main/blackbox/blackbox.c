@@ -1165,7 +1165,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #ifdef USE_DSHOT_TELEMETRY
     for (int i = 0; i < motorCount; i++) {
-        blackboxCurrent->erpm[i] = getDshotTelemetry(i);
+        blackboxCurrent->erpm[i] = getDshotErpm(i);
     }
 #endif
 

@@ -6119,8 +6119,8 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 #endif
 
         for (uint8_t i = 0; i < getMotorCount(); i++) {
-            const uint16_t erpm = getDshotTelemetry(i);
-            const uint16_t rpm = erpmToRpm(erpm);
+            const uint16_t erpm = getDshotErpm(i);
+            const uint16_t rpm = lrintf(getDshotRpm(i));
 
             cliPrintf("%5d   %c%c%c%c%c %6d %6d %6d",
                     i + 1,
