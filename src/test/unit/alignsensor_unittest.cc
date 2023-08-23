@@ -110,7 +110,7 @@ static void alignSensorViaMatrixFromRotation(float *dest, sensor_align_e alignme
 
     buildAlignmentFromStandardAlignment(&sensorAlignment, alignment);
 
-    buildRotationMatrixFromAlignment(&sensorAlignment, &sensorRotationMatrix);
+    buildRotationMatrixFromAngles(&sensorRotationMatrix, &sensorAlignment);
 
     alignSensorViaMatrix(dest, &sensorRotationMatrix);
 }

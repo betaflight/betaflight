@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "common/maths.h"
 
 typedef union vector2_u {
@@ -44,18 +46,20 @@ typedef struct matrix33_s {
     float m[3][3];
 } matrix33_t;
 
+bool vector2Equal(const vector2_t *a, const vector2_t *b);
 void vector2Zero(vector2_t *v);
 void vector2Add(vector2_t *result, const vector2_t *a, const vector2_t *b);
-void vector2Scale(vector2_t *result, const vector2_t *a, const float k);
+void vector2Scale(vector2_t *result, const vector2_t *v, const float k);
 float vector2Dot(const vector2_t *a, const vector2_t *b);
 float vector2Cross(const vector2_t *a, const vector2_t *b);
 float vector2NormSq(const vector2_t *v);
 float vector2Norm(const vector2_t *v);
 void vector2Normalize(vector2_t *result, const vector2_t *v);
 
+bool vector3Equal(const vector3_t *a, const vector3_t *b);
 void vector3Zero(vector3_t *v);
 void vector3Add(vector3_t *result, const vector3_t *a, const vector3_t *b);
-void vector3Scale(vector3_t *result, const vector3_t *a, const float k);
+void vector3Scale(vector3_t *result, const vector3_t *v, const float k);
 float vector3Dot(const vector3_t *a, const vector3_t *b);
 void vector3Cross(vector3_t *result, const vector3_t *a, const vector3_t *b);
 float vector3NormSq(const vector3_t *v);
@@ -65,5 +69,5 @@ void vector3Normalize(vector3_t *result, const vector3_t *v);
 void matrixVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *v);
 void matrixTrnVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *v);
 
-void buildRotationMatrix(matrix33_t *result, const fp_angles_t *delta);
+void buildRotationMatrix(matrix33_t *result, const fp_angles_t *rpy);
 void applyRotationMatrix(float *v, const matrix33_t *rotationMatrix);

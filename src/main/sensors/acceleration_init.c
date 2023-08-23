@@ -407,7 +407,7 @@ bool accInit(uint16_t accSampleRateHz)
     }
 #endif
     acc.dev.accAlign = alignment;
-    buildRotationMatrixFromAlignment(customAlignment, &acc.dev.rotationMatrix);
+    buildRotationMatrixFromAngles(&acc.dev.rotationMatrix, customAlignment);
 
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;

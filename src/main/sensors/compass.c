@@ -386,7 +386,7 @@ bool compassInit(void)
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
 
-    buildRotationMatrixFromAlignment(&compassConfig()->mag_customAlignment, &magDev.rotationMatrix);
+    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &compassConfig()->mag_customAlignment);
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 
