@@ -195,17 +195,17 @@ static void setReturnAltitude(void)
         rescueState.intent.descentDistanceM = fminf(0.5f * rescueState.sensor.distanceToHomeM, gpsRescueConfig()->descentDistanceM);
  
         const float returnAltitudeCm = gpsRescueConfig()->returnAltitudeM * 100.0f;
-        const float rescueAltitudeBufferCm = gpsRescueConfig()->initialClimbM * 100.0f;
+        const float initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
         switch (gpsRescueConfig()->altitudeMode) {
             case GPS_RESCUE_ALT_MODE_FIXED:
                 rescueState.intent.returnAltitudeCm = returnAltitudeCm;
                 break;
             case GPS_RESCUE_ALT_MODE_CURRENT:
-                rescueState.intent.returnAltitudeCm = rescueState.sensor.currentAltitudeCm + rescueAltitudeBufferCm;
+                rescueState.intent.returnAltitudeCm = rescueState.sensor.currentAltitudeCm + initialClimbCm;
                 break;
             case GPS_RESCUE_ALT_MODE_MAX:
             default:
-                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + rescueAltitudeBufferCm;
+                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + initialClimbCm;
                 break;
         }
     }
@@ -770,7 +770,7 @@ void gpsRescueUpdate(void)
 
     sensorUpdate(); // always get latest GPS and Altitude data, update ascend and descend rates
 
-    static bool initialAltitudeLow = true;
+    static bool returnAltitudeLow = true;
     static bool initialVelocityLow = true;
     rescueState.isAvailable = checkGPSRescueIsAvailable();
 
@@ -805,7 +805,7 @@ void gpsRescueUpdate(void)
                 }
                 // otherwise behave as for a normal rescue
                 initialiseRescueValues ();
-                initialAltitudeLow = (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm);
+                returnAltitudeLow = (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm);
                 rescueState.phase = RESCUE_ATTAIN_ALT;
             }
         }
@@ -815,9 +815,9 @@ void gpsRescueUpdate(void)
         // gradually increment the target altitude until the craft reaches target altitude
         // note that this can mean the target altitude may increase above returnAltitude if the craft lags target
         // sanity check will abort if altitude gain is blocked for a cumulative period
-        if (initialAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
+        if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
             // we started low, and still are low; also true if we started high, and still are too high
-            const float altitudeStep = ((initialAltitudeLow) ? gpsRescueConfig()->ascendRate : -1.0f * gpsRescueConfig()->descendRate) * rescueState.sensor.gpsRescueTaskIntervalSeconds;
+            const float altitudeStep = (returnAltitudeLow ? gpsRescueConfig()->ascendRate : -1.0f * gpsRescueConfig()->descendRate) * rescueState.sensor.gpsRescueTaskIntervalSeconds;
             rescueState.intent.targetAltitudeCm += altitudeStep;
         } else {
             // target altitude achieved - move on to ROTATE phase, returning at target altitude
