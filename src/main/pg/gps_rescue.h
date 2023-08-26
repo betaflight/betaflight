@@ -29,7 +29,7 @@ typedef struct gpsRescue_s {
     uint16_t maxRescueAngle; // degrees
     uint16_t returnAltitudeM; // meters
     uint16_t descentDistanceM; // meters
-    uint16_t rescueGroundspeed; // centimeters per second
+    uint16_t groundSpeed; // centimeters per second
     uint8_t  throttleP, throttleI, throttleD;
     uint8_t  yawP;
     uint16_t throttleMin;
@@ -37,7 +37,7 @@ typedef struct gpsRescue_s {
     uint16_t throttleHover;
     uint8_t  minSats;
     uint8_t  velP, velI, velD;
-    uint16_t minRescueDth; // meters
+    uint16_t minStartDistM; // meters
     uint8_t  sanityChecks;
     uint8_t  allowArmingWithoutFix;
     uint8_t  useMag;

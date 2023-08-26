@@ -158,7 +158,7 @@
 #define PARAM_NAME_GPS_RESCUE_ASCEND_RATE "gps_rescue_ascend_rate"
 
 #define PARAM_NAME_GPS_RESCUE_RETURN_ALT "gps_rescue_return_alt"
-#define PARAM_NAME_GPS_RESCUE_RETURN_SPEED "gps_rescue_ground_speed"
+#define PARAM_NAME_GPS_RESCUE_GROUND_SPEED "gps_rescue_ground_speed"
 #define PARAM_NAME_GPS_RESCUE_MAX_RESCUE_ANGLE "gps_rescue_max_angle"
 #define PARAM_NAME_GPS_RESCUE_ROLL_MIX "gps_rescue_roll_mix"
 #define PARAM_NAME_GPS_RESCUE_PITCH_CUTOFF "gps_rescue_pitch_cutoff"

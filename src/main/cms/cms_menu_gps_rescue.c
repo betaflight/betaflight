@@ -39,13 +39,13 @@
 
 #include "flight/gps_rescue.h"
 
-static uint16_t gpsRescueConfig_minRescueDth; //meters
+static uint16_t gpsRescueConfig_minStartDistM; //meters
 static uint8_t gpsRescueConfig_altitudeMode;
 static uint16_t gpsRescueConfig_initialClimbM; // meters
 static uint16_t gpsRescueConfig_ascendRate;
 
 static uint16_t gpsRescueConfig_returnAltitudeM; //meters
-static uint16_t gpsRescueConfig_rescueGroundspeed; // centimeters per second
+static uint16_t gpsRescueConfig_groundSpeed; // centimeters per second
 static uint8_t gpsRescueConfig_angle; //degrees
 
 static uint16_t gpsRescueConfig_descentDistanceM; //meters
@@ -143,13 +143,13 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    gpsRescueConfig_minRescueDth = gpsRescueConfig()->minRescueDth;
+    gpsRescueConfig_minStartDistM = gpsRescueConfig()->minStartDistM;
     gpsRescueConfig_altitudeMode = gpsRescueConfig()->altitudeMode;
     gpsRescueConfig_initialClimbM = gpsRescueConfig()->initialClimbM;
     gpsRescueConfig_ascendRate = gpsRescueConfig()->ascendRate;
 
     gpsRescueConfig_returnAltitudeM = gpsRescueConfig()->returnAltitudeM;
-    gpsRescueConfig_rescueGroundspeed = gpsRescueConfig()->rescueGroundspeed;
+    gpsRescueConfig_groundSpeed = gpsRescueConfig()->groundSpeed;
     gpsRescueConfig_angle = gpsRescueConfig()->maxRescueAngle;
 
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
@@ -171,13 +171,13 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     UNUSED(pDisp);
     UNUSED(self);
 
-    gpsRescueConfigMutable()->minRescueDth = gpsRescueConfig_minRescueDth;
+    gpsRescueConfigMutable()->minStartDistM = gpsRescueConfig_minStartDistM;
     gpsRescueConfigMutable()->altitudeMode = gpsRescueConfig_altitudeMode;
     gpsRescueConfigMutable()->initialClimbM = gpsRescueConfig_initialClimbM;
     gpsRescueConfigMutable()->ascendRate = gpsRescueConfig_ascendRate;
 
     gpsRescueConfigMutable()->returnAltitudeM = gpsRescueConfig_returnAltitudeM;
-    gpsRescueConfigMutable()->rescueGroundspeed = gpsRescueConfig_rescueGroundspeed;
+    gpsRescueConfigMutable()->groundSpeed = gpsRescueConfig_groundSpeed;
     gpsRescueConfigMutable()->maxRescueAngle = gpsRescueConfig_angle;
 
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
@@ -198,13 +198,13 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
 {
     {"--- GPS RESCUE ---", OME_Label, NULL, NULL},
 
-    { "MIN START DIST  M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minRescueDth, 20, 1000, 1 } },
+    { "MIN START DIST  M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minStartDistM, 20, 1000, 1 } },
     { "ALTITUDE MODE"    , OME_TAB | REBOOT_REQUIRED, NULL, &(OSD_TAB_t) { &gpsRescueConfig_altitudeMode, 2, lookupTableRescueAltitudeMode} },
     { "INITAL CLIMB    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialClimbM, 0, 100, 1 } },
     { "ASCEND RATE  CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, 50, 2500, 1 } },
 
     { "RETURN ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_returnAltitudeM, 2, 255, 1 } },
-    { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_rescueGroundspeed, 0, 3000, 1 } },
+    { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_groundSpeed, 0, 3000, 1 } },
     { "PITCH ANGLE MAX",   OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_angle, 0, 60, 1 } },
 
     { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 5, 500, 1 } },
