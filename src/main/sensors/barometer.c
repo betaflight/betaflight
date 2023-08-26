@@ -44,6 +44,7 @@
 #include "drivers/barometer/barometer_ms5611.h"
 #include "drivers/barometer/barometer_lps.h"
 #include "drivers/barometer/barometer_2smpb_02b.h"
+#include "drivers/barometer/barometer_lps22df.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/bus_spi.h"
@@ -77,7 +78,11 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     //   a. Precedence is in the order of popularity; BMP388, BMP280, MS5611 then BMP085, then
     //   b. If SPI variant is specified, it is likely onboard, so take it.
 
-#if !(defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_QMP6988) || defined(DEFAULT_BARO_QMP6988)) || defined(DEFAULT_BARO_DPS310) || defined(DEFAULT_BARO_SPI_DPS310)
+#if !(defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || \
+    defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || \
+    defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_QMP6988) || \
+    defined(DEFAULT_BARO_QMP6988)) || defined(DEFAULT_BARO_DPS310) || defined(DEFAULT_BARO_SPI_DPS310) || \
+    defined(DEFAULT_BARO_LPS22DF) || defined(DEFAULT_BARO_SPI_LPS22DF)
 
 #if defined(USE_BARO_DPS310) || defined(USE_BARO_SPI_DPS310)
 #if defined(USE_BARO_SPI_DPS310)
@@ -119,6 +124,12 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #define DEFAULT_BARO_SPI_2SMBP_02B
 #else
 #define DEFAULT_BARO_2SMBP_02B
+#endif
+#elif defined(USE_BARO_LPS22DF) || defined(USE_BARO_SPI_LPS22DF)
+#if defined(USE_BARO_LPS22DF)
+#define DEFAULT_BARO_SPI_LPS22DF
+#else
+#define DEFAULT_BARO_LPS22DF
 #endif
 #endif
 
@@ -300,6 +311,15 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 #if defined(USE_BARO_2SMBP_02B) || defined(USE_BARO_SPI_2SMBP_02B)
         if (baro2SMPB02BDetect(baroDev)) {
             baroHardware = BARO_2SMPB_02B;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+     case BARO_LPS22DF:
+#if defined(USE_BARO_LPS22DF) || defined(USE_BARO_SPI_LPS22DF)
+        if (lps22dfDetect(baroDev)) {
+            baroHardware = BARO_LPS22DF;
             break;
         }
 #endif
