@@ -111,11 +111,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 2);
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .craftName = { 0 },
     .pilotName = { 0 },
-);
-
-PG_REGISTER_WITH_RESET_TEMPLATE(customMsgConfig_t, customMsgConfig, PG_CUSTOM_MSG_CONFIG, 1);
-
-PG_RESET_TEMPLATE(customMsgConfig_t, customMsgConfig,
     .message[0] = { 0 },
     .message[1] = { 0 },
     .message[2] = { 0 },

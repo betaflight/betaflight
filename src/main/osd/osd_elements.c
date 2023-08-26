@@ -781,50 +781,26 @@ static void osdElementCompassBar(osdElementParms_t *element)
 //display custom message from MSPv2
 static void osdElementCustomMsg1(osdElementParms_t *element)
 {
-    if (strlen(customMsgConfig()->message[0]) == 0) {
+    if (strlen(pilotConfig()->message[0]) == 0) {
         strcpy(element->buff, "CUSTOM_MSG1");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_CUSTOM_MSG_LENGTH; i++) {
-            if (customMsgConfig()->message[0][i]) {
-                element->buff[i] = customMsgConfig()->message[0][i];
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        strncpy(element->buff, pilotConfig()->message[0], strlen(pilotConfig()->message[0]));
     }
 }
 static void osdElementCustomMsg2(osdElementParms_t *element)
 {
-    if (strlen(customMsgConfig()->message[1]) == 0) {
+    if (strlen(pilotConfig()->message[1]) == 0) {
         strcpy(element->buff, "CUSTOM_MSG2");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_CUSTOM_MSG_LENGTH; i++) {
-            if (customMsgConfig()->message[1][i]) {
-                element->buff[i] = customMsgConfig()->message[1][i];
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        strncpy(element->buff, pilotConfig()->message[1], strlen(pilotConfig()->message[1]));
     }
 }
 static void osdElementCustomMsg3(osdElementParms_t *element)
 {
-    if (strlen(customMsgConfig()->message[2]) == 0) {
+    if (strlen(pilotConfig()->message[2]) == 0) {
         strcpy(element->buff, "CUSTOM_MSG3");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_CUSTOM_MSG_LENGTH; i++) {
-            if (customMsgConfig()->message[2][i]) {
-                element->buff[i] = customMsgConfig()->message[2][i];
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        strncpy(element->buff, pilotConfig()->message[2], strlen(pilotConfig()->message[2]));
     }
 }
 

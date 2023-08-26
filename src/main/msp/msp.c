@@ -3943,7 +3943,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             const uint8_t textType = sbufReadU8(src);
 
             char* textVar;
-            const uint8_t textLength = MIN(MAX_NAME_LENGTH, sbufReadU8(src));
             switch (textType) {
                 case MSP2TEXT_PILOT_NAME:
                     textVar = pilotConfigMutable()->pilotName;
@@ -3963,27 +3962,19 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
                 case MSP2TEXT_CUSTOM_MSG:
                     {   //handle custom msg from msp
-                        char customRawMessage[MAX_CUSTOM_MSG_LENGTH*3];
-                        const uint8_t msgLength = MIN(MAX_CUSTOM_MSG_LENGTH*3, sbufReadU8(src));
-                        memset(customRawMessage, 0, msgLength);
+                        char customRawMessage[MAX_NAME_LENGTH*3] = {0};
+                        const uint8_t textLength = MIN(MAX_NAME_LENGTH*3, sbufReadU8(src));
+                        memset(customRawMessage, 0, textLength);
 
-                        for (unsigned int i = 0; i < msgLength; i++) {
+                        for (unsigned int i = 0; i < textLength; i++) {
                             customRawMessage[i] = sbufReadU8(src);
                         }
-
-                        uint8_t spliter_pos = 0;
-                        uint8_t msg_cnt = 0;
-                        uint8_t i = 0;
-                        for(msg_cnt = 0;msg_cnt < 3;msg_cnt++)
+                        
+                        unsigned int pointer_offset = 0;
+                        for(unsigned int msg_cnt = 0;msg_cnt < 3;msg_cnt++)
                         {
-                            for(i = spliter_pos;i < 20;i++)
-                            {
-                                if(customRawMessage[i] != CUSTOM_MSG_SPLITER)
-                                    customMsgConfigMutable()->message[msg_cnt][i-spliter_pos] = customRawMessage[i];
-                                else
-                                    break;
-                            }
-                            spliter_pos = i + 1;
+                            strncpy(pilotConfigMutable()->message[msg_cnt], customRawMessage + pointer_offset, MAX_NAME_LENGTH - 1);
+                            pointer_offset = pointer_offset + strlen(pilotConfigMutable()->message[msg_cnt]) + 1;
                         }
                     }
                     break;
@@ -3993,6 +3984,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             }
 
             if (textType != MSP2TEXT_CUSTOM_MSG) {
+                const uint8_t textLength = MIN(MAX_NAME_LENGTH, sbufReadU8(src));
                 memset(textVar, 0, strlen(textVar));
                 for (unsigned int i = 0; i < textLength; i++) {
                     textVar[i] = sbufReadU8(src);
