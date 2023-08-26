@@ -3972,7 +3972,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                         
                         unsigned int pointer_offset = 0;
                         for (unsigned int msg_cnt = 0; msg_cnt < 3; msg_cnt++) {
-                        {
                             strncpy(pilotConfigMutable()->message[msg_cnt], customRawMessage + pointer_offset, MAX_NAME_LENGTH - 1);
                             pointer_offset = pointer_offset + strlen(pilotConfigMutable()->message[msg_cnt]) + 1;
                         }
