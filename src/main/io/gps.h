@@ -34,6 +34,7 @@
 #define GPS_X 1
 #define GPS_Y 0
 #define GPS_MIN_SAT_COUNT 4      // number of sats to trigger low sat count sanity check
+#define GPS_EARTH_RADIUS 6371000 
 
 #ifdef USE_GPS_UBLOX
 typedef enum {
@@ -299,6 +300,11 @@ typedef struct gpsData_s {
 #endif
 } gpsData_t;
 
+typedef struct gpsRelativePos_s {
+    uint16_t lat;
+    uint16_t lon;
+} gpsRelativePos_t;
+
 extern int32_t GPS_home[2];
 extern uint16_t GPS_distanceToHome;             // distance to home point in meters
 extern uint32_t GPS_distanceToHomeCm;           // distance to home point in cm
@@ -314,6 +320,7 @@ typedef enum {
 
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
+extern gpsRelativePos_t gpsrelativePos;
 
 #define GPS_SV_MAXSATS_LEGACY   16U
 #define GPS_SV_MAXSATS_M8N      32U

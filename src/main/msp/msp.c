@@ -1050,6 +1050,9 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdConfig()->camera_frame_width);
         sbufWriteU8(dst, osdConfig()->camera_frame_height);
 
+        sbufWriteU8(dst, osdConfig()->camera_fov_h);
+        sbufWriteU8(dst, osdConfig()->camera_fov_v);
+
         break;
     }
 #endif // USE_OSD
@@ -4162,6 +4165,14 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                     osdConfigMutable()->camera_frame_width = sbufReadU8(src);
                     osdConfigMutable()->camera_frame_height = sbufReadU8(src);
                 }
+
+                if (sbufBytesRemaining(src) >= 2) {
+                    // API >= 1.46
+                    // OSD camera fov values
+                    osdConfigMutable()->camera_fov_h = sbufReadU8(src);
+                    osdConfigMutable()->camera_fov_v = sbufReadU8(src);
+                }
+
             } else if ((int8_t)addr == -2) {
                 // Timers
                 uint8_t index = sbufReadU8(src);

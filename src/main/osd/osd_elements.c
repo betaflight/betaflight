@@ -1040,6 +1040,12 @@ static void osdElementGpsFlightDistance(osdElementParms_t *element)
     }
 }
 
+int16_t osdGetBoundaryFromDisplay(uint8_t fov, int16_t error)
+{
+    const uint8_t fov2 = fov / 2;
+    return constrain(error, -fov2, fov2-1);
+}
+
 static void osdElementGpsHomeDirection(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
@@ -1051,6 +1057,34 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
                 direction = lrintf(gpsLapTimerData.dirToPoint * 0.1f); // Convert from centidegree to degree and round to nearest
             }
 #endif
+            if (osdConfig()->home_point_show) { // add on the HomeDirection Dynamic Home point
+                const int16_t center_x = osdConfig()->canvas_cols / 2;
+                const int16_t center_y = osdConfig()->canvas_rows / 2;
+                int16_t error_x = DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw);
+
+                error_x = (error_x + 540) % 360 - 180;
+
+                int16_t rollAngle = attitude.values.roll / 10.0;
+                if (abs(rollAngle) > 90) {
+                    rollAngle = (rollAngle < 0 ? -180 : 180) - rollAngle;
+                }
+                // roll angle project to x scale, project on the y position with factor for rollAngle (as more outside to the display for example at 45° roll angle as left/right have to be the projected point)
+                int16_t error_roll_x = cos_approx(rollAngle) * sin_approx(rollAngle) * rollAngle;
+                // roll angle project to y scale, project on the x position with factor for rollAngle (as more outside to the display for example at 45° roll angle as highter/lower have to be the projected point)
+                int16_t error_roll_y = sin_approx(rollAngle) * cos_approx(rollAngle) * rollAngle;
+
+                float poi_angle = RADIANS_TO_DEGREES(atan2_approx(- (getEstimatedAltitudeCm() / 100.0), GPS_distanceToHome));
+                int16_t pitchAngle = attitude.values.pitch / 10.0;
+                int16_t error_y = - pitchAngle - poi_angle + rxConfig()->fpvCamAngleDegrees;
+
+                float scaled_x = sin_approx(DEGREES_TO_RADIANS(osdGetBoundaryFromDisplay(osdConfig()->camera_fov_h, error_x + error_roll_x))) / sin_approx(DEGREES_TO_RADIANS(osdConfig()->camera_fov_h / 2));
+                int8_t poi_x = center_x + center_x * scaled_x;
+
+                float scaled_y = sin_approx(DEGREES_TO_RADIANS(osdGetBoundaryFromDisplay(osdConfig()->camera_fov_v, error_y + error_roll_y))) / sin_approx(DEGREES_TO_RADIANS(osdConfig()->camera_fov_v / 2));
+                int8_t poi_y = center_y + center_y * scaled_y;
+
+                osdDisplayWriteChar(element, poi_x, poi_y, DISPLAYPORT_SEVERITY_NORMAL, SYM_OVER_HOME);
+            }
             element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(direction - attitude.values.yaw));
         } else {
             element->buff[0] = SYM_OVER_HOME;

@@ -338,6 +338,7 @@ typedef enum {
 } ubloxStatePosition_e;
 
 baudRate_e initBaudRateIndex;
+gpsRelativePos_t gpsrelativePos;
 size_t initBaudRateCycleCount;
 static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_e msg_id, uint16_t length);
 
@@ -2629,11 +2630,36 @@ void GPS_calculateDistanceAndDirectionToHome(void)
         GPS_distanceToHome = dist / 100; // m
         GPS_distanceToHomeCm = dist; // cm
         GPS_directionToHome = dir / 10; // degrees * 10 or decidegrees
+        GPS_calculateRelativePositionEarthGround(&GPS_home[GPS_LATITUDE], &GPS_home[GPS_LONGITUDE], &gpsSol.llh.lat, &gpsSol.llh.lon, &relativePos);
     } else {
         // If we don't have home set, do not display anything
         GPS_distanceToHome = 0;
         GPS_distanceToHomeCm = 0;
         GPS_directionToHome = 0;
+    }
+}
+
+void GPS_calculateRelativePositionEarthGround(int32_t *homeLat, int32_t *homeLon, int32_t *targetLat, int32_t *targetLon, gpsRelativePos_t *gpsrelativePos) {
+{
+    if (STATE(GPS_FIX_HOME)) {
+        // Umrechnung von Grad in Bogenmaß
+        float homeLatRad = (*homeLat / 10000000.0) * M_PI / 180.0;
+        float homeLonRad = (*homeLon / 10000000.0) * M_PI / 180.0;
+        float targetLatRad = (*targetLat / 10000000.0) * M_PI / 180.0;
+        float targetLonRad = (*targetLon / 10000000.0) * M_PI / 180.0;
+
+        // Berechnung der relativen Position
+        float deltaLat = targetLatRad - homeLatRad;
+        float deltaLon = targetLonRad - homeLonRad;
+
+        // Berechnung der Entfernung in Metern
+        //float distance = GPS_EARTH_RADIUS * sqrt(deltaLat * deltaLat + deltaLon * deltaLon);
+
+        gpsrelativePos->lat = (uint16_t)(deltaLat * GPS_EARTH_RADIUS);
+        gpsrelativePos->lon = (uint16_t)(deltaLon * GPS_EARTH_RADIUS);
+    } else {
+        gpsrelativePos->lat = 0;
+        gpsrelativePos->lon = 0;
     }
 }
 

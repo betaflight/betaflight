@@ -404,6 +404,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
 
+    osdConfig->camera_fov_h = 138;
+    osdConfig->camera_fov_v = 75;
+    osdConfig->home_point_show = false;
+    
     osdConfig->stat_show_cell_value = false;
     osdConfig->framerate_hz = OSD_FRAMERATE_DEFAULT_HZ;
     osdConfig->cms_background_type = DISPLAY_BACKGROUND_TRANSPARENT;
