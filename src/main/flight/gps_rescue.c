@@ -583,7 +583,7 @@ static void sensorUpdate(void)
     DEBUG_SET(DEBUG_ATTITUDE, 4, rescueState.sensor.velocityToHomeCmS); // velocity to home
 
     // when there is a flyaway due to IMU disorientation, increase IMU yaw CoG gain, and reduce max pitch angle
-    if (gpsRescueConfig()->groundSpeed) {
+    if (gpsRescueConfig()->groundSpeedCmS) {
         // calculate a factor that can reduce pitch angle when flying away
         const float rescueGroundspeed = gpsRescueConfig()->imuYawGain * 100.0f; // in cm/s, imuYawGain is m/s groundspeed
         // rescueGroundspeed is effectively a normalising gain factor for the magnitude of the groundspeed error
@@ -703,7 +703,7 @@ void descend(void)
 
         // reduce target velocity as we get closer to home. Zero within 2m of home, reducing risk of overshooting.
         // if it does overshoot, allow pitch angle limit to build up to correct the overshoot once rotated
-        rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeed * proximityToLandingArea;
+        rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * proximityToLandingArea;
 
         // attenuate velocity iterm towards zero as we get closer to the landing area
         rescueState.intent.velocityItermAttenuator = fminf(proximityToLandingArea, rescueState.intent.velocityItermAttenuator);
@@ -840,7 +840,7 @@ void gpsRescueUpdate(void)
             rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
         }
-        initialVelocityLow = rescueState.sensor.velocityToHomeCmS < gpsRescueConfig()->groundSpeed; // used to set direction of velocity target change
+        initialVelocityLow = rescueState.sensor.velocityToHomeCmS < gpsRescueConfig()->groundSpeedCmS; // used to set direction of velocity target change
         rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
         break;
 
@@ -850,10 +850,10 @@ void gpsRescueUpdate(void)
         }
         // velocity PIDs are now active
         // update target velocity gradually, aiming for rescueGroundspeed with a time constant of 1.0s
-        const float targetVelocityError = gpsRescueConfig()->groundSpeed - rescueState.intent.targetVelocityCmS;
+        const float targetVelocityError = gpsRescueConfig()->groundSpeedCmS - rescueState.intent.targetVelocityCmS;
         const float velocityTargetStep = rescueState.sensor.gpsRescueTaskIntervalSeconds * targetVelocityError;
         // velocityTargetStep is positive when starting low, negative when starting high
-        const bool targetVelocityIsLow = rescueState.intent.targetVelocityCmS < gpsRescueConfig()->groundSpeed;
+        const bool targetVelocityIsLow = rescueState.intent.targetVelocityCmS < gpsRescueConfig()->groundSpeedCmS;
         if (initialVelocityLow == targetVelocityIsLow) {
             // also true if started faster than target velocity and target is still high
             rescueState.intent.targetVelocityCmS += velocityTargetStep;

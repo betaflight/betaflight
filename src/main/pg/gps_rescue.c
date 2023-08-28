@@ -39,7 +39,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .ascendRate = 750,          // cm/s, for altitude corrections on ascent
 
     .returnAltitudeM = 30,
-    .groundSpeed = 750,
+    .groundSpeedCmS = 750,
     .maxRescueAngle = 45,
     .rollMix = 150,
     .pitchCutoffHz = 75,
