@@ -1010,9 +1010,9 @@ void gpsConfigureNmea(void)
                 gpsData.state_position++;
                 gpsSetState(GPS_STATE_RECEIVING_DATA);
             }
-#else // !GP_NMEA_TX_ONLY
+#else // !GPS_NMEA_TX_ONLY
             gpsSetState(GPS_STATE_RECEIVING_DATA);
-#endif // !GP_NMEA_TX_ONLY
+#endif // !GPS_NMEA_TX_ONLY
             break;
     }
 }
