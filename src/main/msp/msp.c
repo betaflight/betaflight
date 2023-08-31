@@ -1545,9 +1545,9 @@ case MSP_NAME:
 #ifdef USE_GPS_RESCUE
     case MSP_GPS_RESCUE:
         sbufWriteU16(dst, gpsRescueConfig()->maxRescueAngle);
-        sbufWriteU16(dst, gpsRescueConfig()->initialAltitudeM);
+        sbufWriteU16(dst, gpsRescueConfig()->returnAltitudeM);
         sbufWriteU16(dst, gpsRescueConfig()->descentDistanceM);
-        sbufWriteU16(dst, gpsRescueConfig()->rescueGroundspeed);
+        sbufWriteU16(dst, gpsRescueConfig()->groundSpeedCmS);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMin);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
         sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
@@ -1560,7 +1560,9 @@ case MSP_NAME:
         sbufWriteU8(dst, gpsRescueConfig()->allowArmingWithoutFix);
         sbufWriteU8(dst, gpsRescueConfig()->altitudeMode);
         // Added in API version 1.44
-        sbufWriteU16(dst, gpsRescueConfig()->minRescueDth);
+        sbufWriteU16(dst, gpsRescueConfig()->minStartDistM);
+        // Added in API version 1.46
+        sbufWriteU16(dst, gpsRescueConfig()->initialClimbM);
         break;
 
     case MSP_GPS_RESCUE_PIDS:
@@ -2823,11 +2825,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
 #ifdef USE_GPS_RESCUE
-        case MSP_SET_GPS_RESCUE:
+    case MSP_SET_GPS_RESCUE:
         gpsRescueConfigMutable()->maxRescueAngle = sbufReadU16(src);
-        gpsRescueConfigMutable()->initialAltitudeM = sbufReadU16(src);
+        gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16(src);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
-        gpsRescueConfigMutable()->rescueGroundspeed = sbufReadU16(src);
+        gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMin = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMax = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleHover = sbufReadU16(src);
@@ -2842,7 +2844,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         if (sbufBytesRemaining(src) >= 2) {
             // Added in API version 1.44
-            gpsRescueConfigMutable()->minRescueDth = sbufReadU16(src);
+            gpsRescueConfigMutable()->minStartDistM = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            // Added in API version 1.46
+            gpsRescueConfigMutable()->initialClimbM = sbufReadU16(src);
         }
         break;
 
