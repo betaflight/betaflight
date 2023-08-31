@@ -268,6 +268,7 @@ static void rescueAttainPosition(void)
     throttleD *= rescueState.intent.throttleDMultiplier;
     // apply user's throttle D gain
     throttleD *= gpsRescueConfig()->throttleD;
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 6, lrintf(throttleD)); // throttle D before lowpass smoothing
     // smooth
     throttleD = pt2FilterApply(&throttleDLpf, throttleD);
 
@@ -282,8 +283,13 @@ static void rescueAttainPosition(void)
 
     rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
     rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
+
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, lrintf(throttleP));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, lrintf(throttleD));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 4, lrintf(throttleI));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 5, lrintf(tiltAdjustment));     // factor that adjusts throttle based on tilt angle
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 7, lrintf(throttleAdjustment)); // pidSum; amount to add/subtract from hover throttle value
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(rescueThrottle));         // throttle value to use during a rescue
 
     /**
         Heading / yaw controller
@@ -315,6 +321,11 @@ static void rescueAttainPosition(void)
 
     rescueYaw *= GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     // rescueYaw is the yaw rate in deg/s to correct the heading error
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 5, rollMixAttenuator);          // 0-1 to suppress roll adjustments at higher yaw rates
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 6, gpsRescueAngle[AI_ROLL]);    // roll added in degrees*100
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 7, rescueYaw);                  // the yaw rate in deg/s to correct a yaw error
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, gpsRescueAngle[AI_ROLL]);  // roll added in degrees*100
 
     /**
         Pitch / velocity controller
@@ -350,7 +361,7 @@ static void rescueAttainPosition(void)
         float velocityD = ((velocityError - previousVelocityError) / sampleIntervalNormaliseFactor);
         previousVelocityError = velocityError;
         velocityD *= gpsRescueConfig()->velD;
-
+        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 5, lrintf(velocityD)); // velocity D before lowpass smoothing
         // smooth the D steps
         const float cutoffHz = rescueState.intent.velocityPidCutoff * rescueState.intent.velocityPidCutoffModifier;
         // note that this cutoff is increased up to 2x as we get closer to landing point in descend()
@@ -366,6 +377,9 @@ static void rescueAttainPosition(void)
         // it gets added to the normal level mode Pitch adjustments in pid.c
         DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, lrintf(velocityP));
         DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, lrintf(velocityD));
+        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 4, lrintf(velocityI));
+        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 6, lrintf(rescueState.intent.velocityItermRelax)); // factor attenuates velocity iTerm by multiplication
+        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 7, lrintf(pitchAdjustment)); // rescue pitch angle in degrees * 100
     }
 
     // if initiated too close, and in the climb phase, pitch forward in whatever direction the nose is oriented until min distance away
@@ -380,8 +394,8 @@ static void rescueAttainPosition(void)
     gpsRescueAngle[AI_PITCH] = pitchAdjustmentFiltered;
     // this angle gets added to the normal pitch Angle Mode control values in pid.c - will be seen in pitch setpoint
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVelocityCmS));
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVelocityCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVelocityCmS)); // target velocity to home
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVelocityCmS)); // target velocity to home
 }
 
 static void performSanityChecks(void)
@@ -541,11 +555,10 @@ static void sensorUpdate(void)
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueState.sensor.currentAltitudeCm));
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS); // groundspeed cm/s
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse); // degrees * 10
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw); // degrees * 10
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome); // degrees * 10
-
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS);  // groundspeed cm/s
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);                // degrees * 10
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);                // degrees * 10
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome); // computed from current GPS position in relation to home
     rescueState.sensor.healthy = gpsIsHealthy();
 
     if (rescueState.phase == RESCUE_LANDING) {
@@ -554,7 +567,7 @@ static void sensorUpdate(void)
         // Note: subtracting 1G from Z assumes the quad is 'flat' with respect to the horizon.  A true non-gravity acceleration value, regardless of attitude, may be better.
     }
 
-    rescueState.sensor.directionToHome = GPS_directionToHome;
+    rescueState.sensor.directionToHome = GPS_directionToHome; // extern value from gps.c using current position relative to home
     rescueState.sensor.errorAngle = (attitude.values.yaw - rescueState.sensor.directionToHome) / 10.0f;
     // both attitude and direction are in degrees * 10, errorAngle is degrees
     if (rescueState.sensor.errorAngle <= -180) {
@@ -563,6 +576,9 @@ static void sensorUpdate(void)
         rescueState.sensor.errorAngle -= 360;
     }
     rescueState.sensor.absErrorAngle = fabsf(rescueState.sensor.errorAngle);
+    
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(attitude.values.yaw));                 // estimated heading of the quad (direction nose is pointing in)
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.directionToHome));  // angle to home derived from GPS location and home position
 
     if (!newGPSData) {
         return;
