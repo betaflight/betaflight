@@ -266,6 +266,9 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf);  // BF->EF
         mag_ef.z = 0.0f;                // project to XY plane (optimized away)
 
+//        float magHeadingDeg = RADIANS_TO_DEGREES(-atan2f(mag_ef.y, mag_ef.x)); // heading in degrees
+        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, (RADIANS_TO_DEGREES(-atan2f(mag_ef.y, mag_ef.x))) * 10);  // mag heading in degrees * 10
+
         fpVector2_t north_ef = {{ 1.0f, 0.0f }};
         // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
         // increase gain on large misalignment
