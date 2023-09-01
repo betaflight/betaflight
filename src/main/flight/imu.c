@@ -252,8 +252,21 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 #ifdef USE_MAG
     // Use measured magnetic field vector
     fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
-    float recipMagNorm = vectorNormSquared(&mag_bf);
-    if (useMag && recipMagNorm > 0.01f) {
+    fpMat33_t rMatYTrans, rMatPR;
+    // Using negative angle yields transposed rotation matrix
+    yawToRotationMatrixZ(&rMatYTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
+    // rMat = rMatZ(Yaw) * rMatY(Pitch) * rMatX(Roll) = rMatY * rMatPR <->
+    // rMatPR = rMatTrans * rMat
+    matrixMatrixMul(&rMatPR, &rMatYTrans, (const fpMat33_t*)&rMat);
+    fpVector3_t mag_ef_yawed;
+    matrixVectorMul(&mag_ef_yawed, &rMatPR, &mag_bf);  // BF->yawed EF
+    int16_t magYawDeciDegrees = (RADIANS_TO_DEGREES(atan2f(mag_ef_yawed.y, mag_ef_yawed.x))) * 10.0;
+    if (magYawDeciDegrees < 0) {
+        magYawDeciDegrees += 3600;
+    }
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYawDeciDegrees);  // mag heading in degrees * 10
+    float magNormSquared = vectorNormSquared(&mag_bf);
+    if (useMag && magNormSquared > 0.01f) {
         // Normalise magnetometer measurement
         vectorNormalize(&mag_bf, &mag_bf);
 
@@ -265,9 +278,6 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         fpVector3_t mag_ef;
         matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf);  // BF->EF
         mag_ef.z = 0.0f;                // project to XY plane (optimized away)
-
-//        float magHeadingDeg = RADIANS_TO_DEGREES(-atan2f(mag_ef.y, mag_ef.x)); // heading in degrees
-        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, (RADIANS_TO_DEGREES(-atan2f(mag_ef.y, mag_ef.x))) * 10);  // mag heading in degrees * 10
 
         fpVector2_t north_ef = {{ 1.0f, 0.0f }};
         // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
