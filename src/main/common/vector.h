@@ -121,24 +121,6 @@ static inline fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_
     return result;
 }
 
-static inline fpMat33_t * matrixMatrixMul(fpMat33_t * result, const fpMat33_t * matA, const fpMat33_t * matB)
-{
-    fpMat33_t r;
-
-    r.m[0][0] = matA->m[0][0] * matB->m[0][0] + matA->m[0][1] * matB->m[1][0] + matA->m[0][2] * matB->m[2][0];
-    r.m[1][0] = matA->m[1][0] * matB->m[0][0] + matA->m[1][1] * matB->m[1][0] + matA->m[1][2] * matB->m[2][0];
-    r.m[2][0] = matA->m[2][0] * matB->m[0][0] + matA->m[2][1] * matB->m[1][0] + matA->m[2][2] * matB->m[2][0];
-    r.m[0][1] = matA->m[0][0] * matB->m[0][1] + matA->m[0][1] * matB->m[1][1] + matA->m[0][2] * matB->m[2][1];
-    r.m[1][1] = matA->m[1][0] * matB->m[0][1] + matA->m[1][1] * matB->m[1][1] + matA->m[1][2] * matB->m[2][1];
-    r.m[2][1] = matA->m[2][0] * matB->m[0][1] + matA->m[2][1] * matB->m[1][1] + matA->m[2][2] * matB->m[2][1];
-    r.m[0][2] = matA->m[0][0] * matB->m[0][2] + matA->m[0][1] * matB->m[1][2] + matA->m[0][2] * matB->m[2][2];
-    r.m[1][2] = matA->m[1][0] * matB->m[0][2] + matA->m[1][1] * matB->m[1][2] + matA->m[1][2] * matB->m[2][2];
-    r.m[2][2] = matA->m[2][0] * matB->m[0][2] + matA->m[2][1] * matB->m[1][2] + matA->m[2][2] * matB->m[2][2];
-
-    *result = r;
-    return result;
-}
-
 static inline fpMat33_t * yawToRotationMatrixZ(fpMat33_t * result, const float yaw)
 {
     fpMat33_t r;
