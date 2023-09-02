@@ -252,31 +252,28 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 #ifdef USE_MAG
     // Use measured magnetic field vector
     fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
-    fpMat33_t rMatYTrans, rMatPR;
-    // Using negative angle yields transposed rotation matrix
-    yawToRotationMatrixZ(&rMatYTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
-    // rMat = rMatZ(Yaw) * rMatY(Pitch) * rMatX(Roll) = rMatY * rMatPR <->
-    // rMatPR = rMatTrans * rMat
-    matrixMatrixMul(&rMatPR, &rMatYTrans, (const fpMat33_t*)&rMat);
-    fpVector3_t mag_ef_yawed;
-    matrixVectorMul(&mag_ef_yawed, &rMatPR, &mag_bf);  // BF->yawed EF
-    int16_t magYawDeciDegrees = (RADIANS_TO_DEGREES(atan2f(mag_ef_yawed.y, mag_ef_yawed.x))) * 10.0;
-    if (magYawDeciDegrees < 0) {
-        magYawDeciDegrees += 3600;
-    }
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYawDeciDegrees);  // mag heading in degrees * 10
     float magNormSquared = vectorNormSquared(&mag_bf);
+    fpVector3_t mag_ef;
+    matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf);  // BF->EF
+    fpMat33_t rMatYTrans;
+    yawToRotationMatrixZ(&rMatYTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
+    fpVector3_t mag_ef_yawed;
+    matrixVectorMul(&mag_ef_yawed, &rMatYTrans, &mag_ef);        // EF->EF yawed
+    // Magnetic yaw is the angle between magnetic north and the X axis of the body frame
+    int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
+    if (magYaw < 0) {
+        magYaw += 3600;
+    }
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw);   // mag heading in degrees * 10
     if (useMag && magNormSquared > 0.01f) {
         // Normalise magnetometer measurement
-        vectorNormalize(&mag_bf, &mag_bf);
+        vectorNormalize(&mag_ef, &mag_ef);
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles
 
         // (hx; hy; 0) - measured mag field vector in EF (forcing Z-component to zero)
         // (bx; 0; 0) - reference mag field vector heading due North in EF (assuming Z-component is zero)
-        fpVector3_t mag_ef;
-        matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf);  // BF->EF
         mag_ef.z = 0.0f;                // project to XY plane (optimized away)
 
         fpVector2_t north_ef = {{ 1.0f, 0.0f }};
