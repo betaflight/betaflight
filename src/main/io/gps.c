@@ -101,17 +101,15 @@ typedef struct gpsInitData_s {
     uint8_t index;
     uint8_t baudrateIndex; // see baudRate_e
     const char *ubx;
-    const char *mtk;
 } gpsInitData_t;
 
-// NMEA will cycle through these until valid data is received
+// UBX will cycle through these until valid data is received
 static const gpsInitData_t gpsInitData[] = {
-    { GPS_BAUDRATE_115200,   BAUD_115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n", "$PMTK251,115200*1F\r\n" },
-    { GPS_BAUDRATE_57600,    BAUD_57600,  "$PUBX,41,1,0003,0001,57600,0*2D\r\n",  "$PMTK251,57600*2C\r\n" },
-    { GPS_BAUDRATE_38400,    BAUD_38400,  "$PUBX,41,1,0003,0001,38400,0*26\r\n",  "$PMTK251,38400*27\r\n" },
-    { GPS_BAUDRATE_19200,    BAUD_19200,  "$PUBX,41,1,0003,0001,19200,0*23\r\n",  "$PMTK251,19200*22\r\n" },
-    // 9600 is not enough for 5Hz updates - leave for compatibility to dumb NMEA that only runs at this speed
-    { GPS_BAUDRATE_9600,     BAUD_9600,   "$PUBX,41,1,0003,0001,9600,0*16\r\n",   "" }
+    { GPS_BAUDRATE_115200,   BAUD_115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n" },
+    { GPS_BAUDRATE_57600,    BAUD_57600,  "$PUBX,41,1,0003,0001,57600,0*2D\r\n" },
+    { GPS_BAUDRATE_38400,    BAUD_38400,  "$PUBX,41,1,0003,0001,38400,0*26\r\n" },
+    { GPS_BAUDRATE_19200,    BAUD_19200,  "$PUBX,41,1,0003,0001,19200,0*23\r\n" },
+    { GPS_BAUDRATE_9600,     BAUD_9600,   "$PUBX,41,1,0003,0001,9600,0*16\r\n" }
 };
 
 #define GPS_INIT_DATA_ENTRY_COUNT ARRAYLEN(gpsInitData)
@@ -339,8 +337,6 @@ typedef enum {
 
 baudRate_e initBaudRateIndex;
 size_t initBaudRateCycleCount;
-static void ubloxSendClassMessage(ubxProtocolBytes_e class_id, ubxProtocolBytes_e msg_id, uint16_t length);
-
 #endif // USE_GPS_UBLOX
 
 gpsData_t gpsData;
@@ -953,111 +949,57 @@ void setSatInfoMessageRate(uint8_t divisor)
 #ifdef USE_GPS_NMEA
 void gpsConfigureNmea(void)
 {
-    static bool atgmRestartDone = false;
-#if !defined(GPS_NMEA_TX_ONLY)
-#endif
+    // minimal support for NMEA, we only:
+    // - set the FC's GPS port to the user's configured rate, and 
+    // - send any NMEA custom commands to the GPS Module
+    // the user must configure the power-up baud rate of the module to be fast enough for their data rate
+    // Note: we always parse all incoming NMEA messages
     DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));
+
+    // wait 500ms between changes
+    if (cmp32(gpsData.now, gpsData.state_ts) < 500) {
+        return;
+    }
+    gpsData.state_ts = gpsData.now;
+
+    // Check that the GPS transmit buffer is empty
+    if (!isSerialTransmitBufferEmpty(gpsPort)) {
+        return;
+    }
+
     switch (gpsData.state) {
+
         case GPS_STATE_DETECT_BAUD:
-#if !defined(GPS_NMEA_TX_ONLY)
-            if (cmp32(gpsData.now, gpsData.state_ts) < 1000) {
-                return;
-            }
-            gpsData.state_ts = gpsData.now;
-            switch (gpsData.state_position) {
-                case 0: // first run after bootup
-                    serialSetBaudRate(gpsPort, 4800);
-                    gpsData.state_position++;
-                    break;
-                case 1: // second run
-                    // print the init string for the baudrate we want to be at
-                    serialPrint(gpsPort, "$PSRF100,1,115200,8,1,0*05\r\n");
-                    gpsData.state_position++;
-                    break;
-                default: 
-                    // we're now (hopefully) at the correct rate, next state should switch to it
-                    // TO DO: Check that this actually works, it seems broken at present
-                    gpsData.state_position = 0;
-                    gpsSetState(GPS_STATE_CHANGE_BAUD);
-                    break;
-            }
+            // no attempt to read the baud rate of the GPS module, or change it
+            gpsSetState(GPS_STATE_CHANGE_BAUD);
             break;
-#endif
+
         case GPS_STATE_CHANGE_BAUD:
 #if !defined(GPS_NMEA_TX_ONLY)
-            // wait a short time between sending commands
-            // note that no commands are sent to request the packets we need
-            if (cmp32(gpsData.now, gpsData.state_ts) < 500) {
-                return;
-            }
-            gpsData.state_ts = gpsData.now;
-
-            if (gpsData.state_position < 1) { // first run after boot up 
+            if (gpsData.state_position < 1) {
+                // set the FC's baud rate to the user's configured baud rate
                 serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
                 gpsData.state_position++;
             } else if (gpsData.state_position < 2) {
-                // *** this message also appears to fail ***//
-                // NMEA reports back at whatever speed the module is configured to send at, not 5Hz
-                serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n"); // set GGA rate to 5Hz
-                gpsData.state_position++;
-            } else if (gpsData.state_position < 3) {
-                // special initialization for NMEA ATGM336 and similar GPS recivers - should be done only once
-                if (!atgmRestartDone) {
-                    atgmRestartDone = true;
-                    serialPrint(gpsPort, "$PCAS02,100*1E\r\n");  // 10Hz refresh rate
-                    serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart
-                }
-                gpsData.state_position++;
-            } else if (gpsData.state_position < 4) {
-#ifdef USE_GPS_UBLOX
-                // try to disable UBlox NAV-PVT and NAV-SAT, using ValSet, to which M9 or above should respond
-                ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_PVT_UART1, 0);
-                ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_UART1, 0);
-#endif
-                gpsData.state_position++;
-            } else if (gpsData.state_position < 5) {
-#ifdef USE_GPS_UBLOX
-                // try to disable UBX NAV-PVT, NAV-SAT and NAV_SVINFO, to which M7 and M8 should respond
-                ubloxSetMessageRate(CLASS_NAV, MSG_NAV_PVT, 0);
-                ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SAT, 0);
-                ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SVINFO, 0);
-#endif
-                gpsData.state_position++;
-            } else if (gpsData.state_position < 6) {
-                if (!(isConfiguratorConnected())) {
-                    // disable GSV MESSAGES
-                    // *** THIS COMMAND FAILS TO DISABLE GSV MESSAGES WHEN SENT ****
-                    // bug?? why??
-                    serialPrint(gpsPort, "$PSRF103,03,00,00,01*27\r\n");  // disable GSV (Sat info) messages
-                    // *** BUT THE UBLOX EQUIVALENT WORKS ****
-                    // so I'll send both for now...
-                    ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_GSV, 0);
-                    }
-                gpsData.state_position++;
-            } else if (gpsData.state_position < 7) {
-                // NMEA custom commands after ATGM336 initialization
+                // send NMEA custom commands to select which messages being sent, data rate etc
+                // use PUBX, MTK, SiRF or GTK format commands, depending on module type
                 static int commandOffset = 0;
                 const char *commands = gpsConfig()->nmeaCustomCommands;
                 const char *cmd = commands + commandOffset;
-
                 // skip leading whitespaces and get first command length
                 int commandLen;
                 while (*cmd && (commandLen = strcspn(cmd, " \0")) == 0) {
                     cmd++;  // skip separators
                 }
-
                 if (*cmd) {
                     // Send the current command to the GPS
                     serialWriteBuf(gpsPort, (uint8_t *)cmd, commandLen);
                     serialWriteBuf(gpsPort, (uint8_t *)"\r\n", 2);
-
                     // Move to the next command
                     cmd += commandLen;
                 }
-
                 // skip trailing whitespaces
                 while (*cmd && strcspn(cmd, " \0") == 0) cmd++;
-
                 if (*cmd) {
                     // more commands to send
                     commandOffset = cmd - commands;
@@ -1065,14 +1007,13 @@ void gpsConfigureNmea(void)
                     gpsData.state_position++;
                     commandOffset = 0;
                 }
-            } else
-#else
-            {
-                serialSetBaudRate (gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
+                gpsData.state_position++;
+                gpsSetState(GPS_STATE_RECEIVING_DATA);
             }
-#endif
+#else // !GPS_NMEA_TX_ONLY
             gpsSetState(GPS_STATE_RECEIVING_DATA);
-        break;
+#endif // !GPS_NMEA_TX_ONLY
+            break;
     }
 }
 #endif // USE_GPS_NMEA
