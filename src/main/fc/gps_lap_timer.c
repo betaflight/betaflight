@@ -120,6 +120,7 @@ void gpsLapTimerNewGpsData(void)
                 // Not the first time through the gate
                 if (gpsLapTimerData.timerRunning) {
                     uint32_t lapTime = minDistanceTime - gpsLapTimerData.timeOfLastLap;
+                    gpsLapTimerData.numberOfLapsRecorded++;
 
                     // Update best lap time
                     if (gpsLapTimerData.numberOfLapsRecorded >= 1 && (lapTime < gpsLapTimerData.bestLapTime || gpsLapTimerData.bestLapTime == 0)) {
