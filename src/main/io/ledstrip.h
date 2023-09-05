@@ -28,6 +28,8 @@
 
 #include "pg/pg.h"
 
+#define TASK_LEDSTRIP_RATE_HZ 100
+
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6
 #define LED_DIRECTION_COUNT             6
@@ -176,8 +178,8 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_beacon_armed_only;
     colorId_e ledstrip_visual_beeper_color;
     uint8_t ledstrip_brightness;
-    uint8_t ledstrip_rainbow_delta;
-    uint8_t ledstrip_rainbow_freq;
+    uint16_t ledstrip_rainbow_delta;
+    uint16_t ledstrip_rainbow_freq;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
