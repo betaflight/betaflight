@@ -779,28 +779,13 @@ static void osdElementCompassBar(osdElementParms_t *element)
 }
 
 //display custom message from MSPv2
-static void osdElementCustomMsg1(osdElementParms_t *element)
+static void osdElementCustomMsg(osdElementParms_t *element)
 {
-    if (strlen(pilotConfig()->message[0]) == 0) {
-        strcpy(element->buff, "CUSTOM_MSG1");
+    unsigned msgIndex = element->item - OSD_CUSTOM_MSG1;
+    if (strlen(pilotConfig()->message[msgIndex]) == 0) {
+        tfp_sprintf(element->buff, "CUSTOM_MSG%d", msgIndex + 1);
     } else {
-        strncpy(element->buff, pilotConfig()->message[0], strlen(pilotConfig()->message[0]));
-    }
-}
-static void osdElementCustomMsg2(osdElementParms_t *element)
-{
-    if (strlen(pilotConfig()->message[1]) == 0) {
-        strcpy(element->buff, "CUSTOM_MSG2");
-    } else {
-        strncpy(element->buff, pilotConfig()->message[1], strlen(pilotConfig()->message[1]));
-    }
-}
-static void osdElementCustomMsg3(osdElementParms_t *element)
-{
-    if (strlen(pilotConfig()->message[2]) == 0) {
-        strcpy(element->buff, "CUSTOM_MSG3");
-    } else {
-        strncpy(element->buff, pilotConfig()->message[2], strlen(pilotConfig()->message[2]));
+        strncpy(element->buff, pilotConfig()->message[msgIndex], MAX_NAME_LENGTH-1);
     }
 }
 
@@ -1744,6 +1729,11 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_CUSTOM_MSG1,
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
+    OSD_CUSTOM_MSG4,
+    OSD_CUSTOM_MSG5,
+    OSD_CUSTOM_MSG6,
+    OSD_CUSTOM_MSG7,
+    OSD_CUSTOM_MSG8,
     OSD_ALTITUDE,
     OSD_ROLL_PIDS,
     OSD_PITCH_PIDS,
@@ -1839,9 +1829,14 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_ITEM_TIMER_2]            = osdElementTimer,
     [OSD_FLYMODE]                 = osdElementFlymode,
     [OSD_CRAFT_NAME]              = NULL,  // only has background
-    [OSD_CUSTOM_MSG1]              = osdElementCustomMsg1,
-    [OSD_CUSTOM_MSG2]              = osdElementCustomMsg2,
-    [OSD_CUSTOM_MSG3]              = osdElementCustomMsg3,
+    [OSD_CUSTOM_MSG1]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG2]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG3]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG4]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG5]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG6]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG7]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG8]              = osdElementCustomMsg,
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
 #ifdef USE_VTX_COMMON
     [OSD_VTX_CHANNEL]             = osdElementVtxChannel,
