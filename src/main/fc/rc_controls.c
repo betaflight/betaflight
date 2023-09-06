@@ -271,14 +271,17 @@ void processRcStickPositions(void)
     case THR_LO + YAW_LO + PIT_CE + ROL_LO:
         // ROLL left -> PID profile 1
         changePidProfile(0);
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
         return;
     case THR_LO + YAW_LO + PIT_HI + ROL_CE:
         // PITCH up -> PID profile 2
         changePidProfile(1);
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
         return;
     case THR_LO + YAW_LO + PIT_CE + ROL_HI:
         // ROLL right -> PID profile 3
         changePidProfile(2);
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
         return;
     }
 
@@ -351,15 +354,19 @@ void processRcStickPositions(void)
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
             changeControlRateProfile(0);
+            beeper(BEEPER_CONFIRM_STICK_COMMANDS);
             return;
         case THR_HI + YAW_CE + PIT_LO + ROL_CE:
             changeControlRateProfile(1);
+            beeper(BEEPER_CONFIRM_STICK_COMMANDS);
             return;
         case THR_HI + YAW_CE + PIT_CE + ROL_HI:
             changeControlRateProfile(2);
+            beeper(BEEPER_CONFIRM_STICK_COMMANDS);
             return;
         case THR_HI + YAW_CE + PIT_CE + ROL_LO:
             changeControlRateProfile(3);
+            beeper(BEEPER_CONFIRM_STICK_COMMANDS);
             return;
         }
     }
@@ -367,25 +374,31 @@ void processRcStickPositions(void)
 #ifdef USE_DASHBOARD
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {
         dashboardDisablePageCycling();
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
     }
 
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_HI) {
         dashboardEnablePageCycling();
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
     }
 #endif
 
 #ifdef USE_VTX_CONTROL
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
         vtxIncrementBand();
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
     }
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_LO) {
         vtxDecrementBand();
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
     }
     if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_HI) {
         vtxIncrementChannel();
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
     }
     if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_LO) {
         vtxDecrementChannel();
+        beeper(BEEPER_CONFIRM_STICK_COMMANDS);
     }
 #endif
 
