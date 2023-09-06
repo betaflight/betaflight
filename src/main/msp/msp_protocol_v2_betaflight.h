@@ -36,3 +36,4 @@
 #define MSP2TEXT_RATE_PROFILE_NAME               4
 #define MSP2TEXT_BUILDKEY                        5
 #define MSP2TEXT_RELEASENAME                     6
+#define MSP2TEXT_CUSTOM_MSG                      7  //add for msp set custom message
