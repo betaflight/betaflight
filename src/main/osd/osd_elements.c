@@ -1831,15 +1831,15 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_ITEM_TIMER_2]            = osdElementTimer,
     [OSD_FLYMODE]                 = osdElementFlymode,
     [OSD_CRAFT_NAME]              = NULL,  // only has background
-    [OSD_CUSTOM_MSG0]              = osdElementCustomMsg,
-    [OSD_CUSTOM_MSG1]              = osdElementCustomMsg,
-    [OSD_CUSTOM_MSG2]              = osdElementCustomMsg,
-    [OSD_CUSTOM_MSG3]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG0]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG1]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG2]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG3]             = osdElementCustomMsg,
 #if OSD_CUSTOM_MSG_COUNT > 4   
-    [OSD_CUSTOM_MSG4]              = osdElementCustomMsg,
-    [OSD_CUSTOM_MSG5]              = osdElementCustomMsg,
-    [OSD_CUSTOM_MSG6]              = osdElementCustomMsg,
-    [OSD_CUSTOM_MSG7]              = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG4]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG5]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG6]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG7]             = osdElementCustomMsg,
 #endif
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
 #ifdef USE_VTX_COMMON
