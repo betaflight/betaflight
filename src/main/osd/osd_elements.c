@@ -781,7 +781,7 @@ static void osdElementCompassBar(osdElementParms_t *element)
 //display custom message from MSPv2
 static void osdElementCustomMsg(osdElementParms_t *element)
 {
-    int8_t msgIndex = element->item - OSD_CUSTOM_MSG0;
+    int msgIndex = element->item - OSD_CUSTOM_MSG0;
     if (msgIndex < 0 || msgIndex >= OSD_CUSTOM_MSG_COUNT || pilotConfig()->message[msgIndex][0] == '\0'){
         tfp_sprintf(element->buff, "CUSTOM_MSG%d", msgIndex + 1);
     } else {
