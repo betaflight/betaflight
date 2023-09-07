@@ -3983,7 +3983,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 case MSP2TEXT_CUSTOM_MSG_0 + 7:
                     {
                         unsigned msgIdx = textType - MSP2TEXT_CUSTOM_MSG_0;
-                        textVar = pilotConfigMutable()->message[msgIdx];
+                        if (msgIdx < OSD_CUSTOM_MSG_COUNT) {
+                            textVar = pilotConfigMutable()->message[msgIdx];
+                        } else {
+                             return MSP_RESULT_ERROR;
+                        }
                     }
                     break;
 
