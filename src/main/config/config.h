@@ -26,6 +26,7 @@
 #include "pg/pg.h"
 
 #define MAX_NAME_LENGTH 16u
+#define OSD_CUSTOM_MSG_COUNT 4
 
 typedef enum {
     CONFIGURATION_STATE_DEFAULTS_BARE = 0,
@@ -36,7 +37,7 @@ typedef enum {
 typedef struct pilotConfig_s {
     char craftName[MAX_NAME_LENGTH + 1];
     char pilotName[MAX_NAME_LENGTH + 1];
-    char message[8][MAX_NAME_LENGTH + 1];
+    char message[OSD_CUSTOM_MSG_COUNT][MAX_NAME_LENGTH + 1];
 } pilotConfig_t;
 
 PG_DECLARE(pilotConfig_t, pilotConfig);
