@@ -3986,7 +3986,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                         if (msgIdx < OSD_CUSTOM_MSG_COUNT) {
                             textVar = pilotConfigMutable()->message[msgIdx];
                         } else {
-                             return MSP_RESULT_ERROR;
+                            return MSP_RESULT_ERROR;
                         }
                     }
                     break;
