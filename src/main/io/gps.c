@@ -1355,10 +1355,29 @@ void gpsUpdate(timeUs_t currentTimeUs)
             isFast = false;
             rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
         }
-    } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
-        gpsSetState(GPS_STATE_RECEIVING_DATA);
-        onGpsNewData();
-        GPS_update &= ~GPS_MSP_UPDATE;
+    } else if (gpsConfig()->provider == GPS_MSP) {
+        if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+            if (gpsData.state == GPS_STATE_INITIALIZED) {
+                gpsSetState(GPS_STATE_RECEIVING_DATA);
+            }
+
+            // Data is available
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
+            gpsData.lastNavMessage = gpsData.now;
+            sensorsSet(SENSOR_GPS);
+
+            GPS_update ^= GPS_DIRECT_TICK;
+
+            onGpsNewData();
+
+            GPS_update &= ~GPS_MSP_UPDATE;
+        } else {
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+            // check for no data/gps timeout/cable disconnection etc
+            if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
+                gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+            }
+        }
     }
 
     switch (gpsData.state) {
@@ -1382,11 +1401,13 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_STATE_RECEIVING_DATA:
 #ifdef USE_GPS_UBLOX
-            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
-                // when we are connected up, and get a 3D fix, enable the 'flight' fix model
-                if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
-                    gpsData.ubloxUsingFlightModel = true;
-                    ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
+            if (gpsConfig()->provider != GPS_MSP) {
+                if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
+                    // when we are connected up, and get a 3D fix, enable the 'flight' fix model
+                    if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
+                        gpsData.ubloxUsingFlightModel = true;
+                        ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
+                    }
                 }
             }
 #endif
@@ -1434,14 +1455,14 @@ void gpsUpdate(timeUs_t currentTimeUs)
     schedulerSetNextStateTime(gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT);
 
     DEBUG_SET(DEBUG_GPS_CONNECTION, 5, executeTimeUs);
-//    keeping temporarily, to be used when debugging the sheduler stuff
+//    keeping temporarily, to be used when debugging the scheduler stuff
 //    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, (gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT));
 }
 
 static void gpsNewData(uint16_t c)
 {
     DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);
-   if (!gpsNewFrame(c)) {
+    if (!gpsNewFrame(c)) {
         // no new nav solution data
         return;
     }
