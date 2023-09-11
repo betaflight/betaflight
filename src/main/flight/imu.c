@@ -31,6 +31,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/vector.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -99,6 +100,7 @@ static float smallAngleCosZ = 0;
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 float rMat[3][3];
+static fpVector2_t north_ef;
 
 #if defined(USE_ACC)
 STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
@@ -171,8 +173,8 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
     const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->imu_magnetic_declination_deci_degrees / 10.0f);
-    imuRuntimeConfig.north_ef.x = cos_approx(imuMagneticDeclinationRad);
-    imuRuntimeConfig.north_ef.y = -sin_approx(imuMagneticDeclinationRad);
+    north_ef.x = cos_approx(imuMagneticDeclinationRad);
+    north_ef.y = -sin_approx(imuMagneticDeclinationRad);
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
@@ -287,8 +289,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
         // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
         // increase gain on large misalignment
-        const float dot = vector2Dot((fpVector2_t*)&mag_ef, &imuRuntimeConfig.north_ef);
-        const float cross = vector2Cross((fpVector2_t*)&mag_ef, &imuRuntimeConfig.north_ef);
+        const float dot = vector2Dot((fpVector2_t*)&mag_ef, &north_ef);
+        const float cross = vector2Cross((fpVector2_t*)&mag_ef, &north_ef);
         const float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * vector2Mag((fpVector2_t*)&mag_ef);
         // Rotate mag error vector back to BF and accumulate
         ex += rMat[2][0] * ez_ef;

@@ -23,7 +23,6 @@
 #include "common/axis.h"
 #include "common/time.h"
 #include "common/maths.h"
-#include "common/vector.h"
 #include "pg/pg.h"
 
 // Exported symbols
@@ -66,7 +65,6 @@ PG_DECLARE(imuConfig_t, imuConfig);
 typedef struct imuRuntimeConfig_s {
     float dcm_ki;
     float dcm_kp;
-    fpVector2_t north_ef;
 } imuRuntimeConfig_t;
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value);
