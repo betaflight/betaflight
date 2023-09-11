@@ -31,7 +31,6 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/vector.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -115,13 +114,14 @@ quaternion offset = QUATERNION_INITIALIZE;
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .dcm_kp = 2500,                // 1.0 * 10000
     .dcm_ki = 0,                   // 0.003 * 10000
     .small_angle = 25,
-    .imu_process_denom = 2
+    .imu_process_denom = 2,
+    .imu_magnetic_declination_deci_degrees = 0
 );
 
 static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
@@ -169,6 +169,10 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 {
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
+    // magnetic declination has negative sign (positive clockwise when seen from top)
+    const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->imu_magnetic_declination_deci_degrees / 10.0f);
+    imuRuntimeConfig.north_ef.x = cos_approx(imuMagneticDeclinationRad);
+    imuRuntimeConfig.north_ef.y = -sin_approx(imuMagneticDeclinationRad);
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
@@ -254,7 +258,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
     float magNormSquared = vectorNormSquared(&mag_bf);
     fpVector3_t mag_ef;
-    matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf); // BF->EF
+    matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf); // BF->EF true north
 
     // Encapsulate additional operations in a block so that it is only executed when the according debug mode is used
     if (debugMode == DEBUG_GPS_RESCUE_HEADING) {
@@ -262,7 +266,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
         fpVector3_t mag_ef_yawed;
         matrixVectorMul(&mag_ef_yawed, &rMatZTrans, &mag_ef); // EF->EF yawed
-        // Magnetic yaw is the angle between magnetic north and the X axis of the body frame
+        // Magnetic yaw is the angle between true north and the X axis of the body frame
         int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
         if (magYaw < 0) {
             magYaw += 3600;
@@ -281,11 +285,10 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // (bx; 0; 0) - reference mag field vector heading due North in EF (assuming Z-component is zero)
         mag_ef.z = 0.0f;                // project to XY plane (optimized away)
 
-        fpVector2_t north_ef = {{ 1.0f, 0.0f }};
         // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
         // increase gain on large misalignment
-        const float dot = vector2Dot((fpVector2_t*)&mag_ef, &north_ef);
-        const float cross = vector2Cross((fpVector2_t*)&mag_ef, &north_ef);
+        const float dot = vector2Dot((fpVector2_t*)&mag_ef, &imuRuntimeConfig.north_ef);
+        const float cross = vector2Cross((fpVector2_t*)&mag_ef, &imuRuntimeConfig.north_ef);
         const float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * vector2Mag((fpVector2_t*)&mag_ef);
         // Rotate mag error vector back to BF and accumulate
         ex += rMat[2][0] * ez_ef;

@@ -23,6 +23,7 @@
 #include "common/axis.h"
 #include "common/time.h"
 #include "common/maths.h"
+#include "common/vector.h"
 #include "pg/pg.h"
 
 // Exported symbols
@@ -53,10 +54,11 @@ extern attitudeEulerAngles_t attitude;
 extern float rMat[3][3];
 
 typedef struct imuConfig_s {
-    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
-    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    uint16_t dcm_kp;                                // DCM filter proportional gain ( x 10000)
+    uint16_t dcm_ki;                                // DCM filter integral gain ( x 10000)
     uint8_t small_angle;
     uint8_t imu_process_denom;
+    uint16_t imu_magnetic_declination_deci_degrees; // Magnetic declination in degrees * 10
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);
@@ -64,6 +66,7 @@ PG_DECLARE(imuConfig_t, imuConfig);
 typedef struct imuRuntimeConfig_s {
     float dcm_ki;
     float dcm_kp;
+    fpVector2_t north_ef;
 } imuRuntimeConfig_t;
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value);
