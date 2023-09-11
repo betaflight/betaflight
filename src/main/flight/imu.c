@@ -254,17 +254,22 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
     float magNormSquared = vectorNormSquared(&mag_bf);
     fpVector3_t mag_ef;
-    matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf);  // BF->EF
-    fpMat33_t rMatYTrans;
-    yawToRotationMatrixZ(&rMatYTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
-    fpVector3_t mag_ef_yawed;
-    matrixVectorMul(&mag_ef_yawed, &rMatYTrans, &mag_ef);        // EF->EF yawed
-    // Magnetic yaw is the angle between magnetic north and the X axis of the body frame
-    int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
-    if (magYaw < 0) {
-        magYaw += 3600;
+    matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf); // BF->EF
+
+    // Encapsulate additional operations in a block so that it is only executed when the according debug mode is used
+    if (debugMode == DEBUG_GPS_RESCUE_HEADING) {
+        fpMat33_t rMatYTrans;
+        yawToRotationMatrixZ(&rMatYTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
+        fpVector3_t mag_ef_yawed;
+        matrixVectorMul(&mag_ef_yawed, &rMatYTrans, &mag_ef); // EF->EF yawed
+        // Magnetic yaw is the angle between magnetic north and the X axis of the body frame
+        int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
+        if (magYaw < 0) {
+            magYaw += 3600;
+        }
+        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw); // mag heading in degrees * 10
     }
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw);   // mag heading in degrees * 10
+
     if (useMag && magNormSquared > 0.01f) {
         // Normalise magnetometer measurement
         vectorNormalize(&mag_ef, &mag_ef);
