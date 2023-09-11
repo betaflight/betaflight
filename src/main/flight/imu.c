@@ -258,10 +258,10 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
     // Encapsulate additional operations in a block so that it is only executed when the according debug mode is used
     if (debugMode == DEBUG_GPS_RESCUE_HEADING) {
-        fpMat33_t rMatYTrans;
-        yawToRotationMatrixZ(&rMatYTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
+        fpMat33_t rMatZTrans;
+        yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
         fpVector3_t mag_ef_yawed;
-        matrixVectorMul(&mag_ef_yawed, &rMatYTrans, &mag_ef); // EF->EF yawed
+        matrixVectorMul(&mag_ef_yawed, &rMatZTrans, &mag_ef); // EF->EF yawed
         // Magnetic yaw is the angle between magnetic north and the X axis of the body frame
         int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
         if (magYaw < 0) {
