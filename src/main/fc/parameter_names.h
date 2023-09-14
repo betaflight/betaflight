@@ -197,3 +197,11 @@
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_TOLERANCE "gps_lap_timer_gate_tolerance_m"
 #endif // USE_GPS_LAP_TIMER
 #endif
+
+#define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
+#define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"
+#define PARAM_NAME_IMU_SMALL_ANGLE "imu_small_angle"
+#define PARAM_NAME_PROCESS_DENOM "imu_process_denom"
+#ifdef USE_MAG
+#define PARAM_NAME_IMU_MAG_DECLINATION "imu_mag_declination"
+#endif

@@ -119,11 +119,11 @@ attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
-    .dcm_kp = 2500,                // 1.0 * 10000
-    .dcm_ki = 0,                   // 0.003 * 10000
-    .small_angle = 25,
+    .imu_dcm_kp = 2500,      // 1.0 * 10000
+    .imu_dcm_ki = 0,         // 0.003 * 10000
+    .imu_small_angle = 25,
     .imu_process_denom = 2,
-    .imu_magnetic_declination_deci_degrees = 0
+    .imu_mag_declination = 0
 );
 
 static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
@@ -169,14 +169,14 @@ static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value)
 {
-    imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
-    imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
+    imuRuntimeConfig.imuDcmKp = imuConfig()->imu_dcm_kp / 10000.0f;
+    imuRuntimeConfig.imuDcmKi = imuConfig()->imu_dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
-    const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->imu_magnetic_declination_deci_degrees / 10.0f);
+    const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->imu_mag_declination / 10.0f);
     north_ef.x = cos_approx(imuMagneticDeclinationRad);
     north_ef.y = -sin_approx(imuMagneticDeclinationRad);
 
-    smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
+    smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->imu_small_angle));
 
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 
@@ -317,10 +317,10 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     }
 
     // Compute and apply integral feedback if enabled
-    if (imuRuntimeConfig.dcm_ki > 0.0f) {
+    if (imuRuntimeConfig.imuDcmKi > 0.0f) {
         // Stop integrating if spinning beyond the certain limit
         if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
-            const float dcmKiGain = imuRuntimeConfig.dcm_ki;
+            const float dcmKiGain = imuRuntimeConfig.imuDcmKi;
             integralFBx += dcmKiGain * ex * dt;    // integral error scaled by Ki
             integralFBy += dcmKiGain * ey * dt;
             integralFBz += dcmKiGain * ez * dt;
@@ -400,7 +400,7 @@ static bool imuIsAccelerometerHealthy(float *accAverage)
     return (0.81f < accMagnitudeSq) && (accMagnitudeSq < 1.21f);
 }
 
-// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.dcm_kp * 1.0 scaling.
+// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp * 1.0 scaling.
 // When disarmed after initial boot, the scaling is set to 10.0 for the first 20 seconds to speed up initial convergence.
 // After disarming we want to quickly reestablish convergence to deal with the attitude estimation being incorrect due to a crash.
 //   - wait for a 250ms period of low gyro activity to ensure the craft is not moving
@@ -445,7 +445,7 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
                 arState = stReset;
             }
             // low gain during quiet phase
-            return imuRuntimeConfig.dcm_kp;
+            return imuRuntimeConfig.imuDcmKp;
         case stReset:
             if (cmpTimeUs(currentTimeUs, stateTimeout) >= 0) {
                 arState = stDisarmed;
@@ -454,11 +454,11 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
             return ATTITUDE_RESET_KP_GAIN;
         case stDisarmed:
             // Scale the kP to generally converge faster when disarmed.
-            return imuRuntimeConfig.dcm_kp * 10.0f;
+            return imuRuntimeConfig.imuDcmKp * 10.0f;
         }
     } else {
         arState = stArmed;
-        return imuRuntimeConfig.dcm_kp;
+        return imuRuntimeConfig.imuDcmKp;
     }
 }
 
