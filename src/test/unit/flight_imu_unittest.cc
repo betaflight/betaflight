@@ -179,7 +179,7 @@ TEST(FlightImuTest, TestSmallAngle)
     const float r2 = 0.438;
 
     // given
-    imuConfigMutable()->small_angle = 25;
+    imuConfigMutable()->imu_small_angle = 25;
     imuConfigure(0, 0);
     attitudeIsEstablished = true;
 
