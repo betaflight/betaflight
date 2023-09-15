@@ -121,9 +121,9 @@ PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .imu_dcm_kp = 2500,      // 1.0 * 10000
     .imu_dcm_ki = 0,         // 0.003 * 10000
-    .imu_small_angle = 25,
+    .small_angle = 25,
     .imu_process_denom = 2,
-    .imu_mag_declination = 0
+    .mag_declination = 0
 );
 
 static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
@@ -172,11 +172,11 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     imuRuntimeConfig.imuDcmKp = imuConfig()->imu_dcm_kp / 10000.0f;
     imuRuntimeConfig.imuDcmKi = imuConfig()->imu_dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
-    const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->imu_mag_declination / 10.0f);
+    const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination / 10.0f);
     north_ef.x = cos_approx(imuMagneticDeclinationRad);
     north_ef.y = -sin_approx(imuMagneticDeclinationRad);
 
-    smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->imu_small_angle));
+    smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 
