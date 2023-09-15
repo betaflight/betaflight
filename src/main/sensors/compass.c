@@ -375,7 +375,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     if (busBusy(&magDev.dev, NULL) || !magDev.read(&magDev, magADCRaw)) {
         // No action was taken as the read has not completed
         schedulerIgnoreTaskExecRate();
-        return 1000; // Wait 1ms between states
+        return 500; // Wait 500us between states
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -413,6 +413,6 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    return TASK_PERIOD_HZ(10);
+    return TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 }
 #endif // USE_MAG

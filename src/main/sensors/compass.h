@@ -27,6 +27,7 @@
 #include "pg/pg.h"
 #include "sensors/sensors.h"
 
+#define TASK_COMPASS_RATE_HZ 200
 
 // Type of magnetometer used/detected
 typedef enum {
