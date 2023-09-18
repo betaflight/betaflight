@@ -50,7 +50,6 @@ typedef struct motorDevConfig_s {
     uint8_t  useDshotBitbang;
     uint8_t  useDshotBitbangedTimer;
     uint8_t  motorOutputReordering[MAX_SUPPORTED_MOTORS]; // Reindexing motors for "remap motors" feature in Configurator
-    uint8_t  telemetryStartMargin;
 } motorDevConfig_t;
 
 typedef struct motorConfig_s {
