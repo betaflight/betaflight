@@ -44,10 +44,6 @@
 #define DEFAULT_DSHOT_BURST DSHOT_DMAR_OFF
 #endif
 
-#if !defined(DSHOT_TELEMETRY_START_MARGIN)
-#define DSHOT_TELEMETRY_START_MARGIN 10
-#endif
-
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 2);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
@@ -114,7 +110,6 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #ifdef USE_DSHOT_BITBANG
     motorConfig->dev.useDshotBitbang = DEFAULT_DSHOT_BITBANG;
     motorConfig->dev.useDshotBitbangedTimer = DSHOT_BITBANGED_TIMER_DEFAULT;
-    motorConfig->dev.telemetryStartMargin = DSHOT_TELEMETRY_START_MARGIN;
 #endif
 }
 

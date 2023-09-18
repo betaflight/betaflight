@@ -58,6 +58,8 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
+#define USE_DSHOT_BITBAND
+
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
