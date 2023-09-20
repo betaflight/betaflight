@@ -18,14 +18,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include "platform.h"
 
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
 
-
-
-uint32_t decode_bb(uint16_t buffer[], uint32_t count, uint32_t mask);
+#ifdef USE_DSHOT_BITBAND
 uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit);
-
+#else
+uint32_t decode_bb(uint16_t buffer[], uint32_t count, uint32_t mask);
+#endif
 
 #endif
