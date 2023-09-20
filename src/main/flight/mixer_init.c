@@ -370,7 +370,8 @@ void mixerInitProfile(void)
 void mixerResetRpmLimiter(void)
 {
     const float maxExpectedRpm = MAX(1.0f, motorConfig()->kv * getBatteryVoltage() * 0.01f);
-    const float rpm_derating = -5.44e-6 * maxExpectedRpm + 0.944;
+// Empirical testing found this linear relationship between expected RPM and measured efficiency, independent from prop size
+const float rpmDerating = -5.44e-6 * maxExpectedRpm + 0.944;
     mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / (maxExpectedRpm * rpm_derating), 0.0f, 1.0f);
 }
 #endif // USE_RPM_LIMIT
