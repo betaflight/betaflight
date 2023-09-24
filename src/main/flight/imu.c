@@ -263,7 +263,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf); // BF->EF true north
 
     // Encapsulate additional operations in a block so that it is only executed when the according debug mode is used
-    if (debugMode == DEBUG_GPS_RESCUE_HEADING) {
+    // Only re-calculate magYaw when there is a new Mag data reading, to avoid spikes
+    if (debugMode == DEBUG_GPS_RESCUE_HEADING && mag.isNewMagADCFlag) {
         fpMat33_t rMatZTrans;
         yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
         fpVector3_t mag_ef_yawed;
@@ -274,6 +275,9 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
             magYaw += 3600;
         }
         DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw); // mag heading in degrees * 10
+        // reset new mag data flag to false to initiate monitoring for new Mag data.
+        // note that if the debug doesn't run, this reset will not occur, and we won't waste cycles on the comparison
+        mag.isNewMagADCFlag = false;
     }
 
     if (useMag && magNormSquared > 0.01f) {

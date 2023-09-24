@@ -43,6 +43,7 @@ typedef enum {
 } magSensor_e;
 
 typedef struct mag_s {
+    bool isNewMagADCFlag;
     float magADC[XYZ_AXIS_COUNT];
 } mag_t;
 

@@ -117,6 +117,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
+static int16_t magADCRawPrevious[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
 void compassPreInit(void)
@@ -379,8 +380,13 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (magADCRaw[axis] != magADCRawPrevious[axis]) {
+            // this test, and the isNewMagADCFlag itself, is only needed if we calculate magYaw in imu.c
+            mag.isNewMagADCFlag = true;
+        }
         mag.magADC[axis] = magADCRaw[axis];
     }
+
     if (magDev.magAlignment == ALIGN_CUSTOM) {
         alignSensorViaMatrix(mag.magADC, &magDev.rotationMatrix);
     } else {
