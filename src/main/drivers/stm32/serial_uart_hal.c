@@ -251,10 +251,6 @@ bool checkUsartTxOutput(uartPort_t *s)
             // Enable USART TX output
             uart->txPinState = TX_PIN_ACTIVE;
             IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->tx.af);
-
-            // Enable the UART transmitter
-            SET_BIT(s->Handle.Instance->CR1, USART_CR1_TE);
-
             return true;
         } else {
             // TX line is pulled low so don't enable USART TX
@@ -271,9 +267,6 @@ void uartTxMonitor(uartPort_t *s)
 
     if (uart->txPinState == TX_PIN_ACTIVE) {
         IO_t txIO = IOGetByTag(uart->tx.pin);
-
-        // Disable the UART transmitter
-        CLEAR_BIT(s->Handle.Instance->CR1, USART_CR1_TE);
 
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
