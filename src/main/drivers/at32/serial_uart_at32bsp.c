@@ -179,52 +179,9 @@ void uartReconfigure(uartPort_t *uartPort)
         } else {
             usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
         }
-        usart_interrupt_enable(uartPort->USARTx, USART_TDC_INT, TRUE);
     }
 
     usart_enable(uartPort->USARTx,TRUE);
-}
-
-bool checkUsartTxOutput(uartPort_t *s)
-{
-    uartDevice_t *uart = container_of(s, uartDevice_t, port);
-    IO_t txIO = IOGetByTag(uart->tx.pin);
-
-    if ((uart->txPinState == TX_PIN_MONITOR) && txIO) {
-        if (IORead(txIO)) {
-            // TX is high so we're good to transmit
-
-            // Enable USART TX output
-            uart->txPinState = TX_PIN_ACTIVE;
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->tx.af);
-
-            // Enable the UART transmitter
-            usart_transmitter_enable(s->USARTx, true);
-
-            return true;
-        } else {
-            // TX line is pulled low so don't enable USART TX
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void uartTxMonitor(uartPort_t *s)
-{
-    uartDevice_t *uart = container_of(s, uartDevice_t, port);
-
-    if (uart->txPinState == TX_PIN_ACTIVE) {
-        IO_t txIO = IOGetByTag(uart->tx.pin);
-
-        // Disable the UART transmitter
-        usart_transmitter_enable(s->USARTx, false);
-
-        // Switch TX to an input with pullup so it's state can be monitored
-        uart->txPinState = TX_PIN_MONITOR;
-        IOConfigGPIO(txIO, IOCFG_IPU);
-    }
 }
 
 #ifdef USE_DMA
@@ -274,11 +231,6 @@ void uartTryStartTxDMA(uartPort_t *s)
 static void handleUsartTxDma(uartPort_t *s)
 {
     uartTryStartTxDMA(s);
-
-    if (s->txDMAEmpty) {
-        // Switch TX to an input with pullup so it's state can be monitored
-        uartTxMonitor(s);
-    }
 }
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
@@ -306,14 +258,6 @@ void uartIrqHandler(uartPort_t *s)
             s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->dt;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
-    }
-
-    // UART transmission completed
-    if ((usart_flag_get(s->USARTx, USART_TDC_FLAG) != RESET)) {
-        usart_flag_clear(s->USARTx, USART_TDC_FLAG);
-
-        // Switch TX to an input with pull-up so it's state can be monitored
-        uartTxMonitor(s);
     }
 
     if (!s->txDMAResource && (usart_flag_get(s->USARTx, USART_TDBE_FLAG) == SET)) {
