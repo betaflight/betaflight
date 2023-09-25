@@ -377,9 +377,9 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
 
             if ((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) {
-                uartdev->txPinState = TX_PIN_MONITOR;
-                // Switch TX to UART output whilst UART sends idle preamble
-                checkUsartTxOutput(s);
+                uartdev->txPinState = TX_PIN_ACTIVE;
+                // Switch TX to an input with pullup so it's state can be monitored
+                uartTxMonitor(s);
             } else {
                 IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
             }
