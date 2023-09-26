@@ -125,6 +125,7 @@
 #define HMC_CONFA_POS_BIAS          0x01
 #define HMC_CONFA_NEG_BIAS          0x02
 #define HMC_CONFA_DOR_15HZ          0X10
+#define HMC_CONFA_DOR_75HZ          0x06
 #define HMC_CONFA_8_SAMLES          0X60
 #define HMC_CONFB_GAIN_2_5GA        0X60
 #define HMC_CONFB_GAIN_1_3GA        0X20
@@ -227,7 +228,7 @@ static bool hmc5883lInit(magDev_t *mag)
     extDevice_t *dev = &mag->dev;
 
     // leave test mode
-    busWriteRegister(dev, HMC58X3_REG_CONFA, HMC_CONFA_8_SAMLES | HMC_CONFA_DOR_15HZ | HMC_CONFA_NORMAL);    // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+    busWriteRegister(dev, HMC58X3_REG_CONFA, HMC_CONFA_8_SAMLES | HMC_CONFA_DOR_75HZ | HMC_CONFA_NORMAL);    // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
     busWriteRegister(dev, HMC58X3_REG_CONFB, HMC_CONFB_GAIN_1_3GA);                                          // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
     busWriteRegister(dev, HMC58X3_REG_MODE, HMC_MODE_CONTINOUS);                                             // Mode register             -- 000000 00    continuous Conversion Mode
 

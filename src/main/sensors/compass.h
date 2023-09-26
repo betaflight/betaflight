@@ -27,6 +27,7 @@
 #include "pg/pg.h"
 #include "sensors/sensors.h"
 
+#define TASK_COMPASS_RATE_HZ 200
 
 // Type of magnetometer used/detected
 typedef enum {
@@ -42,6 +43,7 @@ typedef enum {
 } magSensor_e;
 
 typedef struct mag_s {
+    bool isNewMagADCFlag;
     float magADC[XYZ_AXIS_COUNT];
 } mag_t;
 

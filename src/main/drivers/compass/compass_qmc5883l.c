@@ -109,7 +109,7 @@ static bool qmc5883lRead(magDev_t *magDev, int16_t *magData)
             return false;
 
         case STATE_WAIT_STATUS:
-            if ((status & 0x04) == 0) {
+            if ((status & 0x01) == 0) {
                 state = STATE_READ_STATUS;
                 return false;
             }
