@@ -180,8 +180,6 @@ void uartReconfigure(uartPort_t *uartPort)
         } else {
             USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
         }
-        // Enable the interrupt so completion of the transmission will be signalled
-        USART_ITConfig(uartPort->USARTx, USART_IT_TC, ENABLE);
     }
 
     USART_Cmd(uartPort->USARTx, ENABLE);

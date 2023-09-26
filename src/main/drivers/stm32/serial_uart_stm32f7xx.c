@@ -345,8 +345,6 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
     s->port.rxBufferSize = hardware->rxBufferSize;
     s->port.txBufferSize = hardware->txBufferSize;
 
-    s->checkUsartTxOutput = checkUsartTxOutput;
-
 #ifdef USE_DMA
     uartConfigureDma(uartdev);
 #endif
@@ -359,8 +357,6 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
-
-    uartdev->txPinState = TX_PIN_IGNORE;
 
     if ((options & SERIAL_BIDIR) && txIO) {
         ioConfig_t ioCfg = IO_CONFIG(
@@ -376,13 +372,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
 
-            if (((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) && !(options & SERIAL_BIDIR_PP_PD)) {
-                uartdev->txPinState = TX_PIN_ACTIVE;
-                // Switch TX to an input with pullup so it's state can be monitored
-                uartTxMonitor(s);
-            } else {
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
-            }
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
         }
 
         if ((mode & MODE_RX) && rxIO) {
