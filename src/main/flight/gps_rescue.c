@@ -124,6 +124,7 @@ typedef struct {
 
 #define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
 #define GPS_RESCUE_MAX_THROTTLE_ITERM    200    // max iterm value for throttle in degrees * 100
+#define GPS_RESCUE_ALLOWED_YAW_RANGE   30.0f   // yaw error must be less than this to enter fly home phase, and to pitch during descend()
 
 static float rescueThrottle;
 static float rescueYaw;
@@ -718,13 +719,19 @@ void descend(void)
         rescueState.intent.velocityPidCutoffModifier = 2.5f - proximityToLandingArea;
 
         // reduce target velocity as we get closer to home. Zero within 2m of home, reducing risk of overshooting.
-        // if it does overshoot, allow pitch angle limit to build up to correct the overshoot once rotated
         rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * proximityToLandingArea;
+
+        // attenuate velocity target unless pointing towards home, to minimise circling behaviour during overshoots
+        if (rescueState.sensor.absErrorAngle > GPS_RESCUE_ALLOWED_YAW_RANGE) {
+            rescueState.intent.targetVelocityCmS = 0;
+        } else {
+            rescueState.intent.targetVelocityCmS *= (GPS_RESCUE_ALLOWED_YAW_RANGE - rescueState.sensor.absErrorAngle) / GPS_RESCUE_ALLOWED_YAW_RANGE;
+        }
 
         // attenuate velocity iterm towards zero as we get closer to the landing area
         rescueState.intent.velocityItermAttenuator = fminf(proximityToLandingArea, rescueState.intent.velocityItermAttenuator);
 
-        // reduce pitch angle limit if there is a significant groundspeed error - eg on overshooting home
+        // full pitch angle available all the time
         rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
 
         // limit roll angle to half the allowed pitch angle and attenuate when closer to home
@@ -850,8 +857,8 @@ void gpsRescueUpdate(void)
         if (rescueState.intent.yawAttenuator < 1.0f) { // acquire yaw authority over one second
             rescueState.intent.yawAttenuator += rescueState.sensor.gpsRescueTaskIntervalSeconds;
         }
-        if (rescueState.sensor.absErrorAngle < 30.0f) {
-            // allow pitch, limiting allowed angle if we are drifting away from home
+        if (rescueState.sensor.absErrorAngle < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+            // enter fly home phase, and enable pitch, when the yaw angle error is small enough
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
             rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
