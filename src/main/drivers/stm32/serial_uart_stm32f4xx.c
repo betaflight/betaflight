@@ -258,6 +258,10 @@ void uartTxMonitor(uartPort_t *s)
 
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
+        // Initially drive the line high
+        IOHi(txIO);
+        IOConfigGPIO(txIO, IOCFG_OUT_PP_UP);
+        // And then switch to an input
         IOConfigGPIO(txIO, IOCFG_IPU);
     }
 }
