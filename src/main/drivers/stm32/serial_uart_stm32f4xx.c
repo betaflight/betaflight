@@ -38,6 +38,8 @@
 #include "drivers/nvic.h"
 #include "drivers/rcc.h"
 
+#include "io/serial.h"
+
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
@@ -220,12 +222,17 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
 };
 
+#define DEBUG_UART_TX_PORT SERIAL_PORT_UART2
+
 bool checkUsartTxOutput(uartPort_t *s)
 {
     uartDevice_t *uart = container_of(s, uartDevice_t, port);
     IO_t txIO = IOGetByTag(uart->tx.pin);
 
     if ((uart->txPinState == TX_PIN_MONITOR) && txIO) {
+        if (s->port.identifier == DEBUG_UART_TX_PORT) {
+            DEBUG_SET(DEBUG_UART_TX, 0, debug[0] + 1);
+        }
         if (IORead(txIO)) {
             // TX is high so we're good to transmit
 
@@ -239,6 +246,9 @@ bool checkUsartTxOutput(uartPort_t *s)
             return true;
         } else {
             // TX line is pulled low so don't enable USART TX
+            if (s->port.identifier == DEBUG_UART_TX_PORT) {
+                DEBUG_SET(DEBUG_UART_TX, 1, debug[1] + 1);
+            }
             return false;
         }
     }
@@ -263,6 +273,10 @@ void uartTxMonitor(uartPort_t *s)
         IOConfigGPIO(txIO, IOCFG_OUT_PP_UP);
         // And then switch to an input
         IOConfigGPIO(txIO, IOCFG_IPU);
+
+        if (s->port.identifier == DEBUG_UART_TX_PORT) {
+            DEBUG_SET(DEBUG_UART_TX, 2, debug[2] + 1);
+        }
     }
 }
 
