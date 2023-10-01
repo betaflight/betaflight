@@ -21,7 +21,7 @@
 
 #pragma once
 
-#if defined(USE_OSD) && defined(USE_OSD_HD_EXTENDED)   // HD extended screen
+#if defined(USE_OSD) && defined(USE_HD_EXTENDED)   // HD extended screen
   #define TR2(x, y) y
 #else
   #define TR2(x, y) x
