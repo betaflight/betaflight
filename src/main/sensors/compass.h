@@ -62,6 +62,14 @@ typedef struct compassConfig_s {
     sensorAlignment_t mag_customAlignment;
 } compassConfig_t;
 
+typedef struct compassBiasEstimator_s {
+    float lambda_min, lambda;
+    float b[3];
+    float theta[4];
+    float U[4][4];
+    float D[4];
+} compassBiasEstimator_t;
+
 PG_DECLARE(compassConfig_t, compassConfig);
 
 bool compassIsHealthy(void);
@@ -70,4 +78,6 @@ bool compassInit(void);
 void compassPreInit(void);
 void compassStartCalibration(void);
 bool compassIsCalibrationComplete(void);
-
+void compassBiasEstimatorInit(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
+void compassBiasEstimatorUpdate(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag, const float scaleMag);
