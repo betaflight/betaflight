@@ -30,6 +30,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/maths.h"
 
 #include "config/config.h"
 
@@ -75,8 +76,10 @@
  * Calibration should be done in the field triggered by stick commands.
 */
 
-#define LAMBDA_MIN 0.995f                                    // minimal adaptive forgetting factor, range: [0, 1]
-#define P0 1.0e1f                                            // value to initialize P(0) = diag([P0, P0, P0]), typically in range: (0, 1000)
+#define LAMBDA_MIN 0.99f                                     // minimal adaptive forgetting factor, range: [0, 1]
+#define P0 1.0e0f                                            // value to initialize P(0) = diag([P0, P0, P0]), typically in range: (0, 10)
+#define SCALE_MAG 5.0e2f                                     // scale for magnetometer data, method is sensitive, this was optimized for raw mag data
+                                                             // in the range (1000, 2000)
 
 #define CALIBRATION_WAIT_US (15 * 1000 * 1000)               // wait for movement to start and trigger the calibration routine in us
 #define GYRO_NORM_SQUARED_MIN sq(DEGREES_TO_RADIANS(100.0f)) // minimal value that has to be reached so that the calibration routine starts in (rad/sec)^2
@@ -86,7 +89,6 @@ static timeUs_t tCal = 0;
 static bool didMovementStart = false;
 
 static compassBiasEstimator_t compassBiasEstimator;
-static mag_t magPrevious;
 
 magDev_t magDev;
 mag_t mag;
@@ -437,11 +439,6 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         if (cmpTimeUs(tCal, currentTimeUs) > 0) {
             LED0_TOGGLE;
 
-            // calculate mag derivative
-            const float magDerivative[XYZ_AXIS_COUNT] = {(mag.magADC[X] - magPrevious.magADC[X]) * actualCompassRateHz,
-                                                         (mag.magADC[Y] - magPrevious.magADC[Y]) * actualCompassRateHz,
-                                                         (mag.magADC[Z] - magPrevious.magADC[Z]) * actualCompassRateHz};
-
             // get downsampled gyro data
             const float gyroAverageRadians[XYZ_AXIS_COUNT] = {DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(X)),
                                                               DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Y)),
@@ -457,7 +454,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
 
             // only start calibration after the user has started to move the quad
             if(didMovementStart) {
-                compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC, magDerivative, gyroAverageRadians);
+                compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC, SCALE_MAG);
             }
         } else {
             tCal = 0;
@@ -469,9 +466,6 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             saveConfigAndNotify();
         }
     }
-
-    // copy mag to be able to build mag derivative
-    magPrevious = mag;
 
     // remove bias
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -505,45 +499,17 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     return TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 }
 
-/**
- * Source and Nomenclature:
- *   https://de.wikipedia.org/wiki/RLS-Algorithmus
- * Paper for estimation problem: https://www.roboticsproceedings.org/rss09/p50.pdf
- *   Adaptive Estimation of Measurement Bias in Three-Dimensional Field
- *   Sensors with Angular-Rate Sensors: Theory and Comparative Experimental Evaluation
- * Idea for adaptive forgetting factor is from:
- *   https://link.springer.com/book/10.1007/978-3-642-83530-8
- * and
- *   "Ein Beitrag zur on-line adaptiven Regelung elektromechanischer Antriebsregelstrecken, Dissertation 1997"
- * Explicit Matrix inversion is avoided using the Source:
- *   https://www.wiley.com/en-ie/Optimal+State+Estimation:+Kalman,+H+Infinity,+and+Nonlinear+Approaches-p-9780471708582
- *  
- * Problem formulation:
- * 
- *  argmin l2(e)
- *  e = y - y_hat
- *  y_hat = Sw * b, where Sw * b = gyro x b and Sw = Skew( gyro_x, gyro_y, gyro_z )
- *  y = d/dt mag + Sw * mag
- * 
- * Recursive Least Squares Algorithm with adaptive forgetting factor:
- * 
- *  for j = 1:3
- *      zn(j) = 1 / ( Sw(j,:) * P * Sw(j,:).' + lambda );
- *      Gamma(:,j) = P * Sw(j,:).' * zn(j);
- *      b = b + Gamma(:,j) * e(j);
- *      P = ( P - Gamma(:,j) * Sw(j,:) * P );
- *  end
- * 
- *  zn(j) = zn(j) * lambda;
- *  P = P / lambda;
- *  lambda = lambda_min + (1 - lambda_min) * ( zn.' * zn ) / 3.0;
- */
-
 // initialize the compass bias estimator
 void compassBiasEstimatorInit(compassBiasEstimator_t *cBE, const float lambda_min, const float p0)
 {
     memset(cBE, 0, sizeof(*cBE)); // zero contained IEEE754 floats
+    // create identity matrix
+    for (unsigned i = 0; i < 4; i++) {
+        cBE->U[i][i] = 1.0f;
+    }
+
     compassBiasEstimatorUpdate(cBE, lambda_min, p0); 
+
     cBE->lambda = lambda_min;
 }
 
@@ -552,69 +518,83 @@ void compassBiasEstimatorInit(compassBiasEstimator_t *cBE, const float lambda_mi
 void compassBiasEstimatorUpdate(compassBiasEstimator_t *cBE, const float lambda_min, const float p0)
 {
     cBE->lambda_min = lambda_min;
-    cBE->p0 = p0;
-
     // update diagonal entries for faster convergence
-    for (unsigned i = 0; i < 3; i++) {
-        cBE->P[i][i] = cBE->p0;
+    for (unsigned i = 0; i < 4; i++) {
+        cBE->D[i] = p0;
     } 
 }
 
 // apply one estimation step of the compass bias estimator
-void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag, const float *dmag, const float *gyro)
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag, const float scaleMag)
 {
-    //  e = dmag + cross(gyro, mag - b)
-    const float e[3] = {dmag[0] + gyro[2] * (cBE->b[1] - mag[1]) - gyro[1] * (cBE->b[2] - mag[2]),
-                        dmag[1] - gyro[2] * (cBE->b[0] - mag[0]) + gyro[0] * (cBE->b[2] - mag[2]),
-                        dmag[2] + gyro[1] * (cBE->b[0] - mag[0]) - gyro[0] * (cBE->b[1] - mag[1])};
+    float magScaled[3] = {mag[0] / scaleMag, mag[1] / scaleMag, mag[2] / scaleMag};
 
-    float zn[3];
-
-    // iteration 1: k = 0; i = 1; j = 2; sign =  1.0f;
-    compassBiasEstimatorSolveIterative(cBE, &zn[0], e, gyro, 0, 1, 2,  1.0f);
-    // iteration 2: k = 1; i = 0; j = 2; sign = -1.0f;
-    compassBiasEstimatorSolveIterative(cBE, &zn[0], e, gyro, 1, 0, 2, -1.0f);
-    // iteration 3: k = 2; i = 0; j = 1; sign =  1.0f;
-    compassBiasEstimatorSolveIterative(cBE, &zn[0], e, gyro, 2, 0, 1,  1.0f);
-
-    // zn = zn * lambda
-    // P = P / lambda
+    // update phi
+    float phi[4];
+    phi[0] = sq(magScaled[0]) + sq(magScaled[1]) + sq(magScaled[2]);
     for (unsigned i = 0; i < 3; i++) {
-        zn[i] *= cBE->lambda;
-        for (unsigned j = 0; j < 3; j++) {
-            cBE->P[i][j] /= cBE->lambda;
+        phi[i + 1] = magScaled[i];
+    }
+
+    // update e
+    float e = 1.0f;
+    for (unsigned i = 0; i < 4; i++) {
+        e -= phi[i] * cBE->theta[i];
+    }
+
+    // U D U^T
+    float f[4];
+    float v[4];
+    for (unsigned i = 0; i < 4; i++) {
+        f[i] = 0.0f;
+        for (unsigned j = 0; j <= i; j++) {
+            f[i] += cBE->U[j][i] * phi[j];
         }
+        v[i] = cBE->D[i] * f[i];
     }
 
-    // lambda = lambda_min - (lambda_min - 1.0) * ( zn.' * zn ) / 3.0
-    cBE->lambda = cBE->lambda_min - (cBE->lambda_min - 1.0f) * (zn[0] * zn[0] + zn[1] * zn[1] + zn[2] * zn[2]) / 3.0f;
-}
+    // first iteration
+    float alpha[4];
+    float k[4] = {0};
+    alpha[0] = cBE->lambda + v[0] * f[0];
+    cBE->D[0] /= alpha[0];
+    k[0] = v[0];
 
-void compassBiasEstimatorSolveIterative(compassBiasEstimator_t *cBE, float *zn, const float *e, const float *gyro, const unsigned k, const unsigned i, const unsigned j, const float sign)
-{
-    const float dP[3] = {sign * (cBE->P[0][i] * gyro[j] - cBE->P[0][j] * gyro[i]),
-                         sign * (cBE->P[1][i] * gyro[j] - cBE->P[1][j] * gyro[i]),
-                         sign * (cBE->P[2][i] * gyro[j] - cBE->P[2][j] * gyro[i])};
-
-    zn[k] = 1.0f / (cBE->lambda + sign * (dP[i] * gyro[j] - dP[j] * gyro[i]));
-
-    const float g[3] = {zn[k] * dP[0],
-                        zn[k] * dP[1], 
-                        zn[k] * dP[2]};
-
-    for (unsigned l = 0; l < 3; l++) {
-        cBE->b[l] -= e[k] * g[l];
+    // rest of the iterations
+    for (unsigned i = 1; i < 4; i++) {
+        alpha[i] = alpha[i - 1] + v[i] * f[i];
+        cBE->D[i] *= alpha[i - 1] / (alpha[i] * cBE->lambda);
+        for (unsigned j = 0; j < i; j++) {
+            float dU = -(f[i] / alpha[i - 1]) * k[j];
+            k[j] += v[i] * cBE->U[j][i];
+            cBE->U[j][i] += dU;
+        }
+        k[i] += v[i];
     }
 
-    cBE->P[0][0] -= g[0] * dP[0];
-    cBE->P[1][0] -= g[1] * dP[0];
-    cBE->P[1][1] -= g[1] * dP[1];
-    cBE->P[2][0] -= g[2] * dP[0];
-    cBE->P[2][1] -= g[2] * dP[1];
-    cBE->P[2][2] -= g[2] * dP[2];
-    // fill symmetric elements
-    cBE->P[0][1] = cBE->P[1][0];
-    cBE->P[0][2] = cBE->P[2][0];
-    cBE->P[1][2] = cBE->P[2][1];
+    // parameter-update
+    for (unsigned i = 0; i < 4; i++) {
+        cBE->theta[i] += (k[i] / alpha[3]) * e;
+    }
+
+    // bias update
+    for (unsigned i = 0; i < 3; i++) {
+        cBE->b[i] = (-0.5f * cBE->theta[i + 1] / cBE->theta[0]) * scaleMag;
+    }
+
+    // compute zn
+    float U_v;
+    float phiTrans_U_v = 0.0f;
+    for (unsigned i = 0; i < 4; i++) {
+        U_v = 0.0f;
+        for (unsigned j = i; j < 4; j++) {
+            U_v += cBE->U[i][j] * v[j];
+        }
+        phiTrans_U_v += phi[i] * U_v;
+    }
+    float zn = cBE->lambda / (cBE->lambda + phiTrans_U_v);
+
+    // update lambda
+    cBE->lambda = cBE->lambda_min + (1.0f - cBE->lambda_min) * sq(zn);
 }
 #endif // USE_MAG

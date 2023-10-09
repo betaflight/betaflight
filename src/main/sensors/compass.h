@@ -63,9 +63,11 @@ typedef struct compassConfig_s {
 } compassConfig_t;
 
 typedef struct compassBiasEstimator_s {
-    float lambda_min, lambda, p0;
+    float lambda_min, lambda;
     float b[3];
-    float P[3][3];
+    float theta[4];
+    float U[4][4];
+    float D[4];
 } compassBiasEstimator_t;
 
 PG_DECLARE(compassConfig_t, compassConfig);
@@ -78,5 +80,4 @@ void compassStartCalibration(void);
 bool compassIsCalibrationComplete(void);
 void compassBiasEstimatorInit(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
 void compassBiasEstimatorUpdate(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
-void compassBiasEstimatorApply(compassBiasEstimator_t *compassBiasEstimator, float *mag, const float *dmag, const float *gyro);
-void compassBiasEstimatorSolveIterative(compassBiasEstimator_t *compassBiasEstimator, float *zn, const float *e, const float *gyro, const unsigned k, const unsigned i, const unsigned j, const float sign);
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag, const float scaleMag);
