@@ -338,14 +338,20 @@ void gpsInit(void)
     }
 
     portMode_e mode = MODE_RXTX;
+    portOptions_e options = SERIAL_NOT_INVERTED;
+
 #if defined(GPS_NMEA_TX_ONLY)
     if (gpsConfig()->provider == GPS_NMEA) {
         mode &= ~MODE_TX;
     }
 #endif
 
+    if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
+        options |= SERIAL_CHECK_TX;
+    }
+
     // no callback - buffer will be consumed in gpsUpdate()
-    gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex], mode, SERIAL_NOT_INVERTED);
+    gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, NULL, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex], mode, options);
     if (!gpsPort) {
         return;
     }
