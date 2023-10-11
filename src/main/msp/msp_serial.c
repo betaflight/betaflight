@@ -69,7 +69,7 @@ void mspSerialAllocatePorts(void)
 
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
-        } else if ((portConfig->identifier >= SERIAL_PORT_USART1) && (portConfig->identifier <= SERIAL_PORT_USART_MAX)){
+        } else if ((portConfig->identifier >= SERIAL_PORT_USART1) && (portConfig->identifier <= SERIAL_PORT_USART10)){
             options |= SERIAL_CHECK_TX;
         }
 

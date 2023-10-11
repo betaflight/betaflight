@@ -346,7 +346,7 @@ void gpsInit(void)
     }
 #endif
 
-    if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
+    if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART10)){
         options |= SERIAL_CHECK_TX;
     }
 
