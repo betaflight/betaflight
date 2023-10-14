@@ -76,13 +76,14 @@
  * Calibration should be done in the field triggered by stick commands.
 */
 
-#define LAMBDA_MIN 0.99f                                     // minimal adaptive forgetting factor, range: [0, 1]
-#define P0 1.0e0f                                            // value to initialize P(0) = diag([P0, P0, P0]), typically in range: (0, 10)
-#define SCALE_MAG 5.0e2f                                     // scale for magnetometer data, method is sensitive, this was optimized for raw mag data
-                                                             // in the range (1000, 2000)
+#define LAMBDA_MIN 0.95f // minimal adaptive forgetting factor, range: [0.90, 0.99], currently tuned for 200 Hz
+                         // (TASK_COMPASS_RATE_HZ) and update rate of compassBiasEstimatorApply(), not the mag readout
+                         // rate, so it might need to be adjusted TASK_COMPASS_RATE_HZ is changed
+#define P0 1.0e2f        // value to initialize P(0) = diag([P0, P0, P0]), typically in range: (1, 1000)
 
 #define CALIBRATION_WAIT_US (15 * 1000 * 1000)               // wait for movement to start and trigger the calibration routine in us
-#define GYRO_NORM_SQUARED_MIN sq(DEGREES_TO_RADIANS(100.0f)) // minimal value that has to be reached so that the calibration routine starts in (rad/sec)^2
+#define GYRO_NORM_SQUARED_MIN sq(DEGREES_TO_RADIANS(450.0f)) // minimal value that has to be reached so that the calibration routine starts in (rad/sec)^2,
+                                                             // a relatively high value so that the calibration routine is not triggered too early
 #define CALIBRATION_TIME_US (30 * 1000 * 1000)               // duration of the calibration phase in us
 
 static timeUs_t tCal = 0;
@@ -454,7 +455,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
 
             // only start calibration after the user has started to move the quad
             if(didMovementStart) {
-                compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC, SCALE_MAG);
+                compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
             }
         } else {
             tCal = 0;
@@ -525,15 +526,13 @@ void compassBiasEstimatorUpdate(compassBiasEstimator_t *cBE, const float lambda_
 }
 
 // apply one estimation step of the compass bias estimator
-void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag, const float scaleMag)
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag)
 {
-    float magScaled[3] = {mag[0] / scaleMag, mag[1] / scaleMag, mag[2] / scaleMag};
-
     // update phi
     float phi[4];
-    phi[0] = sq(magScaled[0]) + sq(magScaled[1]) + sq(magScaled[2]);
+    phi[0] = sq(mag[0]) + sq(mag[1]) + sq(mag[2]);
     for (unsigned i = 0; i < 3; i++) {
-        phi[i + 1] = magScaled[i];
+        phi[i + 1] = mag[i];
     }
 
     // update e
@@ -579,7 +578,7 @@ void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag, const fl
 
     // bias update
     for (unsigned i = 0; i < 3; i++) {
-        cBE->b[i] = (-0.5f * cBE->theta[i + 1] / cBE->theta[0]) * scaleMag;
+        cBE->b[i] = -0.5f * cBE->theta[i + 1] / cBE->theta[0];
     }
 
     // compute zn
