@@ -79,7 +79,7 @@
 #define LAMBDA_MIN 0.95f // minimal adaptive forgetting factor, range: [0.90, 0.99], currently tuned for 200 Hz
                          // (TASK_COMPASS_RATE_HZ) and update rate of compassBiasEstimatorApply(), not the mag readout
                          // rate, so it might need to be adjusted TASK_COMPASS_RATE_HZ is changed
-#define P0 1.0e2f        // value to initialize P(0) = diag([P0, P0, P0]), typically in range: (1, 1000)
+#define P0 1.0e2f        // value to initialize P(0) = diag([P0, P0, P0, P0]), typically in range: (1, 1000)
 
 #define CALIBRATION_WAIT_US (15 * 1000 * 1000)               // wait for movement to start and trigger the calibration routine in us
 #define GYRO_NORM_SQUARED_MIN sq(DEGREES_TO_RADIANS(450.0f)) // minimal value that has to be reached so that the calibration routine starts in (rad/sec)^2,
