@@ -693,8 +693,8 @@ void crsfRxBind(void)
             CRSF_ADDRESS_FLIGHT_CONTROLLER,
             CRSF_COMMAND_SUBCMD_RX,
             CRSF_COMMAND_SUBCMD_RX_BIND,
-            0x9E,  // CMD CRC
-            0xE8
+            0x9E,  // Command CRC8
+            0xE8,  // Packet CRC8
         };
         serialWriteBuf(serialPort, bindFrame, 9);
     }
