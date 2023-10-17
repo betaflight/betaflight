@@ -318,9 +318,6 @@ void systemInit(void)
     ret = udpInit(&rcLink, NULL, PORT_RC, true);
     printf("[SITL] start UDP server for RC input @%d...%d\n", PORT_RC, ret);
 
-    ret = udpInit(&stateLink, NULL, 9003, true);
-    printf("start UDP server...%d\n", ret);
-
     ret = pthread_create(&udpWorker, NULL, udpThread, NULL);
     if (ret != 0) {
         printf("Create udpWorker error!\n");

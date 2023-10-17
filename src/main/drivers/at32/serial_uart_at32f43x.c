@@ -193,10 +193,12 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxPins = {
             { DEFIO_TAG_E(PA1),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PC11), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PH2),  GPIO_MUX_8 },
         },
         .txPins = {
             { DEFIO_TAG_E(PA0),  GPIO_MUX_8 },
             { DEFIO_TAG_E(PC10), GPIO_MUX_8 },
+            { DEFIO_TAG_E(PH3),  GPIO_MUX_8 },
         },
         .rcc = RCC_APB1(UART4),
         .irqn = UART4_IRQn,

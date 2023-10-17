@@ -59,9 +59,9 @@ typedef enum {
     RESCUE_FLY_HOME,
     RESCUE_DESCENT,
     RESCUE_LANDING,
+    RESCUE_DO_NOTHING,
     RESCUE_ABORT,
-    RESCUE_COMPLETE,
-    RESCUE_DO_NOTHING
+    RESCUE_COMPLETE
 } rescuePhase_e;
 
 typedef enum {
@@ -988,7 +988,9 @@ bool gpsRescueIsDisabled(void)
 #ifdef USE_MAG
 bool gpsRescueDisableMag(void)
 {
-    return ((!gpsRescueConfig()->useMag || magForceDisable) && (rescueState.phase >= RESCUE_INITIALIZE) && (rescueState.phase <= RESCUE_LANDING));
+    // Enable mag on user request, but don't use it during fly home or if force disabled 
+    // Note that while flying home the course over ground from GPS provides a heading that is less affected by wind
+    return !(gpsRescueConfig()->useMag && rescueState.phase != RESCUE_FLY_HOME && !magForceDisable);
 }
 #endif
 #endif

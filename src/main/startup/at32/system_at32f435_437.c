@@ -77,19 +77,11 @@ void SystemInit (void)
   while(CRM->ctrl_bit.hickstbl != SET);
 
   /* hick used as system clock */
-  CRM->cfg_bit.sclksel =
-#ifdef USE_CLOCK_SOURCE_HSI
-                          CRM_SCLK_HICK;
-#else
-                          CRM_SCLK_HEXT;
-#endif
+  CRM->cfg_bit.sclksel = CRM_SCLK_HICK;
 
   /* wait sclk switch status */
-#ifdef USE_CLOCK_SOURCE_HSI
   while(CRM->cfg_bit.sclksts != CRM_SCLK_HICK);
-#else
-  while(CRM->cfg_bit.sclksts != CRM_SCLK_HEXT);
-#endif
+
 
   /* reset cfg register, include sclk switch, ahbdiv, apb1div, apb2div, adcdiv, clkout bits */
   CRM->cfg = 0;

@@ -58,6 +58,7 @@ void system_clock_config(void)
   /* reset crm */
   crm_reset();
 
+#ifndef USE_CLOCK_SOURCE_HSI
   /* enable hext */
   crm_clock_source_enable(CRM_CLOCK_SOURCE_HEXT, TRUE);
 
@@ -65,6 +66,7 @@ void system_clock_config(void)
   while(crm_hext_stable_wait() == ERROR)
   {
   }
+#endif
 
   /* enable hick */
   crm_clock_source_enable(CRM_CLOCK_SOURCE_HICK, TRUE);
@@ -74,8 +76,19 @@ void system_clock_config(void)
   {
   }
 
+/*
+  *                        pll_rcs_freq * pll_ns
+  *         pll clock = --------------------------------
+  *                           pll_ms * pll_fr_n
+*/
   /* config pll clock resource */
+#ifdef USE_CLOCK_SOURCE_HSI
+  // 48 * 72 / (6 * 2) = 288
+  crm_pll_config(CRM_PLL_SOURCE_HSI, 72, 6, CRM_PLL_FR_2);
+#else
+  // 8 * 72 / (1 * 2) = 288
   crm_pll_config(CRM_PLL_SOURCE_HEXT, 72, 1, CRM_PLL_FR_2);
+#endif
 
   /* enable pll */
   crm_clock_source_enable(CRM_CLOCK_SOURCE_PLL, TRUE);
