@@ -153,7 +153,7 @@
 
       __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-#ifdef CLOCK_SOURCE_USE_HSI
+#ifdef USE_CLOCK_SOURCE_HSI
       /* Enable HSI Oscillator and activate PLL with HSI as source */
       RCC_OscInitStruct.OscillatorType       = RCC_OSCILLATORTYPE_HSI;
       RCC_OscInitStruct.HSIState             = RCC_HSI_ON;

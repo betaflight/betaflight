@@ -689,7 +689,14 @@ static int StartHSx(uint32_t onBit, uint32_t readyBit, int maxWaitCount)
   */
 void SetSysClock(void)
 {
-    uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
+    uint32_t hse_value =
+#ifdef USE_CLOCK_SOURCE_HSI
+                          0
+#else
+                          persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE)
+#endif
+                          ;
+
     uint32_t hse_mhz = hse_value / 1000000;
 
     // Switch to HSI during clock manipulation

@@ -79,10 +79,9 @@
 
 #define HSI_FREQ ((uint32_t)64000000) // Frequency of HSI is 64Mhz on all H7 variants.
 
-
 // If `HSE_VALUE` isn't specified, use HSI. This allows HSI to be selected as the PLL source
 // later in this file, and adjusts PLL scalers to use the HSI's frequency as the timing source.
-#if !defined  (HSE_VALUE)
+#if !defined  (HSE_VALUE) || defined(USE_CLOCK_SOURCE_HSI)
 #define PLL_SRC RCC_PLLSOURCE_HSI
 #define PLL_SRC_FREQ HSI_FREQ
 #else
@@ -334,7 +333,7 @@ pllConfig_t pll1Config72x73x = {
 
 // HSE clock configuration, originally taken from
 // STM32Cube_FW_H7_V1.3.0/Projects/STM32H743ZI-Nucleo/Examples/RCC/RCC_ClockConfig/Src/main.c
-static void SystemClockHSE_Config(void)
+static void SystemClock_Config(void)
 {
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -395,6 +394,22 @@ static void SystemClockHSE_Config(void)
     HAL_GPIO_Init(GPIOH, &gpio_initstruct);
 #endif
 
+#ifdef USE_CLOCK_SOURCE_HSI
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = PLL_SRC;
+    RCC_OscInitStruct.PLL.PLLM = pll1Config->m;
+    RCC_OscInitStruct.PLL.PLLN = pll1Config->n;
+    RCC_OscInitStruct.PLL.PLLP = pll1Config->p;
+    RCC_OscInitStruct.PLL.PLLQ = pll1Config->q;
+    RCC_OscInitStruct.PLL.PLLR = pll1Config->r;
+
+    RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
+    RCC_OscInitStruct.PLL.PLLRGE = pll1Config->vciRange;
+    HAL_StatusTypeDef status = HAL_RCC_OscConfig(&RCC_OscInitStruct);
+#else
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
     RCC_OscInitStruct.HSEState = RCC_HSE_ON; // Even Nucleo-H473ZI and Nucleo-H7A3ZI work without RCC_HSE_BYPASS
 
@@ -409,6 +424,7 @@ static void SystemClockHSE_Config(void)
     RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
     RCC_OscInitStruct.PLL.PLLRGE = pll1Config->vciRange;
     HAL_StatusTypeDef status = HAL_RCC_OscConfig(&RCC_OscInitStruct);
+#endif
 
 #ifdef USE_H7_HSE_TIMEOUT_WORKAROUND
     if (status == HAL_TIMEOUT) {
@@ -748,7 +764,9 @@ void SystemInit (void)
     // Instead, we explicitly turn those on
     RCC->CR |= RCC_CR_CSION;
     RCC->CR |= RCC_CR_HSION;
+#ifndef USE_CLOCK_SOURCE_HSI
     RCC->CR |= RCC_CR_HSEON;
+#endif
     RCC->CR |= RCC_CR_HSI48ON;
 
 #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
