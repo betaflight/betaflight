@@ -786,7 +786,8 @@ bool processRx(timeUs_t currentTimeUs)
     /* In airmode iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
      This is needed to prevent iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated && !launchControlActive) {
-        pidSetItermReset(true);
+        const bool fixedWingArmed = isFixedWing() && ARMING_FLAG(ARMED);
+        pidSetItermReset(!fixedWingArmed); // don't reset iterm for fixed wing when armed at zero throttle
         if (currentPidProfile->pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
         else
