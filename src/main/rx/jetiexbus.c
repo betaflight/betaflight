@@ -184,8 +184,7 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
         }
     }
 
-    if (jetiExBusFramePosition == jetiExBusFrameMaxSize)
-    {
+    if (jetiExBusFramePosition == jetiExBusFrameMaxSize) {
         // frame overrun
         jetiExBusFrameReset();
         jetiExBusFrameState = EXBUS_STATE_ZERO;
