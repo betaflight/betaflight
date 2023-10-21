@@ -477,12 +477,13 @@ GTEST_DIR = ../../lib/test/gtest
 
 CC  := clang-12
 CXX := clang++-12
+ifneq ($(OSFAMILY), linux)
 ifeq ($(shell which $(CC) 2>/dev/null),)
-$(info Falling back to 'clang'.)
+$(info Falling back to 'clang' on Windows and OSX.)
 CC  := clang
 CXX := clang++
 endif
-
+endif
 #CC  := gcc
 #CXX := g++
 
