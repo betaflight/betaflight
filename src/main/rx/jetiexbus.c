@@ -153,6 +153,7 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
 
     static timeUs_t jetiExBusTimeLast = 0;
     static uint8_t *jetiExBusFrame;
+    static uint8_t jetiExBusFrameMaxSize;
     const timeUs_t now = microsISR();
 
     // Check if we shall reset frame position due to time
@@ -169,16 +170,27 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
         case EXBUS_START_CHANNEL_FRAME:
             jetiExBusFrameState = EXBUS_STATE_IN_PROGRESS;
             jetiExBusFrame = jetiExBusChannelFrame;
+            jetiExBusFrameMaxSize = EXBUS_MAX_CHANNEL_FRAME_SIZE;
             break;
 
         case EXBUS_START_REQUEST_FRAME:
             jetiExBusRequestState = EXBUS_STATE_IN_PROGRESS;
             jetiExBusFrame = jetiExBusRequestFrame;
+            jetiExBusFrameMaxSize = EXBUS_MAX_REQUEST_FRAME_SIZE;
             break;
 
         default:
             return;
         }
+    }
+
+    if (jetiExBusFramePosition == jetiExBusFrameMaxSize) {
+        // frame overrun
+        jetiExBusFrameReset();
+        jetiExBusFrameState = EXBUS_STATE_ZERO;
+        jetiExBusRequestState = EXBUS_STATE_ZERO;
+
+        return;
     }
 
     // Store in frame copy
