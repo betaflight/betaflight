@@ -773,7 +773,7 @@ bool processRx(timeUs_t currentTimeUs)
     const bool throttleActive = calculateThrottleStatus() != THROTTLE_LOW;
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
     const bool launchControlActive = isLaunchControlActive();
-    airmodeIsActivated = airmodeIsEnabled() && throttlePercent >= rxConfig()->airModeActivateThreshold && !launchControlActive;
+    airmodeIsActivated = airmodeIsEnabled() && ARMING_FLAG(ARMED) && throttlePercent >= rxConfig()->airModeActivateThreshold && !launchControlActive;
 
     if (ARMING_FLAG(ARMED) && (airmodeIsActivated || throttleActive || launchControlActive || isFixedWing())) {
         pidSetItermReset(false);
