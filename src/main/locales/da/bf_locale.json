@@ -7,10 +7,6 @@
         "message": ",",
         "description": "Max length:  1; description"
     },
-    "next": {
-        "message": "another",
-        "description": "Max length: 10; Translation version"
-    },
     "STR_PERIOD": {
         "message": ".",
         "description": "Max length:  1; description"
@@ -25,10 +21,6 @@
     },
     "STR_VISUAL_BEEP": {
         "message": " * * * *",
-        "description": "Max length:  8; description"
-    },
-    "STR_MSP_API_NAME": {
-        "message": "MSP API:",
         "description": "Max length:  8; description"
     },
     "CMS_STARTUP_HELP_TEXT1": {
@@ -443,10 +435,6 @@
         "message": "RET FEJL, INDEN GEM MED 'SAVE'",
         "description": "Max length: 30; description"
     },
-    "STR_CLI_STATUS_MCU": {
-        "message": "MCU:",
-        "description": "Max length:  4; description"
-    },
     "STR_CLI_STATUS_CLOCK": {
         "message": "klokke=",
         "description": "Max length:  7; description"
@@ -487,14 +475,6 @@
         "message": "Enheder opdaget:",
         "description": "Max length: 16; description"
     },
-    "STR_CLI_STATUS_SPI": {
-        "message": " SPI:",
-        "description": "Max length:  5; description"
-    },
-    "STR_CLI_STATUS_I2C": {
-        "message": " I2C:",
-        "description": "Max length:  5; description"
-    },
     "STR_CLI_STATUS_I2C_ERRORS": {
         "message": "I2C fejl:",
         "description": "Max length:  9; description"
@@ -519,10 +499,6 @@
         "message": " delt",
         "description": "Max length:  5; description"
     },
-    "STR_CLI_STATUS_OSD": {
-        "message": "OSD:",
-        "description": "Max length:  4; description"
-    },
     "STR_CLI_STATUS_BUILD_KEY": {
         "message": "RELEASE BYG ID:",
         "description": "Max length: 15; description"
@@ -534,10 +510,6 @@
     "STR_CLI_STATUS_TIME_CURRENT": {
         "message": ", system tid:",
         "description": "Max length: 13; description"
-    },
-    "STR_CLI_STATUS_CPU": {
-        "message": "CPU:",
-        "description": "Max length:  4; description"
     },
     "STR_CLI_STATUS_CPU_CYCLE": {
         "message": "cyklus tid:",
@@ -610,10 +582,6 @@
     "STR_CLI_VERSION_INFO_BOARD": {
         "message": "board_name:",
         "description": "Max length: 11; description"
-    },
-    "STR_CLI_NONE": {
-        "message": "INGEN",
-        "description": "Max length:  5; description"
     },
     "STR_CLI_TIMER": {
         "message": "timer",

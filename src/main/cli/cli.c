@@ -127,6 +127,7 @@ bool cliMode = false;
 #include "msp/msp_protocol.h"
 
 #include "locales/localisation.h"
+
 #include "osd/osd.h"
 
 #include "pg/adc.h"
@@ -4693,7 +4694,6 @@ static void cliStatus(const char *cmdName, char *cmdline)
     UNUSED(cmdline);
 
     // MCU type, clock, vrefint, core temperature
-
     cliPrintf("MCU: %s CLK=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
 
 #if PLATFORM_TRAIT_CONFIG_HSE
@@ -4847,9 +4847,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 #endif // USE_GPS
 
-cliPrintLinef("%s: %s", STR_LANGUAGE, LOCALE);
-
 #if defined(USE_OSD)
+    cliPrintLinef("%s: %s", STR_LANGUAGE, LOCALE);
+    
     osdDisplayPortDevice_e displayPortDeviceType;
     displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
 
@@ -4901,7 +4901,7 @@ cliPrintLinef("%s: %s", STR_LANGUAGE, LOCALE);
     int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
 
     const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
-    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
+    cliPrintLinef("CPU: %d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
 
     // Battery meter

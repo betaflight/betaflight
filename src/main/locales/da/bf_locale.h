@@ -21,12 +21,10 @@
 
 #define LOCALE                        "da"                                  	// Max length:  2; description;
 #define STR_COMMA                     ","                                   	// Max length:  1; description;
-#define next                          "another"                             	// Max length: 10; Translation version;
 #define STR_PERIOD                    "."                                   	// Max length:  1; description;
 #define STR_THOUSAND                  "."                                   	// Max length:  1; description;
 #define STR_SECONDS                   "sekunder"                            	// Max length:  8; description;
 #define STR_VISUAL_BEEP               " * * * *"                            	// Max length:  8; description;
-#define STR_MSP_API_NAME              "MSP API:"                            	// Max length:  8; description;
 #define CMS_STARTUP_HELP_TEXT1        "MENU:GAS MIDT"                       	// Max length: 13; description;
 #define CMS_STARTUP_HELP_TEXT2        " + SIDEROR VENSTRE"                  	// Max length: 18; description;
 #define CMS_STARTUP_HELP_TEXT3        " + HOEJDE OP"                        	// Max length: 12; description;
@@ -129,7 +127,6 @@
 #define STR_CLI_NO_MATCH              "INGEN MATCH FOR:"                    	// Max length: 16; description;
 #define STR_CLI_ERROR_FOUND           "FEJL ER FUNDET - UNDERSOEG INDEN DU FORTSAETTER" 	// Max length: 47; description;
 #define STR_CLI_FIX_ERROR             "RET FEJL, INDEN GEM MED 'SAVE'"      	// Max length: 30; description;
-#define STR_CLI_STATUS_MCU            "MCU:"                                	// Max length:  4; description;
 #define STR_CLI_STATUS_CLOCK          "klokke="                             	// Max length:  7; description;
 #define STR_CLI_STATUS_VREF           "Vref="                               	// Max length:  5; description;
 #define STR_CLI_STATUS_CORETEMP       "kerne temp="                         	// Max length: 11; description;
@@ -140,19 +137,15 @@
 #define STR_CLI_STATUS_CONFIG_SIZE    "stoerrelse:"                         	// Max length: 11; description;
 #define STR_CLI_STATUS_CONFIG_AVAIL   "max anvendeligt:"                    	// Max length: 16; description;
 #define STR_CLI_STATUS_DEVICES        "Enheder opdaget:"                    	// Max length: 16; description;
-#define STR_CLI_STATUS_SPI            " SPI:"                               	// Max length:  5; description;
-#define STR_CLI_STATUS_I2C            " I2C:"                               	// Max length:  5; description;
 #define STR_CLI_STATUS_I2C_ERRORS     "I2C fejl:"                           	// Max length:  9; description;
 #define STR_CLI_STATUS_GYRO_DETECT    "Gyro opdaget:"                       	// Max length: 13; description;
 #define STR_CLI_STATUS_GYRO           " gyro"                               	// Max length:  5; description;
 #define STR_CLI_STATUS_GYRO_LOCKED    " laast"                              	// Max length:  6; description;
 #define STR_CLI_STATUS_GYRO_DMA       " dma"                                	// Max length:  4; description;
 #define STR_CLI_STATUS_GYRO_SHARED    " delt"                               	// Max length:  5; description;
-#define STR_CLI_STATUS_OSD            "OSD:"                                	// Max length:  4; description;
 #define STR_CLI_STATUS_BUILD_KEY      "RELEASE BYG ID:"                     	// Max length: 15; description;
 #define STR_CLI_STATUS_SYSTEM_UPTIME  "System oppetid:"                     	// Max length: 15; description;
 #define STR_CLI_STATUS_TIME_CURRENT   ", system tid:"                       	// Max length: 13; description;
-#define STR_CLI_STATUS_CPU            "CPU:"                                	// Max length:  4; description;
 #define STR_CLI_STATUS_CPU_CYCLE      "cyklus tid:"                         	// Max length: 11; description;
 #define STR_CLI_STATUS_CPU_GYRO       "GYRO hast.:"                         	// Max length: 11; description;
 #define STR_CLI_STATUS_CPU_RX         "RX hast.:"                           	// Max length:  9; description;
@@ -171,7 +164,6 @@
 #define STR_CLI_VERSION_NO_CONFIG     "TR2(INGEN KONFIG, INGEN KONFIGURATION FUNDET)" 	// Max length: 47; description;
 #define STR_CLI_VERSION_INFO_MANUF    "# FC: manufacturer_id:"              	// Max length: 22; description;
 #define STR_CLI_VERSION_INFO_BOARD    "board_name:"                         	// Max length: 11; description;
-#define STR_CLI_NONE                  "INGEN"                               	// Max length:  5; description;
 #define STR_CLI_TIMER                 "timer"                               	// Max length:  5; description;
 #define STR_CLI_TIMERS                "Timers:"                             	// Max length:  7; description;
 #define STR_CLI_TIMERS_ACTIVE         "Aktiv tidtagning:"                   	// Max length: 17; description;

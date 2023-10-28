@@ -23,10 +23,6 @@
         "message": "  * * * *",
         "description": "Max length: 10; translation of:   * * * *"
     },
-    "STR_MSP_API_NAME": {
-        "message": "MSP API:",
-        "description": "Max length:  8; translation of: MSP API:"
-    },
     "CMS_STARTUP_HELP_TEXT1": {
         "message": "MENU:THR MID",
         "description": "Max length: 20; translation of: MENU:THR MID"
@@ -511,10 +507,6 @@
         "message": "PLEASE FIX ERRORS BEFORE 'SAVE'",
         "description": "Max length: 32; translation of: PLEASE FIX ERRORS BEFORE 'SAVE'"
     },
-    "STR_CLI_STATUS_MCU": {
-        "message": "MCU:",
-        "description": "Max length:  6; translation of: MCU:"
-    },
     "STR_CLI_STATUS_CLOCK": {
         "message": "Clock=",
         "description": "Max length:  6; translation of: Clock="
@@ -555,14 +547,6 @@
         "message": "Devices detected:",
         "description": "Max length: 20; translation of: Devices detected:"
     },
-    "STR_CLI_STATUS_SPI": {
-        "message": " SPI:",
-        "description": "Max length:  5; translation of:  SPI:"
-    },
-    "STR_CLI_STATUS_I2C": {
-        "message": " I2C:",
-        "description": "Max length:  5; translation of:  I2C:"
-    },
     "STR_CLI_STATUS_I2C_ERRORS": {
         "message": "I2C Errors:",
         "description": "Max length: 15; translation of: I2C Errors:"
@@ -587,10 +571,6 @@
         "message": " shared",
         "description": "Max length:  8; translation of:  shared"
     },
-    "STR_CLI_STATUS_OSD": {
-        "message": "OSD:",
-        "description": "Max length:  8; translation of: OSD:"
-    },
     "STR_CLI_STATUS_BUILD_KEY": {
         "message": "BUILD KEY:",
         "description": "Max length: 10; translation of: BUILD KEY:"
@@ -602,10 +582,6 @@
     "STR_CLI_STATUS_TIME_CURRENT": {
         "message": ", Current Time:",
         "description": "Max length: 15; translation of: , Current Time:"
-    },
-    "STR_CLI_STATUS_CPU": {
-        "message": "CPU:",
-        "description": "Max length:  4; translation of: CPU:"
     },
     "STR_CLI_STATUS_CPU_CYCLE": {
         "message": "cycle time:",
@@ -682,10 +658,6 @@
     "STR_CLI_VERSION_INFO_BOARD": {
         "message": "board_name:",
         "description": "Max length: 11; translation of: board_name:"
-    },
-    "STR_CLI_NONE": {
-        "message": "NONE",
-        "description": "Max length:  6; translation of: NONE"
     },
     "STR_CLI_TIMER": {
         "message": "timer",

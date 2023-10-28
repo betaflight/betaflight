@@ -25,7 +25,6 @@
 #define STR_THOUSAND                  "."                                   	// Max length:  1; translation of: Thousand delimiter .;
 #define STR_SECONDS                   "seconds"                             	// Max length:  8; translation of: seconds;
 #define STR_VISUAL_BEEP               "  * * * *"                           	// Max length: 10; translation of:   * * * *;
-#define STR_MSP_API_NAME              "MSP API:"                            	// Max length:  8; translation of: MSP API:;
 #define CMS_STARTUP_HELP_TEXT1        "MENU:THR MID"                        	// Max length: 20; translation of: MENU:THR MID;
 #define CMS_STARTUP_HELP_TEXT2        "+ YAW LEFT  "                        	// Max length: 20; translation of: + YAW LEFT  ;
 #define CMS_STARTUP_HELP_TEXT3        "+ PITCH UP  "                        	// Max length: 20; translation of: + PITCH UP  ;
@@ -128,7 +127,6 @@
 #define STR_CLI_NO_MATCH              "NO MATCHES FOR:"                     	// Max length: 15;translation of: NO MATCHES FOR:;
 #define STR_CLI_ERROR_FOUND           "ERRORS WERE DETECTED - PLEASE REVIEW BEFORE CONTINUING" 	// Max length: 55; translation of: ERRORS WERE DETECTED - PLEASE REVIEW BEFORE CONTINUING;
 #define STR_CLI_FIX_ERROR             "PLEASE FIX ERRORS BEFORE 'SAVE'"     	// Max length: 32; translation of: PLEASE FIX ERRORS BEFORE 'SAVE';
-#define STR_CLI_STATUS_MCU            "MCU:"                                	// Max length:  6; translation of: MCU:;
 #define STR_CLI_STATUS_CLOCK          "Clock="                              	// Max length:  6; translation of: Clock=;
 #define STR_CLI_STATUS_VREF           "Vref="                               	// Max length:  6; translation of: Vref=;
 #define STR_CLI_STATUS_CORETEMP       "Core temp="                          	// Max length: 15; translation of: Core temp=;
@@ -139,19 +137,15 @@
 #define STR_CLI_STATUS_CONFIG_SIZE    "size:"                               	// Max length:  6; translation of: size:;
 #define STR_CLI_STATUS_CONFIG_AVAIL   "max available:"                      	// Max length: 15; translation of: max available:;
 #define STR_CLI_STATUS_DEVICES        "Devices detected:"                   	// Max length: 20; translation of: Devices detected:;
-#define STR_CLI_STATUS_SPI            " SPI:"                               	// Max length:  5; translation of:  SPI:;
-#define STR_CLI_STATUS_I2C            " I2C:"                               	// Max length:  5; translation of:  I2C:;
 #define STR_CLI_STATUS_I2C_ERRORS     "I2C Errors:"                         	// Max length: 15; translation of: I2C Errors:;
 #define STR_CLI_STATUS_GYRO_DETECT    "Gyros detected:"                     	// Max length: 15; translation of: Gyros detected:;
 #define STR_CLI_STATUS_GYRO           " gyro"                               	// Max length:  8; translation of:  gyro;
 #define STR_CLI_STATUS_GYRO_LOCKED    " locked"                             	// Max length:  8; translation of:  locked;
 #define STR_CLI_STATUS_GYRO_DMA       " dma"                                	// Max length:  8; translation of:  dma;
 #define STR_CLI_STATUS_GYRO_SHARED    " shared"                             	// Max length:  8; translation of:  shared;
-#define STR_CLI_STATUS_OSD            "OSD:"                                	// Max length:  8; translation of: OSD:;
 #define STR_CLI_STATUS_BUILD_KEY      "BUILD KEY:"                          	// Max length: 10; translation of: BUILD KEY:;
 #define STR_CLI_STATUS_SYSTEM_UPTIME  "System Uptime:"                      	// Max length: 15; translation of: System Uptime:;
 #define STR_CLI_STATUS_TIME_CURRENT   ", Current Time:"                     	// Max length: 15; translation of: , Current Time:;
-#define STR_CLI_STATUS_CPU            "CPU:"                                	// Max length:  4; translation of: CPU:;
 #define STR_CLI_STATUS_CPU_CYCLE      "cycle time:"                         	// Max length: 15; translation of: cycle time:;
 #define STR_CLI_STATUS_CPU_GYRO       "GYRO rate:"                          	// Max length: 15; translation of: GYRO rate:;
 #define STR_CLI_STATUS_CPU_RX         "RX rate:"                            	// Max length: 10; translation of: RX rate:;
@@ -170,7 +164,6 @@
 #define STR_CLI_VERSION_NO_CONFIG     TR2("NO CONFIG FOUND", "NO CONFIGURATION FOUND") 	// Max length: 15; translation of: NO CONFIG FOUND; HD> Max length: 30; HD translation of: NO CONFIGURATION FOUND
 #define STR_CLI_VERSION_INFO_MANUF    "# board: manufacturer_id:"           	// Max length: 25; translation of: # board: manufacturer_id:;
 #define STR_CLI_VERSION_INFO_BOARD    "board_name:"                         	// Max length: 11; translation of: board_name:;
-#define STR_CLI_NONE                  "NONE"                                	// Max length:  6; translation of: NONE;
 #define STR_CLI_TIMER                 "timer"                               	// Max length:  6; translation of: timer;
 #define STR_CLI_TIMERS                "Timers:"                             	// Max length:  8; translation of: Timers:;
 #define STR_CLI_TIMERS_ACTIVE         "Currently active Timers:"            	// Max length: 30; translation of: Currently active Timers:;
