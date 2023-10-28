@@ -231,6 +231,10 @@
         "message": "> CRASH FLIP <",
         "description": "Max length: 15; translation of: > CRASH FLIP <"
     },
+    "STR_OSDW_CRASH_FLIP_SWITCH": {
+        "message": "CRASH FLIP SWITCH",
+        "description": "Max length: 20; translation of: CRASH FLIP SWITCH"
+    },
     "STR_OSDW_BEACON_ON": {
         "message": " BEACON ON",
         "description": "Max length: 15; translation of:  BEACON ON"
@@ -246,10 +250,6 @@
     "STR_OSDW_FAIL_SAFE": {
         "message": "FAIL SAFE",
         "description": "Max length: 15; translation of: FAIL SAFE"
-    },
-    "STR_OSDW_CRASH_FLIP": {
-        "message": "CRASH FLIP SWITCH",
-        "description": "Max length: 20; translation of: CRASH FLIP SWITCH"
     },
     "STR_OSDW_LAUNCH": {
         "message": "LAUNCH",
@@ -267,7 +267,7 @@
         "message": "RSNR LOW",
         "description": "Max length: 15; translation of: RSNR LOW"
     },
-    "STR_OSDW_LINK_QUA": {
+    "STR_OSDW_LINK_QUALITY": {
         "message": "LINK QUALITY",
         "description": "Max length: 15; translation of: LINK QUALITY"
     },
@@ -331,21 +331,9 @@
         "message": "D",
         "description": "Max length:  1; translation of: D"
     },
-    "STR_OSDE_GPS_WEST": {
-        "message": "W",
-        "description": "Max length:  1; translation of: W"
-    },
-    "STR_OSDE_GPS_EAST": {
-        "message": "E",
-        "description": "Max length:  1; translation of: E"
-    },
-    "STR_OSDE_GPS_SOUTH": {
-        "message": "S",
-        "description": "Max length:  1; translation of: S"
-    },
-    "STR_OSDE_GPS_NORTH": {
-        "message": "N",
-        "description": "Max length:  1; translation of: N"
+    "STR_OSDE_GPS_DIRECTION": {
+        "message": "NSEW",
+        "description": "Max length:  4; translation of: NSEW"
     },
     "STR_OSDE_PILOT_NAME": {
         "message": "PILOT NAME",
@@ -399,11 +387,11 @@
         "message": "ACRO",
         "description": "Max length:  5; translation of: ACRO"
     },
-    "STR_ODSE_ELEMENT_PIT": {
+    "STR_ODSE_ELEMENT_PITCH": {
         "message": "PIT",
         "description": "Max length:  4; translation of: PIT"
     },
-    "STR_ODSE_ELEMENT_ROL": {
+    "STR_ODSE_ELEMENT_ROLL": {
         "message": "ROL",
         "description": "Max length:  4; translation of: ROL"
     },

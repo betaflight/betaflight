@@ -63,15 +63,15 @@
 #define STR_OSD_STAT_TOTAL_TIME       "TOTAL FLIGHT TIME"                   	// Max length: 20; translation of: TOTAL FLIGHT TIME;
 #define STR_OSD_STAT_TOTAL_DIST       "TOTAL DISTANCE"                      	// Max length: 20; translation of: TOTAL DISTANCE;
 #define STR_OSDW_CRASH_FLIP_WARNING   "> CRASH FLIP <"                      	// Max length: 15; translation of: > CRASH FLIP <;
+#define STR_OSDW_CRASH_FLIP_SWITCH    "CRASH FLIP SWITCH"                   	// Max length: 20; translation of: CRASH FLIP SWITCH;
 #define STR_OSDW_BEACON_ON            " BEACON ON"                          	// Max length: 15; translation of:  BEACON ON;
 #define STR_OSDW_ARM_IN               TR2("ARM IN", "ARMED IN")             	// Max length: 15; translation of: ARM IN; HD> Max length: 15; HD translation of: ARMED IN
 #define STR_OSDW_FAIL_SAFE            "FAIL SAFE"                           	// Max length: 15; translation of: FAIL SAFE;
-#define STR_OSDW_CRASH_FLIP           "CRASH FLIP SWITCH"                   	// Max length: 20; translation of: CRASH FLIP SWITCH;
 #define STR_OSDW_LAUNCH               "LAUNCH"                              	// Max length: 15; translation of: LAUNCH;
 #define STR_OSDW_RSSI_LOW             "RSSI LOW"                            	// Max length: 15; translation of: RSSI LOW;
 #define STR_OSDW_RSSI_DBM             "RSSI DBM"                            	// Max length: 15; translation of: RSSI DBM;
 #define STR_OSDW_RSNR_LOW             "RSNR LOW"                            	// Max length: 15; translation of: RSNR LOW;
-#define STR_OSDW_LINK_QUA             "LINK QUALITY"                        	// Max length: 15; translation of: LINK QUALITY;
+#define STR_OSDW_LINK_QUALITY         "LINK QUALITY"                        	// Max length: 15; translation of: LINK QUALITY;
 #define STR_OSDW_LAND_NOW             " LAND NOW"                           	// Max length: 15; translation of:  LAND NOW;
 #define STR_OSDW_RESCUE_NA            TR2("RESCUE N/A", "RESCUE NOT AVAILABLE") 	// Max length: 15; translation of: RESCUE N/A; HD> Max length: 20; HD translation of: RESCUE NOT AVAILABLE
 #define STR_OSDW_RESCUE_OFF           "RESCUE OFF"                          	// Max length: 15; translation of: RESCUE OFF;
@@ -85,10 +85,7 @@
 #define STR_OSDE_DISARMED             TR2("DISARMED", "*** DISARMED ***")   	// Max length: 15; translation of: DISARMED; HD> Max length: 20; HD translation of: *** DISARMED ***
 #define STR_OSDE_UP                   "U"                                   	// Max length:  1; translation of: U;
 #define STR_OSDE_DOWN                 "D"                                   	// Max length:  1; translation of: D;
-#define STR_OSDE_GPS_WEST             "W"                                   	// Max length:  1; translation of: W;
-#define STR_OSDE_GPS_EAST             "E"                                   	// Max length:  1; translation of: E;
-#define STR_OSDE_GPS_SOUTH            "S"                                   	// Max length:  1; translation of: S;
-#define STR_OSDE_GPS_NORTH            "N"                                   	// Max length:  1; translation of: N;
+#define STR_OSDE_GPS_DIRECTION        "NSEW"                                	// Max length:  4; translation of: NSEW;
 #define STR_OSDE_PILOT_NAME           "PILOT NAME"                          	// Max length: 10; translation of: PILOT NAME;
 #define STR_OSDE_RATE                 TR2("RATE_", "RATE_")                 	// Max length:  5; translation of: RATE_; HD> Max length: 15; HD translation of: RATE_
 #define STR_OSDE_PID                  "PID_"                                	// Max length:  5; translation of: PID_;
@@ -101,8 +98,8 @@
 #define STR_ODSE_FLYMODE_ATRN         "ATRN"                                	// Max length:  5; translation of: ATRN;
 #define STR_ODSE_FLYMODE_AIR          "AIR "                                	// Max length:  5; translation of: AIR ;
 #define STR_ODSE_FLYMODE_ACRO         "ACRO"                                	// Max length:  5; translation of: ACRO;
-#define STR_ODSE_ELEMENT_PIT          "PIT"                                 	// Max length:  4; translation of: PIT;
-#define STR_ODSE_ELEMENT_ROL          "ROL"                                 	// Max length:  4; translation of: ROL;
+#define STR_ODSE_ELEMENT_PITCH        "PIT"                                 	// Max length:  4; translation of: PIT;
+#define STR_ODSE_ELEMENT_ROLL         "ROL"                                 	// Max length:  4; translation of: ROL;
 #define STR_ODSE_ELEMENT_YAW          "YAW"                                 	// Max length:  4; translation of: YAW;
 #define STR_ODSE_ANTIGRAVITY          TR2("AG", "ANTI G")                   	// Max length:  2; translation of: AG; HD> Max length:  6; HD translation of: ANTI G
 #define STR_OSDE_READY                "READY"                               	// Max length:  5; translation of: READY;

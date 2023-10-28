@@ -102,6 +102,12 @@ int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, co
     return instance->vTable->writeString(instance, x, y, attr, text);
 }
 
+int displayWriteCentered(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *text)
+{
+    uint8_t midCol = instance->cols / 2;
+    return displayWrite(instance, midCol - (strlen(text) / 2), y, attr, text);
+}
+
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, uint8_t c)
 {
     instance->posX = x + 1;
