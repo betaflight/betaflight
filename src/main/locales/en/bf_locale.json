@@ -410,13 +410,5 @@
     "STR_OSDE_READY": {
         "message": "READY",
         "description": "Max length:  5; translation of: READY"
-    },
-    "STR_CLI_ERROR_INVALID_NAME": {
-        "message": "INVALID NAME:",
-        "description": "Max length: 35; translation of: INVALID NAME"
-    },
-    "STR_CLI_ERROR_MESSAGE": {
-        "message": "CANNOT BE CHANGED. CURRENT VALUE:",
-        "description": "Max length: 35; translation of: CANNOT BE CHANGED. CURRENT VALUE:"
     }
 }
