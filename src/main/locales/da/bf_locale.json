@@ -4,7 +4,7 @@
         "description": "Max length:  2; Current language in short form: en, da, es, fr, nl ..."
     },
     "STR_LOCALE_SETUP": {
-        "message": "Sprog:",
+        "message": "Language:",
         "description": "Max length: 10; translation of: Language:"
     },
     "STR_COMMA": {
@@ -48,35 +48,67 @@
         "description": "Max length: 20; HD translation of: *** ARMED ***"
     },
     "STR_OSD_STATS": {
-        "message": "TR2(- STATISTIK -, --- STATISTIK ---)",
+        "message": "- STATISTIK -",
+        "description": "Max length: 39; description"
+    },
+    "STR_OSD_STATS_HD": {
+        "message": "--- STATISTIK ---",
         "description": "Max length: 39; description"
     },
     "STR_OSD_TIM_SOURCE_1": {
-        "message": "TR2(ON TIME , ON TIME )",
+        "message": "ON TIME ",
+        "description": "Max length: 25; description"
+    },
+    "STR_OSD_TIM_SOURCE_1_HD": {
+        "message": "ON TIME ",
         "description": "Max length: 25; description"
     },
     "STR_OSD_TIM_SOURCE_2": {
-        "message": "TR2(TOTAL AKT, TOTAL AKTIVERET)",
+        "message": "TOTAL AKT",
+        "description": "Max length: 33; description"
+    },
+    "STR_OSD_TIM_SOURCE_2_HD": {
+        "message": "TOTAL AKTIVERET",
         "description": "Max length: 33; description"
     },
     "STR_OSD_TIM_SOURCE_3": {
-        "message": "TR2(SIDST AKT, SIDST AKTIVERET)",
+        "message": "SIDST AKT",
+        "description": "Max length: 33; description"
+    },
+    "STR_OSD_TIM_SOURCE_3_HD": {
+        "message": "SIDST AKTIVERET",
         "description": "Max length: 33; description"
     },
     "STR_OSD_TIM_SOURCE_4": {
-        "message": "TR2(TIL/AKT , TIL/AKTIVERET )",
+        "message": "TIL/AKT ",
+        "description": "Max length: 31; description"
+    },
+    "STR_OSD_TIM_SOURCE_4_HD": {
+        "message": "TIL/AKTIVERET ",
         "description": "Max length: 31; description"
     },
     "STR_OSD_STAT_MAX_ALTITUDE": {
-        "message": "TR2(MAX HOEJDE, MAXIMAL HOEJDE)",
+        "message": "MAX HOEJDE",
+        "description": "Max length: 33; description"
+    },
+    "STR_OSD_STAT_MAX_ALTITUDE_HD": {
+        "message": "MAXIMAL HOEJDE",
         "description": "Max length: 33; description"
     },
     "STR_OSD_STAT_MAX_SPEED": {
-        "message": "TR2(MAX FART, MAXIMAL FART)",
+        "message": "MAX FART",
+        "description": "Max length: 29; description"
+    },
+    "STR_OSD_STAT_MAX_SPEED_HD": {
+        "message": "MAXIMAL FART",
         "description": "Max length: 29; description"
     },
     "STR_OSD_STAT_MAX_DISTANCE": {
-        "message": "TR2(MAX DISTANCE, MAXIMAL DISTANCE)",
+        "message": "MAX DISTANCE",
+        "description": "Max length: 37; description"
+    },
+    "STR_OSD_STAT_MAX_DISTANCE_HD": {
+        "message": "MAXIMAL DISTANCE",
         "description": "Max length: 37; description"
     },
     "STR_OSD_STAT_FLIGHT_DISTANCE": {
@@ -112,7 +144,11 @@
         "description": "Max length:  8; description"
     },
     "STR_OSD_STAT_MAX_CURRENT": {
-        "message": "TR2(MAX STROEM, MAXIMAL STROEM)",
+        "message": "MAX STROEM",
+        "description": "Max length: 33; description"
+    },
+    "STR_OSD_STAT_MAX_CURRENT_HD": {
+        "message": "MAXIMAL STROEM",
         "description": "Max length: 33; description"
     },
     "STR_OSD_STAT_USED_MAH": {
@@ -132,15 +168,27 @@
         "description": "Max length: 10; description"
     },
     "STR_OSD_STAT_MAX_G_FORCE": {
-        "message": "TR2(MAX G-KRAFT, MAXIMAL G-KRAFT)",
+        "message": "MAX G-KRAFT",
+        "description": "Max length: 35; description"
+    },
+    "STR_OSD_STAT_MAX_G_FORCE_HD": {
+        "message": "MAXIMAL G-KRAFT",
         "description": "Max length: 35; description"
     },
     "STR_OSD_STAT_MAX_ESC_TEMP": {
-        "message": "TR2(MAX ESC TEMP, MAXIMAL ESC TEMP)",
+        "message": "MAX ESC TEMP",
+        "description": "Max length: 37; description"
+    },
+    "STR_OSD_STAT_MAX_ESC_TEMP_HD": {
+        "message": "MAXIMAL ESC TEMP",
         "description": "Max length: 37; description"
     },
     "STR_OSD_STAT_MAX_ESC_RPM": {
-        "message": "TR2(MAX ESC RPM, MAXIMAL ESV RPM)",
+        "message": "MAX ESC RPM",
+        "description": "Max length: 35; description"
+    },
+    "STR_OSD_STAT_MAX_ESC_RPM_HD": {
+        "message": "MAXIMAL ESV RPM",
         "description": "Max length: 35; description"
     },
     "STR_OSD_STAT_MIN_LINK_QUALITY": {
@@ -179,6 +227,10 @@
         "message": "> CRASH FLIP <",
         "description": "Max length: 14; description"
     },
+    "STR_OSDW_CRASH_FLIP_SWITCH": {
+        "message": "CRASH FLIP SWITCH",
+        "description": "Max length: 17; description"
+    },
     "STR_OSDW_BEACON_ON": {
         "message": " BEACON TIL",
         "description": "Max length: 11; description"
@@ -190,10 +242,6 @@
     "STR_OSDW_FAIL_SAFE": {
         "message": "FEJLSIKRING",
         "description": "Max length: 11; description"
-    },
-    "STR_OSDW_CRASH_FLIP": {
-        "message": "CRASH FLIP SWITCH",
-        "description": "Max length: 17; description"
     },
     "STR_OSDW_LAUNCH": {
         "message": "LAUNCH",
@@ -211,7 +259,7 @@
         "message": "RSNR LAV",
         "description": "Max length:  8; description"
     },
-    "STR_OSDW_LINK_QUA": {
+    "STR_OSDW_LINK_QUALITY": {
         "message": "LINK KVALITET",
         "description": "Max length: 13; description"
     },
@@ -220,7 +268,11 @@
         "description": "Max length:  8; description"
     },
     "STR_OSDW_RESCUE_NA": {
-        "message": "TR2(FEJLSIKRING N/A, FEJLSIKRING IKKE MULIG)",
+        "message": "FEJLSIKRING N/A",
+        "description": "Max length: 46; description"
+    },
+    "STR_OSDW_RESCUE_NA_HD": {
+        "message": "FEJLSIKRING IKKE MULIG",
         "description": "Max length: 46; description"
     },
     "STR_OSDW_RESCUE_OFF": {
@@ -256,7 +308,11 @@
         "description": "Max length: 15; description"
     },
     "STR_OSDE_DISARMED": {
-        "message": "TR2(EJ AKTIV, *** DEAKTIVERET ***)",
+        "message": "EJ AKTIV)",
+        "description": "Max length: 36; description"
+    },
+    "STR_OSDE_DISARMED_HD": {
+        "message": "*** DEAKTIVERET ***",
         "description": "Max length: 36; description"
     },
     "STR_OSDE_UP": {
@@ -267,28 +323,20 @@
         "message": "N",
         "description": "Max length:  1; description"
     },
-    "STR_OSDE_GPS_WEST": {
-        "message": "V",
-        "description": "Max length:  1; description"
-    },
-    "STR_OSDE_GPS_EAST": {
-        "message": "E",
-        "description": "Max length:  2; description"
-    },
-    "STR_OSDE_GPS_SOUTH": {
-        "message": "S",
-        "description": "Max length:  1; description"
-    },
-    "STR_OSDE_GPS_NORTH": {
-        "message": "N",
-        "description": "Max length:  1; description"
+    "STR_OSDE_GPS_DIRECTION": {
+        "message": "NSEV",
+        "description": "Max length:  4; translation of: NSEW"
     },
     "STR_OSDE_PILOT_NAME": {
         "message": "PILOT_NAVN",
         "description": "Max length: 10; description"
     },
     "STR_OSDE_RATE": {
-        "message": "TR2(HAST_, HASTIGHED_)",
+        "message": "HAST_",
+        "description": "Max length: 24; description"
+    },
+    "STR_OSDE_RATE_HD": {
+        "message": "HASTIGHED_",
         "description": "Max length: 24; description"
     },
     "STR_OSDE_PID": {
@@ -331,11 +379,11 @@
         "message": "ACRO",
         "description": "Max length:  4; description"
     },
-    "STR_ODSE_ELEMENT_PIT": {
+    "STR_ODSE_ELEMENT_PITCH": {
         "message": "HOEJ",
         "description": "Max length:  4; description"
     },
-    "STR_ODSE_ELEMENT_ROL": {
+    "STR_ODSE_ELEMENT_ROLL": {
         "message": "KRAE",
         "description": "Max length:  4; description"
     },
