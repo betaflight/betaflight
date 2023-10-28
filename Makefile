@@ -174,6 +174,7 @@ INCLUDE_DIRS += $(INCLUDE_DIRS) $(SRC_DIR)/locales/$(LOCALE)
 $(SRC_DIR)/locales/$(LOCALE)/bf_locale.h: $(SRC_DIR)/locales/$(LOCALE)/bf_locale.json
 	@echo "Creating locale $(SRC_DIR)/locales/$(LOCALE)/bf_locale.h" "$(STDOUT)"
 	$(V1) $(PYTHON) $(SRC_DIR)/locales/gen_defines.py $(SRC_DIR)/locales $(LOCALE) $< $@
+
 #
 # Default Tool options - can be overridden in {mcu}.mk files.
 #

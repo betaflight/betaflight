@@ -4,7 +4,8 @@ import sys
 import json
 
 # do this
-
+# generate language specific file from language/bf_locale.json to language/bf_locale.h 
+# py gen_defines.py source language 
 
 def wr_bf_header(outFile, filename):
     with open(filename, "r") as fr:
@@ -22,14 +23,16 @@ hdKey = "_HD"
 lenSearch = "Max length:"
 lenDelimiter = ";"
 
-language = sys.argv[1]
-from_filename = sys.argv[2]
-to_filename = language + '/bf_locale.h'
+source   = sys.argv[1]
+language = sys.argv[2]
+from_filename  = source + '/' + language + '/bf_locale.json'
+to_filename    = source + '/' + language + '/bf_locale.h'
+bf_header_name = source + '/bf_header'
 
-print(language + ': ' + from_filename + ' -> '+ to_filename)
+print(sys.argv[0] + ': GENERATE >' + language + '< ' + from_filename + ' to '+ to_filename)
 
 fw = open(to_filename, 'w')
-wr_bf_header(fw, "bf_header")
+wr_bf_header(fw, bf_header_name)
 
 with open(from_filename, "r") as fr:
     # Converting JSON encoded data into Python dictionary
@@ -66,7 +69,7 @@ with open(from_filename, "r") as fr:
         prevDescription = description
     # for
 
-    print("Done reading json file\n")
+    print(sys.argv[0] + ': FINISH')
 # with
 
 fr.close()
