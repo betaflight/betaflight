@@ -45,7 +45,7 @@ with open(from_filename, "r") as fr:
         # get number of maximum lenght in "Max length: 10; description of text"
         start = description.find(lenSearch) + len(lenSearch)
         end = description.find(lenDelimiter, start)
-        maxLen = int(description[start:end].strip()) + 2        # add count for ""
+        maxLen = int(description[start:end].strip())
         # debug print(" currentKey: ", currentKey, ": prevKey: ", prevKey, " maxLen: ", maxLen)
 
         if len(message) > maxLen and maxLen > 0:
