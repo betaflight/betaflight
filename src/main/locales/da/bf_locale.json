@@ -1,43 +1,51 @@
 {
     "LOCALE": {
         "message": "da",
-        "description": "Max length:  2; description"
+        "description": "Max length:  2; Current language in short form: en, da, es, fr, nl ..."
+    },
+    "STR_LOCALE_SETUP": {
+        "message": "Sprog:",
+        "description": "Max length: 10; translation of: Language:"
     },
     "STR_COMMA": {
         "message": ",",
-        "description": "Max length:  1; description"
+        "description": "Max length:  1; translation of: Comma string ,"
     },
     "STR_PERIOD": {
         "message": ".",
-        "description": "Max length:  1; description"
+        "description": "Max length:  1; translation of: Period string ."
     },
     "STR_THOUSAND": {
         "message": ".",
-        "description": "Max length:  1; description"
+        "description": "Max length:  1; translation of: Thousand delimiter ."
     },
     "STR_SECONDS": {
         "message": "sekunder",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of: seconds"
     },
     "STR_VISUAL_BEEP": {
-        "message": " * * * *",
-        "description": "Max length:  8; description"
+        "message": "  * * * *",
+        "description": "Max length: 10; translation of:   * * * *"
     },
     "CMS_STARTUP_HELP_TEXT1": {
         "message": "MENU:GAS MIDT",
-        "description": "Max length: 13; description"
+        "description": "Max length: 20; translation of: MENU:THR MID"
     },
     "CMS_STARTUP_HELP_TEXT2": {
         "message": " + SIDEROR VENSTRE",
-        "description": "Max length: 18; description"
+        "description": "Max length: 20; translation of: + YAW LEFT  "
     },
     "CMS_STARTUP_HELP_TEXT3": {
         "message": " + HOEJDE OP",
-        "description": "Max length: 12; description"
+        "description": "Max length: 20; translation of: + PITCH UP  "
     },
     "STR_OSD_ARMED": {
-        "message": "TR2(* AKTIV *, *** AKTIVERET ***)",
-        "description": "Max length: 35; description"
+        "message": "AKTIVERET",
+        "description": "Max length: 10; translation of: ARMED"
+    },
+    "STR_OSD_ARMED_HD": {
+        "message": "*** AKTIVERET ***",
+        "description": "Max length: 20; HD translation of: *** ARMED ***"
     },
     "STR_OSD_STATS": {
         "message": "TR2(- STATISTIK -, --- STATISTIK ---)",
@@ -347,424 +355,12 @@
         "message": "KLAR",
         "description": "Max length:  4; description"
     },
-    "STR_LOCALE_SETUP": {
-        "message": "Sprog:",
-        "description": "Max length:  6; description"
-    },
     "STR_CLI_ERROR_INVALID_NAME": {
-        "message": "UGYLDIGT NAVN:",
-        "description": "Max length: 14; description"
+        "message": "INVALID NAME:",
+        "description": "Max length: 35; translation of: INVALID NAME"
     },
     "STR_CLI_ERROR_MESSAGE": {
-        "message": "KAN IKKE AENDRES. AKTUEL VAERDI:",
-        "description": "Max length: 32; description"
-    },
-    "STR_CLI_PARSINGFAIL": {
-        "message": "PARSING FEJLET",
-        "description": "Max length: 14; description"
-    },
-    "STR_CLI_INVALIDRESSOURCE": {
-        "message": "UGYLDIGT RESOURCE NAVN:",
-        "description": "Max length: 23; description"
-    },
-    "STR_CLI_ARG_INVALIDCOUNT": {
-        "message": "UGYLDIGT ANTAL ARGUMENTER",
-        "description": "Max length: 25; description"
-    },
-    "STR_CLI_ARG_NOTBETWEEN": {
-        "message": "IKKE MELLEM",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_ARG_AND": {
-        "message": "OG",
-        "description": "Max length:  2; description"
-    },
-    "STR_CLI_ARG_OUTOFRANGE": {
-        "message": "ARGUMENT UDENFOR INTERVAL",
-        "description": "Max length: 25; description"
-    },
-    "STR_CLI_DSHOT_READ": {
-        "message": "Dshot laest:",
-        "description": "Max length: 12; description"
-    },
-    "STR_CLI_DSHOT_INVALID_PKT": {
-        "message": "Dshot ugyldig pakker:",
-        "description": "Max length: 21; description"
-    },
-    "STR_CLI_DSHOT_DIR_CHANGE": {
-        "message": "Dshot retning Skift cyklus:",
-        "description": "Max length: 27; description"
-    },
-    "STR_CLI_DSHOT_DIR_CHANGE_MIC": {
-        "message": ", mikro:",
-        "description": "Max length:  8; description"
-    },
-    "STR_CLI_DSHOT_HEAD1": {
-        "message": "Motor    Type   eRPM    RPM     Hz    Invalid   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3",
-        "description": "Max length:115; description"
-    },
-    "STR_CLI_DSHOT_LINE1": {
-        "message": "=====  ====== ====== ====== ====== ========== ====== ====== ====== ====== ====== ====== ======",
-        "description": "Max length:115; description"
-    },
-    "STR_CLI_DSHOT_HEAD2": {
-        "message": "Motor    Type   eRPM    RPM     Hz   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3",
-        "description": "Max length:115; description"
-    },
-    "STR_CLI_DSHOT_LINE2": {
-        "message": "=====  ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ======",
-        "description": "Max length:115; description"
-    },
-    "STR_CLI_DSHOT_NO_TELEM": {
-        "message": "Dshot telemetri ikke aktiv",
-        "description": "Max length: 26; description"
-    },
-    "STR_CLI_STORAGE_NOTFOUND": {
-        "message": "Masselager findes ikke eller kan ikke aktiveres!",
-        "description": "Max length: 48; description"
-    },
-    "STR_CLI_NO_MATCH": {
-        "message": "INGEN MATCH FOR:",
-        "description": "Max length: 16; description"
-    },
-    "STR_CLI_ERROR_FOUND": {
-        "message": "FEJL ER FUNDET - UNDERSOEG INDEN DU FORTSAETTER",
-        "description": "Max length: 47; description"
-    },
-    "STR_CLI_FIX_ERROR": {
-        "message": "RET FEJL, INDEN GEM MED 'SAVE'",
-        "description": "Max length: 30; description"
-    },
-    "STR_CLI_STATUS_CLOCK": {
-        "message": "klokke=",
-        "description": "Max length:  7; description"
-    },
-    "STR_CLI_STATUS_VREF": {
-        "message": "Vref=",
-        "description": "Max length:  5; description"
-    },
-    "STR_CLI_STATUS_CORETEMP": {
-        "message": "kerne temp=",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_STATUS_STACK_SIZE": {
-        "message": "Stak stoerrelse:",
-        "description": "Max length: 16; description"
-    },
-    "STR_CLI_STATUS_STACK_ADDR": {
-        "message": "Stak adresse:",
-        "description": "Max length: 13; description"
-    },
-    "STR_CLI_STATUS_STACK_USED": {
-        "message": "Stak brugt:",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_STATUS_CONFIG": {
-        "message": "Konfiguration:",
-        "description": "Max length: 14; description"
-    },
-    "STR_CLI_STATUS_CONFIG_SIZE": {
-        "message": "stoerrelse:",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_STATUS_CONFIG_AVAIL": {
-        "message": "max anvendeligt:",
-        "description": "Max length: 16; description"
-    },
-    "STR_CLI_STATUS_DEVICES": {
-        "message": "Enheder opdaget:",
-        "description": "Max length: 16; description"
-    },
-    "STR_CLI_STATUS_I2C_ERRORS": {
-        "message": "I2C fejl:",
-        "description": "Max length:  9; description"
-    },
-    "STR_CLI_STATUS_GYRO_DETECT": {
-        "message": "Gyro opdaget:",
-        "description": "Max length: 13; description"
-    },
-    "STR_CLI_STATUS_GYRO": {
-        "message": " gyro",
-        "description": "Max length:  5; description"
-    },
-    "STR_CLI_STATUS_GYRO_LOCKED": {
-        "message": " laast",
-        "description": "Max length:  6; description"
-    },
-    "STR_CLI_STATUS_GYRO_DMA": {
-        "message": " dma",
-        "description": "Max length:  4; description"
-    },
-    "STR_CLI_STATUS_GYRO_SHARED": {
-        "message": " delt",
-        "description": "Max length:  5; description"
-    },
-    "STR_CLI_STATUS_BUILD_KEY": {
-        "message": "RELEASE BYG ID:",
-        "description": "Max length: 15; description"
-    },
-    "STR_CLI_STATUS_SYSTEM_UPTIME": {
-        "message": "System oppetid:",
-        "description": "Max length: 15; description"
-    },
-    "STR_CLI_STATUS_TIME_CURRENT": {
-        "message": ", system tid:",
-        "description": "Max length: 13; description"
-    },
-    "STR_CLI_STATUS_CPU_CYCLE": {
-        "message": "cyklus tid:",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_STATUS_CPU_GYRO": {
-        "message": "GYRO hast.:",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_STATUS_CPU_RX": {
-        "message": "RX hast.:",
-        "description": "Max length:  9; description"
-    },
-    "STR_CLI_STATUS_CPU_SYSTEM": {
-        "message": "System hast.:",
-        "description": "Max length: 13; description"
-    },
-    "STR_CLI_STATUS_BAT_VOLTAGE": {
-        "message": "Spaending:",
-        "description": "Max length: 10; description"
-    },
-    "STR_CLI_STATUS_BAT_TYPE": {
-        "message": "batteri",
-        "description": "Max length:  7; description"
-    },
-    "STR_CLI_STATUS_FLASH": {
-        "message": "FLASH: JEDEC ID=",
-        "description": "Max length: 16; description"
-    },
-    "STR_CLI_TASK_LATE_LIST": {
-        "message": "Task liste            rate/hz  max/us  avg/us maxload avgload  total/ms   late    run reqd/us",
-        "description": "Max length:115; description"
-    },
-    "STR_CLI_TASK_LIST": {
-        "message": "Task liste            rate/hz  max/us  avg/us maxload avgload  total/ms",
-        "description": "Max length:100; description"
-    },
-    "STR_CLI_TASK_MINIMAL": {
-        "message": "Task liste",
-        "description": "Max length: 10; description"
-    },
-    "STR_CLI_TASK_RX_CHECK": {
-        "message": "RX check funktion",
-        "description": "Max length: 17; description"
-    },
-    "STR_CLI_TASK_TOTAL": {
-        "message": "Total (eksklusiv SERIEL)",
-        "description": "Max length: 24; description"
-    },
-    "STR_CLI_TASK_SCHEDULER_START": {
-        "message": "Scheduler start cykler",
-        "description": "Max length: 22; description"
-    },
-    "STR_CLI_TASK_SCHEDULER_GAURD": {
-        "message": "guard cykler",
-        "description": "Max length: 12; description"
-    },
-    "STR_CLI_VERSION_HAS_CONFIG": {
-        "message": "Konfig: JA",
-        "description": "Max length: 10; description"
-    },
-    "STR_CLI_VERSION_NO_CONFIG": {
-        "message": "TR2(INGEN KONFIG, INGEN KONFIGURATION FUNDET)",
-        "description": "Max length: 47; description"
-    },
-    "STR_CLI_VERSION_INFO_MANUF": {
-        "message": "# FC: manufacturer_id:",
-        "description": "Max length: 22; description"
-    },
-    "STR_CLI_VERSION_INFO_BOARD": {
-        "message": "board_name:",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_TIMER": {
-        "message": "timer",
-        "description": "Max length:  5; description"
-    },
-    "STR_CLI_TIMERS": {
-        "message": "Timers:",
-        "description": "Max length:  7; description"
-    },
-    "STR_CLI_TIMERS_ACTIVE": {
-        "message": "Aktiv tidtagning:",
-        "description": "Max length: 17; description"
-    },
-    "STR_CLI_TIMERS_FREE": {
-        "message": " FRI",
-        "description": "Max length:  4; description"
-    },
-    "STR_CLI_STATUS_ARM_DISABLE": {
-        "message": "Aktiver IKKE flag:",
-        "description": "Max length: 18; description"
-    },
-    "STR_CLI_DSHOT_TEL_INFO": {
-        "message": " INGEN DATA",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_MSC_TIMEZONE": {
-        "message": "UGYLDIG TIDSZONE OFFSET",
-        "description": "Max length: 23; description"
-    },
-    "STR_CLI_MSC_RESTART": {
-        "message": "Skifter til masselager tilstand",
-        "description": "Max length: 31; description"
-    },
-    "STR_CLI_MSC_REBOOT": {
-        "message": "\\r\\nGenstarter",
-        "description": "Max length: 14; description"
-    },
-    "STR_CLI_PROCESS": {
-        "message": "UKENDT KOMMANDO, TAST 'HELP'",
-        "description": "Max length: 28; description"
-    },
-    "STR_CLI_ENTER_LONG": {
-        "message": "\\r\\nCLI tilstand, tast 'exit' for at forlade, eller 'help' for vejledning",
-        "description": "Max length: 73; description"
-    },
-    "STR_CLI_ENTER_SHORT": {
-        "message": "\\r\\nCLI",
-        "description": "Max length:  7; description"
-    },
-    "STR_CLI_SDCARD_NAME": {
-        "message": "SD kort: ",
-        "description": "Max length:  9; description"
-    },
-    "STR_CLI_SDCARD_NOCONFIG": {
-        "message": "Ikke konfigureret",
-        "description": "Max length: 17; description"
-    },
-    "STR_CLI_SDCARD_NONE": {
-        "message": "Ikke indsat",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_SDCARD_NOSTART": {
-        "message": "Startop fejlet",
-        "description": "Max length: 14; description"
-    },
-    "STR_CLI_SDCARD_MANUFAC": {
-        "message": "Producent",
-        "description": "Max length:  9; description"
-    },
-    "STR_CLI_SDCARD_FILESYSTEM": {
-        "message": "\\r\\nFilsystem: ",
-        "description": "Max length: 15; description"
-    },
-    "STR_CLI_SDCARD_READY": {
-        "message": "Klart",
-        "description": "Max length:  5; description"
-    },
-    "STR_CLI_SDCARD_INIT": {
-        "message": "Initialiserer",
-        "description": "Max length: 13; description"
-    },
-    "STR_CLI_SDCARD_FATAL": {
-        "message": "Fejlet helt",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_SDCARD_NOFATMBR": {
-        "message": " - ingen FAT MBR partitioner",
-        "description": "Max length: 28; description"
-    },
-    "STR_CLI_SDCARD_BADFAT": {
-        "message": " - fejlagtig FAT blok",
-        "description": "Max length: 21; description"
-    },
-    "STR_CLI_FLASH_SEC": {
-        "message": "Flash sektorer=",
-        "description": "Max length: 15; description"
-    },
-    "STR_CLI_FLASH_SEC_SIZE": {
-        "message": "sektorStoerrelse=",
-        "description": "Max length: 17; description"
-    },
-    "STR_CLI_FLASH_SEC_PAGE": {
-        "message": "siderPerSektor=",
-        "description": "Max length: 15; description"
-    },
-    "STR_CLI_FLASH_PAGE_SIZE": {
-        "message": "sideStoerrelse=",
-        "description": "Max length: 15; description"
-    },
-    "STR_CLI_FLASH_TOTAL_SIZE": {
-        "message": "totalStoerrelse=",
-        "description": "Max length: 16; description"
-    },
-    "STR_CLI_FLASH_JEDEC": {
-        "message": "JEDEC ID=",
-        "description": "Max length:  9; description"
-    },
-    "STR_CLI_FLASH_PART": {
-        "message": "Partitioner:",
-        "description": "Max length: 12; description"
-    },
-    "STR_CLI_FLASH_SIZE": {
-        "message": "FlashFS stoerrelse=",
-        "description": "Max length: 19; description"
-    },
-    "STR_CLI_FLASH_SIZE_USED": {
-        "message": "brugtStoerrelse=",
-        "description": "Max length: 16; description"
-    },
-    "STR_CLI_FLASH_ER_LONG": {
-        "message": "Sletter, vent venligst ... ",
-        "description": "Max length: 27; description"
-    },
-    "STR_CLI_FLASH_ER_SHORT": {
-        "message": "Sletter,",
-        "description": "Max length:  8; description"
-    },
-    "STR_CLI_FLASH_ER_DONE": {
-        "message": "Faerdig.",
-        "description": "Max length:  8; description"
-    },
-    "STR_CLI_FLASH_VR": {
-        "message": "Kontrollerer",
-        "description": "Max length: 12; description"
-    },
-    "STR_CLI_FLASH_VR_OK": {
-        "message": "Succes",
-        "description": "Max length:  6; description"
-    },
-    "STR_CLI_FLASH_VR_FAIL": {
-        "message": "Fejlet",
-        "description": "Max length:  6; description"
-    },
-    "STR_CLI_FLASH_WROTE": {
-        "message": "Skrevet",
-        "description": "Max length:  7; description"
-    },
-    "STR_CLI_FLASH_READ": {
-        "message": "Laest",
-        "description": "Max length:  5; description"
-    },
-    "STR_CLI_FLASH_BYTES_AT": {
-        "message": "bytes ved:",
-        "description": "Max length: 10; description"
-    },
-    "STR_CLI_ENABLED": {
-        "message": "Aktiveret",
-        "description": "Max length:  9; description"
-    },
-    "STR_CLI_DISABLED": {
-        "message": "Deaktiveret",
-        "description": "Max length: 11; description"
-    },
-    "STR_CLI_AVAILABLE": {
-        "message": "Mulige:",
-        "description": "Max length:  7; description"
-    },
-    "STR_CLI_UNAVAILABLE": {
-        "message": "Ikke mulig",
-        "description": "Max length: 10; description"
-    },
-    "STR_CLI_NOSUPPORT": {
-        "message": "Ikke understoettet.",
-        "description": "Max length: 19; description"
+        "message": "CANNOT BE CHANGED. CURRENT VALUE:",
+        "description": "Max length: 35; translation of: CANNOT BE CHANGED. CURRENT VALUE:"
     }
 }

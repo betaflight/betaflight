@@ -68,6 +68,7 @@ with open(from_filename, "r") as fr:
         prevMessage = message
         prevDescription = description
     # for
+    wr_define(fw, key, '"' + message + '"', description + ";", errorMess)
 
     print(sys.argv[0] + ': FINISH')
 # with
