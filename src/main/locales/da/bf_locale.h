@@ -21,6 +21,8 @@
 
 // DK translations author: HThuren <thuren.henrik@gmail.com>
 
+#define LOCALE                       "da"
+
 #define STR_THOUSAND 	            "."
 #define STR_SECONDS                  "sekunder"
 
@@ -119,6 +121,8 @@
 #define STR_OSDE_READY               "KLAR"
 
 // CLI
+#define STR_LOCALE_SETUP             "Sprog:"
+
 #define STR_CLI_ERROR_INVALID_NAME   "UGYLDIGT NAVN:"
 #define STR_CLI_ERROR_MESSAGE        "KAN IKKE AENDRES. AKTUEL VAERDI:"
 #define STR_CLI_PARSINGFAIL          "PARSING FEJLET"

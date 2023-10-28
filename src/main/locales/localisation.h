@@ -30,3 +30,14 @@
 #include "bf_locale.h"                                      // located in locales/xx, default locales/en, managed by make
 
 extern const char STR_LOCALE[];
+<<<<<<< HEAD
+=======
+
+// defines to be untranslated
+#define STR_COMMA	              ","
+#define STR_PERIOD	            "."
+
+#define STR_VISUAL_BEEP         "  * * * *"
+
+#define STR_MSP_API_NAME        "MSP API:"
+>>>>>>> cd1cda2fb (Report locale in cli command - status)

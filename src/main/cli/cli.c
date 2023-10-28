@@ -4839,6 +4839,7 @@ if (buildKey) {
     }
 #endif
 
+<<<<<<< HEAD
 #ifdef USE_GPS
     cliPrint("GPS: ");
     if (featureIsEnabled(FEATURE_GPS)) {
@@ -4880,6 +4881,13 @@ if (buildKey) {
 #endif // USE_GPS
 
     cliPrint("Arming disable flags:");
+=======
+#ifdef LOCALE
+    cliPrintLinef("%s %s", STR_LOCALE_SETUP, STR_LOCALE);
+#endif
+
+    cliPrint(STR_CLI_STATUS_ARM_DISABLE);
+>>>>>>> cd1cda2fb (Report locale in cli command - status)
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
         const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
