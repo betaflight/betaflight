@@ -5,866 +5,870 @@
     },
     "STR_COMMA": {
         "message": ",",
-        "description": "Max length:  1; Comma string"
+        "description": "Max length:  1; translation of: Comma string ,"
     },
     "STR_PERIOD": {
         "message": ".",
-        "description": "Max length:  1; Period string"
+        "description": "Max length:  1; translation of: Period string ."
     },
     "STR_THOUSAND": {
         "message": ".",
-        "description": "Max length:  1; Thousand delimiter"
+        "description": "Max length:  1; translation of: Thousand delimiter ."
     },
     "STR_SECONDS": {
         "message": "seconds",
-        "description": "Max length:  8; Seconds string"
+        "description": "Max length:  8; translation of: seconds"
     },
     "STR_VISUAL_BEEP": {
         "message": "  * * * *",
-        "description": "Max length: 10; Visual beep"
+        "description": "Max length: 10; translation of:   * * * *"
     },
     "STR_MSP_API_NAME": {
         "message": "MSP API:",
-        "description": "Max length:  8; MSP API prompt"
+        "description": "Max length:  8; translation of: MSP API:"
     },
     "CMS_STARTUP_HELP_TEXT1": {
         "message": "MENU:THR MID",
-        "description": "Max length: 20; CMS menu line 1"
+        "description": "Max length: 20; translation of: MENU:THR MID"
     },
     "CMS_STARTUP_HELP_TEXT2": {
         "message": "+ YAW LEFT  ",
-        "description": "Max length: 20; CMS menu line 2"
+        "description": "Max length: 20; translation of: + YAW LEFT  "
     },
     "CMS_STARTUP_HELP_TEXT3": {
         "message": "+ PITCH UP  ",
-        "description": "Max length: 20; CMS menu line 3"
+        "description": "Max length: 20; translation of: + PITCH UP  "
     },
     "STR_OSD_ARMED": {
         "message": "ARMED",
-        "description": "Max length: 10; ARMED notification"
+        "description": "Max length: 10; translation of: ARMED"
     },
     "STR_OSD_ARMED_HD": {
         "message": "*** ARMED ***",
-        "description": "Max length: 20; HD text for ARMED notification"
+        "description": "Max length: 20; HD translation of: *** ARMED ***"
     },
     "STR_OSD_STATS": {
         "message": "--- STATS ---",
-        "description": "Max length: 15; STATISTICS"
+        "description": "Max length: 15; translation of: --- STATS ---"
     },
     "STR_OSD_STATS_HD": {
         "message": "--- STATISTICS ---",
-        "description": "Max length: 20; HD text for STATISTICS"
+        "description": "Max length: 20; HD translation of: --- STATISTICS ---"
     },
     "STR_OSD_TIM_SOURCE_1": {
         "message": "ON TIME  ",
-        "description": "Max length:  9; TIME SOURCE 1"
+        "description": "Max length:  9; translation of: ON TIME  "
     },
     "STR_OSD_TIM_SOURCE_1_HD": {
         "message": "ON TIME    ",
-        "description": "Max length: 11; HD text for TIME SOURCE 1"
+        "description": "Max length: 11; HD translation of: ON TIME  "
     },
     "STR_OSD_TIM_SOURCE_2": {
         "message": "TOTAL ARM",
-        "description": "Max length:  9; TIME SOURCE 2"
+        "description": "Max length:  9; translation of: TOTAL ARM"
     },
     "STR_OSD_TIM_SOURCE_2_HD": {
         "message": "TOTAL ARMED",
-        "description": "Max length: 11; HD text for TIME SOURCE 2"
+        "description": "Max length: 11; HD translation of: TOTAL ARMED"
     },
     "STR_OSD_TIM_SOURCE_3": {
         "message": "LAST ARM ",
-        "description": "Max length:  9; TIME SOURCE 3"
+        "description": "Max length:  9; translation of: LAST ARM "
     },
     "STR_OSD_TIM_SOURCE_3_HD": {
         "message": "LAST ARMED ",
-        "description": "Max length: 11; HD text for TIME SOURCE 3"
+        "description": "Max length: 11; HD translation of: LAST ARMED "
     },
     "STR_OSD_TIM_SOURCE_4": {
         "message": "ON/ARM   ",
-        "description": "Max length:  9; TIME SOURCE 4"
+        "description": "Max length:  9; translation of: ON/ARM   "
     },
     "STR_OSD_TIM_SOURCE_4_HD": {
         "message": "ON/ARMED   ",
-        "description": "Max length: 11; HD text for TIME SOURCE 4"
+        "description": "Max length: 11; HD translation of: ON/ARMED   "
     },
     "STR_OSD_STAT_MAX_ALTITUDE": {
         "message": "MAX ALTITUDE",
-        "description": "Max length: 12; MAXIMAL ALTITUDE"
+        "description": "Max length: 12; translation of: MAX ALTITUDE"
     },
     "STR_OSD_STAT_MAX_ALTITUDE_HD": {
         "message": "MAXIMAL ALTITUDE",
-        "description": "Max length: 16; HD text for MAXIMAL ALTITUDE"
+        "description": "Max length: 16; HD translation of: MAXIMAL ALTITUDE"
     },
     "STR_OSD_STAT_MAX_SPEED": {
         "message": "MAX SPEED   ",
-        "description": "Max length: 12; MAXIMAL SPEED"
+        "description": "Max length: 12; translation of: MAX SPEED   "
     },
     "STR_OSD_STAT_MAX_SPEED_HD": {
         "message": "MAXIMAL SPEED   ",
-        "description": "Max length: 16; HD text for MAXIMAL SPEED"
+        "description": "Max length: 16; HD translation of: MAXIMAL SPEED   "
     },
     "STR_OSD_STAT_MAX_DISTANCE": {
         "message": "MAX DISTANCE",
-        "description": "Max length: 12; MAXIMAL DISTANCE"
+        "description": "Max length: 12; translation of: MAX DISTANCE"
     },
     "STR_OSD_STAT_MAX_DISTANCE_HD": {
         "message": "MAXIMAL DISTANCE",
-        "description": "Max length: 16; HD text for MAXIMAL DISTANCE"
+        "description": "Max length: 16; HD translation of: MAXIMAL DISTANCE"
     },
     "STR_OSD_STAT_FLIGHT_DISTANCE": {
         "message": "FLIGHT DISTANCE",
-        "description": "Max length: 15; FLIGHT DISTANCE"
+        "description": "Max length: 15; translation of: FLIGHT DISTANCE"
     },
     "STR_OSD_STAT_MIN_BATTERY_AVG": {
         "message": "MIN AVG CELL",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: MIN AVG CELL"
     },
     "STR_OSD_STAT_MIN_BATTERY": {
         "message": "MIN BATTERY",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: MIN BATTERY"
     },
     "STR_OSD_STAT_END_BATTERY_AVG": {
         "message": "END AVG CELL",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: END AVG CELL"
     },
     "STR_OSD_STAT_END_BATTERY": {
         "message": "END BATTERY",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: END BATTERY"
     },
     "STR_OSD_STAT_BATTERY_AVG": {
         "message": "AVG BATT CELL",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: AVG BATT CELL"
     },
     "STR_OSD_STAT_BATTERY": {
         "message": "BATTERY",
-        "description": "Max length: 15; BATTERY"
+        "description": "Max length: 15; translation of: BATTERY"
     },
     "STR_OSD_STAT_MIN_RSSI": {
         "message": "MIN RSSI",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: MIN RSSI"
     },
     "STR_OSD_STAT_MAX_CURRENT": {
         "message": "MAX CURRENT",
-        "description": "Max length: 15; MAXIMAL CURRENT"
+        "description": "Max length: 15; translation of: MAX CURRENT"
     },
     "STR_OSD_STAT_MAX_CURRENT_HD": {
         "message": "MAXIMAL CURRENT",
-        "description": "Max length: 15; HD text for MAXIMAL CURRENT"
+        "description": "Max length: 15; HD translation of: MAXIMAL CURRENT"
     },
     "STR_OSD_STAT_USED_MAH": {
         "message": "USED MAH",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: USED MAH"
     },
     "STR_OSD_STAT_WATT_HOURS_DRAWN": {
         "message": "USED WATT HOURS",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: USED WATT HOURS"
     },
     "STR_OSD_STAT_BLACKBOX": {
         "message": "BLACKBOX",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: BLACKBOX"
     },
     "STR_OSD_STAT_BLACKBOX_NUMBER": {
         "message": "BB LOG NUM",
-        "description": "Max length: 15; BLACKBOX LOG NUMBER"
+        "description": "Max length: 15; translation of: BB LOG NUM"
     },
     "STR_OSD_STAT_BLACKBOX_NUMBER_HD": {
         "message": "BLACKBOX LOG NUMBER",
-        "description": "Max length: 20; HD text for BLACKBOX LOG NUMBER"
+        "description": "Max length: 20; HD translation of: BLACKBOX LOG NUMBER"
     },
     "STR_OSD_STAT_MAX_G_FORCE": {
         "message": "MAX G-FORCE",
-        "description": "Max length: 15; MAXIMAL G-FORCE"
+        "description": "Max length: 15; translation of: MAX G-FORCE"
     },
     "STR_OSD_STAT_MAX_G_FORCE_HD": {
         "message": "MAXIMAL G-FORCE",
-        "description": "Max length: 15; HD text for MAXIMAL G-FORCE"
+        "description": "Max length: 15; HD translation of: MAXIMAL G-FORCE"
     },
     "STR_OSD_STAT_MAX_ESC_TEMP": {
         "message": "MAX ESC TEMP",
-        "description": "Max length: 15; MAXIMAL ESC TEMP"
+        "description": "Max length: 15; translation of: MAX ESC TEMP"
     },
     "STR_OSD_STAT_MAX_ESC_TEMP_HD": {
         "message": "MAXIMAL ESC TEMP",
-        "description": "Max length: 16; HD text for MAXIMAL ESC TEMP"
+        "description": "Max length: 16; HD translation of: MAXIMAL ESC TEMP"
     },
     "STR_OSD_STAT_MAX_ESC_RPM": {
         "message": "MAX ESC RPM",
-        "description": "Max length: 15; MAXIMAL ESC RPM"
+        "description": "Max length: 15; translation of: MAX ESC RPM"
     },
     "STR_OSD_STAT_MAX_ESC_RPM_HD": {
         "message": "MAXIMAL ESC RPM",
-        "description": "Max length: 15; HD text for MAXIMAL ESC RPM"
+        "description": "Max length: 15; HD translation of: MAXIMAL ESC RPM"
     },
     "STR_OSD_STAT_MIN_LINK_QUALITY": {
         "message": "MIN LINK",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: MIN LINK"
     },
     "STR_OSD_STAT_MAX_FFT": {
         "message": "PEAK FFT",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: PEAK FFT"
     },
     "STR_OSD_STAT_MAX_FFT_THRT": {
         "message": "THRT<20%",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: THRT<20%"
     },
     "STR_OSD_STAT_MIN_RSSI_DBM": {
         "message": "MIN RSSI DBM",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: MIN RSSI DBM"
     },
     "STR_OSD_STAT_MIN_RSNR": {
         "message": "MIN RSNR",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: MIN RSNR"
     },
     "STR_USE_PERSISTENT_STATS": {
         "message": "TOTAL FLIGHTS",
-        "description": "Max length: 20; COUNT TOTAL FLIGHTS"
+        "description": "Max length: 20; translation of: TOTAL FLIGHTS"
     },
     "STR_OSD_STAT_TOTAL_TIME": {
         "message": "TOTAL FLIGHT TIME",
-        "description": "Max length: 20; COUNT TOTAL FLIGHT TIME"
+        "description": "Max length: 20; translation of: TOTAL FLIGHT TIME"
     },
     "STR_OSD_STAT_TOTAL_DIST": {
         "message": "TOTAL DISTANCE",
-        "description": "Max length: 20; COUNT TOTAL DISTANCE"
+        "description": "Max length: 20; translation of: TOTAL DISTANCE"
     },
     "STR_OSDW_CRASH_FLIP_WARNING": {
         "message": "> CRASH FLIP <",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: > CRASH FLIP <"
     },
     "STR_OSDW_BEACON_ON": {
         "message": " BEACON ON",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of:  BEACON ON"
     },
     "STR_OSDW_ARM_IN": {
         "message": "ARM IN",
-        "description": "Max length: 15; TIME ARMED IN"
+        "description": "Max length: 15; translation of: ARM IN"
     },
     "STR_OSDW_ARM_IN_HD": {
         "message": "ARMED IN",
-        "description": "Max length: 15; HD text for TIME ARMED IN"
+        "description": "Max length: 15; HD translation of: ARMED IN"
     },
     "STR_OSDW_FAIL_SAFE": {
         "message": "FAIL SAFE",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: FAIL SAFE"
     },
     "STR_OSDW_CRASH_FLIP": {
         "message": "CRASH FLIP SWITCH",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: CRASH FLIP SWITCH"
     },
     "STR_OSDW_LAUNCH": {
         "message": "LAUNCH",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: LAUNCH"
     },
     "STR_OSDW_RSSI_LOW": {
         "message": "RSSI LOW",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: RSSI LOW"
     },
     "STR_OSDW_RSSI_DBM": {
         "message": "RSSI DBM",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: RSSI DBM"
     },
     "STR_OSDW_RSNR_LOW": {
         "message": "RSNR LOW",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: RSNR LOW"
     },
     "STR_OSDW_LINK_QUA": {
         "message": "LINK QUALITY",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: LINK QUALITY"
     },
     "STR_OSDW_LAND_NOW": {
         "message": " LAND NOW",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of:  LAND NOW"
     },
     "STR_OSDW_RESCUE_NA": {
         "message": "RESCUE N/A",
-        "description": "Max length: 15; RESCUE NOT AVAILABLE"
+        "description": "Max length: 15; translation of: RESCUE N/A"
     },
     "STR_OSDW_RESCUE_NA_HD": {
         "message": "RESCUE NOT AVAILABLE",
-        "description": "Max length: 20; HD text for RESCUE NOT AVAILABLE"
+        "description": "Max length: 20; HD translation of: RESCUE NOT AVAILABLE"
     },
     "STR_OSDW_RESCUE_OFF": {
         "message": "RESCUE OFF",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: RESCUE OFF"
     },
     "STR_OSDW_HEADFREE": {
         "message": "HEADFREE",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: HEADFREE"
     },
     "STR_OSDW_CORE": {
         "message": "CORE",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: CORE"
     },
     "STR_OSDW_LOW_BATT": {
         "message": "LOW BATTERY",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: LOW BATTERY"
     },
     "STR_OSDW_RCSMOOTHING": {
         "message": "RCSMOOTHING",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: RCSMOOTHING"
     },
     "STR_OSDW_OVER_CAP": {
         "message": "OVER CAP",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: OVER CAP"
     },
     "STR_OSDW_BATT_CONTINUE": {
         "message": "BATTERY CONTINUE",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: BATTERY CONTINUE"
     },
     "STR_OSDW_BATT_BELOW_FULL": {
         "message": "BATT < FULL",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: BATT < FULL"
     },
     "STR_OSDE_DISARMED": {
         "message": "DISARMED",
-        "description": "Max length: 15; DISARMED"
+        "description": "Max length: 15; translation of: DISARMED"
     },
     "STR_OSDE_DISARMED_HD": {
         "message": "*** DISARMED ***",
-        "description": "Max length: 20; HD text for DISARMED"
+        "description": "Max length: 20; HD translation of: *** DISARMED ***"
     },
     "STR_OSDE_UP": {
         "message": "U",
-        "description": "Max length:  1; Up"
+        "description": "Max length:  1; translation of: U"
     },
     "STR_OSDE_DOWN": {
         "message": "D",
-        "description": "Max length:  1; Down"
+        "description": "Max length:  1; translation of: D"
     },
     "STR_OSDE_GPS_WEST": {
         "message": "W",
-        "description": "Max length:  1; West"
+        "description": "Max length:  1; translation of: W"
     },
     "STR_OSDE_GPS_EAST": {
         "message": "E",
-        "description": "Max length:  1; East"
+        "description": "Max length:  1; translation of: E"
     },
     "STR_OSDE_GPS_SOUTH": {
         "message": "S",
-        "description": "Max length:  1; South"
+        "description": "Max length:  1; translation of: S"
     },
     "STR_OSDE_GPS_NORTH": {
         "message": "N",
-        "description": "Max length:  1; North"
+        "description": "Max length:  1; translation of: N"
     },
     "STR_OSDE_PILOT_NAME": {
         "message": "PILOT NAME",
-        "description": "Max length: 10; PILOT NAME"
+        "description": "Max length: 10; translation of: PILOT NAME"
     },
     "STR_OSDE_RATE": {
         "message": "RATE_",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: RATE_"
     },
     "STR_OSDE_RATE_HD": {
         "message": "RATE_",
-        "description": "Max length: 15; HD text for RATE_"
+        "description": "Max length: 15; HD translation of: RATE_"
     },
     "STR_OSDE_PID": {
         "message": "PID_",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: PID_"
     },
     "STR_OSDE_OID": {
         "message": "OID_",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: OID_"
     },
     "STR_ODSE_FLYMODE_FAILSAFE": {
         "message": "!FS!",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: !FS!"
     },
     "STR_ODSE_FLYMODE_RESCUE": {
         "message": "RESC",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: RESC"
     },
     "STR_ODSE_FLYMODE_HEAD": {
         "message": "HEAD",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: HEAD"
     },
     "STR_ODSE_FLYMODE_ANGL": {
         "message": "ANGL",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: ANGL"
     },
     "STR_ODSE_FLYMODE_HOR": {
         "message": "HOR ",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: HOR "
     },
     "STR_ODSE_FLYMODE_ATRN": {
         "message": "ATRN",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: ATRN"
     },
     "STR_ODSE_FLYMODE_AIR": {
         "message": "AIR ",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: AIR "
     },
     "STR_ODSE_FLYMODE_ACRO": {
         "message": "ACRO",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: ACRO"
     },
     "STR_ODSE_ELEMENT_PIT": {
         "message": "PIT",
-        "description": "Max length:  3; Pitch"
+        "description": "Max length:  4; translation of: PIT"
     },
     "STR_ODSE_ELEMENT_ROL": {
         "message": "ROL",
-        "description": "Max length:  3; Roll"
+        "description": "Max length:  4; translation of: ROL"
     },
     "STR_ODSE_ELEMENT_YAW": {
         "message": "YAW",
-        "description": "Max length:  3; Yaw"
+        "description": "Max length:  4; translation of: YAW"
     },
     "STR_ODSE_ANTIGRAVITY": {
         "message": "AG",
-        "description": "Max length:  2; Anti Gravity"
+        "description": "Max length:  2; translation of: AG"
+    },
+    "STR_ODSE_ANTIGRAVITY_HD": {
+        "message": "ANTI G",
+        "description": "Max length:  6; HD translation of: ANTI G"
     },
     "STR_OSDE_READY": {
         "message": "READY",
-        "description": "Max length:  5; Ready"
+        "description": "Max length:  5; translation of: READY"
     },
     "STR_LOCALE_SETUP": {
         "message": "Language:",
-        "description": "Max length: 10; Language"
+        "description": "Max length: 10; translation of: Language:"
     },
     "STR_CLI_ERROR_INVALID_NAME": {
         "message": "INVALID NAME:",
-        "description": "Max length: 35; ERROR_INVALID_NAME"
+        "description": "Max length: 35; translation of: INVALID NAME"
     },
     "STR_CLI_ERROR_MESSAGE": {
         "message": "CANNOT BE CHANGED. CURRENT VALUE:",
-        "description": "Max length: 35; description"
+        "description": "Max length: 35; translation of: CANNOT BE CHANGED. CURRENT VALUE:"
     },
     "STR_CLI_PARSINGFAIL": {
         "message": "PARSING FAILED",
-        "description": "Max length: 35; PARSING FAILED"
+        "description": "Max length: 35; translation of: PARSING FAILED"
     },
     "STR_CLI_INVALIDRESSOURCE": {
         "message": "INVALID RESOURCE NAME:",
-        "description": "Max length: 35; INVALID RESOURCE NAME"
+        "description": "Max length: 35; translation of: INVALID RESOURCE NAME"
     },
     "STR_CLI_ARG_INVALIDCOUNT": {
         "message": "INVALID ARGUMENT COUNT",
-        "description": "Max length: 35; INVALID ARGUMENT COUNT"
+        "description": "Max length: 35; translation of: INVALID ARGUMENT COUNT"
     },
     "STR_CLI_ARG_NOTBETWEEN": {
         "message": "NOT BETWEEN",
-        "description": "Max length: 35; NOT BETWEEN"
+        "description": "Max length: 35; translation of: NOT BETWEEN"
     },
     "STR_CLI_ARG_AND": {
         "message": "AND",
-        "description": "Max length:  3; and"
+        "description": "Max length:  3; translation of: AND"
     },
     "STR_CLI_ARG_OUTOFRANGE": {
         "message": "ARGUMENT OUT OF RANGE",
-        "description": "Max length: 35; ARGUMENT OUT OF RANGE"
+        "description": "Max length: 35; translation of: ARGUMENT OUT OF RANGE"
     },
     "STR_CLI_DSHOT_READ": {
         "message": "Dshot reads:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Dshot reads:"
     },
     "STR_CLI_DSHOT_INVALID_PKT": {
         "message": "Dshot invalid pkts:",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: Dshot invalid pkts:"
     },
     "STR_CLI_DSHOT_DIR_CHANGE": {
         "message": "Dshot directionChange cycles:",
-        "description": "Max length: 29; description"
+        "description": "Max length: 29; translation of: Dshot directionChange cycles:"
     },
     "STR_CLI_DSHOT_DIR_CHANGE_MIC": {
         "message": ", micros:",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: , micros:"
     },
     "STR_CLI_DSHOT_HEAD1": {
         "message": "Motor    Type   eRPM    RPM     Hz Invalid   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3",
-        "description": "Max length:115; description"
+        "description": "Max length:115; translation of: Motor    Type   eRPM    RPM     Hz Invalid   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3"
     },
     "STR_CLI_DSHOT_LINE1": {
         "message": "=====  ====== ====== ====== ====== ======= ====== ====== ====== ====== ====== ====== ======",
-        "description": "Max length:115; description"
+        "description": "Max length:115; translation of: =====  ====== ====== ====== ====== ======= ====== ====== ====== ====== ====== ====== ======"
     },
     "STR_CLI_DSHOT_HEAD2": {
         "message": "Motor    Type   eRPM    RPM     Hz   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3",
-        "description": "Max length:115; description"
+        "description": "Max length:115; translation of: Motor    Type   eRPM    RPM     Hz   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3"
     },
     "STR_CLI_DSHOT_LINE2": {
         "message": "=====  ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ======",
-        "description": "Max length:115; description"
+        "description": "Max length:115; translation of: =====  ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ======"
     },
     "STR_CLI_DSHOT_NO_TELEM": {
         "message": "Dshot telemetry not enabled",
-        "description": "Max length: 30; description"
+        "description": "Max length: 30; translation of: Dshot telemetry not enabled"
     },
     "STR_CLI_STORAGE_NOTFOUND": {
         "message": "Storage not present or failed to initialize!",
-        "description": "Max length: 50; description"
+        "description": "Max length: 50; translation of: Storage not present or failed to initialize!"
     },
     "STR_CLI_NO_MATCH": {
         "message": "NO MATCHES FOR:",
-        "description": "Max length: 15; NO MATCHES"
+        "description": "Max length: 15;translation of: NO MATCHES FOR:"
     },
     "STR_CLI_ERROR_FOUND": {
         "message": "ERRORS WERE DETECTED - PLEASE REVIEW BEFORE CONTINUING",
-        "description": "Max length: 55; ERRORS WERE DETECTED"
+        "description": "Max length: 55; translation of: ERRORS WERE DETECTED - PLEASE REVIEW BEFORE CONTINUING"
     },
     "STR_CLI_FIX_ERROR": {
         "message": "PLEASE FIX ERRORS BEFORE 'SAVE'",
-        "description": "Max length: 32; FIX ERRORS"
+        "description": "Max length: 32; translation of: PLEASE FIX ERRORS BEFORE 'SAVE'"
     },
     "STR_CLI_STATUS_MCU": {
         "message": "MCU:",
-        "description": "Max length:  6; description"
+        "description": "Max length:  6; translation of: MCU:"
     },
     "STR_CLI_STATUS_CLOCK": {
         "message": "Clock=",
-        "description": "Max length:  6; description"
+        "description": "Max length:  6; translation of: Clock="
     },
     "STR_CLI_STATUS_VREF": {
         "message": "Vref=",
-        "description": "Max length:  6; description"
+        "description": "Max length:  6; translation of: Vref="
     },
     "STR_CLI_STATUS_CORETEMP": {
         "message": "Core temp=",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Core temp="
     },
     "STR_CLI_STATUS_STACK_SIZE": {
         "message": "Stack size:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Stack size:"
     },
     "STR_CLI_STATUS_STACK_ADDR": {
         "message": "Stack address:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Stack address:"
     },
     "STR_CLI_STATUS_STACK_USED": {
         "message": "Stack used:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Stack used:"
     },
     "STR_CLI_STATUS_CONFIG": {
         "message": "Configuration:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Configuration:"
     },
     "STR_CLI_STATUS_CONFIG_SIZE": {
         "message": "size:",
-        "description": "Max length:  6; description"
+        "description": "Max length:  6; translation of: size:"
     },
     "STR_CLI_STATUS_CONFIG_AVAIL": {
         "message": "max available:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: max available:"
     },
     "STR_CLI_STATUS_DEVICES": {
         "message": "Devices detected:",
-        "description": "Max length: 20; no of devices"
+        "description": "Max length: 20; translation of: Devices detected:"
     },
     "STR_CLI_STATUS_SPI": {
         "message": " SPI:",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of:  SPI:"
     },
     "STR_CLI_STATUS_I2C": {
         "message": " I2C:",
-        "description": "Max length:  5; I2C"
+        "description": "Max length:  5; translation of:  I2C:"
     },
     "STR_CLI_STATUS_I2C_ERRORS": {
         "message": "I2C Errors:",
-        "description": "Max length: 15; I2C Errors"
+        "description": "Max length: 15; translation of: I2C Errors:"
     },
     "STR_CLI_STATUS_GYRO_DETECT": {
         "message": "Gyros detected:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Gyros detected:"
     },
     "STR_CLI_STATUS_GYRO": {
         "message": " gyro",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of:  gyro"
     },
     "STR_CLI_STATUS_GYRO_LOCKED": {
         "message": " locked",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of:  locked"
     },
     "STR_CLI_STATUS_GYRO_DMA": {
         "message": " dma",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of:  dma"
     },
     "STR_CLI_STATUS_GYRO_SHARED": {
         "message": " shared",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of:  shared"
     },
     "STR_CLI_STATUS_OSD": {
         "message": "OSD:",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of: OSD:"
     },
     "STR_CLI_STATUS_BUILD_KEY": {
         "message": "BUILD KEY:",
-        "description": "Max length: 10; BUILD KEY ID"
+        "description": "Max length: 10; translation of: BUILD KEY:"
     },
     "STR_CLI_STATUS_SYSTEM_UPTIME": {
         "message": "System Uptime:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: System Uptime:"
     },
     "STR_CLI_STATUS_TIME_CURRENT": {
         "message": ", Current Time:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: , Current Time:"
     },
     "STR_CLI_STATUS_CPU": {
         "message": "CPU:",
-        "description": "Max length:  4; description"
+        "description": "Max length:  4; translation of: CPU:"
     },
     "STR_CLI_STATUS_CPU_CYCLE": {
         "message": "cycle time:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: cycle time:"
     },
     "STR_CLI_STATUS_CPU_GYRO": {
         "message": "GYRO rate:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: GYRO rate:"
     },
     "STR_CLI_STATUS_CPU_RX": {
         "message": "RX rate:",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: RX rate:"
     },
     "STR_CLI_STATUS_CPU_SYSTEM": {
         "message": "System rate:",
-        "description": "Max length: 12; description"
+        "description": "Max length: 12; translation of: System rate:"
     },
     "STR_CLI_STATUS_BAT_VOLTAGE": {
         "message": "Voltage:",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of: Voltage:"
     },
     "STR_CLI_STATUS_BAT_TYPE": {
         "message": "battery",
-        "description": "Max length:  7; description"
+        "description": "Max length:  7; translation of: battery"
     },
     "STR_CLI_STATUS_FLASH": {
         "message": "FLASH: JEDEC ID=",
-        "description": "Max length: 16; description"
+        "description": "Max length: 16; translation of: FLASH: JEDEC ID="
     },
     "STR_CLI_TASK_LATE_LIST": {
         "message": "Task list             rate/hz  max/us  avg/us maxload avgload  total/ms   late    run reqd/us",
-        "description": "Max length:115; description"
+        "description": "Max length:115; translation of: Task list             rate/hz  max/us  avg/us maxload avgload  total/ms   late    run reqd/us"
     },
     "STR_CLI_TASK_LIST": {
         "message": "Task list             rate/hz  max/us  avg/us maxload avgload  total/ms",
-        "description": "Max length:100; description"
+        "description": "Max length:100; translation of: Task list             rate/hz  max/us  avg/us maxload avgload  total/ms"
     },
     "STR_CLI_TASK_MINIMAL": {
         "message": "Task list",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: Task list"
     },
     "STR_CLI_TASK_RX_CHECK": {
         "message": "RX Check Function",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: RX Check Function"
     },
     "STR_CLI_TASK_TOTAL": {
         "message": "Total (excluding SERIAL)",
-        "description": "Max length: 25; description"
+        "description": "Max length: 25; translation of: Total (excluding SERIAL)"
     },
     "STR_CLI_TASK_SCHEDULER_START": {
         "message": "Scheduler start cycles",
-        "description": "Max length: 25; description"
+        "description": "Max length: 25; translation of: Scheduler start cycles"
     },
     "STR_CLI_TASK_SCHEDULER_GAURD": {
         "message": "guard cycles",
-        "description": "Max length: 12; description"
+        "description": "Max length: 12; translation of: guard cycles"
     },
     "STR_CLI_VERSION_HAS_CONFIG": {
         "message": "config: YES",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: config: YES"
     },
     "STR_CLI_VERSION_NO_CONFIG": {
         "message": "NO CONFIG FOUND",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: NO CONFIG FOUND"
     },
     "STR_CLI_VERSION_NO_CONFIG_HD": {
         "message": "NO CONFIGURATION FOUND",
-        "description": "Max length: 30; HD text for description"
+        "description": "Max length: 30; HD translation of: NO CONFIGURATION FOUND"
     },
     "STR_CLI_VERSION_INFO_MANUF": {
         "message": "# board: manufacturer_id:",
-        "description": "Max length: 25; description"
+        "description": "Max length: 25; translation of: # board: manufacturer_id:"
     },
     "STR_CLI_VERSION_INFO_BOARD": {
         "message": "board_name:",
-        "description": "Max length: 11; description"
+        "description": "Max length: 11; translation of: board_name:"
     },
     "STR_CLI_NONE": {
         "message": "NONE",
-        "description": "Max length:  6; description"
+        "description": "Max length:  6; translation of: NONE"
     },
     "STR_CLI_TIMER": {
         "message": "timer",
-        "description": "Max length:  6; description"
+        "description": "Max length:  6; translation of: timer"
     },
     "STR_CLI_TIMERS": {
         "message": "Timers:",
-        "description": "Max length:  8; description"
+        "description": "Max length:  8; translation of: Timers:"
     },
     "STR_CLI_TIMERS_ACTIVE": {
         "message": "Currently active Timers:",
-        "description": "Max length: 30; description"
+        "description": "Max length: 30; translation of: Currently active Timers:"
     },
     "STR_CLI_TIMERS_FREE": {
         "message": " FREE",
-        "description": "Max length:  6; description"
+        "description": "Max length:  6; translation of:  FREE"
     },
     "STR_CLI_STATUS_ARM_DISABLE": {
         "message": "Arming disable flags:",
-        "description": "Max length: 25; Arming disable flags"
+        "description": "Max length: 25; translation of: Arming disable flags"
     },
     "STR_CLI_DSHOT_TEL_INFO": {
         "message": " NO DATA",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of:  NO DATA"
     },
     "STR_CLI_MSC_TIMEZONE": {
         "message": "INVALID TIMEZONE OFFSET",
-        "description": "Max length: 25; description"
+        "description": "Max length: 25; translation of: INVALID TIMEZONE OFFSET"
     },
     "STR_CLI_MSC_RESTART": {
         "message": "Restarting in mass storage mode",
-        "description": "Max length: 35; description"
+        "description": "Max length: 35; translation of: Restarting in mass storage mode"
     },
     "STR_CLI_MSC_REBOOT": {
         "message": "\\r\\nRebooting",
-        "description": "Max length: 15; rebooting"
+        "description": "Max length: 15; translation of: \\r\\nRebooting"
     },
     "STR_CLI_PROCESS": {
         "message": "UNKNOWN COMMAND, TRY 'HELP'",
-        "description": "Max length: 30; UNKNOWN COMMAND"
+        "description": "Max length: 30; translation of: UNKNOWN COMMAND, TRY 'HELP'"
     },
     "STR_CLI_ENTER_LONG": {
         "message": "\\r\\nEntering CLI Mode, type 'exit' to return, or 'help'",
-        "description": "Max length: 75; Enter CLI mode"
+        "description": "Max length: 75; translation of: \\r\\nEntering CLI Mode, type 'exit' to return, or 'help'"
     },
     "STR_CLI_ENTER_SHORT": {
         "message": "\\r\\nCLI",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: \\r\\nCLI"
     },
     "STR_CLI_SDCARD_NAME": {
         "message": "SD card: ",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: SD card: "
     },
     "STR_CLI_SDCARD_NOCONFIG": {
         "message": "Not configured",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: Not configured"
     },
     "STR_CLI_SDCARD_NONE": {
         "message": "None inserted",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: None inserted"
     },
     "STR_CLI_SDCARD_NOSTART": {
         "message": "Startup failed",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: Startup failed"
     },
     "STR_CLI_SDCARD_MANUFAC": {
         "message": "Manufacturer",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Manufacturer"
     },
     "STR_CLI_SDCARD_FILESYSTEM": {
         "message": "\\r\\nFilsystem: ",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: \\r\\nFilsystem: "
     },
     "STR_CLI_SDCARD_READY": {
         "message": "Ready",
-        "description": "Max length:  5; description"
+        "description": "Max length:  5; translation of: Ready"
     },
     "STR_CLI_SDCARD_INIT": {
         "message": "Initializing",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Initializing"
     },
     "STR_CLI_SDCARD_FATAL": {
         "message": "Fatal",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Fatal"
     },
     "STR_CLI_SDCARD_NOFATMBR": {
         "message": " - no FAT MBR partitions",
-        "description": "Max length: 30; description"
+        "description": "Max length: 30; translation of:  - no FAT MBR partitions"
     },
     "STR_CLI_SDCARD_BADFAT": {
         "message": " - bad FAT header",
-        "description": "Max length: 30; description"
+        "description": "Max length: 30; translation of:  - bad FAT header"
     },
     "STR_CLI_FLASH_SEC": {
         "message": "Flash sectors=",
-        "description": "Max length: 30; description"
+        "description": "Max length: 30; translation of: Flash sectors="
     },
     "STR_CLI_FLASH_SEC_SIZE": {
         "message": "sectorSize=",
-        "description": "Max length: 11; description"
+        "description": "Max length: 11; translation of: sectorSize="
     },
     "STR_CLI_FLASH_SEC_PAGE": {
         "message": "pagesPerSector=",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: pagesPerSector="
     },
     "STR_CLI_FLASH_PAGE_SIZE": {
         "message": "pageSize=",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: pageSize="
     },
     "STR_CLI_FLASH_TOTAL_SIZE": {
         "message": "totalSize=",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: totalSize="
     },
     "STR_CLI_FLASH_JEDEC": {
         "message": "JEDEC ID=",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: JEDEC ID="
     },
     "STR_CLI_FLASH_PART": {
         "message": "Partitions:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Partitions:"
     },
     "STR_CLI_FLASH_SIZE": {
         "message": "FlashFS size=",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: FlashFS size="
     },
     "STR_CLI_FLASH_SIZE_USED": {
         "message": "usedSize=",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: usedSize="
     },
     "STR_CLI_FLASH_ER_LONG": {
         "message": "Erasing, please wait ... ",
-        "description": "Max length: 30; description"
+        "description": "Max length: 30; translation of: Erasing, please wait ... "
     },
     "STR_CLI_FLASH_ER_SHORT": {
         "message": "Erasing,",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Erasing,"
     },
     "STR_CLI_FLASH_ER_DONE": {
         "message": "Done.",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: Done."
     },
     "STR_CLI_FLASH_VR": {
         "message": "Verifying",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Verifying"
     },
     "STR_CLI_FLASH_VR_OK": {
         "message": "Success",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Success"
     },
     "STR_CLI_FLASH_VR_FAIL": {
         "message": "Failed",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Failed"
     },
     "STR_CLI_FLASH_WROTE": {
         "message": "Wrote",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: Wrote"
     },
     "STR_CLI_FLASH_READ": {
         "message": "Reading",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: Reading"
     },
     "STR_CLI_FLASH_BYTES_AT": {
         "message": "bytes at:",
-        "description": "Max length: 10; description"
+        "description": "Max length: 10; translation of: bytes at:"
     },
     "STR_CLI_ENABLED": {
         "message": "Enabled",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Enabled"
     },
     "STR_CLI_DISABLED": {
         "message": "Disabled",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Disabled"
     },
     "STR_CLI_AVAILABLE": {
         "message": "Available:",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: Available:"
     },
     "STR_CLI_UNAVAILABLE": {
         "message": "unavailable",
-        "description": "Max length: 15; description"
+        "description": "Max length: 15; translation of: unavailable"
     },
     "STR_CLI_NOSUPPORT": {
         "message": "Not supported.",
-        "description": "Max length: 20; description"
+        "description": "Max length: 20; translation of: Not supported."
     }
 }
