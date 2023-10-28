@@ -63,7 +63,7 @@ with open(from_filename, "r") as fr:
         else:
             # debug print("2 currentKey: ", currentKey, ": prevKey: ", prevKey)
             if prevKey != "" and not prevKey.find(hdKey) > 0:
-                wr_define(fw, prevKey, '"' + prevMessage + '"', prevDescription, errorMess)
+                wr_define(fw, prevKey, '"' + prevMessage + '"', prevDescription + ";", errorMess)
         prevKey = currentKey
         prevMessage = message
         prevDescription = description

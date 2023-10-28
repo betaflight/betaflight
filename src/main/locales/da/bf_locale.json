@@ -344,8 +344,12 @@
         "description": "Max length:  3; description"
     },
     "STR_ODSE_ANTIGRAVITY": {
-        "message": "AT // Anti Tyndekraft",
-        "description": "Max length: 21; description"
+        "message": "AT",
+        "description": "Max length:  2; description"
+    },
+    "STR_ODSE_ANTIGRAVITY_HD": {
+        "message": "ANTI G",
+        "description": "Max length:  6; HD translation of: ANTI G"
     },
     "STR_OSDE_READY": {
         "message": "KLAR",
