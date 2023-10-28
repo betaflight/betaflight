@@ -58,7 +58,7 @@ with open(from_filename, "r") as fr:
             errorMess = ""
 
         if currentKey == prevKey + hdKey:
-            mess = 'TR2("' + prevMessage + '", "' + message + '")'
+            mess = '(TR_TEST ? "' + prevMessage + '" : "' + message + '")'
             wr_define(fw, prevKey, mess, prevDescription + "; HD> " + description, errorMess)
         else:
             # debug print("2 currentKey: ", currentKey, ": prevKey: ", prevKey)
