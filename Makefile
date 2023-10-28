@@ -178,20 +178,6 @@ LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
 
 #
-# Setup locale
-#
-LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(SRC_DIR)/locales/*/bf_locale.json)))))
-ifeq ($(LOCALE),)
-LOCALE := en
-endif
-ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
-    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
-endif
-INCLUDE_DIRS += $(INCLUDE_DIRS) $(SRC_DIR)/locales/$(LOCALE)
-$(SRC_DIR)/locales/$(LOCALE)/bf_locale.h: $(SRC_DIR)/locales/$(LOCALE)/bf_locale.json
-	@echo "Creating locale $(SRC_DIR)/locales/$(LOCALE)/bf_locale.h" "$(STDOUT)"
-	$(V1) $(PYTHON) $(SRC_DIR)/locales/gen_defines.py $(SRC_DIR)/locales $(LOCALE) $< $@
-#
 # Default Tool options - can be overridden in {mcu}.mk files.
 #
 DEBUG_MIXED = no
@@ -278,7 +264,34 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
+# import source files
 include $(MAKE_SCRIPT_DIR)/source.mk
+
+#
+# Setup locale
+#
+LOCALES_DIR		:= $(SRC_DIR)/locales
+# Accept locales that have either bf_locale.xml or a pre-generated bf_locale.h
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(LOCALES_DIR)/*/bf_locale.xml)))))
+ifeq ($(LOCALE),)
+LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+INCLUDE_DIRS += $(LOCALES_DIR)/$(LOCALE)
+
+$(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/en/bf_locale.xml
+	@echo "Creating $(LOCALES_DIR)/untranslated.h" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py UT $(LOCALES_DIR) en $< $@
+
+$(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml
+	@echo "Creating $(LOCALES_DIR)/$(LOCALE)/bf_locale.h" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py BF $(LOCALES_DIR) $(LOCALE) $< $@
+
+# Dependicies translation
+TRANSLATED_DEPEND := $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
+$(TRANSLATED_SRC): $(TRANSLATED_DEPEND)
 
 ifneq ($(TARGET),)
 ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
@@ -433,8 +446,13 @@ endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
-CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_EXST_ELF) $(TARGET_MAP)
-CLEAN_ARTIFACTS += $(wildcard $(BIN_DIR)/*$(TARGET_NAME_CLEAN)*)
+CLEAN_ARTIFACTS := $(TARGET_BIN)
+CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
+CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+CLEAN_ARTIFACTS += $(TARGET_LST)
+CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS += $(TARGET_UF2)
+CLEAN_ARTIFACTS += $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
