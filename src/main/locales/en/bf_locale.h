@@ -109,8 +109,13 @@
 =======
 #define LOCALE                       "en"
 
+#define STR_COMMA	                 ","
+#define STR_PERIOD	                 "."
 #define STR_THOUSAND 	             "."
 #define STR_SECONDS                  "seconds"
+
+#define STR_VISUAL_BEEP              "  * * * *"
+#define STR_MSP_API_NAME             "MSP API:"
 
 // CMS
 #define CMS_STARTUP_HELP_TEXT1       "MENU:THR MID"
