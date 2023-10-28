@@ -21,12 +21,12 @@
 
 #pragma once
 
-#if defined(USE_HD_EXTENDED) 
+#if defined(USE_OSD) && defined(USE_OSD_HD_EXTENDED)   // HD extended screen
   #define TR2(x, y) y
 #else
   #define TR2(x, y) x
 #endif
 
-#include "bf_locale.h"                                      // located in locales/xx, default locales/en, managed by make
+#include "bf_locale.h"                                // located in locales/xx, default locales/en, managed by make
 
 extern const char STR_LOCALE[];

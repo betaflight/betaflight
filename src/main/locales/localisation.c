@@ -21,19 +21,6 @@
 
 #include "platform.h"
 
-#include "drivers/osd.h"
-#include "pg/vcd.h"
-
 #include "locales/localisation.h"
 
 const char STR_LOCALE[] = LOCALE;         // return locale en, da, etc
-
-char * tr_hd(char * str_sd, char * str_hd) {
-#ifdef USE_OSD_HD
-    if( vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
-        return( str_hd);
-    }
-#endif
-    return( str_sd);
-}
-
