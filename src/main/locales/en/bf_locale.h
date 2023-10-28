@@ -20,6 +20,7 @@
  */
 
 #define LOCALE                        "en"                                  	// Max length:  2; Current language in short form: en, da, es, fr, nl ...;
+#define STR_LOCALE_SETUP              "Language:"                           	// Max length: 10; translation of: Language:;
 #define STR_COMMA                     ","                                   	// Max length:  1; translation of: Comma string ,;
 #define STR_PERIOD                    "."                                   	// Max length:  1; translation of: Period string .;
 #define STR_THOUSAND                  "."                                   	// Max length:  1; translation of: Thousand delimiter .;
@@ -105,9 +106,9 @@
 #define STR_ODSE_ELEMENT_YAW          "YAW"                                 	// Max length:  4; translation of: YAW;
 #define STR_ODSE_ANTIGRAVITY          TR2("AG", "ANTI G")                   	// Max length:  2; translation of: AG; HD> Max length:  6; HD translation of: ANTI G
 #define STR_OSDE_READY                "READY"                               	// Max length:  5; translation of: READY;
-#define STR_LOCALE_SETUP              "Language:"                           	// Max length: 10; translation of: Language:;
 #define STR_CLI_ERROR_INVALID_NAME    "INVALID NAME:"                       	// Max length: 35; translation of: INVALID NAME;
 #define STR_CLI_ERROR_MESSAGE         "CANNOT BE CHANGED. CURRENT VALUE:"   	// Max length: 35; translation of: CANNOT BE CHANGED. CURRENT VALUE:;
+<<<<<<< HEAD
 #define STR_CLI_PARSINGFAIL           "PARSING FAILED"                      	// Max length: 35; translation of: PARSING FAILED;
 #define STR_CLI_INVALIDRESSOURCE      "INVALID RESOURCE NAME:"              	// Max length: 35; translation of: INVALID RESOURCE NAME;
 #define STR_CLI_ARG_INVALIDCOUNT      "INVALID ARGUMENT COUNT"              	// Max length: 35; translation of: INVALID ARGUMENT COUNT;
@@ -210,3 +211,5 @@
 #define STR_CLI_AVAILABLE             "Available:"                          	// Max length: 15; translation of: Available:;
 #define STR_CLI_UNAVAILABLE           "unavailable"                         	// Max length: 15; translation of: unavailable;
 >>>>>>> 245b64dee (add translated text to Crowdin comment)
+=======
+>>>>>>> fda68683d (restore cli.c)
