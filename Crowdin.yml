@@ -1,0 +1,35 @@
+# ID used by the upload action to Crowdin
+project_id_env: CROWDIN_PROJECT_ID
+api_token_env: CROWDIN_PERSONAL_TOKEN
+
+#
+# Files configuration
+#
+"preserve_hierarchy": true
+
+files: [
+ {
+  #
+  # Source files filter
+  # e.g. "/resources/en/*.json"
+  #
+  "source" : "/src/main/locales/en/bf_locale.json",
+
+  #
+  # where translations live
+  # e.g. "/resources/%two_letters_code%/%original_file_name%"
+  #
+  "translation" : "/src/main/locales/%two_letters_code%/bf_locale.json",
+
+  #
+  # Often software projects have custom names for locale directories. crowdin-cli allows you to map your own languages to be understandable by Crowdin.
+  #
+  "languages_mapping" : {
+    "two_letters_code" : {
+      "pt-BR" : "pt_BR",
+      "zh-CN" : "zh_CN",
+      "zh-TW" : "zh_TW"
+    }
+  }
+ }
+]
