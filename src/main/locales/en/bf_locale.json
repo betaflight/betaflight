@@ -47,6 +47,14 @@
         "message": "*** ARMED ***",
         "description": "Max length: 20; HD translation of: *** ARMED ***"
     },
+    "STR_OSDE_DISARMED": {
+        "message": "DISARMED",
+        "description": "Max length: 15; translation of: DISARMED"
+    },
+    "STR_OSDE_DISARMED_HD": {
+        "message": "*** DISARMED ***",
+        "description": "Max length: 20; HD translation of: *** DISARMED ***"
+    },
     "STR_OSD_STATS": {
         "message": "--- STATS ---",
         "description": "Max length: 15; translation of: --- STATS ---"
@@ -314,14 +322,6 @@
     "STR_OSDW_BATT_BELOW_FULL": {
         "message": "BATT < FULL",
         "description": "Max length: 15; translation of: BATT < FULL"
-    },
-    "STR_OSDE_DISARMED": {
-        "message": "DISARMED",
-        "description": "Max length: 15; translation of: DISARMED"
-    },
-    "STR_OSDE_DISARMED_HD": {
-        "message": "*** DISARMED ***",
-        "description": "Max length: 20; HD translation of: *** DISARMED ***"
     },
     "STR_OSDE_UP": {
         "message": "U",
