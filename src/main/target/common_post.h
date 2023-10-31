@@ -99,6 +99,9 @@
 #ifndef USE_MAG_QMC5883
 #define USE_MAG_QMC5883
 #endif
+#ifndef USE_MAG_LIS2MDL
+#define USE_MAG_LIS2MDL
+#endif
 #ifndef USE_MAG_LIS3MDL
 #define USE_MAG_LIS3MDL
 #endif
