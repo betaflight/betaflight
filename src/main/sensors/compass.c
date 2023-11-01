@@ -70,7 +70,7 @@ static flightDynamicsTrims_t magZeroTempMax;
 magDev_t magDev;
 mag_t mag;
 
-PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 4);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
