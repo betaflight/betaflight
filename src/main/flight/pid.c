@@ -908,18 +908,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         if (shouldChirpAxisToggle) {
             // toggle chirp signal logic and increment to next axis for next run
             shouldChirpAxisToggle = false;
-            chirpAxis <= FD_YAW ?  (chirpAxis + 1) : 0;
+            chirpAxis = (++chirpAxis > FD_YAW) ? 0 : chirpAxis;
             // reset chirp signal generator
             chirpReset(&pidRuntime.chirp);
-            // TODO: reset filter ?
         }
     }
 
     // input / excitation shaping
     float chirpFiltered  = phaseCompApply(&pidRuntime.chirpFilter, chirp);
 
-    // many tools use debug gyro scaled
-    DEBUG_SET(DEBUG_GYRO_SCALED, 3, lrintf(5.0e3f * sinarg));
+    // ToDo: check if this can be reconstructed offline for rotating filter and if so, remove the debug
+    // fit (0...2*pi) into int16_t (-32768 to 32767)
+    DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
 
 #endif // USE_CHIRP
 

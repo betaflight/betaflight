@@ -26,6 +26,11 @@
 
 #include "chirp.h"
 
+// initialize the chirp signal generator
+// f0: start frequency in Hz
+// f1: end frequency in Hz
+// t1: signal length in seconds
+// looptimeUs: loop time in microseconds
 void chirpInit(chirp_t *chirp, const float f0, const float f1, const float t1, const uint32_t looptimeUs)
 {
     chirp->f0 = f0;
@@ -37,6 +42,7 @@ void chirpInit(chirp_t *chirp, const float f0, const float f1, const float t1, c
     chirpReset(chirp);
 }
 
+// reset the chirp signal generator fully
 void chirpReset(chirp_t *chirp)
 {
     chirp->count = 0;
@@ -44,6 +50,7 @@ void chirpReset(chirp_t *chirp)
     chirpResetSignals(chirp);
 }
 
+// reset the chirp signal generator signals
 void chirpResetSignals(chirp_t *chirp)
 {
     chirp->exc = 0.0f;
@@ -51,6 +58,7 @@ void chirpResetSignals(chirp_t *chirp)
     chirp->sinarg = 0.0f;
 }
 
+// update the chirp signal generator
 bool chirpUpdate(chirp_t *chirp)
 {
     if (chirp->isFinished) {
