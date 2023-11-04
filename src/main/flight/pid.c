@@ -893,34 +893,25 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_CHIRP
 
     static int chirpAxis = 0;
-    static bool shouldChirpAxisToggle = true;
+    static bool shouldChirpAxisToggle = false;
 
     float chirp = 0.0f;
     float sinarg = 0.0f;
     if (FLIGHT_MODE(CHIRP_MODE)) {
-
-        // toggle chirp signal logic
-        if (shouldChirpAxisToggle) {
-            shouldChirpAxisToggle = false;
-        }
-
+        shouldChirpAxisToggle = true;  // advance chirp axis on next !CHIRP_MODE
         // update chirp signal
         if (chirpUpdate(&pidRuntime.chirp)) {
             chirp = pidRuntime.chirp.exc;
             sinarg = pidRuntime.chirp.sinarg;
         }
     } else {
-        if (!shouldChirpAxisToggle) {
-
+        if (shouldChirpAxisToggle) {
             // toggle chirp signal logic and increment to next axis for next run
-            shouldChirpAxisToggle = true;
-            chirpAxis++;
-            if (chirpAxis > FD_YAW) {
-                chirpAxis = 0;
-            }
-
+            shouldChirpAxisToggle = false;
+            chirpAxis <= FD_YAW ?  (chirpAxis + 1) : 0;
             // reset chirp signal generator
             chirpReset(&pidRuntime.chirp);
+            // TODO: reset filter ?
         }
     }
 
