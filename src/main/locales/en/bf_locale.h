@@ -30,6 +30,7 @@
 #define CMS_STARTUP_HELP_TEXT2        "+ YAW LEFT  "                        	// Max length: 20; translation of: + YAW LEFT  ;
 #define CMS_STARTUP_HELP_TEXT3        "+ PITCH UP  "                        	// Max length: 20; translation of: + PITCH UP  ;
 #define STR_OSD_ARMED                 TR2("ARMED", "*** ARMED ***")         	// Max length: 10; translation of: ARMED; HD> Max length: 20; HD translation of: *** ARMED ***
+#define STR_OSDE_DISARMED             TR2("DISARMED", "*** DISARMED ***")   	// Max length: 15; translation of: DISARMED; HD> Max length: 20; HD translation of: *** DISARMED ***
 #define STR_OSD_STATS                 TR2("--- STATS ---", "--- STATISTICS ---") 	// Max length: 15; translation of: --- STATS ---; HD> Max length: 20; HD translation of: --- STATISTICS ---
 #define STR_OSD_TIM_SOURCE_1          TR2("ON TIME  ", "ON TIME    ")       	// Max length:  9; translation of: ON TIME  ; HD> Max length: 11; HD translation of: ON TIME  
 #define STR_OSD_TIM_SOURCE_2          TR2("TOTAL ARM", "TOTAL ARMED")       	// Max length:  9; translation of: TOTAL ARM; HD> Max length: 11; HD translation of: TOTAL ARMED
@@ -82,7 +83,6 @@
 #define STR_OSDW_OVER_CAP             "OVER CAP"                            	// Max length: 15; translation of: OVER CAP;
 #define STR_OSDW_BATT_CONTINUE        "BATTERY CONTINUE"                    	// Max length: 20; translation of: BATTERY CONTINUE;
 #define STR_OSDW_BATT_BELOW_FULL      "BATT < FULL"                         	// Max length: 15; translation of: BATT < FULL;
-#define STR_OSDE_DISARMED             TR2("DISARMED", "*** DISARMED ***")   	// Max length: 15; translation of: DISARMED; HD> Max length: 20; HD translation of: *** DISARMED ***
 #define STR_OSDE_UP                   "U"                                   	// Max length:  1; translation of: U;
 #define STR_OSDE_DOWN                 "D"                                   	// Max length:  1; translation of: D;
 #define STR_OSDE_GPS_DIRECTION        "NSEW"                                	// Max length:  4; translation of: NSEW;
