@@ -21,9 +21,6 @@
 
 #define LOCALE                        "en"                                  	// Max length:  2; Current language in short form: en, da, es, fr, nl ...;
 #define STR_LOCALE_SETUP              "Language:"                           	// Max length: 10; translation of: Language:;
-#define STR_COMMA                     ","                                   	// Max length:  1; translation of: Comma string ,;
-#define STR_PERIOD                    "."                                   	// Max length:  1; translation of: Period string .;
-#define STR_THOUSAND                  "."                                   	// Max length:  1; translation of: Thousand delimiter .;
 #define STR_SECONDS                   "seconds"                             	// Max length:  8; translation of: seconds;
 #define STR_VISUAL_BEEP               "  * * * *"                           	// Max length: 10; translation of:   * * * *;
 #define CMS_STARTUP_HELP_TEXT1        "MENU:THR MID"                        	// Max length: 20; translation of: MENU:THR MID;
@@ -32,10 +29,10 @@
 #define STR_OSD_ARMED                 TR2("ARMED", "*** ARMED ***")         	// Max length: 10; translation of: ARMED; HD> Max length: 20; HD translation of: *** ARMED ***
 #define STR_OSDE_DISARMED             TR2("DISARMED", "*** DISARMED ***")   	// Max length: 15; translation of: DISARMED; HD> Max length: 20; HD translation of: *** DISARMED ***
 #define STR_OSD_STATS                 TR2("--- STATS ---", "--- STATISTICS ---") 	// Max length: 15; translation of: --- STATS ---; HD> Max length: 20; HD translation of: --- STATISTICS ---
-#define STR_OSD_TIM_SOURCE_1          TR2("ON TIME  ", "ON TIME    ")       	// Max length:  9; translation of: ON TIME  ; HD> Max length: 11; HD translation of: ON TIME  
-#define STR_OSD_TIM_SOURCE_2          TR2("TOTAL ARM", "TOTAL ARMED")       	// Max length:  9; translation of: TOTAL ARM; HD> Max length: 11; HD translation of: TOTAL ARMED
-#define STR_OSD_TIM_SOURCE_3          TR2("LAST ARM ", "LAST ARMED ")       	// Max length:  9; translation of: LAST ARM ; HD> Max length: 11; HD translation of: LAST ARMED 
-#define STR_OSD_TIM_SOURCE_4          TR2("ON/ARM   ", "ON/ARMED   ")       	// Max length:  9; translation of: ON/ARM   ; HD> Max length: 11; HD translation of: ON/ARMED   
+#define STR_OSD_TIMER_ON_TIME         TR2("ON TIME  ", "ON TIME    ")       	// Max length:  9; translation of: ON TIME  ; HD> Max length: 11; HD translation of: ON TIME  
+#define STR_OSD_TIMER_TOTAL_ARM       TR2("TOTAL ARM", "TOTAL ARMED")       	// Max length:  9; translation of: TOTAL ARM; HD> Max length: 11; HD translation of: TOTAL ARMED
+#define STR_OSD_TIMER_LAST_ARM        TR2("LAST ARM ", "LAST ARMED ")       	// Max length:  9; translation of: LAST ARM ; HD> Max length: 11; HD translation of: LAST ARMED 
+#define STR_OSD_TIMER_ON_ARM          TR2("ON/ARM   ", "ON/ARMED   ")       	// Max length:  9; translation of: ON/ARM   ; HD> Max length: 11; HD translation of: ON/ARMED   
 #define STR_OSD_STAT_MAX_ALTITUDE     TR2("MAX ALTITUDE", "MAXIMAL ALTITUDE") 	// Max length: 12; translation of: MAX ALTITUDE; HD> Max length: 16; HD translation of: MAXIMAL ALTITUDE
 #define STR_OSD_STAT_MAX_SPEED        TR2("MAX SPEED   ", "MAXIMAL SPEED   ") 	// Max length: 12; translation of: MAX SPEED   ; HD> Max length: 16; HD translation of: MAXIMAL SPEED   
 #define STR_OSD_STAT_MAX_DISTANCE     TR2("MAX DISTANCE", "MAXIMAL DISTANCE") 	// Max length: 12; translation of: MAX DISTANCE; HD> Max length: 16; HD translation of: MAXIMAL DISTANCE
