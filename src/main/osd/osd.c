@@ -113,10 +113,10 @@ typedef enum {
 } osd_logo_on_arming_e;
 
 const char * const osdTimerSourceNames[] = {
-    STR_OSD_TIM_SOURCE_1,
-    STR_OSD_TIM_SOURCE_2,
-    STR_OSD_TIM_SOURCE_3,
-    STR_OSD_TIM_SOURCE_4
+    STR_OSD_TIMER_ON_TIME,
+    STR_OSD_TIMER_TOTAL_ARM,
+    STR_OSD_TIMER_LAST_ARM,
+    STR_OSD_TIMER_ON_ARM
 };
 
 #define OSD_LOGO_ROWS 4

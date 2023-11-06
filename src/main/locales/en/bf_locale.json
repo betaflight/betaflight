@@ -7,18 +7,6 @@
         "message": "Language:",
         "description": "Max length: 10; translation of: Language:"
     },
-    "STR_COMMA": {
-        "message": ",",
-        "description": "Max length:  1; translation of: Comma string ,"
-    },
-    "STR_PERIOD": {
-        "message": ".",
-        "description": "Max length:  1; translation of: Period string ."
-    },
-    "STR_THOUSAND": {
-        "message": ".",
-        "description": "Max length:  1; translation of: Thousand delimiter ."
-    },
     "STR_SECONDS": {
         "message": "seconds",
         "description": "Max length:  8; translation of: seconds"
@@ -63,35 +51,35 @@
         "message": "--- STATISTICS ---",
         "description": "Max length: 20; HD translation of: --- STATISTICS ---"
     },
-    "STR_OSD_TIM_SOURCE_1": {
+    "STR_OSD_TIMER_ON_TIME": {
         "message": "ON TIME  ",
         "description": "Max length:  9; translation of: ON TIME  "
     },
-    "STR_OSD_TIM_SOURCE_1_HD": {
+    "STR_OSD_TIMER_ON_TIME_HD": {
         "message": "ON TIME    ",
         "description": "Max length: 11; HD translation of: ON TIME  "
     },
-    "STR_OSD_TIM_SOURCE_2": {
+    "STR_OSD_TIMER_TOTAL_ARM": {
         "message": "TOTAL ARM",
         "description": "Max length:  9; translation of: TOTAL ARM"
     },
-    "STR_OSD_TIM_SOURCE_2_HD": {
+    "STR_OSD_TIMER_TOTAL_ARM_HD": {
         "message": "TOTAL ARMED",
         "description": "Max length: 11; HD translation of: TOTAL ARMED"
     },
-    "STR_OSD_TIM_SOURCE_3": {
+    "STR_OSD_TIMER_LAST_ARM": {
         "message": "LAST ARM ",
         "description": "Max length:  9; translation of: LAST ARM "
     },
-    "STR_OSD_TIM_SOURCE_3_HD": {
+    "STR_OSD_TIMER_LAST_ARM_HD": {
         "message": "LAST ARMED ",
         "description": "Max length: 11; HD translation of: LAST ARMED "
     },
-    "STR_OSD_TIM_SOURCE_4": {
+    "STR_OSD_TIMER_ON_ARM": {
         "message": "ON/ARM   ",
         "description": "Max length:  9; translation of: ON/ARM   "
     },
-    "STR_OSD_TIM_SOURCE_4_HD": {
+    "STR_OSD_TIMER_ON_ARM_HD": {
         "message": "ON/ARMED   ",
         "description": "Max length: 11; HD translation of: ON/ARMED   "
     },
