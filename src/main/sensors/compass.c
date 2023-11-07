@@ -71,6 +71,8 @@ mag_t mag;
 
 PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 3);
 
+#define COMPASS_READ_US 500 // Allow 500us for compass data read
+
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
     compassConfig->mag_alignment = ALIGN_DEFAULT;
@@ -373,10 +375,16 @@ bool compassIsCalibrationComplete(void)
 
 uint32_t compassUpdate(timeUs_t currentTimeUs)
 {
+    static uint8_t busyCount = 0;
+    uint32_t nextPeriod = COMPASS_READ_US;
+
     if (busBusy(&magDev.dev, NULL) || !magDev.read(&magDev, magADCRaw)) {
         // No action was taken as the read has not completed
-        schedulerIgnoreTaskExecRate();
-        return 500; // Wait 500us between states
+        schedulerIgnoreTaskStateTime();
+
+        busyCount++;
+
+        return nextPeriod; // Wait COMPASS_READ_US between states
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -419,6 +427,11 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    return TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
+    nextPeriod = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ) - COMPASS_READ_US * busyCount;
+
+    // Reset the busy count
+    busyCount = 0;
+
+    return nextPeriod;
 }
 #endif // USE_MAG
