@@ -391,7 +391,6 @@ void ak8963BusInit(const extDevice_t *dev)
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
     case BUS_TYPE_MPU_SLAVE:
-        rescheduleTask(TASK_COMPASS, TASK_PERIOD_HZ(40));
 
         // Disable DMA on gyro as this upsets slave access timing
         spiDmaEnable(dev->bus->busType_u.mpuSlave.master, false);

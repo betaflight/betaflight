@@ -110,7 +110,7 @@ static bool qmc5883lRead(magDev_t *magDev, int16_t *magData)
 
         case STATE_WAIT_STATUS:
             if ((status & 0x01) == 0) {
-                state = STATE_READ_STATUS;
+                busReadRegisterBufferStart(dev, QMC5883L_REG_STATUS, &status, sizeof(status));
                 return false;
             }
 

@@ -88,7 +88,14 @@ mag_t mag;
 
 PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 3);
 
-#define COMPASS_READ_US 500 // Allow 500us for compass data read
+// If the i2c bus is busy, try again in 500us
+#define COMPASS_BUS_BUSY_INTERVAL_US 500
+// If we check for new mag data, and there is none, try again in 1000us
+#define COMPASS_RECHECK_INTERVAL_US 1000
+// after receiving mag data, do nothing for a reasonable time, depending on mag, before we would expect the next data packet to arrive
+// default value of compassReadIntervalUs sets the update rate for older mag units to TASK_COMPASS_RATE_HZ
+// for newer or faster mags, compassReadIntervalUs will be set to suit each mag's ODR in compassDetect()
+static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
@@ -136,7 +143,6 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
-static int16_t magADCRawPrevious[XYZ_AXIS_COUNT];
 
 void compassPreInit(void)
 {
@@ -208,6 +214,7 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 
     case MAG_HMC5883:
 #if defined(USE_MAG_HMC5883) || defined(USE_MAG_SPI_HMC5883)
+        compassReadIntervalUs = 10000; // 10ms 'silent', given 13.33ms between data packets at 75Hz for the HMC5883
         if (dev->bus->busType == BUS_TYPE_I2C) {
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
@@ -224,6 +231,7 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 
     case MAG_LIS3MDL:
 #if defined(USE_MAG_LIS3MDL)
+        compassReadIntervalUs = 9000; // 9ms 'silent', given 12.5ms between data packets at 80Hz
         if (dev->bus->busType == BUS_TYPE_I2C) {
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
@@ -277,6 +285,7 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 
     case MAG_QMC5883:
 #ifdef USE_MAG_QMC5883
+        compassReadIntervalUs = 2800; // 2.8ms 'silent', given 5.0ms between data packets at 200Hz
         if (dev->bus->busType == BUS_TYPE_I2C) {
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
@@ -395,23 +404,25 @@ bool compassIsCalibrationComplete(void)
 
 uint32_t compassUpdate(timeUs_t currentTimeUs)
 {
-    static uint8_t busyCount = 0;
-    uint32_t nextPeriod = COMPASS_READ_US;
+    bool checkBusBusy = busBusy(&magDev.dev, NULL);
+    bool checkReadState = !magDev.read(&magDev, magADCRaw);
 
-    if (busBusy(&magDev.dev, NULL) || !magDev.read(&magDev, magADCRaw)) {
-        // No action was taken as the read has not completed
-        schedulerIgnoreTaskStateTime();
-
-        busyCount++;
-
-        return nextPeriod; // Wait COMPASS_READ_US between states
+    if (checkBusBusy) {
+        // No action is taken, as the bus was busy.
+        schedulerIgnoreTaskExecRate();
+        return COMPASS_BUS_BUSY_INTERVAL_US; // return delay if the bus is busy
+    }
+    if (checkReadState) {
+        // No action is taken, as the compass reported no new data.
+        schedulerIgnoreTaskExecRate();
+        return COMPASS_RECHECK_INTERVAL_US; // return interval if no data is available
     }
 
+    // if we get here, we have new data
+    // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
+    mag.isNewMagADCFlag = true;
+
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        if (magADCRaw[axis] != magADCRawPrevious[axis]) {
-            // this test, and the isNewMagADCFlag itself, is only needed if we calculate magYaw in imu.c
-            mag.isNewMagADCFlag = true;
-        }
         mag.magADC[axis] = magADCRaw[axis];
     }
 
@@ -476,11 +487,8 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf((compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain));
     }
 
-    nextPeriod = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ) - COMPASS_READ_US * busyCount;
-
-    // Reset the busy count
-    busyCount = 0;
-    return nextPeriod;
+    schedulerIgnoreTaskExecRate();
+    return compassReadIntervalUs;
 }
 
 // initialize the compass bias estimator
