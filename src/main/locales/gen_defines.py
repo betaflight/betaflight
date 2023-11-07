@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-import json
+import xml.etree.ElementTree as ET
 
 # do this
 # generate language specific file from language/bf_locale.json to language/bf_locale.h 
@@ -13,18 +13,16 @@ def wr_bf_header(outFile, filename):
 
 def wr_define(outFile, id, mes, desc, error):
     if error == "":
-        newline = "#define " + id + " " * max(1, 30 - len(id)) + mes + " " * max(1, 38 - len(mes)) + "\t// " + desc
+        newline = "#define " + id + " " * max(1, 35 - len(id)) + mes + " " * max(1, 43 - len(mes)) + "\t// " + desc
     else:
-        newline = id + ": " + error + " " * max(1, 30 - len(id)) + mes + " " * max(1, 38 - len(mes)) + "\t// " + desc + '\n'
+        newline = id + ": " + error + " " * max(1, 35 - len(id)) + mes + " " * max(1, 43 - len(mes)) + "\t// " + desc + '\n'
     print(newline, file=outFile)
 
 hdKey = "_HD"
-lenSearch = "Max length:"
-lenDelimiter = ";"
 
 source   = sys.argv[1]
 language = sys.argv[2]
-from_filename  = source + '/' + language + '/bf_locale.json'
+from_filename  = source + '/' + language + '/bf_locale.xml'
 to_filename    = source + '/' + language + '/bf_locale.h'
 bf_header_name = source + '/bf_header'
 
@@ -33,42 +31,36 @@ print(sys.argv[0] + ': GENERATE >' + language + '< ' + from_filename + ' to '+ t
 fw = open(to_filename, 'w')
 wr_bf_header(fw, bf_header_name)
 
-with open(from_filename, "r") as fr:
-    # Converting JSON encoded data into Python dictionary
-    translations = json.load(fr)
-    prevKey = ""
-    prevMessage = prevDescription = ""
+prevKey = ""
+prevMessage = prevDescription = ""
 
-    for key, value in translations.items():
-        currentKey = key
-        # get translation and description
-        message = value.get('message')
-        description = value.get('description')
-        # get number of maximum lenght in "Max length: 10; description of text"
-        start = description.find(lenSearch) + len(lenSearch)
-        end = description.find(lenDelimiter, start)
-        maxLen = int(description[start:end].strip())
+tree = ET.parse(from_filename)
+root = tree.getroot()
 
-        if len(message) > maxLen and maxLen > 0:
-            errorMess = "ERROR - maximum length " + str(maxLen) + " exceed for: " + message + '/' + str(len(message))
-            print(errorMess)
-        else:
-            errorMess = ""
+for string_element in root.findall('string'):
+    currentKey = string_element.get('name')
+    maxLen = int(string_element.get('maxLength'))
+    description = string_element.get('comment')
+    message = string_element.text
 
-        if currentKey == prevKey + hdKey:
-            mess = 'TR2("' + prevMessage + '", "' + message + '")'
-            wr_define(fw, prevKey, mess, prevDescription + "; HD> " + description, errorMess)
-        else:
-            if prevKey != "" and not prevKey.find(hdKey) > 0:
-                wr_define(fw, prevKey, '"' + prevMessage + '"', prevDescription + ";", errorMess)
-        prevKey = currentKey
-        prevMessage = message
-        prevDescription = description
-    # for
-    wr_define(fw, key, '"' + message + '"', description + ";", errorMess)
+    if len(message) > maxLen and maxLen > 0:
+        errorMess = "ERROR - maximum length " + str(maxLen) + " exceed for: " + message + '/' + str(len(message))
+        print(errorMess)
+    else:
+        errorMess = ""
 
-    print(sys.argv[0] + ': FINISH')
-# with
+    if currentKey == prevKey + hdKey:
+        mess = 'TR2("' + prevMessage + '", "' + message + '")'
+        wr_define(fw, prevKey, mess, prevDescription + "; " + description, errorMess)
+    else:
+        if prevKey != "" and not prevKey.find(hdKey) > 0:
+            wr_define(fw, prevKey, '"' + prevMessage + '"', prevDescription, errorMess)
+    prevKey = currentKey
+    prevMessage = message
+    prevDescription = description
+# for
+wr_define(fw, currentKey, '"' + message + '"', description, errorMess)
 
-fr.close()
+print(sys.argv[0] + ': FINISH')
+
 fw.close()
