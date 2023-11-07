@@ -95,7 +95,7 @@
 #define STM32F7
 #endif
 
-#elif defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F446xx)
+#elif defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F446xx)  || defined(STM32F427_437xx)
 
 #include "stm32f4xx.h"
 
@@ -111,7 +111,7 @@
 #endif
 
 #ifdef STM32F4
-#if defined(STM32F40_41xxx)
+#if defined(STM32F40_41xxx) || defined(STM32F427_437xx)
 #define USE_FAST_DATA
 #endif
 

@@ -436,7 +436,7 @@ typedef struct pllConfig_s {
 // For PLL input = 2MHz, divide n by 2; see SystemInitPLLParameters below.
 
 static const pllConfig_t overclockLevels[] = {
-#if defined(STM32F40_41xxx)
+#if defined(STM32F40_41xxx) || defined(STM32F427_437xx)
   { 168, 336, 2,  7 },  // 168 MHz
   { 192, 384, 2,  8 },  // 192 MHz
   { 216, 432, 2,  9 },  // 216 MHz
@@ -875,6 +875,8 @@ uint32_t pllsai_m;
     RCC_PLLI2SConfig(plli2s_n, PLLI2S_R, pll_m);
 #elif defined(STM32F446xx)
     RCC_PLLI2SConfig(pll_m, plli2s_n, 2, 2, PLLI2S_R); // M, N, P, Q, R
+#elif defined(STM32F427_437xx)
+    RCC_PLLI2SConfig(plli2s_n, 2, PLLI2S_R);
 #else
 #error Unsupported MCU
 #endif
