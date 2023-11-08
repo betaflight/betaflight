@@ -21,13 +21,13 @@
 
 #define LOCALE                             "en"                                       	// Current language in short form: en, da, es, fr, nl ...
 #define STR_LOCALE_SETUP                   "Language:"                                	// translation of: Language:
-#define STR_OSD_ARMED                      TR2("ARMED", "*** ARMED ***")              	// translation of: ARMED; HD translation of: *** ARMED ***
-#define STR_OSDE_DISARMED                  TR2("DISARMED", "*** DISARMED ***")        	// translation of: DISARMED; HD translation of: *** DISARMED ***
 #define STR_SECONDS                        "seconds"                                  	// translation of: seconds
 #define STR_VISUAL_BEEP                    "  * * * *"                                	// translation of:   * * * *
-#define CMS_STARTUP_HELP_TEXT1             "MENU:THR MID"                             	// translation of: MENU:THR MID
-#define CMS_STARTUP_HELP_TEXT2             "+ YAW LEFT  "                             	// translation of: + YAW LEFT  
-#define CMS_STARTUP_HELP_TEXT3             "+ PITCH UP  "                             	// translation of: + PITCH UP  
+#define STR_CMS_STARTUP_MENU_TEXT1         "MENU:THR MID"                             	// translation of: MENU:THR MID
+#define STR_CMS_STARTUP_MENU_TEXT2         "+ YAW LEFT  "                             	// translation of: + YAW LEFT  
+#define STR_CMS_STARTUP_MENU_TEXT3         "+ PITCH UP  "                             	// translation of: + PITCH UP  
+#define STR_OSD_ARMED                      TR2("ARMED", "*** ARMED ***")              	// translation of: ARMED; HD translation of: *** ARMED ***
+#define STR_OSDE_DISARMED                  TR2("DISARMED", "*** DISARMED ***")        	// translation of: DISARMED; HD translation of: *** DISARMED ***
 #define STR_OSD_STATS                      TR2("--- STATS ---", "--- STATISTICS ---") 	// translation of: --- STATS ---; HD translation of: --- STATISTICS ---
 #define STR_OSD_TIMER_ON_TIME              TR2("ON TIME  ", "ON TIME    ")            	// translation of: ON TIME  ; HD translation of: ON TIME  
 #define STR_OSD_TIMER_TOTAL_ARM            TR2("TOTAL ARM", "TOTAL ARMED")            	// translation of: TOTAL ARM; HD translation of: TOTAL ARMED
@@ -84,9 +84,9 @@
 #define STR_OSDE_DOWN                      "D"                                        	// translation of: D
 #define STR_OSDE_GPS_DIRECTION             "NSEW"                                     	// translation of: NSEW
 #define STR_OSDE_PILOT_NAME                "PILOT NAME"                               	// translation of: PILOT NAME
-#define STR_OSDE_RATE                      TR2("RATE_", "RATE_")                      	// translation of: RATE_; HD translation of: RATE_
-#define STR_OSDE_PID                       "PID_"                                     	// translation of: PID_
-#define STR_OSDE_OID                       "OID_"                                     	// translation of: OID_
+#define STR_OSDE_RATE                      TR2("RATE_", "RATE_")                      	// translation of: RATE_, notice %u follow; HD translation of: RATE_, notice %u follow
+#define STR_OSDE_PID                       "PID_"                                     	// translation of: PID_, notice %u follow
+#define STR_OSDE_OID                       "OID_"                                     	// translation of: OID_, notice %u follow
 #define STR_ODSE_FLYMODE_FAILSAFE          "!FS!"                                     	// translation of: !FS!
 #define STR_ODSE_FLYMODE_RESCUE            "RESC"                                     	// translation of: RESC
 #define STR_ODSE_FLYMODE_HEAD              "HEAD"                                     	// translation of: HEAD
