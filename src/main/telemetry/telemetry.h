@@ -38,8 +38,7 @@
 #include "telemetry/ibus_shared.h"
 
 typedef enum {
-    FRSKY_FORMAT_DMS = 0,
-    FRSKY_FORMAT_NMEA
+    FRSKY_FORMAT_DMS = 0
 } frskyGpsCoordFormat_e;
 
 typedef enum {

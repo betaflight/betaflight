@@ -149,7 +149,6 @@
 #define PARAM_NAME_GPS_UBLOX_UTC_STANDARD "gps_ublox_utc_standard"
 #define PARAM_NAME_GPS_SET_HOME_POINT_ONCE "gps_set_home_point_once"
 #define PARAM_NAME_GPS_USE_3D_SPEED "gps_use_3d_speed"
-#define PARAM_NAME_GPS_NMEA_CUSTOM_COMMANDS "gps_nmea_custom_commands"
 #define PARAM_NAME_GPS_UPDATE_RATE_HZ "gps_update_rate_hz"
 
 #ifdef USE_GPS_RESCUE

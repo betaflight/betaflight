@@ -373,9 +373,6 @@ static bool isConfiguratorConnected(void)
 }
 
 static void gpsNewData(uint16_t c);
-#ifdef USE_GPS_NMEA
-static bool gpsNewFrameNMEA(char c);
-#endif
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
 #endif
@@ -436,12 +433,6 @@ void gpsInit(void)
 
     portMode_e mode = MODE_RXTX;
     portOptions_e options = SERIAL_NOT_INVERTED;
-
-#if defined(GPS_NMEA_TX_ONLY)
-    if (gpsConfig()->provider == GPS_NMEA) {
-        mode &= ~MODE_TX;
-    }
-#endif
 
     if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
         options |= SERIAL_CHECK_TX;
@@ -789,29 +780,11 @@ static void ubloxDisableNMEAValSet(void)
 
     payload[0] = 0;
 
-//    size_t offset = ubloxValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_I2C, payload, UBX_VAL_LAYER_RAM);
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_SPI, payload, offset);
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_UART1, payload, offset);
     size_t offset = ubloxValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_UART1, payload, UBX_VAL_LAYER_RAM);
-
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_I2C, payload, offset);
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_UART1, payload, offset);
-
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSV_I2C, payload, offset);
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSV_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSV_UART1, payload, offset);
-
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GLL_I2C, payload, offset);
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GLL_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GLL_UART1, payload, offset);
-
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSA_I2C, payload, offset);
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSA_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSA_UART1, payload, offset);
-
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_I2C, payload, offset);
-//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_UART1, payload, offset);
 
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
@@ -950,78 +923,6 @@ void setSatInfoMessageRate(uint8_t divisor)
 }
 
 #endif // USE_GPS_UBLOX
-
-#ifdef USE_GPS_NMEA
-void gpsConfigureNmea(void)
-{
-    // minimal support for NMEA, we only:
-    // - set the FC's GPS port to the user's configured rate, and 
-    // - send any NMEA custom commands to the GPS Module
-    // the user must configure the power-up baud rate of the module to be fast enough for their data rate
-    // Note: we always parse all incoming NMEA messages
-    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));
-
-    // wait 500ms between changes
-    if (cmp32(gpsData.now, gpsData.state_ts) < 500) {
-        return;
-    }
-    gpsData.state_ts = gpsData.now;
-
-    // Check that the GPS transmit buffer is empty
-    if (!isSerialTransmitBufferEmpty(gpsPort)) {
-        return;
-    }
-
-    switch (gpsData.state) {
-
-        case GPS_STATE_DETECT_BAUD:
-            // no attempt to read the baud rate of the GPS module, or change it
-            gpsSetState(GPS_STATE_CHANGE_BAUD);
-            break;
-
-        case GPS_STATE_CHANGE_BAUD:
-#if !defined(GPS_NMEA_TX_ONLY)
-            if (gpsData.state_position < 1) {
-                // set the FC's baud rate to the user's configured baud rate
-                serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
-                gpsData.state_position++;
-            } else if (gpsData.state_position < 2) {
-                // send NMEA custom commands to select which messages being sent, data rate etc
-                // use PUBX, MTK, SiRF or GTK format commands, depending on module type
-                static int commandOffset = 0;
-                const char *commands = gpsConfig()->nmeaCustomCommands;
-                const char *cmd = commands + commandOffset;
-                // skip leading whitespaces and get first command length
-                int commandLen;
-                while (*cmd && (commandLen = strcspn(cmd, " \0")) == 0) {
-                    cmd++;  // skip separators
-                }
-                if (*cmd) {
-                    // Send the current command to the GPS
-                    serialWriteBuf(gpsPort, (uint8_t *)cmd, commandLen);
-                    serialWriteBuf(gpsPort, (uint8_t *)"\r\n", 2);
-                    // Move to the next command
-                    cmd += commandLen;
-                }
-                // skip trailing whitespaces
-                while (*cmd && strcspn(cmd, " \0") == 0) cmd++;
-                if (*cmd) {
-                    // more commands to send
-                    commandOffset = cmd - commands;
-                } else {
-                    gpsData.state_position++;
-                    commandOffset = 0;
-                }
-                gpsData.state_position++;
-                gpsSetState(GPS_STATE_RECEIVING_DATA);
-            }
-#else // !GPS_NMEA_TX_ONLY
-            gpsSetState(GPS_STATE_RECEIVING_DATA);
-#endif // !GPS_NMEA_TX_ONLY
-            break;
-    }
-}
-#endif // USE_GPS_NMEA
 
 #ifdef USE_GPS_UBLOX
 
@@ -1303,20 +1204,10 @@ void gpsConfigureUblox(void)
 
 void gpsConfigureHardware(void)
 {
-    switch (gpsConfig()->provider) {
-    case GPS_NMEA:
-#ifdef USE_GPS_NMEA
-        gpsConfigureNmea();
-#endif
-        break;
-
-    case GPS_UBLOX:
+    if (gpsConfig()->provider == GPS_UBLOX) {
 #ifdef USE_GPS_UBLOX
         gpsConfigureUblox();
 #endif
-        break;
-    default:
-        break;
     }
 }
 
@@ -1495,19 +1386,10 @@ ubloxVersion_e ubloxParseVersion(const uint32_t version) {
 
 bool gpsNewFrame(uint8_t c)
 {
-    switch (gpsConfig()->provider) {
-    case GPS_NMEA:          // NMEA
-#ifdef USE_GPS_NMEA
-        return gpsNewFrameNMEA(c);
-#endif
-        break;
-    case GPS_UBLOX:         // UBX binary
+    if (gpsConfig()->provider == GPS_UBLOX) {
 #ifdef USE_GPS_UBLOX
         return gpsNewFrameUBLOX(c);
 #endif
-        break;
-    default:
-        break;
     }
     return false;
 }
@@ -1538,345 +1420,6 @@ bool gpsIsHealthy(void)
 #define FRAME_RMC  2
 #define FRAME_GSV  3
 #define FRAME_GSA  4
-
-
-// This code is used for parsing NMEA data
-
-/* Alex optimization
-  The latitude or longitude is coded this way in NMEA frames
-  dm.f   coded as degrees + minutes + minute decimal
-  Where:
-    - d can be 1 or more char long. generally: 2 char long for latitude, 3 char long for longitude
-    - m is always 2 char long
-    - f can be 1 or more char long
-  This function converts this format in a unique unsigned long where 1 degree = 10 000 000
-
-  EOS increased the precision here, even if we think that the gps is not precise enough, with 10e5 precision it has 76cm resolution
-  with 10e7 it's around 1 cm now. Increasing it further is irrelevant, since even 1cm resolution is unrealistic, however increased
-  resolution also increased precision of nav calculations
-static uint32_t GPS_coord_to_degrees(char *coordinateString)
-{
-    char *p = s, *d = s;
-    uint8_t min, deg = 0;
-    uint16_t frac = 0, mult = 10000;
-
-    while (*p) {                // parse the string until its end
-        if (d != s) {
-            frac += (*p - '0') * mult;  // calculate only fractional part on up to 5 digits  (d != s condition is true when the . is located)
-            mult /= 10;
-        }
-        if (*p == '.')
-            d = p;              // locate '.' char in the string
-        p++;
-    }
-    if (p == s)
-        return 0;
-    while (s < d - 2) {
-        deg *= 10;              // convert degrees : all chars before minutes ; for the first iteration, deg = 0
-        deg += *(s++) - '0';
-    }
-    min = *(d - 1) - '0' + (*(d - 2) - '0') * 10;       // convert minutes : 2 previous char before '.'
-    return deg * 10000000UL + (min * 100000UL + frac) * 10UL / 6;
-}
-*/
-
-// helper functions
-#ifdef USE_GPS_NMEA
-static uint32_t grab_fields(char *src, uint8_t mult)
-{                               // convert string to uint32
-    uint32_t i;
-    uint32_t tmp = 0;
-    int isneg = 0;
-    for (i = 0; src[i] != 0; i++) {
-        if ((i == 0) && (src[0] == '-')) { // detect negative sign
-            isneg = 1;
-            continue; // jump to next character if the first one was a negative sign
-        }
-        if (src[i] == '.') {
-            i++;
-            if (mult == 0) {
-                break;
-            } else {
-                src[i + mult] = 0;
-            }
-        }
-        tmp *= 10;
-        if (src[i] >= '0' && src[i] <= '9') {
-            tmp += src[i] - '0';
-        }
-        if (i >= 15) {
-            return 0; // out of bounds
-        }
-    }
-    return isneg ? -tmp : tmp;    // handle negative altitudes
-}
-
-typedef struct gpsDataNmea_s {
-    int32_t latitude;
-    int32_t longitude;
-    uint8_t numSat;
-    int32_t altitudeCm;
-    uint16_t speed;
-    uint16_t pdop;
-    uint16_t hdop;
-    uint16_t vdop;
-    uint16_t ground_course;
-    uint32_t time;
-    uint32_t date;
-} gpsDataNmea_t;
-
-static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
-{
-    static uint8_t svMessageNum = 0;
-    uint8_t svSatNum = 0, svPacketIdx = 0, svSatParam = 0;
-
-    switch (gpsFrame) {
-
-        case FRAME_GGA:        //************* GPGGA FRAME parsing
-            switch (idx) {
-                case 1:
-                    data->time = ((uint8_t)(str[5] - '0') * 10 + (uint8_t)(str[7] - '0')) * 100;
-                    break;
-                case 2:
-                    data->latitude = GPS_coord_to_degrees(str);
-                    break;
-                case 3:
-                    if (str[0] == 'S') data->latitude *= -1;
-                    break;
-                case 4:
-                    data->longitude = GPS_coord_to_degrees(str);
-                    break;
-                case 5:
-                    if (str[0] == 'W') data->longitude *= -1;
-                    break;
-                case 6:
-                    gpsSetFixState(str[0] > '0');
-                    break;
-                case 7:
-                    data->numSat = grab_fields(str, 0);
-                    break;
-                case 9:
-                    data->altitudeCm = grab_fields(str, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
-                    break;
-            }
-            break;
-
-        case FRAME_RMC:        //************* GPRMC FRAME parsing
-            switch (idx) {
-                case 1:
-                    data->time = grab_fields(str, 2); // UTC time hhmmss.ss
-                    break;
-                case 7:
-                    data->speed = ((grab_fields(str, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
-                    break;
-                case 8:
-                    data->ground_course = (grab_fields(str, 1));      // ground course deg * 10
-                    break;
-                case 9:
-                    data->date = grab_fields(str, 0); // date dd/mm/yy
-                    break;
-            }
-            break;
-
-        case FRAME_GSV:
-            switch (idx) {
-                /*case 1:
-                    // Total number of messages of this type in this cycle
-                    break; */
-                case 2:
-                    // Message number
-                    svMessageNum = grab_fields(str, 0);
-                    break;
-                case 3:
-                    // Total number of SVs visible
-                    GPS_numCh = MIN(grab_fields(str, 0), GPS_SV_MAXSATS_LEGACY);
-                    break;
-            }
-            if (idx < 4)
-                break;
-
-            svPacketIdx = (idx - 4) / 4 + 1; // satellite number in packet, 1-4
-            svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
-            svSatParam  = idx - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
-
-            if (svSatNum > GPS_SV_MAXSATS_LEGACY)
-                break;
-
-            switch (svSatParam) {
-                case 1:
-                    // SV PRN number
-                    GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
-                    GPS_svinfo_svid[svSatNum - 1] = grab_fields(str, 0);
-                    break;
-                /*case 2:
-                    // Elevation, in degrees, 90 maximum
-                    break;
-                case 3:
-                    // Azimuth, degrees from True North, 000 through 359
-                    break; */
-                case 4:
-                    // SNR, 00 through 99 dB (null when not tracking)
-                    GPS_svinfo_cno[svSatNum - 1] = grab_fields(str, 0);
-                    GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
-                    break;
-            }
-
-#ifdef USE_DASHBOARD
-            dashboardGpsNavSvInfoRcvCount++;
-#endif
-            break;
-
-        case FRAME_GSA:
-            switch (idx) {
-                case 15:
-                    data->pdop = grab_fields(str, 2);  // pDOP * 100
-                    break;
-                case 16:
-                    data->hdop = grab_fields(str, 2);  // hDOP * 100
-                    break;
-                case 17:
-                    data->vdop = grab_fields(str, 2);  // vDOP * 100
-                    break;
-            }
-            break;
-    }
-}
-
-static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *data, uint8_t gpsFrame)
-{
-    int navDeltaTimeMs = 100;
-    const uint32_t msInTenSeconds = 10000;
-    switch (gpsFrame) {
-
-        case FRAME_GGA:
-#ifdef USE_DASHBOARD
-            *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GGA;
-#endif
-            if (STATE(GPS_FIX)) {
-                sol->llh.lat = data->latitude;
-                sol->llh.lon = data->longitude;
-                sol->numSat = data->numSat;
-                sol->llh.altCm = data->altitudeCm;
-            }
-             navDeltaTimeMs = (msInTenSeconds + data->time - gpsData.lastNavSolTs) % msInTenSeconds;
-             gpsData.lastNavSolTs = data->time;
-             sol->navIntervalMs = constrain(navDeltaTimeMs, 100, 2500);
-            // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
-            return true;
-
-        case FRAME_GSA:
-#ifdef USE_DASHBOARD
-            *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_GSA;
-#endif
-            sol->dop.pdop = data->pdop;
-            sol->dop.hdop = data->hdop;
-            sol->dop.vdop = data->vdop;
-            return false;
-
-        case FRAME_RMC:
-#ifdef USE_DASHBOARD
-            *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_NMEA_RMC;
-#endif
-            sol->groundSpeed = data->speed;
-            sol->groundCourse = data->ground_course;
-#ifdef USE_RTC_TIME
-            // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
-            if(!rtcHasTime() && data->date != 0 && data->time != 0) {
-                dateTime_t temp_time;
-                temp_time.year = (data->date % 100) + 2000;
-                temp_time.month = (data->date / 100) % 100;
-                temp_time.day = (data->date / 10000) % 100;
-                temp_time.hours = (data->time / 1000000) % 100;
-                temp_time.minutes = (data->time / 10000) % 100;
-                temp_time.seconds = (data->time / 100) % 100;
-                temp_time.millis = (data->time & 100) * 10;
-                rtcSetDateTime(&temp_time);
-            }
-#endif
-            return false;
-
-        default:
-            return false;
-    }
-}
-
-static bool gpsNewFrameNMEA(char c)
-{
-    static gpsDataNmea_t gps_msg;
-    static char string[15];
-    static uint8_t param = 0, offset = 0, parity = 0;
-    static uint8_t checksum_param, gps_frame = NO_FRAME;
-    bool receivedNavMessage = false;
-
-    switch (c) {
-
-        case '$':
-            param = 0;
-            offset = 0;
-            parity = 0;
-            break;
-
-        case ',':
-        case '*':
-            string[offset] = 0;
-            if (param == 0) {  // frame identification (5 chars, e.g. "GPGGA", "GNGGA", "GLGGA", ...)
-                gps_frame = NO_FRAME;
-                if (strcmp(&string[2], "GGA") == 0) {
-                    gps_frame = FRAME_GGA;
-                } else if (strcmp(&string[2], "RMC") == 0) {
-                    gps_frame = FRAME_RMC;
-                } else if (strcmp(&string[2], "GSV") == 0) {
-                    gps_frame = FRAME_GSV;
-                } else if (strcmp(&string[2], "GSA") == 0) {
-                    gps_frame = FRAME_GSA;
-                }
-            }
-
-            // parse string and write data into gps_msg
-            parseFieldNmea(&gps_msg, string, gps_frame, param);
-
-            param++;
-            offset = 0;
-            if (c == '*')
-                checksum_param = 1;
-            else
-                parity ^= c;
-            break;
-
-        case '\r':
-        case '\n':
-            if (checksum_param) {   //parity checksum
-#ifdef USE_DASHBOARD
-                shiftPacketLog();
-#endif
-                uint8_t checksum = 16 * ((string[0] >= 'A') ? string[0] - 'A' + 10 : string[0] - '0') + ((string[1] >= 'A') ? string[1] - 'A' + 10 : string[1] - '0');
-                if (checksum == parity) {
-#ifdef USE_DASHBOARD
-                    *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_IGNORED;
-                    dashboardGpsPacketCount++;
-#endif
-                    receivedNavMessage = writeGpsSolutionNmea(&gpsSol, &gps_msg, gps_frame);  // // write gps_msg into gpsSol
-                }
-#ifdef USE_DASHBOARD
-                  else {
-                    *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_ERROR;
-                }
-#endif
-            }
-            checksum_param = 0;
-            break;
-
-        default:
-            if (offset < 15)
-                string[offset++] = c;
-            if (!checksum_param)
-                parity ^= c;
-            break;
-    }
-
-    return receivedNavMessage;
-}
-#endif // USE_GPS_NMEA
 
 #ifdef USE_GPS_UBLOX
 // UBX support
