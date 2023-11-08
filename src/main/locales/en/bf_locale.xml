@@ -2,15 +2,15 @@
 <resources>
   <string name="LOCALE" maxLength="2" comment="Current language in short form: en, da, es, fr, nl ...">en</string>
   <string name="STR_LOCALE_SETUP" maxLength="10" comment="translation of: Language:">Language:</string>
+  <string name="STR_SECONDS" maxLength="8" comment="translation of: seconds">seconds</string>
+  <string name="STR_VISUAL_BEEP" maxLength="10" comment="translation of:   * * * *">  * * * *</string>
+  <string name="STR_CMS_STARTUP_MENU_TEXT1" maxLength="20" comment="translation of: MENU:THR MID">MENU:THR MID</string>
+  <string name="STR_CMS_STARTUP_MENU_TEXT2" maxLength="20" comment="translation of: + YAW LEFT  ">+ YAW LEFT  </string>
+  <string name="STR_CMS_STARTUP_MENU_TEXT3" maxLength="20" comment="translation of: + PITCH UP  ">+ PITCH UP  </string>
   <string name="STR_OSD_ARMED" maxLength="10" comment="translation of: ARMED">ARMED</string>
   <string name="STR_OSD_ARMED_HD" maxLength="20" comment="HD translation of: *** ARMED ***">*** ARMED ***</string>
   <string name="STR_OSDE_DISARMED" maxLength="15" comment="translation of: DISARMED">DISARMED</string>
   <string name="STR_OSDE_DISARMED_HD" maxLength="20" comment="HD translation of: *** DISARMED ***">*** DISARMED ***</string>
-  <string name="STR_SECONDS" maxLength="8" comment="translation of: seconds">seconds</string>
-  <string name="STR_VISUAL_BEEP" maxLength="10" comment="translation of:   * * * *">  * * * *</string>
-  <string name="CMS_STARTUP_HELP_TEXT1" maxLength="20" comment="translation of: MENU:THR MID">MENU:THR MID</string>
-  <string name="CMS_STARTUP_HELP_TEXT2" maxLength="20" comment="translation of: + YAW LEFT  ">+ YAW LEFT  </string>
-  <string name="CMS_STARTUP_HELP_TEXT3" maxLength="20" comment="translation of: + PITCH UP  ">+ PITCH UP  </string>
   <string name="STR_OSD_STATS" maxLength="15" comment="translation of: --- STATS ---">--- STATS ---</string>
   <string name="STR_OSD_STATS_HD" maxLength="20" comment="HD translation of: --- STATISTICS ---">--- STATISTICS ---</string>
   <string name="STR_OSD_TIMER_ON_TIME" maxLength="9" comment="translation of: ON TIME  ">ON TIME  </string>
@@ -82,10 +82,10 @@
   <string name="STR_OSDE_DOWN" maxLength="1" comment="translation of: D">D</string>
   <string name="STR_OSDE_GPS_DIRECTION" maxLength="4" comment="translation of: NSEW">NSEW</string>
   <string name="STR_OSDE_PILOT_NAME" maxLength="10" comment="translation of: PILOT NAME">PILOT NAME</string>
-  <string name="STR_OSDE_RATE" maxLength="5" comment="translation of: RATE_">RATE_</string>
-  <string name="STR_OSDE_RATE_HD" maxLength="15" comment="HD translation of: RATE_">RATE_</string>
-  <string name="STR_OSDE_PID" maxLength="5" comment="translation of: PID_">PID_</string>
-  <string name="STR_OSDE_OID" maxLength="5" comment="translation of: OID_">OID_</string>
+  <string name="STR_OSDE_RATE" maxLength="5" comment="translation of: RATE_, notice %u follow">RATE_</string>
+  <string name="STR_OSDE_RATE_HD" maxLength="15" comment="HD translation of: RATE_, notice %u follow">RATE_</string>
+  <string name="STR_OSDE_PID" maxLength="5" comment="translation of: PID_, notice %u follow">PID_</string>
+  <string name="STR_OSDE_OID" maxLength="5" comment="translation of: OID_, notice %u follow">OID_</string>
   <string name="STR_ODSE_FLYMODE_FAILSAFE" maxLength="5" comment="translation of: !FS!">!FS!</string>
   <string name="STR_ODSE_FLYMODE_RESCUE" maxLength="5" comment="translation of: RESC">RESC</string>
   <string name="STR_ODSE_FLYMODE_HEAD" maxLength="5" comment="translation of: HEAD">HEAD</string>
