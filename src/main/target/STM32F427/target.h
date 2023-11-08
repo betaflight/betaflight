@@ -52,6 +52,8 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_5
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
@@ -59,6 +61,7 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
+#define TARGET_IO_PORTG 0xffff
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
@@ -71,7 +74,7 @@
 #define SPI_FULL_RECONFIGURABILITY
 #define USE_SPI_DMA_ENABLE_EARLY
 
-#define USE_USB_DETECT
+//#define USE_USB_DETECT
 
 #define USE_ESCSERIAL
 
