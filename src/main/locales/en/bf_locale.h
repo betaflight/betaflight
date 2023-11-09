@@ -27,8 +27,10 @@
 
 	To generate use 'make xx LOCALE=en'
 
-	Want to USE_EXTENDED_HD, ie. have #define TXT TR2( "short", "long"), x, y), 	write string section for TXT with 'short' followed by string section TXT_HD with 'long'
-	To generate use 'make xx USE_EXTENDED_HD=1'
+	Want to USE_EXTENDED_HD, ie. have #define TXT TR2( "short", "long"), x, y), 
+	write string section for TXT with 'short' followed by string section TXT_HD with 'long'
+
+	To generate use 'make xx LOCALE=en USE_EXTENDED_HD=1'
 */
 
 #define LOCALE                             "en"                                       	// Current language in short form: en, da, es, fr, nl ...
