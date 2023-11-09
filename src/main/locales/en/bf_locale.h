@@ -19,6 +19,18 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+	NOTICE !
+	NOTICE !
+	NOTICE, this header file for LOCALE 'en' are generated from en/bf_locale.xml
+	Changes to translation ie. en/bf_locale.h must be done in en/bf_locale.xml
+
+	To generate use 'make xx LOCALE=en'
+
+	Want to USE_EXTENDED_HD, ie. have #define TXT TR2( "short", "long"), x, y), 	write string section for TXT with 'short' followed by string section TXT_HD with 'long'
+	To generate use 'make xx USE_EXTENDED_HD=1'
+*/
+
 #define LOCALE                             "en"                                       	// Current language in short form: en, da, es, fr, nl ...
 #define STR_LOCALE_SETUP                   "Language:"                                	// translation of: Language:
 #define STR_SECONDS                        "seconds"                                  	// translation of: seconds
