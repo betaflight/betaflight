@@ -23,8 +23,8 @@ import sys
 import xml.etree.ElementTree as ET
 
 # do this
-# generate language specific file from language/bf_locale.json to language/bf_locale.h 
-# py gen_defines.py source language 
+# generate language specific file from locale/bf_locale.xml to locale/bf_locale.h 
+# py gen_defines.py source locale 
 
 def wr_bf_header(outFile, filename):
     with open(filename, "r") as fr:
