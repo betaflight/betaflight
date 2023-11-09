@@ -36,9 +36,9 @@ def wr_bf_notice(outFile, locale):
     outFile.write("\tChanges to translation ie. "  + locale + "/bf_locale.h must be done in "  + locale + "/bf_locale.xml\n\n")
     outFile.write("\tTo generate use 'make xx LOCALE=" + locale + "'")
     outFile.write("\n\n")
-    outFile.write("\tWant to USE_EXTENDED_HD, ie. have #define TXT TR2( \"short\", \"long\"), x, y), ")
-    outFile.write("\twrite string section for TXT with 'short' followed by string section TXT_HD with 'long'\n")
-    outFile.write("\tTo generate use 'make xx USE_EXTENDED_HD=1'\n")
+    outFile.write("\tWant to USE_EXTENDED_HD, ie. have #define TXT TR2( \"short\", \"long\"), x, y), \n")
+    outFile.write("\twrite string section for TXT with 'short' followed by string section TXT_HD with 'long'\n\n")
+    outFile.write("\tTo generate use 'make xx LOCALE=" + locale + " USE_EXTENDED_HD=1'\n")
     outFile.write("*/\n\n")
 
 def wr_define(outFile, id, mes, desc, error):
