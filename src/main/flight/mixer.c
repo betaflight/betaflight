@@ -344,7 +344,6 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-#define USE_RPM_LIMIT
 #ifdef USE_RPM_LIMIT
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
