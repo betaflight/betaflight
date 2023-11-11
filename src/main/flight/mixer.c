@@ -344,6 +344,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
+#define USE_RPM_LIMIT
 #ifdef USE_RPM_LIMIT
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
@@ -367,7 +368,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
         mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
     }
     mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
-    throttle *= mixer->rpmLimiterThrottleScale;
+    throttle *= mixer->rpmLimiterThrottleScale + (mixer->rpmLimiterRpmLimit / mixerRuntime.rpmDerating * (4.2 * getBatteryCellCount() - getBatteryVoltage() * motorConfig()->kv));
 
     // Output
     pidOutput = MAX(0.0f, pidOutput);
