@@ -320,19 +320,19 @@ typedef enum {
     UBLOX_MSG_GSA,          //  7. GSA: GNSS DOP and Active Satellites
     UBLOX_MSG_RMC,          //  8. RMC: Recommended Minimum data
     UBLOX_ACQUIRE_MODEL,    //  9
-//    UBLOX_CFG_ANA,          //  . ANA: if M10, enable autonomous mode : temporarily disabled.
-    UBLOX_SET_SBAS,         // 10. Sets SBAS
-    UBLOX_SET_PMS,          // 11. Sets Power Mode
-    UBLOX_MSG_NAV_PVT,      // 12. set NAV-PVT rate
-    UBLOX_MSG_SOL,          // 13. set SOL MSG rate
-    UBLOX_MSG_POSLLH,       // 14. set POSLLH MSG rate
-    UBLOX_MSG_STATUS,       // 15: set STATUS MSG rate
-    UBLOX_MSG_VELNED,       // 16. set VELNED MSG rate
-    UBLOX_MSG_DOP,          // 17. MSG_NAV_DOP
-    UBLOX_SAT_INFO,         // 18. MSG_NAV_SAT message
-    UBLOX_SET_NAV_RATE,     // 19. set to user requested GPS sample rate
-    UBLOX_MSG_CFG_GNSS,     // 20. For not SBAS or GALILEO
-    UBLOX_CONFIG_COMPLETE   // 21. Config finished, start receiving data
+    UBLOX_CFG_ANA,          // 10 ANA: if M10, enable autonomous mode : temporarily disabled.
+    UBLOX_SET_SBAS,         // 11. Sets SBAS
+    UBLOX_SET_PMS,          // 12. Sets Power Mode
+    UBLOX_MSG_NAV_PVT,      // 13. set NAV-PVT rate
+    UBLOX_MSG_SOL,          // 14. set SOL MSG rate
+    UBLOX_MSG_POSLLH,       // 15. set POSLLH MSG rate
+    UBLOX_MSG_STATUS,       // 16: set STATUS MSG rate
+    UBLOX_MSG_VELNED,       // 17. set VELNED MSG rate
+    UBLOX_MSG_DOP,          // 18. MSG_NAV_DOP
+    UBLOX_SAT_INFO,         // 19. MSG_NAV_SAT message
+    UBLOX_SET_NAV_RATE,     // 20. set to user requested GPS sample rate
+    UBLOX_MSG_CFG_GNSS,     // 21. For not SBAS or GALILEO
+    UBLOX_CONFIG_COMPLETE   // 22. Config finished, start receiving data
 } ubloxStatePosition_e;
 
 baudRate_e initBaudRateIndex;
@@ -696,40 +696,39 @@ static void ubloxSendNAV5Message(uint8_t model) {
     }
 }
 
-// *** Assist Now Autonomous temporarily disabled until a subsequent PR either includes, or removes it ***
-// static void ubloxSendNavX5Message(void) {
-//     ubxMessage_t tx_buffer;
-// 
-//     if (gpsData.ubloxM9orAbove) {
-//         uint8_t payload[1];
-//         payload[0] = 1;
-//         size_t offset = ubloxValSet(&tx_buffer, CFG_ANA_USE_ANA, payload, UBX_VAL_LAYER_RAM); // 5
-// 
-//         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
-//     } else {
-//         memset(&tx_buffer, 0, sizeof(ubxMessage_t));
-// 
-//         tx_buffer.payload.cfg_nav5x.version = 0x0002;
-// 
-//         tx_buffer.payload.cfg_nav5x.mask1 = 0x4000;
-//         tx_buffer.payload.cfg_nav5x.mask2 = 0x0;
-//         tx_buffer.payload.cfg_nav5x.minSVs = 0;
-//         tx_buffer.payload.cfg_nav5x.maxSVs = 0;
-//         tx_buffer.payload.cfg_nav5x.minCNO = 0;
-//         tx_buffer.payload.cfg_nav5x.reserved1 = 0;
-//         tx_buffer.payload.cfg_nav5x.iniFix3D = 0;
-//         tx_buffer.payload.cfg_nav5x.ackAiding = 0;
-//         tx_buffer.payload.cfg_nav5x.wknRollover = 0;
-//         tx_buffer.payload.cfg_nav5x.sigAttenCompMode = 0;
-//         tx_buffer.payload.cfg_nav5x.usePPP = 0;
-// 
-//         tx_buffer.payload.cfg_nav5x.aopCfg = 0x1; //bit 0 = useAOP
-// 
-//         tx_buffer.payload.cfg_nav5x.useAdr = 0;
-// 
-//         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAVX_SETTINGS, sizeof(ubxCfgNav5x_t), false);
-//     }
-// }
+static void ubloxSendNavX5Message(void) {
+    ubxMessage_t tx_buffer;
+
+    if (gpsData.ubloxM9orAbove) {
+        uint8_t payload[1];
+        payload[0] = 1;
+        size_t offset = ubloxValSet(&tx_buffer, CFG_ANA_USE_ANA, payload, UBX_VAL_LAYER_RAM);
+
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
+    } else {
+        memset(&tx_buffer, 0, sizeof(ubxMessage_t));
+
+        tx_buffer.payload.cfg_nav5x.version = 0x0002;
+
+        tx_buffer.payload.cfg_nav5x.mask1 = 0x4000;
+        tx_buffer.payload.cfg_nav5x.mask2 = 0x0;
+        tx_buffer.payload.cfg_nav5x.minSVs = 0;
+        tx_buffer.payload.cfg_nav5x.maxSVs = 0;
+        tx_buffer.payload.cfg_nav5x.minCNO = 0;
+        tx_buffer.payload.cfg_nav5x.reserved1 = 0;
+        tx_buffer.payload.cfg_nav5x.iniFix3D = 0;
+        tx_buffer.payload.cfg_nav5x.ackAiding = 0;
+        tx_buffer.payload.cfg_nav5x.wknRollover = 0;
+        tx_buffer.payload.cfg_nav5x.sigAttenCompMode = 0;
+        tx_buffer.payload.cfg_nav5x.usePPP = 0;
+
+        tx_buffer.payload.cfg_nav5x.aopCfg = 0x1; //bit 0 = useAOP
+
+        tx_buffer.payload.cfg_nav5x.useAdr = 0;
+
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAVX_SETTINGS, sizeof(ubxCfgNav5x_t), false);
+    }
+}
 
 static void ubloxSetPowerModeValSet(uint8_t powerSetupValue)
 {
@@ -1169,14 +1168,13 @@ void gpsConfigureUblox(void)
                     case UBLOX_ACQUIRE_MODEL:
                         ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
                         break;
-//                   *** temporarily disabled
-//                   case UBLOX_CFG_ANA:
-//                      i f (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
-//                           ubloxSendNavX5Message();
-//                       } else {
-//                           gpsData.state_position++;
-//                       }
-//                       break;
+                   case UBLOX_CFG_ANA:
+                       if (gpsConfig()->gps_ublox_enable_ana && gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
+                           ubloxSendNavX5Message();
+                       } else {
+                           gpsData.state_position++;
+                       }
+                       break;
                     case UBLOX_SET_SBAS:
                         ubloxSetSbas();
                         break;
