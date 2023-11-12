@@ -44,6 +44,7 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .gps_use_3d_speed = false,
     .sbas_integrity = false,
     .gps_ublox_utc_standard = UBLOX_UTC_STANDARD_AUTO,
+    .gps_ublox_enable_ana = false
 );
 
 #endif // USE_GPS

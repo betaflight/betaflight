@@ -701,8 +701,13 @@ static void ubloxSendNavX5Message(void) {
 
     if (gpsData.ubloxM9orAbove) {
         uint8_t payload[1];
-        payload[0] = 1;
+        payload[0] = gpsConfig()->gps_ublox_enable_ana;
         size_t offset = ubloxValSet(&tx_buffer, CFG_ANA_USE_ANA, payload, UBX_VAL_LAYER_RAM);
+
+        ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
+
+        // this is split so in case of the unit doesnt have flash, the ram gets set and not discarded
+        offset = ubloxValSet(&tx_buffer, CFG_ANA_USE_ANA, payload, UBX_VAL_LAYER_FLASH);
 
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
     } else {
@@ -722,7 +727,7 @@ static void ubloxSendNavX5Message(void) {
         tx_buffer.payload.cfg_nav5x.sigAttenCompMode = 0;
         tx_buffer.payload.cfg_nav5x.usePPP = 0;
 
-        tx_buffer.payload.cfg_nav5x.aopCfg = 0x1; //bit 0 = useAOP
+        tx_buffer.payload.cfg_nav5x.aopCfg = gpsConfig()->gps_ublox_enable_ana; //bit 0 = useAOP
 
         tx_buffer.payload.cfg_nav5x.useAdr = 0;
 
@@ -1169,7 +1174,7 @@ void gpsConfigureUblox(void)
                         ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
                         break;
                    case UBLOX_CFG_ANA:
-                       if (gpsConfig()->gps_ublox_enable_ana && gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
+                       if (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
                            ubloxSendNavX5Message();
                        } else {
                            gpsData.state_position++;
