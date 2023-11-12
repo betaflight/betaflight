@@ -120,7 +120,7 @@ https://github.com/betaflight/betaflight/releases
 
 Betaflight is software that is **open source** and is available free of charge without warranty to all users.
 
-Betaflight is forked from Cleanflight, so thanks goes to all those whom have contributed to Cleanflight and its origins.
+Betaflight is forked from Cleanflight, so thanks goes to all those who have contributed to Cleanflight and its origins.
 
 Origins for this fork (Thanks!):
 * **Alexinparis** (for MultiWii),
