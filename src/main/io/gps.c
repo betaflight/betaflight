@@ -780,11 +780,29 @@ static void ubloxDisableNMEAValSet(void)
 
     payload[0] = 0;
 
+//    size_t offset = ubloxValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_I2C, payload, UBX_VAL_LAYER_RAM);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_SPI, payload, offset);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_UART1, payload, offset);
     size_t offset = ubloxValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GGA_UART1, payload, UBX_VAL_LAYER_RAM);
+
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_I2C, payload, offset);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_VTG_UART1, payload, offset);
+
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSV_I2C, payload, offset);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSV_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSV_UART1, payload, offset);
+
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GLL_I2C, payload, offset);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GLL_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GLL_UART1, payload, offset);
+
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSA_I2C, payload, offset);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSA_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_GSA_UART1, payload, offset);
+
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_I2C, payload, offset);
+//    offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_SPI, payload, offset);
     offset += ubloxAddValSet(&tx_buffer, CFG_MSGOUT_NMEA_ID_RMC_UART1, payload, offset);
 
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_VALSET, offsetof(ubxCfgValSet_t, cfgData) + offset, true);
