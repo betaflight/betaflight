@@ -41,6 +41,9 @@
 
 */
 
+#define USE_QUICK_OSD_MENU
+#define USE_RPM_LIMIT
+
 #define USE_PARAMETER_GROUPS
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
