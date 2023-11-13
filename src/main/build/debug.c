@@ -117,5 +117,4 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RPM_LIMIT",
     "RC_STATS",
     "MAG_CALIB",
-    "MAG_TASK_RATE",
 };

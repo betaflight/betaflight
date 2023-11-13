@@ -21,7 +21,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <math.h>
 
 #include "platform.h"
 
@@ -30,7 +29,6 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 
 #include "config/config.h"
 
@@ -66,19 +64,9 @@
 
 #include "compass.h"
 
-/**
- * Magnetometer / Compass calibration can either be triggered by the configurator in the setup tab
- * or by the following stick commands:
- *  -----     -----
- * |  /  |   |     |     Throttle: HIGH,     Yaw:  HIGH, 
- * |     |   |  |  |     Pitch:     LOW,     Roll: CENTER
- *  -----     -----
- * Calibration should be done in the field triggered by stick commands.
-*/
-
 #define LAMBDA_MIN 0.95f // minimal adaptive forgetting factor, range: [0.90, 0.99], currently tuned for 200 Hz
                          // (TASK_COMPASS_RATE_HZ) and update rate of compassBiasEstimatorApply(), not the mag readout
-                         // rate, so it might need to be adjusted TASK_COMPASS_RATE_HZ is changed
+                         // rate, so it might need to be adjusted if TASK_COMPASS_RATE_HZ is changed
 #define P0 1.0e2f        // value to initialize P(0) = diag([P0, P0, P0, P0]), typically in range: (1, 1000)
 
 #define CALIBRATION_WAIT_US (15 * 1000 * 1000)               // wait for movement to start and trigger the calibration routine in us
@@ -415,11 +403,6 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         return nextPeriod; // Wait COMPASS_READ_US between states
     }
 
-    static timeUs_t previousTimeUs = 0;
-    const timeDelta_t dTimeUs = cmpTimeUs(currentTimeUs, previousTimeUs);
-    previousTimeUs = currentTimeUs;
-    const float actualCompassRateHz = 1.0e6f / dTimeUs;
-
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         if (magADCRaw[axis] != magADCRawPrevious[axis]) {
             // this test, and the isNewMagADCFlag itself, is only needed if we calculate magYaw in imu.c
@@ -440,13 +423,13 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         if (cmpTimeUs(tCal, currentTimeUs) > 0) {
             LED0_TOGGLE;
 
-            // get downsampled gyro data
-            const float gyroAverageRadians[XYZ_AXIS_COUNT] = {DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(X)),
-                                                              DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Y)),
-                                                              DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Z))};
+            // get filtered and downsampled gyro data
+            const float gyroFilteredRadians[XYZ_AXIS_COUNT] = {DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(X)),
+                                                               DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Y)),
+                                                               DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Z))};
 
             // it is assumed that the user has started to move the quad if squared norm of rotational speed vector is greater than GYRO_NORM_SQUARED_MIN
-            const float gyroNormSquared = sq(gyroAverageRadians[X]) + sq(gyroAverageRadians[Y]) + sq(gyroAverageRadians[Z]);
+            const float gyroNormSquared = sq(gyroFilteredRadians[X]) + sq(gyroFilteredRadians[Y]) + sq(gyroFilteredRadians[Z]);
             if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
                 didMovementStart = true;
                 // starting now, the user has CALIBRATION_TIME_US to move the quad in a figure of eight in all directions
@@ -474,27 +457,18 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     }
 
     if (debugMode == DEBUG_MAG_CALIB) {
-        // DEBUG 0-2: magADC[X], magADC[Y], magADC[Z]
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            // DEBUG 0-2: magADC[X], magADC[Y], magADC[Z]
             DEBUG_SET(DEBUG_MAG_CALIB, axis, lrintf(mag.magADC[axis]));
+            // DEBUG 4-6: estimated magnetometer bias
+            DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));
         }
         // DEBUG 3: norm / length of magADC, ideally the norm stayes constant independent of the orientation of the quad
         DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(sqrtf(sq(mag.magADC[X]) + sq(mag.magADC[Y]) + sq(mag.magADC[Z]))));
-        // DEBUG 4-6: estimated magnetometer bias
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));
-        }
         // map adaptive forgetting factor lambda from (lambda_min, 1.0f) -> (0, 2000)
         const float mapLambdaGain = 1.0f / (1.0f - compassBiasEstimator.lambda_min + 1.0e-6f) * 2.0e3f;
         // DEBUG 7: adaptive forgetting factor lambda, after the transient phase it should converge to 2000
         DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf((compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain));
-    }
-
-    if (debugMode == DEBUG_MAG_TASK_RATE) {
-        // DEBUG 0: expected task frequency in Hz
-        DEBUG_SET(DEBUG_MAG_TASK_RATE, 0, TASK_COMPASS_RATE_HZ);
-        // DEBUG 1: actual task frequency in Hz
-        DEBUG_SET(DEBUG_MAG_TASK_RATE, 1, lrintf(actualCompassRateHz));
     }
 
     return TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
