@@ -149,6 +149,10 @@
 #define PARAM_NAME_GPS_UBLOX_UTC_STANDARD "gps_ublox_utc_standard"
 #define PARAM_NAME_GPS_SET_HOME_POINT_ONCE "gps_set_home_point_once"
 #define PARAM_NAME_GPS_USE_3D_SPEED "gps_use_3d_speed"
+
+#ifdef USE_GPS_NMEA
+#define PARAM_NAME_GPS_NMEA_CUSTOM_COMMANDS "gps_nmea_custom_commands"
+#endif
 #define PARAM_NAME_GPS_UPDATE_RATE_HZ "gps_update_rate_hz"
 
 #ifdef USE_GPS_RESCUE
@@ -188,7 +192,7 @@
 #ifdef USE_MAG
 #define PARAM_NAME_GPS_RESCUE_USE_MAG "gps_rescue_use_mag"
 #endif
-#endif
+#endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_LAT "gps_lap_timer_gate_lat"
@@ -196,12 +200,13 @@
 #define PARAM_NAME_GPS_LAP_TIMER_MIN_LAP_TIME "gps_lap_timer_min_lap_time_s"
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_TOLERANCE "gps_lap_timer_gate_tolerance_m"
 #endif // USE_GPS_LAP_TIMER
-#endif
+#endif // USE_GPS
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
 #define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"
 #define PARAM_NAME_IMU_SMALL_ANGLE "small_angle"
 #define PARAM_NAME_IMU_PROCESS_DENOM "imu_process_denom"
+
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif

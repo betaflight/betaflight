@@ -173,7 +173,12 @@ typedef enum {
 } gpsCoordinateType_e;
 
 typedef enum {
+#ifdef USE_GPS_NMEA
+    GPS_NMEA = 0,
+    GPS_UBLOX,
+#else
     GPS_UBLOX = 0,
+#endif
     GPS_MSP
 } gpsProvider_e;
 
