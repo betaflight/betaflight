@@ -19,7 +19,7 @@
  */
 
 #pragma once
-
+#define USE_RPM_LIMIT
 #include "platform.h"
 
 #include "flight/mixer.h"

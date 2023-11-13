@@ -367,7 +367,9 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
         mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
     }
     mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
-    throttle *= mixer->rpmLimiterThrottleScale + mixerCalculateRpmThrottleScale(getBatteryVoltage() * motorConfig()->kv, mixer->rpmLimiterRpmLimit) - mixerRuntime.rpmLimiterInitialThrottleScale;
+    float rpm_theoretical_max = (float)getBatteryVoltage() * (float)motorConfig()->kv;
+    float rpm_derating = -5.44e-6 * rpm_theoretical_max + 0.944;
+    throttle *= mixer->rpmLimiterThrottleScale + (constrainf(mixer->rpmLimiterRpmLimit / (rpm_theoretical_max * rpm_derating), 0.0f, 1.0f)) - mixer->rpmLimiterInitialThrottleScale;
     // Output
     pidOutput = MAX(0.0f, pidOutput);
     throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
