@@ -201,6 +201,8 @@ static const char * const lookupTableGyro[] = {
 static const char * const lookupTableGpsProvider[] = {
 #ifdef USE_GPS_NMEA
     "NMEA",
+#else
+    "NONE",
 #endif
     "UBLOX", "MSP"
 };

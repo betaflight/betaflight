@@ -437,6 +437,12 @@ void gpsInit(void)
     portMode_e mode = MODE_RXTX;
     portOptions_e options = SERIAL_NOT_INVERTED;
 
+#if defined(GPS_NMEA_TX_ONLY)
+    if (gpsConfig()->provider == GPS_NMEA) {
+        mode &= ~MODE_TX;
+    }
+#endif
+
     if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
         options |= SERIAL_CHECK_TX;
     }
@@ -1303,10 +1309,12 @@ void gpsConfigureHardware(void)
 #ifdef USE_GPS_NMEA
     case GPS_NMEA:
         gpsConfigureNmea();
+        break;
 #endif
 #ifdef USE_GPS_UBLOX
     case GPS_UBLOX:
         gpsConfigureUblox();
+        break;
 #endif
     }
 }
@@ -1495,9 +1503,8 @@ bool gpsNewFrame(uint8_t c)
     case GPS_UBLOX:
         return gpsNewFrameUBLOX(c);
 #endif
-    default:
-        return false;
     }
+    return false;
 }
 
 // Check for healthy communications
@@ -1538,6 +1545,7 @@ bool gpsIsHealthy(void)
     - m is always 2 char long
     - f can be 1 or more char long
   This function converts this format in a unique unsigned long where 1 degree = 10 000 000
+
   EOS increased the precision here, even if we think that the gps is not precise enough, with 10e5 precision it has 76cm resolution
   with 10e7 it's around 1 cm now. Increasing it further is irrelevant, since even 1cm resolution is unrealistic, however increased
   resolution also increased precision of nav calculations
@@ -1546,6 +1554,7 @@ static uint32_t GPS_coord_to_degrees(char *coordinateString)
     char *p = s, *d = s;
     uint8_t min, deg = 0;
     uint16_t frac = 0, mult = 10000;
+
     while (*p) {                // parse the string until its end
         if (d != s) {
             frac += (*p - '0') * mult;  // calculate only fractional part on up to 5 digits  (d != s condition is true when the . is located)
