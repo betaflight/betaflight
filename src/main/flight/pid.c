@@ -230,7 +230,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .horizon_delay_ms = 500, // 500ms time constant on any increase in horizon strength
         .tpa_rate_lower = 20,
         .tpa_breakpoint_lower = 1050,
-        .tpa_breakpoint_lower_vanish = 1,
+        .tpa_breakpoint_lower_fade = 1,
     );
 
 #ifndef USE_D_MIN
@@ -280,15 +280,15 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    static bool isTpaLowerVanished = false;
+    static bool isTpaLowerFaded = false;
     // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
     throttle = constrainf(throttle, 0.0f, 1.0f);
     bool isThrottlePastTpaBreakpointLower = (throttle < pidRuntime.tpaBreakpointLower && pidRuntime.tpaBreakpointLower > 0.01f) ? false : true;
     float tpaRate = 0.0f;
-    if (isThrottlePastTpaBreakpointLower || isTpaLowerVanished) {
+    if (isThrottlePastTpaBreakpointLower || isTpaLowerFaded) {
         tpaRate = pidRuntime.tpaMultiplier * fmaxf(throttle - pidRuntime.tpaBreakpoint, 0.0f);
-        if (pidRuntime.tpaBreakpointLowerVanish && !isTpaLowerVanished) {
-            isTpaLowerVanished = true;
+        if (pidRuntime.tpaBreakpointLowerFade && !isTpaLowerFaded) {
+            isTpaLowerFaded = true;
         }
     } else {
         tpaRate = pidRuntime.tpaMultiplierLower * (pidRuntime.tpaBreakpointLower - throttle);

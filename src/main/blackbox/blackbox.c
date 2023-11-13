@@ -1402,9 +1402,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_MODE, "%d",               currentPidProfile->tpa_mode);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_RATE, "%d",               currentPidProfile->tpa_rate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_BREAKPOINT, "%d",         currentPidProfile->tpa_breakpoint);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_RATE_LOWER, "%d",              currentPidProfile->tpa_rate_lower);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_BREAKPOINT_LOWER, "%d",        currentPidProfile->tpa_breakpoint_lower);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_BREAKPOINT_LOWER_VANISH, "%d", currentPidProfile->tpa_breakpoint_lower_vanish);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_RATE_LOWER, "%d",         currentPidProfile->tpa_rate_lower);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_BREAKPOINT_LOWER, "%d",   currentPidProfile->tpa_breakpoint_lower);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_BREAKPOINT_LOWER_FADE, "%d", currentPidProfile->tpa_breakpoint_lower_fade);
         BLACKBOX_PRINT_HEADER_LINE("rc_rates", "%d,%d,%d",                  currentControlRateProfile->rcRates[ROLL],
                                                                             currentControlRateProfile->rcRates[PITCH],
                                                                             currentControlRateProfile->rcRates[YAW]);

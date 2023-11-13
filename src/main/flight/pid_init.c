@@ -431,7 +431,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     // it is assumed that tpaBreakpointLower is always less than tpaBreakpoint
     pidRuntime.tpaBreakpointLower = constrainf((pidProfile->tpa_breakpoint_lower - PWM_RANGE_MIN) / 1000.0f, 0.01f, 1.0f);
     pidRuntime.tpaMultiplierLower = pidProfile->tpa_rate_lower / (100.0f * pidRuntime.tpaBreakpointLower);
-    pidRuntime.tpaBreakpointLowerVanish = pidProfile->tpa_breakpoint_lower_vanish;
+    pidRuntime.tpaBreakpointLowerFade = pidProfile->tpa_breakpoint_lower_fade;
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
