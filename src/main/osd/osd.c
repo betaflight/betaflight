@@ -336,13 +336,13 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // Enable the default stats
     osdConfig->enabled_stats = 0; // reset all to off and enable only a few initially
-    osdStatSetState(OSD_STAT_MAX_SPEED, true);
+    osdStatSetState(OSD_STAT_MAX_SPEED, false;
     osdStatSetState(OSD_STAT_MIN_BATTERY, true);
-    osdStatSetState(OSD_STAT_MIN_RSSI, true);
-    osdStatSetState(OSD_STAT_MAX_CURRENT, true);
-    osdStatSetState(OSD_STAT_USED_MAH, true);
-    osdStatSetState(OSD_STAT_BLACKBOX, true);
-    osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, true);
+    osdStatSetState(OSD_STAT_MIN_RSSI, false);
+    osdStatSetState(OSD_STAT_MAX_CURRENT, false);
+    osdStatSetState(OSD_STAT_USED_MAH, false);
+    osdStatSetState(OSD_STAT_BLACKBOX, false);
+    osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, false);
     osdStatSetState(OSD_STAT_TIMER_2, true);
 
     osdConfig->units = UNIT_METRIC;
@@ -362,8 +362,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RC_STATS
     osdStatSetState(OSD_STAT_FULL_THROTTLE_TIME, true);
     osdStatSetState(OSD_STAT_FULL_THROTTLE_COUNTER, true);
-    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);    
+    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);
 #endif
+
+    osdStatSetState(OSD_STAT_MIN_LINK_QUALITY, true);
+    osdStatSetState(OSD_STAT_TOTAL_FLIGHTS, true);
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
