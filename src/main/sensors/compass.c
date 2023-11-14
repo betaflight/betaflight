@@ -473,7 +473,11 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf((compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain));
     }
 
-    return TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
+    nextPeriod = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ) - COMPASS_READ_US * busyCount;
+
+    // Reset the busy count
+    busyCount = 0;
+    return nextPeriod;
 }
 
 // initialize the compass bias estimator
