@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -29,6 +30,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/maths.h"
 
 #include "config/config.h"
 
