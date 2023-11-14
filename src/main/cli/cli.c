@@ -519,6 +519,15 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
                 // in32_t array
                 cliPrintf("%d", ((int32_t *)valuePointer)[i]);
                 break;
+            case VAR_UINT64:
+                // uin64_t array
+                cliPrintf("%u", ((uint64_t *)valuePointer)[i]);
+                break;
+
+            case VAR_INT64:
+                // in64_t array
+                cliPrintf("%d", ((int64_t *)valuePointer)[i]);
+                break;
             }
 
             if (i < var->config.array.length - 1) {
@@ -553,6 +562,12 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
             value = *(int32_t *)valuePointer;
 
             break;
+        case VAR_UINT64:
+            value = *(uint64_t *)valuePointer;
+
+            break;
+        case VAR_INT64:
+            value = *(int64_t *)valuePointer;
         }
 
         bool valueIsCorrupted = false;
@@ -571,6 +586,20 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
                     valueIsCorrupted = true;
                 } else if (full) {
                     cliPrintf(" 0 %u", var->config.u32Max);
+                }
+            } else if ((var->type & VALUE_TYPE_MASK) == VAR_UINT64) {
+                cliPrintf("%u", (uint64_t)value);
+                if ((uint64_t)value > var->config.u64Max) {
+                    valueIsCorrupted = true;
+                } else if (full) {
+                    cliPrintf(" 0 %u", var->config.u64Max);
+                }
+            } else if ((var->type & VALUE_TYPE_MASK) == VAR_INT64) {
+                cliPrintf("%d", (int64_t)value);
+                if ((int64_t)value > var->config.d64Max || (int64_t)value < -var->config.d64Max) {
+                    valueIsCorrupted = true;
+                } else if (full) {
+                    cliPrintf(" 0 %u", var->config.u64Max);
                 }
             } else {
                 int min;
@@ -645,6 +674,12 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
             break;
         case VAR_INT32:
             result = result && (((int32_t *)ptr)[i] & mask) == (((int32_t *)ptrDefault)[i] & mask);
+            break;
+        case VAR_UINT64:
+            result = result && (((uint64_t *)ptr)[i] & mask) == (((uint64_t *)ptrDefault)[i] & mask);
+            break;
+        case VAR_INT64:
+            result = result && (((int64_t *)ptr)[i] & mask) == (((int64_t *)ptrDefault)[i] & mask);
             break;
         }
     }
@@ -808,6 +843,14 @@ static void cliPrintVarRange(const clivalue_t *var)
     switch (var->type & VALUE_MODE_MASK) {
     case (MODE_DIRECT): {
         switch (var->type & VALUE_TYPE_MASK) {
+        case VAR_UINT64:
+            cliPrintLinef("Allowed range: 0 - %u", var->config.u64Max);
+
+            break;
+        case VAR_INT64:
+            cliPrintLinef("Allowed range: %d - %d", -var->config.d64Max, var->config.d64Max);
+
+            break;
         case VAR_UINT32:
             cliPrintLinef("Allowed range: 0 - %u", var->config.u32Max);
 
@@ -906,6 +949,26 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
             }
             *(int32_t *)ptr = workValue;
             break;
+
+        case VAR_UINT64:
+            mask = 1 << var->config.bitpos;
+            if (value) {
+                workValue = *(uint64_t *)ptr | mask;
+            } else {
+                workValue = *(uint64_t *)ptr & ~mask;
+            }
+            *(uint64_t *)ptr = workValue;
+            break;
+
+        case VAR_INT64:
+            mask = 1 << var->config.bitpos;
+            if (value) {
+                workValue = *(int64_t *)ptr | mask;
+            } else {
+                workValue = *(int64_t *)ptr & ~mask;
+            }
+            *(int64_t *)ptr = workValue;
+            break;
         }
     } else {
         switch (var->type & VALUE_TYPE_MASK) {
@@ -931,6 +994,14 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
 
         case VAR_INT32:
             *(int32_t *)ptr = value;
+            break;
+
+        case VAR_UINT64:
+            *(uint64_t *)ptr = value;
+            break;
+
+        case VAR_INT64:
+            *(int64_t *)ptr = value;
             break;
         }
     }
@@ -4445,6 +4516,21 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                         cliSetVar(val, value);
                         valueChanged = true;
                     }
+                } else if ((val->type & VALUE_TYPE_MASK) == VAR_UINT64) {
+                    uint64_t value = strtoul(eqptr, NULL, 10);
+
+                    if (value <= val->config.u64Max) {
+                        cliSetVar(val, value);
+                        valueChanged = true;
+                    }
+                } else if ((val->type & VALUE_TYPE_MASK) == VAR_INT64) {
+                    int32_t value = strtol(eqptr, NULL, 10);
+
+                    // INT32s are limited to being symmetric, so we test both bounds with the same magnitude
+                    if (value <= val->config.d64Max && value >= -val->config.d64Max) {
+                        cliSetVar(val, value);
+                        valueChanged = true;
+                    }
                 } else {
                     int value = atoi(eqptr);
 
@@ -4549,6 +4635,24 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                             int32_t *data = (int32_t *)cliGetValuePointer(val) + i;
                             // store value
                             *data = (int32_t)strtol((const char*) valPtr, NULL, 10);
+                        }
+
+                        break;
+                    case VAR_UINT64:
+                        {
+                            // fetch data pointer
+                            uint64_t *data = (uint64_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (uint64_t)strtoul((const char*) valPtr, NULL, 10);
+                        }
+
+                        break;
+                    case VAR_INT64:
+                        {
+                            // fetch data pointer
+                            int64_t *data = (int64_t *)cliGetValuePointer(val) + i;
+                            // store value
+                            *data = (int64_t)strtol((const char*) valPtr, NULL, 10);
                         }
 
                         break;

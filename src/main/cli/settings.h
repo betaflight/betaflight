@@ -166,6 +166,8 @@ typedef enum {
     VAR_INT16 = (3 << VALUE_TYPE_OFFSET),
     VAR_UINT32 = (4 << VALUE_TYPE_OFFSET),
     VAR_INT32 = (5 << VALUE_TYPE_OFFSET),
+    VAR_UINT64 = (6 << VALUE_TYPE_OFFSET),
+    VAR_INT64 = (7 << VALUE_TYPE_OFFSET),
 
     // value section, bits 3-4
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
@@ -222,6 +224,8 @@ typedef union {
     uint8_t bitpos;                           // used for MODE_BITSET
     uint32_t u32Max;                          // used for MODE_DIRECT with VAR_UINT32
     int32_t d32Max;                           // used for MODE_DIRECT with VAR_INT32
+    uint64_t u64Max;                          // used for MODE_DIRECT with VAR_UINT64
+    int64_t d64Max;                           // used for MODE_DIRECT with VAR_INT64
 } cliValueConfig_t;
 
 typedef struct clivalue_s {

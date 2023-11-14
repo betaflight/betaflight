@@ -239,7 +239,7 @@ typedef enum {
 } osd_stats_e;
 
 // Make sure the number of stats do not exceed the available 32bit storage
-STATIC_ASSERT(OSD_STAT_COUNT <= 32, osdstats_overflow);
+STATIC_ASSERT(OSD_STAT_COUNT <= 64, osdstats_overflow);
 
 typedef enum {
     OSD_TIMER_1,
@@ -317,7 +317,7 @@ typedef struct osdConfig_s {
 
     uint8_t ahMaxPitch;
     uint8_t ahMaxRoll;
-    uint32_t enabled_stats;
+    uint64_t enabled_stats;
     uint8_t esc_temp_alarm;
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;

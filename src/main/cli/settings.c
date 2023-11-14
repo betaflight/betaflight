@@ -1492,7 +1492,7 @@ const clivalue_t valueTable[] = {
 #endif
 
     // OSD stats enabled flags are stored as bitmapped values inside a 32bit parameter
-    { "osd_stat_bitmask",     VAR_UINT32 | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},
+    { "osd_stat_bitmask",     VAR_UINT64 | MASTER_VALUE, .config.u64Max = UINT64_MAX, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},
 
 #ifdef USE_OSD_PROFILES
     { "osd_profile",                VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, OSD_PROFILE_COUNT }, PG_OSD_CONFIG, offsetof(osdConfig_t, osdProfileIndex) },
