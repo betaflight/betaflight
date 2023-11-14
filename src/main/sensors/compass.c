@@ -92,9 +92,7 @@ PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 3);
 #define COMPASS_BUS_BUSY_INTERVAL_US 500
 // If we check for new mag data, and there is none, try again in 1000us
 #define COMPASS_RECHECK_INTERVAL_US 1000
-// after receiving mag data, do nothing for a reasonable time, depending on mag, before we would expect the next data packet to arrive
-// default value of compassReadIntervalUs sets the update rate for older mag units to TASK_COMPASS_RATE_HZ
-// for newer or faster mags, compassReadIntervalUs will be set to suit each mag's ODR in compassDetect()
+// default compass read interval, for those with no specified ODR, will be TASK_COMPASS_RATE_HZ 
 static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
@@ -214,7 +212,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 
     case MAG_HMC5883:
 #if defined(USE_MAG_HMC5883) || defined(USE_MAG_SPI_HMC5883)
-        compassReadIntervalUs = 10000; // 10ms 'silent', given 13.33ms between data packets at 75Hz for the HMC5883
         if (dev->bus->busType == BUS_TYPE_I2C) {
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
@@ -231,7 +228,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 
     case MAG_LIS3MDL:
 #if defined(USE_MAG_LIS3MDL)
-        compassReadIntervalUs = 9000; // 9ms 'silent', given 12.5ms between data packets at 80Hz
         if (dev->bus->busType == BUS_TYPE_I2C) {
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
@@ -285,7 +281,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 
     case MAG_QMC5883:
 #ifdef USE_MAG_QMC5883
-        compassReadIntervalUs = 2800; // 2.8ms 'silent', given 5.0ms between data packets at 200Hz
         if (dev->bus->busType == BUS_TYPE_I2C) {
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
@@ -373,7 +368,15 @@ bool compassInit(void)
 
     buildRotationMatrixFromAlignment(&compassConfig()->mag_customAlignment, &magDev.rotationMatrix);
 
-    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
+    if (magDev.magOdrHz) {
+        // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
+        // allow two re-check intervals, plus a margin for clock variations in mag vs FC
+        uint16_t odrInterval = 1e6 / magDev.magOdrHz;
+        compassReadIntervalUs =  odrInterval - (2 * COMPASS_RECHECK_INTERVAL_US) - (odrInterval / 20);
+    } else {
+        // Mags which have no specified ODR will be pinged at the compass task rate
+        compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
+    }
 
     return true;
 }

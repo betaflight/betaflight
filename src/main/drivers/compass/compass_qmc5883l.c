@@ -86,6 +86,7 @@ static bool qmc5883lInit(magDev_t *magDev)
         return false;
     }
 
+    magDev->magOdrHz = 200; // QMC5883L_ODR_200HZ
     return true;
 }
 

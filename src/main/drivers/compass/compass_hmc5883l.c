@@ -235,6 +235,7 @@ static bool hmc5883lInit(magDev_t *mag)
     delay(100);
 
     hmc5883lConfigureDataReadyInterruptHandling(mag);
+    mag->magOdrHz = 75; // HMC_CONFA_DOR_75HZ
     return true;
 }
 

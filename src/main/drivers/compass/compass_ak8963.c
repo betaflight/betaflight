@@ -368,6 +368,7 @@ static bool ak8963Init(magDev_t *mag)
 
     // Trigger first measurement
     ak8963WriteRegister(dev, AK8963_MAG_REG_CNTL1, CNTL1_BIT_16_BIT | CNTL1_MODE_ONCE);
+    mag->magOdrHz = 50; // arbitrary value, need to check what ODR is actually returned
     return true;
 }
 

@@ -127,6 +127,8 @@ static bool ist8310Init(magDev_t *magDev)
     delay(6); 
     ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
 
+    magDev->magOdrHz = 100;
+    // need to check what ODR is actually returned, may be a bit faster than 100Hz
     return ack;
 }
 
