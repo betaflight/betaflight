@@ -66,7 +66,9 @@
 
 #define LAMBDA_MIN 0.95f // minimal adaptive forgetting factor, range: [0.90, 0.99], currently tuned for 200 Hz
                          // (TASK_COMPASS_RATE_HZ) and update rate of compassBiasEstimatorApply(), not the mag readout
-                         // rate, so it might need to be adjusted if TASK_COMPASS_RATE_HZ is changed
+                         // rate.
+                         // offline evaluations showed that 10 Hz is ok, 50 Hz is better and above 100 Hz is good.
+                         // TBC with online tests.
 #define P0 1.0e2f        // value to initialize P(0) = diag([P0, P0, P0, P0]), typically in range: (1, 1000)
 
 #define CALIBRATION_WAIT_US (15 * 1000 * 1000)               // wait for movement to start and trigger the calibration routine in us
@@ -423,13 +425,13 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         if (cmpTimeUs(tCal, currentTimeUs) > 0) {
             LED0_TOGGLE;
 
-            // get filtered and downsampled gyro data
-            const float gyroFilteredRadians[XYZ_AXIS_COUNT] = {DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(X)),
-                                                               DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Y)),
-                                                               DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Z))};
-
             // it is assumed that the user has started to move the quad if squared norm of rotational speed vector is greater than GYRO_NORM_SQUARED_MIN
-            const float gyroNormSquared = sq(gyroFilteredRadians[X]) + sq(gyroFilteredRadians[Y]) + sq(gyroFilteredRadians[Z]);
+            float gyroNormSquared = 0.0f;
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
+            }
+
+            // check if movement has started
             if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
                 didMovementStart = true;
                 // starting now, the user has CALIBRATION_TIME_US to move the quad in a figure of eight in all directions
