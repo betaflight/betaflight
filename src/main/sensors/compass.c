@@ -467,7 +467,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             // DEBUG 4-6: estimated magnetometer bias
             DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));
         }
-        // DEBUG 3: norm / length of magADC, ideally the norm stayes constant independent of the orientation of the quad
+        // DEBUG 3: norm / length of magADC, ideally the norm stays constant independent of the orientation of the quad
         DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(sqrtf(sq(mag.magADC[X]) + sq(mag.magADC[Y]) + sq(mag.magADC[Z]))));
         // map adaptive forgetting factor lambda from (lambda_min, 1.0f) -> (0, 2000)
         const float mapLambdaGain = 1.0f / (1.0f - compassBiasEstimator.lambda_min + 1.0e-6f) * 2.0e3f;
