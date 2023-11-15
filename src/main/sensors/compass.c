@@ -446,12 +446,13 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             }
         } else {
             tCal = 0;
-
-            // copy the estimated bias and save it to the config
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
+            // only copy the estimated bias and save it to the config if the user has actually triggered the calibration routine
+            if (didMovementStart) {
+                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                    magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
+                }
+                saveConfigAndNotify();
             }
-            saveConfigAndNotify();
         }
     }
 
