@@ -441,7 +441,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             }
 
             // only start calibration after the user has started to move the quad
-            if(didMovementStart) {
+            if (didMovementStart) {
                 compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
             }
         } else {
