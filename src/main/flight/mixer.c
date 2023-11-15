@@ -377,7 +377,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
 
     DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));
     DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(constrainf(mixer->rpmLimiterRpmLimit / (rpm_theoretical_max * rpm_derating),0.0f, 1.0f)*100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf( mixer->rpmLimiterInitialThrottleScale * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 4, lrintf(error));
     DEBUG_SET(DEBUG_RPM_LIMIT, 5, lrintf(p * 100.0f));
