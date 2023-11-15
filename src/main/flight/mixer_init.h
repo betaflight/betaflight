@@ -61,6 +61,7 @@ typedef struct mixerRuntime_s {
     pt1Filter_t averageRpmFilter;
     float rpmDerating;
     float rpmLimiterInitialThrottleScale;
+    pt1Filter_t rpmLimiterThrottleScaleOffsetFilter;
 #endif
 } mixerRuntime_t;
 
