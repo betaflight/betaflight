@@ -410,6 +410,15 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     bool checkBusBusy = busBusy(&magDev.dev, NULL);
     bool checkReadState = !magDev.read(&magDev, magADCRaw);
 
+    // temporary debug for task intervals, only while resolving mag timing issues
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 4, checkBusBusy);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 5, checkReadState);
+
+    static timeUs_t previousTaskTimeUs = 0;
+    const timeDelta_t dTaskTimeUs = cmpTimeUs(currentTimeUs, previousTaskTimeUs);
+    previousTaskTimeUs = currentTimeUs;
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 6, dTaskTimeUs);
+
     if (checkBusBusy) {
         // No action is taken, as the bus was busy.
         schedulerIgnoreTaskExecRate();
@@ -491,6 +500,19 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     }
 
     schedulerIgnoreTaskExecRate();
+
+    if (debugMode == DEBUG_MAG_TASK_RATE) {
+        static timeUs_t previousTimeUs = 0;
+        const timeDelta_t dataIntervalUs = cmpTimeUs(currentTimeUs, previousTimeUs); // time since last data received
+        previousTimeUs = currentTimeUs;
+        const uint16_t actualCompassDataRateHz = 1e6 / dataIntervalUs;
+        timeDelta_t executeTimeUs = micros() - currentTimeUs;
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 0, TASK_COMPASS_RATE_HZ);
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 1, actualCompassDataRateHz);
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 2, dataIntervalUs);
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 3, executeTimeUs); // time in uS to complete the mag task
+    }
+
     return compassReadIntervalUs;
 }
 
