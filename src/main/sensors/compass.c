@@ -407,36 +407,33 @@ bool compassIsCalibrationComplete(void)
 
 uint32_t compassUpdate(timeUs_t currentTimeUs)
 {
-    bool checkBusBusy = busBusy(&magDev.dev, NULL);
-    bool checkReadState = !magDev.read(&magDev, magADCRaw);
-
-    // temporary debug for task intervals, only while resolving mag timing issues
-    DEBUG_SET(DEBUG_MAG_TASK_RATE, 4, checkBusBusy);
-    DEBUG_SET(DEBUG_MAG_TASK_RATE, 5, checkReadState);
-
     static timeUs_t previousTaskTimeUs = 0;
     const timeDelta_t dTaskTimeUs = cmpTimeUs(currentTimeUs, previousTaskTimeUs);
     previousTaskTimeUs = currentTimeUs;
     DEBUG_SET(DEBUG_MAG_TASK_RATE, 6, dTaskTimeUs);
 
+    bool checkBusBusy = busBusy(&magDev.dev, NULL);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 4, checkBusBusy);
     if (checkBusBusy) {
         // No action is taken, as the bus was busy.
         schedulerIgnoreTaskExecRate();
-        return COMPASS_BUS_BUSY_INTERVAL_US; // return delay if the bus is busy
+        return COMPASS_BUS_BUSY_INTERVAL_US; // come back in 500us, maybe the bus won't be busy then
     }
+
+    bool checkReadState = !magDev.read(&magDev, magADCRaw);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 5, checkReadState);
     if (checkReadState) {
-        // No action is taken, as the compass reported no new data.
+        // The compass reported no data available to be retrieved; it may use a state engine that has more than one read state
         schedulerIgnoreTaskExecRate();
-        return COMPASS_RECHECK_INTERVAL_US; // return interval if no data is available
+        return COMPASS_RECHECK_INTERVAL_US; // come back in 1ms, maybe data will be available then
     }
 
-    // if we get here, we have new data
-    // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
-    mag.isNewMagADCFlag = true;
-
+    // if we get here, we have new data to parse
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC[axis] = magADCRaw[axis];
     }
+    // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
+    mag.isNewMagADCFlag = true;
 
     if (magDev.magAlignment == ALIGN_CUSTOM) {
         alignSensorViaMatrix(mag.magADC, &magDev.rotationMatrix);
@@ -499,8 +496,6 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf((compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain));
     }
 
-    schedulerIgnoreTaskExecRate();
-
     if (debugMode == DEBUG_MAG_TASK_RATE) {
         static timeUs_t previousTimeUs = 0;
         const timeDelta_t dataIntervalUs = cmpTimeUs(currentTimeUs, previousTimeUs); // time since last data received
@@ -513,6 +508,8 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_MAG_TASK_RATE, 3, executeTimeUs); // time in uS to complete the mag task
     }
 
+    // don't do the next read check until compassReadIntervalUs has expired
+    schedulerIgnoreTaskExecRate();
     return compassReadIntervalUs;
 }
 
