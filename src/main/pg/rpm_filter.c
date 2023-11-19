@@ -27,7 +27,7 @@
 
 #include "rpm_filter.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 5);
+PG_REGISTER_WITH_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 6);
 
 PG_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig,
     .rpm_filter_harmonics = 3,
