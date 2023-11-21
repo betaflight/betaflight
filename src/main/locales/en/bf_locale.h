@@ -34,7 +34,6 @@
 */
 
 #define LOCALE                             "en"                                       	// Current language in short form: en, da, es, fr, nl ...
-#define STR_LOCALE_SETUP                   "Language:"                                	// translation of: Language:
 #define STR_SECONDS                        "seconds"                                  	// translation of: seconds
 #define STR_VISUAL_BEEP                    "  * * * *"                                	// translation of:   * * * *
 #define STR_CMS_STARTUP_MENU_TEXT1         "MENU:THR MID"                             	// translation of: MENU:THR MID
