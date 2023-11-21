@@ -86,18 +86,18 @@
   <string name="STR_OSDE_RATE_HD" maxLength="15" comment="HD translation of: RATE_, notice %u follow">RATE_</string>
   <string name="STR_OSDE_PID" maxLength="5" comment="translation of: PID_, notice %u follow">PID_</string>
   <string name="STR_OSDE_OID" maxLength="5" comment="translation of: OID_, notice %u follow">OID_</string>
-  <string name="STR_ODSE_FLYMODE_FAILSAFE" maxLength="5" comment="translation of: !FS!">!FS!</string>
-  <string name="STR_ODSE_FLYMODE_RESCUE" maxLength="5" comment="translation of: RESC">RESC</string>
-  <string name="STR_ODSE_FLYMODE_HEAD" maxLength="5" comment="translation of: HEAD">HEAD</string>
-  <string name="STR_ODSE_FLYMODE_ANGL" maxLength="5" comment="translation of: ANGL">ANGL</string>
-  <string name="STR_ODSE_FLYMODE_HOR" maxLength="5" comment="translation of: HOR ">HOR </string>
-  <string name="STR_ODSE_FLYMODE_ATRN" maxLength="5" comment="translation of: ATRN">ATRN</string>
-  <string name="STR_ODSE_FLYMODE_AIR" maxLength="5" comment="translation of: AIR ">AIR </string>
-  <string name="STR_ODSE_FLYMODE_ACRO" maxLength="5" comment="translation of: ACRO">ACRO</string>
-  <string name="STR_ODSE_ELEMENT_PITCH" maxLength="4" comment="translation of: PIT">PIT</string>
-  <string name="STR_ODSE_ELEMENT_ROLL" maxLength="4" comment="translation of: ROL">ROL</string>
-  <string name="STR_ODSE_ELEMENT_YAW" maxLength="4" comment="translation of: YAW">YAW</string>
-  <string name="STR_ODSE_ANTIGRAVITY" maxLength="2" comment="translation of: AG">AG</string>
-  <string name="STR_ODSE_ANTIGRAVITY_HD" maxLength="6" comment="HD translation of: ANTI G">ANTI G</string>
+  <string name="STR_OSDE_FLYMODE_FAILSAFE" maxLength="5" comment="translation of: !FS!">!FS!</string>
+  <string name="STR_OSDE_FLYMODE_RESCUE" maxLength="5" comment="translation of: RESC">RESC</string>
+  <string name="STR_OSDE_FLYMODE_HEAD" maxLength="5" comment="translation of: HEAD">HEAD</string>
+  <string name="STR_OSDE_FLYMODE_ANGL" maxLength="5" comment="translation of: ANGL">ANGL</string>
+  <string name="STR_OSDE_FLYMODE_HOR" maxLength="5" comment="translation of: HOR ">HOR </string>
+  <string name="STR_OSDE_FLYMODE_ATRN" maxLength="5" comment="translation of: ATRN">ATRN</string>
+  <string name="STR_OSDE_FLYMODE_AIR" maxLength="5" comment="translation of: AIR ">AIR </string>
+  <string name="STR_OSDE_FLYMODE_ACRO" maxLength="5" comment="translation of: ACRO">ACRO</string>
+  <string name="STR_OSDE_ELEMENT_PITCH" maxLength="4" comment="translation of: PIT">PIT</string>
+  <string name="STR_OSDE_ELEMENT_ROLL" maxLength="4" comment="translation of: ROL">ROL</string>
+  <string name="STR_OSDE_ELEMENT_YAW" maxLength="4" comment="translation of: YAW">YAW</string>
+  <string name="STR_OSDE_ANTIGRAVITY" maxLength="2" comment="translation of: AG">AG</string>
+  <string name="STR_OSDE_ANTIGRAVITY_HD" maxLength="6" comment="HD translation of: ANTI G">ANTI G</string>
   <string name="STR_OSDE_READY" maxLength="5" comment="translation of: READY">READY</string>
 </resources>
