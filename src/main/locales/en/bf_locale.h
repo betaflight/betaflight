@@ -101,16 +101,16 @@
 #define STR_OSDE_RATE                      TR2("RATE_", "RATE_")                      	// translation of: RATE_, notice %u follow; HD translation of: RATE_, notice %u follow
 #define STR_OSDE_PID                       "PID_"                                     	// translation of: PID_, notice %u follow
 #define STR_OSDE_OID                       "OID_"                                     	// translation of: OID_, notice %u follow
-#define STR_ODSE_FLYMODE_FAILSAFE          "!FS!"                                     	// translation of: !FS!
-#define STR_ODSE_FLYMODE_RESCUE            "RESC"                                     	// translation of: RESC
-#define STR_ODSE_FLYMODE_HEAD              "HEAD"                                     	// translation of: HEAD
-#define STR_ODSE_FLYMODE_ANGL              "ANGL"                                     	// translation of: ANGL
-#define STR_ODSE_FLYMODE_HOR               "HOR "                                     	// translation of: HOR 
-#define STR_ODSE_FLYMODE_ATRN              "ATRN"                                     	// translation of: ATRN
-#define STR_ODSE_FLYMODE_AIR               "AIR "                                     	// translation of: AIR 
-#define STR_ODSE_FLYMODE_ACRO              "ACRO"                                     	// translation of: ACRO
-#define STR_ODSE_ELEMENT_PITCH             "PIT"                                      	// translation of: PIT
-#define STR_ODSE_ELEMENT_ROLL              "ROL"                                      	// translation of: ROL
-#define STR_ODSE_ELEMENT_YAW               "YAW"                                      	// translation of: YAW
-#define STR_ODSE_ANTIGRAVITY               TR2("AG", "ANTI G")                        	// translation of: AG; HD translation of: ANTI G
+#define STR_OSDE_FLYMODE_FAILSAFE          "!FS!"                                     	// translation of: !FS!
+#define STR_OSDE_FLYMODE_RESCUE            "RESC"                                     	// translation of: RESC
+#define STR_OSDE_FLYMODE_HEAD              "HEAD"                                     	// translation of: HEAD
+#define STR_OSDE_FLYMODE_ANGL              "ANGL"                                     	// translation of: ANGL
+#define STR_OSDE_FLYMODE_HOR               "HOR "                                     	// translation of: HOR 
+#define STR_OSDE_FLYMODE_ATRN              "ATRN"                                     	// translation of: ATRN
+#define STR_OSDE_FLYMODE_AIR               "AIR "                                     	// translation of: AIR 
+#define STR_OSDE_FLYMODE_ACRO              "ACRO"                                     	// translation of: ACRO
+#define STR_OSDE_ELEMENT_PITCH             "PIT"                                      	// translation of: PIT
+#define STR_OSDE_ELEMENT_ROLL              "ROL"                                      	// translation of: ROL
+#define STR_OSDE_ELEMENT_YAW               "YAW"                                      	// translation of: YAW
+#define STR_OSDE_ANTIGRAVITY               TR2("AG", "ANTI G")                        	// translation of: AG; HD translation of: ANTI G
 #define STR_OSDE_READY                     "READY"                                    	// translation of: READY
