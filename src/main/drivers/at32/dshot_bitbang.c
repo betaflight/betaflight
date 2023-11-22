@@ -525,8 +525,6 @@ static bool bbDecodeTelemetry(void)
             dshotTelemetryState.readCount++;
 
             if (rawValue != DSHOT_TELEMETRY_INVALID) {
-                dshotTelemetryState.motorState[motorIndex].telemetryActive = true;
-
                 // Check EDT enable or store raw value
                 if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(motorIndex) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
                     dshotTelemetryState.motorState[motorIndex].telemetryTypes = 1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS;

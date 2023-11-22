@@ -92,7 +92,6 @@ extern bool useDshotTelemetry;
 typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
-    bool telemetryActive;
     uint8_t telemetryTypes;
     uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
