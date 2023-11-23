@@ -360,13 +360,12 @@ void updateArmingStatus(void)
         }
 #endif
 
-#ifdef USE_RPM_FILTER
-        // USE_RPM_FILTER will only be defined if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
-        // If the RPM filter is enabled and any motor isn't providing telemetry, then disable arming
-        if (isRpmFilterEnabled() && !isDshotTelemetryActive()) {
-            setArmingDisabled(ARMING_DISABLED_RPMFILTER);
+#ifdef USE_DSHOT_TELEMETRY
+        // If Dshot Telemetry is enabled and any motor isn't providing telemetry, then disable arming
+        if (motorConfig()->dev.useDshotTelemetry && !isDshotTelemetryActive()) {
+            setArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
         } else {
-            unsetArmingDisabled(ARMING_DISABLED_RPMFILTER);
+            unsetArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
         }
 #endif
 

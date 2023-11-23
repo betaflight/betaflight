@@ -482,6 +482,7 @@
 #ifndef USE_DSHOT_TELEMETRY
 #undef USE_RPM_FILTER
 #undef USE_DSHOT_TELEMETRY_STATS
+#undef USE_DYN_IDLE
 #endif
 
 #if !defined(USE_BOARD_INFO)
@@ -566,10 +567,6 @@ extern uint8_t __config_end;
 // RAM_CODE for methods that need to be in RAM, but don't need to be in the fastest type of memory.
 // Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
 #define RAM_CODE                   __attribute__((section(".ram_code")))
-#endif
-
-#if !defined(USE_RPM_FILTER)
-#undef USE_DYN_IDLE
 #endif
 
 #ifndef USE_ITERM_RELAX

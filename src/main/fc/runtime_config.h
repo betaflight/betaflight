@@ -60,7 +60,7 @@ typedef enum {
     ARMING_DISABLED_PARALYZE        = (1 << 17),
     ARMING_DISABLED_GPS             = (1 << 18),
     ARMING_DISABLED_RESC            = (1 << 19),
-    ARMING_DISABLED_RPMFILTER       = (1 << 20),
+    ARMING_DISABLED_DSHOT_TELEM     = (1 << 20),
     ARMING_DISABLED_REBOOT_REQUIRED = (1 << 21),
     ARMING_DISABLED_DSHOT_BITBANG   = (1 << 22),
     ARMING_DISABLED_ACC_CALIBRATION = (1 << 23),
