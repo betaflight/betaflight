@@ -262,6 +262,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     fpVector3_t mag_ef;
     matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf); // BF->EF true north
 
+#ifdef USE_GPS_RESCUE
     // Encapsulate additional operations in a block so that it is only executed when the according debug mode is used
     // Only re-calculate magYaw when there is a new Mag data reading, to avoid spikes
     if (debugMode == DEBUG_GPS_RESCUE_HEADING && mag.isNewMagADCFlag) {
@@ -279,6 +280,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // note that if the debug doesn't run, this reset will not occur, and we won't waste cycles on the comparison
         mag.isNewMagADCFlag = false;
     }
+#endif
 
     if (useMag && magNormSquared > 0.01f) {
         // Normalise magnetometer measurement
