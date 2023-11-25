@@ -116,7 +116,6 @@
 #include "io/piniobox.h"
 #include "io/rcdevice_cam.h"
 #include "io/serial.h"
-#include "io/servos.h"
 #include "io/transponder_ir.h"
 #include "io/vtx.h"
 #include "io/vtx_control.h"
