@@ -324,7 +324,6 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     }
 
     detectedSensors[SENSOR_INDEX_BARO] = baroHardware;
-    barometerConfigMutable()->baro_hardware = baroHardware;
     sensorsSet(SENSOR_BARO);
     return true;
 }

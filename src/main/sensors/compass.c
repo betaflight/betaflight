@@ -329,7 +329,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
     }
 
     detectedSensors[SENSOR_INDEX_MAG] = magHardware;
-    compassConfigMutable()->mag_hardware = magHardware;
     sensorsSet(SENSOR_MAG);
     return true;
 }

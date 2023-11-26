@@ -355,7 +355,6 @@ retry:
     }
 
     detectedSensors[SENSOR_INDEX_ACC] = accHardware;
-    accelerometerConfigMutable()->acc_hardware = accHardware;
     sensorsSet(SENSOR_ACC);
     return true;
 }
