@@ -2075,6 +2075,7 @@ case MSP_NAME:
 #endif
         break;
 
+    // Added in MSP API 1.46
     case MSP2_SENSOR_CONFIG_ACTIVE:
 
 #define SENSOR_NOT_AVAILABLE 0xFF
@@ -2094,7 +2095,6 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
-        // Added in MSP API 1.46
 #ifdef USE_RANGEFINDER
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_RANGEFINDER]);
 #else
