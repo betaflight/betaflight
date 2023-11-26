@@ -2076,27 +2076,29 @@ case MSP_NAME:
         break;
 
     case MSP2_SENSOR_CONFIG_ACTIVE:
-        // use sensorIndex_e index: 0:GyroHardware, 1:AccHardware, 2:BaroHardware, 3:MagHardware, 4:RangefinderHardware
+
+#define SENSOR_NOT_AVAILABLE 0xFF
+
 #if defined(USE_ACC)
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_ACC]);
 #else
-        sbufWriteU8(dst, ACC_NONE);
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
 #ifdef USE_BARO
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_BARO]);
 #else
-        sbufWriteU8(dst, BARO_NONE);
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
 #ifdef USE_MAG
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_MAG]);
 #else
-        sbufWriteU8(dst, MAG_NONE);
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
         // Added in MSP API 1.46
 #ifdef USE_RANGEFINDER
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_RANGEFINDER]);
 #else
-        sbufWriteU8(dst, RANGEFINDER_NONE);
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
         break;
 
