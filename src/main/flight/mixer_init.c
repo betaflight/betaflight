@@ -327,7 +327,7 @@ void mixerInitProfile(void)
 mixerRuntime.govenorExpectedThrottleLimit = 1.0f;
 
 //Street League spec settings
-mixerRuntime.govenorPGain = 20.0f * 0.0000015f;
+/*mixerRuntime.govenorPGain = 20.0f * 0.0000015f;
 mixerRuntime.govenorIGain = 15.0f * 0.0001f * pidGetDT();
 mixerRuntime.govenorDGain = 10.0f * 0.00000003f * pidGetPidFrequency();
 mixerRuntime.govenorAccelerationLimit = 60.0f * 1000.0f * pidGetDT();
@@ -340,10 +340,10 @@ mixerRuntime.afterburnerHoldToBoost = false;
 mixerRuntime.rpmLinearization = true;
 mixerRuntime.RPMLimit = 130.0f;
 mixerRuntime.motorPoleCount = 14;
-mixerRuntime.govenorEnabled = true;
+mixerRuntime.govenorEnabled = true;*/
 
 //Unlocked rpm settings
-/*mixerRuntime.govenorPGain = mixerConfig()->govenor_p * 0.0000015f;
+mixerRuntime.govenorPGain = mixerConfig()->govenor_p * 0.0000015f;
 mixerRuntime.govenorIGain = mixerConfig()->govenor_i * 0.0001f * pidGetDT();
 mixerRuntime.govenorDGain = mixerConfig()->govenor_d * 0.00000003f * pidGetPidFrequency();
 mixerRuntime.govenorAccelerationLimit = mixerConfig()->govenor_acceleration_limit * 1000.0f * pidGetDT();
@@ -356,7 +356,7 @@ mixerRuntime.afterburnerHoldToBoost = mixerConfig()->govenor_rpm_afterburner_hol
 mixerRuntime.rpmLinearization = mixerConfig()->govenor_rpm_linearization;
 mixerRuntime.RPMLimit = mixerConfig()->govenor_rpm_limit;
 mixerRuntime.motorPoleCount = motorConfig()->motorPoleCount;
-mixerRuntime.govenorEnabled = mixerConfig()->govenor;*/
+mixerRuntime.govenorEnabled = mixerConfig()->govenor;
 
 
 mixerRuntime.govenorI = 0;
