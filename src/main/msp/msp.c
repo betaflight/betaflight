@@ -2080,6 +2080,11 @@ case MSP_NAME:
 
 #define SENSOR_NOT_AVAILABLE 0xFF
 
+#if defined(USE_GYRO)
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_GYRO]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
 #if defined(USE_ACC)
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_ACC]);
 #else
