@@ -2049,24 +2049,21 @@ case MSP_NAME:
         sbufWriteU8(dst, currentPidProfile->tpa_rate);
         sbufWriteU16(dst, currentPidProfile->tpa_breakpoint);   // was currentControlRateProfile->tpa_breakpoint
         break;
+
     case MSP_SENSOR_CONFIG:
-        // if sensor name is default setting, use name in runtime config
         // use sensorIndex_e index: 0:GyroHardware, 1:AccHardware, 2:BaroHardware, 3:MagHardware, 4:RangefinderHardware
 #if defined(USE_ACC)
-        // Changed with API 1.46
-        sbufWriteU8(dst, accelerometerConfig()->acc_hardware == ACC_DEFAULT ? detectedSensors[1] : accelerometerConfig()->acc_hardware);
+        sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
 #else
-        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, ACC_NONE);
 #endif
 #ifdef USE_BARO
-        // Changed with API 1.46
-        sbufWriteU8(dst, barometerConfig()->baro_hardware == BARO_DEFAULT ? detectedSensors[2] : barometerConfig()->baro_hardware);
+        sbufWriteU8(dst, barometerConfig()->baro_hardware);
 #else
         sbufWriteU8(dst, BARO_NONE);
 #endif
 #ifdef USE_MAG
-        // Changed with API 1.46
-        sbufWriteU8(dst, compassConfig()->mag_hardware == MAG_DEFAULT ? detectedSensors[3] : compassConfig()->mag_hardware);
+        sbufWriteU8(dst, compassConfig()->mag_hardware);
 #else
         sbufWriteU8(dst, MAG_NONE);
 #endif
@@ -2075,6 +2072,38 @@ case MSP_NAME:
         sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);    // no RANGEFINDER_DEFAULT value
 #else
         sbufWriteU8(dst, RANGEFINDER_NONE);
+#endif
+        break;
+
+    // Added in MSP API 1.46
+    case MSP2_SENSOR_CONFIG_ACTIVE:
+
+#define SENSOR_NOT_AVAILABLE 0xFF
+
+#if defined(USE_GYRO)
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_GYRO]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#if defined(USE_ACC)
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_ACC]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#ifdef USE_BARO
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_BARO]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#ifdef USE_MAG
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_MAG]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#ifdef USE_RANGEFINDER
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_RANGEFINDER]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
         break;
 

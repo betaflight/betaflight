@@ -28,6 +28,7 @@
 #define MSP2_SET_TEXT                       0x3007
 #define MSP2_GET_LED_STRIP_CONFIG_VALUES    0x3008
 #define MSP2_SET_LED_STRIP_CONFIG_VALUES    0x3009
+#define MSP2_SENSOR_CONFIG_ACTIVE           0x300A
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
