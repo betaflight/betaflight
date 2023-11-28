@@ -88,7 +88,12 @@ mag_t mag;
 
 PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 3);
 
-#define COMPASS_READ_US 500 // Allow 500us for compass data read
+// If the i2c bus is busy, try again in 500us
+#define COMPASS_BUS_BUSY_INTERVAL_US 500
+// If we check for new mag data, and there is none, try again in 1000us
+#define COMPASS_RECHECK_INTERVAL_US 1000
+// default compass read interval, for those with no specified ODR, will be TASK_COMPASS_RATE_HZ 
+static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
@@ -136,7 +141,6 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
-static int16_t magADCRawPrevious[XYZ_AXIS_COUNT];
 
 void compassPreInit(void)
 {
@@ -364,7 +368,15 @@ bool compassInit(void)
 
     buildRotationMatrixFromAlignment(&compassConfig()->mag_customAlignment, &magDev.rotationMatrix);
 
-    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
+    if (magDev.magOdrHz) {
+        // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
+        // allow two re-check intervals, plus a margin for clock variations in mag vs FC
+        uint16_t odrInterval = 1e6 / magDev.magOdrHz;
+        compassReadIntervalUs =  odrInterval - (2 * COMPASS_RECHECK_INTERVAL_US) - (odrInterval / 20);
+    } else {
+        // Mags which have no specified ODR will be pinged at the compass task rate
+        compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
+    }
 
     return true;
 }
@@ -395,25 +407,33 @@ bool compassIsCalibrationComplete(void)
 
 uint32_t compassUpdate(timeUs_t currentTimeUs)
 {
-    static uint8_t busyCount = 0;
-    uint32_t nextPeriod = COMPASS_READ_US;
+    static timeUs_t previousTaskTimeUs = 0;
+    const timeDelta_t dTaskTimeUs = cmpTimeUs(currentTimeUs, previousTaskTimeUs);
+    previousTaskTimeUs = currentTimeUs;
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 6, dTaskTimeUs);
 
-    if (busBusy(&magDev.dev, NULL) || !magDev.read(&magDev, magADCRaw)) {
-        // No action was taken as the read has not completed
-        schedulerIgnoreTaskStateTime();
-
-        busyCount++;
-
-        return nextPeriod; // Wait COMPASS_READ_US between states
+    bool checkBusBusy = busBusy(&magDev.dev, NULL);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 4, checkBusBusy);
+    if (checkBusBusy) {
+        // No action is taken, as the bus was busy.
+        schedulerIgnoreTaskExecRate();
+        return COMPASS_BUS_BUSY_INTERVAL_US; // come back in 500us, maybe the bus won't be busy then
     }
 
+    bool checkReadState = !magDev.read(&magDev, magADCRaw);
+    DEBUG_SET(DEBUG_MAG_TASK_RATE, 5, checkReadState);
+    if (checkReadState) {
+        // The compass reported no data available to be retrieved; it may use a state engine that has more than one read state
+        schedulerIgnoreTaskExecRate();
+        return COMPASS_RECHECK_INTERVAL_US; // come back in 1ms, maybe data will be available then
+    }
+
+    // if we get here, we have new data to parse
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        if (magADCRaw[axis] != magADCRawPrevious[axis]) {
-            // this test, and the isNewMagADCFlag itself, is only needed if we calculate magYaw in imu.c
-            mag.isNewMagADCFlag = true;
-        }
         mag.magADC[axis] = magADCRaw[axis];
     }
+    // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
+    mag.isNewMagADCFlag = true;
 
     if (magDev.magAlignment == ALIGN_CUSTOM) {
         alignSensorViaMatrix(mag.magADC, &magDev.rotationMatrix);
@@ -476,11 +496,21 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf((compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain));
     }
 
-    nextPeriod = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ) - COMPASS_READ_US * busyCount;
+    if (debugMode == DEBUG_MAG_TASK_RATE) {
+        static timeUs_t previousTimeUs = 0;
+        const timeDelta_t dataIntervalUs = cmpTimeUs(currentTimeUs, previousTimeUs); // time since last data received
+        previousTimeUs = currentTimeUs;
+        const uint16_t actualCompassDataRateHz = 1e6 / dataIntervalUs;
+        timeDelta_t executeTimeUs = micros() - currentTimeUs;
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 0, TASK_COMPASS_RATE_HZ);
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 1, actualCompassDataRateHz);
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 2, dataIntervalUs);
+        DEBUG_SET(DEBUG_MAG_TASK_RATE, 3, executeTimeUs); // time in uS to complete the mag task
+    }
 
-    // Reset the busy count
-    busyCount = 0;
-    return nextPeriod;
+    // don't do the next read check until compassReadIntervalUs has expired
+    schedulerIgnoreTaskExecRate();
+    return compassReadIntervalUs;
 }
 
 // initialize the compass bias estimator
