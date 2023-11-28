@@ -723,7 +723,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 
         // Update the throttle correction for angle and supply it to the mixer
         int throttleAngleCorrection = 0;
-        if (throttleAngleValue && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && ARMING_FLAG(ARMED)) {
+        if (throttleAngleValue && (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | ALTHOLD_MODE)) && ARMING_FLAG(ARMED)) {
             throttleAngleCorrection = calculateThrottleAngleCorrection();
         }
         mixerSetThrottleAngleCorrection(throttleAngleCorrection);
@@ -858,4 +858,16 @@ bool isUpright(void)
 #else
     return true;
 #endif
+}
+
+void imuTransformVectorBodyToEarth(t_fp_vector * v)
+{
+    /* From body frame to earth frame */
+    const float x = rMat[0][0] * v->V.X + rMat[0][1] * v->V.Y + rMat[0][2] * v->V.Z;
+    const float y = rMat[1][0] * v->V.X + rMat[1][1] * v->V.Y + rMat[1][2] * v->V.Z;
+    const float z = rMat[2][0] * v->V.X + rMat[2][1] * v->V.Y + rMat[2][2] * v->V.Z;
+
+    v->V.X = x;
+    v->V.Y = -y;
+    v->V.Z = z;
 }

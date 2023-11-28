@@ -62,6 +62,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/alt_hold.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -1096,6 +1097,17 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_DEADBAND,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 32 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, deadband) },
     { PARAM_NAME_YAW_DEADBAND,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_deadband) },
     { "yaw_control_reversed",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_reversed) },
+
+#ifdef USE_ALTHOLD_MODE
+    { PARAM_NAME_ALTHOLD_P, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altHoldPidP) },
+    { PARAM_NAME_ALTHOLD_I, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altHoldPidI) },
+    { PARAM_NAME_ALTHOLD_D, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altHoldPidD) },
+
+    { PARAM_NAME_ALTHOLD_THROTTLE_MIN,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altHoldThrottleMin) },
+    { PARAM_NAME_ALTHOLD_THROTTLE_MAX,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altHoldThrottleMax) },
+    { PARAM_NAME_ALTHOLD_THROTTLE_HOVER,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altHoldThrottleHover) },
+    { PARAM_NAME_ALTHOLD_TARGET_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altHoldTargetAdjustRate) },
+#endif
 
 // PG_PID_CONFIG
     { PARAM_NAME_PID_PROCESS_DENOM, VAR_UINT8  | MASTER_VALUE,  .config.minmaxUnsigned = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },

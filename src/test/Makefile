@@ -458,6 +458,14 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 		USE_GPS= \
 		USE_MSP_OVER_TELEMETRY= \
 
+althold_unittest_SRC := \
+		$(USER_DIR)/flight/alt_hold.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/pg/rx.c
+
+althold_unittest_DEFINES := \
+		USE_ALTHOLD_MODE= \
+
 vtx_msp_unittest_SRC := \
         $(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c \

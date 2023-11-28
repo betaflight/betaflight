@@ -245,6 +245,7 @@
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_ESCSERIAL_SIMONK
+#define USE_ALTHOLD_MODE
 
 #if !defined(USE_GPS)
 #define USE_GPS

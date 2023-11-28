@@ -218,8 +218,8 @@
 
 #ifdef USE_MAG
 #define PARAM_NAME_GPS_RESCUE_USE_MAG "gps_rescue_use_mag"
-#endif
-#endif
+#endif // USE_MAG
+#endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_LAT "gps_lap_timer_gate_lat"
@@ -227,7 +227,17 @@
 #define PARAM_NAME_GPS_LAP_TIMER_MIN_LAP_TIME "gps_lap_timer_min_lap_time_s"
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_TOLERANCE "gps_lap_timer_gate_tolerance_m"
 #endif // USE_GPS_LAP_TIMER
-#endif
+#endif //
+
+#ifdef USE_ALTHOLD_MODE
+#define PARAM_NAME_ALTHOLD_P "alt_hold_p"
+#define PARAM_NAME_ALTHOLD_I "alt_hold_i"
+#define PARAM_NAME_ALTHOLD_D "alt_hold_d"
+#define PARAM_NAME_ALTHOLD_THROTTLE_HOVER "alt_hold_throttle_hover"
+#define PARAM_NAME_ALTHOLD_THROTTLE_MIN "alt_hold_throttle_min"
+#define PARAM_NAME_ALTHOLD_THROTTLE_MAX "alt_hold_throttle_max"
+#define PARAM_NAME_ALTHOLD_TARGET_ADJUST_RATE "alt_hold_target_adjust_rate"
+#endif // USE_ALTHOLD_MODE
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
 #define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"
