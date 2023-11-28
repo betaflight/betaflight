@@ -31,7 +31,6 @@
 #include "cms/cms.h"
 
 #include "common/color.h"
-#include "common/time.h"
 #include "common/utils.h"
 
 #include "config/feature.h"

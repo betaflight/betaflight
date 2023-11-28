@@ -27,7 +27,7 @@
 #include "pg/pg.h"
 #include "sensors/sensors.h"
 
-#define TASK_COMPASS_RATE_HZ 300
+#define TASK_COMPASS_RATE_HZ 40 // the base mag update rate; faster intervals will apply for higher ODR mags
 
 // Type of magnetometer used/detected
 typedef enum {
