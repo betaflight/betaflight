@@ -985,11 +985,12 @@ void processRxModes(timeUs_t currentTimeUs)
         canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ALTHOLD_MODE)) {
-                ENABLE_FLIGHT_MODE(ALTHOLD_MODE);
-            }
-        } else {
-            DISABLE_FLIGHT_MODE(ALTHOLD_MODE);
+            ENABLE_FLIGHT_MODE(ALTHOLD_MODE);
         }
+
+    } else {
+        DISABLE_FLIGHT_MODE(ALTHOLD_MODE);
+    }
 #endif
 
 

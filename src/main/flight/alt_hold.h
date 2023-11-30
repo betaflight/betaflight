@@ -26,18 +26,18 @@
 
 #define ALTHOLD_TASK_PERIOD 100         // hz
 #define ALTHOLD_ENTER_PERIOD 50         // ms
-#define ALTHOLD_MAX_EXIT_PERIOD 3000    // ms
+#define ALTHOLD_MAX_ENTER_PERIOD 3000    // ms
 
 
 typedef struct altholdConfig_s {
-    uint16_t velPidP;
-    uint16_t velPidD;
+    uint8_t velPidP;
+    uint8_t velPidD;
 
-    uint16_t altPidP;
-    uint16_t altPidI;
+    uint8_t altPidP;
+    uint8_t altPidI;
 
-    uint16_t minThrottle;
-    uint16_t maxThrottle;
+    uint8_t minThrottle;
+    uint8_t maxThrottle;
 
     uint8_t angleLimit;
 } altholdConfig_t;
