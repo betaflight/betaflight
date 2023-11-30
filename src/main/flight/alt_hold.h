@@ -26,7 +26,7 @@
 
 #define ALTHOLD_TASK_PERIOD 100         // hz
 #define ALTHOLD_ENTER_PERIOD 50         // ms
-#define ALTHOLD_MAX_ENTER_PERIOD 3000    // ms
+#define ALTHOLD_MAX_EXIT_PERIOD 3000    // ms
 
 
 typedef struct altholdConfig_s {

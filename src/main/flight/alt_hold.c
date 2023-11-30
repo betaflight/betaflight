@@ -89,7 +89,7 @@ static float getCurrentAltitude(altHoldState_s* altHoldState)
     }
 #endif
     float rawAltitude = 0.01f * getEstimatedAltitudeCm();
-    if (ABS(altHoldState->smoothedAltitude) < 0.0f) {
+    if (ABS(altHoldState->smoothedAltitude) == 0.0f) {
         altHoldState->smoothedAltitude = rawAltitude;
     }
     float smoothFactor = 0.98f;
@@ -161,8 +161,8 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
     }
 
     uint32_t timeSinceExit = currTime - altHoldState->exitTime;
-    if (timeSinceExit < ALTHOLD_MAX_ENTER_PERIOD) {
-        float delta = (float)timeSinceExit / ALTHOLD_MAX_ENTER_PERIOD;
+    if (timeSinceExit < ALTHOLD_MAX_EXIT_PERIOD) {
+        float delta = (float)timeSinceExit / ALTHOLD_MAX_EXIT_PERIOD;
         altHoldState->throttleFactor = MIN(altHoldState->throttleFactor, 1.0f - delta);
         return;
     }
@@ -174,40 +174,40 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 {
     altHoldProcessTransitions(altHoldState);
 
+    float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
+
+    float measuredAltitude = getCurrentAltitude(altHoldState);
+
+    t_fp_vector accelerationVector = {{
+        acc.accADC[X],
+        acc.accADC[Y],
+        acc.accADC[Z]
+    }};
+
+    imuTransformVectorBodyToEarth(&accelerationVector);
+
+    float measuredAccel = 9.8f * (accelerationVector.V.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
+
+    DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
+
+    altHoldState->velocityEstimationAccel += measuredAccel * timeInterval;
+    altHoldState->velocityEstimationAccel *= 0.999f;
+
+    float currentVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->startVelocityEstimationAccel;
+    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0f * currentVelocityEstimationAccel));
+
+    altHoldState->measuredAltitude = measuredAltitude;
+    altHoldState->measuredAccel = measuredAccel;
+
+    float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, altHoldState->measuredAltitude);
+    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
+
+    float velPidForce = simplePidCalculate(&altHoldState->velPid, timeInterval, velocityTarget, currentVelocityEstimationAccel);
+
+    DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
+
     if (altHoldState->altHoldEnabled) {
-        float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
-
-        float measuredAltitude = getCurrentAltitude(altHoldState);
-
-        t_fp_vector accelerationVector = {{
-            acc.accADC[X],
-            acc.accADC[Y],
-            acc.accADC[Z]
-        }};
-
-        imuTransformVectorBodyToEarth(&accelerationVector);
-
-        float measuredAccel = 9.8f * (accelerationVector.V.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
-
-        DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
-
-        altHoldState->velocityEstimationAccel += measuredAccel * timeInterval;
-        altHoldState->velocityEstimationAccel *= 0.999f;
-
-        float currentVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->startVelocityEstimationAccel;
-        DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0f * currentVelocityEstimationAccel));
-
-        altHoldState->measuredAltitude = measuredAltitude;
-        altHoldState->measuredAccel = measuredAccel;
-
-        float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, altHoldState->measuredAltitude);
-        DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
-
-        float velPidForce = simplePidCalculate(&altHoldState->velPid, timeInterval, velocityTarget, currentVelocityEstimationAccel);
-
         float newThrottle = velPidForce;
-
-        DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
 
         newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
         newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01f * altholdConfig()->minThrottle, 0.01f * altholdConfig()->maxThrottle);
