@@ -89,7 +89,7 @@ static float getCurrentAltitude(altHoldState_s* altHoldState)
     }
 #endif
     float rawAltitude = 0.01f * getEstimatedAltitudeCm();
-    if (ABS(altHoldState->smoothedAltitude) == 0.0f) {
+    if (altHoldState->smoothedAltitude == 0.0f) {
         altHoldState->smoothedAltitude = rawAltitude;
     }
     float smoothFactor = 0.98f;
@@ -199,14 +199,15 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
-    float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, altHoldState->measuredAltitude);
-    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
-
-    float velPidForce = simplePidCalculate(&altHoldState->velPid, timeInterval, velocityTarget, currentVelocityEstimationAccel);
-
-    DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
-
     if (altHoldState->altHoldEnabled) {
+        float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, altHoldState->measuredAltitude);
+
+        DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
+
+        float velPidForce = simplePidCalculate(&altHoldState->velPid, timeInterval, velocityTarget, currentVelocityEstimationAccel);
+
+        DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
+
         float newThrottle = velPidForce;
 
         newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
