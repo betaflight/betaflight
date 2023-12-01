@@ -65,6 +65,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 
@@ -623,6 +624,32 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 }
 
 #ifdef USE_VTX_COMMON
+static const struct {
+    uint16_t freq_upper_limit;
+    uint8_t color_index;
+} freq_to_color_lookup[] = {
+    {VTX_SETTINGS_MIN_FREQUENCY_MHZ, COLOR_BLACK},       // invalid
+    // Freqs are divided to match Raceband channels
+    {                          5672, COLOR_WHITE},       // R1
+    {                          5711, COLOR_RED},         // R2
+    {                          5750, COLOR_ORANGE},      // R3
+    {                          5789, COLOR_YELLOW},      // R4
+    {                          5829, COLOR_GREEN},       // R5
+    {                          5867, COLOR_BLUE},        // R6
+    {                          5906, COLOR_DARK_VIOLET}, // R7
+    {VTX_SETTINGS_MAX_FREQUENCY_MHZ, COLOR_DEEP_PINK},   // R8
+};
+
+static uint8_t getColorByVtxFrequency(const uint16_t freq)
+{
+    for (unsigned iter = 0; iter < ARRAYLEN(freq_to_color_lookup); iter++) {
+        if (freq <= freq_to_color_lookup[iter].freq_upper_limit) {
+            return freq_to_color_lookup[iter].color_index;
+        }
+    }
+    return COLOR_BLACK; // invalid
+}
+
 static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
 {
     static uint16_t frequency = 0;
@@ -691,24 +718,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     }
     else { // show frequency
         // calculate the VTX color based on frequency
-        int colorIndex = 0;
-        if (frequency <= 5672) {
-            colorIndex = COLOR_WHITE;
-        } else if (frequency <= 5711) {
-            colorIndex = COLOR_RED;
-        } else if (frequency <= 5750) {
-            colorIndex = COLOR_ORANGE;
-        } else if (frequency <= 5789) {
-            colorIndex = COLOR_YELLOW;
-        } else if (frequency <= 5829) {
-            colorIndex = COLOR_GREEN;
-        } else if (frequency <= 5867) {
-            colorIndex = COLOR_BLUE;
-        } else if (frequency <= 5906) {
-            colorIndex = COLOR_DARK_VIOLET;
-        } else {
-            colorIndex = COLOR_DEEP_PINK;
-        }
+        uint8_t const colorIndex = getColorByVtxFrequency(frequency);
         hsvColor_t color = ledStripStatusModeConfig()->colors[colorIndex];
         color.v = (vtxStatus & VTX_STATUS_PIT_MODE) ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
@@ -1246,6 +1256,24 @@ static void applySimpleProfile(timeUs_t currentTimeUs)
         switch (ledStripConfig()->ledstrip_profile) {
             case LED_PROFILE_RACE:
                 colorIndex = ledStripConfig()->ledstrip_race_color;
+#ifdef USE_VTX_COMMON
+                if (colorIndex == COLOR_BLACK) {
+                    // ledstrip_race_color is not set. Set color based on VTX frequency
+                    const vtxDevice_t *vtxDevice = vtxCommonDevice();
+                    if (vtxDevice) {
+                        uint16_t freq;
+                        uint8_t const band = vtxSettingsConfigMutable()->band;
+                        uint8_t const channel = vtxSettingsConfig()->channel;
+                        if (band && channel) {
+                            freq = vtxCommonLookupFrequency(vtxDevice, band, channel);
+                        } else {
+                            // Direct frequency is used
+                            freq = vtxSettingsConfig()->freq;
+                        }
+                        colorIndex = getColorByVtxFrequency(freq);
+                    }
+                }
+#endif
                 break;
 
             case LED_PROFILE_BEACON: {
@@ -1274,7 +1302,7 @@ static void applySimpleProfile(timeUs_t currentTimeUs)
     }
 
     if ((colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs)) {
-        setStripColor(&hsv[colorIndex]);
+        setStripColor(&ledStripStatusModeConfig()->colors[colorIndex]);
         ws2811UpdateStrip((ledStripFormatRGB_e)ledStripConfig()->ledstrip_grb_rgb, ledStripConfig()->ledstrip_brightness);
         previousProfileColorIndex = colorIndex;
         colorUpdateTimeUs = currentTimeUs + PROFILE_COLOR_UPDATE_INTERVAL_US;
