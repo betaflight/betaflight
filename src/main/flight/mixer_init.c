@@ -361,7 +361,7 @@ void mixerInitProfile(void)
     mixerRuntime.rpmLimiterPGain = mixerConfig()->rpm_limit_p * 15e-6f;
     mixerRuntime.rpmLimiterIGain = mixerConfig()->rpm_limit_i * 1e-3f * pidGetDT();
     mixerRuntime.rpmLimiterDGain = mixerConfig()->rpm_limit_d * 3e-7f * pidGetPidFrequency();
-    pt1FilterInit(&mixerRuntime.averageRpmFilter, pt1FilterGain(6.0f, pidGetDT()));
+    pt1FilterInit(&mixerRuntime.rpmLimiterAverageRpmFilter, pt1FilterGain(6.0f, pidGetDT()));
     pt1FilterInit(&mixerRuntime.rpmLimiterThrottleScaleOffsetFilter, pt1FilterGain(2.0f, pidGetDT()));
     mixerResetRpmLimiter();
 #endif
