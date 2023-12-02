@@ -19,6 +19,7 @@
  */
 
 #pragma once
+
 #include "platform.h"
 
 #include "flight/mixer.h"
@@ -55,12 +56,11 @@ typedef struct mixerRuntime_s {
 #if defined(USE_RPM_LIMIT)
     float rpmLimiterRpmLimit;
     float rpmLimiterThrottleScale;
+    float rpmLimiterInitialThrottleScale;
     float rpmLimiterPGain;
     float rpmLimiterIGain;
     float rpmLimiterDGain;
     pt1Filter_t averageRpmFilter;
-    float rpmDerating;
-    float rpmLimiterInitialThrottleScale;
     pt1Filter_t rpmLimiterThrottleScaleOffsetFilter;
 #endif
 } mixerRuntime_t;

@@ -363,21 +363,21 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     // Throttle limit learning
     if (error > 0.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
         mixer->rpmLimiterThrottleScale *= 1.0f - 4.8f * pidGetDT();
-    } else if (pidOutput < -400 * pidGetDT() && rcCommand[THROTTLE] >= rxConfig()->maxcheck - 5 && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
+    } else if (pidOutput < -400.0f * pidGetDT() && rcCommand[THROTTLE] >= rxConfig()->maxcheck - 5 && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
         mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
     }
     mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
-    float theoreticalMaxRpm = getBatteryVoltage() * 0.01f * motorConfig()->kv;
-    float rpmDerating = -5.44e-6 * theoreticalMaxRpm + 0.944;
-    float rpmLimiterThrottleScaleOffset = pt1FilterApply(&mixer->rpmLimiterThrottleScaleOffsetFilter, constrainf(mixer->rpmLimiterRpmLimit / (theoreticalMaxRpm * rpmDerating),0.0f, 1.0f) - mixer->rpmLimiterInitialThrottleScale);
-    throttle *= constrainf(mixer->rpmLimiterThrottleScale + mixer->rpmLimiterThrottleScaleOffset, 0.0f, 1.0f);
+
+    float rpmLimiterThrottleScaleOffset = pt1FilterApply(&mixer->rpmLimiterThrottleScaleOffsetFilter, constrainf(mixer->rpmLimiterRpmLimit / dshotEstimateMaxRpm(), 0.0f, 1.0f) - mixer->rpmLimiterInitialThrottleScale);
+    throttle *= constrainf(mixer->rpmLimiterThrottleScale + rpmLimiterThrottleScaleOffset, 0.0f, 1.0f);
+
     // Output
     pidOutput = MAX(0.0f, pidOutput);
     throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
     prevError = error;
 
     DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(mixer->rpmLimiterThrottleScaleOffset * 100.0f);
+    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(rpmLimiterThrottleScaleOffset * 100.0f);
     DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 4, lrintf(error));
