@@ -833,11 +833,11 @@
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
-        DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan),            \
+        DEF_TIM_DMA_CHANNEL(dmaopt, TCH_## tim ## _ ## chan),           \
         DEF_TIM_DMA_REQUEST(TCH_## tim ## _ ## chan)                    \
     )                                                                   \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
-        DEF_TIM_DMA_CHANNEL(upopt, TCH_## tim ## _UP),                   \
+        DEF_TIM_DMA_CHANNEL(upopt, TCH_## tim ## _UP),                  \
         DEF_TIM_DMA_REQUEST(TCH_## tim ## _UP),                         \
         DEF_TIM_DMA_HANDLER(upopt, TCH_## tim ## _UP)                   \
     )                                                                   \
