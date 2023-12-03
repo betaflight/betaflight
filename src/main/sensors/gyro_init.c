@@ -711,8 +711,8 @@ void gyroSetTargetLooptime(uint8_t pidDenom)
 {
     activePidLoopDenom = pidDenom;
     if (gyro.sampleRateHz) {
-        gyro.sampleLooptime = 1e6 / gyro.sampleRateHz;
-        gyro.targetLooptime = activePidLoopDenom * 1e6 / gyro.sampleRateHz;
+        gyro.sampleLooptime = 1e6f / gyro.sampleRateHz;
+        gyro.targetLooptime = activePidLoopDenom * 1e6f / gyro.sampleRateHz;
     } else {
         gyro.sampleLooptime = 0;
         gyro.targetLooptime = 0;

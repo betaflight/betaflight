@@ -1270,8 +1270,10 @@ FAST_CODE bool pidLoopReady(void)
 
 FAST_CODE void taskFiltering(timeUs_t currentTimeUs)
 {
+#ifdef USE_DSHOT_TELEMETRY
+    updateDshotTelemetry();  // decode and update Dshot telemetry
+#endif
     gyroFiltering(currentTimeUs);
-
 }
 
 // Function for loop trigger

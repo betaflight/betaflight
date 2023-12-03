@@ -1123,7 +1123,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 
             // Added in API version 1.46
             // Write CPU temp
-#ifdef USE_ADC_INTERNAL                
+#ifdef USE_ADC_INTERNAL
             sbufWriteU16(dst, getCoreTemperatureCelsius());
 #else
             sbufWriteU16(dst, 0);
@@ -1236,7 +1236,7 @@ case MSP_NAME:
 
 #ifdef USE_DSHOT_TELEMETRY
             if (motorConfig()->dev.useDshotTelemetry) {
-                rpm = erpmToRpm(getDshotTelemetry(i));
+                rpm = lrintf(getDshotRpm(i));
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
 
@@ -1272,7 +1272,7 @@ case MSP_NAME:
             if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
                 escSensorData_t *escData = getEscSensorData(i);
                 if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
-                    rpm = erpmToRpm(escData->rpm);
+                    rpm = lrintf(erpmToRpm(escData->rpm));
                     rpmDataAvailable = true;
                 }
                 escTemperature = escData->temperature;
@@ -1495,7 +1495,7 @@ case MSP_NAME:
             sbufWriteU8(dst, getMotorCount());
             for (int i = 0; i < getMotorCount(); i++) {
                 sbufWriteU8(dst, dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]);
-                sbufWriteU16(dst, getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount);
+                sbufWriteU16(dst, lrintf(getDshotRpm(i)));
             }
         }
         else

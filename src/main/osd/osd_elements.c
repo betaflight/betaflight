@@ -266,12 +266,12 @@ static int getEscRpm(int i)
 {
 #ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
-        return erpmToRpm(getDshotTelemetry(i));
+        return lrintf(getDshotRpm(i));
     }
 #endif
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return erpmToRpm(getEscSensorData(i)->rpm);
+        return lrintf(erpmToRpm(getEscSensorData(i)->rpm));
     }
 #endif
     return 0;
