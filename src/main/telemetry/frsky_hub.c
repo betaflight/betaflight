@@ -192,7 +192,7 @@ static void sendThrottleOrBatterySizeAsRpm(void)
 #if defined(USE_ESC_SENSOR_TELEMETRY)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
-        data = escData->dataAge < ESC_DATA_INVALID ? (erpmToRpm(escData->rpm) / 10) : 0;
+        data = escData->dataAge < ESC_DATA_INVALID ? lrintf(erpmToRpm(escData->rpm) / 10.0f) : 0;
     }
 #else
     if (ARMING_FLAG(ARMED)) {

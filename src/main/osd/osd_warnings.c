@@ -282,7 +282,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             const char motorNumber = '1' + i;
             // if everything is OK just display motor number else R, T or C
             char warnFlag = motorNumber;
-            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
+            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
                 warnFlag = 'R';
             }
             if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
