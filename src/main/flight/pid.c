@@ -116,7 +116,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 7);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 8);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -224,6 +224,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .angle_feedforward_smoothing_ms = 80,
         .angle_earth_ref = 100,
         .horizon_delay_ms = 500, // 500ms time constant on any increase in horizon strength
+        .tpa_rate_lower = 20,
+        .tpa_breakpoint_lower = 1050,
+        .tpa_breakpoint_lower_fade = 1,
     );
 
 #ifndef USE_D_MIN
@@ -273,9 +276,20 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    const float throttleTemp = fminf(throttle, 1.0f); // don't permit throttle > 1 ? is this needed ? can throttle be > 1 at this point ?
-    const float throttleDifference = fmaxf(throttleTemp - pidRuntime.tpaBreakpoint, 0.0f);
-    pidRuntime.tpaFactor = 1.0f - throttleDifference * pidRuntime.tpaMultiplier;
+    static bool isTpaLowerFaded = false;
+    // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
+    throttle = constrainf(throttle, 0.0f, 1.0f);
+    bool isThrottlePastTpaBreakpointLower = (throttle < pidRuntime.tpaBreakpointLower && pidRuntime.tpaBreakpointLower > 0.01f) ? false : true;
+    float tpaRate = 0.0f;
+    if (isThrottlePastTpaBreakpointLower || isTpaLowerFaded) {
+        tpaRate = pidRuntime.tpaMultiplier * fmaxf(throttle - pidRuntime.tpaBreakpoint, 0.0f);
+        if (pidRuntime.tpaBreakpointLowerFade && !isTpaLowerFaded) {
+            isTpaLowerFaded = true;
+        }
+    } else {
+        tpaRate = pidRuntime.tpaMultiplierLower * (pidRuntime.tpaBreakpointLower - throttle);
+    }
+    pidRuntime.tpaFactor = 1.0f - tpaRate;
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
