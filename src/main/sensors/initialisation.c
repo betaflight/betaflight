@@ -77,12 +77,12 @@ bool sensorsAutodetect(void)
     }
 #endif
 
-#ifdef USE_MAG
-    compassInit();
-#endif
-
 #ifdef USE_BARO
     baroInit();
+#endif
+
+#ifdef USE_MAG
+    compassInit();
 #endif
 
 #ifdef USE_RANGEFINDER

@@ -90,12 +90,8 @@ pt1Filter_t throttleLpf;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
-#if !defined(DEFAULT_PID_PROCESS_DENOM)
-#if defined(STM32F411xE)
-#define DEFAULT_PID_PROCESS_DENOM       2
-#else
+#ifndef DEFAULT_PID_PROCESS_DENOM
 #define DEFAULT_PID_PROCESS_DENOM       1
-#endif
 #endif
 
 #ifdef USE_RUNAWAY_TAKEOFF
@@ -120,7 +116,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 7);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 8);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -228,6 +224,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .angle_feedforward_smoothing_ms = 80,
         .angle_earth_ref = 100,
         .horizon_delay_ms = 500, // 500ms time constant on any increase in horizon strength
+        .tpa_rate_lower = 20,
+        .tpa_breakpoint_lower = 1050,
+        .tpa_breakpoint_lower_fade = 1,
     );
 
 #ifndef USE_D_MIN
@@ -277,9 +276,20 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    const float throttleTemp = fminf(throttle, 1.0f); // don't permit throttle > 1 ? is this needed ? can throttle be > 1 at this point ?
-    const float throttleDifference = fmaxf(throttleTemp - pidRuntime.tpaBreakpoint, 0.0f);
-    pidRuntime.tpaFactor = 1.0f - throttleDifference * pidRuntime.tpaMultiplier;
+    static bool isTpaLowerFaded = false;
+    // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
+    throttle = constrainf(throttle, 0.0f, 1.0f);
+    bool isThrottlePastTpaBreakpointLower = (throttle < pidRuntime.tpaBreakpointLower && pidRuntime.tpaBreakpointLower > 0.01f) ? false : true;
+    float tpaRate = 0.0f;
+    if (isThrottlePastTpaBreakpointLower || isTpaLowerFaded) {
+        tpaRate = pidRuntime.tpaMultiplier * fmaxf(throttle - pidRuntime.tpaBreakpoint, 0.0f);
+        if (pidRuntime.tpaBreakpointLowerFade && !isTpaLowerFaded) {
+            isTpaLowerFaded = true;
+        }
+    } else {
+        tpaRate = pidRuntime.tpaMultiplierLower * (pidRuntime.tpaBreakpointLower - throttle);
+    }
+    pidRuntime.tpaFactor = 1.0f - tpaRate;
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
@@ -386,7 +396,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // earthRef code here takes about 76 cycles, if conditional on angleEarthRef it takes about 100.  sin_approx costs most of those cycles.
     float sinAngle = sin_approx(DEGREES_TO_RADIANS(pidRuntime.angleTarget[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
     sinAngle *= (axis == FD_ROLL) ? -1.0f : 1.0f; // must be negative for Roll
-    angleRate += pidRuntime.angleYawSetpoint * sinAngle * pidRuntime.angleEarthRef;
+    const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
+    angleRate += pidRuntime.angleYawSetpoint * sinAngle * earthRefGain;
     pidRuntime.angleTarget[axis] = angleTarget;  // set target for alternate axis to current axis, for use in preceding calculation
 
     // smooth final angle rate output to clean up attitude signal steps (500hz), GPS steps (10 or 100hz), RC steps etc
@@ -889,9 +900,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 // if earth referencing is requested, attenuate yaw axis setpoint when pitched or rolled
                 // and send yawSetpoint to Angle code to modulate pitch and roll
                 // code cost is 107 cycles when earthRef enabled, 20 otherwise, nearly all in cos_approx
-                if (pidRuntime.angleEarthRef) {
+                const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
+                if (earthRefGain) {
                     pidRuntime.angleYawSetpoint = currentPidSetpoint;
-                    float maxAngleTargetAbs = pidRuntime.angleEarthRef * fmaxf( fabsf(pidRuntime.angleTarget[FD_ROLL]), fabsf(pidRuntime.angleTarget[FD_PITCH]) );
+                    float maxAngleTargetAbs = earthRefGain * fmaxf( fabsf(pidRuntime.angleTarget[FD_ROLL]), fabsf(pidRuntime.angleTarget[FD_PITCH]) );
                     maxAngleTargetAbs *= (FLIGHT_MODE(HORIZON_MODE)) ? horizonLevelStrength : 1.0f;
                     // reduce compensation whenever Horizon uses less levelling
                     currentPidSetpoint *= cos_approx(DEGREES_TO_RADIANS(maxAngleTargetAbs));

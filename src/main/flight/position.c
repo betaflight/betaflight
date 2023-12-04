@@ -143,7 +143,7 @@ void calculateEstimatedAltitude(void)
             }
         }
         zeroedAltitudeCm = 0.0f; // always hold relativeAltitude at zero while disarmed
-
+        DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm / 100.0f); // Absolute altitude ASL in metres, max 32,767m
     //  ***  ARMED  ***
     } else {
         if (!wasArmed) { // things to run once, on arming, after being disarmed
@@ -165,7 +165,8 @@ void calculateEstimatedAltitude(void)
             gpsTrust = 0.0f;
             // TO DO - smoothly reduce GPS trust, rather than immediately dropping to zero for what could be only a very brief loss of 3D fix 
         }
-
+        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
+        
         // Empirical mixing of GPS and Baro altitudes
         if (useZeroedGpsAltitude && (positionConfig()->altitude_source == DEFAULT || positionConfig()->altitude_source == GPS_ONLY)) {
             if (haveBaroAlt && positionConfig()->altitude_source == DEFAULT) {
@@ -181,8 +182,8 @@ void calculateEstimatedAltitude(void)
         }
     }
 
-      zeroedAltitudeCm = pt2FilterApply(&altitudeLpf, zeroedAltitudeCm);
-      // NOTE: this filter must receive 0 as its input, for the whole disarmed time, to ensure correct zeroed values on arming
+    zeroedAltitudeCm = pt2FilterApply(&altitudeLpf, zeroedAltitudeCm);
+    // NOTE: this filter must receive 0 as its input, for the whole disarmed time, to ensure correct zeroed values on arming
 
     if (wasArmed) {
         displayAltitudeCm = zeroedAltitudeCm; // while armed, show filtered relative altitude in OSD / sensors tab
@@ -202,13 +203,12 @@ void calculateEstimatedAltitude(void)
  
     // *** set debugs
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
-    DEBUG_SET(DEBUG_ALTITUDE, 1, baroAltCm);
-    DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm);
+    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroAltCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
 #ifdef USE_VARIO
     DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
-    DEBUG_SET(DEBUG_RTH, 1, displayAltitudeCm);
-    DEBUG_SET(DEBUG_BARO, 3, baroAltCm);
+    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
+    DEBUG_SET(DEBUG_BARO, 3, lrintf(baroAltCm / 10.0f));
 }
 #endif //defined(USE_BARO) || defined(USE_GPS)
 

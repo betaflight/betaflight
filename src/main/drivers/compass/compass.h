@@ -36,4 +36,5 @@ typedef struct magDev_s {
     fp_rotationMatrix_t rotationMatrix;
     ioTag_t magIntExtiTag;
     int16_t magGain[3];
+    uint16_t magOdrHz;
 } magDev_t;

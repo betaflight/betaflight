@@ -77,7 +77,6 @@
 #include "io/gps.h"
 #include "io/pidaudio.h"
 #include "io/serial.h"
-#include "io/servos.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
@@ -92,6 +91,7 @@
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
 
+#include "rx/rc_stats.h"
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
@@ -296,10 +296,10 @@ void updateArmingStatus(void)
 
             if (justGotRxBack && IS_RC_MODE_ACTIVE(BOXARM)) {
                 // If the RX has just started to receive a signal again and the arm switch is on, apply arming restriction
-                setArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+                setArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
             } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
                 // If RX signal is OK and the arm switch is off, remove arming restriction
-                unsetArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+                unsetArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
             }
 
             hadRx = haveRx;
@@ -359,13 +359,12 @@ void updateArmingStatus(void)
         }
 #endif
 
-#ifdef USE_RPM_FILTER
-        // USE_RPM_FILTER will only be defined if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
-        // If the RPM filter is enabled and any motor isn't providing telemetry, then disable arming
-        if (isRpmFilterEnabled() && !isDshotTelemetryActive()) {
-            setArmingDisabled(ARMING_DISABLED_RPMFILTER);
+#ifdef USE_DSHOT_TELEMETRY
+        // If Dshot Telemetry is enabled and any motor isn't providing telemetry, then disable arming
+        if (motorConfig()->dev.useDshotTelemetry && !isDshotTelemetryActive()) {
+            setArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
         } else {
-            unsetArmingDisabled(ARMING_DISABLED_RPMFILTER);
+            unsetArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
         }
 #endif
 
@@ -553,6 +552,10 @@ void tryArm(void)
         osdSuppressStats(false);
 #endif
         ENABLE_ARMING_FLAG(ARMED);
+
+#ifdef USE_RC_STATS
+        NotifyRcStatsArming();
+#endif
 
         resetTryingToArm();
 
@@ -1266,8 +1269,10 @@ FAST_CODE bool pidLoopReady(void)
 
 FAST_CODE void taskFiltering(timeUs_t currentTimeUs)
 {
+#ifdef USE_DSHOT_TELEMETRY
+    updateDshotTelemetry();  // decode and update Dshot telemetry
+#endif
     gyroFiltering(currentTimeUs);
-
 }
 
 // Function for loop trigger

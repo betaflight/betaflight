@@ -18,6 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -196,7 +197,7 @@ uint16_t getMotorAveragePeriod(void)
 #if defined(USE_DSHOT_TELEMETRY)
     // Calculate this way when no rpm from esc data
     if (useDshotTelemetry && rpm == 0) {
-        rpm = getDshotAverageRpm();
+        rpm = lrintf(getDshotRpmAverage());
     }
 #endif
 

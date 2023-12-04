@@ -137,7 +137,7 @@ static bool lis3mdlInit(magDev_t *mag)
     busWriteRegister(dev, LIS3MDL_REG_CTRL_REG3, 0x00);
 
     delay(100);
-
+    mag->magOdrHz = 80; // LIS3MDL_DO_80
     return true;
 }
 

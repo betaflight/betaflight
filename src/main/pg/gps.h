@@ -36,10 +36,10 @@ typedef struct gpsConfig_s {
     uint8_t gps_ublox_flight_model;
     uint8_t gps_update_rate_hz;
     bool gps_ublox_use_galileo;
-    bool gps_ublox_full_power;
     bool gps_set_home_point_once;
     bool gps_use_3d_speed;
     bool sbas_integrity;
+    uint8_t gps_ublox_utc_standard;
     char nmeaCustomCommands[NMEA_CUSTOM_COMMANDS_MAX_LENGTH + 1];
 } gpsConfig_t;
 

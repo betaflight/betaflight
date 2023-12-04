@@ -89,6 +89,7 @@
 #include "pg/stats.h"
 
 #include "rx/crsf.h"
+#include "rx/rc_stats.h"
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
@@ -196,6 +197,9 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_WATT_HOURS_DRAWN,
     OSD_STAT_BEST_3_CONSEC_LAPS,
     OSD_STAT_BEST_LAP,
+    OSD_STAT_FULL_THROTTLE_TIME,
+    OSD_STAT_FULL_THROTTLE_COUNTER,
+    OSD_STAT_AVG_THROTTLE,
 };
 
 // Group elements in a number of groups to reduce task scheduling overhead
@@ -355,6 +359,12 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     // turn off the over mah capacity warning
     osdWarnSetState(OSD_WARNING_OVER_CAP, false);
 
+#ifdef USE_RC_STATS
+    osdStatSetState(OSD_STAT_FULL_THROTTLE_TIME, true);
+    osdStatSetState(OSD_STAT_FULL_THROTTLE_COUNTER, true);
+    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);    
+#endif
+
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
 
@@ -413,6 +423,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->canvas_cols = OSD_SD_COLS;
     osdConfig->canvas_rows = OSD_SD_ROWS;
 #endif
+
+#ifdef USE_QUICK_OSD_MENU
+    osdConfig->osd_use_quick_menu = true;
+#endif // USE_QUICK_OSD_MENU
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -585,12 +599,12 @@ static int32_t getAverageEscRpm(void)
 {
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return erpmToRpm(osdEscDataCombined->rpm);
+        return lrintf(erpmToRpm(osdEscDataCombined->rpm));
     }
 #endif
 #ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
-        return getDshotAverageRpm();
+        return lrintf(getDshotRpmAverage());
     }
 #endif
     return 0;
@@ -840,7 +854,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         osdDisplayStatisticLabel(midCol, displayRow, osdConfig()->stat_show_cell_value ? "END AVG CELL" : "END BATTERY", buff);
         return true;
 
-    case OSD_STAT_BATTERY: 
+    case OSD_STAT_BATTERY:
         {
             const uint16_t statsVoltage = getStatsVoltage();
             osdPrintFloat(buff, SYM_NONE, statsVoltage / 100.0f, "", 2, true, SYM_VOLT);
@@ -848,7 +862,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             return true;
         }
         break;
-        
+
     case OSD_STAT_MIN_RSSI:
         itoa(stats.min_rssi, buff, 10);
         strcat(buff, "%");
@@ -870,7 +884,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             return true;
         }
         break;
-    
+
     case OSD_STAT_WATT_HOURS_DRAWN:
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
             osdPrintFloat(buff, SYM_NONE, getWhDrawn(), "", 2, true, SYM_NONE);
@@ -1005,6 +1019,28 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         osdDisplayStatisticLabel(midCol, displayRow, "TOTAL DISTANCE", buff);
         return true;
 #endif
+#ifdef USE_RC_STATS
+    case OSD_STAT_FULL_THROTTLE_TIME: {
+        int seconds = RcStatsGetFullThrottleTimeUs() / 1000000;
+        const int minutes = seconds / 60;
+        seconds = seconds % 60;
+        tfp_sprintf(buff, "%02d:%02d", minutes, seconds);
+        osdDisplayStatisticLabel(midCol, displayRow, "100% THRT TIME", buff);
+        return true;
+    }
+
+    case OSD_STAT_FULL_THROTTLE_COUNTER: {
+        itoa(RcStatsGetFullThrottleCounter(), buff, 10);
+        osdDisplayStatisticLabel(midCol, displayRow, "100% THRT COUNT", buff);
+        return true;
+    }
+
+    case OSD_STAT_AVG_THROTTLE: {
+        itoa(RcStatsGetAverageThrottle(), buff, 10);
+        osdDisplayStatisticLabel(midCol, displayRow, "AVG THROTTLE", buff);
+        return true;
+    }
+#endif // USE_RC_STATS
     }
     return false;
 }

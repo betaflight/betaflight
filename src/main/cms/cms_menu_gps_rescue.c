@@ -39,13 +39,13 @@
 
 #include "flight/gps_rescue.h"
 
-static uint16_t gpsRescueConfig_minRescueDth; //meters
+static uint16_t gpsRescueConfig_minStartDistM; //meters
 static uint8_t gpsRescueConfig_altitudeMode;
-static uint8_t gpsRescueConfig_rescueAltitudeBufferM; // meters
+static uint16_t gpsRescueConfig_initialClimbM; // meters
 static uint16_t gpsRescueConfig_ascendRate;
 
-static uint8_t gpsRescueConfig_initialAltitudeM; //meters
-static uint16_t gpsRescueConfig_rescueGroundspeed; // centimeters per second
+static uint16_t gpsRescueConfig_returnAltitudeM; //meters
+static uint16_t gpsRescueConfig_groundSpeedCmS; // centimeters per second
 static uint8_t gpsRescueConfig_angle; //degrees
 
 static uint16_t gpsRescueConfig_descentDistanceM; //meters
@@ -64,6 +64,7 @@ static uint8_t gpsRescueConfig_yawP;
 static uint8_t gpsRescueConfig_velP, gpsRescueConfig_velI, gpsRescueConfig_velD;
 
 static uint8_t gpsRescueConfig_pitchCutoffHz;
+static uint8_t gpsRescueConfig_imuYawGain;
 
 static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
 {
@@ -80,6 +81,8 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
     gpsRescueConfig_velD = gpsRescueConfig()->velD;
 
     gpsRescueConfig_pitchCutoffHz = gpsRescueConfig()->pitchCutoffHz;
+    gpsRescueConfig_imuYawGain = gpsRescueConfig()->imuYawGain;
+
     return NULL;
 }
 
@@ -99,6 +102,7 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     gpsRescueConfigMutable()->velD = gpsRescueConfig_velD;
 
     gpsRescueConfigMutable()->pitchCutoffHz = gpsRescueConfig_pitchCutoffHz;
+    gpsRescueConfigMutable()->imuYawGain = gpsRescueConfig_imuYawGain;
 
     return NULL;
 }
@@ -118,6 +122,7 @@ const OSD_Entry cms_menuGpsRescuePidEntries[] =
     { "VELOCITY D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_velD, 0, 255, 1 } },
 
     { "SMOOTHING",         OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_pitchCutoffHz, 10, 255, 1 } },
+    { "IMU_YAW_GAIN",      OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_imuYawGain, 5, 20, 1 } },
 
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
@@ -138,13 +143,13 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    gpsRescueConfig_minRescueDth = gpsRescueConfig()->minRescueDth;
+    gpsRescueConfig_minStartDistM = gpsRescueConfig()->minStartDistM;
     gpsRescueConfig_altitudeMode = gpsRescueConfig()->altitudeMode;
-    gpsRescueConfig_rescueAltitudeBufferM = gpsRescueConfig()->rescueAltitudeBufferM;
+    gpsRescueConfig_initialClimbM = gpsRescueConfig()->initialClimbM;
     gpsRescueConfig_ascendRate = gpsRescueConfig()->ascendRate;
 
-    gpsRescueConfig_initialAltitudeM = gpsRescueConfig()->initialAltitudeM;
-    gpsRescueConfig_rescueGroundspeed = gpsRescueConfig()->rescueGroundspeed;
+    gpsRescueConfig_returnAltitudeM = gpsRescueConfig()->returnAltitudeM;
+    gpsRescueConfig_groundSpeedCmS = gpsRescueConfig()->groundSpeedCmS;
     gpsRescueConfig_angle = gpsRescueConfig()->maxRescueAngle;
 
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
@@ -166,13 +171,13 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     UNUSED(pDisp);
     UNUSED(self);
 
-    gpsRescueConfigMutable()->minRescueDth = gpsRescueConfig_minRescueDth;
+    gpsRescueConfigMutable()->minStartDistM = gpsRescueConfig_minStartDistM;
     gpsRescueConfigMutable()->altitudeMode = gpsRescueConfig_altitudeMode;
-    gpsRescueConfigMutable()->rescueAltitudeBufferM = gpsRescueConfig_rescueAltitudeBufferM;
+    gpsRescueConfigMutable()->initialClimbM = gpsRescueConfig_initialClimbM;
     gpsRescueConfigMutable()->ascendRate = gpsRescueConfig_ascendRate;
 
-    gpsRescueConfigMutable()->initialAltitudeM = gpsRescueConfig_initialAltitudeM;
-    gpsRescueConfigMutable()->rescueGroundspeed = gpsRescueConfig_rescueGroundspeed;
+    gpsRescueConfigMutable()->returnAltitudeM = gpsRescueConfig_returnAltitudeM;
+    gpsRescueConfigMutable()->groundSpeedCmS = gpsRescueConfig_groundSpeedCmS;
     gpsRescueConfigMutable()->maxRescueAngle = gpsRescueConfig_angle;
 
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
@@ -193,13 +198,13 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
 {
     {"--- GPS RESCUE ---", OME_Label, NULL, NULL},
 
-    { "MIN START DIST  M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minRescueDth, 20, 1000, 1 } },
+    { "MIN START DIST  M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minStartDistM, 20, 1000, 1 } },
     { "ALTITUDE MODE"    , OME_TAB | REBOOT_REQUIRED, NULL, &(OSD_TAB_t) { &gpsRescueConfig_altitudeMode, 2, lookupTableRescueAltitudeMode} },
-    { "INITAL CLIMB    M", OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_rescueAltitudeBufferM, 0, 100, 1 } },
+    { "INITAL CLIMB    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialClimbM, 0, 100, 1 } },
     { "ASCEND RATE  CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, 50, 2500, 1 } },
 
-    { "RETURN ALT      M", OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_initialAltitudeM, 2, 255, 1 } },
-    { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_rescueGroundspeed, 0, 3000, 1 } },
+    { "RETURN ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_returnAltitudeM, 2, 255, 1 } },
+    { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_groundSpeedCmS, 0, 3000, 1 } },
     { "PITCH ANGLE MAX",   OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_angle, 0, 60, 1 } },
 
     { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 5, 500, 1 } },

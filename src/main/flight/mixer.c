@@ -65,12 +65,6 @@
 #define DYN_LPF_THROTTLE_STEPS           100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
-#ifdef USE_RPM_LIMIT
-#define RPM_LIMIT_ACTIVE mixerConfig()->rpm_limit
-#else
-#define RPM_LIMIT_ACTIVE false
-#endif
-
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
 float FAST_DATA_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];
@@ -226,7 +220,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         if (mixerRuntime.dynIdleMinRps > 0.0f) {
             const float maxIncrease = isAirmodeActivated()
                 ? mixerRuntime.dynIdleMaxIncrease : mixerRuntime.dynIdleStartIncrease;
-            float minRps = getMinMotorFrequency();
+            float minRps = getMinMotorFrequencyHz();
             DEBUG_SET(DEBUG_DYN_IDLE, 3, lrintf(minRps * 10.0f));
             float rpsError = mixerRuntime.dynIdleMinRps - minRps;
             // PT1 type lowpass delay and smoothing for D

@@ -773,16 +773,24 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
             break;
         }
         case __builtin_clz(TIM_IT_CC1):
-            timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim->CCR1);
+            if (timerConfig->edgeCallback[0]) {
+                timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim->CCR1);
+            }
             break;
         case __builtin_clz(TIM_IT_CC2):
-            timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
+            if (timerConfig->edgeCallback[1]) {
+                timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim->CCR2);
+            }
             break;
         case __builtin_clz(TIM_IT_CC3):
-            timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim->CCR3);
+            if (timerConfig->edgeCallback[2]) {
+                timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim->CCR3);
+            }
             break;
         case __builtin_clz(TIM_IT_CC4):
-            timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim->CCR4);
+            if (timerConfig->edgeCallback[3]) {
+                timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim->CCR4);
+            }
             break;
         }
     }
@@ -1043,35 +1051,12 @@ void timerInit(void)
     }
 }
 
-// finish configuring timers after allocation phase
-// start timers
-// TODO - Work in progress - initialization routine must be modified/verified to start correctly without timers
-void timerStart(void)
+void timerStart(TIM_TypeDef *tim)
 {
-#if 0
-    for (unsigned timer = 0; timer < USED_TIMER_COUNT; timer++) {
-        int priority = -1;
-        int irq = -1;
-        for (unsigned hwc = 0; hwc < TIMER_CHANNEL_COUNT; hwc++) {
-            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (TIMER_HARDWARE[hwc].tim == usedTimers[timer])) {
-                // TODO - move IRQ to timer info
-                irq = TIMER_HARDWARE[hwc].irq;
-            }
-        }
-        // TODO - aggregate required timer paramaters
-        configTimeBase(usedTimers[timer], 0, 1);
-        TIM_Cmd(usedTimers[timer], ENABLE);
-        if (priority >= 0) {  // maybe none of the channels was configured
-            NVIC_InitTypeDef NVIC_InitStructure;
+    TIM_HandleTypeDef* handle = timerFindTimerHandle(tim);
+    if (handle == NULL) return;
 
-            NVIC_InitStructure.NVIC_IRQChannel = irq;
-            NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_SPLIT_PRIORITY_BASE(priority);
-            NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_SPLIT_PRIORITY_SUB(priority);
-            NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-            NVIC_Init(&NVIC_InitStructure);
-        }
-    }
-#endif
+    __HAL_TIM_ENABLE(handle);
 }
 
 /**

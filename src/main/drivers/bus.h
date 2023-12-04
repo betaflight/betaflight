@@ -75,7 +75,6 @@ typedef struct busDevice_s {
 #endif
 #endif // UNIT_TEST
     volatile struct busSegment_s* volatile curSegment;
-    volatile struct extDevice_s *csLockDevice;
     bool initSegment;
 } busDevice_t;
 

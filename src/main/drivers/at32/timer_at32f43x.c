@@ -72,8 +72,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TMR1,  CH3,  PA10, 0, 0,  0),
     DEF_TIM(TMR1,  CH4,  PA11, 0, 0,  0),
 
-// Port B ORDER BY MUX 1 2 3
-//MUX1
+// PORTB MUX1
     DEF_TIM(TMR1,  CH2N, PB0,  0, 0,  0),
     DEF_TIM(TMR1,  CH3N, PB1,  0, 0,  0),
     DEF_TIM(TMR2,  CH4,  PB2,  0, 0,  0),
@@ -85,7 +84,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TMR1,  CH1N, PB13, 0, 0,  0),
     DEF_TIM(TMR1,  CH2N, PB14, 0, 0,  0),
     DEF_TIM(TMR1,  CH3N, PB15, 0, 0,  0),
-//MUX2
+
+// PORTB MUX2
     DEF_TIM(TMR3,  CH3,  PB0,  0, 0,  0),
     DEF_TIM(TMR3,  CH4,  PB1,  0, 0,  0),
     DEF_TIM(TMR20, CH1,  PB2,  0, 0,  0),
@@ -97,26 +97,94 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TMR4,  CH4,  PB9,  0, 10, 9),
     DEF_TIM(TMR5,  CH4,  PB11, 0, 0,  0),
     DEF_TIM(TMR5,  CH1,  PB12, 0, 0,  0),
-//MUX3
+// PORTB MUX3
     DEF_TIM(TMR8,  CH2N, PB0,  0, 0,  0),
     DEF_TIM(TMR8,  CH3N, PB1,  0, 0,  0),
     DEF_TIM(TMR8,  CH2N, PB14, 0, 0,  0),
     DEF_TIM(TMR8,  CH3N, PB15, 0, 0,  0),
+// PORTB MUX9
+    DEF_TIM(TMR12, CH1,  PB14, 0, 0,  0),
+    DEF_TIM(TMR12, CH2,  PB15, 0, 0,  0),
 
-// Port C ORDER BY MUX 1 2 3
-//MUX2
+// PORTC MUX2
     DEF_TIM(TMR20, CH2,  PC2,  0, 0,  0),
-    DEF_TIM(TMR3,  CH1,  PC6,  0, 0,  12),
+    DEF_TIM(TMR3,  CH1,  PC6,  0, 0,  0),
     DEF_TIM(TMR3,  CH2,  PC7,  0, 0,  12),
     DEF_TIM(TMR3,  CH3,  PC8,  0, 0,  12),
     DEF_TIM(TMR3,  CH4,  PC9,  0, 0,  12),
-    DEF_TIM(TMR5,  CH2,  PC10, 0, 0,  0),
+    DEF_TIM(TMR5,  CH2,  PC10, 0, 0,  12),
     DEF_TIM(TMR5,  CH3,  PC11, 0, 0,  0),
-//MUX 3
+
+// PORTC MUX 3
     DEF_TIM(TMR8,  CH1,  PC6,  0, 0,  0),
     DEF_TIM(TMR8,  CH2,  PC7,  0, 0,  0),
     DEF_TIM(TMR8,  CH3,  PC8,  0, 0,  0),
     DEF_TIM(TMR8,  CH4,  PC9,  0, 0,  0),
+    DEF_TIM(TMR11, CH1N, PC12, 0, 0,  0),
+
+// PORTD MUX 2
+    DEF_TIM(TMR4,  CH1,  PD12, 0, 0,  0),
+    DEF_TIM(TMR4,  CH2,  PD13, 0, 0,  0),
+    DEF_TIM(TMR4,  CH3,  PD14, 0, 0,  0),
+    DEF_TIM(TMR4,  CH4,  PD15, 0, 0,  0),
+
+// PORTE MUX 1
+    DEF_TIM(TMR1,  CH2N, PE1,  0, 0,  0),
+    DEF_TIM(TMR1,  CH1N, PE8,  0, 0,  0),
+    DEF_TIM(TMR1,  CH1,  PE9,  0, 0,  0),
+    DEF_TIM(TMR1,  CH2N, PE10, 0, 0,  0),
+    DEF_TIM(TMR1,  CH2,  PE11, 0, 0,  0),
+    DEF_TIM(TMR1,  CH3N, PE12, 0, 0,  0),
+    DEF_TIM(TMR1,  CH3,  PE13, 0, 0,  0),
+    DEF_TIM(TMR1,  CH4,  PE14, 0, 0,  0),
+
+// PORTE MUX 2
+    DEF_TIM(TMR3,  CH1,  PE3,  0, 0,  0),
+    DEF_TIM(TMR3,  CH2,  PE4,  0, 0,  0),
+    DEF_TIM(TMR3,  CH3,  PE5,  0, 0,  0),
+    DEF_TIM(TMR3,  CH4,  PE6,  0, 0,  0),
+
+// PORTE MUX 3
+    DEF_TIM(TMR9,  CH1,  PE5,  0, 0,  0),
+    DEF_TIM(TMR9,  CH2,  PE6,  0, 0,  0),
+
+// PORTE MUX 6
+    DEF_TIM(TMR20, CH4,  PE1,  0, 0,  0),
+    DEF_TIM(TMR20, CH1,  PE2,  0, 0,  0),
+    DEF_TIM(TMR20, CH2,  PE3,  0, 0,  0),
+    DEF_TIM(TMR20, CH1N, PE4,  0, 0,  0),
+    DEF_TIM(TMR20, CH2N, PE5,  0, 0,  0),
+    DEF_TIM(TMR20, CH3N, PE6,  0, 0,  0),
+
+// PORTF MUX 2
+    DEF_TIM(TMR20, CH3,  PF2,  0, 0,  0),
+    DEF_TIM(TMR20, CH4,  PF3,  0, 0,  0),
+    DEF_TIM(TMR20, CH1N, PF4,  0, 0,  0),
+    DEF_TIM(TMR20, CH2N, PF5,  0, 0,  0),
+    DEF_TIM(TMR20, CH4,  PF6,  0, 0,  0),
+    DEF_TIM(TMR20, CH1,  PF12, 0, 0,  0),
+    DEF_TIM(TMR20, CH2,  PF13, 0, 0,  0),
+    DEF_TIM(TMR20, CH3,  PF14, 0, 0,  0),
+    DEF_TIM(TMR20, CH4,  PF15, 0, 0,  0),
+
+// PORTF MUX 3
+    DEF_TIM(TMR10, CH1,  PF6,  0, 0,  0),
+    DEF_TIM(TMR11, CH1,  PF7,  0, 0,  0),
+
+// PORTF MUX 9
+    DEF_TIM(TMR13, CH1,  PF8,  0, 0,  0),
+    DEF_TIM(TMR14, CH1,  PF9,  0, 0,  0),
+
+// Port G ORDER BY MUX 1 2 3
+// MUX2
+    DEF_TIM(TMR20, CH1N, PG0,  0, 0,  0),
+    DEF_TIM(TMR20, CH2N, PG1,  0, 0,  0),
+    DEF_TIM(TMR20, CH3N, PG2,  0, 0,  0),
+
+// Port H ORDER BY MUX 1 2 3
+// MUX2
+    DEF_TIM(TMR5,  CH1,  PH2,  0, 0,  0),
+    DEF_TIM(TMR5,  CH2,  PH3,  0, 0,  0),
   };
 #endif
 

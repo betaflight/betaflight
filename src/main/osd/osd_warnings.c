@@ -173,7 +173,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // RSSI
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         tfp_sprintf(warningText, "RSSI LOW");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
@@ -181,7 +181,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // rssi dbm
     if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() < osdConfig()->rssi_dbm_alarm)) {
         tfp_sprintf(warningText, "RSSI DBM");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
@@ -190,7 +190,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // rsnr
     if (osdWarnGetState(OSD_WARNING_RSNR) && (getRsnr() < osdConfig()->rsnr_alarm)) {
         tfp_sprintf(warningText, "RSNR LOW");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
@@ -200,7 +200,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // Link Quality
     if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
         tfp_sprintf(warningText, "LINK QUALITY");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
     }
@@ -282,7 +282,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             const char motorNumber = '1' + i;
             // if everything is OK just display motor number else R, T or C
             char warnFlag = motorNumber;
-            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
+            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
                 warnFlag = 'R';
             }
             if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
@@ -338,7 +338,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
             // Add esc warnings
             if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
-                    && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) != 0
+                    && isDshotMotorTelemetryActive(k)
                     && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) <= osdConfig()->esc_rpm_alarm) {
                 warningText[dshotEscErrorLength++] = 'R';
             }

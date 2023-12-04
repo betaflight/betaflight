@@ -55,6 +55,8 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
+#define USE_DSHOT_BITBAND
+
 #define USE_BEEPER
 
 #define DEFAULT_MOTOR_DSHOT_SPEED PWM_TYPE_DSHOT300
@@ -75,5 +77,7 @@
 #define USE_ADC
 
 #define USE_EXTI
+
+#define USE_PID_DENOM_CHECK
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors

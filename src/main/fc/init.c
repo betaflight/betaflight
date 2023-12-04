@@ -51,9 +51,10 @@
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
-#include "drivers/camera_control.h"
+#include "drivers/camera_control_impl.h"
 #include "drivers/compass/compass.h"
 #include "drivers/dma.h"
+#include "drivers/dshot.h"
 #include "drivers/exti.h"
 #include "drivers/flash.h"
 #include "drivers/inverter.h"
@@ -116,7 +117,6 @@
 #include "io/piniobox.h"
 #include "io/rcdevice_cam.h"
 #include "io/serial.h"
-#include "io/servos.h"
 #include "io/transponder_ir.h"
 #include "io/vtx.h"
 #include "io/vtx_control.h"
@@ -694,6 +694,11 @@ void init(void)
     // Now reset the targetLooptime as it's possible for the validation to change the pid_process_denom
     gyroSetTargetLooptime(pidConfig()->pid_process_denom);
 
+#ifdef USE_DSHOT_TELEMETRY
+    // Initialize the motor frequency filter now that we have a target looptime
+    initDshotTelemetry(gyro.targetLooptime);
+#endif
+
     // Finally initialize the gyro filtering
     gyroInitFilters();
 
@@ -854,12 +859,6 @@ void init(void)
 #endif
 
 #endif // VTX_CONTROL
-
-#ifdef USE_TIMER
-    // start all timers
-    // TODO - not implemented yet
-    timerStart();
-#endif
 
     batteryInit(); // always needs doing, regardless of features.
 

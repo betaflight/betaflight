@@ -491,9 +491,6 @@ static const void *saCmsConfigFreqModeByGvar(displayPort_t *pDisp, const void *s
 
 static const void *saCmsCommence(displayPort_t *pDisp, const void *self)
 {
-    UNUSED(pDisp);
-    UNUSED(self);
-
     const vtxSettingsConfig_t prevSettings = {
         .band = vtxSettingsConfig()->band,
         .channel = vtxSettingsConfig()->channel,
@@ -536,6 +533,8 @@ static const void *saCmsCommence(displayPort_t *pDisp, const void *self)
         vtxSettingsConfigMutable()->freq = newSettings.freq;
         saveConfigAndNotify();
     }
+
+    cmsMenuExit(pDisp, self);
 
     return MENU_CHAIN_BACK;
 }
@@ -682,7 +681,7 @@ static CMS_Menu saCmsMenuConfig = {
 static const OSD_Entry saCmsMenuCommenceEntries[] = {
     { "CONFIRM", OME_Label,   NULL,          NULL },
 
-    { "YES",     OME_Funcall, saCmsCommence, NULL },
+    { "YES",   OME_OSD_Exit, saCmsCommence, (void *)CMS_EXIT },
 
     { "NO",    OME_Back, NULL, NULL },
     { NULL,      OME_END, NULL, NULL }
@@ -706,7 +705,7 @@ static const OSD_Entry saCmsMenuFreqModeEntries[] = {
     { "FREQ",   OME_Submenu | OPTSTRING, (CMSEntryFuncPtr)saCmsUserFreqGetString,  &saCmsMenuUserFreq },
     { "POWER",  OME_TAB | DYNAMIC,     saCmsConfigPowerByGvar,                   &saCmsEntPower },
     { "PIT",    OME_TAB | DYNAMIC,     saCmsConfigPitByGvar,                     &saCmsEntPit },
-    { "SAVE",   OME_Submenu, cmsMenuChange,                            &saCmsMenuCommence },
+    { "SAVE&EXIT", OME_Submenu, cmsMenuChange,                            &saCmsMenuCommence },
     { "CONFIG", OME_Submenu, cmsMenuChange,                            &saCmsMenuConfig },
 
     { "BACK", OME_Back, NULL, NULL },
@@ -723,7 +722,7 @@ static const OSD_Entry saCmsMenuChanModeEntries[] =
     { "(FREQ)", OME_UINT16 | DYNAMIC,  NULL,                   &saCmsEntFreqRef },
     { "POWER",  OME_TAB | DYNAMIC,     saCmsConfigPowerByGvar, &saCmsEntPower },
     { "PIT",    OME_TAB | DYNAMIC,     saCmsConfigPitByGvar,   &saCmsEntPit },
-    { "SAVE",   OME_Submenu, cmsMenuChange,          &saCmsMenuCommence },
+    { "SAVE&EXIT", OME_Submenu, cmsMenuChange,          &saCmsMenuCommence },
     { "CONFIG", OME_Submenu, cmsMenuChange,          &saCmsMenuConfig },
 
     { "BACK",   OME_Back, NULL, NULL },

@@ -121,6 +121,26 @@ static inline fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_
     return result;
 }
 
+static inline fpMat33_t * yawToRotationMatrixZ(fpMat33_t * result, const float yaw)
+{
+    fpMat33_t r;
+    const float sinYaw = sin_approx(yaw);
+    const float cosYaw = cos_approx(yaw);
+
+    r.m[0][0] = cosYaw;
+    r.m[1][0] = sinYaw;
+    r.m[2][0] = 0.0f;
+    r.m[0][1] = -sinYaw;
+    r.m[1][1] = cosYaw;
+    r.m[2][1] = 0.0f;
+    r.m[0][2] = 0.0f;
+    r.m[1][2] = 0.0f;
+    r.m[2][2] = 1.0f;
+
+    *result = r;
+    return result;
+}
+
 static inline fpVector3_t * matrixTrnVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
 {
     fpVector3_t r;

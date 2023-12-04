@@ -134,7 +134,13 @@ void timerConfigure(const timerHardware_t *timHw, uint16_t period, uint32_t hz);
 // Initialisation
 //
 void timerInit(void);
-void timerStart(void);
+
+//
+// per-timer
+//
+
+// once-upon-a-time all the timers were started on boot, now they are started when needed.
+void timerStart(TIM_TypeDef *tim);
 
 //
 // per-channel

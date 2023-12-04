@@ -30,4 +30,3 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs);
 void rpmFilterUpdate(void);
 float rpmFilterApply(const int axis, float value);
 bool isRpmFilterEnabled(void);
-float getMinMotorFrequency(void);

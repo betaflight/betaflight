@@ -60,7 +60,12 @@ typedef enum {
 } crsfFrameType_e;
 
 enum {
+    CRSF_COMMAND_SUBCMD_RX = 0x10,    // receiver command
     CRSF_COMMAND_SUBCMD_GENERAL = 0x0A,    // general command
+};
+
+enum {
+    CRSF_COMMAND_SUBCMD_RX_BIND = 0x01,    // bind command
 };
 
 enum {

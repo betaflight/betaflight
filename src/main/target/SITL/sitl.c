@@ -18,6 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -318,9 +319,6 @@ void systemInit(void)
     ret = udpInit(&rcLink, NULL, PORT_RC, true);
     printf("[SITL] start UDP server for RC input @%d...%d\n", PORT_RC, ret);
 
-    ret = udpInit(&stateLink, NULL, 9003, true);
-    printf("start UDP server...%d\n", ret);
-
     ret = pthread_create(&udpWorker, NULL, udpThread, NULL);
     if (ret != 0) {
         printf("Create udpWorker error!\n");
@@ -356,10 +354,6 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 void timerInit(void)
 {
     printf("[timer]Init...\n");
-}
-
-void timerStart(void)
-{
 }
 
 void failureMode(failureMode_e mode)

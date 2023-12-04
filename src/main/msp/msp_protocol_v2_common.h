@@ -20,3 +20,6 @@
 
 #define MSP2_COMMON_SERIAL_CONFIG       0x1009
 #define MSP2_COMMON_SET_SERIAL_CONFIG   0x100A
+
+// Sensors
+#define MSP2_SENSOR_GPS                 0x1F03

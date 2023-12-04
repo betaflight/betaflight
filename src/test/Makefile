@@ -109,8 +109,13 @@ cli_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/config/feature.c \
+		$(USER_DIR)/io/gps.c \
 		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/drivers/serial.c \
 		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
@@ -478,12 +483,13 @@ GTEST_DIR = ../../lib/test/gtest
 
 CC  := clang-12
 CXX := clang++-12
+ifneq ($(OSFAMILY), linux)
 ifeq ($(shell which $(CC) 2>/dev/null),)
-$(info Falling back to 'clang'.)
+$(info Falling back to 'clang' on Windows and OSX.)
 CC  := clang
 CXX := clang++
 endif
-
+endif
 #CC  := gcc
 #CXX := g++
 

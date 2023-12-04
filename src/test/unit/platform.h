@@ -43,13 +43,13 @@
 #define USE_SERVOS
 #define USE_TRANSPONDER
 
-#ifndef LED_MAX_STRIP_LENGTH
+#ifndef LED_STRIP_MAX_LENGTH
     #ifdef USE_LED_STRIP_64
-        #define LED_MAX_STRIP_LENGTH           64
+        #define LED_STRIP_MAX_LENGTH           64
     #else
-        #define LED_MAX_STRIP_LENGTH           32
+        #define LED_STRIP_MAX_LENGTH           32
     #endif
-#endif // #ifndef LED_MAX_STRIP_LENGTH
+#endif // #ifndef LED_STRIP_MAX_LENGTH
 
 typedef enum
 {

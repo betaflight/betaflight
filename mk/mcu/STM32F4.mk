@@ -181,6 +181,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/timer_stm32f4xx.c \
             drivers/stm32/transponder_ir_io_stdperiph.c \
             drivers/stm32/usbd_msc_desc.c \
+            drivers/stm32/camera_control.c \
             startup/system_stm32f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)

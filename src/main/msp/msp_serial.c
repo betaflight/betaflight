@@ -69,6 +69,8 @@ void mspSerialAllocatePorts(void)
 
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
+        } else if ((portConfig->identifier >= SERIAL_PORT_USART1) && (portConfig->identifier <= SERIAL_PORT_USART_MAX)){
+            options |= SERIAL_CHECK_TX;
         }
 
         serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, options);

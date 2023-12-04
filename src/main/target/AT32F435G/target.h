@@ -88,9 +88,9 @@
 // #undef USE_DSHOT_BITBANG
 // burst mode not implemented yet
 #undef USE_DSHOT_DMAR
+#define USE_DSHOT_BITBAND
 
 #define USE_BEEPER
-#undef USE_CAMERA_CONTROL
 #undef USE_RX_PPM
 #undef USE_RX_PWM
 #undef USE_RX_SPI

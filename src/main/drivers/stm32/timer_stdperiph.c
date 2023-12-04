@@ -321,6 +321,11 @@ void timerNVICConfigure(uint8_t irq)
     NVIC_Init(&NVIC_InitStructure);
 }
 
+void timerReconfigureTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
+{
+    configTimeBase(tim, period, hz);
+}
+
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
 {
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
@@ -851,34 +856,9 @@ void timerInit(void)
     }
 }
 
-// finish configuring timers after allocation phase
-// start timers
-// TODO - Work in progress - initialization routine must be modified/verified to start correctly without timers
-void timerStart(void)
+void timerStart(TIM_TypeDef *tim)
 {
-#if 0
-    for (unsigned timer = 0; timer < USED_TIMER_COUNT; timer++) {
-        int priority = -1;
-        int irq = -1;
-        for (unsigned hwc = 0; hwc < TIMER_CHANNEL_COUNT; hwc++)
-            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (TIMER_HARDWARE[hwc].tim == usedTimers[timer])) {
-                // TODO - move IRQ to timer info
-                irq = TIMER_HARDWARE[hwc].irq;
-            }
-        // TODO - aggregate required timer parameters
-        configTimeBase(usedTimers[timer], 0, 1);
-        TIM_Cmd(usedTimers[timer],  ENABLE);
-        if (priority >= 0) {  // maybe none of the channels was configured
-            NVIC_InitTypeDef NVIC_InitStructure;
-
-            NVIC_InitStructure.NVIC_IRQChannel = irq;
-            NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_SPLIT_PRIORITY_BASE(priority);
-            NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_SPLIT_PRIORITY_SUB(priority);
-            NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-            NVIC_Init(&NVIC_InitStructure);
-        }
-    }
-#endif
+    TIM_Cmd(tim,  ENABLE);
 }
 
 /**

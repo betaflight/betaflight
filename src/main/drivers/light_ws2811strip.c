@@ -47,7 +47,7 @@
 
 #include "scheduler/scheduler.h"
 
-#ifdef USE_LEDSTRIP_CACHE_MGMT
+#ifdef USE_LED_STRIP_CACHE_MGMT
 // WS2811_DMA_BUFFER_SIZE is multiples of uint32_t
 // Number of bytes required for buffer
 #define WS2811_DMA_BUF_BYTES              (WS2811_DMA_BUFFER_SIZE * sizeof(uint32_t))
@@ -210,7 +210,7 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
     }
     needsFullRefresh = false;
 
-#ifdef USE_LEDSTRIP_CACHE_MGMT
+#ifdef USE_LED_STRIP_CACHE_MGMT
     SCB_CleanDCache_by_Addr(ledStripDMABuffer, WS2811_DMA_BUF_CACHE_ALIGN_BYTES);
 #endif
 

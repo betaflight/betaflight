@@ -73,7 +73,6 @@ COMMON_SRC = \
             target/config_helper.c \
             fc/init.c \
             fc/controlrate_profile.c \
-            drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
             drivers/rx/rx_spi.c \
             drivers/rx/rx_xn297.c \
@@ -106,6 +105,7 @@ COMMON_SRC = \
             rx/msp.c \
             rx/pwm.c \
             rx/frsky_crc.c \
+            rx/rc_stats.c \
             rx/rx.c \
             rx/rx_bind.c \
             rx/rx_spi.c \
@@ -151,6 +151,8 @@ COMMON_SRC = \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
             cms/cms_menu_persistent_stats.c \
+            cms/cms_menu_rpm_limit.c \
+            cms/cms_menu_quick.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
@@ -325,6 +327,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/pid.c \
             flight/rpm_filter.c \
             rx/ibus.c \
+            rx/rc_stats.c \
             rx/rx.c \
             rx/rx_spi.c \
             rx/crsf.c \
@@ -366,6 +369,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_qmc5883l.c \
             drivers/compass/compass_lis3mdl.c \
+            drivers/compass/compass_ist8310.c \
             drivers/display_ug2864hsweg01.c \
             drivers/inverter.c \
             drivers/light_ws2811strip.c \
@@ -410,6 +414,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
             cms/cms_menu_persistent_stats.c \
+            cms/cms_menu_rpm_limit.c \
+            cms/cms_menu_quick.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \

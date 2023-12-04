@@ -54,6 +54,9 @@
 #define PARAM_NAME_RATES_TYPE "rates_type"
 #define PARAM_NAME_TPA_RATE "tpa_rate"
 #define PARAM_NAME_TPA_BREAKPOINT "tpa_breakpoint"
+#define PARAM_NAME_TPA_RATE_LOWER "tpa_rate_lower"
+#define PARAM_NAME_TPA_BREAKPOINT_LOWER "tpa_breakpoint_lower"
+#define PARAM_NAME_TPA_BREAKPOINT_LOWER_FADE "tpa_breakpoint_lower_fade"
 #define PARAM_NAME_TPA_MODE "tpa_mode"
 #define PARAM_NAME_THROTTLE_LIMIT_TYPE "throttle_limit_type"
 #define PARAM_NAME_THROTTLE_LIMIT_PERCENT "throttle_limit_percent"
@@ -116,6 +119,7 @@
 #define PARAM_NAME_SIMPLIFIED_GYRO_FILTER_MULTIPLIER "simplified_gyro_filter_multiplier"
 #define PARAM_NAME_DEBUG_MODE "debug_mode"
 #define PARAM_NAME_RPM_FILTER_HARMONICS "rpm_filter_harmonics"
+#define PARAM_NAME_RPM_FILTER_WEIGHTS "rpm_filter_weights"
 #define PARAM_NAME_RPM_FILTER_Q "rpm_filter_q"
 #define PARAM_NAME_RPM_FILTER_MIN_HZ "rpm_filter_min_hz"
 #define PARAM_NAME_RPM_FILTER_FADE_RANGE_HZ "rpm_filter_fade_range_hz"
@@ -143,9 +147,9 @@
 #define PARAM_NAME_GPS_AUTO_CONFIG "gps_auto_config"
 #define PARAM_NAME_GPS_AUTO_BAUD "gps_auto_baud"
 #define PARAM_NAME_GPS_UBLOX_USE_GALILEO "gps_ublox_use_galileo"
-#define PARAM_NAME_GPS_UBLOX_FULL_POWER "gps_ublox_full_power"
 #define PARAM_NAME_GPS_UBLOX_ACQUIRE_MODEL "gps_ublox_acquire_model"
 #define PARAM_NAME_GPS_UBLOX_FLIGHT_MODEL "gps_ublox_flight_model"
+#define PARAM_NAME_GPS_UBLOX_UTC_STANDARD "gps_ublox_utc_standard"
 #define PARAM_NAME_GPS_SET_HOME_POINT_ONCE "gps_set_home_point_once"
 #define PARAM_NAME_GPS_USE_3D_SPEED "gps_use_3d_speed"
 #define PARAM_NAME_GPS_NMEA_CUSTOM_COMMANDS "gps_nmea_custom_commands"
@@ -158,10 +162,11 @@
 #define PARAM_NAME_GPS_RESCUE_ASCEND_RATE "gps_rescue_ascend_rate"
 
 #define PARAM_NAME_GPS_RESCUE_RETURN_ALT "gps_rescue_return_alt"
-#define PARAM_NAME_GPS_RESCUE_RETURN_SPEED "gps_rescue_ground_speed"
+#define PARAM_NAME_GPS_RESCUE_GROUND_SPEED "gps_rescue_ground_speed"
 #define PARAM_NAME_GPS_RESCUE_MAX_RESCUE_ANGLE "gps_rescue_max_angle"
 #define PARAM_NAME_GPS_RESCUE_ROLL_MIX "gps_rescue_roll_mix"
 #define PARAM_NAME_GPS_RESCUE_PITCH_CUTOFF "gps_rescue_pitch_cutoff"
+#define PARAM_NAME_GPS_RESCUE_IMU_YAW_GAIN "gps_rescue_imu_yaw_gain"
 
 #define PARAM_NAME_GPS_RESCUE_DESCENT_DIST "gps_rescue_descent_dist"
 #define PARAM_NAME_GPS_RESCUE_DESCEND_RATE "gps_rescue_descend_rate"
@@ -195,4 +200,12 @@
 #define PARAM_NAME_GPS_LAP_TIMER_MIN_LAP_TIME "gps_lap_timer_min_lap_time_s"
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_TOLERANCE "gps_lap_timer_gate_tolerance_m"
 #endif // USE_GPS_LAP_TIMER
+#endif
+
+#define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
+#define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"
+#define PARAM_NAME_IMU_SMALL_ANGLE "small_angle"
+#define PARAM_NAME_IMU_PROCESS_DENOM "imu_process_denom"
+#ifdef USE_MAG
+#define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif

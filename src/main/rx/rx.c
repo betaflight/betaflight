@@ -750,7 +750,7 @@ void detectAndApplySignalLossBehaviour(void)
         //  --> start the timer to exit stage 2 failsafe 100ms after losing all packets or the BOXFAILSAFE switch is actioned
     } else {
         failsafeOnValidDataFailed();
-        //  -> start timer to enter stage2 failsafe the instant we get a good packet or the BOXFAILSAFE switch is reverted
+        //  -> start stage 1 timer to enter stage2 failsafe the instant we get a good packet or the BOXFAILSAFE switch is reverted
     }
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 3, rcData[THROTTLE]);

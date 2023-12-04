@@ -673,15 +673,19 @@ void validateAndFixGyroConfig(void)
         // check for looptime restrictions based on motor protocol. Motor times have safety margin
         float motorUpdateRestriction;
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(USE_DSHOT) && defined(USE_PID_DENOM_CHECK)
         /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
          */
-        if (motorConfig()->dev.useDshotTelemetry && (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600)) {
-            motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+        if (motorConfig()->dev.useDshotTelemetry) {
+            if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600) {
+                motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+            }
+            if (gyro.sampleRateHz > 4000) {
+                pidConfigMutable()->pid_process_denom = 2;
+            }
         }
-#endif
-
+#endif // USE_DSHOT && USE_PID_DENOM_CHECK
         switch (motorConfig()->dev.motorPwmProtocol) {
         case PWM_TYPE_STANDARD:
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;

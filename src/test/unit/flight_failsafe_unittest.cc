@@ -86,7 +86,7 @@ void configureFailsafe(void)
     failsafeConfigMutable()->failsafe_throttle = 1200;
     failsafeConfigMutable()->failsafe_throttle_low_delay = 100; // 10 seconds
     failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
-    // NB we don't have failsafe_recovery_delay so use PERIOD_RXDATA_RECOVERY (200ms)
+    // NB we don't have failsafe_recovery_delay so use PERIOD_RXDATA_RECOVERY (100ms)
     sysTickUptime = 0;
 }
 
