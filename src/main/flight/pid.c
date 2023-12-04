@@ -90,12 +90,8 @@ pt1Filter_t throttleLpf;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
-#if !defined(DEFAULT_PID_PROCESS_DENOM)
-#if defined(STM32F411xE)
-#define DEFAULT_PID_PROCESS_DENOM       2
-#else
+#ifndef DEFAULT_PID_PROCESS_DENOM
 #define DEFAULT_PID_PROCESS_DENOM       1
-#endif
 #endif
 
 #ifdef USE_RUNAWAY_TAKEOFF
