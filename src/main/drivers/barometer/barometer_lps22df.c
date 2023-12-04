@@ -367,7 +367,7 @@ static int32_t lps22dfCompensateTemperature(int32_t adc_T)
 // Output value of "24674867" represents 24674867/256 = 96386.2 Pa = 963.862 hPa
 static uint32_t lps22dfCompensatePressure(int32_t adc_P)
 {
-    return (uint32_t)adc_P * 100.0 / 16;
+    return (uint32_t)(adc_P * 100.0f / 16);
 }
 
 STATIC_UNIT_TESTED void lps22dfCalculate(int32_t *pressure, int32_t *temperature)
