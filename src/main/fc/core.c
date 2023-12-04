@@ -77,7 +77,6 @@
 #include "io/gps.h"
 #include "io/pidaudio.h"
 #include "io/serial.h"
-#include "io/servos.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
