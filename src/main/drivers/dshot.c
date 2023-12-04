@@ -51,8 +51,6 @@
 
 #include "rx/rx.h"
 
-#include "sensors/battery.h"
-
 #include "dshot.h"
 
 #define ERPM_PER_LSB            100.0f
@@ -384,16 +382,6 @@ bool isDshotTelemetryActive(void)
 void dshotCleanTelemetryData(void)
 {
     memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
-}
-
-float dshotEstimateMaxRpm(void)
-{
-    // Empirical testing found this relationship between estimated max RPM without props attached
-    // (unloaded) and measured max RPM with props attached (loaded), independent from prop size
-    float unloadedRpmMax = 0.01f * getBatteryVoltage() * motorConfig()->kv;
-    float loadDerating = -5.44e-6f * unloadedRpmMax + 0.944f;
-
-    return unloadedRpmMax * loadDerating;
 }
 
 #endif // USE_DSHOT_TELEMETRY
