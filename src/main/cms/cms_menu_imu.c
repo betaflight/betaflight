@@ -731,7 +731,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint, 1000, 2000, 10} },
     { "TPA RATE LOW",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate_lower,        0,   100,    1, 10} },
     { "TPA BRKPT LOW",     OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint_lower,      1000, 2000, 10} },
-    { "TPA BRKPT LOW VAN", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_tpa_breakpoint_lower_fade,    0,    1,  1} }, // ToDo: confirm this is correct
+    { "TPA BRKPT LOW FAD", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_tpa_breakpoint_lower_fade,    0,    1,  1} },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
