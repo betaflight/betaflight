@@ -43,6 +43,7 @@
 #include "drivers/compass/compass_ak8963.h"
 #include "drivers/compass/compass_virtual.h"
 #include "drivers/compass/compass_hmc5883l.h"
+#include "drivers/compass/compass_lis2mdl.h"
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
 #include "drivers/compass/compass_qmc5883l.h"
@@ -86,7 +87,7 @@ static compassBiasEstimator_t compassBiasEstimator;
 magDev_t magDev;
 mag_t mag;
 
-PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 4);
 
 // If the i2c bus is busy, try again in 500us
 #define COMPASS_BUS_BUSY_INTERVAL_US 500
@@ -221,6 +222,22 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
             *alignment = MAG_HMC5883_ALIGN;
 #endif
             magHardware = MAG_HMC5883;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+    case MAG_LIS2MDL:
+#if defined(USE_MAG_LIS2MDL)
+        if (dev->bus->busType == BUS_TYPE_I2C) {
+            dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (lis2mdlDetect(magDev)) {
+#ifdef MAG_LIS3MDL_ALIGN
+            *alignment = MAG_LIS2MDL_ALIGN;
+#endif
+            magHardware = MAG_LIS2MDL;
             break;
         }
 #endif
