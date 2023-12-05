@@ -224,6 +224,10 @@
 
 #endif // USE_TELEMETRY
 
+#ifdef USE_DSHOT_TELEMETRY
+#define USE_RPM_LIMIT
+#endif
+
 #define USE_BATTERY_CONTINUE
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
@@ -253,7 +257,7 @@
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
 
-#endif
+#endif // TARGET_FLASH_SIZE > 512
 
 #endif // !defined(CLOUD_BUILD)
 
