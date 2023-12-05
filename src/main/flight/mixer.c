@@ -349,7 +349,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
     static float prevError = 0.0f;
     static float i = 0.0f;
-    const float unsmoothedAverageRpm = getDshotAverageRpm();
+    const float unsmoothedAverageRpm = getDshotRpmAverage();
     const float averageRpm = pt1FilterApply(&mixer->averageRpmFilter, unsmoothedAverageRpm);
     const float error = averageRpm - mixer->rpmLimiterRpmLimit;
 
