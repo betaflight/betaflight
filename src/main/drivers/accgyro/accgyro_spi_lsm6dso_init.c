@@ -40,9 +40,6 @@
 
 #define LSM6DSO_CHIP_ID 0x6C
 
-// equivalent to 70 mdps/LSB, as specified in LSM6DSO datasheet section 4.1, symbol G_So
-#define LSM6DSO_GYRO_SCALE_2000DPS 0.070f
-
 // LSM6DSO register configuration values
 typedef enum {
     LSM6DSO_VAL_INT1_CTRL = 0x02,             // enable gyro data ready interrupt pin 1
@@ -201,7 +198,7 @@ bool lsm6dsoSpiGyroDetect(gyroDev_t *gyro)
 
     gyro->initFn = lsm6dsoSpiGyroInit;
     gyro->readFn = lsm6dsoGyroRead;
-    gyro->scale = LSM6DSO_GYRO_SCALE_2000DPS;
+    gyro->scale = GYRO_SCALE_2000DPS;
 
     return true;
 }
