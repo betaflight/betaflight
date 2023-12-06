@@ -344,12 +344,13 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 }
 
 #ifdef USE_RPM_LIMIT
+#define STICK_HIGH_DEADBAND 5    // deadband to make sure throttle cap can raise, even with maxcheck set around 2000
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
     static float prevError = 0.0f;
     static float i = 0.0f;
-    const float unsmoothedAverageRpm = getDshotAverageRpm();
-    const float averageRpm = pt1FilterApply(&mixer->averageRpmFilter, unsmoothedAverageRpm);
+    const float unsmoothedAverageRpm = getDshotRpmAverage();
+    const float averageRpm = pt1FilterApply(&mixer->rpmLimiterAverageRpmFilter, unsmoothedAverageRpm);
     const float error = averageRpm - mixer->rpmLimiterRpmLimit;
 
     // PID
@@ -362,11 +363,13 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     // Throttle limit learning
     if (error > 0.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
         mixer->rpmLimiterThrottleScale *= 1.0f - 4.8f * pidGetDT();
-    } else if (pidOutput < -400 * pidGetDT() && rcCommand[THROTTLE] >= rxConfig()->maxcheck && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
+    } else if (pidOutput < -400.0f * pidGetDT() && lrintf(rcCommand[THROTTLE]) >= rxConfig()->maxcheck - STICK_HIGH_DEADBAND && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
         mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
     }
     mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
-    throttle *= mixer->rpmLimiterThrottleScale;
+
+    float rpmLimiterThrottleScaleOffset = pt1FilterApply(&mixer->rpmLimiterThrottleScaleOffsetFilter, constrainf(mixer->rpmLimiterRpmLimit / motorEstimateMaxRpm(), 0.0f, 1.0f) - mixer->rpmLimiterInitialThrottleScale);
+    throttle *= constrainf(mixer->rpmLimiterThrottleScale + rpmLimiterThrottleScaleOffset, 0.0f, 1.0f);
 
     // Output
     pidOutput = MAX(0.0f, pidOutput);
@@ -374,7 +377,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     prevError = error;
 
     DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(unsmoothedAverageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(rpmLimiterThrottleScaleOffset * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
 }

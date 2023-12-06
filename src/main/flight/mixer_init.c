@@ -348,7 +348,8 @@ void mixerInitProfile(void)
     mixerRuntime.rpmLimiterPGain = mixerConfig()->rpm_limit_p * 15e-6f;
     mixerRuntime.rpmLimiterIGain = mixerConfig()->rpm_limit_i * 1e-3f * pidGetDT();
     mixerRuntime.rpmLimiterDGain = mixerConfig()->rpm_limit_d * 3e-7f * pidGetPidFrequency();
-    pt1FilterInit(&mixerRuntime.averageRpmFilter, pt1FilterGain(6.0f, pidGetDT()));
+    pt1FilterInit(&mixerRuntime.rpmLimiterAverageRpmFilter, pt1FilterGain(6.0f, pidGetDT()));
+    pt1FilterInit(&mixerRuntime.rpmLimiterThrottleScaleOffsetFilter, pt1FilterGain(2.0f, pidGetDT()));
     mixerResetRpmLimiter();
 #endif
 }
@@ -356,9 +357,10 @@ void mixerInitProfile(void)
 #ifdef USE_RPM_LIMIT
 void mixerResetRpmLimiter(void)
 {
-    const float maxExpectedRpm = MAX(1.0f, motorConfig()->kv * getBatteryVoltage() * 0.01f);
-    mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / maxExpectedRpm, 0.0f, 1.0f);
+    mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / motorEstimateMaxRpm(), 0.0f, 1.0f);
+    mixerRuntime.rpmLimiterInitialThrottleScale = mixerRuntime.rpmLimiterThrottleScale;
 }
+
 #endif // USE_RPM_LIMIT
 
 #ifdef USE_LAUNCH_CONTROL

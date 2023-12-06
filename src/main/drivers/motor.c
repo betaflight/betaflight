@@ -33,12 +33,14 @@
 #include "config/feature.h"
 
 #include "drivers/dshot.h" // for DSHOT_ constants in initEscEndpoints; may be gone in the future
-#include "drivers/pwm_output.h" // for PWM_TYPE_* and others
-#include "drivers/time.h"
 #include "drivers/dshot_bitbang.h"
 #include "drivers/dshot_dpwm.h"
+#include "drivers/pwm_output.h" // for PWM_TYPE_* and others
+#include "drivers/time.h"
 
 #include "fc/rc_controls.h" // for flight3DConfig_t
+
+#include "sensors/battery.h"
 
 #include "motor.h"
 
@@ -349,6 +351,16 @@ void motorEnable(void)
         motorDevice->enabled = true;
         motorDevice->motorEnableTimeMs = millis();
     }
+}
+
+float motorEstimateMaxRpm(void)
+{
+    // Empirical testing found this relationship between estimated max RPM without props attached
+    // (unloaded) and measured max RPM with props attached (loaded), independent from prop size
+    float unloadedMaxRpm = 0.01f * getBatteryVoltage() * motorConfig()->kv;
+    float loadDerating = -5.44e-6f * unloadedMaxRpm + 0.944f;
+
+    return unloadedMaxRpm * loadDerating;
 }
 
 bool motorIsEnabled(void)
