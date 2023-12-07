@@ -45,7 +45,7 @@
 #define ICM20689_WHO_AM_I_CONST             (0x98)
 #define ICM42605_WHO_AM_I_CONST             (0x42)
 #define ICM42688P_WHO_AM_I_CONST            (0x47)
-#define LSM6DSV16X_WHO_AM_I_CONST           (0x71) // TODO Datasheet says this should be 0x70
+#define LSM6DSV16X_WHO_AM_I_CONST           (0x70)
 
 // RA = Register Address
 
