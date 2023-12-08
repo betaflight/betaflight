@@ -269,4 +269,6 @@ extern const char * const lookupTableOffOn[];
 
 extern const char * const lookupTableSimplifiedTuningPidsMode[];
 
+extern const char * const lookupTableMixerType[];
+
 extern const char * const lookupTableCMSMenuBackgroundType[];
