@@ -375,10 +375,9 @@ static const char * const lookupOverclock[] = {
     };
 #endif
 
-static const char * const lookupTableThrottleLimitType[] = {
+const char * const lookupTableThrottleLimitType[] = {
     "OFF", "SCALE", "CLIP"
 };
-
 
 #ifdef USE_GPS_RESCUE
 static const char * const lookupTableRescueSanityType[] = {
