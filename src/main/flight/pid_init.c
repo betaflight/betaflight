@@ -428,11 +428,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.tpaBreakpoint = constrainf((pidProfile->tpa_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, 0.99f);
     // default of 1350 returns 0.35. range limited to 0 to 0.99
     pidRuntime.tpaMultiplier = (pidProfile->tpa_rate / 100.0f) / (1.0f - pidRuntime.tpaBreakpoint);
-    // it is assumed that tpaBreakpointLower is always less than or equal to tpaBreakpoint
-    pidRuntime.tpaBreakpointLower = constrainf((pidProfile->tpa_breakpoint_lower - PWM_RANGE_MIN) / 1000.0f, 0.01f, 1.0f);
-    pidRuntime.tpaBreakpointLower = MIN(pidRuntime.tpaBreakpointLower, pidRuntime.tpaBreakpoint);
-    pidRuntime.tpaMultiplierLower = pidProfile->tpa_rate_lower / (100.0f * pidRuntime.tpaBreakpointLower);
-    pidRuntime.tpaBreakpointLowerFade = pidProfile->tpa_breakpoint_lower_fade;
+    // it is assumed that tpaLowBreakpoint is always less than or equal to tpaBreakpoint
+    pidRuntime.tpaLowBreakpoint = constrainf((pidProfile->tpa_low_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.01f, 1.0f);
+    pidRuntime.tpaLowBreakpoint = MIN(pidRuntime.tpaLowBreakpoint, pidRuntime.tpaBreakpoint);
+    pidRuntime.tpaLowMultiplier = pidProfile->tpa_low_rate / (100.0f * pidRuntime.tpaLowBreakpoint);
+    pidRuntime.tpaLowAlways = pidProfile->tpa_low_always;
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
