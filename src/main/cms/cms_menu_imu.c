@@ -78,10 +78,6 @@ static uint8_t rateProfileIndex;
 static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static controlRateConfig_t rateProfile;
 
-static const char * const osdTableThrottleLimitType[] = {
-    "OFF", "SCALE", "CLIP"
-};
-
 #ifdef USE_MULTI_GYRO
 static const char * const osdTableGyroToUse[] = {
     "FIRST", "SECOND", "BOTH"
@@ -435,7 +431,7 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
     { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1} },
     { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1} },
 
-    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
+    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType} },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
 
     { "BACK", OME_Back, NULL, NULL },
