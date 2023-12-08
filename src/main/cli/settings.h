@@ -270,3 +270,5 @@ extern const char * const lookupTableOffOn[];
 extern const char * const lookupTableSimplifiedTuningPidsMode[];
 
 extern const char * const lookupTableCMSMenuBackgroundType[];
+
+extern const char * const lookupTableThrottleLimitType[];

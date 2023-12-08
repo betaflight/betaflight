@@ -45,6 +45,8 @@
 
 #include "sensors/battery.h"
 
+#include "cli/settings.h"
+
 #include "cms_menu_quick.h"
 
 static controlRateConfig_t rateProfile;
@@ -84,11 +86,6 @@ static const void *cmsx_RateProfileWriteback(displayPort_t *pDisp, const OSD_Ent
 
     return NULL;
 }
-
-
-static const char * const osdTableThrottleLimitType[] = {
-    "OFF", "SCALE", "CLIP"
-};
 
 static const OSD_Entry menuMainEntries[] =
 {
