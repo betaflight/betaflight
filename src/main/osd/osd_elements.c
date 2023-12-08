@@ -1130,19 +1130,16 @@ static void osdElementGpsSpeed(osdElementParms_t *element)
 
 static void osdElementEfficiency(osdElementParms_t *element)
 {
-    int efficiency = 0;
+    float efficiency = 0;
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && gpsSol.groundSpeed >= EFFICIENCY_MINIMUM_SPEED_CM_S) {
         const float speed = (float)osdGetSpeedToSelectedUnit(gpsSol.groundSpeed);
         const float mAmperage = (float)getAmperage() * 10.f; // Current in mA
-        efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed)));
+        const float batteryVoltage = getBatteryVoltage() / 100.0f;
+        efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed) * batteryVoltage / 1000.0f )); // mAh/speed * volts /1000 = Wh/distance
     }
-
-    const char unitSymbol = osdConfig()->units == UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
-    if (efficiency > 0 && efficiency <= 9999) {
-        tfp_sprintf(element->buff, "%4d%c/%c", efficiency, SYM_MAH, unitSymbol);
-    } else {
-        tfp_sprintf(element->buff, "----%c/%c", SYM_MAH, unitSymbol);
-    }
+        int efficiencyWholeNumber = (int)efficiency;
+        int efficiencyDecimalValue = (int)((efficiency - efficiencyWholeNumber) * 100);
+	 tfp_sprintf(element->buff, "%2d.%2dWh/", efficiencyWholeNumber, efficiencyDecimalValue);
 }
 #endif // USE_GPS
 
