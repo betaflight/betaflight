@@ -2112,8 +2112,7 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort, timeUs_t currentTim
 #ifdef USE_SPEC_PREARM_SCREEN
 void osdDrawSpec(displayPort_t *osdDisplayPort)
 {
-    if (!ARMING_FLAG(ARMED) && osdConfig()->osd_show_spec_prearm)
-    {
+    if (!ARMING_FLAG(ARMED) && osdConfig()->osd_show_spec_prearm) {
         const uint8_t midRow = osdDisplayPort->rows / 2;
         const uint8_t midCol = osdDisplayPort->cols / 2;
 
@@ -2126,7 +2125,7 @@ void osdDrawSpec(displayPort_t *osdDisplayPort)
         bool rpmLimitActive = false;
 
 #ifdef USE_RPM_LIMIT
-        rpmLimitActive = mixerConfig()->rpm_limit > 0 && isProtocolBidirectionalDshot(&motorConfig()->dev);
+        rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
         if (rpmLimitActive) {
             len = tfp_sprintf(buff, "RPM LIMIT ON  %d", mixerConfig()->rpm_limit_value);
         } else {

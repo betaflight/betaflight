@@ -1580,11 +1580,9 @@ void osdUpdate(timeUs_t currentTimeUs)
                 // There are more elements to draw
                 break;
             }
-            #ifdef USE_SPEC_PREARM_SCREEN
-            else {
+#ifdef USE_SPEC_PREARM_SCREEN
                 osdDrawSpec(osdDisplayPort);
-            }
-            #endif // USE_SPEC_PREARM_SCREEN
+#endif // USE_SPEC_PREARM_SCREEN
 
             osdElementGroup = 0;
 
