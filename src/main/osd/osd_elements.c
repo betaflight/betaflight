@@ -2122,10 +2122,8 @@ void osdDrawSpec(displayPort_t *osdDisplayPort)
         int len = 0;
         int currentRow = midRow - 3;
 
-        bool rpmLimitActive = false;
-
 #ifdef USE_RPM_LIMIT
-        rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
+        const bool rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
         if (rpmLimitActive) {
             len = tfp_sprintf(buff, "RPM LIMIT ON  %d", mixerConfig()->rpm_limit_value);
         } else {
@@ -2141,10 +2139,9 @@ void osdDrawSpec(displayPort_t *osdDisplayPort)
             memset(buff,0,strlen(buff));
             len = tfp_sprintf(buff, "%d  %d  %d", mixerConfig()->rpm_limit_p, mixerConfig()->rpm_limit_i, mixerConfig()->rpm_limit_d);
             displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
-        }
+        } else
 #endif // #USE_RPM_LIMIT
-
-        if (!rpmLimitActive) {
+        {
             memset(buff,0,strlen(buff));
             len = tfp_sprintf(buff, "THR LIMIT %s", lookupTableThrottleLimitType[currentControlRateProfile->throttle_limit_type]);
             if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
