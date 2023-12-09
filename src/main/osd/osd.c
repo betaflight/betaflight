@@ -1581,7 +1581,7 @@ void osdUpdate(timeUs_t currentTimeUs)
                 break;
             }
 #ifdef USE_SPEC_PREARM_SCREEN
-                osdDrawSpec(osdDisplayPort);
+            osdDrawSpec(osdDisplayPort);
 #endif // USE_SPEC_PREARM_SCREEN
 
             osdElementGroup = 0;
