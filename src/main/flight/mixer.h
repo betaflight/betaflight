@@ -71,6 +71,7 @@ typedef enum mixerType
     MIXER_LEGACY = 0,
     MIXER_LINEAR = 1,
     MIXER_DYNAMIC = 2,
+    MIXER_EZLANDING = 3,
 } mixerType_e;
 
 // Custom mixer data per motor
