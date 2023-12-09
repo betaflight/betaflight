@@ -230,6 +230,12 @@
 #define USE_RPM_LIMIT
 #endif
 
+#ifdef USE_OSD
+// CMS is defined outside this block.
+#define USE_QUICK_OSD_MENU
+#define USE_SPEC_PREARM_SCREEN
+#endif
+
 #define USE_BATTERY_CONTINUE
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
@@ -418,7 +424,6 @@
 
 #endif // defined(USE_OSD)
 
-
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
@@ -429,3 +434,23 @@
 #endif
 
 #endif // defined(USE_SERIALRX_CRSF)
+
+// USE_RACE_PRO feature pack
+#ifdef USE_RACE_PRO
+
+#ifdef USE_DSHOT_TELEMETRY
+#ifndef USE_RPM_LIMIT
+#define USE_RPM_LIMIT
+#endif
+#endif
+
+#ifdef USE_OSD
+#ifndef USE_QUICK_OSD_MENU
+#define USE_QUICK_OSD_MENU
+#endif
+#ifndef USE_SPEC_PREARM_SCREEN
+#define USE_SPEC_PREARM_SCREEN
+#endif
+#endif
+
+#endif // USE_RACE_PRO
