@@ -87,6 +87,7 @@ struct motorDevConfig_s; // XXX Shouldn't be needed once pwm_output* is really c
 void motorDevInit(const struct motorDevConfig_s *motorConfig, uint16_t idlePulse, uint8_t motorCount);
 unsigned motorDeviceCount(void);
 motorVTable_t *motorGetVTable(void);
+bool isProtocolBidirectionalDshot(const motorDevConfig_t *motorDevConfig);
 bool checkMotorProtocolEnabled(const motorDevConfig_t *motorConfig, bool *protocolIsDshot);
 bool isMotorProtocolDshot(void);
 bool isMotorProtocolEnabled(void);

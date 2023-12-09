@@ -119,6 +119,8 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "cli/settings.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/printf.h"
@@ -2106,6 +2108,66 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort, timeUs_t currentTim
 
     return retval;
 }
+
+#ifdef USE_SPEC_PREARM_SCREEN
+void osdDrawSpec(displayPort_t *osdDisplayPort)
+{
+    if (!ARMING_FLAG(ARMED) && osdConfig()->osd_show_spec_prearm)
+    {
+        const uint8_t midRow = osdDisplayPort->rows / 2;
+        const uint8_t midCol = osdDisplayPort->cols / 2;
+
+        char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
+
+        memset(buff,0,strlen(buff));
+        int len = 0;
+        int currentRow = midRow - 3;
+
+        bool rpmLimitActive = false;
+
+#ifdef USE_RPM_LIMIT
+        rpmLimitActive = mixerConfig()->rpm_limit > 0 && isProtocolBidirectionalDshot(&motorConfig()->dev);
+        if (rpmLimitActive) {
+            len = tfp_sprintf(buff, "RPM LIMIT ON  %d", mixerConfig()->rpm_limit_value);
+        } else {
+            len = tfp_sprintf(buff, "%s", "RPM LIMIT OFF");
+        }
+        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        if (rpmLimitActive) {
+            memset(buff,0,strlen(buff));
+            len = tfp_sprintf(buff, "KV %d   POLES %d", motorConfig()->kv, motorConfig()->motorPoleCount);
+            displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+            memset(buff,0,strlen(buff));
+            len = tfp_sprintf(buff, "%d  %d  %d", mixerConfig()->rpm_limit_p, mixerConfig()->rpm_limit_i, mixerConfig()->rpm_limit_d);
+            displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+        }
+#endif // #USE_RPM_LIMIT
+
+        if (!rpmLimitActive) {
+            memset(buff,0,strlen(buff));
+            len = tfp_sprintf(buff, "THR LIMIT %s", lookupTableThrottleLimitType[currentControlRateProfile->throttle_limit_type]);
+            if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
+                len = tfp_sprintf(buff, "%s %d", buff, currentControlRateProfile->throttle_limit_percent);
+            }
+            displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+        }
+
+        memset(buff,0,strlen(buff));
+        len = tfp_sprintf(buff, "MOTOR LIMIT %d", currentPidProfile->motor_output_limit);
+        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        memset(buff,0,strlen(buff));
+        const float batteryVoltage = getBatteryVoltage() / 100.0f;
+        len = osdPrintFloat(buff, osdGetBatterySymbol(getBatteryAverageCellVoltage()), batteryVoltage, "", 2, true, SYM_VOLT);
+        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        len = strlen(FC_VERSION_STRING);
+        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, FC_VERSION_STRING);
+    }
+}
+#endif // USE_SPEC_PREARM_SCREEN
 
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
 {

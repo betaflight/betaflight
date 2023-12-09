@@ -138,6 +138,14 @@ static void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLi
     }
 }
 
+bool isProtocolBidirectionalDshot(const motorDevConfig_t *motorDevConfig)
+{
+    bool motorProtocolDshot = false;
+    const bool motorProtocolEnabled = checkMotorProtocolEnabled(motorDevConfig, &motorProtocolDshot);
+    const bool isBidir = motorDevConfig->useDshotTelemetry;
+    return motorProtocolEnabled && motorProtocolDshot && isBidir;
+}
+
 bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isProtocolDshot)
 {
     bool enabled = false;

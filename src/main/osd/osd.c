@@ -427,6 +427,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_QUICK_OSD_MENU
     osdConfig->osd_use_quick_menu = true;
 #endif // USE_QUICK_OSD_MENU
+#ifdef USE_SPEC_PREARM_SCREEN
+    osdConfig->osd_show_spec_prearm = true;
+#endif // USE_SPEC_PREARM_SCREEN
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -1577,6 +1580,11 @@ void osdUpdate(timeUs_t currentTimeUs)
                 // There are more elements to draw
                 break;
             }
+            #ifdef USE_SPEC_PREARM_SCREEN
+            else {
+                osdDrawSpec(osdDisplayPort);
+            }
+            #endif // USE_SPEC_PREARM_SCREEN
 
             osdElementGroup = 0;
 
