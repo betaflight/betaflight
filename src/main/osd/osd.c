@@ -333,9 +333,9 @@ const uint16_t osdTimerDefault[OSD_TIMER_COUNT] = {
 };
 
 #ifdef USE_RACE_PRO
-    #define RACE_PRO true
+#define RACE_PRO true
 #else
-    #define RACE_PRO false
+#define RACE_PRO false
 #endif
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
