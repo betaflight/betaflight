@@ -295,6 +295,11 @@ bool isMotorProtocolDshot(void)
     return motorProtocolDshot;
 }
 
+bool isMotorProtocolBidirDshot(void)
+{
+    return isMotorProtocolDshot() && motorConfig()->dev.useDshotTelemetry;
+}
+
 void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     memset(motors, 0, sizeof(motors));
