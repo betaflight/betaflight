@@ -36,9 +36,9 @@ void chirpInit(chirp_t *chirp, const float f0, const float f1, const float t1, c
     chirp->f0 = f0;
     chirp->Ts = looptimeUs * 1e-6f;
     chirp->N = (uint32_t)(t1 / chirp->Ts);
-    chirp->beta = pow_approx(f1 / chirp->f0, 1.0f / t1);
+    chirp->beta = pow_approx(f1 / f0, 1.0f / t1);
     chirp->k0 = 2.0f * M_PIf / log_approx(chirp->beta);
-    chirp->k1 = chirp->k0 * chirp->f0;
+    chirp->k1 = chirp->k0 * f0;
     chirpReset(chirp);
 }
 
