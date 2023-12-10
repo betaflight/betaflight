@@ -606,7 +606,7 @@ static int32_t getAverageEscRpm(void)
     }
 #endif
 #ifdef USE_DSHOT_TELEMETRY
-    if (motorConfig()->dev.useDshotTelemetry) {
+    if (isDshotTelemetryEnabled()) {
         return lrintf(getDshotRpmAverage());
     }
 #endif
