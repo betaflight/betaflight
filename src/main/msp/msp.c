@@ -655,10 +655,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         // Target capabilities (uint8)
 #define TARGET_HAS_VCP 0
 #define TARGET_HAS_SOFTSERIAL 1
-#define TARGET_IS_UNIFIED 2
 #define TARGET_HAS_FLASH_BOOTLOADER 3
-#define TARGET_SUPPORTS_CUSTOM_DEFAULTS 4
-#define TARGET_HAS_CUSTOM_DEFAULTS 5
 #define TARGET_SUPPORTS_RX_BIND 6
 
         uint8_t targetCapabilities = 0;
@@ -668,11 +665,9 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #if defined(USE_SOFTSERIAL)
         targetCapabilities |= BIT(TARGET_HAS_SOFTSERIAL);
 #endif
-        targetCapabilities |= BIT(TARGET_IS_UNIFIED);
 #if defined(USE_FLASH_BOOT_LOADER)
         targetCapabilities |= BIT(TARGET_HAS_FLASH_BOOTLOADER);
 #endif
-
 #if defined(USE_RX_BIND)
         if (getRxBindSupported()) {
             targetCapabilities |= BIT(TARGET_SUPPORTS_RX_BIND);

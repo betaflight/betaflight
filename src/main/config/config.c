@@ -475,10 +475,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_RSSI_ADC);
 #endif
 
-// Enable features in Cloud Build
-#ifdef CLOUD_BUILD
-
-if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
+if (systemConfig()->configurationState != CONFIGURATION_STATE_CONFIGURED) {
 
 #ifdef USE_DASHBOARD
     featureEnableImmediate(FEATURE_DASHBOARD);
@@ -510,9 +507,6 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
 #endif
 
 }
-
-#endif // CLOUD_BUILD
-
 
 #if defined(USE_BEEPER)
 #ifdef USE_TIMER
