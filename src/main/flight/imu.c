@@ -119,9 +119,9 @@ attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 
 #ifdef USE_RACE_PRO
-    #define DEFAULT_SMALL_ANGLE 180
+#define DEFAULT_SMALL_ANGLE 180
 #else
-    #define DEFAULT_SMALL_ANGLE 25
+#define DEFAULT_SMALL_ANGLE 25
 #endif
 
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
