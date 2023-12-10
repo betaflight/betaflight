@@ -71,6 +71,8 @@
 #define LED_XY_MASK      0x0F
 #define CALCULATE_LED_XY(x, y) ((((x) & LED_XY_MASK) << LED_X_BIT_OFFSET) | (((y) & LED_XY_MASK) << LED_Y_BIT_OFFSET))
 
+#define LED_TARGET_UPDATE_US 20
+
 typedef enum {
     COLOR_BLACK = 0,
     COLOR_WHITE,

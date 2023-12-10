@@ -50,6 +50,8 @@ extern "C" {
 
     #include "sensors/battery.h"
 
+    #include "scheduler/scheduler.h"
+
     #include "target.h"
 }
 
@@ -314,7 +316,7 @@ void ws2811LedStripInit(ioTag_t ioTag)
     UNUSED(ioTag);
 }
 
-void ws2811UpdateStrip(ledStripFormatRGB_e, uint8_t) {}
+bool ws2811UpdateStrip(ledStripFormatRGB_e, uint8_t) {return true;}
 
 void setLedValue(uint16_t index, const uint8_t value)
 {
@@ -406,7 +408,9 @@ void ws2811LedStripEnable(void) { }
 
 void setUsedLedCount(unsigned) { }
 void pinioBoxTaskControl(void) {}
+void rescheduleTask(taskId_e, timeDelta_t){}
 void schedulerIgnoreTaskExecTime(void) {}
+void schedulerIgnoreTaskExecRate(void) {}
 bool schedulerGetIgnoreTaskExecTime() { return false; }
 void schedulerSetNextStateTime(timeDelta_t) {}
 }
