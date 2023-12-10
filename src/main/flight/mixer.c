@@ -355,7 +355,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     // PID
     const float p = error * mixer->rpmLimiterPGain;
     const float d = (error - prevError) * mixer->rpmLimiterDGain; // rpmLimiterDGain already adjusted for looprate (see mixer_init.c)
-    mixer->rpmLimiterI += error * mixer->rpmLimiterIGain;                          // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
+    mixer->rpmLimiterI += error * mixer->rpmLimiterIGain;         // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
     mixer->rpmLimiterI = MAX(0.0f, mixer->rpmLimiterI);
     float pidOutput = p + mixer->rpmLimiterI + d;
 
