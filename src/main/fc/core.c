@@ -551,6 +551,9 @@ void tryArm(void)
 #ifdef USE_OSD
         osdSuppressStats(false);
 #endif
+#ifdef USE_RPM_LIMIT
+        mixerResetRpmLimiter();
+#endif
         ENABLE_ARMING_FLAG(ARMED);
 
 #ifdef USE_RC_STATS
