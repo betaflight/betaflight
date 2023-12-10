@@ -348,7 +348,6 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
     static float prevError = 0.0f;
-    static float i = 0.0f;
     const float unsmoothedAverageRpm = getDshotRpmAverage();
     const float averageRpm = pt1FilterApply(&mixer->rpmLimiterAverageRpmFilter, unsmoothedAverageRpm);
     const float error = averageRpm - mixer->rpmLimiterRpmLimit;
@@ -356,9 +355,9 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     // PID
     const float p = error * mixer->rpmLimiterPGain;
     const float d = (error - prevError) * mixer->rpmLimiterDGain; // rpmLimiterDGain already adjusted for looprate (see mixer_init.c)
-    i += error * mixer->rpmLimiterIGain;                          // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
-    i = MAX(0.0f, i);
-    float pidOutput = p + i + d;
+    mixer->rpmLimiterI += error * mixer->rpmLimiterIGain;         // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
+    mixer->rpmLimiterI = MAX(0.0f, mixer->rpmLimiterI);
+    float pidOutput = p + mixer->rpmLimiterI + d;
 
     // Throttle limit learning
     if (error > 0.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
@@ -382,7 +381,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 4, lrintf(error));
     DEBUG_SET(DEBUG_RPM_LIMIT, 5, lrintf(p * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMIT, 6, lrintf(i * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 6, lrintf(mixer->rpmLimiterI * 100.0f));
     DEBUG_SET(DEBUG_RPM_LIMIT, 7, lrintf(d * 100.0f));
 }
 #endif // USE_RPM_LIMIT
