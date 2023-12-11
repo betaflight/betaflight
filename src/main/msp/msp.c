@@ -1741,7 +1741,7 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, 0);   // only simple ledstrip available
 #endif
-        sbufWriteU8(dst, ledStripConfig()->ledstrip_profile);
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_mode);
         break;
 #endif
 
@@ -3932,9 +3932,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
             sbufReadU32(src);
 #endif
-            // API 1.41 - selected ledstrip_profile
+            // API 1.41 - selected ledstrip_mode
             if (sbufBytesRemaining(src) >= 1) {
-                ledStripConfigMutable()->ledstrip_profile = sbufReadU8(src);
+                ledStripConfigMutable()->ledstrip_mode = sbufReadU8(src);
             }
         }
         break;

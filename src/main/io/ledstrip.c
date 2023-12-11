@@ -138,9 +138,9 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
     ledStripConfig->ledstrip_visual_beeper = 0;
 #ifdef USE_LED_STRIP_STATUS_MODE
-    ledStripConfig->ledstrip_profile = LED_PROFILE_STATUS;
+    ledStripConfig->ledstrip_mode = LED_PROFILE_STATUS;
 #else
-    ledStripConfig->ledstrip_profile = LED_PROFILE_RACE;
+    ledStripConfig->ledstrip_mode = LED_PROFILE_RACE;
 #endif
     ledStripConfig->ledstrip_race_color = COLOR_ORANGE;
     ledStripConfig->ledstrip_beacon_color = COLOR_WHITE;
@@ -1407,7 +1407,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         onPercent = BEACON_FAILSAFE_ON_PERCENT;
         colorIndex = ledStripConfig()->ledstrip_visual_beeper_color;
     } else {
-        switch (ledStripConfig()->ledstrip_profile) {
+        switch (ledStripConfig()->ledstrip_mode) {
             case LED_PROFILE_RACE:
                 colorIndex = ledStripConfig()->ledstrip_race_color;
 #ifdef USE_VTX_COMMON
@@ -1502,7 +1502,7 @@ void ledStripUpdate(timeUs_t currentTimeUs)
                 updateStartTimeUs = currentTimeUs;
             }
 
-            switch (ledStripConfig()->ledstrip_profile) {
+            switch (ledStripConfig()->ledstrip_mode) {
 #ifdef USE_LED_STRIP_STATUS_MODE
                 case LED_PROFILE_STATUS: {
                     ledProfileSequence = applyStatusProfile(currentTimeUs);
@@ -1579,13 +1579,13 @@ void ledStripUpdate(timeUs_t currentTimeUs)
 
 uint8_t getLedProfile(void)
 {
-    return ledStripConfig()->ledstrip_profile;
+    return ledStripConfig()->ledstrip_mode;
 }
 
 void setLedProfile(uint8_t profile)
 {
     if (profile < LED_PROFILE_COUNT) {
-        ledStripConfigMutable()->ledstrip_profile = profile;
+        ledStripConfigMutable()->ledstrip_mode = profile;
     }
 }
 #endif
