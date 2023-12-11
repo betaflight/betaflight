@@ -61,7 +61,7 @@ const char * const ledProfileNames[LED_PROFILE_COUNT] = {
     "RACE",
     "BEACON",
 #ifdef USE_LED_STRIP_STATUS_MODE
-    "STATUS"
+    "DEFAULT"
 #endif
 };
 
