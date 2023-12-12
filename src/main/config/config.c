@@ -527,7 +527,7 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
 
 #ifdef USE_DSHOT
     if (beeperConfig()->dshotBeaconOffFlags & ~DSHOT_BEACON_ALLOWED_MODES) {
-        beeperConfigMutable()->dshotBeaconOffFlags = 0;
+        beeperConfigMutable()->dshotBeaconOffFlags = DEFAULT_DSHOT_BEACON_OFF_FLAGS;
     }
 
     if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1
