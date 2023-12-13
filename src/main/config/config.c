@@ -475,7 +475,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_RSSI_ADC);
 #endif
 
-if (systemConfig()->configurationState != CONFIGURATION_STATE_CONFIGURED) {
+if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
 
 #ifdef USE_DASHBOARD
     featureEnableImmediate(FEATURE_DASHBOARD);
