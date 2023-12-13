@@ -442,7 +442,7 @@ static const char * const lookupTableTpaMode[] = {
 #ifdef USE_LED_STRIP
 #ifdef USE_LED_STRIP_STATUS_MODE
 static const char * const lookupTableLEDProfile[] = {
-    "RACE", "BEACON", "DEFAULT"
+    "RACE", "BEACON", "NORMAL"
 };
 #else
 static const char * const lookupTableLEDProfile[] = {
