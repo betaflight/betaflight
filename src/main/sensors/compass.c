@@ -385,6 +385,8 @@ bool compassInit(void)
 
     buildRotationMatrixFromAlignment(&compassConfig()->mag_customAlignment, &magDev.rotationMatrix);
 
+    compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
+
     if (magDev.magOdrHz) {
         // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
         // allow two re-check intervals, plus a margin for clock variations in mag vs FC
