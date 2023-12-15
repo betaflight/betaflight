@@ -281,8 +281,8 @@ static const char *mcuTypeNames[] = {
 };
 
 static const char *configurationStates[] = {
-    [CONFIGURATION_STATE_UNCONFIGURED ] = "UNCONFIGURED",
-    [CONFIGURATION_STATE_CONFIGURED ] = "CONFIGURED"
+    [CONFIGURATION_STATE_UNCONFIGURED] = "UNCONFIGURED",
+    [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
 };
 
 typedef enum dumpFlags_e {
