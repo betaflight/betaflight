@@ -23,7 +23,6 @@
   */
 
 #include "i2c_application.h"
-#include "drivers/pinio.h"
 
 /** @addtogroup AT32F435_437_middlewares_i2c_application_library
   * @{
@@ -1071,7 +1070,7 @@ i2c_status_type i2c_memory_write(i2c_handle_type* hi2c, i2c_mem_address_width_ty
   hi2c->mode   = I2C_MA_TX;
 
   // Initialise the data buffer
-  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size + mem_address_width);
 
   hi2c->error_code = I2C_OK;
 
