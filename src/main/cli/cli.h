@@ -25,10 +25,8 @@
 extern bool cliMode;
 
 void cliProcess(void);
-bool hasCustomDefaults(void);
 struct serialPort_s;
 void cliEnter(struct serialPort_s *serialPort);
-bool resetConfigToCustomDefaults(void);
 
 #ifdef USE_CLI_DEBUG_PRINT
 void cliPrint(const char *str);
