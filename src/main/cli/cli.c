@@ -280,7 +280,10 @@ static const char *mcuTypeNames[] = {
     "AT32F435"
 };
 
-static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
+static const char *configurationStates[] = {
+    [CONFIGURATION_STATE_UNCONFIGURED] = "UNCONFIGURED",
+    [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
+};
 
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
