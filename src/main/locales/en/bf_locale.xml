@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="LOCALE" maxLength="2" comment="Current language in short form: en, da, es, fr, nl ...">en</string>
+  <string name="STR_NEW_STRING" maxLength="10" comment="translation of: new string">new string</string>
   <string name="STR_SECONDS" maxLength="8" comment="translation of: seconds">seconds</string>
   <string name="STR_VISUAL_BEEP" maxLength="10" comment="translation of:   * * * *">  * * * *</string>
   <string name="STR_CMS_STARTUP_MENU_TEXT1" maxLength="20" comment="translation of: MENU:THR MID">MENU:THR MID</string>
