@@ -283,6 +283,13 @@ COMMON_SRC = \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
 
+TRANSLATED_SRC = \
+            osd/osd.c \
+            osd/osd_elements.c \
+            osd/osd_warnings.c \
+            cli/cli.c \
+            locales/localisation.c
+
 ifneq ($(SIMULATOR_BUILD),yes)
 
 COMMON_SRC += \

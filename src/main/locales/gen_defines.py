@@ -19,18 +19,25 @@
 # *
 # * If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import sys
 import xml.etree.ElementTree as ET
 
 # do this
 # generate language specific file from locale/bf_locale.xml to locale/bf_locale.h 
-# py gen_defines.py source locale 
+# also generate fallback if new defines not yet are translated (ie. defined)
+# 
+# syntaks: py gen_defines.py TASK source locale 
+#          TASK: BF ->locale/bf_header.h
+#          TASK: UT ->untranslated.h
+
+hdKey = "_HD"
 
 def wr_bf_header(outFile, filename):
     with open(filename, "r") as fr:
         outFile.write(fr.read())
 
-def wr_bf_notice(outFile, locale):
+def wr_bf_notice_bf(outFile, locale):
     outFile.write("/*\n")
     outFile.write("\tNOTICE !\n\tNOTICE !\n\tNOTICE, this header file for LOCALE '" + locale + "' are generated from " + locale + "/bf_locale.xml\n")
     outFile.write("\tChanges to translation ie. "  + locale + "/bf_locale.h must be done in "  + locale + "/bf_locale.xml\n\n")
@@ -41,26 +48,50 @@ def wr_bf_notice(outFile, locale):
     outFile.write("\tTo generate use 'make xx LOCALE=" + locale + " USE_EXTENDED_HD=1'\n")
     outFile.write("*/\n\n")
 
-def wr_define(outFile, id, mes, desc, error):
+def wr_bf_notice_ut(outFile):
+    outFile.write("/*\n")
+    outFile.write("\tNOTICE !\n\tNOTICE !\n\tNOTICE, this header file are generated from en/bf_locale.xml\n")
+    outFile.write("\tChanges to translation ie. en/bf_locale.h must be done in en/bf_locale.xml\n\n")
+    outFile.write("\tThis files handle defines not yet translated in some LOCALE, makeing possible to compile target\n")
+    outFile.write("*/\n\n")
+
+def wr_define_bf(outFile, id, mes, desc, error):
     if error == "":
         newline = "#define " + id + " " * max(1, 35 - len(id)) + mes + " " * max(1, 43 - len(mes)) + "\t// " + desc
     else:
         newline = id + ": " + error + " " * max(1, 35 - len(id)) + mes + " " * max(1, 43 - len(mes)) + "\t// " + desc + '\n'
     print(newline, file=outFile)
 
-hdKey = "_HD"
+def wr_define_ut(outFile, id, mes, error):
+    if error == "":
+        newline = "#ifndef " + id + "\n   #define " + id + " " * max(1, 35 - len(id)) + mes + "\n#endif\n"
+    print(newline, file=outFile)
 
-source   = sys.argv[1]
-locale = sys.argv[2]
-from_filename  = source + '/' + locale + '/bf_locale.xml'
-to_filename    = source + '/' + locale + '/bf_locale.h'
-bf_header_name = source + '/bf_header'
+if os.getenv('V1') == '@':
+    verbose = False
+else:
+    verbose = True
 
-print(sys.argv[0] + ': GENERATE >' + locale + '< ' + from_filename + ' to '+ to_filename)
+task   = sys.argv[1]
+source = sys.argv[2]
+locale = sys.argv[3]
+from_filename    = source + '/' + locale + '/bf_locale.xml'
+to_filename      = source + '/' + locale + '/bf_locale.h'
+untrans_filename = source + '/untranslated.h' 
+bf_header_name   = source + '/bf_header'
 
-fw = open(to_filename, 'w')
-wr_bf_header(fw, bf_header_name)
-wr_bf_notice(fw, locale)
+if verbose:
+    print(sys.argv[0] + ': GENERATE ' + task + ' >' + locale + '< ' + from_filename + ' to '+ to_filename)
+
+if task == 'BF':
+    fw_to = open(to_filename, 'w')
+    wr_bf_header(fw_to, bf_header_name)
+    wr_bf_notice_bf(fw_to, locale)
+
+if task == 'UT':
+    fw_ut = open(untrans_filename, 'w')
+    wr_bf_header(fw_ut, bf_header_name)
+    wr_bf_notice_ut(fw_ut)
 
 prevKey = ""
 prevMessage = prevDescription = ""
@@ -81,17 +112,33 @@ for string_element in root.findall('string'):
         errorMess = ""
 
     if currentKey == prevKey + hdKey:
-        mess = 'TR2("' + prevMessage + '", "' + message + '")'
-        wr_define(fw, prevKey, mess, prevDescription + "; " + description, errorMess)
+        messTR2 = 'TR2("' + prevMessage + '", "' + message + '")'
+        mess    = '"' + prevMessage + '"'
+        if task == 'BF':
+            wr_define_bf(fw_to, prevKey, messTR2, prevDescription + "; " + description, errorMess)
+        if task == 'UT':
+            wr_define_ut(fw_ut, prevKey, mess, errorMess)
     else:
         if prevKey != "" and not prevKey.find(hdKey) > 0:
-            wr_define(fw, prevKey, '"' + prevMessage + '"', prevDescription, errorMess)
+            mess = '"' + prevMessage + '"'
+            if task == 'BF':
+                wr_define_bf(fw_to, prevKey, mess, prevDescription, errorMess)
+            if task == 'UT':
+                wr_define_ut(fw_ut, prevKey, mess, errorMess)
     prevKey = currentKey
     prevMessage = message
     prevDescription = description
 # for
-wr_define(fw, currentKey, '"' + message + '"', description, errorMess)
+mess = '"' + message + '"'
+if task == 'BF':
+    wr_define_bf(fw_to, currentKey, mess, description, errorMess)
+if task == 'UT':
+    wr_define_ut(fw_ut, currentKey, mess, errorMess)
 
-print(sys.argv[0] + ': FINISH')
+if task == 'BF':
+    fw_to.close()
+if task == 'UT':
+    fw_ut.close()
 
-fw.close()
+if verbose:
+    print(sys.argv[0] + ': FINISH')

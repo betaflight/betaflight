@@ -28,5 +28,6 @@
 #endif
 
 #include "bf_locale.h"                             // located in locales/xx, default locales/en, managed by make
+#include "locales/untranslated.h"                  // to ensure defines not yet in locale are handled
 
 extern const char STR_LOCALE[];
