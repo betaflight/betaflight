@@ -169,7 +169,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
 #undef TC
 #undef REQMAP_TIM
 
-#define DMA(d, c) { DMA_CODE(d, 0, c), (dmaResource_t *) DMA ## d ## _CHANNEL ## c , 0 }
+#define DMA(d, c) { DMA_CODE(d, c, 0), (dmaResource_t *) DMA ## d ## _CHANNEL ## c , 0 }
 
 static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
     DMA(1, 1),
@@ -232,7 +232,7 @@ dmaoptValue_t dmaoptByTag(ioTag_t ioTag)
 
 const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(TIM_TypeDef *tim, uint8_t channel, dmaoptValue_t dmaopt)
 {
-    if (dmaopt < 0 || dmaopt >= MAX_TIMER_DMA_OPTIONS) {
+    if (dmaopt < 0 || dmaopt >= MAX_PERIPHERAL_DMA_OPTIONS) {
         return NULL;
     }
 
