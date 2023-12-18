@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -59,6 +60,9 @@
 // 1 - ID of late task
 // 2 - Amount task is late in 10th of a us
 // 3 - Gyro lock skew in 10th of a us
+// 4 - Minimum Gyro period in 100th of a us
+// 5 - Maximum Gyro period in 100th of a us
+// 6 - Span of Gyro period in 100th of a us
 
 // DEBUG_TIMING_ACCURACY, requires USE_LATE_TASK_STATISTICS to be defined
 // 0 - % CPU busy
@@ -562,6 +566,10 @@ FAST_CODE void scheduler(void)
                 // Track the actual gyro rate over given number of cycle times and remove skew
                 static uint32_t terminalGyroLockCount = 0;
                 static int32_t accGyroSkew = 0;
+                static int32_t minGyroPeriod = (int32_t)INT_MAX;
+                static int32_t maxGyroPeriod = (int32_t)INT_MIN;
+                static uint32_t lastGyroSyncEXTI;
+                int32_t gyroCycles;
 
                 int32_t gyroSkew = cmpTimeCycles(nextTargetCycles, gyro->gyroSyncEXTI) % desiredPeriodCycles;
                 if (gyroSkew > (desiredPeriodCycles / 2)) {
@@ -569,6 +577,23 @@ FAST_CODE void scheduler(void)
                 }
 
                 accGyroSkew += gyroSkew;
+
+                gyroCycles = cmpTimeCycles(gyro->gyroSyncEXTI, lastGyroSyncEXTI);
+
+                if (gyroCycles) {
+                    lastGyroSyncEXTI = gyro->gyroSyncEXTI;
+                    // If we're syncing to a short cycle, divide by eight
+                    if (gyro->gyroShortPeriod != 0) {
+                        gyroCycles /= 8;
+                    }
+                    if (gyroCycles < minGyroPeriod) {
+                        minGyroPeriod = gyroCycles;
+                    }
+                    // Crude detection of missed cycles caused by configurator traffic
+                    if ((gyroCycles > maxGyroPeriod) && (gyroCycles < (1.5 * minGyroPeriod))) {
+                        maxGyroPeriod = gyroCycles;
+                    }
+                }
 
                 if (terminalGyroLockCount == 0) {
                     terminalGyroLockCount = gyro->detectedEXTI + GYRO_LOCK_COUNT;
@@ -579,8 +604,14 @@ FAST_CODE void scheduler(void)
 
                     // Move the desired start time of the gyroTask
                     lastTargetCycles -= (accGyroSkew/GYRO_LOCK_COUNT);
+
                     DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 3, clockCyclesTo10thMicros(accGyroSkew/GYRO_LOCK_COUNT));
+                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 4, clockCyclesTo100thMicros(minGyroPeriod));
+                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 5, clockCyclesTo100thMicros(maxGyroPeriod));
+                    DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 6, clockCyclesTo100thMicros(maxGyroPeriod - minGyroPeriod));
                     accGyroSkew = 0;
+                    minGyroPeriod = INT_MAX;
+                    maxGyroPeriod = INT_MIN;
                 }
             }
        }
