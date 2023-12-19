@@ -1457,6 +1457,11 @@ case MSP_NAME:
 #endif
         break;
 
+#ifdef USE_MAG
+    case MSP_COMPASS_CONFIG:
+        sbufWriteU16(dst, imuConfig()->mag_declination);
+        break;
+#endif
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
     // Used by DJI FPV
     case MSP_ESC_SENSOR_DATA:
@@ -2842,7 +2847,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             gpsConfigMutable()->gps_ublox_use_galileo = sbufReadU8(src);
         }
         break;
+#endif
 
+#ifdef USE_MAG
+    case MSP_SET_COMPASS_CONFIG:
+        imuConfigMutable()->mag_declination = sbufReadU16(src);
+        break;
+#endif
+
+#ifdef USE_GPS
 #ifdef USE_GPS_RESCUE
     case MSP_SET_GPS_RESCUE:
         gpsRescueConfigMutable()->maxRescueAngle = sbufReadU16(src);

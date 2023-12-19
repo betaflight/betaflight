@@ -280,7 +280,7 @@
 #define MSP_BATTERY_STATE        130    //out message         Connected/Disconnected, Voltage, Current Used
 #define MSP_MOTOR_CONFIG         131    //out message         Motor configuration (min/max throttle, etc)
 #define MSP_GPS_CONFIG           132    //out message         GPS configuration
-//DEPRECATED - #define MSP_COMPASS_CONFIG       133    //out message         Compass configuration
+#define MSP_COMPASS_CONFIG       133    //out message         Compass configuration
 #define MSP_ESC_SENSOR_DATA      134    //out message         Extra ESC data from 32-Bit ESCs (Temperature, RPM)
 #define MSP_GPS_RESCUE           135    //out message         GPS Rescue angle, returnAltitude, descentDistance, groundSpeed, sanityChecks and minSats
 #define MSP_GPS_RESCUE_PIDS      136    //out message         GPS Rescue throttleP and velocity PIDS + yaw P
@@ -319,7 +319,7 @@
 #define MSP_SET_LED_STRIP_MODECOLOR 221 //in  message         Set LED strip mode_color settings
 #define MSP_SET_MOTOR_CONFIG     222    //out message         Motor configuration (min/max throttle, etc)
 #define MSP_SET_GPS_CONFIG       223    //out message         GPS configuration
-//DEPRECATED - #define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
+#define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
 #define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescue angle, returnAltitude, descentDistance, groundSpeed and sanityChecks
 #define MSP_SET_GPS_RESCUE_PIDS  226    //in message          GPS Rescue throttleP and velocity PIDS + yaw P
 #define MSP_SET_VTXTABLE_BAND    227    //in message          set vtxTable band/channel data (one band at a time)
