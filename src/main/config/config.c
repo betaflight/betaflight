@@ -411,6 +411,10 @@ static void validateAndFixConfig(void)
 #endif
 #endif // USE_ADC
 
+    // Bounds check gyro filter selection in case prior build had USE_GYRO_DLPF_EXPERIMENTAL defined
+    if (gyroConfig()->gyro_hardware_lpf >= GYRO_HARDWARE_LPF_COUNT) {
+        gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
+    }
 
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
