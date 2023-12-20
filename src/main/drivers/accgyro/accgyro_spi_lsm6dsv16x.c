@@ -28,6 +28,8 @@
 
 #include "accgyro_spi_lsm6dsv16x.h"
 
+#include "sensors/gyro.h"
+
 /* See datasheet
  *
  *     https://www.st.com/content/ccc/resource/technical/document/datasheet/group3/47/03/b2/44/47/32/4b/76/DM00741844/files/DM00741844.pdf/jcr:content/translations/en.DM00741844.pdf
@@ -943,6 +945,15 @@ bool lsm6dsv16xSpiAccDetect(accDev_t *acc)
 void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 {
     const extDevice_t *dev = &gyro->dev;
+    // Set default LPF1 filter bandwidth to be as close as possible to MPU6000's 250Hz cutoff
+    uint8_t lsm6dsv16xLPF1BandwidthOptions[GYRO_HARDWARE_LPF_COUNT] = {
+            [GYRO_HARDWARE_LPF_NORMAL] = LSM6DSV_CTRL6_FS_G_BW_281HZ,
+            [GYRO_HARDWARE_LPF_OPTION_1] = LSM6DSV_CTRL6_FS_G_BW_156HZ,
+            [GYRO_HARDWARE_LPF_OPTION_2] = LSM6DSV_CTRL6_FS_G_BW_213HZ,
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+            [GYRO_HARDWARE_LPF_EXPERIMENTAL] = LSM6DSV_CTRL6_FS_G_BW_407HZ
+#endif
+    };
 
     spiSetClkDivisor(dev, spiCalculateDivider(LSM6DSV16X_MAX_SPI_CLK_HZ));
 
@@ -964,9 +975,9 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
                                     LSM6DSV_CTRL2_ODR_G_MASK,
                                     LSM6DSV_CTRL2_ODR_G_SHIFT));
 
-    // Enable 2000 deg/s sensitivity
+    // Enable 2000 deg/s sensitivity and selected LPF1 filter setting
     spiWriteReg(dev, LSM6DSV_CTRL6,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL6_FS_G_BW_407HZ,
+                LSM6DSV_ENCODE_BITS(lsm6dsv16xLPF1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
                                     LSM6DSV_CTRL6_LPF1_G_BW_MASK,
                                     LSM6DSV_CTRL6_LPF1_G_BW_SHIFT) |
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL6_FS_G_2000DPS,
@@ -977,7 +988,6 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC);
 
     // Generate pulse on interrupt line, not requiring a read to clear
-    // TODO this pulse lasts 66us followed by a low of 66us, so we get 132us cycle time, not 125us
     spiWriteReg(dev, LSM6DSV_CTRL4, LSM6DSV_CTRL4_DRDY_PULSED);
 
     // From section 4.1, Mechanical characteristics, of the datasheet, G_So is 70mdps/LSB for FS = ±2000 dps.
