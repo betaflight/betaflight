@@ -600,10 +600,10 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 
 static void gyroPreInitSensor(const gyroDeviceConfig_t *config)
 {
-#ifndef USE_VIRTUAL_ACC
-    mpuPreInit(config);
-#else
+#ifdef USE_VIRTUAL_GYRO
     UNUSED(config);
+#else
+    mpuPreInit(config);
 #endif
 }
 
