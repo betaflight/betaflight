@@ -35,21 +35,63 @@
 #include "config/config.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+
+#ifdef USE_VIRTUAL_GYRO
+#include "drivers/accgyro/accgyro_virtual.h"
+#endif
+
+#ifdef USE_GYRO_MPU3050
 #include "drivers/accgyro/accgyro_mpu3050.h"
+#endif
+
+#ifdef USE_GYRO_MPU6050
 #include "drivers/accgyro/accgyro_mpu6050.h"
+#endif
+
+#if defined(USE_GYRO_MPU6500)
 #include "drivers/accgyro/accgyro_mpu6500.h"
+#endif
+
+#ifdef USE_ACCGYRO_BMI160
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
+#endif
+
+#ifdef USE_ACCGYRO_BMI270
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+#endif
+
+#ifdef USE_GYRO_SPI_ICM20649
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
+#endif
+
+#ifdef USE_GYRO_SPI_ICM20689
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
+#endif
+
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSO
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
+#endif
+
+#ifdef USE_GYRO_SPI_MPU6000
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
+#endif
+
+#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20602) || defined(USE_GYRO_SPI_ICM20608G)
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
+#endif
+
+#ifdef USE_GYRO_SPI_MPU9250
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSV16X
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+#endif
 
 #ifdef USE_GYRO_L3GD20
 #include "drivers/accgyro/accgyro_spi_l3gd20.h"
@@ -75,7 +117,8 @@
 #if !defined(USE_GYRO_L3G4200D) && !defined(USE_GYRO_MPU3050) && !defined(USE_GYRO_MPU6050) && \
     !defined(USE_GYRO_MPU6500) && !defined(USE_GYRO_SPI_ICM20689) && !defined(USE_GYRO_SPI_MPU6000) && \
     !defined(USE_GYRO_SPI_MPU6500) && !defined(USE_GYRO_SPI_MPU9250) && !defined(USE_GYRO_L3GD20) && \
-    !defined(USE_GYRO_SPI_ICM42605) && !defined(USE_GYRO_SPI_ICM42688P) && !defined(USE_ACCGYRO_BMI270) && \
+    !defined(USE_GYRO_SPI_ICM42605) && !defined(USE_GYRO_SPI_ICM42688P) && \
+    !defined(USE_ACCGYRO_BMI160) && !defined(USE_ACCGYRO_BMI270) && \
     !defined(USE_ACCGYRO_LSM6DSV16X) && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_VIRTUAL_GYRO)
 #error At least one USE_GYRO device definition required
 #endif
@@ -409,7 +452,7 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
     case GYRO_ICM20602:
     case GYRO_ICM20608G:
 #ifdef USE_GYRO_SPI_MPU6500
-        if (mpu6500GyroDetect(dev) || mpu6500SpiGyroDetect(dev)) {
+        if (mpu6500SpiGyroDetect(dev)) {
 #else
         if (mpu6500GyroDetect(dev)) {
 #endif
@@ -540,22 +583,13 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
 
 static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
 {
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
- || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) \
- || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
- || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_LSM6DSV16X)
-
+#ifdef USE_VIRTUAL_GYRO
+    UNUSED(config);
+#else
     bool gyroFound = mpuDetect(&gyroSensor->gyroDev, config);
-
-#if !defined(USE_VIRTUAL_GYRO) // Allow resorting to virtual accgyro if defined
     if (!gyroFound) {
         return false;
     }
-#else
-    UNUSED(gyroFound);
-#endif
-#else
-    UNUSED(config);
 #endif
 
     const gyroHardware_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
@@ -566,9 +600,7 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 
 static void gyroPreInitSensor(const gyroDeviceConfig_t *config)
 {
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
- || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) \
- || defined(USE_GYRO_SPI_ICM20689) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGRYO_LSM6DSO)
+#ifndef USE_VIRTUAL_ACC
     mpuPreInit(config);
 #else
     UNUSED(config);

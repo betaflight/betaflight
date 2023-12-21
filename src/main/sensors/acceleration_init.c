@@ -37,21 +37,63 @@
 #include "config/feature.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+
+#ifdef USE_VIRTUAL_ACC
+#include "drivers/accgyro/accgyro_virtual.h"
+#endif
+
+#ifdef USE_ACC_MPU3050
 #include "drivers/accgyro/accgyro_mpu3050.h"
+#endif
+
+#ifdef USE_ACC_MPU6050
 #include "drivers/accgyro/accgyro_mpu6050.h"
+#endif
+
+#ifdef USE_ACC_MPU6500
 #include "drivers/accgyro/accgyro_mpu6500.h"
+#endif
+
+#ifdef USE_ACCGYRO_BMI160
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
+#endif
+
+#ifdef USE_ACCGYRO_BMI270
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+#endif
+
+#ifdef USE_ACC_SPI_ICM20649
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
+#endif
+
+#ifdef USE_ACC_SPI_ICM20689
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
+#endif
+
+#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P)
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSO
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
+#endif
+
+#ifdef USE_ACC_SPI_MPU6000
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
+#endif
+
+#if defined(USE_ACC_SPI_MPU6500) || defined(USE_ACC_SPI_MPU9250) || defined(USE_ACC_SPI_ICM20601) || defined(USE_ACC_SPI_ICM20602) || defined(USE_ACC_SPI_ICM20608G)
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
+#endif
+
+#ifdef USE_ACC_SPI_MPU9250
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSV16X
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+#endif
 
 #ifdef USE_ACC_ADXL345
 #include "drivers/accgyro_legacy/accgyro_adxl345.h"
@@ -240,7 +282,7 @@ retry:
     case ACC_ICM20608G:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
-        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
+        if (mpu6500SpiAccDetect(dev)) {
 #else
         if (mpu6500AccDetect(dev)) {
 #endif
