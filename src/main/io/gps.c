@@ -367,9 +367,24 @@ static void logErrorToPacketLog(void)
 }
 #endif  // USE_DASHBOARD
 
+// Enable sat info using MSP request
+#ifdef USE_GPS_UBLOX
+void gpsRequestSatInfo(void)
+{
+    gpsData.satMessagesDisabled = false;
+    setSatInfoMessageRate(5);
+}
+#endif
+
 static bool isConfiguratorConnected(void)
 {
-    return (getArmingDisableFlags() & ARMING_DISABLED_MSP);
+    bool connected = getArmingDisableFlags() & ARMING_DISABLED_MSP;
+
+    if (!connected) {
+        gpsData.satMessagesDisabled = true;
+    }
+
+    return connected;
 }
 
 static void gpsNewData(uint16_t c);
@@ -395,7 +410,7 @@ void gpsInit(void)
     gpsDataIntervalSeconds = 0.1f;
     gpsData.userBaudRateIndex = 0;
     gpsData.timeouts = 0;
-    gpsData.satMessagesDisabled = false;
+    gpsData.satMessagesDisabled = true;
     gpsData.state_ts = millis();
 #ifdef USE_GPS_UBLOX
     gpsData.ubloxUsingFlightModel = false;
@@ -1106,16 +1121,6 @@ void gpsConfigureUblox(void)
                 break;
             }
 
-            // allow 3s for the Configurator connection to stabilise, to get the correct answer when we test the state of the connection.
-            // 3s is an arbitrary time at present, maybe should be defined or user adjustable.
-            // This delays the appearance of GPS data in OSD when not connected to configurator by 3s.
-            // Note that state_ts is set to millis() on the previous gpsSetState() command
-            if (!isConfiguratorConnected()) {
-               if (cmp32(gpsData.now, gpsData.state_ts) < 3000) {
-                   return;
-               }
-            }
-
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
 
                 // short delay before between commands, including the first command
@@ -1241,8 +1246,8 @@ void gpsConfigureUblox(void)
                         }
                         break;
                     case UBLOX_SAT_INFO:
-                        // enable by default, turned off when armed and receiving data to reduce in-flight traffic
-                        setSatInfoMessageRate(5);
+                        // disabled by default, turned off when armed and receiving data to reduce in-flight traffic
+                        setSatInfoMessageRate(0);
                         break;
                     case UBLOX_SET_NAV_RATE:
                         // set the nav solution rate to the user's configured update rate

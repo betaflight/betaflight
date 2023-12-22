@@ -4052,6 +4052,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
+#ifdef USE_GPS
+    case MSP2_GPS_REQUEST_SV_INFO:
+        gpsRequestSatInfo();
+        break;
+#endif
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;
