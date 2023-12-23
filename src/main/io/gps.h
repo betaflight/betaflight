@@ -292,7 +292,6 @@ typedef struct gpsData_s {
     bool ubloxM8orAbove;
     bool ubloxM9orAbove;
     bool ubloxUsingFlightModel;     // false = Acquire model, true = Flight model
-    bool satMessagesDisabled;
 #ifdef USE_GPS_UBLOX
     uint32_t lastNavSolTs;          // time stamp of last UBCX message.  Used to calculate message delta
     ubloxVersion_e platformVersion; // module platform version, mapped from reported hardware version

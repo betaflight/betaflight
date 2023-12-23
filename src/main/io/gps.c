@@ -371,20 +371,13 @@ static void logErrorToPacketLog(void)
 #ifdef USE_GPS_UBLOX
 void gpsRequestSatInfo(void)
 {
-    gpsData.satMessagesDisabled = false;
     setSatInfoMessageRate(5);
 }
 #endif
 
 static bool isConfiguratorConnected(void)
 {
-    bool connected = getArmingDisableFlags() & ARMING_DISABLED_MSP;
-
-    if (!connected) {
-        gpsData.satMessagesDisabled = true;
-    }
-
-    return connected;
+    return getArmingDisableFlags() & ARMING_DISABLED_MSP;
 }
 
 static void gpsNewData(uint16_t c);
@@ -410,7 +403,6 @@ void gpsInit(void)
     gpsDataIntervalSeconds = 0.1f;
     gpsData.userBaudRateIndex = 0;
     gpsData.timeouts = 0;
-    gpsData.satMessagesDisabled = true;
     gpsData.state_ts = millis();
 #ifdef USE_GPS_UBLOX
     gpsData.ubloxUsingFlightModel = false;
