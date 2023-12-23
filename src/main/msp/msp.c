@@ -4053,7 +4053,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
 #if defined(USE_GPS) && defined(USE_GPS_UBLOX)
-    case MSP2_GPS_REQUEST_SV_INFO:
+    case MSP2_UBLOX_REQUEST_SV_INFO:
         gpsRequestSatInfo();
         break;
 #endif
