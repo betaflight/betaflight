@@ -75,8 +75,6 @@
 
 #define USE_ADC
 
-#define USE_PWM_OUTPUT
-
 // Remove these undefines as support is added
 //#undef USE_BEEPER
 //#undef USE_LED_STRIP
