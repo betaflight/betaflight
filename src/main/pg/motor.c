@@ -61,6 +61,9 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->minthrottle = 1070;
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #ifndef USE_DSHOT
+    if (motorConfig->dev.motorPwmProtocol == PWM_TYPE_STANDARD) {
+        motorConfig->dev.useUnsyncedPwm = true;
+    }
     motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
 #elif defined(DEFAULT_MOTOR_DSHOT_SPEED)
     motorConfig->dev.motorPwmProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
