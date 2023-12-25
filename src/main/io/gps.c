@@ -2559,7 +2559,7 @@ void GPS_reset_home_position(void)
 
 #ifdef USE_GPS_UBLOX
     // disable Sat Info requests on arming
-    if (ARMING_FLAG(ARMED)) {
+    if (gpsConfig()->provider == GPS_UBLOX && ARMING_FLAG(ARMED)) {
         setSatInfoMessageRate(0);
     }
 #endif

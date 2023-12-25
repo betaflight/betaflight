@@ -484,9 +484,6 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
 #ifdef USE_DASHBOARD
     featureEnableImmediate(FEATURE_DASHBOARD);
 #endif
-#ifdef USE_GPS
-    featureEnableImmediate(FEATURE_GPS);
-#endif
 #ifdef USE_LED_STRIP
     featureEnableImmediate(FEATURE_LED_STRIP);
 #endif
