@@ -269,24 +269,6 @@
 
 #endif // !defined(CLOUD_BUILD)
 
-#if !defined(LED_STRIP_MAX_LENGTH)
-#if defined(USE_LED_STRIP_64) && !defined(USE_LIMITED_LED_STRIP_OUTPUTS)
-#define LED_STRIP_MAX_LENGTH           64
-#else
-#define LED_STRIP_MAX_LENGTH           32
-
-// be sure to include the LED strip driver if we are using a limited number of outputs
-#ifndef USE_LED_STRIP
-#define USE_LED_STRIP
-#endif
-
-#endif
-#endif // # !defined(LED_STRIP_MAX_LENGTH)
-
-#if defined(USE_LED_STRIP)
-#define USE_LED_STRIP_STATUS_MODE
-#endif
-
 #if defined(USE_PINIO)
 #define USE_PINIOBOX
 #define USE_PIN_PULL_UP_DOWN
