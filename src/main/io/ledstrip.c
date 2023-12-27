@@ -89,11 +89,12 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 
 #define MAX_TIMER_DELAY (5 * 1000 * 1000)
 
-#define TASK_LEDSTRIP_RATE_FAST_HZ 4000
+#define TASK_LEDSTRIP_RATE_WAIT_HZ 500    // Scheduling rate waiting for a timer to fire
+#define TASK_LEDSTRIP_RATE_FAST_HZ 100000 // Reschedule as fast as possible
 
 #define LED_TASK_MARGIN                 1
 // Decay the estimated max task duration by 1/(1 << LED_EXEC_TIME_SHIFT) on every invocation
-#define LED_EXEC_TIME_SHIFT             5
+#define LED_EXEC_TIME_SHIFT             7
 
 #define PROFILE_COLOR_UPDATE_INTERVAL_US 1e6  // normally updates when color changes but this is a 1 second forced update
 
@@ -1117,12 +1118,14 @@ static ledProfileSequence_t applyStatusProfile(timeUs_t now)
                 // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
                 const timeDelta_t delta = cmpTimeUs(now, timerVal[timId]);
                 // max delay is limited to 5s
-                if (delta < 0 && delta > -MAX_TIMER_DELAY)
-                    continue;  // not ready yet
-                timActive |= 1 << timId;
-                if (delta >= 100 * 1000 || delta < 0) {
+                if (delta > MAX_TIMER_DELAY) {
+                    // Restart the interval on this timer; catches start condition following initialisation
                     timerVal[timId] = now;
                 }
+
+                if (delta < 0)
+                    continue;  // not ready yet
+                timActive |= 1 << timId;
             }
         }
 
@@ -1137,11 +1140,12 @@ static ledProfileSequence_t applyStatusProfile(timeUs_t now)
     }
 
     for (; timId < ARRAYLEN(layerTable); timId++) {
-        uint32_t *timer = &timerVal[timId];
+        timeUs_t *timer = &timerVal[timId];
         bool updateNow = timActive & (1 << timId);
         (*layerTable[timId])(updateNow, timer);
         if (cmpTimeUs(micros(), startTime) > LED_TARGET_UPDATE_US) {
             // Come back and complete this quickly
+            timId++;
             return LED_PROFILE_FAST;
         }
     }
@@ -1349,12 +1353,12 @@ void ledStripUpdate(timeUs_t currentTimeUs)
 {
     static uint16_t ledStateDurationFractionUs[2] = { 0 };
     static bool applyProfile = true;
-    static ledProfileSequence_t ledProfileSequence = LED_PROFILE_SLOW;
-    static uint8_t updateIterations = 0;
+    static timeUs_t updateStartTimeUs = 0;
     bool ledCurrentState = applyProfile;
 
-    if (ledProfileSequence != LED_PROFILE_SLOW) {
-        updateIterations++;
+    if (updateStartTimeUs != 0) {
+        // The LED task rate is considered to be the rate at which updates are sent to the LEDs as a consequence
+        // of the layer timers firing
         schedulerIgnoreTaskExecRate();
     }
 
@@ -1372,6 +1376,11 @@ void ledStripUpdate(timeUs_t currentTimeUs)
 
     if (ledStripEnabled) {
         if (applyProfile) {
+            ledProfileSequence_t ledProfileSequence = LED_PROFILE_SLOW;
+
+            if (updateStartTimeUs == 0) {
+                updateStartTimeUs = currentTimeUs;
+            }
 
             switch (ledStripConfig()->ledstrip_profile) {
 #ifdef USE_LED_STRIP_STATUS_MODE
@@ -1390,21 +1399,47 @@ void ledStripUpdate(timeUs_t currentTimeUs)
                     break;
             }
 
-            if (ledProfileSequence != LED_PROFILE_SLOW) {
+            if (ledProfileSequence == LED_PROFILE_SLOW) {
+                // No timer was ready so no work was done
+                schedulerIgnoreTaskExecTime();
+                // Reschedule waiting for a timer to trigger a LED state change
+                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_LEDSTRIP_RATE_WAIT_HZ));
+            } else {
+                static bool multipassProfile = false;
                 if (ledProfileSequence == LED_PROFILE_ADVANCE) {
+                    // The state leading to advancing from applying the profile layers to updating the DMA buffer is always short
+                    if (multipassProfile) {
+                        schedulerIgnoreTaskExecTime();
+                        multipassProfile = false;
+                    }
+                    // The profile is now fully applied
                     applyProfile = false;
+                } else {
+                    multipassProfile = true;
                 }
-                // Reschedule the fast update
+                // Reschedule for a fast period to update the DMA buffer
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_LEDSTRIP_RATE_FAST_HZ));
             }
         } else {
+            static bool multipassUpdate = false;
             // Profile is applied, so now update the LEDs
             if (ws2811UpdateStrip((ledStripFormatRGB_e) ledStripConfig()->ledstrip_grb_rgb, ledStripConfig()->ledstrip_brightness)) {
+                // Final pass updating the DMA buffer is always short
+                if (multipassUpdate) {
+                    schedulerIgnoreTaskExecTime();
+                    multipassUpdate = false;
+                }
+
                 applyProfile = true;
-                // Restore the default LED task rate
-                ledProfileSequence = LED_PROFILE_SLOW;
-                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_LEDSTRIP_RATE_HZ) - updateIterations * TASK_PERIOD_HZ(TASK_LEDSTRIP_RATE_FAST_HZ));
-                updateIterations = 0;
+
+                timeDelta_t lastUpdateDurationUs = cmpTimeUs(currentTimeUs, updateStartTimeUs);
+
+                lastUpdateDurationUs %= TASK_PERIOD_HZ(TASK_LEDSTRIP_RATE_HZ);
+                rescheduleTask(TASK_SELF, cmpTimeUs(TASK_PERIOD_HZ(TASK_LEDSTRIP_RATE_HZ), lastUpdateDurationUs));
+
+                updateStartTimeUs = 0;
+            } else {
+                multipassUpdate = true;
             }
         }
     }
