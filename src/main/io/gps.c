@@ -2559,7 +2559,9 @@ void GPS_reset_home_position(void)
 
 #ifdef USE_GPS_UBLOX
     // disable Sat Info requests on arming
-    setSatInfoMessageRate(0);
+    if (gpsConfig()->provider == GPS_UBLOX) {
+         setSatInfoMessageRate(0);
+     }
 #endif
     GPS_calculateDistanceFlown(true); // Initialize
 }
