@@ -329,9 +329,10 @@ typedef enum {
     UBLOX_MSG_STATUS,       // 15: set STATUS MSG rate
     UBLOX_MSG_VELNED,       // 16. set VELNED MSG rate
     UBLOX_MSG_DOP,          // 17. MSG_NAV_DOP
-    UBLOX_SET_NAV_RATE,     // 18. set to user requested GPS sample rate
-    UBLOX_MSG_CFG_GNSS,     // 19. For not SBAS or GALILEO
-    UBLOX_CONFIG_COMPLETE   // 20. Config finished, start receiving data
+    UBLOX_SAT_INFO,         // 18. MSG_NAV_SAT message
+    UBLOX_SET_NAV_RATE,     // 19. set to user requested GPS sample rate
+    UBLOX_MSG_CFG_GNSS,     // 20. For not SBAS or GALILEO
+    UBLOX_CONFIG_COMPLETE   // 21. Config finished, start receiving data
 } ubloxStatePosition_e;
 
 baudRate_e initBaudRateIndex;
@@ -365,16 +366,6 @@ static void logErrorToPacketLog(void)
     gpsData.errors++;
 }
 #endif  // USE_DASHBOARD
-
-// Enable sat info using MSP request
-#ifdef USE_GPS_UBLOX
-void gpsRequestSatInfo(void)
-{
-    if (!ARMING_FLAG(ARMED)) {
-        setSatInfoMessageRate(5);
-    }
-}
-#endif
 
 static void gpsNewData(uint16_t c);
 #ifdef USE_GPS_NMEA
@@ -1108,6 +1099,11 @@ void gpsConfigureUblox(void)
                 break;
             }
 
+            // Add delay to stabilize the connection
+            if (cmp32(gpsData.now, gpsData.state_ts) < 1000) {
+                return;
+            }
+    
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
 
                 // short delay before between commands, including the first command
@@ -1231,6 +1227,10 @@ void gpsConfigureUblox(void)
                         } else {
                             ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1);
                         }
+                        break;
+                    case UBLOX_SAT_INFO:
+                        // enable by default, turned off when armed and receiving data to reduce in-flight traffic
+                        setSatInfoMessageRate(5);
                         break;
                     case UBLOX_SET_NAV_RATE:
                         // set the nav solution rate to the user's configured update rate
@@ -2559,7 +2559,7 @@ void GPS_reset_home_position(void)
 
 #ifdef USE_GPS_UBLOX
     // disable Sat Info requests on arming
-    if (gpsConfig()->provider == GPS_UBLOX && ARMING_FLAG(ARMED)) {
+    if (gpsConfig()->provider == GPS_UBLOX) {
         setSatInfoMessageRate(0);
     }
 #endif
