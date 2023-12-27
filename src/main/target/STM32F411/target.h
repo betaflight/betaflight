@@ -80,4 +80,6 @@
 
 #define USE_PID_DENOM_CHECK
 
+#define USE_LIMITED_LED_STRIP_OUTPUTS
+
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
