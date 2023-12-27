@@ -320,19 +320,19 @@ typedef enum {
     UBLOX_MSG_GSA,          //  7. GSA: GNSS DOP and Active Satellites
     UBLOX_MSG_RMC,          //  8. RMC: Recommended Minimum data
     UBLOX_ACQUIRE_MODEL,    //  9
-    UBLOX_CFG_ANA,          // 10 ANA: if M10, enable autonomous mode : temporarily disabled.
-    UBLOX_SET_SBAS,         // 11. Sets SBAS
-    UBLOX_SET_PMS,          // 12. Sets Power Mode
-    UBLOX_MSG_NAV_PVT,      // 13. set NAV-PVT rate
-    UBLOX_MSG_SOL,          // 14. set SOL MSG rate
-    UBLOX_MSG_POSLLH,       // 15. set POSLLH MSG rate
-    UBLOX_MSG_STATUS,       // 16: set STATUS MSG rate
-    UBLOX_MSG_VELNED,       // 17. set VELNED MSG rate
-    UBLOX_MSG_DOP,          // 18. MSG_NAV_DOP
-    UBLOX_SAT_INFO,         // 19. MSG_NAV_SAT message
-    UBLOX_SET_NAV_RATE,     // 20. set to user requested GPS sample rate
-    UBLOX_MSG_CFG_GNSS,     // 21. For not SBAS or GALILEO
-    UBLOX_CONFIG_COMPLETE   // 22. Config finished, start receiving data
+    UBLOX_CFG_ANA,          //  . ANA: if M10, enable autonomous mode : temporarily disabled.
+    UBLOX_SET_SBAS,         // 10. Sets SBAS
+    UBLOX_SET_PMS,          // 11. Sets Power Mode
+    UBLOX_MSG_NAV_PVT,      // 12. set NAV-PVT rate
+    UBLOX_MSG_SOL,          // 13. set SOL MSG rate
+    UBLOX_MSG_POSLLH,       // 14. set POSLLH MSG rate
+    UBLOX_MSG_STATUS,       // 15: set STATUS MSG rate
+    UBLOX_MSG_VELNED,       // 16. set VELNED MSG rate
+    UBLOX_MSG_DOP,          // 17. MSG_NAV_DOP
+    UBLOX_SAT_INFO,         // 18. MSG_NAV_SAT message
+    UBLOX_SET_NAV_RATE,     // 19. set to user requested GPS sample rate
+    UBLOX_MSG_CFG_GNSS,     // 20. For not SBAS or GALILEO
+    UBLOX_CONFIG_COMPLETE   // 21. Config finished, start receiving data
 } ubloxStatePosition_e;
 
 baudRate_e initBaudRateIndex;
@@ -366,16 +366,6 @@ static void logErrorToPacketLog(void)
     gpsData.errors++;
 }
 #endif  // USE_DASHBOARD
-
-// Enable sat info using MSP request
-#ifdef USE_GPS_UBLOX
-void gpsRequestSatInfo(void)
-{
-    if (!ARMING_FLAG(ARMED)) {
-        setSatInfoMessageRate(5);
-    }
-}
-#endif
 
 static void gpsNewData(uint16_t c);
 #ifdef USE_GPS_NMEA
@@ -1113,6 +1103,11 @@ void gpsConfigureUblox(void)
                 break;
             }
 
+            // Add delay to stabilize the connection
+            if (cmp32(gpsData.now, gpsData.state_ts) < 1000) {
+                return;
+            }
+    
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
 
                 // short delay before between commands, including the first command
@@ -1235,6 +1230,10 @@ void gpsConfigureUblox(void)
                         } else {
                             ubloxSetMessageRate(CLASS_NAV, MSG_NAV_DOP, 1);
                         }
+                        break;
+                    case UBLOX_SAT_INFO:
+                        // enable by default, turned off when armed and receiving data to reduce in-flight traffic
+                        setSatInfoMessageRate(5);
                         break;
                     case UBLOX_SET_NAV_RATE:
                         // set the nav solution rate to the user's configured update rate
@@ -2563,7 +2562,7 @@ void GPS_reset_home_position(void)
 
 #ifdef USE_GPS_UBLOX
     // disable Sat Info requests on arming
-    if (ARMING_FLAG(ARMED)) {
+    if (gpsConfig()->provider == GPS_UBLOX) {
         setSatInfoMessageRate(0);
     }
 #endif
