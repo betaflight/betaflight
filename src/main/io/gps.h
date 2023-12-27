@@ -381,7 +381,6 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
-void gpsRequestSatInfo(void);
 void setSatInfoMessageRate(uint8_t divisor);
 #endif
 
