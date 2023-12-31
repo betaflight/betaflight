@@ -240,7 +240,7 @@ retry:
     case ACC_ICM20608G:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
-        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
+        if (mpu6500SpiAccDetect(dev)) {
 #else
         if (mpu6500AccDetect(dev)) {
 #endif
