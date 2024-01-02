@@ -269,7 +269,7 @@ static void rescueAttainPosition(void)
     throttleD *= rescueState.intent.throttleDMultiplier;
     // apply user's throttle D gain
     throttleD *= gpsRescueConfig()->throttleD;
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 6, lrintf(throttleD)); // throttle D before lowpass smoothing
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 3, lrintf(throttleD)); // throttle D before lowpass smoothing
     // smooth
     throttleD = pt2FilterApply(&throttleDLpf, throttleD);
 
@@ -286,10 +286,10 @@ static void rescueAttainPosition(void)
     rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
 
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, lrintf(throttleP));
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, lrintf(throttleD));
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 4, lrintf(throttleI));
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 5, lrintf(tiltAdjustment));     // factor that adjusts throttle based on tilt angle
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 7, lrintf(throttleAdjustment)); // pidSum; amount to add/subtract from hover throttle value
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, lrintf(throttleI));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(throttleD));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 4, lrintf(tiltAdjustment));     // factor that adjusts throttle based on tilt angle
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 5, lrintf(throttleAdjustment)); // pidSum; amount to add/subtract from hover throttle value
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(rescueThrottle));         // throttle value to use during a rescue
 
     /**
@@ -555,7 +555,7 @@ static void sensorUpdate(void)
     rescueState.sensor.currentAltitudeCm = getAltitude();
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueState.sensor.currentAltitudeCm));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 6, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS);  // groundspeed cm/s
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);                // degrees * 10
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);                // degrees * 10
@@ -939,7 +939,7 @@ void gpsRescueUpdate(void)
     }
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 3, lrintf(rescueState.intent.targetAltitudeCm));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 7, lrintf(rescueState.intent.targetAltitudeCm));
     DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.intent.maxAltitudeCm / 10.0f));
 
     performSanityChecks();
