@@ -309,7 +309,7 @@ static const hsvColor_t* getSC(ledSpecialColorIds_e index)
 }
 
 static const char directionCodes[LED_DIRECTION_COUNT] = { 'N', 'E', 'S', 'W', 'U', 'D' };
-static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT] = { 'C', 'F', 'A', 'P', 'E', 'L', 'S', 'G', 'R' };
+static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT] = { 'C', 'F', 'A', 'P', 'E', 'U', 'L', 'S', 'G', 'R' };
 static const char overlayCodes[LED_OVERLAY_COUNT] = { 'T', 'Y', 'O', 'B', 'V', 'I', 'W' };
 
 #define CHUNK_BUFFER_SIZE 11
@@ -493,7 +493,6 @@ static void applyLedFixedLayers(void)
     int totalLedsBattery = 0;
     int lightsCountGps = 0;
     int lightsCountBattery = 0;
-    int enabledLeds = 0;
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
         int fn = ledGetFunction(ledConfig);
@@ -571,6 +570,11 @@ static void applyLedFixedLayers(void)
                     color = *getSC(LED_SCOLOR_GPSNOSATS);
                 }
             }
+            break;
+
+        case LED_FUNCTION_ALTITUDE:
+            color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
+            hOffset += MAX(scaleRange(baro.altitude, 0, 1000, -30, 120), 0);
             break;
 
         case LED_FUNCTION_RSSI:
