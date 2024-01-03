@@ -155,7 +155,7 @@
 #define USE_RX_SPI
 
 #define USE_RX_CC2500
-#define USE_RX_CRSF
+#define USE_RX_CRSF_BIND
 #define USE_RX_EXPRESSLRS
 #define USE_RX_SX1280
 #define USE_RX_SX127X
@@ -428,6 +428,10 @@
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
+
+#ifndef USE_RX_CRSF_BIND
+#define USE_RX_CRSF_BIND
+#endif
 
 #if defined(USE_TELEMETRY_CRSF) && defined(USE_CMS)
 #define USE_CRSF_CMS_TELEMETRY

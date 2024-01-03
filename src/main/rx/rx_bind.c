@@ -41,7 +41,7 @@ static bool doRxBind(bool doBind)
         switch (rxRuntimeState.serialrxProvider) {
         default:
             return false;
-#if defined(USE_RX_CRSF)
+#if defined(USE_RX_CRSF_BIND)
         case SERIALRX_CRSF:
             if (doBind) {
                 crsfRxBind();
