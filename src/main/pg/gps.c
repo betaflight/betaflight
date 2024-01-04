@@ -29,7 +29,7 @@
 
 #include "gps.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 4);
 
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .provider = GPS_UBLOX,
@@ -44,6 +44,7 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .gps_use_3d_speed = false,
     .sbas_integrity = false,
     .gps_ublox_utc_standard = UBLOX_UTC_STANDARD_AUTO,
+    .nmeaCustomCommands = "",
 );
 
 #endif // USE_GPS
