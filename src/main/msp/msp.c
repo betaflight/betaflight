@@ -3646,7 +3646,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         int32_t ned_vel_east = (int32_t)sbufReadU32(src);   // ned_vel_east
         gpsSol.groundSpeed = (uint16_t)sqrtf((ned_vel_north * ned_vel_north) + (ned_vel_east * ned_vel_east));
         (void)sbufReadU32(src);             // ned_vel_down
-        gpsSol.groundCourse = ((uint16_t)sbufReadU16(src) % 360);   // ground_course
+        gpsSol.groundCourse = ((uint16_t)sbufReadU16(src) % 36000) / 10; // incoming value expected to be in centidegrees, output value in decidegrees
         (void)sbufReadU16(src);             // true_yaw
         (void)sbufReadU16(src);             // year
         (void)sbufReadU8(src);              // month
