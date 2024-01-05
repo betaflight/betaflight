@@ -613,7 +613,7 @@ extern uint8_t __config_end;
 #endif
 #endif
 
-#if defined(USE_RX_SPI) || defined(USE_SERIALRX_SRXL2)
+#if defined(USE_RX_SPI) || defined(USE_SERIALRX_SRXL2) || defined(USE_SERIALRX_CRSF)
 #define USE_RX_BIND
 #endif
 

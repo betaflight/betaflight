@@ -6468,7 +6468,7 @@ const clicmd_t cmdTable[] = {
         "\t<->[name]", cliBeeper),
 #endif // USE_BEEPER
 #if defined(USE_RX_BIND)
-    CLI_COMMAND_DEF("bind_rx", "initiate binding for RX SPI or SRXL2", NULL, cliRxBind),
+    CLI_COMMAND_DEF("bind_rx", "initiate binding for RX SPI, SRXL2 or CRSF", NULL, cliRxBind),
 #endif
 #if defined(USE_FLASH_BOOT_LOADER)
     CLI_COMMAND_DEF("bl", "reboot into bootloader", "[flash|rom]", cliBootloader),
