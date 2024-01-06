@@ -562,19 +562,19 @@ static void applyLedFixedLayers(void)
 
         case LED_FUNCTION_GPS_BAR:
             if (gpsSol.numSat == 0 || !sensors(SENSOR_GPS)) {
-                color = *getSC(LED_SCOLOR_GPSNOSATS);
+                color = HSV(RED);
             } else {
                 if (STATE(GPS_FIX)) {
-                    color = *getSC(LED_SCOLOR_GPSLOCKED);
+                    color = HSV(GREEN);
                 } else {
-                    color = *getSC(LED_SCOLOR_GPSNOSATS);
+                    color = HSV(RED);
                 }
             }
             break;
 
         case LED_FUNCTION_ALTITUDE:
             color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
-            hOffset += MAX(scaleRange(baro.altitude, 0, 1000, -30, 120), 0);
+            hOffset += MAX(scaleRange(baro.altitude, 0, 500, -30, 120), 0);
             break;
 
         case LED_FUNCTION_RSSI:
@@ -598,12 +598,18 @@ static void applyLedFixedLayers(void)
                     lightsCountGps++;
                     setLedHsv(ledIndex, &color);
                 }
+                else {
+                    setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
+                }
                 break;
 
             case LED_FUNCTION_BATTERY_BAR:
                 if (lightsCountBattery < 0.01 * calculateBatteryPercentageRemaining() * totalLedsBattery) {
                     lightsCountBattery++;
                     setLedHsv(ledIndex, &color);
+                }
+                else {
+                    setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
                 }
                 break;
 
