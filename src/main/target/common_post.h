@@ -469,29 +469,6 @@
 #endif
 #endif
 
-// LED strip support
-#if defined(USE_LIMITED_LED_STRIP_OUTPUTS) && defined(USE_LED_STRIP_64)
-#error USE_LED_STRIP_64 is not supported for this MCU, please use USE_LED_STRIP_32
-#endif
-
-#ifndef LED_STRIP_MAX_LENGTH
-#ifdef USE_LED_STRIP_64
-
-// be sure to include the LED strip driver
-#ifndef USE_LED_STRIP
-#define USE_LED_STRIP
-#endif
-
-#define LED_STRIP_MAX_LENGTH           64
-#else
-#define LED_STRIP_MAX_LENGTH           32
-#endif
-#endif // # !defined(LED_STRIP_MAX_LENGTH)
-
-#if defined(USE_LED_STRIP)
-#define USE_LED_STRIP_STATUS_MODE
-#endif
-
 #if defined(USE_RX_PWM) || defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER) || defined(USE_BEEPER) || defined(USE_SERIAL_4WAY_BLHELI_INTERFACE)
 #ifndef USE_PWM_OUTPUT
 #define USE_PWM_OUTPUT

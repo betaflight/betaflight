@@ -269,6 +269,18 @@
 
 #endif // !defined(CLOUD_BUILD)
 
+#if !defined(LED_STRIP_MAX_LENGTH)
+#ifdef USE_LED_STRIP_64
+#define LED_STRIP_MAX_LENGTH           64
+#else
+#define LED_STRIP_MAX_LENGTH           32
+#endif
+#endif // # !defined(LED_STRIP_MAX_LENGTH)
+
+#if defined(USE_LED_STRIP)
+#define USE_LED_STRIP_STATUS_MODE
+#endif
+
 #if defined(USE_PINIO)
 #define USE_PINIOBOX
 #define USE_PIN_PULL_UP_DOWN
