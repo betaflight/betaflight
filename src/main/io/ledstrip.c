@@ -489,17 +489,22 @@ static const struct {
 static void applyLedFixedLayers(void)
 {
     // For loading bar style layers:
+#ifdef USE_GPS
     int totalLedsGps = 0;
-    int totalLedsBattery = 0;
     int lightsCountGps = 0;
+#endif
+    int totalLedsBattery = 0;
     int lightsCountBattery = 0;
+
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
         int fn = ledGetFunction(ledConfig);
         switch (fn) {
+        #ifdef USE_GPS
             case LED_FUNCTION_GPS_BAR:
                 totalLedsGps++;
                 break;
+        #endif
             case LED_FUNCTION_BATTERY_BAR:
                 totalLedsBattery++;
                 break;
@@ -560,6 +565,7 @@ static void applyLedFixedLayers(void)
             hOffset += MAX(scaleRange(calculateBatteryPercentageRemaining(), 0, 100, -30, 120), 0);
             break;
 
+    #ifdef USE_GPS
         case LED_FUNCTION_GPS_BAR:
             if (gpsSol.numSat == 0 || !sensors(SENSOR_GPS)) {
                 color = HSV(RED);
@@ -571,11 +577,14 @@ static void applyLedFixedLayers(void)
                 }
             }
             break;
+    #endif
 
+    #ifdef USE_BARO
         case LED_FUNCTION_ALTITUDE:
             color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
             hOffset += MAX(scaleRange(baro.altitude, 0, 500, -30, 120), 0);
             break;
+    #endif
 
         case LED_FUNCTION_RSSI:
             color = HSV(RED);
@@ -593,6 +602,7 @@ static void applyLedFixedLayers(void)
         color.h = (color.h + hOffset) % (HSV_HUE_MAX + 1);
 
         switch (fn) {
+        #ifdef USE_GPS
             case LED_FUNCTION_GPS_BAR:
                 if (lightsCountGps < gpsSol.numSat) {
                     lightsCountGps++;
@@ -602,6 +612,7 @@ static void applyLedFixedLayers(void)
                     setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
                 }
                 break;
+        #endif
 
             case LED_FUNCTION_BATTERY_BAR:
                 if (lightsCountBattery < 0.01 * calculateBatteryPercentageRemaining() * totalLedsBattery) {
