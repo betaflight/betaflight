@@ -94,6 +94,7 @@ typedef struct serialPort_s {
 } serialPort_t;
 
 #define SERIAL_PORT_MAX_INDEX 11
+#define SERIAL_LPUART_MAX_INDEX 1
 
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
