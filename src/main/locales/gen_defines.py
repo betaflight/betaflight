@@ -106,7 +106,7 @@ for string_element in root.findall('string'):
     message = string_element.text
 
     if len(message) > maxLen and maxLen > 0:
-        errorMess = "ERROR - maximum length " + str(maxLen) + " exceed for: " + message + '/' + str(len(message))
+        errorMess = "ERROR - define " + currentKey + " with maxLength of " + str(maxLen) + " exceed with text: " + message + " / " + str(len(message))
         print(errorMess)
     else:
         errorMess = ""
