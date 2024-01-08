@@ -430,9 +430,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->canvas_rows = OSD_SD_ROWS;
 #endif
 
-#ifdef USE_QUICK_OSD_MENU
+#ifdef USE_OSD_QUICK_MENU
     osdConfig->osd_use_quick_menu = true;
-#endif // USE_QUICK_OSD_MENU
+#endif // USE_OSD_QUICK_MENU
 #ifdef USE_SPEC_PREARM_SCREEN
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_SPEC_PREARM_SCREEN

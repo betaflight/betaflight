@@ -25,7 +25,7 @@
 #include "platform.h"
 
 #ifdef USE_CMS
-#ifdef USE_QUICK_OSD_MENU
+#ifdef USE_OSD_QUICK_MENU
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -120,5 +120,5 @@ CMS_Menu cmsx_menuQuick = {
     .entries = menuMainEntries,
 };
 
-#endif // USE_QUICK_OSD_MENU
+#endif // USE_OSD_QUICK_MENU
 #endif // USE_CMS
