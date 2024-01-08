@@ -898,11 +898,11 @@ void cmsMenuOpen(void)
         currentCtx = (cmsCtx_t){ NULL, 0, 0 };
         startMenu = &cmsx_menuMain;
 
-#ifdef USE_QUICK_OSD_MENU
+#ifdef USE_OSD_QUICK_MENU
         if (osdConfig()->osd_use_quick_menu) {
             startMenu = &cmsx_menuQuick;
         }
-#endif // USE_QUICK_OSD_MENU
+#endif // USE_OSD_QUICK_MENU
 
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);

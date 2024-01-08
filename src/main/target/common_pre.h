@@ -231,7 +231,7 @@
 
 #ifdef USE_OSD
 // Dependency for CMS is defined outside this block.
-#define USE_QUICK_OSD_MENU
+#define USE_OSD_QUICK_MENU
 #define USE_RC_STATS
 #define USE_SPEC_PREARM_SCREEN
 #endif
@@ -445,8 +445,8 @@
 #endif
 
 #ifdef USE_OSD
-#ifndef USE_QUICK_OSD_MENU
-#define USE_QUICK_OSD_MENU
+#ifndef USE_OSD_QUICK_MENU
+#define USE_OSD_QUICK_MENU
 #endif
 #ifndef USE_RC_STATS
 #define USE_RC_STATS

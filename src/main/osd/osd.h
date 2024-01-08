@@ -348,9 +348,9 @@ typedef struct osdConfig_s {
     uint8_t aux_symbol;
     uint8_t canvas_cols;                      // Canvas dimensions for HD display
     uint8_t canvas_rows;
-#ifdef USE_QUICK_OSD_MENU
+#ifdef USE_OSD_QUICK_MENU
     uint8_t osd_use_quick_menu;               // use QUICK menu YES/NO
-#endif // USE_QUICK_OSD_MENU
+#endif // USE_OSD_QUICK_MENU
 #ifdef USE_SPEC_PREARM_SCREEN
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
