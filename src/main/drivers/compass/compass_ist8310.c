@@ -44,16 +44,22 @@
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
-#define IST8310_MAG_I2C_ADDRESS 0x0C
+#define IST8310_MAG_I2C_ADDRESS 0x0E
 
-/* ist8310 Slave Address Select : default address 0x0C
- *        CAD1  |  CAD0   |  Address
- *    ------------------------------
- *         VSS   |   VSS  |  0CH
- *         VSS   |   VDD  |  0DH
- *         VDD   |   VSS  |  0EH
- *         VDD   |   VDD  |  0FH
- * if CAD1 and CAD0 are floating, I2C address will be 0EH
+/* ist8310 Slave Address is set by the value of two pins CAD1 and CAD 0
+ * see https://isentek.com/userfiles/files/IST8310Datasheet_3DMagneticSensors.pdf
+ * from which the table below is copied
+ * Note 2 on page 6 says "If CAD1 and CAD0 are floating (default), I2C address will be 0EH"
+ * Users should be aware that any address from 12 to 15 may apply, depending on the board
+ * if manufacturers follow the note on the datasheet, the default address is 0x0E or 14
+ *
+ *        CAD1  |  CAD0   |  Address  |  Decimal  |
+ *    ---------------------------------------------
+ *         VSS   |   VSS  |    0CH    |    12     |
+ *         VSS   |   VDD  |    0DH    |    13     |
+ *         VDD   |   VSS  |    0EH    |    14     |
+ *         VDD   |   VDD  |    0FH    |    15     |
+ * 
  *
  *
  * CTRL_REGA: Control Register 1
