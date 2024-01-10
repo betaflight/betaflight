@@ -53,6 +53,10 @@
 #define USE_DSHOT
 #endif
 
+#if !defined(USE_RACE_PRO)
+#define USE_RACE_PRO
+#endif
+
 #ifdef USE_DSHOT
 #define USE_DSHOT_BITBANG
 #define USE_DSHOT_TELEMETRY
