@@ -154,9 +154,12 @@ FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 void initDshotTelemetry(const timeUs_t looptimeUs)
 {
     // if bidirectional DShot is not available
-    if (!motorConfig()->dev.useDshotTelemetry) {
+    if (!motorConfig()->dev.useDshotTelemetry && !featureIsEnabled(FEATURE_ESC_SENSOR)) {
         return;
     }
+
+    // erpmToHz is used by bidir dshot and ESC telemetry
+    erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
 
     // init LPFs for RPM data
     for (int i = 0; i < getMotorCount(); i++) {
@@ -389,12 +392,6 @@ void dshotCleanTelemetryData(void)
 #endif // USE_DSHOT_TELEMETRY
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
-
-void initEscSensor(void) {
-    if (!motorConfig()->dev.useDshotTelemetry && featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
-    }
-}
 
 // Used with serial esc telem as well as dshot telem
 float erpmToRpm(uint32_t erpm)
