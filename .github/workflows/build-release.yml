@@ -28,12 +28,12 @@ jobs:
       - name: Attach assets to release
         run: |
           set -x
-          assets=()
+          ASSETS=()
           for asset in Assets/*.hex; do
-            assets+=("-a" "$asset")
+            ASSETS+=("-a" "$asset")
             echo "$asset"
           done
-          tag_name="${GITHUB_REF##*/}"
-          hub release edit "${assets[@]}" -m "" "$tag_name"
+          TAG_NAME="${GITHUB_REF##*/}"
+          gh release edit "${ASSETS[@]}" "${TAG_NAME}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
