@@ -152,7 +152,7 @@ FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 void initDshotTelemetry(const timeUs_t looptimeUs)
 {
     // if bidirectional DShot is not available
-    if (!motorConfig()->dev.useDshotTelemetry) {
+    if (!isDshotTelemetryEnabled()) {
         return;
     }
 
@@ -288,7 +288,7 @@ static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t ty
 
 FAST_CODE_NOINLINE void updateDshotTelemetry(void)
 {
-    if (!motorConfig()->dev.useDshotTelemetry) {
+    if (!isDshotTelemetryEnabled()) {
         return;
     }
 
@@ -379,6 +379,10 @@ bool isDshotTelemetryActive(void)
     return false;
 }
 
+bool isDshotTelemetryEnabled(void)
+{
+    return useDshotTelemetry;
+}
 void dshotCleanTelemetryData(void)
 {
     memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));

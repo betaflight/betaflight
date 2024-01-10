@@ -1215,7 +1215,7 @@ case MSP_NAME:
             bool rpmDataAvailable = false;
 
 #ifdef USE_DSHOT_TELEMETRY
-            if (motorConfig()->dev.useDshotTelemetry) {
+            if (isDshotTelemetryEnabled()) {
                 rpm = lrintf(getDshotRpm(i));
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
@@ -1445,7 +1445,7 @@ case MSP_NAME:
         sbufWriteU8(dst, getMotorCount());
         sbufWriteU8(dst, motorConfig()->motorPoleCount);
 #ifdef USE_DSHOT_TELEMETRY
-        sbufWriteU8(dst, motorConfig()->dev.useDshotTelemetry);
+        sbufWriteU8(dst, isDshotTelemetryEnabled());
 #else
         sbufWriteU8(dst, 0);
 #endif
@@ -1476,7 +1476,7 @@ case MSP_NAME:
         } else
 #endif
 #if defined(USE_DSHOT_TELEMETRY)
-        if (motorConfig()->dev.useDshotTelemetry) {
+        if (isDshotTelemetryEnabled()) {
             sbufWriteU8(dst, getMotorCount());
             for (int i = 0; i < getMotorCount(); i++) {
                 sbufWriteU8(dst, dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]);
