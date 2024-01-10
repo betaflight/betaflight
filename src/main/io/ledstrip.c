@@ -310,8 +310,8 @@ static const hsvColor_t* getSC(ledSpecialColorIds_e index)
 }
 
 static const char directionCodes[LED_DIRECTION_COUNT] = { 'N', 'E', 'S', 'W', 'U', 'D' };
-static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT]   = { 'C', 'F', 'A', 'L', 'S', 'G', 'R' };
-static const char overlayCodes[LED_OVERLAY_COUNT]   = { 'T', 'Y', 'O', 'B', 'V', 'I', 'W' };
+static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT] = { 'C', 'F', 'A', 'P', 'E', 'U', 'L', 'S', 'G', 'R' };
+static const char overlayCodes[LED_OVERLAY_COUNT] = { 'T', 'Y', 'O', 'B', 'V', 'I', 'W' };
 
 #define CHUNK_BUFFER_SIZE 11
 bool parseLedStripConfig(int ledIndex, const char *config)
@@ -489,6 +489,31 @@ static const struct {
 
 static void applyLedFixedLayers(void)
 {
+    // For loading bar style layers:
+#ifdef USE_GPS
+    int totalLedsGps = 0;
+    int lightsCountGps = 0;
+#endif
+    int totalLedsBattery = 0;
+    int lightsCountBattery = 0;
+
+    for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
+        const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
+        int fn = ledGetFunction(ledConfig);
+        switch (fn) {
+        #ifdef USE_GPS
+            case LED_FUNCTION_GPS_BAR:
+                totalLedsGps++;
+                break;
+        #endif
+            case LED_FUNCTION_BATTERY_BAR:
+                totalLedsBattery++;
+                break;
+            default:
+                break;
+        }
+    }
+
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
         hsvColor_t color = *getSC(LED_SCOLOR_BACKGROUND);
@@ -536,9 +561,31 @@ static void applyLedFixedLayers(void)
             break;
 
         case LED_FUNCTION_BATTERY:
+        case LED_FUNCTION_BATTERY_BAR:
             color = HSV(RED);
             hOffset += MAX(scaleRange(calculateBatteryPercentageRemaining(), 0, 100, -30, 120), 0);
             break;
+
+    #ifdef USE_GPS
+        case LED_FUNCTION_GPS_BAR:
+            if (gpsSol.numSat == 0 || !sensors(SENSOR_GPS)) {
+                color = HSV(RED);
+            } else {
+                if (STATE(GPS_FIX)) {
+                    color = HSV(GREEN);
+                } else {
+                    color = HSV(RED);
+                }
+            }
+            break;
+    #endif
+
+    #ifdef USE_BARO
+        case LED_FUNCTION_ALTITUDE:
+            color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
+            hOffset += MAX(scaleRange(baro.altitude, 0, 500, -30, 120), 0);
+            break;
+    #endif
 
         case LED_FUNCTION_RSSI:
             color = HSV(RED);
@@ -553,9 +600,35 @@ static void applyLedFixedLayers(void)
             const int auxInput = rcData[ledStripStatusModeConfig()->ledstrip_aux_channel];
             hOffset += scaleRange(auxInput, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, HSV_HUE_MAX + 1);
         }
-
         color.h = (color.h + hOffset) % (HSV_HUE_MAX + 1);
-        setLedHsv(ledIndex, &color);
+
+        switch (fn) {
+        #ifdef USE_GPS
+            case LED_FUNCTION_GPS_BAR:
+                if (lightsCountGps < gpsSol.numSat) {
+                    lightsCountGps++;
+                    setLedHsv(ledIndex, &color);
+                }
+                else {
+                    setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
+                }
+                break;
+        #endif
+
+            case LED_FUNCTION_BATTERY_BAR:
+                if (lightsCountBattery < 0.01 * calculateBatteryPercentageRemaining() * totalLedsBattery) {
+                    lightsCountBattery++;
+                    setLedHsv(ledIndex, &color);
+                }
+                else {
+                    setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
+                }
+                break;
+
+            default:
+                setLedHsv(ledIndex, &color);
+                break;
+        }
     }
 }
 
