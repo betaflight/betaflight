@@ -145,9 +145,7 @@ FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
 FAST_DATA_ZERO_INIT static pt1Filter_t motorFreqLpf[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT static float motorFrequencyHz[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT static float minMotorFrequencyHz;
-#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
 FAST_DATA_ZERO_INIT static float erpmToHz;
-#endif
 FAST_DATA_ZERO_INIT static float dshotRpmAverage;
 FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 
