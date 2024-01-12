@@ -281,6 +281,13 @@
 #define USE_LED_STRIP_STATUS_MODE
 #endif
 
+// Enable PINIO by default if defined
+#if defined(PINIO1_PIN) || defined(PINIO2_PIN) || defined(PINIO3_PIN) || defined(PINIO4_PIN)
+#ifndef USE_PINIO
+#define USE_PINIO
+#endif
+#endif
+
 #if defined(USE_PINIO)
 #define USE_PINIOBOX
 #define USE_PIN_PULL_UP_DOWN
