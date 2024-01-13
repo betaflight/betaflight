@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "platform.h"
@@ -100,6 +101,7 @@ static float smallAngleCosZ = 0;
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 float rMat[3][3];
+float rMatTransposed[3][3];
 static fpVector2_t north_ef;
 
 #if defined(USE_ACC)
@@ -166,6 +168,35 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat[1][0] = -2.0f * (qP.xy - -qP.wz);
     rMat[2][0] = -2.0f * (qP.xz + -qP.wy);
 #endif
+    transposeMatrix3x3(rMatTransposed, rMat);
+}
+
+void vectorEarthToBody(float * v)
+{
+    applyMatrixRotationArray(v, rMat);
+}
+
+void vectorBodyToEarth(float * v)
+{
+    applyMatrixRotationArray(v, rMatTransposed);
+}
+
+void imuComputeAccelEarth(void)
+{
+    memcpy(acc.accEarth, acc.accADC, sizeof(acc.accADC));
+    vectorBodyToEarth(acc.accEarth);
+    acc.accEarth[Z] -= acc.dev.acc_1G;
+
+    acc.accMagnitudeEarthFrame = 0;
+    for (int i = 0; i < 3; i++) {
+        acc.accEarth[i] *= acc.dev.acc_1G_rec;
+        acc.accMagnitudeEarthFrame += sq(acc.accEarth[i]);
+        DEBUG_SET(DEBUG_EARTH_FRAME, i, lrintf(acc.accEarth[i] * 100.0f));
+    }
+
+    acc.accMagnitudeEarthFrame = sqrt(acc.accMagnitudeEarthFrame);
+
+    DEBUG_SET(DEBUG_EARTH_FRAME, 3, lrintf(acc.accMagnitudeEarthFrame * 100.0f));
 }
 
 static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
@@ -198,6 +229,7 @@ void imuInit(void)
 #endif
 
     imuComputeRotationMatrix();
+    imuComputeAccelEarth();
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     if (pthread_mutex_init(&imuUpdateLock, NULL) != 0) {
@@ -373,6 +405,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
     // Pre-compute rotation matrix from quaternion
     imuComputeRotationMatrix();
+    imuComputeAccelEarth();
 
     attitudeIsEstablished = true;
 }
@@ -516,6 +549,7 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
     quatProd->wz = q0 * q3;
 
     imuComputeRotationMatrix();
+    imuComputeAccelEarth();
 
     attitudeIsEstablished = true;
 }

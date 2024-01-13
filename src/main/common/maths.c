@@ -210,14 +210,28 @@ void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation)
     rotation->m[2][Z] = cosy * cosx;
 }
 
-void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix)
+void transposeMatrix3x3(float transposedMatrix[3][3], float matrix[3][3])
+{
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            transposedMatrix[i][j] = matrix[j][i];
+        }
+    }
+}
+
+void applyMatrixRotationArray(float *v, float rotationMatrix[3][3])
 {
     struct fp_vector *vDest = (struct fp_vector *)v;
     struct fp_vector vTmp = *vDest;
 
-    vDest->X = (rotationMatrix->m[0][X] * vTmp.X + rotationMatrix->m[1][X] * vTmp.Y + rotationMatrix->m[2][X] * vTmp.Z);
-    vDest->Y = (rotationMatrix->m[0][Y] * vTmp.X + rotationMatrix->m[1][Y] * vTmp.Y + rotationMatrix->m[2][Y] * vTmp.Z);
-    vDest->Z = (rotationMatrix->m[0][Z] * vTmp.X + rotationMatrix->m[1][Z] * vTmp.Y + rotationMatrix->m[2][Z] * vTmp.Z);
+    vDest->X = (rotationMatrix[0][X] * vTmp.X + rotationMatrix[1][X] * vTmp.Y + rotationMatrix[2][X] * vTmp.Z);
+    vDest->Y = (rotationMatrix[0][Y] * vTmp.X + rotationMatrix[1][Y] * vTmp.Y + rotationMatrix[2][Y] * vTmp.Z);
+    vDest->Z = (rotationMatrix[0][Z] * vTmp.X + rotationMatrix[1][Z] * vTmp.Y + rotationMatrix[2][Z] * vTmp.Z);
+}
+
+void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix)
+{
+    applyMatrixRotationArray(v, rotationMatrix->m);
 }
 
 // Quick median filter implementation

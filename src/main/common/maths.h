@@ -118,6 +118,8 @@ int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float destTo);
 
 void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation);
+void transposeMatrix3x3(float transposedMatrix[3][3], float matrix[3][3]);
+void applyMatrixRotationArray(float *v, float rotationMatrix[3][3]);
 void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix);
 
 int32_t quickMedianFilter3(int32_t * v);

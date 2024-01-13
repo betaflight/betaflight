@@ -55,6 +55,8 @@ typedef struct acc_s {
     accDev_t dev;
     uint16_t sampleRateHz;
     float accADC[XYZ_AXIS_COUNT];
+    float accEarth[XYZ_AXIS_COUNT]; // in units of Gs, gravity substracted
+    float accMagnitudeEarthFrame; // in units of Gs, gravity substracted
     bool isAccelUpdatedAtLeastOnce;
 } acc_t;
 
