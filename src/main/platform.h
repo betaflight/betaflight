@@ -26,8 +26,6 @@
 #pragma GCC poison sprintf snprintf
 #endif
 
-#include "target/common_pre.h"
-
 #ifdef USE_CONFIG
 #include "config.h"
 #endif
@@ -36,5 +34,6 @@
 #include "platform_mcu.h"
 
 #include "target.h"
+#include "target/common_pre.h"
 #include "target/common_post.h"
 #include "target/common_defaults_post.h"
