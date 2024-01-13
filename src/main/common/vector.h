@@ -167,3 +167,8 @@ static inline float vector2Mag(const fpVector2_t *a)
 {
     return sqrtf(sq(a->x) + sq(a->y));
 }
+
+static inline float vector3Dot(const fpVector3_t *a, const fpVector3_t *b)
+{
+    return a->x * b->x + a->y * b->y + a->z * b->z;
+}

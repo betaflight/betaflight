@@ -130,6 +130,8 @@ typedef struct gyro_s {
     uint8_t overflowAxisMask;
 #endif
     pt1Filter_t imuGyroFilter[XYZ_AXIS_COUNT];
+
+    float scalingAdjustment[XYZ_AXIS_COUNT];
 } gyro_t;
 
 extern gyro_t gyro;
@@ -198,6 +200,8 @@ typedef struct gyroConfig_s {
     uint8_t gyro_lpf1_dyn_expo; // set the curve for dynamic gyro lowpass filter
     uint8_t simplified_gyro_filter;
     uint8_t simplified_gyro_filter_multiplier;
+
+    int8_t gyro_scaling_adjustment[XYZ_AXIS_COUNT];
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -205,6 +209,7 @@ PG_DECLARE(gyroConfig_t, gyroConfig);
 void gyroUpdate(void);
 void gyroFiltering(timeUs_t currentTimeUs);
 float gyroGetFilteredDownsampled(int axis);
+float gyroGetDurationSpentSaturated(void);
 void gyroStartCalibration(bool isFirstArmingCalibration);
 bool isFirstArmingGyroCalibrationRunning(void);
 bool gyroIsCalibrationComplete(void);
