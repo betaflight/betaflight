@@ -172,6 +172,10 @@
 
 #include "telemetry/telemetry.h"
 
+#ifndef CPU_OVERLOAD_THRESHOLD
+#define CPU_OVERLOAD_THRESHOLD 50
+#endif
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -973,6 +977,10 @@ void init(void)
         telemetryInit();
     }
 #endif
+
+    if (getAverageSystemLoadPercent() > CPU_OVERLOAD_THRESHOLD) {
+        setArmingDisabled(ARMING_DISABLED_CPU_OVERLOAD);
+    }
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
