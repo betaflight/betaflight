@@ -85,7 +85,6 @@ static bool imuUpdated = false;
 
 #define ATTITUDE_RESET_QUIET_TIME 250000   // 250ms - gyro quiet period after disarm before attitude reset
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
-#define ATTITUDE_RESET_KP_GAIN    25.0     // dcmKpGain value to use during attitude reset
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
 #define GPS_COG_MIN_GROUNDSPEED 100        // 1.0m/s - the minimum groundspeed for a gps based IMU heading to be considered valid
                                            // Better to have some update than none for GPS Rescue at slow return speeds
@@ -176,6 +175,7 @@ static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value)
 {
     imuRuntimeConfig.imuDcmKp = imuConfig()->imu_dcm_kp / 10000.0f;
+    // current default for imu_dcm_kp is 2500, so this returns a base value for imuDcmKp of 0.25
     imuRuntimeConfig.imuDcmKi = imuConfig()->imu_dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
     const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination / 10.0f);
@@ -456,16 +456,16 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
                 stateTimeout = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
                 arState = stReset;
             }
-            // low gain during quiet phase
+            // low gain (value of 0.25 with defaults) during quiet phase
             return imuRuntimeConfig.imuDcmKp;
         case stReset:
             if (cmpTimeUs(currentTimeUs, stateTimeout) >= 0) {
                 arState = stDisarmed;
             }
-            // high gain after quiet period
-            return ATTITUDE_RESET_KP_GAIN;
+            // high gain, 100x greater than normal, or 25, after quiet period
+            return imuRuntimeConfig.imuDcmKp * 100.0f;
         case stDisarmed:
-            // Scale the kP to generally converge faster when disarmed.
+            // Scale the kP to converge 10x faster when disarmed, ie 2.5
             return imuRuntimeConfig.imuDcmKp * 10.0f;
         }
     } else {
