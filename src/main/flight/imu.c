@@ -174,8 +174,8 @@ static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value)
 {
+    // current default for imu_dcm_kp is 2500; our 'normal' or baseline value for imuDcmKp is 0.25
     imuRuntimeConfig.imuDcmKp = imuConfig()->imu_dcm_kp / 10000.0f;
-    // current default for imu_dcm_kp is 2500, so this returns a base value for imuDcmKp of 0.25
     imuRuntimeConfig.imuDcmKi = imuConfig()->imu_dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
     const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination / 10.0f);
