@@ -229,7 +229,7 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-    if (!isSerialConfigValid(serialConfig())) {
+    if (!isSerialConfigValid(serialConfigMutable())) {
         pgResetFn_serialConfig(serialConfigMutable());
     }
 
