@@ -157,7 +157,7 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
 void serialRemovePort(serialPortIdentifier_e identifier);
 uint8_t serialGetAvailablePortCount(void);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
-bool isSerialConfigValid(const serialConfig_t *serialConfig);
+bool isSerialConfigValid(serialConfig_t *serialConfig);
 const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
 serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e identifier);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
