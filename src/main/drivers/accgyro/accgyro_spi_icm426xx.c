@@ -288,7 +288,8 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, ICM426XX_INTF_CONFIG1, intfConfig1Value);
 
     // If an external 32.768kHz crystal oscillator is connectod, enable it as the timing
-    // source: PIN9_FUNCTION = CLKIN. See Datasheet, section 4.10 for details.
+    // source: PIN9_FUNCTION = CLKIN. See Datasheet, section 4.10 for details. Sets
+    // bits 1-2 of the INTF_CONFIG5 register to 0b10.
     #if defined(USE_IMU_XTAL)
         uint8_t intfConfig5Value = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG5);
         intfConfig5Value |= ICM426XX_INTF_CONFIG5_CLKIN;
