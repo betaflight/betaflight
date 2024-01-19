@@ -59,6 +59,8 @@
 #define ICM426XX_INTF_CONFIG1                       0x4D
 #define ICM426XX_INTF_CONFIG1_AFSR_MASK             0xC0
 #define ICM426XX_INTF_CONFIG1_AFSR_DISABLE          0x40
+#define ICM426XX_INTF_CONFIG5                       0x7B
+#define ICM426XX_INTF_CONFIG5_CLKIN                 0x04
 
 #define ICM426XX_RA_PWR_MGMT0                       0x4E  // User Bank 0
 #define ICM426XX_PWR_MGMT0_ACCEL_MODE_LN            (3 << 0)
@@ -285,6 +287,10 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     intfConfig1Value |= ICM426XX_INTF_CONFIG1_AFSR_DISABLE;
     spiWriteReg(dev, ICM426XX_INTF_CONFIG1, intfConfig1Value);
 
+    // If an external 32.768kHz crystal oscillator is connector, enable it as the timing
+    // source: PIN9_FUNCTION = CLKIN
+    uint8_t intfConfig5Value = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG5);
+    intfConfig1Value |= ICM426XX_INTF_CONFIG5_CLKIN;
 
     // Turn on gyro and acc on again so ODR and FSR can be configured
     turnGyroAccOn(dev);
