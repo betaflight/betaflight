@@ -290,7 +290,7 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     // If an external 32.768kHz crystal oscillator is connector, enable it as the timing
     // source: PIN9_FUNCTION = CLKIN
     uint8_t intfConfig5Value = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG5);
-    intfConfig1Value |= ICM426XX_INTF_CONFIG5_CLKIN;
+    intfConfig5Value |= ICM426XX_INTF_CONFIG5_CLKIN;
 
     // Turn on gyro and acc on again so ODR and FSR can be configured
     turnGyroAccOn(dev);
