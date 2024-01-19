@@ -483,15 +483,11 @@ GTEST_DIR = ../../lib/test/gtest
 
 CC  := clang-12
 CXX := clang++-12
-ifneq ($(OSFAMILY), linux)
 ifeq ($(shell which $(CC) 2>/dev/null),)
-$(info Falling back to 'clang' on Windows and OSX.)
+$(info Falling back to 'clang'.)
 CC  := clang
 CXX := clang++
 endif
-endif
-#CC  := gcc
-#CXX := g++
 
 # These flags are needed for clang > 10 (linux / MacOS) to make test work:
 # -Wno-c99-extensions
@@ -523,8 +519,8 @@ CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
 CC_VERSION_CHECK_MAX := 14
 
-# Added flags for clang 11 - 13 are not backwards compatible
-ifeq ($(shell expr $(CC_VERSION_MAJOR) \> 10 \& $(CC_VERSION_MAJOR) \< 14), 1)
+# Added flags for clang 11 - 14 are not backwards compatible
+ifeq ($(shell expr $(CC_VERSION_MAJOR) \> 10 \& $(CC_VERSION_MAJOR) \< 15), 1)
 COMMON_FLAGS += \
 	-fcommon \
 	-Wno-void-pointer-to-int-cast
