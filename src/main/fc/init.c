@@ -896,8 +896,12 @@ void init(void)
         switch(device) {
 
         case OSD_DISPLAYPORT_DEVICE_AUTO:
+#if defined(USE_OSD_HD) && !defined(USE_OSD_SD)
+            device = OSD_DISPLAYPORT_DEVICE_MSP;
+            // User has to configure port for MSP DisplayPort
+            osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+#endif
             FALLTHROUGH;
-
 #if defined(USE_FRSKYOSD)
         // Test OSD_DISPLAYPORT_DEVICE_FRSKYOSD first, since an FC could
         // have a builtin MAX7456 but also an FRSKYOSD connected to an
