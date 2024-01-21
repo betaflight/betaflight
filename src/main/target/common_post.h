@@ -627,13 +627,15 @@ extern uint8_t __config_end;
 #endif
 
 // Enable PINIO by default if any PIN is defined
-#if defined(PINIO1_BOX) || defined(PINIO2_BOX) || defined(PINIO3_BOX) || defined(PINIO4_BOX)
-#ifndef USE_PINIO
+#if !defined(USE_PINIO) && (defined(PINIO1_BOX) || defined(PINIO2_BOX) || defined(PINIO3_BOX) || defined(PINIO4_BOX))
 #define USE_PINIO
 #endif
-#endif
 
-#if defined(USE_PINIO)
+#ifdef USE_PINIO
+#ifndef USE_PINIOBOX
 #define USE_PINIOBOX
+#endif
+#ifndef USE_PIN_PULL_UP_DOWN
 #define USE_PIN_PULL_UP_DOWN
 #endif
+#endif // USE_PINIO
