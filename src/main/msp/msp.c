@@ -2585,6 +2585,13 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             }
         }
         break;
+    case MSP2_CLI:
+        cliMspEnter(dst);
+        while(sbufBytesRemaining(src)) {
+            const uint8_t c = sbufReadU8(src);
+            processCharacterInteractive(c);
+        }
+        break;
 #ifdef USE_LED_STRIP
     case MSP2_GET_LED_STRIP_CONFIG_VALUES:
         sbufWriteU8(dst, ledStripConfig()->ledstrip_brightness);
