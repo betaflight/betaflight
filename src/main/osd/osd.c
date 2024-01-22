@@ -401,8 +401,6 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
         osdConfig->rcChannels[i] = -1;
     }
 
-    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
-
     osdConfig->distance_alarm = 0;
     osdConfig->logo_on_arming = OSD_LOGO_ARMING_OFF;
     osdConfig->logo_on_arming_duration = 5;  // 0.5 seconds
@@ -423,9 +421,11 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     // Make it obvious on the configurator that the FC doesn't support HD
 #ifdef USE_OSD_HD
+    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     osdConfig->canvas_cols = OSD_HD_COLS;
     osdConfig->canvas_rows = OSD_HD_ROWS;
 #else
+    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
     osdConfig->canvas_cols = OSD_SD_COLS;
     osdConfig->canvas_rows = OSD_SD_ROWS;
 #endif

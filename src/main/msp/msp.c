@@ -4174,17 +4174,30 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             if ((int8_t)addr == -1) {
                 /* Set general OSD settings */
                 videoSystem_e video_system = sbufReadU8(src);
-#ifndef USE_OSD_HD
-                if (video_system == VIDEO_SYSTEM_HD) {
-                    video_system = VIDEO_SYSTEM_AUTO;
-                }
-#endif
 
                 if ((video_system == VIDEO_SYSTEM_HD) && (vcdProfile()->video_system != VIDEO_SYSTEM_HD)) {
                     // If switching to HD, don't wait for the VTX to communicate the correct resolution, just
-                    // increase the canvas size to the HD default as that is what the user will expect
+#ifdef USE_OSD_HD
+                    // If an HD build, increase the canvas size to the HD default as that is what the user will expect
                     osdConfigMutable()->canvas_cols = OSD_HD_COLS;
                     osdConfigMutable()->canvas_rows = OSD_HD_ROWS;
+                    // Also force use of MSP displayport
+                    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+#else
+                    // must have an SD build option, keep existing SD video_system, do not change canvas size
+                    video_system = vcdProfile()->video_system;
+#endif
+                } else if ((video_system != VIDEO_SYSTEM_HD) && (vcdProfile()->video_system == VIDEO_SYSTEM_HD)) {
+                    // Switching away from HD to SD
+#ifdef USE_OSD_SD
+                    // SD is in the build; set canvas size to SD and displayport device to auto
+                    osdConfigMutable()->canvas_cols = OSD_SD_COLS;
+                    osdConfigMutable()->canvas_rows = (video_system == VIDEO_SYSTEM_NTSC) ? VIDEO_LINES_NTSC : VIDEO_LINES_PAL;
+                    osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
+#else
+                    // must have an HD build option, keep existing HD video_system, do not change canvas size
+                    video_system = VIDEO_SYSTEM_HD;
+#endif
                 }
 
                 vcdProfileMutable()->video_system = video_system;

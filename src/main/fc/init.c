@@ -891,7 +891,13 @@ void init(void)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (featureIsEnabled(FEATURE_OSD)) {
-        osdDisplayPortDevice_e device = osdConfig()->displayPortDevice;
+        osdDisplayPortDevice_e device;
+
+        if (vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
+            device = OSD_DISPLAYPORT_DEVICE_MSP;
+        } else {
+            device = osdConfig()->displayPortDevice;
+        }
 
         switch(device) {
 
