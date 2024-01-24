@@ -440,12 +440,13 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
 {
-#ifdef USE_OSD_SD
-    uint8_t midRow = 7;
-    uint8_t midCol = 15;
-#else
+// If user includes OSD_HD in the build assume they want to use it as default
+#ifdef USE_OSD_HD
     uint8_t midRow = 10;
     uint8_t midCol = 26;
+#else
+    uint8_t midRow = 7;
+    uint8_t midCol = 15;
 #endif
 
     // Position elements near centre of screen and disabled by default
