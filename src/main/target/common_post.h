@@ -625,3 +625,17 @@ extern uint8_t __config_end;
 #ifdef USE_GPS_LAP_TIMER
 #define USE_CMS_GPS_LAP_TIMER_MENU
 #endif
+
+// Enable PINIO by default if any PIN is defined
+#if !defined(USE_PINIO) && (defined(PINIO1_BOX) || defined(PINIO2_BOX) || defined(PINIO3_BOX) || defined(PINIO4_BOX))
+#define USE_PINIO
+#endif
+
+#ifdef USE_PINIO
+#ifndef USE_PINIOBOX
+#define USE_PINIOBOX
+#endif
+#ifndef USE_PIN_PULL_UP_DOWN
+#define USE_PIN_PULL_UP_DOWN
+#endif
+#endif // USE_PINIO

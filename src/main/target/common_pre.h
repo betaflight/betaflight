@@ -281,11 +281,6 @@
 #define USE_LED_STRIP_STATUS_MODE
 #endif
 
-#if defined(USE_PINIO)
-#define USE_PINIOBOX
-#define USE_PIN_PULL_UP_DOWN
-#endif
-
 #if defined(USE_VTX)
 #define USE_VTX_COMMON
 #define USE_VTX_CONTROL
