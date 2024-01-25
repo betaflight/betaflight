@@ -4259,11 +4259,9 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                 // Timers
                 uint8_t index = sbufReadU8(src);
                 if (index > OSD_TIMER_COUNT) {
-                  return MSP_RESULT_ERROR;
+                    return MSP_RESULT_ERROR;
                 }
                 osdConfigMutable()->timers[index] = sbufReadU16(src);
-
-                return MSP_RESULT_ERROR;
             } else {
                 const uint16_t value = sbufReadU16(src);
 
@@ -4278,7 +4276,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                     osdElementConfigMutable()->item_pos[addr] = value;
                     osdAnalyzeActiveElements();
                 } else {
-                  return MSP_RESULT_ERROR;
+                    return MSP_RESULT_ERROR;
                 }
             }
         }
