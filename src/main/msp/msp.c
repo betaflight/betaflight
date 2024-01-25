@@ -1457,11 +1457,14 @@ case MSP_NAME:
 #endif
         break;
 
-#ifdef USE_MAG
     case MSP_COMPASS_CONFIG:
+#ifdef USE_MAG
         sbufWriteU16(dst, imuConfig()->mag_declination);
-        break;
+#else
+        sbufWriteU16(dst, 0);
 #endif
+        break;
+
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
     // Used by DJI FPV
     case MSP_ESC_SENSOR_DATA:
@@ -2095,9 +2098,9 @@ case MSP_NAME:
 #endif
         break;
 
-#if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG:
         {
+#if defined(USE_VTX_COMMON)
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
             unsigned vtxStatus = 0;
             vtxDevType_e vtxType = VTXDEV_UNKNOWN;
@@ -2118,6 +2121,17 @@ case MSP_NAME:
 
             // API version 1.42
             sbufWriteU16(dst, vtxSettingsConfig()->pitModeFreq);
+#else
+            sbufWriteU8(dst, VTXDEV_UNKNOWN);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU16(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU16(dst, 0);
+#endif
 #ifdef USE_VTX_TABLE
             sbufWriteU8(dst, 1);   // vtxtable is available
             sbufWriteU8(dst, vtxTableConfig()->bands);
@@ -2134,7 +2148,6 @@ case MSP_NAME:
 #endif
         }
         break;
-#endif
 
     case MSP_TX_INFO:
         sbufWriteU8(dst, rssiSource);
@@ -2849,11 +2862,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
-#ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
+#ifdef USE_MAG
         imuConfigMutable()->mag_declination = sbufReadU16(src);
-        break;
+#else
+        sbufReadU16(src); // consume the data to keep the protocol in sync
 #endif
+        break;
 
 #ifdef USE_GPS
 #ifdef USE_GPS_RESCUE
