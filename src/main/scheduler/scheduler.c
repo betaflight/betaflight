@@ -69,6 +69,7 @@
 // 1 - Tasks late in last second
 // 2 - Total lateness in last second in 10ths us
 // 3 - Total tasks run in last second
+// 4 - 10ths % of tasks late in last second
 
 extern task_t tasks[];
 
@@ -107,6 +108,7 @@ static uint8_t skippedOSDAttempts = 0;
 static int16_t lateTaskCount = 0;
 static uint32_t lateTaskTotal = 0;
 static int16_t taskCount = 0;
+static uint32_t lateTaskPercentage = 0;
 static uint32_t nextTimingCycles;
 #endif
 
@@ -196,6 +198,15 @@ void taskSystemLoad(timeUs_t currentTimeUs)
 
 #if defined(SIMULATOR_BUILD)
     averageSystemLoadPercent = 0;
+#endif
+}
+
+uint32_t getCPUPercentageLate(void)
+{
+#if defined(USE_LATE_TASK_STATISTICS)
+    return lateTaskPercentage;
+#else
+    return 0;
 #endif
 }
 
@@ -534,6 +545,10 @@ FAST_CODE void scheduler(void)
                 DEBUG_SET(DEBUG_TIMING_ACCURACY, 2, clockCyclesTo10thMicros(lateTaskTotal));
                 // Total tasks run in last second
                 DEBUG_SET(DEBUG_TIMING_ACCURACY, 3, taskCount);
+
+                lateTaskPercentage = 1000 * (uint32_t)lateTaskCount / taskCount;
+                // 10ths % of tasks late in last second
+                DEBUG_SET(DEBUG_TIMING_ACCURACY, 4, lateTaskPercentage);
 
                 lateTaskCount = 0;
                 lateTaskTotal = 0;
