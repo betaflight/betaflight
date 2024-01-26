@@ -64,6 +64,7 @@ COMMON_SRC = \
             io/usb_msc.c \
             msp/msp.c \
             msp/msp_box.c \
+            msp/msp_build_info.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
