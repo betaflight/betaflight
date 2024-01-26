@@ -167,6 +167,10 @@ flight_mixer_unittest :=  \
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
+gps_nmea_unittest_SRC := \
+		$(USER_DIR)/io/gps_utils.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c
 
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
