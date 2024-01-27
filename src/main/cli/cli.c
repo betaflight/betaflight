@@ -277,7 +277,8 @@ static const char *mcuTypeNames[] = {
     "H723/H725",
     "G474",
     "H730",
-    "AT32F435"
+    "AT32F435",
+    "H573"
 };
 
 static const char *configurationStates[] = {

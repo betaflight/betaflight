@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Release Notes for STM32Cube USB Device Library</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="_htmresc/mini-st.css" />
+  <link rel="icon" type="image/x-icon" href="_htmresc/favicon.png" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div class="row">
+<div class="col-sm-12 col-lg-4">
+<center>
+<h1 id="release-notes-for-stm32cube-usb-device-library">Release Notes
+for <mark>STM32Cube USB Device Library</mark></h1>
+<p>Copyright © 2015 STMicroelectronics<br />
+</p>
+<a href="https://www.st.com" class="logo"><img
+src="_htmresc/st_logo_2020.png" alt="ST logo" /></a>
+</center>
+<h1 id="purpose">Purpose</h1>
+<p>The USB device library comes on top of the STM32Cube™ USB device HAL
+driver and offers all the APIs required to develop an USB device
+application.</p>
+<p>The main USB device library features are:</p>
+<ul>
+<li>Support of multi packet transfer features allowing sending big
+amount of data without splitting it into max packet size transfers.</li>
+<li>Support of most common USB Class drivers (HID, MSC, DFU, CDC-ACM,
+CDC-ECM, RNDIS, MTP, AUDIO1.0, Printer, Video, Composite)</li>
+<li>Configuration files to interface with Cube HAL and change the
+library configuration without changing the library code (Read
+Only).</li>
+<li>32-bits aligned data structures to handle DMA based transfer in High
+speed modes.</li>
+</ul>
+<p>Here is the list of references to user documents:</p>
+<ul>
+<li><a
+href="https://www.st.com/resource/en/user_manual/DM00108129.pdf">UM1734</a>
+: STM32Cube USB device library User Manual</li>
+<li><a href="https://wiki.st.com/stm32mcu/wiki/USB_overview">Wiki
+Page</a> : STM32Cube USB Wiki Page</li>
+</ul>
+</div>
+<section id="update-history" class="col-sm-12 col-lg-8">
+<h1>Update History</h1>
+<div class="collapse">
+<input type="checkbox" id="collapse-section23" checked aria-hidden="true">
+<label for="collapse-section23" aria-hidden="true">V2.11.1 /
+27-September-2022</label>
+<h2 id="main-changes">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="even">
+<td style="text-align: left;"> Improvement of the memory management
+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB Core:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix some compilation warnings related
+to unused parameters</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Improve some code parts style</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add check on the USB Device status in
+USBD_LL_Suspend before suspending it</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CDC-ACM Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Remove redundant prototype declaration of
+USBD_CDC_GetOtherSpeedCfgDesc()</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CompositeBuilder, CCID, CDC_ECM, CDC_RNDIS,
+CustomHID, MSC & Video Classes:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">  Improve some code parts style </td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section22" checked aria-hidden="true">
+<label for="collapse-section22" aria-hidden="true">V2.11.0 /
+25-March-2022</label>
+<h2 id="main-changes">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB VIDEO Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Correction of the support of
+VS_PROBE_CONTROL &amp; VS_COMMIT_CONTROL requets</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB AUDIO Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Correction of the check on
+AUDIO_TOTAL_BUF_SIZE to avoid vulnerabilities</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB HID Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Modification of some constants names to
+avoid duplication versus USB host library</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CustomHID Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add support of Get Report control
+request</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Allow disabling EP OUT prepare receive
+using a dedicated macros that can be defined in usbd_conf.h application
+file</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add support of Report Descriptor with
+length greater than 255 bytes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CCID Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix minor Code Spelling warning</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB All Classes:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Update all classes to support composite
+multi-instance using the class id parameter</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fix code spelling and improve code
+style</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">fix misraC 2012 rule 10.3</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section21" checked aria-hidden="true">
+<label for="collapse-section21" aria-hidden="true">V2.10.0 /
+03-Sept-2021</label>
+<h2 id="main-changes-1">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Integration of new USB device
+Class driver:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Adding support of Composite devices with
+an auto generation of composite device configuration descriptors</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB All Classes:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix Code Spelling and improve Code
+Style</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Update device class drivers to support
+Composite devices</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Improve declaration of USB configuration
+descriptor table which is allocated if the composite builder is not
+selected</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section20" checked aria-hidden="true">
+<label for="collapse-section20" aria-hidden="true">V2.9.0 /
+06-July-2021</label>
+<h2 id="main-changes-2">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Integration of new USB device
+Class driver:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">USB CCID Class driver based on Universal
+Serial Bus Device Class Definition for Integrated Circuit(s) Cards
+Interface Devices Revision 1.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">USB MTP Class driver based on Universal
+Serial Bus Device Class Media Transfer Protocol Revision 1.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>USB All Classes:</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fix Code Spelling and improve Code
+Style</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Update the way to declare licenses</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CDC/RNDIS/ECM
+Classes:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix compilation warning with C++ due to
+missing casting during class handler allocation</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section19" checked aria-hidden="true">
+<label for="collapse-section19" aria-hidden="true">V2.8.0 /
+10-Mars-2021</label>
+<h2 id="main-changes-3">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Integration of new USB device
+Class driver:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">USB Printer Class driver based on
+Universal Serial Bus Device Class Definition for Printing Devices
+Version 1.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB All Classes:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix USB buffer overflow vulnerability for
+CDC, CDC-ECM, CDC-RNDIS, DFU, AUDIO, CustomHID, and Video Classes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fix compilation warning with C++ due to
+missing casting during class handler allocation</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Enhance comments of USB configuration
+descriptors fields</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB Video Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix missing closing bracket for extern “C”
+in usbd_video.h</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fix USBCV test with Uncompressed video
+format support</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section17" checked aria-hidden="true">
+<label for="collapse-section17" aria-hidden="true">V2.7.1 /
+18-August-2020</label>
+<h2 id="main-changes-4">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">USB All Class: Add NULL pointer access
+check to Class handler</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section16" checked aria-hidden="true">
+<label for="collapse-section16" aria-hidden="true">V2.7.0 /
+12-August-2020</label>
+<h2 id="main-changes-5">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Integration of new USB device
+Class driver:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">USB video Class driver based on USB-IF
+video class definition version 1.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB Core:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Enhance NULL pointer check in Core
+APIs</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Allow supporting both USER and USER Class
+string desc</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add support of USB controller which
+handles packet-size splitting by hardware</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Avoid compilation warning due macro
+redefinition</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">change added to USBD_HandleTypeDef
+structure: dev_state, old_dev_state and ep0_state declaration become
+volatile to disable compiler optimization</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Word spelling correction and file
+indentation improved</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_conf.h/c Template file updated to
+suggest using by default a static memory allocation for Class
+handler</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB All Classes:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Word spelling correction and file
+indentation improved</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Allow updating device config descriptor
+Max power from user code usbd_conf.h using USBD_MAX_POWER define</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix device config descriptor bmAttributes
+value which depends on user code define USBD_SELF_POWERED</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CDC Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Class specific request, add protection to
+limit the maximum data length to be sent by the CDC device</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CustomHID Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Allow changing CustomHID data EP size from
+user code</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section15" checked aria-hidden="true">
+<label for="collapse-section15" aria-hidden="true">V2.6.1 /
+05-June-2020</label>
+<h2 id="main-changes-6">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Fix minor misra-c 2012 violations</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>USB Core:</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">minor rework on USBD_Init()
+USBD_DeInit()</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix warning issue with Keil due to missing
+return value of setup API</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CDC Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix file indentation</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Avoid accessing to NULL pointer in case
+TransmitCplt() user fops is not defined to allow application
+compatibility with device library version below v2.6.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section14" checked aria-hidden="true">
+<label for="collapse-section14" aria-hidden="true">V2.6.0 /
+27-December-2019</label>
+<h2 id="main-changes-7">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Integration of three new USB device Class
+drivers:CDC ECM , CDC RNDIS Microsoft, USB Billboard</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix mandatory misra-c 2012 violations</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">update user core and class template
+files</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>USB Core:</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fix unexpected EP0 stall during
+enumeration phase</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Improve APIs error management and prevent
+accessing NULL pointers</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB MSC Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix USBCV specific class tests</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fix multiple error with SCSI commands
+handling</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Protect medium access when host ask for
+medium ejection</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CDC Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add new function to inform user that
+current IN transfer is completed</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">update transmit and receive APIs to
+transfer up to 64KB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>USB AUDIO Class:</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fix audio sync start buffer size</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">update user callback periodicTC args by
+adding pointer to user buffer and size</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>USB CustomHID Class:</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Rework the OUT transfer complete and
+prevent automatically re-enabling the OUT EP</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Add new user API to restart the OUT
+transfer: USBD_CUSTOM_HID_ReceivePacket()</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section13" checked aria-hidden="true">
+<label for="collapse-section13" aria-hidden="true">V2.5.3 /
+30-April-2019</label>
+<h2 id="main-changes-8">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Fix misra-c 2012 high severity
+violations</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Core driver:</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">protect shared macros __ALIGN_BEGIN,
+__ALIGN_END with C directive #ifndef</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">update Core driver and DFU Class driver to
+use USBD_SUPPORT_USER_STRING_DESC instead of
+USBD_SUPPORT_USER_STRING</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">prevent accessing to NULL pointer if the
+get descriptor functions are not defined</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Update on USBD_LL_Resume(), restore the
+device state only if the current state is USBD_STATE_SUSPENDED</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section12" checked aria-hidden="true">
+<label for="collapse-section12" aria-hidden="true">V2.5.2 /
+27-Mars-2019</label>
+<h2 id="main-changes-9">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">DFU Class: fix compilation warning due to
+unreachable instruction code introduced with CMSIS V5.4.0
+NVIC_SystemReset() prototype change</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section11" checked aria-hidden="true">
+<label for="collapse-section11" aria-hidden="true">V2.5.1 /
+03-August-2018</label>
+<h2 id="main-changes-10">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Update license section by adding path to
+get copy of ST Ultimate Liberty license</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Core: Fix unexpected stall during status
+OUT phase</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">DFU Class: rework hdfu struct to prevent
+unaligned addresses</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MSC Class: fix lba address overflow during
+large file transfers greater than 4Go</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Template Class: add missing Switch case
+Break on USBD_Template_Setup API</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section10" checked aria-hidden="true">
+<label for="collapse-section10" aria-hidden="true">V2.5.0 /
+15-December-2017</label>
+<h2 id="main-changes-11">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Update license section</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Update some functions to be MISRAC 2004
+compliant</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Add HS and OtherSpeed configuration
+descriptor for HID and CustomHID classes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Correct error handling in all class setup
+function</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Add usbd_desc_template.c/
+usbd_desc_template.h templates files</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add support of class and vendor
+request</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CDC Class: fix zero-length packet issue in
+bulk IN transfer</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fix compilation warning with unused
+arguments for some functions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Improve USB Core enumeration state
+machine</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section9" checked aria-hidden="true">
+<label for="collapse-section9" aria-hidden="true">V2.4.2 /
+11-December-2015</label>
+<h2 id="main-changes-12">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>CDC Class</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_cdc.c: change #include “USBD_CDC.h”
+by #include “usbd_cdc.h”</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section8" checked aria-hidden="true">
+<label for="collapse-section8" aria-hidden="true">V2.4.1 /
+19-June-2015</label>
+<h2 id="main-changes-13">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>CDC Class</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_cdc.c: comments update</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>MSC Class</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_msc_bot.h: update to be C++
+compliant</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>AUDIO Class</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_audio.c: fix issue when Host sends
+GetInterface command it gets a wrong value</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">usbd_audio.c: remove useless management of
+DMA half transfer</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section7" checked aria-hidden="true">
+<label for="collapse-section7" aria-hidden="true">V2.4.0 /
+28-February-2015</label>
+<h2 id="main-changes-14">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Core Driver</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add support of Link Power Management
+(LPM): add new API GetBOSDescriptor(), that is used only if
+USBD_LPM_ENABLED switch is enabled in usbd_conf.h file</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">usbd_core.c: Fix bug of unsupported
+premature Host Out stage during data In stage (ie. when endpoint 0
+maximum data size is 8 and Host requests GetDeviceDescriptor for the
+first time)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_ctlreq.c: Fix bug of unsupported
+Endpoint Class requests (ie. Audio SetCurrent request for endpoint
+sampling rate setting)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>HID Class</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Updating Polling time API
+USBD_HID_GetPollingInterval() to query this period for HS and FS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">usbd_hid.c: Fix USBD_LL_CloseEP() function
+call in USBD_HID_DeInit() replacing endpoint size by endpoint
+address.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>CDC Class</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">usbd_cdc.c: Add missing GetInterface
+request management in USBD_CDC_Setup() function</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_cdc.c: Update USBD_CDC_Setup()
+function to allow correct user implementation of
+CDC_SET_CONTROL_LINE_STATE and similar no-data setup requests.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section6" checked aria-hidden="true">
+<label for="collapse-section6" aria-hidden="true">V2.3.0 /
+04-November-2014</label>
+<h2 id="main-changes-15">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Update all drivers to be C++
+compliant</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>CDC Class</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">usbd_cdc.c: fix clear flag issue in
+USBD_CDC_TransmitPacket() function</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_cdc_if_template.c: update
+TEMPLATE_Receive() function header comment</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Miscellaneous source code comments
+update</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section5" checked aria-hidden="true">
+<label for="collapse-section5" aria-hidden="true">V2.2.0 /
+13-June-2014</label>
+<h2 id="main-changes-16">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Source code comments review and
+update</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>HID class</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Remove unused API
+USBD_HID_DeviceQualifierDescriptor()</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add a new API in the HID class to query
+the poll time USBD_HID_GetPollingInterval()</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>CDC class</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bug fix: missing handling ZeroLength Setup
+request</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>All classes</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add alias for the class definition, it’s
+defined as macro with capital letter</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ex. for the HID, the USBD_HID_CLASS macro
+is defined this way #define USBD_HID_CLASS &amp;USBD_HID</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">and the application code can use the
+previous definition: &amp;USBD_HID ex.
+USBD_RegisterClass(&amp;USBD_Device, &amp;USBD_HID) or the new
+USBD_HID_CLASS ex. USBD_RegisterClass(&amp;USBD_Device,
+USBD_HID_CLASS)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section4" checked aria-hidden="true">
+<label for="collapse-section4" aria-hidden="true">V2.1.0 /
+22-April-2014</label>
+<h2 id="main-changes-17">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">usbd_conf_template.c: update file with the
+right content (it was using MSC memory management layer)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">usbd_conf_template.h: change include of
+stm32f4xx.h by stm32xxx.h and add comment to inform user to adapt it to
+the device used</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Several enhancements in CustomHID
+class</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Update the Custom HID class driver to
+simplify the link with user processes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Optimize the Custom HID class driver and
+reduce footprint</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Add USBD_CUSTOM_HID_RegisterInterface()
+API to link user process to custom HID class</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Add Custom HID interface template file
+usbd_customhid_if_template.c/h</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Miscellaneous comments update</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section3" checked aria-hidden="true">
+<label for="collapse-section3" aria-hidden="true">V2.0.0 /
+18-February-2014</label>
+<h2 id="main-changes-18">Main Changes</h2>
+<p>Major update based on STM32Cube specification.</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Library Core, Classes architecture and
+APIs modified vs. V1.1.0, and thus the 2 versions are not
+compatible.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>This version has to be used only with STM32Cube based
+development</strong></p>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section2" checked aria-hidden="true">
+<label for="collapse-section2" aria-hidden="true">V1.1.0 /
+19-March-2012</label>
+<h2 id="main-changes-19">Main Changes</h2>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Official support of STM32F4xx devices</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">All source files: license disclaimer text
+update and add link to the License file on ST Internet.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Handle test mode in the set feature
+request</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Handle dynamically the USB SELF POWERED
+feature</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Handle correctly the USBD_CtlError process
+to take into account error during Control OUT stage</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Miscellaneous bug fix</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" checked aria-hidden="true">
+<label for="collapse-section1" aria-hidden="true">V1.0.0 /
+22-July-2011</label>
+<h2 id="main-changes-20">Main Changes</h2>
+<p>First official version for STM32F105/7xx and STM32F2xx devices</p>
+</div>
+</section>
+</div>
+<footer class="sticky">
+<div class="columns">
+<div class="column" style="width:95%;">
+
+</div><div class="column" style="width:5%;">
+<p><abbr title="Based on template cx566953 version 2.1">Info</abbr></p>
+</div>
+</div>
+</footer>
+</body>
+</html>
