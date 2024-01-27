@@ -88,8 +88,15 @@ static struct {
     } state;
 } blackboxSDCard;
 
-#define LOGFILE_PREFIX "LOG"
+#define LOGFILE_PREFIX_LOG "LOG"
+#define LOGFILE_SEPARATOR "_"
 #define LOGFILE_SUFFIX "BFL"
+
+#ifdef BOARD_NAME
+#define LOGFILE_PREFIX LOGFILE_PREFIX_LOG LOGFILE_SEPARATOR BOARD_NAME LOGFILE_SEPARATOR
+#else
+#define LOGFILE_PREFIX LOGFILE_PREFIX_LOG
+#endif
 
 #endif // USE_SDCARD
 
