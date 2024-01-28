@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "common/streambuf.h"
 
 #include "msp/msp_build_info.h"
