@@ -26,7 +26,8 @@
 
 #include "msp/msp_build_info.h"
 
-void sbufWriteBuildInfoFlags(sbuf_t *dst) {
+void sbufWriteBuildInfoFlags(sbuf_t *dst) 
+{
     uint8_t options = 0;
 #ifdef USE_SERIALRX_CRSF
     options |= MSP_BUILD_OPTION_FLAG_SERIALRX_CRSF;
