@@ -31,7 +31,7 @@ arm_sdk_version:
 ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10
 # source: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 ifeq ($(OSFAMILY), linux)
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-x86_64-linux.tar.bz2
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-$(shell uname -m)-linux.tar.bz2
 endif
 
 ifeq ($(OSFAMILY), macosx)
