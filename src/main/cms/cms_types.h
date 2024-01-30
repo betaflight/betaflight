@@ -65,7 +65,7 @@ typedef struct
     uint16_t flags;
     CMSEntryFuncPtr func;
     void *data;
-} __attribute__((packed)) OSD_Entry;
+} __PACKED__ OSD_Entry;
 
 // Bits in flags
 #define OSD_MENU_ELEMENT_MASK 0x001f

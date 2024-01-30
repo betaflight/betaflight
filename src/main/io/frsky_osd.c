@@ -185,18 +185,18 @@ typedef struct frskyOsdTriangle_s {
 typedef struct frskyOsdSetPixel_s {
     frskyOsdPoint_t p;
     uint8_t color;
-}  __attribute__((packed)) frskyOsdSetPixel_t;
+}  __PACKED__ frskyOsdSetPixel_t;
 
 typedef struct frskyOsdDrawCharacterCmd_s {
     frskyOsdPoint_t p;
     uint16_t chr;
     uint8_t opts;
-}  __attribute__((packed)) frskyOsdDrawCharacterCmd_t;
+}  __PACKED__ frskyOsdDrawCharacterCmd_t;
 
 typedef struct frskyOsdDrawCharacterMaskCmd_s {
     frskyOsdDrawCharacterCmd_t dc;
     uint8_t maskColor;
-}  __attribute__((packed)) frskyOsdDrawCharacterMaskCmd_t;
+}  __PACKED__ frskyOsdDrawCharacterMaskCmd_t;
 
 typedef struct frskyOsdDrawStrCommandHeaderCmd_s {
     frskyOsdPoint_t p;

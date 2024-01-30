@@ -55,8 +55,8 @@ const int TEST_UPDATE_OSD_TIME = 30;
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 
 extern "C" {
-    task_t * unittest_scheduler_selectedTask;
-    uint8_t unittest_scheduler_selectedTaskDynPrio;
+    extern task_t * unittest_scheduler_selectedTask;
+    extern uint8_t unittest_scheduler_selectedTaskDynPrio;
     timeDelta_t unittest_scheduler_taskRequiredTimeUs;
     bool taskGyroRan = false;
     bool taskFilterRan = false;

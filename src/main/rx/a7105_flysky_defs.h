@@ -43,21 +43,21 @@
 #define TX_DELAY        500
 #define BIND_TIMEOUT    200000
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint8_t type;
     uint8_t number;
     uint8_t valueL;
     uint8_t valueH;
 } flySky2ASens_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint8_t type;
     uint32_t txId;
     uint32_t rxId;
     flySky2ASens_t sens[7];
 } flySky2ATelemetryPkt_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint8_t type;
     uint32_t txId;
     uint32_t rxId;
@@ -67,14 +67,14 @@ typedef struct __attribute__((packed)) {
     uint8_t reserved2[10];
 } flySky2ABindPkt_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint8_t type;
     uint32_t txId;
     uint32_t rxId;
     uint8_t data[28];
 } flySky2ARcDataPkt_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint8_t type;
     uint32_t txId;
     uint8_t data[16];

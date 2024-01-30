@@ -22,6 +22,8 @@
 
 #define NOINLINE __attribute__((noinline))
 
+#define __PACKED__ __attribute__((packed))
+
 #if !defined(UNIT_TEST) && !defined(SIMULATOR_BUILD) && !(USBD_DEBUG_LEVEL > 0)
 #pragma GCC poison sprintf snprintf
 #endif

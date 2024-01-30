@@ -1,6 +1,6 @@
 #pragma once
 
-#define PACKED __attribute__((packed))
+#define PACKED __PACKED__
 
 typedef enum {
     Disabled,

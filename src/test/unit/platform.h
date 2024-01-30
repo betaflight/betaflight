@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define __PACKED__
+
 #define USE_PARAMETER_GROUPS
 
 #define U_ID_0 0

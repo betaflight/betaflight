@@ -231,7 +231,7 @@ typedef struct clivalue_s {
 
     pgn_t pgn;
     uint16_t offset;
-} __attribute__((packed)) clivalue_t;
+} __PACKED__ clivalue_t;
 
 
 extern const lookupTableEntry_t lookupTables[];

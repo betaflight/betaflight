@@ -160,7 +160,9 @@ typedef struct bmp388_calib_param_s {
     int8_t P11;
 } __attribute__((packed)) bmp388_calib_param_t;
 
+#ifndef UNIT_TEST
 STATIC_ASSERT(sizeof(bmp388_calib_param_t) == BMP388_TRIMMING_DATA_LENGTH, bmp388_calibration_structure_incorrectly_packed);
+#endif
 
 static uint8_t bmp388_chip_id = 0;
 STATIC_UNIT_TESTED bmp388_calib_param_t bmp388_cal;

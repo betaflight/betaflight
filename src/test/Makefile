@@ -481,17 +481,12 @@ GTEST_DIR = ../../lib/test/gtest
 
 # Use clang/clang++ by default
 
-CC  := clang-12
-CXX := clang++-12
-ifneq ($(OSFAMILY), linux)
-ifeq ($(shell which $(CC) 2>/dev/null),)
-$(info Falling back to 'clang' on Windows and OSX.)
-CC  := clang
-CXX := clang++
+ifeq ($(origin CC), default)
+CC  = clang
 endif
+ifeq ($(origin CXX), default)
+CXX = clang++
 endif
-#CC  := gcc
-#CXX := g++
 
 # These flags are needed for clang > 10 (linux / MacOS) to make test work:
 # -Wno-c99-extensions
@@ -517,11 +512,11 @@ CXX_VERSION = $(shell $(CXX) -dumpversion)
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 
-# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 14 }
+# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 15 }
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 14
+CC_VERSION_CHECK_MAX := 15
 
 # Added flags for clang 11 - 13 are not backwards compatible
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \> 10 \& $(CC_VERSION_MAJOR) \< 14), 1)
