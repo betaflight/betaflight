@@ -29,145 +29,141 @@
 
 void sbufWriteBuildInfoFlags(sbuf_t *dst) 
 {
-    uint8_t options = 0;
+    static const uint16_t options[] = {
 #ifdef USE_SERIALRX_CRSF
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_CRSF;
+        BUILD_OPTION_SERIALRX_CRSF,
 #endif
 #ifdef USE_SERIALRX_FPORT
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_FPORT;
+        BUILD_OPTION_SERIALRX_FPORT,
 #endif
 #ifdef USE_SERIALRX_GHST
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_GHST;
+        BUILD_OPTION_SERIALRX_GHST,
 #endif
 #ifdef USE_SERIALRX_IBUS
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_IBUS;
+        BUILD_OPTION_SERIALRX_IBUS,
 #endif
 #ifdef USE_SERIALRX_JETIEXBUS
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_JETIEXBUS;
+        BUILD_OPTION_SERIALRX_JETIEXBUS,
 #endif
 #ifdef USE_RX_PPM
-    options |= MSP_BUILD_OPTION_FLAG_RX_PPM;
+        BUILD_OPTION_RX_PPM,
 #endif
 #ifdef USE_SERIALRX_SBUS
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_SBUS;
+        BUILD_OPTION_SERIALRX_SBUS,
 #endif
 #ifdef USE_SERIALRX_SPEKTRUM
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_SPEKTRUM;
+        BUILD_OPTION_SERIALRX_SPEKTRUM,
 #endif
-    sbufWriteU8(dst, options); // byte 1
-    options = 0;
 #ifdef USE_SERIALRX_SRXL2
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_SRXL2;
+        BUILD_OPTION_SERIALRX_SRXL2,
 #endif
 #ifdef USE_SERIALRX_SUMD
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_SUMD;
+        BUILD_OPTION_SERIALRX_SUMD,
 #endif
 #ifdef USE_SERIALRX_SUMH
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_SUMH;
+        BUILD_OPTION_SERIALRX_SUMH,
 #endif
 #ifdef USE_SERIALRX_XBUS
-    options |= MSP_BUILD_OPTION_FLAG_SERIALRX_XBUS;
+        BUILD_OPTION_SERIALRX_XBUS,
 #endif
 #ifdef USE_TELEMETRY_FRSKY_HUB
-    options |= MSP_BUILD_OPTION_FLAG_TELEMETRY_FRSKY_HUB;
+        BUILD_OPTION_TELEMETRY_FRSKY_HUB,
 #endif
 #ifdef USE_TELEMETRY_HOTT
-    options |= MSP_BUILD_OPTION_FLAG_TELEMETRY_HOTT;
+        BUILD_OPTION_TELEMETRY_HOTT,
 #endif
 #ifdef USE_TELEMETRY_IBUS_EXTENDED
-    options |= MSP_BUILD_OPTION_FLAG_TELEMETRY_IBUS_EXTENDED;
+        BUILD_OPTION_TELEMETRY_IBUS_EXTENDED,
 #endif
 #ifdef USE_TELEMETRY_LTM
-    options |= MSP_BUILD_OPTION_FLAG_TELEMETRY_LTM;
+        BUILD_OPTION_TELEMETRY_LTM,
 #endif
-    sbufWriteU8(dst, options); // byte 2
-    options = 0;
 #ifdef USE_TELEMETRY_MAVLINK
-    options |= MSP_BUILD_OPTION_FLAG_TELEMETRY_MAVLINK;
+        BUILD_OPTION_TELEMETRY_MAVLINK,
 #endif
 #ifdef USE_TELEMETRY_SMARTPORT
-    options |= MSP_BUILD_OPTION_FLAG_TELEMETRY_SMARTPORT;
+        BUILD_OPTION_TELEMETRY_SMARTPORT,
 #endif
 #ifdef USE_TELEMETRY_SRXL
-    options |= MSP_BUILD_OPTION_FLAG_TELEMETRY_SRXL;
+        BUILD_OPTION_TELEMETRY_SRXL,
 #endif
 #ifdef USE_ACRO_TRAINER
-    options |= MSP_BUILD_OPTION_FLAG_ACRO_TRAINER;
+        BUILD_OPTION_ACRO_TRAINER,
 #endif
 #ifdef USE_AKK_SMARTAUDIO
-    options |= MSP_BUILD_OPTION_FLAG_AKK_SMARTAUDIO;
+        BUILD_OPTION_AKK_SMARTAUDIO,
 #endif
 #ifdef USE_BATTERY_CONTINUE
-    options |= MSP_BUILD_OPTION_FLAG_BATTERY_CONTINUE;
+        BUILD_OPTION_BATTERY_CONTINUE,
 #endif
 #ifdef USE_CAMERA_CONTROL
-    options |= MSP_BUILD_OPTION_FLAG_CAMERA_CONTROL;
+        BUILD_OPTION_CAMERA_CONTROL,
 #endif
 #ifdef USE_DASHBOARD
-    options |= MSP_BUILD_OPTION_FLAG_DASHBOARD;
+        BUILD_OPTION_DASHBOARD,
 #endif
-    sbufWriteU8(dst, options); // byte 3
-    options = 0;
 #ifdef USE_EMFAT_TOOLS
-    options |= MSP_BUILD_OPTION_FLAG_EMFAT_TOOLS;
+        BUILD_OPTION_EMFAT_TOOLS,
 #endif
 #ifdef USE_ESCSERIAL_SIMONK
-    options |= MSP_BUILD_OPTION_FLAG_ESCSERIAL_SIMONK;
+        BUILD_OPTION_ESCSERIAL_SIMONK,
 #endif
 #ifdef USE_FRSKYOSD
-    options |= MSP_BUILD_OPTION_FLAG_FRSKYOSD;
+        BUILD_OPTION_FRSKYOSD,
 #endif
 #ifdef USE_GPS
-    options |= MSP_BUILD_OPTION_FLAG_GPS;
+        BUILD_OPTION_GPS,
 #endif
 #ifdef USE_LED_STRIP
-    options |= MSP_BUILD_OPTION_FLAG_LED_STRIP;
+        BUILD_OPTION_LED_STRIP,
 #endif
 #ifdef USE_LED_STRIP_64
-    options |= MSP_BUILD_OPTION_FLAG_LED_STRIP_64;
+        BUILD_OPTION_LED_STRIP_64,
 #endif
 #ifdef USE_MAG
-    options |= MSP_BUILD_OPTION_FLAG_MAG;
+        BUILD_OPTION_MAG,
 #endif
 #ifdef USE_OSD_SD
-    options |= MSP_BUILD_OPTION_FLAG_OSD_SD;
+        BUILD_OPTION_OSD_SD,
 #endif
-    sbufWriteU8(dst, options); // byte 4
-    options = 0;
 #ifdef USE_OSD_HD
-    options |= MSP_BUILD_OPTION_FLAG_OSD_HD;
+        BUILD_OPTION_OSD_HD,
 #endif
 #ifdef USE_PINIO
-    options |= MSP_BUILD_OPTION_FLAG_PINIO;
+        BUILD_OPTION_PINIO,
 #endif
 #ifdef USE_RACE_PRO
-    options |= MSP_BUILD_OPTION_FLAG_RACE_PRO;
+        BUILD_OPTION_RACE_PRO,
 #endif
 #ifdef USE_SERVOS
-    options |= MSP_BUILD_OPTION_FLAG_SERVOS;
+        BUILD_OPTION_SERVOS,
 #endif
 #ifdef USE_VTX
-    options |= MSP_BUILD_OPTION_FLAG_VTX;
+        BUILD_OPTION_VTX,
 #endif
 #ifdef USE_BRUSHED
-    options |= MSP_BUILD_OPTION_FLAG_BRUSHED;
+        BUILD_OPTION_BRUSHED,
 #endif
 #ifdef USE_DSHOT
-    options |= MSP_BUILD_OPTION_FLAG_DSHOT;
+        BUILD_OPTION_DSHOT,
 #endif
 #ifdef USE_MULTISHOT
-    options |= MSP_BUILD_OPTION_FLAG_MULTISHOT;
+        BUILD_OPTION_MULTISHOT,
 #endif
-    sbufWriteU8(dst, options); // byte 5
-    options = 0;
 #ifdef USE_ONESHOT
-    options |= MSP_BUILD_OPTION_FLAG_ONESHOT;
+        BUILD_OPTION_ONESHOT,
 #endif
 #ifdef USE_PROSHOT
-    options |= MSP_BUILD_OPTION_FLAG_PROSHOT;
+        BUILD_OPTION_PROSHOT,
 #endif
 #ifdef USE_PWM_OUTPUT
-    options |= MSP_BUILD_OPTION_FLAG_PWM_OUTPUT;
+        BUILD_OPTION_PWM_OUTPUT,
 #endif
-    sbufWriteU8(dst, options); // byte 6
+    };
+    
+    uint16_t lenOptions = ARRAYLEN(options);
+    for (uint16_t i = 0; i < lenOptions; i++)
+    {
+        sbufWriteU16(dst, options[i]);
+    }
 }

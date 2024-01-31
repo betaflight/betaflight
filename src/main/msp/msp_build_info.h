@@ -23,57 +23,52 @@
 
 #include "common/streambuf.h"
 
-typedef enum
-{
-    // byte 1
-    MSP_BUILD_OPTION_FLAG_SERIALRX_CRSF           = 1 << 0,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_FPORT          = 1 << 1,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_GHST           = 1 << 2,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_IBUS           = 1 << 3,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_JETIEXBUS      = 1 << 4,
-    MSP_BUILD_OPTION_FLAG_RX_PPM                  = 1 << 5,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_SBUS           = 1 << 6,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_SPEKTRUM       = 1 << 7,
-    // byte 2
-    MSP_BUILD_OPTION_FLAG_SERIALRX_SRXL2          = 1 << 0,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_SUMD           = 1 << 1,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_SUMH           = 1 << 2,
-    MSP_BUILD_OPTION_FLAG_SERIALRX_XBUS           = 1 << 3,
-    MSP_BUILD_OPTION_FLAG_TELEMETRY_FRSKY_HUB     = 1 << 4,
-    MSP_BUILD_OPTION_FLAG_TELEMETRY_HOTT          = 1 << 5,
-    MSP_BUILD_OPTION_FLAG_TELEMETRY_IBUS_EXTENDED = 1 << 6,
-    MSP_BUILD_OPTION_FLAG_TELEMETRY_LTM           = 1 << 7,
-    // byte 3
-    MSP_BUILD_OPTION_FLAG_TELEMETRY_MAVLINK       = 1 << 0,
-    MSP_BUILD_OPTION_FLAG_TELEMETRY_SMARTPORT     = 1 << 1,
-    MSP_BUILD_OPTION_FLAG_TELEMETRY_SRXL          = 1 << 2,
-    MSP_BUILD_OPTION_FLAG_ACRO_TRAINER            = 1 << 3,
-    MSP_BUILD_OPTION_FLAG_AKK_SMARTAUDIO          = 1 << 4,
-    MSP_BUILD_OPTION_FLAG_BATTERY_CONTINUE        = 1 << 5,
-    MSP_BUILD_OPTION_FLAG_CAMERA_CONTROL          = 1 << 6,
-    MSP_BUILD_OPTION_FLAG_DASHBOARD               = 1 << 7,
-    // byte 4
-    MSP_BUILD_OPTION_FLAG_EMFAT_TOOLS             = 1 << 0,
-    MSP_BUILD_OPTION_FLAG_ESCSERIAL_SIMONK        = 1 << 1,
-    MSP_BUILD_OPTION_FLAG_FRSKYOSD                = 1 << 2,
-    MSP_BUILD_OPTION_FLAG_GPS                     = 1 << 3,
-    MSP_BUILD_OPTION_FLAG_LED_STRIP               = 1 << 4,
-    MSP_BUILD_OPTION_FLAG_LED_STRIP_64            = 1 << 5,
-    MSP_BUILD_OPTION_FLAG_MAG                     = 1 << 6,
-    MSP_BUILD_OPTION_FLAG_OSD_SD                  = 1 << 7,
-    // byte 5
-    MSP_BUILD_OPTION_FLAG_OSD_HD                  = 1 << 0,
-    MSP_BUILD_OPTION_FLAG_PINIO                   = 1 << 1,
-    MSP_BUILD_OPTION_FLAG_RACE_PRO                = 1 << 2,
-    MSP_BUILD_OPTION_FLAG_SERVOS                  = 1 << 3,
-    MSP_BUILD_OPTION_FLAG_VTX                     = 1 << 4,
-    MSP_BUILD_OPTION_FLAG_BRUSHED                 = 1 << 5,
-    MSP_BUILD_OPTION_FLAG_DSHOT                   = 1 << 6,
-    MSP_BUILD_OPTION_FLAG_MULTISHOT               = 1 << 7,
-    // byte 6
-    MSP_BUILD_OPTION_FLAG_ONESHOT                 = 1 << 0,
-    MSP_BUILD_OPTION_FLAG_PROSHOT                 = 1 << 1,
-    MSP_BUILD_OPTION_FLAG_PWM_OUTPUT              = 1 << 2,
-} mspBuildOptionFlags_e;
+// radioProtocols
+#define BUILD_OPTION_SERIALRX_CRSF              1000
+#define BUILD_OPTION_SERIALRX_FPORT             1001
+#define BUILD_OPTION_SERIALRX_GHST              1002
+#define BUILD_OPTION_SERIALRX_IBUS              1003
+#define BUILD_OPTION_SERIALRX_JETIEXBUS         1004
+#define BUILD_OPTION_RX_PPM                     1005
+#define BUILD_OPTION_SERIALRX_SBUS              1006
+#define BUILD_OPTION_SERIALRX_SPEKTRUM          1007
+#define BUILD_OPTION_SERIALRX_SRXL2             1008
+#define BUILD_OPTION_SERIALRX_SUMD              1009
+#define BUILD_OPTION_SERIALRX_SUMH              1010
+#define BUILD_OPTION_SERIALRX_XBUS              1011
+// telemetryProtocols
+#define BUILD_OPTION_TELEMETRY_FRSKY_HUB        2001
+#define BUILD_OPTION_TELEMETRY_HOTT             2002
+#define BUILD_OPTION_TELEMETRY_IBUS_EXTENDED    2003
+#define BUILD_OPTION_TELEMETRY_LTM              2004
+#define BUILD_OPTION_TELEMETRY_MAVLINK          2005
+#define BUILD_OPTION_TELEMETRY_SMARTPORT        2006
+#define BUILD_OPTION_TELEMETRY_SRXL             2007
+// generalOptions
+#define BUILD_OPTION_ACRO_TRAINER               3000
+#define BUILD_OPTION_AKK_SMARTAUDIO             3001
+#define BUILD_OPTION_BATTERY_CONTINUE           3002
+#define BUILD_OPTION_CAMERA_CONTROL             3003
+#define BUILD_OPTION_DASHBOARD                  3004
+#define BUILD_OPTION_EMFAT_TOOLS                3005
+#define BUILD_OPTION_ESCSERIAL_SIMONK           3006
+#define BUILD_OPTION_FRSKYOSD                   3007
+#define BUILD_OPTION_GPS                        3008
+#define BUILD_OPTION_LED_STRIP                  3009
+#define BUILD_OPTION_LED_STRIP_64               3010
+#define BUILD_OPTION_MAG                        3011
+#define BUILD_OPTION_OSD_SD                     3012
+#define BUILD_OPTION_OSD_HD                     3013
+#define BUILD_OPTION_PINIO                      3014
+#define BUILD_OPTION_RACE_PRO                   3015
+#define BUILD_OPTION_SERVOS                     3016
+#define BUILD_OPTION_VTX                        3017
+// motorProtocols
+#define BUILD_OPTION_BRUSHED                    4000
+#define BUILD_OPTION_DSHOT                      4001
+#define BUILD_OPTION_MULTISHOT                  4002
+#define BUILD_OPTION_ONESHOT                    4003
+#define BUILD_OPTION_PROSHOT                    4004
+#define BUILD_OPTION_PWM_OUTPUT                 4005
 
 void sbufWriteBuildInfoFlags(sbuf_t *dst);
