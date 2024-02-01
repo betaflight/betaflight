@@ -160,9 +160,8 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
         BUILD_OPTION_PWM_OUTPUT,
 #endif
     };
-    
-    uint16_t lenOptions = ARRAYLEN(options);
-    for (uint16_t i = 0; i < lenOptions; i++)
+
+    for (unsigned i = 0; i < ARRAYLEN(options); i++)
     {
         sbufWriteU16(dst, options[i]);
     }
