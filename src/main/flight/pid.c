@@ -278,17 +278,15 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    // always allow TPA low on arming
-    static bool isTpaLowFaded = false;
     // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
     throttle = constrainf(throttle, 0.0f, 1.0f);
 
-    const bool tpaLowInactive = (pidRuntime.tpaLowDisabled || isTpaLowFaded || (throttle >= pidRuntime.tpaLowBreakpoint));
+    const bool tpaLowInactive = (pidRuntime.tpaLowDisabled || (throttle >= pidRuntime.tpaLowBreakpoint));
     float tpaRate = 0.0f;
     if (tpaLowInactive) {
         // to get here, throttle exceeded the tpaLow threshold
-        // set the 'faded' latch when not configured to be always on
-        isTpaLowFaded = !pidRuntime.tpaLowAlways;
+        // disable when not configured to be always on 
+        pidRuntime.tpaLowDisabled = pidRuntime.tpaLowDisabled || !pidRuntime.tpaLowAlways;
         // apply normal TPA
         tpaRate = pidRuntime.tpaMultiplier * fmaxf(throttle - pidRuntime.tpaBreakpoint, 0.0f);
     } else {
