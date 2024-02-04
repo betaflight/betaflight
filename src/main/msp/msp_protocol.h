@@ -167,8 +167,7 @@
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
-// Use MSP_BUILD_INFO instead
-// DEPRECATED - #define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
+#define MSP_RADIO_SETUP                 69 //out message list of options available in radio menu
 
 #define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
 #define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip

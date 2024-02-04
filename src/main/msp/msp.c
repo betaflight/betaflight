@@ -751,6 +751,30 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteData(dst, shortGitRevision, GIT_SHORT_REVISION_LENGTH);
         break;
 
+    case MSP_RADIO_SETUP:
+    {
+#define BUILD_HAS_VTX      0
+#define BUILD_HAS_GPS      1
+#define BUILD_HAS_OSD      2
+#define BUILD_HAS_BLACKBOX 3
+
+        uint8_t options = 0;
+#ifdef USE_VTX
+        options |= BIT(BUILD_HAS_VTX); // byte 1 bit 1
+#endif
+#ifdef USE_GPS
+        options |= BIT(BUILD_HAS_GPS); // byte 1 bit 2
+#endif
+#ifdef USE_OSD
+        options |= BIT(BUILD_HAS_OSD); // byte 1 bit 3
+#endif
+#ifdef USE_BLACKBOX
+        options |= BIT(BUILD_HAS_BLACKBOX); // byte 1 bit 4
+#endif
+        sbufWriteU8(dst, options);
+        break;
+    }
+
     case MSP_ANALOG:
         sbufWriteU8(dst, (uint8_t)constrain(getLegacyBatteryVoltage(), 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
