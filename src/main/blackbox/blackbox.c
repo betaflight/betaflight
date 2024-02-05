@@ -1503,6 +1503,11 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_DEADBAND, "%d",           rcControlsConfig()->yaw_deadband);
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_HARDWARE_LPF, "%d",      gyroConfig()->gyro_hardware_lpf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_DELT, "%d",              gyroConfig()->gyro_delt);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_DELTSQR, "%d",           gyroConfig()->gyro_deltSqr);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_BITSHIFT, "%d",          gyroConfig()->gyro_bitshift);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_UI, "%d",                gyroConfig()->gyro_ui);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_UI_ORD, "%d",            gyroConfig()->gyro_ui_ord);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_LPF1_TYPE, "%d",         gyroConfig()->gyro_lpf1_type);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_LPF1_STATIC_HZ, "%d",    gyroConfig()->gyro_lpf1_static_hz);
 #ifdef USE_DYN_LPF
