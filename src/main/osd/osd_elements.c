@@ -1577,6 +1577,71 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 }
 #endif // USE_OSD_STICK_OVERLAY
 
+#ifdef USE_OSD_AAT_TELEMETRY
+static uint16_t osdAATTelemetry_CRC(uint8_t data, uint16_t crcAccum)
+{
+    uint8_t tmp;
+    tmp = data ^ (uint8_t)(crcAccum & 0xff);
+    tmp ^= (tmp << 4);
+    crcAccum = (crcAccum >> 8) ^ (tmp << 8) ^ (tmp << 3) ^ (tmp >> 4);
+    return crcAccum;
+}
+
+
+static void osdElementAATTelemetry(osdElementParms_t *element)
+{
+    uint32_t trk_data;
+    uint16_t trk_crc = 0;
+    static int16_t trk_elevation  = 127;
+    static uint16_t trk_bearing   = 0;
+    char fmtbuf[31];
+    if (ARMING_FLAG(ARMED)) {
+        if (STATE(GPS_FIX)){
+            if (GPS_distanceToHome > 5) {
+                trk_bearing = GPS_directionToHome;
+                trk_bearing += 360 + 180;
+                trk_bearing %= 360;
+                int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitudeCm()) / 10;
+                float at = atan2(alt, GPS_distanceToHome);
+                trk_elevation = (float)at * 57.2957795; // 57.2957795 = 1 rad
+                trk_elevation += 37; // because elevation in telemetry should be from -37 to 90
+                if (trk_elevation < 0) {
+                    trk_elevation = 0;
+                }
+            }
+        }
+        else
+        {
+            trk_elevation = 127;
+            trk_bearing   = 0;
+        }
+    }
+
+    trk_data = 0;                                                   // bit? 0    - packet type 0 = bearing/elevation, 1 = 2 byte data packet
+    trk_data = trk_data | (uint32_t)(0x7F & trk_elevation) << 1;    // bits 1-7  - elevation angle to target. NOTE uint8 is abused. constrained value of -37 to 90 sent as 0 to 127.
+    trk_data = trk_data | (uint32_t)trk_bearing << 8;               // bits 8-17 - bearing angle to target. 0 = true north. 0 to 360
+    trk_crc = osdAATTelemetry_CRC(0xFF & trk_data, trk_crc);        // CRC First Byte? bits 0-7
+    trk_crc = osdAATTelemetry_CRC(0xFF & trk_bearing, trk_crc);     // CRC Second Byte bits 8-15
+    trk_crc = osdAATTelemetry_CRC(trk_bearing >> 8, trk_crc);       // CRC Third Byte? bits? 16-17
+    trk_data = trk_data | (uint32_t)trk_crc << 17;                  // bits 18-29 CRC & 0x3FFFF
+    for (uint8_t t_ctr = 0; t_ctr < 30; t_ctr++) { // Prepare screen buffer and write data line. Big Endian
+        if (trk_data & (uint32_t)1 << t_ctr){
+            fmtbuf[29 - t_ctr] = SYM_TELEMETRY_0;
+        }
+        else
+        {
+            fmtbuf[29 - t_ctr] = SYM_TELEMETRY_1;
+        }
+    }
+    fmtbuf[30] = 0;
+    osdDisplayWrite(element, 0,0, DISPLAYPORT_SEVERITY_NORMAL, fmtbuf);
+
+    if (osdConfig()->osd_telemetry > 1){
+        osdDisplayWrite(element, 0, 3, DISPLAYPORT_SEVERITY_NORMAL, fmtbuf);   // Test display because normal telemetry line is not visible
+    }
+}
+#endif //#ifdef USE_OSD_AAT_TELEMETRY
+
 static void osdElementThrottlePosition(osdElementParms_t *element)
 {
     tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
@@ -1799,6 +1864,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_WARNINGS,
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
+#ifdef USE_OSD_AAT_TELEMETRY
+    OSD_AAT_TELEMETRY,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1938,6 +2006,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
 #endif
+#ifdef USE_OSD_AAT_TELEMETRY
+    [OSD_AAT_TELEMETRY]           = osdElementAATTelemetry,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -1959,6 +2030,13 @@ static void osdAddActiveElement(osd_items_e element)
     if (VISIBLE(osdElementConfig()->item_pos[element])) {
         activeOsdElementArray[activeOsdElementCount++] = element;
     }
+#ifdef USE_OSD_AAT_TELEMETRY
+    else if (element==OSD_AAT_TELEMETRY){
+        if (osdConfig()->osd_telemetry > 0){
+            activeOsdElementArray[activeOsdElementCount++] = element;
+        }
+    }
+#endif 
 }
 
 // Examine the elements and build a list of only the active (enabled)
