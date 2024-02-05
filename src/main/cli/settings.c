@@ -660,7 +660,12 @@ const lookupTableEntry_t lookupTables[] = {
 
 const clivalue_t valueTable[] = {
 // PG_GYRO_CONFIG
-    { PARAM_NAME_GYRO_HARDWARE_LPF, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
+    { PARAM_NAME_GYRO_HARDWARE_LPF, VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
+    { PARAM_NAME_GYRO_DELT,         VAR_UINT8  | HARDWARE_VALUE,  .config.minmaxUnsigned = { 1,   63 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_delt) },
+    { PARAM_NAME_GYRO_DELTSQR,      VAR_UINT16 | HARDWARE_VALUE,  .config.minmaxUnsigned = { 1, 3968 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_deltSqr) },
+    { PARAM_NAME_GYRO_BITSHIFT,     VAR_UINT8  | HARDWARE_VALUE,  .config.minmaxUnsigned = { 3,   15 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_bitshift) },
+    { PARAM_NAME_GYRO_UI,           VAR_UINT8  | HARDWARE_VALUE,  .config.minmaxUnsigned = { 0,   15 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_ui) },
+    { PARAM_NAME_GYRO_UI_ORD,       VAR_UINT8  | HARDWARE_VALUE,  .config.minmaxUnsigned = { 0,    2 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_ui_ord) },
 
 #if defined(USE_GYRO_SPI_ICM20649)
     { "gyro_high_range",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_high_fsr) },
