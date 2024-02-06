@@ -89,7 +89,10 @@ const uint8_t supportedVoltageMeterCount = ARRAYLEN(voltageMeterIds);
 void voltageMeterReset(voltageMeter_t *meter)
 {
     meter->displayFiltered = 0;
+    meter->prevDisplayFiltered = 0;
+    meter->prevDisplayFilteredTime = 0;
     meter->unfiltered = 0;
+    meter->isVoltageStable = false;
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     meter->sagFiltered = 0;
 #endif
