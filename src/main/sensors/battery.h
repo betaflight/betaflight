@@ -97,6 +97,8 @@ void batteryInit(void);
 void batteryUpdateVoltage(timeUs_t currentTimeUs);
 void batteryUpdatePresence(void);
 
+bool isVoltageFromBattery(void);
+
 batteryState_e getBatteryState(void);
 batteryState_e getVoltageState(void);
 batteryState_e getConsumptionState(void);
