@@ -362,13 +362,13 @@ static uint32_t usbVcpAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
 
-    uint32_t available=0;
+    uint32_t available = 0;
 
-    available=APP_Rx_ptr_in-APP_Rx_ptr_out;
-    if(available == 0){
+    available = APP_Rx_ptr_in-APP_Rx_ptr_out;
+    if (available == 0) {
         cdc_struct_type *pcdc = (cdc_struct_type *)otg_core_struct.dev.class_handler->pdata;
-        if(pcdc->g_rx_completed == 1){
-            available=pcdc->g_rxlen;
+        if (pcdc->g_rx_completed == 1) {
+            available = pcdc->g_rxlen;
         }
     }
     return available;
@@ -381,7 +381,8 @@ static uint8_t usbVcpRead(serialPort_t *instance)
    if ((APP_Rx_ptr_in == 0) || (APP_Rx_ptr_out == APP_Rx_ptr_in)){
         APP_Rx_ptr_out = 0;
         APP_Rx_ptr_in = usb_vcp_get_rxdata(&otg_core_struct.dev, APP_Rx_Buffer);
-        if(APP_Rx_ptr_in == 0) {
+        if (APP_Rx_ptr_in == 0) {
+            // We've drained the input buffer
             return 0;
         }
     }

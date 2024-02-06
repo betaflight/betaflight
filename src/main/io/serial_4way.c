@@ -418,7 +418,6 @@ static void WriteByteCrc(uint8_t b)
 
 void esc4wayProcess(serialPort_t *mspPort)
 {
-
     uint8_t ParamBuf[256];
     uint8_t ESC;
     uint8_t I_PARAM_LEN;
@@ -491,7 +490,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     if (isMcuConnected()) {
                         switch (CurrentInterfaceMode)
                         {
-                            #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                             case imATM_BLB:
                             case imSIL_BLB:
                             case imARM_BLB:
@@ -501,8 +500,8 @@ void esc4wayProcess(serialPort_t *mspPort)
                                 }
                                 break;
                             }
-                            #endif
-                            #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+#endif
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                             case imSK:
                             {
                                 if (!Stk_SignOn()) { // SetStateDisconnected();
@@ -510,7 +509,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                                 }
                                 break;
                             }
-                            #endif
+#endif
                             default:
                                 ACK_OUT = ACK_D_GENERAL_ERROR;
                         }
@@ -581,7 +580,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     switch (CurrentInterfaceMode)
                     {
                         case imSIL_BLB:
-                        #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                         case imATM_BLB:
                         case imARM_BLB:
                         {
@@ -596,13 +595,13 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
-                        #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+#endif
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                         case imSK:
                         {
                             break;
                         }
-                        #endif
+#endif
                     }
                     SET_DISCONNECTED;
                     break;
@@ -629,7 +628,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     break;
                 }
 
-                #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                 case cmd_DeviceEraseAll:
                 {
                     switch (CurrentInterfaceMode)
@@ -644,9 +643,9 @@ void esc4wayProcess(serialPort_t *mspPort)
                     }
                     break;
                 }
-                #endif
+#endif
 
-                #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                 case cmd_DevicePageErase:
                 {
                     switch (CurrentInterfaceMode)
@@ -671,7 +670,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     }
                     break;
                 }
-                #endif
+#endif
 
                 //*** Device Memory Read Ops ***
                 case cmd_DeviceRead:
@@ -684,7 +683,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     */
                     switch (CurrentInterfaceMode)
                     {
-                        #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                         case imSIL_BLB:
                         case imATM_BLB:
                         case imARM_BLB:
@@ -695,8 +694,8 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
-                        #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+#endif
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                         case imSK:
                         {
                             if (!Stk_ReadFlash(&ioMem))
@@ -705,7 +704,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
+#endif
                         default:
                             ACK_OUT = ACK_I_INVALID_CMD;
                     }
@@ -727,7 +726,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     */
                     switch (CurrentInterfaceMode)
                     {
-                        #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                         case imATM_BLB:
                         {
                             if (!BL_ReadEEprom(&ioMem))
@@ -736,8 +735,8 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
-                        #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+#endif
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                         case imSK:
                         {
                             if (!Stk_ReadEEprom(&ioMem))
@@ -746,7 +745,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
+#endif
                         default:
                             ACK_OUT = ACK_I_INVALID_CMD;
                     }
@@ -769,7 +768,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     */
                     switch (CurrentInterfaceMode)
                     {
-                        #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                         case imSIL_BLB:
                         case imATM_BLB:
                         case imARM_BLB:
@@ -779,8 +778,8 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
-                        #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+#endif
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                         case imSK:
                         {
                             if (!Stk_WriteFlash(&ioMem))
@@ -789,7 +788,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
+#endif
                     }
                     break;
                 }
@@ -805,7 +804,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     */
                     switch (CurrentInterfaceMode)
                     {
-                        #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                         case imSIL_BLB:
                         {
                             ACK_OUT = ACK_I_INVALID_CMD;
@@ -819,8 +818,8 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
-                        #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
+#endif
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                         case imSK:
                         {
                             if (Stk_WriteEEprom(&ioMem))
@@ -829,12 +828,12 @@ void esc4wayProcess(serialPort_t *mspPort)
                             }
                             break;
                         }
-                        #endif
+#endif
                     }
                     break;
                 }
                 //*** Device Memory Verify Ops ***
-                #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                 case cmd_DeviceVerify:
                 {
                     switch (CurrentInterfaceMode)
@@ -870,7 +869,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     }
                     break;
                 }
-                #endif
+#endif
                 default:
                 {
                     ACK_OUT = ACK_I_INVALID_CMD;
@@ -889,7 +888,7 @@ void esc4wayProcess(serialPort_t *mspPort)
         WriteByteCrc(ioMem.D_FLASH_ADDR_L);
         WriteByteCrc(O_PARAM_LEN);
 
-        i=O_PARAM_LEN;
+        i = O_PARAM_LEN;
         do {
             while (!serialTxBytesFree(port));
 
@@ -910,7 +909,5 @@ void esc4wayProcess(serialPort_t *mspPort)
         }
     };
 }
-
-
 
 #endif
