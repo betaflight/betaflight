@@ -517,10 +517,10 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 14
+CC_VERSION_CHECK_MAX := 15
 
 # Added flags for clang 11 - 14 are not backwards compatible
-ifeq ($(shell expr $(CC_VERSION_MAJOR) \> 10 \& $(CC_VERSION_MAJOR) \< 15), 1)
+ifeq ($(shell expr $(CC_VERSION_MAJOR) \> 10 \& $(CC_VERSION_MAJOR) \< 16), 1)
 COMMON_FLAGS += \
 	-fcommon \
 	-Wno-void-pointer-to-int-cast

@@ -4250,7 +4250,6 @@ static void cliDefaults(const char *cmdName, char *cmdline)
 
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
-    int index = 0;
     bool expectParameterGroupId = false;
     while (tok != NULL) {
         if (expectParameterGroupId) {
@@ -4271,7 +4270,6 @@ static void cliDefaults(const char *cmdName, char *cmdline)
             return;
         }
 
-        index++;
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
