@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from string import ascii_uppercase
+import logging
+import os
+
+import requests
+
+
+HEADER_FILE_TEMPLATE = """{license_header}
+
+#pragma once
+
+#include "common/streambuf.h"
+
+{defines}
+
+void sbufWriteBuildInfoFlags(sbuf_t *dst);
+"""
+
+SOURCE_FILE_TEMPLATE = """{license_header}
+
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "common/streambuf.h"
+
+#include "msp/msp_build_info.h"
+
+void sbufWriteBuildInfoFlags(sbuf_t *dst) 
+{
+    static const uint16_t options[] = {
+{build_options}
+    };
+
+    for (unsigned i = 0; i < ARRAYLEN(options); i++)
+    {
+        sbufWriteU16(dst, options[i]);
+    }
+}
+"""
+
+
+def __find_project_root() -> str:
+    utils_dir = os.path.abspath(os.path.dirname(__file__))
+    src_dir = os.path.dirname(utils_dir)
+    root_dir = os.path.dirname(src_dir)
+    return os.path.realpath(root_dir)
+
+
+def camel_case_to_title(s: str) -> str:
+    if not s:
+        return "Unspecified"
+    else:
+        return "".join([(c if c not in ascii_uppercase else f" {c}") for c in s]).title()
+
+
+def fetch_build_options(endpoint_url: str) -> tuple:
+    logging.info(f"Fetching JSON: {endpoint_url}")
+    data = requests.get(endpoint_url, timeout=2).json()
+    defines  = []
+    options = []
+    groups = list(data.keys())
+    for group_index , option_list in enumerate(data.values()):
+        for i, option in enumerate(option_list):
+            define = option.get("value")
+            if define:
+                defines.append(define)
+                number = option.get("key")
+                name = define.replace("USE_", "BUILD_OPTION_")
+                options.append((name, number, camel_case_to_title(groups[group_index])))
+    logging.info(f"Number of defines: {len(defines)}")
+    return defines, options
+
+
+def main(project_root: str, endpoint_url: str):
+    logging.info(f"Project root: {project_root}")
+
+    license_file_path = os.path.join(project_root, "DEFAULT_LICENSE.md")
+    msp_build_info_c_path = os.path.join(project_root, "src", "main", "msp", "msp_build_info.c")
+    msp_build_info_h_path = os.path.join(project_root, "src", "main", "msp", "msp_build_info.h")
+
+    with open(license_file_path) as f:
+        license_header = f.read().rstrip()
+
+    gates, options = fetch_build_options(endpoint_url)
+
+    with open(msp_build_info_h_path, "w+") as f:
+        max_len = max(map(lambda x: len(x[0]), options)) + 4
+        lines = []
+        last_group = None
+        for k, v, g in options:
+            if g != last_group:
+                lines.append(f"// {g}")
+                last_group = g
+            lines.append("#define {:<{width}}{}".format(k, v, width=max_len))
+        data = HEADER_FILE_TEMPLATE \
+            .replace("{license_header}", license_header) \
+            .replace("{defines}", "\n".join(lines))
+        f.write(data)
+
+    logging.info(f"Written header file: {msp_build_info_h_path}")
+
+    with open(msp_build_info_c_path, "w+") as f:
+        lines = []
+        indent = " " * 8
+        for i, define in enumerate(gates):
+            option_name, _, _ = options[i]
+            lines.append(f"#ifdef {define}")
+            lines.append(f"{indent}{option_name},")
+            lines.append("#endif")
+        data = SOURCE_FILE_TEMPLATE \
+            .replace("{license_header}", license_header) \
+            .replace("{build_options}", "\n".join(lines))
+        f.write(data)
+
+    logging.info(f"Written source file: {msp_build_info_c_path}")
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument("endpoint_url", metavar="ENDPOINT_URL", help="URL to build options API endpoint")
+    parser.add_argument("-v", "--verbose", action="store_true")
+
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO if args.verbose else logging.ERROR)
+
+    main(__find_project_root(), args.endpoint_url)
