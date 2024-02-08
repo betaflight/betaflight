@@ -80,5 +80,6 @@
 #define USE_EXTI
 
 #define USE_PID_DENOM_CHECK
+#define USE_PID_DENOM_OVERCLOCK_LEVEL 2
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
