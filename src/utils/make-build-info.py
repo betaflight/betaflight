@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from datetime import datetime
+from hashlib import md5
 from string import ascii_uppercase
+import json
 import logging
 import os
 
@@ -52,7 +54,7 @@ WARNING_COMMENT_TEMPLATE = """
  *
  * Generator    : `src/utils/make-build-info.py`
  * Source       : {source}
- * Timestamp UTC: {timestamp_utc}
+ * Input hash   : {input_hash}
  */
 """
 
@@ -74,6 +76,9 @@ def camel_case_to_title(s: str) -> str:
 def fetch_build_options(endpoint_url: str) -> tuple:
     logging.info(f"Fetching JSON: {endpoint_url}")
     data = requests.get(endpoint_url, timeout=2).json()
+    input_hash = md5(json.dumps(data, sort_keys=True).encode()).hexdigest()
+    logging.info(f"Input hash: {input_hash}")
+
     defines  = []
     options = []
     groups = list(data.keys())
@@ -86,14 +91,14 @@ def fetch_build_options(endpoint_url: str) -> tuple:
                 name = define.replace("USE_", "BUILD_OPTION_")
                 options.append((name, number, camel_case_to_title(groups[group_index])))
     logging.info(f"Number of defines: {len(defines)}")
-    return defines, options
+    return defines, options, input_hash
 
 
-def get_warning_comment(source: str) -> str:
+def get_warning_comment(source: str, input_hash: str) -> str:
     return WARNING_COMMENT_TEMPLATE \
         .strip() \
         .replace("{source}", source) \
-        .replace("{timestamp_utc}", datetime.utcnow().isoformat())
+        .replace("{input_hash}", input_hash) \
 
 
 def main(root_path: str, target_path: str, endpoint_url: str):
@@ -106,9 +111,9 @@ def main(root_path: str, target_path: str, endpoint_url: str):
     with open(license_file_path) as f:
         license_header = f.read().rstrip()
 
-    gates, options = fetch_build_options(endpoint_url)
+    gates, options, input_hash = fetch_build_options(endpoint_url)
 
-    generated_warning = get_warning_comment(endpoint_url)
+    generated_warning = get_warning_comment(endpoint_url, input_hash)
 
     with open(msp_build_info_h_path, "w+") as f:
         max_len = max(map(lambda x: len(x[0]), options)) + 4

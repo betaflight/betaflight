@@ -24,7 +24,7 @@
  *
  * Generator    : `src/utils/make-build-info.py`
  * Source       : https://build.betaflight.com/api/options/4.5.0-zulu
- * Timestamp UTC: 2024-02-09T15:00:13.444266
+ * Input hash   : 2b66ff01549c4d858593dbf96c6aae12
  */
 
 #pragma once
