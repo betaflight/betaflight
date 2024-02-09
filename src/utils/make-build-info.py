@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from datetime import datetime
 from string import ascii_uppercase
 import logging
 import os
@@ -8,6 +9,8 @@ import requests
 
 
 HEADER_FILE_TEMPLATE = """{license_header}
+
+{generated_warning}
 
 #pragma once
 
@@ -19,6 +22,8 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst);
 """
 
 SOURCE_FILE_TEMPLATE = """{license_header}
+
+{generated_warning}
 
 #include <stdint.h>
 
@@ -39,6 +44,16 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
         sbufWriteU16(dst, options[i]);
     }
 }
+"""
+
+WARNING_COMMENT_TEMPLATE = """
+/*
+ * WARNING: This is an auto-generated file, please do not edit directly!
+ *
+ * Generator    : `src/utils/make-build-info.py`
+ * Source       : {source}
+ * Timestamp UTC: {timestamp_utc}
+ */
 """
 
 
@@ -62,8 +77,8 @@ def fetch_build_options(endpoint_url: str) -> tuple:
     defines  = []
     options = []
     groups = list(data.keys())
-    for group_index , option_list in enumerate(data.values()):
-        for i, option in enumerate(option_list):
+    for group_index, option_list in enumerate(data.values()):
+        for option in option_list:
             define = option.get("value")
             if define:
                 defines.append(define)
@@ -74,29 +89,39 @@ def fetch_build_options(endpoint_url: str) -> tuple:
     return defines, options
 
 
-def main(project_root: str, endpoint_url: str):
-    logging.info(f"Project root: {project_root}")
+def get_warning_comment(source: str) -> str:
+    return WARNING_COMMENT_TEMPLATE \
+        .strip() \
+        .replace("{source}", source) \
+        .replace("{timestamp_utc}", datetime.utcnow().isoformat())
 
-    license_file_path = os.path.join(project_root, "DEFAULT_LICENSE.md")
-    msp_build_info_c_path = os.path.join(project_root, "src", "main", "msp", "msp_build_info.c")
-    msp_build_info_h_path = os.path.join(project_root, "src", "main", "msp", "msp_build_info.h")
+
+def main(root_path: str, target_path: str, endpoint_url: str):
+    logging.info(f"Project root: {root_path}")
+
+    license_file_path = os.path.join(root_path, "DEFAULT_LICENSE.md")
+    msp_build_info_c_path = os.path.join(target_path, "msp_build_info.c")
+    msp_build_info_h_path = os.path.join(target_path, "msp_build_info.h")
 
     with open(license_file_path) as f:
         license_header = f.read().rstrip()
 
     gates, options = fetch_build_options(endpoint_url)
 
+    generated_warning = get_warning_comment(endpoint_url)
+
     with open(msp_build_info_h_path, "w+") as f:
         max_len = max(map(lambda x: len(x[0]), options)) + 4
         lines = []
         last_group = None
-        for k, v, g in options:
-            if g != last_group:
-                lines.append(f"// {g}")
-                last_group = g
-            lines.append("#define {:<{width}}{}".format(k, v, width=max_len))
+        for option_name, option_value, group in options:
+            if group != last_group:
+                lines.append(f"// {group}")
+                last_group = group
+            lines.append(f"#define {option_name:<{max_len}}{option_value}")
         data = HEADER_FILE_TEMPLATE \
             .replace("{license_header}", license_header) \
+            .replace("{generated_warning}", generated_warning) \
             .replace("{defines}", "\n".join(lines))
         f.write(data)
 
@@ -112,6 +137,7 @@ def main(project_root: str, endpoint_url: str):
             lines.append("#endif")
         data = SOURCE_FILE_TEMPLATE \
             .replace("{license_header}", license_header) \
+            .replace("{generated_warning}", generated_warning) \
             .replace("{build_options}", "\n".join(lines))
         f.write(data)
 
@@ -119,12 +145,20 @@ def main(project_root: str, endpoint_url: str):
 
 
 if __name__ == "__main__":
+    PROJECT_ROOT_DIR = __find_project_root()
+    DEFAULT_TARGET_DIR = os.path.join(PROJECT_ROOT_DIR, "src", "main", "msp")
+
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument("endpoint_url", metavar="ENDPOINT_URL", help="URL to build options API endpoint")
+    parser.add_argument("endpoint_url", help="URL to build options API endpoint")
+    parser.add_argument("-d", "--target-dir", default=DEFAULT_TARGET_DIR, help="Path to output directory")
     parser.add_argument("-v", "--verbose", action="store_true")
 
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO if args.verbose else logging.ERROR)
 
-    main(__find_project_root(), args.endpoint_url)
+    main(
+        root_path=PROJECT_ROOT_DIR,
+        target_path=args.target_dir,
+        endpoint_url=args.endpoint_url,
+    )

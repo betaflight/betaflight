@@ -19,6 +19,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * WARNING: This is an auto-generated file, please do not edit directly!
+ *
+ * Generator    : `src/utils/make-build-info.py`
+ * Source       : https://build.betaflight.com/api/options/4.5.0-zulu
+ * Timestamp UTC: 2024-02-09T15:00:13.444266
+ */
+
 #pragma once
 
 #include "common/streambuf.h"
