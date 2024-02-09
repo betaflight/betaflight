@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from datetime import datetime
 from hashlib import md5
-from string import ascii_uppercase
 import json
 import logging
 import os
@@ -70,7 +68,10 @@ def camel_case_to_title(s: str) -> str:
     if not s:
         return "Unspecified"
     else:
-        return "".join([(c if c not in ascii_uppercase else f" {c}") for c in s]).title()
+        spaceless = s.replace(" ", "")
+        return "".join([(c if not c.isupper() else f" {c}") for c in spaceless]) \
+            .lstrip() \
+            .title()
 
 
 def fetch_build_options(endpoint_url: str) -> tuple:
