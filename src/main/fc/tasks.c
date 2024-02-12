@@ -58,6 +58,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/flight_health.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -454,6 +455,9 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_RC_STATS] = DEFINE_TASK("RC_STATS", NULL, NULL, rcStatsUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
 
+#ifdef USE_THRUST_IMBALANCE_DETECTION
+    [TASK_THRUST_IMBALANCE_DETECTION] = DEFINE_TASK("THRUST_IMBALANCE_DETECTION", NULL, NULL, thrustImbalanceDetectionProcess, TASK_PERIOD_HZ(TASK_THRUST_IMBALANCE_RATE_HZ), TASK_PRIORITY_MEDIUM),
+#endif
 };
 
 task_t *getTask(unsigned taskId)
@@ -628,5 +632,9 @@ void tasksInit(void)
 
 #ifdef USE_RC_STATS
     setTaskEnabled(TASK_RC_STATS, true);
+#endif
+
+#ifdef USE_THRUST_IMBALANCE_DETECTION
+    setTaskEnabled(TASK_THRUST_IMBALANCE_DETECTION, true);
 #endif
 }

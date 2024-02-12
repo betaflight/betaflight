@@ -179,6 +179,9 @@ typedef enum {
 #ifdef USE_RC_STATS
     TASK_RC_STATS,
 #endif
+#ifdef USE_THRUST_IMBALANCE_DETECTION
+    TASK_THRUST_IMBALANCE_DETECTION,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

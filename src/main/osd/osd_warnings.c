@@ -44,12 +44,14 @@
 #include "fc/rc.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/flight_health.h"
 
 #include "io/beeper.h"
 
@@ -219,6 +221,15 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *blinking = true;
         return;
     }
+
+#ifdef USE_THRUST_IMBALANCE_DETECTION
+    if (osdWarnGetState(OSD_WARNING_THRUST_IMBALANCE) && isThrustImbalanceDetected()) {
+        tfp_sprintf(warningText, "THRUST IMBALANCE");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif // USE_THRUST_IMBALANCE_DETECTION
 
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&

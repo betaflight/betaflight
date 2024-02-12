@@ -143,6 +143,10 @@
 #define PARAM_NAME_HORIZON_IGNORE_STICKS "horizon_ignore_sticks"
 #define PARAM_NAME_HORIZON_DELAY_MS "horizon_delay_ms"
 
+#define PARAM_NAME_THRUST_IMBALANCE_THRESHOLD "thrust_imbalance_threshold"
+#define PARAM_NAME_THRUST_IMBALANCE_TRIGGER_DELAY "thrust_imbalance_trigger_delay"
+#define PARAM_NAME_THRUST_IMBALANCE_UNTRIGGER_DELAY "thrust_imbalance_untrigger_delay"
+
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
 #define PARAM_NAME_GPS_SBAS_MODE "gps_sbas_mode"

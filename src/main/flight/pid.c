@@ -229,6 +229,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_low_always = 0,
         .ez_landing_threshold = 25,
         .ez_landing_limit = 5,
+        .thrust_imbalance_threshold = 20,
+        .thrust_imbalance_trigger_delay = 1,
+        .thrust_imbalance_untrigger_delay = 10,
     );
 
 #ifndef USE_D_MIN

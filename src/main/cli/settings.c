@@ -1261,6 +1261,12 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_EZ_LANDING_THRESHOLD,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_threshold) },
     { PARAM_NAME_EZ_LANDING_LIMIT,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 75 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_limit) },
 
+#ifdef USE_THRUST_IMBALANCE_DETECTION
+    { PARAM_NAME_THRUST_IMBALANCE_THRESHOLD,       VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, thrust_imbalance_threshold) },
+    { PARAM_NAME_THRUST_IMBALANCE_TRIGGER_DELAY,   VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, thrust_imbalance_trigger_delay) },
+    { PARAM_NAME_THRUST_IMBALANCE_UNTRIGGER_DELAY, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, thrust_imbalance_untrigger_delay) },
+#endif
+
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },
