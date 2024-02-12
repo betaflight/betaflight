@@ -28,7 +28,7 @@
 
 #include "pg/pg.h"
 
-#define TASK_LEDSTRIP_RATE_HZ 50
+#define TASK_LEDSTRIP_RATE_HZ 60
 
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6
