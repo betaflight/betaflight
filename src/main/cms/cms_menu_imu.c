@@ -725,9 +725,9 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 
     { "TPA RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate, 0, 100, 1, 10} },
     { "TPA BRKPT",     OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint, 1000, 2000, 10} },
-    { "TPA LOW RATE",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_low_rate, 0, 100, 1, 10} },
+    { "TPA LOW RATE",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_tpa_low_rate, 0, 100, 1} },
     { "TPA LOW BRKPT", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_low_breakpoint, 1000, 2000, 10} },
-    { "TPA LOW ALWYS", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_tpa_low_always, 0, 1, 1} },
+    { "TPA LOW ALWYS", OME_Bool,   NULL, &cmsx_tpa_low_always },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
