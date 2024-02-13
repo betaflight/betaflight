@@ -1264,9 +1264,11 @@ void ledStripInit(void)
     ws2811LedStripInit(ledStripConfig()->ioTag);
 }
 
-static uint8_t selectVisualBeeperColor(uint8_t colorIndex)
+static uint8_t selectVisualBeeperColor(uint8_t colorIndex, bool *colorIndexIsCustom)
 {
     if (ledStripConfig()->ledstrip_visual_beeper && isBeeperOn()) {
+        if (colorIndexIsCustom)
+            *colorIndexIsCustom = false;
         return ledStripConfig()->ledstrip_visual_beeper_color;
     } else {
         return colorIndex;
@@ -1279,6 +1281,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     uint8_t colorIndex = COLOR_BLACK;
     bool blinkLed = false;
     bool visualBeeperOverride = true;
+    bool useCustomColors = false;
     unsigned flashPeriod;
     unsigned onPercent;
 
@@ -1308,6 +1311,9 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
                             freq = vtxSettingsConfig()->freq;
                         }
                         colorIndex = getColorByVtxFrequency(freq);
+                        // getColorByVtxFrequency always uses custom colors
+                        // as they may be reassigned by the race director
+                        useCustomColors = true;
                     }
                 }
 #endif
@@ -1335,11 +1341,11 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     }
 
     if (visualBeeperOverride) {
-        colorIndex = selectVisualBeeperColor(colorIndex);
+        colorIndex = selectVisualBeeperColor(colorIndex, &useCustomColors);
     }
 
     if ((colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs)) {
-        setStripColor(&ledStripStatusModeConfig()->colors[colorIndex]);
+        setStripColor((useCustomColors) ? &ledStripStatusModeConfig()->colors[colorIndex] : &hsv[colorIndex]);
         previousProfileColorIndex = colorIndex;
         colorUpdateTimeUs = currentTimeUs + PROFILE_COLOR_UPDATE_INTERVAL_US;
         return LED_PROFILE_ADVANCE;
