@@ -396,13 +396,19 @@ static serialPort_t *port;
 
 static bool ReadByte(uint8_t *data, timeDelta_t timeoutUs)
 {
-    // need timedOut?
+#ifdef USE_TIMEOUT_4WAYIF
     timeUs_t startTime = micros();
     while (!serialRxBytesWaiting(port)) {
         if (timeoutUs && (cmpTimeUs(micros(), startTime) > timeoutUs)) {
             return true;
         }
     }
+#else
+    UNUSED(timeoutUs);
+
+    // Wait indefinitely
+    while (!serialRxBytesWaiting(port));
+#endif
 
     *data = serialRead(port);
 
