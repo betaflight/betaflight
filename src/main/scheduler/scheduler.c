@@ -201,7 +201,7 @@ void taskSystemLoad(timeUs_t currentTimeUs)
 #endif
 }
 
-uint32_t getCPUPercentageLate(void)
+uint32_t getCpuPercentageLate(void)
 {
 #if defined(USE_LATE_TASK_STATISTICS)
     return lateTaskPercentage;
