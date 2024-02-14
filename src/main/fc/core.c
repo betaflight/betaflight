@@ -324,7 +324,7 @@ void updateArmingStatus(void)
         }
 
 #if defined(USE_LATE_TASK_STATISTICS)
-        if ((getCPUPercentageLate() > schedulerConfig()->cpuLatePercentageLimit)) {
+        if ((getCpuPercentageLate() > schedulerConfig()->cpuLatePercentageLimit)) {
             setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_LOAD);
