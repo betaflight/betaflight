@@ -220,6 +220,7 @@
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_SMARTPORT
 #undef USE_TELEMETRY_SRXL
+#endif
 
 #ifdef USE_SERIALRX_FPORT
 #ifndef USE_TELEMETRY
@@ -227,7 +228,6 @@
 #endif
 #ifndef USE_TELEMETRY_SMARTPORT
 #define USE_TELEMETRY_SMARTPORT
-#endif
 #endif
 #endif
 
