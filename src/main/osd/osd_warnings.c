@@ -213,6 +213,13 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
+    if (osdWarnGetState(OSD_WARNING_LOAD) && (getArmingDisableFlags() & ARMING_DISABLED_LOAD)) {
+        tfp_sprintf(warningText, "CPU OVERLOAD");
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
+        *blinking = true;
+        return;
+    }
+
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&
        ARMING_FLAG(ARMED) &&
