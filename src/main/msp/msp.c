@@ -1459,7 +1459,7 @@ case MSP_NAME:
 
 #ifdef USE_MAG
     case MSP_COMPASS_CONFIG:
-        sbufWriteU16(dst, imuConfig()->mag_declination);
+        sbufWriteU16(dst, imuConfig()->mag_declination * 10);
         break;
 #endif
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
@@ -2851,7 +2851,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
 #ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
-        imuConfigMutable()->mag_declination = sbufReadU16(src);
+        imuConfigMutable()->mag_declination = sbufReadU16(src) / 10;
         break;
 #endif
 
