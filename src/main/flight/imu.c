@@ -86,10 +86,8 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_QUIET_TIME 250000   // 250ms - gyro quiet period after disarm before attitude reset
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
-#define GPS_COG_MIN_GROUNDSPEED 100        // 1.0m/s - the minimum groundspeed for a gps based IMU heading to be considered valid
-                                           // Better to have some update than none for GPS Rescue at slow return speeds
+#define GPS_COG_MIN_GROUNDSPEED 200        // 2.0m/s - the minimum groundspeed for GPS Heading correction to be initialised
 #define GPS_COG_MAX_GROUNDSPEED 500        // 5.0m/s - Value for 'normal' 1.0 yaw IMU CogGain
-
 bool canUseGPSHeading = true;
 
 static float throttleAngleScale;
@@ -222,10 +220,16 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     // Calculate general spin rate (rad/s)
     const float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
 
-    // Use raw heading error (from GPS or whatever else)
+    // Calculate raw heading error from GPS courseOverGround
+
     float ex = 0, ey = 0, ez = 0;
-    if (cogYawGain != 0.0f) {
-        // Used in a GPS Rescue to boost IMU yaw gain when course over ground and velocity to home differ significantly
+
+    // In non-rescue settings, cogYawGain changes depending on GPS groundspeed from 0.0 to max of 2.0 at 10m/s or higher
+    // cogYawGain >f 0.1 means > 0.5m/s, a value where we are likely to start getting some value from the GPS heading
+    // In a GPS Rescue, cogYawGain changes when course over ground and velocity to home differ significantly to max of 4.5
+    // cogYawGain is a simple multiplier for the yaw error factor ez
+
+    if (cogYawGain > 0.1f) {
 
         // Compute heading vector in EF from scalar CoG. CoG is clockwise from North
         // Note that Earth frame X is pointing north and sin/cos argument is anticlockwise
@@ -249,7 +253,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // increase gain for small tilt (just heuristic; sqrt is cheap on F4+)
         ez_ef /= sqrtf(heading_mag);
 #endif
-        ez_ef *= cogYawGain;          // apply gain parameter
+        ez_ef *= cogYawGain;          // apply cogYawGain gain parameter
         // convert to body frame
         ex += rMat[2][0] * ez_ef;
         ey += rMat[2][1] * ez_ef;
@@ -286,7 +290,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // note that if the debug doesn't run, this reset will not occur, and we won't waste cycles on the comparison
         mag.isNewMagADCFlag = false;
     }
-#endif
+#endif // USE_GPS_RESCUE
 
     if (useMag && magNormSquared > 0.01f) {
         // Normalise magnetometer measurement
@@ -311,7 +315,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
     }
 #else
     UNUSED(useMag);
-#endif
+#endif // USE_MAG
 
     // Use measured acceleration vector
     float recipAccNorm = sq(ax) + sq(ay) + sq(az);
@@ -412,8 +416,8 @@ static bool imuIsAccelerometerHealthy(float *accAverage)
     return (0.81f < accMagnitudeSq) && (accMagnitudeSq < 1.21f);
 }
 
-// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp * 1.0 scaling.
-// When disarmed after initial boot, the scaling is set to 10.0 for the first 20 seconds to speed up initial convergence.
+// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, the default value
+// When disarmed after initial boot, the scaling is 10 times higher  for the first 20 seconds to speed up initial convergence.
 // After disarming we want to quickly reestablish convergence to deal with the attitude estimation being incorrect due to a crash.
 //   - wait for a 250ms period of low gyro activity to ensure the craft is not moving
 //   - use a large dcmKpGain value for 500ms to allow the attitude estimate to quickly converge
@@ -456,7 +460,7 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
                 stateTimeout = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
                 arState = stReset;
             }
-            // low gain (value of 0.25 with defaults) during quiet phase
+            // low gain (default value of 0.25) during quiet phase
             return imuRuntimeConfig.imuDcmKp;
         case stReset:
             if (cmpTimeUs(currentTimeUs, stateTimeout) >= 0) {
@@ -527,7 +531,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     bool useAcc = false;
     bool useMag = false;
     float cogYawGain = 0.0f; // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course, default to no correction from CoG
-    float courseOverGround = 0; // To be used when cogYawGain is non-zero, in radians
+    float courseOverGround = 0.0f; // North
 
     const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTimeUs;
@@ -541,18 +545,24 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         useMag = true;
     }
 #endif
+
 #if defined(USE_GPS)
-    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
-        // Use GPS course over ground to correct attitude.values.yaw
-        const float imuYawGroundspeed = fminf ((float)gpsSol.groundSpeed / GPS_COG_MAX_GROUNDSPEED, 2.0f);
-        courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-        cogYawGain = (FLIGHT_MODE(GPS_RESCUE_MODE)) ? gpsRescueGetImuYawCogGain() : imuYawGroundspeed;
-        // normally update yaw heading with GPS data, but when in a Rescue, modify the IMU yaw gain dynamically
-        if (shouldInitializeGPSHeading()) {
-            // Reset our reference and reinitialize quaternion.
-            // shouldInitializeGPSHeading() returns true only once.
+    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+        static bool gpsHeadingInitialized = false;
+        if (gpsHeadingInitialized) {
+            // Use GPS course over ground to correct attitude.values.yaw, depending on GPS Rescue state and groundspeed.
+            // while not in a rescue, the imuYawGroundspeed value is zero at 0.0m/s, rising to 1.0 at 5m/s, reaching max of 2.0 at 10m/s
+            const float imuYawGroundspeed = fminf ((float)gpsSol.groundSpeed / GPS_COG_MAX_GROUNDSPEED, 2.0f);
+            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+            // GPS_Rescue adjusts cogYawGain during a rescue, otherwise use imuYawGroundspeed factor
+            // cogYawGain multiplies the ez_ef gain factor in the IMU code, influencing how quickly the GPS data modifies heading values
+            cogYawGain = (FLIGHT_MODE(GPS_RESCUE_MODE)) ? gpsRescueGetImuYawCogGain() : imuYawGroundspeed;
+        } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
+            // Reset the reference and reinitialize quaternion factors when GPS groundspeed > 2.0 m/s
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-            cogYawGain = 0.0f; // Don't use the COG when we first initialize
+            // cogYawGain will be zero on the initialisation run
+            // Only runs once.
+            gpsHeadingInitialized = true;
         }
     }
 #endif
@@ -634,23 +644,10 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         schedulerIgnoreTaskStateTime();
     }
 
-    DEBUG_SET(DEBUG_ATTITUDE, X, acc.accADC[X]); // roll
-    DEBUG_SET(DEBUG_ATTITUDE, Y, acc.accADC[Y]); // pitch
+    DEBUG_SET(DEBUG_ATTITUDE, 0, attitude.values.yaw); // roll
+    DEBUG_SET(DEBUG_ATTITUDE, 1, attitude.values.pitch); // pitch
 }
 #endif // USE_ACC
-
-bool shouldInitializeGPSHeading(void)
-{
-    static bool initialized = false;
-
-    if (!initialized) {
-        initialized = true;
-
-        return true;
-    }
-
-    return false;
-}
 
 float getCosTiltAngle(void)
 {
