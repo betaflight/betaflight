@@ -544,7 +544,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #if defined(USE_GPS)
     if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
-        const float imuYawGroundspeed = fminf (gpsSol.groundSpeed / GPS_COG_MAX_GROUNDSPEED, 2.0f);
+        const float imuYawGroundspeed = fminf ((float)gpsSol.groundSpeed / GPS_COG_MAX_GROUNDSPEED, 2.0f);
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
         cogYawGain = (FLIGHT_MODE(GPS_RESCUE_MODE)) ? gpsRescueGetImuYawCogGain() : imuYawGroundspeed;
         // normally update yaw heading with GPS data, but when in a Rescue, modify the IMU yaw gain dynamically
