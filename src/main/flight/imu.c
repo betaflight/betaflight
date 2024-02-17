@@ -87,7 +87,6 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
 #define GPS_COG_MIN_GROUNDSPEED 200        // 2.0m/s - the minimum groundspeed for GPS Heading correction to be initialised
-#define GPS_COG_MAX_GROUNDSPEED 500        // 5.0m/s - Value for 'normal' 1.0 yaw IMU CogGain
 bool canUseGPSHeading = true;
 
 static float throttleAngleScale;
@@ -550,13 +549,19 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
         static bool gpsHeadingInitialized = false;
         if (gpsHeadingInitialized) {
-            // Use GPS course over ground to correct attitude.values.yaw, depending on GPS Rescue state and groundspeed.
-            // while not in a rescue, the imuYawGroundspeed value is zero at 0.0m/s, rising to 1.0 at 5m/s, reaching max of 2.0 at 10m/s
-            const float imuYawGroundspeed = fminf ((float)gpsSol.groundSpeed / GPS_COG_MAX_GROUNDSPEED, 2.0f);
-            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-            // GPS_Rescue adjusts cogYawGain during a rescue, otherwise use imuYawGroundspeed factor
+            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse); // used later
             // cogYawGain multiplies the ez_ef gain factor in the IMU code, influencing how quickly the GPS data modifies heading values
-            cogYawGain = (FLIGHT_MODE(GPS_RESCUE_MODE)) ? gpsRescueGetImuYawCogGain() : imuYawGroundspeed;
+            // Higher values result in more rapid adaptation of IMU heading to GPS Heading.
+            if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+                // GPS_Rescue adjusts cogYawGain during a rescue in a range 0 - 4.5, depending on GPS Rescue state and groundspeed relative to speed to home.
+                cogYawGain = gpsRescueGetImuYawCogGain();
+            } else {
+                // in normal flight, IMU should ignore GPS at low speed, but respond more quickly at higher speeds.
+                // GPS typically returns quite good heading estimates at or above 1 m/s, definitely by 2m/s
+                // cogYawGain will be 0 at 0.0m/s, rising slowly towards 1.0 at 2m/s, and reaching max of 20.0 at 40m/s
+                const float speedRatio = (float)gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
+                cogYawGain = speedRatio > 1.0f ? fminf(speedRatio, 20.0f) : speedRatio * speedRatio;
+            }
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
             // Reset the reference and reinitialize quaternion factors when GPS groundspeed > 2.0 m/s
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
