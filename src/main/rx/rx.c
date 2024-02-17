@@ -761,7 +761,12 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
     if (auxiliaryProcessingRequired) {
         auxiliaryProcessingRequired = !rxRuntimeState.rcProcessFrameFn(&rxRuntimeState);
     }
-
+#if defined(USE_RX_MSP_OVERRIDE)
+    // override failsafe on primary control link
+    if (IS_RC_MODE_ACTIVE(BOXMSPOVERRIDE) && rxConfig()->msp_override_channels_mask) {
+        rxDataProcessingRequired = true;
+    } else
+#endif
     if (!rxDataProcessingRequired) {
         return false;
     }
