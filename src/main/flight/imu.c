@@ -230,12 +230,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // Compute heading vector in EF from scalar CoG. CoG is clockwise from North
         // Note that Earth frame X is pointing north and sin/cos argument is anticlockwise
         const fpVector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
-#define THRUST_COG 1
-#if THRUST_COG
-        const fpVector2_t heading_ef = {.x = rMat[X][Z], .y = rMat[Y][Z]};  // body Z axis (up) - direction of thrust vector
-#else
         const fpVector2_t heading_ef = {.x = rMat[0][0], .y = rMat[1][0]};  // body X axis. Projected vector magnitude is reduced as pitch increases
-#endif
         // cross product = 1 * |heading| * sin(angle) (magnitude of Z vector in 3D)
         // order operands so that rotation is in direction of zero error
         const float cross = vector2Cross(&heading_ef, &cog_ef);
