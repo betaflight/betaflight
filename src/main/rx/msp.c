@@ -59,7 +59,7 @@ void rxMspFrameReceive(uint16_t *frame, int channelCount)
     rxMspFrameDone = true;
 }
 
-static uint8_t rxMspFrameStatus(rxRuntimeState_t *rxRuntimeState)
+uint8_t rxMspFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
 
