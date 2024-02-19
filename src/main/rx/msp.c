@@ -35,6 +35,7 @@
 
 static uint16_t mspFrame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static bool rxMspFrameDone = false;
+static bool rxMspOverrideFrameDone = false;
 
 float rxMspReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
@@ -57,9 +58,10 @@ void rxMspFrameReceive(uint16_t *frame, int channelCount)
     }
 
     rxMspFrameDone = true;
+    rxMspOverrideFrameDone = true;
 }
 
-uint8_t rxMspFrameStatus(rxRuntimeState_t *rxRuntimeState)
+static uint8_t rxMspFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
 
@@ -68,6 +70,16 @@ uint8_t rxMspFrameStatus(rxRuntimeState_t *rxRuntimeState)
     }
 
     rxMspFrameDone = false;
+    return RX_FRAME_COMPLETE;
+}
+
+uint8_t rxMspOverrideFrameStatus(void)
+{
+    if (!rxMspOverrideFrameDone) {
+        return RX_FRAME_PENDING;
+    }
+
+    rxMspOverrideFrameDone = false;
     return RX_FRAME_COMPLETE;
 }
 
