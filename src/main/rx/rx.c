@@ -568,9 +568,11 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
 
 #if defined(USE_RX_MSP_OVERRIDE)
     if (IS_RC_MODE_ACTIVE(BOXMSPOVERRIDE) && rxConfig()->msp_override_channels_mask) {
-        rxSignalReceived = true;
-        rxDataProcessingRequired = true;
-        needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+        if (rxMspFrameStatus(&rxRuntimeState) & RX_FRAME_COMPLETE) {
+            rxSignalReceived = true;
+            rxDataProcessingRequired = true;
+            needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+        }
     }
 #endif
     
