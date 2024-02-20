@@ -73,6 +73,7 @@ static uint8_t rxMspFrameStatus(rxRuntimeState_t *rxRuntimeState)
     return RX_FRAME_COMPLETE;
 }
 
+#if defined(USE_RX_MSP_OVERRIDE)
 uint8_t rxMspOverrideFrameStatus(void)
 {
     if (!rxMspOverrideFrameDone) {
@@ -82,6 +83,7 @@ uint8_t rxMspOverrideFrameStatus(void)
     rxMspOverrideFrameDone = false;
     return RX_FRAME_COMPLETE;
 }
+#endif
 
 void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
