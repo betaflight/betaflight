@@ -44,6 +44,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "fc/rc.h"
 
 #include "io/gps.h"
 
@@ -86,7 +87,7 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_QUIET_TIME 250000   // 250ms - gyro quiet period after disarm before attitude reset
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
-#define GPS_COG_MIN_GROUNDSPEED 200        // 2.0m/s - the minimum groundspeed for GPS Heading correction to be initialised
+#define GPS_COG_MIN_GROUNDSPEED 100        // 1.0m/s - min groundspeed for GPS Heading reinitialisation etc
 bool canUseGPSHeading = true;
 
 static float throttleAngleScale;
@@ -212,7 +213,7 @@ static float invSqrt(float x)
 STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag,
-                                float cogYawGain, float courseOverGround, const float dcmKpGain)
+                                float gpsGroundspeedGain, float courseOverGround, const float dcmKpGain)
 {
     static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
 
@@ -221,8 +222,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
     float ex = 0, ey = 0, ez = 0;
 
-    // *** Calculate and correct IMU heading from GPS values ***
-    if (cogYawGain > 0.0f) {
+    // *** Calculate and correct IMU heading from GPS values once min groundspeed exceeded ***
+    if (gpsGroundspeedGain > 0.0f) {
         // Compute GPS heading vector in earth frame (ef) from scalar GPS courseOverGround
         // Earth frame X is pointing north and sin/cos argument is anticlockwise
         const fpVector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
@@ -232,7 +233,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         const fpVector2_t heading_ef = {.x = rMat[0][0], .y = rMat[1][0]};
         const float headingMagnitude = vector2Mag(&heading_ef);
 
-        // cross (product) = heading * cogHeading * sin error angle.
+        // cross (product) = heading * cogHeading * sin error angle, ie, reflects error angle of quad X axis vs GPS groundspeed
         // cross value sign depends on the rotation change from input to output vectors by right hand rule
         // operand order is such that rotation is in direction of zero error
         // abs value of cross is zero when parallel, max of 1.0 at 90 degree error
@@ -244,19 +245,35 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // max when aligned, zero at 90 degrees of vector difference, negative for any error > 90 degrees
         const float dot = vector2Dot(&heading_ef, &cog_ef);
 
+
+        // ez_ef is the error value used to correct the heading via an IIR like smoothing function
         // for error angles less than 90 degrees (dot > 0), use cross value to compute ez_ef
         // above 90 degrees error, use heading vector magnitude, but give it sign from cross product
         // heading vector magnitude is 1.0 when flat, and is attenuated when pitch angle is large
         // when error exceeds 90 degrees, and pitch angle is high, a transient step may occur in ez_ef
         float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * headingMagnitude;
 
-        // ez_ef is the error value used to correct the heading via an IIR like smoothing function
-        // cogYawGain is a simple multiplier of ez_ef - a bit like P for gyro error in acro mode
-        // higher cogYawGain values cause the IMU heading estimate to more rapidly move towards the GPS heading
-        // the underlying ez+ef value is higher when the error is large
-        // In a GPS Rescue, cogYawGain can be up to 4.5 depending on course over groundspeed vs velocity to home
-        // Otherwise, cogYawGain can be up to 10.5 depending on GPS groundspeed relative to GPS_COG_MIN_GROUNDSPEED
-        ez_ef *= cogYawGain;
+        // avoid using GPS (reduce ez_ef) during and soon after roll or yaw inputs
+        // because the GPS heading will tend to lag the true heading
+        const float deflectionRPMaxInv = 1.0f - fmaxf(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_YAW));
+        float deflectionRPMaxInvPwr5 = power5(deflectionRPMaxInv);
+        // negative peak detector with 1s time constant 1.0s
+        static float prev = 0.0f;
+
+        const float k = 0.5f * dt; // k = 0.005 at 100Hz, dt in seconds, 2.0s time constant
+        float smoothedStickMovement = prev + k * (deflectionRPMaxInvPwr5 - prev);
+        prev = fminf(smoothedStickMovement, deflectionRPMaxInvPwr5);
+
+        const fpVector2_t thrustVectorEF = {.x = rMat[X][Z], .y = rMat[Y][Z]};
+        // body Z axis (up) - direction of thrust vector - 0-1
+        // magnitude is closer to 1 when thrust is 'forward', closer to 0 when thrust is 'backward'
+        const float thrustVectorAlignment = vector2Mag(&thrustVectorEF);
+
+        // gpsGroundspeedGain is a speed related multiplier of ez_ef
+        // In a GPS Rescue, gpsGroundspeedGain can be up to 4.5 depending on course over groundspeed vs velocity to home
+        // Otherwise, gpsGroundspeedGain can be up to 10 depending on GPS groundspeed relative to GPS_COG_MIN_GROUNDSPEED
+
+        ez_ef *= gpsGroundspeedGain * smoothedStickMovement * thrustVectorAlignment;
 
         // convert to body frame
         ex += rMat[2][0] * ez_ef;
@@ -264,10 +281,11 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         ez += rMat[2][2] * ez_ef;
 
         DEBUG_SET(DEBUG_ATTITUDE, 3, (ez_ef * 100));
+        DEBUG_SET(DEBUG_ATTITUDE, 6, thrustVectorAlignment * 100.0f);
+        DEBUG_SET(DEBUG_ATTITUDE, 7, (smoothedStickMovement * 100));
     }
 
-    DEBUG_SET(DEBUG_ATTITUDE, 2, cogYawGain * 100.0f);
-    DEBUG_SET(DEBUG_ATTITUDE, 7, (dcmKpGain * 100));
+    DEBUG_SET(DEBUG_ATTITUDE, 2, gpsGroundspeedGain * 100.0f);
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
@@ -534,7 +552,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     static timeUs_t previousIMUUpdateTime;
     bool useAcc = false;
     bool useMag = false;
-    float cogYawGain = 0.0f; // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course, default is no correction from GPS
+    float gpsGroundspeedGain = 0.0f; // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course, default is no correction from GPS
     float courseOverGround = 0.0f; // North
 
     const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
@@ -557,21 +575,21 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             // used in imuMahonyAHRSupdate()
             if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-                // GPS_Rescue adjusts cogYawGain during a rescue in a range 0 - 4.5, depending on GPS Rescue state and groundspeed relative to speed to home.
-                cogYawGain = gpsRescueGetImuYawCogGain();
+                // GPS_Rescue adjusts gpsGroundspeedGain during a rescue in a range 0 - 4.5, depending on GPS Rescue state and groundspeed relative to speed to home.
+                gpsGroundspeedGain = gpsRescueGetImuYawCogGain();
             } else {
                 // in normal flight, IMU should:
                 // - heavily average GPS heading values at low speed, since they are random, almost
                 // - respond more quickly at higher speeds.
                 // GPS typically returns quite good heading estimates at or above 0.5- 1.0 m/s, quite solid by 2m/s
-                // cogYawGain will be 0 at 0.0m/s, rising slowly towards 1.0 at 2m/s, and reaching max of 10.0 at 20m/s
+                // gpsGroundspeedGain will be 0 at 0.0m/s, rising slowly towards 1.0 at 2m/s, and reaching max of 10.0 at 20m/s
                 const float speedRatio = (float)gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
-                cogYawGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : speedRatio * speedRatio;
+                gpsGroundspeedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : speedRatio * speedRatio;
             }
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
             // Reset the reference and reinitialize quaternion factors when GPS groundspeed > 2.0 m/s
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-            // cogYawGain will be zero before and during the initialisation run
+            // gpsGroundspeedGain will be zero before and during the initialisation run
             // Only runs once; not really sure this needs to run at all?
             gpsHeadingInitialized = true;
         }
@@ -583,7 +601,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(imuIsAccelerometerHealthy);
     UNUSED(useAcc);
     UNUSED(useMag);
-    UNUSED(cogYawGain);
+    UNUSED(gpsGroundspeedGain);
     UNUSED(canUseGPSHeading);
     UNUSED(courseOverGround);
     UNUSED(deltaT);
@@ -605,7 +623,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
                         useAcc, acc.accADC[X], acc.accADC[Y], acc.accADC[Z],
                         useMag,
-                        cogYawGain, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
+                        gpsGroundspeedGain, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
 #endif

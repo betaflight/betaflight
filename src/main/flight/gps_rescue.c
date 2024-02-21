@@ -633,7 +633,7 @@ static void sensorUpdate(void)
         // pitchForwardAngle is 1.0 if pitch angle is 30 degrees (ie with rescue angle of 60 and 180deg IMU error)
         // pitchForwardAngle is 2.0 if pitch angle is 60 degrees and flying towards home (unlikely to be sustained at that angle)
 
-        DEBUG_SET(DEBUG_ATTITUDE, 6, pitchForwardAngle * 100.0f);
+//        DEBUG_SET(DEBUG_ATTITUDE, 6, pitchForwardAngle * 100.0f);
 
         if (rescueState.phase != RESCUE_FLY_HOME) {
             // prevent IMU disorientation arising from drift during climb, rotate or do nothing phases, which have zero pitch angle

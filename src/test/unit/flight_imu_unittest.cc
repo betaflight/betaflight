@@ -61,7 +61,7 @@ extern "C" {
     void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                              bool useAcc, float ax, float ay, float az,
                              bool useMag,
-                             float cogYawGain, float courseOverGround, const float dcmKpGain);
+                             float gpsGroundspeedGain, float courseOverGround, const float dcmKpGain);
     extern quaternion q;
     extern float rMat[3][3];
     extern bool attitudeIsEstablished;
