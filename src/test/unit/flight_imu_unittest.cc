@@ -40,12 +40,14 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
-
+    #include "fc/rc.h"
+    
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/position.h"
 
+    
     #include "io/gps.h"
 
     #include "rx/rx.h"
@@ -425,6 +427,7 @@ extern "C" {
     float pt2FilterGain(float, float)  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
+    float getRcDeflectionAbs(int) {return 0.0f; }
 
     void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
         UNUSED(baroDerivativeLpf);

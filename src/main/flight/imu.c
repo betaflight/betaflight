@@ -582,7 +582,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 // - heavily average GPS heading values at low speed, since they are random, almost
                 // - respond more quickly at higher speeds.
                 // GPS typically returns quite good heading estimates at or above 0.5- 1.0 m/s, quite solid by 2m/s
-                // gpsGroundspeedGain will be 0 at 0.0m/s, rising slowly towards 1.0 at 2m/s, and reaching max of 10.0 at 20m/s
+                // gpsGroundspeedGain will be 0 at 0.0m/s, rising slowly towards 1.0 at 1.0 m/s, and reaching max of 10.0 at 10m/s
                 const float speedRatio = (float)gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
                 gpsGroundspeedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : speedRatio * speedRatio;
             }
