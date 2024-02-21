@@ -2310,11 +2310,13 @@ static bool UBLOX_parse_gps(void)
             memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, messageSize);
 
             if (isSBASenabled && (gpsConfig()->sbasMode == SBAS_NONE)) {
-                tx_buffer.payload.cfg_gnss.configblocks[1].flags &= ~UBLOX_GNSS_ENABLE; //Disable SBAS
+                tx_buffer.payload.cfg_gnss.configblocks[1].flags &= ~UBLOX_GNSS_ENABLE; // Disable SBAS
             }
 
             if (isM8NwithDefaultConfig && gpsConfig()->gps_ublox_use_galileo) {
-                tx_buffer.payload.cfg_gnss.configblocks[2].flags |= UBLOX_GNSS_ENABLE; //Enable Galileo
+                tx_buffer.payload.cfg_gnss.configblocks[2].flags |= UBLOX_GNSS_ENABLE; // Enable Galileo
+            } else {
+                tx_buffer.payload.cfg_gnss.configblocks[2].flags &= ~UBLOX_GNSS_ENABLE; // Disable Galileo
             }
 
             ubloxSendConfigMessage(&tx_buffer, MSG_CFG_GNSS, messageSize, false);
