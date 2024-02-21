@@ -166,11 +166,13 @@ typedef struct
     INT8 dBm_A, // Average signal for A antenna in dBm
     INT8 dBm_B; // Average signal for B antenna in dBm.
     // If only 1 antenna, set B = A
+    UINT16 spare[2];
+    UINT16 fastbootUptime; // bit 15 = fastboot flag.  Bits 0-14= uptime in seconds.  0x0000 --> no data
 } STRU_TELE_RPM;
 */
 
 #define STRU_TELE_RPM_EMPTY_FIELDS_COUNT 8
-#define STRU_TELE_RPM_EMPTY_FIELDS_VALUE 0xff
+#define STRU_TELE_RPM_EMPTY_FIELDS_VALUE 0x00
 
 #define SPEKTRUM_RPM_UNUSED 0xffff
 #define SPEKTRUM_TEMP_UNUSED 0x7fff
