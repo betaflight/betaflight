@@ -599,7 +599,7 @@ static void sensorUpdate(void)
     // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.
     prevDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
 
-    DEBUG_SET(DEBUG_ATTITUDE, 4, rescueState.sensor.velocityToHomeCmS); // velocity to home
+// TEMPORARY    DEBUG_SET(DEBUG_ATTITUDE, 4, rescueState.sensor.velocityToHomeCmS); // velocity to home
 
     // when there is a flyaway due to IMU disorientation, increase IMU yaw CoG gain, and reduce max pitch angle
     if (gpsRescueConfig()->groundSpeedCmS) {
@@ -613,7 +613,8 @@ static void sensorUpdate(void)
         // 1 if forward velocity is zero but sideways speed is imuYawGain in m/s
         // 2 if moving backwards at imuYawGain m/s, 4 if moving backwards at 2* imuYawGain m/s, etc
 
-        DEBUG_SET(DEBUG_ATTITUDE, 5, groundspeedErrorRatio * 100);
+// TEMPORARY
+//        DEBUG_SET(DEBUG_ATTITUDE, 5, groundspeedErrorRatio * 100);
 
         rescueState.intent.velocityItermAttenuator = 4.0f / (groundspeedErrorRatio + 4.0f);
         // 1 if groundspeedErrorRatio = 0, falling to 2/3 if groundspeedErrorRatio = 2, 0.5 if groundspeedErrorRatio = 4, etc
