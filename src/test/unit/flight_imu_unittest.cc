@@ -427,7 +427,7 @@ extern "C" {
     float pt2FilterGain(float, float)  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
-    float getMaxRcDeflectionAbs(void) {return 0.0f; }
+    float getRcDeflectionAbs(int) { return 0.0f; }
 
     void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
         UNUSED(baroDerivativeLpf);
