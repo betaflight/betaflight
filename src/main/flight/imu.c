@@ -263,6 +263,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
 
+            const bool isWing = isFixedWing();
+
             // 2. suppress ez_ef during and after yaw inputs, down to zero at 100% yaw
             const float yawStickDeflectionInv = 1.0f - getRcDeflectionAbs(FD_YAW);
             float stickDeflectionFactor = power5(yawStickDeflectionInv);
@@ -273,15 +275,24 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
             prev = fminf(stickSuppression, stickDeflectionFactor);
 
             // 3. suppress ez_ef unless roll is centered, from 1.0 to zero if Roll is more than 12 degrees from flat
+            // this is to prevent adaptation to GPS while flying sideways, or with a significant sideways element
             const float rollAngle = (float)attitude.values.roll;  // decidegrees
             const float absRollAngle = fabsf(rollAngle);
-            const float rollMax = 120.0f; // 12 degrees
+            float rollMax = isWing ? 250.0f : 120.0f; // 25 degrees for wing, 12 degrees for quad
+            // note: these value are 'educated guesses' - for quads it must be very tight
+            // for wings, which can't fly sideways, it can be wider
             const float rollSuppression = (absRollAngle < rollMax) ? fmaxf((rollMax - absRollAngle) / rollMax, 0.0f) : 0.0f;
 
-            // 4. attenuate ez_ef by pitch angle, will be zero if flat or negative (ie flying tail first), increasing to 1.0 at 45 degrees
-            const float pitchAngle = (float)attitude.values.pitch; // decidegrees
-            float pitchSuppression = pitchAngle / 450.0f; // 1.0 at 45 degrees, 2.0 at 90 degrees
-            pitchSuppression = (pitchSuppression >= 0) ? pitchSuppression : 0.0f; // zero if flat or pitched backwards
+            // 4. attenuate ez_ef by pitch angle, will be zero if flat or negative (ie flying tail first)
+            // allow faster adaptation for quads at higher pitch angles; returns 1.0 at 45 degrees
+            // but not if a wing, because they typically are flat when flying.
+            // need to test if anything special is needed for pitch with wings, for now do nothing.
+            float pitchSuppression = 1.0f;
+            if (!isWing) {
+                const float pitchAngle = (float)attitude.values.pitch; // decidegrees, negative is backwards
+                float pitchSuppression = pitchAngle / 450.0f; // 1.0 at 45 degrees, 2.0 at 90 degrees
+                pitchSuppression = (pitchSuppression >= 0) ? pitchSuppression : 0.0f; // zero if flat or pitched backwards
+            }
 
             ez_ef *= stickSuppression * rollSuppression * pitchSuppression;
 
