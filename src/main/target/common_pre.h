@@ -233,7 +233,7 @@
 // Dependency for CMS is defined outside this block.
 #define USE_OSD_QUICK_MENU
 #define USE_RC_STATS
-#define USE_SPEC_PREARM_SCREEN
+//#define USE_SPEC_PREARM_SCREEN
 #endif
 
 #define USE_BATTERY_CONTINUE
@@ -447,7 +447,7 @@
 #define USE_RC_STATS
 #endif
 #ifndef USE_SPEC_PREARM_SCREEN
-#define USE_SPEC_PREARM_SCREEN
+//#define USE_SPEC_PREARM_SCREEN
 #endif
 #endif
 
