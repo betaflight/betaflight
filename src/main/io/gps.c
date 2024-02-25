@@ -2291,29 +2291,24 @@ static bool UBLOX_parse_gps(void)
         break;
     case CLSMSG(CLASS_CFG, MSG_CFG_GNSS):
         {
-            bool isSBASenabled = false;
-
-            if ((ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks >= 2) &&
-                (ubxRcvMsgPayload.ubxCfgGnss.configblocks[1].gnssId == UBLOX_GNSS_SBAS) && //SBAS
-                (ubxRcvMsgPayload.ubxCfgGnss.configblocks[1].flags & UBLOX_GNSS_ENABLE)) { //enabled
-
-                isSBASenabled = true;
-            }
-
             const uint16_t messageSize = 4 + (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks * sizeof(ubxConfigblock_t));
-
             ubxMessage_t tx_buffer;
+
             memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, messageSize);
 
-            if (isSBASenabled && (gpsConfig()->sbasMode == SBAS_NONE)) {
-                tx_buffer.payload.cfg_gnss.configblocks[1].flags &= ~UBLOX_GNSS_ENABLE; // Disable SBAS
-            }
+            for (int i = 0; i < ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks; i++) {
+                if (ubxRcvMsgPayload.ubxCfgGnss.configblocks[i].gnssId == UBLOX_GNSS_SBAS) {
+                    if (gpsConfig()->sbasMode == SBAS_NONE) {
+                        tx_buffer.payload.cfg_gnss.configblocks[i].flags &= ~UBLOX_GNSS_ENABLE; // Disable SBAS
+                    }
+                }
 
-            if (ubxRcvMsgPayload.ubxCfgGnss.configblocks[2].gnssId == UBLOX_GNSS_GALILEO) {
-                if (gpsConfig()->gps_ublox_use_galileo) {
-                    tx_buffer.payload.cfg_gnss.configblocks[2].flags |= UBLOX_GNSS_ENABLE; // Enable Galileo
-                } else {
-                    tx_buffer.payload.cfg_gnss.configblocks[2].flags &= ~UBLOX_GNSS_ENABLE; // Disable Galileo
+                if (ubxRcvMsgPayload.ubxCfgGnss.configblocks[i].gnssId == UBLOX_GNSS_GALILEO) {
+                    if (gpsConfig()->gps_ublox_use_galileo) {
+                        tx_buffer.payload.cfg_gnss.configblocks[i].flags |= UBLOX_GNSS_ENABLE; // Enable Galileo
+                    } else {
+                        tx_buffer.payload.cfg_gnss.configblocks[i].flags &= ~UBLOX_GNSS_ENABLE; // Disable Galileo
+                    }
                 }
             }
 
