@@ -290,7 +290,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
             float pitchSuppression = 1.0f;
             if (!isWing) {
                 const float pitchAngle = (float)attitude.values.pitch; // decidegrees, negative is backwards
-                float pitchSuppression = pitchAngle / 450.0f; // 1.0 at 45 degrees, 2.0 at 90 degrees
+                pitchSuppression = pitchAngle / 450.0f; // 1.0 at 45 degrees, 2.0 at 90 degrees
                 pitchSuppression = (pitchSuppression >= 0) ? pitchSuppression : 0.0f; // zero if flat or pitched backwards
             }
 
