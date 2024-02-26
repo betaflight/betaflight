@@ -2294,7 +2294,9 @@ static bool UBLOX_parse_gps(void)
             const uint16_t messageSize = 4 + (ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks * sizeof(ubxConfigblock_t));
             ubxMessage_t tx_buffer;
 
-            memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, messageSize);
+            // prevent buffer overflow on invalid numConfigBlocks
+            const int size = MIN(messageSize, sizeof(tx_buffer.payload));
+            memcpy(&tx_buffer.payload, &ubxRcvMsgPayload, size);
 
             for (int i = 0; i < ubxRcvMsgPayload.ubxCfgGnss.numConfigBlocks; i++) {
                 if (ubxRcvMsgPayload.ubxCfgGnss.configblocks[i].gnssId == UBLOX_GNSS_SBAS) {
