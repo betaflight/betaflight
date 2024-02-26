@@ -573,7 +573,7 @@ FAST_CODE void scheduler(void)
 
                 gyroCyclesMean = gyroCyclesTotal/gyroCyclesCount;
 
-                devSquared = 0.0;
+                devSquared = 0.0f;
                 gyroCyclesTotal = 0;
                 gyroCyclesCount = 0;
                 lateTaskCount = 0;
