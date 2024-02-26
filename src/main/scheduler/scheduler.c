@@ -461,7 +461,7 @@ FAST_CODE void scheduler(void)
     static uint32_t gyroCyclesMean = 0;
     static uint32_t gyroCyclesCount = 0;
     static uint64_t gyroCyclesTotal = 0;
-    static float devSquared = 0.0;
+    static float devSquared = 0.0f;
 #endif
 #if !defined(UNIT_TEST)
     const timeUs_t schedulerStartTimeUs = micros();
