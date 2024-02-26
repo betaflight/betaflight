@@ -5029,7 +5029,11 @@ const cliResourceValue_t resourceTable[] = {
     DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[0], SERIAL_PORT_MAX_INDEX - SERIAL_LPUART_MAX_INDEX ),
 #endif
 #ifdef USE_INVERTER
+#ifdef USE_LPUART1
+    DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[0], SERIAL_PORT_MAX_INDEX ),
+#else
     DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[0], SERIAL_PORT_MAX_INDEX - SERIAL_LPUART_MAX_INDEX ),
+#endif
 #endif
 #if defined(USE_SOFTSERIAL)
     DEFA( OWNER_SOFTSERIAL_TX, PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagTx[0], SOFTSERIAL_COUNT ),
