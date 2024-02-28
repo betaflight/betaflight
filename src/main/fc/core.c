@@ -323,11 +323,13 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        if (getAverageSystemLoadPercent() > LOAD_PERCENTAGE_ONE) {
+#if defined(USE_LATE_TASK_STATISTICS)
+        if ((getCpuPercentageLate() > schedulerConfig()->cpuLatePercentageLimit)) {
             setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_LOAD);
         }
+#endif // USE_LATE_TASK_STATISTICS
 
         if (isCalibrating()) {
             setArmingDisabled(ARMING_DISABLED_CALIBRATING);

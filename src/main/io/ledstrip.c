@@ -92,6 +92,13 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 #define TASK_LEDSTRIP_RATE_WAIT_HZ 500    // Scheduling rate waiting for a timer to fire
 #define TASK_LEDSTRIP_RATE_FAST_HZ 100000 // Reschedule as fast as possible
 
+#define LED_OVERLAY_RAINBOW_RATE_HZ 60
+#define LED_OVERLAY_LARSON_RATE_HZ 60
+#define LED_OVERLAY_BLINK_RATE_HZ 10
+#define LED_OVERLAY_VTX_RATE_HZ 5
+#define LED_OVERLAY_INDICATOR_RATE_HZ 5
+#define LED_OVERLAY_WARNING_RATE_HZ 10
+
 #define LED_TASK_MARGIN                 1
 // Decay the estimated max task duration by 1/(1 << LED_EXEC_TIME_SHIFT) on every invocation
 #define LED_EXEC_TIME_SHIFT             7
@@ -673,7 +680,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                 warningFlags |= 1 << WARNING_CRASH_FLIP_ACTIVE;
             }
         }
-        *timer += HZ_TO_US(10);
+        *timer += HZ_TO_US(LED_OVERLAY_WARNING_RATE_HZ);
     }
 
     const hsvColor_t *warningColor = NULL;
@@ -773,7 +780,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
             showSettings--;
         }
         blink = !blink;
-        *timer += HZ_TO_US(5); // check 5 times a second
+        *timer += HZ_TO_US(LED_OVERLAY_VTX_RATE_HZ);
     }
 
     hsvColor_t color = {0, 0, 0};
@@ -929,7 +936,7 @@ static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
 
             flash = !flash;
         } else {
-            *timer += HZ_TO_US(5);
+            *timer += HZ_TO_US(LED_OVERLAY_INDICATOR_RATE_HZ);
         }
     }
 
@@ -999,7 +1006,7 @@ static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
 
     if (updateNow) {
         offset += ledStripConfig()->ledstrip_rainbow_freq;
-        *timer += HZ_TO_US(TASK_LEDSTRIP_RATE_HZ);
+        *timer += HZ_TO_US(LED_OVERLAY_RAINBOW_RATE_HZ);
     }
     uint8_t rainbowLedIndex = 0;
 
@@ -1007,7 +1014,7 @@ static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_RAINBOW)) {
             hsvColor_t ledColor;
-            ledColor.h = (offset / TASK_LEDSTRIP_RATE_HZ + rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta) % (HSV_HUE_MAX + 1);
+            ledColor.h = (offset / LED_OVERLAY_RAINBOW_RATE_HZ + rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta) % (HSV_HUE_MAX + 1);
             ledColor.s = 0;
             ledColor.v = HSV_VALUE_MAX;
             setLedHsv(i, &ledColor);
@@ -1060,7 +1067,7 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
 
     if (updateNow) {
         larsonScannerNextStep(&larsonParameters, 15);
-        *timer += HZ_TO_US(60);
+        *timer += HZ_TO_US(LED_OVERLAY_LARSON_RATE_HZ);
     }
 
     int scannerLedIndex = 0;
@@ -1089,7 +1096,7 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
         if (blinkMask <= 1)
             blinkMask = blinkPattern;
 
-        *timer += HZ_TO_US(10);
+        *timer += HZ_TO_US(LED_OVERLAY_BLINK_RATE_HZ);
     }
 
     bool ledOn = (blinkMask & 1);  // b_b_____...
@@ -1337,9 +1344,11 @@ void ledStripInit(void)
     ws2811LedStripInit(ledStripConfig()->ioTag);
 }
 
-static uint8_t selectVisualBeeperColor(uint8_t colorIndex)
+static uint8_t selectVisualBeeperColor(uint8_t colorIndex, bool *colorIndexIsCustom)
 {
     if (ledStripConfig()->ledstrip_visual_beeper && isBeeperOn()) {
+        if (colorIndexIsCustom)
+            *colorIndexIsCustom = false;
         return ledStripConfig()->ledstrip_visual_beeper_color;
     } else {
         return colorIndex;
@@ -1352,6 +1361,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     uint8_t colorIndex = COLOR_BLACK;
     bool blinkLed = false;
     bool visualBeeperOverride = true;
+    bool useCustomColors = false;
     unsigned flashPeriod;
     unsigned onPercent;
 
@@ -1381,6 +1391,9 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
                             freq = vtxSettingsConfig()->freq;
                         }
                         colorIndex = getColorByVtxFrequency(freq);
+                        // getColorByVtxFrequency always uses custom colors
+                        // as they may be reassigned by the race director
+                        useCustomColors = true;
                     }
                 }
 #endif
@@ -1408,11 +1421,11 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     }
 
     if (visualBeeperOverride) {
-        colorIndex = selectVisualBeeperColor(colorIndex);
+        colorIndex = selectVisualBeeperColor(colorIndex, &useCustomColors);
     }
 
     if ((colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs)) {
-        setStripColor(&ledStripStatusModeConfig()->colors[colorIndex]);
+        setStripColor((useCustomColors) ? &ledStripStatusModeConfig()->colors[colorIndex] : &hsv[colorIndex]);
         previousProfileColorIndex = colorIndex;
         colorUpdateTimeUs = currentTimeUs + PROFILE_COLOR_UPDATE_INTERVAL_US;
         return LED_PROFILE_ADVANCE;

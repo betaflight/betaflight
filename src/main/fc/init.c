@@ -694,7 +694,7 @@ void init(void)
     // Now reset the targetLooptime as it's possible for the validation to change the pid_process_denom
     gyroSetTargetLooptime(pidConfig()->pid_process_denom);
 
-#ifdef USE_DSHOT_TELEMETRY
+#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     // Initialize the motor frequency filter now that we have a target looptime
     initDshotTelemetry(gyro.targetLooptime);
 #endif
@@ -891,7 +891,13 @@ void init(void)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (featureIsEnabled(FEATURE_OSD)) {
-        osdDisplayPortDevice_e device = osdConfig()->displayPortDevice;
+        osdDisplayPortDevice_e device;
+
+        if (vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
+            device = OSD_DISPLAYPORT_DEVICE_MSP;
+        } else {
+            device = osdConfig()->displayPortDevice;
+        }
 
         switch(device) {
 

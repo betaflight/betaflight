@@ -243,6 +243,7 @@ void schedulerInit(void);
 void scheduler(void);
 timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs);
 void taskSystemLoad(timeUs_t currentTimeUs);
+uint32_t getCpuPercentageLate(void);
 void schedulerEnableGyro(void);
 uint16_t getAverageSystemLoadPercent(void);
 float schedulerGetCycleTimeMultiplier(void);

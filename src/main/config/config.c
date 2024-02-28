@@ -229,7 +229,7 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-    if (!isSerialConfigValid(serialConfig())) {
+    if (!isSerialConfigValid(serialConfigMutable())) {
         pgResetFn_serialConfig(serialConfigMutable());
     }
 
@@ -672,7 +672,12 @@ void validateAndFixGyroConfig(void)
         /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
          */
-        if (motorConfig()->dev.useDshotTelemetry) {
+        if (true
+#ifdef USE_PID_DENOM_OVERCLOCK_LEVEL
+        && (systemConfig()->cpu_overclock < USE_PID_DENOM_OVERCLOCK_LEVEL) 
+#endif
+        && motorConfig()->dev.useDshotTelemetry
+        ) {
             if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600) {
                 motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
             }

@@ -92,7 +92,6 @@
 #define SERIAL_4WAY_VERSION_HI (uint8_t) (SERIAL_4WAY_VERSION / 100)
 #define SERIAL_4WAY_VERSION_LO (uint8_t) (SERIAL_4WAY_VERSION % 100)
 
-#define ESC_TIMEOUT_US  3000000
 #define CMD_TIMEOUT_US  50000
 #define ARG_TIMEOUT_US  25000
 #define DAT_TIMEOUT_US  10000
@@ -397,13 +396,19 @@ static serialPort_t *port;
 
 static bool ReadByte(uint8_t *data, timeDelta_t timeoutUs)
 {
-    // need timedOut?
+#ifdef USE_TIMEOUT_4WAYIF
     timeUs_t startTime = micros();
     while (!serialRxBytesWaiting(port)) {
-        if (cmpTimeUs(micros(), startTime) > timeoutUs) {
+        if (timeoutUs && (cmpTimeUs(micros(), startTime) > timeoutUs)) {
             return true;
         }
     }
+#else
+    UNUSED(timeoutUs);
+
+    // Wait indefinitely
+    while (!serialRxBytesWaiting(port));
+#endif
 
     *data = serialRead(port);
 
@@ -464,8 +469,9 @@ void esc4wayProcess(serialPort_t *mspPort)
         // restart looking for new sequence from host
         do {
             CRC_in.word = 0;
-            timedOut = ReadByteCrc(&ESC, ESC_TIMEOUT_US);
-        } while ((ESC != cmd_Local_Escape) && !timedOut);
+            // No timeout as BLHeliSuite32 has this loops sitting indefinitely waiting for input
+            ReadByteCrc(&ESC, 0);
+        } while (ESC != cmd_Local_Escape);
 
         RX_LED_ON;
 
@@ -473,27 +479,24 @@ void esc4wayProcess(serialPort_t *mspPort)
         O_PARAM = &Dummy.bytes[0];
         O_PARAM_LEN = 1;
 
+        timedOut = ReadByteCrc(&CMD, CMD_TIMEOUT_US) ||
+                   ReadByteCrc(&ioMem.D_FLASH_ADDR_H, ARG_TIMEOUT_US) ||
+                   ReadByteCrc(&ioMem.D_FLASH_ADDR_L, ARG_TIMEOUT_US) ||
+                   ReadByteCrc(&I_PARAM_LEN, ARG_TIMEOUT_US);
+
         if (!timedOut) {
-            timedOut = ReadByteCrc(&CMD, CMD_TIMEOUT_US);
-            timedOut |= ReadByteCrc(&ioMem.D_FLASH_ADDR_H, ARG_TIMEOUT_US);
-            timedOut |= ReadByteCrc(&ioMem.D_FLASH_ADDR_L, ARG_TIMEOUT_US);
-            timedOut |= ReadByteCrc(&I_PARAM_LEN, ARG_TIMEOUT_US);
+            uint8_t i = I_PARAM_LEN;
 
-            if (!timedOut) {
-                InBuff = ParamBuf;
-                uint8_t i = I_PARAM_LEN;
-                do {
-                  timedOut |= ReadByteCrc(InBuff, DAT_TIMEOUT_US);
-                  InBuff++;
-                  i--;
-                } while ((i > 0) && !timedOut);
+            InBuff = ParamBuf;
+            do {
+              timedOut = ReadByteCrc(InBuff++, DAT_TIMEOUT_US);
+            } while ((--i > 0) && !timedOut);
 
-                if (!timedOut) {
-                    timedOut |= ReadByte(&CRC_check.bytes[1], CRC_TIMEOUT_US);
-                    timedOut |= ReadByte(&CRC_check.bytes[0], CRC_TIMEOUT_US);
-                }
+            for (int8_t i = 1; (i >= 0) && !timedOut; i--) {
+                timedOut = ReadByte(&CRC_check.bytes[i], CRC_TIMEOUT_US);
             }
         }
+
         if ((CRC_check.word == CRC_in.word) && !timedOut) {
             ACK_OUT = ACK_OK;
         } else {

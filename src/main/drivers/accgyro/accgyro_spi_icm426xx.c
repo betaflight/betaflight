@@ -45,8 +45,16 @@
 
 #include "sensors/gyro.h"
 
-// 24 MHz max SPI frequency
+// Allows frequency to be set from the compile line EXTRA_FLAGS by adding e.g.
+// -D'ICM426XX_CLOCK=12000000'. If using the configurator this simply becomes
+// ICM426XX_CLOCK=12000000 in the custom settings text box.
+#ifndef ICM426XX_CLOCK
+// Default: 24 MHz max SPI frequency
 #define ICM426XX_MAX_SPI_CLK_HZ 24000000
+#else
+// Use the supplied value
+#define ICM426XX_MAX_SPI_CLK_HZ ICM426XX_CLOCK
+#endif
 
 #define ICM426XX_RA_REG_BANK_SEL                    0x76
 #define ICM426XX_BANK_SELECT0                       0x00

@@ -19,10 +19,10 @@ jobs:
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Cache build toolchain
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-toolchain
         with:
           path: tools
@@ -49,10 +49,10 @@ jobs:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch toolchain from cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-toolchain
         with:
           path: tools
@@ -81,7 +81,7 @@ jobs:
     name: Test
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: sudo apt-get install -y libblocksruntime-dev clang-12

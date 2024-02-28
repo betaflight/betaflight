@@ -335,7 +335,7 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).map
 
 TARGET_EXST_HASH_SECTION_FILE = $(TARGET_OBJ_DIR)/exst_hash_section.bin
 
-TARGET_EF_HASH      := $(shell echo -n "$(EXTRA_FLAGS)" | openssl dgst -md5 | awk '{print $$2;}')
+TARGET_EF_HASH      := $(shell echo -n "$(EXTRA_FLAGS)" | openssl dgst -md5 -r | awk '{print $$1;}')
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
 CLEAN_ARTIFACTS := $(TARGET_BIN)
@@ -500,6 +500,9 @@ $(CONFIGS_CLEAN):
 
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
+
+## configs           : Hydrate configuration
+configs: configs
 
 TARGETS_FLASH = $(addsuffix _flash,$(BASE_TARGETS))
 

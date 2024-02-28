@@ -1161,4 +1161,5 @@ extern "C" {
         return 0.0f;
     }
     void getRcDeflectionAbs(void) {}
+    uint32_t getCpuPercentageLate(void) { return 0; };
 }

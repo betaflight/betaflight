@@ -1720,6 +1720,10 @@ const clivalue_t valueTable[] = {
     { "scheduler_relax_rx",  VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, rxRelaxDeterminism) },
     { "scheduler_relax_osd", VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, osdRelaxDeterminism) },
 
+#ifdef USE_LATE_TASK_STATISTICS
+    { "cpu_late_limit_permille", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_SCHEDULER_CONFIG, offsetof(schedulerConfig_t, cpuLatePercentageLimit) },
+#endif
+
     { "serialmsp_halfduplex", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MSP_CONFIG, offsetof(mspConfig_t, halfDuplex) },
 
 // PG_TIMECONFIG
