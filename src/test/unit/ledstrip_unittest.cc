@@ -391,6 +391,7 @@ bool rxIsReceivingSignal() { return true; }
 bool isBeeperOn() { return false; };
 
 uint8_t calculateBatteryPercentageRemaining() { return 0; }
+uint32_t getEstimatedAltitudeCm() { return 0; }
 
 bool sensors(uint32_t mask)
 {
