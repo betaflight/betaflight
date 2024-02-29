@@ -281,7 +281,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
             float rollMax = isWing ? 250.0f : 120.0f; // 25 degrees for wing, 12 degrees for quad
             // note: these value are 'educated guesses' - for quads it must be very tight
             // for wings, which can't fly sideways, it can be wider
-            const float rollSuppression = (absRollAngle < rollMax) ? fmaxf((rollMax - absRollAngle) / rollMax, 0.0f) : 0.0f;
+            const float rollSuppression = (absRollAngle < rollMax) ? (rollMax - absRollAngle) / rollMax : 0.0f;
 
             // 4. attenuate ez_ef by pitch angle, will be zero if flat or negative (ie flying tail first)
             // allow faster adaptation for quads at higher pitch angles; returns 1.0 at 45 degrees
