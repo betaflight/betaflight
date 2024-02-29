@@ -599,7 +599,7 @@ static void sensorUpdate(void)
     // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.
     prevDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
 
-// TEMPORARY    DEBUG_SET(DEBUG_ATTITUDE, 4, rescueState.sensor.velocityToHomeCmS); // velocity to home
+    DEBUG_SET(DEBUG_ATTITUDE, 4, rescueState.sensor.velocityToHomeCmS); // velocity to home
 
     // when there is a flyaway due to IMU disorientation, increase IMU yaw CoG gain, and reduce max pitch angle
     if (gpsRescueConfig()->groundSpeedCmS) {
@@ -613,8 +613,7 @@ static void sensorUpdate(void)
         // 1 if forward velocity is zero but sideways speed is imuYawGain in m/s
         // 2 if moving backwards at imuYawGain m/s, 4 if moving backwards at 2* imuYawGain m/s, etc
 
-// TEMPORARY
-//        DEBUG_SET(DEBUG_ATTITUDE, 5, groundspeedErrorRatio * 100);
+        DEBUG_SET(DEBUG_ATTITUDE, 5, groundspeedErrorRatio * 100);
 
         rescueState.intent.velocityItermAttenuator = 4.0f / (groundspeedErrorRatio + 4.0f);
         // 1 if groundspeedErrorRatio = 0, falling to 2/3 if groundspeedErrorRatio = 2, 0.5 if groundspeedErrorRatio = 4, etc
@@ -634,7 +633,7 @@ static void sensorUpdate(void)
         // pitchForwardAngle is 1.0 if pitch angle is 30 degrees (ie with rescue angle of 60 and 180deg IMU error)
         // pitchForwardAngle is 2.0 if pitch angle is 60 degrees and flying towards home (unlikely to be sustained at that angle)
 
-//        DEBUG_SET(DEBUG_ATTITUDE, 6, pitchForwardAngle * 100.0f);
+        DEBUG_SET(DEBUG_ATTITUDE, 6, pitchForwardAngle * 100.0f);
 
         if (rescueState.phase != RESCUE_FLY_HOME) {
             // prevent IMU disorientation arising from drift during climb, rotate or do nothing phases, which have zero pitch angle

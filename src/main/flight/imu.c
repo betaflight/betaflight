@@ -238,7 +238,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         // cross sign depends on the rotation change from input to output vectors by right hand rule
         // operand order is arranged such that rotation is in direction of zero error
         // abs value of cross is zero when parallel, max of 1.0 at 90 degree error
-        // cross value determines ez_ef when error is less than 90 degrees
+        // cross value is used for ez_ef when error is less than 90 degrees
         // decreasing cross value after 90 degrees, and zero cross value at 180 degree error,
         // would prevent error correction, so the maximum angular error value of 1.0 is used for this interval
         const float cross = vector2Cross(&heading_ef, &cog_ef);
@@ -298,11 +298,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
             // NOTE : these suppressions make sense with normal pilot inputs and normal flight
             // They are not used in GPS Rescue, and probably should be bypassed in position hold, etc, 
-
-            DEBUG_SET(DEBUG_ATTITUDE, 5, stickSuppression * 100);
-            DEBUG_SET(DEBUG_ATTITUDE, 6, rollSuppression * 100);
-            DEBUG_SET(DEBUG_ATTITUDE, 7, pitchSuppression * 100);
         }
+
         // convert to body frame
         ex += rMat[2][0] * ez_ef;
         ey += rMat[2][1] * ez_ef;
@@ -311,7 +308,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         DEBUG_SET(DEBUG_ATTITUDE, 3, (ez_ef * 100));
     }
 
-    DEBUG_SET(DEBUG_ATTITUDE, 2, groundspeedGain * 100.0f);
+    DEBUG_SET(DEBUG_ATTITUDE, 2, groundspeedGain * 100);
+    DEBUG_SET(DEBUG_ATTITUDE, 7, dcmKpGain * 100);
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
@@ -464,7 +462,7 @@ static bool imuIsAccelerometerHealthy(float *accAverage)
     return (0.81f < accMagnitudeSq) && (accMagnitudeSq < 1.21f);
 }
 
-// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, the default value
+// Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, i.e., the default value
 // When disarmed after initial boot, the scaling is 10 times higher  for the first 20 seconds to speed up initial convergence.
 // After disarming we want to quickly reestablish convergence to deal with the attitude estimation being incorrect due to a crash.
 //   - wait for a 250ms period of low gyro activity to ensure the craft is not moving
@@ -613,7 +611,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 groundspeedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : speedRatio * speedRatio;
             }
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
-            // Reset the reference and reinitialize quaternion factors when GPS groundspeed > 2.0 m/s
+            // Reset the reference and reinitialize quaternion factors when GPS groundspeed > GPS_COG_MIN_GROUNDSPEED
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
             // groundspeedGain will be zero before and during the initialisation run
             // Only runs once; not really sure this needs to run at all?
