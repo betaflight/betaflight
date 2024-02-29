@@ -230,7 +230,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         const fpVector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
 
         // Compute and normalise craft earth frame heading vector from body X axis
-        fpVector2_t heading_ef = {.x = rMat[0][0], .y = rMat[1][0]};
+        fpVector2_t heading_ef = {.x = rMat[X][X], .y = rMat[Y][X]};
         vector2Normalize(&heading_ef, &heading_ef); // XY only, normalised to magnitude 1.0
 
         // cross (vector product) = heading * cog * sin angle
