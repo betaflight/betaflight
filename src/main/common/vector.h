@@ -111,10 +111,11 @@ static inline fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3
 
 static inline fpVector2_t * vector2Normalize(fpVector2_t *result, const fpVector2_t *v)
 {
-    float norm = sqrtf(v->x * v->x + v->y * v->y);
-    if (norm > 0) {
-        result->x = v->x / norm;
-        result->y = v->y / norm;
+    float normSq = sq(v->x) + sq(v->y);
+    if (normSq > 0.0f) {
+        normSq = 1.0f / sqrtf(normSq);
+        result->x = v->x * normSq;
+        result->y = v->y * normSq;
     } else {
         result->x = 0.0f;
         result->y = 0.0f;
