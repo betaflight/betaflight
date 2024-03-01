@@ -308,8 +308,8 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
         DEBUG_SET(DEBUG_ATTITUDE, 3, (ez_ef * 100));
     }
 
-    DEBUG_SET(DEBUG_ATTITUDE, 2, groundspeedGain * 100);
-    DEBUG_SET(DEBUG_ATTITUDE, 7, dcmKpGain * 100);
+    DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(groundspeedGain * 100.0f));
+    DEBUG_SET(DEBUG_ATTITUDE, 7, lrintf(dcmKpGain * 100.0f));
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
