@@ -12,7 +12,6 @@ OPENOCD_CFG := target/stm32f7x.cfg
 
 else ifeq ($(TARGET_MCU_FAMILY),STM32H7)
 OPENOCD_CFG := target/stm32h7x.cfg
-else
 endif
 
 ifneq ($(OPENOCD_CFG),)
