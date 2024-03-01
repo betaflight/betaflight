@@ -53,6 +53,8 @@
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
+#include "io/gps.h"
+
 #include "pg/rx.h"
 
 #include "rx/rx.h"
@@ -502,7 +504,7 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
 }
 
-static float calcEzLandLimit(float maxDeflection)
+static float calcEzLandLimit(float maxDeflection, float speed)
 {
     // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
     // 0.0 = no increas allowed, 1.0 = 100% increase allowed
@@ -510,6 +512,13 @@ static float calcEzLandLimit(float maxDeflection)
     if (maxDeflection < mixerRuntime.ezLandingThreshold) { // roll, pitch and yaw sticks under threshold
         ezLandLimit = maxDeflection / mixerRuntime.ezLandingThreshold; // normalised 0 - 1
         ezLandLimit = fmaxf(ezLandLimit, mixerRuntime.ezLandingLimit); // stay above the minimum
+    }
+    // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
+    // TODO sanity checks like number of sats, dop, accuracy?
+    if (speed < mixerRuntime.ezLandingSpeed && mixerRuntime.ezLandingSpeed > 0.0f) {
+        const float speed_limit = speed / mixerRuntime.ezLandingSpeed;  // normalised 0 - 1
+        DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speed_limit * 10000.0f));
+        ezLandLimit = fmaxf(ezLandLimit, speed_limit);
     }
     return ezLandLimit;
 }
@@ -523,7 +532,13 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
 
     // Upper throttle limit
     // range default 0.05 - 1.0 with ezLandingLimit = 5, no stick deflection -> 0.05
-    const float ezLandLimit = calcEzLandLimit(getMaxRcDeflectionAbs());
+#ifdef USE_GPS
+    const float speed = gpsSol.speed3d;
+#else
+    const float speed = 0.0f;
+#endif
+
+    const float ezLandLimit = calcEzLandLimit(getMaxRcDeflectionAbs(), speed);
     // use the largest of throttle and limit calculated from RPY stick positions
     float upperLimit = fmaxf(ezLandLimit, throttle);
     // limit throttle to avoid clipping the highest motor output
