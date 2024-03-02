@@ -508,19 +508,16 @@ static float calcEzLandLimit(float maxDeflection, float speed)
 {
     // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
     // 0.0 = no increas allowed, 1.0 = 100% increase allowed
-    float ezLandLimit = 1.0f;
-    if (maxDeflection < mixerRuntime.ezLandingThreshold) { // roll, pitch and yaw sticks under threshold
-        ezLandLimit = maxDeflection / mixerRuntime.ezLandingThreshold; // normalised 0 - 1
-        ezLandLimit = fmaxf(ezLandLimit, mixerRuntime.ezLandingLimit); // stay above the minimum
-    }
-    // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
+    const float deflectionLimit = fminf(1.0f, maxDeflection / mixerRuntime.ezLandingThreshold);
+
+    // calculate limit to where the mixer can raise the throttle based on speed
     // TODO sanity checks like number of sats, dop, accuracy?
-    if (speed < mixerRuntime.ezLandingSpeed && mixerRuntime.ezLandingSpeed > 0.0f) {
-        const float speed_limit = speed / mixerRuntime.ezLandingSpeed;  // normalised 0 - 1
-        DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speed_limit * 10000.0f));
-        ezLandLimit = fmaxf(ezLandLimit, speed_limit);
-    }
-    return ezLandLimit;
+    const float speedLimit = mixerRuntime.ezLandingSpeed > 0.0f ? fminf(1.0f, speed / mixerRuntime.ezLandingSpeed) : 0.0f;
+    DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speedLimit * 10000.0f));
+
+    // get the highest of the limits from deflection, speed, and the base ez_landing_limit
+    const float deflectionAndSpeedLimit = fmaxf(deflectionLimit, speedLimit);
+    return fmaxf(mixerRuntime.ezLandingLimit, deflectionAndSpeedLimit);
 }
 
 static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
