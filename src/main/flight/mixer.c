@@ -509,6 +509,7 @@ static float calcEzLandLimit(float maxDeflection, float speed)
     // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
     // 0.0 = no increas allowed, 1.0 = 100% increase allowed
     const float deflectionLimit = fminf(1.0f, maxDeflection / mixerRuntime.ezLandingThreshold);
+    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(deflectionLimit * 10000.0f));
 
     // calculate limit to where the mixer can raise the throttle based on speed
     // TODO sanity checks like number of sats, dop, accuracy?
@@ -566,6 +567,7 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     // DEBUG_EZLANDING 1 is the adjusted throttle
     DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);
     DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
+    // DEBUG_EZLANDING 4 and 5 is the upper limits based on stick input and speed respectively
 }
 
 static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
