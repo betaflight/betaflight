@@ -528,10 +528,8 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     const float normalizedMotorMixMin = motorMixMin * baseNormalizationFactor;
     const float normalizedMotorMixMax = motorMixMax * baseNormalizationFactor;
 
-    // Upper throttle limit
-    // range default 0.05 - 1.0 with ezLandingLimit = 5, no stick deflection -> 0.05
 #ifdef USE_GPS
-    const float speed = gpsSol.speed3d;
+    const float speed = STATE(GPS_FIX) ? gpsSol.speed3d : 0.0f;
 #else
     const float speed = 0.0f;
 #endif
