@@ -753,7 +753,6 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
     int timerDelayUs = HZ_TO_US(1);
 
     if (updateNow) {
-
         switch (getBatteryState()) {
             case BATTERY_OK:
                 flash = true;
@@ -771,9 +770,9 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
 
                 break;
         }
-    }
 
-    *timer += timerDelayUs;
+        *timer += timerDelayUs;
+    }
 
     if (!flash) {
        const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
@@ -800,9 +799,9 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
             flash = !flash;
             timerDelay = HZ_TO_US(8);
         }
-    }
 
-    *timer += timerDelay;
+        *timer += timerDelay;
+    }
 
     if (!flash) {
         const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
@@ -1130,9 +1129,9 @@ static ledProfileSequence_t applyStatusProfile(timeUs_t now)
                     timerVal[timId] = now;
                 }
 
-                if (delta < 0)
-                    continue;  // not ready yet
-                timActive |= 1 << timId;
+                if (delta >= 0) {
+                    timActive |= 1 << timId;
+                }
             }
         }
 
