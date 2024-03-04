@@ -358,6 +358,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     // turn off the over mah capacity warning
     osdWarnSetState(OSD_WARNING_OVER_CAP, false);
 
+#ifdef USE_VTX
+    osdWarnSetState(OSD_WARNING_VTX_OFFLINE, true);
+#endif
+
 #ifdef USE_RC_STATS
     osdStatSetState(OSD_STAT_FULL_THROTTLE_TIME, true);
     osdStatSetState(OSD_STAT_FULL_THROTTLE_COUNTER, true);

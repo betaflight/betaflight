@@ -39,6 +39,7 @@
 #include "drivers/osd_symbols.h"
 #include "drivers/time.h"
 #include "drivers/dshot.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -426,6 +427,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         osdSetVisualBeeperState(false);
         return;
     }
+
+#ifdef USE_VTX
+    if (osdWarnGetState(OSD_WARNING_VTX_OFFLINE) && !ARMING_FLAG(ARMED)) {
+        if (!vtxCommonDeviceIsReady(vtxCommonDevice())) {
+            tfp_sprintf(warningText, "VTX OFFLINE");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+    }
+#endif // USE_VTX
 
 }
 
