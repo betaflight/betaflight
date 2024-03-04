@@ -567,7 +567,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     }
 
 #if defined(USE_RX_MSP_OVERRIDE)
-    if (IS_RC_MODE_ACTIVE(BOXMSPOVERRIDE) && rxConfig()->msp_override_channels_mask) {
+    if (IS_RC_MODE_ACTIVE(BOXMSPOVERRIDE) && rxConfig()->msp_override_channels_mask && !rxConfig()->msp_override_failsafe) {
         if (rxMspOverrideFrameStatus() & RX_FRAME_COMPLETE) {
             rxSignalReceived = true;
             rxDataProcessingRequired = true;
