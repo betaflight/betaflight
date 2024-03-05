@@ -508,7 +508,7 @@ static float calcEzLandLimit(float maxDeflection, float speed)
 {
     // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
     // 0.0 = no increas allowed, 1.0 = 100% increase allowed
-    const float deflectionLimit = fminf(1.0f, maxDeflection / mixerRuntime.ezLandingThreshold);
+    const float deflectionLimit = mixerRuntime.ezLandingThreshold > 0.0f ? fminf(1.0f, maxDeflection / mixerRuntime.ezLandingThreshold) : 0.0f;
     DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(deflectionLimit * 10000.0f));
 
     // calculate limit to where the mixer can raise the throttle based on speed
