@@ -68,8 +68,11 @@
 #define DPS310_REG_COEF             0x10
 #define DPS310_REG_COEF_SRCE        0x28
 
-
-#define DPS310_ID_REV_AND_PROD_ID       (0x10)
+#ifndef USE_BARO_DPS310_GOERTEK
+#define DPS310_ID_REV_AND_PROD_ID       (0x10)  // Infineon DPS310
+#else
+#define DPS310_ID_REV_AND_PROD_ID       (0x11)  // GoerTek SPA006_003
+#endif
 
 #define DPS310_RESET_BIT_SOFT_RST       (0x09)    // 0b1001
 
@@ -170,7 +173,12 @@ static bool deviceConfigure(const extDevice_t *dev)
     // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21) from the Calibration Coefficient register.
     //   Note: The coefficients read from the coefficient register are 2's complement numbers.
     // Do the read of the coefficients in multiple parts, as the chip will return a read failure when trying to read all at once over I2C.
+#ifndef USE_BARO_DPS310_GOERTEK
 #define COEFFICIENT_LENGTH 18
+#else
+#define COEFFICIENT_LENGTH 22
+#endif
+
 #define READ_LENGTH (COEFFICIENT_LENGTH / 2)
 
     uint8_t coef[COEFFICIENT_LENGTH];
@@ -209,6 +217,14 @@ static bool deviceConfigure(const extDevice_t *dev)
 
     // 0x20 c30 [15:8] + 0x21 c30 [7:0]
     baroState.calib.c30 = getTwosComplement(((uint32_t)coef[16] << 8) | (uint32_t)coef[17], 16);
+
+#ifdef USE_BARO_DPS310_GOERTEK
+    // 0x22 c31 [11:4] + 0x23 c31 [3:0]
+    baroState.calib.c31 = getTwosComplement(((uint32_t)coef[18] << 4) | ((uint32_t)coef[19]), 12);
+
+    // 0x23 c40 [11:8] + 0x24 c40 [7:0]
+    baroState.calib.c40 = getTwosComplement((((uint32_t)coef[20] & 0X0F) << 8) | ((uint32_t)coef[21]), 12);
+#endif
 
     // PRS_CFG: pressure measurement rate (32 Hz) and oversampling (16 time standard)
     registerSetBits(dev, DPS310_REG_PRS_CFG, DPS310_PRS_CFG_BIT_PM_RATE_32HZ | DPS310_PRS_CFG_BIT_PM_PRC_16);
