@@ -68,11 +68,8 @@
 #define DPS310_REG_COEF             0x10
 #define DPS310_REG_COEF_SRCE        0x28
 
-#ifndef USE_BARO_DPS310_GOERTEK
 #define DPS310_ID_REV_AND_PROD_ID       (0x10)  // Infineon DPS310
-#else
-#define DPS310_ID_REV_AND_PROD_ID       (0x11)  // GoerTek SPA006_003
-#endif
+#define SPL07_003_CHIP_ID               (0x11)  // GoerTek SPA006_003 or SPL07_003
 
 #define DPS310_RESET_BIT_SOFT_RST       (0x09)    // 0b1001
 
@@ -104,6 +101,8 @@ typedef struct {
     int16_t c20;    // 16bit
     int16_t c21;    // 16bit
     int16_t c30;    // 16bit
+    int16_t c31;    // 12bit
+    int16_t c40;    // 12bit
 } calibrationCoefficients_t;
 
 typedef struct {
@@ -118,6 +117,7 @@ static baroState_t  baroState;
 #define busWrite   busWriteRegister
 
 static uint8_t buf[6];
+static uint8_t chipId[1];
 
 // Helper functions
 static uint8_t registerRead(const extDevice_t *dev, uint8_t reg)
@@ -173,19 +173,21 @@ static bool deviceConfigure(const extDevice_t *dev)
     // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21) from the Calibration Coefficient register.
     //   Note: The coefficients read from the coefficient register are 2's complement numbers.
     // Do the read of the coefficients in multiple parts, as the chip will return a read failure when trying to read all at once over I2C.
-#ifndef USE_BARO_DPS310_GOERTEK
-#define COEFFICIENT_LENGTH 18
-#else
-#define COEFFICIENT_LENGTH 22
-#endif
+    uint8_t COEFFICIENT_LENGTH, READ_LENGTH;
 
-#define READ_LENGTH (COEFFICIENT_LENGTH / 2)
+    if (chipId[0] == SPL07_003_CHIP_ID) {
+        COEFFICIENT_LENGTH = 22;
+    } else {
+        COEFFICIENT_LENGTH = 18;
+    }
+
+    READ_LENGTH = COEFFICIENT_LENGTH / 2;
 
     uint8_t coef[COEFFICIENT_LENGTH];
     if (!busReadBuf(dev, DPS310_REG_COEF, coef, READ_LENGTH)) {
         return false;
     }
-     if (!busReadBuf(dev, DPS310_REG_COEF + READ_LENGTH, coef + READ_LENGTH, COEFFICIENT_LENGTH - READ_LENGTH)) {
+    if (!busReadBuf(dev, DPS310_REG_COEF + READ_LENGTH, coef + READ_LENGTH, COEFFICIENT_LENGTH - READ_LENGTH)) {
         return false;
     }
 
@@ -218,20 +220,27 @@ static bool deviceConfigure(const extDevice_t *dev)
     // 0x20 c30 [15:8] + 0x21 c30 [7:0]
     baroState.calib.c30 = getTwosComplement(((uint32_t)coef[16] << 8) | (uint32_t)coef[17], 16);
 
-#ifdef USE_BARO_DPS310_GOERTEK
-    // 0x22 c31 [11:4] + 0x23 c31 [3:0]
-    baroState.calib.c31 = getTwosComplement(((uint32_t)coef[18] << 4) | ((uint32_t)coef[19]), 12);
+    baroState.calib.c31 = 0;
+    baroState.calib.c40 = 0;
 
-    // 0x23 c40 [11:8] + 0x24 c40 [7:0]
-    baroState.calib.c40 = getTwosComplement((((uint32_t)coef[20] & 0X0F) << 8) | ((uint32_t)coef[21]), 12);
-#endif
+    if (chipId[0] == SPL07_003_CHIP_ID) {
+		// 0x23 c31 [3:0] + 0x22 c31 [11:4]
+		baroState.calib.c31 = getTwosComplement(((uint32_t)coef[18] << 4) | (((uint32_t)coef[19] >> 4) & 0x0F), 12);
+	
+		// 0x23 c40 [11:8] + 0x24 c40 [7:0]
+		baroState.calib.c40 = getTwosComplement((((uint32_t)coef[19] & 0x0F) << 8) | (uint32_t)coef[20], 12);
+	}
 
     // PRS_CFG: pressure measurement rate (32 Hz) and oversampling (16 time standard)
     registerSetBits(dev, DPS310_REG_PRS_CFG, DPS310_PRS_CFG_BIT_PM_RATE_32HZ | DPS310_PRS_CFG_BIT_PM_PRC_16);
 
     // TMP_CFG: temperature measurement rate (32 Hz) and oversampling (16 times)
-    const uint8_t TMP_COEF_SRCE = registerRead(dev, DPS310_REG_COEF_SRCE) & DPS310_COEF_SRCE_BIT_TMP_COEF_SRCE;
-    registerSetBits(dev, DPS310_REG_TMP_CFG, DPS310_TMP_CFG_BIT_TMP_RATE_32HZ | DPS310_TMP_CFG_BIT_TMP_PRC_16 | TMP_COEF_SRCE);
+    if (chipId[0] == SPL07_003_CHIP_ID) {
+        registerSetBits(dev, DPS310_REG_TMP_CFG, DPS310_TMP_CFG_BIT_TMP_RATE_32HZ | DPS310_TMP_CFG_BIT_TMP_PRC_16);
+    } else {
+        const uint8_t TMP_COEF_SRCE = registerRead(dev, DPS310_REG_COEF_SRCE) & DPS310_COEF_SRCE_BIT_TMP_COEF_SRCE;
+        registerSetBits(dev, DPS310_REG_TMP_CFG, DPS310_TMP_CFG_BIT_TMP_RATE_32HZ | DPS310_TMP_CFG_BIT_TMP_PRC_16 | TMP_COEF_SRCE);
+    }
 
     // CFG_REG: set pressure and temperature result bit-shift (required when the oversampling rate is >8 times)
     registerSetBits(dev, DPS310_REG_CFG_REG, DPS310_CFG_REG_BIT_T_SHIFT | DPS310_CFG_REG_BIT_P_SHIFT);
@@ -312,13 +321,11 @@ static void deviceCalculate(int32_t *pressure, int32_t *temperature)
 static bool deviceDetect(const extDevice_t *dev)
 {
     for (int retry = 0; retry < DETECTION_MAX_RETRY_COUNT; retry++) {
-        uint8_t chipId[1];
-
         delay(100);
 
         bool ack = busReadBuf(dev, DPS310_REG_ID, chipId, 1);
 
-        if (ack && chipId[0] == DPS310_ID_REV_AND_PROD_ID) {
+        if (ack && (chipId[0] == DPS310_ID_REV_AND_PROD_ID || chipId[0] == SPL07_003_CHIP_ID)) {
             return true;
         }
     };
