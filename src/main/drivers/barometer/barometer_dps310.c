@@ -224,12 +224,12 @@ static bool deviceConfigure(const extDevice_t *dev)
     baroState.calib.c40 = 0;
 
     if (chipId[0] == SPL07_003_CHIP_ID) {
-		// 0x23 c31 [3:0] + 0x22 c31 [11:4]
-		baroState.calib.c31 = getTwosComplement(((uint32_t)coef[18] << 4) | (((uint32_t)coef[19] >> 4) & 0x0F), 12);
-	
-		// 0x23 c40 [11:8] + 0x24 c40 [7:0]
-		baroState.calib.c40 = getTwosComplement((((uint32_t)coef[19] & 0x0F) << 8) | (uint32_t)coef[20], 12);
-	}
+        // 0x23 c31 [3:0] + 0x22 c31 [11:4]
+        baroState.calib.c31 = getTwosComplement(((uint32_t)coef[18] << 4) | (((uint32_t)coef[19] >> 4) & 0x0F), 12);
+
+        // 0x23 c40 [11:8] + 0x24 c40 [7:0]
+        baroState.calib.c40 = getTwosComplement((((uint32_t)coef[19] & 0x0F) << 8) | (uint32_t)coef[20], 12);
+    }
 
     // PRS_CFG: pressure measurement rate (32 Hz) and oversampling (16 time standard)
     registerSetBits(dev, DPS310_REG_PRS_CFG, DPS310_PRS_CFG_BIT_PM_RATE_32HZ | DPS310_PRS_CFG_BIT_PM_PRC_16);
