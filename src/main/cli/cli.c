@@ -4820,12 +4820,7 @@ if (buildKey) {
                 cliPrint("configured");
             }
         }
-        if (gpsData.platformVersion != UBX_VERSION_UNDEF) {
-            cliPrint(", version = ");
-            cliPrintf("%s", ubloxVersionMap[gpsData.platformVersion].str);
-        } else {
-            cliPrint("unknown");
-        }
+        cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
     } else {
         cliPrint("NOT ENABLED");
     }
