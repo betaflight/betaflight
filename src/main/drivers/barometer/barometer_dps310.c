@@ -178,7 +178,7 @@ static bool deviceConfigure(const extDevice_t *dev)
     uint8_t coef[coefficientLength];
 
     for (unsigned i = 0; i < sizeof(coef); ) {
-        int chunk = MIN(9, (sizeof(coef) - i));
+        int chunk = MIN((unsigned)9, (sizeof(coef) - i));
         if (!busReadBuf(dev, DPS310_REG_COEF + i,  coef + i, chunk)) {
             return false;
         }
