@@ -171,7 +171,7 @@ static bool deviceConfigure(const extDevice_t *dev)
         return false;
     }
 
-    // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21) from the Calibration Coefficient register.
+    // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21, c31, c40) from the Calibration Coefficient register.
     //   Note: The coefficients read from the coefficient register are 2's complement numbers.
     // Do the read of the coefficients in multiple parts, as the chip will return a read failure when trying to read all at once over I2C.
     unsigned coefficientLength = chipId[0] == SPL07_003_CHIP_ID ? 22 : 18;
@@ -284,9 +284,11 @@ static bool dps310GetUP(baroDev_t *baro)
     const float c20 = baroState.calib.c20;
     const float c21 = baroState.calib.c21;
     const float c30 = baroState.calib.c30;
+    const float c31 = baroState.calib.c31;
+    const float c40 = baroState.calib.c40;
 
     // See section 4.9.1, How to Calculate Compensated Pressure Values, of datasheet
-    baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * c30)) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * c21);
+    baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * (c30 + Praw_sc * c40))) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * (c21 + Praw_sc * c31));
 
     const float c0 = baroState.calib.c0;
     const float c1 = baroState.calib.c1;
