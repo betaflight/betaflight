@@ -70,7 +70,7 @@
 #define DPS310_REG_COEF_SRCE        0x28
 
 #define DPS310_ID_REV_AND_PROD_ID       (0x10)  // Infineon DPS310
-#define SPL07_003_CHIP_ID               (0x11)  // GoerTek SPA006_003 or SPL07_003
+#define SPL07_003_CHIP_ID               (0x11)  // SPL07_003
 
 #define DPS310_RESET_BIT_SOFT_RST       (0x09)    // 0b1001
 
