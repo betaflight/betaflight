@@ -267,17 +267,28 @@ static void scaleRawSetpointToFpvCamAngle(void)
 
 void updateRcRefreshRate(timeUs_t currentTimeUs)
 {
-    static timeUs_t lastRxTimeUs;
+    // runs when rxFrameCheck() indicates new Rx frame arrived, via calculateRxChannelsAndUpdateFailsafe()
+    static timeUs_t lastRxTimeUs = 0;
 
     timeDelta_t frameAgeUs;
-    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
+    // initalise frameDeltaUs to the last non-zero Rx-driver reported frame time stamp delta
+    // update frameAgeUs, the interval from the most recent driver reported time stamp and now
+    // should be short, but will grow if the Rx time stamp does not update
+    timeDelta_t frameDeltaUsRx = rxGetFrameDelta(&frameAgeUs);
+    timeDelta_t frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
 
-    if (!frameDeltaUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
-        frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
+    DEBUG_SET(DEBUG_RX_TIMING, 4, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames based on rxFrameCheck
+    DEBUG_SET(DEBUG_RX_TIMING, 5, MIN(frameDeltaUsRx / 10, INT16_MAX)); // time between frames as reported by Rx
+
+    // if we have non-zero Rx-reported values, and
+    // the Rx Reported frameAgeUs is less than our rxFrameCheck delta time
+    // meaning we got a packet with an interval less than that reported by the Rx, perhaps Rx packet didn't have a time stamp?
+    if (frameDeltaUsRx && frameAgeUs < frameDeltaUs) {
+        frameDeltaUs = frameDeltaUsRx;
     }
 
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
-    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames in hundredths of ms
+    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));     // time from reception of frame to now in hundredths of ms
 
     lastRxTimeUs = currentTimeUs;
     currentRxIntervalUs = constrain(frameDeltaUs, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);

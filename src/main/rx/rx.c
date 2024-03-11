@@ -1025,15 +1025,18 @@ bool isRssiConfigured(void)
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs)
 {
     static timeUs_t previousFrameTimeUs = 0;
-    static timeDelta_t frameTimeDeltaUs = 0;
+    static timeDelta_t frameTimeDeltaUs = 0; // last valid Rx-reported frame time stamp delta
 
     if (rxRuntimeState.rcFrameTimeUsFn) {
-        const timeUs_t frameTimeUs = rxRuntimeState.rcFrameTimeUsFn();
+        const timeUs_t frameTimeUs = rxRuntimeState.rcFrameTimeUsFn(); // Frame time stamp from Rx driver
 
         *frameAgeUs = cmpTimeUs(micros(), frameTimeUs);
+        // Time interval between now and most recent Rx-reported frame time
+        // will grow large if Rx does not update the last reported frame time stamp
 
         const timeDelta_t deltaUs = cmpTimeUs(frameTimeUs, previousFrameTimeUs);
         if (deltaUs) {
+            // Rx-reported frame time has changed, compared to previous Rx-reported frame time stamp
             frameTimeDeltaUs = deltaUs;
             previousFrameTimeUs = frameTimeUs;
         }
