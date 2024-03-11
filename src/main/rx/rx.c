@@ -133,7 +133,8 @@ uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define DELAY_20_MS (20 * 1000)                         // 20ms in us
-#define DELAY_100_MS (100 * 1000)                       // 100ms in us
+#define DELAY_50_MS (50 * 1000)                         // 50ms in us
+#define DELAY_200_MS (200 * 1000)                       // 200ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
 
@@ -504,7 +505,8 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
 {
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
-    timeDelta_t needRxSignalMaxDelayUs = DELAY_100_MS;
+    timeDelta_t needRxSignalMaxDelayUs = DELAY_200_MS;
+    timeDelta_t reCheckRxSignalInterval = DELAY_50_MS;
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, MIN(2000, currentDeltaTimeUs / 100));
 
@@ -559,10 +561,10 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     } else {
         //  watch for next packet
         if (cmpTimeUs(currentTimeUs, needRxSignalBefore) > 0) {
-            //  initial time to signalReceived failure is 100ms, then we check every 100ms
+            //  initial time to signalReceived failure is 150ms, then we check every 50ms
             rxSignalReceived = false;
-            needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
-            //  review and process rcData values every 100ms in case failsafe changed them
+            needRxSignalBefore = currentTimeUs + reCheckRxSignalInterval;
+            //  review and process rcData values every 50ms in case failsafe changed them
             rxDataProcessingRequired = true;
         }
     }
@@ -687,7 +689,7 @@ void detectAndApplySignalLossBehaviour(void)
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     rxFlightChannelsValid = rxSignalReceived && !boxFailsafeSwitchIsOn;
-    // rxFlightChannelsValid is false after 100ms of no packets, or as soon as use the BOXFAILSAFE switch is actioned
+    // rxFlightChannelsValid is false after 200ms of no packets, or as soon as use the BOXFAILSAFE switch is actioned
     // rxFlightChannelsValid is true the instant we get a good packet or the BOXFAILSAFE switch is reverted
     // can also go false with good packets but where one flight channel is bad > 300ms (PPM type receiver error)
 
