@@ -38,7 +38,7 @@ EXCLUDES        = stm32f4xx_crc.c \
 VPATH       := $(VPATH):$(STDPERIPH_DIR)/src
 endif
 
-ifeq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
+ifeq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx STM32F427xx))
 EXCLUDES        += stm32f4xx_fsmc.c
 endif
 
@@ -140,6 +140,12 @@ else ifeq ($(TARGET_MCU),STM32F405xx)
 DEVICE_FLAGS    = -DSTM32F40_41xxx -DSTM32F405xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
 STARTUP_SRC     = startup_stm32f40xx.s
+MCU_FLASH_SIZE  := 1024
+
+else ifeq ($(TARGET_MCU),STM32F427xx)
+DEVICE_FLAGS    = -DSTM32F427_437xx
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f427xg.ld
+STARTUP_SRC     = startup_stm32f427xx.s
 MCU_FLASH_SIZE  := 1024
 
 else ifeq ($(TARGET_MCU),STM32F446xx)
