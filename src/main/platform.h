@@ -26,11 +26,11 @@
 #pragma GCC poison sprintf snprintf
 #endif
 
-#include "target/common_pre.h"
-
 #ifdef USE_CONFIG
 #include "config.h"
 #endif
+
+#include "target/common_pre.h"
 
 // MCU specific platform from drivers/XX
 #include "platform_mcu.h"
