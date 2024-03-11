@@ -71,7 +71,7 @@ mcuTypeId_e getMcuTypeId(void)
 #elif defined(AT32F435)
     return MCU_TYPE_AT32;
 #elif defined(STM32H573)
-    return MCU_TYPE_STM32H573;
+    return MCU_TYPE_H573;
 #else
     return MCU_TYPE_UNKNOWN;
 #endif
