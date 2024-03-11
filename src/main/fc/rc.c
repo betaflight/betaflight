@@ -279,10 +279,13 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_RX_TIMING, 4, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames based on rxFrameCheck
     DEBUG_SET(DEBUG_RX_TIMING, 5, MIN(frameDeltaUsRx / 10, INT16_MAX)); // time between frames as reported by Rx
+#ifdef USE_RX_LINK_QUALITY_INFO
+    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());                  // raw link quality value
+#endif
 
     // if we have non-zero Rx-reported values, and
-    // the Rx Reported frameAgeUs is less than our rxFrameCheck delta time
-    // meaning we got a packet with an interval less than that reported by the Rx, perhaps Rx packet didn't have a time stamp?
+    // the Rx Reported frameAgeUs is less than our rxFrameCheck delta time (normally less than 30us)
+    // if the link is lost, the incoming frameDeltaUsRx does not change, but frameAge climbs rapidly to integer maximum
     if (frameDeltaUsRx && frameAgeUs < frameDeltaUs) {
         frameDeltaUs = frameDeltaUsRx;
     }
