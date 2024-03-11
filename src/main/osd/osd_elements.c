@@ -286,15 +286,20 @@ static int getEscRpmFreq(int i)
 
 static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms_t *element)
 {
+    static uint8_t motor = 0;
     int x = element->elemPosX;
     int y = element->elemPosY;
-    for (int i=0; i < getMotorCount(); i++) {
-        char rpmStr[6];
-        const int rpm = MIN((*escFnPtr)(i),99999);
-        const int len = tfp_sprintf(rpmStr, "%d", rpm);
-        rpmStr[len] = '\0';
-        osdDisplayWrite(element, x, y + i, DISPLAYPORT_SEVERITY_NORMAL, rpmStr);
+    char rpmStr[6];
+    const int rpm = MIN((*escFnPtr)(motor),99999);
+    tfp_sprintf(rpmStr, "%d", rpm);
+    osdDisplayWrite(element, x, y + motor, DISPLAYPORT_SEVERITY_NORMAL, rpmStr);
+
+    if (++motor == getMotorCount()) {
+        motor = 0;
+    } else {
+        element->rendered = false;
     }
+
     element->drawElement = false;
 }
 #endif
@@ -708,6 +713,7 @@ static void osdElementAntiGravity(osdElementParms_t *element)
 
 static void osdElementArtificialHorizon(osdElementParms_t *element)
 {
+    static int x = -4;
     // Get pitch and roll limits in tenths of degrees
     const int maxPitch = osdConfig()->ahMaxPitch * 10;
     const int maxRoll = osdConfig()->ahMaxRoll * 10;
@@ -721,11 +727,18 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
     }
     pitchAngle -= 41; // 41 = 4 * AH_SYMBOL_COUNT + 5
 
-    for (int x = -4; x <= 4; x++) {
-        const int y = ((-rollAngle * x) / 64) - pitchAngle;
-        if (y >= 0 && y <= 81) {
-            osdDisplayWriteChar(element, element->elemPosX + x, element->elemPosY + (y / AH_SYMBOL_COUNT), DISPLAYPORT_SEVERITY_NORMAL, (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
-        }
+    const int y = ((-rollAngle * x) / 64) - pitchAngle;
+    if (y >= 0 && y <= 81) {
+        osdDisplayWriteChar(element, element->elemPosX + x, element->elemPosY + (y / AH_SYMBOL_COUNT), DISPLAYPORT_SEVERITY_NORMAL, (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
+    }
+
+    if (x == 4) {
+        // Rendering is complete, so prepare to start again
+        x = -4;
+    } else {
+        // Rendering not yet complete
+        element->rendered = false;
+        x++;
     }
 
     element->drawElement = false;  // element already drawn
@@ -794,24 +807,43 @@ static void osdElementCoreTemperature(osdElementParms_t *element)
 
 static void osdBackgroundCameraFrame(osdElementParms_t *element)
 {
+    static enum {TOP, MIDDLE, BOTTOM} renderPhase = TOP;
     const uint8_t xpos = element->elemPosX;
     const uint8_t ypos = element->elemPosY;
     const uint8_t width = constrain(osdConfig()->camera_frame_width, OSD_CAMERA_FRAME_MIN_WIDTH, OSD_CAMERA_FRAME_MAX_WIDTH);
     const uint8_t height = constrain(osdConfig()->camera_frame_height, OSD_CAMERA_FRAME_MIN_HEIGHT, OSD_CAMERA_FRAME_MAX_HEIGHT);
 
-    element->buff[0] = SYM_STICK_OVERLAY_CENTER;
-    for (int i = 1; i < (width - 1); i++) {
-        element->buff[i] = SYM_STICK_OVERLAY_HORIZONTAL;
+    if (renderPhase != BOTTOM) {
+        // Rendering not yet complete
+        element->rendered = false;
     }
-    element->buff[width - 1] = SYM_STICK_OVERLAY_CENTER;
-    element->buff[width] = 0;  // string terminator
 
-    osdDisplayWrite(element, xpos, ypos, DISPLAYPORT_SEVERITY_NORMAL, element->buff);
-    for (int i = 1; i < (height - 1); i++) {
+    if (renderPhase == MIDDLE) {
+        static uint8_t i = 1;
+
         osdDisplayWriteChar(element, xpos, ypos + i, DISPLAYPORT_SEVERITY_NORMAL, SYM_STICK_OVERLAY_VERTICAL);
         osdDisplayWriteChar(element, xpos + width - 1, ypos + i, DISPLAYPORT_SEVERITY_NORMAL, SYM_STICK_OVERLAY_VERTICAL);
+
+        if (++i == height) {
+            i = 1;
+            renderPhase = BOTTOM;
+        }
+    } else {
+        element->buff[0] = SYM_STICK_OVERLAY_CENTER;
+        for (uint8_t i = 1; i < (width - 1); i++) {
+            element->buff[i] = SYM_STICK_OVERLAY_HORIZONTAL;
+        }
+        element->buff[width - 1] = SYM_STICK_OVERLAY_CENTER;
+        element->buff[width] = 0;  // string terminator
+
+        if (renderPhase == TOP) {
+            osdDisplayWrite(element, xpos, ypos, DISPLAYPORT_SEVERITY_NORMAL, element->buff);
+            renderPhase = MIDDLE;
+        } else {
+            osdDisplayWrite(element, xpos, ypos + height - 1, DISPLAYPORT_SEVERITY_NORMAL, element->buff);
+            renderPhase = TOP;
+        }
     }
-    osdDisplayWrite(element, xpos, ypos + height - 1, DISPLAYPORT_SEVERITY_NORMAL, element->buff);
 
     element->drawElement = false;  // element already drawn
 }
@@ -1184,17 +1216,32 @@ static void osdElementGpsLapTimeBest3(osdElementParms_t *element)
 
 static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 {
+    static bool renderLevel = false;
+    static int8_t y = -AH_SIDEBAR_HEIGHT_POS;
     // Draw AH sides
     const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
     const int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
-    for (int y = -hudheight; y <= hudheight; y++) {
+
+    if (renderLevel) {
+        // AH level indicators
+        osdDisplayWriteChar(element, element->elemPosX - hudwidth + 1, element->elemPosY, DISPLAYPORT_SEVERITY_NORMAL, SYM_AH_LEFT);
+        osdDisplayWriteChar(element, element->elemPosX + hudwidth - 1, element->elemPosY, DISPLAYPORT_SEVERITY_NORMAL, SYM_AH_RIGHT);
+        renderLevel = false;
+    } else {
         osdDisplayWriteChar(element, element->elemPosX - hudwidth, element->elemPosY + y, DISPLAYPORT_SEVERITY_NORMAL, SYM_AH_DECORATION);
         osdDisplayWriteChar(element, element->elemPosX + hudwidth, element->elemPosY + y, DISPLAYPORT_SEVERITY_NORMAL, SYM_AH_DECORATION);
-    }
 
-    // AH level indicators
-    osdDisplayWriteChar(element, element->elemPosX - hudwidth + 1, element->elemPosY, DISPLAYPORT_SEVERITY_NORMAL, SYM_AH_LEFT);
-    osdDisplayWriteChar(element, element->elemPosX + hudwidth - 1, element->elemPosY, DISPLAYPORT_SEVERITY_NORMAL, SYM_AH_RIGHT);
+        if (y == hudheight) {
+            // Rendering is complete, so prepare to start again
+            y = -hudheight;
+            // On next pass render the level markers
+            renderLevel = true;
+        } else {
+            y++;
+        }
+        // Rendering not yet complete
+        element->rendered = false;
+    }
 
     element->drawElement = false;  // element already drawn
 }
@@ -1444,19 +1491,24 @@ static void osdElementPower(osdElementParms_t *element)
 
 static void osdElementRcChannels(osdElementParms_t *element)
 {
+    static uint8_t channel = 0;
     const uint8_t xpos = element->elemPosX;
     const uint8_t ypos = element->elemPosY;
 
-    for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
-        if (osdConfig()->rcChannels[i] >= 0) {
-            // Translate (1000, 2000) to (-1000, 1000)
-            int data = scaleRange(rcData[osdConfig()->rcChannels[i]], PWM_RANGE_MIN, PWM_RANGE_MAX, -1000, 1000);
-            // Opt for the simplest formatting for now.
-            // Decimal notation can be added when tfp_sprintf supports float among fancy options.
-            char fmtbuf[6];
-            tfp_sprintf(fmtbuf, "%5d", data);
-            osdDisplayWrite(element, xpos, ypos + i, DISPLAYPORT_SEVERITY_NORMAL, fmtbuf);
-        }
+    if (osdConfig()->rcChannels[channel] >= 0) {
+        // Translate (1000, 2000) to (-1000, 1000)
+        int data = scaleRange(rcData[osdConfig()->rcChannels[channel]], PWM_RANGE_MIN, PWM_RANGE_MAX, -1000, 1000);
+        // Opt for the simplest formatting for now.
+        // Decimal notation can be added when tfp_sprintf supports float among fancy options.
+        char fmtbuf[6];
+        tfp_sprintf(fmtbuf, "%5d", data);
+        osdDisplayWrite(element, xpos, ypos + channel, DISPLAYPORT_SEVERITY_NORMAL, fmtbuf);
+    }
+
+    if (++channel == OSD_RCCHANNELS_COUNT) {
+        channel = 0;
+    } else {
+        element->rendered = false;
     }
 
     element->drawElement = false;  // element already drawn
@@ -1531,21 +1583,37 @@ static void osdElementRsnr(osdElementParms_t *element)
 #ifdef USE_OSD_STICK_OVERLAY
 static void osdBackgroundStickOverlay(osdElementParms_t *element)
 {
+    static enum {VERT, HORZ} renderPhase = VERT;
     const uint8_t xpos = element->elemPosX;
     const uint8_t ypos = element->elemPosY;
 
-    // Draw the axis first
-    for (unsigned x = 0; x < OSD_STICK_OVERLAY_WIDTH; x++) {
-        for (unsigned  y = 0; y < OSD_STICK_OVERLAY_HEIGHT; y++) {
-            // draw the axes, vertical and horizonal
-            if ((x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) && (y == (OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_SEVERITY_NORMAL, SYM_STICK_OVERLAY_CENTER);
-            } else if (x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) {
-                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_SEVERITY_NORMAL, SYM_STICK_OVERLAY_VERTICAL);
-            } else if (y == ((OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_SEVERITY_NORMAL, SYM_STICK_OVERLAY_HORIZONTAL);
-            }
+    if (renderPhase == VERT) {
+        static uint8_t y = 0;
+        osdDisplayWriteChar(element, xpos + ((OSD_STICK_OVERLAY_WIDTH - 1) / 2), ypos + y, DISPLAYPORT_SEVERITY_NORMAL, SYM_STICK_OVERLAY_VERTICAL);
+
+        y++;
+
+        if (y == (OSD_STICK_OVERLAY_HEIGHT - 1) / 2) {
+            // Skip over horizontal
+            y++;
         }
+
+        if (y == OSD_STICK_OVERLAY_HEIGHT) {
+            y = 0;
+            renderPhase = HORZ;
+        }
+
+        element->rendered = false;
+    } else {
+        for (uint8_t i = 0; i < OSD_STICK_OVERLAY_WIDTH; i++) {
+            element->buff[i] = SYM_STICK_OVERLAY_HORIZONTAL;
+        }
+        element->buff[((OSD_STICK_OVERLAY_WIDTH - 1) / 2)] = SYM_STICK_OVERLAY_CENTER;
+        element->buff[OSD_STICK_OVERLAY_WIDTH] = 0;  // string terminator
+
+        osdDisplayWrite(element, xpos, ypos + ((OSD_STICK_OVERLAY_HEIGHT - 1) / 2), DISPLAYPORT_SEVERITY_NORMAL, element->buff);
+
+        renderPhase = VERT;
     }
 
     element->drawElement = false;  // element already drawn
@@ -2016,14 +2084,14 @@ void osdAddActiveElements(void)
 #endif
 }
 
-static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
+static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
 {
     if (!osdElementDrawFunction[item]) {
         // Element has no drawing function
-        return;
+        return true;
     }
     if (!osdDisplayPort->useDeviceBlink && BLINK(item)) {
-        return;
+        return true;
     }
 
     uint8_t elemPosX = OSD_X(osdElementConfig()->item_pos[item]);
@@ -2038,6 +2106,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.buff = (char *)&buff;
     element.osdDisplayPort = osdDisplayPort;
     element.drawElement = true;
+    element.rendered = true;
     element.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element drawing function
@@ -2049,13 +2118,15 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
             osdDisplayWrite(&element, elemPosX, elemPosY, element.attr, buff);
         }
     }
+
+    return element.rendered;
 }
 
-static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_t item)
+static bool osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_t item)
 {
     if (!osdElementBackgroundFunction[item]) {
         // Element has no background drawing function
-        return;
+        return true;
     }
 
     uint8_t elemPosX = OSD_X(osdElementConfig()->item_pos[item]);
@@ -2069,6 +2140,7 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     element.type = OSD_TYPE(osdElementConfig()->item_pos[item]);
     element.buff = (char *)&buff;
     element.osdDisplayPort = osdDisplayPort;
+    element.rendered = true;
     element.drawElement = true;
 
     // Call the element background drawing function
@@ -2076,6 +2148,8 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     if (element.drawElement) {
         osdDisplayWrite(&element, elemPosX, elemPosY, DISPLAYPORT_SEVERITY_NORMAL, buff);
     }
+
+    return element.rendered;
 }
 
 static uint8_t activeElement = 0;
@@ -2094,81 +2168,127 @@ uint8_t osdGetActiveElementCount(void)
 bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
+    static bool backgroundRendered = false;
     bool retval = true;
 
     if (activeElement >= activeOsdElementCount) {
         return false;
     }
 
-    if (!backgroundLayerSupported) {
+    if (!backgroundLayerSupported && !backgroundRendered) {
         // If the background layer isn't supported then we
         // have to draw the element's static layer as well.
-        osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[activeElement]);
+        backgroundRendered = osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[activeElement]);
+
+        return retval;
     }
 
-    osdDrawSingleElement(osdDisplayPort, activeOsdElementArray[activeElement]);
-
-    if (++activeElement >= activeOsdElementCount) {
-        activeElement = 0;
-        retval = false;
+    // Only advance to the next element if rendering is complete
+    if (osdDrawSingleElement(osdDisplayPort, activeOsdElementArray[activeElement])) {
+        // Prepare to render the background of the next element
+        backgroundRendered = false;
+        if (++activeElement >= activeOsdElementCount) {
+            activeElement = 0;
+            retval = false;
+        }
     }
 
     return retval;
 }
 
 #ifdef USE_SPEC_PREARM_SCREEN
-void osdDrawSpec(displayPort_t *osdDisplayPort)
+bool osdDrawSpec(displayPort_t *osdDisplayPort)
 {
-    if (!ARMING_FLAG(ARMED) && osdConfig()->osd_show_spec_prearm) {
-        const uint8_t midRow = osdDisplayPort->rows / 2;
-        const uint8_t midCol = osdDisplayPort->cols / 2;
+    static enum {CLR, RPM, POLES, MIXER, THR, MOTOR, BAT, VER} specState = CLR;
+    static int currentRow;
 
-        char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
+    const uint8_t midRow = osdDisplayPort->rows / 2;
+    const uint8_t midCol = osdDisplayPort->cols / 2;
 
-        memset(buff,0,strlen(buff));
-        int len = 0;
-        int currentRow = midRow - 3;
+    char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
 
+    int len = 0;
+
+    switch (specState) {
+    default:
+    case CLR:
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
+        currentRow = midRow - 3;
+
+        specState = RPM;
+        break;
+
+    case RPM:
 #ifdef USE_RPM_LIMIT
-        const bool rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
-        if (rpmLimitActive) {
-            len = tfp_sprintf(buff, "RPM LIMIT ON  %d", mixerConfig()->rpm_limit_value);
-        } else {
-            len = tfp_sprintf(buff, "%s", "RPM LIMIT OFF");
-        }
-        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
-
-        if (rpmLimitActive) {
-            memset(buff,0,strlen(buff));
-            len = tfp_sprintf(buff, "KV %d   POLES %d", motorConfig()->kv, motorConfig()->motorPoleCount);
-            displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
-
-            memset(buff,0,strlen(buff));
-            len = tfp_sprintf(buff, "%d  %d  %d", mixerConfig()->rpm_limit_p, mixerConfig()->rpm_limit_i, mixerConfig()->rpm_limit_d);
-            displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
-        } else
-#endif // #USE_RPM_LIMIT
         {
-            memset(buff,0,strlen(buff));
-            len = tfp_sprintf(buff, "THR LIMIT %s", lookupTableThrottleLimitType[currentControlRateProfile->throttle_limit_type]);
-            if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
-                len = tfp_sprintf(buff, "%s %d", buff, currentControlRateProfile->throttle_limit_percent);
+            const bool rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
+            if (rpmLimitActive) {
+                len = tfp_sprintf(buff, "RPM LIMIT ON  %d", mixerConfig()->rpm_limit_value);
+            } else {
+                len = tfp_sprintf(buff, "%s", "RPM LIMIT OFF");
             }
-            displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+            if (rpmLimitActive) {
+                specState = POLES;
+            } else {
+                specState = THR;
+            }
+        }
+        break;
+
+    case POLES:
+        len = tfp_sprintf(buff, "KV %d   POLES %d", motorConfig()->kv, motorConfig()->motorPoleCount);
+        displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        specState = MIXER;
+        break;
+
+    case MIXER:
+        len = tfp_sprintf(buff, "%d  %d  %d", mixerConfig()->rpm_limit_p, mixerConfig()->rpm_limit_i, mixerConfig()->rpm_limit_d);
+        displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        specState = THR;
+        break;
+
+    case THR:
+#endif // #USE_RPM_LIMIT
+        len = tfp_sprintf(buff, "THR LIMIT %s", lookupTableThrottleLimitType[currentControlRateProfile->throttle_limit_type]);
+        if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
+            len = tfp_sprintf(buff, "%s %d", buff, currentControlRateProfile->throttle_limit_percent);
+        }
+        displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        specState = MOTOR;
+        break;
+
+    case MOTOR:
+        len = tfp_sprintf(buff, "MOTOR LIMIT %d", currentPidProfile->motor_output_limit);
+        displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        specState = BAT;
+        break;
+
+    case BAT:
+        {
+            const float batteryVoltage = getBatteryVoltage() / 100.0f;
+            len = osdPrintFloat(buff, osdGetBatterySymbol(getBatteryAverageCellVoltage()), batteryVoltage, "", 2, true, SYM_VOLT);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
         }
 
-        memset(buff,0,strlen(buff));
-        len = tfp_sprintf(buff, "MOTOR LIMIT %d", currentPidProfile->motor_output_limit);
-        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+        specState = VER;
+        break;
 
-        memset(buff,0,strlen(buff));
-        const float batteryVoltage = getBatteryVoltage() / 100.0f;
-        len = osdPrintFloat(buff, osdGetBatterySymbol(getBatteryAverageCellVoltage()), batteryVoltage, "", 2, true, SYM_VOLT);
-        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
-
+    case VER:
         len = strlen(FC_VERSION_STRING);
-        displayWrite(osdDisplayPort, midCol - len/2, currentRow++, DISPLAYPORT_SEVERITY_NORMAL, FC_VERSION_STRING);
+        displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, FC_VERSION_STRING);
+
+        specState = CLR;
+
+        return true;
     }
+
+    return false;
 }
 #endif // USE_SPEC_PREARM_SCREEN
 
@@ -2178,7 +2298,7 @@ void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
         displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
         displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
         for (unsigned i = 0; i < activeOsdElementCount; i++) {
-            osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]);
+            while (!osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]));
         }
         displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
     }

@@ -27,6 +27,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -34,6 +35,7 @@
 
 #include "build/build_config.h"
 
+#include <common/maths.h>
 #include "common/utils.h"
 
 #include "drivers/dma.h"
@@ -297,6 +299,71 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
     }
 }
 
+static void uartBeginWrite(serialPort_t *instance)
+{
+    uartPort_t *uartPort = (uartPort_t *)instance;
+
+    // Check if the TX line is being pulled low by an unpowered peripheral
+    if (uartPort->checkUsartTxOutput) {
+        uartPort->checkUsartTxOutput(uartPort);
+    }
+}
+
+static void uartWriteBuf(serialPort_t *instance, const void *data, int count)
+{
+    uartPort_t *uartPort = (uartPort_t *)instance;
+    uartDevice_t *uart = container_of(uartPort, uartDevice_t, port);
+    const uint8_t *bytePtr = (const uint8_t*)data;
+
+    // Test if checkUsartTxOutput() detected TX line being pulled low by an unpowered peripheral
+    if (uart->txPinState == TX_PIN_MONITOR) {
+        // TX line is being pulled low, so don't transmit
+        return;
+    }
+
+    while (count > 0) {
+        // Calculate the available space to the end of the buffer
+        const int spaceToEnd = uartPort->port.txBufferSize - uartPort->port.txBufferHead;
+        // Determine the amount to copy in this iteration
+        const int chunkSize = MIN(spaceToEnd, count);
+        // Copy the chunk
+        memcpy((void *)&uartPort->port.txBuffer[uartPort->port.txBufferHead], bytePtr, chunkSize);
+        // Advance source pointer
+        bytePtr += chunkSize;
+        // Advance head, wrapping if necessary
+        uartPort->port.txBufferHead = (uartPort->port.txBufferHead + chunkSize) % uartPort->port.txBufferSize;
+        // Decrease remaining count
+        count -= chunkSize;
+    }
+}
+
+static void uartEndWrite(serialPort_t *instance)
+{
+    uartPort_t *uartPort = (uartPort_t *)instance;
+    uartDevice_t *uart = container_of(uartPort, uartDevice_t, port);
+
+    // Check if the TX line is being pulled low by an unpowered peripheral
+    if (uart->txPinState == TX_PIN_MONITOR) {
+        // TX line is being pulled low, so don't transmit
+        return;
+    }
+
+#ifdef USE_DMA
+    if (uartPort->txDMAResource) {
+        uartTryStartTxDMA(uartPort);
+    } else
+#endif
+    {
+#if defined(USE_HAL_DRIVER)
+        __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+#elif defined(USE_ATBSP_DRIVER)
+        usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+#else
+        USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
+#endif
+    }
+}
+
 const struct serialPortVTable uartVTable[] = {
     {
         .serialWrite = uartWrite,
@@ -308,9 +375,9 @@ const struct serialPortVTable uartVTable[] = {
         .setMode = uartSetMode,
         .setCtrlLineStateCb = NULL,
         .setBaudRateCb = NULL,
-        .writeBuf = NULL,
-        .beginWrite = NULL,
-        .endWrite = NULL,
+        .writeBuf = uartWriteBuf,
+        .beginWrite = uartBeginWrite,
+        .endWrite = uartEndWrite,
     }
 };
 
