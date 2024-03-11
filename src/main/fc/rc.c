@@ -268,12 +268,14 @@ static void scaleRawSetpointToFpvCamAngle(void)
 void updateRcRefreshRate(timeUs_t currentTimeUs)
 {
     // runs when rxFrameCheck() indicates new Rx frame arrived, via calculateRxChannelsAndUpdateFailsafe()
+    // Note that after a lost packet, we check again only at 100ms intervals
     static timeUs_t lastRxTimeUs = 0;
 
     timeDelta_t frameAgeUs;
-    // initalise frameDeltaUs to the last non-zero Rx-driver reported frame time stamp delta
-    // update frameAgeUs, the interval from the most recent driver reported time stamp and now
-    // should be short, but will grow if the Rx time stamp does not update
+    // use rxGetFrameDelta to set frameDeltaUsRx to the last non-zero Rx-driver-reported frame interval from time stamp delta
+    // this value is updated only when a valid packet arrives
+    // also update frameAgeUs, usually the short interval from the most recent driver reported time stamp and now, 
+    // but which goes up in 100ms steps during ongoing packet loss, since our checks are only done every 100ms
     timeDelta_t frameDeltaUsRx = rxGetFrameDelta(&frameAgeUs);
     timeDelta_t frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
 
@@ -283,11 +285,10 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());                  // raw link quality value
 #endif
 
-    // if we have non-zero Rx-reported values, and
-    // the Rx Reported frameAgeUs is less than our rxFrameCheck delta time (normally less than 30us)
-    // if the link is lost, the incoming frameDeltaUsRx does not change, but frameAge climbs rapidly to integer maximum
-    if (frameDeltaUsRx && frameAgeUs < frameDeltaUs) {
-        frameDeltaUs = frameDeltaUsRx;
+    // if we have a non-zero Rx-reported interval, use either the reported interval whenever we get that value, or
+    // the max of that and frameAge, which increases every 100ms, even without new data.
+    if (frameDeltaUsRx) {
+        frameDeltaUs = MAX(frameAgeUs, frameDeltaUsRx);
     }
 
     DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames in hundredths of ms
