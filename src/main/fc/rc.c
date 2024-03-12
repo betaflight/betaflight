@@ -267,34 +267,38 @@ static void scaleRawSetpointToFpvCamAngle(void)
 
 void updateRcRefreshRate(timeUs_t currentTimeUs)
 {
-    // runs when rxFrameCheck() indicates new Rx frame arrived, via calculateRxChannelsAndUpdateFailsafe()
-    // Note that after a lost packet, we check again only at 100ms intervals
+    // updateRcRefreshRate runs when rxFrameCheck() says that new Rx frame arrived (when rxDataProcessingRequired is true)
+    // also runs after 150ms of signal loss and at 50ms intervals thereafter
+
+    // rxGetFrameDelta gets frameDeltaUsRx from time stamp delta provided by the Rx, if available
+    // during a signal loss, the 'last interval' is held
+    // if no reported frame times, should initialise to zero
+    timeDelta_t frameDeltaUsRx = rxGetFrameDelta();
+
+    static timeDelta_t frameDeltaUs = 0;
     static timeUs_t lastRxTimeUs = 0;
 
-    timeDelta_t frameAgeUs;
-    // use rxGetFrameDelta to set frameDeltaUsRx to the last non-zero Rx-driver-reported frame interval from time stamp delta
-    // this value is updated only when a valid packet arrives
-    // also update frameAgeUs, usually the short interval from the most recent driver reported time stamp and now, 
-    // but which goes up in 100ms steps during ongoing packet loss, since our checks are only done every 100ms
-    timeDelta_t frameDeltaUsRx = rxGetFrameDelta(&frameAgeUs);
-    timeDelta_t frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
+    // the Rx may not provide values as above, so we calculate frameDeltaUs here also
+    // this value updates every packet, and after 150ms of signal loss, updates every 50ms
+    frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
+    if (rxIsReceivingSignal()) {
+        lastRxTimeUs = currentTimeUs;
+    }
 
     DEBUG_SET(DEBUG_RX_TIMING, 4, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames based on rxFrameCheck
     DEBUG_SET(DEBUG_RX_TIMING, 5, MIN(frameDeltaUsRx / 10, INT16_MAX)); // time between frames as reported by Rx
 #ifdef USE_RX_LINK_QUALITY_INFO
     DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());                  // raw link quality value
 #endif
+    DEBUG_SET(DEBUG_RX_TIMING, 7, rxIsReceivingSignal());
 
-    // if we have a non-zero Rx-reported interval, use either the reported interval whenever we get that value, or
-    // the max of that and frameAge, which increases every 100ms, even without new data.
+    // if we have an Rx-reported interval, use it
     if (frameDeltaUsRx) {
-        frameDeltaUs = MAX(frameAgeUs, frameDeltaUsRx);
+        frameDeltaUs = frameDeltaUsRx;
     }
 
     DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames in hundredths of ms
-    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));     // time from reception of frame to now in hundredths of ms
 
-    lastRxTimeUs = currentTimeUs;
     currentRxIntervalUs = constrain(frameDeltaUs, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
     isRxIntervalValid = frameDeltaUs == currentRxIntervalUs;
 

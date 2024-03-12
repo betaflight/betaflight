@@ -225,6 +225,6 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRange
 void suspendRxSignal(void);
 void resumeRxSignal(void);
 
-timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
+timeDelta_t rxGetFrameDelta();
 
 timeUs_t rxFrameTimeUs(void);

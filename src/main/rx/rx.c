@@ -134,7 +134,7 @@ uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 #define DELAY_20_MS (20 * 1000)                         // 20ms in us
 #define DELAY_50_MS (50 * 1000)                         // 50ms in us
-#define DELAY_200_MS (200 * 1000)                       // 200ms in us
+#define DELAY_150_MS (150 * 1000)                       // 150ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
 
@@ -505,7 +505,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
 {
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
-    timeDelta_t needRxSignalMaxDelayUs = DELAY_200_MS;
+    timeDelta_t needRxSignalMaxDelayUs = DELAY_150_MS;
     timeDelta_t reCheckRxSignalInterval = DELAY_50_MS;
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, MIN(2000, currentDeltaTimeUs / 100));
@@ -581,7 +581,6 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     
     DEBUG_SET(DEBUG_FAILSAFE, 1, rxSignalReceived);
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 0, rxSignalReceived);
-    DEBUG_SET(DEBUG_RX_TIMING, 7, rxSignalReceived);
 }
 
 #if defined(USE_RX_PWM) || defined(USE_RX_PPM)
@@ -1025,26 +1024,19 @@ bool isRssiConfigured(void)
     return rssiSource != RSSI_SOURCE_NONE;
 }
 
-timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs)
+timeDelta_t rxGetFrameDelta(void)
 {
-    // returns the delta time based on the Rx Driver time stamps
+    // return the delta time based on time stamps provided by the Rx driver
+    // frameTimeDeltaUs holds its last good value until after 150ms of no frames, it goes to zero)
     static timeUs_t previousFrameTimeUs = 0;
-    static timeDelta_t frameTimeDeltaUs = 0; // last valid Rx-reported frame time stamp delta
+    static timeDelta_t frameTimeDeltaUs = 0;
 
-    // when a new packet arrives, return the delta time 
-    if (rxRuntimeState.rcFrameTimeUsFn) {
-        const timeUs_t frameTimeUs = rxRuntimeState.rcFrameTimeUsFn(); // Frame time stamp from Rx driver
+    const timeUs_t frameTimeUs = rxRuntimeState.rcFrameTimeUsFn(); // Frame time stamp from Rx driver
+    DEBUG_SET(DEBUG_RX_TIMING, 1, frameTimeUs);     // time from reception of frame to now in hundredths of ms
 
-        *frameAgeUs = cmpTimeUs(micros(), frameTimeUs);
-        // Time interval between now and most recent Rx-reported frame time
-        // steps up every 100ms if Rx does not update the last reported frame time stamp
-
-        const timeDelta_t deltaUs = cmpTimeUs(frameTimeUs, previousFrameTimeUs);
-        if (deltaUs) {
-            // Rx-reported frame time has changed, compared to previous Rx-reported frame time stamp
-            frameTimeDeltaUs = deltaUs;
-            previousFrameTimeUs = frameTimeUs;
-        }
+    if (frameTimeUs) {
+        frameTimeDeltaUs = cmpTimeUs(frameTimeUs, previousFrameTimeUs);
+        previousFrameTimeUs = frameTimeUs;
     }
 
     return frameTimeDeltaUs;
