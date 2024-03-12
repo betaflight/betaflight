@@ -48,6 +48,7 @@
 
 #define BMP388_I2C_ADDR                                 (0x76) // same as BMP280/BMP180
 #define BMP388_DEFAULT_CHIP_ID                          (0x50) // from https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3_defs.h#L130
+#define BMP390_DEFAULT_CHIP_ID                          (0x60) // from https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3_defs.h#L133
 
 #define BMP388_CMD_REG                                  (0x7E)
 #define BMP388_RESERVED_UPPER_REG                       (0x7D)
@@ -249,7 +250,7 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
 
     busReadRegisterBuffer(dev, BMP388_CHIP_ID_REG, &bmp388_chip_id, 1);
 
-    if (bmp388_chip_id != BMP388_DEFAULT_CHIP_ID) {
+    if (bmp388_chip_id != BMP388_DEFAULT_CHIP_ID || bmp388_chip_id != BMP390_DEFAULT_CHIP_ID) {
         bmp388BusDeinit(dev);
         if (defaultAddressApplied) {
             dev->busType_u.i2c.address = 0;
