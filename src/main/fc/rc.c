@@ -267,38 +267,38 @@ static void scaleRawSetpointToFpvCamAngle(void)
 
 void updateRcRefreshRate(timeUs_t currentTimeUs)
 {
-    // updateRcRefreshRate runs when rxFrameCheck() says that new Rx frame arrived (when rxDataProcessingRequired is true)
-    // also runs after 150ms of signal loss and at 50ms intervals thereafter
+    // this function runs when a new frame is detected, after 150ms of no frames, and then every 50ms until the link is restored.
 
-    // rxGetFrameDelta gets frameDeltaUsRx from time stamp delta provided by the Rx, if available
-    // during a signal loss, the 'last interval' is held
-    // if no reported frame times, should initialise to zero
+    // get the frame interval reported by the Rx driver code
     timeDelta_t frameDeltaUsRx = rxGetFrameDelta();
 
     static timeDelta_t frameDeltaUs = 0;
     static timeUs_t lastRxTimeUs = 0;
 
-    // the Rx may not provide values as above, so we calculate frameDeltaUs here also
-    // this value updates every packet, and after 150ms of signal loss, updates every 50ms
+    // also calculate frame interval here to handle it not being provided by the driver
+    // (I think there is little to be gained from the driver values).
     frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
     if (rxIsReceivingSignal()) {
         lastRxTimeUs = currentTimeUs;
     }
 
+    // temporary debugs
     DEBUG_SET(DEBUG_RX_TIMING, 4, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames based on rxFrameCheck
     DEBUG_SET(DEBUG_RX_TIMING, 5, MIN(frameDeltaUsRx / 10, INT16_MAX)); // time between frames as reported by Rx
 #ifdef USE_RX_LINK_QUALITY_INFO
-    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());                  // raw link quality value
+    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());           // raw link quality value
 #endif
-    DEBUG_SET(DEBUG_RX_TIMING, 7, rxIsReceivingSignal());
+    DEBUG_SET(DEBUG_RX_TIMING, 7, rxIsReceivingSignal());               // flag to initiate RXLOSS signal and Stage 1 values
 
     // if we have an Rx-reported interval, use it
+    // note that it falls to zero during dropouts of 150ms or more.
     if (frameDeltaUsRx) {
         frameDeltaUs = frameDeltaUsRx;
     }
 
     DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames in hundredths of ms
 
+    // constrain the value used to modulate the RC smoothing filter
     currentRxIntervalUs = constrain(frameDeltaUs, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
     isRxIntervalValid = frameDeltaUs == currentRxIntervalUs;
 

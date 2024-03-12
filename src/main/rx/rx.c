@@ -688,7 +688,7 @@ void detectAndApplySignalLossBehaviour(void)
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     rxFlightChannelsValid = rxSignalReceived && !boxFailsafeSwitchIsOn;
-    // rxFlightChannelsValid is false after 200ms of no packets, or as soon as use the BOXFAILSAFE switch is actioned
+    // rxFlightChannelsValid is false after 150ms of no packets, or as soon as use the BOXFAILSAFE switch is actioned
     // rxFlightChannelsValid is true the instant we get a good packet or the BOXFAILSAFE switch is reverted
     // can also go false with good packets but where one flight channel is bad > 300ms (PPM type receiver error)
 
