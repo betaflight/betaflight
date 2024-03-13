@@ -529,7 +529,7 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     const float normalizedMotorMixMax = motorMixMax * baseNormalizationFactor;
 
 #ifdef USE_GPS
-    const float speed = STATE(GPS_FIX) ? gpsSol.speed3d : 0.0f;
+    const float speed = STATE(GPS_FIX) ? gpsSol.speed3d / 100.0f : 0.0f;
 #else
     const float speed = 0.0f;
 #endif
