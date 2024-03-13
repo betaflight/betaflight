@@ -211,7 +211,7 @@ int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
     const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeState.channelCount) {
-        return rcData[channelToForwardFrom];
+        return scaleRange(constrain(rcData[channelToForwardFrom], 1000, 2000), 1000, 2000, servoParams(servoIndex)->min, servoParams(servoIndex)->max);
     }
 
     return servoParams(servoIndex)->middle;
