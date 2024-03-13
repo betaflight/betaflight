@@ -268,16 +268,16 @@ static void scaleRawSetpointToFpvCamAngle(void)
 void updateRcRefreshRate(timeUs_t currentTimeUs)
 {
     // this function runs when a new frame is detected, after 150ms of no frames, and then every 50ms until the link is restored.
+    // it provides values for use in RCSmoothing, Feedforward, etc.
 
     // get the frame interval reported by the Rx driver code
+    // this will be zero for NULL values and for forced checks in the absence of incoming data
     timeDelta_t frameDeltaUsRx = rxGetFrameDelta();
 
-    static timeDelta_t frameDeltaUs = 0;
+    // calculate frame interval here as well both on new packets and on forced checks without new packets
+    // provides an alternative delta value if zero returned by rxGetFrameDelta()
     static timeUs_t lastRxTimeUs = 0;
-
-    // also calculate frame interval here to handle it not being provided by the driver
-    // (I think there is little to be gained from the driver values).
-    frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
+    timeDelta_t frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
     if (rxIsReceivingSignal()) {
         lastRxTimeUs = currentTimeUs;
     }
@@ -290,19 +290,18 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
 #endif
     DEBUG_SET(DEBUG_RX_TIMING, 7, rxIsReceivingSignal());               // flag to initiate RXLOSS signal and Stage 1 values
 
-    // if we have an Rx-reported interval, use it
-    // note that it falls to zero during dropouts of 150ms or more.
+    // if we have a non-zero Rx-reported interval, use it
     if (frameDeltaUsRx) {
         frameDeltaUs = frameDeltaUsRx;
     }
 
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));   // time between frames in hundredths of ms
-
-    // constrain the value used to modulate the RC smoothing filter
+    // constrain to a frequency range no lower than about 15Hz and up to about 1000Hz
     currentRxIntervalUs = constrain(frameDeltaUs, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
     isRxIntervalValid = frameDeltaUs == currentRxIntervalUs;
-
     currentRxRateHz = 1e6f / currentRxIntervalUs; // cannot be zero due to preceding constraint
+
+
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));   // output value in hundredths of ms
     DEBUG_SET(DEBUG_RX_TIMING, 2, isRxIntervalValid);
     DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));
 }

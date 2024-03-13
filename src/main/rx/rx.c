@@ -1028,16 +1028,17 @@ timeDelta_t rxGetFrameDelta(void)
 {
     // return the delta time based on time stamps provided by the Rx driver
     // frameTimeDeltaUs holds its last good value until after 150ms of no frames, it goes to zero)
-    static timeUs_t previousFrameTimeUs = 0;
     static timeDelta_t frameTimeDeltaUs = 0;
+    static timeUs_t previousFrameTimeUs = 0;
+    timeUs_t frameTimeUs = 0;
 
-    const timeUs_t frameTimeUs = rxRuntimeState.rcFrameTimeUsFn(); // Frame time stamp from Rx driver
-    DEBUG_SET(DEBUG_RX_TIMING, 1, frameTimeUs);     // time from reception of frame to now in hundredths of ms
-
-    if (frameTimeUs) {
+    if (rxRuntimeState.rcFrameTimeUsFn) {               // only update delta when time is provided, handle possibility of NULL
+        frameTimeUs = rxRuntimeState.rcFrameTimeUsFn(); // Frame time stamp from Rx driver
         frameTimeDeltaUs = cmpTimeUs(frameTimeUs, previousFrameTimeUs);
         previousFrameTimeUs = frameTimeUs;
     }
+
+    DEBUG_SET(DEBUG_RX_TIMING, 1, frameTimeUs/100);     // 32 bit time will roll over 16 bit limit
 
     return frameTimeDeltaUs;
 }
