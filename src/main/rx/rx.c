@@ -132,9 +132,9 @@ uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 // will not be actioned until the nearest multiple of 100ms
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
-#define DELAY_20_MS (20 * 1000)                         // 20ms in us
-#define DELAY_50_MS (50 * 1000)                         // 50ms in us
-#define DELAY_150_MS (150 * 1000)                       // 150ms in us
+#define RSSI_UPDATE_INTERVAL (20 * 1000)                // 20ms in us
+#define RX_FRAME_CHECK_INTERVAL (50 * 1000)             // 50ms in us
+#define RXLOSS_TRIGGER_INTERVAL (150 * 1000)            // 150ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
 
@@ -505,8 +505,8 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
 {
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
-    timeDelta_t needRxSignalMaxDelayUs = DELAY_150_MS;
-    timeDelta_t reCheckRxSignalInterval = DELAY_50_MS;
+    timeDelta_t needRxSignalMaxDelayUs = RXLOSS_TRIGGER_INTERVAL;
+    timeDelta_t reCheckRxSignalInterval = RX_FRAME_CHECK_INTERVAL;
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, MIN(2000, currentDeltaTimeUs / 100));
 
@@ -561,7 +561,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     } else {
         //  watch for next packet
         if (cmpTimeUs(currentTimeUs, needRxSignalBefore) > 0) {
-            //  initial time to signalReceived failure is 150ms, then we check every 50ms
+            //  initial time to signalReceived failure is RXLOSS_TRIGGER_INTERVAL, then we check every RX_FRAME_CHECK_INTERVAL
             rxSignalReceived = false;
             needRxSignalBefore = currentTimeUs + reCheckRxSignalInterval;
             //  review and process rcData values every 50ms in case failsafe changed them
@@ -688,7 +688,7 @@ void detectAndApplySignalLossBehaviour(void)
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     rxFlightChannelsValid = rxSignalReceived && !boxFailsafeSwitchIsOn;
-    // rxFlightChannelsValid is false after 150ms of no packets, or as soon as use the BOXFAILSAFE switch is actioned
+    // rxFlightChannelsValid is false after RXLOSS_TRIGGER_INTERVAL of no packets, or as soon as use the BOXFAILSAFE switch is actioned
     // rxFlightChannelsValid is true the instant we get a good packet or the BOXFAILSAFE switch is reverted
     // can also go false with good packets but where one flight channel is bad > 300ms (PPM type receiver error)
 
@@ -864,7 +864,7 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     if ((int32_t)(currentTimeUs - rssiUpdateAt) < 0) {
         return;
     }
-    rssiUpdateAt = currentTimeUs + DELAY_20_MS;
+    rssiUpdateAt = currentTimeUs + RSSI_UPDATE_INTERVAL;
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
     uint16_t rssiValue = adcRssiSample / RSSI_ADC_DIVISOR;
@@ -1027,7 +1027,7 @@ bool isRssiConfigured(void)
 timeDelta_t rxGetFrameDelta(void)
 {
     // return the delta time based on time stamps provided by the Rx driver
-    // frameTimeDeltaUs holds its last good value until after 150ms of no frames, it goes to zero)
+    // frameTimeDeltaUs holds its 'last good value' until, after RXLOSS_TRIGGER_INTERVAL, it goes to zero
     static timeDelta_t frameTimeDeltaUs = 0;
     static timeUs_t previousFrameTimeUs = 0;
     timeUs_t frameTimeUs = 0;

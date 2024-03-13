@@ -149,7 +149,7 @@ static bool failsafeShouldHaveCausedLandingByNow(void)
 bool failsafeIsReceivingRxData(void)
 {
     return (failsafeState.rxLinkState == FAILSAFE_RXLINK_UP);
-    // False with BOXFAILSAFE switch or when no valid packets for 150ms or any flight channel invalid for 300ms,
+    // False with BOXFAILSAFE switch or when no valid packets for RXLOSS_TRIGGER_INTERVAL or any flight channel invalid for 300ms,
     // becomes true immediately BOXFAILSAFE switch reverts, or after recovery period expires when valid packets are received
     // rxLinkState RXLINK_DOWN (not up) is the trigger for the various failsafe stage 2 outcomes.
 }
@@ -193,11 +193,11 @@ void failsafeOnValidDataReceived(void)
 }
 
 void failsafeOnValidDataFailed(void)
-// run from rc.c when packets are lost for more than the signal validation period (150ms), or immediately BOXFAILSAFE switch is active
+// run from rc.c when packets are lost for more than RXLOSS_TRIGGER_INTERVAL, or immediately BOXFAILSAFE switch is active
 // after the stage 1 delay has expired, sets the rxLinkState to RXLINK_DOWN, ie not up, causing failsafeIsReceivingRxData to become false
 // if failsafe is configured to go direct to stage 2, this is emulated immediately in failsafeUpdateState()
 {
-    //  set RXLOSS in OSD and block arming after 150ms of signal loss
+    //  set RXLOSS in OSD and block arming after RXLOSS_TRIGGER_INTERVAL of frame loss
     setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
 
     failsafeState.validRxDataFailedAt = millis();

@@ -267,7 +267,9 @@ static void scaleRawSetpointToFpvCamAngle(void)
 
 void updateRcRefreshRate(timeUs_t currentTimeUs)
 {
-    // this function runs when a new frame is detected, after 150ms of no frames, and then every 50ms until the link is restored.
+    // this function runs whenever a new frame is detected, and
+    // after RXLOSS_TRIGGER_INTERVAL since the last good frame, and 
+    // then every RX_FRAME_CHECK_INTERVAL, until a new frame is detected
     // it provides values for use in RCSmoothing, Feedforward, etc.
 
     // get the frame interval reported by the Rx driver code
