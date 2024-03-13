@@ -41,6 +41,9 @@
 #define CHANNEL_VALUE_TO_RXFAIL_STEP(channelValue) ((constrain(channelValue, PWM_PULSE_MIN, PWM_PULSE_MAX) - PWM_PULSE_MIN) / 25)
 #define MAX_RXFAIL_RANGE_STEP ((PWM_PULSE_MAX - PWM_PULSE_MIN) / 25)
 
+#define PWM_SERVO_MIN   500       // minimum servo PWM pulse width which we can set from cli
+#define PWM_SERVO_MAX   2500      // maximum servo PWM pulse width which we can set from cli
+
 #define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
