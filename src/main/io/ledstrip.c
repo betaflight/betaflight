@@ -495,32 +495,12 @@ static const struct {
     {0,             LED_MODE_ORIENTATION},
 };
 
+ledBarState_t ledBarStates[MAX_BAR_STATES];
+
 static void applyLedFixedLayers(void)
 {
-    // For loading bar style layers:
-#ifdef USE_GPS
-    int totalLedsGps = 0;
-    int lightsCountGps = 0;
-#endif
-    int totalLedsBattery = 0;
-    int lightsCountBattery = 0;
-
-    for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
-        const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
-        int fn = ledGetFunction(ledConfig);
-        switch (fn) {
-#ifdef USE_GPS
-            case LED_FUNCTION_GPS_BAR:
-                totalLedsGps++;
-                break;
-#endif
-            case LED_FUNCTION_BATTERY_BAR:
-                totalLedsBattery++;
-                break;
-            default:
-                break;
-        }
-    }
+    ledBarStates[LED_BAR_GPS].count = 0;
+    ledBarStates[LED_BAR_BATTERY].count = 0;
 
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
@@ -583,7 +563,8 @@ static void applyLedFixedLayers(void)
                     color = HSV(GREEN);
                 } else {
                     color = HSV(RED);
-                }
+                    hOffset += MAX(scaleRange(gpsSol.numSat, 0, 4, -30, 120), 0);
+                } 
             }
             break;
 #endif
@@ -613,8 +594,8 @@ static void applyLedFixedLayers(void)
         switch (fn) {
 #ifdef USE_GPS
             case LED_FUNCTION_GPS_BAR:
-                if (lightsCountGps < gpsSol.numSat) {
-                    lightsCountGps++;
+                if (ledBarStates[LED_BAR_GPS].count < gpsSol.numSat) {
+                    ledBarStates[LED_BAR_GPS].count++;
                     setLedHsv(ledIndex, &color);
                 }
                 else {
@@ -624,8 +605,8 @@ static void applyLedFixedLayers(void)
 #endif
 
             case LED_FUNCTION_BATTERY_BAR:
-                if (lightsCountBattery < 0.01 * calculateBatteryPercentageRemaining() * totalLedsBattery) {
-                    lightsCountBattery++;
+                if (ledBarStates[LED_BAR_BATTERY].count < 0.01 * calculateBatteryPercentageRemaining() * ledBarStates[LED_BAR_BATTERY].total) {
+                    ledBarStates[LED_BAR_BATTERY].count++;
                     setLedHsv(ledIndex, &color);
                 }
                 else {
@@ -1171,6 +1152,31 @@ bool isOverlayTypeUsed(ledOverlayId_e overlayType)
     return false;
 }
 
+void updateLedBars(void)
+{
+    ledBarStates[LED_BAR_GPS].count = 0;
+    ledBarStates[LED_BAR_BATTERY].count = 0;
+    ledBarStates[LED_BAR_GPS].total = 0;
+    ledBarStates[LED_BAR_BATTERY].total = 0;
+
+    for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
+        const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
+        int fn = ledGetFunction(ledConfig);
+        switch (fn) {
+#ifdef USE_GPS
+                case LED_FUNCTION_GPS_BAR:
+                    ledBarStates[LED_BAR_GPS].total++;
+                    break;
+#endif
+                case LED_FUNCTION_BATTERY_BAR:
+                    ledBarStates[LED_BAR_BATTERY].total++;
+                    break;
+                default:
+                    break;
+            }
+        }
+}
+
 void updateRequiredOverlay(void)
 {
     disabledTimerMask = 0;
@@ -1182,6 +1188,7 @@ void updateRequiredOverlay(void)
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_VTX) << timVtx;
 #endif
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_INDICATOR) << timIndicator;
+    updateLedBars();
 }
 
 static ledProfileSequence_t applyStatusProfile(timeUs_t now)
