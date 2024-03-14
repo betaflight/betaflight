@@ -499,8 +499,7 @@ ledBarState_t ledBarStates[MAX_BAR_STATES];
 
 static void applyLedFixedLayers(void)
 {
-    ledBarStates[LED_BAR_GPS].count = 0;
-    ledBarStates[LED_BAR_BATTERY].count = 0;
+    uint8_t ledBarIdx[MAX_BAR_STATES] = {0};
 
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
