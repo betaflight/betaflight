@@ -69,7 +69,6 @@ static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 
 static uint16_t currentRxIntervalUs; // packet interval in microseconds
-static float currentRxRateHz; // packet rate in hertz
 
 static bool isRxDataNew = false;
 static bool isRxIntervalValid = false;
@@ -295,9 +294,8 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
     }
 
     // constrain to a frequency range no lower than about 15Hz and up to about 1000Hz
-    currentRxIntervalUs = constrain(frameDeltaUs, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
-    isRxIntervalValid = frameDeltaUs == currentRxIntervalUs;
-    currentRxRateHz = 1e6f / currentRxIntervalUs; // cannot be zero due to preceding constraint
+    currentRxIntervalUs = constrain(delta, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
+    isRxIntervalValid = delta == currentRxIntervalUs;
 
 
     DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));   // output value in hundredths of ms
@@ -441,11 +439,12 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         // by using interval here, we catch a dropout/telemetry where the inteval increases by 100%, but accept
                         // the return to normal value, which is only 50% different from the 100% interval of a single drop, and 66% of a return after a double drop.
                         static float prevRxRateHz;
+                        float rxRateHz = 1e6f / currentRxIntervalUs;   // isRxIntervalValid == true
                         // smooth the current Rx link frequency estimates
                         const float kF = 0.1f; // first order lowpass smoothing filter coefficient
-                        const float smoothedRxRateHz = prevRxRateHz + kF * (currentRxRateHz - prevRxRateHz);
+                        const float smoothedRxRateHz = prevRxRateHz + kF * (rxRateHz - prevRxRateHz);
                         prevRxRateHz = smoothedRxRateHz;
-      
+
                         // recalculate cutoffs every 3 acceptable samples
                         if (rcSmoothingData.sampleCount) {
                             rcSmoothingData.sampleCount --;
@@ -516,6 +515,8 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
     float rxRate = currentRxRateHz;                 // 1e6f / currentRxIntervalUs;
     static float prevRcCommand[3];                  // for rcCommandDelta test
+    static float prevRxInterval;
+    static float prevRcCommand[3];
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
     static float prevSetpoint[3];                   // equals raw unless extrapolated forward 
     static float prevSetpointSpeed[3];              // for setpointDelta calculation
