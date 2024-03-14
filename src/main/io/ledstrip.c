@@ -1162,7 +1162,7 @@ void updateLedBars(void)
         int fn = ledGetFunction(ledConfig);
         switch (fn) {
 #ifdef USE_GPS
-                case LED_FUNCTION_GPS_BAR:
+       case LED_FUNCTION_GPS_BAR:
                     ledBarStates[LED_BAR_GPS].total++;
                     break;
 #endif
