@@ -216,7 +216,7 @@ static uint8_t rxSpiFrameStatus(rxRuntimeState_t *rxRuntimeState)
         status = RX_FRAME_COMPLETE;
     }
 
-    if (result & RX_SPI_ROCESSING_REQUIRED) {
+    if (result & RX_SPI_PROCESSING_REQUIRED) {
         status |= RX_FRAME_PROCESSING_REQUIRED;
     }
 
