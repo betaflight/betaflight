@@ -295,7 +295,7 @@ void rxInit(void)
     rxRuntimeState.rcReadRawFn = nullReadRawRC;
     rxRuntimeState.rcFrameStatusFn = nullFrameStatus;
     rxRuntimeState.rcProcessFrameFn = nullProcessFrame;
-    rxRuntimeState.lastRcFrameTimeUs = 0;
+    rxRuntimeState.lastRcFrameTimeUs = 0;              // zero when driver does not provide timing info
     rcSampleIndex = 0;
 
     uint32_t now = millis();
@@ -1024,26 +1024,3 @@ bool isRssiConfigured(void)
     return rssiSource != RSSI_SOURCE_NONE;
 }
 
-timeDelta_t rxGetFrameDelta(void)
-{
-    // return the delta time based on time stamps provided by the Rx driver
-    // frameTimeDeltaUs holds its 'last good value' until, after RXLOSS_TRIGGER_INTERVAL, it goes to zero
-    static timeDelta_t frameTimeDeltaUs = 0;
-    static timeUs_t previousFrameTimeUs = 0;
-    timeUs_t frameTimeUs = 0;
-
-    if (rxRuntimeState.rcFrameTimeUsFn) {               // only update delta when time is provided, handle possibility of NULL
-        frameTimeUs = rxRuntimeState.rcFrameTimeUsFn(); // Frame time stamp from Rx driver
-        frameTimeDeltaUs = cmpTimeUs(frameTimeUs, previousFrameTimeUs);
-        previousFrameTimeUs = frameTimeUs;
-    }
-
-    DEBUG_SET(DEBUG_RX_TIMING, 1, frameTimeUs/100);     // 32 bit time will roll over 16 bit limit
-
-    return frameTimeDeltaUs;
-}
-
-timeUs_t rxFrameTimeUs(void)
-{
-    return rxRuntimeState.lastRcFrameTimeUs;
-}

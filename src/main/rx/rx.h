@@ -144,7 +144,6 @@ typedef struct rxRuntimeState_s {
     rcReadRawDataFnPtr  rcReadRawFn;
     rcFrameStatusFnPtr  rcFrameStatusFn;
     rcProcessFrameFnPtr rcProcessFrameFn;
-    rcGetFrameTimeUsFn *rcFrameTimeUsFn;
     uint16_t            *channelData;
     void                *frameData;
     timeUs_t            lastRcFrameTimeUs;

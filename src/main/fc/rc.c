@@ -272,9 +272,6 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
     // then every RX_FRAME_CHECK_INTERVAL, until a new frame is detected
     // it provides values for use in RCSmoothing, Feedforward, etc.
 
-    // get the frame interval reported by the Rx driver code
-    // this will be zero for NULL values and for forced checks in the absence of incoming data
-    timeDelta_t frameDeltaUsRx = rxGetFrameDelta();
 
     // calculate frame interval here as well both on new packets and on forced checks without new packets
     // provides an alternative delta value if zero returned by rxGetFrameDelta()
