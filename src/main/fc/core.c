@@ -762,7 +762,7 @@ bool processRx(timeUs_t currentTimeUs)
         return false;
     }
 
-    updateRcRefreshRate(currentTimeUs);
+    updateRcRefreshRate(currentTimeUs, rxIsReceivingSignal());
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {

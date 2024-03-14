@@ -46,6 +46,6 @@ bool rcSmoothingInitializationComplete(void);
 float getMaxRcRate(int axis);
 float getFeedforward(int axis);
 
-void updateRcRefreshRate(timeUs_t currentTimeUs);
+void updateRcRefreshRate(timeUs_t currentTimeUs, bool newDataReceived);
 uint16_t getCurrentRxIntervalUs(void);
 bool getRxRateValid(void);
