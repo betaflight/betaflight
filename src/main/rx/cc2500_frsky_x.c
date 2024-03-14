@@ -480,7 +480,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 
 #if defined(USE_TELEMETRY_SMARTPORT)
             if (telemetryEnabled) {
-                ret |= RX_SPI_ROCESSING_REQUIRED;
+                ret |= RX_SPI_PROCESSING_REQUIRED;
             }
 #endif
             *protocolState = STATE_RESUME;

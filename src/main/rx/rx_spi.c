@@ -236,10 +236,6 @@ static bool rxSpiProcessFrame(const rxRuntimeState_t *rxRuntimeState)
         if (result & RX_SPI_RECEIVED_DATA) {
             rxSpiNewPacketAvailable = true;
         }
-
-        if (result & RX_SPI_ROCESSING_REQUIRED) {
-            return false;
-        }
     }
 
     return true;
