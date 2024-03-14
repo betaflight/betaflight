@@ -597,8 +597,7 @@ static void applyLedFixedLayers(void)
                 if (ledBarStates[LED_BAR_GPS].count < gpsSol.numSat) {
                     ledBarStates[LED_BAR_GPS].count++;
                     setLedHsv(ledIndex, &color);
-                }
-                else {
+                } else {
                     setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
                 }
                 break;
