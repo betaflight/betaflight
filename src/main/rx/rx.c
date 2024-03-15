@@ -769,7 +769,8 @@ void detectAndApplySignalLossBehaviour(void)
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 {
     if (auxiliaryProcessingRequired) {
-        auxiliaryProcessingRequired = !rxRuntimeState.rcProcessFrameFn(&rxRuntimeState);
+        rxRuntimeState.rcProcessFrameFn(&rxRuntimeState);
+        auxiliaryProcessingRequired = false;
     }
 
     if (!rxDataProcessingRequired) {
