@@ -250,7 +250,7 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
 
     busReadRegisterBuffer(dev, BMP388_CHIP_ID_REG, &bmp388_chip_id, 1);
 
-    if (bmp388_chip_id != BMP388_DEFAULT_CHIP_ID || bmp388_chip_id != BMP390_DEFAULT_CHIP_ID) {
+    if (bmp388_chip_id != BMP388_DEFAULT_CHIP_ID && bmp388_chip_id != BMP390_DEFAULT_CHIP_ID) {
         bmp388BusDeinit(dev);
         if (defaultAddressApplied) {
             dev->busType_u.i2c.address = 0;
