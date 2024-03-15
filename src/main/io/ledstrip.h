@@ -37,9 +37,11 @@
 #define LED_OVERLAY_COUNT               7
 #define LED_SPECIAL_COLOR_COUNT        11
 
-#define LED_BAR_GPS 0
-#define LED_BAR_BATTERY 1
-#define MAX_BAR_STATES 2
+enum ledBarIds {
+   LED_BAR_GPS ,
+   LED_BAR_BATTERY,
+   LED_BAR__COUNT
+};
 
 #define LED_POS_OFFSET                  0
 #define LED_FUNCTION_OFFSET             8
