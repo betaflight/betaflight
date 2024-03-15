@@ -1152,8 +1152,6 @@ bool isOverlayTypeUsed(ledOverlayId_e overlayType)
 
 void updateLedBars(void)
 {
-    ledBarStates[LED_BAR_GPS].count = 0;
-    ledBarStates[LED_BAR_BATTERY].count = 0;
     ledBarStates[LED_BAR_GPS].total = 0;
     ledBarStates[LED_BAR_BATTERY].total = 0;
 
