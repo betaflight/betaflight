@@ -268,7 +268,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool newDataReceived)
 {
     // this function runs whenever a new frame is detected (newDataReceived == true),
     // and after RXLOSS_TRIGGER_INTERVAL since the last good frame, and
-    // then every RX_FRAME_CHECK_INTERVAL, until a new frame is detected
+    // then every RX_FRAME_RECHECK_INTERVAL, until a new frame is detected
     //   (newDataReceived == false)
 
     // it provides values for use in RCSmoothing, Feedforward, etc.
@@ -283,6 +283,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool newDataReceived)
             delta = cmpTimeUs(rxTime, lastRxTimeUs);
         }
         lastRxTimeUs = rxTime;
+        DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);   // output value in hundredths of ms
     } else {
         if (lastRxTimeUs) {
             // no packet received, use current time for delta

@@ -133,7 +133,7 @@ uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define RSSI_UPDATE_INTERVAL (20 * 1000)                // 20ms in us
-#define RX_FRAME_CHECK_INTERVAL (50 * 1000)             // 50ms in us
+#define RX_FRAME_RECHECK_INTERVAL (50 * 1000)             // 50ms in us
 #define RXLOSS_TRIGGER_INTERVAL (150 * 1000)            // 150ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
@@ -506,7 +506,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
     timeDelta_t needRxSignalMaxDelayUs = RXLOSS_TRIGGER_INTERVAL;
-    timeDelta_t reCheckRxSignalInterval = RX_FRAME_CHECK_INTERVAL;
+    timeDelta_t reCheckRxSignalInterval = RX_FRAME_RECHECK_INTERVAL;
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, MIN(2000, currentDeltaTimeUs / 100));
 
@@ -561,7 +561,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     } else {
         //  watch for next packet
         if (cmpTimeUs(currentTimeUs, needRxSignalBefore) > 0) {
-            //  initial time to signalReceived failure is RXLOSS_TRIGGER_INTERVAL, then we check every RX_FRAME_CHECK_INTERVAL
+            //  initial time to signalReceived failure is RXLOSS_TRIGGER_INTERVAL, then we check every RX_FRAME_RECHECK_INTERVAL
             rxSignalReceived = false;
             needRxSignalBefore = currentTimeUs + reCheckRxSignalInterval;
             //  review and process rcData values every 50ms in case failsafe changed them
