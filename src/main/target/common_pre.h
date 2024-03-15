@@ -204,7 +204,7 @@
 #define USE_OSD_HD
 #define USE_BLACKBOX
 
-#if TARGET_FLASH_SIZE > 512
+#if TARGET_FLASH_SIZE >= 1024
 
 #if defined(USE_SERIALRX)
 
