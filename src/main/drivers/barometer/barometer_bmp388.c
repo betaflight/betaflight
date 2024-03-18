@@ -191,7 +191,7 @@ static bool bmp388ReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_
         uint8_t buf[length + 1];
         bool ret = busReadRegisterBuffer(dev, reg, buf, length + 1);
         if (ret) {
-            memcpy(data, buf + 1, length - 1);
+            memcpy(data, buf + 1, length);
         }
         return ret;
     } else {
