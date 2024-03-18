@@ -206,7 +206,7 @@ static void setReturnAltitude(void)
                 break;
             case GPS_RESCUE_ALT_MODE_MAX:
             default:
-                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + initiaClimbCm;
+                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + initialClimbCm;
                 break;
         }
     }
