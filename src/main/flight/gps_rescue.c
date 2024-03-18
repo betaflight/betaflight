@@ -202,7 +202,7 @@ static void setReturnAltitude(void)
                 break;
             case GPS_RESCUE_ALT_MODE_CURRENT:
                 // climb above current altitude, but always return at least initial height above takeoff point, in case current altitude was negative
-                rescueState.intent.returnAltitudeCm = fmaxf(initiaClimbCm, rescueState.sensor.currentAltitudeCm + initiaClimbCm);
+                rescueState.intent.returnAltitudeCm = fmaxf(initialClimbCm, rescueState.sensor.currentAltitudeCm + initialClimbCm);
                 break;
             case GPS_RESCUE_ALT_MODE_MAX:
             default:
