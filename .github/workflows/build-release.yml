@@ -30,10 +30,10 @@ jobs:
           set -x
           ASSETS=()
           for asset in Assets/*.hex; do
-            ASSETS+=("-a" "$asset")
+            ASSETS+=("$asset")
             echo "$asset"
           done
           TAG_NAME="${GITHUB_REF##*/}"
-          gh release edit "${ASSETS[@]}" "${TAG_NAME}"
+          gh release upload "${TAG_NAME}" "${ASSETS[@]}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
