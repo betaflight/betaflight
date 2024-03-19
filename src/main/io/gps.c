@@ -40,6 +40,7 @@
 
 #include "drivers/light_led.h"
 #include "drivers/time.h"
+#include "drivers/system.h"
 
 #include "io/beeper.h"
 #ifdef USE_DASHBOARD
@@ -90,7 +91,7 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 #define GPS_CONFIG_BAUD_CHANGE_INTERVAL 330  // Time to wait, in ms, between 'test this baud rate' messages
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
 #define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
-#define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the Receive Data process
+#define GPS_RECV_TIME_MAX 15           // Max permitted time, in us, for the Receive Data process
 // Decay the estimated max task duration by 1/(1 << GPS_TASK_DECAY_SHIFT) on every invocation
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
 
@@ -1333,6 +1334,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
     gpsData.now = millis();
 
     if (gpsPort) {
+        const uint32_t cpuCycleLimit = clockMicrosToCycles(GPS_RECV_TIME_MAX);
+        const uint32_t initialCycleCount = getCycleCounter();
+
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         static uint8_t wait = 0;
         static bool isFast = false;
@@ -1342,7 +1346,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
                 isFast = true;
             }
-            if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
+            if ((getCycleCounter() - initialCycleCount) > cpuCycleLimit) {
                 break;
             }
             // Add every byte to _buffer, when enough bytes are received, convert data to values
