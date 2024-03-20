@@ -503,7 +503,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 
 FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
-    bool signalReceived = false;
+    bool rxDataReceived = false;
     bool useDataDrivenProcessing = true;
     timeDelta_t needRxSignalMaxDelayUs = RXLOSS_TRIGGER_INTERVAL;
     timeDelta_t reCheckRxSignalInterval = RX_FRAME_RECHECK_INTERVAL;
@@ -522,14 +522,14 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
 #if defined(USE_RX_PWM) || defined(USE_RX_PPM)
     case RX_PROVIDER_PPM:
         if (isPPMDataBeingReceived()) {
-            signalReceived = true;
+            rxDataReceived = true;
             resetPPMDataReceivedState();
         }
 
         break;
     case RX_PROVIDER_PARALLEL_PWM:
         if (isPWMDataBeingReceived()) {
-            signalReceived = true;
+            rxDataReceived = true;
             useDataDrivenProcessing = false;
         }
 
@@ -542,15 +542,15 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
         {
             const uint8_t frameStatus = rxRuntimeState.rcFrameStatusFn(&rxRuntimeState);
             DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 1, (frameStatus & RX_FRAME_FAILSAFE));
-            signalReceived = (frameStatus & RX_FRAME_COMPLETE) && !(frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED));
-            setLinkQuality(signalReceived, currentDeltaTimeUs);
+            rxDataReceived = (frameStatus & RX_FRAME_COMPLETE) && !(frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED));
+            setLinkQuality(rxDataReceived, currentDeltaTimeUs);
             auxiliaryProcessingRequired |= (frameStatus & RX_FRAME_PROCESSING_REQUIRED);
         }
 
         break;
     }
 
-    if (signalReceived) {
+    if (rxDataReceived) {
         //  true only when a new packet arrives
         needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
         rxSignalReceived = true; // immediately process packet data
@@ -561,7 +561,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     } else {
         //  watch for next packet
         if (cmpTimeUs(currentTimeUs, needRxSignalBefore) > 0) {
-            //  initial time to signalReceived failure is RXLOSS_TRIGGER_INTERVAL, then we check every RX_FRAME_RECHECK_INTERVAL
+            //  initial time to rxDataReceived failure is RXLOSS_TRIGGER_INTERVAL, then we check every RX_FRAME_RECHECK_INTERVAL
             rxSignalReceived = false;
             needRxSignalBefore = currentTimeUs + reCheckRxSignalInterval;
             //  review and process rcData values every 50ms in case failsafe changed them

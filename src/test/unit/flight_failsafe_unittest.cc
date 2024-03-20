@@ -588,7 +588,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     // when
     failsafeUpdateState();
 
-    // now should be in monitoring mode, with switch holding signalReceived false
+    // now should be in monitoring mode, with switch holding rxDataReceived false
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_TRUE(isArmingDisabled());
