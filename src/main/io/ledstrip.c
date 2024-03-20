@@ -1019,8 +1019,14 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
 // blink twice, then wait ; either always or just when landing
 static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
 {
-    const uint16_t blinkPattern = ledStripConfig()->extra_ledstrip_blinkmask;
+    uint16_t blinkPattern = ledStripConfig()->extra_ledstrip_blinkmask;
+    if (IS_RC_MODE_ACTIVE(BOXLEDNOBLINK)) {
+
+        blinkPattern = 0xFFFF;
+    }
+
     static uint16_t blinkMask;
+
 
     if (updateNow) {
         blinkMask = blinkMask >> 1;
