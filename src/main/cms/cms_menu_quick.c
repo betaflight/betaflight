@@ -32,6 +32,8 @@
 #include "cms/cms_menu_main.h"
 #include "cms/cms_menu_vtx_common.h"
 #include "cms/cms_menu_rpm_limit.h"
+
+#include "io/ledstrip.h"
 #include "common/printf.h"
 #include "config/config.h"
 
@@ -54,6 +56,7 @@ static uint8_t rateProfileIndex;
 static batteryConfig_t batteryProfile;
 static uint8_t  cmsx_motorOutputLimit;
 static uint8_t pidProfileIndex;
+static uint8_t cmsx_extraLedstripColor;
 static pidProfile_t *pidProfile;
 
 static const void *quickMenuOnEnter(displayPort_t *pDisp)
@@ -67,6 +70,7 @@ static const void *quickMenuOnEnter(displayPort_t *pDisp)
     memcpy(&batteryProfile, batteryConfigMutable(), sizeof(batteryConfig_t));
 
     cmsx_motorOutputLimit = pidProfile->motor_output_limit;
+    cmsx_extraLedstripColor = ledStripConfig()->extra_ledstrip_color;
 
     return NULL;
 }
@@ -82,10 +86,41 @@ static const void *cmsx_RateProfileWriteback(displayPort_t *pDisp, const OSD_Ent
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
     pidProfile->motor_output_limit = cmsx_motorOutputLimit;
 
+    ledStripConfigMutable()->extra_ledstrip_color = cmsx_extraLedstripColor;
+
     pidInitConfig(currentPidProfile);
 
     return NULL;
 }
+
+static const void *writeLedColor(displayPort_t *pDisp, const OSD_Entry *self) {
+    UNUSED(pDisp);
+    UNUSED(self);
+    ledStripConfigMutable()->extra_ledstrip_color = cmsx_extraLedstripColor;
+    return NULL;
+}
+
+
+static const char * const osdTableThrottleLimitType[] = {
+    "OFF", "SCALE", "CLIP"
+};
+
+static const char * const lookupTableLedstripColors[COLOR_COUNT] = {
+    "BLACK",
+    "WHITE",
+    "RED",
+    "ORANGE",
+    "YELLOW",
+    "LIME_GREEN",
+    "GREEN",
+    "MINT_GREEN",
+    "CYAN",
+    "LIGHT_BLUE",
+    "BLUE",
+    "DARK_VIOLET",
+    "MAGENTA",
+    "DEEP_PINK"
+};
 
 static const OSD_Entry menuMainEntries[] =
 {
@@ -103,7 +138,8 @@ static const OSD_Entry menuMainEntries[] =
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
-    { "MAIN",            OME_Submenu,  NULL, &cmsx_menuMain },
+    { "FORCE LED", OME_TAB, NULL, &(OSD_TAB_t) { &cmsx_extraLedstripColor, COLOR_COUNT - 1, lookupTableLedstripColors} },
+    { "MAIN",     OME_Submenu,  NULL, &cmsx_menuMain},
     { "EXIT",            OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT},
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
     {NULL, OME_END, NULL, NULL},
@@ -116,7 +152,7 @@ CMS_Menu cmsx_menuQuick = {
 #endif
     .onEnter = quickMenuOnEnter,
     .onExit = cmsx_RateProfileWriteback,
-    .onDisplayUpdate = NULL,
+    .onDisplayUpdate = writeLedColor,
     .entries = menuMainEntries,
 };
 

@@ -150,6 +150,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_rainbow_delta = 0;
     ledStripConfig->ledstrip_rainbow_freq = 120;
     ledStripConfig->extra_ledstrip_blinkmask = 0x8005; // 0b1000000000000101;
+    ledStripConfig->extra_ledstrip_color = COLOR_BLACK;
 #ifndef UNIT_TEST
 #ifdef LED_STRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
@@ -507,6 +508,9 @@ static void applyLedFixedLayers(void)
         switch (fn) {
         case LED_FUNCTION_COLOR:
             color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
+            if (COLOR_BLACK != ledStripConfig()->extra_ledstrip_color) {
+                color = hsv[ledStripConfig()->extra_ledstrip_color];
+            }
 
             hsvColor_t nextColor = ledStripStatusModeConfig()->colors[(ledGetColor(ledConfig) + 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
             hsvColor_t previousColor = ledStripStatusModeConfig()->colors[(ledGetColor(ledConfig) - 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
