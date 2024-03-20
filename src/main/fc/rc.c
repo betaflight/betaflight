@@ -265,18 +265,19 @@ static void scaleRawSetpointToFpvCamAngle(void)
     rawSetpoint[YAW]  = constrainf(yaw  * cosFactor + roll * sinFactor, SETPOINT_RATE_LIMIT_MIN, SETPOINT_RATE_LIMIT_MAX);
 }
 
-void updateRcRefreshRate(timeUs_t currentTimeUs, bool newDataReceived)
+void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
 {
-    // this function runs whenever a new frame is detected (newDataReceived == true),
+    // this function only runs when rxDataProcessingRequired is true, which is:
+    // every time a new frame is detected,
     // and after RXLOSS_TRIGGER_INTERVAL since the last good frame, and
     // then every RX_FRAME_RECHECK_INTERVAL, until a new frame is detected
-    //   (newDataReceived == false)
+    //   (rxReceivingSignal == false)
 
     // it provides values for use in RCSmoothing, Feedforward, etc.
     static timeUs_t lastRxTimeUs = 0;
     timeDelta_t delta = 0;
 
-    if (newDataReceived) {
+    if (rxReceivingSignal) { // true while receiving data and until RXLOSS_TRIGGER_INTERVAL expires, otherwise false
         previousRxIntervalUs = currentRxIntervalUs;
         // use driver rx time if available, current time otherwise
         const timeUs_t rxTime = rxRuntimeState.lastRcFrameTimeUs ? rxRuntimeState.lastRcFrameTimeUs : currentTimeUs;
@@ -292,12 +293,13 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool newDataReceived)
             delta = cmpTimeUs(currentTimeUs, lastRxTimeUs);
         }
     }
+
     // temporary debugs
     DEBUG_SET(DEBUG_RX_TIMING, 4, MIN(delta / 10, INT16_MAX));   // time between frames based on rxFrameCheck
 #ifdef USE_RX_LINK_QUALITY_INFO
-    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());           // raw link quality value
+    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());    // raw link quality value
 #endif
-    DEBUG_SET(DEBUG_RX_TIMING, 7, rxIsReceivingSignal());               // flag to initiate RXLOSS signal and Stage 1 values
+    DEBUG_SET(DEBUG_RX_TIMING, 7, rxIsReceivingSignal());        // flag to initiate RXLOSS signal and Stage 1 values
 
     // constrain to a frequency range no lower than about 15Hz and up to about 1000Hz
     currentRxIntervalUs = constrain(delta, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
