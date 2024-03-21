@@ -1453,10 +1453,10 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF2_TYPE, "%d",        currentPidProfile->dterm_lpf2_type);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF2_STATIC_HZ, "%d",   currentPidProfile->dterm_lpf2_static_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_LOWPASS_HZ, "%d",         currentPidProfile->yaw_lowpass_hz);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH1_HZ, "%d",         currentPidProfile->dterm_notch_hz);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH2_HZ, "%d",         currentPidProfile->dterm_notch_hz);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH1_CUTOFF, "%d",     currentPidProfile->dterm_notch_cutoff);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH2_CUTOFF, "%d",     currentPidProfile->dterm_notch_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH1_HZ, "%d",         currentPidProfile->dterm_notch1_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH2_HZ, "%d",         currentPidProfile->dterm_notch2_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH1_CUTOFF, "%d",     currentPidProfile->dterm_notch1_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH2_CUTOFF, "%d",     currentPidProfile->dterm_notch2_cutoff);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ITERM_WINDUP, "%d",           currentPidProfile->itermWindupPointPercent);
 #if defined(USE_ITERM_RELAX)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ITERM_RELAX, "%d",            currentPidProfile->iterm_relax);
