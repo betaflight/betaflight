@@ -72,7 +72,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     if (targetPidLooptime == 0) {
         // no looptime set, so set all the filters to null
-        pidRuntime.dtermNotchApplyFn = nullFilterApply;
+        pidRuntime.dtermNotch1ApplyFn = nullFilterApply;
+        pidRuntime.dtermNotch2ApplyFn = nullFilterApply;
         pidRuntime.dtermLowpassApplyFn = nullFilterApply;
         pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
         pidRuntime.ptermYawLowpassApplyFn = nullFilterApply;
@@ -81,25 +82,50 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     const uint32_t pidFrequencyNyquist = pidRuntime.pidFrequency / 2; // No rounding needed
 
-    uint16_t dTermNotchHz;
-    if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
-        dTermNotchHz = pidProfile->dterm_notch_hz;
+    //1st Dterm Notch Filter
+
+    uint16_t dTermNotch1Hz;
+    if (pidProfile->dterm_notch1_hz <= pidFrequencyNyquist) {
+        dTermNotchHz = pidProfile->dterm_notch1_hz;
     } else {
-        if (pidProfile->dterm_notch_cutoff < pidFrequencyNyquist) {
-            dTermNotchHz = pidFrequencyNyquist;
+        if (pidProfile->dterm_notch1_cutoff < pidFrequencyNyquist) {
+            dTermNotch1Hz = pidFrequencyNyquist;
         } else {
-            dTermNotchHz = 0;
+            dTermNotch1Hz = 0;
         }
     }
 
-    if (dTermNotchHz != 0 && pidProfile->dterm_notch_cutoff != 0) {
-        pidRuntime.dtermNotchApplyFn = (filterApplyFnPtr)biquadFilterApply;
-        const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
+    if (dTermNotch1Hz != 0 && pidProfile->dterm_notch1_cutoff != 0) {
+        pidRuntime.dtermNotch1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+        const float notchQ = filterGetNotchQ(dTermNotch1Hz, pidProfile->dterm_notch1_cutoff);
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            biquadFilterInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH, 1.0f);
+            biquadFilterInit(&pidRuntime.dtermNotch1[axis], dTermNotch1Hz, targetPidLooptime, notchQ, FILTER_NOTCH, 1.0f);
         }
     } else {
-        pidRuntime.dtermNotchApplyFn = nullFilterApply;
+        pidRuntime.dtermNotch1ApplyFn = nullFilterApply;
+    }
+
+    //2nd Dterm Notch Filter
+
+    uint16_t dTermNotch2Hz;
+    if (pidProfile->dterm_notch2_hz <= pidFrequencyNyquist) {
+        dTermNotch2Hz = pidProfile->dterm_notch2_hz;
+    } else {
+        if (pidProfile->dterm_notch2_cutoff < pidFrequencyNyquist) {
+            dTermNotch2Hz = pidFrequencyNyquist;
+        } else {
+            dTermNotch2Hz = 0;
+        }
+    }
+
+    if (dTermNotch2Hz != 0 && pidProfile->dterm_notch_cutoff != 0) {
+        pidRuntime.dtermNotch2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+        const float notchQ = filterGetNotchQ(dTermNotch2Hz, pidProfile->dterm_notch2_cutoff);
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            biquadFilterInit(&pidRuntime.dtermNotch2[axis], dTermNotch2Hz, targetPidLooptime, notchQ, FILTER_NOTCH, 1.0f);
+        }
+    } else {
+        pidRuntime.dtermNotch2ApplyFn = nullFilterApply;
     }
 
     //1st Dterm Lowpass Filter

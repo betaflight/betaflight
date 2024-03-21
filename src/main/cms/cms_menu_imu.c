@@ -918,8 +918,10 @@ static CMS_Menu cmsx_menuDynFilt = {
 
 static uint16_t cmsx_dterm_lpf1_static_hz;
 static uint16_t cmsx_dterm_lpf2_static_hz;
-static uint16_t cmsx_dterm_notch_hz;
-static uint16_t cmsx_dterm_notch_cutoff;
+static uint16_t cmsx_dterm_notch1_hz;
+static uint16_t cmsx_dterm_notch2_hz;
+static uint16_t cmsx_dterm_notch1_cutoff;
+static uint16_t cmsx_dterm_notch2_cutoff;
 static uint16_t cmsx_yaw_lowpass_hz;
 
 static const void *cmsx_FilterPerProfileRead(displayPort_t *pDisp)
@@ -930,8 +932,10 @@ static const void *cmsx_FilterPerProfileRead(displayPort_t *pDisp)
 
     cmsx_dterm_lpf1_static_hz   = pidProfile->dterm_lpf1_static_hz;
     cmsx_dterm_lpf2_static_hz   = pidProfile->dterm_lpf2_static_hz;
-    cmsx_dterm_notch_hz         = pidProfile->dterm_notch_hz;
-    cmsx_dterm_notch_cutoff     = pidProfile->dterm_notch_cutoff;
+    cmsx_dterm_notch1_hz         = pidProfile->dterm_notch1_hz;
+    cmsx_dterm_notch2_hz         = pidProfile->dterm_notch2_hz;
+    cmsx_dterm_notch1_cutoff     = pidProfile->dterm_notch1_cutoff;
+    cmsx_dterm_notch2_cutoff     = pidProfile->dterm_notch2_cutoff;
     cmsx_yaw_lowpass_hz         = pidProfile->yaw_lowpass_hz;
 
     return NULL;
@@ -946,8 +950,10 @@ static const void *cmsx_FilterPerProfileWriteback(displayPort_t *pDisp, const OS
 
     pidProfile->dterm_lpf1_static_hz  = cmsx_dterm_lpf1_static_hz;
     pidProfile->dterm_lpf2_static_hz  = cmsx_dterm_lpf2_static_hz;
-    pidProfile->dterm_notch_hz        = cmsx_dterm_notch_hz;
-    pidProfile->dterm_notch_cutoff    = cmsx_dterm_notch_cutoff;
+    pidProfile->dterm_notch1_hz        = cmsx_dterm_notch1_hz;
+    pidProfile->dterm_notch2_hz        = cmsx_dterm_notch2_hz;
+    pidProfile->dterm_notch1_cutoff    = cmsx_dterm_notch1_cutoff;
+    pidProfile->dterm_notch2_cutoff    = cmsx_dterm_notch2_cutoff;
     pidProfile->yaw_lowpass_hz        = cmsx_yaw_lowpass_hz;
 
     return NULL;
@@ -959,8 +965,10 @@ static const OSD_Entry cmsx_menuFilterPerProfileEntries[] =
 
     { "DTERM LPF1", OME_UINT16 | SLIDER_DTERM, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lpf1_static_hz, 0, LPF_MAX_HZ, 1 } },
     { "DTERM LPF2", OME_UINT16 | SLIDER_DTERM, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lpf2_static_hz, 0, LPF_MAX_HZ, 1 } },
-    { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, LPF_MAX_HZ, 1 } },
-    { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, LPF_MAX_HZ, 1 } },
+    { "DTERM NF1",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch1_hz,       0, LPF_MAX_HZ, 1 } },
+    { "DTERM NF2",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch2_hz,       0, LPF_MAX_HZ, 1 } },
+    { "DTERM NFCO1", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch1_cutoff,   0, LPF_MAX_HZ, 1 } },
+    { "DTERM NFCO2", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch2_cutoff,   0, LPF_MAX_HZ, 1 } },
     { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, 500, 1 } },
 
     { "BACK", OME_Back, NULL, NULL },
