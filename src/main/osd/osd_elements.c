@@ -2199,7 +2199,7 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort, timeUs_t currentTim
 #ifdef USE_SPEC_PREARM_SCREEN
 bool osdDrawSpec(displayPort_t *osdDisplayPort)
 {
-    static enum {CLR, RPM, POLES, MIXER, THR, MOTOR, BAT, VER} specState = CLR;
+    static enum {RPM, POLES, MIXER, THR, MOTOR, BAT, VER} specState = RPM;
     static int currentRow;
 
     const uint8_t midRow = osdDisplayPort->rows / 2;
@@ -2211,14 +2211,8 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
 
     switch (specState) {
     default:
-    case CLR:
-        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
-        currentRow = midRow - 3;
-
-        specState = RPM;
-        break;
-
     case RPM:
+        currentRow = midRow - 3;
 #ifdef USE_RPM_LIMIT
         {
             const bool rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
@@ -2283,7 +2277,7 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
         len = strlen(FC_VERSION_STRING);
         displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, FC_VERSION_STRING);
 
-        specState = CLR;
+        specState = RPM;
 
         return true;
     }
