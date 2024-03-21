@@ -316,6 +316,8 @@ uint32_t millis(void) { return 0; }
 uint8_t getBatteryCellCount(void) { return 1; }
 void servoMixerLoadMix(int) {}
 const char * getBatteryStateString(void){ return "_getBatteryStateString_"; }
+uint32_t getCycleCounter(void) { return 0; }
+uint32_t clockMicrosToCycles(uint32_t micros) { return micros; }
 
 uint32_t stackTotalSize(void) { return 0x4000; }
 uint32_t stackHighMem(void) { return 0x80000000; }
