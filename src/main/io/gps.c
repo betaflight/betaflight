@@ -92,6 +92,7 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
 #define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
 #define GPS_RECV_TIME_MAX 15           // Max permitted time, in us, for the Receive Data process
+#define GPS_FRAME_PROCES_TIME_US 10    // Estimated ceiling for time required to process a frame, in us, for the Receive Data process
 // Decay the estimated max task duration by 1/(1 << GPS_TASK_DECAY_SHIFT) on every invocation
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
 
@@ -1326,6 +1327,16 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
     }
 }
 
+static bool ubloxParsingAlmostDone = false;
+
+static inline uint32_t cpuCycleLimit(void)
+{
+    if (ubloxParsingAlmostDone) {
+        return clockMicrosToCycles(GPS_RECV_TIME_MAX - GPS_FRAME_PROCES_TIME_US);
+    }
+    return clockMicrosToCycles(GPS_RECV_TIME_MAX);
+}
+
 void gpsUpdate(timeUs_t currentTimeUs)
 {
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
@@ -1334,24 +1345,25 @@ void gpsUpdate(timeUs_t currentTimeUs)
     gpsData.now = millis();
 
     if (gpsPort) {
-        const uint32_t cpuCycleLimit = clockMicrosToCycles(GPS_RECV_TIME_MAX);
         const uint32_t initialCycleCount = getCycleCounter();
 
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         static uint8_t wait = 0;
         static bool isFast = false;
+
         while (serialRxBytesWaiting(gpsPort)) {
             wait = 0;
             if (!isFast) {
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
                 isFast = true;
             }
-            if ((getCycleCounter() - initialCycleCount) > cpuCycleLimit) {
+            if ((getCycleCounter() - initialCycleCount) > cpuCycleLimit()) {
                 break;
             }
             // Add every byte to _buffer, when enough bytes are received, convert data to values
             gpsNewData(serialRead(gpsPort));
         }
+
         if (wait < 1) {
             wait++;
         } else if (wait == 1) {
@@ -2349,6 +2361,7 @@ static bool UBLOX_parse_gps(void)
 static bool gpsNewFrameUBLOX(uint8_t data)
 {
     bool newPositionDataReceived = false;
+    ubloxParsingAlmostDone = false;
 
     switch (ubxFrameParseState) {
         case UBX_PARSE_PREAMBLE_SYNC_1:
@@ -2430,6 +2443,7 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             if (ubxRcvMsgChecksumA == data) {
                 // Checksum A matches, go on to checksum B.
                 ubxFrameParseState = UBX_PARSE_CHECKSUM_B;
+                ubloxParsingAlmostDone = true;
                 break;
             }
             // Bad checksum A, restart new message parsing.
