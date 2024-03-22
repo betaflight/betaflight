@@ -137,7 +137,6 @@ static const OSD_Entry menuMainEntries[] =
 #if defined(USE_RPM_LIMIT)
     { "RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit },
 #endif
-    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
     { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1} },
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
