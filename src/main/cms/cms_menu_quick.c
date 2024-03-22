@@ -57,6 +57,8 @@ static batteryConfig_t batteryProfile;
 static uint8_t  cmsx_motorOutputLimit;
 static uint8_t pidProfileIndex;
 static uint8_t cmsx_extraLedstripColor;
+static uint8_t cmsx_extraLedstripColor2;
+static uint8_t cmsx_extraLedstripColor2_brightness;
 static pidProfile_t *pidProfile;
 
 static const void *quickMenuOnEnter(displayPort_t *pDisp)
@@ -71,6 +73,8 @@ static const void *quickMenuOnEnter(displayPort_t *pDisp)
 
     cmsx_motorOutputLimit = pidProfile->motor_output_limit;
     cmsx_extraLedstripColor = ledStripConfig()->extra_ledstrip_color;
+    cmsx_extraLedstripColor2 = ledStripConfig()->extra_ledstrip_color2;
+    cmsx_extraLedstripColor2_brightness = ledStripConfig()->extra_ledstrip_color2_brightness;
 
     return NULL;
 }
@@ -87,6 +91,8 @@ static const void *cmsx_RateProfileWriteback(displayPort_t *pDisp, const OSD_Ent
     pidProfile->motor_output_limit = cmsx_motorOutputLimit;
 
     ledStripConfigMutable()->extra_ledstrip_color = cmsx_extraLedstripColor;
+    ledStripConfigMutable()->extra_ledstrip_color2 = cmsx_extraLedstripColor2;
+    ledStripConfigMutable()->extra_ledstrip_color2_brightness = cmsx_extraLedstripColor2_brightness;
 
     pidInitConfig(currentPidProfile);
 
@@ -97,6 +103,8 @@ static const void *writeLedColor(displayPort_t *pDisp, const OSD_Entry *self) {
     UNUSED(pDisp);
     UNUSED(self);
     ledStripConfigMutable()->extra_ledstrip_color = cmsx_extraLedstripColor;
+    ledStripConfigMutable()->extra_ledstrip_color2 = cmsx_extraLedstripColor2;
+    ledStripConfigMutable()->extra_ledstrip_color2_brightness = cmsx_extraLedstripColor2_brightness;
     return NULL;
 }
 
@@ -106,7 +114,7 @@ static const char * const osdTableThrottleLimitType[] = {
 };
 
 static const char * const lookupTableLedstripColors[COLOR_COUNT] = {
-    "BLACK",
+    "DEFAULT",
     "WHITE",
     "RED",
     "ORANGE",
@@ -129,16 +137,16 @@ static const OSD_Entry menuMainEntries[] =
 #if defined(USE_RPM_LIMIT)
     { "RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit },
 #endif
-    { "THR LIM TYPE",  OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType } },
-    { "THR LIM %",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1 } },
-    { "MTR OUT LIM %", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1 } },
-    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1 } },
+    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
+    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1} },
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
-    { "FORCE LED", OME_TAB, NULL, &(OSD_TAB_t) { &cmsx_extraLedstripColor, COLOR_COUNT - 1, lookupTableLedstripColors} },
+    { "FORCE LED",     OME_TAB, NULL, &(OSD_TAB_t) { &cmsx_extraLedstripColor, COLOR_COUNT - 1, lookupTableLedstripColors} },
+    { "FORCE LED2",    OME_TAB, NULL, &(OSD_TAB_t) { &cmsx_extraLedstripColor2, COLOR_COUNT - 1, lookupTableLedstripColors} },
+    { "LED2 BRIGHT",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_extraLedstripColor2_brightness, 0, 255, 1} },
     { "MAIN",     OME_Submenu,  NULL, &cmsx_menuMain},
     { "EXIT",            OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT},
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
