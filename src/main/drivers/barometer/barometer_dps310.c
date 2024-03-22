@@ -177,8 +177,10 @@ static bool deviceConfigure(const extDevice_t *dev)
     unsigned coefficientLength = chipId[0] == SPL07_003_CHIP_ID ? 22 : 18;
     uint8_t coef[coefficientLength];
 
+#define READ_LENGTH 9
+
     for (unsigned i = 0; i < sizeof(coef); ) {
-        int chunk = MIN((unsigned)9, (sizeof(coef) - i));
+        int chunk = MIN((unsigned)READ_LENGTH, (sizeof(coef) - i));
         if (!busReadBuf(dev, DPS310_REG_COEF + i,  coef + i, chunk)) {
             return false;
         }
@@ -212,9 +214,6 @@ static bool deviceConfigure(const extDevice_t *dev)
 
     // 0x20 c30 [15:8] + 0x21 c30 [7:0]
     baroState.calib.c30 = getTwosComplement(((uint32_t)coef[16] << 8) | (uint32_t)coef[17], 16);
-
-    baroState.calib.c31 = 0;
-    baroState.calib.c40 = 0;
 
     if (chipId[0] == SPL07_003_CHIP_ID) {
         // 0x23 c31 [3:0] + 0x22 c31 [11:4]
@@ -288,7 +287,11 @@ static bool dps310GetUP(baroDev_t *baro)
     const float c40 = baroState.calib.c40;
 
     // See section 4.9.1, How to Calculate Compensated Pressure Values, of datasheet
-    baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * (c30 + Praw_sc * c40))) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * (c21 + Praw_sc * c31));
+    if (chipId[0] == SPL07_003_CHIP_ID) {
+        baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * (c30 + Praw_sc * c40))) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * (c21 + Praw_sc * c31));
+    } else {
+        baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * c30)) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * c21);
+    }
 
     const float c0 = baroState.calib.c0;
     const float c1 = baroState.calib.c1;
