@@ -149,7 +149,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_brightness = 100;
     ledStripConfig->ledstrip_rainbow_delta = 0;
     ledStripConfig->ledstrip_rainbow_freq = 120;
-    ledStripConfig->extra_ledstrip_blinkmask = 0x8005; // 0b1000000000000101;
+    ledStripConfig->extra_ledstrip_blinkmask = 0x3333; // 0b1000000000000101;
     ledStripConfig->extra_ledstrip_color = COLOR_BLACK;
     ledStripConfig->extra_ledstrip_color2 = COLOR_BLACK;
     ledStripConfig->extra_ledstrip_color2_brightness = 0;
