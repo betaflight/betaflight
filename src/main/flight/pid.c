@@ -594,15 +594,12 @@ static float accelerationLimit(int axis, float currentPidSetpoint)
 
 static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT])
 {
-    // rotate v around rotation vector rotation
+    // rotate v around yaw component of vector rotation
     // rotation in radians, all elements must be small
-    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-        int i_1 = (i + 1) % 3;
-        int i_2 = (i + 2) % 3;
-        float newV = v[i_1] + v[i_2] * rotation[i];
-        v[i_2] -= v[i_1] * rotation[i];
-        v[i_1] = newV;
-    }
+    float pRatio = pidRuntime.pidCoefficient[FD_ROLL].Kp / pidRuntime.pidCoefficient[FD_PITCH].Kp;
+    float newV = v[FD_ROLL] + v[FD_PITCH] * rotation[FD_YAW] * pRatio;
+    v[FD_PITCH] -= v[FD_ROLL] * rotation[FD_YAW] / pRatio;
+    v[FD_ROLL] = newV;
 }
 
 STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
