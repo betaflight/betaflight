@@ -108,10 +108,11 @@ static const void *writeLedColor(displayPort_t *pDisp, const OSD_Entry *self) {
     return NULL;
 }
 
-
+/*
 static const char * const osdTableThrottleLimitType[] = {
     "OFF", "SCALE", "CLIP"
 };
+*/
 
 static const char * const lookupTableLedstripColors[COLOR_COUNT] = {
     "DEFAULT",
