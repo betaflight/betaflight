@@ -1496,6 +1496,16 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ACC_LIMIT, "%d",              currentPidProfile->rateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PIDSUM_LIMIT, "%d",           currentPidProfile->pidSumLimit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PIDSUM_LIMIT_YAW, "%d",       currentPidProfile->pidSumLimitYaw);
+#ifdef USE_CHIRP
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_LAG_FREQ_HZ, "%d",             currentPidProfile->chirp_lag_freq_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_LEAD_FREQ_HZ, "%d",            currentPidProfile->chirp_lead_freq_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_AMPLITUDE_ROLL, "%d",          currentPidProfile->chirp_amplitude_roll);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_AMPLITUDE_PITCH, "%d",         currentPidProfile->chirp_amplitude_pitch);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_AMPLITUDE_YAW, "%d",           currentPidProfile->chirp_amplitude_yaw);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_FREQUENCY_START_DECI_HZ, "%d", currentPidProfile->chirp_frequency_start_deci_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_FREQUENCY_END_DECI_HZ, "%d",   currentPidProfile->chirp_frequency_end_deci_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_CHIRP_TIME_SECONDS, "%d",            currentPidProfile->chirp_time_seconds);
+#endif
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DEADBAND, "%d",               rcControlsConfig()->deadband);
