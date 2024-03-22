@@ -33,7 +33,7 @@
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6
 #define LED_DIRECTION_COUNT             6
-#define LED_BASEFUNCTION_COUNT          7
+#define LED_BASEFUNCTION_COUNT          10
 #define LED_OVERLAY_COUNT               7
 #define LED_SPECIAL_COLOR_COUNT        11
 
@@ -126,6 +126,9 @@ typedef enum {
     LED_FUNCTION_COLOR,
     LED_FUNCTION_FLIGHT_MODE,
     LED_FUNCTION_ARM_STATE,
+    LED_FUNCTION_GPS_BAR,
+    LED_FUNCTION_BATTERY_BAR,
+    LED_FUNCTION_ALTITUDE,
     LED_FUNCTION_BATTERY,
     LED_FUNCTION_RSSI,
     LED_FUNCTION_GPS,
@@ -167,6 +170,11 @@ typedef struct ledCounts_s {
     uint8_t larson;
     uint8_t ringSeqLen;
 } ledCounts_t;
+
+typedef struct ledBarState_s {
+    uint8_t total;
+    uint8_t count;
+} ledBarState_t;
 
 typedef struct ledStripConfig_s {
     uint8_t ledstrip_visual_beeper;
