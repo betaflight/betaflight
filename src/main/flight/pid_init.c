@@ -86,7 +86,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     uint16_t dTermNotch1Hz;
     if (pidProfile->dterm_notch1_hz <= pidFrequencyNyquist) {
-        dTermNotchHz = pidProfile->dterm_notch1_hz;
+        dTermNotch1Hz = pidProfile->dterm_notch1_hz;
     } else {
         if (pidProfile->dterm_notch1_cutoff < pidFrequencyNyquist) {
             dTermNotch1Hz = pidFrequencyNyquist;
@@ -118,7 +118,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 
-    if (dTermNotch2Hz != 0 && pidProfile->dterm_notch_cutoff != 0) {
+    if (dTermNotch2Hz != 0 && pidProfile->dterm_notch2_cutoff != 0) {
         pidRuntime.dtermNotch2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(dTermNotch2Hz, pidProfile->dterm_notch2_cutoff);
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {

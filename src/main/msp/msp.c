@@ -1862,10 +1862,8 @@ case MSP_NAME:
         sbufWriteU16(dst, currentPidProfile->yaw_lowpass_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1);
-        sbufWriteU16(dst, currentPidProfile->dterm_notch_hz);
-        sbufWriteU16(dst, currentPidProfile->dterm_notch_cutoff);
-        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
-        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
+        sbufWriteU16(dst, currentPidProfile->dterm_notch1_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_notch1_cutoff);
         sbufWriteU8(dst, currentPidProfile->dterm_lpf1_type);
         sbufWriteU8(dst, gyroConfig()->gyro_hardware_lpf);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_32khz_hardware_lpf
@@ -1876,6 +1874,8 @@ case MSP_NAME:
         sbufWriteU16(dst, currentPidProfile->dterm_lpf2_static_hz);
         // Added in MSP API 1.41
         sbufWriteU8(dst, currentPidProfile->dterm_lpf2_type);
+        sbufWriteU16(dst, currentPidProfile->dterm_notch2_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_notch2_cutoff);
 #if defined(USE_DYN_LPF)
         sbufWriteU16(dst, gyroConfig()->gyro_lpf1_dyn_min_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_lpf1_dyn_max_hz);
@@ -1922,6 +1922,8 @@ case MSP_NAME:
         sbufWriteU8(dst, dynNotchConfig()->dyn_notch_count);
 #else
         sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
+        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
 #endif
 
         break;
@@ -3036,8 +3038,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
-            currentPidProfile->dterm_notch_hz = sbufReadU16(src);
-            currentPidProfile->dterm_notch_cutoff = sbufReadU16(src);
+            currentPidProfile->dterm_notch1_hz = sbufReadU16(src);
+            currentPidProfile->dterm_notch1_cutoff = sbufReadU16(src);
+            currentPidProfile->dterm_notch2_hz = sbufReadU16(src);
+            currentPidProfile->dterm_notch2_cutoff = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 4) {
             gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);

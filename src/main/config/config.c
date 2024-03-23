@@ -258,10 +258,13 @@ static void validateAndFixConfig(void)
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch2_cutoff, 0);
 
         // Prevent invalid notch cutoff (not sure what to do about this...)
-        if (pidProfilesMutable(i)->dterm_notch_cutoff >= pidProfilesMutable(i)->dterm_notch_hz) {
-            pidProfilesMutable(i)->dterm_notch_hz = 0;
+        if (pidProfilesMutable(i)->dterm_notch1_cutoff >= pidProfilesMutable(i)->dterm_notch1_hz) {
+            pidProfilesMutable(i)->dterm_notch1_hz = 0; 
         }
-
+        if (pidProfilesMutable(i)->dterm_notch2_cutoff >= pidProfilesMutable(i)->dterm_notch2_hz) {
+            pidProfilesMutable(i)->dterm_notch2_hz = 0; 
+        }
+            
 #ifdef USE_DYN_LPF
         //Prevent invalid dynamic lowpass
         if (pidProfilesMutable(i)->dterm_lpf1_dyn_min_hz > pidProfilesMutable(i)->dterm_lpf1_dyn_max_hz) {
