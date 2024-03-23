@@ -33,7 +33,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "GYRO_FILTERED",
     "ACCELEROMETER",
     "PIDLOOP",
-    "GYRO_SCALED",
     "RC_INTERPOLATION",
     "ANGLERATE",
     "ESC_SENSOR",
