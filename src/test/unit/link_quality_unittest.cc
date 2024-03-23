@@ -137,7 +137,7 @@ void doTestArm(bool testEmpty = true)
 
     // then
     // arming alert displayed
-    displayPortTestBufferSubstring(13, 8, "ARMED");
+    displayPortTestBufferSubstring(13, 8, "%s", pilotConfig()->extraArmedWarning);
 
     // given
     // armed alert times out (0.5 seconds)

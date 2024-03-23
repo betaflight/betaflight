@@ -848,7 +848,7 @@ static void osdBackgroundCameraFrame(osdElementParms_t *element)
     element->drawElement = false;  // element already drawn
 }
 
-static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
+void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
 {
     unsigned int i;
     for (i = 0; i < maxSrcLength && src[i]; i++) {
@@ -1647,7 +1647,15 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
 static void osdElementThrottlePosition(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
+    const uint8_t throttleValue = calculateThrottlePercent();
+    if (strlen(pilotConfig()->extra100Throttle) == 0 || throttleValue < 100)
+    {
+        tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
+    }
+    else
+    {
+        tfp_sprintf(element->buff, pilotConfig()->extra100Throttle);
+    }
 }
 
 static void osdElementTimer(osdElementParms_t *element)
