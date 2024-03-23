@@ -32,6 +32,7 @@ typedef struct rxExpressLrsSpiConfig_s {
     uint8_t domain;
     uint8_t rateIndex;
     uint8_t modelId;
+    uint32_t powerOnCounter;
 } rxExpressLrsSpiConfig_t;
 
 PG_DECLARE(rxExpressLrsSpiConfig_t, rxExpressLrsSpiConfig);

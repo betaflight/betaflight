@@ -47,5 +47,6 @@ PG_RESET_TEMPLATE(rxExpressLrsSpiConfig_t, rxExpressLrsSpiConfig,
     .domain = 0,
     .rateIndex = 0,
     .modelId = 0xFF,
+    .powerOnCounter = 0,
 );
 #endif
