@@ -221,6 +221,9 @@ static bool deviceConfigure(const extDevice_t *dev)
 
         // 0x23 c40 [11:8] + 0x24 c40 [7:0]
         baroState.calib.c40 = getTwosComplement((((uint32_t)coef[19] & 0x0F) << 8) | (uint32_t)coef[20], 12);
+    } else {
+        baroState.calib.c31 = 0;
+        baroState.calib.c40 = 0; 
     }
 
     // PRS_CFG: pressure measurement rate (32 Hz) and oversampling (16 time standard)
