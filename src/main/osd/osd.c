@@ -1538,10 +1538,10 @@ void osdUpdate(timeUs_t currentTimeUs)
             if (!ARMING_FLAG(ARMED) && osdConfig()->osd_show_spec_prearm) {
                 osdState = OSD_STATE_REFRESH_PREARM;
             } else
-#endif // USE_SPEC_PREARM_SCREEN
             {
                 osdState = OSD_STATE_COMMIT;
             }
+#endif // USE_SPEC_PREARM_SCREEN
         }
         break;
 
