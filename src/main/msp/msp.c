@@ -1514,7 +1514,7 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
         // Added in API version 1.44
-        sbufWriteU16(dst, gpsSol.dop.hdop);
+        sbufWriteU16(dst, gpsSol.dop.pdop);
         break;
 
     case MSP_COMP_GPS:
@@ -3641,7 +3641,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsSol.acc.hAcc = sbufReadU16(src) * 10; // horizontal_pos_accuracy - convert cm to mm
         gpsSol.acc.vAcc = sbufReadU16(src) * 10; // vertical_pos_accuracy - convert cm to mm
         gpsSol.acc.sAcc = sbufReadU16(src) * 10; // horizontal_vel_accuracy - convert cm to mm
-        gpsSol.dop.hdop = sbufReadU16(src); // hdop
+        gpsSol.dop.pdop = sbufReadU16(src); // hdop in 4.4 and earlier, pdop in 4.5 and above
         gpsSol.llh.lon = sbufReadU32(src);
         gpsSol.llh.lat = sbufReadU32(src);
         gpsSol.llh.altCm = sbufReadU32(src); // alt
