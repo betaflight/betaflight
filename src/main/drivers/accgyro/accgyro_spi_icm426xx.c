@@ -77,6 +77,10 @@
 
 #define ICM426XX_RA_GYRO_CONFIG0                    0x4F
 #define ICM426XX_RA_ACCEL_CONFIG0                   0x50
+#define ICM426XX_RA_GYRO_CONFIG1                    0x51
+#define ICM426XX_RA_TEMP_FILT_BW                    (0  << 5)
+#define ICM426XX_RA_GYRO_UI_FILT_ORD(x)             ((x)<< 2)
+#define ICM426XX_RA_GYRO_DEC2_M2_ORD                (1  << 1)
 
 // --- Registers for gyro and acc Anti-Alias Filter ---------
 #define ICM426XX_RA_GYRO_CONFIG_STATIC3             0x0C  // User Bank 1
@@ -87,8 +91,8 @@
 #define ICM426XX_RA_ACCEL_CONFIG_STATIC4            0x05  // User Bank 2
 // --- Register & setting for gyro and acc UI Filter --------
 #define ICM426XX_RA_GYRO_ACCEL_CONFIG0              0x52  // User Bank 0
-#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4) 
-#define ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY        (15 << 0)
+#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4)
+#define ICM426XX_GYRO_UI_FILT_BW(x)                 ((x)<< 0)
 // ----------------------------------------------------------
 
 #define ICM426XX_RA_GYRO_DATA_X1                    0x25  // User Bank 0
@@ -257,7 +261,11 @@ void icm426xxGyroInit(gyroDev_t *gyro)
 
     // Configure gyro Anti-Alias Filter (see section 5.3 "ANTI-ALIAS FILTER")
     const mpuSensor_e gyroModel = gyro->mpuDetectionResult.sensor;
-    aafConfig_t aafConfig = getGyroAafConfig(gyroModel, gyroConfig()->gyro_hardware_lpf);
+    aafConfig_t aafConfig = { gyroConfig()->gyro_delt, gyroConfig()->gyro_deltSqr, gyroConfig()->gyro_bitshift };
+    if (gyroModel == ICM_42688P_SPI) {
+        aafConfig = getGyroAafConfig(gyroModel, gyroConfig()->gyro_hardware_lpf);
+    };
+
     setUserBank(dev, ICM426XX_BANK_SELECT1);
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC3, aafConfig.delt);
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC4, aafConfig.deltSqr & 0xFF);
@@ -272,7 +280,13 @@ void icm426xxGyroInit(gyroDev_t *gyro)
 
     // Configure gyro and acc UI Filters
     setUserBank(dev, ICM426XX_BANK_SELECT0);
-    spiWriteReg(dev, ICM426XX_RA_GYRO_ACCEL_CONFIG0, ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY | ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY);
+    uint8_t ui = gyroConfig()->gyro_ui;
+    if (ui > 7 && ui < 14) {
+        ui = 7;
+    }
+    spiWriteReg(dev, ICM426XX_RA_GYRO_ACCEL_CONFIG0, ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY | ICM426XX_GYRO_UI_FILT_BW(ui));
+    uint8_t ui_ord = gyroConfig()->gyro_ui_ord;
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG1, ICM426XX_RA_TEMP_FILT_BW | ICM426XX_RA_GYRO_UI_FILT_ORD(ui_ord) | ICM426XX_RA_GYRO_DEC2_M2_ORD);
 
     // Configure interrupt pin
     spiWriteReg(dev, ICM426XX_RA_INT_CONFIG, ICM426XX_INT1_MODE_PULSED | ICM426XX_INT1_DRIVE_CIRCUIT_PP | ICM426XX_INT1_POLARITY_ACTIVE_HIGH);

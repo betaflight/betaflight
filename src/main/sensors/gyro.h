@@ -167,6 +167,11 @@ enum {
 typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t gyro_hardware_lpf;                // gyro DLPF setting
+    uint8_t gyro_delt;
+    uint16_t gyro_deltSqr;
+    uint8_t gyro_bitshift;
+    uint8_t gyro_ui;
+    uint8_t gyro_ui_ord;
     uint8_t gyro_high_fsr;
     uint8_t gyro_to_use;
 
