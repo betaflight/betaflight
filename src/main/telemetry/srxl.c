@@ -296,7 +296,7 @@ bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
     gpsCoordinateDDDMMmmmm_t coordinate;
     uint32_t latitudeBcd, longitudeBcd, altitudeLo;
-    uint16_t altitudeLoBcd, groundCourseBcd, hpop;
+    uint16_t altitudeLoBcd, groundCourseBcd, pdop;
     uint8_t pdopBcd, gpsFlags;
 
     if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < GPS_MIN_SAT_COUNT) {
