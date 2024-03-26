@@ -603,13 +603,33 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
 }
 #endif
 
+#if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC)
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
-    static timeUs_t previousIMUUpdateTime;
+    // unused static functions
+    UNUSED(imuMahonyAHRSupdate);
+    UNUSED(imuIsAccelerometerHealthy);
+    UNUSED(canUseGPSHeading);
+    UNUSED(imuCalcKpGain);
+    UNUSED(imuCalcMagErr);
 
+    UNUSED(currentTimeUs);
+}
+#else
+
+static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
+{
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
+    // Simulator-based timing
+    //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
+    const timeDelta_t deltaT = imuDeltaT;
+#else
+    static timeUs_t previousIMUUpdateTime = 0;
     const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTimeUs;
+#endif
     const float dt = deltaT * 1e-6f;
+
     // *** magnetometer based error estimate ***
     bool useMag = false;   // mag will suppress GPS correction
     float magErr = 0;
@@ -661,22 +681,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 
-#if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC)
-    UNUSED(imuMahonyAHRSupdate);
-    UNUSED(imuIsAccelerometerHealthy);
-    UNUSED(useAcc);
-    UNUSED(useMag);
-    UNUSED(groundspeedGain);
-    UNUSED(canUseGPSHeading);
-    UNUSED(courseOverGround);
-    UNUSED(deltaT);
-    UNUSED(imuCalcKpGain);
-#else
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
-//  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
-    deltaT = imuDeltaT;
-#endif
     float gyroAverage[XYZ_AXIS_COUNT];
     for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
         gyroAverage[axis] = gyroGetFilteredDownsampled(axis);
@@ -691,8 +696,9 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                         imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
-#endif
 }
+
+#endif
 
 static int calculateThrottleAngleCorrection(void)
 {
