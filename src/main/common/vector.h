@@ -109,18 +109,38 @@ static inline fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3
     }
 }
 
+
+static inline float vector2NormSquared(const fpVector2_t *a)
+{
+    return sq(a->x) + sq(a->y);
+}
+
+static inline float vector2Norm(const fpVector2_t *a)
+{
+    return sqrtf(vector2NormSquared(a));
+}
+
+
+static inline fpVector2_t * vector2Scale(fpVector2_t *result, const fpVector2_t *a, const float b)
+{
+    fpVector2_t ab;
+
+    ab.x = a->x * b;
+    ab.y = a->y * b;
+
+    *result = ab;
+    return result;
+}
+
 static inline fpVector2_t * vector2Normalize(fpVector2_t *result, const fpVector2_t *v)
 {
-    float normSq = sq(v->x) + sq(v->y);
+    float normSq = vector2NormSquared(v);
     if (normSq > 0.0f) {
-        normSq = 1.0f / sqrtf(normSq);
-        result->x = v->x * normSq;
-        result->y = v->y * normSq;
+        return vector2Scale(result, v, 1.0f / sqrtf(normSq));
     } else {
-        result->x = 0.0f;
-        result->y = 0.0f;
+        *result = (fpVector2_t){.x = 0.0f, .y = 0.0f};
+        return result;
     }
-    return result;
 }
 
 static inline fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
@@ -177,7 +197,3 @@ static inline float vector2Dot(const fpVector2_t *a, const fpVector2_t *b)
     return a->x * b->x + a->y * b->y;
 }
 
-static inline float vector2Mag(const fpVector2_t *a)
-{
-    return sqrtf(sq(a->x) + sq(a->y));
-}
