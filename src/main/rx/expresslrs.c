@@ -1129,16 +1129,13 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payloadBuffer)
 #ifdef USE_PERSISTENT_STATS
     // We haven't reached our binding mode power cycles and we've been powered on for 2s, reset the power on counter.
     static bool enter_once = false;
-    if (rxExpressLrsSpiConfig()->powerOnCounter >= 3 && !enter_once)
-    {
+    if (rxExpressLrsSpiConfig()->powerOnCounter >= 3 && !enter_once) {
         rxExpressLrsSpiConfigMutable()->powerOnCounter = 0;
         receiver.configChanged = true;
 
         enterBindingMode();
         enter_once = true;
-    }
-    else if ((millis() > 4000) && (rxExpressLrsSpiConfig()->powerOnCounter != 0))
-    {
+    } else if ((millis() > 4000) && (rxExpressLrsSpiConfig()->powerOnCounter != 0)) {
         rxExpressLrsSpiConfigMutable()->powerOnCounter = 0;
         receiver.configChanged = true;
     }
