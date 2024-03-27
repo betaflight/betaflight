@@ -109,6 +109,20 @@ static inline fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3
     }
 }
 
+static inline fpVector2_t * vector2Normalize(fpVector2_t *result, const fpVector2_t *v)
+{
+    float normSq = sq(v->x) + sq(v->y);
+    if (normSq > 0.0f) {
+        normSq = 1.0f / sqrtf(normSq);
+        result->x = v->x * normSq;
+        result->y = v->y * normSq;
+    } else {
+        result->x = 0.0f;
+        result->y = 0.0f;
+    }
+    return result;
+}
+
 static inline fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
 {
     fpVector3_t r;
