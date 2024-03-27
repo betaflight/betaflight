@@ -131,8 +131,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidSumLimit = PIDSUM_LIMIT,
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lowpass_hz = 100,
-        .dterm_notch_hz = 0,
-        .dterm_notch_cutoff = 0,
+        .dterm_notch1_hz = 0,
+        .dterm_notch2_hz = 0,
+        .dterm_notch1_cutoff = 0,
+        .dterm_notch2_cutoff = 0,
         .itermWindupPointPercent = 85,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .angle_limit = 60,
@@ -870,7 +872,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             DEBUG_SET(DEBUG_D_LPF, axis, lrintf(delta)); // debug d_lpf 2 and 3 used for pre-TPA D
         }
 
-        gyroRateDterm[axis] = pidRuntime.dtermNotchApplyFn((filter_t *) &pidRuntime.dtermNotch[axis], gyroRateDterm[axis]);
+        gyroRateDterm[axis] = pidRuntime.dtermNotch1ApplyFn((filter_t *) &pidRuntime.dtermNotch1[axis], gyroRateDterm[axis]);
+        gyroRateDterm[axis] = pidRuntime.dtermNotch2ApplyFn((filter_t *) &pidRuntime.dtermNotch2[axis], gyroRateDterm[axis]);
         gyroRateDterm[axis] = pidRuntime.dtermLowpassApplyFn((filter_t *) &pidRuntime.dtermLowpass[axis], gyroRateDterm[axis]);
         gyroRateDterm[axis] = pidRuntime.dtermLowpass2ApplyFn((filter_t *) &pidRuntime.dtermLowpass2[axis], gyroRateDterm[axis]);
     }

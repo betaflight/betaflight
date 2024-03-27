@@ -252,14 +252,19 @@ static void validateAndFixConfig(void)
         // allowed higher cutoff limits from previous firmware versions.
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_lpf1_static_hz, LPF_MAX_HZ);
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_lpf2_static_hz, LPF_MAX_HZ);
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz, LPF_MAX_HZ);
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_cutoff, 0);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch1_hz, LPF_MAX_HZ);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch2_hz, LPF_MAX_HZ);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch1_cutoff, 0);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch2_cutoff, 0);
 
-        // Prevent invalid notch cutoff
-        if (pidProfilesMutable(i)->dterm_notch_cutoff >= pidProfilesMutable(i)->dterm_notch_hz) {
-            pidProfilesMutable(i)->dterm_notch_hz = 0;
+        // Prevent invalid notch cutoff (not sure what to do about this...)
+        if (pidProfilesMutable(i)->dterm_notch1_cutoff >= pidProfilesMutable(i)->dterm_notch1_hz) {
+            pidProfilesMutable(i)->dterm_notch1_hz = 0; 
         }
-
+        if (pidProfilesMutable(i)->dterm_notch2_cutoff >= pidProfilesMutable(i)->dterm_notch2_hz) {
+            pidProfilesMutable(i)->dterm_notch2_hz = 0; 
+        }
+            
 #ifdef USE_DYN_LPF
         //Prevent invalid dynamic lowpass
         if (pidProfilesMutable(i)->dterm_lpf1_dyn_min_hz > pidProfilesMutable(i)->dterm_lpf1_dyn_max_hz) {
