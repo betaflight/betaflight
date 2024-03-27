@@ -67,11 +67,14 @@ static float maxRcDeflectionAbs;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 
-static uint16_t currentRxIntervalUs; // packet interval in microseconds
-static float currentRxRateHz; // packet rate in hertz
+#define RX_INTERVAL_MIN_US     950 // 0.950ms to fit 1kHz without an issue
+#define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
+static uint16_t currentRxIntervalUs;  // packet interval in microseconds, constrained to above range
+static uint16_t previousRxIntervalUs; // previous packet interval in microseconds
+static float currentRxRateHz;         // packet interval in Hz, constrained as above
 
 static bool isRxDataNew = false;
-static bool isRxIntervalValid = false;
+static bool isRxRateValid = false;
 static float rcCommandDivider = 500.0f;
 static float rcCommandYawDivider = 500.0f;
 
@@ -105,9 +108,6 @@ float getFeedforward(int axis)
 static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 static float rcDeflectionSmoothed[3];
 #endif // USE_RC_SMOOTHING_FILTER
-
-#define RX_INTERVAL_MIN_US     950 // 0.950ms to fit 1kHz without an issue
-#define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
 
 float getSetpointRate(int axis)
 {
@@ -261,32 +261,60 @@ static void scaleRawSetpointToFpvCamAngle(void)
     rawSetpoint[YAW]  = constrainf(yaw  * cosFactor + roll * sinFactor, SETPOINT_RATE_LIMIT_MIN, SETPOINT_RATE_LIMIT_MAX);
 }
 
-void updateRcRefreshRate(timeUs_t currentTimeUs)
+void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
 {
-    static timeUs_t lastRxTimeUs;
+    // this function only runs when rxDataProcessingRequired is true, which is:
+    // every time a new frame is detected,
+    // and after RXLOSS_TRIGGER_INTERVAL since the last good frame, and
+    // then every RX_FRAME_RECHECK_INTERVAL, until a new frame is detected
+    //   (rxReceivingSignal == false)
 
-    timeDelta_t frameAgeUs;
-    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
+    // it provides values for use in RCSmoothing, Feedforward, etc.
+    static timeUs_t lastRxTimeUs = 0;
+    timeDelta_t delta = 0;
 
-    if (!frameDeltaUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
-        frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs);
+    if (rxReceivingSignal) { // true while receiving data and until RXLOSS_TRIGGER_INTERVAL expires, otherwise false
+        previousRxIntervalUs = currentRxIntervalUs;
+        // use driver rx time if available, current time otherwise
+        const timeUs_t rxTime = rxRuntimeState.lastRcFrameTimeUs ? rxRuntimeState.lastRcFrameTimeUs : currentTimeUs;
+
+        if (lastRxTimeUs) {  // report delta only if previous time is available
+            delta = cmpTimeUs(rxTime, lastRxTimeUs);
+        }
+        lastRxTimeUs = rxTime;
+        DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);   // output value in hundredths of ms
+    } else {
+        if (lastRxTimeUs) {
+            // no packet received, use current time for delta
+            delta = cmpTimeUs(currentTimeUs, lastRxTimeUs);
+        }
     }
 
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
-    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
+    // temporary debugs
+    DEBUG_SET(DEBUG_RX_TIMING, 4, MIN(delta / 10, INT16_MAX));   // time between frames based on rxFrameCheck
+#ifdef USE_RX_LINK_QUALITY_INFO
+    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());    // raw link quality value
+#endif
+    DEBUG_SET(DEBUG_RX_TIMING, 7, rxIsReceivingSignal());        // flag to initiate RXLOSS signal and Stage 1 values
 
-    lastRxTimeUs = currentTimeUs;
-    currentRxIntervalUs = constrain(frameDeltaUs, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
-    isRxIntervalValid = frameDeltaUs == currentRxIntervalUs;
+    // constrain to a frequency range no lower than about 15Hz and up to about 1000Hz
+    currentRxIntervalUs = constrain(delta, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
+    currentRxRateHz = 1e6f / currentRxIntervalUs;
+    isRxRateValid = delta == currentRxIntervalUs;
 
-    currentRxRateHz = 1e6f / currentRxIntervalUs; // cannot be zero due to preceding constraint
-    DEBUG_SET(DEBUG_RX_TIMING, 2, isRxIntervalValid);
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(delta / 10, INT16_MAX));   // output value in hundredths of ms
+    DEBUG_SET(DEBUG_RX_TIMING, 2, isRxRateValid);
     DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));
 }
 
-uint16_t getCurrentRxIntervalUs(void)
+uint16_t getCurrentRxRateHz(void)
 {
-    return currentRxIntervalUs;
+    return currentRxRateHz;
+}
+
+bool getRxRateValid(void)
+{
+    return isRxRateValid;
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -412,19 +440,18 @@ static FAST_CODE void processRcSmoothingFilter(void)
             const bool ready = (currentTimeMs > 1000) && (targetPidLooptime > 0);
             if (ready) { // skip during FC initialization
                 // Wait 1000ms after power to let the PID loop stabilize before starting average frame rate calculation
-                if (rxIsReceivingSignal() && isRxIntervalValid) {
+                if (rxIsReceivingSignal() && isRxRateValid) {
 
-                    static uint16_t previousRxIntervalUs;
                     if (abs(currentRxIntervalUs - previousRxIntervalUs) < (previousRxIntervalUs - (previousRxIntervalUs / 8))) {
                         // exclude large steps, eg after dropouts or telemetry
                         // by using interval here, we catch a dropout/telemetry where the inteval increases by 100%, but accept
                         // the return to normal value, which is only 50% different from the 100% interval of a single drop, and 66% of a return after a double drop.
-                        static float prevRxRateHz;
+                        static float prevSmoothedRxRateHz;
                         // smooth the current Rx link frequency estimates
                         const float kF = 0.1f; // first order lowpass smoothing filter coefficient
-                        const float smoothedRxRateHz = prevRxRateHz + kF * (currentRxRateHz - prevRxRateHz);
-                        prevRxRateHz = smoothedRxRateHz;
-      
+                        const float smoothedRxRateHz = prevSmoothedRxRateHz + kF * (currentRxRateHz - prevSmoothedRxRateHz);
+                        prevSmoothedRxRateHz = smoothedRxRateHz;
+
                         // recalculate cutoffs every 3 acceptable samples
                         if (rcSmoothingData.sampleCount) {
                             rcSmoothingData.sampleCount --;
@@ -437,7 +464,6 @@ static FAST_CODE void processRcSmoothingFilter(void)
                             sampleState = 2;
                         }
                     }
-                    previousRxIntervalUs = currentRxIntervalUs;
                 } else {
                     // either we stopped receiving rx samples (failsafe?) or the sample interval is unreasonable
                     // require a full re-evaluation period after signal is restored
@@ -498,10 +524,7 @@ NOINLINE void initAveraging(uint16_t feedforwardAveraging)
 
 FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 {
-    const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
-    float rxRate = currentRxRateHz;
-    static float prevRxInterval;
-
+    float rxRateHz = currentRxRateHz;
     static float prevRcCommand[3];
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
     static float prevSetpoint[3];                   // equals raw unless interpolated 
@@ -544,11 +567,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     if (rcCommandDeltaAbs) {
         // movement!
         if (prevDuplicatePacket[axis] == true) {
-            rxRate = 1.0f / (rxInterval + prevRxInterval);
+            rxRateHz = 1e6f / (currentRxIntervalUs + previousRxIntervalUs);
             zeroTheAcceleration = 0.0f;
             // don't add acceleration, empirically seems better on FrSky
         }
-        setpointSpeed *= rxRate;
+        setpointSpeed *= rxRateHz;
         prevDuplicatePacket[axis] = false;
     } else {
         // no movement!
@@ -567,13 +590,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         }
         prevDuplicatePacket[axis] = true;
     }
-    prevRxInterval = rxInterval;
 
     // smooth the setpointSpeed value
     setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
 
     // calculate acceleration and attenuate
-    setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * rxRate * 0.01f;
+    setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * rxRateHz * 0.01f;
     prevSetpointSpeed[axis] = setpointSpeed;
 
     // smooth the acceleration element (effectively a second order filter) and apply jitter reduction
