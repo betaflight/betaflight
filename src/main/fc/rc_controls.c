@@ -107,6 +107,10 @@ bool isUsingSticksForArming(void)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
+    if (FLIGHT_MODE(ALTHOLD_MODE)) {
+        return THROTTLE_HIGH;
+    }
+
     if (featureIsEnabled(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
             if (rcData[THROTTLE] < rxConfig()->mincheck) {
@@ -304,7 +308,7 @@ void processRcStickPositions(void)
 #endif
 
 
-    if (FLIGHT_MODE(ANGLE_MODE|HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | ALTHOLD_MODE | HORIZON_MODE)) {
         // in ANGLE or HORIZON mode, so use sticks to apply accelerometer trims
         rollAndPitchTrims_t accelerometerTrimsDelta;
         memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
