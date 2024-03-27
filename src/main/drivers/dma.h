@@ -75,7 +75,7 @@ typedef struct dmaChannelDescriptor_s {
 
 #if defined(USE_ATBSP_DRIVER)
 
-#elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32H5)
 
 typedef enum {
     DMA_NONE = 0,

@@ -78,6 +78,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     // NOP
 #elif defined(AT32F4)
     flash_flag_clear(FLASH_ODF_FLAG | FLASH_PRGMERR_FLAG | FLASH_EPPERR_FLAG);
+#elif defined(STM32H5)
+// NOP
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -229,7 +231,7 @@ static uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx)
+#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H573xx)
 /*
 MCUs with uniform array of equal size sectors, handled in two banks having contiguous address.
 (Devices with non-contiguous flash layout is not currently useful anyways.)
@@ -260,7 +262,7 @@ FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 
 #if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx)
 #define FLASH_PAGE_PER_BANK 8
-#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H573xx)
 #define FLASH_PAGE_PER_BANK 128
 #elif defined(STM32G4)
 #define FLASH_PAGE_PER_BANK 128
