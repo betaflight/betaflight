@@ -194,6 +194,7 @@ COMMON_SRC = \
             telemetry/ibus.c \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
+            locales/localisation.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
@@ -223,6 +224,13 @@ COMMON_SRC += \
 
 endif
 endif
+
+TRANSLATED_SRC = \
+            osd/osd.c \
+            osd/osd_elements.c \
+            osd/osd_warnings.c \
+            cli/cli.c \
+	        locales/localisation.c
 
 RX_SRC = \
             rx/cc2500_common.c \

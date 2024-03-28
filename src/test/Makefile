@@ -20,6 +20,17 @@ MAKE_SCRIPT_DIR := $(ROOT)/mk
 
 include $(MAKE_SCRIPT_DIR)/system-id.mk
 
+# Setup locale
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(USER_DIR)/locales/*/bf_locale.h)))))
+ifeq ($(LOCALE),)
+    LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+INCLUDE_DIRS := $(USER_DIR)/locales/$(LOCALE)
+
+
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
 # specify which files that are included in the test in addition to the unittest file.
@@ -106,6 +117,7 @@ blackbox_encoding_unittest_SRC :=  \
 
 cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
+		$(USER_DIR)/locales/localisation.c \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
@@ -505,6 +517,7 @@ COMMON_FLAGS = \
 	-Wno-error=unused-command-line-argument \
 	-ggdb3 \
 	-O0 \
+	-I$(INCLUDE_DIRS)\
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP \

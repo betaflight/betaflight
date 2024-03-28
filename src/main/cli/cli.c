@@ -127,6 +127,8 @@ bool cliMode = false;
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
 
+#include "locales/localisation.h"
+
 #include "osd/osd.h"
 
 #include "pg/adc.h"
@@ -4623,7 +4625,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf("MCU %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
+    cliPrintf("MCU: %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
 
 #if defined(STM32F4) || defined(STM32G4)
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
@@ -4663,13 +4665,13 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #if defined(USE_SPI) || defined(USE_I2C)
     cliPrint("Devices detected:");
 #if defined(USE_SPI)
-    cliPrintf(" SPI:%d", spiGetRegisteredDeviceCount());
+    cliPrintf(" SPI: %d", spiGetRegisteredDeviceCount());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
 #endif
 #if defined(USE_I2C)
-    cliPrintf(" I2C:%d", i2cGetRegisteredDeviceCount());
+    cliPrintf(" I2C: %d", i2cGetRegisteredDeviceCount());
 #endif
     cliPrintLinefeed();
 #endif
@@ -4760,7 +4762,7 @@ if (buildKey) {
         rxRate = (int)(1000000.0f / ((float)rxRate));
     }
     const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
-    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
+    cliPrintLinef("CPU: %d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
 
     // Battery meter
@@ -4826,6 +4828,8 @@ if (buildKey) {
     }
     cliPrintLinefeed();
 #endif // USE_GPS
+
+    cliPrintLinef("Language: %s %s", STR_LOCALE, STR_NEW_STRING);
 
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
@@ -5390,8 +5394,7 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             entry->device, uiIndex, DMA_CODE_CONTROLLER(dmaCode), DMA_CODE_STREAM(dmaCode), DMA_CODE_CHANNEL(dmaCode));
     } else if (!(dumpMask & HIDE_UNUSED)) {
         printValue(dumpMask, equalsDefault,
-            "dma %s %d NONE",
-            entry->device, uiIndex);
+            "dma %s %d %s", entry->device, uiIndex, "NONE");
     }
 }
 
@@ -5454,9 +5457,8 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
         }
     } else if (!(dumpMask & HIDE_UNUSED)) {
         printValue(dumpMask, equalsDefault,
-            "dma pin %c%02d NONE",
-            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag)
-        );
+            "dma pin %c%02d %s",
+            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), "NONE");
     }
 }
 
@@ -6101,7 +6103,6 @@ static void cliResource(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
-
 
 static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 {

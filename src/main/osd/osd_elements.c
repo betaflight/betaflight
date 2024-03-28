@@ -154,6 +154,8 @@
 #include "io/gps.h"
 #include "io/vtx.h"
 
+#include "locales/localisation.h"
+
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
@@ -369,6 +371,7 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
 
     case OSD_ELEMENT_TYPE_3: // degree, minutes, seconds style. ddd^mm'ss.00"W
         {
+            const char *trailingSymbols = STR_OSDE_GPS_DIRECTION;   // NSEW
             char trailingSymbol;
             *buff++ = leadingSymbol;
 
@@ -378,9 +381,9 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
             const int tenthSeconds = (fractionalMinutes * 60 % GPS_DEGREES_DIVIDER) * 10 / GPS_DEGREES_DIVIDER;
 
             if (coordinateType == GPS_LONGITUDE) {
-                trailingSymbol = (gpsValue < 0) ? 'W' : 'E';
+                trailingSymbol = (gpsValue < 0) ? trailingSymbols[3] : trailingSymbols[2];  // W : E
             } else {
-                trailingSymbol = (gpsValue < 0) ? 'S' : 'N';
+                trailingSymbol = (gpsValue < 0) ? trailingSymbols[1] : trailingSymbols[0];  // S : N
             }
             tfp_sprintf(buff, "%u%c%02u%c%02u.%u%c%c", degreesPart, SYM_GPS_DEGREE, minutes, SYM_GPS_MINUTE, seconds, tenthSeconds, SYM_GPS_SECOND, trailingSymbol);
             break;
@@ -705,7 +708,7 @@ static void osdElementAngleRollPitch(osdElementParms_t *element)
 static void osdElementAntiGravity(osdElementParms_t *element)
 {
     if (pidOsdAntiGravityActive()) {
-        strcpy(element->buff, "AG");
+        strcpy(element->buff, STR_OSDE_ANTIGRAVITY);
     }
 }
 
@@ -752,7 +755,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
         float psiB; // psi from body frame to zenith/nadir
-        char *symbol[2] = {"U", "D"}; // character buffer
+        const char *symbol[2] = {STR_OSDE_UP, STR_OSDE_DOWN}; // character buffer
         int direction;
 
         if(attitude.values.pitch>0.0){ //nose down
@@ -932,14 +935,14 @@ static void osdElementDebug(osdElementParms_t *element)
 static void osdElementDisarmed(osdElementParms_t *element)
 {
     if (!ARMING_FLAG(ARMED)) {
-        tfp_sprintf(element->buff, "DISARMED");
+        tfp_sprintf(element->buff, STR_OSDE_DISARMED);
     }
 }
 
 static void osdBackgroundPilotName(osdElementParms_t *element)
 {
     if (strlen(pilotConfig()->pilotName) == 0) {
-        strcpy(element->buff, "PILOT_NAME");
+        strcpy(element->buff, STR_OSDE_PILOT_NAME);
     } else {
         toUpperCase(element->buff, pilotConfig()->pilotName, MAX_NAME_LENGTH);
     }
@@ -957,7 +960,7 @@ static void osdElementTotalFlights(osdElementParms_t *element)
 static void osdElementRateProfileName(osdElementParms_t *element)
 {
     if (strlen(currentControlRateProfile->profileName) == 0) {
-        tfp_sprintf(element->buff, "RATE_%u", getCurrentControlRateProfileIndex() + 1);
+        tfp_sprintf(element->buff, "%s%u", STR_OSDE_RATE, getCurrentControlRateProfileIndex() + 1);
     } else {
         toUpperCase(element->buff, currentControlRateProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
@@ -966,12 +969,12 @@ static void osdElementRateProfileName(osdElementParms_t *element)
 static void osdElementPidProfileName(osdElementParms_t *element)
 {
     if (strlen(currentPidProfile->profileName) == 0) {
-        tfp_sprintf(element->buff, "PID_%u", getCurrentPidProfileIndex() + 1);
+        tfp_sprintf(element->buff, "%s%u", STR_OSDE_PID, getCurrentPidProfileIndex() + 1);
     } else {
         toUpperCase(element->buff, currentPidProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
-#endif
+#endif // USE_PROFILE_NAMES
 
 #ifdef USE_OSD_PROFILES
 static void osdElementOsdProfileName(osdElementParms_t *element)
@@ -979,12 +982,12 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
     uint8_t profileIndex = getCurrentOsdProfileIndex();
 
     if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
-        tfp_sprintf(element->buff, "OSD_%u", profileIndex);
+        tfp_sprintf(element->buff, "%s%u", STR_OSDE_OID, profileIndex);
     } else {
         toUpperCase(element->buff, osdConfig()->profile[profileIndex - 1], OSD_PROFILE_NAME_LENGTH);
     }
 }
-#endif
+#endif // USE_OSD_PROFILES
 
 #if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
 
@@ -994,7 +997,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
     } else
-#endif
+#endif // USE_ESC_SENSOR
 #if defined(USE_DSHOT_TELEMETRY)
     {
         uint32_t osdEleIx = tfp_sprintf(element->buff, "E%c", SYM_TEMPERATURE);
@@ -1011,7 +1014,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
     }
 #else
     {}
-#endif
+#endif // USE_DSHOT_TELEMETRY
 }
 
 static void osdElementEscRpm(osdElementParms_t *element)
@@ -1024,7 +1027,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
     renderOsdEscRpmOrFreq(&getEscRpmFreq,element);
 }
 
-#endif
+#endif // defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
 
 static void osdElementFlymode(osdElementParms_t *element)
 {
@@ -1036,28 +1039,28 @@ static void osdElementFlymode(osdElementParms_t *element)
     //  5. ACRO
 
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
-        strcpy(element->buff, "!FS!");
+        strcpy(element->buff, STR_OSDE_FLYMODE_FAILSAFE);
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        strcpy(element->buff, "RESC");
+        strcpy(element->buff, STR_OSDE_FLYMODE_RESCUE);
     } else if (FLIGHT_MODE(HEADFREE_MODE)) {
-        strcpy(element->buff, "HEAD");
+        strcpy(element->buff, STR_OSDE_FLYMODE_HEAD);
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
-        strcpy(element->buff, "ANGL");
+        strcpy(element->buff, STR_OSDE_FLYMODE_ANGL);
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
-        strcpy(element->buff, "HOR ");
+        strcpy(element->buff, STR_OSDE_FLYMODE_HOR);
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
-        strcpy(element->buff, "ATRN");
+        strcpy(element->buff, STR_OSDE_FLYMODE_ATRN);
     } else if (airmodeIsEnabled()) {
-        strcpy(element->buff, "AIR ");
+        strcpy(element->buff, STR_OSDE_FLYMODE_AIR);
     } else {
-        strcpy(element->buff, "ACRO");
+        strcpy(element->buff, STR_OSDE_FLYMODE_ACRO);
     }
 }
 
 static void osdElementReadyMode(osdElementParms_t *element)
 {
     if (IS_RC_MODE_ACTIVE(BOXREADY) && !ARMING_FLAG(ARMED)) {
-        strcpy(element->buff, "READY");
+        strcpy(element->buff, STR_OSDE_READY); 
     }
 }
 
@@ -1471,17 +1474,17 @@ static void osdElementPidRateProfile(osdElementParms_t *element)
 
 static void osdElementPidsPitch(osdElementParms_t *element)
 {
-    osdFormatPID(element->buff, "PIT", PID_PITCH);
+    osdFormatPID(element->buff, STR_OSDE_ELEMENT_PITCH, PID_PITCH);
 }
 
 static void osdElementPidsRoll(osdElementParms_t *element)
 {
-    osdFormatPID(element->buff, "ROL", PID_ROLL);
+    osdFormatPID(element->buff, STR_OSDE_ELEMENT_ROLL, PID_ROLL);
 }
 
 static void osdElementPidsYaw(osdElementParms_t *element)
 {
-    osdFormatPID(element->buff, "YAW", PID_YAW);
+    osdFormatPID(element->buff, STR_OSDE_ELEMENT_YAW, PID_YAW);
 }
 
 static void osdElementPower(osdElementParms_t *element)

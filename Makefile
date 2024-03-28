@@ -139,6 +139,32 @@ LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
 
 #
+# Setup locale
+#
+LOCALES_DIR		:= $(SRC_DIR)/locales
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(LOCALES_DIR)/*/bf_locale.xml)))))
+ifeq ($(LOCALE),)
+LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+INCLUDE_DIRS += $(INCLUDE_DIRS) $(LOCALES_DIR)/$(LOCALE)
+
+$(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/en/bf_locale.xml
+	@echo "Creating $(LOCALES_DIR)/untranslated.h" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py UT $(LOCALES_DIR) en $< $@
+
+$(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml
+	@echo "Creating $(LOCALES_DIR)/$(LOCALE)/bf_locale.h" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py BF $(LOCALES_DIR) $(LOCALE) $< $@
+
+# Dependicies for files with translation
+TRANSLATED_DEPEND := $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
+$(TRANSLATED_SRC): $(TRANSLATED_DEPEND)
+	@echo "DEBUG $(LOCALES_DIR)/$(LOCALE)/bf_locale.h    $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml" "$(STDOUT)"
+
+#
 # Default Tool options - can be overridden in {mcu}.mk files.
 #
 ifeq ($(DEBUG),GDB)
