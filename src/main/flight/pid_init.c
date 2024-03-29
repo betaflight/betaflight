@@ -298,7 +298,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * pidRuntime.dT;
-    pidRuntime.itermWindupPointInv = 1.0f;
+    pidRuntime.itermWindupPointInv = 100.0f; // value with user setting of 100; 0 means off
     if (pidProfile->itermWindupPointPercent < 100) {
         const float itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
         pidRuntime.itermWindupPointInv = 1.0f / (1.0f - itermWindupPoint);
@@ -312,7 +312,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold;
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
-    pidRuntime.itermLimit = pidProfile->itermLimit;
+    pidRuntime.itermLimit = MIN(pidProfile->itermLimit, pidProfile->pidSumLimit);
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif

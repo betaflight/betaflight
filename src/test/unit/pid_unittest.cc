@@ -258,6 +258,10 @@ TEST(pidControllerTest, testPidLoop)
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
 
+    // increase pid sum limits to avoid interactions with the i term anti windup mechanism
+    pidProfile->pidSumLimit = USHRT_MAX;
+    pidProfile->pidSumLimitYaw = USHRT_MAX;
+
     pidController(pidProfile, currentTestTime());
 
     // Loop 1 - Expecting zero since there is no error
@@ -569,6 +573,63 @@ TEST(pidControllerTest, testMixerSaturation)
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+
+    // // Test that i term is limited on yaw even when only yaw is saturated
+    // resetTest();
+    // ENABLE_ARMING_FLAG(ARMED);
+    // pidStabilisationState(PID_STABILISATION_ON);
+    // gyro.gyroADCf[FD_ROLL] = PIDSUM_LIMIT_YAW;
+    // gyro.gyroADCf[FD_PITCH] = PIDSUM_LIMIT_YAW;
+    // gyro.gyroADCf[FD_YAW] = PIDSUM_LIMIT_YAW;
+    // pidController(pidProfile, currentTestTime());
+    // // value from the previous itteration is used for efficiency reasons so expect
+    // // i term accumulation to stop at the second itteration
+    // const float i_term_after_first = pidData[FD_YAW].I;
+    // pidController(pidProfile, currentTestTime());
+    // EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_YAW].I);
+}
+
+TEST(pidControllerTest, testPidsumAntiWindup)
+{
+    // Test that i term is limited when the pidsum limit is hit
+    // important for yaw since yaw cant saturate the mixer alone with the default pidsum_limit_yaw
+    // Go axis by axis to avoid breaking the test if mixer saturation gets automatically calculated in the future
+    {
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    gyro.gyroADCf[FD_ROLL] = PIDSUM_LIMIT;
+    pidController(pidProfile, currentTestTime());
+    // value from the previous itteration is used for efficiency reasons so expect
+    // i term accumulation to stop at the second itteration
+    const float i_term_after_first = pidData[FD_ROLL].I;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_ROLL].I);
+    }
+    {
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    gyro.gyroADCf[FD_PITCH] = PIDSUM_LIMIT;
+    pidController(pidProfile, currentTestTime());
+    // value from the previous itteration is used for efficiency reasons so expect
+    // i term accumulation to stop at the second itteration
+    const float i_term_after_first = pidData[FD_PITCH].I;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_PITCH].I);
+    }
+    {
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    gyro.gyroADCf[FD_YAW] = PIDSUM_LIMIT_YAW;
+    pidController(pidProfile, currentTestTime());
+    // value from the previous itteration is used for efficiency reasons so expect
+    // i term accumulation to stop at the second itteration
+    const float i_term_after_first = pidData[FD_YAW].I;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_YAW].I);
+    }
 }
 
 // TODO - Add more scenarios
