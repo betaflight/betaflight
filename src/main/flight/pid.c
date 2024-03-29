@@ -987,7 +987,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
             }
         }
-        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
+
+        // Calculate iTerm anti windup attenuation based on pid sum limit for the current axis
+        float axisCi = 1.0f;
+        if (pidRuntime.itermWindupPointInv > 1.0f) {
+            const int16_t limit = (axis != FD_YAW) ? pidProfile->pidSumLimit : pidProfile->pidSumLimitYaw;
+            axisCi = constrainf((limit - fabsf(pidData[axis].Sum)) / limit * pidRuntime.itermWindupPointInv, 0.0f, 1.0f);
+        }
+
+        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * fminf(dynCi, axisCi) * pidRuntime.dT * itermErrorRate;
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate D component
