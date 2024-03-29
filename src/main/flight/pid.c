@@ -133,7 +133,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .yaw_lowpass_hz = 100,
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
-        .itermWindupPointPercent = 85,
+        .itermWindup = 80,         // sets iTerm limit to this percentage below pidSumLimit
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .angle_limit = 60,
         .feedforward_transition = 0,
@@ -994,12 +994,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // amount of antigravity added relative to user's pitch iTerm coefficient
     // used later to increase iTerm
 
-    // iTerm windup (attenuation of iTerm if motorMix range is large)
-    float dynCi = 1.0;
-    if (pidRuntime.itermWindupPointInv > 1.0f) {
-        dynCi = constrainf((1.0f - getMotorMixRange()) * pidRuntime.itermWindupPointInv, 0.0f, 1.0f);
-    }
-
     // Precalculate gyro delta for D-term here, this allows loop unrolling
     float gyroRateDterm[XYZ_AXIS_COUNT];
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1119,9 +1113,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].P = pidRuntime.ptermYawLowpassApplyFn((filter_t *) &pidRuntime.ptermYawLowpass, pidData[axis].P);
         }
 
-
         // -----calculate I component
         float Ki = pidRuntime.pidCoefficient[axis].Ki;
+        float itermLimit = pidRuntime.itermLimit; // windup fraction of pidSumLimit
+
 #ifdef USE_LAUNCH_CONTROL
         // if launch control is active override the iterm gains and apply iterm windup protection to all axes
         if (launchControlActive) {
@@ -1129,13 +1124,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         } else
 #endif
         {
+            // yaw iTerm has it's own limit based on pidSumLimitYaw
             if (axis == FD_YAW) {
+                itermLimit = pidRuntime.itermLimitYaw; // windup fraction of pidSumLimitYaw
+                // note that this is a stronger limit than previously
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
             }
         }
 
-        float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
-
+        float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate;
 #ifdef USE_WING
         if (pidProfile->spa_mode[axis] != SPA_MODE_OFF) {
             // slowing down I-term change, or even making it zero if setpoint is high enough
@@ -1143,7 +1140,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // USE_WING
 
-        pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
+        pidData[axis].I = constrainf(previousIterm + iTermChange, -itermLimit, itermLimit);
 
         // -----calculate D component
 

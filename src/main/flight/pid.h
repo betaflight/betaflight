@@ -173,9 +173,9 @@ typedef struct pidProfile_s {
     pidf_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_lpf1_type;                // Filter type for dterm lowpass 1
-    uint8_t itermWindupPointPercent;        // iterm windup threshold, percent motor saturation
-    uint16_t pidSumLimit;
-    uint16_t pidSumLimitYaw;
+    uint8_t itermWindup;                    // iterm windup threshold, percentage of pidSumLimit within which to limit iTerm
+    uint16_t pidSumLimit;                   // pidSum limit value for pitch and roll
+    uint16_t pidSumLimitYaw;                // pidSum limit value for yaw
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t angle_limit;                    // Max angle in degrees in Angle mode
 
@@ -361,7 +361,6 @@ typedef struct pidRuntime_s {
     float horizonLimitDegreesInv;
     float horizonIgnoreSticks;
     float maxVelocity[XYZ_AXIS_COUNT];
-    float itermWindupPointInv;
     bool inCrashRecoveryMode;
     timeUs_t crashDetectedAtUs;
     timeDelta_t crashTimeLimitUs;
@@ -373,6 +372,7 @@ typedef struct pidRuntime_s {
     float crashSetpointThreshold;
     float crashLimitYaw;
     float itermLimit;
+    float itermLimitYaw;
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
