@@ -133,7 +133,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .yaw_lowpass_hz = 100,
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
-        .itermWindupPointPercent = 85,
+        .itermWindupPointPercent = 30, // now used for 'leaky iTerm' on yaw, temporarily, for testing
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .angle_limit = 60,
         .feedforward_transition = 0,
@@ -994,12 +994,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // amount of antigravity added relative to user's pitch iTerm coefficient
     // used later to increase iTerm
 
-    // iTerm windup (attenuation of iTerm if motorMix range is large)
-    float dynCi = 1.0;
-    if (pidRuntime.itermWindupPointInv > 1.0f) {
-        dynCi = constrainf((1.0f - getMotorMixRange()) * pidRuntime.itermWindupPointInv, 0.0f, 1.0f);
-    }
-
     // Precalculate gyro delta for D-term here, this allows loop unrolling
     float gyroRateDterm[XYZ_AXIS_COUNT];
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1134,6 +1128,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate I component
         float Ki = pidRuntime.pidCoefficient[axis].Ki;
+        float itermLimit = pidRuntime.itermLimit;
+        float iTermLeak = 0.0f;
+
 #ifdef USE_LAUNCH_CONTROL
         // if launch control is active override the iterm gains and apply iterm windup protection to all axes
         if (launchControlActive) {
@@ -1141,7 +1138,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         } else
 #endif
         {
+
+            // *** EzLanding error limiter on error for the input to the ITerm accumulator ***
+            //  - unfortunately iTermErrorRate is different from errorRate used by P, otherwise this is wasteful
+            if (applyEzLandingLimiting) {
+                itermErrorRate = constrainf(itermErrorRate, -ezLandingLimit, ezLandingLimit);
+            }
+
+            // handle yaw iTerm limit differently from other axes, and make yaw iTerm leaky
             if (axis == FD_YAW) {
+                iTermLeak = pidData[axis].I * pidRuntime.itermLeakRateYaw;
+                itermLimit = pidRuntime.pidSumLimitYaw;
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
             }
         }
@@ -1161,7 +1168,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // #ifdef USE_WING
 
-        pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
+        pidData[axis].I = constrainf(previousIterm + iTermChange - iTermLeak, -itermLimit, itermLimit);
 
         // -----calculate D component
 

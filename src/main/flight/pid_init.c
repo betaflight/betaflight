@@ -306,11 +306,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * pidRuntime.dT;
-    pidRuntime.itermWindupPointInv = 1.0f;
-    if (pidProfile->itermWindupPointPercent < 100) {
-        const float itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
-        pidRuntime.itermWindupPointInv = 1.0f / (1.0f - itermWindupPoint);
-    }
     pidRuntime.antiGravityGain = pidProfile->anti_gravity_gain;
     pidRuntime.crashTimeLimitUs = pidProfile->crash_time * 1000;
     pidRuntime.crashTimeDelayUs = pidProfile->crash_delay * 1000;
@@ -320,7 +315,14 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold;
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
-    pidRuntime.itermLimit = pidProfile->itermLimit;
+
+    // itermLimit cannot be set higher than 80% of pidSumLimit
+    pidRuntime.itermLimit = fminf((float)pidProfile->itermLimit, 0.8f * pidProfile->pidSumLimit);
+    // used to limit iTerm for yaw to not exceed pidSumLimitYaw
+    pidRuntime.pidSumLimitYaw = pidProfile->pidSumLimitYaw;
+    // precalculate iTerm leak rate factor for yaw
+    pidRuntime.itermLeakRateYaw = pidRuntime.dT * pidProfile->itermWindupPointPercent / 10.0f; // used for iTerm leak on yaw
+
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
