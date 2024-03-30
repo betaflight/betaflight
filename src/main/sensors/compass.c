@@ -55,6 +55,8 @@
 
 #include "fc/runtime_config.h"
 
+#include "io/beeper.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -408,9 +410,9 @@ bool compassIsHealthy(void)
 void compassStartCalibration(void)
 {
     // starting now, the user has CALIBRATION_WAIT_US to start moving the quad and trigger the actual calibration routine
+    beeper(BEEPER_ACC_CALIBRATION); // Beep to alert user that calibration request was received
     magCalEndTimeUs = micros() + CALIBRATION_WAIT_US;
     didMovementStart = false;
-
     // reset / update the compass bias estimator for faster convergence
     compassBiasEstimatorUpdate(&compassBiasEstimator, LAMBDA_MIN, P0);
 }
@@ -470,6 +472,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             // check if movement has started
             if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
                 // zero cal values
+                beeper(BEEPER_READY_BEEP); // Beep to alert user to start moving the quad, since we are recording values
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                     magZero->raw[axis] = 0;
                 }
@@ -491,8 +494,10 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                     magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
                 }
+                beeper(BEEPER_GYRO_CALIBRATED); // success beep
                 saveConfigAndNotify();
-
+            } else {
+                beeper(BEEPER_ACC_CALIBRATION_FAIL); // calibration fail beep
             }
         }
     }
