@@ -791,7 +791,7 @@ static float applyEzLanding(float rateToLimit)
         // if both sticks are inside 20% of the stick threshold, enable auto-disarm on impact
         // will not disarm on gentle landings
         // value should be highe enough to avoid unwanted disarms in the air on throttle chops
-        if (pidRuntime.useEzDisarm && isAirmodeActivated() && ezLandFactor < 0.2) {
+        if (pidRuntime.useEzDisarm && isAirmodeActivated() && ezLandFactor < 0.2f) {
             float accMagnitude = (float) sqrtf(sq(acc.accADC[Z] - acc.dev.acc_1G) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec;
             if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);

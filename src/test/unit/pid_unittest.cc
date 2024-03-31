@@ -73,6 +73,7 @@ extern "C" {
     #include "sensors/gyro.h"
     #include "sensors/acceleration.h"
 
+    acc_t acc;
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
 
@@ -89,6 +90,7 @@ extern "C" {
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
+    bool isFlipOverAfterCrashActive(void) {return false; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
     float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
@@ -161,6 +163,9 @@ void setDefaultTestSettings(void)
     pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
     pidProfile->launchControlGain = 40,
     pidProfile->level_race_mode = false,
+    pidProfile->ez_landing_threshold = 25,
+    pidProfile->ez_landing_limit = 10,
+
 
     gyro.targetLooptime = 8000;
 }
