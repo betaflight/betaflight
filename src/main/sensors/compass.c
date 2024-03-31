@@ -458,51 +458,51 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         alignSensorViaRotation(mag.magADC, magDev.magAlignment);
     }
 
+    // get stored cal/bias values
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
 
-    timeDelta_t magCalTimeRemaining = 0;
-    if (magCalEndTimeUs != 0) {
-        magCalTimeRemaining = cmpTimeUs(magCalEndTimeUs, currentTimeUs);
-        if (magCalTimeRemaining > 0) {
-            // it is assumed that the user has started to move the quad if squared norm of rotational speed vector is greater than GYRO_NORM_SQUARED_MIN
-            float gyroNormSquared = 0.0f;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
-            }
-            // check if movement has started
-            if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
-                // zero cal values
-                beeper(BEEPER_READY_BEEP); // Beep to alert user to start moving the quad, since we are recording values
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    magZero->raw[axis] = 0;
-                }
-                didMovementStart = true;
-                // starting now, the user has CALIBRATION_TIME_US to move the quad in a figure of eight in all directions
-                magCalEndTimeUs = micros() + CALIBRATION_TIME_US;
-            }
-
-            // only start calibration after the user has started to move the quad
-            if (didMovementStart) {
-                LED0_TOGGLE; // LED will flash at task rate while calibrating
-                // ideally we would beep at start and finish, or while calibrating, IDK how to do that
-                compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
-            }
-        } else {
-            magCalEndTimeUs = 0;
-            // only copy the estimated bias and save it to the config if the user has actually triggered the calibration routine
-            if (didMovementStart) {
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
-                }
-                beeper(BEEPER_GYRO_CALIBRATED); // success beep
-                saveConfigAndNotify();
-            } else {
-                beeper(BEEPER_ACC_CALIBRATION_FAIL); // calibration fail beep
-            }
+    // ** perform calibration, if initiated by switch or Configurator button **
+    const bool magCalInProgress = cmpTimeUs(magCalEndTimeUs, currentTimeUs) > 0;
+    if (magCalInProgress) {
+        // compare squared norm of rotation rate to GYRO_NORM_SQUARED_MIN
+        float gyroNormSquared = 0.0f;
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
         }
+        // movement has started
+        if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
+            beeper(BEEPER_READY_BEEP); // Beep to alert user to start moving the quad (does this work?)
+            // zero the old cal/bias values
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                magZero->raw[axis] = 0;
+            }
+            didMovementStart = true;
+            // the user has CALIBRATION_TIME_US from now to move the quad in all directions
+            magCalEndTimeUs = micros() + CALIBRATION_TIME_US;
+        }
+        // start acquiring mag data and computing new cal factors
+        if (didMovementStart) {
+            // LED will flash at task rate while calibrating, looks like 'ON' all the time.
+            LED0_TOGGLE;
+            compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
+        }
+    } else {
+        // success; save the cal/bias values only if data collection occurred
+        // we accept whatever cal/bias values are available at the end of the movement period
+        if (didMovementStart) {
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
+            }
+            beeper(BEEPER_GYRO_CALIBRATED); // re-purpose gyro cal success beep
+            saveConfigAndNotify();
+        } else {
+            beeper(BEEPER_ACC_CALIBRATION_FAIL); // calibration fail beep
+        }
+        // indicate that calibration process is complete, whether successful or not, by setting endTime to zero
+        magCalEndTimeUs = 0;
     }
 
-    // remove bias
+    // remove saved cal/bias; this is zero while calibrating
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC[axis] -= magZero->raw[axis];
     }
@@ -514,14 +514,18 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             // DEBUG 4-6: estimated magnetometer bias, increases above zero when calibration starts
             DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));
         }
-        // DEBUG 3: norm / length of magADC, ideally the norm stays constant independent of the orientation of the quad
+        // DEBUG 3: absolute vector length of magADC, should stay constant independent of the orientation of the quad
         DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(sqrtf(sq(mag.magADC[X]) + sq(mag.magADC[Y]) + sq(mag.magADC[Z]))));
-        // map adaptive forgetting factor lambda from (lambda_min, 1.0f) -> (0, 2000)
-        // DEBUG 7: adaptive forgetting factor lambda, after the transient phase it should converge to 2000
-        float mapLambdaGain = 1.0f / (1.0f - compassBiasEstimator.lambda_min + 1.0e-6f) * 2.0e3f;
-        // force to zero to signal point of  completion of calibration run in sensors tab
-        mapLambdaGain = (magCalTimeRemaining > 0) ? (compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain : 0.0f;
-        DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf(mapLambdaGain));
+        // DEBUG 7: adaptive forgetting factor lambda, only while analysing cal data
+        // after the transient phase it should converge to 2000
+        // force dsiplayed lambda to zero unless calibrating, to indicate start and finish in Sensors tab
+        float displayLambdaGain = 0.0f;
+        if (magCalInProgress && didMovementStart) {
+            // map adaptive forgetting factor lambda from (lambda_min, 1.0f) -> (0, 2000)
+            const float mapLambdaGain = 1.0f / (1.0f - compassBiasEstimator.lambda_min + 1.0e-6f) * 2.0e3f;
+            displayLambdaGain = (compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain;
+        }
+        DEBUG_SET(DEBUG_MAG_CALIB, 7, lrintf(displayLambdaGain));
     }
 
     if (debugMode == DEBUG_MAG_TASK_RATE) {
