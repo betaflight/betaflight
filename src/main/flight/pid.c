@@ -786,7 +786,7 @@ static float applyEzLanding(float rateToLimit)
 {
     float ezLandFactor = 1.0f;
 //    const float maxDeflectionAbs = fmaxf(getMaxRcDeflectionAbs(), mixerGetRcThrottle());
-    if (maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
+    if (!isFlipOverAfterCrashActive() && maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
         ezLandFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
         // if both sticks are inside 20% of the stick threshold, enable auto-disarm on impact
         // will not disarm on gentle landings
