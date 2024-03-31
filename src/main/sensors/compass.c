@@ -462,15 +462,16 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
 
     // ** perform calibration, if initiated by switch or Configurator button **
-    const bool magCalInProgress = cmpTimeUs(magCalProcessEndTimeUs, currentTimeUs) > 0;
-    if (magCalInProgress) {
+    const bool magCalProcessActive = cmpTimeUs(magCalProcessEndTimeUs, currentTimeUs) > 0;
+    const bool magCalProcessFinalised = magCalProcessEndTimeUs == 0;
+    if (magCalProcessActive) {
         // compare squared norm of rotation rate to GYRO_NORM_SQUARED_MIN
         float gyroNormSquared = 0.0f;
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
         }
-        // movement has started
         if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
+            // movement has started
             beeper(BEEPER_READY_BEEP); // Beep to alert user to start moving the quad (does this work?)
             // zero the old cal/bias values
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -487,19 +488,24 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
         }
     } else {
-        // success; save the cal/bias values only if data collection occurred
-        // we accept whatever cal/bias values are available at the end of the movement period
-        if (didMovementStart) {
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
+        // this runs every time the mag task runs....
+        // if magCalProcessEndTimeUs !=0, we need to finalise the calibration process, otherwise do nothing
+        if (!magCalProcessFinalised) {
+            // if movement started, accept whatever cal/bias values are available at the end of the movement period
+            if (didMovementStart) {
+                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                    magZero->raw[axis] = lrintf(compassBiasEstimator.b[axis]);
+                }
+                beeper(BEEPER_GYRO_CALIBRATED); // re-purpose gyro cal success beep
+                saveConfigAndNotify();
+            } else {
+                // there was no movement, and no new calibration values were saved
+                beeper(BEEPER_ACC_CALIBRATION_FAIL); // calibration fail beep
             }
-            beeper(BEEPER_GYRO_CALIBRATED); // re-purpose gyro cal success beep
-            saveConfigAndNotify();
-        } else {
-            beeper(BEEPER_ACC_CALIBRATION_FAIL); // calibration fail beep
+            // didMovementStart remains true until next run 
+            // signal that the calibration process is finalised, whether successful or not, by setting end time to zero
+            magCalProcessEndTimeUs = 0;
         }
-        // indicate that calibration process is complete, whether successful or not, by setting endTime to zero
-        magCalProcessEndTimeUs = 0;
     }
 
     // remove saved cal/bias; this is zero while calibrating
@@ -518,9 +524,9 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(sqrtf(sq(mag.magADC[X]) + sq(mag.magADC[Y]) + sq(mag.magADC[Z]))));
         // DEBUG 7: adaptive forgetting factor lambda, only while analysing cal data
         // after the transient phase it should converge to 2000
-        // force dsiplayed lambda to zero unless calibrating, to indicate start and finish in Sensors tab
+        // set dsiplayed lambda to zero unless calibrating, to indicate start and finish in Sensors tab
         float displayLambdaGain = 0.0f;
-        if (magCalInProgress && didMovementStart) {
+        if (magCalProcessActive && didMovementStart) {
             // map adaptive forgetting factor lambda from (lambda_min, 1.0f) -> (0, 2000)
             const float mapLambdaGain = 1.0f / (1.0f - compassBiasEstimator.lambda_min + 1.0e-6f) * 2.0e3f;
             displayLambdaGain = (compassBiasEstimator.lambda - compassBiasEstimator.lambda_min) * mapLambdaGain;
