@@ -679,6 +679,8 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             gpsHeadingInitialized = true;
         }
     }
+#else
+    UNUSED(useMag);
 #endif
 
 
