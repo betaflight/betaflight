@@ -647,7 +647,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
 
 #if defined(USE_MAG) && defined(USE_GPS_RESCUE)
-    // fill in GPS rescue debug value (from code refactoring)
+    // fill in GPS rescue debug value (leftover from code refactoring)
     imuDebug_GPS_RESCUE_HEADING();
 #endif
 
