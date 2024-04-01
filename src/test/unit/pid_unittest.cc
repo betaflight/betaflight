@@ -292,7 +292,7 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_NEAR(-12.81, pidData[FD_ROLL].P, calculateTolerance(-12.81));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-0.78, pidData[FD_ROLL].I, calculateTolerance(-0.78));
+    EXPECT_NEAR(-0.16, pidData[FD_ROLL].I, calculateTolerance(-0.16)); // iTerm accumulates at 20% of the others
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_NEAR(-19.8, pidData[FD_ROLL].D, calculateTolerance(-19.8));

@@ -229,7 +229,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_low_always = 0,
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
-        .ez_landing_disarm_threshold = 80,
+        .ez_landing_disarm_threshold = 100,
         .tpa_delay_ms = 0,
         .tpa_gravity_thr0 = 0,
         .tpa_gravity_thr100 = 0,
@@ -789,17 +789,14 @@ static float applyEzLanding(float rateToLimit, float multiplier)
         // if both sticks are inside 20% of the stick threshold, enable auto-disarm on impact
         // will not disarm on gentle landings
         // value should be highe enough to avoid unwanted disarms in the air on throttle chops
-        bool maybeDisarm = false;
-        float accMagnitude = acc.dev.acc_1G_rec * (sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) - acc.dev.acc_1G);
+        float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
         if (pidRuntime.useEzDisarm && isAirmodeActivated() && maxDeflectionAbs < pidRuntime.ezLandingThreshold * 0.5f) {
-            maybeDisarm = true;
             if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
                 disarm(DISARM_REASON_LANDING);
             }
         }
         DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
-        DEBUG_SET(DEBUG_EZLANDING, 5, maybeDisarm);
 
         ezLandFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
         const float rateLimit = fabsf(ezLandFactor * rateToLimit);
