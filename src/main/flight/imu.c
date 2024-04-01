@@ -550,7 +550,7 @@ STATIC_UNIT_TESTED float imuCalcMagErr(void)
         return (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * vector2Norm(&mag2d_ef);
     } else {
         // invalid magnetometer data
-        return 0;
+        return 0.0f;
     }
 }
 
