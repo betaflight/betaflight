@@ -228,8 +228,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_low_breakpoint = 1050,
         .tpa_low_always = 0,
         .ez_landing_threshold = 25,
-        .ez_landing_limit = 25,
-        .ez_landing_disarm_threshold = 50,
+        .ez_landing_limit = 15,
+        .ez_landing_disarm_threshold = 80,
         .tpa_delay_ms = 0,
         .tpa_gravity_thr0 = 0,
         .tpa_gravity_thr100 = 0,
@@ -782,25 +782,28 @@ float sendMaxDeflectionAbs(float maxRcDeflectionAbs)
     return maxDeflectionAbs;
 }
 
-static float applyEzLanding(float rateToLimit)
+static float applyEzLanding(float rateToLimit, float multiplier)
 {
     float ezLandFactor = 1.0f;
-//    const float maxDeflectionAbs = fmaxf(getMaxRcDeflectionAbs(), mixerGetRcThrottle());
     if (!isFlipOverAfterCrashActive() && maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
-        ezLandFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
         // if both sticks are inside 20% of the stick threshold, enable auto-disarm on impact
         // will not disarm on gentle landings
         // value should be highe enough to avoid unwanted disarms in the air on throttle chops
-        if (pidRuntime.useEzDisarm && isAirmodeActivated() && ezLandFactor < 0.2f) {
-//            float accMagnitude = (float) sqrtf(sq(acc.accADC[Z] - acc.dev.acc_1G) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec;
-            float accMagnitude = (acc.accADC[Z] + acc.accADC[X] + acc.accADC[Y] - acc.dev.acc_1G) * acc.dev.acc_1G_rec;
+        bool maybeDisarm = false;
+        float accMagnitude = acc.dev.acc_1G_rec * (sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) - acc.dev.acc_1G);
+        if (pidRuntime.useEzDisarm && isAirmodeActivated() && maxDeflectionAbs < pidRuntime.ezLandingThreshold * 0.5f) {
+            maybeDisarm = true;
             if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
                 disarm(DISARM_REASON_LANDING);
             }
         }
+        DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
+        DEBUG_SET(DEBUG_EZLANDING, 5, maybeDisarm);
+
+        ezLandFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
         const float rateLimit = fabsf(ezLandFactor * rateToLimit);
-        rateToLimit = constrainf(rateToLimit, -rateLimit, rateLimit);
+        rateToLimit = multiplier * constrainf(rateToLimit, -rateLimit, rateLimit);
     }
     DEBUG_SET(DEBUG_EZLANDING, 0, ezLandFactor * 100);
     DEBUG_SET(DEBUG_EZLANDING, 1, maxDeflectionAbs * 100);
@@ -1099,7 +1102,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             DEBUG_SET(DEBUG_EZLANDING, 2, errorRate); // before attenuation
         }
         if (pidRuntime.useEzLanding) {
-            errorRate = applyEzLanding(errorRate);
+            errorRate = applyEzLanding(errorRate, 1.0f);
         }
         if (axis == FD_ROLL) {
             DEBUG_SET(DEBUG_EZLANDING, 3, errorRate); // after attenuation
@@ -1138,7 +1141,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // *** EzLanding error limiter on error for the input to the ITerm accumulator ***
         //  - unfortunately iTermErrorRate is different from errorRate used by P, otherwise this is wasteful
         if (pidRuntime.useEzLanding) {
-            itermErrorRate = applyEzLanding(itermErrorRate);
+            itermErrorRate = applyEzLanding(itermErrorRate, 0.2f);
         }
 
         const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
@@ -1209,7 +1212,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
             // *** EzLanding limiter on DTerm ***
             if (pidRuntime.useEzLanding) {
-                preTpaD = applyEzLanding(preTpaD);
+                preTpaD = applyEzLanding(preTpaD, 1.0f);
             }
 
             pidData[axis].D = preTpaD * pidRuntime.tpaFactor;
