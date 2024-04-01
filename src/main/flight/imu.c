@@ -538,7 +538,7 @@ STATIC_UNIT_TESTED float imuCalcMagErr(void)
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles
-        fpVector2_t mag2d_ef = {.x = mag_ef.x, .y=mag_ef.y};
+        fpVector2_t mag2d_ef = {.x = mag_ef.x, .y = mag_ef.y};
         // mag2d_ef - measured mag field vector in EF (2D ground plane projection)
         // north_ef - reference mag field vector heading due North in EF (2D ground plane projection).
         //              Adjusted for magnetic declination (in imuConfigure)
