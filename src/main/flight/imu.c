@@ -674,8 +674,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
             // Reset the reference and reinitialize quaternion factors when GPS groundspeed > GPS_COG_MIN_GROUNDSPEED
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-            // groundspeedGain will be zero before and during the initialisation run
-            // Only runs once; not really sure this needs to run at all?
             gpsHeadingInitialized = true;
         }
     }
