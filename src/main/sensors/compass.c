@@ -81,7 +81,7 @@
                                                              // a relatively high value so that the calibration routine is not triggered too early
 #define CALIBRATION_TIME_US (30 * 1000 * 1000)               // duration of the calibration phase in us
 
-static timeUs_t magCalProcessEndTimeUs = 0;
+static timeUs_t magCalEndTime = 0;
 static bool didMovementStart = false;
 static bool magCalProcessActive = false;
 
@@ -413,7 +413,7 @@ void compassStartCalibration(void)
     // starting now, the user has CALIBRATION_WAIT_US to start moving the quad and trigger the actual calibration routine
     beeper(BEEPER_ACC_CALIBRATION); // Beep to alert user that calibration request was received
     magCalProcessActive = true;
-    magCalProcessEndTimeUs = micros() + CALIBRATION_WAIT_US;
+    magCalEndTime = micros() + CALIBRATION_WAIT_US;
     didMovementStart = false;
     // reset / update the compass bias estimator for faster convergence
     compassBiasEstimatorUpdate(&compassBiasEstimator, LAMBDA_MIN, P0);
@@ -465,7 +465,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
 
     // ** perform calibration, if initiated by switch or Configurator button **
     if (magCalProcessActive) {
-        if (cmpTimeUs(magCalProcessEndTimeUs, currentTimeUs) > 0) {
+        if (cmpTimeUs(magCalEndTime, currentTimeUs) > 0) {
                 // compare squared norm of rotation rate to GYRO_NORM_SQUARED_MIN
             float gyroNormSquared = 0.0f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -480,7 +480,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
                 }
                 didMovementStart = true;
                 // the user has CALIBRATION_TIME_US from now to move the quad in all directions
-                magCalProcessEndTimeUs = micros() + CALIBRATION_TIME_US;
+                magCalEndTime = micros() + CALIBRATION_TIME_US;
             }
             // start acquiring mag data and computing new cal factors
             if (didMovementStart) {
