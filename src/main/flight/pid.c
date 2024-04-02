@@ -782,22 +782,28 @@ float sendMaxDeflectionAbs(float maxRcDeflectionAbs)
     return maxDeflectionAbs;
 }
 
+static void disarmOnImpact(const int axis)
+{
+    // if both sticks are inside 20% of the stick threshold, enable auto-disarm on impact
+    // will not disarm on gentle landings
+    // value should be highe enough to avoid unwanted disarms in the air on throttle chops
+    // note that unlike GPS code, this just compares one axis at a time, to reduce CPU load
+    // for the Z axis, 1G gets added while 'flat', but that won't matter much given we are looking around 8G mostly
+    float accMagnitude = fabsf(acc.accADC[axis]) * acc.dev.acc_1G_rec;
+    // *** annoying to need to normalise accADC here, should normalise acc.accADC once, in accelerometer.c, not everywhere we use it
+    if (isAirmodeActivated() && maxDeflectionAbs < pidRuntime.ezLandingThreshold * 0.5f) {
+        if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            disarm(DISARM_REASON_LANDING);
+            }
+    }
+    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
+}
+
 static float applyEzLanding(float rateToLimit, float multiplier)
 {
     float ezLandFactor = 1.0f;
     if (!isFlipOverAfterCrashActive() && maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
-        // if both sticks are inside 20% of the stick threshold, enable auto-disarm on impact
-        // will not disarm on gentle landings
-        // value should be highe enough to avoid unwanted disarms in the air on throttle chops
-        float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
-        if (pidRuntime.useEzDisarm && isAirmodeActivated() && maxDeflectionAbs < pidRuntime.ezLandingThreshold * 0.5f) {
-            if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
-                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-                disarm(DISARM_REASON_LANDING);
-            }
-        }
-        DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
-
         ezLandFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
         const float rateLimit = fabsf(ezLandFactor * rateToLimit);
         rateToLimit = multiplier * constrainf(rateToLimit, -rateLimit, rateLimit);
@@ -1099,6 +1105,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             DEBUG_SET(DEBUG_EZLANDING, 2, errorRate); // before attenuation
         }
         if (pidRuntime.useEzLanding) {
+            if (pidRuntime.useEzDisarm) {
+                disarmOnImpact(axis);
+            }
             errorRate = applyEzLanding(errorRate, 1.0f);
         }
         if (axis == FD_ROLL) {
@@ -1138,6 +1147,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // *** EzLanding error limiter on error for the input to the ITerm accumulator ***
         //  - unfortunately iTermErrorRate is different from errorRate used by P, otherwise this is wasteful
         if (pidRuntime.useEzLanding) {
+            if (pidRuntime.useEzDisarm) {
+                disarmOnImpact(axis);
+            }
             itermErrorRate = applyEzLanding(itermErrorRate, 0.2f);
         }
 
@@ -1209,6 +1221,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
             // *** EzLanding limiter on DTerm ***
             if (pidRuntime.useEzLanding) {
+                if (pidRuntime.useEzDisarm) {
+                    disarmOnImpact(axis);
+                }
                 preTpaD = applyEzLanding(preTpaD, 1.0f);
             }
 
