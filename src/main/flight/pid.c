@@ -229,7 +229,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_low_always = 0,
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
-        .ez_landing_disarm_threshold = 100,
+        .ez_landing_disarm_threshold = 0,
         .tpa_delay_ms = 0,
         .tpa_gravity_thr0 = 0,
         .tpa_gravity_thr100 = 0,
@@ -776,15 +776,32 @@ float pidGetAirmodeThrottleOffset(void)
 
 
 
+// ezLanding stuff
+static float ezLandingFactor = 1.0f;
+static float maxDeflectionAbs = 1.0f;
 
-// runs when new Rx data is received in rc.c, updatesmaxDeflectionAbs, so we don't do this every PID loop
-static float maxDeflectionAbs = 0.0f;
-float sendMaxDeflectionAbs(float maxRcDeflectionAbs)
+// EzLanding factors are updated only when new Rx data is received in rc.c
+// this will cause steps in PID as the limiting value changes
+
+float calcEzLandingFactor(float maxRcDeflectionAbs)
 {
     maxDeflectionAbs = fmaxf(maxRcDeflectionAbs, mixerGetRcThrottle());
-    return maxDeflectionAbs;
+    ezLandingFactor = 1.0f;
+    if (pidRuntime.useEzLanding && !isFlipOverAfterCrashActive() && maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
+        ezLandingFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
+    }
+    DEBUG_SET(DEBUG_EZLANDING, 0, ezLandingFactor * 100);
     DEBUG_SET(DEBUG_EZLANDING, 1, maxDeflectionAbs * 100);
+    return ezLandingFactor;
+}
 
+static float applyEzLanding(float rateToLimit, float multiplier)
+{
+    if (ezLandingFactor < 1.0f) {
+        const float rateLimit = fabsf(ezLandingFactor * rateToLimit);
+        rateToLimit = multiplier * constrainf(rateToLimit, -rateLimit, rateLimit);
+    }
+    return rateToLimit;
 }
 
 static void disarmOnImpact(void)
@@ -801,24 +818,6 @@ static void disarmOnImpact(void)
             }
     }
     DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
-}
-
-static float ezLandingFactor = 1.0f;
-static float calcEzLandingFactor(void)
-{
-    ezLandingFactor = 1.0f;
-    if (!isFlipOverAfterCrashActive() && maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
-        ezLandingFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
-    }
-    DEBUG_SET(DEBUG_EZLANDING, 0, ezLandingFactor * 100);
-    return ezLandingFactor;
-}
-
-static float applyEzLanding(float rateToLimit, float multiplier)
-{
-    const float rateLimit = fabsf(ezLandingFactor * rateToLimit);
-    rateToLimit = multiplier * constrainf(rateToLimit, -rateLimit, rateLimit);
-    return rateToLimit;
 }
 
 
@@ -1023,11 +1022,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
     // do the non-axis dependent calculations once
-    if (pidRuntime.useEzLanding) {
-        calcEzLandingFactor();
-        if (pidRuntime.useEzDisarm) {
-            disarmOnImpact();
-        }
+    if (pidRuntime.useEzLanding && pidRuntime.useEzDisarm) {
+        disarmOnImpact();
     }
 
     // ----------PID controller----------
