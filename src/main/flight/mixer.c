@@ -100,7 +100,7 @@ void stopMotors(void)
 }
 
 static FAST_DATA_ZERO_INIT float throttle = 0;
-static FAST_DATA_ZERO_INIT float basicThrottle = 0;
+static float basicThrottle = 0;
 static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
 static FAST_DATA_ZERO_INIT float motorOutputMin;
 static FAST_DATA_ZERO_INIT float motorRangeMin;
