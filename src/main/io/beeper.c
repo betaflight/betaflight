@@ -77,7 +77,7 @@
 #define BEEPER_PWM_HZ   0
 #endif
 
-#define MAX_MULTI_BEEPS 64   //size limit for 'beep_multiBeeps[]'
+#define MAX_MULTI_BEEPS 32   // number of beeps (including pause) for 'beep_multiBeeps[]'
 
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
@@ -173,7 +173,7 @@ static const uint8_t beep_rcSmoothingInitFail[] = {
 };
 
 // array used for variable # of beeps (reporting GPS sat count, etc)
-static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
+static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS * 2 + 1];
 
 #define BEEPER_CONFIRMATION_BEEP_DURATION 2
 #define BEEPER_CONFIRMATION_BEEP_GAP_DURATION 20
@@ -294,23 +294,35 @@ void beeperSilence(void)
     currentBeeperEntry = NULL;
 }
 
+// helper function, add count beeps starting at pos to beep_multiBeeps
+// `off` is used as interval between beeps
+// if offLast is nonzero, it is used after sequence
+// if offLast is zero, no delay is appended after last beep (and BEEPER_COMMAND_STOP must follow)
+// returns new pos
+// will always keep enough space for stop-/repeat command
+static unsigned beep_multiBeepsAdd(unsigned pos, int count, uint8_t on, uint8_t off, uint8_t offLast)
+{
+    while (pos < MAX_MULTI_BEEPS * 2 - 1 && count > 0) {   // make sure both entries fit
+        beep_multiBeeps[pos++] = on;
+        if (count > 1 || offLast) {
+            beep_multiBeeps[pos++] = count > 1 ? off : offLast;
+        }
+        count--;
+    }
+    return pos;
+}
+
 /*
  * Emits the given number of 20ms beeps (with 200ms spacing).
  * This function returns immediately (does not block).
  */
 void beeperConfirmationBeeps(uint8_t beepCount)
 {
-    uint32_t i = 0;
-    uint32_t cLimit = beepCount * 2;
-    if (cLimit > MAX_MULTI_BEEPS) {
-        cLimit = MAX_MULTI_BEEPS;
-    }
-    do {
-        beep_multiBeeps[i++] = BEEPER_CONFIRMATION_BEEP_DURATION;
-        beep_multiBeeps[i++] = BEEPER_CONFIRMATION_BEEP_GAP_DURATION;
-    } while (i < cLimit);
+    unsigned i = 0;
+    i = beep_multiBeepsAdd(i, beepCount,
+                           BEEPER_CONFIRMATION_BEEP_DURATION,
+                           BEEPER_CONFIRMATION_BEEP_GAP_DURATION, BEEPER_CONFIRMATION_BEEP_GAP_DURATION);
     beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
-
     beeper(BEEPER_MULTI_BEEPS);
 }
 
@@ -321,32 +333,15 @@ void beeperWarningBeeps(uint8_t beepCount)
 
     unsigned i = 0;
 
-    unsigned count = 0;
-    while (i < MAX_MULTI_BEEPS - 1 && count < WARNING_FLASH_COUNT) {
-        beep_multiBeeps[i++] = WARNING_FLASH_DURATION_MS / 10;
-        if (++count < WARNING_FLASH_COUNT) {
-            beep_multiBeeps[i++] = WARNING_FLASH_DURATION_MS / 10;
-        } else {
-            beep_multiBeeps[i++] = WARNING_PAUSE_DURATION_MS / 10;
-        }
-    }
-
-    while (i < MAX_MULTI_BEEPS - 1 && longBeepCount > 0) {
-        beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
-        if (--longBeepCount > 0) {
-            beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
-        } else {
-            beep_multiBeeps[i++] = WARNING_PAUSE_DURATION_MS / 10;
-        }
-    }
-
-    while (i < MAX_MULTI_BEEPS - 1 && shortBeepCount > 0) {
-        beep_multiBeeps[i++] = WARNING_CODE_DURATION_SHORT_MS / 10;
-        if (--shortBeepCount > 0) {
-            beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
-        }
-    }
-
+    i = beep_multiBeepsAdd(i, WARNING_FLASH_COUNT - 1,
+                           WARNING_FLASH_DURATION_MS / 10,
+                           WARNING_FLASH_DURATION_MS / 10, WARNING_PAUSE_DURATION_MS / 10);
+    i = beep_multiBeepsAdd(i, longBeepCount,
+                           WARNING_CODE_DURATION_LONG_MS / 10,
+                           WARNING_CODE_DURATION_LONG_MS / 10,  WARNING_PAUSE_DURATION_MS / 10);
+    i = beep_multiBeepsAdd(i, shortBeepCount,
+                           WARNING_CODE_DURATION_SHORT_MS / 10,
+                           WARNING_CODE_DURATION_LONG_MS / 10, 0);
     beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
     beeper(BEEPER_MULTI_BEEPS);
@@ -358,16 +353,13 @@ static void beeperGpsStatus(void)
     if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_GPS_STATUS))) {
         // if GPS 3D fix and at least the minimum number available, then beep out number of satellites
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
-            uint8_t i = 0;
-            do {
-                beep_multiBeeps[i++] = 5;
-                beep_multiBeeps[i++] = 10;
-            } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
-
-            beep_multiBeeps[i - 1] = 50; // extend last pause
+            unsigned i = 0;
+            i = beep_multiBeepsAdd(i, gpsSol.numSat,
+                                   5,
+                                   10, 50);
             beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
-            beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
+            beeper(BEEPER_MULTI_BEEPS);
         }
     }
 }
