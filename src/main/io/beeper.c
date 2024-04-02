@@ -193,8 +193,6 @@ static uint32_t beeperNextToggleTime = 0;
 // Time of last arming beep in microseconds (for blackbox)
 static uint32_t armingBeepTimeMicros = 0;
 
-static void beeperProcessCommand(timeUs_t currentTimeUs);
-
 typedef struct beeperTableEntry_s {
     uint8_t mode;
     uint8_t priority; // 0 = Highest
@@ -376,6 +374,49 @@ static void beeperGpsStatus(void)
 #endif
 
 /*
+ * Calculates array position when next to change beeper state is due.
+ */
+enum beeperState_e {
+    BeepOnFirst,
+    BeepOn,
+    BeepOff,
+    BeepDone,
+    BeepError,
+};
+
+static enum beeperState_e beeperSequenceAdvance(timeUs_t currentTimeUs)
+{
+    unsigned origPos = beeperPos;
+    bool wasRepeat = false;
+    while (true) {  // evaluate commands until return statement
+        switch (currentBeeperEntry->sequence[beeperPos]) {
+        case BEEPER_COMMAND_REPEAT:
+            if (wasRepeat) {     // prevent infinite loop on badly formed beep sequence
+                return BeepError;
+            }
+            wasRepeat = true;
+            beeperPos = 0;
+            continue;
+        case BEEPER_COMMAND_STOP:
+            return BeepDone;
+        case 0:
+            beeperPos++;  // skip 0 in data
+            continue;
+        default:   // Otherwise advance the sequence and calculate next toggle time
+            beeperNextToggleTime = currentTimeUs + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
+            beeperPos++;
+            // on/off is strictly index-based
+            if ((beeperPos % 2) == 1) {
+                return origPos ? BeepOn : BeepOnFirst;
+            } else {
+                return BeepOff;
+            }
+        }
+    }
+}
+
+
+/*
  * Beeper handler function to be called periodically in loop. Updates beeper
  * state via time schedule.
  */
@@ -415,58 +456,45 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (!beeperIsOn) {
-        if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
-                BEEP_ON;
-                beeperIsOn = true;
-            }
-
-            warningLedEnable();
-            warningLedRefresh();
-            // if this was arming beep then mark time (for blackbox)
-            if (
-                beeperPos == 0
-                && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX
-                || currentBeeperEntry->mode == BEEPER_ARMING_GPS_NO_FIX)) {
-                armingBeepTimeMicros = micros();
-            }
+    bool visualBeep = false;
+    switch (beeperSequenceAdvance(currentTimeUs)) {
+    case BeepOnFirst:
+        // if this is arming beep then mark time (for blackbox)
+        // note that ARM sequence must start with beep
+        if (BEEPER_GET_FLAG(currentBeeperEntry->mode) & BEEPER_ARMING_MODES) {
+            armingBeepTimeMicros = micros();
         }
-    } else {
-        if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            BEEP_OFF;
-            beeperIsOn = false;
-
-            warningLedDisable();
-            warningLedRefresh();
+        FALLTHROUGH;
+    case BeepOn:
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
+            BEEP_ON;
+            beeperIsOn = true;
+            visualBeep = true;
         }
+        warningLedEnable();
+        warningLedRefresh();
+        break;
+    case BeepOff:
+        BEEP_OFF;
+        beeperIsOn = false;
+        warningLedDisable();
+        warningLedRefresh();
+        break;
+    case BeepDone:
+    case BeepError:
+        beeperSilence();
+        break;
     }
 
 #if defined(USE_OSD)
-    static bool beeperWasOn = false;
-    if (beeperIsOn && !beeperWasOn) {
+    static bool visualWasOn = false;
+    if (visualBeep && !visualWasOn) {
         osdSetVisualBeeperState(true);
     }
-    beeperWasOn = beeperIsOn;
+    visualWasOn = visualBeep;
+#else
+    UNUSED(visualBeep);
 #endif
-    
-    beeperProcessCommand(currentTimeUs);
-}
-
-/*
- * Calculates array position when next to change beeper state is due.
- */
-static void beeperProcessCommand(timeUs_t currentTimeUs)
-{
-    if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_REPEAT) {
-        beeperPos = 0;
-    } else if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_STOP) {
-        beeperSilence();
-    } else {
-        // Otherwise advance the sequence and calculate next toggle time
-        beeperNextToggleTime = currentTimeUs + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
-        beeperPos++;
-    }
 }
 
 /*
