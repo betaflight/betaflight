@@ -481,8 +481,8 @@ GTEST_DIR = ../../lib/test/gtest
 
 # Use clang/clang++ by default
 
-CC  := clang-12
-CXX := clang++-12
+CC  ?= clang-12
+CXX ?= clang++-12
 ifneq ($(OSFAMILY), linux)
 ifeq ($(shell which $(CC) 2>/dev/null),)
 $(info Falling back to 'clang' on Windows and OSX.)
