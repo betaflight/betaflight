@@ -485,7 +485,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             // start acquiring mag data and computing new cal factors
             if (didMovementStart) {
                 // LED will flash at task rate while calibrating, looks like 'ON' all the time.
-                LED0_TOGGLE;
+                LED0_ON;
                 compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
             }
         } else {
