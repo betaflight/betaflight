@@ -233,7 +233,17 @@ static const beeperTableEntry_t beeperTable[] = {
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
 
-#define BEEPER_TABLE_ENTRY_COUNT (sizeof(beeperTable) / sizeof(beeperTableEntry_t))
+
+// find entry by mode
+static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
+{
+    for (const beeperTableEntry_t* e = beeperTable; e < ARRAYEND(beeperTable); e++) {
+        if (e->mode == mode) {
+            return e;
+        }
+    }
+    return NULL;
+}
 
 /*
  * Called to activate/deactivate beeper, using the given "BEEPER_..." value.
@@ -251,31 +261,18 @@ void beeper(beeperMode_e mode)
         return;
     }
 
-    const beeperTableEntry_t *selectedCandidate = NULL;
-    for (uint32_t i = 0; i < BEEPER_TABLE_ENTRY_COUNT; i++) {
-        const beeperTableEntry_t *candidate = &beeperTable[i];
-        if (candidate->mode != mode) {
-            continue;
-        }
-
-        if (!currentBeeperEntry) {
-            selectedCandidate = candidate;
-            break;
-        }
-
-        if (candidate->priority < currentBeeperEntry->priority) {
-            selectedCandidate = candidate;
-        }
-
-        break;
+    const beeperTableEntry_t *candidate = beeperFind(mode);
+    if (!candidate || candidate->sequence == NULL) {
+        // invalid mode for beeper()
+        return;
     }
-
-    if (!selectedCandidate) {
+    if (currentBeeperEntry && candidate->priority >= currentBeeperEntry->priority) {
+        // already got better beeper
+        // this will also prevent restarting sequence for identical mode
         return;
     }
 
-    currentBeeperEntry = selectedCandidate;
-
+    currentBeeperEntry = candidate;
     beeperPos = 0;
     beeperNextToggleTime = 0;
 }
@@ -498,13 +495,18 @@ uint32_t getArmingBeepTimeMicros(void)
     return armingBeepTimeMicros;
 }
 
+static bool beeperModeIndexValid(int idx)
+{
+    return (idx >= 0 && idx < (int)ARRAYLEN(beeperTable));
+}
+
 /*
  * Returns the 'beeperMode_e' value for the given beeper-table index,
  * or BEEPER_SILENCE if none.
  */
 beeperMode_e beeperModeForTableIndex(int idx)
 {
-    return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ? beeperTable[idx].mode : BEEPER_SILENCE;
+    return beeperModeIndexValid(idx) ? beeperTable[idx].mode : BEEPER_SILENCE;
 }
 
 /*
@@ -524,7 +526,7 @@ uint32_t beeperModeMaskForTableIndex(int idx)
  */
 const char *beeperNameForTableIndex(int idx)
 {
-    return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ? beeperTable[idx].name : NULL;
+    return beeperModeIndexValid(idx) ? beeperTable[idx].name : NULL;
 }
 
 /*
@@ -532,7 +534,7 @@ const char *beeperNameForTableIndex(int idx)
  */
 int beeperTableEntryCount(void)
 {
-    return (int)BEEPER_TABLE_ENTRY_COUNT;
+    return ARRAYLEN(beeperTable);
 }
 
 /*
