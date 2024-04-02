@@ -69,12 +69,12 @@
 #endif
 
 #ifdef USE_BEEPER
-#ifndef BEEPER_PWM_HZ
-#define BEEPER_PWM_HZ   0
-#endif
+# ifndef BEEPER_PWM_HZ
+#  define BEEPER_PWM_HZ   0
+# endif
 #else
-#define BEEPER_PIN      NONE
-#define BEEPER_PWM_HZ   0
+# define BEEPER_PIN      NONE
+# define BEEPER_PWM_HZ   0
 #endif
 
 #define MAX_MULTI_BEEPS 32   // number of beeps (including pause) for 'beep_multiBeeps[]'
@@ -87,6 +87,9 @@ static timeUs_t lastDshotBeaconCommandTimeUs;
 #endif
 
 #ifdef USE_BEEPER
+
+STATIC_ASSERT(BEEPER_ALL - 1 < sizeof(uint32_t) * 8, "BEEPER_GET_FLAG bits exceeded");
+
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -94,6 +97,9 @@ static timeUs_t lastDshotBeaconCommandTimeUs;
  * "Sound" Sequences are made so that 1st, 3rd, 5th.. are the delays how
  * long the beeper is on and 2nd, 4th, 6th.. are the delays how long beeper
  * is off. Delays are in milliseconds/10 (i.e., 5 => 50ms).
+ *
+ * if first value is zero, sequence starts with pause
+ *
  */
 // short fast beep
 static const uint8_t beep_shortBeep[] = {
@@ -186,11 +192,11 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS * 2 + 1];
 
 static bool beeperIsOn = false;
 
-// Place in current sequence
+// Index in current sequence (currentBeeperEntry->sequence[])
 static uint16_t beeperPos = 0;
-// Time when beeper routine must act next time
+// Time when beeper routine must act next time (zero when not waiting)
 static uint32_t beeperNextToggleTime = 0;
-// Time of last arming beep in microseconds (for blackbox)
+// Timestamp of last arming beep in microseconds (for blackbox)
 static uint32_t armingBeepTimeMicros = 0;
 
 typedef struct beeperTableEntry_s {
@@ -218,7 +224,7 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       11, beep_2shortBeeps,     "ACC_CALIBRATION") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  12, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
     { BEEPER_ENTRY(BEEPER_READY_BEEP,            13, beep_readyBeep,       "READY_BEEP") },
-    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME This entry must not be called directly.
     { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         15, beep_disarmRepeatBeep, "DISARM_REPEAT") },
     { BEEPER_ENTRY(BEEPER_ARMED,                 16, beep_armedBeep,       "ARMED") },
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           17, NULL,                 "SYSTEM_INIT") },
@@ -248,15 +254,14 @@ static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
 /*
  * Called to activate/deactivate beeper, using the given "BEEPER_..." value.
  * This function returns immediately (does not block).
+ * TODO - use led for beeps even for BEEPER_USB / BOXBEEPERMUTE
  */
 void beeper(beeperMode_e mode)
 {
-    if (
-        mode == BEEPER_SILENCE || (
-            (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-            && getBatteryState() == BATTERY_NOT_PRESENT
-        ) || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE)
-    ) {
+    if (mode == BEEPER_SILENCE
+        || ((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && getBatteryState() == BATTERY_NOT_PRESENT )
+        || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE) ) {
         beeperSilence();
         return;
     }
@@ -285,11 +290,11 @@ void beeperSilence(void)
     warningLedDisable();
     warningLedRefresh();
 
-    beeperNextToggleTime = 0;
-    beeperPos = 0;
-
     currentBeeperEntry = NULL;
+    beeperPos = 0;
+    beeperNextToggleTime = 0;
 }
+
 
 // helper function, add count beeps starting at pos to beep_multiBeeps
 // `off` is used as interval between beeps
@@ -414,11 +419,13 @@ void beeperUpdate(timeUs_t currentTimeUs)
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
-#ifdef USE_GPS
-    } else if (featureIsEnabled(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
-        beeperGpsStatus();
-#endif
     }
+#ifdef USE_GPS
+    else if (featureIsEnabled(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
+        // Note: this may overwrite current beep_multiBeeps sequence
+        beeperGpsStatus();
+    }
+#endif
 
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
