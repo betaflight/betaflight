@@ -432,12 +432,13 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
     if (pidProfile->tpa_low_breakpoint > PWM_RANGE_MIN + 10) {
         // tpaLowBreakpoint must be less than or equal to tpaBreakpoint
-        pidRuntime.tpaLowBreakpoint = constrainf((pidProfile->tpa_low_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.01f, pidRuntime.tpaBreakpoint);
         pidRuntime.tpaLowDisabled = false;
+        pidRuntime.tpaLowBreakpoint = constrainf((pidProfile->tpa_low_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, pidRuntime.tpaBreakpoint);
         pidRuntime.tpaLowMultiplier = pidProfile->tpa_low_rate / (100.0f * pidRuntime.tpaLowBreakpoint);
     } else {
        pidRuntime.tpaLowDisabled = true;
-       pidRuntime.tpaLowBreakpoint = 0.01f;
+       pidRuntime.tpaLowBreakpoint = 0.0f;
+       pidRuntime.tpaLowMultiplier = 0;
     }
     pidRuntime.tpaLowAlways = pidProfile->tpa_low_always;
 }
