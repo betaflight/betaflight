@@ -39,6 +39,8 @@
 
 #endif // DEFAULT_RX_FEATURE
 
+// features must be listed in
+//  cli/cli.c:featureNames
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
