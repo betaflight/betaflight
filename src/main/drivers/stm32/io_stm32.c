@@ -40,7 +40,7 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(GPIOE) },
     { RCC_AHB1(GPIOF) },
 };
-#elif defined(STM32F7)
+#elif defined(STM32F7) || defined(STM32H5)
 const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(GPIOA) },
     { RCC_AHB1(GPIOB) },

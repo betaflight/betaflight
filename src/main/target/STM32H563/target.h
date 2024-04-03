@@ -24,35 +24,38 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32H563"
 
-#define USE_I2C_DEVICE_1
-#define USE_I2C_DEVICE_2
-#define USE_I2C_DEVICE_3
-#define USE_I2C_DEVICE_4
+#undef USE_PWM
+#undef USE_DSHOT
+#undef USE_ADC
 
-#define USE_VCP
+//#define USE_I2C_DEVICE_1
+//#define USE_I2C_DEVICE_2
+//#define USE_I2C_DEVICE_3
+//#define USE_I2C_DEVICE_4
 
-#define USE_SOFTSERIAL
+//#define USE_VCP
 
-#define UNIFIED_SERIAL_PORT_COUNT       3
+//#define USE_SOFTSERIAL
 
-#define USE_UART1
-#define USE_UART2
-#define USE_UART3
-#define USE_UART4
-#define USE_UART5
-#define USE_UART6
-#define USE_UART7
-#define USE_UART8
-#define USE_LPUART1
+#define UNIFIED_SERIAL_PORT_COUNT       0
 
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 9)
+//#define USE_UART1
+//#define USE_UART2
+//#define USE_UART3
+//#define USE_UART4
+//#define USE_UART5
+//#define USE_UART6
+//#define USE_UART7
+//#define USE_UART8
 
-#define USE_SPI_DEVICE_1
-#define USE_SPI_DEVICE_2
-#define USE_SPI_DEVICE_3
-#define USE_SPI_DEVICE_4
-#define USE_SPI_DEVICE_5
-#define USE_SPI_DEVICE_6
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT)
+
+//#define USE_SPI_DEVICE_1
+//#define USE_SPI_DEVICE_2
+//#define USE_SPI_DEVICE_3
+//#define USE_SPI_DEVICE_4
+//#define USE_SPI_DEVICE_5
+//#define USE_SPI_DEVICE_6
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
@@ -60,29 +63,29 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
-#define TARGET_IO_PORTG 0xffff
+//#define TARGET_IO_PORTG 0xffff
 
-#define USE_I2C
-#define I2C_FULL_RECONFIGURABILITY
+//#define USE_I2C
+//#define I2C_FULL_RECONFIGURABILITY
 
-#define USE_BEEPER
+//#define USE_BEEPER
 
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
 #endif
 
-#define USE_SPI
-#define SPI_FULL_RECONFIGURABILITY
-#define USE_SPI_DMA_ENABLE_LATE
+//#define USE_SPI
+//#define SPI_FULL_RECONFIGURABILITY
+//#define USE_SPI_DMA_ENABLE_LATE
 
-#define USE_USB_DETECT
+//#define USE_USB_DETECT
 
-#define USE_ESCSERIAL
+//#define USE_ESCSERIAL
 
-#define USE_ADC
-#define USE_EXTI
-#define USE_TIMER_UP_CONFIG
+//#define USE_ADC
+//#define USE_EXTI
+//#define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
 

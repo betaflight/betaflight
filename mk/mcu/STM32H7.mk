@@ -335,7 +335,7 @@ MCU_EXCLUDES = \
             drivers/bus_i2c.c
 
 MSC_SRC = \
-            drivers/stm32/usb_msc_h7xx.c \
+            drivers/stm32/usb_msc_hal.c \
             drivers/usb_msc_common.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \

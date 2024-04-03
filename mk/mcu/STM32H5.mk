@@ -92,26 +92,13 @@ EXCLUDES        = \
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
-#USB
-USBCORE_DIR = $(ROOT)/lib/main/STM32H5/Middlewares/ST/STM32_USB_Device_Library/Core
-USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
-EXCLUDES    = usbd_conf_template.c
-USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
+#USB  ##TODO - need to work through the USB drivers, new directory: USBX
+#USBCORE_DIR = $(ROOT)/lib/main/STM32H5/Middlewares/ST/usbx/Common
+#USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
+#EXCLUDES    =
+#USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
 
-USBCDC_DIR = $(ROOT)/lib/main/STM32H5/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
-USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
-EXCLUDES   = usbd_cdc_if_template.c
-USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
-
-USBHID_DIR = $(ROOT)/lib/main/STM32H5/Middlewares/ST/STM32_USB_Device_Library/Class/HID
-USBHID_SRC = $(notdir $(wildcard $(USBHID_DIR)/Src/*.c))
-
-USBMSC_DIR = $(ROOT)/lib/main/STM32H5/Middlewares/ST/STM32_USB_Device_Library/Class/MSC
-USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
-EXCLUDES   = usbd_msc_storage_template.c
-USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
-
-VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src:$(STDPERIPH_DIR)/src
+#VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src:$(STDPERIPH_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
@@ -120,7 +107,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBMSC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/stm32h5xx
+VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32H5xx
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -130,7 +117,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBHID_DIR)/Inc \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
-                   $(ROOT)/lib/main/STM32H5/Drivers/CMSIS/Device/ST/stm32h5xx/Include \
+                   $(ROOT)/lib/main/STM32H5/Drivers/CMSIS/Device/ST/STM32H5xx/Include \
                    $(ROOT)/src/main/drivers/stm32 \
                    $(ROOT)/src/main/drivers/stm32/vcp_hal
 
@@ -187,16 +174,12 @@ MCU_COMMON_SRC = \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/stm32/adc_stm32h5xx.c \
-            drivers/stm32/audio_stm32h5xx.c \
             drivers/stm32/bus_i2c_hal_init.c \
             drivers/stm32/bus_i2c_hal.c \
             drivers/stm32/bus_spi_ll.c \
             drivers/stm32/bus_quadspi_hal.c \
-            drivers/stm32/bus_octospi_stm32h5xx.c \
             drivers/stm32/debug.c \
             drivers/stm32/dma_reqmap_mcu.c \
-            drivers/stm32/dma_stm32h5xx.c \
             drivers/stm32/dshot_bitbang_ll.c \
             drivers/stm32/dshot_bitbang.c \
             drivers/stm32/exti.c \
@@ -208,21 +191,23 @@ MCU_COMMON_SRC = \
             drivers/stm32/pwm_output.c \
             drivers/stm32/pwm_output_dshot_hal.c \
             drivers/stm32/rcc_stm32.c \
-            drivers/stm32/sdio_h5xx.c \
             drivers/stm32/serial_uart_hal.c \
-            drivers/stm32/serial_uart_stm32h5xx.c \
-            drivers/stm32/system_stm32h5xx.c \
             drivers/stm32/timer_hal.c \
-            drivers/stm32/timer_stm32h5xx.c \
             drivers/stm32/transponder_ir_io_hal.c \
             drivers/stm32/camera_control.c \
             startup/system_stm32h5xx.c
+#            drivers/stm32/serial_uart_stm32h5xx.c \
+#            drivers/stm32/sdio_h5xx.c \
+#            drivers/stm32/system_stm32h5xx.c \
+#            drivers/stm32/timer_stm32h5xx.c \
+#            drivers/stm32/adc_stm32h5xx.c \
+#            drivers/stm32/dma_stm32h5xx.c \
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c
 
 MSC_SRC = \
-            drivers/stm32/usb_msc_h5xx.c \
+            drivers/stm32/usb_msc_hal.c \
             drivers/usb_msc_common.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
