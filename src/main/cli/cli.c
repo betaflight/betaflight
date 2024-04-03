@@ -3311,7 +3311,7 @@ static void cliFeature(const char *cmdName, char *cmdline)
             }
         }
         if (found == 1) {
-            uint32_t feature = 1U << i;
+            uint32_t feature = 1U << featureIdx;
             const char *verb;
             if ((feature & featuresSupportedByBuild) == 0) {
                 verb = "Unavailable";
@@ -3322,7 +3322,7 @@ static void cliFeature(const char *cmdName, char *cmdline)
                 featureConfigSet(feature);
                 verb = (mask & feature) ? "AlreadyEnabled" : "Enabled";
             }
-            cliPrintLinef("%s %s", verb, featureNames[i]);
+            cliPrintLinef("%s %s", verb, featureNames[featureIdx]);
         } else if (found > 1) {
             cliPrintErrorLinef(cmdName, "Multiple features match %s", cmdline);
         } else /* found <= 0 */ {
