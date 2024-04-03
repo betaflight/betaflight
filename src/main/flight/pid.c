@@ -281,10 +281,10 @@ void pidUpdateTpaFactor(float throttle)
     // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
     throttle = constrainf(throttle, 0.0f, 1.0f);
 
-    const bool tpaLowInactive = (pidRuntime.tpaLowDisabled || (throttle >= pidRuntime.tpaLowBreakpoint));
+    const bool tpaLowInactive = pidRuntime.tpaLowDisabled || (throttle >= pidRuntime.tpaLowBreakpoint);
     float tpaRate = 0.0f;
     if (tpaLowInactive) {
-        // to get here, throttle exceeded the tpaLow threshold
+        // to get here, throttle exceeded the tpaLow threshold, or tpaLowBreakpoint set < PWM_RANGE_MIN + 10
         // disable when not configured to be always on 
         pidRuntime.tpaLowDisabled = pidRuntime.tpaLowDisabled || !pidRuntime.tpaLowAlways;
         // apply normal TPA

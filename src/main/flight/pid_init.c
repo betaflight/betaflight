@@ -425,15 +425,20 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
+
     pidRuntime.tpaBreakpoint = constrainf((pidProfile->tpa_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, 0.99f);
     // default of 1350 returns 0.35. range limited to 0 to 0.99
     pidRuntime.tpaMultiplier = (pidProfile->tpa_rate / 100.0f) / (1.0f - pidRuntime.tpaBreakpoint);
-    pidRuntime.tpaLowBreakpoint = constrainf((pidProfile->tpa_low_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, 1.0f);
-    // tpaLowBreakpoint must be less than or equal to tpaBreakpoint
-    pidRuntime.tpaLowBreakpoint = MIN(pidRuntime.tpaLowBreakpoint, pidRuntime.tpaBreakpoint);
-    // disable TPA Low if its breakpoint is 1000 (or lower), or if TPA itself is disabled by setting the tpa_breakpoint to 1000
-    pidRuntime.tpaLowDisabled = pidRuntime.tpaLowBreakpoint <= 0.01f;
-    pidRuntime.tpaLowMultiplier = pidProfile->tpa_low_rate / (100.0f * pidRuntime.tpaLowBreakpoint);
+
+    if (pidProfile->tpa_low_breakpoint > PWM_RANGE_MIN + 10) {
+        // tpaLowBreakpoint must be less than or equal to tpaBreakpoint
+        pidRuntime.tpaLowBreakpoint = constrainf((pidProfile->tpa_low_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.01f, pidRuntime.tpaBreakpoint);
+        pidRuntime.tpaLowDisabled = false;
+        pidRuntime.tpaLowMultiplier = pidProfile->tpa_low_rate / (100.0f * pidRuntime.tpaLowBreakpoint);
+    } else {
+       pidRuntime.tpaLowDisabled = true;
+       pidRuntime.tpaLowBreakpoint = 0.01f;
+    }
     pidRuntime.tpaLowAlways = pidProfile->tpa_low_always;
 }
 
