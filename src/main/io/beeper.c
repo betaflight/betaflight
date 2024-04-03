@@ -69,12 +69,12 @@
 #endif
 
 #ifdef USE_BEEPER
-# ifndef BEEPER_PWM_HZ
-#  define BEEPER_PWM_HZ   0
-# endif
+#ifndef BEEPER_PWM_HZ
+#define BEEPER_PWM_HZ   0
+#endif
 #else
-# define BEEPER_PIN      NONE
-# define BEEPER_PWM_HZ   0
+#define BEEPER_PIN      NONE
+#define BEEPER_PWM_HZ   0
 #endif
 
 #define MAX_MULTI_BEEPS 32   // number of beeps (including pause) for 'beep_multiBeeps[]'
