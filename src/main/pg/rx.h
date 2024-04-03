@@ -24,7 +24,7 @@
 
 #include "pg/pg.h"
 
-#define GET_FRAME_ERR_LPF_FREQUENCY(period) (1 / (period / 10.0f))
+#define GET_FRAME_ERR_LPF_FREQUENCY(period) (1.0f / ((period) * 0.1f/*[s]*/))
 #define FRAME_ERR_RESAMPLE_US 100000
 
 typedef struct rxConfig_s {
