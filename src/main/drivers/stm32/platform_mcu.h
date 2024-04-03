@@ -115,8 +115,8 @@
 
 #define USE_PIN_AF
 
-#ifndef STM32F7
-#define STM32F7
+#ifndef STM32H5
+#define STM32H5
 #endif
 
 #elif defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F446xx)
