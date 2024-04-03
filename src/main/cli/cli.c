@@ -3278,17 +3278,17 @@ static void cliFeature(const char *cmdName, char *cmdline)
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
     if (len == 0) {
-        cliPrint("Enabled: ");
+        cliPrint("Enabled:");
         for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {
             if (featureNames[i] && (mask & (1U << i))) {
-                cliPrintf("%s ", featureNames[i]);
+                cliPrintf(" %s", featureNames[i]);
             }
         }
         cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {
-            if (featureNames[i]) //Skip unused
+            if (featureNames[i])
                 cliPrintf(" %s", featureNames[i]);
         }
         cliPrintLinefeed();
@@ -3302,35 +3302,30 @@ static void cliFeature(const char *cmdName, char *cmdline)
             len--;
         }
 
-        bool found = false;
+        unsigned found = 0;
+        int featureIdx = -1;
         for (unsigned i = 0; !found && i < ARRAYLEN(featureNames); i++) {
             if (featureNames[i] && strncasecmp(cmdline, featureNames[i], len) == 0) {
-                found = true;
-                uint32_t feature = 1U << i;
-#ifndef USE_GPS
-                if (feature & FEATURE_GPS) {
-                    cliPrintLine("unavailable");
-                    break;
-                }
-#endif
-#ifndef USE_RANGEFINDER
-                if (feature & FEATURE_RANGEFINDER) {
-                    cliPrintLine("unavailable");
-                    break;
-                }
-#endif
-                const char *verb;
-                if (remove) {
-                    featureConfigClear(feature);
-                    verb = "Disabled";
-                } else {
-                    featureConfigSet(feature);
-                    verb = "Enabled";
-                }
-                cliPrintLinef("%s %s", verb, featureNames[i]);
+                found++;
+                featureIdx = i;
             }
         }
-        if (!found) {
+        if (found == 1) {
+            uint32_t feature = 1U << i;
+            const char *verb;
+            if ((feature & featuresSupportedByBuild) == 0) {
+                verb = "Unavailable";
+            } else if (remove) {
+                featureConfigClear(feature);
+                verb = (mask & feature) ? "Disabled" : "AlreadyDisabled";
+            } else {
+                featureConfigSet(feature);
+                verb = (mask & feature) ? "AlreadyEnabled" : "Enabled";
+            }
+            cliPrintLinef("%s %s", verb, featureNames[i]);
+        } else if (found > 1) {
+            cliPrintErrorLinef(cmdName, "Multiple features match %s", cmdline);
+        } else /* found <= 0 */ {
             cliPrintErrorLinef(cmdName, ERROR_INVALID_NAME, cmdline);
         }
     }
