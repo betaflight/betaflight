@@ -52,7 +52,6 @@
 #define D_MIN_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
 #define D_MIN_GAIN_FACTOR 0.00008f
 #define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
-#define TPA_LOW_MIN_BREAKPOINT 1010  // minimum TPA 
 #endif
 
 #define ATTITUDE_CUTOFF_HZ 50
@@ -431,7 +430,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     // default of 1350 returns 0.35. range limited to 0 to 0.99
     pidRuntime.tpaMultiplier = (pidProfile->tpa_rate / 100.0f) / (1.0f - pidRuntime.tpaBreakpoint);
 
-    if (pidProfile->tpa_low_breakpoint > TPA_LOW_MIN_BREAKPOINT) {
+    if (pidProfile->tpa_low_breakpoint > PWM_RANGE_MIN + 10) {
         // tpaLowBreakpoint must be less than or equal to tpaBreakpoint
         pidRuntime.tpaLowDisabled = false;
         pidRuntime.tpaLowBreakpoint = constrainf((pidProfile->tpa_low_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, pidRuntime.tpaBreakpoint);
