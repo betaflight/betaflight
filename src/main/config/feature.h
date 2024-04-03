@@ -40,6 +40,7 @@
 #endif // DEFAULT_RX_FEATURE
 
 // features must be listed in
+//  config/feature.c:featuresSupportedByBuild
 //  cli/cli.c:featureNames
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
@@ -73,6 +74,10 @@ typedef struct featureConfig_s {
 } featureConfig_t;
 
 PG_DECLARE(featureConfig_t, featureConfig);
+
+// Mask of features that have code compiled in with current config.
+//  Other restrictions on available features may apply.
+extern uint32_t featuresSupportedByBuild;
 
 void featureInit(void);
 bool featureIsEnabled(const uint32_t mask);
