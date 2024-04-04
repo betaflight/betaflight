@@ -1846,7 +1846,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
 
     switch (blackboxState) {
     case BLACKBOX_STATE_STOPPED:
-        if (ARMING_FLAG(ARMED)) {
+        if (true) {
             blackboxOpen();
             blackboxStart();
         }
