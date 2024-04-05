@@ -374,7 +374,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
 
     uint64_t *dest_addr = (uint64_t *)c->address;
     uint64_t *src_addr = (uint64_t*)buffer;
-    uint8_t row_index = 4;
+    uint8_t row_index = CONFIG_STREAMER_BUFFER_SIZE / sizeof(uint64_t);
     STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE % sizeof(uint64_t) == 0, "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     /* copy the 256 bits flash word */
     do
