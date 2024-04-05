@@ -32,3 +32,6 @@ void writeConfigToEEPROM(void);
 
 uint16_t getEEPROMConfigSize(void);
 size_t getEEPROMStorageSize(void);
+
+bool saveEEPROMToSDCard(void);
+void saveEEPROMToMemoryMappedFlash(void);

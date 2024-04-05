@@ -25,6 +25,7 @@
 #include "drivers/system.h"
 #include "drivers/flash.h"
 
+#include "config/config_eeprom.h"
 #include "config/config_streamer.h"
 
 #if !defined(CONFIG_IN_FLASH)
@@ -528,12 +529,10 @@ int config_streamer_finish(config_streamer_t *c)
 {
     if (c->unlocked) {
 #if defined(CONFIG_IN_SDCARD)
-        bool saveEEPROMToSDCard(void); // forward declaration to avoid circular dependency between config_streamer / config_eeprom
         saveEEPROMToSDCard();
 #elif defined(CONFIG_IN_EXTERNAL_FLASH)
         flashFlush();
 #elif defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
-        void saveEEPROMToMemoryMappedFlash(void); // forward declaration to avoid circular dependency between config_streamer / config_eeprom
         saveEEPROMToMemoryMappedFlash();
 #elif defined(CONFIG_IN_RAM)
         // NOP
