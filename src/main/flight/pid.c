@@ -511,7 +511,7 @@ static FAST_CODE_NOINLINE void detectAndSetCrashRecovery(
     const timeUs_t currentTimeUs, const float delta, const float errorRate)
 {
     // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
-    // no point in trying to recover if the crash is so severe that the gyro overflows
+    // no point in trying to recover if the crash is so severe that the gyro in case we hit a tree
     if ((crash_recovery || FLIGHT_MODE(GPS_RESCUE_MODE)) && !gyroOverflowDetected()) {
         if (ARMING_FLAG(ARMED)) {
             if (getMotorMixRange() >= 1.0f && !pidRuntime.inCrashRecoveryMode
@@ -812,10 +812,10 @@ static void disarmOnImpact(void)
     float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
     // *** annoying to need to normalise accADC here, should normalise acc.accADC once, in accelerometer.c, not everywhere we use it
     if (isAirmodeActivated() && maxDeflectionAbs < pidRuntime.ezLandingThreshold * 0.5f) {
-        if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
+        if (accMagnitude > pidRuntime.ezLandingDisarmThreshold || getMotorMixRange() >= 1.0f) {
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             disarm(DISARM_REASON_LANDING);
-            }
+        }
     }
     DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
 }
