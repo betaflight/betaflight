@@ -780,32 +780,39 @@ float pidGetAirmodeThrottleOffset(void)
 
 // ezLanding stuff
 static float ezLandingFactor = 1.0f;
+static float ezLandingLimit = PIDSUM_LIMIT;
 static float maxDeflectionAbs = 1.0f;
 
 // EzLanding factors are updated only when new Rx data is received in rc.c
 // this will cause steps in PID as the limiting value changes
-
 float calcEzLandingFactor(float maxRcDeflectionAbs)
 {
-    maxDeflectionAbs = fmaxf(maxRcDeflectionAbs, mixerGetRcThrottle());
-    ezLandingFactor = 1.0f;
-    if (pidRuntime.useEzLanding && !isFlipOverAfterCrashActive() && maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
-        ezLandingFactor = fmaxf(pidRuntime.ezLandingLimit, maxDeflectionAbs / pidRuntime.ezLandingThreshold);
+
+    if (pidRuntime.useEzLanding && !isFlipOverAfterCrashActive()) {
+        maxDeflectionAbs = fmaxf(maxRcDeflectionAbs, mixerGetRcThrottle());
+        if (maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
+            ezLandingFactor = maxDeflectionAbs / pidRuntime.ezLandingThreshold; // 0-1
+            ezLandingLimit = fmaxf(pidRuntime.ezLandingLimit, PIDSUM_LIMIT * ezLandingFactor); // 15-500 with defaults
+        } else {
+            ezLandingFactor = 1.0f;
+            ezLandingLimit = PIDSUM_LIMIT;
+        }
     }
     DEBUG_SET(DEBUG_EZLANDING, 0, ezLandingFactor * 100);
     DEBUG_SET(DEBUG_EZLANDING, 1, maxDeflectionAbs * 100);
     return ezLandingFactor;
 }
 
-static float applyEzLanding(float rateToLimit, float multiplier)
+// every PID loop, per axis
+static float applyEzLanding(float rateToLimit, const float multiplier)
 {
     if (ezLandingFactor < 1.0f) {
-        const float rateLimit = fabsf(ezLandingFactor * rateToLimit);
-        rateToLimit = multiplier * constrainf(rateToLimit, -rateLimit, rateLimit);
+        const float errorRateLimit = multiplier * ezLandingLimit;
+        rateToLimit = constrainf(rateToLimit, -errorRateLimit, errorRateLimit);
     }
-
     return rateToLimit;
 }
+
 
 static void disarmOnImpact(void)
 {
