@@ -33,7 +33,7 @@ float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
 float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
-float simulatedMaxRcDeflectionAbs = 0.0f;
+float simulatedmaxRcDeflectionAbs = 1.0f;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
@@ -180,7 +180,6 @@ void resetTest(void)
     loopIter = 0;
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
-    simulatedMaxRcDeflectionAbs = 0.0f;
 
     pidStabilisationState(PID_STABILISATION_OFF);
     DISABLE_ARMING_FLAG(ARMED);
@@ -266,6 +265,10 @@ TEST(pidControllerTest, testPidLoop)
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
+    
+        // Disable ezLanding
+    simulatedmaxRcDeflectionAbs = 1.0f;
+    calcEzLandingFactor (simulatedmaxRcDeflectionAbs);
 
     pidController(pidProfile, currentTestTime());
 
@@ -280,37 +283,10 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 
-    // Loop 2a - Expecting zero since there is no error
-    // Do a test with no maxRcDeflectionAbs to check that ezLanding attenuates pids
-    simulatedMaxRcDeflectionAbs = 0.0f;
-    sendMaxDeflectionAbs(simulatedMaxRcDeflectionAbs);
-    // Add some rotation on ROLL to generate error
     gyro.gyroADCf[FD_ROLL] = 100;
     pidController(pidProfile, currentTestTime());
 
-    // Loop 1 - Expect PID loop reaction to ROLL error of 1/10th that of the next test
-    EXPECT_NEAR(-12.81, pidData[FD_ROLL].P, calculateTolerance(-12.81));
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-0.16, pidData[FD_ROLL].I, calculateTolerance(-0.16)); // iTerm accumulates at 20% of the others
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
-    EXPECT_NEAR(-19.8, pidData[FD_ROLL].D, calculateTolerance(-19.8));
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
-
-    resetTest();
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
-
-    // Add a simulated maxRcDeflectionAbs to defeat ezLanding
-    simulatedMaxRcDeflectionAbs = 0.5f;
-    sendMaxDeflectionAbs(simulatedMaxRcDeflectionAbs);
-    // Keep the same rotation on ROLL to generate error
-    gyro.gyroADCf[FD_ROLL] = 100;
-    pidController(pidProfile, currentTestTime());
-
-    // Loop 2b - Expect PID loop reaction to ROLL error
+    // Loop 2 - Expect PID loop reaction to ROLL error
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
@@ -392,6 +368,78 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+}
+
+TEST(pidControllerTest, testEzLanding)
+{
+
+    // Make sure to start with fresh values
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    // Enable ezLanding
+    simulatedmaxRcDeflectionAbs = 0.01f;   
+    calcEzLandingFactor (simulatedmaxRcDeflectionAbs);
+    
+    pidController(pidProfile, currentTestTime());
+
+    // Loop 1 - Expecting zero since there is no error
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+
+    gyro.gyroADCf[FD_ROLL] = 100;
+    pidController(pidProfile, currentTestTime());
+
+    // Loop 2 - Expect lower PIDs than on the earlier test because ezLanding is limiting error
+    EXPECT_NEAR(-25.6, pidData[FD_ROLL].P, calculateTolerance(-25.6));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
+    EXPECT_NEAR(-0.312, pidData[FD_ROLL].I, calculateTolerance(-0.312));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+    EXPECT_NEAR(-20, pidData[FD_ROLL].D, calculateTolerance(-20));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+
+    gyro.gyroADCf[FD_ROLL] = 200;
+    pidController(pidProfile, currentTestTime());
+
+    // Loop 2 - Expect only iTerm to increase, because error is limited
+    EXPECT_NEAR(-25.6, pidData[FD_ROLL].P, calculateTolerance(-25.6));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
+    EXPECT_NEAR(-0.625, pidData[FD_ROLL].I, calculateTolerance(-0.625));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+    EXPECT_NEAR(-20, pidData[FD_ROLL].D, calculateTolerance(-20));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+
+    gyro.gyroADCf[FD_ROLL] = 500;
+    pidController(pidProfile, currentTestTime());
+
+    // Loop 3 - Expect only iTerm to increase, because error is limited
+    EXPECT_NEAR(-25.6, pidData[FD_ROLL].P, calculateTolerance(-25.6));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
+    EXPECT_NEAR(-0.94, pidData[FD_ROLL].I, calculateTolerance(-0.94));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+    EXPECT_NEAR(-20, pidData[FD_ROLL].D, calculateTolerance(-20));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+
+   // Disable ezLanding
+    simulatedmaxRcDeflectionAbs = 1.0f;
+    calcEzLandingFactor (simulatedmaxRcDeflectionAbs);
 }
 
 TEST(pidControllerTest, testPidLevel)
