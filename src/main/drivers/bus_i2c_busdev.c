@@ -41,6 +41,11 @@ bool i2cBusWriteRegisterStart(const extDevice_t *dev, uint8_t reg, uint8_t data)
     // Need a static value, not on the stack
     static uint8_t byte;
 
+    bool error;
+    if (i2cBusy(dev->bus->busType_u.i2c.device, &error)) {
+        return false;
+    }
+
     byte = data;
 
     return i2cWriteBuffer(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, reg, sizeof(byte), &byte);

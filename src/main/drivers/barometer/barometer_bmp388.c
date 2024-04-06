@@ -174,10 +174,10 @@ static uint8_t * sensor_data = sensor_data_buffer;
 
 STATIC_UNIT_TESTED int64_t t_lin = 0;
 
-static void bmp388StartUT(baroDev_t *baro);
+static bool bmp388StartUT(baroDev_t *baro);
 static bool bmp388GetUT(baroDev_t *baro);
 static bool bmp388ReadUT(baroDev_t *baro);
-static void bmp388StartUP(baroDev_t *baro);
+static bool bmp388StartUP(baroDev_t *baro);
 static bool bmp388GetUP(baroDev_t *baro);
 static bool bmp388ReadUP(baroDev_t *baro);
 
@@ -238,11 +238,11 @@ void bmp388BusDeinit(const extDevice_t *dev)
 #endif
 }
 
-void bmp388BeginForcedMeasurement(const extDevice_t *dev)
+bool bmp388BeginForcedMeasurement(const extDevice_t *dev)
 {
     // enable pressure measurement, temperature measurement, set power mode and start sampling
     uint8_t mode = BMP388_MODE_FORCED << 4 | 1 << 1 | 1 << 0;
-    busWriteRegisterStart(dev, BMP388_PWR_CTRL_REG, mode);
+    return busWriteRegisterStart(dev, BMP388_PWR_CTRL_REG, mode);
 }
 
 bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
@@ -328,10 +328,12 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
     return true;
 }
 
-static void bmp388StartUT(baroDev_t *baro)
+static bool bmp388StartUT(baroDev_t *baro)
 {
     UNUSED(baro);
     // dummy
+
+    return true;
 }
 
 static bool bmp388ReadUT(baroDev_t *baro)
@@ -348,10 +350,10 @@ static bool bmp388GetUT(baroDev_t *baro)
     return true;
 }
 
-static void bmp388StartUP(baroDev_t *baro)
+static bool bmp388StartUP(baroDev_t *baro)
 {
     // start measurement
-    bmp388BeginForcedMeasurement(&baro->dev);
+    return bmp388BeginForcedMeasurement(&baro->dev);
 }
 
 static bool bmp388ReadUP(baroDev_t *baro)
@@ -361,8 +363,7 @@ static bool bmp388ReadUP(baroDev_t *baro)
     }
 
     // read data from sensor
-    busReadRegisterBufferStart(&baro->dev, BMP388_DATA_0_REG, sensor_data_buffer, BMP388_DATA_FRAME_SIZE + (sensor_data - sensor_data_buffer));
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, BMP388_DATA_0_REG, sensor_data_buffer, BMP388_DATA_FRAME_SIZE + (sensor_data - sensor_data_buffer));
 }
 
 static bool bmp388GetUP(baroDev_t *baro)

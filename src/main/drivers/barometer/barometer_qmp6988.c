@@ -96,10 +96,10 @@ int32_t qmp6988_up = 0;
 int32_t qmp6988_ut = 0;
 static DMA_DATA_ZERO_INIT uint8_t sensor_data[QMP6988_DATA_FRAME_SIZE];
 
-static void qmp6988StartUT(baroDev_t *baro);
+static bool qmp6988StartUT(baroDev_t *baro);
 static bool qmp6988ReadUT(baroDev_t *baro);
 static bool qmp6988GetUT(baroDev_t *baro);
-static void qmp6988StartUP(baroDev_t *baro);
+static bool qmp6988StartUP(baroDev_t *baro);
 static bool qmp6988ReadUP(baroDev_t *baro);
 static bool qmp6988GetUP(baroDev_t *baro);
 
@@ -279,10 +279,12 @@ bool qmp6988Detect(baroDev_t *baro)
     return true;
 }
 
-static void qmp6988StartUT(baroDev_t *baro)
+static bool qmp6988StartUT(baroDev_t *baro)
 {
     UNUSED(baro);
     // dummy
+
+    return true;
 }
 
 static bool qmp6988ReadUT(baroDev_t *baro)
@@ -299,10 +301,10 @@ static bool qmp6988GetUT(baroDev_t *baro)
     return true;
 }
 
-static void qmp6988StartUP(baroDev_t *baro)
+static bool qmp6988StartUP(baroDev_t *baro)
 {
     // start measurement
-    busWriteRegister(&baro->dev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);
+    return busWriteRegister(&baro->dev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);
 }
 
 static bool qmp6988ReadUP(baroDev_t *baro)
@@ -312,9 +314,7 @@ static bool qmp6988ReadUP(baroDev_t *baro)
     }
 
     // read data from sensor
-    busReadRegisterBufferStart(&baro->dev, QMP6988_PRESSURE_MSB_REG, sensor_data, QMP6988_DATA_FRAME_SIZE);
-
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, QMP6988_PRESSURE_MSB_REG, sensor_data, QMP6988_DATA_FRAME_SIZE);
 }
 
 static bool qmp6988GetUP(baroDev_t *baro)
