@@ -236,6 +236,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
+        .ez_landing_disarm_threshold = 120,
     );
 
 #ifndef USE_D_MIN
@@ -511,7 +512,8 @@ static FAST_CODE_NOINLINE void detectAndSetCrashRecovery(
     const timeUs_t currentTimeUs, const float delta, const float errorRate)
 {
     // if crash recovery is on and accelerometer enabled and there is no gyro overflow, then check for a crash
-    // no point in trying to recover if the crash is so severe that the gyro in case we hit a tree
+    // no point in trying to recover if the crash is so severe that the gyro overflows
+    // automatically enable in a GPS Rescue, in case we hit a tree or a person
     if ((crash_recovery || FLIGHT_MODE(GPS_RESCUE_MODE)) && !gyroOverflowDetected()) {
         if (ARMING_FLAG(ARMED)) {
             if (getMotorMixRange() >= 1.0f && !pidRuntime.inCrashRecoveryMode
@@ -801,23 +803,29 @@ static float applyEzLanding(float rateToLimit, float multiplier)
         const float rateLimit = fabsf(ezLandingFactor * rateToLimit);
         rateToLimit = multiplier * constrainf(rateToLimit, -rateLimit, rateLimit);
     }
+
     return rateToLimit;
 }
 
 static void disarmOnImpact(void)
 {
-    // if both sticks are inside 50% of the stick threshold, enable auto-disarm on impact
-    // will not disarm on gentle landings
+    // if both sticks are inside 50% of the stick threshold, check acc magnitude for impacts
+    // at half the impact threshold, force iTerm to zero, to attenuate iTerm-mediated bouncing
     // threshold should be highe enough to avoid unwanted disarms in the air on throttle chops
-    float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
-    // *** annoying to need to normalise accADC here, should normalise acc.accADC once, in accelerometer.c, not everywhere we use it
-    if (isAirmodeActivated() && maxDeflectionAbs < pidRuntime.ezLandingThreshold * 0.5f) {
-        if (accMagnitude > pidRuntime.ezLandingDisarmThreshold || getMotorMixRange() >= 1.0f) {
+    if (isAirmodeActivated() && ezLandingFactor < 0.5f) {
+        float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
+        DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
+        if (accMagnitude > (0.5f * pidRuntime.ezLandingDisarmThreshold)) {
+            // force iTerm to zero on all axes on moderate bumps
+            pidResetIterm();
+            // after reset, iTerm will slowly re-accumulate
+        }
+        if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
+            // disarm after big bumps
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             disarm(DISARM_REASON_LANDING);
         }
     }
-    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
 }
 
 
@@ -1022,7 +1030,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
     // do the non-axis dependent calculations once
-    if (pidRuntime.useEzLanding && pidRuntime.useEzDisarm) {
+    if (pidRuntime.useEzDisarm) {
         disarmOnImpact();
     }
 
