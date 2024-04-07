@@ -34,7 +34,7 @@ float getSetpointRate(int axis);
 float getRcDeflection(int axis);
 float getRcDeflectionRaw(int axis);
 float getRcDeflectionAbs(int axis);
-float calcEzLandingFactor(float maxRcDeflectionAbs);
+void calcEzLandingLimit(float maxRcDeflectionAbs);
 void updateRcCommands(void);
 void resetYawAxis(void);
 void initRcProcessing(void);

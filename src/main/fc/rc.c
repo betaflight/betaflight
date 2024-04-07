@@ -662,7 +662,7 @@ FAST_CODE void processRcCommand(void)
         calculateFeedforward(&pidRuntime, axis);
 #endif // USE_FEEDFORWARD
 
-        calcEzLandingFactor(maxRcDeflectionAbs);
+        calcEzLandingLimit(maxRcDeflectionAbs);
 
         }
         // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
