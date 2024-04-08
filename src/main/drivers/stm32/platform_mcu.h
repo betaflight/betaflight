@@ -108,7 +108,7 @@
 #include "stm32h5xx_ll_tim.h"
 #include "stm32h5xx_ll_system.h"
 
-// Chip Unique ID on F7
+// Chip Unique ID on H5
 #define U_ID_0 (*(uint32_t*)UID_BASE)
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
