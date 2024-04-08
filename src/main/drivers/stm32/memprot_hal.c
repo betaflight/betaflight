@@ -41,9 +41,10 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
 
     // Setup common members
     MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
+#if !defined(STM32H5)
     MPU_InitStruct.SubRegionDisable = 0x00;
     MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL0;
-
+#endif
     for (unsigned number = 0; number < regionCount; number++) {
         mpuRegion_t *region = &regions[number];
 
@@ -55,7 +56,11 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
         MPU_InitStruct.BaseAddress = region->start;
 
         if (region->size) {
+#if defined(STM32H5)
+            MPU_InitStruct.LimitAddress = region->start + region->size;
+#else
             MPU_InitStruct.Size = region->size;
+#endif
         } else {
             // Adjust start of the region to align with cache line size.
             uint32_t start = region->start & ~0x1F;
@@ -72,16 +77,21 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
                 msbpos += 1;
             }
 
+#if defined(STM32H5)
+            MPU_InitStruct.LimitAddress = region->start + msbpos;
+#else
             MPU_InitStruct.Size = msbpos;
+#endif
         }
 
         // Copy per region attributes
         MPU_InitStruct.AccessPermission = region->perm;
         MPU_InitStruct.DisableExec      = region->exec;
         MPU_InitStruct.IsShareable      = region->shareable;
+#if !defined(STM32H5)
         MPU_InitStruct.IsCacheable      = region->cacheable;
         MPU_InitStruct.IsBufferable     = region->bufferable;
-
+#endif
         HAL_MPU_ConfigRegion(&MPU_InitStruct);
     }
 
