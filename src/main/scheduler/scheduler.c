@@ -443,8 +443,8 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
 }
 
 #if defined(UNIT_TEST)
-task_t *unittest_scheduler_selectedTask;
-uint8_t unittest_scheduler_selectedTaskDynamicPriority;
+STATIC_UNIT_TESTED task_t *unittest_scheduler_selectedTask;
+STATIC_UNIT_TESTED uint8_t unittest_scheduler_selectedTaskDynamicPriority;
 
 static void readSchedulerLocals(task_t *selectedTask, uint8_t selectedTaskDynamicPriority)
 {
