@@ -20,6 +20,7 @@ extern "C" {
 
 #include "platform.h"
 #include "target.h"
+#include "common/utils.h"
 #include "drivers/barometer/barometer.h"
 #include "drivers/bus.h"
 

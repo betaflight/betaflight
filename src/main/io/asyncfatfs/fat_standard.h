@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "common/utils.h"
+
 #define MBR_PARTITION_TYPE_FAT16     0x06
 #define MBR_PARTITION_TYPE_FAT32     0x0B
 #define MBR_PARTITION_TYPE_FAT32_LBA 0x0C

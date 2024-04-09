@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "pg/pg.h"
-
+#include "common/utils.h"
 
 typedef enum {
     TABLE_OFF_ON = 0,

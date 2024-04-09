@@ -60,6 +60,7 @@
 
 #define DISCARD(x) (void)(x) // To explicitly ignore result of x (usually an I/O register access).
 
+#define __PACKED__ __attribute__((packed))
 #define STATIC_ASSERT(condition, name) _Static_assert((condition), #name)
 
 
