@@ -119,8 +119,12 @@ static int32_t gyroCyclesNow;
 static timeMs_t lastFailsafeCheckMs = 0;
 
 // No need for a linked list for the queue, since items are only inserted at startup
-
-STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT task_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
+#ifdef UNIT_TEST
+#define TASK_QUEUE_RESERVE 1
+#else
+#define TASK_QUEUE_RESERVE 0
+#endif
+STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT task_t* taskQueueArray[TASK_COUNT + 1 + TASK_QUEUE_RESERVE]; // extra item for NULL pointer at end of queue (+ overflow check in UNTT_TEST)
 
 void queueClear(void)
 {
