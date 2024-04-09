@@ -485,10 +485,9 @@ CC  ?= clang-12
 CXX ?= clang++-12
 ifneq ($(OSFAMILY), linux)
 ifeq ($(shell which $(CC) 2>/dev/null),)
-$(info Falling back to 'clang' on Windows and OSX.)
+$(info Falling back to 'clang'.)
 CC  := clang
 CXX := clang++
-endif
 endif
 #CC  := gcc
 #CXX := g++
