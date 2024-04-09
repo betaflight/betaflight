@@ -207,9 +207,9 @@ static bool hmc5883lRead(magDev_t *mag, int16_t *magData)
     extDevice_t *dev = &mag->dev;
 
     if (pendingRead) {
-        busReadRegisterBufferStart(dev, HMC58X3_REG_DATA, buf, sizeof(buf));
-
-        pendingRead = false;
+        if (busReadRegisterBufferStart(dev, HMC58X3_REG_DATA, buf, sizeof(buf))) {
+            pendingRead = false;
+        }
         return false;
     }
 
