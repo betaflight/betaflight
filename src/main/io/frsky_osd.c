@@ -137,7 +137,7 @@ typedef struct frskyOsdInfoResponse_s {
     uint8_t hasDetectedCamera;
     uint16_t maxFrameSize;
     uint8_t contextStackSize;
-} __attribute__((packed)) frskyOsdInfoResponse_t;
+} __PACKED__ frskyOsdInfoResponse_t;
 
 typedef struct frskyOsdFontCharacter_s {
     uint16_t addr;
@@ -145,71 +145,71 @@ typedef struct frskyOsdFontCharacter_s {
         uint8_t bitmap[FRSKY_OSD_CHAR_DATA_BYTES]; // 12x18 2bpp
         uint8_t metadata[FRSKY_OSD_CHAR_METADATA_BYTES];
     } data;
-} __attribute__((packed)) frskyOsdCharacter_t;
+} __PACKED__ frskyOsdCharacter_t;
 
 typedef struct frskyOsdDrawGridCharCmd_s {
     uint8_t gx;
     uint8_t gy;
     uint16_t chr;
     uint8_t opts;
-} __attribute__((packed)) frskyOsdDrawGridCharCmd_t;
+} __PACKED__ frskyOsdDrawGridCharCmd_t;
 
 typedef struct frskyOsdDrawGridStrHeaderCmd_s {
     uint8_t gx;
     uint8_t gy;
     uint8_t opts;
     // uvarint with size and blob folow
-} __attribute__((packed)) frskyOsdDrawGridStrHeaderCmd_t;
+} __PACKED__ frskyOsdDrawGridStrHeaderCmd_t;
 
 typedef struct frskyOsdPoint_s {
     int x : 12;
     int y : 12;
-} __attribute__((packed)) frskyOsdPoint_t;
+} __PACKED__ frskyOsdPoint_t;
 
 typedef struct frskyOsdSize_s {
     int w : 12;
     int h : 12;
-} __attribute__((packed)) frskyOsdSize_t;
+} __PACKED__ frskyOsdSize_t;
 
 typedef struct frskyOsdRect_s {
     frskyOsdPoint_t origin;
     frskyOsdSize_t size;
-} __attribute__((packed)) frskyOsdRect_t;
+} __PACKED__ frskyOsdRect_t;
 
 typedef struct frskyOsdTriangle_s {
     frskyOsdPoint_t p1;
     frskyOsdPoint_t p2;
     frskyOsdPoint_t p3;
-} __attribute__((packed)) frskyOsdTriangle_t;
+} __PACKED__ frskyOsdTriangle_t;
 
 typedef struct frskyOsdSetPixel_s {
     frskyOsdPoint_t p;
     uint8_t color;
-}  __attribute__((packed)) frskyOsdSetPixel_t;
+}  __PACKED__ frskyOsdSetPixel_t;
 
 typedef struct frskyOsdDrawCharacterCmd_s {
     frskyOsdPoint_t p;
     uint16_t chr;
     uint8_t opts;
-}  __attribute__((packed)) frskyOsdDrawCharacterCmd_t;
+}  __PACKED__ frskyOsdDrawCharacterCmd_t;
 
 typedef struct frskyOsdDrawCharacterMaskCmd_s {
     frskyOsdDrawCharacterCmd_t dc;
     uint8_t maskColor;
-}  __attribute__((packed)) frskyOsdDrawCharacterMaskCmd_t;
+}  __PACKED__ frskyOsdDrawCharacterMaskCmd_t;
 
 typedef struct frskyOsdDrawStrCommandHeaderCmd_s {
     frskyOsdPoint_t p;
     uint8_t opts;
     // uvarint with size and blob follow
-} __attribute__((packed)) frskyOsdDrawStrCommandHeaderCmd_t;
+} __PACKED__ frskyOsdDrawStrCommandHeaderCmd_t;
 
 typedef struct frskyOsdDrawStrMaskCommandHeaderCmd_s {
     frskyOsdPoint_t p;
     uint8_t opts;
     uint8_t maskColor;
     // uvarint with size and blob follow
-} __attribute__((packed)) frskyOsdDrawStrMaskCommandHeaderCmd_t;
+} __PACKED__ frskyOsdDrawStrMaskCommandHeaderCmd_t;
 
 
 typedef struct frskyOsdState_s {

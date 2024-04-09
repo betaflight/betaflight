@@ -31,19 +31,19 @@ typedef struct trampSettings_s {
     uint16_t power;
     uint8_t raceModeEnabled;
     uint8_t pitModeEnabled;
-} __attribute__((packed)) trampSettings_t;
+} __PACKED__ trampSettings_t;
 
 typedef struct trampFrameHeader_s {
     uint8_t syncStart;
     uint8_t command;
-} __attribute__((packed)) trampFrameHeader_t;
+} __PACKED__ trampFrameHeader_t;
 
 #define TRAMP_HEADER_LENGTH sizeof(trampFrameHeader_t)
 
 typedef struct trampFrameFooter_s {
     uint8_t crc;
     uint8_t syncStop;
-} __attribute__((packed)) trampFrameFooter_t;
+} __PACKED__ trampFrameFooter_t;
 
 typedef union trampPayload_u {
     uint8_t buf[TRAMP_PAYLOAD_LENGTH];
@@ -57,7 +57,7 @@ typedef struct trampFrame_s {
     trampFrameHeader_t header;
     trampPayload_t payload;
     trampFrameFooter_t footer;
-} __attribute__((packed)) trampFrame_t;
+} __PACKED__ trampFrame_t;
 
 #define TRAMP_FRAME_LENGTH sizeof(trampFrame_t)
 

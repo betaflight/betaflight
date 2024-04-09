@@ -202,7 +202,7 @@ typedef struct smartPortFrame_s {
     uint8_t  sensorId;
     smartPortPayload_t payload;
     uint8_t  crc;
-} __attribute__((packed)) smartPortFrame_t;
+} __PACKED__ smartPortFrame_t;
 
 #define SMARTPORT_MSP_PAYLOAD_SIZE (sizeof(smartPortPayload_t) - sizeof(uint8_t))
 

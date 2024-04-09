@@ -78,16 +78,16 @@ typedef enum {
 #define MSP_PORT_OUTBUF_SIZE MSP_PORT_OUTBUF_SIZE_MIN // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1.
 #endif
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint8_t size;
     uint8_t cmd;
 } mspHeaderV1_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint16_t size;
 } mspHeaderJUMBO_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __PACKED__ {
     uint8_t  flags;
     uint16_t cmd;
     uint16_t size;

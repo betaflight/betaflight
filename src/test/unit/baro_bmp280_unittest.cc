@@ -42,7 +42,7 @@ typedef struct bmp280_calib_param_s {
     int16_t dig_P7; /* calibration P7 data */
     int16_t dig_P8; /* calibration P8 data */
     int16_t dig_P9; /* calibration P9 data */
-} __attribute__((packed)) bmp280_calib_param_t; // packed as we read directly from the device into this structure.
+} __PACKED__ bmp280_calib_param_t; // packed as we read directly from the device into this structure.
 
 extern bmp280_calib_param_t bmp280_cal;
 }

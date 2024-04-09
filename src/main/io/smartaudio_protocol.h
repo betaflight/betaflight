@@ -44,38 +44,38 @@ typedef struct smartaudioFrameHeader_s {
     uint16_t startCode;
     uint8_t length;
     uint8_t command;
-} __attribute__((packed)) smartaudioFrameHeader_t;
+} __PACKED__ smartaudioFrameHeader_t;
 
 typedef struct smartaudioCommandOnlyFrame_s {
     smartaudioFrameHeader_t header;
     uint8_t crc;
-} __attribute__((packed)) smartaudioCommandOnlyFrame_t;
+} __PACKED__ smartaudioCommandOnlyFrame_t;
 
 typedef struct smartaudioU8Frame_s {
     smartaudioFrameHeader_t header;
     uint8_t payload;
     uint8_t crc;
-} __attribute__((packed)) smartaudioU8Frame_t;
+} __PACKED__ smartaudioU8Frame_t;
 
 typedef struct smartaudioU16Frame_s {
     smartaudioFrameHeader_t header;
     uint16_t payload;
     uint8_t crc;
-} __attribute__((packed)) smartaudioU16Frame_t;
+} __PACKED__ smartaudioU16Frame_t;
 
 typedef struct smartaudioU8ResponseFrame_s {
     smartaudioFrameHeader_t header;
     uint8_t payload;
     uint8_t reserved;
     uint8_t crc;
-} __attribute__((packed)) smartaudioU8ResponseFrame_t;
+} __PACKED__ smartaudioU8ResponseFrame_t;
 
 typedef struct smartaudioU16ResponseFrame_s {
     smartaudioFrameHeader_t header;
     uint16_t payload;
     uint8_t reserved;
     uint8_t crc;
-} __attribute__((packed)) smartaudioU16ResponseFrame_t;
+} __PACKED__ smartaudioU16ResponseFrame_t;
 
 typedef struct smartaudioSettingsResponseFrame_s {
     smartaudioFrameHeader_t header;
@@ -84,13 +84,13 @@ typedef struct smartaudioSettingsResponseFrame_s {
     uint8_t operationMode;
     uint16_t frequency;
     uint8_t crc;
-} __attribute__((packed)) smartaudioSettingsResponseFrame_t;
+} __PACKED__ smartaudioSettingsResponseFrame_t;
 
 typedef union smartaudioFrame_u {
     smartaudioCommandOnlyFrame_t commandOnlyFrame;
     smartaudioU8Frame_t u8RequestFrame;
     smartaudioU16Frame_t u16RequestFrame;
-} __attribute__((packed)) smartaudioFrame_t;
+} __PACKED__ smartaudioFrame_t;
 
 size_t smartaudioFrameGetSettings(smartaudioFrame_t *smartaudioFrame);
 size_t smartaudioFrameGetPitmodeFrequency(smartaudioFrame_t *smartaudioFrame);

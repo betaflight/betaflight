@@ -315,7 +315,7 @@ typedef union ubxPayload_s {
 typedef struct ubxMessage_s {
     ubxHeader_t header;
     ubxPayload_t payload;
-} __attribute__((packed)) ubxMessage_t;
+} __PACKED__ ubxMessage_t;
 
 typedef enum {
     UBLOX_DETECT_UNIT,      //  0

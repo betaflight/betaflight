@@ -58,7 +58,7 @@ typedef struct smartPortPayload_s {
     uint8_t  frameId;
     uint16_t valueId;
     uint32_t data;
-} __attribute__((packed)) smartPortPayload_t;
+} __PACKED__ smartPortPayload_t;
 
 typedef void smartPortWriteFrameFn(const smartPortPayload_t *payload);
 typedef bool smartPortReadyToSendFn(void);

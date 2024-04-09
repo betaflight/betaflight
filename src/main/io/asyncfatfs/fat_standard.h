@@ -67,7 +67,7 @@ typedef struct mbrPartitionEntry_t {
     uint8_t chsEnd[3];
     uint32_t lbaBegin;
     uint32_t numSectors;
-} __attribute__((packed)) mbrPartitionEntry_t;
+} __PACKED__ mbrPartitionEntry_t;
 
 typedef struct fat16Descriptor_t {
     uint8_t driveNumber;
@@ -76,7 +76,7 @@ typedef struct fat16Descriptor_t {
     uint32_t volumeID;
     char volumeLabel[11];
     char fileSystemType[8];
-} __attribute__((packed)) fat16Descriptor_t;
+} __PACKED__ fat16Descriptor_t;
 
 typedef struct fat32Descriptor_t {
     uint32_t FATSize32;
@@ -92,7 +92,7 @@ typedef struct fat32Descriptor_t {
     uint32_t volumeID;
     char volumeLabel[11];
     char fileSystemType[8];
-} __attribute__((packed)) fat32Descriptor_t;
+} __PACKED__ fat32Descriptor_t;
 
 typedef struct fatVolumeID_t {
     uint8_t jmpBoot[3];
@@ -113,7 +113,7 @@ typedef struct fatVolumeID_t {
         fat16Descriptor_t fat16;
         fat32Descriptor_t fat32;
     } fatDescriptor;
-} __attribute__((packed)) fatVolumeID_t;
+} __PACKED__ fatVolumeID_t;
 
 typedef struct fatDirectoryEntry_t {
     char filename[FAT_FILENAME_LENGTH];
@@ -128,7 +128,7 @@ typedef struct fatDirectoryEntry_t {
     uint16_t lastWriteDate;
     uint16_t firstClusterLow;
     uint32_t fileSize;
-} __attribute__((packed)) fatDirectoryEntry_t;
+} __PACKED__ fatDirectoryEntry_t;
 
 uint32_t fat32_decodeClusterNumber(uint32_t clusterNumber);
 
