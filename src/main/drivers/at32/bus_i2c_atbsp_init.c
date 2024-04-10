@@ -27,7 +27,6 @@
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
 #include "drivers/io.h"
-#include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
 #include "drivers/rcc.h"
@@ -35,21 +34,9 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
+#include "drivers/bus_i2c_utils.h"
 
 #include "pg/pinio.h"
-
-// Number of bits in I2C protocol phase
-#define LEN_ADDR 7
-#define LEN_RW 1
-#define LEN_ACK 1
-
-// Clock period in us during unstick transfer
-#define UNSTICK_CLK_US 10
-
-// Allow 500us for clock strech to complete during unstick
-#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
-
-static void i2cUnstick(IO_t scl, IO_t sda);
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_MUX , GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_UP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_MUX , GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_NONE)
@@ -169,36 +156,4 @@ void i2cInit(I2CDevice device)
     i2c_enable(i2cx, TRUE);
 }
 
-static void i2cUnstick(IO_t scl, IO_t sda)
-{
-    int i;
-
-    IOHi(scl);
-    IOHi(sda);
-
-    IOConfigGPIO(scl, IOCFG_OUT_OD);
-    IOConfigGPIO(sda, IOCFG_OUT_OD);
-
-    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
-        int timeout = UNSTICK_CLK_STRETCH;
-        while (!IORead(scl) && timeout) {
-            delayMicroseconds(UNSTICK_CLK_US);
-            timeout--;
-        }
-
-        IOLo(scl);
-        delayMicroseconds(UNSTICK_CLK_US / 2);
-        IOHi(scl);
-        delayMicroseconds(UNSTICK_CLK_US / 2);
-    }
-
-    IOLo(scl);
-    delayMicroseconds(UNSTICK_CLK_US / 2);
-    IOLo(sda);
-    delayMicroseconds(UNSTICK_CLK_US / 2);
-
-    IOHi(scl);
-    delayMicroseconds(UNSTICK_CLK_US / 2);
-    IOHi(sda);
-}
 #endif
