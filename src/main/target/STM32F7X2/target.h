@@ -77,3 +77,6 @@
 #define USE_EXTI
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
+
+// knowing the ITCM will overflow so need to drop items.
+#define FAST_CODE_PREF

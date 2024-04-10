@@ -76,7 +76,7 @@ bool sx1280IsBusy(void)
     return IORead(busy);
 }
 
-FAST_CODE static bool sx1280PollBusy(void)
+FAST_CODE_PREF static bool sx1280PollBusy(void)
 {
     uint32_t startTime = micros();
     while (IORead(busy)) {
@@ -89,7 +89,7 @@ FAST_CODE static bool sx1280PollBusy(void)
     return true;
 }
 
-FAST_CODE static bool sx1280MarkBusy(void)
+FAST_CODE_PREF static bool sx1280MarkBusy(void)
 {
     // Check that there isn't already a sequence of accesses to the SX1280 in progress
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
@@ -109,7 +109,7 @@ static void sx1280ClearBusyFn(void)
 }
 
 // Switch to waiting for busy interrupt
-FAST_CODE static bool sx1280EnableBusy(void)
+FAST_CODE_PREF static bool sx1280EnableBusy(void)
 {
     if (!sx1280MarkBusy()) {
         return false;
