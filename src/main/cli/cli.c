@@ -3273,26 +3273,31 @@ static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32
     }
 }
 
+static void printFeatureList(const char* header, uint32_t mask, const char* delimiter, bool lineFeed)
+{
+    if (header) {
+        cliPrint(header);
+    }
+    for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {
+        if (featureNames[i] && (mask & (1U << i))) {
+            cliPrintf("%s%s", i ? delimiter : "", featureNames[i]);
+        }
+    }
+    if (lineFeed) {
+        cliPrintLinefeed();
+    }
+}
+
 static void cliFeature(const char *cmdName, char *cmdline)
 {
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
     if (len == 0) {
-        cliPrint("Enabled:");
-        for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {
-            if (featureNames[i] && (mask & (1U << i))) {
-                cliPrintf(" %s", featureNames[i]);
-            }
-        }
-        cliPrintLinefeed();
+        printFeatureList("Enabled: ", mask, " ", true);
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available:");
-        for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {
-            if (featureNames[i])
-                cliPrintf(" %s", featureNames[i]);
-        }
-        cliPrintLinefeed();
-        return;
+        printFeatureList("Available: ", featuresSupportedByBuild, " ", true);
+        // only defined features are printed, extra bits are ignored
+        printFeatureList("NotSupported: ", ~featuresSupportedByBuild, " ", true);
     } else {
         bool remove = false;
         if (cmdline[0] == '-') {
