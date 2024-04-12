@@ -233,4 +233,3 @@ bool mpuAccRead(struct accDev_s *acc);
 bool mpuAccReadSPI(struct accDev_s *acc);
 
 busStatus_e mpuIntCallback(uint32_t arg);
-void mpuIntExtiHandler(extiCallbackRec_t *cb);
