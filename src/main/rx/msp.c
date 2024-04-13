@@ -37,6 +37,11 @@ static uint16_t mspFrame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static bool rxMspFrameDone = false;
 static bool rxMspOverrideFrameDone = false;
 
+// Initialize ROLL, PITCH, and YAW channels to 1500
+mspFrame[0] = 1500; // ROLL
+mspFrame[1] = 1500; // PITCH
+mspFrame[2] = 1500; // YAW    
+
 float rxMspReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
     UNUSED(rxRuntimeState);
@@ -92,10 +97,5 @@ void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
     rxRuntimeState->rcReadRawFn = rxMspReadRawRC;
     rxRuntimeState->rcFrameStatusFn = rxMspFrameStatus;
-
-    // Initialize ROLL, PITCH, and YAW channels to 1500
-    mspFrame[0] = 1500; // ROLL
-    mspFrame[1] = 1500; // PITCH
-    mspFrame[2] = 1500; // YAW    
 }
 #endif
