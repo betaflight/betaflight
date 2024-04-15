@@ -20,9 +20,13 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIE
 #define TARGET_BOARD_IDENTIFIER "S745"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32F745"
+#endif
 
 #ifndef STM32F745
 #define STM32F745
