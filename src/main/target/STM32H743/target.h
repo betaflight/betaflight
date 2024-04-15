@@ -20,7 +20,7 @@
 
 #pragma once
 
-#ifndef TARGET_BOARD_IDENTIFIE
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "SH74"
 #endif
 
