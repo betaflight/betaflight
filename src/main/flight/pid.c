@@ -707,6 +707,18 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
                 DEBUG_SET(DEBUG_ITERM_RELAX, 1, lrintf(itermRelaxFactor * 100.0f));
                 DEBUG_SET(DEBUG_ITERM_RELAX, 2, lrintf(*itermErrorRate));
             }
+        } else {
+            // testing putting iTermRelax for yaw here
+            // method uses a modification of tbolin's pidSum limiting
+            // reduce iTerm rate of change (input gain) as pidSum approaches pidSum limit for yaw
+            float axisCi = 1.0f - (fabsf(pidData[axis].Sum) / pidRuntime.pidSumLimitYaw);
+            axisCi = constrainf(axisCi * pidRuntime.itermWindupPointInv, 0.0f, 1.0f);
+            *itermErrorRate *= axisCi;
+
+            DEBUG_SET(DEBUG_ITERM_RELAX, 4, lrintf(axisCi * 100.0f));
+            DEBUG_SET(DEBUG_ITERM_RELAX, 5, lrintf(pidData[axis].Sum));
+            DEBUG_SET(DEBUG_ITERM_RELAX, 6, lrintf(*itermErrorRate));
+            DEBUG_SET(DEBUG_ITERM_RELAX, 7, lrintf(pidData[axis].I));
         }
 
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -982,13 +994,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 
-        // axisCi implements input iTerm limiting based on pidSum compared to iTermLimit
-        float axisCi = (pidRuntime.itermLimit - fabsf(pidData[axis].Sum)) / pidRuntime.itermLimit;
-        // itermWindupPointInv sets the slope of the iterm attenuation.
-        axisCi = constrainf(axisCi * pidRuntime.itermWindupPointInv, 0.0f, 1.0f);
-
-        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * axisCi * pidRuntime.dT * itermErrorRate;
-        pidData[axis].I = previousIterm + iTermChange;
+        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate;
+        pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate D component
 

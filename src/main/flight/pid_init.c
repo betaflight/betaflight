@@ -312,7 +312,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold;
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
-    pidRuntime.itermLimit = MIN(pidProfile->itermLimit, pidProfile->pidSumLimit);
+    // to avoid motor saturation by iTerm alone, itermLimit cannot be set higher than 80% of pidSumLimit
+    // **todo** yaw has it's own pidSumLimitYaw, this may cause issues?
+    pidRuntime.itermLimit = fminf((float)pidProfile->itermLimit, 0.8f * pidProfile->pidSumLimit);
+    pidRuntime.pidSumLimitYaw = pidProfile->pidSumLimitYaw;
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
