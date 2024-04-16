@@ -607,8 +607,8 @@ static const void *saCmsConfigUserFreq(displayPort_t *pDisp, const void *self)
 static const OSD_Entry saCmsMenuPORFreqEntries[] = {
     { "- POR FREQ -", OME_Label,   NULL,             NULL },
 
-    { "CUR FREQ",     OME_UINT16 | DYNAMIC,  NULL,             &(OSD_UINT16_t){ &saCmsORFreq, 5000, 5999, 0 } },
-    { "NEW FREQ",     OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsORFreqNew, 5000, 5999, 1 } },
+    { "CUR FREQ",     OME_UINT16 | DYNAMIC,  NULL,             &(OSD_UINT16_t){ &saCmsORFreq, 1000, 6700, 0 } },
+    { "NEW FREQ",     OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsORFreqNew, 1000, 6700, 1 } },
     { "SAVE",         OME_Funcall, saCmsSetPORFreq,  NULL },
 
     { "BACK",         OME_Back,    NULL,             NULL },
@@ -630,8 +630,8 @@ static CMS_Menu saCmsMenuPORFreq =
 static const OSD_Entry saCmsMenuUserFreqEntries[] = {
     { "- USER FREQ -", OME_Label,   NULL,             NULL },
 
-    { "CUR FREQ",      OME_UINT16 | DYNAMIC,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreq, 5000, 5999, 0 } },
-    { "NEW FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreqNew, 5000, 5999, 1 } },
+    { "CUR FREQ",      OME_UINT16 | DYNAMIC,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreq, 1000, 6700, 0 } },
+    { "NEW FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreqNew, 1000, 6700, 1 } },
     { "SAVE",          OME_Funcall, saCmsConfigUserFreq, NULL },
 
     { "BACK",          OME_Back,    NULL,             NULL },
