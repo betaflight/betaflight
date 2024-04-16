@@ -680,9 +680,6 @@ void validateAndFixGyroConfig(void)
             if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600) {
                 motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
             }
-            if (gyro.sampleRateHz > 4000) {
-                pidConfigMutable()->pid_process_denom = 2;
-            }
         }
 #endif // USE_DSHOT && USE_PID_DENOM_CHECK
         switch (motorConfig()->dev.motorPwmProtocol) {
