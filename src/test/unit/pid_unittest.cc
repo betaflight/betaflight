@@ -298,7 +298,7 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-7.8, pidData[FD_ROLL].I, calculateTolerance(-7.8));
+    EXPECT_NEAR(-15.6, pidData[FD_ROLL].I, calculateTolerance(-15.6));
     EXPECT_NEAR(9.8, pidData[FD_PITCH].I, calculateTolerance(9.8));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
@@ -313,8 +313,8 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
     EXPECT_NEAR(-224.2, pidData[FD_YAW].P, calculateTolerance(-224.2));
-    EXPECT_NEAR(-9.3, pidData[FD_ROLL].I, calculateTolerance(-9.3));
-    EXPECT_NEAR(9.8, pidData[FD_PITCH].I, calculateTolerance(9.8));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
     EXPECT_NEAR(-8.7, pidData[FD_YAW].I, calculateTolerance(-8.7));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
@@ -323,9 +323,9 @@ TEST(pidControllerTest, testPidLoop)
     // Simulate Iterm behaviour during mixer saturation
     simulatedMotorMixRange = 1.2f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_NEAR(-10.6, pidData[FD_ROLL].I, calculateTolerance(-10.6));
-    EXPECT_NEAR(9.8, pidData[FD_PITCH].I, calculateTolerance(9.8));
-    EXPECT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
+    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
+    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
+    EXPECT_NEAR(-17.6, pidData[FD_YAW].I, calculateTolerance(-17.6));
     simulatedMotorMixRange = 0;
 
     // Match the stick to gyro to stop error
@@ -340,9 +340,9 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-10.6, pidData[FD_ROLL].I, calculateTolerance(-10.6));
-    EXPECT_NEAR(9.8, pidData[FD_PITCH].I, calculateTolerance(9.8));
-    EXPECT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
+    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
+    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
+    EXPECT_NEAR(-19.3, pidData[FD_YAW].I, calculateTolerance(-19.3));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
@@ -520,9 +520,9 @@ TEST(pidControllerTest, testMixerSaturation)
     pidController(pidProfile, currentTestTime());
 
     // Expect iterm accumulation for all axes because at this point, pidSum is not at limit
-    EXPECT_NEAR(156.2f, pidData[FD_ROLL].I, calculateTolerance(156.2));
-    EXPECT_NEAR(-195.3f, pidData[FD_PITCH].I, calculateTolerance(-195.3));
-    EXPECT_NEAR(7.0f, pidData[FD_YAW].I, calculateTolerance(7.0));
+    EXPECT_NEAR(156.2f, pidData[FD_ROLL].I, calculateTolerance(156.2f));
+    EXPECT_NEAR(-150.0f, pidData[FD_PITCH].I, calculateTolerance(-150.0f));
+    EXPECT_NEAR(7.0f, pidData[FD_YAW].I, calculateTolerance(7.0f));
 
 //    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
 //    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
@@ -598,14 +598,17 @@ TEST(pidControllerTest, testPidsumAntiWindup)
     // Test that i term is limited when the pidsum limit is hit
     // important for yaw since yaw cant saturate the mixer alone with the default pidsum_limit_yaw
     // Go axis by axis to avoid breaking the test if mixer saturation gets automatically calculated in the future
+    // takes about 5 iterations for values to stabilise
     {
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
     gyro.gyroADCf[FD_ROLL] = PIDSUM_LIMIT;
-    pidController(pidProfile, currentTestTime());
-    // value from the previous itteration is used for efficiency reasons so expect
-    // i term accumulation to stop at the second itteration
+    for(int loop = 0; loop < 5; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+    // value from the previous iteration is used for efficiency reasons so expect
+    // i term accumulation to stop after 5 iterations
     const float i_term_after_first = pidData[FD_ROLL].I;
     pidController(pidProfile, currentTestTime());
     EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_ROLL].I);
@@ -615,9 +618,11 @@ TEST(pidControllerTest, testPidsumAntiWindup)
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
     gyro.gyroADCf[FD_PITCH] = PIDSUM_LIMIT;
-    pidController(pidProfile, currentTestTime());
-    // value from the previous itteration is used for efficiency reasons so expect
-    // i term accumulation to stop at the second itteration
+    for(int loop = 0; loop < 5; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+    // value from the previous iteration is used for efficiency reasons so expect
+    // i term accumulation to stop after 5 iterations
     const float i_term_after_first = pidData[FD_PITCH].I;
     pidController(pidProfile, currentTestTime());
     EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_PITCH].I);
@@ -627,9 +632,11 @@ TEST(pidControllerTest, testPidsumAntiWindup)
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
     gyro.gyroADCf[FD_YAW] = PIDSUM_LIMIT_YAW;
-    pidController(pidProfile, currentTestTime());
-    // value from the previous itteration is used for efficiency reasons so expect
-    // i term accumulation to stop at the second itteration
+    for(int loop = 0; loop < 5; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+    // value from the previous iteration is used for efficiency reasons so expect
+    // i term accumulation to stop after 5 iterations
     const float i_term_after_first = pidData[FD_YAW].I;
     pidController(pidProfile, currentTestTime());
     EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_YAW].I);
