@@ -326,7 +326,7 @@ typedef struct pidRuntime_s {
     float crashSetpointThreshold;
     float crashLimitYaw;
     float itermLimit;
-    float pidSumLimitYaw;
+    float pidSumLimitYawInv;
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;

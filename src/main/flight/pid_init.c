@@ -315,7 +315,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     // to avoid motor saturation by iTerm alone, itermLimit cannot be set higher than 80% of pidSumLimit
     // **todo** yaw has it's own pidSumLimitYaw, this may cause issues?
     pidRuntime.itermLimit = fminf((float)pidProfile->itermLimit, 0.8f * pidProfile->pidSumLimit);
-    pidRuntime.pidSumLimitYaw = pidProfile->pidSumLimitYaw;
+    pidRuntime.pidSumLimitYawInv = 1.0f / pidProfile->pidSumLimitYaw;
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
