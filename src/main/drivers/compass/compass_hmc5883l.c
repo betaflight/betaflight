@@ -124,11 +124,11 @@
 #define HMC_CONFA_NORMAL            0x00
 #define HMC_CONFA_POS_BIAS          0x01
 #define HMC_CONFA_NEG_BIAS          0x02
-#define HMC_CONFA_DOR_15HZ          0X10
-#define HMC_CONFA_DOR_75HZ          0x06
-#define HMC_CONFA_8_SAMLES          0X60
-#define HMC_CONFB_GAIN_2_5GA        0X60
-#define HMC_CONFB_GAIN_1_3GA        0X20
+#define HMC_CONFA_DOR_15HZ          (0x4 << 2)
+#define HMC_CONFA_DOR_75HZ          (0x6 << 2)
+#define HMC_CONFA_8_SAMLES          (0x3 << 5)
+#define HMC_CONFB_GAIN_2_5GA        (0x3 << 5)
+#define HMC_CONFB_GAIN_1_3GA        (0x1 << 5)
 #define HMC_MODE_CONTINOUS          0X00
 #define HMC_MODE_SINGLE             0X01
 
