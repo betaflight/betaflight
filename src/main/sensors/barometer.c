@@ -229,13 +229,11 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
         {
-            static bmp085Config_t defaultBMP085Config;
-            defaultBMP085Config.xclrTag = barometerConfig()->baro_xclr_tag;
-            defaultBMP085Config.eocTag = barometerConfig()->baro_eoc_tag;
-
-            static const bmp085Config_t *bmp085Config = &defaultBMP085Config;
-
-            if (bmp085Detect(bmp085Config, baroDev)) {
+            const bmp085Config_t defaultBMP085Config = {
+                .xclrTag = barometerConfig()->baro_xclr_tag,
+                .eocTag = barometerConfig()->baro_eoc_tag
+            };
+            if (bmp085Detect(&defaultBMP085Config, baroDev)) {
                 baroHardware = BARO_BMP085;
                 break;
             }
@@ -275,13 +273,10 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     case BARO_BMP388:
 #if defined(USE_BARO_BMP388) || defined(USE_BARO_SPI_BMP388)
         {
-            static bmp388Config_t defaultBMP388Config;
-
-            defaultBMP388Config.eocTag = barometerConfig()->baro_eoc_tag;
-
-            static const bmp388Config_t *bmp388Config = &defaultBMP388Config;
-
-            if (bmp388Detect(bmp388Config, baroDev)) {
+            const bmp388Config_t defaultBMP388Config = {
+                .eocTag = barometerConfig()->baro_eoc_tag,
+            };
+            if (bmp388Detect(&defaultBMP388Config, baroDev)) {
                 baroHardware = BARO_BMP388;
                 break;
             }
