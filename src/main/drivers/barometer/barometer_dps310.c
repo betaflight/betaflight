@@ -255,9 +255,7 @@ static bool dps310ReadUP(baroDev_t *baro)
     // 1. Kick off read
     // No need to poll for data ready as the conversion rate is 32Hz and this is sampling at 20Hz
     // Read PSR_B2, PSR_B1, PSR_B0, TMP_B2, TMP_B1, TMP_B0
-     busReadRegisterBufferStart(&baro->dev, DPS310_REG_PSR_B2, buf, 6);
-
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, DPS310_REG_PSR_B2, buf, 6);
 }
 
 static bool dps310GetUP(baroDev_t *baro)
@@ -334,9 +332,11 @@ static bool deviceDetect(const extDevice_t *dev)
     return false;
 }
 
-static void dps310StartUT(baroDev_t *baro)
+static bool dps310StartUT(baroDev_t *baro)
 {
     UNUSED(baro);
+
+    return true;
 }
 
 static bool dps310ReadUT(baroDev_t *baro)
@@ -353,9 +353,11 @@ static bool dps310GetUT(baroDev_t *baro)
     return true;
 }
 
-static void dps310StartUP(baroDev_t *baro)
+static bool dps310StartUP(baroDev_t *baro)
 {
     UNUSED(baro);
+
+    return true;
 }
 
 static void deviceInit(const extDevice_t *dev, resourceOwner_e owner)

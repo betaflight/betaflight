@@ -51,13 +51,13 @@
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
-// Handle case where we'd prefer code to be in ITCM, but it won't fit on the F745
-#ifdef STM32F745xx
-#define FAST_CODE_PREF
-#else
-#define FAST_CODE_PREF                  __attribute__((section(".tcm_code")))
+// Handle case where we'd prefer code to be in ITCM, but it won't fit on the device
+#ifndef FAST_CODE_PREF
+#define FAST_CODE_PREF              FAST_CODE
 #endif
+
 #define FAST_CODE_NOINLINE          NOINLINE
+
 #else
 #define FAST_CODE
 #define FAST_CODE_PREF

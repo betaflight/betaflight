@@ -110,14 +110,16 @@ static bool qmc5883lRead(magDev_t *magDev, int16_t *magData)
         case STATE_WAIT_DRDY:
             if (status & QMC5883L_REG_STATUS_DRDY) {
                 // New data is available
-                busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_OUTPUT_X, buf, sizeof(buf));
-                state = STATE_READ;
+                if (busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_OUTPUT_X, buf, sizeof(buf))) {
+                    state = STATE_READ;
+                }
             } else if (status & QMC5883L_REG_STATUS_DOR) {
                 // Data overrun (and data not ready). Data registers may be locked, read unlock regiter (ZH)
-                busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_UNLOCK, buf + sizeof(buf) - 1, 1);
-                status = 0;   // force status read next
+                if (busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_UNLOCK, buf + sizeof(buf) - 1, 1)) {
+                    status = 0;   // force status read next
+                }
             } else {
-                // Read status register to check for data ready
+                // Read status register to check for data ready - status will be untouched if read fails
                 busReadRegisterBufferStart(dev, QMC5883L_REG_STATUS, &status, sizeof(status));
             }
             return false;
