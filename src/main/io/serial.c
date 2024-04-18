@@ -350,7 +350,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
             // Ensure that the baud rate on soft serial ports is limited to 19200
             serialConfigToCheck->portConfigs[index].gps_baudrateIndex = constrain(portConfig->gps_baudrateIndex, BAUD_AUTO, BAUD_19200);
             serialConfigToCheck->portConfigs[index].blackbox_baudrateIndex = constrain(portConfig->blackbox_baudrateIndex, BAUD_AUTO, BAUD_19200);
-            // serialConfigToCheck->portConfigs[index].telemetry_baudrateIndex = constrain(portConfig->telemetry_baudrateIndex, BAUD_AUTO, BAUD_19200);
+            // serialConfigToCheck->portConfigs[index].telemetry_baudrateIndex = constrain(portConfig->telemetry_baudrateIndex, BAUD_AUTO, BAUD_57600);
         }
 #endif
 
@@ -437,9 +437,9 @@ serialPort_t *openSerialPort(
     serialPort_t *serialPort = NULL;
 
 #ifdef USE_SOFTSERIAL
-    if (((identifier == SERIAL_PORT_SOFTSERIAL1) || (identifier == SERIAL_PORT_SOFTSERIAL2)) && (baudRate > 19200)) {
+    if (((identifier == SERIAL_PORT_SOFTSERIAL1) || (identifier == SERIAL_PORT_SOFTSERIAL2)) && (baudRate > 57600)) {
         // Limit baud rate on soft serial ports
-        baudRate = 19200;
+        baudRate = 57600;
     }
 #endif
 
