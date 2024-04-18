@@ -428,7 +428,13 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->osd_use_quick_menu = true;
 #endif // USE_OSD_QUICK_MENU
 #ifdef USE_SPEC_PREARM_SCREEN
-    osdConfig->osd_show_spec_prearm = true;
+    osdConfig->osd_show_spec_prearm =
+#ifdef USE_RACE_PRO
+        true
+#else
+        false
+#endif //USE_RACE_PRO
+        ;
 #endif // USE_SPEC_PREARM_SCREEN
 }
 
