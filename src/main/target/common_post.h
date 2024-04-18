@@ -323,7 +323,7 @@
 #endif
 #endif
 
-#if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV)) && !defined(USE_FLASH_M25P16)
+#if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_PY25Q128HA)) && !defined(USE_FLASH_M25P16)
 #if !defined(USE_FLASH_M25P16)
 #define USE_FLASH_M25P16
 #endif
