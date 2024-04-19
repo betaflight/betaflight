@@ -103,6 +103,8 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+const bool PRINT_TEST_DATA = false;
+
 TEST(CLIUnittest, TestCliSetArray)
 {
     char *str = (char *)"array_unit_test    =   123,  -3  , 1";
@@ -112,14 +114,15 @@ TEST(CLIUnittest, TestCliSetArray)
     EXPECT_LT(index, valueTableEntryCount);
 
     const clivalue_t val = valueTable[index];
-
-    printf("\n===============================\n");
     int8_t *data = (int8_t *)cliGetValuePointer(&val);
-    for(int i=0; i < val.config.array.length; i++){
-        printf("data[%d] = %d\n", i, data[i]);
-    }
-    printf("\n===============================\n");
 
+    if (PRINT_TEST_DATA) {
+        printf("\n===============================\n");
+        for(int i = 0; i < val.config.array.length; i++){
+            printf("data[%d] = %d\n", i, data[i]);
+        }
+        printf("\n===============================\n");
+    }
 
     EXPECT_EQ(123, data[0]);
     EXPECT_EQ( -3, data[1]);
@@ -135,14 +138,15 @@ TEST(CLIUnittest, TestCliSetStringNoFlags)
     EXPECT_LT(index, valueTableEntryCount);
 
     const clivalue_t val = valueTable[index];
-
-    printf("\n===============================\n");
     uint8_t *data = (uint8_t *)cliGetValuePointer(&val);
-    for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
-        printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
-    }
-    printf("\n===============================\n");
 
+    if (PRINT_TEST_DATA) {
+        printf("\n===============================\n");
+        for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
+            printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+        }
+        printf("\n===============================\n");
+    }
 
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
@@ -164,13 +168,14 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
 
     const clivalue_t val = valueTable[index];
 
-    printf("\n===============================\n");
     uint8_t *data = (uint8_t *)cliGetValuePointer(&val);
-    for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
-        printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+    if (PRINT_TEST_DATA) {
+        printf("\n===============================\n");
+        for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
+            printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+        }
+        printf("\n===============================\n");
     }
-    printf("\n===============================\n");
-
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
     EXPECT_EQ('M', data[2]);
@@ -198,8 +203,6 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ('L', data[4]);
     EXPECT_EQ('E', data[5]);
     EXPECT_EQ(0,   data[6]);
-
-    printf("\n");
 }
 
 // STUBS
