@@ -4580,7 +4580,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                 if (updatable && len > 0 && len <= max) {
                     memset((char *)cliGetValuePointer(val), 0, max);
                     if (len >= min && strncmp(valPtr, emptyName, len)) {
-                        strncpy((char *)cliGetValuePointer(val), valPtr, len);
+                        memcpy((char *)cliGetValuePointer(val), valPtr, len);
                     }
                     valueChanged = true;
                 } else {

@@ -273,8 +273,8 @@ uint8_t serialRead(serialPort_t *instance)
 
 void serialTestResetBuffers()
 {
-    memset(&serialReadStub, 0, sizeof(serialReadStub));
-    memset(&serialWriteStub, 0, sizeof(serialWriteStub));
+    serialReadStub = { {0} }; 
+    serialWriteStub = { {0} };
 }
 
 void setTestSensors()
