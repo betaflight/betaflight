@@ -293,7 +293,8 @@ rx_sumd_unittest_SRC := \
 scheduler_unittest_SRC := \
 		$(USER_DIR)/scheduler/scheduler.c \
 		$(USER_DIR)/common/crc.c \
-		$(USER_DIR)/common/streambuf.c
+		$(USER_DIR)/common/streambuf.c \
+		$(TEST_DIR)/scheduler_stubs.c
 
 scheduler_unittest_DEFINES := \
 		USE_OSD=
