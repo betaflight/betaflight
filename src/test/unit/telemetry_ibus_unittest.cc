@@ -101,6 +101,16 @@ uint16_t getBatteryAverageCellVoltage(void)
     return testBatteryVoltage / testBatteryCellCount;
 }
 
+uint16_t getBatteryVoltage(void)
+{
+    return testBatteryVoltage;
+}
+
+uint8_t getBatteryCellCount(void)
+{
+    return testBatteryCellCount;
+}
+
 int32_t getMAhDrawn(void)
 {
     return 0;
@@ -120,7 +130,7 @@ bool sensors(sensors_e sensor)
 {
     return (definedSensors & sensor) != 0;
 }
-}
+} /* extern "C" */
 
 #define SERIAL_BUFFER_SIZE 256
 
@@ -129,17 +139,6 @@ typedef struct serialPortStub_s {
     int pos = 0;
     int end = 0;
 } serialPortStub_t;
-
-
-uint16_t getBatteryVoltage(void)
-{
-    return testBatteryVoltage;
-}
-
-uint8_t getBatteryCellCount(void)
-{
-    return testBatteryCellCount;
-}
 
 static serialPortStub_t serialWriteStub;
 static serialPortStub_t serialReadStub;
