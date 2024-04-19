@@ -133,6 +133,9 @@ void spiRelease(const extDevice_t *dev);
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev);
 
+// Link two segment lists
+void spiLinkSegments(const extDevice_t *dev, busSegment_t *firstSegment, busSegment_t *secondSegment);
+
 /*
  * Routine naming convention is:
  *  spi[Read][Write][Reg][Msk][Buf][RB]

@@ -744,6 +744,19 @@ uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
     return dev->bus->deviceCount;
 }
 
+// Link two segment lists
+// Note that there is no need to unlink segment lists as this is done automatically as they are processed
+void spiLinkSegments(const extDevice_t *dev, busSegment_t *firstSegment, busSegment_t *secondSegment)
+{
+    busSegment_t *endSegment;
+
+    // Find the last segment of the new transfer
+    for (endSegment = firstSegment; endSegment->len; endSegment++);
+
+    endSegment->u.link.dev = dev;
+    endSegment->u.link.segments = secondSegment;
+}
+
 // DMA transfer setup and start
 void spiSequence(const extDevice_t *dev, busSegment_t *segments)
 {
