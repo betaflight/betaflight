@@ -260,14 +260,11 @@ extern "C" {
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
     controlRateConfig_t controlRateConfig = {
-            .rcRates[FD_ROLL] = 90,
-            .rcRates[FD_PITCH] = 90,
-            .rcExpo[FD_ROLL] = 0,
-            .rcExpo[FD_PITCH] = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0, 0, 0},
-            .rcExpo[FD_YAW] = 0,
+        .thrMid8 = 0,
+        .thrExpo8 = 0,
+        .rcRates = {[FD_ROLL] = 90, [FD_PITCH] = 90},
+        .rcExpo = {[FD_ROLL] = 0, [FD_PITCH] = 0, [FD_YAW] = 0},
+        .rates = {0, 0, 0},
     };
 
     channelRange_t fullRange = {
@@ -362,14 +359,11 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 {
     // given
     controlRateConfig_t controlRateConfig = {
-            .rcRates[FD_ROLL] = 90,
-            .rcRates[FD_PITCH] = 90,
-            .rcExpo[FD_ROLL] = 0,
-            .rcExpo[FD_PITCH] = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0,0,0},
-            .rcExpo[FD_YAW] = 0,
+        .thrMid8 = 0,
+        .thrExpo8 = 0,
+        .rcRates = {[FD_ROLL] = 90, [FD_PITCH] = 90},
+        .rcExpo = {[FD_ROLL] = 0, [FD_PITCH] = 0, [FD_YAW] = 0},
+        .rates = {0,0,0},
     };
 
     // and

@@ -147,8 +147,8 @@ static serialPortStub_t serialReadStub;
 #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x12
 serialPort_t serialTestInstance;
 serialPortConfig_t serialTestInstanceConfig = {
+    .functionMask = 0,
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .functionMask = 0
 };
 
 static serialPortConfig_t *findSerialPortConfig_stub_retval;

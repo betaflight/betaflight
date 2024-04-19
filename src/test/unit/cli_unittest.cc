@@ -64,9 +64,9 @@ extern "C" {
     void *cliGetValuePointer(const clivalue_t *value);
     
     const clivalue_t valueTable[] = {
-        { "array_unit_test",   VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config.array.length = 3,      PG_RESERVED_FOR_TESTING_1, 0 },
-        { "str_unit_test",     VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config.string = { 0, 16, 0 }, PG_RESERVED_FOR_TESTING_1, 0 },
-        { "wos_unit_test",     VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config.string = { 0, 16, STRING_FLAGS_WRITEONCE }, PG_RESERVED_FOR_TESTING_1, 0 },
+        { .name = "array_unit_test",   .type = VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config = { .array = { .length = 3}},                     .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
+        { .name = "str_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, 0 }},                      .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
+        { .name = "wos_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, STRING_FLAGS_WRITEONCE }}, .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
