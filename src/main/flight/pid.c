@@ -133,7 +133,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .yaw_lowpass_hz = 100,
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
-        .itermWindupPointPercent = 30, // now used for 'leaky iTerm' on yaw, temporarily, for testing
+        .itermWindupPointPercent = 60, // now used for 'leaky iTerm' on yaw, temporarily, for testing
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .angle_limit = 60,
         .feedforward_transition = 0,
@@ -1159,7 +1159,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             itermErrorRate = constrainf(itermErrorRate, -ezLandingLimit, ezLandingLimit);
         }
 
-        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
+        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate - iTermLeak;
 
 #ifdef USE_WING
         if (pidProfile->spa_mode[axis] != SPA_MODE_OFF) {
@@ -1168,7 +1168,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // #ifdef USE_WING
 
-        pidData[axis].I = constrainf(previousIterm + iTermChange - iTermLeak, -itermLimit, itermLimit);
+        pidData[axis].I = constrainf(previousIterm + iTermChange, -itermLimit, itermLimit);
 
         // -----calculate D component
 
