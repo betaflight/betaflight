@@ -30,10 +30,10 @@
 
 // Clock period in us during unstick transfer
 #define UNSTICK_CLK_US 10  // 100Khz
-// Allow 500us for clock strech to complete during unstick
+// Allow 500us for clock stretch to complete during unstick
 #define UNSTICK_CLK_STRETCH (500 / UNSTICK_CLK_US)
 
-// wait for cls to return high (clock stretching)
+// wait for SCL to return high (clock stretching)
 static bool i2cUnstick_waitStretch(IO_t scl, int timeout)
 {
     bool sclVal;
@@ -45,7 +45,7 @@ static bool i2cUnstick_waitStretch(IO_t scl, int timeout)
 }
 
 // generate clock pulses + STOP on I2C bus
-// this should to get all devices into idle state
+// this should get all devices into idle state
 // return true if bus seems to be idle (both SCL and SDA are high)
 bool i2cUnstick(IO_t scl, IO_t sda)
 {
