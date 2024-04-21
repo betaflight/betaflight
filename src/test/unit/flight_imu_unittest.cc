@@ -385,7 +385,7 @@ INSTANTIATE_TEST_SUITE_P(
 // STUBS
 
 extern "C" {
-    boxBitmask_t rcModeActivationMask;
+    extern boxBitmask_t rcModeActivationMask;
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 

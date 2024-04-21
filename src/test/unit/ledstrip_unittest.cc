@@ -303,7 +303,7 @@ uint8_t stateFlags = 0;
 uint16_t flightModeFlags = 0;
 float rcCommand[4];
 float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-boxBitmask_t rcModeActivationMask;
+extern boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
 batteryState_e getBatteryState(void)

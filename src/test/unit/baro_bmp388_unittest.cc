@@ -46,7 +46,7 @@ typedef struct bmp388_calib_param_s {
     int8_t P11;
 } __attribute__((packed)) bmp388_calib_param_t; // packed as we read directly from the device into this structure.
 
-bmp388_calib_param_t bmp388_cal;
+extern bmp388_calib_param_t bmp388_cal;
 
 } // extern "C"
 
