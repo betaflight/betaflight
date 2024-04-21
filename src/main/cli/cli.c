@@ -5039,7 +5039,7 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_LPUART1
     DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[SERIAL_PORT_MAX_INDEX], SERIAL_LPUART_MAX_INDEX ),
-    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[SERIAL_PORT_MAX_INDEX], SERIAL_LPUART_MAX_INDEX ),
+    DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[SERIAL_PORT_MAX_INDEX], SERIAL_LPUART_MAX_INDEX ),
 #endif
 #ifdef USE_I2C
     DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),
