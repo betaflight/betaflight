@@ -663,18 +663,10 @@ uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buf
     STATIC_DMA_DATA_AUTO uint8_t progExecDataLoad[] = { W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, 0, 0};
     STATIC_DMA_DATA_AUTO uint8_t progRandomProgDataLoad[] = { W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, 0};
 
-    static busSegment_t segmentsFlash[] = {
-        {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, w25n01g_callbackReady},
-        {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, w25n01g_callbackWriteEnable},
-        {.u.buffers = {progExecCmd, NULL}, sizeof(progExecCmd), true, w25n01g_callbackWriteComplete},
-        {.u.link = {NULL, NULL}, 0, true, NULL},
-    };
-
     static busSegment_t segmentsDataLoad[] = {
         {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, w25n01g_callbackReady},
         {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, w25n01g_callbackWriteEnable},
         {.u.buffers = {progExecDataLoad, NULL}, sizeof(progExecDataLoad), false, NULL},
-        {.u.buffers = {NULL, NULL}, 0, true, NULL}, // Patch in pointer to data buffer here
         {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
@@ -682,7 +674,18 @@ uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buf
         {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, w25n01g_callbackReady},
         {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, w25n01g_callbackWriteEnable},
         {.u.buffers = {progRandomProgDataLoad, NULL}, sizeof(progRandomProgDataLoad), false, NULL},
-        {.u.buffers = {NULL, NULL}, 0, true, NULL}, // Patch in pointer to data buffer here
+        {.u.link = {NULL, NULL}, 0, true, NULL},
+    };
+
+    static busSegment_t segmentsBuffer[] = {
+        {.u.buffers = {NULL, NULL}, 0, true, NULL},
+        {.u.link = {NULL, NULL}, 0, true, NULL},
+    };
+
+    static busSegment_t segmentsFlash[] = {
+        {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, w25n01g_callbackReady},
+        {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, w25n01g_callbackWriteEnable},
+        {.u.buffers = {progExecCmd, NULL}, sizeof(progExecCmd), true, w25n01g_callbackWriteComplete},
         {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
@@ -698,9 +701,6 @@ uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buf
         // Set the address and buffer details for the random data load
         progRandomProgDataLoad[1] = (columnAddress >> 8) & 0xff;
         progRandomProgDataLoad[2] = columnAddress & 0xff;
-        segmentsRandomDataLoad[3].u.buffers.txData = (uint8_t *)buffers[0];
-        segmentsRandomDataLoad[3].len = bufferSizes[0];
-
         programSegment = segmentsRandomDataLoad;
     } else {
         programStartAddress = programLoadAddress = fdevice->currentWriteAddress;
@@ -708,11 +708,15 @@ uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buf
         // Set the address and buffer details for the data load
         progExecDataLoad[1] = (columnAddress >> 8) & 0xff;
         progExecDataLoad[2] = columnAddress & 0xff;
-        segmentsDataLoad[3].u.buffers.txData = (uint8_t *)buffers[0];
-        segmentsDataLoad[3].len = bufferSizes[0];
-
         programSegment = segmentsDataLoad;
     }
+
+    // Add the data buffer
+    segmentsBuffer[0].u.buffers.txData = (uint8_t *)buffers[0];
+    segmentsBuffer[0].len = bufferSizes[0];
+    segmentsBuffer[0].callback = NULL;
+
+    spiLinkSegments(fdevice->io.handle.dev, programSegment, segmentsBuffer);
 
     bufferDirty = true;
     programLoadAddress += bufferSizes[0];
@@ -724,17 +728,14 @@ uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buf
         progExecCmd[2] = (currentPage >> 8) & 0xff;
         progExecCmd[3] = currentPage & 0xff;
 
-        // Don't callback on completion of data load but rather after flashing
-        programSegment[3].callback = NULL;
-
-        spiLinkSegments(fdevice->io.handle.dev, programSegment, segmentsFlash);
+        spiLinkSegments(fdevice->io.handle.dev, segmentsBuffer, segmentsFlash);
 
         bufferDirty = false;
 
         programStartAddress = programLoadAddress;
     } else {
         // Callback on completion of data load
-        programSegment[3].callback = w25n01g_callbackWriteComplete;
+        segmentsBuffer[0].callback = w25n01g_callbackWriteComplete;
     }
 
     if (!fdevice->couldBeBusy) {
