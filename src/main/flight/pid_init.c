@@ -426,10 +426,17 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
     pidRuntime.feedforwardSmoothFactor = 1.0f - (0.01f * pidProfile->feedforward_smooth_factor);
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
-    pidRuntime.feedforwardJitterFactorInv = 1.0f / (2.0f * pidProfile->feedforward_jitter_factor);
-    // the extra division by 2 is to average the sum of the two previous rcCommandAbs values
-    pidRuntime.feedforwardBoostFactor = 0.1f * pidProfile->feedforward_boost;
+    pidRuntime.feedforwardJitterFactorInv = 1.0f / (1.0f + pidProfile->feedforward_jitter_factor);
+    pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
+    pidRuntime.feedforwardInterpolate = !(rxRuntimeState.serialrxProvider == SERIALRX_CRSF);
+    pidRuntime.feedforwardYawHoldTime = (pidProfile->feedforward_yaw_hold_time == 0) ? 1.0f : 1000.0f / pidProfile->feedforward_yaw_hold_time;
+    pidRuntime.feedforwardYawHoldGain = pidProfile->feedforward_yaw_hold_gain;
+    // normalise/maintain boost when cutoffs are faster
+    if (pidProfile->feedforward_yaw_hold_time < 100) {
+        pidRuntime.feedforwardYawHoldGain *= pidRuntime.feedforwardYawHoldTime * 0.1f;
+    }
+
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
