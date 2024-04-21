@@ -417,8 +417,13 @@ FAST_IRQ_HANDLER static void spiIrqHandler(const extDevice_t *dev)
             break;
 
         case BUS_ABORT:
-            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
-            return;
+            // Skip to the end of the segment list
+            nextSegment = (busSegment_t *)bus->curSegment + 1;
+            while (nextSegment->len != 0) {
+                bus->curSegment = nextSegment;
+                nextSegment = (busSegment_t *)bus->curSegment + 1;
+            }
+            break;
 
         case BUS_READY:
         default:
