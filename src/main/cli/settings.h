@@ -224,6 +224,12 @@ typedef union {
     int32_t d32Max;                           // used for MODE_DIRECT with VAR_INT32
 } cliValueConfig_t;
 
+#ifdef __APPLE__
+#define PTR_PACKING
+#else
+#define PTR_PACKING __attribute__((packed))
+#endif
+
 typedef struct clivalue_s {
     const char *name;
     const uint8_t type;                       // see cliValueFlag_e
@@ -231,7 +237,7 @@ typedef struct clivalue_s {
 
     pgn_t pgn;
     uint16_t offset;
-} __attribute__((packed)) clivalue_t;
+} PTR_PACKING clivalue_t;
 
 
 extern const lookupTableEntry_t lookupTables[];
