@@ -25,6 +25,7 @@
 #include "drivers/system.h"
 #include "drivers/flash.h"
 
+#include "config/config_eeprom.h"
 #include "config/config_streamer.h"
 
 #if !defined(CONFIG_IN_FLASH)
@@ -374,7 +375,8 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
 
     uint64_t *dest_addr = (uint64_t *)c->address;
     uint64_t *src_addr = (uint64_t*)buffer;
-    uint8_t row_index = 4;
+    uint8_t row_index = CONFIG_STREAMER_BUFFER_SIZE / sizeof(uint64_t);
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE % sizeof(uint64_t) == 0, "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     /* copy the 256 bits flash word */
     do
     {
@@ -389,6 +391,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
             return -1;
         }
     }
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t), "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     const FLASH_Status status = FLASH_ProgramWord(c->address, *buffer);
     if (status != FLASH_COMPLETE) {
         return -2;
@@ -415,6 +418,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
 
     // For H7
     // HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t Address, uint64_t DataAddress);
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * FLASH_NB_32BITWORD_IN_FLASHWORD,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, c->address, (uint64_t)(uint32_t)buffer);
     if (status != HAL_OK) {
         return -2;
@@ -434,6 +438,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
         }
     }
 
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     // For F7
     // HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t Address, uint64_t Data);
     const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, c->address, (uint64_t)*buffer);
@@ -455,6 +460,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
         }
     }
 
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 2,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, c->address, (uint64_t)*buffer);
     if (status != HAL_OK) {
         return -2;
@@ -467,6 +473,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
         }
     }
 
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     const flash_status_type status = flash_word_program(c->address, (uint32_t)*buffer);
     if (status != FLASH_OPERATE_DONE) {
         return -2;
@@ -478,6 +485,8 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
             return -1;
         }
     }
+
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     const FLASH_Status status = FLASH_ProgramWord(c->address, *buffer);
     if (status != FLASH_COMPLETE) {
         return -2;
@@ -520,12 +529,10 @@ int config_streamer_finish(config_streamer_t *c)
 {
     if (c->unlocked) {
 #if defined(CONFIG_IN_SDCARD)
-        bool saveEEPROMToSDCard(void); // forward declaration to avoid circular dependency between config_streamer / config_eeprom
         saveEEPROMToSDCard();
 #elif defined(CONFIG_IN_EXTERNAL_FLASH)
         flashFlush();
 #elif defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
-        void saveEEPROMToMemoryMappedFlash(void); // forward declaration to avoid circular dependency between config_streamer / config_eeprom
         saveEEPROMToMemoryMappedFlash();
 #elif defined(CONFIG_IN_RAM)
         // NOP

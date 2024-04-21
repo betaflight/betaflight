@@ -133,7 +133,7 @@ busStatus_e mpuIntCallback(uint32_t arg)
     return BUS_READY;
 }
 
-void mpuIntExtiHandler(extiCallbackRec_t *cb)
+static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
 

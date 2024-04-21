@@ -123,10 +123,10 @@ STATIC_UNIT_TESTED uint16_t bmp085_ut;  // static result of temperature measurem
 STATIC_UNIT_TESTED uint32_t bmp085_up;  // static result of pressure measurement
 
 static void bmp085ReadCalibrarionParameters(const extDevice_t *dev);
-static void bmp085StartUT(baroDev_t *baro);
+static bool bmp085StartUT(baroDev_t *baro);
 static bool bmp085ReadUT(baroDev_t *baro);
 static bool bmp085GetUT(baroDev_t *baro);
-static void bmp085StartUP(baroDev_t *baro);
+static bool bmp085StartUP(baroDev_t *baro);
 static bool bmp085ReadUP(baroDev_t *baro);
 static bool bmp085GetUP(baroDev_t *baro);
 static int32_t bmp085GetTemperature(uint32_t ut);
@@ -273,11 +273,11 @@ static int32_t bmp085GetPressure(uint32_t up)
     return pressure;
 }
 
-static void bmp085StartUT(baroDev_t *baro)
+static bool bmp085StartUT(baroDev_t *baro)
 {
     isConversionComplete = false;
 
-    busWriteRegisterStart(&baro->dev, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
+    return busWriteRegisterStart(&baro->dev, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
 }
 
 static bool bmp085ReadUT(baroDev_t *baro)
@@ -291,9 +291,7 @@ static bool bmp085ReadUT(baroDev_t *baro)
         return false;
     }
 
-    busReadRegisterBufferStart(&baro->dev, BMP085_ADC_OUT_MSB_REG, sensor_data, BMP085_DATA_TEMP_SIZE);
-
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, BMP085_ADC_OUT_MSB_REG, sensor_data, BMP085_DATA_TEMP_SIZE);
 }
 
 static bool bmp085GetUT(baroDev_t *baro)
@@ -307,7 +305,7 @@ static bool bmp085GetUT(baroDev_t *baro)
     return true;
 }
 
-static void bmp085StartUP(baroDev_t *baro)
+static bool bmp085StartUP(baroDev_t *baro)
 {
     uint8_t ctrl_reg_data;
 
@@ -315,7 +313,7 @@ static void bmp085StartUP(baroDev_t *baro)
 
     isConversionComplete = false;
 
-    busWriteRegisterStart(&baro->dev, BMP085_CTRL_MEAS_REG, ctrl_reg_data);
+    return busWriteRegisterStart(&baro->dev, BMP085_CTRL_MEAS_REG, ctrl_reg_data);
 }
 
 static bool bmp085ReadUP(baroDev_t *baro)
@@ -329,9 +327,7 @@ static bool bmp085ReadUP(baroDev_t *baro)
         return false;
     }
 
-    busReadRegisterBufferStart(&baro->dev, BMP085_ADC_OUT_MSB_REG, sensor_data, BMP085_DATA_PRES_SIZE);
-
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, BMP085_ADC_OUT_MSB_REG, sensor_data, BMP085_DATA_PRES_SIZE);
 }
 
 /** read out up for pressure conversion
