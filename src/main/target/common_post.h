@@ -654,4 +654,12 @@ extern uint8_t __config_end;
 #define SOFTSERIAL_PORT_COUNT 0
 #endif
 
+#ifndef UART_PORT_COUNT
+#define UART_PORT_COUNT 0
+#endif
+
+#ifndef LPUART_PORT_COUNT
+#define LPUART_PORT_COUNT 0
+#endif
+
 #define SERIAL_PORT_COUNT (VCP_PORT_COUNT + SOFTSERIAL_PORT_COUNT + UART_PORT_COUNT + LPUART_PORT_COUNT)
