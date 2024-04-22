@@ -93,13 +93,13 @@ typedef struct serialPort_s {
     uint8_t identifier;
 } serialPort_t;
 
-#define SERIAL_PORT_MAX_INDEX 11
-#define SERIAL_LPUART_MAX_INDEX 1
+// SerialPort and LPUART uart pins are stored in the same PG
+#define LPUART_FIRST_INDEX (UART_PORT_COUNT)
 
 typedef struct serialPinConfig_s {
-    ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
-    ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
-    ioTag_t ioTagInverter[SERIAL_PORT_MAX_INDEX];
+    ioTag_t ioTagTx[SERIAL_PORT_COUNT];
+    ioTag_t ioTagRx[SERIAL_PORT_COUNT];
+    ioTag_t ioTagInverter[SERIAL_PORT_COUNT];
 } serialPinConfig_t;
 
 PG_DECLARE(serialPinConfig_t, serialPinConfig);

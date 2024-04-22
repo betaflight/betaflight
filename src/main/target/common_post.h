@@ -641,3 +641,17 @@ extern uint8_t __config_end;
 #define USE_PIN_PULL_UP_DOWN
 #endif
 #endif // USE_PINIO
+
+#ifdef USE_VCP
+#define VCP_PORT_COUNT 1
+#else
+#define VCP_PORT_COUNT 0
+#endif
+
+#ifdef USE_SOFTSERIAL
+#define SOFTSERIAL_PORT_COUNT 2
+#else
+#define SOFTSERIAL_PORT_COUNT 0
+#endif
+
+#define SERIAL_PORT_COUNT (VCP_PORT_COUNT + SOFTSERIAL_PORT_COUNT + UART_PORT_COUNT + LPUART_PORT_COUNT)

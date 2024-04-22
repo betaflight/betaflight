@@ -52,6 +52,10 @@
 
 #define USE_SPI_DMA_ENABLE_LATE
 
+#define USE_VCP
+
+#define USE_SOFTSERIAL
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -61,9 +65,10 @@
 #define USE_UART7
 #define USE_UART8
 #define USE_UART9
-#define USE_LPUART1
+#define UART_PORT_COUNT       9
 
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 10)
+#define USE_LPUART1
+#define LPUART_PORT_COUNT     1
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
@@ -79,13 +84,6 @@
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
 #endif
-
-
-#define USE_VCP
-
-#define USE_SOFTSERIAL
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
 
 #define USE_USB_DETECT
 

@@ -68,8 +68,6 @@
 
 #define USE_VCP
 
-#define UNIFIED_SERIAL_PORT_COUNT       1
-
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -80,9 +78,10 @@
 #define USE_UART8
 #define USE_UART9
 #define USE_UART10
-#define USE_LPUART1
+#define UART_PORT_COUNT         10
 
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 11)
+#define USE_LPUART1
+#define LPUART_PORT_COUNT       1
 
 // Disable OCTOSPI pins PB2/CLK, PB6/NCS, PD11/IO0, PD12/IO1, PD13/IO3, PE2/IO2
 // PE7/IO4, PE8/IO5, PE9/IO6, PE10/IO7
