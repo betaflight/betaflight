@@ -346,11 +346,6 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
             (portConfig->identifier == SERIAL_PORT_SOFTSERIAL2)) {
             // Ensure MSP or serial RX is not enabled on soft serial ports
             serialConfigToCheck->portConfigs[index].functionMask &= ~(FUNCTION_MSP | FUNCTION_RX_SERIAL);
-
-            // Ensure that the baud rate on soft serial ports is limited to 19200
-            serialConfigToCheck->portConfigs[index].gps_baudrateIndex = constrain(portConfig->gps_baudrateIndex, BAUD_AUTO, BAUD_19200);
-            serialConfigToCheck->portConfigs[index].blackbox_baudrateIndex = constrain(portConfig->blackbox_baudrateIndex, BAUD_AUTO, BAUD_19200);
-            // serialConfigToCheck->portConfigs[index].telemetry_baudrateIndex = constrain(portConfig->telemetry_baudrateIndex, BAUD_AUTO, BAUD_57600);
         }
 #endif
 
@@ -437,9 +432,16 @@ serialPort_t *openSerialPort(
     serialPort_t *serialPort = NULL;
 
 #ifdef USE_SOFTSERIAL
-    if (((identifier == SERIAL_PORT_SOFTSERIAL1) || (identifier == SERIAL_PORT_SOFTSERIAL2)) && (baudRate > 57600)) {
+
+#ifdef USE_OVERRIDE_SOFTSERIAL_BAUDRATE_RESTRICTION
+#define SOFTSERIAL_MAX_BAUDRATE 57600
+#else
+#define SOFTSERIAL_MAX_BAUDRATE 19200
+#endif
+
+    if (((identifier == SERIAL_PORT_SOFTSERIAL1) || (identifier == SERIAL_PORT_SOFTSERIAL2)) && (baudRate > SOFTSERIAL_MAX_BAUDRATE)) {
         // Limit baud rate on soft serial ports
-        baudRate = 57600;
+        baudRate = SOFTSERIAL_MAX_BAUDRATE;
     }
 #endif
 
