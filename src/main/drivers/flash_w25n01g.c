@@ -353,7 +353,7 @@ bool w25n01g_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
     fdevice->vTable = &w25n01g_vTable;
 
-    spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(100000000));
+    //spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(100000000));
 
     return true;
 }
