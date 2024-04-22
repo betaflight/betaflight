@@ -316,12 +316,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
 
-    // itermLimit cannot be set higher than 80% of pidSumLimit
-    pidRuntime.itermLimit = fminf((float)pidProfile->itermLimit, 0.8f * pidProfile->pidSumLimit);
-    // used to limit iTerm for yaw to not exceed pidSumLimitYaw
-    pidRuntime.pidSumLimitYaw = pidProfile->pidSumLimitYaw;
-    // precalculate iTerm leak rate factor for yaw
-    pidRuntime.itermLeakRateYaw = pidRuntime.dT * pidProfile->itermWindupPointPercent / 10.0f; // used for iTerm leak on yaw
+    pidRuntime.itermLeakRateYaw = pidRuntime.dT * pidProfile->itermLeak / 10.0f;
+    pidRuntime.itermLimit = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimit;
+    pidRuntime.itermLimitYaw = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimitYaw;
+
 
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;

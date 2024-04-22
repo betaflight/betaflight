@@ -97,6 +97,7 @@
 #define PARAM_NAME_ITERM_RELAX_TYPE "iterm_relax_type"
 #define PARAM_NAME_ITERM_RELAX_CUTOFF "iterm_relax_cutoff"
 #define PARAM_NAME_ITERM_WINDUP "iterm_windup"
+#define PARAM_NAME_ITERM_LEAK "iterm_leak"
 #define PARAM_NAME_PIDSUM_LIMIT "pidsum_limit"
 #define PARAM_NAME_PIDSUM_LIMIT_YAW "pidsum_limit_yaw"
 #define PARAM_NAME_YAW_LOWPASS_HZ "yaw_lowpass_hz"
