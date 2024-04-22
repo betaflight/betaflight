@@ -353,7 +353,10 @@ bool w25n01g_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
     fdevice->vTable = &w25n01g_vTable;
 
+#ifndef USE_QUADSPI
+    // Need to set clock speed for 8kHz logging support with SPI
     spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(100000000));
+#endif // USE_QUADSPI
 
     return true;
 }
