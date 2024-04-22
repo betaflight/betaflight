@@ -58,7 +58,7 @@ static void onClose(dyad_Event *e)
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     s->clientCount--;
     s->conn = NULL;
-    fprintf(stderr, "[CLS]UART%u: %d,%d\n", s->id + 1, s->connected, s->clientCount);
+    fprintf(stderr, "[CLS]UART%u: %d,%d\n", s->id + 1U, s->connected, s->clientCount);
     if (s->clientCount == 0) {
         s->connected = false;
     }
@@ -66,7 +66,7 @@ static void onClose(dyad_Event *e)
 static void onAccept(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
-    fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
+    fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1U, s->clientCount);
 
     s->connected = true;
     if (s->clientCount > 0) {
@@ -74,7 +74,7 @@ static void onAccept(dyad_Event *e)
         return;
     }
     s->clientCount++;
-    fprintf(stderr, "[NEW]UART%u: %d,%d\n", s->id + 1, s->connected, s->clientCount);
+    fprintf(stderr, "[NEW]UART%u: %d,%d\n", s->id + 1U, s->connected, s->clientCount);
     s->conn = e->remote;
     dyad_setNoDelay(e->remote, 1);
     dyad_setTimeout(e->remote, 120);

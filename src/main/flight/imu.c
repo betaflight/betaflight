@@ -323,7 +323,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static bool imuIsAccelerometerHealthy(float *accAverage)
+static bool imuIsAccelerometerHealthy(const float *accAverage)
 {
     float accMagnitudeSq = 0;
     for (int axis = 0; axis < 3; axis++) {

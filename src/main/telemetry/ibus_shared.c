@@ -283,9 +283,8 @@ static int16_t getACC(uint8_t index)
 static void setCombinedFrame(uint8_t* bufferPtr, const uint8_t* structure, uint8_t itemCount)
 {
     uint8_t offset = 0;
-    uint8_t size = 0;
     for (unsigned i = 0; i < itemCount; i++) {
-        size = getSensorLength(structure[i]);
+        uint8_t size = getSensorLength(structure[i]);
         setValue(bufferPtr + offset, structure[i], size);
         offset += size;
     }
@@ -306,11 +305,9 @@ static bool setGPS(uint8_t sensorType, ibusTelemetry_s* value)
     }
     if (!result) return result;
 
-    uint16_t gpsFixType = 0;
-    uint16_t sats = 0;
     if (sensors(SENSOR_GPS)) {
-        gpsFixType = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < GPS_MIN_SAT_COUNT ? 2 : 3);
-        sats = gpsSol.numSat;
+        uint16_t gpsFixType = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < GPS_MIN_SAT_COUNT ? 2 : 3);
+        uint16_t sats = gpsSol.numSat;
         if (STATE(GPS_FIX) || sensorType == IBUS_SENSOR_TYPE_GPS_STATUS) {
             result = true;
             switch (sensorType) {

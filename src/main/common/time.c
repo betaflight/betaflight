@@ -184,12 +184,12 @@ rtcTime_t rtcTimeMake(int32_t secs, uint16_t millis)
     return ((rtcTime_t)secs) * MILLIS_PER_SECOND + millis;
 }
 
-int32_t rtcTimeGetSeconds(rtcTime_t *t)
+int32_t rtcTimeGetSeconds(const rtcTime_t *t)
 {
     return *t / MILLIS_PER_SECOND;
 }
 
-uint16_t rtcTimeGetMillis(rtcTime_t *t)
+uint16_t rtcTimeGetMillis(const rtcTime_t *t)
 {
     return *t % MILLIS_PER_SECOND;
 }
@@ -244,7 +244,7 @@ bool rtcGet(rtcTime_t *t)
     return true;
 }
 
-bool rtcSet(rtcTime_t *t)
+bool rtcSet(const rtcTime_t *t)
 {
     started = *t - millis();
     return true;
