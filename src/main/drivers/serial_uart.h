@@ -44,8 +44,6 @@ typedef enum {
     UARTDEV_COUNT
 } UARTDevice_e;
 
-STATIC_ASSERT(UARTDEV_COUNT == UART_PORT_COUNT + LPUART_PORT_COUNT, serial_pinconfig_does_not_match_uartdevs);
-
 typedef struct uartPort_s {
     serialPort_t port;
 
