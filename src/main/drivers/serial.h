@@ -94,7 +94,7 @@ typedef struct serialPort_s {
 } serialPort_t;
 
 // SerialPort and LPUART uart pins are stored in the same PG
-#define LPUART_FIRST_INDEX (UART_PORT_COUNT)
+#define LPUART_FIRST_INDEX UART_PORT_COUNT
 
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[SERIAL_PORT_COUNT];
