@@ -1294,10 +1294,13 @@ static void cliSerial(const char *cmdName, char *cmdline)
     int val = atoi(ptr++);
     serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(val);
 
-    if (currentConfig) {
-        portConfig.identifier = val;
-        validArgumentCount++;
+    if (!currentConfig) {
+        cliShowParseError(cmdName);
+        return;
     }
+
+    portConfig.identifier = val;
+    validArgumentCount++;
 
     ptr = nextArg(ptr);
     if (ptr) {
