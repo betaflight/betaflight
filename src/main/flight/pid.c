@@ -1150,6 +1150,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             if (axis == FD_YAW) {
                 iTermLeak = pidData[axis].I * pidRuntime.itermLeakRateYaw;
                 itermLimit = pidRuntime.itermLimitYaw; // windup fraction of pidSumLimitYaw
+                // note that this is a stronger limit than previously
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
             }
         }
@@ -1159,6 +1160,16 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         if (applyEzLandingLimiting) {
             itermErrorRate = constrainf(itermErrorRate, -ezLandingLimit, ezLandingLimit);
         }
+
+//        // Alternate method for limiting iTerm growth when pidSum reaches pidSumLimit and change is in same direction as I
+//        // Without this, iTerm can grow to its limit when motors saturate or yaw pidSum reaches the limit
+//        // Existing iterm_Relax may need a lower cutoff for cases of motor saturation during yaws.
+//        // This may be too aggressive, limiting iTerm growth too much.
+//        // Also will apply for un-commanded errors, weakening ability to return to previous heading
+//        float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate - iTermLeak;
+//        if (fabsf(pidData[axis].Sum) >= pidSumLimit && iTermChange * pidData[axis].I > 0) {
+//            iTermChange = 0.0f;
+//        }
 
         const float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate - iTermLeak;
 
