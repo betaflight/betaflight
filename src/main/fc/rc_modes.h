@@ -78,6 +78,7 @@ typedef enum {
     BOXSTICKCOMMANDDISABLE,
     BOXBEEPERMUTE,
     BOXREADY,
+    BOXBOOST,
     CHECKBOX_ITEM_COUNT
     
 } boxId_e;

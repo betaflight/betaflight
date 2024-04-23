@@ -52,17 +52,17 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .crashflip_motor_percent = 0,
     .crashflip_expo = 0,
     .govenor = true,
-    .govenor_p = 20,
-    .govenor_i = 15,
-    .govenor_d = 10,
+    .govenor_p = 20.0f,
+    .govenor_i = 15.0f,
+    .govenor_d = 10.0f,
     .govenor_rpm_linearization = true,
     .govenor_idle_rpm = 17,
     .govenor_acceleration_limit = 60,
     .govenor_deceleration_limit = 60,
-    .govenor_rpm_limit = 130,
+    .govenor_rpm_limit = 130.0f,
     .govenor_rpm_afterburner = 16,
     .govenor_rpm_afterburner_duration = 5,
-    .govenor_rpm_afterburner_reset = true,
+    .govenor_rpm_afterburner_reset = false,
     .govenor_rpm_afterburner_hold_to_use = false,
     .govenor_rpm_afterburner_tank_count = 3,
     .mixer_type = MIXER_LEGACY,
@@ -343,7 +343,7 @@ mixerRuntime.motorPoleCount = 14;
 mixerRuntime.govenorEnabled = true;
 
 //Unlocked rpm settings
-/*mixerRuntime.govenorPGain = mixerConfig()->govenor_p * 0.0000015f;
+mixerRuntime.govenorPGain = mixerConfig()->govenor_p * 0.0000015f;
 mixerRuntime.govenorIGain = mixerConfig()->govenor_i * 0.0001f * pidGetDT();
 mixerRuntime.govenorDGain = mixerConfig()->govenor_d * 0.00000003f * pidGetPidFrequency();
 mixerRuntime.govenorAccelerationLimit = mixerConfig()->govenor_acceleration_limit * 1000.0f * pidGetDT();
@@ -356,7 +356,7 @@ mixerRuntime.afterburnerHoldToBoost = mixerConfig()->govenor_rpm_afterburner_hol
 mixerRuntime.rpmLinearization = mixerConfig()->govenor_rpm_linearization;
 mixerRuntime.RPMLimit = mixerConfig()->govenor_rpm_limit;
 mixerRuntime.motorPoleCount = motorConfig()->motorPoleCount;
-mixerRuntime.govenorEnabled = mixerConfig()->govenor;*/
+mixerRuntime.govenorEnabled = mixerConfig()->govenor;
 
 
 mixerRuntime.govenorI = 0;

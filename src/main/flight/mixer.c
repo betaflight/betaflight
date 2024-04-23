@@ -370,7 +370,7 @@ static void applyRPMLimiter(void)
         //if drone is armed
         if (ARMING_FLAG(ARMED)) {
             //if the afterburner switch is engaged
-            if(IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
+            if(IS_RC_MODE_ACTIVE(BOXBOOST)) {
                 //if the afterburner isn't initiated
                 if(mixerRuntime.afterburnerInitiated == false) {
                     //if there's charge in the tank

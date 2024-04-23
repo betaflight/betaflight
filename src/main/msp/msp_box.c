@@ -101,6 +101,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXSTICKCOMMANDDISABLE, .boxName = "STICK COMMANDS DISABLE", .permanentId = 51},
     { .boxId = BOXBEEPERMUTE, .boxName = "BEEPER MUTE", .permanentId = 52},
     { .boxId = BOXREADY, .boxName = "READY", .permanentId = 53},
+    { .boxId = BOXBOOST, .boxName = "BOOST", .permanentId = 54},
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -187,6 +188,7 @@ void initActiveBoxIds(void)
 #define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
     BME(BOXARM);
     BME(BOXPREARM);
+    BME(BOXBOOST);
     if (!featureIsEnabled(FEATURE_AIRMODE)) {
         BME(BOXAIRMODE);
     }
