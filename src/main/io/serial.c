@@ -440,8 +440,8 @@ serialPort_t *openSerialPort(
 #endif
 
     if (((identifier == SERIAL_PORT_SOFTSERIAL1) || (identifier == SERIAL_PORT_SOFTSERIAL2)) && (baudRate > SOFTSERIAL_MAX_BAUDRATE)) {
-        // Limit baud rate on soft serial ports
-        baudRate = SOFTSERIAL_MAX_BAUDRATE;
+        // Don't continue if baud rate requested is higher then the limit set on soft serial ports
+        return NULL;
     }
 #endif
 
