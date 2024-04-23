@@ -230,14 +230,13 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
         .ez_landing_disarm_threshold = 110,
-        .ez_landing_speed = 50,
         .tpa_delay_ms = 0,
         .tpa_gravity_thr0 = 0,
         .tpa_gravity_thr100 = 0,
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
-        .itermLeak = 30,
+        .itermLeak = 15,
     );
 
 #ifndef USE_D_MIN
