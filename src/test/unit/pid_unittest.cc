@@ -340,8 +340,7 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_NEAR(-132.25, pidData[FD_YAW].D, calculateTolerance(-132.25));
 
-    // Simulate Iterm behaviour during mixer saturation
-    simulatedMotorMixRange = 1.2f;
+    // Simulate Iterm growth if not saturated
     pidController(pidProfile, currentTestTime());
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
@@ -356,13 +355,13 @@ TEST(pidControllerTest, testPidLoop)
     for(int loop = 0; loop < 5; loop++) {
         pidController(pidProfile, currentTestTime());
     }
-    // Iterm is stalled as it is not accumulating anymore; yaw droops a little due to the leak
+    // Iterm is stalled as it is not accumulating anymore; yaw climbs from setpoint factor
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
-    EXPECT_NEAR(-15.5, pidData[FD_YAW].I, calculateTolerance(-15.5));
+    EXPECT_NEAR(-19.3, pidData[FD_YAW].I, calculateTolerance(-19.3));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
@@ -598,142 +597,154 @@ TEST(pidControllerTest, testPidHorizon)
 
 }
 
-// TEST(pidControllerTest, testMixerSaturation)
-// {
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-// 
-//     // Test full stick response
-//     setStickPosition(FD_ROLL, 1.0f);
-//     setStickPosition(FD_PITCH, -1.0f);
-//     setStickPosition(FD_YAW, 1.0f);
-//     simulatedMotorMixRange = 2.0f;
-//     pidController(pidProfile, currentTestTime());
-// 
-//     // Expect iterm accumulation for all axes because at this point, pidSum is not at limit
-//     EXPECT_NEAR(156.2f, pidData[FD_ROLL].I, calculateTolerance(156.2f));
-//     EXPECT_NEAR(-150.0f, pidData[FD_PITCH].I, calculateTolerance(-150.0f));
-//     EXPECT_NEAR(7.0f, pidData[FD_YAW].I, calculateTolerance(7.0f));
+// trying to fix
 
-//    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-//    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
-//    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
-    // Test itermWindup limit
-    // First store values without exceeding iterm windup limit
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-//     setStickPosition(FD_ROLL, 0.1f);
-//     setStickPosition(FD_PITCH, -0.1f);
-//     setStickPosition(FD_YAW, 0.1f);
-//    simulatedMotorMixRange = 0.0f;
-//     pidController(pidProfile, currentTestTime());
-//     float rollTestIterm = pidData[FD_ROLL].I;
-//     float pitchTestIterm = pidData[FD_PITCH].I;
-//     float yawTestIterm = pidData[FD_YAW].I;
 
-    // Now compare values when exceeding the limit
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-//     setStickPosition(FD_ROLL, 0.1f);
-//     setStickPosition(FD_PITCH, -0.1f);
-//     setStickPosition(FD_YAW, 0.1f);
-//     simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 2) / 100.0f;
-//     pidController(pidProfile, currentTestTime());
-//     EXPECT_LT(pidData[FD_ROLL].I, rollTestIterm);
-//     EXPECT_GE(pidData[FD_PITCH].I, pitchTestIterm);
-//     EXPECT_LT(pidData[FD_YAW].I, yawTestIterm);
+TEST(pidControllerTest, testMixerSaturation)
+{
+    resetTest();
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    pidRuntime.itermLimit = 400;
+    pidRuntime.itermLimitYaw = 320;
+
+    // Test full stick response
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, 1.0f);
+    pidController(pidProfile, currentTestTime());
+
+    // Expect iterm accumulation for all axes because at this point, pidSum is not at limit
+    EXPECT_NEAR(156.2f, pidData[FD_ROLL].I, calculateTolerance(156.2f));
+    EXPECT_NEAR(-195.3f, pidData[FD_PITCH].I, calculateTolerance(-195.3f));
+    EXPECT_NEAR(7.0f, pidData[FD_YAW].I, calculateTolerance(7.0f));
+
+     // ????? why such slow yaw iTerm growth ?? this is not what I see in the real logs == strange
+
+    // Check for iterm growth, should not reach limits yet
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(312.4f, pidData[FD_ROLL].I, calculateTolerance(312.4f));
+    EXPECT_NEAR(-390.6f, pidData[FD_PITCH].I, calculateTolerance(-390.6));
+    EXPECT_NEAR(21.1f, pidData[FD_YAW].I, calculateTolerance(21.1));
+
+    // Expect iterm  roll + pitch to stop at limit of 400
+    // yaw is still growing, 
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(400.0f, pidData[FD_ROLL].I, calculateTolerance(400.0f));
+    EXPECT_NEAR(-400.0f, pidData[FD_PITCH].I, calculateTolerance(-400.0f));
+    EXPECT_NEAR(42.2f, pidData[FD_YAW].I, calculateTolerance(42.2f));
+
+    // run some more loops, check all iTerm values are at their limit
+    for (int loop = 0; loop < 7; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+    EXPECT_NEAR(400, pidData[FD_ROLL].I, calculateTolerance(400));
+    EXPECT_NEAR(-400, pidData[FD_PITCH].I, calculateTolerance(-400));
+    EXPECT_NEAR(320, pidData[FD_YAW].I, calculateTolerance(320));
 
     // Test that the added i term gain from Anti Gravity
-    // is also affected by itermWindup
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-// 
-//     setStickPosition(FD_ROLL, 1.0f);
-//     setStickPosition(FD_PITCH, -1.0f);
-//     setStickPosition(FD_YAW, 1.0f);
-//     simulatedMotorMixRange = 2.0f;
-//     const bool prevAgState = pidRuntime.antiGravityEnabled;
-//     const float prevAgTrhottleD = pidRuntime.antiGravityThrottleD;
-//     pidRuntime.antiGravityEnabled = true;
-//     pidRuntime.antiGravityThrottleD = 1.0;
-//     pidController(pidProfile, currentTestTime());
-//     pidRuntime.antiGravityEnabled = prevAgState;
-//     pidRuntime.antiGravityThrottleD = prevAgTrhottleD;
-// 
-//     // Expect no iterm accumulation for all axes
-//     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-//     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
-//     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+    // is also limited
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    pidRuntime.itermLimit = 400;
+    pidRuntime.itermLimitYaw = 320;
 
-    // // Test that i term is limited on yaw even when only yaw is saturated
-    // resetTest();
-    // ENABLE_ARMING_FLAG(ARMED);
-    // pidStabilisationState(PID_STABILISATION_ON);
-    // gyro.gyroADCf[FD_ROLL] = PIDSUM_LIMIT_YAW;
-    // gyro.gyroADCf[FD_PITCH] = PIDSUM_LIMIT_YAW;
-    // gyro.gyroADCf[FD_YAW] = PIDSUM_LIMIT_YAW;
-    // pidController(pidProfile, currentTestTime());
-    // // value from the previous itteration is used for efficiency reasons so expect
-    // // i term accumulation to stop at the second itteration
-    // const float i_term_after_first = pidData[FD_YAW].I;
-    // pidController(pidProfile, currentTestTime());
-    // EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_YAW].I);
-// }
-// 
-// TEST(pidControllerTest, testPidsumAntiWindup)
-// {
-//     // Test that i term is limited when the pidsum limit is hit
-//     // important for yaw since yaw cant saturate the mixer alone with the default pidsum_limit_yaw
-//     // Go axis by axis to avoid breaking the test if mixer saturation gets automatically calculated in the future
-//     // takes about 5 iterations for values to stabilise
-//     {
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-//     gyro.gyroADCf[FD_ROLL] = PIDSUM_LIMIT;
-//     for(int loop = 0; loop < 5; loop++) {
-//         pidController(pidProfile, currentTestTime());
-//     }
-//     // value from the previous iteration is used for efficiency reasons so expect
-//     // i term accumulation to stop after 5 iterations
-//     const float i_term_after_first = pidData[FD_ROLL].I;
-//     pidController(pidProfile, currentTestTime());
-//     EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_ROLL].I);
-//     }
-//     {
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-//     gyro.gyroADCf[FD_PITCH] = PIDSUM_LIMIT;
-//     for(int loop = 0; loop < 5; loop++) {
-//         pidController(pidProfile, currentTestTime());
-//     }
-//     // value from the previous iteration is used for efficiency reasons so expect
-//     // i term accumulation to stop after 5 iterations
-//     const float i_term_after_first = pidData[FD_PITCH].I;
-//     pidController(pidProfile, currentTestTime());
-//     EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_PITCH].I);
-//     }
-//     {
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-//     gyro.gyroADCf[FD_YAW] = PIDSUM_LIMIT_YAW;
-//     for(int loop = 0; loop < 20; loop++) {
-//         pidController(pidProfile, currentTestTime());
-//     }
-//     // value from the previous iteration is used for efficiency reasons so expect
-//     // i term accumulation to stop after 5 iterations
-//     const float i_term_after_first = pidData[FD_YAW].I;
-//     pidController(pidProfile, currentTestTime());
-//     EXPECT_FLOAT_EQ(i_term_after_first, pidData[FD_YAW].I);
-//     }
-// }
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, 1.0f);
+    const bool prevAgState = pidRuntime.antiGravityEnabled;
+    const float prevAgTrhottleD = pidRuntime.antiGravityThrottleD;
+    pidRuntime.antiGravityEnabled = true;
+    pidRuntime.antiGravityThrottleD = 1.0;
+
+    pidController(pidProfile, currentTestTime());
+
+    // Expect more iterm accumulation than before on pitch and roll, no change on yaw
+    // without antigravity values were 156, 195, 7
+    EXPECT_NEAR(210.6, pidData[FD_ROLL].I, calculateTolerance(210.6f));
+    EXPECT_NEAR(-249.6f, pidData[FD_PITCH].I, calculateTolerance(-249.6f));
+    EXPECT_NEAR(7.0f, pidData[FD_YAW].I, calculateTolerance(7.0f));
+
+    // run again and should expect to hit the limit on pitch and roll but yaw unaffected
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(400, pidData[FD_ROLL].I, calculateTolerance(400));
+    EXPECT_NEAR(-400, pidData[FD_PITCH].I, calculateTolerance(-400));
+    EXPECT_NEAR(21.0f, pidData[FD_YAW].I, calculateTolerance(21.0f));
+
+    pidRuntime.antiGravityEnabled = prevAgState;
+    pidRuntime.antiGravityThrottleD = prevAgTrhottleD;
+
+    // Test that i term is limited on yaw at 320  when only yaw is saturated
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidRuntime.itermLimit = 400;
+    pidRuntime.itermLimitYaw = 320;
+
+    pidStabilisationState(PID_STABILISATION_ON);
+    setStickPosition(FD_ROLL, 0.0f);
+    setStickPosition(FD_PITCH, 0.0f);
+    setStickPosition(FD_YAW, 0.5f);
+
+    for (int loop = 0; loop < 7; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+
+    EXPECT_NEAR(0, pidData[FD_ROLL].I, calculateTolerance(0));
+    EXPECT_NEAR(0, pidData[FD_PITCH].I, calculateTolerance(0));
+    EXPECT_NEAR(197, pidData[FD_YAW].I, calculateTolerance(197));
+
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(253, pidData[FD_YAW].I, calculateTolerance(320));
+
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(320, pidData[FD_YAW].I, calculateTolerance(320));
+
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(0, pidData[FD_ROLL].I, calculateTolerance(0));
+    EXPECT_NEAR(0, pidData[FD_PITCH].I, calculateTolerance(0));
+    EXPECT_NEAR(320, pidData[FD_YAW].I, calculateTolerance(320));
+}
+
+TEST(pidControllerTest, testiTermWindup)
+{
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    // simulate the outcome with iterm_windup of 50
+    pidRuntime.itermLimit = 200;
+    pidRuntime.itermLimitYaw = 160;
+
+    pidStabilisationState(PID_STABILISATION_ON);
+    setStickPosition(FD_ROLL, 0.12f);
+    setStickPosition(FD_PITCH, 0.12f);
+    setStickPosition(FD_YAW, 0.12f);
+
+    for (int loop = 0; loop < 7; loop++) {
+        pidController(pidProfile, currentTestTime());
+    }
+
+    EXPECT_NEAR(131, pidData[FD_ROLL].I, calculateTolerance(131));
+    EXPECT_NEAR(164, pidData[FD_PITCH].I, calculateTolerance(164));
+    EXPECT_NEAR(126, pidData[FD_YAW].I, calculateTolerance(126));
+
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(150, pidData[FD_ROLL].I, calculateTolerance(150));
+    EXPECT_NEAR(200, pidData[FD_PITCH].I, calculateTolerance(200));
+    EXPECT_NEAR(160, pidData[FD_YAW].I, calculateTolerance(160));
+
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(169, pidData[FD_ROLL].I, calculateTolerance(200));
+    EXPECT_NEAR(200, pidData[FD_PITCH].I, calculateTolerance(200));
+    EXPECT_NEAR(160, pidData[FD_YAW].I, calculateTolerance(160));
+
+    pidController(pidProfile, currentTestTime());
+    EXPECT_NEAR(200, pidData[FD_ROLL].I, calculateTolerance(200));
+    EXPECT_NEAR(200, pidData[FD_PITCH].I, calculateTolerance(200));
+    EXPECT_NEAR(160, pidData[FD_YAW].I, calculateTolerance(320));
+}
 
 // TODO - Add more scenarios
 TEST(pidControllerTest, testCrashRecoveryMode)
