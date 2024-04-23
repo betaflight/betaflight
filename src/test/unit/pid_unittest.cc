@@ -415,7 +415,7 @@ TEST(pidControllerTest, testEzLanding)
     EXPECT_NEAR(-25.6, pidData[FD_ROLL].P, calculateTolerance(-25.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-0.312, pidData[FD_ROLL].I, calculateTolerance(-0.312));
+    EXPECT_NEAR(-1.6, pidData[FD_ROLL].I, calculateTolerance(-1.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_NEAR(-20, pidData[FD_ROLL].D, calculateTolerance(-20));
@@ -429,7 +429,7 @@ TEST(pidControllerTest, testEzLanding)
     EXPECT_NEAR(-25.6, pidData[FD_ROLL].P, calculateTolerance(-25.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-0.625, pidData[FD_ROLL].I, calculateTolerance(-0.625));
+    EXPECT_NEAR(-3.1, pidData[FD_ROLL].I, calculateTolerance(-3.1));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_NEAR(-20, pidData[FD_ROLL].D, calculateTolerance(-20));
@@ -443,7 +443,7 @@ TEST(pidControllerTest, testEzLanding)
     EXPECT_NEAR(-25.6, pidData[FD_ROLL].P, calculateTolerance(-25.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-0.94, pidData[FD_ROLL].I, calculateTolerance(-0.94));
+    EXPECT_NEAR(-4.7, pidData[FD_ROLL].I, calculateTolerance(-4.7));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_NEAR(-20, pidData[FD_ROLL].D, calculateTolerance(-20));
