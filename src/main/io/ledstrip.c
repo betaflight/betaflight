@@ -665,8 +665,7 @@ static void applyLedFixedLayers(void)
                 if (ledBarCounters[LED_BAR_BATTERY] < (calculateBatteryPercentageRemaining() * ledBarStates[LED_BAR_BATTERY]) / 100 || ledBarCounters[LED_BAR_BATTERY] == 0) {
                     ledBarCounters[LED_BAR_BATTERY]++;
                     setLedHsv(ledIndex, &color);
-                }
-                else {
+                } else {
                     setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
                 }
                 break;
