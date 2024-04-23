@@ -313,6 +313,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
     pidRuntime.itermLimit = pidProfile->itermLimit;
+    pidRuntime.itermLeakRateYaw = pidRuntime.dT * pidProfile->itermLeak / 10.0f;
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif

@@ -230,6 +230,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
         .ez_landing_speed = 50,
+        .itermLeak = 30,
     );
 
 #ifndef USE_D_MIN
@@ -976,6 +977,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate I component
         float Ki = pidRuntime.pidCoefficient[axis].Ki;
+        float iTermLeak = 0.0f;
 #ifdef USE_LAUNCH_CONTROL
         // if launch control is active override the iterm gains and apply iterm windup protection to all axes
         if (launchControlActive) {
@@ -985,9 +987,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         {
             if (axis == FD_YAW) {
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
+                iTermLeak = pidData[axis].I * pidRuntime.itermLeakRateYaw;
             }
         }
-        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
+        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate - iTermLeak;
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate D component

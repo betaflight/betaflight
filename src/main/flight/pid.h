@@ -245,6 +245,7 @@ typedef struct pidProfile_s {
     uint8_t ez_landing_threshold;           // Threshold stick position below which motor output is limited
     uint8_t ez_landing_limit;               // Maximum motor output when all sticks centred and throttle zero
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
+    uint8_t itermLeak;                      // Fractional rate at which iTerm on yaw leaks towards zero, arbitrary units
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -326,6 +327,7 @@ typedef struct pidRuntime_s {
     float crashSetpointThreshold;
     float crashLimitYaw;
     float itermLimit;
+    float itermLeakRateYaw;
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
