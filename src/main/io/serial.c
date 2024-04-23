@@ -347,7 +347,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
             // Ensure MSP or serial RX is not enabled on soft serial ports
             serialConfigToCheck->portConfigs[index].functionMask &= ~(FUNCTION_MSP | FUNCTION_RX_SERIAL);
             // Ensure that the baud rate on soft serial ports is limited to 19200
-#ifndef OVERRIDE_SOFTSERIAL_BAUDRATE_RESTRICTION
+#ifndef USE_OVERRIDE_SOFTSERIAL_BAUDRATE_RESTRICTION
             serialConfigToCheck->portConfigs[index].gps_baudrateIndex = constrain(portConfig->gps_baudrateIndex, BAUD_AUTO, BAUD_19200);
             serialConfigToCheck->portConfigs[index].blackbox_baudrateIndex = constrain(portConfig->blackbox_baudrateIndex, BAUD_AUTO, BAUD_19200);
             serialConfigToCheck->portConfigs[index].telemetry_baudrateIndex = constrain(portConfig->telemetry_baudrateIndex, BAUD_AUTO, BAUD_19200);
