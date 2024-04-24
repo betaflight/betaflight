@@ -419,9 +419,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
     // Visual beeper
     if (osdWarnGetState(OSD_WARNING_VISUAL_BEEPER) && osdGetVisualBeeperState()) {
-        tfp_sprintf(warningText, "BOOST ENGAGED");
+        tfp_sprintf(warningText, "  * * * *");
         *displayAttr = DISPLAYPORT_SEVERITY_INFO;
         osdSetVisualBeeperState(false);
+        return;
+    }
+
+    // Boost mode
+    if (IS_RC_MODE_ACTIVE(BOXBOOST)) {
+        tfp_sprintf(warningText, "BOOST ENGAGED");
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
         return;
     }
 
