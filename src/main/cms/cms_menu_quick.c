@@ -114,23 +114,6 @@ static const char * const osdTableThrottleLimitType[] = {
 };
 */
 
-static const char * const lookupTableLedstripColors[COLOR_COUNT] = {
-    "DEFAULT",
-    "WHITE",
-    "RED",
-    "ORANGE",
-    "YELLOW",
-    "LIME_GREEN",
-    "GREEN",
-    "MINT_GREEN",
-    "CYAN",
-    "LIGHT_BLUE",
-    "BLUE",
-    "DARK_VIOLET",
-    "MAGENTA",
-    "DEEP_PINK"
-};
-
 static const OSD_Entry menuMainEntries[] =
 {
     { "-- QUICK --",  OME_Label, NULL, NULL },
