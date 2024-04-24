@@ -355,13 +355,13 @@ TEST(pidControllerTest, testPidLoop)
     for(int loop = 0; loop < 5; loop++) {
         pidController(pidProfile, currentTestTime());
     }
-    // Iterm is stalled as it is not accumulating anymore; yaw climbs from setpoint factor
+    // Iterm is stalled as it is not accumulating anymore; yaw falls from leak
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
-    EXPECT_NEAR(-19.3, pidData[FD_YAW].I, calculateTolerance(-19.3));
+    EXPECT_NEAR(-17, pidData[FD_YAW].I, calculateTolerance(-17)); 
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
@@ -733,7 +733,7 @@ TEST(pidControllerTest, testiTermWindup)
     pidController(pidProfile, currentTestTime());
     EXPECT_NEAR(150, pidData[FD_ROLL].I, calculateTolerance(150));
     EXPECT_NEAR(200, pidData[FD_PITCH].I, calculateTolerance(200));
-    EXPECT_NEAR(160, pidData[FD_YAW].I, calculateTolerance(160));
+    EXPECT_NEAR(137, pidData[FD_YAW].I, calculateTolerance(137));
 
     pidController(pidProfile, currentTestTime());
     EXPECT_NEAR(169, pidData[FD_ROLL].I, calculateTolerance(200));
