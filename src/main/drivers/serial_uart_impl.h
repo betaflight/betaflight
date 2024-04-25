@@ -22,6 +22,15 @@
 
 // Configuration constants
 
+// TODO: this comment is obsolete
+
+// Since serial ports can be used for any function these buffer sizes should be equal
+// The two largest things that need to be sent are: 1, MSP responses, 2, UBLOX SVINFO packet.
+
+// Size must be a power of two due to various optimizations which use 'and' instead of 'mod'
+// Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
+// increase size further.
+
 #if defined(STM32F4)
 
 #define UARTHARDWARE_MAX_PINS 4
@@ -91,6 +100,7 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #else
 #error unknown MCU family
 #endif
@@ -150,14 +160,14 @@ typedef struct uartHardware_s {
     dmaResource_t *rxDMAResource;
     // For H7 and G4  , {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); H7:RM0433 Table 110, G4:RM0440 Table 80.
     // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x)
-    // For at32f435/7 DmaChannel is the dmamux ,need to call dmamuxenable using dmamuxid
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) 
+    // For at32f435/7 DmaChannel is the dmamux, need to call dmamuxenable using dmamuxid
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint32_t txDMAChannel;
     uint32_t rxDMAChannel;
 #elif defined(AT32F4)
     uint32_t txDMAMuxId;//for dmaspec->dmamux  and using dmaMuxEnable(dmax,muxid)
     uint32_t rxDMAMuxId;
-#endif 
+#endif
 
 #endif // USE_DMA
 

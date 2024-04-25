@@ -76,7 +76,7 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_RX) {
         usart_receiver_enable(uartPort->USARTx, TRUE);
     }
-    
+
     if (uartPort->port.mode & MODE_TX) {
         usart_transmitter_enable(uartPort->USARTx, TRUE);
     }
@@ -297,7 +297,7 @@ void uartIrqHandler(uartPort_t *s)
     if (usart_flag_get(s->USARTx, USART_ROERR_FLAG) == SET) {
         usart_flag_clear(s->USARTx, USART_ROERR_FLAG);
     }
-    
+
     if (usart_flag_get(s->USARTx, USART_IDLEF_FLAG) == SET) {
         if (s->port.idleCallback) {
             s->port.idleCallback();

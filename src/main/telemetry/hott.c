@@ -372,7 +372,7 @@ static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_e
     if (telemetryConfig()->halfDuplex) {
         portOptions |= SERIAL_BIDIR;
     }
-
+    // TODO - identifier is set only after opening port
     hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, NULL, HOTT_BAUDRATE, mode, portOptions);
 }
 

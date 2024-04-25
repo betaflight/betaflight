@@ -496,7 +496,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 #endif
         }
     }
-#else
+#else /* USE_DMA_SPEC */
     // Non USE_DMA_SPEC does not support configurable ON/OFF of UART DMA
 
     if (hardware->rxDMAResource) {
@@ -516,7 +516,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
         uartPort->txDMAMuxId = hardware->txDMAMuxId;
 #endif
     }
-#endif
+#endif /* USE_DMA_SPEC */
 
     if (uartPort->txDMAResource) {
         dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
