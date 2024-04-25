@@ -258,7 +258,7 @@ static void sdCardAndFSInit(void)
 
 void init(void)
 {
-#ifdef SERIAL_PORT_COUNT
+#if SERIAL_PORT_COUNT > 0
     printfSerialInit();
 #endif
 

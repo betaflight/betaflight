@@ -97,24 +97,13 @@ typedef enum {
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2,
     SERIAL_PORT_LPUART1 = 40,
-    SERIAL_PORT_IDENTIFIER_MAX = SERIAL_PORT_LPUART1,
 } serialPortIdentifier_e;
+
+// use value from target serial port normalization
+#define SERIAL_PORT_COUNT (SERIAL_UART_COUNT + SERIAL_LPUART_COUNT + SERIAL_SOFTSERIAL_COUNT + SERIAL_VCP_COUNT)
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
-#define SOFTSERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_SOFTSERIAL1)
-
-#if defined(USE_LPUART1)
-
-#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) \
-    (((x) <= SERIAL_PORT_USART_MAX) ? ((x) - SERIAL_PORT_USART1) : ((x) - SERIAL_PORT_LPUART1) + LPUARTDEV_1)
-#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) \
-    (((x) <= SERIAL_PORT_USART_MAX) ? ((x) - SERIAL_PORT_USART1 + UARTDEV_1) : ((x) - SERIAL_PORT_LPUART1) + LPUARTDEV_1)
-
-#else
-
-#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_USART1)
-#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
 typedef enum {
     SERIALTYPE_INVALID = -1,
     SERIALTYPE_USB_VCP = 0,
@@ -124,7 +113,6 @@ typedef enum {
     SERIALTYPE_COUNT
 } serialType_e;
 
-#endif
 serialType_e serialType(serialPortIdentifier_e identifier);
 
 // resource index of given identifier, or -1 if not available

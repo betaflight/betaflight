@@ -85,6 +85,10 @@
     In the future we can move to specific drivers being added only - to save flash space.
 */
 
+
+// normalize serial ports definitions
+#include "serial_post.h"
+
 #if defined(USE_MAG) && !defined(USE_VIRTUAL_MAG)
 
 #ifndef USE_MAG_DATA_READY_SIGNAL

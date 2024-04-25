@@ -23,7 +23,7 @@
 // Configuration constants
 
 #if defined(STM32F4)
-#define UARTDEV_COUNT_MAX 6
+
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -35,8 +35,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(STM32F7)
-#define UARTDEV_COUNT_MAX 8
+
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -48,8 +49,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(STM32H7)
-#define UARTDEV_COUNT_MAX 11 // UARTs 1 to 10 + LPUART1
+
 #define UARTHARDWARE_MAX_PINS 5
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -61,8 +63,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(STM32G4)
-#define UARTDEV_COUNT_MAX 11  // UARTs 1 to 5 + LPUART1 (index 10)
+
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -74,8 +77,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(AT32F4)
-#define UARTDEV_COUNT_MAX 8  // UARTs 1 to 5 + LPUART1 (index 9)
+
 #define UARTHARDWARE_MAX_PINS 5
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256

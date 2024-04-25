@@ -92,10 +92,6 @@ typedef struct serialPort_s {
     uint8_t identifier;
 } serialPort_t;
 
-#define SERIAL_PORT_MAX_INDEX 11
-#define SERIAL_UART_COUNT 10
-#define SERIAL_LPUART_COUNT 1
-
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[RESOURCE_SERIAL_COUNT];
     ioTag_t ioTagRx[RESOURCE_SERIAL_COUNT];

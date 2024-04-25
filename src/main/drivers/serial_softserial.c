@@ -47,8 +47,6 @@
 #define RX_TOTAL_BITS 10
 #define TX_TOTAL_BITS 10
 
-#define MAX_SOFTSERIAL_PORTS 2
-
 typedef enum {
     TIMER_MODE_SINGLE,
     TIMER_MODE_DUAL,
