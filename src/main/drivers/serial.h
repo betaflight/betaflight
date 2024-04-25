@@ -23,8 +23,7 @@
 #include "drivers/io.h"
 #include "drivers/io_types.h"
 #include "drivers/resource.h"
-// TODO(hertz@): uncomment and use UARTDevice_e::MAX_UARTDEV
-// #include "drivers/serial_uart.h"
+#include "drivers/serial_resource.h"
 
 #include "pg/pg.h"
 
@@ -98,23 +97,15 @@ typedef struct serialPort_s {
 #define SERIAL_LPUART_COUNT 1
 
 typedef struct serialPinConfig_s {
-    ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
-    ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
-    ioTag_t ioTagInverter[SERIAL_PORT_MAX_INDEX];
+    ioTag_t ioTagTx[RESOURCE_SERIAL_COUNT];
+    ioTag_t ioTagRx[RESOURCE_SERIAL_COUNT];
+#ifdef USE_INVERTER
+    // TODO - no need for LPUART inverter
+    ioTag_t ioTagInverter[RESOURCE_UART_COUNT + RESOURCE_LPUART_COUNT]; // this array is only for UARTs.
+#endif
 } serialPinConfig_t;
 
 PG_DECLARE(serialPinConfig_t, serialPinConfig);
-
-#if defined(USE_SOFTSERIAL)
-#define SOFTSERIAL_COUNT 2
-
-typedef struct softSerialPinConfig_s {
-    ioTag_t ioTagTx[SOFTSERIAL_COUNT];
-    ioTag_t ioTagRx[SOFTSERIAL_COUNT];
-} softSerialPinConfig_t;
-
-PG_DECLARE(softSerialPinConfig_t, softSerialPinConfig);
-#endif
 
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);

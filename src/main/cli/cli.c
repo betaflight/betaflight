@@ -5022,20 +5022,21 @@ const cliResourceValue_t resourceTable[] = {
 #if defined(USE_LED_STRIP)
     DEFS( OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, ledStripConfig_t, ioTag ),
 #endif
-#ifdef USE_UART
-    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[0], SERIAL_UART_COUNT ),
-    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[0], SERIAL_UART_COUNT ),
+#if defined(USE_UART)
+    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT),
+    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT),
 #endif
-#ifdef USE_INVERTER
-    DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[0], SERIAL_PORT_MAX_INDEX ),
+#if defined(USE_INVERTER)
+    DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT),
+    // LPUART and SOFTSERIAL don't need external inversion
 #endif
 #if defined(USE_SOFTSERIAL)
-    DEFA( OWNER_SOFTSERIAL_TX, PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagTx[0], SOFTSERIAL_COUNT ),
-    DEFA( OWNER_SOFTSERIAL_RX, PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagRx[0], SOFTSERIAL_COUNT ),
+    DEFA( OWNER_SOFTSERIAL_TX, PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_SOFTSERIAL_OFFSET], RESOURCE_SOFTSERIAL_COUNT ),
+    DEFA( OWNER_SOFTSERIAL_RX, PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_SOFTSERIAL_OFFSET], RESOURCE_SOFTSERIAL_COUNT ),
 #endif
-#ifdef USE_LPUART1
-    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[SERIAL_UART_COUNT], SERIAL_LPUART_COUNT ),
-    DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[SERIAL_UART_COUNT], SERIAL_LPUART_COUNT ),
+#if defined(USE_LPUART)
+    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT),
+    DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT),
 #endif
 #ifdef USE_I2C
     DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),
@@ -5299,6 +5300,7 @@ typedef struct dmaoptEntry_s {
 // DEFS : Single entry
 // DEFA : Array of uint8_t (stride = 1)
 // DEFW : Wider stride case; array of structs.
+// DEFW_OFS: array of structs, starting at offset ofs
 
 #define DEFS(device, peripheral, pgn, type, member) \
     { device, peripheral, pgn, 0,               offsetof(type, member), 0, MASK_IGNORED }
@@ -5307,7 +5309,10 @@ typedef struct dmaoptEntry_s {
     { device, peripheral, pgn, sizeof(uint8_t), offsetof(type, member), max, mask }
 
 #define DEFW(device, peripheral, pgn, type, member, max, mask) \
-    { device, peripheral, pgn, sizeof(type), offsetof(type, member), max, mask }
+    DEFW_OFS(device, peripheral, pgn, type, member, 0, max, mask)
+
+#define DEFW_OFS(device, peripheral, pgn, type, member, ofs, max, mask)  \
+    { device, peripheral, pgn, sizeof(type), offsetof(type, member) + (ofs) * sizeof(type), max, mask }
 
 dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_SDO", DMA_PERIPH_SPI_SDO, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     txDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
@@ -5317,8 +5322,14 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW("SPI_RX",   DMA_PERIPH_SPI_SDI, PG_SPI_PIN_CONFIG,     spiPinConfig_t,     rxDmaopt, SPIDEV_COUNT,                    MASK_IGNORED),
     DEFA("ADC",      DMA_PERIPH_ADC,      PG_ADC_CONFIG,         adcConfig_t,        dmaopt,   ADCDEV_COUNT,                    MASK_IGNORED),
     DEFS("SDIO",     DMA_PERIPH_SDIO,     PG_SDIO_CONFIG,        sdioConfig_t,       dmaopt),
-    DEFW("UART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, UARTDEV_CONFIG_MAX,              MASK_IGNORED),
-    DEFW("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, UARTDEV_CONFIG_MAX,              MASK_IGNORED),
+#ifdef USE_UART
+    DEFW_OFS("UART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
+    DEFW_OFS("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_UART_OFFSET, RESOURCE_UART_COUNT, MASK_IGNORED),
+#endif
+#ifdef USE_LPUART1
+    DEFW_OFS("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+    DEFW_OFS("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
+#endif
 #if defined(STM32H7) || defined(STM32G4)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
 #endif

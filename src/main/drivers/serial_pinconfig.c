@@ -186,7 +186,7 @@
 # endif
 #endif
 
-#if defined(USE_UART) || defined(USE_SOFTSERIAL)
+#if defined(USE_UART) || defined(USE_LPUART) || defined(USE_SOFTSERIAL)
 typedef struct serialDefaultPin_s {
     serialPortIdentifier_e ident;
     ioTag_t rxIO, txIO, inverterIO;
@@ -226,44 +226,33 @@ static const serialDefaultPin_t serialDefaultPin[] = {
 #ifdef USE_LPUART1
     { SERIAL_PORT_LPUART1, IO_TAG(LPUART1_RX_PIN), IO_TAG(LPUART1_TX_PIN), IO_TAG(INVERTER_PIN_LPUART1) },
 #endif
+#ifdef USE_SOFTSERIAL1
+    { SERIAL_PORT_SOFTSERIAL1, IO_TAG(SOFTSERIAL1_RX_PIN), IO_TAG(SOFTSERIAL1_TX_PIN), IO_TAG(NONE) },
+#endif
+#ifdef USE_SOFTSERIAL2
+    { SERIAL_PORT_SOFTSERIAL2, IO_TAG(SOFTSERIAL2_RX_PIN), IO_TAG(SOFTSERIAL2_TX_PIN), IO_TAG(NONE) },
+#endif
 };
 
 PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 
 void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
 {
-    for (size_t index = 0 ; index < ARRAYLEN(serialDefaultPin) ; index++) {
-        const serialDefaultPin_t *defpin = &serialDefaultPin[index];
-        serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->rxIO;
-        serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->txIO;
-        serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->inverterIO;
+    for (const serialDefaultPin_t *defpin = serialDefaultPin; defpin < ARRAYEND(serialDefaultPin); defpin++) {
+        const int resourceIndex = serialResourceIndex(defpin->ident);
+        if (resourceIndex >= 0) {
+            serialPinConfig->ioTagRx[resourceIndex] = defpin->rxIO;
+            serialPinConfig->ioTagTx[resourceIndex] = defpin->txIO;
+#if defined(USE_INVERTER)
+            if (resourceIndex < (int)ARRAYLEN(serialPinConfig->ioTagInverter)) {
+                // LPUART/SOFTSERIAL do not need inverter
+                serialPinConfig->ioTagInverter[resourceIndex] = defpin->inverterIO;
+            }
+#endif
+        }
     }
 }
 
-#if defined(USE_SOFTSERIAL)
-typedef struct softSerialDefaultPin_s {
-    serialPortIdentifier_e ident;
-    ioTag_t rxIO, txIO;
-} softSerialDefaultPin_t;
-
-static const softSerialDefaultPin_t softSerialDefaultPin[SOFTSERIAL_COUNT] = {
-#ifdef USE_SOFTSERIAL
-    { SERIAL_PORT_SOFTSERIAL1, IO_TAG(SOFTSERIAL1_RX_PIN), IO_TAG(SOFTSERIAL1_TX_PIN) },
-    { SERIAL_PORT_SOFTSERIAL2, IO_TAG(SOFTSERIAL2_RX_PIN), IO_TAG(SOFTSERIAL2_TX_PIN) },
-#endif
-};
-
-PG_REGISTER_WITH_RESET_FN(softSerialPinConfig_t, softSerialPinConfig, PG_SOFTSERIAL_PIN_CONFIG, 0);
-
-void pgResetFn_softSerialPinConfig(softSerialPinConfig_t *softSerialPinConfig)
-{
-    for (size_t index = 0 ; index < ARRAYLEN(softSerialDefaultPin) ; index++) {
-        const softSerialDefaultPin_t *defpin = &softSerialDefaultPin[index];
-        softSerialPinConfig->ioTagRx[SOFTSERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->rxIO;
-        softSerialPinConfig->ioTagTx[SOFTSERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->txIO;
-    }
-}
-#endif
 
 #endif
 #endif

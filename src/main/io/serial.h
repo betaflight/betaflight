@@ -115,8 +115,25 @@ extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
 #define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_USART1)
 #define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
+typedef enum {
+    SERIALTYPE_INVALID = -1,
+    SERIALTYPE_USB_VCP = 0,
+    SERIALTYPE_UART,
+    SERIALTYPE_LPUART,
+    SERIALTYPE_SOFTSERIAL,
+    SERIALTYPE_COUNT
+} serialType_e;
 
 #endif
+serialType_e serialType(serialPortIdentifier_e identifier);
+
+// resource index of given identifier, or -1 if not available
+int serialResourceIndex(serialPortIdentifier_e identifier);
+// owner of Tx pin (+1 for Rx)
+resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier);
+// index for given owner
+int serialOwnerIndex(serialPortIdentifier_e identifier);
+
 //
 // runtime
 //

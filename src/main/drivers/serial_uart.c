@@ -389,10 +389,17 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
 #ifdef USE_DMA_SPEC
     UARTDevice_e device = hardware->device;
+    const serialPortIdentifier_e uartPortIdentifier = hardware->identifier;
+    const int resourceIdx = serialResourceIndex(uartPortIdentifier);
+    // TODO - check <= LPUART
+    const uartDeviceIdx_e uartDeviceIdx = uartDeviceIdxFromIdentifier(uartPortIdentifier);
+    const int ownerIndex = serialOwnerIndex(uartPortIdentifier);
+    const resourceOwner_e ownerTxRx = serialOwnerTxRx(uartPortIdentifier); // rx is always +1
+
     const dmaChannelSpec_t *dmaChannelSpec;
 
-    if (serialUartConfig(device)->txDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, device, serialUartConfig(device)->txDmaopt);
+    if (serialUartConfig(resourceIdx)->txDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, uartDeviceIdx, serialUartConfig(resourceIdx)->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->txDMAResource = dmaChannelSpec->ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -403,8 +410,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
         }
     }
 
-    if (serialUartConfig(device)->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, device, serialUartConfig(device)->txDmaopt);
+    if (serialUartConfig(resourceIdx)->rxDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, serialUartConfig(resourceIdx)->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -438,7 +445,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
     if (uartPort->txDMAResource) {
         dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
-        if (dmaAllocate(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(hardware->device))) {
+        if (dmaAllocate(identifier, ownerTxRx, ownerIndex)) {
             dmaEnable(identifier);
 #if defined(AT32F4)
             dmaMuxEnable(identifier, uartPort->txDMAMuxId);
@@ -450,7 +457,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
     if (uartPort->rxDMAResource) {
         dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
-        if (dmaAllocate(identifier, OWNER_SERIAL_RX, RESOURCE_INDEX(hardware->device))) {
+        if (dmaAllocate(identifier, ownerTxRx + 1, ownerIndex)) {
             dmaEnable(identifier);
 #if defined(AT32F4)
             dmaMuxEnable(identifier, uartPort->rxDMAMuxId);
