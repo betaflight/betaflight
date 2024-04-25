@@ -246,12 +246,6 @@ void uartTxMonitor(uartPort_t *s);
     UART_BUFFER(extern, n, R); \
     UART_BUFFER(extern, n, T); struct dummy_s
 
-#define LPUART_BUFFER(type, n, rxtx) type volatile uint8_t lpuart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
-
-#define LPUART_BUFFERS_EXTERN(n) \
-    LPUART_BUFFER(extern, n, R); \
-    LPUART_BUFFER(extern, n, T); struct dummy_s
-
 #ifdef USE_UART1
 UART_BUFFERS_EXTERN(1);
 #endif
@@ -293,7 +287,7 @@ UART_BUFFERS_EXTERN(10);
 #endif
 
 #ifdef USE_LPUART1
-LPUART_BUFFERS_EXTERN(1);
+UART_BUFFERS_EXTERN(Lp1);
 #endif
 
 #undef UART_BUFFERS_EXTERN

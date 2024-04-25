@@ -246,10 +246,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .irqn = LPUART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6,
-        .txBuffer = lpuart1TxBuffer,
-        .rxBuffer = lpuart1RxBuffer,
-        .txBufferSize = sizeof(lpuart1TxBuffer),
-        .rxBufferSize = sizeof(lpuart1RxBuffer),
+        .txBuffer = uartLp1TxBuffer,
+        .rxBuffer = uartLp1RxBuffer,
+        .txBufferSize = sizeof(uartLp1TxBuffer),
+        .rxBufferSize = sizeof(uartLp1RxBuffer),
     },
 #endif
 };

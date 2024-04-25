@@ -67,10 +67,6 @@
     UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
     UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
 
-#define LPUART_BUFFERS(n) \
-    LPUART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
-    LPUART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
-
 #ifdef USE_UART1
 UART_BUFFERS(1);
 #endif
@@ -112,7 +108,7 @@ UART_BUFFERS(10);
 #endif
 
 #ifdef USE_LPUART1
-LPUART_BUFFERS(1);
+UART_BUFFERS(Lp1);  // TODO - maybe some other naming scheme ?
 #endif
 
 #undef UART_BUFFERS
@@ -596,7 +592,7 @@ UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_LPUART1
-UART_IRQHandler(LPUART, 1, LPUARTDEV_1) // LPUART1 Rx/Tx IRQ Handler
+UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
 #endif
 
 
