@@ -48,40 +48,9 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-static void usartConfigurePinInversion(uartPort_t *uartPort) {
-#if !defined(USE_INVERTER) && !defined(STM32F303xC)
-    UNUSED(uartPort);
-#else
-    bool inverted = uartPort->port.options & SERIAL_INVERTED;
-
-#ifdef USE_INVERTER
-    if (inverted) {
-        // Enable hardware inverter if available.
-        enableInverter(uartPort->USARTx, TRUE);
-    }
-#endif
-#endif
-}
-
-static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
-{
-    for (uint32_t i = 0; i < UARTDEV_COUNT_MAX; i++) {
-        uartDevice_t *candidate = uartDevmap[i];
-
-        if (&candidate->port == uartPort) {
-            return candidate;
-        }
-    }
-    return NULL;
-}
-
 static void uartConfigurePinSwap(uartPort_t *uartPort)
 {
-    uartDevice_t *uartDevice = uartFindDevice(uartPort);
-    if (!uartDevice) {
-        return;
-    }
-
+    uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
     if (uartDevice->pinSwap) {
         usart_transmit_receive_pin_swap(uartDevice->port.USARTx, TRUE);
     }
@@ -112,10 +81,10 @@ void uartReconfigure(uartPort_t *uartPort)
         usart_transmitter_enable(uartPort->USARTx, TRUE);
     }
 
-    //config pin inverter
-    usartConfigurePinInversion(uartPort);
+    // config external pin inverter (no internal pin inversion available)
+    uartConfigureExternalPinInversion(uartPort);
 
-    //config pin swap
+    // config pin swap
     uartConfigurePinSwap(uartPort);
 
     if (uartPort->port.options & SERIAL_BIDIR) {

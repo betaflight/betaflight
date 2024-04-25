@@ -48,22 +48,6 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-static void usartConfigurePinInversion(uartPort_t *uartPort)
-{
-#if !defined(USE_INVERTER)
-    UNUSED(uartPort);
-#else
-    bool inverted = uartPort->port.options & SERIAL_INVERTED;
-
-#ifdef USE_INVERTER
-    if (inverted) {
-        // Enable hardware inverter if available.
-        enableInverter(uartPort->USARTx, true);
-    }
-#endif
-#endif
-}
-
 void uartReconfigure(uartPort_t *uartPort)
 {
     USART_InitTypeDef USART_InitStructure;
@@ -91,7 +75,8 @@ void uartReconfigure(uartPort_t *uartPort)
 
     USART_Init(uartPort->USARTx, &USART_InitStructure);
 
-    usartConfigurePinInversion(uartPort);
+    // config external pin inverter (no internal pin inversion available)
+    uartConfigureExternalPinInversion(uartPort);
 
     if (uartPort->port.options & SERIAL_BIDIR)
         USART_HalfDuplexCmd(uartPort->USARTx, ENABLE);

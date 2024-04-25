@@ -127,6 +127,23 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
 #ifdef USE_DMA
     uartPort->txDMAEmpty = true;
 #endif
+uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e identifier)
+{
+    const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(identifier);
+    return deviceIdx != UARTDEV_INVALID ? &uartDevice[deviceIdx] : NULL;
+}
+
+serialPort_t *uartOpen(serialPortIdentifier_e identifier, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+{
+    uartDevice_t *uartDevice = uartDeviceFromIdentifier(identifier);
+    if (!uartDevice) {
+        return NULL;
+    }
+
+    uartPort_t *uartPort = serialUART(uartDevice, baudRate, mode, options);
+    if (!uartPort) {
+        return NULL;
+    }
 
     // common serial initialisation code should move to serialPort::init()
     uartPort->port.rxBufferHead = uartPort->port.rxBufferTail = 0;

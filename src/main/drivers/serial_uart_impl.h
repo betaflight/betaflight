@@ -242,7 +242,9 @@ extern const struct serialPortVTable uartVTable[];
 
 void uartTryStartTxDMA(uartPort_t *s);
 
-uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options);
+uartPort_t *serialUART(uartDevice_t *uart, uint32_t baudRate, portMode_e mode, portOptions_e options);
+
+void uartConfigureExternalPinInversion(uartPort_t *uartPort);
 
 void uartIrqHandler(uartPort_t *s);
 
