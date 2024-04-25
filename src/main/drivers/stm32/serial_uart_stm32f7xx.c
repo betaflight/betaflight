@@ -69,7 +69,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         },
         .rcc = RCC_APB2(USART1),
-        .rxIrq = USART1_IRQn,
+        .irqn = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART1,
         .txBuffer = uart1TxBuffer,
@@ -100,7 +100,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PD5), GPIO_AF7_USART2 }
         },
         .rcc = RCC_APB1(USART2),
-        .rxIrq = USART2_IRQn,
+        .irqn = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART2,
         .txBuffer = uart2TxBuffer,
@@ -133,7 +133,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PD8), GPIO_AF7_USART3 }
         },
         .rcc = RCC_APB1(USART3),
-        .rxIrq = USART3_IRQn,
+        .irqn = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART3,
         .txBuffer = uart3TxBuffer,
@@ -172,7 +172,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         },
         .rcc = RCC_APB1(UART4),
-        .rxIrq = UART4_IRQn,
+        .irqn = UART4_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART4,
         .txBuffer = uart4TxBuffer,
@@ -211,7 +211,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         },
         .rcc = RCC_APB1(UART5),
-        .rxIrq = UART5_IRQn,
+        .irqn = UART5_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART5,
         .txBuffer = uart5TxBuffer,
@@ -242,7 +242,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PG14), GPIO_AF8_USART6 }
         },
         .rcc = RCC_APB2(USART6),
-        .rxIrq = USART6_IRQn,
+        .irqn = USART6_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6,
         .txBuffer = uart6TxBuffer,
@@ -281,7 +281,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         },
         .rcc = RCC_APB1(UART7),
-        .rxIrq = UART7_IRQn,
+        .irqn = UART7_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART7_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART7,
         .txBuffer = uart7TxBuffer,
@@ -310,7 +310,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PE1), GPIO_AF8_UART8 }
         },
         .rcc = RCC_APB1(UART8),
-        .rxIrq = UART8_IRQn,
+        .irqn = UART8_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART8_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART8,
         .txBuffer = uart8TxBuffer,

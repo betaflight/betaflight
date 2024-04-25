@@ -166,12 +166,8 @@ typedef struct uartHardware_s {
     uint8_t af;
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-    uint8_t txIrq;
-    uint8_t rxIrq;
-#else
-    uint8_t irqn;
-#endif
+    uint8_t irqn;                  // uart IRQ. One shared IRQ per uart
+
     uint8_t txPriority;
     uint8_t rxPriority;
 

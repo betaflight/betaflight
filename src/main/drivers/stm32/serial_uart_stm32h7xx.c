@@ -122,7 +122,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB14), GPIO_AF4_USART1 },
         },
         .rcc = RCC_APB2(USART1),
-        .rxIrq = USART1_IRQn,
+        .irqn = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART1,
         .txBuffer = uart1TxBuffer,
@@ -151,7 +151,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PD5), GPIO_AF7_USART2 }
         },
         .rcc = RCC_APB1L(USART2),
-        .rxIrq = USART2_IRQn,
+        .irqn = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART2,
         .txBuffer = uart2TxBuffer,
@@ -182,7 +182,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PD8), GPIO_AF7_USART3 }
         },
         .rcc = RCC_APB1L(USART3),
-        .rxIrq = USART3_IRQn,
+        .irqn = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART3,
         .txBuffer = uart3TxBuffer,
@@ -217,7 +217,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PD1),  GPIO_AF8_UART4 }
         },
         .rcc = RCC_APB1L(UART4),
-        .rxIrq = UART4_IRQn,
+        .irqn = UART4_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART4,
         .txBuffer = uart4TxBuffer,
@@ -248,7 +248,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC12), GPIO_AF8_UART5 },
         },
         .rcc = RCC_APB1L(UART5),
-        .rxIrq = UART5_IRQn,
+        .irqn = UART5_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART5,
         .txBuffer = uart5TxBuffer,
@@ -277,7 +277,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PG14), GPIO_AF7_USART6 }
         },
         .rcc = RCC_APB2(USART6),
-        .rxIrq = USART6_IRQn,
+        .irqn = USART6_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6,
         .txBuffer = uart6TxBuffer,
@@ -310,7 +310,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PF7),  GPIO_AF7_UART7 },
         },
         .rcc = RCC_APB1L(UART7),
-        .rxIrq = UART7_IRQn,
+        .irqn = UART7_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART7_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART7,
         .txBuffer = uart7TxBuffer,
@@ -337,7 +337,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PE1), GPIO_AF8_UART8 }
         },
         .rcc = RCC_APB1L(UART8),
-        .rxIrq = UART8_IRQn,
+        .irqn = UART8_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART8_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART8,
         .txBuffer = uart8TxBuffer,
@@ -364,7 +364,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PD15), GPIO_AF11_UART9 }
         },
         .rcc = RCC_APB2(UART9),
-        .rxIrq = UART9_IRQn,
+        .irqn = UART9_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART9_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART9,
         .txBuffer = uart9TxBuffer,
@@ -391,7 +391,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PE3), GPIO_AF11_USART10 }
         },
         .rcc = RCC_APB2(USART10),
-        .rxIrq = USART10_IRQn,
+        .irqn = USART10_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART10_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART10,
         .txBuffer = uart10TxBuffer,
@@ -420,7 +420,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB6),  GPIO_AF8_LPUART }
         },
         .rcc = RCC_APB4(LPUART1),
-        .rxIrq = LPUART1_IRQn,
+        .irqn = LPUART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALLPUART1_TXDMA, // Not used until DMA is supported
         .rxPriority = NVIC_PRIO_SERIALLPUART1,       // Not used until DMA is supported
         .txBuffer = lpuart1TxBuffer,
