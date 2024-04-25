@@ -169,7 +169,7 @@ void uartReconfigure(uartPort_t *uartPort)
         USART_ITConfig(uartPort->USARTx, USART_IT_TC, ENABLE);
     }
 
-    USART_Cmd(uartPort->USARTx, ENABLE);
+    USART_Cmd(uartPort->USARTx, ENABLE); // TODO : enabling twice?
 }
 
 #ifdef USE_DMA

@@ -127,6 +127,7 @@ static const uint32_t quadSpi_addressSizeMap[] = {
 
 static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
 {
+    // TODO addressSize + 7) / 8)
     return quadSpi_addressSizeMap[((addressSize + 1) / 8) - 1]; // rounds to nearest QSPI_ADDRESS_* value that will hold the address.
 }
 
