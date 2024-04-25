@@ -520,8 +520,7 @@ const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, ui
         return NULL;
     }
 
-    for (unsigned i = 0 ; i < ARRAYLEN(dmaPeripheralMapping) ; i++) {
-        const dmaPeripheralMapping_t *periph = &dmaPeripheralMapping[i];
+    for (const dmaPeripheralMapping_t *periph =  dmaPeripheralMapping; periph < ARRAYEND(dmaPeripheralMapping) ; periph++) {
 #if defined(STM32H7) || defined(STM32G4)
         if (periph->device == device && periph->index == index) {
             dmaChannelSpec_t *dmaSpec = &dmaChannelSpec[opt];

@@ -614,12 +614,11 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
     // Find the first serial port on which MSP Displayport is enabled
     displayPortMspSetSerial(SERIAL_PORT_NONE);
 
-    for (uint8_t serialPort  = 0; serialPort < SERIAL_PORT_COUNT; serialPort++) {
-        const serialPortConfig_t *portConfig = &serialConfig()->portConfigs[serialPort];
-
-        if (portConfig &&
-            (portConfig->identifier != SERIAL_PORT_USB_VCP) &&
-            ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
+    for (const serialPortConfig_t *portConfig =  serialConfig()->portConfigs;
+         portConfig < ARRAYEND(serialConfig()->portConfigs);
+         portConfig++) {
+        if ((portConfig->identifier != SERIAL_PORT_USB_VCP)
+            && ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
             displayPortMspSetSerial(portConfig->identifier);
             break;
         }
