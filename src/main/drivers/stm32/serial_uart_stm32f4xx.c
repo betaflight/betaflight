@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build/debug.h"
 
 #ifdef USE_UART
 
