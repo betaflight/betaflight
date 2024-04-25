@@ -50,7 +50,7 @@ typedef enum {
     DMA_PERIPH_SPI_SDI,
     DMA_PERIPH_ADC,
     DMA_PERIPH_SDIO,
-    DMA_PERIPH_UART_TX,
+    DMA_PERIPH_UART_TX,   // LPUART is handled as UART
     DMA_PERIPH_UART_RX,
     DMA_PERIPH_TIMUP,
 } dmaPeripheral_e;

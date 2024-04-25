@@ -25,7 +25,7 @@
 
 #ifdef USE_INVERTER
 
-#include "io/serial.h" // For SERIAL_PORT_IDENTIFIER_TO_INDEX
+#include "io/serial.h"
 #include "drivers/io.h"
 #include "drivers/serial.h"
 

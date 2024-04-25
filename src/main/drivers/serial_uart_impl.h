@@ -91,75 +91,44 @@
 #error unknown MCU family
 #endif
 
-// Count number of configured UARTs
-
+// compressed index of UART/LPUART. Direct index into uartDevice[]
+typedef enum {
+    UARTDEV_INVALID = -1,
 #ifdef USE_UART1
-#define UARTDEV_COUNT_1 1
-#else
-#define UARTDEV_COUNT_1 0
+    UARTDEV_1,
 #endif
-
 #ifdef USE_UART2
-#define UARTDEV_COUNT_2 1
-#else
-#define UARTDEV_COUNT_2 0
+    UARTDEV_2,
 #endif
-
 #ifdef USE_UART3
-#define UARTDEV_COUNT_3 1
-#else
-#define UARTDEV_COUNT_3 0
+    UARTDEV_3,
 #endif
-
 #ifdef USE_UART4
-#define UARTDEV_COUNT_4 1
-#else
-#define UARTDEV_COUNT_4 0
+    UARTDEV_4,
 #endif
-
 #ifdef USE_UART5
-#define UARTDEV_COUNT_5 1
-#else
-#define UARTDEV_COUNT_5 0
+    UARTDEV_5,
 #endif
-
 #ifdef USE_UART6
-#define UARTDEV_COUNT_6 1
-#else
-#define UARTDEV_COUNT_6 0
+    UARTDEV_6,
 #endif
-
 #ifdef USE_UART7
-#define UARTDEV_COUNT_7 1
-#else
-#define UARTDEV_COUNT_7 0
+    UARTDEV_7,
 #endif
-
 #ifdef USE_UART8
-#define UARTDEV_COUNT_8 1
-#else
-#define UARTDEV_COUNT_8 0
+    UARTDEV_8,
 #endif
-
 #ifdef USE_UART9
-#define UARTDEV_COUNT_9 1
-#else
-#define UARTDEV_COUNT_9 0
+    UARTDEV_9,
 #endif
-
 #ifdef USE_UART10
-#define UARTDEV_COUNT_10 1
-#else
-#define UARTDEV_COUNT_10 0
+    UARTDEV_10,
 #endif
-
 #ifdef USE_LPUART1
-#define LPUARTDEV_COUNT_1 1
-#else
-#define LPUARTDEV_COUNT_1 0
+    UARTDEV_LP1,
 #endif
-
-#define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8 + UARTDEV_COUNT_9 + UARTDEV_COUNT_10 + LPUARTDEV_COUNT_1)
+    UARTDEV_COUNT
+} uartDeviceIdx_e;
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
@@ -169,7 +138,7 @@ typedef struct uartPinDef_s {
 } uartPinDef_t;
 
 typedef struct uartHardware_s {
-    UARTDevice_e device;    // XXX Not required for full allocation
+    serialPortIdentifier_e identifier;
     USART_TypeDef* reg;
 
 #ifdef USE_DMA
@@ -212,7 +181,7 @@ typedef struct uartHardware_s {
     uint16_t rxBufferSize;
 } uartHardware_t;
 
-extern const uartHardware_t uartHardware[];
+extern const uartHardware_t uartHardware[UARTDEV_COUNT];
 
 // uartDevice_t is an actual device instance.
 // XXX Instances are allocated for uarts defined by USE_UARTx atm.
@@ -236,7 +205,10 @@ typedef struct uartDevice_s {
     txPinState_t txPinState;
 } uartDevice_t;
 
-extern uartDevice_t *uartDevmap[];
+extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDevice_e, used for LPUART too
+
+uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier);
+uartDevice_t* uartDeviceFromIdentifier(serialPortIdentifier_e identifier);
 
 extern const struct serialPortVTable uartVTable[];
 

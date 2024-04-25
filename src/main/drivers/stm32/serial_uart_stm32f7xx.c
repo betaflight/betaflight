@@ -44,7 +44,7 @@
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
-        .device = UARTDEV_1,
+        .identifier = SERIAL_PORT_USART1,
         .reg = USART1,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -81,7 +81,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART2
     {
-        .device = UARTDEV_2,
+        .identifier = SERIAL_PORT_USART2,
         .reg = USART2,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -112,7 +112,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART3
     {
-        .device = UARTDEV_3,
+        .identifier = SERIAL_PORT_USART3,
         .reg = USART3,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -145,7 +145,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART4
     {
-        .device = UARTDEV_4,
+        .identifier = SERIAL_PORT_UART4,
         .reg = UART4,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -184,7 +184,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART5
     {
-        .device = UARTDEV_5,
+        .identifier = SERIAL_PORT_UART5,
         .reg = UART5,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -223,7 +223,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART6
     {
-        .device = UARTDEV_6,
+        .identifier = SERIAL_PORT_USART6,
         .reg = USART6,
         .rxDMAChannel = DMA_CHANNEL_5,
         .txDMAChannel = DMA_CHANNEL_5,
@@ -254,7 +254,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART7
     {
-        .device = UARTDEV_7,
+        .identifier = SERIAL_PORT_UART7,
         .reg = UART7,
         .rxDMAChannel = DMA_CHANNEL_5,
         .txDMAChannel = DMA_CHANNEL_5,
@@ -293,7 +293,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART8
     {
-        .device = UARTDEV_8,
+        .identifier = SERIAL_PORT_UART8,
         .reg = UART8,
         .rxDMAChannel = DMA_CHANNEL_5,
         .txDMAChannel = DMA_CHANNEL_5,

@@ -117,16 +117,78 @@ LPUART_BUFFERS(1);
 
 #undef UART_BUFFERS
 
-serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+// store only devices configured for target (USE_UARTx)
+// some entries may be unused, for example because off pin configuration
+// uartDeviceIdx_e is direct index into this table
+FAST_DATA_ZERO_INIT uartDevice_t uartDevice[UARTDEV_COUNT];
+
+// map serialPortIdentifier_e to uartDeviceIdx_e
+uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
 {
-    uartPort_t *uartPort = serialUART(device, baudRate, mode, options);
-
-    if (!uartPort)
-        return (serialPort_t *)uartPort;
-
-#ifdef USE_DMA
-    uartPort->txDMAEmpty = true;
+#ifdef USE_LPUART1
+    if (identifier == SERIAL_PORT_LPUART1) {
+        return UARTDEV_LP1;
+    }
 #endif
+
+#if 1 // TODO ... 
+    // store +1 in table - unset values default to 0
+    // table is for UART only to save space (LPUART is handled separately)
+#define _R(id, dev) [id] = (dev) + 1
+    static const uartDeviceIdx_e uartMap[] = {
+#ifdef USE_UART1
+        _R(SERIAL_PORT_USART1, UARTDEV_1),
+#endif
+#ifdef USE_UART2
+        _R(SERIAL_PORT_USART2, UARTDEV_2),
+#endif
+#ifdef USE_UART3
+        _R(SERIAL_PORT_USART3, UARTDEV_3),
+#endif
+#ifdef USE_UART4
+        _R(SERIAL_PORT_UART4, UARTDEV_4),
+#endif
+#ifdef USE_UART5
+        _R(SERIAL_PORT_UART5, UARTDEV_5),
+#endif
+#ifdef USE_UART6
+        _R(SERIAL_PORT_USART6, UARTDEV_6),
+#endif
+#ifdef USE_UART7
+        _R(SERIAL_PORT_USART7, UARTDEV_7),
+#endif
+#ifdef USE_UART8
+        _R(SERIAL_PORT_USART8, UARTDEV_8),
+#endif
+#ifdef USE_UART9
+        _R(SERIAL_PORT_UART9, UARTDEV_9),
+#endif
+#ifdef USE_UART10
+        _R(SERIAL_PORT_USART10, UARTDEV_10),
+#endif
+    };
+#undef _R
+    if (identifier >= 0 && identifier < (int)ARRAYLEN(uartMap)) {
+        // UART case, but given USE_UARtx may not be defined
+        return uartMap[identifier] ? uartMap[identifier] - 1 : UARTDEV_INVALID;
+    }
+#else
+    {
+        int idx = identifier - SERIAL_PORT_USART1;
+        if (idx >= 0 && idx < SERIAL_UART_MAX) {
+            if (BIT(idx) & SERIAL_UART_MASK) {
+                // retrun number of enabled uart ports smaller than idx
+                return __builtin_popcount((BIT(idx) - 1) & SERIAL_UART_MASK);  // TODO - pocount in utils.h
+            } else {
+                return UARTDEV_INVALID;
+            }
+        }
+    }
+#endif
+  // neither LPUART, nor UART
+    return UARTDEV_INVALID;
+}
+
 uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e identifier)
 {
     const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(identifier);
@@ -398,6 +460,7 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
+// TODO - move to serial_uart_hw.c
 #ifdef USE_DMA
 void uartConfigureDma(uartDevice_t *uartdev)
 {
@@ -405,7 +468,6 @@ void uartConfigureDma(uartDevice_t *uartdev)
     const uartHardware_t *hardware = uartdev->hardware;
 
 #ifdef USE_DMA_SPEC
-    UARTDevice_e device = hardware->device;
     const serialPortIdentifier_e uartPortIdentifier = hardware->identifier;
     const int resourceIdx = serialResourceIndex(uartPortIdentifier);
     // TODO - check <= LPUART
@@ -485,12 +547,13 @@ void uartConfigureDma(uartDevice_t *uartdev)
 }
 #endif
 
-#define UART_IRQHandler(type, number, dev) \
-    FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void) \
-    { \
-        uartPort_t *uartPort = &(uartDevmap[dev]->port); \
-        uartIrqHandler(uartPort); \
-    }
+#define UART_IRQHandler(type, number, dev)                      \
+    FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
+    {                                                           \
+        uartPort_t *uartPort = &(uartDevice[(dev)].port);       \
+        uartIrqHandler(uartPort);                               \
+    }                                                           \
+/**/
 
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler

@@ -41,13 +41,8 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-static FAST_DATA_ZERO_INIT uartDevice_t uartDevice[UARTDEV_COUNT];      // Only those configured in target.h
-FAST_DATA_ZERO_INIT uartDevice_t *uartDevmap[UARTDEV_COUNT_MAX]; // Full array
-
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 {
-    uartDevice_t *uartdev = uartDevice;
-
     for (const uartHardware_t* hardware = uartHardware; hardware < ARRAYEND(uartHardware); hardware++) {
         const serialPortIdentifier_e identifier = hardware->identifier;
         uartDevice_t* uartdev = uartDeviceFromIdentifier(identifier);

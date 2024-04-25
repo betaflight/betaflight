@@ -89,7 +89,7 @@
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
-        .device = UARTDEV_1,
+        .identifier = SERIAL_PORT_USART1,
         .reg = USART1,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART1_RX,
@@ -120,7 +120,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART2
     {
-        .device = UARTDEV_2,
+        .identifier = SERIAL_PORT_USART2,
         .reg = USART2,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART2_RX,
@@ -151,7 +151,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART3
     {
-        .device = UARTDEV_3,
+        .identifier = SERIAL_PORT_USART3,
         .reg = USART3,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART3_RX,
@@ -182,7 +182,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART4
     {
-        .device = UARTDEV_4,
+        .identifier = SERIAL_PORT_UART4,
         .reg = UART4,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART4_RX,
@@ -213,7 +213,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART5
     {
-        .device = UARTDEV_5,
+        .identifier = SERIAL_PORT_UART5,
         .reg = UART5,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART5_RX,
@@ -246,7 +246,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART6
     {
-        .device = UARTDEV_6,
+        .identifier = SERIAL_PORT_USART6,
         .reg = USART6,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART6_RX,
@@ -279,7 +279,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART7
     {
-        .device = UARTDEV_7,
+        .identifier = SERIAL_PORT_UART7,
         .reg = UART7,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART7_RX,
@@ -313,7 +313,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART8
     {
-        .device = UARTDEV_8,
+        .identifier = SERIAL_PORT_UART8,
         .reg = UART8, //USE UART8 FOR PIN CONFIG
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART8_RX,
