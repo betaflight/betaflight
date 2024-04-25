@@ -496,8 +496,13 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
     featureEnableImmediate(FEATURE_CHANNEL_FORWARDING);
     featureEnableImmediate(FEATURE_SERVO_TILT);
 #endif
-#if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
-    featureEnableImmediate(FEATURE_SOFTSERIAL);
+#if defined(USE_SOFTSERIAL)
+    for (unsigned i = RESOURCE_SOFTSERIAL_OFFSET; i < RESOURCE_SOFTSERIAL_OFFSET + RESOURCE_SOFTSERIAL_COUNT; i++) {
+        if (serialPinConfig()->ioTagTx[i] || serialPinConfig()->ioTagRx[i]) {
+            featureEnableImmediate(FEATURE_SOFTSERIAL);
+            break;
+        }
+    }
 #endif
 #ifdef USE_TELEMETRY
     featureEnableImmediate(FEATURE_TELEMETRY);

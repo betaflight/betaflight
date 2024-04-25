@@ -85,7 +85,6 @@ typedef struct softSerial_s {
     uint16_t         transmissionErrors;
     uint16_t         receiveErrors;
 
-    uint8_t          softSerialPortIndex;
     timerMode_e      timerMode;
 
     timerOvrHandlerRec_t overCb;
@@ -93,8 +92,8 @@ typedef struct softSerial_s {
 } softSerial_t;
 
 static const struct serialPortVTable softSerialVTable; // Forward
-
-static softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
+// SERIAL_SOFTSERIAL_COUNT is fine, softserial ports must start from 1 and be continuous
+static softSerial_t softSerialPorts[SERIAL_SOFTSERIAL_COUNT];
 
 void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
@@ -209,9 +208,20 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options)
+softSerial_t* softSerialFromIdentifier(serialPortIdentifier_e identifier)
 {
-    softSerial_t *softSerial = &(softSerialPorts[portIndex]);
+    if (identifier >= SERIAL_PORT_SOFTSERIAL1 && identifier < SERIAL_PORT_SOFTSERIAL1 + SERIAL_SOFTSERIAL_COUNT) {
+        return &softSerialPorts[identifier - SERIAL_PORT_SOFTSERIAL1];
+    }
+    return NULL;
+}
+
+serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options)
+{
+    softSerial_t *softSerial = softSerialFromIdentifier(identifier);
+    if (!softSerial) {
+        return NULL;
+    }
     const int resourceIndex = serialResourceIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
     const int ownerIndex = serialOwnerIndex(identifier);
@@ -279,8 +289,6 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->port.rxCallbackData = rxCallbackData;
 
     resetBuffers(softSerial);
-
-    softSerial->softSerialPortIndex = portIndex;
 
     softSerial->transmissionErrors = 0;
     softSerial->receiveErrors = 0;
