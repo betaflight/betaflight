@@ -353,10 +353,6 @@ bool w25n01g_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
     fdevice->vTable = &w25n01g_vTable;
 
-    if (fdevice->io.mode == FLASHIO_SPI) {    // Need to set clock speed for 8kHz logging support with SPI
-        spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(100000000));
-    }
-
     return true;
 }
 
@@ -384,6 +380,10 @@ void w25n01g_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
     // There are only 20 BB LUT entries, and there are 32 replacement blocks.
     // There will be a least chance of running out of replacement blocks.
     // If it ever run out, the device becomes unusable.
+
+    if (fdevice->io.mode == FLASHIO_SPI) {    // Need to set clock speed for 8kHz logging support with SPI
+        spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(100000000));
+    }
 
     w25n01g_deviceInit(fdevice);
 }
