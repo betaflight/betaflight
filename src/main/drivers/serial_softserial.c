@@ -184,7 +184,7 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
         timerPeriod = clock / baud;
         if (isTimerPeriodTooLarge(timerPeriod)) {
             if (clock > 1) {
-                clock = clock / 2;   // this is wrong - mhz stays the same ... This will double baudrate until ok (but minimum baudrate is < 1200)
+                clock = clock / 2;   // minimum baudrate is < 1200
             } else {
                 // TODO unable to continue, unable to determine clock and timerPeriods for the given baud
             }
@@ -192,7 +192,7 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
         }
     } while (isTimerPeriodTooLarge(timerPeriod));
 
-    timerConfigure(timerHardwarePtr, timerPeriod, baseClock);
+    timerConfigure(timerHardwarePtr, timerPeriod, clock);
 }
 
 static void resetBuffers(softSerial_t *softSerial)
