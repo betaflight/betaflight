@@ -25,8 +25,6 @@
 #define SLOW_VOLTAGE_TASK_FREQ_HZ 50
 #define FAST_VOLTAGE_TASK_FREQ_HZ 200
 
-#define PREV_DISPLAY_FILTERED_TIME_DIFF 500 // ms
-
 //
 // meters
 //
@@ -44,9 +42,6 @@ extern const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT];
 
 typedef struct voltageMeter_s {
     uint16_t displayFiltered;               // voltage in 0.01V steps
-    uint16_t prevDisplayFiltered;               // voltage in 0.01V steps
-    timeMs_t prevDisplayFilteredTime;
-    bool isVoltageStable;
     uint16_t unfiltered;                    // voltage in 0.01V steps
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     uint16_t sagFiltered;                   // voltage in 0.01V steps
