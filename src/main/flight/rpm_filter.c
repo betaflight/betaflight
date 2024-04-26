@@ -111,7 +111,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
 
 FAST_CODE_NOINLINE void rpmFilterUpdate(void)
 {
-    if (!useDshotTelemetry || (rpmFilter.numHarmonics == 0)) {
+    if (!useDshotTelemetry) {
         return;
     }
 
