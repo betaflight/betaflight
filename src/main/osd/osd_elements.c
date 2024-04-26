@@ -267,7 +267,7 @@ typedef int (*getEscRpmOrFreqFnPtr)(int i);
 static int getEscRpm(int i)
 {
 #ifdef USE_DSHOT_TELEMETRY
-    if (motorConfig()->dev.useDshotTelemetry) {
+    if (useDshotTelemetry) {
         return lrintf(getDshotRpm(i));
     }
 #endif
@@ -2064,7 +2064,7 @@ void osdAddActiveElements(void)
 #endif // GPS
 
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
-    if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || (motorConfig()->dev.useDshotTelemetry)) {
+    if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || useDshotTelemetry) {
         osdAddActiveElement(OSD_ESC_TMP);
         osdAddActiveElement(OSD_ESC_RPM);
         osdAddActiveElement(OSD_ESC_RPM_FREQ);
