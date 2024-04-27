@@ -59,3 +59,4 @@ eeprom.bin
 # config used for building targets
 /src/config
 
+betaflight.code-workspace
