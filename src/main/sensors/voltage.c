@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -89,10 +90,10 @@ const uint8_t supportedVoltageMeterCount = ARRAYLEN(voltageMeterIds);
 void voltageMeterReset(voltageMeter_t *meter)
 {
     meter->displayFiltered = 0;
-    meter->prevDisplayFiltered = 0;
-    meter->prevDisplayFilteredTime = 0;
+    meter->voltageStablePrevFiltered = 0;
+    meter->voltageStableLastUpdate = 0;
+    meter->voltageStableBits = 0;
     meter->unfiltered = 0;
-    meter->isVoltageStable = false;
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     meter->sagFiltered = 0;
 #endif
@@ -361,4 +362,27 @@ void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *meter)
     {
         voltageMeterReset(meter);
     }
+}
+
+// update voltageStableBits
+// new bit is shifted in every VOLTAGE_STABLE_UPDATE_MS
+// bit 1 is shifted in when voltage did not change more than VOLTAGE_STABLE_MAX_DELTA
+// bit 0 is shifted in othervise
+void voltageStableUpdate(voltageMeter_t* vm)
+{
+    const uint32_t now = millis();
+    if (cmp32(now, vm->voltageStableLastUpdate) >= VOLTAGE_STABLE_UPDATE_MS) {
+        vm->voltageStableBits =
+            (vm->voltageStableBits << 1)
+            | (abs(vm->voltageStablePrevFiltered - vm->displayFiltered) <= VOLTAGE_STABLE_MAX_DELTA);
+
+        vm->voltageStablePrevFiltered = vm->displayFiltered;
+        vm->voltageStableLastUpdate = now;
+    }
+}
+
+// voltage is stable when it was within VOLTAGE_STABLE_MAX_DELTA for 10 update periods
+bool voltageIsStable(voltageMeter_t* vm)
+{
+    return (vm->voltageStableBits & VOLTAGE_STABLE_MASK) == VOLTAGE_STABLE_MASK;
 }
