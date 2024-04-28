@@ -4,9 +4,9 @@
 #
 # NOTE: These are not tied to the default goals and must be invoked manually
 #
-# ARM SDK Version: 12.2.mpacbt1-rel1
+# ARM SDK Version: 13.2.Rel1
 #
-# Release date: March 22, 2023
+# Release date: October 30, 2023
 #
 ###############################################################
 
@@ -17,27 +17,26 @@
 ##############################
 
 # Set up ARM (STM32) SDK
-ARM_SDK_BASE_DIR ?= $(TOOLS_DIR)/arm-gnu-toolchain-12.2.mpacbti-rel1
+ARM_SDK_BASE_DIR ?= $(TOOLS_DIR)/arm-gnu-toolchain-13.2.Rel1
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
-GCC_REQUIRED_VERSION ?= 12.2.1
+GCC_REQUIRED_VERSION ?= 13.2.1
 
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
 # source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 ifeq ($(OSFAMILY), linux)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/12.2.mpacbti-rel1/binrel/arm-gnu-toolchain-12.2.mpacbti-rel1-x86_64-arm-none-eabi.tar.xz?rev=71e595a1f2b6457bab9242bc4a40db90&hash=37B0C59767BAE297AEB8967E7C54705BAE9A4B95
+  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz?rev=e434b9ea4afc4ed7998329566b764309&hash=CA590209F5774EE1C96E6450E14A3E26
   ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-x86_64-arm-none-eabi
 endif
 
 ifeq ($(OSFAMILY), macosx)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/12.2.mpacbti-rel1/binrel/arm-gnu-toolchain-12.2.mpacbti-rel1-darwin-x86_64-arm-none-eabi.tar.xz?rev=c517551be7e3468d826036530848cde0&hash=25A1A3E625D6822B6F7E1705D11B623E07EDEC3F
+  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-darwin-x86_64-arm-none-eabi.tar.xz?rev=a3d8c87bb0af4c40b7d7e0e291f6541b&hash=D1BCDFFD19D3EE94A915B5347E3CDA5A
   ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-darwin-x86_64-arm-none-eabi
 endif
 
 ifeq ($(OSFAMILY), windows)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/12.2.mpacbti-rel1/binrel/arm-gnu-toolchain-12.2.mpacbti-rel1-mingw-w64-i686-arm-none-eabi.zip?rev=3a67072e4b984fb2911b4953c0fa6f53&hash=FD03ED6AF3D23D37E047708C49F9E16D17A85311
-  ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-mingw-w64-i686-arm-none-eabi
+  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-mingw-w64-i686-arm-none-eabi.zip?rev=93fda279901c4c0299e03e5c4899b51f&hash=99EF910A1409E119125AF8FED325CF79
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
