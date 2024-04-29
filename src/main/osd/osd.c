@@ -425,8 +425,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
 
+#if defined(USE_OSD_HD) && !defined(USE_SPRACING_PIXEL_OSD)
     // Make it obvious on the configurator that the FC doesn't support HD
-#ifdef USE_OSD_HD
     osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
     osdConfig->canvas_cols = OSD_HD_COLS;
     osdConfig->canvas_rows = OSD_HD_ROWS;
