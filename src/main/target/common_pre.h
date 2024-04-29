@@ -405,7 +405,7 @@
 #endif
 
 #ifndef DEFAULT_FEATURES
-#define DEFAULT_FEATURES (FEATURES_OSD)
+#define DEFAULT_FEATURES (FEATURE_OSD)
 #endif
 
 #define USE_CANVAS
