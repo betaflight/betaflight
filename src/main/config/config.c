@@ -120,6 +120,9 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .extraLowBatteryWarning = "AINT LEAVING",
     .extraArmedWarning = "LETS GO",
     .extraLandNowWarning = ">> LAND NOW <<",
+    .extraPrearm1 = "SCULLY",
+    .extraPrearm2 = "ONE",
+    .extraPrearm3 = "LOVE",
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
@@ -226,6 +229,10 @@ void makeStringsUpperCase(void)
     toUpperCase(pilotConfigMutable()->extraTurtleModeWarning, pilotConfig()->extraTurtleModeWarning, MAX_NAME_LENGTH);
     toUpperCase(pilotConfigMutable()->extraLowBatteryWarning, pilotConfig()->extraLowBatteryWarning, MAX_NAME_LENGTH);
     toUpperCase(pilotConfigMutable()->extraArmedWarning, pilotConfig()->extraArmedWarning, MAX_NAME_LENGTH);
+
+    toUpperCase(pilotConfigMutable()->extraPrearm1, pilotConfig()->extraPrearm1, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraPrearm2, pilotConfig()->extraPrearm2, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraPrearm3, pilotConfig()->extraPrearm3, MAX_NAME_LENGTH);
 }
 
 static void validateAndFixConfig(void)

@@ -2250,7 +2250,8 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
 }
 
 #ifdef USE_SPEC_PREARM_SCREEN
-bool osdDrawSpec(displayPort_t *osdDisplayPort)
+
+bool osdDrawSpecReal(displayPort_t *osdDisplayPort)
 {
     static enum {RPM, POLES, MIXER, THR, MOTOR, BAT, VER} specState = RPM;
     static int currentRow;
@@ -2337,6 +2338,53 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
 
     return false;
 }
+
+bool osdDrawPrearmStrings(displayPort_t *osdDisplayPort)
+{
+    const uint8_t midRow = osdDisplayPort->rows / 2;
+    const uint8_t midCol = osdDisplayPort->cols / 2;
+
+    char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
+
+    int len = 0;
+
+    static int currentRow;
+    static int state = 0;
+
+    switch (state) {
+        default:
+        case 0:
+            state++;
+            currentRow = midRow - 2;
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm1);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+            break;
+        case 1:
+            state++;            
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm1);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+            break;
+        case 2:
+            state = 0;
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm1);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+            return true;
+    }
+
+    return false;
+}
+
+bool osdDrawSpec(displayPort_t *osdDisplayPort)
+{
+    const uint8_t throttleValue = calculateThrottlePercent();
+    if (throttleValue > 80) {
+        return osdDrawPrearmStrings(osdDisplayPort);
+    } else {
+        return osdDrawSpecReal(osdDisplayPort);
+    }
+
+}
+
 #endif // USE_SPEC_PREARM_SCREEN
 
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
