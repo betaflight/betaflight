@@ -25,9 +25,13 @@
 #define SLOW_VOLTAGE_TASK_FREQ_HZ 50
 #define FAST_VOLTAGE_TASK_FREQ_HZ 200
 
-#define VOLTAGE_STABLE_UPDATE_MS 50
-#define VOLTAGE_STABLE_MASK      (BIT(10 + 1) - 1)  // voltage must be stable for 10 samples (10LSB set)
-#define VOLTAGE_STABLE_MAX_DELTA 10 // 100mV
+#define VOLTAGE_STABLE_TICK_MS        100
+#define VOLTAGE_STABLE_BITS_TOTAL     11    // number of samples to test
+#define VOLTAGE_STABLE_BITS_THRESHOLD 10    // number of samples tham must be within delta (~1s)
+#define VOLTAGE_STABLE_MAX_DELTA      10    // 100mV
+
+STATIC_ASSERT(VOLTAGE_STABLE_BITS_TOTAL < sizeof(uint16_t) * 8, "not enough voltageStableBits");
+
 //
 // meters
 //

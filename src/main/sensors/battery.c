@@ -162,9 +162,10 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_BATTERY, 0, voltageMeter.unfiltered);
     DEBUG_SET(DEBUG_BATTERY, 1, voltageMeter.displayFiltered);
+    DEBUG_SET(DEBUG_BATTERY, 3, voltageMeter.voltageStableBits);
     DEBUG_SET(DEBUG_BATTERY, 4, voltageIsStable(&voltageMeter) ? 1 : 0);
     DEBUG_SET(DEBUG_BATTERY, 5, isVoltageFromBattery() ? 1 : 0);
-    DEBUG_SET(DEBUG_BATTERY, 6, voltageMeter.voltageStableLastUpdate);
+    DEBUG_SET(DEBUG_BATTERY, 6, voltageMeter.voltageStablePrevFiltered);
     DEBUG_SET(DEBUG_BATTERY, 7, voltageState);
 }
 

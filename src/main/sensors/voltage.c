@@ -371,12 +371,13 @@ void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *meter)
 void voltageStableUpdate(voltageMeter_t* vm)
 {
     const uint32_t now = millis();
-    if (cmp32(now, vm->voltageStableLastUpdate) >= VOLTAGE_STABLE_UPDATE_MS) {
-        vm->voltageStableBits =
-            (vm->voltageStableBits << 1)
-            | (abs(vm->voltageStablePrevFiltered - vm->displayFiltered) <= VOLTAGE_STABLE_MAX_DELTA);
-
+    if (abs(vm->voltageStablePrevFiltered - vm->displayFiltered) > VOLTAGE_STABLE_MAX_DELTA) {
+        // reset stable voltage reference
         vm->voltageStablePrevFiltered = vm->displayFiltered;
+        vm->voltageStableBits &= ~BIT(0);  // woltage threshold exceeded in this period
+    }
+    if (cmp32(now, vm->voltageStableLastUpdate) >= VOLTAGE_STABLE_TICK_MS) {
+        vm->voltageStableBits = (vm->voltageStableBits << 1) | BIT(0);  // start with 'stable' state
         vm->voltageStableLastUpdate = now;
     }
 }
@@ -384,5 +385,5 @@ void voltageStableUpdate(voltageMeter_t* vm)
 // voltage is stable when it was within VOLTAGE_STABLE_MAX_DELTA for 10 update periods
 bool voltageIsStable(voltageMeter_t* vm)
 {
-    return (vm->voltageStableBits & VOLTAGE_STABLE_MASK) == VOLTAGE_STABLE_MASK;
+    return __builtin_popcount(vm->voltageStableBits & (BIT(VOLTAGE_STABLE_BITS_TOTAL + 1) - 1)) >= VOLTAGE_STABLE_BITS_THRESHOLD;
 }
