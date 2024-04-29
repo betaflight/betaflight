@@ -453,6 +453,7 @@ static void cliPrintError(const char *cmdName, const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(cmdName, format, va);
+    va_end(va);
 
     if (!cliWriter) {
         // Supply our own linefeed in case we are printing inside a custom defaults operation
@@ -467,6 +468,7 @@ static void cliPrintErrorLinef(const char *cmdName, const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(cmdName, format, va);
+    va_end(va);
     cliPrintInternal(cliErrorWriter, "\r\n");
 }
 
