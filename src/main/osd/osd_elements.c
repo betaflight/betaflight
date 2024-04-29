@@ -2361,12 +2361,12 @@ bool osdDrawPrearmStrings(displayPort_t *osdDisplayPort)
             break;
         case 1:
             state++;            
-            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm1);
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm2);
             displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
             break;
         case 2:
             state = 0;
-            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm1);
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm3);
             displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
             return true;
     }
