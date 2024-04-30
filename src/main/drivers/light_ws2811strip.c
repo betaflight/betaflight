@@ -181,8 +181,8 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbCol
     }
 
     unsigned dmaBufferOffset = 0;
-    for (int index = bits_per_led-1; index >= 0; index--) {
-        ledStripDMABuffer[ledIndex * bits_per_led + dmaBufferOffset++] = (packed_colour & (1 << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
+    for (int index = bits_per_led - 1; index >= 0; index--) {
+        ledStripDMABuffer[ledIndex * bits_per_led + dmaBufferOffset++] = (packed_colour & (1U << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
     }
 }
 
