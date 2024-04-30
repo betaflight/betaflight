@@ -201,8 +201,10 @@
 
 #define USE_VTX
 #define USE_OSD
+#if !defined(USE_OSD_SD) && !defined(USE_OSD_HD)
 #define USE_OSD_SD
 #define USE_OSD_HD
+#endif
 #define USE_BLACKBOX
 
 #if TARGET_FLASH_SIZE >= 1024
