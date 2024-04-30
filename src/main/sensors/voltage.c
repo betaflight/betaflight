@@ -365,16 +365,17 @@ void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *meter)
 }
 
 // update voltageStableBits
-// new bit is shifted in every VOLTAGE_STABLE_UPDATE_MS
-// bit 1 is shifted in when voltage did not change more than VOLTAGE_STABLE_MAX_DELTA
-// bit 0 is shifted in othervise
+// new 1 bit (= stable) is shifted in every VOLTAGE_STABLE_UPDATE_MS
+// when difference is larger than VOLTAGE_STABLE_MAX_DELTA, LSB of shift register is
+//   reset to 0 (logical AND) and voltageStablePrevFiltered is updated with new voltage value
 void voltageStableUpdate(voltageMeter_t* vm)
 {
     const uint32_t now = millis();
+    // test voltage on each call
     if (abs(vm->voltageStablePrevFiltered - vm->displayFiltered) > VOLTAGE_STABLE_MAX_DELTA) {
         // reset stable voltage reference
         vm->voltageStablePrevFiltered = vm->displayFiltered;
-        vm->voltageStableBits &= ~BIT(0);  // woltage threshold exceeded in this period
+        vm->voltageStableBits &= ~BIT(0);  // voltage threshold exceeded in this period, clear LSB/BIT(0)
     }
     if (cmp32(now, vm->voltageStableLastUpdate) >= VOLTAGE_STABLE_TICK_MS) {
         vm->voltageStableBits = (vm->voltageStableBits << 1) | BIT(0);  // start with 'stable' state
