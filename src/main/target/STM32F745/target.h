@@ -20,9 +20,13 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "S745"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32F745"
+#endif
 
 #ifndef STM32F745
 #define STM32F745
@@ -85,3 +89,6 @@
 #define USE_EXTI
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x8000) // 32K sectors
+
+// ITCM is in short supply so excluding fast code where preferred, not required.
+#define FAST_CODE_PREF

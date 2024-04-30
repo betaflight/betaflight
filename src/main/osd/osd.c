@@ -389,7 +389,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     }
     osdConfig->rssi_dbm_alarm = -60;
     osdConfig->rsnr_alarm = 4;
-    osdConfig->gps_sats_show_hdop = false;
+    osdConfig->gps_sats_show_pdop = false;
 
     for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
         osdConfig->rcChannels[i] = -1;
@@ -427,9 +427,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_OSD_QUICK_MENU
     osdConfig->osd_use_quick_menu = true;
 #endif // USE_OSD_QUICK_MENU
-#ifdef USE_SPEC_PREARM_SCREEN
+
+#ifdef USE_RACE_PRO
     osdConfig->osd_show_spec_prearm = true;
-#endif // USE_SPEC_PREARM_SCREEN
+#endif // USE_RACE_PRO
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -607,7 +608,7 @@ static int32_t getAverageEscRpm(void)
     }
 #endif
 #ifdef USE_DSHOT_TELEMETRY
-    if (motorConfig()->dev.useDshotTelemetry) {
+    if (useDshotTelemetry) {
         return lrintf(getDshotRpmAverage());
     }
 #endif
@@ -1462,29 +1463,8 @@ void osdUpdate(timeUs_t currentTimeUs)
         if (resumeRefreshAt) {
             osdState = OSD_STATE_TRANSFER;
         } else {
-#ifdef USE_SPEC_PREARM_SCREEN
-            osdState = OSD_STATE_REFRESH_PREARM;
-#else
             osdState = OSD_STATE_UPDATE_CANVAS;
-#endif
         }
-        break;
-
-    case OSD_STATE_REFRESH_PREARM:
-        {
-#ifdef USE_SPEC_PREARM_SCREEN
-            if (!ARMING_FLAG(ARMED) && osdConfig()->osd_show_spec_prearm) {
-                if (osdDrawSpec(osdDisplayPort)) {
-                        // Rendering is complete
-                        osdState = OSD_STATE_COMMIT;
-                }
-            } else
-#endif // USE_SPEC_PREARM_SCREEN
-            {
-                osdState = OSD_STATE_UPDATE_CANVAS;
-            }
-        }
-
         break;
 
     case OSD_STATE_UPDATE_CANVAS:
@@ -1555,9 +1535,26 @@ void osdUpdate(timeUs_t currentTimeUs)
                 break;
             }
 
-            osdState = OSD_STATE_COMMIT;
+#ifdef USE_SPEC_PREARM_SCREEN
+            if (!ARMING_FLAG(ARMED) && osdConfig()->osd_show_spec_prearm) {
+                osdState = OSD_STATE_REFRESH_PREARM;
+            } else
+#endif // USE_SPEC_PREARM_SCREEN
+            {
+                osdState = OSD_STATE_COMMIT;
+            }
         }
         break;
+
+#ifdef USE_SPEC_PREARM_SCREEN
+    case OSD_STATE_REFRESH_PREARM:
+        if (osdDrawSpec(osdDisplayPort)) {
+            // Rendering is complete
+            osdState = OSD_STATE_COMMIT;
+        }
+
+        break;
+#endif // USE_SPEC_PREARM_SCREEN
 
     case OSD_STATE_COMMIT:
         displayCommitTransaction(osdDisplayPort);

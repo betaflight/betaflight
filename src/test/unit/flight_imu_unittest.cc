@@ -40,12 +40,14 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
-
+    #include "fc/rc.h"
+    
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/position.h"
 
+    
     #include "io/gps.h"
 
     #include "rx/rx.h"
@@ -58,10 +60,13 @@ extern "C" {
 
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
-    void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
+    void imuMahonyAHRSupdate(float dt,
+                             float gx, float gy, float gz,
                              bool useAcc, float ax, float ay, float az,
-                             bool useMag,
-                             float cogYawGain, float courseOverGround, const float dcmKpGain);
+                             float headingErrMag, float headingErrCog,
+                             const float dcmKpGain);
+    float imuCalcMagErr(void);
+    float imuCalcCourseErr(float courseOverGround);
     extern quaternion q;
     extern float rMat[3][3];
     extern bool attitudeIsEstablished;
@@ -289,11 +294,19 @@ protected:
         float alignTime = -1;
         for (float t = 0; t < runTime; t += dt) {
             //     if (fmod(t, 1) < dt) printf("MagBF=%.2f %.2f %.2f\n", magBF.x, magBF.y, magBF.z);
+            float headingErrMag = 0;
+            if (useMag) {   // not implemented yet
+                headingErrMag = imuCalcMagErr();
+            }
+            float headingErrCog = 0;
+            if (cogGain > 0) {
+                headingErrCog = imuCalcCourseErr(DEGREES_TO_RADIANS(cogDeg)) * cogGain;
+            }
+
             imuMahonyAHRSupdate(dt,
                                 gyro.x, gyro.y, gyro.z,
                                 useAcc, acc.x, acc.y, acc.z,
-                                useMag,                             // no mag now
-                                cogGain, DEGREES_TO_RADIANS(cogDeg),   // use Cog, param direction
+                                headingErrMag, headingErrCog,
                                 dcmKp);
             imuUpdateEulerAngles();
             // if (fmod(t, 1) < dt) printf("%3.1fs - %3.1f %3.1f %3.1f\n", t, attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f);
@@ -372,7 +385,7 @@ INSTANTIATE_TEST_SUITE_P(
 // STUBS
 
 extern "C" {
-    boxBitmask_t rcModeActivationMask;
+    extern boxBitmask_t rcModeActivationMask;
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
@@ -425,6 +438,7 @@ extern "C" {
     float pt2FilterGain(float, float)  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
+    float getRcDeflectionAbs(int) { return 0.0f; }
 
     void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
         UNUSED(baroDerivativeLpf);

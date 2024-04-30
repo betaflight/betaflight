@@ -130,9 +130,9 @@ static bool lis2mdlRead(magDev_t * mag, int16_t *magData)
     extDevice_t *dev = &mag->dev;
 
     if (pendingRead) {
-        busReadRegisterBufferStart(dev, LIS2MDL_OUTX_L_REG, buf, sizeof(buf));
-
-        pendingRead = false;
+        if (busReadRegisterBufferStart(dev, LIS2MDL_OUTX_L_REG, buf, sizeof(buf))) {
+            pendingRead = false;
+        }
         return false;
     }
 

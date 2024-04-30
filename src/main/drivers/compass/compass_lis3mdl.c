@@ -109,9 +109,9 @@ static bool lis3mdlRead(magDev_t * mag, int16_t *magData)
     extDevice_t *dev = &mag->dev;
 
     if (pendingRead) {
-        busReadRegisterBufferStart(dev, LIS3MDL_REG_OUT_X_L, buf, sizeof(buf));
-
-        pendingRead = false;
+        if (busReadRegisterBufferStart(dev, LIS3MDL_REG_OUT_X_L, buf, sizeof(buf))) {
+            pendingRead = false;
+        }
         return false;
     }
 

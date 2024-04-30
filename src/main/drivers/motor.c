@@ -63,7 +63,7 @@ void motorWriteAll(float *values)
 #ifdef USE_PWM_OUTPUT
     if (motorDevice->enabled) {
 #ifdef USE_DSHOT_BITBANG
-        if (isDshotBitbangActive(&motorConfig()->dev)) {
+        if (useDshotTelemetry && isDshotBitbangActive(&motorConfig()->dev)) {
             // Initialise the output buffers
             if (motorDevice->vTable.updateInit) {
                 motorDevice->vTable.updateInit();
@@ -297,7 +297,7 @@ bool isMotorProtocolDshot(void)
 
 bool isMotorProtocolBidirDshot(void)
 {
-    return isMotorProtocolDshot() && motorConfig()->dev.useDshotTelemetry;
+    return isMotorProtocolDshot() && useDshotTelemetry;
 }
 
 void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount)

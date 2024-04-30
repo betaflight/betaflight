@@ -71,7 +71,7 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
 FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
 {
     const float delta = sample - rPowerN * sdft->samples[sdft->idx];
-    
+
     sdft->samples[sdft->idx] = sample;
     sdft->idx = (sdft->idx + 1) % SDFT_SAMPLE_SIZE;
 

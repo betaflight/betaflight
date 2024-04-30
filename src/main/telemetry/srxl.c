@@ -277,7 +277,7 @@ typedef struct
     UINT32   latitude;      // BCD, format 4.4, Degrees * 100 + minutes, less than 100 degrees
     UINT32   longitude;     // BCD, format 4.4 , Degrees * 100 + minutes, flag indicates > 99 degrees
     UINT16   course;        // BCD, 3.1
-    UINT8    HDOP;          // BCD, format 1.1
+    UINT8    PDOP;          // BCD, format 1.1
     UINT8    GPSflags;      // see definitions below
 } STRU_TELE_GPS_LOC;
 */
@@ -296,8 +296,8 @@ bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
     gpsCoordinateDDDMMmmmm_t coordinate;
     uint32_t latitudeBcd, longitudeBcd, altitudeLo;
-    uint16_t altitudeLoBcd, groundCourseBcd, hdop;
-    uint8_t hdopBcd, gpsFlags;
+    uint16_t altitudeLoBcd, groundCourseBcd, pdop;
+    uint8_t pdopBcd, gpsFlags;
 
     if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < GPS_MIN_SAT_COUNT) {
         return false;
@@ -318,10 +318,10 @@ bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
     // Ground course
     groundCourseBcd = dec2bcd(gpsSol.groundCourse);
 
-    // HDOP
-    hdop = gpsSol.dop.hdop / 10;
-    hdop = (hdop > 99) ? 99 : hdop;
-    hdopBcd = dec2bcd(hdop);
+    // PDOP
+    pdop = gpsSol.dop.pdop / 10;
+    pdop = (pdop > 99) ? 99 : pdop;
+    pdopBcd = dec2bcd(pdop);
 
     // flags
     gpsFlags = GPS_FLAGS_GPS_DATA_RECEIVED_BIT | GPS_FLAGS_GPS_FIX_VALID_BIT | GPS_FLAGS_3D_FIX_BIT;
@@ -337,7 +337,7 @@ bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
     sbufWriteU32(dst, latitudeBcd);
     sbufWriteU32(dst, longitudeBcd);
     sbufWriteU16(dst, groundCourseBcd);
-    sbufWriteU8(dst, hdopBcd);
+    sbufWriteU8(dst, pdopBcd);
     sbufWriteU8(dst, gpsFlags);
 
     return true;

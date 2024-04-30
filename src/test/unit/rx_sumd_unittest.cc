@@ -86,8 +86,8 @@ typedef struct serialPortStub_s {
 
 static serialPort_t serialTestInstance;
 static serialPortConfig_t serialTestInstanceConfig = {
+    .functionMask = 0,
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .functionMask = 0
 };
 
 static serialReceiveCallbackPtr stub_serialRxCallback;

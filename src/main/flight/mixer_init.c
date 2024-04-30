@@ -328,7 +328,7 @@ void initEscEndpoints(void)
 void mixerInitProfile(void)
 {
 #ifdef USE_DYN_IDLE
-    if (motorConfigMutable()->dev.useDshotTelemetry) {
+    if (useDshotTelemetry) {
         mixerRuntime.dynIdleMinRps = currentPidProfile->dyn_idle_min_rpm * 100.0f / 60.0f;
     } else {
         mixerRuntime.dynIdleMinRps = 0.0f;
@@ -369,6 +369,7 @@ void mixerInitProfile(void)
 
     mixerRuntime.ezLandingThreshold = 2.0f * currentPidProfile->ez_landing_threshold / 100.0f;
     mixerRuntime.ezLandingLimit = currentPidProfile->ez_landing_limit / 100.0f;
+    mixerRuntime.ezLandingSpeed = 2.0f * currentPidProfile->ez_landing_speed / 10.0f;
 }
 
 #ifdef USE_RPM_LIMIT
