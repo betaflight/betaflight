@@ -45,7 +45,7 @@
 #define STM32G4
 #endif
 
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "system_stm32h7xx.h"

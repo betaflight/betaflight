@@ -57,6 +57,7 @@ typedef enum {
     MCU_TYPE_H743_REV_V,
     MCU_TYPE_H7A3,
     MCU_TYPE_H723_725,
+    MCU_TYPE_H735,
     MCU_TYPE_G474,
     MCU_TYPE_H730,
     MCU_TYPE_AT32,
