@@ -93,7 +93,8 @@
     !defined(USE_ACCGYRO_BMI270) && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) && \
     !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) && \
     !defined(USE_ACC_MMA8452) && !defined(USE_ACC_LSM303DLHC) && !defined(USE_ACCGYRO_LSM6DSV16X) && \
-	!defined(USE_VIRTUAL_ACC)
+    !defined(USE_VIRTUAL_ACC) \
+    && !defined(USE_ACC_SPI_ICM20649)
 #error At least one USE_ACC device definition required
 #endif
 

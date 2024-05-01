@@ -77,7 +77,8 @@
     !defined(USE_GYRO_SPI_MPU6500) && !defined(USE_GYRO_SPI_MPU9250) && !defined(USE_GYRO_L3GD20) && \
     !defined(USE_GYRO_SPI_ICM42605) && !defined(USE_GYRO_SPI_ICM42688P) && \
     !defined(USE_ACCGYRO_BMI160) && !defined(USE_ACCGYRO_BMI270) && \
-    !defined(USE_ACCGYRO_LSM6DSV16X) && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_VIRTUAL_GYRO)
+    !defined(USE_ACCGYRO_LSM6DSV16X) && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_VIRTUAL_GYRO) \
+    && !defined(USE_GYRO_SPI_ICM20649)
 #error At least one USE_GYRO device definition required
 #endif
 
