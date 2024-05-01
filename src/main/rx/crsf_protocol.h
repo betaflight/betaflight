@@ -27,7 +27,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define CRSF_BAUDRATE           420000
+// Rev7 CRSF docs: UART runs at 400000 baud, 8N1 at 3.0 to 3.3V level.
+// Rev10 CRSF docs: UART runs at 416666 baud, 8N1 at 3.0 to 3.3V level.
+#define CRSF_BAUDRATE           416666
 
 enum { CRSF_SYNC_BYTE = 0xC8 };
 
