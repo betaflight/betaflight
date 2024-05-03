@@ -365,7 +365,7 @@ static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT] = {
     [LED_FUNCTION_THRUST_RING] = 'R',
     [LED_FUNCTION_GPS_BAR] = 'P',
     [LED_FUNCTION_BATTERY_BAR] = 'E',
-    [LED_FUNCTION_ALTITUDE] = 'U',
+    [LED_FUNCTION_ALTITUDE] = 'U'
 };
 static const char overlayCodes[LED_OVERLAY_COUNT] = {
     [LED_OVERLAY_THROTTLE] = 'T',
