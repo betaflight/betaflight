@@ -359,13 +359,13 @@ static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT] = {
     [LED_FUNCTION_COLOR] = 'C', 
     [LED_FUNCTION_FLIGHT_MODE] = 'F',
     [LED_FUNCTION_ARM_STATE] = 'A',
-    [LED_FUNCTION_GPS_BAR] = 'P',
-    [LED_FUNCTION_BATTERY_BAR] = 'E',
-    [LED_FUNCTION_ALTITUDE] = 'U',
     [LED_FUNCTION_BATTERY] = 'L',
     [LED_FUNCTION_RSSI] = 'S',
     [LED_FUNCTION_GPS] = 'G',
     [LED_FUNCTION_THRUST_RING] = 'R'
+    [LED_FUNCTION_GPS_BAR] = 'P',
+    [LED_FUNCTION_BATTERY_BAR] = 'E',
+    [LED_FUNCTION_ALTITUDE] = 'U',
 };
 static const char overlayCodes[LED_OVERLAY_COUNT] = {
     [LED_OVERLAY_THROTTLE] = 'T',
