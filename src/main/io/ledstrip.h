@@ -126,13 +126,13 @@ typedef enum {
     LED_FUNCTION_COLOR,
     LED_FUNCTION_FLIGHT_MODE,
     LED_FUNCTION_ARM_STATE,
-    LED_FUNCTION_GPS_BAR,
-    LED_FUNCTION_BATTERY_BAR,
-    LED_FUNCTION_ALTITUDE,
     LED_FUNCTION_BATTERY,
     LED_FUNCTION_RSSI,
     LED_FUNCTION_GPS,
-    LED_FUNCTION_THRUST_RING
+    LED_FUNCTION_THRUST_RING,
+    LED_FUNCTION_GPS_BAR,
+    LED_FUNCTION_BATTERY_BAR,
+    LED_FUNCTION_ALTITUDE
 } ledBaseFunctionId_e;
 
 typedef enum {
@@ -170,11 +170,6 @@ typedef struct ledCounts_s {
     uint8_t larson;
     uint8_t ringSeqLen;
 } ledCounts_t;
-
-typedef struct ledBarState_s {
-    uint8_t total;
-    uint8_t count;
-} ledBarState_t;
 
 typedef struct ledStripConfig_s {
     uint8_t ledstrip_visual_beeper;
