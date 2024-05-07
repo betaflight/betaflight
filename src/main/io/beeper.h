@@ -22,7 +22,7 @@
 
 #include "common/time.h"
 
-#define BEEPER_GET_FLAG(mode) (1 << (mode - 1))
+#define BEEPER_GET_FLAG(mode) (1 << ((mode) - 1))
 
 #ifdef USE_DSHOT
 #define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events

@@ -10,8 +10,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 | Date  | Event |
 | - | - |
-| 01-11-2022 | Firmware 4.4 Feature freeze |
-| 29-01-2023 | Firmware 4.4 Release |
+| 28-04-2024 | Firmware 4.5 Release |
 
 
 ## News
