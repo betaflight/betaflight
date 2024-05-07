@@ -477,6 +477,10 @@
 #endif
 #endif
 
+#ifndef DEFAULT_FEATURES
+#define DEFAULT_FEATURES (FEATURE_OSD)
+#endif
+
 #if !defined(USE_LED_STRIP)
 #undef USE_LED_STRIP_STATUS_MODE
 #endif

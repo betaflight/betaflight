@@ -404,10 +404,6 @@
 #undef USE_MAX7456
 #endif
 
-#ifndef DEFAULT_FEATURES
-#define DEFAULT_FEATURES (FEATURE_OSD)
-#endif
-
 #define USE_CANVAS
 #define USE_CMS
 #define USE_CMS_FAILSAFE_MENU
