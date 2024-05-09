@@ -285,6 +285,8 @@ extern "C" {
     	return 0;
     }
 
+    int16_t getEstimatedVario(void) { return 0; }
+
     bool featureIsEnabled(uint32_t) {return false;}
 
     bool airmodeIsEnabled(void) {return true;}
