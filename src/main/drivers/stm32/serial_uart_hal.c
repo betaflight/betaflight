@@ -67,7 +67,7 @@ static void usartConfigurePinInversion(uartPort_t *uartPort)
     }
 }
 
-static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
+static uartDevice_t *uartFindDevice(const uartPort_t *uartPort)
 {
     for (uint32_t i = 0; i < UARTDEV_COUNT_MAX; i++) {
         uartDevice_t *candidate = uartDevmap[i];

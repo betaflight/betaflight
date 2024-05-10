@@ -469,7 +469,7 @@ void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
-static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart)
+static void crsfProcessSpeedNegotiationCmd(const uint8_t *frameStart)
 {
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
     uint8_t ii = 0;

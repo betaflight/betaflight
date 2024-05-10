@@ -52,7 +52,7 @@ static SPI_InitTypeDef defaultInit = {
     .SPI_CPHA = SPI_CPHA_2Edge
 };
 
-static uint16_t spiDivisorToBRbits(SPI_TypeDef *instance, uint16_t divisor)
+static uint16_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor)
 {
     // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
 #if defined(STM32F410xx) || defined(STM32F411xE)

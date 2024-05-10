@@ -74,7 +74,7 @@ static LL_SPI_InitTypeDef defaultInit =
     .ClockPhase = LL_SPI_PHASE_2EDGE,
 };
 
-static uint32_t spiDivisorToBRbits(SPI_TypeDef *instance, uint16_t divisor)
+static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor)
 {
 #if !defined(STM32H7)
     // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.

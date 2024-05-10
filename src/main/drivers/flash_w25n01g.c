@@ -547,7 +547,7 @@ void w25n01g_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*c
     }
 }
 
-uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     if (bufferCount < 1) {
         fdevice->callback(0);
@@ -650,7 +650,7 @@ busStatus_e w25n01g_callbackWriteComplete(uint32_t arg)
     return BUS_READY;
 }
 
-uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     if (bufferCount < 1) {
         fdevice->callback(0);

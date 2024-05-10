@@ -130,7 +130,7 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
     return cmsDisplayPorts[cmsCurrentDevice];
 }
 
-bool cmsDisplayPortSelect(displayPort_t *instance)
+bool cmsDisplayPortSelect(const displayPort_t *instance)
 {
     for (unsigned i = 0; i < cmsDeviceCount; i++) {
         if (cmsDisplayPortSelectNext() == instance) {
