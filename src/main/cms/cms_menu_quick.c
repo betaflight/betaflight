@@ -51,6 +51,8 @@
 
 #include "cms_menu_quick.h"
 
+#include "cms/cms_menu_spec.h"
+
 static controlRateConfig_t rateProfile;
 static uint8_t rateProfileIndex;
 static batteryConfig_t batteryProfile;
@@ -112,6 +114,7 @@ static const OSD_Entry menuMainEntries[] =
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
+    { "SPECS", OME_Submenu, cmsMenuChange, &cmsx_menuSpec },
     { "MAIN",     OME_Submenu,  NULL, &cmsx_menuMain},
     { "EXIT",            OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT},
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
