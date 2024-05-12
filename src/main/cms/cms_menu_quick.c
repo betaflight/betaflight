@@ -99,8 +99,6 @@ static const char * const osdTableThrottleLimitType[] = {
 
 static const OSD_Entry menuMainEntries[] =
 {
-    { "-- QUICK --",  OME_Label, NULL, NULL },
-
 #if defined(USE_RPM_LIMIT)
     { "RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit },
 #endif
