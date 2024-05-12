@@ -64,6 +64,7 @@ void setSpec(SpecType specType)
     mixerConfigMutable()->rpm_limit = specArray[specType].rpm_limit;
     mixerConfigMutable()->rpm_limit_value = specArray[specType].rpm_limit_value;
     motorConfigMutable()->motorPoleCount = specArray[specType].motorPoleCount;
+    motorConfigMutable()->kv = specArray[specType].kv;
     mixerConfigMutable()->rpm_limit_p = specArray[specType].rpm_limit_p;
     mixerConfigMutable()->rpm_limit_i = specArray[specType].rpm_limit_i;
     mixerConfigMutable()->rpm_limit_d = specArray[specType].rpm_limit_d;
@@ -79,6 +80,7 @@ specSettings_t specArray[] = {
         8,       // uint16_t rpm_limit_d;
         18000,   // uint16_t rpm_limit_value;
         14,      // uint8_t motorPoleCount;
+        1960,    // uint16_t kv;
 
         {   // Logo groups
             { "FS ",
@@ -107,6 +109,7 @@ specSettings_t specArray[] = {
         8,       // uint16_t rpm_limit_d;
         13000,   // uint16_t rpm_limit_value;
         14,      // uint8_t motorPoleCount;
+        1300,    // uint16_t kv;
 
         {   // Logo groups
             { "7I ",
@@ -135,6 +138,7 @@ specSettings_t specArray[] = {
         8,       // uint16_t rpm_limit_d;
         24000,   // uint16_t rpm_limit_value;
         14,      // uint8_t motorPoleCount;
+        1960,    // uint16_t kv;
 
         {   // Logo groups
             { "M8 ",
@@ -163,6 +167,7 @@ specSettings_t specArray[] = {
         8,       // uint16_t rpm_limit_d;
         30000,   // uint16_t rpm_limit_value;
         12,      // uint8_t motorPoleCount;
+        4533,    // uint16_t kv;
 
         {   // Logo groups
             { "TT ",
@@ -192,6 +197,7 @@ specSettings_t specArray[] = {
         8,       // uint16_t rpm_limit_d;
         17000,   // uint16_t rpm_limit_value;
         14,      // uint8_t motorPoleCount;
+        1980,    // uint16_t kv;
 
         {   // Logo groups
             { "LL ",

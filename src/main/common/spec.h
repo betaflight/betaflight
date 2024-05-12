@@ -50,6 +50,7 @@ typedef struct specSettings_s {
     uint16_t rpm_limit_d;
     uint16_t rpm_limit_value;
     uint8_t motorPoleCount;
+    uint16_t kv;
     char logo[LOGO_GROUPS][LOGO_HEIGHT][LOGO_WIDTH]; // 4x3 array of strings
 } specSettings_t;
 
