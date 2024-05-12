@@ -371,7 +371,7 @@ void updateArmingStatus(void)
 #endif
 
 #ifdef USE_DSHOT_BITBANG
-        if (useDshotTelemetry && isDshotBitbangActive(&motorConfig()->dev) && dshotBitbangGetStatus() != DSHOT_BITBANG_STATUS_OK) {
+        if (isDshotBitbangActive(&motorConfig()->dev) && dshotBitbangGetStatus() != DSHOT_BITBANG_STATUS_OK) {
             setArmingDisabled(ARMING_DISABLED_DSHOT_BITBANG);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_DSHOT_BITBANG);
