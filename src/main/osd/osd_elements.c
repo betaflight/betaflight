@@ -128,6 +128,7 @@
 #include "common/utils.h"
 #include "common/unit.h"
 #include "common/filter.h"
+#include "common/spec.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -2253,7 +2254,7 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
 
 bool osdDrawSpecReal(displayPort_t *osdDisplayPort)
 {
-    static enum {RPM, POLES, MIXER, THR, MOTOR, BAT, VER} specState = RPM;
+    static enum {RPM, POLES, MIXER, THR, MOTOR, BAT, VER, SPEC_NAME} specState = RPM;
     static int currentRow;
 
     const uint8_t midRow = osdDisplayPort->rows / 2;
@@ -2331,9 +2332,21 @@ bool osdDrawSpecReal(displayPort_t *osdDisplayPort)
         len = strlen(FC_VERSION_STRING);
         displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, FC_VERSION_STRING);
 
+        specState = SPEC_NAME;
+        break;
+
+    case SPEC_NAME: {
+        SpecType specType = getCurrentSpec();
+
+        if (specType != SPEC_COUNT) {
+            len = strlen(specArray[specType].name);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, specArray[specType].name);
+        }
+
         specState = RPM;
 
         return true;
+        }
     }
 
     return false;
