@@ -592,6 +592,16 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
              osdConfigMutable()->timers[i] = osdTimerDefault[i];
          }
      }
+
+     featureEnableImmediate(FEATURE_OSD);
+
+     if (!VISIBLE(osdElementConfig()->item_pos[OSD_SPEC_LOGO])) {
+        uint16_t profileFlags = 0;
+        for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
+            profileFlags |= OSD_PROFILE_FLAG(i);
+        }
+        osdElementConfigMutable()->item_pos[OSD_SPEC_LOGO] = OSD_POS(1, 2) | profileFlags;
+     }
 #endif
 
 #if defined(USE_VTX_COMMON) && defined(USE_VTX_TABLE)
