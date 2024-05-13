@@ -30,6 +30,7 @@
 
 #include "cms/cms.h"
 
+#include "common/call_scheduler.h"
 #include "common/color.h"
 #include "common/utils.h"
 
@@ -453,7 +454,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #ifdef USE_RC_STATS
     [TASK_RC_STATS] = DEFINE_TASK("RC_STATS", NULL, NULL, rcStatsUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
-
+    [TASK_CALL_SCHEDULER] = DEFINE_TASK("CALL_SCEDULER", NULL, NULL, callSchedulerUpdate, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM),
 };
 
 task_t *getTask(unsigned taskId)
@@ -629,4 +630,6 @@ void tasksInit(void)
 #ifdef USE_RC_STATS
     setTaskEnabled(TASK_RC_STATS, true);
 #endif
+
+    setTaskEnabled(TASK_CALL_SCHEDULER, true);
 }
