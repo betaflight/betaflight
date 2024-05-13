@@ -63,7 +63,7 @@ void motorWriteAll(float *values)
 #ifdef USE_PWM_OUTPUT
     if (motorDevice->enabled) {
 #ifdef USE_DSHOT_BITBANG
-        if (useDshotTelemetry && isDshotBitbangActive(&motorConfig()->dev)) {
+        if (isDshotBitbangActive(&motorConfig()->dev)) {
             // Initialise the output buffers
             if (motorDevice->vTable.updateInit) {
                 motorDevice->vTable.updateInit();
