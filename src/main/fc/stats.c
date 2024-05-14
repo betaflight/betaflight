@@ -18,6 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
+
 #include "platform.h"
 
 #ifdef USE_PERSISTENT_STATS
@@ -33,6 +35,8 @@
 #include "io/gps.h"
 
 #include "pg/stats.h"
+
+#include "sensors/gyro.h"
 
 #ifdef USE_BATTERY_CONTINUE
 #include "sensors/battery.h"
@@ -56,6 +60,13 @@ void statsInit(void)
     dispatchEnable();
 }
 
+void writeStats(struct dispatchEntry_s* self);
+
+dispatchEntry_t writeStatsEntry =
+{
+    writeStats, 0, NULL, false
+};
+
 void writeStats(struct dispatchEntry_s* self)
 {
     UNUSED(self);
@@ -63,21 +74,23 @@ void writeStats(struct dispatchEntry_s* self)
     if (!ARMING_FLAG(ARMED)) {
         // Don't save if the user made config changes that have not yet been saved.
         if (!isConfigDirty()) {
-            writeEEPROM();
 
-            // Repeat disarming beep indicating the stats save is complete
-            beeper(BEEPER_DISARMING);
+            const bool gyroIsStill = fabsf(gyro.gyroADCf[FD_ROLL]) < systemConfig()->statsSavingMaxGyroRate &&
+                fabsf(gyro.gyroADCf[FD_PITCH]) < systemConfig()->statsSavingMaxGyroRate &&
+                fabsf(gyro.gyroADCf[FD_YAW]) < systemConfig()->statsSavingMaxGyroRate;
+
+            if (gyroIsStill || 0 == systemConfig()->statsSavingMaxGyroRate) {
+                writeEEPROM();
+                // Repeat disarming beep indicating the stats save is complete
+                beeper(BEEPER_DISARMING);
+            } else {
+                dispatchAdd(&writeStatsEntry, STATS_SAVE_DELAY_US);
+            }
         }
 
         saveRequired = false;
     }
 }
-
-dispatchEntry_t writeStatsEntry =
-{
-    writeStats, 0, NULL, false
-};
-
 
 void statsOnArm(void)
 {
