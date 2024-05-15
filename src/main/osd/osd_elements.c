@@ -122,6 +122,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/spec.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
 #include "common/unit.h"

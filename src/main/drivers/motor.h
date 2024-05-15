@@ -89,6 +89,7 @@ unsigned motorDeviceCount(void);
 motorVTable_t *motorGetVTable(void);
 bool checkMotorProtocolEnabled(const motorDevConfig_t *motorConfig, bool *protocolIsDshot);
 bool isMotorProtocolDshot(void);
+bool isMotorProtocolBidirDshot(void);
 bool isMotorProtocolEnabled(void);
 
 void motorDisable(void);
