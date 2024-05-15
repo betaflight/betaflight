@@ -1603,36 +1603,22 @@ static void osdElementAuxValue(osdElementParms_t *element)
 
 static void osdElementSpecLogo(osdElementParms_t *element)
 {
-    static int state = -1; // for rendering logo line by line
     static int animationState = 0; // for rendering different logo states
     static timeMs_t lastLogoAnimationUpdateMs = 0;
-    static SpecType specType = SPEC_COUNT;
+    const SpecType specType = getCurrentSpec();
 
-    switch (state) {
-        case -1:
-            specType = getCurrentSpec();
-            break;
-        default:
-            if (specType != SPEC_COUNT) {
-                osdDisplayWrite(element, element->elemPosX, element->elemPosY + state, DISPLAYPORT_SEVERITY_NORMAL, specArray[specType].logo[animationState][state]);
-            }
-    }
-
-    state ++;
-
-    if (state >= LOGO_HEIGHT) { // rendered the whole logo
-        if (millis() - lastLogoAnimationUpdateMs > 1000) // update logo animation ever second
-        {
-            lastLogoAnimationUpdateMs = millis();
-            animationState = (animationState + 1) % LOGO_GROUPS; // increment animation state and make sure its < LOGO_GROUPS
+    if (specType != SPEC_COUNT) {
+        for (int state = 0; state < LOGO_HEIGHT; state++) {
+            osdDisplayWrite(element, element->elemPosX, element->elemPosY + state, DISPLAYPORT_SEVERITY_NORMAL, specArray[specType].logo[animationState][state]);
         }
-        
-        state = -1;
-    } else {
-        element->rendered = false;
     }
 
-    element->drawElement = false;  // element already drawn
+
+    if (millis() - lastLogoAnimationUpdateMs > 1000) // update logo animation every second
+    {
+        lastLogoAnimationUpdateMs = millis();
+        animationState = (animationState + 1) % LOGO_GROUPS; // increment animation state and make sure its < LOGO_GROUPS
+    }
 }
 
 
