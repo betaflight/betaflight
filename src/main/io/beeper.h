@@ -22,7 +22,7 @@
 
 #include "common/time.h"
 
-#define BEEPER_GET_FLAG(mode) (1 << ((mode) - 1))
+#define BEEPER_GET_FLAG(mode) (1U << ((mode) - 1))
 
 #ifdef USE_DSHOT
 #define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events
@@ -96,6 +96,12 @@ typedef enum {
     BEEPER_GET_FLAG(BEEPER_RX_LOST) \
     | BEEPER_GET_FLAG(BEEPER_RX_SET) )
 
+// record theese modes as arming beep (for dshot)
+#define BEEPER_ARMING_MODES (                   \
+    BEEPER_GET_FLAG(BEEPER_ARMING)              \
+    | BEEPER_GET_FLAG(BEEPER_ARMING_GPS_FIX)    \
+    | BEEPER_GET_FLAG(BEEPER_ARMING_GPS_NO_FIX) \
+    )
 #ifdef USE_RACE_PRO
 #define DEFAULT_DSHOT_BEACON_OFF_FLAGS BEEPER_GET_FLAG(BEEPER_RX_LOST)
 #else
