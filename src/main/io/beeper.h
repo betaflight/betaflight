@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/utils.h"
 
 #define BEEPER_GET_FLAG(mode) (1 << (mode - 1))
 
