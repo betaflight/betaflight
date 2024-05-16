@@ -1619,6 +1619,8 @@ static void osdElementSpecLogo(osdElementParms_t *element)
         lastLogoAnimationUpdateMs = millis();
         animationState = (animationState + 1) % LOGO_GROUPS; // increment animation state and make sure its < LOGO_GROUPS
     }
+
+    element->drawElement = false;
 }
 
 
@@ -2001,7 +2003,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element drawing function
-    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_ITEM_COUNT)) {
+    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item <= OSD_SYS_FAN_SPEED)) {
         displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
     } else {
         osdElementDrawFunction[item](&element);
