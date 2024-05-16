@@ -496,7 +496,7 @@ static void osdCompleteInitialization(void)
 
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
-    displayWrite(osdDisplayPort, midCol, midRow, DISPLAYPORT_SEVERITY_NORMAL, string_buffer);
+    displayWrite(osdDisplayPort, midCol - 5, midRow, DISPLAYPORT_SEVERITY_NORMAL, string_buffer);
     SpecType specType = getCurrentSpec();
     if (specType != SPEC_COUNT) {
         displayWrite(osdDisplayPort, midCol - 5, midRow + 1,  DISPLAYPORT_SEVERITY_NORMAL, specArray[specType].name);
