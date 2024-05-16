@@ -253,7 +253,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
     return NULL;
 }
 
-serialPortUsage_t *findSerialPortUsageByPort(serialPort_t *serialPort)
+serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
 {
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {

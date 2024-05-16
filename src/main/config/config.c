@@ -438,7 +438,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_TELEMETRY);
 #endif
 
-#ifndef USE_PWM
+#ifndef USE_RX_PWM
     featureDisableImmediate(FEATURE_RX_PARALLEL_PWM);
 #endif
 

@@ -46,7 +46,7 @@ float rxMspReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 /*
  * Called from MSP command handler - mspFcProcessCommand
  */
-void rxMspFrameReceive(uint16_t *frame, int channelCount)
+void rxMspFrameReceive(const uint16_t *frame, int channelCount)
 {
     for (int i = 0; i < channelCount; i++) {
         mspFrame[i] = frame[i];

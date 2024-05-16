@@ -428,6 +428,8 @@ extern "C" {
 
     int32_t getEstimatedAltitudeCm(void) { return gpsSol.llh.altCm; }
 
+    int16_t getEstimatedVario(void) { return 0; }
+
     int32_t getMAhDrawn(void) { return testmAhDrawn; }
 
     bool isArmingDisabled(void) { return false; }

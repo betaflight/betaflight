@@ -105,7 +105,7 @@ extern "C" {
     extern task_t* taskQueueArray[];
 
     extern void queueClear(void);
-    extern bool queueContains(task_t *task);
+    extern bool queueContains(const task_t *task);
     extern bool queueAdd(task_t *task);
     extern bool queueRemove(task_t *task);
     extern task_t *queueFirst(void);

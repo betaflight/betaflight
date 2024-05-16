@@ -113,7 +113,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    19 }, // 19 VREFINT
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 18 }, // 18 VSENSE
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VBAT,       17 }, // 17 VBAT/4
-#elif
+#else
 #error MCU not defined
 #endif
 
