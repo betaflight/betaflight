@@ -330,7 +330,7 @@ typedef struct osdConfig_s {
     uint16_t link_quality_alarm;
     int16_t rssi_dbm_alarm;
     int16_t rsnr_alarm;
-    uint8_t gps_sats_show_hdop;
+    uint8_t gps_sats_show_pdop;
     int8_t rcChannels[OSD_RCCHANNELS_COUNT];  // RC channel values to display, -1 if none
     uint8_t displayPortDevice;                // osdDisplayPortDevice_e
     uint16_t distance_alarm;
@@ -355,6 +355,7 @@ typedef struct osdConfig_s {
 #ifdef USE_SPEC_PREARM_SCREEN
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
+    displayPortSeverity_e arming_logo;        // font from which to display logo on arming
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

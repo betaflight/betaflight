@@ -76,7 +76,7 @@ extern "C" {
 TEST(LedStripTest, parseLedStripConfig)
 {
     // given
-    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_STRIP_MAX_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, sizeof(ledStripStatusModeConfigMutable()->ledConfigs));
 
     // and
     static const ledConfig_t expectedLedStripConfig[WS2811_LED_STRIP_LENGTH] = {
@@ -197,7 +197,7 @@ TEST(LedStripTest, parseLedStripConfig)
 TEST(LedStripTest, smallestGridWithCenter)
 {
     // given
-    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_STRIP_MAX_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, sizeof(ledStripStatusModeConfigMutable()->ledConfigs));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -225,7 +225,7 @@ TEST(LedStripTest, smallestGridWithCenter)
 TEST(LedStripTest, smallestGrid)
 {
     // given
-    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, LED_STRIP_MAX_LENGTH);
+    memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, sizeof(ledStripStatusModeConfigMutable()->ledConfigs));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -303,7 +303,7 @@ uint8_t stateFlags = 0;
 uint16_t flightModeFlags = 0;
 float rcCommand[4];
 float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-boxBitmask_t rcModeActivationMask;
+extern boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
 batteryState_e getBatteryState(void)
@@ -391,6 +391,7 @@ bool rxIsReceivingSignal() { return true; }
 bool isBeeperOn() { return false; };
 
 uint8_t calculateBatteryPercentageRemaining() { return 0; }
+uint32_t getEstimatedAltitudeCm() { return 0; }
 
 bool sensors(uint32_t mask)
 {

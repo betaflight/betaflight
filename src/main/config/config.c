@@ -438,7 +438,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_TELEMETRY);
 #endif
 
-#ifndef USE_PWM
+#ifndef USE_RX_PWM
     featureDisableImmediate(FEATURE_RX_PARALLEL_PWM);
 #endif
 
@@ -681,7 +681,7 @@ void validateAndFixGyroConfig(void)
                 motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
             }
             if (gyro.sampleRateHz > 4000) {
-                pidConfigMutable()->pid_process_denom = 2;
+                pidConfigMutable()->pid_process_denom = MAX(2, pidConfig()->pid_process_denom);
             }
         }
 #endif // USE_DSHOT && USE_PID_DENOM_CHECK

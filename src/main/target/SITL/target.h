@@ -148,10 +148,6 @@
 #define TARGET_FLASH_SIZE 2048
 
 
-#define LED_STRIP_TIMER 1
-#define SOFTSERIAL_1_TIMER 2
-#define SOFTSERIAL_2_TIMER 3
-
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 
 #define FLASH_PAGE_SIZE (0x400)

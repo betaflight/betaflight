@@ -453,10 +453,6 @@ static void mspEvaluateNonMspData(mspPort_t * mspPort, uint8_t receivedChar)
    } else if (receivedChar == '#') {
         mspPort->pendingRequest = MSP_PENDING_CLI;
 #endif
-#if defined(USE_FLASH_BOOT_LOADER)
-   } else if (receivedChar == 'F') {
-        mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_FLASH;
-#endif
     }
 }
 

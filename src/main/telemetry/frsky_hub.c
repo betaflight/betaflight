@@ -131,7 +131,7 @@ static frSkyHubWriteByteFn *frSkyHubWriteByte = NULL;
 #define ID_VERT_SPEED         0x30 // opentx vario
 
 #define GPS_BAD_QUALITY       300
-#define GPS_MAX_HDOP_VAL      9999
+#define GPS_MAX_DOP_VAL      9999
 #define DELAY_FOR_BARO_INITIALISATION_US 5000000
 #define BLADE_NUMBER_DIVIDER  5 // should set 12 blades in Taranis
 
@@ -288,8 +288,8 @@ static void sendSatalliteSignalQualityAsTemperature2(uint8_t cycleNum)
 {
     uint16_t satellite = gpsSol.numSat;
 
-    if (gpsSol.dop.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) { // Every 1s
-        satellite = constrain(gpsSol.dop.hdop, 0, GPS_MAX_HDOP_VAL);
+    if (gpsSol.dop.pdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) { // Every 1s
+        satellite = constrain(gpsSol.dop.pdop, 0, GPS_MAX_DOP_VAL);
     }
     int16_t data;
     if (telemetryConfig()->frsky_unit == UNIT_IMPERIAL) {

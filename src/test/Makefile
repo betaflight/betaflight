@@ -293,7 +293,8 @@ rx_sumd_unittest_SRC := \
 scheduler_unittest_SRC := \
 		$(USER_DIR)/scheduler/scheduler.c \
 		$(USER_DIR)/common/crc.c \
-		$(USER_DIR)/common/streambuf.c
+		$(USER_DIR)/common/streambuf.c \
+		$(TEST_DIR)/scheduler_stubs.c
 
 scheduler_unittest_DEFINES := \
 		USE_OSD=
@@ -481,35 +482,23 @@ GTEST_DIR = ../../lib/test/gtest
 
 # Use clang/clang++ by default
 
-CC  := clang-12
-CXX := clang++-12
-ifneq ($(OSFAMILY), linux)
+CC  := clang-15
+CXX := clang++-15
 ifeq ($(shell which $(CC) 2>/dev/null),)
-$(info Falling back to 'clang' on Windows and OSX.)
+$(info Falling back to 'clang')
 CC  := clang
 CXX := clang++
 endif
-endif
-#CC  := gcc
-#CXX := g++
 
-# These flags are needed for clang > 10 (linux / MacOS) to make test work:
-# -Wno-c99-extensions
-# -Wno-reorder
+OPTIMIZE = -O0
 
 COMMON_FLAGS = \
-	-g \
-	-Wall \
-	-Wextra \
-	-Werror \
-	-Wno-error=unused-command-line-argument \
-	-ggdb3 \
-	-O0 \
+	-g -ggdb3 \
+	-Wall -Wextra  \
+	$(OPTIMIZE) \
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP \
-	-Wno-c99-extensions \
-	-Wno-reorder \
 	-pipe
 
 CC_VERSION = $(shell $(CC) -dumpversion)
@@ -517,30 +506,37 @@ CXX_VERSION = $(shell $(CXX) -dumpversion)
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 
-# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 14 }
+# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 16 }
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 14
+CC_VERSION_CHECK_MAX := 16
 
-# Added flags for clang 11 - 13 are not backwards compatible
-ifeq ($(shell expr $(CC_VERSION_MAJOR) \> 10 \& $(CC_VERSION_MAJOR) \< 14), 1)
-COMMON_FLAGS += \
-	-fcommon \
-	-Wno-void-pointer-to-int-cast
-endif
+# c99-designator is fine, code is not expected to be clean C++
+COMMON_FLAGS += -Wno-c99-designator
+
+# no warning expected on clang
+COMMON_FLAGS += -Werror
 
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
-$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-12'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
+$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-15'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
 COMMON_FLAGS += -fblocks
 ifndef CYGWIN
 ifneq ($(OSFAMILY), macosx)
 LDFLAGS	     += -lBlocksRuntime
-endif
-endif
-endif
+endif # !macosx
+endif # !CYGWIN
+
+else ifeq ($(shell $(CC) -v 2>&1 | grep -q "gcc version" && echo "gcc"),gcc)
+
+$(warning warning: gcc/g++ support is experimental. For normal testing, clang is recommended)
+
+# no -Werror, allow warning for gcc now
+COMMON_FLAGS += -Wno-missing-field-initializers
+
+endif # is clang / gcc
 
 $(info CC version: $(shell $(CC) --version))
 $(info CXX version: $(shell $(CXX) --version))

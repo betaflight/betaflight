@@ -226,7 +226,7 @@ bool srxl2ProcessControlData(const Srxl2Header* header, rxRuntimeState_t *rxRunt
         DEBUG_PRINTF("vtx region: %x\r\n", vtxData->region);
         // Pack data as it was used before srxl2 to use existing functions.
         // Get the VTX control bytes in a frame
-        uint32_t vtxControl =   (0xE0 << 24) | (0xE0 << 8) |
+        uint32_t vtxControl =   (0xE0U << 24) | (0xE0 << 8) |
                                 ((vtxData->band & 0x07) << 21) |
                                 ((vtxData->channel & 0x0F) << 16) |
                                 ((vtxData->pit & 0x01) << 4) |

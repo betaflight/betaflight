@@ -363,7 +363,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_DSHOT_TELEMETRY
         // If Dshot Telemetry is enabled and any motor isn't providing telemetry, then disable arming
-        if (motorConfig()->dev.useDshotTelemetry && !isDshotTelemetryActive()) {
+        if (useDshotTelemetry && !isDshotTelemetryActive()) {
             setArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
@@ -514,7 +514,7 @@ void tryArm(void)
         if (isMotorProtocolDshot()) {
 #if defined(USE_ESC_SENSOR) && defined(USE_DSHOT_TELEMETRY)
             // Try to activate extended DSHOT telemetry only if no esc sensor exists and dshot telemetry is active
-            if (!featureIsEnabled(FEATURE_ESC_SENSOR) && motorConfig()->dev.useDshotTelemetry) {
+            if (!featureIsEnabled(FEATURE_ESC_SENSOR) && useDshotTelemetry) {
                 dshotCleanTelemetryData();
                 if (motorConfig()->dev.useDshotEdt) {
                     dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE, DSHOT_CMD_TYPE_INLINE);

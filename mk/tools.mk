@@ -268,7 +268,7 @@ else ifeq (,$(filter %_install test% clean% %-print checks help configs, $(MAKEC
     $(error **ERROR** your arm-none-eabi-gcc is '$(GCC_VERSION)', but '$(GCC_REQUIRED_VERSION)' is expected. Override with 'GCC_REQUIRED_VERSION' in mk/local.mk or run 'make arm_sdk_install' to install the right version automatically in the tools folder of this repo)
   endif
 
-  # ARM tookchain is in the path, and the version is what's required.
+  # ARM toolchain is in the path, and the version is what's required.
   ARM_SDK_PREFIX ?= arm-none-eabi-
 endif
 

@@ -20,9 +20,13 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "A435"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight AT32F435"
+#endif
 
 #ifndef AT32F435
 #define AT32F435

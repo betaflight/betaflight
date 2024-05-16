@@ -218,10 +218,10 @@ static int32_t lps22df_ut = 0;
 
 static DMA_DATA_ZERO_INIT uint8_t sensor_data[LPS22DF_DATA_FRAME_SIZE];
 
-static void lps22dfStartUT(baroDev_t *baro);
+static bool lps22dfStartUT(baroDev_t *baro);
 static bool lps22dfReadUT(baroDev_t *baro);
 static bool lps22dfGetUT(baroDev_t *baro);
-static void lps22dfStartUP(baroDev_t *baro);
+static bool lps22dfStartUP(baroDev_t *baro);
 static bool lps22dfReadUP(baroDev_t *baro);
 static bool lps22dfGetUP(baroDev_t *baro);
 
@@ -306,10 +306,12 @@ bool lps22dfDetect(baroDev_t *baro)
     return true;
 }
 
-static void lps22dfStartUT(baroDev_t *baro)
+static bool lps22dfStartUT(baroDev_t *baro)
 {
     UNUSED(baro);
     // dummy
+
+    return true;
 }
 
 static bool lps22dfReadUT(baroDev_t *baro)
@@ -326,11 +328,11 @@ static bool lps22dfGetUT(baroDev_t *baro)
     return true;
 }
 
-static void lps22dfStartUP(baroDev_t *baro)
+static bool lps22dfStartUP(baroDev_t *baro)
 {
     // start measurement
     // Trigger one-shot enable block data update to ensure LSB/MSB are coherent
-    busWriteRegister(&baro->dev, LPS22DF_CTRL_REG2, LPS22DF_CTRL_REG2_ONESHOT | LPS22DF_CTRL_REG2_BDU);
+    return busWriteRegister(&baro->dev, LPS22DF_CTRL_REG2, LPS22DF_CTRL_REG2_ONESHOT | LPS22DF_CTRL_REG2_BDU);
 }
 
 static bool lps22dfReadUP(baroDev_t *baro)
@@ -340,9 +342,7 @@ static bool lps22dfReadUP(baroDev_t *baro)
     }
 
     // Read data from sensor
-    busReadRegisterBufferStart(&baro->dev, LPS22DF_PRESSURE_OUT_XL, sensor_data, LPS22DF_DATA_FRAME_SIZE);
-
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, LPS22DF_PRESSURE_OUT_XL, sensor_data, LPS22DF_DATA_FRAME_SIZE);
 }
 
 static bool lps22dfGetUP(baroDev_t *baro)

@@ -267,7 +267,7 @@ typedef int (*getEscRpmOrFreqFnPtr)(int i);
 static int getEscRpm(int i)
 {
 #ifdef USE_DSHOT_TELEMETRY
-    if (motorConfig()->dev.useDshotTelemetry) {
+    if (useDshotTelemetry) {
         return lrintf(getDshotRpm(i));
     }
 #endif
@@ -1151,7 +1151,7 @@ static void osdElementGpsSats(osdElementParms_t *element)
         tfp_sprintf(element->buff, "%c%cNC", SYM_SAT_L, SYM_SAT_R);
     } else {
         int pos = tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
-        if (osdConfig()->gps_sats_show_hdop) { // add on the GPS module HDOP estimate
+        if (osdConfig()->gps_sats_show_pdop) { // add on the GPS module PDOP estimate
             element->buff[pos++] = ' ';
             osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.dop.pdop / 100.0f, "", 1, true, SYM_NONE);
         }
@@ -2064,7 +2064,7 @@ void osdAddActiveElements(void)
 #endif // GPS
 
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
-    if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || (motorConfig()->dev.useDshotTelemetry)) {
+    if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || useDshotTelemetry) {
         osdAddActiveElement(OSD_ESC_TMP);
         osdAddActiveElement(OSD_ESC_RPM);
         osdAddActiveElement(OSD_ESC_RPM_FREQ);

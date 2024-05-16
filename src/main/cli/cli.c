@@ -453,6 +453,7 @@ static void cliPrintError(const char *cmdName, const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(cmdName, format, va);
+    va_end(va);
 
     if (!cliWriter) {
         // Supply our own linefeed in case we are printing inside a custom defaults operation
@@ -467,6 +468,7 @@ static void cliPrintErrorLinef(const char *cmdName, const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(cmdName, format, va);
+    va_end(va);
     cliPrintInternal(cliErrorWriter, "\r\n");
 }
 
@@ -1634,28 +1636,26 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
 static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 {
     const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
-    int i, val = 0;
     const char *ptr;
 
     if (isEmpty(cmdline)) {
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL, NULL);
     } else {
         ptr = cmdline;
-        i = atoi(ptr++);
+        int i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
                 // Was: slot
                 // Keeping the parameter to retain backwards compatibility for the command format.
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1666,7 +1666,7 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
                     ar->adjustmentConfig = val;
                     validArgumentCount++;
@@ -1674,7 +1674,7 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxSwitchChannelIndex = val;
                     validArgumentCount++;
@@ -1693,13 +1693,13 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 ar->adjustmentCenter = val;
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 ar->adjustmentScale = val;
                 validArgumentCount++;
             }
@@ -2614,7 +2614,6 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
 static void cliVtx(const char *cmdName, char *cmdline)
 {
     const char *format = "vtx %u %u %u %u %u %u %u";
-    int i, val = 0;
     const char *ptr;
 
     if (isEmpty(cmdline)) {
@@ -2630,13 +2629,13 @@ static void cliVtx(const char *cmdName, char *cmdline)
         const uint8_t maxPowerIndex = VTX_TABLE_MAX_POWER_LEVELS;
 #endif
         ptr = cmdline;
-        i = atoi(ptr++);
+        int i = atoi(ptr++);
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     cac->auxChannelIndex = val;
                     validArgumentCount++;
@@ -2644,7 +2643,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxBandIndex) {
                     cac->band = val;
                     validArgumentCount++;
@@ -2652,7 +2651,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxChannelIndex) {
                     cac->channel = val;
                     validArgumentCount++;
@@ -2660,7 +2659,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxPowerIndex) {
                     cac->power= val;
                     validArgumentCount++;
@@ -4250,7 +4249,6 @@ static void cliDefaults(const char *cmdName, char *cmdline)
 
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
-    int index = 0;
     bool expectParameterGroupId = false;
     while (tok != NULL) {
         if (expectParameterGroupId) {
@@ -4271,7 +4269,6 @@ static void cliDefaults(const char *cmdName, char *cmdline)
             return;
         }
 
-        index++;
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
@@ -4377,7 +4374,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
     }
 }
 
-static uint8_t getWordLength(char *bufBegin, char *bufEnd)
+static uint8_t getWordLength(const char *bufBegin, const char *bufEnd)
 {
     while (*(bufEnd - 1) == ' ') {
         bufEnd--;
@@ -4386,13 +4383,13 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd)
     return bufEnd - bufBegin;
 }
 
-uint16_t cliGetSettingIndex(char *name, uint8_t length)
+uint16_t cliGetSettingIndex(const char *name, size_t length)
 {
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         const char *settingName = valueTable[i].name;
 
-        // ensure exact match when setting to prevent setting variables with shorter names
-        if (strncasecmp(name, settingName, strlen(settingName)) == 0 && length == strlen(settingName)) {
+        // ensure exact match when setting to prevent setting variables with longer names
+        if (strncasecmp(name, settingName, length) == 0 && length == strlen(settingName)) {
             return i;
         }
     }
@@ -4582,7 +4579,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                 if (updatable && len > 0 && len <= max) {
                     memset((char *)cliGetValuePointer(val), 0, max);
                     if (len >= min && strncmp(valPtr, emptyName, len)) {
-                        strncpy((char *)cliGetValuePointer(val), valPtr, len);
+                        memcpy((char *)cliGetValuePointer(val), valPtr, len);
                     }
                     valueChanged = true;
                 } else {
@@ -5025,23 +5022,19 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, ledStripConfig_t, ioTag ),
 #endif
 #ifdef USE_UART
-    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[0], SERIAL_PORT_MAX_INDEX - SERIAL_LPUART_MAX_INDEX ),
-    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[0], SERIAL_PORT_MAX_INDEX - SERIAL_LPUART_MAX_INDEX ),
+    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[0], SERIAL_UART_COUNT ),
+    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[0], SERIAL_UART_COUNT ),
 #endif
 #ifdef USE_INVERTER
-#ifdef USE_LPUART1
     DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[0], SERIAL_PORT_MAX_INDEX ),
-#else
-    DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[0], SERIAL_PORT_MAX_INDEX - SERIAL_LPUART_MAX_INDEX ),
-#endif
 #endif
 #if defined(USE_SOFTSERIAL)
     DEFA( OWNER_SOFTSERIAL_TX, PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagTx[0], SOFTSERIAL_COUNT ),
     DEFA( OWNER_SOFTSERIAL_RX, PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagRx[0], SOFTSERIAL_COUNT ),
 #endif
 #ifdef USE_LPUART1
-    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[SERIAL_PORT_MAX_INDEX], SERIAL_LPUART_MAX_INDEX ),
-    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[SERIAL_PORT_MAX_INDEX], SERIAL_LPUART_MAX_INDEX ),
+    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[SERIAL_UART_COUNT], SERIAL_LPUART_COUNT ),
+    DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[SERIAL_UART_COUNT], SERIAL_LPUART_COUNT ),
 #endif
 #ifdef USE_I2C
     DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),
@@ -5442,9 +5435,8 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
 
         if (printDetails) {
             const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, dmaopt);
-            dmaCode_t dmaCode = 0;
             if (dmaChannelSpec) {
-                dmaCode = dmaChannelSpec->code;
+                dmaCode_t dmaCode = dmaChannelSpec->code;
                 printValue(dumpMask, false,
                     "# pin %c%02d: " DMASPEC_FORMAT_STRING,
                     IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),

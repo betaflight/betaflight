@@ -224,7 +224,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     7                   TIM8_CH1    TIM8_CH2    TIM8_CH3                                        TIM8_CH4
 */
 
-uint32_t timerClock(TIM_TypeDef *tim)
+uint32_t timerClock(const TIM_TypeDef *tim)
 {
 #if defined(STM32F411xE)
     UNUSED(tim);

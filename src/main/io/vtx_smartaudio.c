@@ -549,7 +549,7 @@ static void saResendCmd(void)
     saSendFrame(sa_osbuf, sa_oslen);
 }
 
-static void saSendCmd(uint8_t *buf, int len)
+static void saSendCmd(const uint8_t *buf, int len)
 {
     for (int i = 0 ; i < len ; i++) {
         sa_osbuf[i] = buf[i];

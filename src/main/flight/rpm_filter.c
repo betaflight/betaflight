@@ -68,7 +68,6 @@ FAST_DATA_ZERO_INIT static int notchUpdatesPerIteration;
 FAST_DATA_ZERO_INIT static int motorIndex;
 FAST_DATA_ZERO_INIT static int harmonicIndex;
 
-
 void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
 {
     motorIndex = 0;
@@ -76,7 +75,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     rpmFilter.numHarmonics = 0; // disable RPM Filtering
 
     // if bidirectional DShot is not available
-    if (!motorConfig()->dev.useDshotTelemetry) {
+    if (!useDshotTelemetry) {
         return;
     }
 
@@ -112,7 +111,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
 
 FAST_CODE_NOINLINE void rpmFilterUpdate(void)
 {
-    if (!motorConfig()->dev.useDshotTelemetry) {
+    if (!useDshotTelemetry) {
         return;
     }
 

@@ -229,6 +229,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_low_always = 0,
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
+        .ez_landing_speed = 50,
     );
 
 #ifndef USE_D_MIN
@@ -592,7 +593,7 @@ static float accelerationLimit(int axis, float currentPidSetpoint)
     return currentPidSetpoint;
 }
 
-static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT])
+static void rotateVector(float v[XYZ_AXIS_COUNT], const float rotation[XYZ_AXIS_COUNT])
 {
     // rotate v around rotation vector rotation
     // rotation in radians, all elements must be small

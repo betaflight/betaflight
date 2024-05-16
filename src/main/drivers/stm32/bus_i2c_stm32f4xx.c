@@ -34,21 +34,10 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
-
-// Number of bits in I2C protocol phase
-#define LEN_ADDR 7
-#define LEN_RW 1
-#define LEN_ACK 1
-
-// Clock period in us during unstick transfer
-#define UNSTICK_CLK_US 10
-
-// Allow 500us for clock strech to complete during unstick
-#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
+#include "drivers/bus_i2c_utils.h"
 
 static void i2c_er_handler(I2CDevice device);
 static void i2c_ev_handler(I2CDevice device);
-static void i2cUnstick(IO_t scl, IO_t sda);
 
 #ifdef STM32F4
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
@@ -511,46 +500,6 @@ void i2cInit(I2CDevice device)
 uint16_t i2cGetErrorCounter(void)
 {
     return i2cErrorCount;
-}
-
-static void i2cUnstick(IO_t scl, IO_t sda)
-{
-    int i;
-
-    IOHi(scl);
-    IOHi(sda);
-
-    IOConfigGPIO(scl, IOCFG_OUT_OD);
-    IOConfigGPIO(sda, IOCFG_OUT_OD);
-
-    // Clock out, with SDA high:
-    //   7 data bits
-    //   1 READ bit
-    //   1 cycle for the ACK
-    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
-        // Wait for any clock stretching to finish
-        int timeout = UNSTICK_CLK_STRETCH;
-        while (!IORead(scl) && timeout) {
-            delayMicroseconds(UNSTICK_CLK_US);
-            timeout--;
-        }
-
-        // Pull low
-        IOLo(scl); // Set bus low
-        delayMicroseconds(UNSTICK_CLK_US/2);
-        IOHi(scl); // Set bus high
-        delayMicroseconds(UNSTICK_CLK_US/2);
-    }
-
-    // Generate a stop condition in case there was none
-    IOLo(scl);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOLo(sda);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-
-    IOHi(scl); // Set bus scl high
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOHi(sda); // Set bus sda high
 }
 
 #endif

@@ -27,7 +27,6 @@
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
 #include "drivers/io.h"
-#include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
 #include "drivers/rcc.h"
@@ -35,19 +34,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
-
-// Number of bits in I2C protocol phase
-#define LEN_ADDR 7
-#define LEN_RW 1
-#define LEN_ACK 1
-
-// Clock period in us during unstick transfer
-#define UNSTICK_CLK_US 10
-
-// Allow 500us for clock strech to complete during unstick
-#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
-
-static void i2cUnstick(IO_t scl, IO_t sda);
+#include "drivers/bus_i2c_utils.h"
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
@@ -285,46 +272,6 @@ void i2cInit(I2CDevice device)
     HAL_NVIC_EnableIRQ(hardware->er_irq);
     HAL_NVIC_SetPriority(hardware->ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
     HAL_NVIC_EnableIRQ(hardware->ev_irq);
-}
-
-static void i2cUnstick(IO_t scl, IO_t sda)
-{
-    int i;
-
-    IOHi(scl);
-    IOHi(sda);
-
-    IOConfigGPIO(scl, IOCFG_OUT_OD);
-    IOConfigGPIO(sda, IOCFG_OUT_OD);
-
-    // Clock out, with SDA high:
-    //   7 data bits
-    //   1 READ bit
-    //   1 cycle for the ACK
-    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
-        // Wait for any clock stretching to finish
-        int timeout = UNSTICK_CLK_STRETCH;
-        while (!IORead(scl) && timeout) {
-            delayMicroseconds(UNSTICK_CLK_US);
-            timeout--;
-        }
-
-        // Pull low
-        IOLo(scl); // Set bus low
-        delayMicroseconds(UNSTICK_CLK_US/2);
-        IOHi(scl); // Set bus high
-        delayMicroseconds(UNSTICK_CLK_US/2);
-    }
-
-    // Generate a stop condition in case there was none
-    IOLo(scl);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOLo(sda);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-
-    IOHi(scl); // Set bus scl high
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOHi(sda); // Set bus sda high
 }
 
 #endif

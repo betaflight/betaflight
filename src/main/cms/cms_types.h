@@ -58,6 +58,12 @@ typedef enum
 
 typedef const void *(*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
 
+#ifdef __APPLE__
+#define PTR_PACKING
+#else
+#define PTR_PACKING __attribute__((packed))
+#endif
+
 typedef struct
 {
     const char * text;
@@ -65,7 +71,7 @@ typedef struct
     uint16_t flags;
     CMSEntryFuncPtr func;
     void *data;
-} __attribute__((packed)) OSD_Entry;
+} PTR_PACKING OSD_Entry;
 
 // Bits in flags
 #define OSD_MENU_ELEMENT_MASK 0x001f

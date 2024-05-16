@@ -119,8 +119,12 @@ static int32_t gyroCyclesNow;
 static timeMs_t lastFailsafeCheckMs = 0;
 
 // No need for a linked list for the queue, since items are only inserted at startup
-
-STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT task_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
+#ifdef UNIT_TEST
+#define TASK_QUEUE_RESERVE 1
+#else
+#define TASK_QUEUE_RESERVE 0
+#endif
+STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT task_t* taskQueueArray[TASK_COUNT + 1 + TASK_QUEUE_RESERVE]; // extra item for NULL pointer at end of queue (+ overflow check in UNTT_TEST)
 
 void queueClear(void)
 {
@@ -129,7 +133,7 @@ void queueClear(void)
     taskQueueSize = 0;
 }
 
-bool queueContains(task_t *task)
+bool queueContains(const task_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
@@ -443,8 +447,8 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
 }
 
 #if defined(UNIT_TEST)
-task_t *unittest_scheduler_selectedTask;
-uint8_t unittest_scheduler_selectedTaskDynamicPriority;
+STATIC_UNIT_TESTED task_t *unittest_scheduler_selectedTask;
+STATIC_UNIT_TESTED uint8_t unittest_scheduler_selectedTaskDynamicPriority;
 
 static void readSchedulerLocals(task_t *selectedTask, uint8_t selectedTaskDynamicPriority)
 {

@@ -579,12 +579,13 @@ void esc4wayProcess(serialPort_t *mspPort)
                 case cmd_InterfaceSetMode:
                 {
 #if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
-                    if ((ParamBuf[0] <= imARM_BLB) && (ParamBuf[0] >= imSIL_BLB)) {
+                    if ((ParamBuf[0] <= imARM_BLB) && (ParamBuf[0] >= imSIL_BLB))
 #elif defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
-                    if (((ParamBuf[0] <= imATM_BLB)||(ParamBuf[0] == imARM_BLB)) && (ParamBuf[0] >= imSIL_BLB)) {
+                    if (((ParamBuf[0] <= imATM_BLB)||(ParamBuf[0] == imARM_BLB)) && (ParamBuf[0] >= imSIL_BLB))
 #elif defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
-                    if (ParamBuf[0] == imSK) {
+                    if (ParamBuf[0] == imSK)
 #endif
+                    {
                         CurrentInterfaceMode = ParamBuf[0];
                     } else {
                         ACK_OUT = ACK_I_INVALID_PARAM;

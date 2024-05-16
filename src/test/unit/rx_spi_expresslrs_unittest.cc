@@ -61,6 +61,9 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+// set to dump generted sequences during test
+const bool PRINT_FHSS_SEQUENCES = false;
+
 //make clean test_rx_spi_expresslrs_unittest
 TEST(RxSpiExpressLrsUnitTest, TestCrc14)
 {
@@ -176,13 +179,17 @@ TEST(RxSpiExpressLrsUnitTest, TestFHSSTable)
     };
 
     fhssGenSequence(UID, ISM2400);
-    printFhssSequence(fhssSequence);
+    if (PRINT_FHSS_SEQUENCES) {
+        printFhssSequence(fhssSequence);
+    }
     for (int i = 0; i < ELRS_NR_SEQUENCE_ENTRIES; i++) {
         EXPECT_EQ(expectedSequence[0][i], fhssSequence[i]);
     }
 
     fhssGenSequence(UID, FCC915);
-    printFhssSequence(fhssSequence);
+    if (PRINT_FHSS_SEQUENCES) {
+        printFhssSequence(fhssSequence);
+    }
     for (int i = 0; i < ELRS_NR_SEQUENCE_ENTRIES; i++) {
         EXPECT_EQ(expectedSequence[1][i], fhssSequence[i]);
     }
