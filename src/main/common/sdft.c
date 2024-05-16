@@ -41,9 +41,8 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
     if (!isInitialized) {
         rPowerN = powf(SDFT_R, SDFT_SAMPLE_SIZE);
         const float c = 2.0f * M_PIf / (float)SDFT_SAMPLE_SIZE;
-        float phi = 0.0f;
         for (int i = 0; i < SDFT_BIN_COUNT; i++) {
-            phi = c * i;
+            float phi = c * i;
             twiddle[i] = SDFT_R * (cos_approx(phi) + _Complex_I * sin_approx(phi));
         }
         isInitialized = true;
@@ -71,7 +70,7 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
 FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
 {
     const float delta = sample - rPowerN * sdft->samples[sdft->idx];
-    
+
     sdft->samples[sdft->idx] = sample;
     sdft->idx = (sdft->idx + 1) % SDFT_SAMPLE_SIZE;
 

@@ -113,6 +113,6 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "RX_SPI_EXPRESSLRS_BUSY",
     "SOFTSERIAL_TX",
     "SOFTSERIAL_RX",
-    [OWNER_LPUART_TX] = "LPUART_TX",
-    [OWNER_LPUART_RX] = "LPUART_RX",
+    "LPUART_TX",
+    "LPUART_RX",
 };

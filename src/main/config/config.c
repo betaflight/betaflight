@@ -423,7 +423,6 @@ static void validateAndFixConfig(void)
         uint32_t autoFeatures =
             FEATURE_DASHBOARD | FEATURE_LED_STRIP | FEATURE_OSD | FEATURE_RANGEFINDER
             | FEATURE_CHANNEL_FORWARDING | FEATURE_SERVO_TILT
-            | FEATURE_TELEMETRY | FEATURE_TRANSPONDER
 #if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
             | FEATURE_SOFTSERIAL
 #endif
@@ -604,7 +603,7 @@ void validateAndFixGyroConfig(void)
                 motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
             }
             if (gyro.sampleRateHz > 4000) {
-                pidConfigMutable()->pid_process_denom = 2;
+                pidConfigMutable()->pid_process_denom = MAX(2, pidConfig()->pid_process_denom);
             }
         }
 #endif // USE_DSHOT && USE_PID_DENOM_CHECK

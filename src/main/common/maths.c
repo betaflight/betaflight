@@ -229,7 +229,7 @@ void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix)
 #define QMF_SORTF(a,b) { if ((a)>(b)) QMF_SWAPF((a),(b)); }
 #define QMF_SWAPF(a,b) { float temp=(a);(a)=(b);(b)=temp; }
 
-int32_t quickMedianFilter3(int32_t * v)
+int32_t quickMedianFilter3(const int32_t * v)
 {
     int32_t p[3];
     QMF_COPY(p, v, 3);
@@ -238,7 +238,7 @@ int32_t quickMedianFilter3(int32_t * v)
     return p[1];
 }
 
-int32_t quickMedianFilter5(int32_t * v)
+int32_t quickMedianFilter5(const int32_t * v)
 {
     int32_t p[5];
     QMF_COPY(p, v, 5);
@@ -249,7 +249,7 @@ int32_t quickMedianFilter5(int32_t * v)
     return p[2];
 }
 
-int32_t quickMedianFilter7(int32_t * v)
+int32_t quickMedianFilter7(const int32_t * v)
 {
     int32_t p[7];
     QMF_COPY(p, v, 7);
@@ -262,7 +262,7 @@ int32_t quickMedianFilter7(int32_t * v)
     return p[3];
 }
 
-int32_t quickMedianFilter9(int32_t * v)
+int32_t quickMedianFilter9(const int32_t * v)
 {
     int32_t p[9];
     QMF_COPY(p, v, 9);
@@ -277,7 +277,7 @@ int32_t quickMedianFilter9(int32_t * v)
     return p[4];
 }
 
-float quickMedianFilter3f(float * v)
+float quickMedianFilter3f(const float * v)
 {
     float p[3];
     QMF_COPY(p, v, 3);
@@ -286,7 +286,7 @@ float quickMedianFilter3f(float * v)
     return p[1];
 }
 
-float quickMedianFilter5f(float * v)
+float quickMedianFilter5f(const float * v)
 {
     float p[5];
     QMF_COPY(p, v, 5);
@@ -297,7 +297,7 @@ float quickMedianFilter5f(float * v)
     return p[2];
 }
 
-float quickMedianFilter7f(float * v)
+float quickMedianFilter7f(const float * v)
 {
     float p[7];
     QMF_COPY(p, v, 7);
@@ -310,7 +310,7 @@ float quickMedianFilter7f(float * v)
     return p[3];
 }
 
-float quickMedianFilter9f(float * v)
+float quickMedianFilter9f(const float * v)
 {
     float p[9];
     QMF_COPY(p, v, 9);
@@ -325,7 +325,7 @@ float quickMedianFilter9f(float * v)
     return p[4];
 }
 
-void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count)
+void arraySubInt32(int32_t *dest, const int32_t *array1, const int32_t *array2, int count)
 {
     for (int i = 0; i < count; i++) {
         dest[i] = array1[i] - array2[i];

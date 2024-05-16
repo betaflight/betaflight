@@ -89,9 +89,9 @@ float dshotConvertFromExternal(uint16_t externalValue);
 uint16_t dshotConvertToExternal(float motorValue);
 
 uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb);
+extern bool useDshotTelemetry;
 
 #ifdef USE_DSHOT_TELEMETRY
-extern bool useDshotTelemetry;
 
 typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;

@@ -50,7 +50,7 @@ static uint8_t spiRegisteredDeviceCount = 0;
 spiDevice_t spiDevice[SPIDEV_COUNT];
 busDevice_t spiBusDevice[SPIDEV_COUNT];
 
-SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
+SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance)
 {
 #ifdef USE_SPI_DEVICE_1
     if (instance == SPI1) {
@@ -417,8 +417,13 @@ FAST_IRQ_HANDLER static void spiIrqHandler(const extDevice_t *dev)
             break;
 
         case BUS_ABORT:
-            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
-            return;
+            // Skip to the end of the segment list
+            nextSegment = (busSegment_t *)bus->curSegment + 1;
+            while (nextSegment->len != 0) {
+                bus->curSegment = nextSegment;
+                nextSegment = (busSegment_t *)bus->curSegment + 1;
+            }
+            break;
 
         case BUS_READY:
         default:
@@ -742,6 +747,19 @@ uint8_t spiGetRegisteredDeviceCount(void)
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
 {
     return dev->bus->deviceCount;
+}
+
+// Link two segment lists
+// Note that there is no need to unlink segment lists as this is done automatically as they are processed
+void spiLinkSegments(const extDevice_t *dev, busSegment_t *firstSegment, busSegment_t *secondSegment)
+{
+    busSegment_t *endSegment;
+
+    // Find the last segment of the new transfer
+    for (endSegment = firstSegment; endSegment->len; endSegment++);
+
+    endSegment->u.link.dev = dev;
+    endSegment->u.link.segments = secondSegment;
 }
 
 // DMA transfer setup and start

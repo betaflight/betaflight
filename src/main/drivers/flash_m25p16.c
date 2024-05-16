@@ -109,6 +109,9 @@ struct {
     // Winbond W25Q128
     // Datasheet: https://www.winbond.com/resource-files/w25q128fv%20rev.l%2008242015.pdf
     { 0xEF4018, 104, 50, 256, 256 },
+    // PUYA PY25Q128
+    // Datasheet: https://www.puyasemi.com/download_path/%E6%95%B0%E6%8D%AE%E6%89%8B%E5%86%8C/Flash%20%E8%8A%AF%E7%89%87/PY25F128HA_datasheet_V1.1.pdf
+    { 0x852018, 133, 80, 256, 256 },
     // Zbit ZB25VQ128
     // Datasheet: http://zbitsemi.com/upload/file/20201010/20201010174048_82182.pdf
     { 0x5E4018, 104, 50, 256, 256 },
@@ -406,7 +409,7 @@ static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, vo
 }
 
 
-static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     // The segment list cannot be in automatic storage as this routine is non-blocking
     STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
@@ -502,7 +505,7 @@ static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const u
 #ifdef USE_QUADSPI
 // Page programming QSPI mode
 
-static uint32_t m25p16_pageProgramContinueQspi(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t m25p16_pageProgramContinueQspi(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     if (bufferCount == 0) {
         return 0;

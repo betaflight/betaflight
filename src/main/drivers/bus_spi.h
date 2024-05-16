@@ -97,7 +97,7 @@ typedef enum SPIDevice {
 
 void spiPreinit(void);
 void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, uint8_t init);
-void spiPreinitByIO(IO_t io);
+void spiPreinitByIO(const IO_t io);
 void spiPreinitByTag(ioTag_t tag);
 
 bool spiInit(SPIDevice device);
@@ -106,7 +106,7 @@ bool spiInit(SPIDevice device);
 void spiInitBusDMA();
 
 
-SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
+SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance);
 SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
 // BusDevice API
@@ -132,6 +132,9 @@ void spiWait(const extDevice_t *dev);
 void spiRelease(const extDevice_t *dev);
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev);
+
+// Link two segment lists
+void spiLinkSegments(const extDevice_t *dev, busSegment_t *firstSegment, busSegment_t *secondSegment);
 
 /*
  * Routine naming convention is:

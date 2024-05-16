@@ -120,15 +120,15 @@ float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float des
 void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation);
 void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix);
 
-int32_t quickMedianFilter3(int32_t * v);
-int32_t quickMedianFilter5(int32_t * v);
-int32_t quickMedianFilter7(int32_t * v);
-int32_t quickMedianFilter9(int32_t * v);
+int32_t quickMedianFilter3(const int32_t * v);
+int32_t quickMedianFilter5(const int32_t * v);
+int32_t quickMedianFilter7(const int32_t * v);
+int32_t quickMedianFilter9(const int32_t * v);
 
-float quickMedianFilter3f(float * v);
-float quickMedianFilter5f(float * v);
-float quickMedianFilter7f(float * v);
-float quickMedianFilter9f(float * v);
+float quickMedianFilter3f(const float * v);
+float quickMedianFilter5f(const float * v);
+float quickMedianFilter7f(const float * v);
+float quickMedianFilter9f(const float * v);
 
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
 float sin_approx(float x);
@@ -150,7 +150,7 @@ float pow_approx(float a, float b);
 #define pow_approx(a, b)    powf(b, a)
 #endif
 
-void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
+void arraySubInt32(int32_t *dest, const int32_t *array1, const int32_t *array2, int count);
 
 int16_t qPercent(fix12_t q);
 int16_t qMultiply(fix12_t q, int16_t input);

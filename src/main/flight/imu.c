@@ -323,7 +323,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-static bool imuIsAccelerometerHealthy(float *accAverage)
+static bool imuIsAccelerometerHealthy(const float *accAverage)
 {
     float accMagnitudeSq = 0;
     for (int axis = 0; axis < 3; axis++) {
@@ -744,8 +744,8 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         schedulerIgnoreTaskStateTime();
     }
 
-    DEBUG_SET(DEBUG_ATTITUDE, 0, attitude.values.yaw); // roll
-    DEBUG_SET(DEBUG_ATTITUDE, 1, attitude.values.pitch); // pitch
+    DEBUG_SET(DEBUG_ATTITUDE, 0, attitude.values.roll);
+    DEBUG_SET(DEBUG_ATTITUDE, 1, attitude.values.pitch);
 }
 #endif // USE_ACC
 

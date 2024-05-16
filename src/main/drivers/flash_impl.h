@@ -109,7 +109,7 @@ typedef struct flashVTable_s {
     void (*eraseCompletely)(flashDevice_t *fdevice);
 
     void (*pageProgramBegin)(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length));
-    uint32_t (*pageProgramContinue)(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount);
+    uint32_t (*pageProgramContinue)(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount);
     void (*pageProgramFinish)(flashDevice_t *fdevice);
     void (*pageProgram)(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length));
 

@@ -300,7 +300,7 @@ uint8_t timerLookupChannelIndex(const uint16_t channel)
     return lookupChannelIndex(channel);
 }
 
-rccPeriphTag_t timerRCC(tmr_type *tim)
+rccPeriphTag_t timerRCC(const tmr_type *tim)
 {
     for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
@@ -310,7 +310,7 @@ rccPeriphTag_t timerRCC(tmr_type *tim)
     return 0;
 }
 
-uint8_t timerInputIrq(tmr_type *tim)
+uint8_t timerInputIrq(const tmr_type *tim)
 {
     for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {

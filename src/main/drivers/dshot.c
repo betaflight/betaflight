@@ -291,7 +291,7 @@ static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t ty
 
 FAST_CODE_NOINLINE void updateDshotTelemetry(void)
 {
-    if (!motorConfig()->dev.useDshotTelemetry) {
+    if (!useDshotTelemetry) {
         return;
     }
 

@@ -329,8 +329,6 @@ void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static void hottSerialWrite(uint8_t c)
 {
-    static uint8_t serialWrites = 0;
-    serialWrites++;
     serialWrite(hottPort, c);
 }
 
@@ -502,8 +500,7 @@ void hottTextmodeExit(void)
 void hottTextmodeWriteChar(uint8_t column, uint8_t row, char c)
 {
     if (column < HOTT_TEXTMODE_DISPLAY_COLUMNS && row < HOTT_TEXTMODE_DISPLAY_ROWS) {
-        if (hottTextModeMessage.txt[row][column] != c)
-            hottTextModeMessage.txt[row][column] = c;
+        hottTextModeMessage.txt[row][column] = c;
     }
 }
 

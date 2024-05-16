@@ -19,6 +19,7 @@ COMMON_SRC = \
             drivers/bus.c \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_busdev.c \
+            drivers/bus_i2c_utils.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_octospi.c \
             drivers/bus_quadspi.c \

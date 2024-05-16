@@ -66,6 +66,7 @@ typedef struct mixerRuntime_s {
 #endif
     float ezLandingThreshold;
     float ezLandingLimit;
+    float ezLandingSpeed;
 } mixerRuntime_t;
 
 extern mixerRuntime_t mixerRuntime;
