@@ -3296,7 +3296,7 @@ static void cliFeature(const char *cmdName, char *cmdline)
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         printFeatureList("Available: ", featuresSupportedByBuild, " ", true);
         // only defined features are printed, extra bits are ignored
-        printFeatureList("NotSupported: ", ~featuresSupportedByBuild, " ", true);
+        printFeatureList("Unavailable: ", ~featuresSupportedByBuild, " ", true);
     } else {
         bool remove = false;
         if (cmdline[0] == '-') {
