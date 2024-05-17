@@ -3291,11 +3291,10 @@ static void cliFeature(const char *cmdName, char *cmdline)
 {
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
-    if (len == 0) {
+    if (len == 0                                      // `feature`
+        || strncasecmp(cmdline, "list", len) == 0) {  // old `feature list` invocation
         printFeatureList("Enabled: ", mask, " ", true);
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
-        printFeatureList("Available: ", featuresSupportedByBuild, " ", true);
-        // only defined features are printed, extra bits are ignored
+        printFeatureList("NotEnabled: ", ~mask & featuresSupportedByBuild, " ", true);
         printFeatureList("NotSupported: ", ~featuresSupportedByBuild, " ", true);
     } else {
         bool remove = false;
