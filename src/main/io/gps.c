@@ -1325,6 +1325,16 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
     }
 }
 
+static void calculateNavInterval (void)
+{
+    // calculate the interval between nav packets, handling iTow wraparound at the end of the week
+    const uint32_t weekDurationMs = 7 * 24 * 3600 * 1000;
+    const uint32_t navDeltaTimeMs = (weekDurationMs + gpsSol.time - gpsData.lastNavSolTs) % weekDurationMs;
+    gpsData.lastNavSolTs = gpsSol.time;
+    // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
+    gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
+}
+
 void gpsUpdate(timeUs_t currentTimeUs)
 {
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
@@ -1368,7 +1378,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             sensorsSet(SENSOR_GPS);
 
             GPS_update ^= GPS_DIRECT_TICK;
-
+            calculateNavInterval();
             onGpsNewData();
 
             GPS_update &= ~GPS_MSP_UPDATE;
@@ -2096,16 +2106,6 @@ typedef enum {
 } ubxFrameParseState_e;
 static ubxFrameParseState_e ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
 static uint16_t ubxFrameParsePayloadCounter;
-
-static void calculateNavInterval (void)
-{
-    // calculate the interval between nav packets, handling iTow wraparound at the end of the week
-    const uint32_t weekDurationMs = 7 * 24 * 3600 * 1000;
-    const uint32_t navDeltaTimeMs = (weekDurationMs + gpsSol.time - gpsData.lastNavSolTs) % weekDurationMs;
-    gpsData.lastNavSolTs = gpsSol.time;
-    // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
-    gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
-}
 
 // SCEDEBUG To help debug which message is slow to process
 // static uint8_t lastUbxRcvMsgClass;
