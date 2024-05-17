@@ -3294,8 +3294,8 @@ static void cliFeature(const char *cmdName, char *cmdline)
     if (len == 0                                      // `feature`
         || strncasecmp(cmdline, "list", len) == 0) {  // old `feature list` invocation
         printFeatureList("Enabled: ", mask, " ", true);
-        printFeatureList("NotEnabled: ", ~mask & featuresSupportedByBuild, " ", true);
-        printFeatureList("NotSupported: ", ~featuresSupportedByBuild, " ", true);
+        printFeatureList("Available: ", ~mask & featuresSupportedByBuild, " ", true);
+        printFeatureList("Unavailable: ", ~featuresSupportedByBuild, " ", true);
     } else {
         bool remove = false;
         if (cmdline[0] == '-') {
