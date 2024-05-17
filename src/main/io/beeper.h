@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/utils.h"
 
 #define BEEPER_GET_FLAG(mode) (1U << ((mode) - 1))
 
@@ -64,6 +65,7 @@ typedef enum {
     // BEEPER_ALL must remain at the bottom of this enum
 } beeperMode_e;
 
+STATIC_ASSERT(BEEPER_ALL < sizeof(uint32_t) * 8, "BEEPER bits exhausted");
 
 #define BEEPER_ALLOWED_MODES ( \
     BEEPER_GET_FLAG(BEEPER_GYRO_CALIBRATED) \

@@ -3332,12 +3332,12 @@ static void printBeeper(dumpFlags_t dumpMask, const uint32_t offFlags, const uin
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     const uint8_t beeperCount = beeperTableEntryCount();
     for (int32_t i = 0; i < beeperCount - 1; i++) {
-        if (beeperModeMaskForTableIndex(i) & allowedFlags) {
+        const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
+        if (beeperModeMask & allowedFlags) {
             const char *formatOff = "%s -%s";
             const char *formatOn = "%s %s";
-            const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
-            cliDefaultPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
             const bool equalsDefault = ~(offFlags ^ offFlagsDefault) & beeperModeMask;
+            cliDefaultPrintLinef(dumpMask, equalsDefault, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             cliDumpPrintLinef(dumpMask, equalsDefault, offFlags & beeperModeMask ? formatOff : formatOn, name, beeperNameForTableIndex(i));
         }
