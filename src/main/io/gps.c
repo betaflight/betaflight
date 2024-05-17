@@ -2613,6 +2613,10 @@ void onGpsNewData(void)
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {
         GPS_calculateDistanceFlown(false);
+
+        if (!STATE(GPS_FIX_HOME) && !gpsConfig()->gps_set_home_point_once) {
+            GPS_reset_home_position();
+        }
     }
 
 #ifdef USE_GPS_RESCUE

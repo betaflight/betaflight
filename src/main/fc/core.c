@@ -998,6 +998,10 @@ void processRxModes(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
     }
+
+    if (!FLIGHT_MODE(GPS_RESCUE_MODE) && IS_RC_MODE_ACTIVE(BOXGPSRESETHOME) && featureIsEnabled(FEATURE_GPS)) {
+        GPS_reset_home_position();
+    }
 #endif
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
