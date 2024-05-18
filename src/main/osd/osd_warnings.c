@@ -256,6 +256,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
+    // Show warning if in GPSRESETHOME mode
+    if (IS_RC_MODE_ACTIVE(BOXGPSRESETHOME)) {
+        tfp_sprintf(warningText, "GPSRESETHOME");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+
 #ifdef USE_ADC_INTERNAL
     const int16_t coreTemperature = getCoreTemperatureCelsius();
     if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
