@@ -207,7 +207,6 @@ static bool signatureUpdated = false;
 #endif // USE_BOARD_INFO
 
 static const char* const emptyName = "-";
-static const char* const emptyString = "";
 
 #define MAX_CHANGESET_ID_LENGTH 8
 #define MAX_DATE_LENGTH 20
@@ -228,14 +227,31 @@ static const char * const mixerNames[] = {
 #endif
 
 // sync this with features_e
+#define _R(_flag, _name) [LOG2(_flag)] = _name
 static const char * const featureNames[] = {
-    "RX_PPM", "", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
-    "SERVO_TILT", "SOFTSERIAL", "GPS", "",
-    "RANGEFINDER", "TELEMETRY", "", "3D", "RX_PARALLEL_PWM",
-    "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
-    "", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    "", "", "RX_SPI", "", "ESC_SENSOR", "ANTI_GRAVITY", "", NULL
+    _R(FEATURE_RX_PPM, "RX_PPM"),
+    _R(FEATURE_INFLIGHT_ACC_CAL, "INFLIGHT_ACC_CAL"),
+    _R(FEATURE_RX_SERIAL, "RX_SERIAL"),
+    _R(FEATURE_MOTOR_STOP, "MOTOR_STOP"),
+    _R(FEATURE_SERVO_TILT, "SERVO_TILT"),
+    _R(FEATURE_SOFTSERIAL, "SOFTSERIAL"),
+    _R(FEATURE_GPS, "GPS"),
+    _R(FEATURE_RANGEFINDER, "RANGEFINDER"),
+    _R(FEATURE_TELEMETRY, "TELEMETRY"),
+    _R(FEATURE_3D, "3D"),
+    _R(FEATURE_RX_PARALLEL_PWM, "RX_PARALLEL_PWM"),
+    _R(FEATURE_RSSI_ADC, "RSSI_ADC"),
+    _R(FEATURE_LED_STRIP, "LED_STRIP"),
+    _R(FEATURE_DASHBOARD, "DISPLAY"),
+    _R(FEATURE_OSD, "OSD"),
+    _R(FEATURE_CHANNEL_FORWARDING, "CHANNEL_FORWARDING"),
+    _R(FEATURE_TRANSPONDER, "TRANSPONDER"),
+    _R(FEATURE_AIRMODE, "AIRMODE"),
+    _R(FEATURE_RX_SPI, "RX_SPI"),
+    _R(FEATURE_ESC_SENSOR, "ESC_SENSOR"),
+    _R(FEATURE_ANTI_GRAVITY, "ANTI_GRAVITY"),
 };
+#undef _R
 
 // sync this with rxFailsafeChannelMode_e
 static const char rxFailsafeModeCharacters[] = "ahs";
@@ -3232,23 +3248,23 @@ static void cliMcuId(const char *cmdName, char *cmdline)
 static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32_t defaultMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
-    for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
-        if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
+    for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) { // disabled features first
+        if (featureNames[i]) { //Skip unused
             const char *format = "feature -%s";
-            const bool equalsDefault = (~defaultMask | mask) & (1 << i);
+            const bool equalsDefault = (~defaultMask | mask) & (1U << i);
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
-            cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1U << i), format, featureNames[i]);
             cliDumpPrintLinef(dumpMask, equalsDefault, format, featureNames[i]);
         }
     }
-    for (uint32_t i = 0; featureNames[i]; i++) {  // enabled features
-        if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
+    for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {  // enabled features
+        if (featureNames[i]) { //Skip unused
             const char *format = "feature %s";
-            if (defaultMask & (1 << i)) {
-                cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+            if (defaultMask & (1U << i)) {
+                cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1U << i), format, featureNames[i]);
             }
-            if (mask & (1 << i)) {
-                const bool equalsDefault = (defaultMask | ~mask) & (1 << i);
+            if (mask & (1U << i)) {
+                const bool equalsDefault = (defaultMask | ~mask) & (1U << i);
                 headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
                 cliDumpPrintLinef(dumpMask, equalsDefault, format, featureNames[i]);
             }
@@ -3256,34 +3272,31 @@ static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32
     }
 }
 
+static void printFeatureList(const char* header, uint32_t mask, const char* delimiter, bool lineFeed)
+{
+    if (header) {
+        cliPrint(header);
+    }
+    for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {
+        if (featureNames[i] && (mask & (1U << i))) {
+            cliPrintf("%s%s", i ? delimiter : "", featureNames[i]);
+        }
+    }
+    if (lineFeed) {
+        cliPrintLinefeed();
+    }
+}
+
 static void cliFeature(const char *cmdName, char *cmdline)
 {
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
-    if (len == 0) {
-        cliPrint("Enabled: ");
-        for (uint32_t i = 0; ; i++) {
-            if (featureNames[i] == NULL) {
-                break;
-            }
-            if (mask & (1 << i)) {
-                cliPrintf("%s ", featureNames[i]);
-            }
-        }
-        cliPrintLinefeed();
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available:");
-        for (uint32_t i = 0; ; i++) {
-            if (featureNames[i] == NULL)
-                break;
-            if (strcmp(featureNames[i], emptyString) != 0) //Skip unused
-                cliPrintf(" %s", featureNames[i]);
-        }
-        cliPrintLinefeed();
-        return;
+    if (len == 0                                      // `feature`
+        || strncasecmp(cmdline, "list", len) == 0) {  // old `feature list` invocation
+        printFeatureList("Enabled: ", mask, " ", true);
+        printFeatureList("Available: ", ~mask & featuresSupportedByBuild, " ", true);
+        printFeatureList("Unavailable: ", ~featuresSupportedByBuild, " ", true);
     } else {
-        uint32_t feature;
-
         bool remove = false;
         if (cmdline[0] == '-') {
             // remove feature
@@ -3292,36 +3305,31 @@ static void cliFeature(const char *cmdName, char *cmdline)
             len--;
         }
 
-        for (uint32_t i = 0; ; i++) {
-            if (featureNames[i] == NULL) {
-                cliPrintErrorLinef(cmdName, ERROR_INVALID_NAME, cmdline);
-                break;
+        unsigned found = 0;
+        int featureIdx = -1;
+        for (unsigned i = 0; !found && i < ARRAYLEN(featureNames); i++) {
+            if (featureNames[i] && strncasecmp(cmdline, featureNames[i], len) == 0) {
+                found++;
+                featureIdx = i;
             }
-
-            if (strncasecmp(cmdline, featureNames[i], len) == 0) {
-                feature = 1 << i;
-#ifndef USE_GPS
-                if (feature & FEATURE_GPS) {
-                    cliPrintLine("unavailable");
-                    break;
-                }
-#endif
-#ifndef USE_RANGEFINDER
-                if (feature & FEATURE_RANGEFINDER) {
-                    cliPrintLine("unavailable");
-                    break;
-                }
-#endif
-                if (remove) {
-                    featureConfigClear(feature);
-                    cliPrint("Disabled");
-                } else {
-                    featureConfigSet(feature);
-                    cliPrint("Enabled");
-                }
-                cliPrintLinef(" %s", featureNames[i]);
-                break;
+        }
+        if (found == 1) {
+            uint32_t feature = 1U << featureIdx;
+            const char *verb;
+            if ((feature & featuresSupportedByBuild) == 0) {
+                verb = "Unavailable";
+            } else if (remove) {
+                featureConfigClear(feature);
+                verb = (mask & feature) ? "Disabled" : "AlreadyDisabled";
+            } else {
+                featureConfigSet(feature);
+                verb = (mask & feature) ? "AlreadyEnabled" : "Enabled";
             }
+            cliPrintLinef("%s %s", verb, featureNames[featureIdx]);
+        } else if (found > 1) {
+            cliPrintErrorLinef(cmdName, "Multiple features match %s", cmdline);
+        } else /* found <= 0 */ {
+            cliPrintErrorLinef(cmdName, ERROR_INVALID_NAME, cmdline);
         }
     }
 }
