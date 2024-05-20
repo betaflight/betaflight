@@ -422,12 +422,6 @@ static void validateAndFixConfig(void)
         // enable some compiled-in features by default
         uint32_t autoFeatures =
             0
-#ifdef USE_OSD
-            | FEATURE_OSD
-#endif
-#ifdef USE_LED_STRIP
-            | FEATURE_LED_STRIP
-#endif
 #if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
             | FEATURE_SOFTSERIAL
 #endif
