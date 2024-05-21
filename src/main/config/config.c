@@ -421,8 +421,7 @@ static void validateAndFixConfig(void)
     if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
         // enable some compiled-in features by default
         uint32_t autoFeatures =
-            FEATURE_DASHBOARD | FEATURE_LED_STRIP | FEATURE_OSD | FEATURE_RANGEFINDER
-            | FEATURE_CHANNEL_FORWARDING | FEATURE_SERVO_TILT
+            FEATURE_OSD | FEATURE_LED_STRIP
 #if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
             | FEATURE_SOFTSERIAL
 #endif
