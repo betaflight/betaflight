@@ -29,8 +29,8 @@ typedef struct huffmanTable_s {
 } huffmanTable_t;
 
 typedef struct huffmanState_s {
-    uint8_t     *outByte;
     uint16_t    bytesWritten;
+    uint8_t     *outByte;
     uint16_t    outBufLen;
     uint8_t     outBit;
 } huffmanState_t;

@@ -2700,10 +2700,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
         sbufReadU8(src); // reserved. disarm_kill_switch was removed in #5073
-        if (sbufBytesRemaining(src)) {
+        if (sbufBytesRemaining(src) >= 1) {
           imuConfigMutable()->small_angle = sbufReadU8(src);
         }
-        if (sbufBytesRemaining(src)) {
+        if (sbufBytesRemaining(src) >= 1) {
             armingConfigMutable()->gyro_cal_on_first_arm = sbufReadU8(src);
         }
         break;
