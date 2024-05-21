@@ -114,6 +114,7 @@
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
+#include "io/headtracker.h"
 #include "io/ledstrip.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
@@ -158,6 +159,7 @@
 #include "pg/vtx_io.h"
 
 #include "rx/rx.h"
+#include "rx/sbus.h"
 #include "rx/spektrum.h"
 
 #include "scheduler/scheduler.h"
@@ -763,6 +765,14 @@ void init(void)
     failsafeInit();
 
     rxInit();
+
+#ifdef USE_SERIALTX
+    txInit();
+#endif
+
+#ifdef USE_HEADTRACKER
+    headtrackerInit();
+#endif
 
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {

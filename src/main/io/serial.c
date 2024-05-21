@@ -218,6 +218,13 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
+#ifdef SERIALTX_UART
+    serialPortConfig_t *serialTxUartConfig = serialFindPortConfigurationMutable(SERIALTX_UART);
+    if (serialTxUartConfig) {
+        serialTxUartConfig->functionMask = FUNCTION_TX_SERIAL;
+    }
+#endif
+
 #ifdef SBUS_TELEMETRY_UART
     serialPortConfig_t *serialTelemetryUartConfig = serialFindPortConfigurationMutable(SBUS_TELEMETRY_UART);
     if (serialTelemetryUartConfig) {

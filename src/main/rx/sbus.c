@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -107,6 +108,10 @@ typedef struct sbusFrameData_s {
     uint8_t position;
     bool done;
 } sbusFrameData_t;
+
+#ifdef USE_SERIALTX
+static serialPort_t *sBusTxPort;
+#endif
 
 // Receive ISR callback
 static void sbusDataReceive(uint16_t c, void *data)
@@ -214,4 +219,75 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     return sBusPort != NULL;
 }
+
+
+#ifdef USE_SERIALTX
+bool sbusTxInit(void)
+{
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_TX_SERIAL);
+
+    if (!portConfig) {
+        return false;
+    }
+
+    sBusTxPort = openSerialPort(portConfig->identifier,
+        FUNCTION_TX_SERIAL,
+        NULL,
+        NULL,
+        SBUS_BAUDRATE,
+        MODE_TX,
+        SBUS_PORT_OPTIONS | (rxConfig()->serialtx_inverted ? 0 : SERIAL_INVERTED));
+
+    return sBusTxPort != NULL;
+}
+
+bool sbusTx(uint16_t *channels, int channelCount)
+{
+    struct sbusFrame_s sbusFrame;
+    uint16_t channelsFull[16];
+    int channel;
+
+    if (sBusTxPort == NULL) {
+        return false;
+    }
+
+    if (channelCount > 16) {
+        channelCount = 16;
+    }
+
+    for (channel = 0; channel < channelCount; channel++) {
+        // Scale to standard SBus range
+        channelsFull[channel] = (channels[channel] * (SBUS_DIGITAL_CHANNEL_MAX - SBUS_DIGITAL_CHANNEL_MIN) / 2048) + SBUS_DIGITAL_CHANNEL_MIN;
+    }
+    for (; channel < 16; channel++) {
+        // Midpoint
+        channelsFull[channel] = 993;
+    }
+    memset(&sbusFrame, 0, sizeof(sbusFrame));
+    sbusFrame.syncByte = SBUS_FRAME_BEGIN_BYTE;
+    sbusFrame.channels.chan0 = channelsFull[0];
+    sbusFrame.channels.chan1 = channelsFull[1];
+    sbusFrame.channels.chan2 = channelsFull[2];
+    sbusFrame.channels.chan3 = channelsFull[3];
+    sbusFrame.channels.chan4 = channelsFull[4];
+    sbusFrame.channels.chan5 = channelsFull[5];
+    sbusFrame.channels.chan6 = channelsFull[6];
+    sbusFrame.channels.chan7 = channelsFull[7];
+    sbusFrame.channels.chan8 = channelsFull[8];
+    sbusFrame.channels.chan9 = channelsFull[9];
+    sbusFrame.channels.chan10 = channelsFull[10];
+    sbusFrame.channels.chan11 = channelsFull[11];
+    sbusFrame.channels.chan12 = channelsFull[12];
+    sbusFrame.channels.chan13 = channelsFull[13];
+    sbusFrame.channels.chan14 = channelsFull[14];
+    sbusFrame.channels.chan15 = channelsFull[15];
+    sbusFrame.channels.flags = 0x00;
+    sbusFrame.endByte = 0x00;
+
+    serialWriteBuf(sBusTxPort, (uint8_t *)&sbusFrame, sizeof(sbusFrame));
+
+    return true;
+}
+#endif // USE_SERIALTX
+
 #endif

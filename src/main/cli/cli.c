@@ -137,6 +137,7 @@ bool cliMode = false;
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/gyrodev.h"
+#include "pg/headtracker.h"
 #include "pg/max7456.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
@@ -5209,6 +5210,9 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_PIN_PULL_UP_DOWN
     DEFA( OWNER_PULLUP,        PG_PULLUP_CONFIG,   pinPullUpDownConfig_t, ioTag, PIN_PULL_UP_DOWN_COUNT ),
     DEFA( OWNER_PULLDOWN,      PG_PULLDOWN_CONFIG, pinPullUpDownConfig_t, ioTag, PIN_PULL_UP_DOWN_COUNT ),
+#endif
+#ifdef USE_HEADTRACKER
+    DEFS( OWNER_HEADTRACKER,   PG_HEADTRACKER_CONFIG, headtrackerConfig_t, headtracker_ioTag),
 #endif
 };
 

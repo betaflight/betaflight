@@ -65,6 +65,7 @@
 #include "io/dashboard.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
+#include "io/headtracker.h"
 #include "io/ledstrip.h"
 #include "io/piniobox.h"
 #include "io/serial.h"
@@ -84,6 +85,7 @@
 
 #include "rx/rx.h"
 #include "rx/rc_stats.h"
+#include "rx/sbus.h"
 
 #include "scheduler/scheduler.h"
 
@@ -362,6 +364,11 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
     [TASK_RX] = DEFINE_TASK("RX", NULL, rxUpdateCheck, taskUpdateRxMain, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH), // If event-based scheduling doesn't work, fallback to periodic scheduling
+
+#if defined(USE_HEADTRACKER) && defined(USE_SERIALTX)
+    // Run the SBus output task at 14ms intervals for standard rate
+    [TASK_HEADTRACKER] = DEFINE_TASK("HEADTRACKER", NULL, NULL, taskHeadtracker, 14000, TASK_PRIORITY_MEDIUM),
+#endif
     [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH),
 
 #ifdef USE_BEEPER
@@ -520,6 +527,10 @@ void tasksInit(void)
 #endif
 
     setTaskEnabled(TASK_RX, true);
+
+#if defined(USE_HEADTRACKER)
+    setTaskEnabled(TASK_HEADTRACKER, true);
+#endif
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
 

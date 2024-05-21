@@ -21,3 +21,8 @@
 #pragma once
 
 bool sbusInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);
+
+#ifdef USE_SERIALTX
+bool sbusTxInit();
+bool sbusTx(uint16_t *angles, int angleCount);
+#endif
