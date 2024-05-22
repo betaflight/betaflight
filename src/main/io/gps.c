@@ -2614,7 +2614,7 @@ void onGpsNewData(void)
     if (ARMING_FLAG(ARMED)) {
         GPS_calculateDistanceFlown(false);
 
-        if (!STATE(GPS_FIX_HOME) && !gpsConfig()->gps_set_home_point_once) {
+        if (!STATE(GPS_FIX_HOME)) {
             GPS_reset_home_position();
         }
     }
