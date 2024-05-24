@@ -102,7 +102,7 @@ extern adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);
-ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
 bool adcVerifyPin(ioTag_t tag, ADCDevice device);
 
 // Marshall values in DMA instance/channel based order to adcChannel based order.

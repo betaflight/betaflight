@@ -55,10 +55,12 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+#include "flight/position.h"
 
 #include "io/beeper.h"
 #include "io/gimbal.h"
@@ -277,6 +279,34 @@ STATIC_UNIT_TESTED void updateDimensions(void)
 
 }
 
+enum ledBarIds {
+   LED_BAR_GPS,
+   LED_BAR_BATTERY,
+   LED_BAR_COUNT
+};
+static uint8_t ledBarStates[LED_BAR_COUNT] = {0};
+
+void updateLedBars(void)
+{
+    memset(ledBarStates, 0, sizeof(ledBarStates));
+    for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
+        const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
+        int fn = ledGetFunction(ledConfig);
+        switch (fn) {
+#ifdef USE_GPS
+            case LED_FUNCTION_GPS_BAR:
+                ledBarStates[LED_BAR_GPS]++;
+                break;
+#endif
+            case LED_FUNCTION_BATTERY_BAR:
+                ledBarStates[LED_BAR_BATTERY]++;
+                break;
+            default:
+                break;
+            }
+        }
+}
+
 STATIC_UNIT_TESTED void updateLedCount(void)
 {
     int count = 0, countRing = 0, countScanner= 0;
@@ -308,6 +338,7 @@ void reevaluateLedConfig(void)
     updateDimensions();
     updateLedRingCounts();
     updateRequiredOverlay();
+    updateLedBars();
 }
 
 // get specialColor by index
@@ -316,9 +347,35 @@ static const hsvColor_t* getSC(ledSpecialColorIds_e index)
     return &ledStripStatusModeConfig()->colors[ledStripStatusModeConfig()->specialColors.color[index]];
 }
 
-static const char directionCodes[LED_DIRECTION_COUNT] = { 'N', 'E', 'S', 'W', 'U', 'D' };
-static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT]   = { 'C', 'F', 'A', 'L', 'S', 'G', 'R' };
-static const char overlayCodes[LED_OVERLAY_COUNT]   = { 'T', 'Y', 'O', 'B', 'V', 'I', 'W' };
+static const char directionCodes[LED_DIRECTION_COUNT] = {
+    [LED_DIRECTION_NORTH] = 'N',
+    [LED_DIRECTION_EAST] = 'E',
+    [LED_DIRECTION_SOUTH] = 'S',
+    [LED_DIRECTION_WEST] = 'W',
+    [LED_DIRECTION_UP] = 'U',
+    [LED_DIRECTION_DOWN] = 'D'
+};
+static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT] = {
+    [LED_FUNCTION_COLOR] = 'C', 
+    [LED_FUNCTION_FLIGHT_MODE] = 'F',
+    [LED_FUNCTION_ARM_STATE] = 'A',
+    [LED_FUNCTION_BATTERY] = 'L',
+    [LED_FUNCTION_RSSI] = 'S',
+    [LED_FUNCTION_GPS] = 'G',
+    [LED_FUNCTION_THRUST_RING] = 'R',
+    [LED_FUNCTION_GPS_BAR] = 'P',
+    [LED_FUNCTION_BATTERY_BAR] = 'E',
+    [LED_FUNCTION_ALTITUDE] = 'U'
+};
+static const char overlayCodes[LED_OVERLAY_COUNT] = {
+    [LED_OVERLAY_THROTTLE] = 'T',
+    [LED_OVERLAY_RAINBOW] = 'Y',
+    [LED_OVERLAY_LARSON_SCANNER] = 'O',
+    [LED_OVERLAY_BLINK] = 'B',
+    [LED_OVERLAY_VTX] = 'V',
+    [LED_OVERLAY_INDICATOR] = 'I',
+    [LED_OVERLAY_WARNING] = 'W'
+};
 
 #define CHUNK_BUFFER_SIZE 11
 bool parseLedStripConfig(int ledIndex, const char *config)
@@ -496,6 +553,8 @@ static const struct {
 
 static void applyLedFixedLayers(void)
 {
+    uint8_t ledBarCounters[LED_BAR_COUNT] = {0};
+
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
         hsvColor_t color = *getSC(LED_SCOLOR_BACKGROUND);
@@ -543,9 +602,38 @@ static void applyLedFixedLayers(void)
             break;
 
         case LED_FUNCTION_BATTERY:
+        case LED_FUNCTION_BATTERY_BAR:
             color = HSV(RED);
             hOffset += MAX(scaleRange(calculateBatteryPercentageRemaining(), 0, 100, -30, 120), 0);
             break;
+
+#ifdef USE_GPS
+        case LED_FUNCTION_GPS_BAR:
+            {
+                uint8_t minSats = 8;
+#ifdef USE_GPS_RESCUE
+                minSats = gpsRescueConfig()->minSats;
+#endif
+                if (gpsSol.numSat == 0 || !sensors(SENSOR_GPS)) {
+                    color = HSV(RED);
+                } else {
+                    if (gpsSol.numSat >= minSats) {
+                        color = HSV(GREEN);
+                    } else {
+                        color = HSV(RED);
+                        hOffset += MAX(scaleRange(gpsSol.numSat, 0, minSats, -30, 120), 0);
+                    } 
+                }
+                break;
+            }
+#endif
+
+#if defined(USE_BARO) || defined(USE_GPS)
+        case LED_FUNCTION_ALTITUDE:
+            color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
+            hOffset += MAX(scaleRange(getEstimatedAltitudeCm(), 0, 500, -30, 120), 0);
+            break;
+#endif
 
         case LED_FUNCTION_RSSI:
             color = HSV(RED);
@@ -560,9 +648,32 @@ static void applyLedFixedLayers(void)
             const int auxInput = rcData[ledStripStatusModeConfig()->ledstrip_aux_channel];
             hOffset += scaleRange(auxInput, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, HSV_HUE_MAX + 1);
         }
-
         color.h = (color.h + hOffset) % (HSV_HUE_MAX + 1);
-        setLedHsv(ledIndex, &color);
+
+        switch (fn) {
+#ifdef USE_GPS
+            case LED_FUNCTION_GPS_BAR:
+                if (ledBarCounters[LED_BAR_GPS] < gpsSol.numSat || ledBarCounters[LED_BAR_GPS] == 0) {
+                    ledBarCounters[LED_BAR_GPS]++;
+                    setLedHsv(ledIndex, &color);
+                } else {
+                    setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
+                }
+                break;
+#endif
+            case LED_FUNCTION_BATTERY_BAR:
+                if (ledBarCounters[LED_BAR_BATTERY] < (calculateBatteryPercentageRemaining() * ledBarStates[LED_BAR_BATTERY]) / 100 || ledBarCounters[LED_BAR_BATTERY] == 0) {
+                    ledBarCounters[LED_BAR_BATTERY]++;
+                    setLedHsv(ledIndex, &color);
+                } else {
+                    setLedHsv(ledIndex, getSC(LED_SCOLOR_BACKGROUND));
+                }
+                break;
+
+            default:
+                setLedHsv(ledIndex, &color);
+                break;
+        }
     }
 }
 
@@ -685,7 +796,6 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     }
 
     uint8_t band = 255, channel = 255;
-    uint16_t check = 0;
 
     if (updateNow) {
         // keep counter running, so it stays in sync with vtx
@@ -696,7 +806,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         frequency = vtxCommonLookupFrequency(vtxDevice, band, channel);
 
         // check if last vtx values have changed.
-        check = ((vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0) + (power << 1) + (band << 4) + (channel << 8);
+        uint16_t check = ((vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0) + (power << 1) + (band << 4) + (channel << 8);
         if (!showSettings && check != lastCheck) {
             // display settings for 3 seconds.
             showSettings = 15;
@@ -710,23 +820,21 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         *timer += HZ_TO_US(LED_OVERLAY_VTX_RATE_HZ);
     }
 
-    hsvColor_t color = {0, 0, 0};
     if (showSettings) { // show settings
         uint8_t vtxLedCount = 0;
         for (int i = 0; i < ledCounts.count && vtxLedCount < 6; ++i) {
             const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_VTX)) {
+                hsvColor_t color = {0, 0, 0};
                 if (vtxLedCount == 0) {
                     color.h = HSV(GREEN).h;
                     color.s = HSV(GREEN).s;
                     color.v = blink ? 15 : 0; // blink received settings
-                }
-                else if (vtxLedCount > 0 && power >= vtxLedCount && !(vtxStatus & VTX_STATUS_PIT_MODE)) { // show power
+                } else if (vtxLedCount > 0 && power >= vtxLedCount && !(vtxStatus & VTX_STATUS_PIT_MODE)) { // show power
                     color.h = HSV(ORANGE).h;
                     color.s = HSV(ORANGE).s;
                     color.v = blink ? 15 : 0; // blink received settings
-                }
-                else { // turn rest off
+                } else { // turn rest off
                     color.h = HSV(BLACK).h;
                     color.s = HSV(BLACK).s;
                     color.v = HSV(BLACK).v;

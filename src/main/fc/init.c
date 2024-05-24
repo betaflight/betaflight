@@ -236,7 +236,7 @@ static void configureQuadSPIBusses(void)
 #ifdef USE_QUADSPI_DEVICE_1
     quadSpiInit(QUADSPIDEV_1);
 #endif
-#endif // USE_QUAD_SPI
+#endif // USE_QUADSPI
 }
 
 static void configureOctoSPIBusses(void)

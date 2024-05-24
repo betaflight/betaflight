@@ -62,8 +62,8 @@ PG_DECLARE(timeConfig_t, timeConfig);
 typedef int64_t rtcTime_t;
 
 rtcTime_t rtcTimeMake(int32_t secs, uint16_t millis);
-int32_t rtcTimeGetSeconds(rtcTime_t *t);
-uint16_t rtcTimeGetMillis(rtcTime_t *t);
+int32_t rtcTimeGetSeconds(const rtcTime_t *t);
+uint16_t rtcTimeGetMillis(const rtcTime_t *t);
 
 typedef struct _dateTime_s {
     // full year
@@ -96,7 +96,7 @@ bool dateTimeSplitFormatted(char *formatted, char **date, char **time);
 bool rtcHasTime(void);
 
 bool rtcGet(rtcTime_t *t);
-bool rtcSet(rtcTime_t *t);
+bool rtcSet(const rtcTime_t *t);
 
 bool rtcGetDateTime(dateTime_t *dt);
 bool rtcSetDateTime(dateTime_t *dt);

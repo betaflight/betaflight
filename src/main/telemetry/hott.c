@@ -500,8 +500,7 @@ void hottTextmodeExit(void)
 void hottTextmodeWriteChar(uint8_t column, uint8_t row, char c)
 {
     if (column < HOTT_TEXTMODE_DISPLAY_COLUMNS && row < HOTT_TEXTMODE_DISPLAY_ROWS) {
-        if (hottTextModeMessage.txt[row][column] != c)
-            hottTextModeMessage.txt[row][column] = c;
+        hottTextModeMessage.txt[row][column] = c;
     }
 }
 
