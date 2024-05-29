@@ -377,6 +377,9 @@ extern float osdGForce;
 extern escSensorData_t *osdEscDataCombined;
 #endif
 extern uint16_t osdAuxValue;
+#ifdef USE_N1_TEMP_SENSOR
+extern uint16_t osdTempValue;
+#endif
 
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
 bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);

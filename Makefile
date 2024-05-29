@@ -16,8 +16,9 @@
 #
 
 # The target to build, see VALID_TARGETS below
-DEFAULT_TARGET    ?= STM32F405
-TARGET    ?=
+DEFAULT_TARGET    ?= STM32F411
+TARGET    ?= 
+CONFIG    ?= MATEKF411
 
 # Compile-time options
 OPTIONS   ?=

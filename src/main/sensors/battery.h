@@ -129,3 +129,6 @@ void setMAhDrawn(uint32_t mAhDrawn);
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 
 const lowVoltageCutoff_t *getLowVoltageCutoff(void);
+
+//GLEB ADDITION
+int32_t getExternalTemperature(void);

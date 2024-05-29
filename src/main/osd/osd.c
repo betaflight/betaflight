@@ -150,6 +150,10 @@ static bool backgroundLayerSupported = false;
 escSensorData_t *osdEscDataCombined;
 #endif
 
+#ifdef USE_N1_TEMP_SENSOR
+uint16_t osdTempValue = 10;
+#endif
+
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 12);
@@ -1231,6 +1235,11 @@ void osdProcessStats2(timeUs_t currentTimeUs)
 
         schedulerIgnoreTaskExecTime();
     }
+
+#ifdef USE_N1_TEMP_SENSOR
+        osdTempValue = getExternalTemperature();
+#endif
+
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         osdEscDataCombined = getEscSensorData(ESC_SENSOR_COMBINED);

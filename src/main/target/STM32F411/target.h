@@ -75,3 +75,6 @@
 #define USE_ADC
 
 #define USE_CUSTOM_DEFAULTS
+
+//GLEB ADDITION
+#define USE_N1_TEMP_SENSOR

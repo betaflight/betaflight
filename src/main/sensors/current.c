@@ -325,3 +325,16 @@ void currentMeterRead(currentMeterId_e id, currentMeter_t *meter)
         currentMeterReset(meter);
     }
 }
+
+//GLEB ADDITION
+int32_t getExternalTemperatureADC(void) {
+    //Adding 500 to match value when we get it from ADC_CURRENT
+    const uint16_t src = adcGetChannel(ADC_NTEMP);
+    int32_t millivolts = ((uint32_t)src * getVrefMv()) / 4096;
+    //Taken from Ti datasheet on LMT88
+    //Vo = (-11.79 mV/C * T) +1.8528 V
+    //T = (V0 (in mV) - 1852.8 (in mV))/(-11.79 mV/C)
+    int32_t tempCentigrade= -((millivolts-1853)/11.79);
+    return tempCentigrade;
+}
+

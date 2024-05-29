@@ -145,3 +145,7 @@ void currentMeterMSPSet(uint16_t amperage, uint16_t mAhDrawn);
 extern const uint8_t supportedCurrentMeterCount;
 extern const uint8_t currentMeterIds[];
 void currentMeterRead(currentMeterId_e id, currentMeter_t *currentMeter);
+
+
+//GLEB ADDITION
+int32_t getExternalTemperatureADC(void);

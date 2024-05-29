@@ -30,6 +30,7 @@ typedef enum {
     OWNER_ADC,
     OWNER_ADC_BATT,
     OWNER_ADC_CURR,
+    OWNER_ADC_NTEMP,
     OWNER_ADC_EXT,
     OWNER_ADC_RSSI,
     OWNER_SERIAL_TX,

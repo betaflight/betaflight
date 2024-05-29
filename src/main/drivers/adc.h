@@ -68,7 +68,8 @@ typedef enum {
     ADC_BATTERY = 0,
     ADC_CURRENT = 1,
     ADC_EXTERNAL1 = 2,
-    ADC_RSSI = 3,
+    ADC_NTEMP = 3,
+    ADC_RSSI = 7,
 #if defined(STM32H7) || defined(STM32G4)
     // On H7 and G4, internal sensors are treated in the similar fashion as regular ADC inputs
     ADC_CHANNEL_INTERNAL_FIRST_ID = 4,
