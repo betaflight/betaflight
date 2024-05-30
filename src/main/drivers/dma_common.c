@@ -33,6 +33,12 @@ dmaIdentifier_e dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, u
     }
 
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
+
+    // Prevent Wstringop-overflow warning
+    if (index < 0 || index >= DMA_LAST_HANDLER) {
+        return DMA_NONE;
+    }
+
     dmaDescriptors[index].owner.owner = owner;
     dmaDescriptors[index].owner.resourceIndex = resourceIndex;
 
