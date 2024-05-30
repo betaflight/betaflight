@@ -2,10 +2,11 @@
 #
 # Installers for tools
 #
-# NOTE: These are not tied to the default goals
-#       and must be invoked manually
+# NOTE: These are not tied to the default goals and must be invoked manually
 #
-# ARM SDK Version: 10.3-2021.10
+# ARM SDK Version: 13.2.Rel1
+#
+# Release date: October 30, 2023
 #
 ###############################################################
 
@@ -16,35 +17,36 @@
 ##############################
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR ?= $(TOOLS_DIR)/gcc-arm-none-eabi-10.3-2021.10
+ARM_SDK_BASE_DIR ?= $(TOOLS_DIR)/arm-gnu-toolchain-13.2.Rel1
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
-GCC_REQUIRED_VERSION ?= 10.3.1
-
-.PHONY: arm_sdk_version
-
-arm_sdk_version:
-	$(V1) $(ARM_SDK_PREFIX)gcc --version
+GCC_REQUIRED_VERSION ?= 13.2.1
 
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
-ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10
-# source: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
+# source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 ifeq ($(OSFAMILY), linux)
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-$(shell uname -m)-linux.tar.bz2
+  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz?rev=e434b9ea4afc4ed7998329566b764309&hash=CA590209F5774EE1C96E6450E14A3E26
+  ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-x86_64-arm-none-eabi
 endif
 
 ifeq ($(OSFAMILY), macosx)
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-mac.tar.bz2
+  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-darwin-x86_64-arm-none-eabi.tar.xz?rev=a3d8c87bb0af4c40b7d7e0e291f6541b&hash=D1BCDFFD19D3EE94A915B5347E3CDA5A
+  ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-darwin-x86_64-arm-none-eabi
 endif
 
 ifeq ($(OSFAMILY), windows)
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
+  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-mingw-w64-i686-arm-none-eabi.zip?rev=93fda279901c4c0299e03e5c4899b51f&hash=99EF910A1409E119125AF8FED325CF79
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
 
 SDK_INSTALL_MARKER := $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc-$(GCC_REQUIRED_VERSION)
+
+.PHONY: arm_sdk_version
+
+arm_sdk_version: | $(ARM_SDK_DIR)
+	$(V1) $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc --version
 
 # order-only prereq on directory existance:
 arm_sdk_install: | $(TOOLS_DIR)
@@ -53,7 +55,7 @@ arm_sdk_install: arm_sdk_download $(SDK_INSTALL_MARKER)
 $(SDK_INSTALL_MARKER):
 ifneq ($(OSFAMILY), windows)
         # binary only release so just extract it
-	$(V1) tar -C $(TOOLS_DIR) -xjf "$(DL_DIR)/$(ARM_SDK_FILE)"
+	$(V1) tar -C $(TOOLS_DIR) -xf "$(DL_DIR)/$(ARM_SDK_FILE)"
 else
 	$(V1) unzip -q -d $(ARM_SDK_DIR) "$(DL_DIR)/$(ARM_SDK_FILE)"
 endif
