@@ -48,6 +48,21 @@ FAST_CODE_NOINLINE float pt1FilterGain(float f_cut, float dT)
     return omega / (omega + 1.0f);
 }
 
+FAST_CODE float pt1FilterCutoffFromDelay(float delay)
+{
+    return 1.0f / (2.0f * M_PIf * delay);
+}
+
+float pt1FilterGainFromDelay(float delay, float dT)
+{
+    if (delay == 0) {
+        return 1.0f; // gain = 1 means no filtering
+    }
+
+    const float cutoffHz = pt1FilterCutoffFromDelay(delay);
+    return pt1FilterGain(cutoffHz, dT);
+}
+
 void pt1FilterInit(pt1Filter_t *filter, float k)
 {
     filter->state = 0.0f;
@@ -68,13 +83,23 @@ FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
 
 // PT2 Low Pass filter
 
+// PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
+#define CUTOFF_CORRECTION_PT2 1.553773974f
+
 FAST_CODE float pt2FilterGain(float f_cut, float dT)
 {
-    // PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
-    #define CUTOFF_CORRECTION_PT2 1.553773974f
-
     // shift f_cut to satisfy -3dB cutoff condition
     return pt1FilterGain(f_cut * CUTOFF_CORRECTION_PT2, dT);
+}
+
+float pt2FilterGainFromDelay(float delay, float dT)
+{
+    if (delay == 0) {
+        return 1.0f; // gain = 1 means no filtering
+    }
+
+    const float cutoffHz = 1.0f / (M_PIf * delay * CUTOFF_CORRECTION_PT2);
+    return pt2FilterGain(cutoffHz, dT);
 }
 
 void pt2FilterInit(pt2Filter_t *filter, float k)

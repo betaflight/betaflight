@@ -230,6 +230,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
         .ez_landing_speed = 50,
+        .tpa_delay_ms = 0,
     );
 
 #ifndef USE_D_MIN
@@ -292,7 +293,17 @@ void pidUpdateTpaFactor(float throttle)
     } else {
         tpaRate = pidRuntime.tpaLowMultiplier * (pidRuntime.tpaLowBreakpoint - throttle);
     }
+
+    DEBUG_SET(DEBUG_TPA, 0, lrintf(pidRuntime.tpaFactor * 1000));
     pidRuntime.tpaFactor = 1.0f - tpaRate;
+
+#ifdef WING
+    if (isFixedWing()) {
+        pidRuntime.tpaFactor = pt2FilterApply(&pidRuntime.tpaLpf, pidRuntime.tpaFactor);
+    }    
+#endif
+    
+    DEBUG_SET(DEBUG_TPA, 1, lrintf(pidRuntime.tpaFactor * 1000));
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
