@@ -505,8 +505,8 @@ clean_all: $(TARGETS_CLEAN) test_clean
 ## configs           : Hydrate configuration
 configs: configs
 
-## configs_all       : Build all configs
-configs_all: $(BASE_CONFIGS)
+## all_configs       : Build all configs
+all_configs: $(BASE_CONFIGS)
 
 TARGETS_FLASH = $(addsuffix _flash,$(BASE_TARGETS))
 
