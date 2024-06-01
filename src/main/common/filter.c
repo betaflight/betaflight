@@ -48,11 +48,13 @@ FAST_CODE_NOINLINE float pt1FilterGain(float f_cut, float dT)
     return omega / (omega + 1.0f);
 }
 
+// Calculates filter cutoff frequency based on delay (time constant) - time it takes for filter response to reach 63.2% of a step input.
 FAST_CODE float pt1FilterCutoffFromDelay(float delay)
 {
     return 1.0f / (2.0f * M_PIf * delay);
 }
 
+// Calculates filter gain based on delay (time constant) - time it takes for filter response to reach 63.2% of a step input.
 float pt1FilterGainFromDelay(float delay, float dT)
 {
     if (delay == 0) {
@@ -92,6 +94,7 @@ FAST_CODE float pt2FilterGain(float f_cut, float dT)
     return pt1FilterGain(f_cut * CUTOFF_CORRECTION_PT2, dT);
 }
 
+// Calculates filter gain based on delay (time constant) - time it takes for filter response to reach 63.2% of a step input.
 float pt2FilterGainFromDelay(float delay, float dT)
 {
     if (delay == 0) {

@@ -245,7 +245,7 @@ typedef struct pidProfile_s {
     uint8_t ez_landing_threshold;           // Threshold stick position below which motor output is limited
     uint8_t ez_landing_limit;               // Maximum motor output when all sticks centred and throttle zero
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
-    uint16_t tpa_delay_ms;                  // TPA delay for fixed wings using pt2 filter
+    uint16_t tpa_delay_ms;                  // TPA delay for fixed wings using pt2 filter (time constant)
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
