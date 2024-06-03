@@ -1,0 +1,286 @@
+# 
+
+# diff all
+
+# version
+# Betaflight / STM32F411 (S411) 4.4.3 Dec  6 2023 / 22:46:44 (738127e7e) MSP API: 1.45
+
+# config: YES
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults nosave
+
+board_name MATEKF411
+manufacturer_id MTKS
+mcu_id 004000665830500320333154
+signature 
+
+# name: Archer
+
+# resources
+resource BEEPER 1 NONE
+resource MOTOR 5 NONE
+resource MOTOR 6 NONE
+resource SERVO 1 A00
+resource SERIAL_TX 11 B10
+resource PINIO 1 B02
+resource PINIO 2 B03
+resource PINIO 3 A02
+resource PINIO 4 B09
+
+# dma
+dma pin B10 NONE
+
+# feature
+feature -TELEMETRY
+feature SERVO_TILT
+
+# serial
+serial 1 1024 115200 57600 0 115200
+serial 30 2048 115200 57600 0 115200
+
+# servo
+servo 0 1000 2000 1500 100 9
+
+# beacon
+beacon RX_LOST
+beacon RX_SET
+
+# aux
+aux 0 0 0 1300 2100 0 0
+aux 1 1 4 1550 2100 0 0
+aux 2 40 1 900 1650 0 0
+aux 3 41 3 1700 2100 0 0
+aux 4 42 2 1550 1775 0 0
+
+# adjrange
+adjrange 0 0 3 900 2100 29 3 0 0
+
+# vtxtable
+vtxtable bands 5
+vtxtable channels 8
+vtxtable band 1 BAND_A   A CUSTOM  5865 5845 5825 5805 5785 5765 5745 5725
+vtxtable band 2 BAND_B   B CUSTOM  5733 5752 5771 5790 5809 5828 5847 5866
+vtxtable band 3 BAND_E   E CUSTOM  5705 5685 5665 5665 5885 5905 5905 5905
+vtxtable band 4 AIRWAVE  F CUSTOM  5740 5760 5780 5800 5820 5840 5860 5880
+vtxtable band 5 RACEBAND R CUSTOM  5658 5695 5732 5769 5806 5843 5880 5917
+vtxtable powerlevels 4
+vtxtable powervalues 14 27 30 34
+vtxtable powerlabels 25 500 1K MAX
+
+# master
+set gyro_lpf1_static_hz = 200
+set gyro_lpf2_static_hz = 400
+set dyn_notch_count = 2
+set dyn_notch_min_hz = 125
+set dyn_notch_max_hz = 550
+set gyro_lpf1_dyn_min_hz = 200
+set gyro_lpf1_dyn_max_hz = 400
+set acc_lpf_hz = 10
+set acc_calibration = -49,-30,-82,1
+set rssi_scale = 217
+set serialrx_provider = CRSF
+set dshot_bidir = ON
+set motor_pwm_protocol = DSHOT300
+set failsafe_delay = 100
+set failsafe_throttle_low_delay = 20
+set align_board_yaw = -90
+set bat_capacity = 8000
+set vbat_max_cell_voltage = 440
+set vbat_min_cell_voltage = 280
+set vbat_warning_cell_voltage = 310
+set vbat_scale = 210
+set ibata_scale = 125
+set ibata_offset = -25700
+set beeper_dshot_beacon_tone = 3
+set yaw_motors_reversed = ON
+set small_angle = 180
+set pid_process_denom = 4
+set simplified_gyro_filter_multiplier = 80
+set osd_warn_bitmask = 8187
+set osd_rssi_alarm = 0
+set osd_cap_alarm = 8000
+set osd_logo_on_arming = ON
+set osd_tim1 = 0
+set osd_tim2 = 3073
+set osd_vbat_pos = 14423
+set osd_rssi_pos = 417
+set osd_link_quality_pos = 14753
+set osd_tim_1_pos = 55
+set osd_tim_2_pos = 14656
+set osd_throttle_pos = 14681
+set osd_vtx_channel_pos = 14785
+set osd_crosshairs_pos = 14573
+set osd_current_pos = 14774
+set osd_mah_drawn_pos = 14808
+set osd_craft_name_pos = 14369
+set osd_pilot_name_pos = 14797
+set osd_warnings_pos = 14761
+set osd_avg_cell_voltage_pos = 14391
+set osd_esc_tmp_pos = 193
+set osd_esc_rpm_pos = 152
+set osd_esc_rpm_freq_pos = 161
+set osd_core_temp_pos = 225
+set osd_profile_name_pos = 14401
+set osd_efficiency_pos = 327
+set osd_total_flights_pos = 97
+set osd_stat_bitmask = 27395814
+set osd_profile_1_name = day
+set osd_profile_2_name = day
+set osd_profile_3_name = night
+set osd_canvas_width = 30
+set osd_canvas_height = 16
+set vtx_band = 5
+set vtx_channel = 1
+set vtx_power = 4
+set vtx_freq = 5658
+set vcd_video_system = PAL
+set pinio_box = 40,41,42,43
+set gyro_1_align_yaw = 1800
+set rpm_filter_harmonics = 2
+set stats_min_armed_time_s = 70
+set stats_total_flights = 46
+set stats_total_time_s = 8329
+set craft_name = Archer
+set pilot_name = Name
+
+profile 0
+
+# profile 0
+set dterm_lpf1_dyn_min_hz = 90
+set dterm_lpf1_dyn_max_hz = 180
+set dterm_lpf1_static_hz = 90
+set dterm_lpf2_static_hz = 180
+set anti_gravity_gain = 90
+set iterm_relax_cutoff = 10
+set pidsum_limit = 1000
+set pidsum_limit_yaw = 1000
+set yaw_lowpass_hz = 0
+set p_pitch = 61
+set i_pitch = 70
+set d_pitch = 63
+set f_pitch = 186
+set p_roll = 58
+set i_roll = 67
+set d_roll = 50
+set f_roll = 179
+set p_yaw = 58
+set i_yaw = 67
+set f_yaw = 179
+set d_min_roll = 50
+set d_min_pitch = 63
+set thrust_linear = 20
+set dyn_idle_min_rpm = 35
+set simplified_master_multiplier = 130
+set simplified_i_gain = 65
+set simplified_d_gain = 130
+set simplified_dmax_gain = 0
+set simplified_feedforward_gain = 115
+set simplified_pitch_d_gain = 110
+set simplified_dterm_filter_multiplier = 120
+
+profile 1
+
+# profile 1
+set dterm_lpf1_dyn_min_hz = 52
+set dterm_lpf1_dyn_max_hz = 105
+set dterm_lpf1_static_hz = 52
+set dterm_lpf2_static_hz = 105
+set anti_gravity_gain = 90
+set iterm_relax_cutoff = 3
+set pidsum_limit = 1000
+set pidsum_limit_yaw = 1000
+set yaw_lowpass_hz = 0
+set throttle_boost = 0
+set p_pitch = 40
+set i_pitch = 80
+set d_pitch = 25
+set f_pitch = 200
+set p_roll = 40
+set i_roll = 75
+set d_roll = 28
+set f_roll = 200
+set p_yaw = 40
+set i_yaw = 85
+set f_yaw = 190
+set angle_level_strength = 30
+set d_min_roll = 28
+set d_min_pitch = 25
+set feedforward_boost = 8
+set dyn_idle_min_rpm = 35
+set simplified_pids_mode = OFF
+set simplified_i_gain = 110
+set simplified_d_gain = 95
+set simplified_pi_gain = 85
+set simplified_dmax_gain = 0
+set simplified_feedforward_gain = 160
+set simplified_pitch_d_gain = 80
+set simplified_dterm_filter_multiplier = 70
+
+profile 2
+
+# profile 2
+set dterm_lpf1_dyn_min_hz = 67
+set dterm_lpf1_dyn_max_hz = 135
+set dterm_lpf1_static_hz = 67
+set dterm_lpf2_static_hz = 135
+set anti_gravity_gain = 110
+set iterm_relax_cutoff = 5
+set pidsum_limit = 1000
+set pidsum_limit_yaw = 1000
+set yaw_lowpass_hz = 125
+set p_pitch = 51
+set i_pitch = 69
+set d_pitch = 71
+set f_pitch = 55
+set p_roll = 49
+set i_roll = 66
+set d_roll = 52
+set f_roll = 52
+set p_yaw = 150
+set i_yaw = 150
+set f_yaw = 0
+set d_min_roll = 39
+set d_min_pitch = 53
+set thrust_linear = 20
+set dyn_idle_min_rpm = 37
+set simplified_pids_mode = RP
+set simplified_master_multiplier = 110
+set simplified_i_gain = 75
+set simplified_d_gain = 120
+set simplified_dmax_gain = 95
+set simplified_feedforward_gain = 40
+set simplified_pitch_d_gain = 120
+set simplified_dterm_filter_multiplier = 90
+
+profile 3
+
+# restore original profile selection
+profile 0
+
+rateprofile 0
+
+# rateprofile 0
+set rates_type = BETAFLIGHT
+set roll_rc_rate = 100
+set pitch_rc_rate = 100
+set yaw_rc_rate = 100
+set roll_srate = 65
+set pitch_srate = 60
+set yaw_srate = 55
+
+rateprofile 1
+
+rateprofile 2
+
+rateprofile 3
+
+# restore original rateprofile selection
+rateprofile 0
+
+# save configuration
+save
+# 
