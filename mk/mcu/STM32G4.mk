@@ -180,7 +180,7 @@ MCU_EXCLUDES = \
 # G4's MSC use the same driver layer file with F7
 MSC_SRC = \
             drivers/usb_msc_common.c \
-            drivers/stm32/usb_msc_f7xx.c \
+            drivers/stm32/usb_msc_hal.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
