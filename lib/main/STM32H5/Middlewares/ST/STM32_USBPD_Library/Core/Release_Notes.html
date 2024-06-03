@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Release Notes for STM32 USB-C Power Delivery Core Stack Library</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="_htmresc/mini-st_2020.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="icon" type="image/x-icon" href="_htmresc/favicon.png" />
+</head>
+<body>
+<div class="row">
+<div class="col-sm-12 col-lg-4">
+<center>
+<h1 id="release-notes-for-stm32-usb-c-power-delivery-core-stack-library">Release Notes for STM32 USB-C Power Delivery Core Stack Library</h1>
+<p>Copyright © 2017(-2021) STMicroelectronics<br />
+</p>
+<a href="https://www.st.com" class="logo"><img src="_htmresc/st_logo_2020.png" alt="ST logo" /></a>
+</center>
+<h1 id="purpose">Purpose</h1>
+<p>The USB-PD core stack library component provides SW implementation of the USB-PD protocol stack, as described in USB-IF specifications. This implementation covers features of modules as :</p>
+<ul>
+<li>PE (Policy Engine)</li>
+<li>PRL (Protocol Layer)</li>
+<li>CAD (CAble Detection) for the high level of the type C detection state machine</li>
+</ul>
+<p>The library is provided in binary format, comes on top of the STM32Cube HAL driver and offers all the APIs required to develop an USB PD application.</p>
+<p>The USB-PD library is developed following the Universal Serial Bus Power Delivery Specification Revision 3.0, V2.0 (August 29, 2019) and Universal Serial Bus type-C Cable and Connector Specification, Revision 2.0 (August, 2019). It has passed successfully the official certification.</p>
+<p>Here is the list of references to user documents:</p>
+<ul>
+<li><a href="https://www.st.com/en/applications/connectivity/usb-type-c-and-power-delivery.html">ST page</a>: Key features of the new USB Type-C™ connector</li>
+<li><a href="https://www.st.com/resource/en/user_manual/dm00598101-managing-usb-power-delivery-systems-with-stm32-microcontrollers-stmicroelectronics.pdf">UM2552</a>: USB power delivery User Manual</li>
+<li><a href="https://wiki.st.com/stm32mcu/wiki/USB_Power_Delivery_overview">WIKI Page</a>: USB Power Delivery overview</li>
+</ul>
+</div>
+<div class="col-sm-12 col-lg-8">
+<h1 id="update-history">Update History</h1>
+<div class="collapse">
+<input type="checkbox" id="collapse-section32" checked aria-hidden="true"> <label for="collapse-section32" aria-hidden="true">V4.1.1 / 21-Oct-2022</label>
+<div>
+<h2 id="main-changes">Main Changes</h2>
+<h3 id="maintenance-release">Maintenance release</h3>
+<h2 id="contents">Contents</h2>
+<p><strong>Fixed bugs list</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Codespell corrections</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.50.6</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.31</li>
+<li>STM32CubeIDE V1.7.0</li>
+</ul>
+<h2 id="supported-devices-and-boards">Supported Devices and boards</h2>
+<h2 id="backward-compatibility">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies">Dependencies</h2>
+<p>NA</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section31" aria-hidden="true"> <label for="collapse-section31" aria-hidden="true">V4.1.0 / 15-Dec-2021</label>
+<div>
+<h2 id="main-changes-1">Main Changes</h2>
+<h3 id="maintenance-release-1">Maintenance release</h3>
+<h2 id="contents-1">Contents</h2>
+<p><strong>Fixed bugs list</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[OS] Fix THREADX thread ID struct handling</td>
+</tr>
+<tr class="even">
+<td>[OS] Fix define for CMSIS OS v2</td>
+</tr>
+<tr class="odd">
+<td>[PE] Update FRS AMS to manage power requirement</td>
+</tr>
+<tr class="even">
+<td>[PE] Clear RX event before FRS ACCEPT</td>
+</tr>
+<tr class="odd">
+<td>[OS] update to kill PE if does not stop executing itself</td>
+</tr>
+<tr class="even">
+<td>[OS] replace OS Free RTOS API with cmsis OS API</td>
+</tr>
+<tr class="odd">
+<td>[SNK] After a soft reset we shall wait for source capa</td>
+</tr>
+<tr class="even">
+<td>Fix typo error, add legacy define for USPBPD_WRITE32</td>
+</tr>
+<tr class="odd">
+<td>[DEF] Add defines for STATUS message</td>
+</tr>
+<tr class="even">
+<td>[PE] SOP’ message needs to be sent only if sender is VCONN owner</td>
+</tr>
+<tr class="odd">
+<td>[PE] Add the support of the USB4 (message USB_ENTER and DATA_RESET)</td>
+</tr>
+<tr class="even">
+<td>[PE] Revision message must be answered</td>
+</tr>
+<tr class="odd">
+<td>[PE] Status message has 6 bytes whereas 7 are mandatory</td>
+</tr>
+<tr class="even">
+<td>[PRL] Update to handle retry and crc timer for more than 2 ports</td>
+</tr>
+<tr class="odd">
+<td>[PRL] MessageId is not well incremented after retry</td>
+</tr>
+<tr class="even">
+<td>[PRL] In PD3 GoodCRC is always sent with PD revision 1</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Update the stack to manage 3 ports in parallel</td>
+</tr>
+<tr class="even">
+<td>MCUAstyle, Codespell</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Solve CubeIDE compilation warning in OS_CREATE_TASK macro use.</td>
+</tr>
+<tr class="even">
+<td>[Licensing] Update the way to declare licenses in Cube and X-CUBE components</td>
+</tr>
+<tr class="odd">
+<td>{PE] SNK AMS HardReset : the USB stack shutdown must be done after VBUS has reached VSAFE_0V</td>
+</tr>
+<tr class="even">
+<td>[PRL] PHY state BUSY is no taken into account</td>
+</tr>
+<tr class="odd">
+<td>[UCSI] Add new ID for UCSI trace</td>
+</tr>
+<tr class="even">
+<td>[THREADX] remove pool allocation inside the stack and Add a pool pointer on the InitOS function</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-1">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-1">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.50.6</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.31</li>
+<li>STM32CubeIDE V1.7.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-1">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-1">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies-1">Dependencies</h2>
+<p>NA</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section30" aria-hidden="true"> <label for="collapse-section30" aria-hidden="true">V4.0.1 / 22-Jun-2021</label>
+<div>
+<h2 id="main-changes-2">Main Changes</h2>
+<h3 id="maintenance-release-2">Maintenance release</h3>
+<h2 id="contents-2">Contents</h2>
+<p><strong>Fixed bugs list</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Update Release Note</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-2">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-2">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.50.6</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.31</li>
+<li>STM32CubeIDE V1.7.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-2">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-2">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies-2">Dependencies</h2>
+<p>NA</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section29" aria-hidden="true"> <label for="collapse-section29" aria-hidden="true">V4.0.0 / 6-May-2021</label>
+<div>
+<h2 id="main-changes-3">Main Changes</h2>
+<h3 id="maintenance-release-3">Maintenance release</h3>
+<h2 id="contents-3">Contents</h2>
+<p><strong>Fixed bugs list</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Messages should be discarded when device was about to send HardReset</td>
+</tr>
+<tr class="even">
+<td>Messages must be discarded when VBUS is out of range (like during HR)</td>
+</tr>
+<tr class="odd">
+<td>NO_PD mode only, a type C state machine shall runs therefore the CAD task must be created</td>
+</tr>
+<tr class="even">
+<td>Add the data role reset during hard reset AMS</td>
+</tr>
+<tr class="odd">
+<td>Astyle update</td>
+</tr>
+<tr class="even">
+<td>OS update around the thread creation</td>
+</tr>
+<tr class="odd">
+<td>OS Add the support of the ThreadX RTOS</td>
+</tr>
+<tr class="even">
+<td>Stack state machine issue seen in PHY.E2/E3</td>
+</tr>
+<tr class="odd">
+<td>Codespell update</td>
+</tr>
+<tr class="even">
+<td>OS PE task management improvement to replace create/terminate by suspend/resume</td>
+</tr>
+<tr class="odd">
+<td>OS Add file usbpd_os_port.h to manage the OS portability</td>
+</tr>
+<tr class="even">
+<td>Update in Task definition and creation macros for CMSIS RTOS V2</td>
+</tr>
+<tr class="odd">
+<td>OS improvement of the os porting layer</td>
+</tr>
+<tr class="even">
+<td>[CAD] VconnCCIs shall be set for a snk attachment</td>
+</tr>
+<tr class="odd">
+<td>When an Hard Reset receive too quickly after a message the hardreset is not done"</td>
+</tr>
+<tr class="even">
+<td>MISRAC2012 update</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-3">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-3">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.50.6</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.31</li>
+<li>STM32CubeIDE V1.7.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-3">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-3">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies-3">Dependencies</h2>
+<p>NA</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section28" aria-hidden="true"> <label for="collapse-section28" aria-hidden="true">V3.3.1 / 17-Feb-2021</label>
+<div>
+<h2 id="main-changes-4">Main Changes</h2>
+<h3 id="maintenance-release-4">Maintenance release</h3>
+<h2 id="contents-4">Contents</h2>
+<p><strong>Fixed bugs list</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Update timer in Low Power Mode not correctly set</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-4">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-4">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>STM32CubeIDE V1.4.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-4">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-4">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies-4">Dependencies</h2>
+<p>NA</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section27" aria-hidden="true"> <label for="collapse-section27" aria-hidden="true">V3.3.0 / 26-Nov-2020</label>
+<div>
+<h2 id="main-changes-5">Main Changes</h2>
+<h3 id="maintenance-release-5">Maintenance release</h3>
+<h2 id="contents-5">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Enable VCONN support in MIN_SRC library</td>
+</tr>
+<tr class="even">
+<td>[PE] Update to avoid PE lock when called PE_Wakeup inside a critical section</td>
+</tr>
+<tr class="odd">
+<td>Add a MIN_DRP configuration in the stack libraries</td>
+</tr>
+<tr class="even">
+<td>[CAD] Hard fault issue detected with CortexM33 (L5)</td>
+</tr>
+<tr class="odd">
+<td>[LPM] replace the LPM call by tiny_lpm function</td>
+</tr>
+<tr class="even">
+<td>[PE] new sop’ msge shouldn’t be sent after src_cap till DUT is not in explicit</td>
+</tr>
+<tr class="odd">
+<td>[PE] PE_SNK state machine state change abnormally</td>
+</tr>
+<tr class="even">
+<td>Add mechanisme to guarantee the goodcrc timing</td>
+</tr>
+<tr class="odd">
+<td>Implement BIST Shared Capacity Test Mode message</td>
+</tr>
+<tr class="even">
+<td>The RP resistor shall be reset to the default value during the HardReset AMS</td>
+</tr>
+<tr class="odd">
+<td>[PE] Hard fault in the usbpd stack library if USBPD_PE_GetDataInfo not implemented in the application</td>
+</tr>
+<tr class="even">
+<td>[PE] Role alignment during HardReset</td>
+</tr>
+<tr class="odd">
+<td>[PE] TxOK/NG shouldn’t be checked in PD2</td>
+</tr>
+<tr class="even">
+<td>[DOC] Update to add timeout information inside the MSC</td>
+</tr>
+<tr class="odd">
+<td>conflict when PE perform HardReset and CAD a detach</td>
+</tr>
+<tr class="even">
+<td>Rework InitCore function</td>
+</tr>
+<tr class="odd">
+<td>MISRA corrections</td>
+</tr>
+<tr class="even">
+<td>Codespell and MCUAStyle corrections</td>
+</tr>
+<tr class="odd">
+<td>[DRD] update around the identical data role for SRC and SNK</td>
+</tr>
+<tr class="even">
+<td>[SRC] add a notification USBPD_NOTIFY_STATE_SRC_READY</td>
+</tr>
+<tr class="odd">
+<td>[PE] PE_powerrole after power swap</td>
+</tr>
+<tr class="even">
+<td>[CORE] Update to be aligned with latest USB-PD spec (remove the 2nd UFP VDO)</td>
+</tr>
+<tr class="odd">
+<td>[PE] Add defines for conditions on PE_Request_Control</td>
+</tr>
+<tr class="even">
+<td>[PE] AMC and AMA deprecated in PD3.0. AMA only used in PD2.0.</td>
+</tr>
+<tr class="odd">
+<td>[PE] Soft_reset should be sent prior to HardReset in case of non response of src_cap post PR_swap</td>
+</tr>
+<tr class="even">
+<td>Tests TD4.3.x failed on Lecroy with NO_PD Sink version</td>
+</tr>
+<tr class="odd">
+<td>Add a system of hook function to request an action of USB stack</td>
+</tr>
+<tr class="even">
+<td>Avoid double definition with LE16 &amp; LE32 macros used in usbh.def</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-5">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-5">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>STM32CubeIDE V1.4.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-5">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-5">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies-5">Dependencies</h2>
+<p>Dependencies with TRACER_EMB V1.4.0 or latest</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section26" aria-hidden="true"> <label for="collapse-section26" aria-hidden="true">V3.2.1 / 8-October-2020</label>
+<div>
+<h2 id="main-changes-6">Main Changes</h2>
+<h3 id="patch-release">Patch release</h3>
+<h2 id="contents-6">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Conflict when PE perform HardReset and CAD a detach</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-6">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-6">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>STM32CubeIDE V1.2.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-6">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-6">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies-6">Dependencies</h2>
+<p>Dependencies with TRACER_EMB V1.4.0</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section26" aria-hidden="true"> <label for="collapse-section26" aria-hidden="true">V3.2.0 / 08-July-2020</label>
+<div>
+<h2 id="main-changes-7">Main Changes</h2>
+<h3 id="maintenance-release-6">Maintenance release</h3>
+<h2 id="contents-7">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SOPSupported not well reset after detach</td>
+</tr>
+<tr class="even">
+<td>DR_swap management issue</td>
+</tr>
+<tr class="odd">
+<td>LeCroy new merge test : fail on PRSWAP because tester expecting Hard Reset</td>
+</tr>
+<tr class="even">
+<td>Keep USBPD_CAD_Process API for all the configuration</td>
+</tr>
+<tr class="odd">
+<td>PE_datatrole is not aligned to PE_powerRole in DPM_UserCableDetection</td>
+</tr>
+<tr class="even">
+<td>SOFT_RESET sent to SOP1 is not well manage</td>
+</tr>
+<tr class="odd">
+<td>cable_reset management to be improved</td>
+</tr>
+<tr class="even">
+<td>Correct misspelled words</td>
+</tr>
+<tr class="odd">
+<td>Provide external API in CAD to allow application to know which RP present in Sink</td>
+</tr>
+<tr class="even">
+<td>Should not answer GoodCRC to SOP1 soft reset</td>
+</tr>
+<tr class="odd">
+<td>TxOK / TxNG should not be toggled while in PD2 second part to reset the PD capabilities in case of HARDRESET</td>
+</tr>
+<tr class="even">
+<td>Expose RX buffer size to the devices module (to avoid buffer overflow)</td>
+</tr>
+<tr class="odd">
+<td>Reduce size of USBPD_SettingsTypeDef in case of NO_PD configuration</td>
+</tr>
+<tr class="even">
+<td>Remove notification USBPD_NOTIF_PROTOCOL_ERROR when stack has received a NAK message to VDM identity request</td>
+</tr>
+<tr class="odd">
+<td>Move before resetting VCONN status to be able to correctly switch off VCONN during detach</td>
+</tr>
+<tr class="even">
+<td>Add UFP and VPD VDOs for VDM discovery identity</td>
+</tr>
+<tr class="odd">
+<td>Add ErrorRecovery API and remove CAD detection API</td>
+</tr>
+<tr class="even">
+<td>Improve the AMS management to discard any PD send if a message is already present inside the fifo</td>
+</tr>
+<tr class="odd">
+<td>Message discarded wrongly while in PD2</td>
+</tr>
+<tr class="even">
+<td>TEST.PD.VDM.SRC.01 fail on LeCroy</td>
+</tr>
+<tr class="odd">
+<td>Add new API USBPD_PHY_FastRoleSwapReception</td>
+</tr>
+<tr class="even">
+<td>Set FRS as a PD3 feature</td>
+</tr>
+<tr class="odd">
+<td>Integration of the FRS on SRC and SNK state machine</td>
+</tr>
+<tr class="even">
+<td>Remove trace process</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-7">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-7">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>STM32CubeIDE V1.2.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-7">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-7">Backward compatibility</h2>
+<p>NA</p>
+<h2 id="dependencies-7">Dependencies</h2>
+<p>Dependencies with TRACER_EMB V1.4.0</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section25" aria-hidden="true"> <label for="collapse-section25" aria-hidden="true">V3.1.0 / 14-Apr-2020</label>
+<div>
+<h2 id="main-changes-8">Main Changes</h2>
+<h3 id="maintenance-release-7">Maintenance release</h3>
+<h2 id="contents-8">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>BIST no more enabled in TCPM</td>
+</tr>
+<tr class="even">
+<td>Indicate when trace is lost</td>
+</tr>
+<tr class="odd">
+<td>Bad answer to UVDM msge.</td>
+</tr>
+<tr class="even">
+<td>Hard reset not detected by PE during power negotiation</td>
+</tr>
+<tr class="odd">
+<td>Update to avoid issue to send a control message</td>
+</tr>
+<tr class="even">
+<td>Add a check on Resistor in case of VBUS lost (manage HardReset Sequence)</td>
+</tr>
+<tr class="odd">
+<td>Update to use a new ID for TCPM trace</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-8">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-8">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>STM32CubeIDE V1.2.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-8">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-8">Backward compatibility</h2>
+<p>For TCPM implementation, updates have been done on FUSB307 component (tag v3.0.0).</p>
+<h2 id="dependencies-8">Dependencies</h2>
+<p>Dependencies with TRACER_EMB V1.4.0</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section24" aria-hidden="true"> <label for="collapse-section24" aria-hidden="true">V3.0.0 / 26-Mar-2020</label>
+<div>
+<h2 id="main-changes-9">Main Changes</h2>
+<h3 id="maintenance-release-8">Maintenance release</h3>
+<h2 id="contents-9">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[CORE] Explicit_Contract information not properly sent to UCPD Monitor on DETACH</td>
+</tr>
+<tr class="even">
+<td>[CORE] Add inside PRL a mechanism to avoid RX buffer overwrite in case of multiple RX</td>
+</tr>
+<tr class="odd">
+<td>[PE] Discard shall be done only if there is incoming message</td>
+</tr>
+<tr class="even">
+<td>[TCPM] Update for TCPM compilation</td>
+</tr>
+<tr class="odd">
+<td>[PRL] update for TCPC mode</td>
+</tr>
+<tr class="even">
+<td>[PRL] Add an optional mechansime to manage the tx discard and tx abort by UCPD IP</td>
+</tr>
+<tr class="odd">
+<td>[PE] Lecroy TEST.PD.VDM.SNK.7 Unrecognized VID in Unstructured VDM</td>
+</tr>
+<tr class="even">
+<td>[PE] TD PD.SRC3.E27 and TD PD.SRC3.E28 - Testing Downstream Port</td>
+</tr>
+<tr class="odd">
+<td>[PE] Reset the spec revision + data role in case of HardReset</td>
+</tr>
+<tr class="even">
+<td>[PE] MQP regression on TD.PD.VNDI3.E10</td>
+</tr>
+<tr class="odd">
+<td>[PE-PRL] Add critical section on the cluster management</td>
+</tr>
+<tr class="even">
+<td>[PE] state machine SRC wrongly managed at reset</td>
+</tr>
+<tr class="odd">
+<td>[PRL] Rework to avoid usage of reentrant state machine</td>
+</tr>
+<tr class="even">
+<td>[PE] keep GPTimer only for TCPC compilation</td>
+</tr>
+<tr class="odd">
+<td>[PE] rework of HardReset + ResetDuringSwap + PE Reset</td>
+</tr>
+<tr class="even">
+<td>[PRL] Code optimizations</td>
+</tr>
+<tr class="odd">
+<td>[PRL] remove the disable RX to avoid overwrite of rx buffer</td>
+</tr>
+<tr class="even">
+<td>[CORE][TCPM] Reset Supported SOPs to SOP when disconnect</td>
+</tr>
+<tr class="odd">
+<td>Merge of modifications done in usbpd_dpm_core.c files in CubeMx generated projects</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-9">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-9">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>STM32CubeIDE V1.2.0</li>
+</ul>
+<h2 id="supported-devices-and-boards-9">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-9">Backward compatibility</h2>
+<p>In order to use this version of USBPD Core module, please ensure version of USBPD Device driver module mentions compatibility with this v3.0.0 USBPD Core. (Example for STM32G4xx =&gt; use g4_v4.0.0 or higher version of USBPD Device for STM32L5xx =&gt; use l5_v2.0.0 or higher version of USBPD Device …</p>
+<h2 id="dependencies-9">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section23" aria-hidden="true"> <label for="collapse-section23" aria-hidden="true">V2.10.0 / 19-Feb-2020</label>
+<div>
+<h2 id="main-changes-10">Main Changes</h2>
+<h3 id="maintenance-release-9">Maintenance release</h3>
+<h2 id="contents-10">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>correction to manage correstly the SNK wakeup</td>
+</tr>
+<tr class="even">
+<td>[CORE] Add dedicated SNK state machine to handler VPD identification PRL update to manage SOP*</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Add PD message In in TCPM mode</td>
+</tr>
+<tr class="even">
+<td>[CORE] Add switch USE_STM32_UTILITY_OS to integrate SEQUENCER utility</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Update done to integrate NO PD stack</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE] Do not send SOFT_RESET if NOT_SUPPORTED answered to GET_BATTERY messages</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PRL] Extended message GET_BATTERY_CAPA should not be seen as BIST message</td>
+</tr>
+<tr class="even">
+<td>[CORE][TCPM] Manage TX complete alert before RX alert</td>
+</tr>
+<tr class="odd">
+<td>[NRTOS] Integration of the utilities SEQ and TIMER_SERVER to handle the non RTOS mode</td>
+</tr>
+<tr class="even">
+<td>[PE] Get Source and sink capability extended message should be sent in DRP</td>
+</tr>
+<tr class="odd">
+<td>[PRL] patch TD.PD.VNDI.E4 SOP* Handling</td>
+</tr>
+<tr class="even">
+<td>[TCPC] remove specific management of SOP1, SOP2 and let PE manage</td>
+</tr>
+<tr class="odd">
+<td>Update done to integrate NO PD stack</td>
+</tr>
+<tr class="even">
+<td>Handle incoming message in discard case</td>
+</tr>
+<tr class="odd">
+<td>AMS not correctly set for GET_SNK_CAPA_EXT message</td>
+</tr>
+<tr class="even">
+<td>Trace impacts timing during unchunk test</td>
+</tr>
+<tr class="odd">
+<td>Core library file generates warnings with ARM Compiler V6</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-10">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-10">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-10">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-10">Backward compatibility</h2>
+<h2 id="dependencies-10">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section23" aria-hidden="true"> <label for="collapse-section23" aria-hidden="true">V2.9.0 / 15-Nov.-2019</label>
+<div>
+<h2 id="main-changes-11">Main Changes</h2>
+<h3 id="maintenance-release-10">Maintenance release</h3>
+<h2 id="contents-11">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Core library file generates warnings with ARM Compiler V6</td>
+</tr>
+<tr class="even">
+<td>Product_type_PSD needs to be added</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PE] SNK_extended_cap must be answered while SNK or DRP</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE] Increase PE_TSRCRECOVERHARDRESET_MAX timing to be less restrictive during hard reset</td>
+</tr>
+<tr class="odd">
+<td>[CORE]Increase Stack size for TRACE task (issue with Nucleo_L5)</td>
+</tr>
+<tr class="even">
+<td>Enabled the switch USBPDCORE_ERROR_RECOVERY for the libraries configuration</td>
+</tr>
+<tr class="odd">
+<td>Rework the error recovery + disable RX in error recovery and disable state</td>
+</tr>
+<tr class="even">
+<td>Add library NO_PD with the switch USBPDCORE_LIB_NO_PD</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Change TRACE priority and change condition on NRTOS to trig the PE scheduling</td>
+</tr>
+<tr class="even">
+<td>Remove un-needed notification</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-11">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-11">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.27</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-11">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-11">Backward compatibility</h2>
+<h2 id="dependencies-11">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section22" aria-hidden="true"> <label for="collapse-section22" aria-hidden="true">V2.8.0 / 06-Sept-2019</label>
+<div>
+<h2 id="main-changes-12">Main Changes</h2>
+<h3 id="maintenance-release-11">Maintenance release</h3>
+<h2 id="contents-12">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[USBPD][CORE] Rework of the hard reset procedure to avoid issue with TD.PD.LL.E4</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] CMSIS OS V2 adaptations</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Code optimization + notification moved before the swapongoing reset to avoid wrong VBUS detach level</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][PE] GRL issue SNK3.E7 - Do not send request in SinkTXOK is not set</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Remove dependency with max number of ports defined in the library (USBPD_MAXPORT_COUNT)</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] Manage correctly errors during core stack initialization</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Remove notification inside function PE_StateMachine_SRC_NegocCapa: avoid duplicate information because it is application decision</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] Few updates to integrate the TCPC G0</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] [CubeMx-UBSPD] Update generated code to make it compatible with CMSIS-RTOS v2.</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][PE] Fix an issue with Elissys test 4.9.4</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Add specific tag for tracing TCPM</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][TCPM] remove Wait for VBUS in TCPM file</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][TCPM] Update to manage G0 as TCPC</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-12">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-12">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.26</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-12">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-12">Backward compatibility</h2>
+<h2 id="dependencies-12">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section21" aria-hidden="true"> <label for="collapse-section21" aria-hidden="true">V2.7.0 / 11-July-2019</label>
+<div>
+<h2 id="main-changes-13">Main Changes</h2>
+<h3 id="maintenance-release-12">Maintenance release</h3>
+<h2 id="contents-13">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[USBPD][CORE] Update for TCPM after integration of TCPC solution on G0</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] Add management of new LIB : USBPDCORE_LIB_PD3_CONFIG_MINSNK</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][DOC] MSC and documentation update</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] Few updates for TCPM</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Correction for allowing 2 ports in Non RTOS configuration</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] [CubeMx-UBSPD] Update generated code to make it compatible with CMSIS-RTOS v2.</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Update define name in usbpd_dpm_core.c</td>
+</tr>
+<tr class="even">
+<td>[UCPD][PE] add a flag to support or not Battery feature in the stack</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][PE] calculate correct timing for request in Sink</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] Improve the disconnection timing to avoid issue with Ellisys (4.8.3) - put PE lower prio than CAD and increase mailbox of CAD</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Change core version</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][PE] Should accept DR swap if no enter in VDM mode (GRL issue)</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][1602] Add USBPD_HR_STATUS_START_REQ and USBPD_HR_STATUS_START_ACK inside the Hardreset process of the sink</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] Remove static from TraceQueueId declaration to allow using TRACE in DISCO spy mode</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][LOWPOWER] update to allow stop mode in attached cases</td>
+</tr>
+<tr class="even">
+<td>[USBPD][LOWPOWER] add a link between the task and the low power capability</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE] Allow to enable only UVDM and not SVDM and/or VCONN_SUPPORT</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE] remove the lowpower, must be handled on application side</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][PE] MQP Regression linked to update of cable revision.</td>
+</tr>
+<tr class="even">
+<td>[USBPD][TRACE] wakeup trace process only in task context</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][G0] update to manage correctly the SwapOngoing in SRC cases</td>
+</tr>
+<tr class="even">
+<td>[USBPD] reset SwapOngoing to avoid CAD lock</td>
+</tr>
+<tr class="odd">
+<td>[USBPD] update to avoid regression link with trace optim</td>
+</tr>
+<tr class="even">
+<td>[USBPD] change the way to exit PE task</td>
+</tr>
+<tr class="odd">
+<td>[LOWPOWER] update to avoid issue to manage repetition timing</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-13">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-13">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.32.3</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-13">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-13">Backward compatibility</h2>
+<h2 id="dependencies-13">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section20" aria-hidden="true"> <label for="collapse-section20" aria-hidden="true">V2.6.0 / 11-April-2019</label>
+<div>
+<h2 id="main-changes-14">Main Changes</h2>
+<h3 id="maintenance-release-13">Maintenance release</h3>
+<h2 id="contents-14">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[LOWPOWER] improve dpm core + add deinit interface to usbpd trace</td>
+</tr>
+<tr class="even">
+<td>[LOWPOWER] add interface to update the PE timer according lowpower time</td>
+</tr>
+<tr class="odd">
+<td>[PE] SOP’/SOP’’ should be enabled on PRL only if SOP’/SOP" communication is started (not linked to VCONN source) - Bis</td>
+</tr>
+<tr class="even">
+<td>[PE] rework of cable reset management is needed (vconn must be impacted)</td>
+</tr>
+<tr class="odd">
+<td>[PE] Cable information (using SOP prime) only works once</td>
+</tr>
+<tr class="even">
+<td>[PE] Soft reset should be used when extended message received after tSenderResponse</td>
+</tr>
+<tr class="odd">
+<td>[PE] Alert data could be overwritten before the PE sent</td>
+</tr>
+<tr class="even">
+<td>[PE] Alert reception can generate an hardfault</td>
+</tr>
+<tr class="odd">
+<td>[PE] Enable RX after sending a cable reset</td>
+</tr>
+<tr class="even">
+<td>Communicate in PD2 with cable if no respond to PD3</td>
+</tr>
+<tr class="odd">
+<td>USBPD_HR_STATUS_FAILED needs to be kept</td>
+</tr>
+<tr class="even">
+<td>SINK needs to be able to issue a Hard reset</td>
+</tr>
+<tr class="odd">
+<td>[DEF] Missing PPS Power Limited Bit</td>
+</tr>
+<tr class="even">
+<td>[PE] AMS should be started only if message has been sent to port partner</td>
+</tr>
+<tr class="odd">
+<td>[PE] PE state machine in should be called immediately during PPS negotiation to enter correctly in ready_wait state</td>
+</tr>
+<tr class="even">
+<td>[PE] Fix few MISRA warnings</td>
+</tr>
+<tr class="odd">
+<td>[PE] Add Prorocol_error notification in case of wrong received VDM Discovery identity.</td>
+</tr>
+<tr class="even">
+<td>[PE] remove callback trace for VDM specific (move to dpm_user)</td>
+</tr>
+<tr class="odd">
+<td>[TRACE] fix trace length (because of a MISRA update)</td>
+</tr>
+<tr class="even">
+<td>[TRACE] wakeup trace process only in task context</td>
+</tr>
+<tr class="odd">
+<td>[TRACE] improve the trace system to free CPU time</td>
+</tr>
+<tr class="even">
+<td>update to manage correctly the SwapOngoing in SRC cases</td>
+</tr>
+<tr class="odd">
+<td>reset SwapOngoing to avoid CAD lock</td>
+</tr>
+<tr class="even">
+<td>change the way to exit PE task</td>
+</tr>
+<tr class="odd">
+<td>USBPD_DPM_IsPowerReady called in SRC and SNK</td>
+</tr>
+<tr class="even">
+<td>Move PDFU files to another folder</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-14">Known Limitations</h2>
+<p>Outstanding bugs list : None</p>
+<p>Requirements not met or planned in a forthcoming release : None</p>
+<h2 id="development-toolchains-and-compilers-14">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-14">Supported Devices and boards</h2>
+<p>All STM32 devices embedding USBPD IP All STM32 devices implementing USB-PD feature as TCPC</p>
+<h2 id="backward-compatibility-14">Backward compatibility</h2>
+<p>No compatibility break with previous version</p>
+<h2 id="dependencies-14">Dependencies</h2>
+<p>No identified dependencies</p>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section19" aria-hidden="true"> <label for="collapse-section19" aria-hidden="true">V2.5.2 / 02-April-2019</label>
+<div>
+<h2 id="main-changes-15">Main Changes</h2>
+<h3 id="maintenance-release-14">Maintenance release</h3>
+<h2 id="contents-15">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Forbidden word detected in usbpdfu_responder.c (files removed from delivery)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-15">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-15">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-15">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-15">Backward compatibility</h2>
+<h2 id="dependencies-15">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section18" aria-hidden="true"> <label for="collapse-section18" aria-hidden="true">V2.5.1 / 15-March-2019</label>
+<div>
+<h2 id="main-changes-16">Main Changes</h2>
+<h3 id="maintenance-release-15">Maintenance release</h3>
+<h2 id="contents-16">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Remove dependencies with CMSIS drivers version</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-16">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-16">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-16">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-16">Backward compatibility</h2>
+<h2 id="dependencies-16">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section17" aria-hidden="true"> <label for="collapse-section17" aria-hidden="true">V2.5.0 / 19-December-2018</label>
+<div>
+<h2 id="main-changes-17">Main Changes</h2>
+<h3 id="maintenance-release-16">Maintenance release</h3>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Add prototype definition for HAL_GetTick() (needed for non rtos applications)</td>
+</tr>
+<tr class="even">
+<td>Simplify function USBPD_TRACE_Add which is no more used by GUI</td>
+</tr>
+<tr class="odd">
+<td>Update link with rx patch: certification regression</td>
+</tr>
+<tr class="even">
+<td>Update to manage Rx Enable</td>
+</tr>
+<tr class="odd">
+<td>Callback USBPD_DPM_HardReset used only in SRC or DRP config and removed unused enum for HR (USBPD_HR_STATUS_MSG_RECEIVED &amp; USBPD_HR_STATUS_FAILED)</td>
+</tr>
+<tr class="even">
+<td>Add switch _TRACE to exclude usbpd_trace.c if not _TRACE not enabled</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-17">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-17">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-17">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-17">Backward compatibility</h2>
+<h2 id="dependencies-17">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section16" aria-hidden="true"> <label for="collapse-section16" aria-hidden="true">V2.4.0 / 12-Dec-2018 </label>
+<div>
+<h2 id="main-changes-18">Main Changes</h2>
+<h3 id="maintenance-release-17">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-17">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[USBPD] renaming inside USBPD_SettingsTypeDef</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][DEF] Wrong value for SVDM ATTENTION message</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][PE] Remove return FAIL if no AMA is supported</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][PE] Need notification when ALERT message has been sent by PE</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][PE] ALERT message shouldn’t be considered as AMS message</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][PRL] Add debug switch _PRL_DEBUG_DISABLE_BIST_TRACE (not enabled) to disable BIST message in the traces</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][PE] Minor updates due to compilation issue when __DEBUG_LEVEL is set to 2</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][PE] Disable RX during SNK hard reset sequence</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][PE] SRC3.E25 fail: issue in chunking tests</td>
+</tr>
+<tr class="even">
+<td>[USBPD][CORE][PE] Collision avoidance once an Explicit Contract is in place</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][CORE][DEF] TD.PD.SNK3.E15 Status Fields Check - add power status field in SCB structure</td>
+</tr>
+<tr class="even">
+<td>[USBPD][G0] update to allow the treatment of an incoming message when waiting for sinkTxNG timeout</td>
+</tr>
+<tr class="odd">
+<td>[USBPD][G0] increase tsendertimer to 29ms and update the HardReset state change to use notimeout</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-18">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-18">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-18">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-18">Backward compatibility</h2>
+<h2 id="dependencies-18">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section15" aria-hidden="true"> <label for="collapse-section15" aria-hidden="true">V2.3.0 / 15-Nov-2018 </label>
+<div>
+<h2 id="main-changes-19">Main Changes</h2>
+<h3 id="maintenance-release-18">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-18">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[USBPD][CORE] Increase PE Stack size for Authentication configs</td>
+</tr>
+<tr class="even">
+<td>[G0] correction retry patch</td>
+</tr>
+<tr class="odd">
+<td>[G0] manage retry according the current spec revision value</td>
+</tr>
+<tr class="even">
+<td>[G0] Patch ellisys test TD.PD.SRC3.E26 Soft reset sent regardless of Rp value</td>
+</tr>
+<tr class="odd">
+<td>[G0] report gotomin + CtrlMessage capability from G0</td>
+</tr>
+<tr class="even">
+<td>[PRL] PD revision should be set to 0 in GoodCRC message only if PD2.0</td>
+</tr>
+<tr class="odd">
+<td>add the cable reset tracking inside the tracer</td>
+</tr>
+<tr class="even">
+<td>API update for the following function USBPD_VDM_InformSVID : remove the return which is not tested inside PE USBPD_VDM_InformMode : remove the return which is not tested inside PE USBPD_VDM_InformModeEnter : remove the return which is not tested inside PE USBPD_VDM_SendAttention : remove the return which is not tested inside PE USBPD_VDM_SendSpecific : remove the return which is not tested inside PE USBPD_VDM_InformSpecific : remove the return which is not tested inside PE USBPD_VDM_SendUVDM : remove the return which is not tested inside PE</td>
+</tr>
+<tr class="odd">
+<td>Correct wrong destination state in SNK state machine (case PE_SNK_REQUEST_GETSNKCAP_WAITANSWER) : go to PE_SNK_SEND_SOFT_RESET instead of PE_SRC_SEND_SOFT_RESET in case of timeout.</td>
+</tr>
+<tr class="even">
+<td>increase stack size to avoid hardfault with SW4STM32</td>
+</tr>
+<tr class="odd">
+<td>Solve one issue in PRL_Received() in case of extended messages. Extended Header was not properly retrieved from RX buffer.</td>
+</tr>
+<tr class="even">
+<td>[3.0] Add battery status management</td>
+</tr>
+<tr class="odd">
+<td>[3.0] Authentication : Modifications after end of PlugFest : - Use NOTIMEOUT state update from PE_Sxx_EXTENDEDMESSAGE_SENDING_COMPLETE to PE_Sxx_EXTENDED_WAITRESPONSE in order to avoid losing next chunk request. - Addition of SOPType input parameter in USBPD_PE_SendExtendedMessage() to allow authentication messages to be carried on SOP’ - Extension of PE trace buffer from 20 to 30 (useful when chunking is used).</td>
+</tr>
+<tr class="even">
+<td>[3.0] Correction of TD.PD.SRC3.E25 and TD.PD.SNK3.E25 (Receiving Chunked Extended Message)</td>
+</tr>
+<tr class="odd">
+<td>[3.0] fix ellisys issue regarding answering NOT_SUPPORTED for SRC_CAPA_EXT in SNK config + NON_SUPPORTED if VDM is not enabled (but test VNDI3.E3 is still failed)</td>
+</tr>
+<tr class="even">
+<td>[3.0] Update SetData and GetData info to provide size in bytes and no more words</td>
+</tr>
+<tr class="odd">
+<td>[3.0][PE] Send Not_supported message for DR_SWAP &amp; PR_SWAP in case of SRC only (MQP issues)</td>
+</tr>
+<tr class="even">
+<td>[Core] : Solve critical section issue met on G0 Cut2.0 validation : SRC cap transmitted again despite reception of GoodCRC of previous sending. A critical section has been added before moving in RETRY state.</td>
+</tr>
+<tr class="odd">
+<td>[Core] : Update in CMSIS include policy to fit with CMSIS core v4.5 or v5</td>
+</tr>
+<tr class="even">
+<td>[CORE] : update Vconn Support switch name to _VCONN_SUPPORT (as in Application side).</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Add missing Extended Message handling in case of SECURITY RESPONSE message type</td>
+</tr>
+<tr class="even">
+<td>[CORE] Align combination of compilation switches used in Collision avoidance functions between H and C</td>
+</tr>
+<tr class="odd">
+<td>[CORE] check return on USBPD_DPM_UserInit function</td>
+</tr>
+<tr class="even">
+<td>[CORE] Merge back modifications done for G0 FW v0.9.0 delivery (Stack size updates for PE + CAD, Release_Notes.html)</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Move GUI init in GUI_interface module</td>
+</tr>
+<tr class="even">
+<td>[CORE] remove Disable RX during hard reset sequence (fix pb with hard reset on FUSB307 when RX is disabled)</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Need to have ‘MAX’ function as the ‘MIN’ already present</td>
+</tr>
+<tr class="even">
+<td>[CORE] MQP TD.PD.SRC.E12 Test Failed</td>
+</tr>
+<tr class="odd">
+<td>[CORE] Update done for MISRAC2012</td>
+</tr>
+<tr class="even">
+<td>[CORE][DEF] TD.PD.SNK3.E15 Status Fields Check - add power status field in SCB structure</td>
+</tr>
+<tr class="odd">
+<td>[CORE][DEF] Wrong value for SVDM ATTENTION message</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE/DPMCORE] : End of Data Role Swap procedure implementation. Solving of SoftReset issue after Datarole swap executed.</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PE] Answer to SVDM message only if PE_RespondsToDiscovSOP is enabled</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE] Change state when TPPS timer expires (directly go through PE_SEND_REQUEST) + update lib version to v2.3.0</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PE] Disable RX during SNK hard reset sequence</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE] Remove return FAIL if no AMA is supported</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PE] Send not supported when VDM enabled in the stack but not in the VIF (DISCO)</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE] Need notification when ALERT message has been sent by PE</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PE] Collision avoidance once an Explicit Contract is in place</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE] SRC3.E25 fail: issue in chunking tests</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PE] ALERT message shouldn’t be considered as AMS message</td>
+</tr>
+<tr class="even">
+<td>[CORE][PE] Update for memory optimizations</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PRL] Restore default value for PRL_RETRY_TIMER_VALUE in case of Keil or SW4STM32</td>
+</tr>
+<tr class="even">
+<td>[CORE][PRL] remove 2nd call of USBPD_PHY_IsResistor_SinkTxOk</td>
+</tr>
+<tr class="odd">
+<td>[CORE][PRL] Remove interface ‘USBPD_PHY_ChannelIdleAfterBusy between PHY &amp; PRL’</td>
+</tr>
+<tr class="even">
+<td>[DPM] Remove semaphore to send message to DPM mailbox</td>
+</tr>
+<tr class="odd">
+<td>[DPM] Update DPM param and settings to save Src Extended capa</td>
+</tr>
+<tr class="even">
+<td>[G0] Correct reset of response timer in few state machine</td>
+</tr>
+<tr class="odd">
+<td>[G0] Fix Ellisys issue SRC3.E29</td>
+</tr>
+<tr class="even">
+<td>[G0] increase tsendertimer to 29ms and update the HardReset state change to use notimeout</td>
+</tr>
+<tr class="odd">
+<td>[G0] remove GUI and User application init, move inside main.c</td>
+</tr>
+<tr class="even">
+<td>[G0] separate the emb tracer and usbpd application</td>
+</tr>
+<tr class="odd">
+<td>[G0] update to allow the treatment of an incoming message when waiting for sinkTxNG timeout</td>
+</tr>
+<tr class="even">
+<td>[G0][PPS] Move start of the timer PE_SRCPPSCommTimer in PE_SRC_READY state</td>
+</tr>
+<tr class="odd">
+<td>[G0]Move PE_UnchunkSupport &amp; PE_FastRoleSwapSupport in PD3 structure + add PE_FirmUpdateResponseSupport</td>
+</tr>
+<tr class="even">
+<td>[GUI] Add field in DPM_Settings structure</td>
+</tr>
+<tr class="odd">
+<td>[GUI] add PD3 structure</td>
+</tr>
+<tr class="even">
+<td>[GUI] Add USBPD_TRACE_SendNotification API</td>
+</tr>
+<tr class="odd">
+<td>[GUI] Integrate _GUI_INTERFACE</td>
+</tr>
+<tr class="even">
+<td>[GUI] Move GUI processing from Core to GUI utilities</td>
+</tr>
+<tr class="odd">
+<td>[GUI] Save Data in FLASH</td>
+</tr>
+<tr class="even">
+<td>[MB1357] Add check on VBUS when start SNK</td>
+</tr>
+<tr class="odd">
+<td>[PD30] Fix ellisys issues (BATTERY_CAPA + SECURITY REQUEST) + add flag PE_SecuResponseSupport</td>
+</tr>
+<tr class="even">
+<td>[PD30] Modifications done to be able to send GET_SRC_CAPA_EXT message</td>
+</tr>
+<tr class="odd">
+<td>[PDO] : 1st step in PDO initialisation rework : Addition of defines usad in APDO values building.</td>
+</tr>
+<tr class="even">
+<td>[PE/PRL] Add interfaces to enable / disable RX + modify callbacks for VDM message ATTENTION</td>
+</tr>
+<tr class="odd">
+<td>[PE] Add macro for manage not support or reject message depending</td>
+</tr>
+<tr class="even">
+<td>[PE] Add not supported by GET_SNK_CAPA for SRC</td>
+</tr>
+<tr class="odd">
+<td>[PE] Align SNK_READY to SRC_READY state</td>
+</tr>
+<tr class="even">
+<td>[PE] Change VDM specific callbacks</td>
+</tr>
+<tr class="odd">
+<td>[PE] fix an issue with SRC extended message</td>
+</tr>
+<tr class="even">
+<td>[PE] Fix Ellisys issue TD.PD.VNDI3.E3 VDM Identity</td>
+</tr>
+<tr class="odd">
+<td>[PE] Increase PE_TSNKWAITCAP from 500 to 600 to decrease probability of the test TD4.3.4 but test still failed :-(</td>
+</tr>
+<tr class="even">
+<td>[PE] Need to reset PE variables after hard reset</td>
+</tr>
+<tr class="odd">
+<td>[PE] Put again PE_TSNKWAITCAP to 500 as regressions!!!</td>
+</tr>
+<tr class="even">
+<td>[PE] Reset AMS in SRC_READY state</td>
+</tr>
+<tr class="odd">
+<td>[PE] Reset PE_HardResetCounter when SRC capa has been received</td>
+</tr>
+<tr class="even">
+<td>[PE] Few modifications to be done in PE stack after review</td>
+</tr>
+<tr class="odd">
+<td>[PE] Issue in mode off when product presents default Rp</td>
+</tr>
+<tr class="even">
+<td>[PPS] Fix issues on Ellisys (SCR3.E28, E30, E31…)</td>
+</tr>
+<tr class="odd">
+<td>[PPS] Fix issues on Ellisys (SNK.E13, E14)</td>
+</tr>
+<tr class="even">
+<td>[PPS]Reduce value of PE_TPPSTIMEOUT to 14s</td>
+</tr>
+<tr class="odd">
+<td>[STACK] Align with modifications done onb G0</td>
+</tr>
+<tr class="even">
+<td>[STACK] Align with new inclusion model done on G0</td>
+</tr>
+<tr class="odd">
+<td>[VCONN] Add USBPD_PE_EvaluateVconnSwap function + change switch from _VCONN_SWAP to _VCONN_SUPPORT</td>
+</tr>
+<tr class="even">
+<td>[VCONN] Evaluate VConn swap in VCONN substate machine</td>
+</tr>
+<tr class="odd">
+<td>[VDM] Add check on VDM init function</td>
+</tr>
+<tr class="even">
+<td>[VDM] Change USBPD_VDM_UserInit interface + update functions descriptions</td>
+</tr>
+<tr class="odd">
+<td>[VDM] Fix issues on VDM identity and reply to specific</td>
+</tr>
+<tr class="even">
+<td>[VDM] reset PD_Request when Attention message is sent</td>
+</tr>
+<tr class="odd">
+<td>[VDM] Wrong return used for USBPD_VDM_UserInit</td>
+</tr>
+<tr class="even">
+<td>[VCONN] start to implement Vconn swap. SNK mode only</td>
+</tr>
+<tr class="odd">
+<td>[VDM] Solve MQP PROT-R3-DISCOV test failed on VDM3.E1</td>
+</tr>
+<tr class="even">
+<td>add a function ptr to handle automatic update of the trace if NULL means no trace</td>
+</tr>
+<tr class="odd">
+<td>Add support of VCONN and some PD3.0 features (Manufacturer info…)</td>
+</tr>
+<tr class="even">
+<td>considered REJECTED/NOT SUPPORTED valid in case of GETSOURCE_CAP done by source</td>
+</tr>
+<tr class="odd">
+<td>correction for gotomin scenario</td>
+</tr>
+<tr class="even">
+<td>correction for TD.PD.SNK3.E12</td>
+</tr>
+<tr class="odd">
+<td>correction for VDM3.E2</td>
+</tr>
+<tr class="even">
+<td>correction patch retry</td>
+</tr>
+<tr class="odd">
+<td>correction TD.PD.SRC.E3</td>
+</tr>
+<tr class="even">
+<td>DataRole swap test correction</td>
+</tr>
+<tr class="odd">
+<td>disable message reception during HARD reset AMS</td>
+</tr>
+<tr class="even">
+<td>Increase PE stack size following crash observed on MQP and Ellisys.</td>
+</tr>
+<tr class="odd">
+<td>Lecroy patch TDA 2.2.6 2.2.9</td>
+</tr>
+<tr class="even">
+<td>Lecroy patch TDA.2.2.9 Get Source Cap Receive test</td>
+</tr>
+<tr class="odd">
+<td>Merge “[USBPD][PE] Reset PE_HardResetCounter when SRC capa has been received”</td>
+</tr>
+<tr class="even">
+<td>Modifications for VNDI.E7 (Sec Msgs). Still failed on MQP due to GetExtendedSRCCaps request sent by us, but question sent to MQP).</td>
+</tr>
+<tr class="odd">
+<td>move CC line assignment before calling DPM_UserCableDetection</td>
+</tr>
+<tr class="even">
+<td>Move trace init after creation of the trace threads</td>
+</tr>
+<tr class="odd">
+<td>Notification done with 1 param</td>
+</tr>
+<tr class="even">
+<td>Notification done with only one parameter</td>
+</tr>
+<tr class="odd">
+<td>patch TD.PD.DPU.E2 Status Update Command</td>
+</tr>
+<tr class="even">
+<td>PD3.0 manufacturer info management</td>
+</tr>
+<tr class="odd">
+<td>PRL alignment with GO</td>
+</tr>
+<tr class="even">
+<td>remove inside PE dpm dependence + lib regeneration</td>
+</tr>
+<tr class="odd">
+<td>remove patch to disable RX incompatible with hard reset management</td>
+</tr>
+<tr class="even">
+<td>[DPM] VBUS should be kept enabled when NonPD capable with Rd is present</td>
+</tr>
+<tr class="odd">
+<td>Add error recory management inside USBPD stack</td>
+</tr>
+<tr class="even">
+<td>Update PDO typedefs and constants for reflecting Rev3.0 specs (addition of Unchunk support in PDO Source Fixed, and FRS required current in PDO Sink Fixed).</td>
+</tr>
+<tr class="odd">
+<td>update USBPD_PE_Request_CtrlMessage to handle more CTRL message</td>
+</tr>
+<tr class="even">
+<td>Vconn Swap and PD3 integration (Core)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-19">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-19">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-19">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-19">Backward compatibility</h2>
+<h2 id="dependencies-19">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section14" aria-hidden="true"> <label for="collapse-section14" aria-hidden="true">V2.2.5 / 10-October-2018</label>
+<div>
+<h2 id="main-changes-20">Main Changes</h2>
+<h3 id="maintenance-release-19">Maintenance release</h3>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Addition of CORE stack API in chm file : _CORE_RELEASE_User_Manual.chm</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-20">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-20">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-20">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-20">Backward compatibility</h2>
+<h2 id="dependencies-20">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section13" aria-hidden="true"> <label for="collapse-section13" aria-hidden="true">V2.2.3 / 12-Sept.-2018</label>
+<div>
+<h2 id="main-changes-21">Main Changes</h2>
+<h3 id="maintenance-release-20">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-19">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Add the check of the value returned by USBPD_DPM_UserInit.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-21">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-21">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-21">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-21">Backward compatibility</h2>
+<h2 id="dependencies-21">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section12" aria-hidden="true"> <label for="collapse-section12" aria-hidden="true">V2.2.2 / 06-Sept.-2018</label>
+<div>
+<h2 id="main-changes-22">Main Changes</h2>
+<h3 id="maintenance-release-21">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-20">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Corrections done link with tester update Ellisys, MQP, GRP and Lecroy.</td>
+</tr>
+<tr class="even">
+<td>Code improvements</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-22">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-22">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-22">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-22">Backward compatibility</h2>
+<h2 id="dependencies-22">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section11" aria-hidden="true"> <label for="collapse-section11" aria-hidden="true">V2.2.1 / 19-June-2018</label>
+<div>
+<h2 id="main-changes-23">Main Changes</h2>
+<h3 id="maintenance-release-22">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-21">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Correction for compilation warning under Keil IDE.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-23">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-23">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-23">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-23">Backward compatibility</h2>
+<h2 id="dependencies-23">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section10" aria-hidden="true"> <label for="collapse-section10" aria-hidden="true">V2.2.0 / 20-Apr-2018</label>
+<div>
+<h2 id="main-changes-24">Main Changes</h2>
+<h3 id="maintenance-release-23">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-22">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Alignment between USBPD Core stack delivered in STM32Cube firmware packages and X-Cube USBPD Expansion packages.</td>
+</tr>
+<tr class="even">
+<td>Addition of TCPM feature support. Dedicated libs provided.</td>
+</tr>
+<tr class="odd">
+<td>Libraries provided for IAR v7, IAR v8, Keil and SW4STM32.</td>
+</tr>
+<tr class="even">
+<td>Maintenance fixes.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-24">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-24">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-24">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-24">Backward compatibility</h2>
+<h2 id="dependencies-24">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section9" aria-hidden="true"> <label for="collapse-section9" aria-hidden="true">V2.1.3 / 20-Mars-2018</label>
+<div>
+<h2 id="main-changes-25">Main Changes</h2>
+<h3 id="maintenance-release-24">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-23">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>IAR lib compiled with IAR v8.20.2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-25">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-25">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-25">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-25">Backward compatibility</h2>
+<h2 id="dependencies-25">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section8" aria-hidden="true"> <label for="collapse-section8" aria-hidden="true">V2.1.2 / 22-Jan-2018</label>
+<div>
+<h2 id="main-changes-26">Main Changes</h2>
+<h3 id="maintenance-release-25">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-24">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Add library for SW4STM32 patch</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-26">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-26">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-26">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-26">Backward compatibility</h2>
+<h2 id="dependencies-26">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section7" aria-hidden="true"> <label for="collapse-section7" aria-hidden="true">V2.1.0 / 20-Sep-2017</label>
+<div>
+<h2 id="main-changes-27">Main Changes</h2>
+<h3 id="maintenance-release-26">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-25">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PD3.0 Full.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-27">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-27">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-27">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-27">Backward compatibility</h2>
+<h2 id="dependencies-27">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section6" aria-hidden="true"> <label for="collapse-section6" aria-hidden="true">V2.1.1 / 8-Dec-2017</label>
+<div>
+<h2 id="main-changes-28">Main Changes</h2>
+<h3 id="maintenance-release-27">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-26">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Patch to accept message not supported in case of data role swap</td>
+</tr>
+<tr class="even">
+<td>Patch to abort AMS power role swap in case of rejection</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-28">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-28">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-28">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-28">Backward compatibility</h2>
+<h2 id="dependencies-28">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section5" aria-hidden="true"> <label for="collapse-section5" aria-hidden="true">V2.0.0 / 13-Sep-2017</label>
+<div>
+<h2 id="main-changes-29">Main Changes</h2>
+<h3 id="maintenance-release-28">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-27">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>First official version as element of a STM32Cube FW package.</td>
+</tr>
+<tr class="even">
+<td>Rework in order to enable support of PD3.0 (not activated yet).</td>
+</tr>
+<tr class="odd">
+<td>Addition of trace system.</td>
+</tr>
+<tr class="even">
+<td>Reorganization between Core and User/application related code parts and functionalities.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-29">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-29">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-29">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-29">Backward compatibility</h2>
+<h2 id="dependencies-29">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section4" aria-hidden="true"> <label for="collapse-section4" aria-hidden="true">V1.5.0 / 20-Fev-2017</label>
+<div>
+<h2 id="main-changes-30">Main Changes</h2>
+<h3 id="maintenance-release-29">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-28">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>USBPD Core Stack version delivery for X-CUBE-USBPD V2.0.0.</td>
+</tr>
+<tr class="even">
+<td>Code clean-up and code comments review. Code documentation added (Doxygen). Compilation switch renaming, …</td>
+</tr>
+<tr class="odd">
+<td>Addition of PD3.0 revision support (specific libs created)</td>
+</tr>
+<tr class="even">
+<td>Rework of Application capabilities definition by user : Now handled in new structures to be personalized by user (usbpd_dpm_conf.h, usbpd_dpm_user.h and usbpd_pdo_defs.h files located on User side could be updated).</td>
+</tr>
+<tr class="odd">
+<td>New set of libraries delivered :</td>
+</tr>
+<tr class="even">
+<td>PD2 Config_1 : Standard support of PD2.0 (Snk, Source or DRP, 1 or 2 ports, PR Swap, DR Swap, VCONN management support, …)</td>
+</tr>
+<tr class="odd">
+<td>PD2 Full : equal to PD2 Config_1 + support of VDM feature.</td>
+</tr>
+<tr class="even">
+<td>PD3 Config_1 : Standard support of PD3.0 (Snk, Source or DRP, 1 or 2 ports, PR Swap, DR Swap, VCONN management support, support of specific PD3.0 features as ALERT, SRC_CAPA_EXT, STATUS, BATTERY_STATUS, BATTERY_CAPA, MANU_INFO, COUNTRY_MSG messages, support of Extended messages,…)</td>
+</tr>
+<tr class="odd">
+<td>PD3 Full : equal to PD3 Config_1 + support of VDM feature.</td>
+</tr>
+<tr class="even">
+<td>CAD rework with management of event queue.</td>
+</tr>
+<tr class="odd">
+<td>Several updates done for fixing issues discovered during continuous integration of Core Stack vs official Conformance test tools (MQP, Ellisys, LeCroy).</td>
+</tr>
+<tr class="even">
+<td>Addition of Trace feature (for debugging purpose).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-30">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-30">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-30">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-30">Backward compatibility</h2>
+<h2 id="dependencies-30">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section3" aria-hidden="true"> <label for="collapse-section3" aria-hidden="true">V1.4.0 / 24-Jul-2017</label>
+<div>
+<h2 id="main-changes-31">Main Changes</h2>
+<h3 id="maintenance-release-30">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-29">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Updates after compliance testing completion on STUSB1602 Device</td>
+</tr>
+<tr class="even">
+<td>Implementation of Error Recovery management</td>
+</tr>
+<tr class="odd">
+<td>Code clean, solving of some compilation warnings in SW4STM32.</td>
+</tr>
+<tr class="even">
+<td>[VDM] Addition of API for starting USB Billboard driver.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-31">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-31">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-31">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-31">Backward compatibility</h2>
+<h2 id="dependencies-31">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section2" aria-hidden="true"> <label for="collapse-section2" aria-hidden="true">V1.2.1 / 24-Apr-2017</label>
+<div>
+<h2 id="main-changes-32">Main Changes</h2>
+<h3 id="maintenance-release-31">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-30">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Second official version after USBPD library split into Core and Device parts. This item only refers to Core stack and is device independent.</td>
+</tr>
+<tr class="even">
+<td>Updates for support of STUSB1602 Device</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-32">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-32">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-32">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-32">Backward compatibility</h2>
+<h2 id="dependencies-32">Dependencies</h2>
+</div>
+</div>
+<div class="collapse">
+<input type="checkbox" id="collapse-section1" aria-hidden="true"> <label for="collapse-section1" aria-hidden="true">V1.2.0 / 16-Jan-2017</label>
+<div>
+<h2 id="main-changes-33">Main Changes</h2>
+<h3 id="maintenance-release-32">Maintenance release</h3>
+<p>Maintenance release</p>
+<h2 id="contents-31">Contents</h2>
+<table>
+<caption>Fixed bugs list</caption>
+<thead>
+<tr class="header">
+<th>Headline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>First official version after USBPD library split into Core and Device parts. This item only refers to Core stack and is device independent.</td>
+</tr>
+<tr class="even">
+<td>Main Changes compared to USB-C Power Delivery Library delivered in previous versions</td>
+</tr>
+<tr class="odd">
+<td>Addition of VDM support</td>
+</tr>
+<tr class="even">
+<td>Various corrections in regards with test updates and test additions in USBPD Conformance test tools</td>
+</tr>
+<tr class="odd">
+<td>Move PDO definition/capabilities management inside DPM/PWR_IF</td>
+</tr>
+<tr class="even">
+<td>Remove HW dependency with Timerserver (Timerserver feature now handled in Device)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-limitations-33">Known limitations</h2>
+<h2 id="development-toolchains-and-compilers-33">Development Toolchains and Compilers</h2>
+<ul>
+<li>IAR Embedded Workbench for ARM (EWARM) toolchain V8.20.2</li>
+<li>Keil Microcontroller Development Kit (MDK-ARM) toolchain V5.25</li>
+<li>System Workbench STM32 (SW4STM32) toolchain V2.7.2</li>
+</ul>
+<h2 id="supported-devices-and-boards-33">Supported Devices and boards</h2>
+<h2 id="backward-compatibility-33">Backward compatibility</h2>
+<h2 id="dependencies-33">Dependencies</h2>
+</div>
+</div>
+</div>
+</div>
+<footer class="sticky">
+<p>For complete documentation on STM32,visit: [<a href="http://www.st.com">www.st.com/stm32</a>]</p>
+This release note uses up to date web standards and, for this reason, should not be opened with Internet Explorer but preferably with popular browsers such as Google Chrome, Mozilla Firefox, Opera or Microsoft Edge.
+</footer>
+</body>
+</html>

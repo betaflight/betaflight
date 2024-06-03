@@ -1,0 +1,124 @@
+;                     
+; Template INF for a USB Remote NDIS Device
+; Copyright (c) Microsoft Corporation
+;
+
+[Version]
+Signature           = "$Windows NT$"
+Class               = Net
+ClassGUID           = {4d36e972-e325-11ce-bfc1-08002be10318}
+Provider            = %MicrosoftAzureRTOS%
+DriverVer           = mm/dd/yyyy,x.y.v.z
+CatalogFile         = MicrosoftAzureRTOS.cat
+
+[Manufacturer]
+%MicrosoftAzureRTOS%          = MicrosoftAzureRTOSDevices,NT.5.1
+
+[MicrosoftAzureRTOSDevices]
+%MicrosoftAzureRTOSDevice%    = RNDIS, USB\VID_3939&PID_0000
+
+[MicrosoftAzureRTOSDevices.NT.5.1]
+%MicrosoftAzureRTOSDevice%    = RNDIS.NT.5.1, USB\VID_3939&PID_0000
+
+[ControlFlags]
+ExcludeFromSelect=*
+
+; Windows 2000 specific sections ---------------------------------
+
+[RNDIS.NT]
+Characteristics = 0x84   ; NCF_PHYSICAL + NCF_HAS_UI
+BusType         = 15
+DriverVer       = 05/17/2008,0.0.0.0
+AddReg          = RNDIS_AddReg_NT, RNDIS_AddReg_WIN2K
+CopyFiles       = RNDIS_CopyFiles_NT
+
+; DO NOT MODIFY THE SERVICE NAME
+[RNDIS.NT.Services]
+AddService = USB_RNDISY, 2, RNDIS_ServiceInst_NT, RNDIS_EventLog
+
+[RNDIS_CopyFiles_NT]
+; no rename of files on Windows 2000, use the 'y' names as is
+usb8023y.sys, , , 0 
+rndismpy.sys, , , 0 
+
+[RNDIS_ServiceInst_NT]
+DisplayName     = %ServiceDisplayName%
+ServiceType     = 1 
+StartType       = 3 
+ErrorControl    = 1 
+ServiceBinary   = %12%\usb8023y.sys    
+LoadOrderGroup  = NDIS
+AddReg          = RNDIS_WMI_AddReg_NT
+
+[RNDIS_WMI_AddReg_NT]
+HKR, , MofImagePath, 0x00020000, "System32\drivers\rndismpy.sys"
+
+; Windows XP specific sections -----------------------------------
+
+[RNDIS.NT.5.1]
+Characteristics = 0x84   ; NCF_PHYSICAL + NCF_HAS_UI
+BusType         = 15
+DriverVer       = 05/17/2008,0.0.0.0
+AddReg          = RNDIS_AddReg_XP
+include         = netrndis.inf
+needs           = Usb_Rndis.ndi
+
+; no copyfiles - the files are already in place
+
+[RNDIS.NT.5.1.Services]
+include     = netrndis.inf
+needs       = Usb_Rndis.ndi.Services
+
+; Windows 2000 sections 
+
+; DO NOT MODIFY ServiceName
+[RNDIS_AddReg_NT]
+HKR, Ndi,               Service,        0, "USB_RNDISY"
+HKR, Ndi\Interfaces,    UpperRange,     0, "ndis5" 
+HKR, Ndi\Interfaces,    LowerRange,     0, "ethernet"
+
+[RNDIS_AddReg_WIN2K]
+HKR, ,                  ReclaimRecv,    0x00010001, 1
+HKR, NDI\params\NetworkAddress, ParamDesc,  0, %NetworkAddress%
+HKR, NDI\params\NetworkAddress, type,       0, "edit"
+HKR, NDI\params\NetworkAddress, LimitText,  0, "12"
+HKR, NDI\params\NetworkAddress, UpperCase,  0, "1"
+HKR, NDI\params\NetworkAddress, default,    0, " "
+HKR, NDI\params\NetworkAddress, optional,   0, "1"
+
+[RNDIS_EventLog]
+AddReg = RNDIS_EventLog_AddReg
+
+[RNDIS_EventLog_AddReg]
+HKR, , EventMessageFile, 0x00020000, "%%SystemRoot%%\System32\netevent.dll"
+HKR, , TypesSupported,   0x00010001, 7
+
+; An optional Property to demonstrate adding advanced properties on Windows XP 
+[RNDIS_AddReg_XP]
+HKR, NDI\params\XPProperty, ParamDesc,  0, %Sample_Property%
+HKR, NDI\params\XPProperty, type,       0, "edit"
+HKR, NDI\params\XPProperty, LimitText,  0, "12"
+HKR, NDI\params\XPProperty, UpperCase,  0, "1"
+HKR, NDI\params\XPProperty, default,    0, " "
+HKR, NDI\params\XPProperty, optional,   0, "1"
+
+
+[SourceDisksNames]
+1=%SourceDisk%,,1
+
+[SourceDisksFiles]
+usb8023y.sys=1
+rndismpy.sys=1
+
+[DestinationDirs]
+RNDIS_CopyFiles_NT    = 12
+
+; DO NOT CHANGE ServiceDisplayName
+[Strings]
+ServiceDisplayName          = "USB Remote NDIS Y Network Device Driver"
+Sample_Property             = "Sample XP property"
+NetworkAddress              = "Network Address"
+MicrosoftAzureRTOS          = "Microsoft Corporation Inc."
+MicrosoftAzureRTOSDevice    = "Microsoft Azure RTOS USB Remote NDIS Network Device"
+SourceDisk                  = "Microsoft Azure RTOS USB Network Driver Install Disk"
+
