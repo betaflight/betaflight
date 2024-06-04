@@ -1663,7 +1663,10 @@ static bool blackboxWriteSysinfo(void)
 #endif
 #endif
 #endif
+
+#ifdef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_MS, "%d", currentPidProfile->tpa_delay_ms);
+#endif
 
         default:
             return true;

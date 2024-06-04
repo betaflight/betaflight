@@ -297,7 +297,7 @@ void pidUpdateTpaFactor(float throttle)
     DEBUG_SET(DEBUG_TPA, 0, lrintf(pidRuntime.tpaFactor * 1000));
     pidRuntime.tpaFactor = 1.0f - tpaRate;
 
-#ifdef WING
+#ifdef USE_WING
     if (isFixedWing()) {
         pidRuntime.tpaFactor = pt2FilterApply(&pidRuntime.tpaLpf, pidRuntime.tpaFactor);
     }    
