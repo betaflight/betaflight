@@ -20,76 +20,7 @@
 
 #pragma once
 
-// Configuration constants
-
-#if defined(STM32F4)
-#define UARTDEV_COUNT_MAX 6
-#define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-#elif defined(STM32F7)
-#define UARTDEV_COUNT_MAX 8
-#define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-#elif defined(STM32H7)
-#define UARTDEV_COUNT_MAX 11 // UARTs 1 to 10 + LPUART1
-#define UARTHARDWARE_MAX_PINS 5
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-#elif defined(STM32G4)
-#define UARTDEV_COUNT_MAX 11  // UARTs 1 to 5 + LPUART1 (index 10)
-#define UARTHARDWARE_MAX_PINS 3
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-#elif defined(AT32F4)
-#define UARTDEV_COUNT_MAX 8  // UARTs 1 to 5 + LPUART1 (index 9)
-#define UARTHARDWARE_MAX_PINS 5
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-#else
-#error unknown MCU family
-#endif
+#include "serial_uart_impl_mcu.h"
 
 // Count number of configured UARTs
 
@@ -163,7 +94,7 @@
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x)
+#if defined(UART_AF_CAPABLE)
     uint8_t af;
 #endif
 } uartPinDef_t;
@@ -175,16 +106,13 @@ typedef struct uartHardware_s {
 #ifdef USE_DMA
     dmaResource_t *txDMAResource;
     dmaResource_t *rxDMAResource;
-    // For H7 and G4  , {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); H7:RM0433 Table 110, G4:RM0440 Table 80.
-    // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x)
-    // For at32f435/7 DmaChannel is the dmamux ,need to call dmamuxenable using dmamuxid
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) 
+#if defined(UART_MUX_CAPABLE)
+    uint32_t txDMAMuxId;
+    uint32_t rxDMAMuxId;
+#else
     uint32_t txDMAChannel;
     uint32_t rxDMAChannel;
-#elif defined(AT32F4)
-    uint32_t txDMAMuxId;//for dmaspec->dmamux  and using dmaMuxEnable(dmax,muxid)
-    uint32_t rxDMAMuxId;
-#endif 
+#endif
 
 #endif // USE_DMA
 
@@ -193,11 +121,11 @@ typedef struct uartHardware_s {
 
     rccPeriphTag_t rcc;
 
-#if !defined(STM32F7)
+#if defined(UART_AF_CAPABLE)
     uint8_t af;
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(UART_TXRXIRQ_CAPABLE)
     uint8_t txIrq;
     uint8_t rxIrq;
 #else
@@ -230,7 +158,7 @@ typedef struct uartDevice_s {
     uartPinDef_t tx;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-#if !defined(STM32F4) // Don't support pin swap.
+#if defined(UART_PINSWAP_CAPABLE)
     bool pinSwap;
 #endif
     txPinState_t txPinState;
@@ -254,17 +182,6 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor);
 
 bool checkUsartTxOutput(uartPort_t *s);
 void uartTxMonitor(uartPort_t *s);
-
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-#define UART_REG_RXD(base) ((base)->RDR)
-#define UART_REG_TXD(base) ((base)->TDR)
-#elif defined(STM32F4)
-#define UART_REG_RXD(base) ((base)->DR)
-#define UART_REG_TXD(base) ((base)->DR)
-#elif defined(AT32F43x)
-#define UART_REG_RXD(base) ((base)->dt)
-#define UART_REG_TXD(base) ((base)->dt)
-#endif
 
 #define UART_BUFFER(type, n, rxtx) type volatile uint8_t uart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
 

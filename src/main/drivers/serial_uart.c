@@ -47,19 +47,7 @@
 
 #include "pg/serial_uart.h"
 
-#if defined(STM32H7)
-#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
-#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
-#elif defined(STM32G4)
-#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM_W          // SRAM MPU NOT_BUFFERABLE
-#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM_R          // SRAM MPU NOT CACHABLE
-#elif defined(STM32F7)
-#define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#elif defined(STM32F4) || defined(AT32F4)
-#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
-#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
-#else
+#if !(defined(UART_TX_BUFFER_ATTRIBUTE) && defined(UART_RX_BUFFER_ATTRIBUTE))
 #error Undefined UART_{TX,RX}_BUFFER_ATTRIBUTE for this MCU
 #endif
 
@@ -511,6 +499,5 @@ UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 #ifdef USE_LPUART1
 UART_IRQHandler(LPUART, 1, LPUARTDEV_1) // LPUART1 Rx/Tx IRQ Handler
 #endif
-
 
 #endif // USE_UART
