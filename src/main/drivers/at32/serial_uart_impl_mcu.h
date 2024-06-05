@@ -36,8 +36,8 @@
 #endif
 
 // For at32f435/7 DmaChannel is the dmamux ,need to call dmamuxenable using dmamuxid
-#define UART_MUX_CAPABLE
-#define UART_AF_CAPABLE
+#define UART_USES_DMAMUX
+#define UART_USES_PIN_AF
 #define UART_PINSWAP_CAPABLE
 
 #define UART_REG_RXD(base) ((base)->dt)

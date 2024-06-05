@@ -94,7 +94,7 @@
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(UART_AF_CAPABLE)
+#if defined(UART_USES_PIN_AF)
     uint8_t af;
 #endif
 } uartPinDef_t;
@@ -106,7 +106,7 @@ typedef struct uartHardware_s {
 #ifdef USE_DMA
     dmaResource_t *txDMAResource;
     dmaResource_t *rxDMAResource;
-#if defined(UART_MUX_CAPABLE)
+#if defined(UART_USES_DMAMUX)
     uint32_t txDMAMuxId;
     uint32_t rxDMAMuxId;
 #else
@@ -121,11 +121,11 @@ typedef struct uartHardware_s {
 
     rccPeriphTag_t rcc;
 
-#if defined(UART_AF_CAPABLE)
+#if defined(UART_USES_PIN_AF)
     uint8_t af;
 #endif
 
-#if defined(UART_TXRXIRQ_CAPABLE)
+#if defined(UART_USES_TXRXIRQ)
     uint8_t txIrq;
     uint8_t rxIrq;
 #else

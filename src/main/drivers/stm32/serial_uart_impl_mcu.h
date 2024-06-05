@@ -95,10 +95,10 @@
 // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x)
 // so STM32 do not use UART_MUX_CAPABLE
 
-#define UART_AF_CAPABLE
+#define UART_USES_PIN_AF
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-#define UART_TXRXIRQ_CAPABLE
+#define UART_USES_TXRXIRQ
 #endif
 
 #if !defined(STM32F4) // Don't support pin swap.
