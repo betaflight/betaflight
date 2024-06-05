@@ -125,7 +125,7 @@ typedef struct uartHardware_s {
     uint8_t af;
 #endif
 
-#if defined(UART_USES_TXRXIRQ)
+#if defined(UART_USES_TXRX_IRQ)
     uint8_t txIrq;
     uint8_t rxIrq;
 #else
