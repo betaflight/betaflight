@@ -3,7 +3,7 @@
 # diff all
 
 # version
-# Betaflight / STM32F411 (S411) 4.4.3 Dec  6 2023 / 22:46:44 (738127e7e) MSP API: 1.45
+# Betaflight / STM32F411 (S411) 4.4.3 Jun  4 2024 / 18:28:26 (c5c31d7ee) MSP API: 1.45
 
 # config: YES
 
@@ -15,30 +15,92 @@ defaults nosave
 
 board_name MATEKF411
 manufacturer_id MTKS
-mcu_id 004000665830500320333154
+mcu_id 004700313931501920363458
 signature 
 
 # name: Archer
 
 # resources
-resource BEEPER 1 NONE
-resource MOTOR 5 NONE
-resource MOTOR 6 NONE
+resource MOTOR 1 B04
+resource MOTOR 2 B05
+resource MOTOR 3 B06
+resource MOTOR 4 B07
 resource SERVO 1 A00
+resource SERIAL_TX 1 A09
+resource SERIAL_TX 2 A02
 resource SERIAL_TX 11 B10
+resource SERIAL_RX 1 A10
+resource SERIAL_RX 2 A03
+resource I2C_SCL 1 B08
+resource I2C_SDA 1 B09
+resource LED 1 C13
+resource LED 2 C14
+resource SPI_SCK 1 A05
+resource SPI_SCK 2 B13
+resource SPI_MISO 1 A06
+resource SPI_MISO 2 B14
+resource SPI_MOSI 1 A07
+resource SPI_MOSI 2 B15
+resource ADC_BATT 1 B00
+resource ADC_CURR 1 B01
 resource PINIO 1 B02
 resource PINIO 2 B03
 resource PINIO 3 A02
 resource PINIO 4 B09
+resource OSD_CS 1 B12
+resource GYRO_EXTI 1 A01
+resource GYRO_CS 1 A04
+resource USB_DETECT 1 C15
+
+# timer
+timer A03 AF3
+# pin A03: TIM9 CH2 (AF3)
+timer B04 AF2
+# pin B04: TIM3 CH1 (AF2)
+timer B05 AF2
+# pin B05: TIM3 CH2 (AF2)
+timer B06 AF2
+# pin B06: TIM4 CH1 (AF2)
+timer B07 AF2
+# pin B07: TIM4 CH2 (AF2)
+timer B03 AF1
+# pin B03: TIM2 CH2 (AF1)
+timer B10 AF1
+# pin B10: TIM2 CH3 (AF1)
+timer A00 AF2
+# pin A00: TIM5 CH1 (AF2)
+timer A02 AF2
+# pin A02: TIM5 CH3 (AF2)
+timer A08 AF1
+# pin A08: TIM1 CH1 (AF1)
 
 # dma
-dma pin B10 NONE
+dma ADC 1 1
+# ADC 1: DMA2 Stream 4 Channel 0
+dma pin B04 0
+# pin B04: DMA1 Stream 4 Channel 5
+dma pin B05 0
+# pin B05: DMA1 Stream 5 Channel 5
+dma pin B06 0
+# pin B06: DMA1 Stream 0 Channel 2
+dma pin B07 0
+# pin B07: DMA1 Stream 3 Channel 2
+dma pin B03 0
+# pin B03: DMA1 Stream 6 Channel 3
+dma pin A00 0
+# pin A00: DMA1 Stream 2 Channel 6
+dma pin A02 0
+# pin A02: DMA1 Stream 0 Channel 6
+dma pin A08 0
+# pin A08: DMA2 Stream 6 Channel 0
 
 # feature
-feature -TELEMETRY
 feature SERVO_TILT
+feature SOFTSERIAL
+feature OSD
 
 # serial
+serial 0 64 115200 57600 0 115200
 serial 1 1024 115200 57600 0 115200
 serial 30 2048 115200 57600 0 115200
 
@@ -81,9 +143,14 @@ set gyro_lpf1_dyn_min_hz = 200
 set gyro_lpf1_dyn_max_hz = 400
 set acc_lpf_hz = 10
 set acc_calibration = -49,-30,-82,1
+set baro_bustype = I2C
+set baro_i2c_device = 1
+set baro_hardware = NONE
 set rssi_scale = 217
 set serialrx_provider = CRSF
+set dshot_burst = AUTO
 set dshot_bidir = ON
+set dshot_bitbang = OFF
 set motor_pwm_protocol = DSHOT300
 set failsafe_delay = 100
 set failsafe_throttle_low_delay = 20
@@ -92,9 +159,13 @@ set bat_capacity = 8000
 set vbat_max_cell_voltage = 440
 set vbat_min_cell_voltage = 280
 set vbat_warning_cell_voltage = 310
+set current_meter = ADC
+set battery_meter = ADC
 set vbat_scale = 210
 set ibata_scale = 125
 set ibata_offset = -25700
+set beeper_inversion = ON
+set beeper_od = OFF
 set beeper_dshot_beacon_tone = 3
 set yaw_motors_reversed = ON
 set small_angle = 180
@@ -133,12 +204,17 @@ set osd_profile_2_name = day
 set osd_profile_3_name = night
 set osd_canvas_width = 30
 set osd_canvas_height = 16
+set system_hse_mhz = 8
 set vtx_band = 5
 set vtx_channel = 1
 set vtx_power = 4
 set vtx_freq = 5658
 set vcd_video_system = PAL
+set max7456_spi_bus = 2
 set pinio_box = 40,41,42,43
+set gyro_1_bustype = SPI
+set gyro_1_spibus = 1
+set gyro_1_sensor_align = CW180
 set gyro_1_align_yaw = 1800
 set rpm_filter_harmonics = 2
 set stats_min_armed_time_s = 70
@@ -184,77 +260,7 @@ set simplified_dterm_filter_multiplier = 120
 
 profile 1
 
-# profile 1
-set dterm_lpf1_dyn_min_hz = 52
-set dterm_lpf1_dyn_max_hz = 105
-set dterm_lpf1_static_hz = 52
-set dterm_lpf2_static_hz = 105
-set anti_gravity_gain = 90
-set iterm_relax_cutoff = 3
-set pidsum_limit = 1000
-set pidsum_limit_yaw = 1000
-set yaw_lowpass_hz = 0
-set throttle_boost = 0
-set p_pitch = 40
-set i_pitch = 80
-set d_pitch = 25
-set f_pitch = 200
-set p_roll = 40
-set i_roll = 75
-set d_roll = 28
-set f_roll = 200
-set p_yaw = 40
-set i_yaw = 85
-set f_yaw = 190
-set angle_level_strength = 30
-set d_min_roll = 28
-set d_min_pitch = 25
-set feedforward_boost = 8
-set dyn_idle_min_rpm = 35
-set simplified_pids_mode = OFF
-set simplified_i_gain = 110
-set simplified_d_gain = 95
-set simplified_pi_gain = 85
-set simplified_dmax_gain = 0
-set simplified_feedforward_gain = 160
-set simplified_pitch_d_gain = 80
-set simplified_dterm_filter_multiplier = 70
-
 profile 2
-
-# profile 2
-set dterm_lpf1_dyn_min_hz = 67
-set dterm_lpf1_dyn_max_hz = 135
-set dterm_lpf1_static_hz = 67
-set dterm_lpf2_static_hz = 135
-set anti_gravity_gain = 110
-set iterm_relax_cutoff = 5
-set pidsum_limit = 1000
-set pidsum_limit_yaw = 1000
-set yaw_lowpass_hz = 125
-set p_pitch = 51
-set i_pitch = 69
-set d_pitch = 71
-set f_pitch = 55
-set p_roll = 49
-set i_roll = 66
-set d_roll = 52
-set f_roll = 52
-set p_yaw = 150
-set i_yaw = 150
-set f_yaw = 0
-set d_min_roll = 39
-set d_min_pitch = 53
-set thrust_linear = 20
-set dyn_idle_min_rpm = 37
-set simplified_pids_mode = RP
-set simplified_master_multiplier = 110
-set simplified_i_gain = 75
-set simplified_d_gain = 120
-set simplified_dmax_gain = 95
-set simplified_feedforward_gain = 40
-set simplified_pitch_d_gain = 120
-set simplified_dterm_filter_multiplier = 90
 
 profile 3
 
