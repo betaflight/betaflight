@@ -1,6 +1,4 @@
-# 
-
-# diff all
+diff all
 
 # version
 # Betaflight / STM32F411 (S411) 4.4.3 Jun  4 2024 / 18:28:26 (c5c31d7ee) MSP API: 1.45
@@ -43,12 +41,12 @@ resource SPI_MOSI 1 A07
 resource SPI_MOSI 2 B15
 resource ADC_BATT 1 B00
 resource ADC_CURR 1 B01
+resource ADC_NTEMP 1 A01
 resource PINIO 1 B02
 resource PINIO 2 B03
 resource PINIO 3 A02
 resource PINIO 4 B09
 resource OSD_CS 1 B12
-resource GYRO_EXTI 1 A01
 resource GYRO_CS 1 A04
 resource USB_DETECT 1 C15
 
@@ -105,7 +103,7 @@ serial 1 1024 115200 57600 0 115200
 serial 30 2048 115200 57600 0 115200
 
 # servo
-servo 0 1000 2000 1500 100 9
+servo 0 1000 2000 1500 100 6
 
 # beacon
 beacon RX_LOST
@@ -116,7 +114,7 @@ aux 0 0 0 1300 2100 0 0
 aux 1 1 4 1550 2100 0 0
 aux 2 40 1 900 1650 0 0
 aux 3 41 3 1700 2100 0 0
-aux 4 42 2 1550 1775 0 0
+aux 4 42 5 1450 2100 0 0
 
 # adjrange
 adjrange 0 0 3 900 2100 29 3 0 0
@@ -177,21 +175,21 @@ set osd_cap_alarm = 8000
 set osd_logo_on_arming = ON
 set osd_tim1 = 0
 set osd_tim2 = 3073
-set osd_vbat_pos = 14423
-set osd_rssi_pos = 417
-set osd_link_quality_pos = 14753
+set osd_vbat_pos = 14455
+set osd_rssi_pos = 388
+set osd_link_quality_pos = 14785
 set osd_tim_1_pos = 55
 set osd_tim_2_pos = 14656
 set osd_throttle_pos = 14681
-set osd_vtx_channel_pos = 14785
+set osd_vtx_channel_pos = 14389
 set osd_crosshairs_pos = 14573
 set osd_current_pos = 14774
 set osd_mah_drawn_pos = 14808
 set osd_craft_name_pos = 14369
 set osd_pilot_name_pos = 14797
 set osd_warnings_pos = 14761
-set osd_avg_cell_voltage_pos = 14391
-set osd_esc_tmp_pos = 193
+set osd_avg_cell_voltage_pos = 14423
+set osd_esc_tmp_pos = 14753
 set osd_esc_rpm_pos = 152
 set osd_esc_rpm_freq_pos = 161
 set osd_core_temp_pos = 225
@@ -218,8 +216,8 @@ set gyro_1_sensor_align = CW180
 set gyro_1_align_yaw = 1800
 set rpm_filter_harmonics = 2
 set stats_min_armed_time_s = 70
-set stats_total_flights = 46
-set stats_total_time_s = 8329
+set stats_total_flights = 48
+set stats_total_time_s = 8570
 set craft_name = Archer
 set pilot_name = Name
 
@@ -235,26 +233,26 @@ set iterm_relax_cutoff = 10
 set pidsum_limit = 1000
 set pidsum_limit_yaw = 1000
 set yaw_lowpass_hz = 0
-set p_pitch = 61
-set i_pitch = 70
-set d_pitch = 63
-set f_pitch = 186
-set p_roll = 58
-set i_roll = 67
-set d_roll = 50
+set p_pitch = 56
+set i_pitch = 65
+set d_pitch = 58
+set f_pitch = 187
+set p_roll = 53
+set i_roll = 62
+set d_roll = 46
 set f_roll = 179
-set p_yaw = 58
-set i_yaw = 67
+set p_yaw = 53
+set i_yaw = 62
 set f_yaw = 179
-set d_min_roll = 50
-set d_min_pitch = 63
+set d_min_roll = 46
+set d_min_pitch = 58
 set thrust_linear = 20
 set dyn_idle_min_rpm = 35
-set simplified_master_multiplier = 130
+set simplified_master_multiplier = 120
 set simplified_i_gain = 65
 set simplified_d_gain = 130
 set simplified_dmax_gain = 0
-set simplified_feedforward_gain = 115
+set simplified_feedforward_gain = 125
 set simplified_pitch_d_gain = 110
 set simplified_dterm_filter_multiplier = 120
 
