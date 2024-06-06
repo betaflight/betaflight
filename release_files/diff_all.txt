@@ -1,4 +1,6 @@
-diff all
+`# 
+
+# diff all`
 
 # version
 # Betaflight / STM32F411 (S411) 4.4.3 Jun  4 2024 / 18:28:26 (c5c31d7ee) MSP API: 1.45
@@ -110,11 +112,11 @@ beacon RX_LOST
 beacon RX_SET
 
 # aux
-aux 0 0 0 1300 2100 0 0
-aux 1 1 4 1550 2100 0 0
+aux 0 0 0 1600 2100 0 0
+aux 1 1 4 1600 2100 0 0
 aux 2 40 1 900 1650 0 0
-aux 3 41 3 1700 2100 0 0
-aux 4 42 5 1450 2100 0 0
+aux 3 41 3 1600 2100 0 0
+aux 4 42 5 1600 2100 0 0
 
 # adjrange
 adjrange 0 0 3 900 2100 29 3 0 0
@@ -131,6 +133,9 @@ vtxtable powerlevels 4
 vtxtable powervalues 14 27 30 34
 vtxtable powerlabels 25 500 1K MAX
 
+# rxfail
+rxfail 3 h
+
 # master
 set gyro_lpf1_static_hz = 200
 set gyro_lpf2_static_hz = 400
@@ -141,6 +146,7 @@ set gyro_lpf1_dyn_min_hz = 200
 set gyro_lpf1_dyn_max_hz = 400
 set acc_lpf_hz = 10
 set acc_calibration = -49,-30,-82,1
+set mag_hardware = NONE
 set baro_bustype = I2C
 set baro_i2c_device = 1
 set baro_hardware = NONE
@@ -179,7 +185,7 @@ set osd_vbat_pos = 14455
 set osd_rssi_pos = 388
 set osd_link_quality_pos = 14785
 set osd_tim_1_pos = 55
-set osd_tim_2_pos = 14656
+set osd_tim_2_pos = 14657
 set osd_throttle_pos = 14681
 set osd_vtx_channel_pos = 14389
 set osd_crosshairs_pos = 14573
@@ -216,8 +222,8 @@ set gyro_1_sensor_align = CW180
 set gyro_1_align_yaw = 1800
 set rpm_filter_harmonics = 2
 set stats_min_armed_time_s = 70
-set stats_total_flights = 48
-set stats_total_time_s = 8570
+set stats_total_flights = 53
+set stats_total_time_s = 9258
 set craft_name = Archer
 set pilot_name = Name
 

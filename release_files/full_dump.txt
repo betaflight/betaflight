@@ -1,6 +1,4 @@
-# 
-
-# dump
+dump
 
 # version
 # Betaflight / STM32F411 (S411) 4.4.3 Jun  4 2024 / 18:28:26 (c5c31d7ee) MSP API: 1.45
@@ -305,11 +303,11 @@ beacon RX_SET
 map AETR1234
 
 # aux
-aux 0 0 0 1300 2100 0 0
-aux 1 1 4 1550 2100 0 0
+aux 0 0 0 1600 2100 0 0
+aux 1 1 4 1600 2100 0 0
 aux 2 40 1 900 1650 0 0
-aux 3 41 3 1700 2100 0 0
-aux 4 42 5 1450 2100 0 0
+aux 3 41 3 1600 2100 0 0
+aux 4 42 5 1600 2100 0 0
 aux 5 0 0 900 900 0 0
 aux 6 0 0 900 900 0 0
 aux 7 0 0 900 900 0 0
@@ -392,7 +390,7 @@ vtx 9 0 0 0 0 900 900
 rxfail 0 a
 rxfail 1 a
 rxfail 2 a
-rxfail 3 a
+rxfail 3 h
 rxfail 4 h
 rxfail 5 h
 rxfail 6 h
@@ -446,7 +444,7 @@ set mag_bustype = SPI
 set mag_i2c_device = 0
 set mag_i2c_address = 0
 set mag_spi_device = 0
-set mag_hardware = AUTO
+set mag_hardware = NONE
 set mag_calibration = 0,0,0
 set baro_bustype = I2C
 set baro_spi_device = 0
@@ -660,7 +658,7 @@ set osd_link_tx_power_pos = 234
 set osd_rssi_dbm_pos = 234
 set osd_rsnr_pos = 234
 set osd_tim_1_pos = 55
-set osd_tim_2_pos = 14656
+set osd_tim_2_pos = 14657
 set osd_remaining_time_estimate_pos = 234
 set osd_flymode_pos = 234
 set osd_anti_gravity_pos = 234
@@ -841,8 +839,8 @@ set rpm_filter_lpf_hz = 150
 set flysky_spi_tx_id = 0
 set flysky_spi_rf_channels = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 set stats_min_armed_time_s = 70
-set stats_total_flights = 48
-set stats_total_time_s = 8570
+set stats_total_flights = 53
+set stats_total_time_s = 9258
 set stats_total_dist_m = 0
 set craft_name = Archer
 set pilot_name = Name
