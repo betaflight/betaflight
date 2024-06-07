@@ -32,6 +32,7 @@
 #include "flash_impl.h"
 #include "flash_m25p16.h"
 #include "flash_w25n01g.h"
+#include "flash_w25n02k.h"
 #include "flash_w25q128fv.h"
 #include "flash_w25m.h"
 #include "drivers/bus_spi.h"
@@ -167,6 +168,13 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
                         detected = true;
                     }
 #endif
+
+#if defined(USE_FLASH_W25N02K)
+                    if (!detected && w25n02kv_detect(&flashDevice, jedecID)) {
+                        detected = true;
+                    }
+#endif
+
 #if defined(USE_FLASH_W25M02G)
                     if (!detected && w25m_identify(&flashDevice, jedecID)) {
                         detected = true;
@@ -251,6 +259,13 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
                     detected = true;
                 }
 #endif
+
+#if defined(USE_FLASH_W25N02K)
+                if (!detected && w25n02kv_detect(&flashDevice, jedecID)) {
+                    detected = true;
+                }
+#endif
+
 #if defined(USE_FLASH_W25M02G)
                 if (!detected && w25m_identify(&flashDevice, jedecID)) {
                     detected = true;
@@ -335,6 +350,12 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
 #ifdef USE_FLASH_W25N01G
     if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
+        detected = true;
+    }
+#endif
+
+#ifdef USE_FLASH_W25N02K
+    if (!detected && w25n02kv_detect(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif
