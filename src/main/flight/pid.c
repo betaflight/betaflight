@@ -294,16 +294,17 @@ void pidUpdateTpaFactor(float throttle)
         tpaRate = pidRuntime.tpaLowMultiplier * (pidRuntime.tpaLowBreakpoint - throttle);
     }
 
-    DEBUG_SET(DEBUG_TPA, 0, lrintf(pidRuntime.tpaFactor * 1000));
-    pidRuntime.tpaFactor = 1.0f - tpaRate;
+    float tpaFactor = 1.0f - tpaRate;
+    DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
 
 #ifdef USE_WING
     if (isFixedWing()) {
-        pidRuntime.tpaFactor = pt2FilterApply(&pidRuntime.tpaLpf, pidRuntime.tpaFactor);
+        tpaFactor = pt2FilterApply(&pidRuntime.tpaLpf, tpaFactor);
     }    
 #endif
-    
-    DEBUG_SET(DEBUG_TPA, 1, lrintf(pidRuntime.tpaFactor * 1000));
+
+    DEBUG_SET(DEBUG_TPA, 1, lrintf(tpaFactor * 1000));
+    pidRuntime.tpaFactor = tpaFactor;
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
