@@ -113,7 +113,7 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .pilotName = { 0 },
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 4);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
@@ -127,7 +127,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .hseMhz = SYSTEM_HSE_MHZ,  // Only used for F4 and G4 targets
     .configurationState = CONFIGURATION_STATE_UNCONFIGURED,
     .enableStickArming = false,
-    .statsSavingMaxGyroRate = 20,
+    .statsSaveMoveLimit = 20,
 );
 
 bool isEepromWriteInProgress(void)

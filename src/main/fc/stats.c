@@ -24,23 +24,25 @@
 
 #ifdef USE_PERSISTENT_STATS
 
+#include "config/config.h"
+
 #include "drivers/time.h"
 
-#include "config/config.h"
 #include "fc/dispatch.h"
 #include "fc/runtime_config.h"
-#include "fc/stats.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
 
 #include "pg/stats.h"
 
-#include "sensors/gyro.h"
-
 #ifdef USE_BATTERY_CONTINUE
 #include "sensors/battery.h"
 #endif
+
+#include "sensors/gyro.h"
+
+#include "stats.h"
 
 #define STATS_SAVE_DELAY_US 500000 // Let disarming complete and save stats after this time
 
@@ -48,6 +50,9 @@ static timeMs_t arm_millis;
 static uint32_t arm_distance_cm;
 
 static bool saveRequired = false;
+
+static void writeStats(dispatchEntry_t *self);
+dispatchEntry_t writeStatsEntry = { writeStats, 0, NULL, false };
 
 #ifdef USE_GPS
     #define DISTANCE_FLOWN_CM (GPS_distanceFlownInCm)
@@ -60,14 +65,7 @@ void statsInit(void)
     dispatchEnable();
 }
 
-void writeStats(struct dispatchEntry_s* self);
-
-dispatchEntry_t writeStatsEntry =
-{
-    writeStats, 0, NULL, false
-};
-
-void writeStats(struct dispatchEntry_s* self)
+static void writeStats(dispatchEntry_t *self)
 {
     UNUSED(self);
 
@@ -75,11 +73,11 @@ void writeStats(struct dispatchEntry_s* self)
         // Don't save if the user made config changes that have not yet been saved.
         if (!isConfigDirty()) {
 
-            const bool gyroIsStill = fabsf(gyro.gyroADCf[FD_ROLL]) < systemConfig()->statsSavingMaxGyroRate &&
-                fabsf(gyro.gyroADCf[FD_PITCH]) < systemConfig()->statsSavingMaxGyroRate &&
-                fabsf(gyro.gyroADCf[FD_YAW]) < systemConfig()->statsSavingMaxGyroRate;
+            const bool gyroIsStill = fabsf(gyro.gyroADCf[FD_ROLL]) < systemConfig()->statsSaveMoveLimit &&
+                fabsf(gyro.gyroADCf[FD_PITCH]) < systemConfig()->statsSaveMoveLimit &&
+                fabsf(gyro.gyroADCf[FD_YAW]) < systemConfig()->statsSaveMoveLimit;
 
-            if (gyroIsStill || 0 == systemConfig()->statsSavingMaxGyroRate) {
+            if (gyroIsStill || systemConfig()->statsSaveMoveLimit == 0) {
                 writeEEPROM();
                 // Repeat disarming beep indicating the stats save is complete
                 beeper(BEEPER_DISARMING);
