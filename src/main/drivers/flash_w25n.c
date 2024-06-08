@@ -35,15 +35,6 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
-// Device size parameters
-#define W25N01G_PAGE_SIZE         2048
-#define W25N01G_PAGES_PER_BLOCK   64
-#define W25N01G_BLOCKS_PER_DIE    1024
-
-#define W25N02K_PAGE_SIZE         2048
-#define W25N02K_PAGES_PER_BLOCK   64
-#define W25N02K_BLOCKS_PER_DIE    2048
-
 // BB replacement area
 #define W25N_BB_MARKER_BLOCKS           1
 #define W25N_BB_REPLACEMENT_BLOCKS      20
@@ -136,6 +127,22 @@ typedef struct bblut_s {
     uint16_t pba;
     uint16_t lba;
 } bblut_t;
+
+// Table of recognised FLASH devices
+struct {
+    uint32_t        jedecID;
+    flashSector_t   sectors;
+    uint16_t        pagesPerSector;
+    uint16_t        pageSize;
+} w25nFlashConfig[] = {
+    // Winbond W25N01GV
+    // Datasheet: https://www.winbond.com/resource-files/W25N01GV%20Rev%20R%20070323.pdf
+    { 0xEFAA21, 2048, 64, 1024 },
+    // Winbond W25N02KV
+    // Datasheet: https://www.winbond.com/resource-files/W25N02KVxxIRU_Datasheet_RevM.pdf
+    { 0xEFAA22, 2048, 64, 2048 },
+    { 0, 0, 0, 0 },
+};
 
 static bool w25n_waitForReady(flashDevice_t *fdevice);
 
@@ -329,24 +336,22 @@ const flashVTable_t w25n_vTable;
 
 bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
-    switch (jedecID) {
-    case JEDEC_ID_WINBOND_W25N01GV:
-        fdevice->geometry.sectors = W25N01G_BLOCKS_PER_DIE;      // Blocks
-        fdevice->geometry.pagesPerSector = W25N01G_PAGES_PER_BLOCK; // Pages/Blocks
-        fdevice->geometry.pageSize = W25N01G_PAGE_SIZE;
-        break;
+    flashGeometry_t *geometry = &fdevice->geometry;
+    uint8_t index;
 
-    case JEDEC_ID_WINBOND_W25N02KV:
-        fdevice->geometry.sectors = W25N02K_BLOCKS_PER_DIE;      // Blocks
-        fdevice->geometry.pagesPerSector = W25N02K_PAGES_PER_BLOCK; // Pages/Blocks
-        fdevice->geometry.pageSize = W25N02K_PAGE_SIZE;
-        break;
+    for (index = 0; w25nFlashConfig[index].jedecID; index++) {
+        if (w25nFlashConfig[index].jedecID == jedecID) {
+            geometry->sectors = w25nFlashConfig[index].sectors;
+            geometry->pagesPerSector = w25nFlashConfig[index].pagesPerSector;
+            geometry->pageSize = w25nFlashConfig[index].pageSize;
+            break;
+        }
+    }
 
-    default:
+    if (w25nFlashConfig[index].jedecID == 0) {
         // Unsupported chip
         fdevice->geometry.sectors = 0;
         fdevice->geometry.pagesPerSector = 0;
-
         fdevice->geometry.sectorSize = 0;
         fdevice->geometry.totalSize = 0;
         return false;
