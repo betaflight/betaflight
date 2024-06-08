@@ -112,7 +112,10 @@ void altHoldReset(altHoldState_s* altHoldState)
     altHoldState->throttle = 0.0f;
     altHoldState->enterTime = millis();
     altHoldState->exitTime = 0;
-    float externalVelocityEstimation = 0.01f * getEstimatedVario();
+    float externalVelocityEstimation = 0.0f;
+#ifdef USE_VARIO
+    externalVelocityEstimation = 0.01f * getEstimatedVario();
+#endif
     altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - externalVelocityEstimation;
     altHoldState->targetAltitude = getCurrentAltitude(altHoldState);
     altHoldState->smoothedAltitude = 0.0f;
