@@ -162,7 +162,7 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 #ifdef USE_OCTOSPI_EXPERIMENTAL
                 if (!memoryMappedModeEnabledOnBoot) {
                     // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
-#if defined(USE_FLASH_W25N01G)
+#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K)
                     if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
                         detected = true;
                     }

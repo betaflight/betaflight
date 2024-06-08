@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FLASH_W25N01G
+#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K)
 
 #include "flash.h"
 #include "flash_impl.h"
@@ -38,16 +38,19 @@
 // Device size parameters
 #define W25N01G_PAGE_SIZE         2048
 #define W25N01G_PAGES_PER_BLOCK   64
-#define W25N01G_BLOCKS_PER_DIE 1024
+#define W25N01G_BLOCKS_PER_DIE    1024
+
+#define W25N02K_PAGE_SIZE         2048
+#define W25N02K_PAGES_PER_BLOCK   64
+#define W25N02K_BLOCKS_PER_DIE    2048
 
 // BB replacement area
 #define W25N01G_BB_MARKER_BLOCKS           1
 #define W25N01G_BB_REPLACEMENT_BLOCKS      20
 #define W25N01G_BB_MANAGEMENT_BLOCKS       (W25N01G_BB_REPLACEMENT_BLOCKS + W25N01G_BB_MARKER_BLOCKS)
 // blocks are zero-based index
-#define W25N01G_BB_REPLACEMENT_START_BLOCK (W25N01G_BLOCKS_PER_DIE - W25N01G_BB_REPLACEMENT_BLOCKS)
-#define W25N01G_BB_MANAGEMENT_START_BLOCK  (W25N01G_BLOCKS_PER_DIE - W25N01G_BB_MANAGEMENT_BLOCKS)
-#define W25N01G_BB_MARKER_BLOCK            (W25N01G_BB_REPLACEMENT_START_BLOCK - W25N01G_BB_MARKER_BLOCKS)
+#define W25N01G_BB_REPLACEMENT_START_BLOCK (fdevice->geometry.sectors - W25N01G_BB_REPLACEMENT_BLOCKS)
+#define W25N01G_BB_MANAGEMENT_START_BLOCK  (fdevice->geometry.sectors - W25N01G_BB_MANAGEMENT_BLOCKS)
 
 // Instructions
 
@@ -327,9 +330,15 @@ bool w25n01g_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
     switch (jedecID) {
     case JEDEC_ID_WINBOND_W25N01GV:
-        fdevice->geometry.sectors = 1024;      // Blocks
-        fdevice->geometry.pagesPerSector = 64; // Pages/Blocks
-        fdevice->geometry.pageSize = 2048;
+        fdevice->geometry.sectors = W25N01G_BLOCKS_PER_DIE;      // Blocks
+        fdevice->geometry.pagesPerSector = W25N01G_PAGES_PER_BLOCK; // Pages/Blocks
+        fdevice->geometry.pageSize = W25N01G_PAGE_SIZE;
+        break;
+
+    case JEDEC_ID_WINBOND_W25N02KV:
+        fdevice->geometry.sectors = W25N02K_BLOCKS_PER_DIE;      // Blocks
+        fdevice->geometry.pagesPerSector = W25N02K_PAGES_PER_BLOCK; // Pages/Blocks
+        fdevice->geometry.pageSize = W25N02K_PAGE_SIZE;
         break;
 
     default:

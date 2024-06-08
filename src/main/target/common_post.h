@@ -329,6 +329,12 @@
 #endif
 #endif
 
+#if defined(USE_FLASH_W25N02K) && !defined(USE_FLASH_W25N01G)
+#if !defined(USE_FLASH_W25N01G)
+#define USE_FLASH_W25N01G
+#endif
+#endif
+
 #if defined(USE_FLASH_W25M02G) && !defined(USE_FLASH_W25N01G)
 #if !defined(USE_FLASH_W25N01G)
 #define USE_FLASH_W25N01G
