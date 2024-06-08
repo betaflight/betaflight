@@ -31,7 +31,7 @@
 #include "flash.h"
 #include "flash_impl.h"
 #include "flash_m25p16.h"
-#include "flash_w25n01g.h"
+#include "flash_w25n.h"
 #include "flash_w25q128fv.h"
 #include "flash_w25m.h"
 #include "drivers/bus_spi.h"
@@ -162,8 +162,8 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 #ifdef USE_OCTOSPI_EXPERIMENTAL
                 if (!memoryMappedModeEnabledOnBoot) {
                     // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
-#if defined(USE_FLASH_W25N01G)
-                    if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
+#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K)
+                    if (!detected && w25n_identify(&flashDevice, jedecID)) {
                         detected = true;
                     }
 #endif
@@ -247,7 +247,7 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
             if (offset == 1) {
 #if defined(USE_FLASH_W25N01G)
-                if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
+                if (!detected && w25n_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
@@ -333,8 +333,8 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
         jedecID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
     }
 
-#ifdef USE_FLASH_W25N01G
-    if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
+#ifdef USE_FLASH_W25N
+    if (!detected && w25n_identify(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif

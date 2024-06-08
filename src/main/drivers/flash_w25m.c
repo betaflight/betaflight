@@ -43,7 +43,7 @@
 
 #include "flash_m25p16.h"
 #include "flash_w25m.h"
-#include "flash_w25n01g.h"
+#include "flash_w25n.h"
 
 #include "pg/flash.h"
 
@@ -52,6 +52,7 @@
 #define JEDEC_ID_WINBOND_W25M512                     0xEF7119 // W25Q256 x 2
 #define JEDEC_ID_WINBOND_W25M02G                     0xEFAB21 // W25N01G x 2
 #define JEDEC_ID_WINBOND_W25Q256                     0xEF4019
+#define JEDEC_ID_WINBOND_W25N01GV                    0xEFAA21
 
 static const flashVTable_t w25m_vTable;
 
@@ -143,7 +144,7 @@ bool w25m_identify(flashDevice_t *fdevice, uint32_t jedecID)
             w25m_dieSelect(fdevice->io.handle.dev, die);
             dieDevice[die].io.handle.dev = fdevice->io.handle.dev;
             dieDevice[die].io.mode = fdevice->io.mode;
-            w25n01g_identify(&dieDevice[die], JEDEC_ID_WINBOND_W25N01GV);
+            w25n_identify(&dieDevice[die], JEDEC_ID_WINBOND_W25N01GV);
         }
 
         fdevice->geometry.flashType = FLASH_TYPE_NAND;
