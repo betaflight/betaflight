@@ -34,7 +34,6 @@
 #include "drivers/bus_quadspi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
-#include "drivers/pinio.h"
 
 // Device size parameters
 #define W25N01G_PAGE_SIZE         2048
@@ -651,8 +650,6 @@ busStatus_e w25n01g_callbackWriteComplete(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
-    pinioSet(1, 0);
-
     fdevice->currentWriteAddress += fdevice->callbackArg;
     // Call transfer completion callback
     if (fdevice->callback) {
@@ -759,10 +756,7 @@ uint32_t w25n01g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buf
 
     fdevice->callbackArg = bufferSizes[0];
 
-    pinioSet(0, 1);
-    pinioSet(1, 1);
     spiSequence(fdevice->io.handle.dev, programSegment);
-    pinioSet(0, 0);
 
     if (fdevice->callback == NULL) {
         // No callback was provided so block
