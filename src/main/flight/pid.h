@@ -70,6 +70,12 @@
 
 #define TPA_MAX 100
 
+#ifdef USE_WING
+#define TPA_LOW_RATE_MIN INT8_MIN
+#else
+#define TPA_LOW_RATE_MIN 0
+#endif
+
 typedef enum {
     TPA_MODE_PD,
     TPA_MODE_D
