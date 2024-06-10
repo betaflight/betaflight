@@ -39,9 +39,8 @@
 #define W25N_BB_MARKER_BLOCKS           1
 #define W25N_BB_REPLACEMENT_BLOCKS      20
 #define W25N_BB_MANAGEMENT_BLOCKS       (W25N_BB_REPLACEMENT_BLOCKS + W25N_BB_MARKER_BLOCKS)
-// blocks are zero-based index
-#define W25N_BB_REPLACEMENT_START_BLOCK (fdevice->geometry.sectors - W25N_BB_REPLACEMENT_BLOCKS)
-#define W25N_BB_MANAGEMENT_START_BLOCK  (fdevice->geometry.sectors - W25N_BB_MANAGEMENT_BLOCKS)
+// blocks are zero-based index; when negative, it is from end of flash
+#define W25N_BB_MANAGEMENT_START_BLOCK  (-W25N_BB_MANAGEMENT_BLOCKS)
 
 // Instructions
 
@@ -361,9 +360,10 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
+    const uint32_t managementStartBlock = W25N_BB_MANAGEMENT_START_BLOCK >= 0 ? W25N_BB_MANAGEMENT_START_BLOCK : fdevice->geometry.sectors + W25N_BB_MANAGEMENT_START_BLOCK;
     flashPartitionSet(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT,
-            W25N_BB_MANAGEMENT_START_BLOCK,
-            W25N_BB_MANAGEMENT_START_BLOCK + W25N_BB_MANAGEMENT_BLOCKS - 1);
+            managementStartBlock,
+            managementStartBlock + W25N_BB_MANAGEMENT_BLOCKS - 1);
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
     fdevice->vTable = &w25n_vTable;
