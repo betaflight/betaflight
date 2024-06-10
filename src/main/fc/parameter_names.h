@@ -135,6 +135,9 @@
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"
+#define PARAM_NAME_S_PITCH "s_pitch"
+#define PARAM_NAME_S_ROLL "s_roll"
+#define PARAM_NAME_S_YAW "s_yaw"
 #define PARAM_NAME_ANGLE_P_GAIN "angle_p_gain"
 #define PARAM_NAME_ANGLE_EARTH_REF "angle_earth_ref"
 
