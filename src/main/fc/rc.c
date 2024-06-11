@@ -724,7 +724,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
     rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
-    if (featureIsEnabled(FEATURE_3D) && !failsafeIsActive()) {
+    if (featureIsEnabled(FEATURE_3D)) {
         if (!flight3DConfig()->switched_mode3d) {
             if (IS_RC_MODE_ACTIVE(BOX3D)) {
                 fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
