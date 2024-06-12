@@ -135,7 +135,7 @@ float pt3FilterGainFromDelay(float delay, float dT)
     }
 
     const float cutoffHz = 1.0f / (M_PIf * delay * CUTOFF_CORRECTION_PT3);
-    return pt2FilterGain(cutoffHz, dT);
+    return pt3FilterGain(cutoffHz, dT);
 }
 
 void pt3FilterInit(pt3Filter_t *filter, float k)
