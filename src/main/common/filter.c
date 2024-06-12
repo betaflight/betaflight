@@ -30,6 +30,9 @@
 
 #define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
 
+// PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
+#define CUTOFF_CORRECTION_PT2 1.553773974f
+#define CUTOFF_CORRECTION_PT3 1.961459177f
 
 // NULL filter
 
@@ -51,7 +54,7 @@ FAST_CODE_NOINLINE float pt1FilterGain(float f_cut, float dT)
 // Calculates filter gain based on delay (time constant of filter) - time it takes for filter response to reach 63.2% of a step input.
 float pt1FilterGainFromDelay(float delay, float dT)
 {
-    if (delay == 0) {
+    if (delay <= 0) {
         return 1.0f; // gain = 1 means no filtering
     }
 
@@ -79,9 +82,6 @@ FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
 
 // PT2 Low Pass filter
 
-// PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
-#define CUTOFF_CORRECTION_PT2 1.553773974f
-
 FAST_CODE float pt2FilterGain(float f_cut, float dT)
 {
     // shift f_cut to satisfy -3dB cutoff condition
@@ -91,7 +91,7 @@ FAST_CODE float pt2FilterGain(float f_cut, float dT)
 // Calculates filter gain based on delay (time constant of filter) - time it takes for filter response to reach 63.2% of a step input.
 float pt2FilterGainFromDelay(float delay, float dT)
 {
-    if (delay == 0) {
+    if (delay <= 0) {
         return 1.0f; // gain = 1 means no filtering
     }
 
@@ -123,11 +123,19 @@ FAST_CODE float pt2FilterApply(pt2Filter_t *filter, float input)
 
 FAST_CODE float pt3FilterGain(float f_cut, float dT)
 {
-    // PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
-    #define CUTOFF_CORRECTION_PT3 1.961459177f
-
     // shift f_cut to satisfy -3dB cutoff condition
     return pt1FilterGain(f_cut * CUTOFF_CORRECTION_PT3, dT);
+}
+
+// Calculates filter gain based on delay (time constant of filter) - time it takes for filter response to reach 63.2% of a step input.
+float pt3FilterGainFromDelay(float delay, float dT)
+{
+    if (delay <= 0) {
+        return 1.0f; // gain = 1 means no filtering
+    }
+
+    const float cutoffHz = 1.0f / (M_PIf * delay * CUTOFF_CORRECTION_PT3);
+    return pt2FilterGain(cutoffHz, dT);
 }
 
 void pt3FilterInit(pt3Filter_t *filter, float k)
