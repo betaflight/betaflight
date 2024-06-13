@@ -167,6 +167,11 @@ flight_mixer_unittest :=  \
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
+io_unittest_SRC	:= \
+		$(USER_DIR)/drivers/io.c
+
+io_unittest_DEFINES := \
+		SITL=1 GPIOA_BASE="((intptr_t)0x0001)"
 
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
@@ -679,7 +684,8 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR)
+test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) \
+	$(ROOT)/lib/main/boost_1_81_0		# boost is necessary for anything IO_TAG related
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 

@@ -73,7 +73,7 @@ END2
 #define DEFIO_GPIOID__${port} @{[ord($port)-ord('A')]}
 END2
 
-// DEFIO_TAG__P<port><pin> will expand to TAG if defined for target, error is triggered otherwise
+// DEFIO_TAG__P<port><pin> will expand to TAG if defined for target, error is triggered otherwise (using DEFIO_TAG__UNSUPPORTED() macro)
 // DEFIO_TAG_E__P<port><pin> will expand to TAG if defined, to NONE otherwise (usefull for tables that are CPU-specific)
 // DEFIO_REC__P<port><pin> will expand to ioRec* (using DEFIO_REC_INDEX(idx))
 
@@ -85,9 +85,9 @@ END2
 # define DEFIO_TAG_E__P${port}${pin} DEFIO_TAG_MAKE(DEFIO_GPIOID__${port}, ${pin})
 # define DEFIO_REC__P${port}${pin} DEFIO_REC_INDEXED(BITCOUNT(DEFIO_PORT_${port}_USED_MASK & (BIT(${pin}) - 1)) + @{[join('+', map {  "DEFIO_PORT_${_}_USED_COUNT" } @prev_ports) || '0']})
 #else
-# define DEFIO_TAG__P${port}${pin} defio_error_P${port}${pin}_is_not_supported_on_TARGET
+# define DEFIO_TAG__P${port}${pin} DEFIO_TAG__UNSUPPORTED(${port}, ${pin})
 # define DEFIO_TAG_E__P${port}${pin} DEFIO_TAG_E__NONE
-# define DEFIO_REC__P${port}${pin} defio_error_P${port}${pin}_is_not_supported_on_TARGET
+# define DEFIO_REC__P${port}${pin} DEFIO_REC__UNSUPPORTED(${port}, ${pin})
 #endif
 END2
 
