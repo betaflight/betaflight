@@ -25,7 +25,7 @@
 
 #ifdef USE_USB_CDC_HID
 
-#include "drivers/stm32/vcpf4/usbd_cdc_vcp.h"
+#include "drivers/mcu/stm32/vcpf4/usbd_cdc_vcp.h"
 #include "usbd_hid_core.h"
 
 void sendReport(uint8_t *report, uint8_t len)

@@ -239,13 +239,13 @@ void i2cInit(I2CDevice device)
     uint32_t i2cPclk;
 
 #if defined(STM32F7) || defined(STM32G4)
-    // F7 Clock source configured in startup/system_stm32f7xx.c as:
+    // F7 Clock source configured in startup/stm32/system_stm32f7xx.c as:
     //   I2C1234 : PCLK1
-    // G4 Clock source configured in startup/system_stm32g4xx.c as:
+    // G4 Clock source configured in startup/stm32/system_stm32g4xx.c as:
     //   I2C1234 : PCLK1
     i2cPclk = HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32H7)
-    // Clock sources configured in startup/system_stm32h7xx.c as:
+    // Clock sources configured in startup/stm32/system_stm32h7xx.c as:
     //   I2C123 : D2PCLK1 (rcc_pclk1 for APB1)
     //   I2C4   : D3PCLK1 (rcc_pclk4 for APB4)
     i2cPclk = (pHandle->Instance == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
