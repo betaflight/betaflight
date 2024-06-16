@@ -74,7 +74,7 @@ bool cliMode = false;
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"

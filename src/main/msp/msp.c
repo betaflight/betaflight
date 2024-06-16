@@ -58,7 +58,7 @@
 #include "drivers/display.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/io.h"
 #include "drivers/motor.h"
 #include "drivers/osd.h"

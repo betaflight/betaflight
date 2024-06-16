@@ -30,8 +30,8 @@
 
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
-#include "drivers/flash.h"
-#include "drivers/flash_impl.h"
+#include "flash.h"
+#include "flash_impl.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 

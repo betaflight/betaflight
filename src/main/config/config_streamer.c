@@ -23,7 +23,7 @@
 #include "platform.h"
 
 #include "drivers/system.h"
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"

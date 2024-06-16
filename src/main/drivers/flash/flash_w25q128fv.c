@@ -34,8 +34,8 @@
 #include "common/utils.h"
 
 #include "drivers/time.h"
-#include "drivers/flash.h"
-#include "drivers/flash_impl.h"
+#include "drivers/flash/flash.h"
+#include "drivers/flash/flash_impl.h"
 #include "drivers/flash_w25q128fv.h"
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_octospi.h"

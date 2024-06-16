@@ -42,7 +42,7 @@
 
 #include "build/debug.h"
 #include "common/printf.h"
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/light_led.h"
 
 #include "io/flashfs.h"
