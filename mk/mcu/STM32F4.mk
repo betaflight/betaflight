@@ -14,35 +14,37 @@ VPATH       := $(VPATH):$(STDPERIPH_DIR)/Src
 else
 CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
-STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
-EXCLUDES        = stm32f4xx_crc.c \
-                  stm32f4xx_can.c \
-                  stm32f4xx_fmc.c \
-                  stm32f4xx_sai.c \
-                  stm32f4xx_cec.c \
-                  stm32f4xx_dsi.c \
-                  stm32f4xx_flash_ramfunc.c \
-                  stm32f4xx_fmpi2c.c \
-                  stm32f4xx_lptim.c \
-                  stm32f4xx_qspi.c \
-                  stm32f4xx_spdifrx.c \
-                  stm32f4xx_cryp.c \
-                  stm32f4xx_cryp_aes.c \
-                  stm32f4xx_hash_md5.c \
-                  stm32f4xx_cryp_des.c \
-                  stm32f4xx_hash.c \
-                  stm32f4xx_dbgmcu.c \
-                  stm32f4xx_cryp_tdes.c \
-                  stm32f4xx_hash_sha1.c
+STDPERIPH_SRC   = \
+            misc.c \
+            stm32f4xx_adc.c \
+            stm32f4xx_dac.c \
+            stm32f4xx_dcmi.c \
+            stm32f4xx_dfsdm.c \
+            stm32f4xx_dma2d.c \
+            stm32f4xx_dma.c \
+            stm32f4xx_exti.c \
+            stm32f4xx_flash.c \
+            stm32f4xx_gpio.c \
+            stm32f4xx_i2c.c \
+            stm32f4xx_iwdg.c \
+            stm32f4xx_ltdc.c \
+            stm32f4xx_pwr.c \
+            stm32f4xx_rcc.c \
+            stm32f4xx_rng.c \
+            stm32f4xx_rtc.c \
+            stm32f4xx_sdio.c \
+            stm32f4xx_spi.c \
+            stm32f4xx_syscfg.c \
+            stm32f4xx_tim.c \
+            stm32f4xx_usart.c \
+            stm32f4xx_wwdg.c
 
 VPATH       := $(VPATH):$(STDPERIPH_DIR)/src
 endif
 
-ifeq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
-EXCLUDES        += stm32f4xx_fsmc.c
+ifneq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
+STDPERIPH_SRC += stm32f4xx_fsmc.c
 endif
-
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 ifeq ($(PERIPH_DRIVER), HAL)
 #USB
