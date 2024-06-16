@@ -220,7 +220,11 @@ LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
 ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
 
 COMMON_SRC += \
-            $(addprefix drivers/accgyro_legacy/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro_legacy/*.c)))
+            drivers/accgyro/legacy/accgyro_adxl345.c \
+            drivers/accgyro/legacy/accgyro_bma280.c \
+            drivers/accgyro/legacy/accgyro_l3g4200d.c \
+            drivers/accgyro/legacy/accgyro_lsm303dlhc.c \
+            drivers/accgyro/legacy/accgyro_mma845x.c
 
 endif
 endif
