@@ -226,7 +226,16 @@ endif
 endif
 
 RX_SRC = \
-            $(addprefix drivers/rx/,$(notdir $(wildcard $(SRC_DIR)/drivers/rx/*.c))) \
+            drivers/rx/expresslrs_driver.c \
+            drivers/rx/rx_a7105.c \
+            drivers/rx/rx_cc2500.c \
+            drivers/rx/rx_cyrf6936.c \
+            drivers/rx/rx_nrf24l01.c \
+            drivers/rx/rx_pwm.c \
+            drivers/rx/rx_spi.c \
+            drivers/rx/rx_sx127x.c \
+            drivers/rx/rx_sx1280.c \
+            drivers/rx/rx_xn297.c \
             rx/cc2500_common.c \
             rx/cc2500_frsky_shared.c \
             rx/cc2500_frsky_d.c \
