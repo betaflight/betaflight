@@ -240,7 +240,11 @@ RX_SRC = \
             rx/expresslrs_telemetry.c
 
 FLASH_SRC += \
-            $(addprefix drivers/flash/,$(notdir $(wildcard $(SRC_DIR)/drivers/flash/*.c))) \
+            drivers/flash/flash.c \
+            drivers/flash/flash_m25p16.c \
+            drivers/flash/flash_w25m.c \
+            drivers/flash/flash_w25n.c \
+            drivers/flash/flash_w25q128fv.c \
             io/flashfs.c
 
 SDCARD_SRC += \
