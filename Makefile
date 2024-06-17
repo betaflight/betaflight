@@ -502,9 +502,6 @@ $(CONFIGS_CLEAN):
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
 
-## configs           : Hydrate configuration
-configs: configs
-
 TARGETS_FLASH = $(addsuffix _flash,$(BASE_TARGETS))
 
 ## <TARGET>_flash    : build and flash a target
