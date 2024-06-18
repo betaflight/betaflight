@@ -88,7 +88,7 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 4);
 
 #ifndef DEFAULT_PID_PROCESS_DENOM
 #define DEFAULT_PID_PROCESS_DENOM       1
@@ -230,6 +230,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
         .ez_landing_speed = 50,
+        .tpa_delay_ms = 0,
     );
 
 #ifndef USE_D_MIN
@@ -292,7 +293,18 @@ void pidUpdateTpaFactor(float throttle)
     } else {
         tpaRate = pidRuntime.tpaLowMultiplier * (pidRuntime.tpaLowBreakpoint - throttle);
     }
-    pidRuntime.tpaFactor = 1.0f - tpaRate;
+
+    float tpaFactor = 1.0f - tpaRate;
+    DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
+
+#ifdef USE_WING
+    if (isFixedWing()) {
+        tpaFactor = pt2FilterApply(&pidRuntime.tpaLpf, tpaFactor);
+    }    
+#endif
+
+    DEBUG_SET(DEBUG_TPA, 1, lrintf(tpaFactor * 1000));
+    pidRuntime.tpaFactor = tpaFactor;
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
