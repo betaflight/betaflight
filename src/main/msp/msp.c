@@ -4019,7 +4019,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             const uint8_t textType = sbufReadU8(src);
 
             char* textVar;
-            const uint8_t textLength = MIN(MAX_NAME_LENGTH, sbufReadU8(src));
             switch (textType) {
                 case MSP2TEXT_PILOT_NAME:
                     textVar = pilotConfigMutable()->pilotName;
@@ -4037,10 +4036,29 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     textVar = currentControlRateProfile->profileName;
                     break;
 
+                case MSP2TEXT_CUSTOM_MSG_0:
+                case MSP2TEXT_CUSTOM_MSG_0 + 1:
+                case MSP2TEXT_CUSTOM_MSG_0 + 2:
+                case MSP2TEXT_CUSTOM_MSG_0 + 3:
+                case MSP2TEXT_CUSTOM_MSG_0 + 4:
+                case MSP2TEXT_CUSTOM_MSG_0 + 5:
+                case MSP2TEXT_CUSTOM_MSG_0 + 6:
+                case MSP2TEXT_CUSTOM_MSG_0 + 7:
+                    {
+                        unsigned msgIdx = textType - MSP2TEXT_CUSTOM_MSG_0;
+                        if (msgIdx < OSD_CUSTOM_MSG_COUNT) {
+                            textVar = pilotConfigMutable()->message[msgIdx];
+                        } else {
+                            return MSP_RESULT_ERROR;
+                        }
+                    }
+                    break;
+
                 default:
                     return MSP_RESULT_ERROR;
             }
 
+            const uint8_t textLength = MIN(MAX_NAME_LENGTH, sbufReadU8(src));
             memset(textVar, 0, strlen(textVar));
             for (unsigned int i = 0; i < textLength; i++) {
                 textVar[i] = sbufReadU8(src);
