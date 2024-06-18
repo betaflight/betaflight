@@ -508,10 +508,6 @@ static void mspSerialProcessReceivedReply(mspPort_t *msp, mspProcessReplyFnPtr m
  */
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
-    if (millis() < serialConfig()->serial_delay_ms) {
-        return;
-    }
-
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
         if (!mspPort->port) {
@@ -521,6 +517,14 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
         mspPostProcessFnPtr mspPostProcessFn = NULL;
 
         if (serialRxBytesWaiting(mspPort->port)) {
+            if (mspPort->port->identifier != SERIAL_PORT_USB_VCP && millis() < serialConfig()->serial_delay_ms) {
+                // clear rx buffer
+                while (serialRxBytesWaiting(mspPort->port)) {
+                    serialRead(mspPort->port);
+                }
+                return;
+            }
+
             // There are bytes incoming - abort pending request
             mspPort->lastActivityMs = millis();
             mspPort->pendingRequest = MSP_PENDING_NONE;
