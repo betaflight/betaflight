@@ -300,9 +300,6 @@ typedef struct pidRuntime_s {
     pt1Filter_t ptermYawLowpass;
     bool antiGravityEnabled;
     pt2Filter_t antiGravityLpf;
-#ifdef USE_WING
-    pt2Filter_t tpaLpf;
-#endif
     float antiGravityOsdCutoff;
     float antiGravityThrottleD;
     float itermAccelerator;
@@ -426,6 +423,10 @@ typedef struct pidRuntime_s {
     float angleTarget[2];
     bool axisInAngleMode[3];
     float maxRcRateInv[2];
+#endif
+
+#ifdef USE_WING
+    pt2Filter_t tpaLpf;
 #endif
 } pidRuntime_t;
 
