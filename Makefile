@@ -84,7 +84,7 @@ endif
 include $(MAKE_SCRIPT_DIR)/checks.mk
 
 # basic target list
-BASE_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
+BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
@@ -127,7 +127,8 @@ endif
 # default xtal value
 HSE_VALUE       ?= 8000000
 
-CI_TARGETS       := $(BASE_TARGETS) $(filter CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF, $(BASE_CONFIGS))
+CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/.exclude)))))
+CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(filter CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF, $(BASE_CONFIGS))
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
 
 REVISION := norevision
@@ -500,9 +501,6 @@ $(CONFIGS_CLEAN):
 
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
-
-## configs           : Hydrate configuration
-configs: configs
 
 TARGETS_FLASH = $(addsuffix _flash,$(BASE_TARGETS))
 
