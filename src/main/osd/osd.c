@@ -1503,7 +1503,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         {
             bool moreElements = true;
 
-            uint8_t osdNextElement = osdGetActiveElement();
+            uint8_t osdElement = osdGetActiveElement();
 
             timeUs_t startElementTime = micros();
 
@@ -1511,11 +1511,11 @@ void osdUpdate(timeUs_t currentTimeUs)
 
             executeTimeUs = micros() - startElementTime;
 
-            if (executeTimeUs > (osdElementDurationFractionUs[osdNextElement] >> OSD_EXEC_TIME_SHIFT)) {
-                osdElementDurationFractionUs[osdNextElement] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
-            } else if (osdElementDurationFractionUs[osdNextElement] > 0) {
+            if (executeTimeUs > (osdElementDurationFractionUs[osdElement] >> OSD_EXEC_TIME_SHIFT)) {
+                osdElementDurationFractionUs[osdElement] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+            } else if (osdElementDurationFractionUs[osdElement] > 0) {
                 // Slowly decay the max time
-                osdElementDurationFractionUs[osdNextElement]--;
+                osdElementDurationFractionUs[osdElement]--;
             }
 
             if (moreElements) {
