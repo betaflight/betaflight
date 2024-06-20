@@ -59,9 +59,9 @@
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 250
 
-#define PID_ROLL_DEFAULT  { 45, 80, 40, 120 }
-#define PID_PITCH_DEFAULT { 47, 84, 46, 125 }
-#define PID_YAW_DEFAULT   { 45, 80,  0, 120 }
+#define PID_ROLL_DEFAULT  { 45, 80, 40, 120, 0 }
+#define PID_PITCH_DEFAULT { 47, 84, 46, 125, 0 }
+#define PID_YAW_DEFAULT   { 45, 80,  0, 120, 0 }
 #define D_MIN_DEFAULT     { 30, 34, 0 }
 
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
@@ -107,6 +107,7 @@ typedef struct pidf_s {
     uint8_t I;
     uint8_t D;
     uint16_t F;
+    uint8_t S;
 } pidf_t;
 
 typedef enum {
@@ -267,6 +268,7 @@ typedef struct pidAxisData_s {
     float I;
     float D;
     float F;
+    float S;
 
     float Sum;
 } pidAxisData_t;

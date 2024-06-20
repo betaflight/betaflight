@@ -120,6 +120,7 @@ typedef enum {
     DEBUG_MAG_TASK_RATE,
     DEBUG_EZLANDING,
     DEBUG_TPA,
+    DEBUG_S_TERM,
     DEBUG_COUNT
 } debugType_e;
 
