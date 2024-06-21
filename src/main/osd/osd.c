@@ -202,12 +202,9 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_AVG_THROTTLE,
 };
 
-// Group elements in a number of groups to reduce task scheduling overhead
-#define OSD_GROUP_COUNT                 OSD_ITEM_COUNT
-// Aim to render a group of elements within a target time
-#define OSD_ELEMENT_RENDER_TARGET       30
-
 #define OSD_TASK_MARGIN                 1
+#define OSD_ELEMENT_MARGIN              1
+
 // Decay the estimated max task duration by 1/(1 << OSD_EXEC_TIME_SHIFT) on every invocation
 #define OSD_EXEC_TIME_SHIFT             8
 
@@ -1375,7 +1372,6 @@ void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint16_t osdStateDurationFractionUs[OSD_STATE_COUNT] = { 0 };
     static uint32_t osdElementDurationFractionUs[OSD_ITEM_COUNT] = { 0 };
-    static bool firstPass = true;
     timeUs_t executeTimeUs;
     osdState_e osdCurrentState = osdState;
 
@@ -1506,29 +1502,20 @@ void osdUpdate(timeUs_t currentTimeUs)
         {
             bool moreElements = true;
 
-            for (int rendered = 0; moreElements; rendered++) {
-                uint8_t osdCurrentElement = osdGetActiveElement();
+            uint8_t osdElement = osdGetActiveElement();
 
-                timeUs_t startElementTime = micros();
+            timeUs_t startElementTime = micros();
 
-                timeUs_t anticipatedEndUs = startElementTime + (osdElementDurationFractionUs[osdCurrentElement] >> OSD_EXEC_TIME_SHIFT);
+            moreElements = osdDrawNextActiveElement(osdDisplayPort, startElementTime);
 
-                if ((rendered > 0) && cmpTimeUs(anticipatedEndUs, currentTimeUs) > OSD_ELEMENT_RENDER_TARGET) {
-                    // There isn't time to render the next element
-                    break;
-                }
+            executeTimeUs = micros() - startElementTime;
 
-                moreElements = osdDrawNextActiveElement(osdDisplayPort, currentTimeUs);
-
-                executeTimeUs = micros() - startElementTime;
-
-                if (executeTimeUs > (osdElementDurationFractionUs[osdCurrentElement] >> OSD_EXEC_TIME_SHIFT)) {
-                    osdElementDurationFractionUs[osdCurrentElement] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
-                } else if (osdElementDurationFractionUs[osdCurrentElement] > 0) {
-                    // Slowly decay the max time
-                    osdElementDurationFractionUs[osdCurrentElement]--;
-                }
-            };
+            if (executeTimeUs > (osdElementDurationFractionUs[osdElement] >> OSD_EXEC_TIME_SHIFT)) {
+                osdElementDurationFractionUs[osdElement] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+            } else if (osdElementDurationFractionUs[osdElement] > 0) {
+                // Slowly decay the max time
+                osdElementDurationFractionUs[osdElement]--;
+            }
 
             if (moreElements) {
                 // There are more elements to draw
@@ -1577,7 +1564,6 @@ void osdUpdate(timeUs_t currentTimeUs)
             break;
         }
 
-        firstPass = false;
         osdState = OSD_STATE_IDLE;
 
         break;
@@ -1591,21 +1577,18 @@ void osdUpdate(timeUs_t currentTimeUs)
     if (!schedulerGetIgnoreTaskExecTime()) {
         executeTimeUs = micros() - currentTimeUs;
 
-
-        // On the first pass no element groups will have been formed, so all elements will have been
-        // rendered which is unrepresentative, so ignore
-        if (!firstPass) {
-            if (executeTimeUs > (osdStateDurationFractionUs[osdCurrentState] >> OSD_EXEC_TIME_SHIFT)) {
-                osdStateDurationFractionUs[osdCurrentState] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
-            } else if (osdStateDurationFractionUs[osdCurrentState] > 0) {
-                // Slowly decay the max time
-                osdStateDurationFractionUs[osdCurrentState]--;
-            }
+        if (executeTimeUs > (osdStateDurationFractionUs[osdCurrentState] >> OSD_EXEC_TIME_SHIFT)) {
+            osdStateDurationFractionUs[osdCurrentState] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+        } else if (osdStateDurationFractionUs[osdCurrentState] > 0) {
+            // Slowly decay the max time
+            osdStateDurationFractionUs[osdCurrentState]--;
         }
     }
 
     if (osdState == OSD_STATE_IDLE) {
-        schedulerSetNextStateTime((osdStateDurationFractionUs[OSD_STATE_CHECK] >> OSD_EXEC_TIME_SHIFT) + OSD_TASK_MARGIN);
+        schedulerSetNextStateTime((osdStateDurationFractionUs[OSD_STATE_CHECK] >> OSD_EXEC_TIME_SHIFT));
+    } else if (osdState == OSD_STATE_UPDATE_ELEMENTS) {
+        schedulerSetNextStateTime((osdElementDurationFractionUs[osdGetActiveElement()] >> OSD_EXEC_TIME_SHIFT) + OSD_ELEMENT_MARGIN);
     } else {
         schedulerSetNextStateTime((osdStateDurationFractionUs[osdState] >> OSD_EXEC_TIME_SHIFT) + OSD_TASK_MARGIN);
     }
