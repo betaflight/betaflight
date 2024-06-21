@@ -35,7 +35,7 @@
 
 #include "drivers/serial_usb_vcp.h"
 #include "usbd_hid.h"
-#include "drivers/stm32/vcp_hal/usbd_cdc_interface.h"
+#include "drivers/mcu/stm32/vcp_hal/usbd_cdc_interface.h"
 
 #define USB_HID_CDC_CONFIG_DESC_SIZ  (USB_HID_CONFIG_DESC_SIZ - 9 + USB_CDC_CONFIG_DESC_SIZ + 8)
 

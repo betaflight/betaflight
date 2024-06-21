@@ -14,35 +14,37 @@ VPATH       := $(VPATH):$(STDPERIPH_DIR)/Src
 else
 CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
-STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
-EXCLUDES        = stm32f4xx_crc.c \
-                  stm32f4xx_can.c \
-                  stm32f4xx_fmc.c \
-                  stm32f4xx_sai.c \
-                  stm32f4xx_cec.c \
-                  stm32f4xx_dsi.c \
-                  stm32f4xx_flash_ramfunc.c \
-                  stm32f4xx_fmpi2c.c \
-                  stm32f4xx_lptim.c \
-                  stm32f4xx_qspi.c \
-                  stm32f4xx_spdifrx.c \
-                  stm32f4xx_cryp.c \
-                  stm32f4xx_cryp_aes.c \
-                  stm32f4xx_hash_md5.c \
-                  stm32f4xx_cryp_des.c \
-                  stm32f4xx_hash.c \
-                  stm32f4xx_dbgmcu.c \
-                  stm32f4xx_cryp_tdes.c \
-                  stm32f4xx_hash_sha1.c
+STDPERIPH_SRC   = \
+            misc.c \
+            stm32f4xx_adc.c \
+            stm32f4xx_dac.c \
+            stm32f4xx_dcmi.c \
+            stm32f4xx_dfsdm.c \
+            stm32f4xx_dma2d.c \
+            stm32f4xx_dma.c \
+            stm32f4xx_exti.c \
+            stm32f4xx_flash.c \
+            stm32f4xx_gpio.c \
+            stm32f4xx_i2c.c \
+            stm32f4xx_iwdg.c \
+            stm32f4xx_ltdc.c \
+            stm32f4xx_pwr.c \
+            stm32f4xx_rcc.c \
+            stm32f4xx_rng.c \
+            stm32f4xx_rtc.c \
+            stm32f4xx_sdio.c \
+            stm32f4xx_spi.c \
+            stm32f4xx_syscfg.c \
+            stm32f4xx_tim.c \
+            stm32f4xx_usart.c \
+            stm32f4xx_wwdg.c
 
 VPATH       := $(VPATH):$(STDPERIPH_DIR)/src
 endif
 
-ifeq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
-EXCLUDES        += stm32f4xx_fsmc.c
+ifneq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
+STDPERIPH_SRC += stm32f4xx_fsmc.c
 endif
-
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 ifeq ($(PERIPH_DRIVER), HAL)
 #USB
@@ -100,7 +102,8 @@ endif
 VPATH           := $(VPATH):$(CMSIS_DIR)/Core/Include:$(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(ROOT)/src/main/drivers/stm32
+                   $(SRC_DIR)/startup/stm32 \
+                   $(SRC_DIR)/drivers/mcu/stm32
 
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_SRC       :=
@@ -110,7 +113,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBCDC_DIR)/Inc \
                    $(CMSIS_DIR)/Include \
                    $(CMSIS_DIR)/Device/ST/STM32F4xx/Include \
-                   $(ROOT)/src/main/drivers/stm32/vcp_hal
+                   $(SRC_DIR)/drivers/mcu/stm32/vcp_hal
 else
 CMSIS_SRC       := $(notdir $(wildcard $(CMSIS_DIR)/CoreSupport/*.c \
                    $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/*.c))
@@ -124,7 +127,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
-                   $(ROOT)/src/main/drivers/stm32/vcpf4
+                   $(SRC_DIR)/drivers/mcu/stm32/vcpf4
 endif
 
 #Flags
@@ -133,19 +136,19 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu
 ifeq ($(TARGET_MCU),STM32F411xE)
 DEVICE_FLAGS    = -DSTM32F411xE -finline-limit=20
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
-STARTUP_SRC     = startup_stm32f411xe.s
+STARTUP_SRC     = stm32/startup_stm32f411xe.s
 MCU_FLASH_SIZE  := 512
 
 else ifeq ($(TARGET_MCU),STM32F405xx)
 DEVICE_FLAGS    = -DSTM32F40_41xxx -DSTM32F405xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
-STARTUP_SRC     = startup_stm32f40xx.s
+STARTUP_SRC     = stm32/startup_stm32f40xx.s
 MCU_FLASH_SIZE  := 1024
 
 else ifeq ($(TARGET_MCU),STM32F446xx)
 DEVICE_FLAGS    = -DSTM32F446xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f446.ld
-STARTUP_SRC     = startup_stm32f446xx.s
+STARTUP_SRC     = stm32/startup_stm32f446xx.s
 MCU_FLASH_SIZE  := 512
 
 else
@@ -158,54 +161,54 @@ MCU_COMMON_SRC = \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/stm32/pwm_output_dshot.c \
-            drivers/stm32/adc_stm32f4xx.c \
-            drivers/stm32/bus_i2c_stm32f4xx.c \
-            drivers/stm32/bus_spi_stdperiph.c \
-            drivers/stm32/debug.c \
-            drivers/stm32/dma_reqmap_mcu.c \
-            drivers/stm32/dma_stm32f4xx.c \
-            drivers/stm32/dshot_bitbang.c \
-            drivers/stm32/dshot_bitbang_stdperiph.c \
-            drivers/stm32/exti.c \
-            drivers/stm32/io_stm32.c \
-            drivers/stm32/light_ws2811strip_stdperiph.c \
-            drivers/stm32/persistent.c \
-            drivers/stm32/pwm_output.c \
-            drivers/stm32/rcc_stm32.c \
-            drivers/stm32/sdio_f4xx.c \
-            drivers/stm32/serial_uart_stdperiph.c \
-            drivers/stm32/serial_uart_stm32f4xx.c \
-            drivers/stm32/system_stm32f4xx.c \
-            drivers/stm32/timer_stdperiph.c \
-            drivers/stm32/timer_stm32f4xx.c \
-            drivers/stm32/transponder_ir_io_stdperiph.c \
-            drivers/stm32/usbd_msc_desc.c \
-            drivers/stm32/camera_control.c \
-            startup/system_stm32f4xx.c
+            drivers/mcu/stm32/pwm_output_dshot.c \
+            drivers/mcu/stm32/adc_stm32f4xx.c \
+            drivers/mcu/stm32/bus_i2c_stm32f4xx.c \
+            drivers/mcu/stm32/bus_spi_stdperiph.c \
+            drivers/mcu/stm32/debug.c \
+            drivers/mcu/stm32/dma_reqmap_mcu.c \
+            drivers/mcu/stm32/dma_stm32f4xx.c \
+            drivers/mcu/stm32/dshot_bitbang.c \
+            drivers/mcu/stm32/dshot_bitbang_stdperiph.c \
+            drivers/mcu/stm32/exti.c \
+            drivers/mcu/stm32/io_stm32.c \
+            drivers/mcu/stm32/light_ws2811strip_stdperiph.c \
+            drivers/mcu/stm32/persistent.c \
+            drivers/mcu/stm32/pwm_output.c \
+            drivers/mcu/stm32/rcc_stm32.c \
+            drivers/mcu/stm32/sdio_f4xx.c \
+            drivers/mcu/stm32/serial_uart_stdperiph.c \
+            drivers/mcu/stm32/serial_uart_stm32f4xx.c \
+            drivers/mcu/stm32/system_stm32f4xx.c \
+            drivers/mcu/stm32/timer_stdperiph.c \
+            drivers/mcu/stm32/timer_stm32f4xx.c \
+            drivers/mcu/stm32/transponder_ir_io_stdperiph.c \
+            drivers/mcu/stm32/usbd_msc_desc.c \
+            drivers/mcu/stm32/camera_control.c \
+            startup/stm32/system_stm32f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
-            drivers/stm32/vcp_hal/usbd_desc.c \
-            drivers/stm32/vcp_hal/usbd_conf.c \
-            drivers/stm32/vcp_hal/usbd_cdc_interface.c \
-            drivers/stm32/serial_usb_vcp.c \
+            drivers/mcu/stm32/vcp_hal/usbd_desc.c \
+            drivers/mcu/stm32/vcp_hal/usbd_conf.c \
+            drivers/mcu/stm32/vcp_hal/usbd_cdc_interface.c \
+            drivers/mcu/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 else
 VCP_SRC = \
-            drivers/stm32/vcpf4/stm32f4xx_it.c \
-            drivers/stm32/vcpf4/usb_bsp.c \
-            drivers/stm32/vcpf4/usbd_desc.c \
-            drivers/stm32/vcpf4/usbd_usr.c \
-            drivers/stm32/vcpf4/usbd_cdc_vcp.c \
-            drivers/stm32/vcpf4/usb_cdc_hid.c \
-            drivers/stm32/serial_usb_vcp.c \
+            drivers/mcu/stm32/vcpf4/stm32f4xx_it.c \
+            drivers/mcu/stm32/vcpf4/usb_bsp.c \
+            drivers/mcu/stm32/vcpf4/usbd_desc.c \
+            drivers/mcu/stm32/vcpf4/usbd_usr.c \
+            drivers/mcu/stm32/vcpf4/usbd_cdc_vcp.c \
+            drivers/mcu/stm32/vcpf4/usb_cdc_hid.c \
+            drivers/mcu/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 endif
 
 MSC_SRC = \
             drivers/usb_msc_common.c \
-            drivers/stm32/usb_msc_f4xx.c \
+            drivers/mcu/stm32/usb_msc_f4xx.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \

@@ -41,7 +41,7 @@
 #endif
 #include "drivers/usb_io.h"
 #elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-#include "drivers/stm32/vcp_hal/usbd_cdc_interface.h"
+#include "drivers/mcu/stm32/vcp_hal/usbd_cdc_interface.h"
 #include "drivers/usb_io.h"
 #ifdef USE_USB_CDC_HID
 #include "usbd_ioreq.h"
