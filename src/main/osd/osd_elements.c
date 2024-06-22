@@ -318,16 +318,25 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
-    const char unitSymbol = osdGetMetersToSelectedUnitSymbol();
-    unsigned decimalPlaces;
+    static const struct {
+        uint8_t decimals; 
+        bool asl;
+    } variantMap[] = {
+        [OSD_ELEMENT_TYPE_1] = { 1, false },
+        [OSD_ELEMENT_TYPE_2] = { 0, false },
+        [OSD_ELEMENT_TYPE_3] = { 1, true },
+        [OSD_ELEMENT_TYPE_4] = { 0, true },
+    };
 
-#ifdef USE_GPS
-    decimalPlaces = (variantType == OSD_ELEMENT_TYPE_2 || variantType == OSD_ELEMENT_TYPE_4) ? 0 : 1;
-    int32_t alt = (variantType == OSD_ELEMENT_TYPE_3 || variantType == OSD_ELEMENT_TYPE_4) ? getAltitudeAsl() : altitudeCm;
-#else
-    decimalPlaces = (variantType == OSD_ELEMENT_TYPE_2) ? 0 : 1;
     int32_t alt = altitudeCm;
+#ifdef USE_GPS
+    if (variantMap[variantType].asl) {
+        alt = getAltitudeAsl();
+    }
 #endif
+    unsigned decimalPlaces = variantMap[variantType].decimals;
+    const char unitSymbol = osdGetMetersToSelectedUnitSymbol();
+
     osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", decimalPlaces, true, unitSymbol);
 }
 
