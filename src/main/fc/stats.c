@@ -73,11 +73,11 @@ static void writeStats(dispatchEntry_t *self)
         // Don't save if the user made config changes that have not yet been saved.
         if (!isConfigDirty()) {
 
-            const bool gyroIsStill = fabsf(gyro.gyroADCf[FD_ROLL]) < systemConfig()->statsSaveMoveLimit &&
-                fabsf(gyro.gyroADCf[FD_PITCH]) < systemConfig()->statsSaveMoveLimit &&
-                fabsf(gyro.gyroADCf[FD_YAW]) < systemConfig()->statsSaveMoveLimit;
+            const bool gyroIsStill = fabsf(gyro.gyroADCf[FD_ROLL]) < statsConfig()->statsSaveMoveLimit &&
+                fabsf(gyro.gyroADCf[FD_PITCH]) < statsConfig()->statsSaveMoveLimit &&
+                fabsf(gyro.gyroADCf[FD_YAW]) < statsConfig()->statsSaveMoveLimit;
 
-            if (gyroIsStill || systemConfig()->statsSaveMoveLimit == 0) {
+            if (gyroIsStill || statsConfig()->statsSaveMoveLimit == 0) {
                 writeEEPROM();
                 // Repeat disarming beep indicating the stats save is complete
                 beeper(BEEPER_DISARMING);
