@@ -439,6 +439,10 @@ static const char * const lookupTableTpaMode[] = {
 };
 #endif
 
+static const char * const lookupTableSpaMode[] = {
+    "OFF", "I_FREEZE", "I", "PID", "PD_I_FREEZE"
+};
+
 #ifdef USE_LED_STRIP
 #ifdef USE_LED_STRIP_STATUS_MODE
 static const char * const lookupTableLEDProfile[] = {
@@ -629,6 +633,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_TPA_MODE
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
 #endif
+    LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
 #ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
     LOOKUP_TABLE_ENTRY(lookupTableLedstripColors),
@@ -1272,6 +1277,18 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_EZ_LANDING_THRESHOLD,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_threshold) },
     { PARAM_NAME_EZ_LANDING_LIMIT,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 75 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_limit) },
     { PARAM_NAME_EZ_LANDING_SPEED,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_speed) },
+
+#ifdef USE_WING
+    { PARAM_NAME_SPA_ROLL_CENTER,    VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_center[FD_ROLL]) },
+    { PARAM_NAME_SPA_ROLL_WIDTH,     VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_width[FD_ROLL]) },
+    { PARAM_NAME_SPA_ROLL_MODE,      VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_mode[FD_ROLL]) },
+    { PARAM_NAME_SPA_PITCH_CENTER,   VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_center[FD_PITCH]) },
+    { PARAM_NAME_SPA_PITCH_WIDTH,    VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_width[FD_PITCH]) },
+    { PARAM_NAME_SPA_PITCH_MODE,     VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_mode[FD_PITCH]) },
+    { PARAM_NAME_SPA_YAW_CENTER,     VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_center[FD_YAW]) },
+    { PARAM_NAME_SPA_YAW_WIDTH,      VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_width[FD_YAW]) },
+    { PARAM_NAME_SPA_YAW_MODE,       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_mode[FD_YAW]) },
+#endif
 
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY

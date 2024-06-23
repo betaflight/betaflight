@@ -121,6 +121,7 @@ typedef enum {
     DEBUG_EZLANDING,
     DEBUG_TPA,
     DEBUG_S_TERM,
+    DEBUG_SPA,
     DEBUG_COUNT
 } debugType_e;
 

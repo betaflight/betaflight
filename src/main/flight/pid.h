@@ -82,6 +82,14 @@ typedef enum {
 } tpaMode_e;
 
 typedef enum {
+    SPA_MODE_OFF,
+    SPA_MODE_I_FREEZE,
+    SPA_MODE_I,
+    SPA_MODE_PID,
+    SPA_MODE_PD_I_FREEZE,
+} spaMode_e;
+
+typedef enum {
     PID_ROLL,
     PID_PITCH,
     PID_YAW,
@@ -253,6 +261,9 @@ typedef struct pidProfile_s {
     uint8_t ez_landing_limit;               // Maximum motor output when all sticks centred and throttle zero
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
     uint16_t tpa_delay_ms;                  // TPA delay for fixed wings using pt2 filter (time constant)
+    uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
+    uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
+    uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -435,6 +446,7 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_WING
     pt2Filter_t tpaLpf;
+    float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
 #endif
 } pidRuntime_t;
 
