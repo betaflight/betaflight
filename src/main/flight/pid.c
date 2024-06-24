@@ -820,8 +820,8 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 #ifdef USE_WING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         float currentRate = getSetpointRate(axis);
-        pidRuntime.spa[axis] = smoothStepDownTransition(
-            fabs(currentRate), pidProfile->spa_center[axis], pidProfile->spa_width[axis]);
+        pidRuntime.spa[axis] = 1.0f - smoothStepUpTransition(
+            fabsf(currentRate), pidProfile->spa_center[axis], pidProfile->spa_width[axis]);
         DEBUG_SET(DEBUG_SPA, axis, lrintf(pidRuntime.spa[axis] * 1000));
     }    
 #else
@@ -1062,12 +1062,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 
-    float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
+        float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
 #ifdef USE_WING
-    if (pidProfile->spa_mode[axis] != SPA_MODE_OFF) {
-        // slowing down I-term change, or even making it zero if setpoint is high enough
-        iTermChange *= pidRuntime.spa[axis];
-    }
+        if (pidProfile->spa_mode[axis] != SPA_MODE_OFF) {
+            // slowing down I-term change, or even making it zero if setpoint is high enough
+            iTermChange *= pidRuntime.spa[axis];
+        }
 #endif // #ifdef USE_WING
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
