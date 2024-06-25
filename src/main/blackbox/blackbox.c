@@ -1412,6 +1412,18 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_LANDING_LIMIT, "%d",       currentPidProfile->ez_landing_limit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_LANDING_SPEED, "%d",       currentPidProfile->ez_landing_speed);
 
+#ifdef USE_WING
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_CENTER, "%d",        currentPidProfile->spa_center[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_WIDTH, "%d",         currentPidProfile->spa_width[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_MODE, "%d",          currentPidProfile->spa_mode[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_PITCH_CENTER, "%d",       currentPidProfile->spa_center[FD_PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_PITCH_WIDTH, "%d",        currentPidProfile->spa_width[FD_PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_PITCH_MODE, "%d",         currentPidProfile->spa_mode[FD_PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_YAW_CENTER, "%d",         currentPidProfile->spa_center[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_YAW_WIDTH, "%d",          currentPidProfile->spa_width[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_YAW_MODE, "%d",           currentPidProfile->spa_mode[FD_YAW]);
+#endif
+
         BLACKBOX_PRINT_HEADER_LINE("rc_rates", "%d,%d,%d",                  currentControlRateProfile->rcRates[ROLL],
                                                                             currentControlRateProfile->rcRates[PITCH],
                                                                             currentControlRateProfile->rcRates[YAW]);

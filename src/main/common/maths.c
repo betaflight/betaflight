@@ -346,3 +346,26 @@ fix12_t  qConstruct(int16_t num, int16_t den)
 {
     return (num << 12) / den;
 }
+
+// Cubic polynomial blending function
+static float cubicBlend(const float t)
+{
+    return t * t * (3.0f - 2.0f * t);
+}
+
+// Smooth step-up transition function from 0 to 1
+float smoothStepUpTransition(const float x, const float center, const float width)
+{
+    const float half_width = width * 0.5f;
+    const float left_limit = center - half_width;
+    const float right_limit = center + half_width;
+
+    if (x < left_limit) {
+        return 0.0f;
+    } else if (x > right_limit) {
+        return 1.0f;
+    } else {
+        const float t = (x - left_limit) / width; // Normalize x within the range
+        return cubicBlend(t);
+    }
+}
