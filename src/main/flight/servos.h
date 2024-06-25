@@ -30,6 +30,7 @@
 #define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
+#define SERVO_RATE_MAX 100 // 100% servo deflection
 
 // These must be consecutive, see 'reversedSources'
 enum {
@@ -132,6 +133,7 @@ typedef struct servoConfig_s {
     uint16_t servo_lowpass_freq;            // lowpass servo filter frequency selection; 1/1000ths of loop freq
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     uint8_t channelForwardingStartChannel;
+    int8_t servo_custom_rate;               // servo rate is applied when BOXSERVOCUSTOMRATE is active
 } servoConfig_t;
 
 PG_DECLARE(servoConfig_t, servoConfig);

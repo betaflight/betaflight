@@ -56,7 +56,7 @@
 #include "rx/rx.h"
 
 
-PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 1);
 
 void pgResetFn_servoConfig(servoConfig_t *servoConfig)
 {
@@ -78,6 +78,7 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
 #ifdef SERVO4_PIN
     servoConfig->dev.ioTags[3] = IO_TAG(SERVO4_PIN);
 #endif
+    servoConfig->servo_custom_rate = SERVO_RATE_MAX;
 }
 
 PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
@@ -480,7 +481,12 @@ void servoMixer(void)
     }
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = ((int32_t)servoParams(i)->rate * servo[i]) / 100L;
+        int32_t rate = (int32_t)servoParams(i)->rate;
+        if (IS_RC_MODE_ACTIVE(BOXSERVOCUSTOMRATE)) {
+            rate = SIGN(rate) * servoConfig()->servo_custom_rate;
+        }
+
+        servo[i] = ((int32_t)rate * servo[i]) / 100L;
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
