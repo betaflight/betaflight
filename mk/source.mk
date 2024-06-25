@@ -332,6 +332,16 @@ endif
 endif
 
 RX_SRC = \
+            drivers/rx/expresslrs_driver.c \
+            drivers/rx/rx_a7105.c \
+            drivers/rx/rx_cc2500.c \
+            drivers/rx/rx_cyrf6936.c \
+            drivers/rx/rx_nrf24l01.c \
+            drivers/rx/rx_pwm.c \
+            drivers/rx/rx_spi.c \
+            drivers/rx/rx_sx127x.c \
+            drivers/rx/rx_sx1280.c \
+            drivers/rx/rx_xn297.c \
             rx/cc2500_common.c \
             rx/cc2500_frsky_shared.c \
             rx/cc2500_frsky_d.c \
@@ -340,22 +350,16 @@ RX_SRC = \
             rx/cc2500_redpine.c \
             rx/a7105_flysky.c \
             rx/cyrf6936_spektrum.c \
-            drivers/rx/expresslrs_driver.c \
             rx/expresslrs.c \
             rx/expresslrs_common.c \
-            rx/expresslrs_telemetry.c \
-            drivers/rx/rx_cc2500.c \
-            drivers/rx/rx_a7105.c \
-            drivers/rx/rx_cyrf6936.c \
-            drivers/rx/rx_sx127x.c \
-            drivers/rx/rx_sx1280.c
+            rx/expresslrs_telemetry.c
 
 FLASH_SRC += \
-            drivers/flash.c \
-            drivers/flash_m25p16.c \
-            drivers/flash_w25n.c \
-            drivers/flash_w25q128fv.c \
-            drivers/flash_w25m.c \
+            drivers/flash/flash.c \
+            drivers/flash/flash_m25p16.c \
+            drivers/flash/flash_w25m.c \
+            drivers/flash/flash_w25n.c \
+            drivers/flash/flash_w25q128fv.c \
             io/flashfs.c
 
 SDCARD_SRC += \

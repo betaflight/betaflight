@@ -30,14 +30,14 @@
 
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
-#include "drivers/flash.h"
-#include "drivers/flash_impl.h"
+#include "drivers/flash/flash.h"
+#include "drivers/flash/flash_impl.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
 #include "pg/flash.h"
 
-#include "flash_m25p16.h"
+#include "drivers/flash/flash_m25p16.h"
 
 #define M25P16_INSTRUCTION_RDID             SPIFLASH_INSTRUCTION_RDID
 #define M25P16_INSTRUCTION_READ_BYTES       0x03

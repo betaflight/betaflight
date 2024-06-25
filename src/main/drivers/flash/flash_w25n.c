@@ -27,9 +27,9 @@
 
 #ifdef USE_FLASH_W25N
 
-#include "flash.h"
-#include "flash_impl.h"
-#include "flash_w25n.h"
+#include "drivers/flash/flash.h"
+#include "drivers/flash/flash_impl.h"
+#include "drivers/flash/flash_w25n.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
 #include "drivers/io.h"

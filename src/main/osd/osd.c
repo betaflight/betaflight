@@ -55,7 +55,7 @@
 
 #include "drivers/display.h"
 #include "drivers/dshot.h"
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/sdcard.h"
 #include "drivers/time.h"

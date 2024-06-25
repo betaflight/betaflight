@@ -29,7 +29,7 @@
 #include "drivers/resource.h"
 #include "drivers/system.h"
 
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/max7456.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/sdcard.h"
