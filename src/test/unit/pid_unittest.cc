@@ -114,10 +114,10 @@ void setDefaultTestSettings(void)
 {
     pgResetAll();
     pidProfile = pidProfilesMutable(1);
-    pidProfile->pid[PID_ROLL]  =  { 40, 40, 30, 65 };
-    pidProfile->pid[PID_PITCH] =  { 58, 50, 35, 60 };
-    pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60 };
-    pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 50 };
+    pidProfile->pid[PID_ROLL]  =  { 40, 40, 30, 65, 0 };
+    pidProfile->pid[PID_PITCH] =  { 58, 50, 35, 60, 0 };
+    pidProfile->pid[PID_YAW]   =  { 70, 45, 20, 60, 0 };
+    pidProfile->pid[PID_LEVEL] =  { 50, 50, 75, 50, 0 };
 
     // Compensate for the upscaling done without 'use_integrated_yaw'
     pidProfile->pid[PID_YAW].I = pidProfile->pid[PID_YAW].I / 2.5f;
@@ -183,6 +183,7 @@ void resetTest(void)
         pidData[axis].I = 0;
         pidData[axis].D = 0;
         pidData[axis].F = 0;
+        pidData[axis].S = 0;
         pidData[axis].Sum = 0;
         simulatedSetpointRate[axis] = 0;
         simulatedRcDeflection[axis] = 0;

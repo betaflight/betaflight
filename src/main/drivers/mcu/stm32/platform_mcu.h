@@ -32,7 +32,7 @@
 #include "stm32g4xx_ll_bus.h"
 #include "stm32g4xx_ll_tim.h"
 #include "stm32g4xx_ll_system.h"
-#include "drivers/stm32/stm32g4xx_ll_ex.h"
+#include "drivers/mcu/stm32/stm32g4xx_ll_ex.h"
 
 // Chip Unique ID on G4
 #define U_ID_0 (*(uint32_t*)UID_BASE)
@@ -57,7 +57,7 @@
 #include "stm32h7xx_ll_bus.h"
 #include "stm32h7xx_ll_tim.h"
 #include "stm32h7xx_ll_system.h"
-#include "drivers/stm32/stm32h7xx_ll_ex.h"
+#include "drivers/mcu/stm32/stm32h7xx_ll_ex.h"
 
 // Chip Unique ID on H7
 #define U_ID_0 (*(uint32_t*)UID_BASE)
@@ -82,7 +82,7 @@
 #include "stm32f7xx_ll_bus.h"
 #include "stm32f7xx_ll_tim.h"
 #include "stm32f7xx_ll_system.h"
-#include "drivers/stm32/stm32f7xx_ll_ex.h"
+#include "drivers/mcu/stm32/stm32f7xx_ll_ex.h"
 
 // Chip Unique ID on F7
 #define U_ID_0 (*(uint32_t*)UID_BASE)

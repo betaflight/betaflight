@@ -38,7 +38,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #endif
 
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/system.h"
 
 static uint16_t eepromConfigSize;

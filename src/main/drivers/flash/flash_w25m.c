@@ -36,14 +36,14 @@
 
 #include "common/maths.h"
 #include "drivers/bus_spi.h"
-#include "drivers/flash.h"
-#include "drivers/flash_impl.h"
+#include "drivers/flash/flash.h"
+#include "drivers/flash/flash_impl.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
 
-#include "flash_m25p16.h"
-#include "flash_w25m.h"
-#include "flash_w25n.h"
+#include "drivers/flash/flash_m25p16.h"
+#include "drivers/flash/flash_w25m.h"
+#include "drivers/flash/flash_w25n.h"
 
 #include "pg/flash.h"
 
