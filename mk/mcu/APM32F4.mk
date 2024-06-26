@@ -38,22 +38,21 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
 VPATH           := $(VPATH):$(ROOT)/lib/main/APM32F4/Libraries/Device/Geehy/APM32F4xx
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(ROOT)/src/main/drivers/apm32
+                   $(SRC_DIR)/startup/apm32 \
+                   $(SRC_DIR)/drivers/mcu/apm32
 
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(SRC_DIR)/startup/apm32 \
                    $(STDPERIPH_DIR)/Include \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Geehy/APM32F4xx/Include \
-                   $(ROOT)/src/main/drivers/apm32/usb/vcp \
-                   $(ROOT)/src/main/drivers/apm32/usb/msc \
-                   $(ROOT)/src/main/drivers/apm32/usb \
-                   $(ROOT)/src/main/drivers/apm32/platform \
-                   $(ROOT)/src/main/msc \
-                   $(ROOT)/lib/main/CMSIS/Core/Include
+                   $(SRC_DIR)/drivers/mcu/apm32/usb/vcp \
+                   $(SRC_DIR)/drivers/mcu/apm32/usb/msc \
+                   $(SRC_DIR)/drivers/mcu/apm32/usb \
+                   $(ROOT)/lib/main/CMSIS/Core/Include \
+                   $(SRC_DIR)/msc
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
@@ -76,42 +75,42 @@ MCU_COMMON_SRC = \
             drivers/inverter.c \
             drivers/dshot_bitbang_decode.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/apm32/bus_spi_apm32.c \
-            drivers/apm32/bus_i2c_apm32.c \
-            drivers/apm32/bus_i2c_apm32_init.c \
-            drivers/apm32/camera_control.c \
-            drivers/apm32/debug.c \
-            drivers/apm32/dma_reqmap_mcu.c \
-            drivers/apm32/dshot_bitbang.c \
-            drivers/apm32/dshot_bitbang_ddl.c \
-            drivers/apm32/eint_apm32.c \
-            drivers/apm32/io_apm32.c \
-            drivers/apm32/light_ws2811strip_apm32.c \
-            drivers/apm32/persistent_apm32.c \
-            drivers/apm32/pwm_output_apm32.c \
-            drivers/apm32/pwm_output_dshot_apm32.c \
-            drivers/apm32/rcm_apm32.c \
-            drivers/apm32/serial_uart_apm32.c \
-            drivers/apm32/timer_apm32.c \
-            drivers/apm32/transponder_ir_io_apm32.c \
-            drivers/apm32/targets/apm32f4/timer_apm32f4xx.c \
-            drivers/apm32/targets/apm32f4/adc_apm32f4xx.c \
-            drivers/apm32/targets/apm32f4/dma_apm32f4xx.c \
-            drivers/apm32/targets/apm32f4/serial_uart_apm32f4xx.c \
-            drivers/apm32/targets/apm32f4/system_apm32f4xx.c
+            drivers/mcu/apm32/bus_spi_apm32.c \
+            drivers/mcu/apm32/bus_i2c_apm32.c \
+            drivers/mcu/apm32/bus_i2c_apm32_init.c \
+            drivers/mcu/apm32/camera_control.c \
+            drivers/mcu/apm32/debug.c \
+            drivers/mcu/apm32/dma_reqmap_mcu.c \
+            drivers/mcu/apm32/dshot_bitbang.c \
+            drivers/mcu/apm32/dshot_bitbang_ddl.c \
+            drivers/mcu/apm32/eint_apm32.c \
+            drivers/mcu/apm32/io_apm32.c \
+            drivers/mcu/apm32/light_ws2811strip_apm32.c \
+            drivers/mcu/apm32/persistent_apm32.c \
+            drivers/mcu/apm32/pwm_output_apm32.c \
+            drivers/mcu/apm32/pwm_output_dshot_apm32.c \
+            drivers/mcu/apm32/rcm_apm32.c \
+            drivers/mcu/apm32/serial_uart_apm32.c \
+            drivers/mcu/apm32/timer_apm32.c \
+            drivers/mcu/apm32/transponder_ir_io_apm32.c \
+            drivers/mcu/apm32/timer_apm32f4xx.c \
+            drivers/mcu/apm32/adc_apm32f4xx.c \
+            drivers/mcu/apm32/dma_apm32f4xx.c \
+            drivers/mcu/apm32/serial_uart_apm32f4xx.c \
+            drivers/mcu/apm32/system_apm32f4xx.c
 
 VCP_SRC = \
-            drivers/apm32/usb/vcp/usbd_cdc_descriptor.c \
-            drivers/apm32/usb/usbd_board_apm32f4.c \
-            drivers/apm32/usb/vcp/usbd_cdc_vcp.c \
-            drivers/apm32/usb/vcp/serial_usb_vcp.c \
+            drivers/mcu/apm32/usb/vcp/usbd_cdc_descriptor.c \
+            drivers/mcu/apm32/usb/usbd_board_apm32f4.c \
+            drivers/mcu/apm32/usb/vcp/usbd_cdc_vcp.c \
+            drivers/mcu/apm32/usb/vcp/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MSC_SRC = \
             drivers/usb_msc_common.c \
-            drivers/apm32/usb/msc/usb_msc_apm32f4xx.c \
-            drivers/apm32/usb/msc/usbd_memory.c \
-            drivers/apm32/usb/msc/usbd_msc_descriptor.c \
+            drivers/mcu/apm32/usb/msc/usb_msc_apm32f4xx.c \
+            drivers/mcu/apm32/usb/msc/usbd_memory.c \
+            drivers/mcu/apm32/usb/msc/usbd_msc_descriptor.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
