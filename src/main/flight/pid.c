@@ -641,7 +641,7 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], const float rotation[XYZ_AXIS_
     }
 }
 
-STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
+STATIC_UNIT_TESTED FAST_CODE_NOINLINE void rotateItermAndAxisError(void)
 {
     if (pidRuntime.itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -673,7 +673,7 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 
 #if defined(USE_ITERM_RELAX)
 #if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
+STATIC_UNIT_TESTED FAST_CODE_NOINLINE void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
 {
     if (pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR) {
         const float setpointLpf = pt1FilterApply(&pidRuntime.acLpf[axis], *currentPidSetpoint);
@@ -863,7 +863,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-static float getSterm(int axis, const pidProfile_t *pidProfile)
+static FAST_CODE_NOINLINE float getSterm(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     const float sTerm = getSetpointRate(axis) / getMaxRcRate(axis) * 1000.0f *
@@ -879,7 +879,7 @@ static float getSterm(int axis, const pidProfile_t *pidProfile)
 #endif
 }
 
-NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
+static FAST_CODE_NOINLINE void calculateSpaValues(const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -893,7 +893,7 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 #endif // #ifdef USE_WING ... #else
 }
 
-NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
+static FAST_CODE_NOINLINE void applySpa(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     switch(pidProfile->spa_mode[axis]){
