@@ -501,11 +501,11 @@ static void saSendFrame(uint8_t *buf, int len)
         case SERIAL_PORT_SOFTSERIAL1:
         case SERIAL_PORT_SOFTSERIAL2:
             if (vtxSettingsConfig()->softserialAlt) {
-                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
+                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
             }
             break;
         default:
-            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
+            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
             break;
         }
 
@@ -707,7 +707,7 @@ bool vtxSmartAudioInit(void)
     // the SA protocol instead requires pulldowns, and therefore uses SERIAL_BIDIR_PP_PD instead of SERIAL_BIDIR_PP
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
-        portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP_PD;
+        portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP_PD | SERIAL_BIDIR_NOPULL;
 
         smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
     }
