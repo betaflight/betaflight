@@ -945,7 +945,7 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_SW_RESET);
 
     // Wait for the device to be ready
-    while (spiReadRegMsk(dev, LSM6DSV_CTRL3 & LSM6DSV_CTRL3_SW_RESET)) {}
+    while (spiReadRegMsk(dev, LSM6DSV_CTRL3) & LSM6DSV_CTRL3_SW_RESET) {}
 
     // Autoincrement register address when doing block SPI reads and update continuously
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC | LSM6DSV_CTRL3_BDU);      /*BDU bit need to be set*/
