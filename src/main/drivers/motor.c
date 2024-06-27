@@ -383,9 +383,6 @@ bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 #ifdef STM32F4
     return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
         (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);
-#elif defined(APM32F4)
-    return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
-        (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);
 #else
     return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
         (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);

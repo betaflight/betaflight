@@ -293,9 +293,7 @@ static const char *mcuTypeNames[] = {
     "H723/H725",
     "G474",
     "H730",
-    "AT32F435",
-    "APM32F405",
-    "APM32F407"
+    "AT32F435"
 };
 
 static const char *configurationStates[] = {
@@ -4632,7 +4630,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     cliPrintf("MCU %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
 
-#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32G4)
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
     int sysclkSource = SystemSYSCLKSource();
 
@@ -5346,7 +5344,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_CHANREQ_STRING "Channel"
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 #define DMA_STCH_STRING    "Stream"
 #else
 #define DMA_STCH_STRING    "Channel"
