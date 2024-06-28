@@ -199,24 +199,33 @@ uint32_t timerClock(const TIM_TypeDef *tim)
 
 #define PERIPH_PRESCALER(bus) ((RCC->D2CFGR & RCC_D2CFGR_D2PPRE ## bus) >> RCC_D2CFGR_D2PPRE ## bus ## _Pos)
 
-    if (tim == TIM1 || tim == TIM8 || tim == TIM15 || tim == TIM16 || tim == TIM17) {
-        // Timers on APB2
+    RCC_ClkInitTypeDef  clkConfig, uint32_t fLatency
+    HAL_RCC_GetClockConfig(&clkConfig, &fLatency);
+
+    if ((uintptr_t)tim >= APB2PERIPH_BASE ) { // APB2 
         pclk = HAL_RCC_GetPCLK2Freq();
-        ppre = PERIPH_PRESCALER(2);
-    } else {
-        // Timers on APB1
+        ppre = clkConfig.APB2CLKDivider;
+    } else {  // all other timers are on APB1
         pclk = HAL_RCC_GetPCLK1Freq();
-        ppre = PERIPH_PRESCALER(1);
+        ppre = clkConfig.APB1CLKDivider;
     }
-
     timpre = (RCC->CFGR & RCC_CFGR_TIMPRE) ? 1 : 0;
+#define PC(m) (0x80 | (m))  // multiply pclk
+#define HC(m) (0x00 | (m))  // multiply hclk
+        static const uint8_t periphToKernel[2][8] = { // The multiplier table
+        //  1      1      1      1      2      4      8      16 
+        { HC(1), HC(1), HC(1), HC(1), HC(1), PC(2), PC(2), PC(2) }, // TIMPRE = 0 
+        { PC(2), PC(2), PC(2), PC(2), PC(2), PC(2), PC(4), PC(4) }     // TIMPRE = 1 
+      }
+#undef PC
+#undef HC
+     int flagMult = periphToKernel[timpre][ppre];
 
-    int index = (timpre << 3) | ppre;
-
-    static uint8_t periphToKernel[2][8] = { // The multiplier table
-        { 1, 1, 1, 1, 2, 2, 2, 2 }, // TIMPRE = 0
-        { 1, 1, 1, 1, 2, 4, 4, 4 }  // TIMPRE = 1
-    };
+     if (flagMult & 0x80) { // PCLK based
+        return pclk * (flagMult & 0x7f);
+     } else {
+         return HAL_RCC_GetHCLKFreq() *  (flagMult & 0x7f);
+     }
 
     return pclk * periphToKernel[timpre][ppre];
 
