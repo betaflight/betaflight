@@ -194,19 +194,10 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     uint32_t pclk;
     uint32_t ppre;
 
-    // Implement the table:
-    // RM0433 (Rev 6) Table 52.
-    // RM0455 (Rev 3) Table 55.
-    // "Ratio between clock timer and pclk"
-    // (Tables are the same, just D2 or CD difference)
+    // This function is used to calculate the timer clock frequency.
+    // RM0481 (Rev 3) Table 
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 #define PERIPH_PRESCALER(bus) ((RCC->D2CFGR & RCC_D2CFGR_D2PPRE ## bus) >> RCC_D2CFGR_D2PPRE ## bus ## _Pos)
-#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
-#define PERIPH_PRESCALER(bus) ((RCC->CDCFGR2 & RCC_CDCFGR2_CDPPRE ## bus) >> RCC_CDCFGR2_CDPPRE ## bus ## _Pos)
-#else
-#error Unknown MCU type
-#endif
 
     if (tim == TIM1 || tim == TIM8 || tim == TIM15 || tim == TIM16 || tim == TIM17) {
         // Timers on APB2
@@ -222,12 +213,12 @@ uint32_t timerClock(const TIM_TypeDef *tim)
 
     int index = (timpre << 3) | ppre;
 
-    static uint8_t periphToKernel[16] = { // The multiplier table
-        1, 1, 1, 1, 2, 2, 2, 2, // TIMPRE = 0
-        1, 1, 1, 1, 2, 4, 4, 4  // TIMPRE = 1
+    static uint8_t periphToKernel[2][8] = { // The multiplier table
+        { 1, 1, 1, 1, 2, 2, 2, 2 }, // TIMPRE = 0
+        { 1, 1, 1, 1, 2, 4, 4, 4 }  // TIMPRE = 1
     };
 
-    return pclk * periphToKernel[index];
+    return pclk * periphToKernel[timpre][ppre];
 
 #undef PERIPH_PRESCALER
 }
