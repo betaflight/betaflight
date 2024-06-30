@@ -99,10 +99,12 @@ typedef struct mixerConfig_s {
     uint8_t mixer_type;
 #ifdef USE_RPM_LIMIT
     bool rpm_limit;
+    bool rpm_limit_boost_active;
     uint16_t rpm_limit_p;
     uint16_t rpm_limit_i;
     uint16_t rpm_limit_d;
     uint16_t rpm_limit_value;
+    uint16_t rpm_limit_boost_value;
 #endif
 } mixerConfig_t;
 
