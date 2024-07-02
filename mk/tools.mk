@@ -21,6 +21,8 @@ ARM_SDK_BASE_DIR ?= $(TOOLS_DIR)/arm-gnu-toolchain-13.2.Rel1
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
 GCC_REQUIRED_VERSION ?= 13.2.1
 
+LINTER_ASTYLE_VERSION ?= 3.1
+
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
@@ -318,3 +320,21 @@ breakpad_clean:
 	$(V1) [ ! -d "$(BREAKPAD_DIR)" ] || $(RM) -rf $(BREAKPAD_DIR)
 	@echo " CLEAN        $(BREAKPAD_DL_FILE)"
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
+
+.PHONY: lint
+lint:
+	@command -v astyle >/dev/null 2>&1 || { echo >&2 "Error: astyle is required for linting, but it's not installed. Aborting."; exit 1; }
+	@echo "Found astyle: $$(astyle --version)"
+	@if ! astyle --version | grep -q "$(LINTER_ASTYLE_VERSION)"; then \
+		echo >&2 "Error: astyle version $(LINTER_ASTYLE_VERSION) is required. Aborting."; \
+		exit 1; \
+	fi
+	@echo "Applying astyle formatting..."
+	@if [ -z "$(LINT_TARGETS)" ]; then \
+		echo "Linting all C and header files in $(SRC_DIR)..."; \
+		find $(SRC_DIR) -type f \( -name '*.c' -o -name '*.h' \) -exec astyle --options=.astylerc {} +; \
+	else \
+		echo "Linting specified files: $(LINT_TARGETS)"; \
+		astyle --options=.astylerc $(LINT_TARGETS); \
+	fi
+	@echo "Formatting complete."
