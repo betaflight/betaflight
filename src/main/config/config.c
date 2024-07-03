@@ -600,7 +600,12 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
         for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
             profileFlags |= OSD_PROFILE_FLAG(i);
         }
-        osdElementConfigMutable()->item_pos[OSD_SPEC_LOGO] = OSD_POS(1, 2) | profileFlags;
+
+        if (osdConfig()->canvas_cols < 40) {
+            osdElementConfigMutable()->item_pos[OSD_SPEC_LOGO] = OSD_POS(1, 2) | profileFlags;
+        } else {
+            osdElementConfigMutable()->item_pos[OSD_SPEC_LOGO] = OSD_POS(3, 2) | profileFlags;
+        }
      }
 #endif
 
