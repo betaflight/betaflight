@@ -102,7 +102,7 @@ specSettings_t specArray[] = {
     },
 
     {
-        "IO 7IN 13K", // Name
+        "MGP PRO 13K", // Name
         true,    // bool rpm_limit;
         25,      // uint16_t rpm_limit_p;
         10,      // uint16_t rpm_limit_i;
@@ -112,20 +112,20 @@ specSettings_t specArray[] = {
         1300,    // uint16_t kv;
 
         {   // Logo groups
-            { "7I ",
+            { "PRO",
               "   ",
               "   " },
 
-            { " 7 ",
-              " I ",
+            { " RO",
+              "P  ",
               "   " },
 
-            { "   ",
-              "7I ",
+            { "P O",
+              " R ",
               "   " },
 
-            { "7  ",
-              "I  ",
+            { "PR ",
+              "  O",
               "   " },
         }
     },
