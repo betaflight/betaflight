@@ -375,9 +375,9 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             }
 
             if (state.axis == gyro.gyroDebugAxis) {
-                for (int p = 1; p <= dynNotch.count && p <= DYN_NOTCH_COUNT_MAX; p++) {
-                  // debug channel 0 is reserved for pre DN gyro
-                    DEBUG_SET(DEBUG_FFT_FREQ, p, lrintf(dynNotch.centerFreq[state.axis][p]));
+                for (int p = 0; p < dynNotch.count && p < DYN_NOTCH_COUNT_MAX; p++) {
+                    // debug channel 0 is reserved for pre DN gyro
+                    DEBUG_SET(DEBUG_FFT_FREQ, p + 1, lrintf(dynNotch.centerFreq[state.axis][p]));
                 }
                 DEBUG_SET(DEBUG_DYN_LPF, 1, lrintf(dynNotch.centerFreq[state.axis][0]));
             }
