@@ -26,7 +26,7 @@
 
 #include "pg/dyn_notch.h"
 
-#define DYN_NOTCH_COUNT_MAX 5
+#define DYN_NOTCH_COUNT_MAX 7
 
 void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs);
 void dynNotchPush(const int axis, const float sample);
