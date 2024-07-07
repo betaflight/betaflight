@@ -1,0 +1,22 @@
+name: Auto close bad PR
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  pull_request_target:
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  close-pr:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: autoclose
+        shell: bash
+        if: github.head_ref == 'master'
+        run: gh pr close ${{github.event.pull_request.number}} --comment "Auto-closing pull request because the source branch is named 'master'. Please create a feature branch instead. https://betaflight.com/docs/development#using-git-and-github"
