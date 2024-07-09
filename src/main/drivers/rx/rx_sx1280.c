@@ -345,9 +345,9 @@ uint8_t sx1280GetStatus(void)
 static void sx1280ConfigModParamsLora(const sx1280LoraBandwidths_e bw, const sx1280LoraSpreadingFactors_e sf, const sx1280LoraCodingRates_e cr)
 {
     uint8_t rfparams[3];
-    rfparams[0] = (uint8_t)sf;
-    rfparams[1] = (uint8_t)bw;
-    rfparams[2] = (uint8_t)cr;
+    rfparams[0] = sf;
+    rfparams[1] = bw;
+    rfparams[2] = cr;
 
     sx1280WriteCommandBurst(SX1280_RADIO_SET_MODULATIONPARAMS, rfparams, 3);
 
@@ -383,9 +383,9 @@ static void sx1280SetPacketParamsLora(const uint8_t preambleLength, const sx1280
 static void sx1280ConfigModParamsFlrc(const SX1280_RadioFlrcBandwidths_t bw, const SX1280_RadioFlrcCodingRates_t cr, const SX1280_RadioFlrcGaussianFilter_t bt)
 {
     uint8_t rfparams[3];
-    rfparams[0] = (uint8_t)bw;
-    rfparams[1] = (uint8_t)cr;
-    rfparams[2] = (uint8_t)bt;
+    rfparams[0] = bw;
+    rfparams[1] = cr;
+    rfparams[2] = bt;
 
     sx1280WriteCommandBurst(SX1280_RADIO_SET_MODULATIONPARAMS, rfparams, 3);
 }
@@ -395,16 +395,15 @@ static void sx1280SetPacketParamsFlrc(uint8_t PreambleLength, uint8_t HeaderType
 {
     if (PreambleLength < 8)
         PreambleLength = 8;
-    PreambleLength = ((PreambleLength / 4) - 1) << 4;
 
     uint8_t buf[7];
-    buf[0] = PreambleLength;                    // AGCPreambleLength
+    buf[0] = ((PreambleLength / 4) - 1) << 4;   // AGCPreambleLength
     buf[1] = SX1280_FLRC_SYNC_WORD_LEN_P32S;    // SyncWordLength
     buf[2] = SX1280_FLRC_RX_MATCH_SYNC_WORD_1;  // SyncWordMatch
     buf[3] = HeaderType;                        // PacketType
     buf[4] = PayloadLength;                     // PayloadLength
     buf[5] = SX1280_FLRC_CRC_3_BYTE;            // CrcLength
-    buf[6] = 0x08;                              // Must be whitening disabled
+    buf[6] = SX1280_FLRC_WHITENING_DISABLE;     // Must be whitening disabled
     sx1280WriteCommandBurst(SX1280_RADIO_SET_PACKETPARAMS, buf, 7);
 
     // CRC seed (use dedicated cipher)

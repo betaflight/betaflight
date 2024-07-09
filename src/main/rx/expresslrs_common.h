@@ -54,9 +54,10 @@
 #define FREQ_HZ_TO_REG_VAL_900(freq) ((uint32_t)(freq / SX127x_FREQ_STEP))
 #define FREQ_HZ_TO_REG_VAL_24(freq) ((uint32_t)(freq / SX1280_FREQ_STEP))
 
-#define ELRS_RATE_MAX_24 6
+#define ELRS_RATE_MAX_24  6
 #define ELRS_RATE_MAX_900 4
-#define ELRS_BINDING_RATE_24 5
+#define ELRS_RATE_MAX     ((ELRS_RATE_MAX_24 > ELRS_RATE_MAX_900) ? ELRS_RATE_MAX_24 :ELRS_RATE_MAX_900)
+#define ELRS_BINDING_RATE_24  5
 #define ELRS_BINDING_RATE_900 2
 
 #define ELRS_MAX_CHANNELS 16
@@ -223,8 +224,8 @@ typedef void (*elrsRxgetRfLinkInfoFnPtr)(int8_t *rssi, int8_t *snr);
 typedef void (*elrsRxSetFrequencyFnPtr)(const uint32_t freq);
 typedef void (*elrsRxHandleFreqCorrectionFnPtr)(int32_t *offset, const uint32_t freq);
 
-extern elrsModSettings_t airRateConfig[][ELRS_RATE_MAX_24];
-extern elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX_24];
+extern elrsModSettings_t airRateConfig[][ELRS_RATE_MAX];
+extern elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX];
 
 void generateCrc14Table(void);
 uint16_t calcCrc14(uint8_t *data, uint8_t len, uint16_t crc);

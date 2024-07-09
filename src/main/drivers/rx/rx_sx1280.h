@@ -238,6 +238,10 @@ typedef enum {
     SX1280_FLRC_CRC_4_BYTE = 0x30,
 } SX1280_RadioFlrcCrc_t;
 
+typedef enum {
+    SX1280_FLRC_WHITENING_DISABLE = 0x08,
+} SX1280_RadioFlrcWhitening_t;
+
 enum {
     // Error Packet Status
     SX1280_FLRC_PKT_ERROR_BUSY      = 1 << 0,

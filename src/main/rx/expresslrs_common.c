@@ -50,15 +50,13 @@ static uint32_t freqSpread = 0;
 // @CapnBry - Higher rates shorter timeout. Usually it runs 1-1.5 seconds with complete sync 500Hz.
 //            250Hz is 2-5s. 150Hz 2.5s. 50Hz stays in sync all 5 seconds of my test.
 // The failsafe timeout values come from the ELRS project's ExpressLRS_AirRateConfig definitions.
-elrsModSettings_t airRateConfig[][ELRS_RATE_MAX_24] = {
+elrsModSettings_t airRateConfig[][ELRS_RATE_MAX] = {
 #ifdef USE_RX_SX127X
     {
         {0, RADIO_TYPE_SX127x_LORA, RATE_LORA_200HZ, SX127x_BW_500_00_KHZ, SX127x_SF_6, SX127x_CR_4_7, 5000, TLM_RATIO_1_64, 4, 8},
         {1, RADIO_TYPE_SX127x_LORA, RATE_LORA_100HZ, SX127x_BW_500_00_KHZ, SX127x_SF_7, SX127x_CR_4_7, 10000, TLM_RATIO_1_64, 4, 8},
         {2, RADIO_TYPE_SX127x_LORA, RATE_LORA_50HZ, SX127x_BW_500_00_KHZ, SX127x_SF_8, SX127x_CR_4_7, 20000, TLM_RATIO_1_16, 4, 10},
         {3, RADIO_TYPE_SX127x_LORA, RATE_LORA_25HZ, SX127x_BW_500_00_KHZ, SX127x_SF_9, SX127x_CR_4_7, 40000, TLM_RATIO_1_8, 2, 10},
-        { 0 },
-        { 0 },
     },
 #endif
 #ifdef USE_RX_SX1280
@@ -76,15 +74,13 @@ elrsModSettings_t airRateConfig[][ELRS_RATE_MAX_24] = {
 #endif
 };
 
-elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX_24] = {
+elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX] = {
 #ifdef USE_RX_SX127X
     {
         {0, RATE_LORA_200HZ, -112, 4380, 3000, 2500, 600, 5000},
         {1, RATE_LORA_100HZ, -117, 8770, 3500, 2500, 600, 5000},
         {2, RATE_LORA_50HZ, -120, 17540, 4000, 2500, 600, 5000},
         {3, RATE_LORA_25HZ, -123, 17540, 6000, 4000, 0, 5000},
-        { 0 },
-        { 0 },
     },
 #endif
 #ifdef USE_RX_SX1280
