@@ -27,9 +27,14 @@
 
 #include "common/time.h"
 
-#define REG_LR_FIRMWARE_VERSION_MSB 0x0153 //The address of the register holding the firmware version MSB
+#define SX1280_REG_FIRMWARE_VERSION_MSB   0x0153 //The address of the register holding the firmware version MSB
+#define SX1280_REG_RX_GAIN_REGIME         0x0891
+#define SX1280_REG_SF_ADDITIONAL_CONFIG   0x0925
 #define SX1280_REG_LR_ESTIMATED_FREQUENCY_ERROR_MSB 0x0954
 #define SX1280_REG_LR_ESTIMATED_FREQUENCY_ERROR_MASK 0x0FFFFF
+#define SX1280_REG_FLRC_CRC_SEED          0x09C8
+#define SX1280_REG_FLRC_SYNC_WORD         0x09CF
+#define SX1280_REG_FLRC_SYNC_ADDR_CTRL    0x09CD
 
 #define SX1280_XTAL_FREQ 52000000
 #define SX1280_FREQ_STEP (SX1280_XTAL_FREQ / 262144.0)
@@ -175,6 +180,79 @@ typedef enum {
     SX1280_LORA_CRC_OFF = 0x00, // CRC not used
 } sx1280LoraCrcModes_e;
 
+/*!
+ * \brief Represents the bandwidth values for FLRC packet type
+ */
+typedef enum {
+    SX1280_FLRC_BR_1_300_BW_1_2 = 0x45,
+    SX1280_FLRC_BR_1_000_BW_1_2 = 0x69,
+    SX1280_FLRC_BR_0_650_BW_0_6 = 0x86,
+    SX1280_FLRC_BR_0_520_BW_0_6 = 0xAA,
+    SX1280_FLRC_BR_0_325_BW_0_3 = 0xC7,
+    SX1280_FLRC_BR_0_260_BW_0_3 = 0xEB,
+} SX1280_RadioFlrcBandwidths_t;
+
+/*!
+ * \brief Represents the coding rate values for FLRC packet type
+ */
+typedef enum {
+    SX1280_FLRC_CR_1_2 = 0x00,
+    SX1280_FLRC_CR_3_4 = 0x02,
+    SX1280_FLRC_CR_1_0 = 0x04,
+} SX1280_RadioFlrcCodingRates_t;
+
+/*!
+ * \brief Represents the Gaussian filter value in FLRC packet types
+ */
+typedef enum {
+    SX1280_FLRC_BT_DIS  = 0x00,
+    SX1280_FLRC_BT_1    = 0x10,
+    SX1280_FLRC_BT_0_5  = 0x20,
+} SX1280_RadioFlrcGaussianFilter_t;
+
+typedef enum {
+    SX1280_FLRC_SYNC_NOSYNC        = 0x00,
+    SX1280_FLRC_SYNC_WORD_LEN_P32S = 0x04,
+} SX1280_RadioFlrcSyncWordLen_t;
+
+typedef enum {
+    SX1280_FLRC_RX_DISABLE_SYNC_WORD     = 0x00,
+    SX1280_FLRC_RX_MATCH_SYNC_WORD_1     = 0x10,
+    SX1280_FLRC_RX_MATCH_SYNC_WORD_2     = 0x20,
+    SX1280_FLRC_RX_MATCH_SYNC_WORD_1_2   = 0x30,
+    SX1280_FLRC_RX_MATCH_SYNC_WORD_3     = 0x40,
+    SX1280_FLRC_RX_MATCH_SYNC_WORD_1_3   = 0x50,
+    SX1280_FLRC_RX_MATCH_SYNC_WORD_2_3   = 0x60,
+    SX1280_FLRC_RX_MATCH_SYNC_WORD_1_2_3 = 0x70,
+} SX1280_RadioFlrcSyncWordCombination_t;
+
+typedef enum {
+    SX1280_FLRC_PACKET_FIXED_LENGTH    = 0x00,
+    SX1280_FLRC_PACKET_VARIABLE_LENGTH = 0x20,
+} SX1280_RadioFlrcPacketType_t;
+
+typedef enum {
+    SX1280_FLRC_CRC_OFF    = 0x00,
+    SX1280_FLRC_CRC_2_BYTE = 0x10,
+    SX1280_FLRC_CRC_3_BYTE = 0x20,
+    SX1280_FLRC_CRC_4_BYTE = 0x30,
+} SX1280_RadioFlrcCrc_t;
+
+typedef enum {
+    SX1280_FLRC_WHITENING_DISABLE = 0x08,
+} SX1280_RadioFlrcWhitening_t;
+
+enum {
+    // Error Packet Status
+    SX1280_FLRC_PKT_ERROR_BUSY      = 1 << 0,
+    SX1280_FLRC_PKT_ERROR_PKT_RCVD  = 1 << 1,
+    SX1280_FLRC_PKT_ERROR_HDR_RCVD  = 1 << 2,
+    SX1280_FLRC_PKT_ERROR_ABORT     = 1 << 3,
+    SX1280_FLRC_PKT_ERROR_CRC       = 1 << 4,
+    SX1280_FLRC_PKT_ERROR_LENGTH    = 1 << 5,
+    SX1280_FLRC_PKT_ERROR_SYNC      = 1 << 6,
+};
+
 typedef enum {
     SX1280_RADIO_GET_STATUS = 0xC0,
     SX1280_RADIO_WRITE_REGISTER = 0x18,
@@ -263,14 +341,13 @@ void sx1280WriteBuffer(const uint8_t offset, const uint8_t *buffer, const uint8_
 void sx1280ReadBuffer(const uint8_t offset, uint8_t *buffer, const uint8_t size);
 
 uint8_t sx1280GetStatus(void);
-void sx1280ConfigLoraDefaults(void);
-void sx1280Config(const sx1280LoraBandwidths_e bw, const sx1280LoraSpreadingFactors_e sf, const sx1280LoraCodingRates_e cr, const uint32_t freq, const uint8_t preambleLength, const bool iqInverted);
+void sx1280Config(const uint8_t bw, const uint8_t sfbt, const uint8_t cr,
+    const uint32_t freq, const uint8_t preambleLength, const bool iqInverted,
+    const uint32_t flrcSyncWord, const uint16_t flrcCrcSeed, const bool isFlrc);
 void sx1280SetOutputPower(const int8_t power);
-void sx1280SetPacketParams(const uint8_t preambleLength, const sx1280LoraPacketLengthsModes_e headerType, const uint8_t payloadLength, const sx1280LoraCrcModes_e crc, const sx1280LoraIqModes_e invertIQ);
 void sx1280SetMode(const sx1280OperatingModes_e opMode);
-void sx1280ConfigLoraModParams(const sx1280LoraBandwidths_e bw, const sx1280LoraSpreadingFactors_e sf, const sx1280LoraCodingRates_e cr);
 void sx1280SetFrequencyReg(const uint32_t freqReg);
-void sx1280AdjustFrequency(int32_t offset, const uint32_t freq);
+void sx1280AdjustFrequency(int32_t *offset, const uint32_t freq);
 void sx1280SetFifoAddr(const uint8_t txBaseAddr, const uint8_t rxBaseAddr);
 void sx1280SetDioIrqParams(const uint16_t irqMask, const uint16_t dio1Mask, const uint16_t dio2Mask, const uint16_t dio3Mask);
 void sx1280ClearIrqStatus(const uint16_t irqMask);

@@ -281,7 +281,7 @@ static void unpackChannelDataHybridWide(uint16_t *rcData, volatile elrsOtaPacket
     } else {
         uint8_t bins;
         uint16_t switchValue;
-        if (currTlmDenom < 8) {
+        if (currTlmDenom > 1 && currTlmDenom < 8) {
             bins = 63;
             switchValue = switchByte & 0x3F; // 6-bit
         } else {
@@ -332,10 +332,21 @@ static void setRfLinkRate(const uint8_t index)
     receiver.rfPerfParams = &rfPerfConfig[0][index];
 #endif
     receiver.currentFreq = fhssGetInitialFreq(receiver.freqOffset);
+
     // Wait for (11/10) 110% of time it takes to cycle through all freqs in FHSS table (in ms)
     receiver.cycleIntervalMs = ((uint32_t)11U * fhssGetNumEntries() * receiver.modParams->fhssHopInterval * receiver.modParams->interval) / (10U * 1000U);
 
-    receiver.config(receiver.modParams->bw, receiver.modParams->sf, receiver.modParams->cr, receiver.currentFreq, receiver.modParams->preambleLen, receiver.UID[5] & 0x01);
+    receiver.config(
+        receiver.modParams->bw,
+        receiver.modParams->sf,
+        receiver.modParams->cr,
+        receiver.currentFreq,
+        receiver.modParams->preambleLen,
+        receiver.UID[5] & 0x01,
+        elrsUidToSeed(receiver.UID),
+        crcInitializer,
+        receiver.modParams->radioType == RADIO_TYPE_SX128x_FLRC
+    );
 #if defined(USE_RX_SX1280)
     if (rxExpressLrsSpiConfig()->domain == CE2400)
       sx1280SetOutputPower(10);
@@ -566,8 +577,8 @@ static void gotConnection(const uint32_t timeStampMs)
     receiver.timerState = ELRS_TIM_TENTATIVE;
     receiver.gotConnectionMs = timeStampMs;
 
-    if (rxExpressLrsSpiConfig()->rateIndex != receiver.rateIndex) {
-        rxExpressLrsSpiConfigMutable()->rateIndex = receiver.rateIndex;
+    if (rxExpressLrsSpiConfig()->rateIndex != receiver.nextRateIndex) {
+        rxExpressLrsSpiConfigMutable()->rateIndex = receiver.nextRateIndex;
         receiver.configChanged = true;
     }
 }
@@ -575,7 +586,7 @@ static void gotConnection(const uint32_t timeStampMs)
 //setup radio
 static void initializeReceiver(void)
 {
-    fhssGenSequence(receiver.UID, rxExpressLrsSpiConfig()->domain);
+    fhssGenSequence(elrsUidToSeed(receiver.UID), rxExpressLrsSpiConfig()->domain);
     lqReset();
     receiver.nonceRX = 0;
     receiver.freqOffset = 0;
@@ -587,6 +598,7 @@ static void initializeReceiver(void)
 #endif //USE_RX_RSNR
     receiver.snr = 0;
     receiver.uplinkLQ = 0;
+    receiver.switchMode = 0;
     receiver.rateIndex = receiver.inBindingMode ? bindingRateIndex : rxExpressLrsSpiConfig()->rateIndex;
     setRfLinkRate(receiver.rateIndex);
 
@@ -606,7 +618,7 @@ static void initializeReceiver(void)
     receiver.lastSyncPacketMs = timeStampMs;
     receiver.lastValidPacketMs = timeStampMs;
 
-    receiver.rfModeCycleMultiplier = 1;
+    receiver.rfModeCycleMultiplier = ELRS_MODE_CYCLE_MULTIPLIER_SLOW / 2;
 }
 
 static void unpackBindPacket(volatile uint8_t *packet)
@@ -681,13 +693,8 @@ static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr
 
     // Will change the packet air rate in loop() if this changes
     receiver.nextRateIndex = domainIsTeam24() ? airRateIndexToIndex24(otaPktPtr->sync.rateIndex, receiver.rateIndex) : airRateIndexToIndex900(otaPktPtr->sync.rateIndex, receiver.rateIndex);
-    uint8_t switchEncMode = otaPktPtr->sync.switchEncMode;
-
     // Update switch mode encoding immediately
-    if (switchEncMode != rxExpressLrsSpiConfig()->switchMode) {
-        rxExpressLrsSpiConfigMutable()->switchMode = switchEncMode;
-        receiver.configChanged = true;
-    }
+    receiver.switchMode = otaPktPtr->sync.switchEncMode;
 
     // Update TLM ratio
     uint8_t tlmRateIn = otaPktPtr->sync.newTlmRatio + TLM_RATIO_NO_TLM;
@@ -721,7 +728,7 @@ static bool validatePacketCrcStd(volatile elrsOtaPacket_t * const otaPktPtr)
     uint16_t const inCRC = ((uint16_t) otaPktPtr->crcHigh << 8) + otaPktPtr->crcLow;
     // For smHybrid the CRC only has the packet type in byte 0
     // For smWide the FHSS slot is added to the CRC in byte 0 on PACKET_TYPE_RCDATAs
-    if (otaPktPtr->type == ELRS_RC_DATA_PACKET && rxExpressLrsSpiConfig()->switchMode == SM_WIDE) {
+    if (otaPktPtr->type == ELRS_RC_DATA_PACKET && receiver.switchMode == SM_WIDE) {
         otaPktPtr->crcHigh = (receiver.nonceRX % receiver.modParams->fhssHopInterval) + 1;
     } else {
         otaPktPtr->crcHigh = 0;
@@ -750,7 +757,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
         // Must be fully connected to process RC packets, prevents processing RC
         // during sync, where packets can be received before connection
         if (receiver.connectionState == ELRS_CONNECTED && connectionHasModelMatch) {
-            if (rxExpressLrsSpiConfig()->switchMode == SM_WIDE) {
+            if (receiver.switchMode == SM_WIDE) {
                 wideSwitchIndex = hybridWideNonceToSwitchIndex(receiver.nonceRX);
                 if ((currTlmDenom < 8) || wideSwitchIndex == 7) {
                     confirmCurrentTelemetryPayload((otaPktPtr->rc.switches & 0x40) >> 6);
@@ -776,6 +783,8 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
 
     // Store the LQ/RSSI/Antenna
     receiver.getRfLinkInfo(&receiver.rssi, &receiver.snr);
+    receiver.handleFreqCorrection(&receiver.freqOffset, receiver.currentFreq);
+
     meanAccumulatorAdd(&snrFilter, receiver.snr);
     // Received a packet, that's the definition of LQ
     lqIncrease();
@@ -1078,7 +1087,7 @@ void expressLrsSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     if (rcData && payload) {
         volatile elrsOtaPacket_t * const otaPktPtr = (elrsOtaPacket_t * const) payload;
-        rxExpressLrsSpiConfig()->switchMode == SM_WIDE ? unpackChannelDataHybridWide(rcData, otaPktPtr) : unpackChannelDataHybridSwitch8(rcData, otaPktPtr);
+        receiver.switchMode == SM_WIDE ? unpackChannelDataHybridWide(rcData, otaPktPtr) : unpackChannelDataHybridSwitch8(rcData, otaPktPtr);
     }
 }
 
@@ -1098,10 +1107,10 @@ void expressLrsDoTelem(void)
     expressLrsHandleTelemetryUpdate();
     expressLrsSendTelemResp();
     
-    if (!domainIsTeam24() && !receiver.didFhss && !expressLrsTelemRespReq() && lqPeriodIsSet()) {
+    if (!expressLrsTelemRespReq() && lqPeriodIsSet()) {
         // TODO No need to handle this on SX1280, but will on SX127x
         // TODO this needs to be DMA aswell, SX127x unlikely to work right now
-        receiver.handleFreqCorrection(receiver.freqOffset, receiver.currentFreq); //corrects for RX freq offset
+        receiver.handleFreqCorrection(&receiver.freqOffset, receiver.currentFreq); //corrects for RX freq offset
     }
 }
 
