@@ -1107,7 +1107,7 @@ void expressLrsDoTelem(void)
     expressLrsHandleTelemetryUpdate();
     expressLrsSendTelemResp();
     
-    if (!receiver.didFhss && !expressLrsTelemRespReq() && lqPeriodIsSet()) {
+    if (!expressLrsTelemRespReq() && lqPeriodIsSet()) {
         // TODO No need to handle this on SX1280, but will on SX127x
         // TODO this needs to be DMA aswell, SX127x unlikely to work right now
         receiver.handleFreqCorrection(&receiver.freqOffset, receiver.currentFreq); //corrects for RX freq offset

@@ -99,7 +99,6 @@ typedef struct elrsReceiver_s {
     bool inBindingMode;
     volatile bool initializeReceiverPending;
     volatile bool fhssRequired;
-    volatile bool didFhss;
 
     uint32_t statsUpdatedAtMs;
 
