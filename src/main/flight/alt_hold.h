@@ -28,7 +28,6 @@
 #define ALTHOLD_ENTER_PERIOD 50         // ms
 #define ALTHOLD_MAX_EXIT_PERIOD 3000    // ms
 
-
 typedef struct altholdConfig_s {
     uint8_t velPidP;
     uint8_t velPidD;
@@ -39,7 +38,7 @@ typedef struct altholdConfig_s {
     uint8_t minThrottle;
     uint8_t maxThrottle;
 
-    uint8_t angleLimit;
+    uint8_t maxVerticalVelocity;
 } altholdConfig_t;
 
 PG_DECLARE(altholdConfig_t, altholdConfig);
@@ -60,16 +59,17 @@ typedef struct {
     float throttle;
     float throttleFactor;
     float targetAltitude;
+    float targetVelocity;
     float measuredAltitude;
     float measuredAccel;
     float velocityEstimationAccel;  // based on acceleration
+    float velocityEstimationVario;
     float startVelocityEstimationAccel;
     bool altHoldEnabled;
     uint32_t enterTime;
     uint32_t exitTime;
     float smoothedAltitude;
 } altHoldState_s;
-
 
 void initAltHoldState(void);
 void updateAltHoldState(timeUs_t currentTimeUs);

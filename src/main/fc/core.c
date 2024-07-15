@@ -987,7 +987,6 @@ void processRxModes(timeUs_t currentTimeUs)
         if (!FLIGHT_MODE(ALTHOLD_MODE)) {
             ENABLE_FLIGHT_MODE(ALTHOLD_MODE);
         }
-
     } else {
         DISABLE_FLIGHT_MODE(ALTHOLD_MODE);
     }

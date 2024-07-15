@@ -1,7 +1,6 @@
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-
 extern "C" {
 
     #include "sensors/acceleration.h"
@@ -39,6 +38,16 @@ extern "C" {
     int16_t getEstimatedVario(void)
     {
         return 0;
+    }
+
+    #include "fc/rc_controls.h"
+    float rcCommand[4];
+
+    #include "rx/rx.h"
+    void parseRcChannels(const char *input, rxConfig_t *rxConfig)
+    {
+        UNUSED(input);
+        UNUSED(rxConfig);
     }
 
     // other
@@ -92,7 +101,6 @@ TEST(AltholdUnittest, altHoldTransitionsTest)
     EXPECT_EQ(altHoldState.altHoldEnabled, false);
     EXPECT_EQ(altHoldState.exitTime, 56);
 
-
     flightModeFlags |= ALTHOLD_MODE;
     millisRW = 64;
     altHoldUpdate(&altHoldState);
@@ -112,7 +120,6 @@ TEST(AltholdUnittest, altHoldTransitionsTest)
     millisRW = 64 + 1.4f * ALTHOLD_ENTER_PERIOD;
     altHoldUpdate(&altHoldState);
     EXPECT_TRUE(ABS(getAltHoldThrottleFactor(0) - 1.0f) < 0.01f);
-
 
     millisRW = 10042;
     flightModeFlags ^= ALTHOLD_MODE;

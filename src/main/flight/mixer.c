@@ -727,7 +727,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED) && !failsafeIsActive()) {
         float altHoldThrottle = getAltHoldThrottle();
         float altHoldThrottleFactor = getAltHoldThrottleFactor(throttle);
-        throttle += (altHoldThrottle - throttle)  * altHoldThrottleFactor;
+        throttle += (altHoldThrottle - throttle) * altHoldThrottleFactor;
     }
 #endif
 
