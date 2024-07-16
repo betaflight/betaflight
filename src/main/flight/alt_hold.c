@@ -153,9 +153,9 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
         if (timeSinceEnter < ALTHOLD_ENTER_PERIOD) {
             float delta = (float)timeSinceEnter / ALTHOLD_ENTER_PERIOD;
             altHoldState->throttleFactor = MAX(delta, altHoldState->throttleFactor);
-            return;
+        } else {
+            altHoldState->throttleFactor = 1.0f;
         }
-        altHoldState->throttleFactor = 1.0f;
         return;
     }
 
@@ -165,8 +165,8 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
     }
 
     uint32_t timeSinceExit = currTime - altHoldState->exitTime;
-    if (timeSinceExit < ALTHOLD_MAX_EXIT_PERIOD) {
-        float delta = (float)timeSinceExit / ALTHOLD_MAX_EXIT_PERIOD;
+    if (timeSinceExit < ALTHOLD_MAX_ENTER_PERIOD) {
+        float delta = (float)timeSinceExit / ALTHOLD_MAX_ENTER_PERIOD;
         altHoldState->throttleFactor = MIN(altHoldState->throttleFactor, 1.0f - delta);
         return;
     }
