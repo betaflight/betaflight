@@ -91,7 +91,7 @@ static float getCurrentAltitude(altHoldState_s* altHoldState)
     }
 #endif
     float rawAltitude = 0.01f * getEstimatedAltitudeCm();
-    if (ABS(altHoldState->smoothedAltitude) < 0.01f) {
+    if (altHoldState->smoothedAltitude == 0.0f) {
         altHoldState->smoothedAltitude = rawAltitude;
     }
     float smoothFactor = 0.98f;
@@ -205,6 +205,14 @@ void altHoldUpdateTarget(altHoldState_s* altHoldState)
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
     altHoldProcessTransitions(altHoldState);
+
+    if (!altHoldState->altHoldEnabled) {
+        DEBUG_SET(DEBUG_ALTHOLD, 0, 0);
+        DEBUG_SET(DEBUG_ALTHOLD, 1, 0);
+
+        return;
+    }
+
     altHoldUpdateTarget(altHoldState);
 
     float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
@@ -248,20 +256,15 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 
     float newThrottle = velPidForce;
 
-//    DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
+    // DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
 
     newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
     newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01f * altholdConfig()->minThrottle, 0.01f * altholdConfig()->maxThrottle);
 
-    if (altHoldState->altHoldEnabled) {
-        altHoldState->throttle = newThrottle;
+    altHoldState->throttle = newThrottle;
 
-        DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(altHoldState->targetAltitude * 100.0f));
-        DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(altHoldState->measuredAltitude * 100.0f));
-    } else {
-        DEBUG_SET(DEBUG_ALTHOLD, 0, 0);
-        DEBUG_SET(DEBUG_ALTHOLD, 1, 0);
-    }
+    DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(altHoldState->targetAltitude * 100.0f));
+    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(altHoldState->measuredAltitude * 100.0f));
 }
 
 altHoldState_s altHoldState;
