@@ -1645,6 +1645,12 @@ case MSP_NAME:
         memset(emptyUid, 0, sizeof(emptyUid));
         sbufWriteData(dst, &emptyUid, sizeof(emptyUid));
 #endif
+        // Added in MSP API 1.47
+#ifdef USE_RX_EXPRESSLRS
+        sbufWriteU8(dst, rxExpressLrsSpiConfig()->modelId);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
     case MSP_FAILSAFE_CONFIG:
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
@@ -3792,6 +3798,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
             uint8_t emptyUid[6];
             sbufReadData(src, emptyUid, 6);
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+#ifdef USE_RX_EXPRESSLRS
+            // Added in MSP API 1.47
+            rxExpressLrsSpiConfigMutable()->modelId = sbufReadU8(src);
+#else
+            sbufReadU8(src);
 #endif
         }
         break;
