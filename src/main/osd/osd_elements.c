@@ -2199,7 +2199,7 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort, timeUs_t currentTim
 #ifdef USE_SPEC_PREARM_SCREEN
 bool osdDrawSpec(displayPort_t *osdDisplayPort)
 {
-    static enum {RPM, POLES, MIXER, THR, MOTOR, BAT, VER} specState = RPM;
+    static enum {RPM, POLES, MIXER, THR, MOTOR, RPM_FILT_HZ, BAT, VER} specState = RPM;
     static int currentRow;
 
     const uint8_t midRow = osdDisplayPort->rows / 2;
@@ -2212,7 +2212,7 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
     switch (specState) {
     default:
     case RPM:
-        currentRow = midRow - 3;
+        currentRow = midRow - 1;
 #ifdef USE_RPM_LIMIT
         {
             const bool rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
@@ -2258,6 +2258,13 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
 
     case MOTOR:
         len = tfp_sprintf(buff, "MOTOR LIMIT %d", currentPidProfile->motor_output_limit);
+        displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+
+        specState = RPM_FILT_HZ;
+        break;
+
+    case RPM_FILT_HZ:
+        len = tfp_sprintf(buff, "AVG RPM FILT CUTOFF %d", mixerConfig()->rpm_limit_rpm_filter_cutoff);
         displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
 
         specState = BAT;

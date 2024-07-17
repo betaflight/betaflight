@@ -40,6 +40,7 @@
 uint16_t rpm_limit_value;
 uint16_t kv;
 bool rpm_limit;
+uint16_t rpm_limit_rpm_filter_cutoff;
 
 static const void *cmsx_RpmLimit_onEnter(displayPort_t *pDisp)
 {
@@ -48,6 +49,7 @@ static const void *cmsx_RpmLimit_onEnter(displayPort_t *pDisp)
     rpm_limit_value = mixerConfig()->rpm_limit_value;
     kv = motorConfig()->kv;
     rpm_limit = mixerConfig()->rpm_limit;
+    rpm_limit_rpm_filter_cutoff = mixerConfig()->rpm_limit_rpm_filter_cutoff;
 
     return NULL;
 }
@@ -60,6 +62,7 @@ static const void *cmsx_RpmLimit_onExit(displayPort_t *pDisp, const OSD_Entry *s
     mixerConfigMutable()->rpm_limit_value = rpm_limit_value;
     motorConfigMutable()->kv = kv;
     mixerConfigMutable()->rpm_limit = rpm_limit;
+    mixerConfigMutable()->rpm_limit_rpm_filter_cutoff = rpm_limit_rpm_filter_cutoff;
 
     return NULL;
 }
@@ -70,6 +73,7 @@ static const OSD_Entry cmsx_menuRpmLimitEntries[] =
     {  "ACTIVE",   OME_Bool | REBOOT_REQUIRED,  NULL, &rpm_limit },
     { "MAX RPM", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limit_value, 0, UINT16_MAX, 100} },
     { "KV", OME_UINT16, NULL, &(OSD_UINT16_t){ &kv, 0, UINT16_MAX, 1} },
+    { "RPM FILTER CUTOFF", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limit_rpm_filter_cutoff, 1, UINT16_MAX, 1000} }, 
 
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT },
     { "BACK", OME_Back, NULL, NULL },
