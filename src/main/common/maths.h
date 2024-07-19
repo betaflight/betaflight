@@ -135,6 +135,7 @@ float sin_approx(float x);
 float cos_approx(float x);
 float atan2_approx(float y, float x);
 float acos_approx(float x);
+float asin_approx(float x);
 #define tan_approx(x)       (sin_approx(x) / cos_approx(x))
 float exp_approx(float val);
 float log_approx(float val);

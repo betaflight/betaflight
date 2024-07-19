@@ -261,6 +261,8 @@ typedef struct pidProfile_s {
     uint8_t ez_landing_limit;               // Maximum motor output when all sticks centred and throttle zero
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
     uint16_t tpa_delay_ms;                  // TPA delay for fixed wings using pt2 filter (time constant)
+    uint8_t tpa_gravity_factor_min;         // For wings: addition to tpa argument in % when full throttle
+    uint8_t tpa_gravity_factor_max;         // For wings: addition to tpa argument in % when zero throttle
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
@@ -446,6 +448,8 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_WING
     pt2Filter_t tpaLpf;
+    float tpaGravityFactorMin;
+    float tpaGravityFactorMax;
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
 #endif
 } pidRuntime_t;
