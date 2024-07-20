@@ -428,7 +428,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
     pidRuntime.feedforwardJitterFactorInv = 1.0f / (2.0f * pidProfile->feedforward_jitter_factor);
     // the extra division by 2 is to average the sum of the two previous rcCommandAbs values
-    pidRuntime.feedforwardBoostFactor = 0.1f * pidProfile->feedforward_boost;
+    pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
 #endif
 
