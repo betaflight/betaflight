@@ -581,6 +581,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     if (axis == FD_ROLL) {
         DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));         // setpoint speed smoothed
         DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpointAcceleration * 0.01f));  // acceleration smoothed
+        if (prevDuplicatePacket[axis]) {
+            DEBUG_SET(DEBUG_FEEDFORWARD, 6, 0);  // it a duplicate
+        } else {
+            DEBUG_SET(DEBUG_FEEDFORWARD, 6, 1);  // not a duplicate
+        }
+
     }
 
     // apply jitter attenuation to classic feedforward elements only (twice on acceleaertion)
