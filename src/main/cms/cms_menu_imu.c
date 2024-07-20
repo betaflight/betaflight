@@ -559,10 +559,6 @@ static int8_t cmsx_tpa_low_rate;
 static uint16_t cmsx_tpa_low_breakpoint;
 static uint8_t cmsx_tpa_low_always;
 
-static uint8_t cmsx_ez_landing_threshold;
-static uint8_t cmsx_ez_landing_limit;
-static uint8_t cmsx_ez_landing_disarm_threshold;
-
 static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
