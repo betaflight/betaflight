@@ -426,10 +426,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
     pidRuntime.feedforwardSmoothFactor = 1.0f - (0.01f * pidProfile->feedforward_smooth_factor);
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
-    pidRuntime.feedforwardJitterFactorInv = 1.0f / (2.0f * pidProfile->feedforward_jitter_factor);
-    // the extra division by 2 is to average the sum of the two previous rcCommandAbs values
+    pidRuntime.feedforwardJitterFactorInv = 1.0f / (1.0f + pidProfile->feedforward_jitter_factor);
+    // the extra division by 2 is to average the sum of the two most recent rcCommandAbs values
     pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
+    pidRuntime.feedforwardInterpolate = pidProfile->feedforward_interpolate;
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;

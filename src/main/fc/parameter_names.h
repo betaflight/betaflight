@@ -115,6 +115,7 @@
 #define PARAM_NAME_FEEDFORWARD_JITTER_FACTOR "feedforward_jitter_factor"
 #define PARAM_NAME_FEEDFORWARD_BOOST "feedforward_boost"
 #define PARAM_NAME_FEEDFORWARD_MAX_RATE_LIMIT "feedforward_max_rate_limit"
+#define PARAM_NAME_FEEDFORWARD_INTERPOLATE "feedforward_interpolate"
 #define PARAM_NAME_DYN_IDLE_MIN_RPM "dyn_idle_min_rpm"
 #define PARAM_NAME_DYN_IDLE_P_GAIN "dyn_idle_p_gain"
 #define PARAM_NAME_DYN_IDLE_I_GAIN "dyn_idle_i_gain"

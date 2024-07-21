@@ -509,8 +509,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         initAveraging(feedforwardAveraging);
     }
 
-    const float rcCommandDeltaAbs = fabsf(rcCommand[axis] - prevRcCommand[axis]);
+    float rcCommandDeltaAbs = fabsf(rcCommand[axis] - prevRcCommand[axis]);
     prevRcCommand[axis] = rcCommand[axis];
+
+    if (axis == FD_ROLL) {
+        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDeltaAbs * 10.0f));   // setpoint speed before smoothing
+    }
 
     const float setpoint = rawSetpoint[axis];
     float setpointSpeed = (setpoint - prevSetpoint[axis]);
@@ -518,63 +522,71 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 
     float setpointAcceleration = 0.0f;
     float feedforward = 0.0f;
-    float jitterAttenuator = 1.0f;
+
+    // for FrSky and other systems that send duplicate packets to the FC when sending telemetry
+    if (!pid->feedforwardInterpolate) {
+        // don't interpolate CRSF, ELRS, and other systems without this problem
+        setpointSpeed *= rxRate;
+    } else {
+        // for FrSky, interpolate setpointSpeed remove steps in setpointSpeed when telemetry packets are sent
+        if (rcCommandDeltaAbs) {
+            // movement!
+            // next valid step will be larger if a duplicate was sent because the time interval will be longer
+            if (prevDuplicatePacket[axis] == true) {
+                rxRate = 1.0f / (rxInterval + prevRxInterval);
+            }
+            setpointSpeed *= rxRate;
+            prevDuplicatePacket[axis] = false;
+        } else {
+            // no movement!
+            if (prevDuplicatePacket[axis] == false) {
+                // first duplicate after normal movement, interpolate a replacement setpoint value
+                // unless sticks are near max, include the previous acceleration in the interpolated setpoint value
+                // need the check on stick position to avoid interpolating when just about to hit max deflection
+                if (fabsf(setpoint) < 0.90f * maxRcRate[axis]) {
+                    setpointSpeed = prevSetpointSpeed[axis];
+                    setpointSpeed += prevAcceleration[axis];
+                    // pretend that there was stick movement also, to hold the jitter value
+                    rcCommandDeltaAbs = prevRcCommandDeltaAbs[axis];
+                }
+                // otherwise don't interpolate, and allow a low jitter value to suppress boost
+            } else {
+                // zero the setpoint speed (and acceleration) for the second and all subsequent duplicates
+                setpointSpeed = 0.0f;
+                prevSetpointSpeed[axis] = 0.0f;
+            }
+            prevDuplicatePacket[axis] = true;
+        }
+        prevRxInterval = rxInterval;
+    }
 
     // calculate jitterAttenuation factor
-    if (pid->feedforwardJitterFactor) {
-        if (rcCommandDeltaAbs < pid->feedforwardJitterFactor) {
-            jitterAttenuator = MAX(1.0f - (rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) * pid->feedforwardJitterFactorInv, 0.0f);
-            // note that feedforwardJitterFactorInv includes a divide by 2 to average the two previous rcCommandDeltaAbs values
-            jitterAttenuator = 1.0f - jitterAttenuator * jitterAttenuator;
-        }
+    // The intent is to attenuate feedforward when rcCommandDelta is small, ie when sticks move very slowly
+    // feedforwardJitterFactorInv will be 1 when user-set jitter factor is 0, 0.5 when user selects 1... 0.1 if they select 10
+    // If there is zero rcCommandDelta, jitterAttenuator will reduce setpoint by 0.5 if user selects 1, 0.1 if they select 10
+    // For non-zero rcCommandDelta values up to the user jitter value there is linear attenuation
+    // user config of zero results in a 1.0 multiplier, achieving nothing
+    // if user config is 10, setpoint values will be * 0.1 when rcCommandDelta = 0, * 0.2 when rcCommandDelta = 1 etc
+    // note that the jitter reduction attenuates a smoothed value of feedforward which has useful data even when rcCommandDelta is zero
+    float jitterAttenuator = 1.0f;
+    if (rcCommandDeltaAbs <= pid->feedforwardJitterFactor) {
+        jitterAttenuator = (rcCommandDeltaAbs + 1.0f) * pid->feedforwardJitterFactorInv;
     }
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
-
-    // interpolate if necessary to remove steps in setpointSpeed
-    if (rcCommandDeltaAbs) {
-        // movement!
-        if (prevDuplicatePacket[axis] == true) {
-            rxRate = 1.0f / (rxInterval + prevRxInterval);
-        }
-        setpointSpeed *= rxRate;
-        prevDuplicatePacket[axis] = false;
-    } else {
-        // no movement!
-        if (prevDuplicatePacket[axis] == false) {
-            // first duplicate after movement, interpolate a replacement setpoint value just this once
-            setpointSpeed = prevSetpointSpeed[axis];
-            if (fabsf(setpoint) < 0.95f * maxRcRate[axis]) {
-                setpointSpeed += prevAcceleration[axis]; // previous stick acceleration will be held
-            }
-        } else {
-            // zero the second and subsequent duplicates after movement
-            setpointSpeed = 0.0f;
-            prevSetpointSpeed[axis] = 0.0f;
-        }
-        prevDuplicatePacket[axis] = true;
-    }
-    prevRxInterval = rxInterval;
-
-    if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDeltaAbs * 10.0f));   // setpoint speed before smoothing
-    }
 
     // smooth the setpointSpeed value
     setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
 
-    if (prevDuplicatePacket[axis]) {
-        // leave setpointAcceleration at its initial value of 0.0f, and force the smoothed acceleration value to zero
-        prevAcceleration[axis] = 0.0f;
-    } else {
-        setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]);
-        // smooth the acceleration element (effectively a second order filter since incoming setpoint was already smoothed)
-        setpointAcceleration = prevAcceleration[axis] + pid->feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
-        prevAcceleration[axis] = setpointAcceleration;
-        // apply final gain factors and jitter attenuation
-        setpointAcceleration *= rxRate * pid->feedforwardBoostFactor * jitterAttenuator;
-    }
-
+    // calculate and smooth setpointAcceleration
+    setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]);
     prevSetpointSpeed[axis] = setpointSpeed;
+
+    // smooth the acceleration element (effectively a second order filter since incoming setpoint was already smoothed)
+    setpointAcceleration = prevAcceleration[axis] + pid->feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
+    prevAcceleration[axis] = setpointAcceleration;
+
+    // apply final gain factors to acceleration
+    setpointAcceleration *= rxRate * pid->feedforwardBoostFactor;
 
     feedforward = setpointSpeed + setpointAcceleration;
 
@@ -586,13 +598,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         } else {
             DEBUG_SET(DEBUG_FEEDFORWARD, 6, 1);  // not a duplicate
         }
-
     }
 
-    // apply jitter attenuation to classic feedforward elements only (twice on acceleaertion)
+    // apply jitter attenuation to final feedforward value
     feedforward *= jitterAttenuator;
 
-    // apply feedforward transition to classic feedforward elements only
+    // apply feedforward transition, if configured. Archaic (better to use jitter reduction)
     const bool useTransition = (pid->feedforwardTransition != 0.0f) && (rcDeflectionAbs[axis] < pid->feedforwardTransition);
     if (useTransition) {
         feedforward *= rcDeflectionAbs[axis] * pid->feedforwardTransitionInv;
