@@ -1156,8 +1156,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidSetpointDelta += setpointCorrection - pidRuntime.oldSetpointCorrection[axis];
         pidRuntime.oldSetpointCorrection[axis] = setpointCorrection;
 #endif
-        // no feedforward in launch control or alt-hold mode
-        const float feedforwardGain = launchControlActive || FLIGHT_MODE(ALTHOLD_MODE) ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
+        // no feedforward in launch control
+        const float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         pidData[axis].F = feedforwardGain * pidSetpointDelta;
 
 #ifdef USE_YAW_SPIN_RECOVERY
