@@ -570,7 +570,8 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     // note that the jitter reduction attenuates a smoothed value of feedforward which has useful data even when rcCommandDelta is zero
     float jitterAttenuator = 1.0f;
     if (rcCommandDeltaAbs <= pid->feedforwardJitterFactor) {
-        jitterAttenuator = (rcCommandDeltaAbs + 1.0f) * pid->feedforwardJitterFactorInv;
+        jitterAttenuator = ((rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) * 0.5f + 1.0f) * pid->feedforwardJitterFactorInv;
+        jitterAttenuator = MIN(jitterAttenuator, 1.0f);
     }
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
@@ -598,6 +599,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         } else {
             DEBUG_SET(DEBUG_FEEDFORWARD, 6, 1);  // not a duplicate
         }
+        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(jitterAttenuator * 100.0f));  // jitter factor
     }
 
     // apply jitter attenuation to final feedforward value
