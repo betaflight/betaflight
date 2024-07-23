@@ -218,7 +218,7 @@ uint32_t timerClock(const TIM_TypeDef *tim)
       }
 #undef PC
 #undef HC
-     int flagMult = periphToKernel[timpre][ppre];
+     int flagMult = timpreTab[timpre][ppre];
 
      if (flagMult & 0x80) { // PCLK based
         return pclk * (flagMult & 0x7f);
