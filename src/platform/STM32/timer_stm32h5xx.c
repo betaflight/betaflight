@@ -211,7 +211,7 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     timpre = (RCC->CFGR & RCC_CFGR_TIMPRE) ? 1 : 0;
 #define PC(m) (0x80 | (m))  // multiply pclk
 #define HC(m) (0x00 | (m))  // multiply hclk
-        static const uint8_t periphToKernel[2][8] = { // The multiplier table
+        static const uint8_t timpreTab[2][8] = { //  see RM0481 TIMPRE: timers clocks prescaler selection
         //  1      1      1      1      2      4      8      16 
         { HC(1), HC(1), HC(1), HC(1), HC(1), PC(2), PC(2), PC(2) }, // TIMPRE = 0 
         { PC(2), PC(2), PC(2), PC(2), PC(2), PC(2), PC(4), PC(4) }     // TIMPRE = 1 
