@@ -228,6 +228,5 @@ uint32_t timerClock(const TIM_TypeDef *tim)
 
     return pclk * periphToKernel[timpre][ppre];
 
-#undef PERIPH_PRESCALER
 }
 #endif
