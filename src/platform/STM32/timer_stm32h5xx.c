@@ -197,7 +197,6 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     // This function is used to calculate the timer clock frequency.
     // RM0481 (Rev 3) Table 
 
-#define PERIPH_PRESCALER(bus) ((RCC->D2CFGR & RCC_D2CFGR_D2PPRE ## bus) >> RCC_D2CFGR_D2PPRE ## bus ## _Pos)
 
     RCC_ClkInitTypeDef  clkConfig, uint32_t fLatency
     HAL_RCC_GetClockConfig(&clkConfig, &fLatency);
