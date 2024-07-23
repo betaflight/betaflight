@@ -165,15 +165,6 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 #endif
 }
 
-#ifdef USE_WING
-// Angle in between nose axis of the craft and the horizontal plane in ground reference.
-// Poitive angle - nose up, negative angle - nose down.
-float getNoseAngleSin(void)
-{
-    return rMat[2][0];
-}
-#endif
-
 static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
@@ -757,6 +748,13 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_ATTITUDE, 1, attitude.values.pitch);
 }
 #endif // USE_ACC
+
+// Angle in between nose axis of the craft and the horizontal plane in ground reference.
+// Poitive angle - nose down, negative angle - nose up.
+float getSinTiltAngle(void)
+{
+    return rMat[2][0];
+}
 
 float getCosTiltAngle(void)
 {
