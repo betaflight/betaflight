@@ -101,6 +101,7 @@ typedef struct mixerConfig_s {
     uint8_t govenor_rpm_afterburner_tank_count;
     uint16_t govenor_acceleration_limit;
     uint16_t govenor_deceleration_limit;
+    uint16_t govenor_k_factor; 
     bool govenor_rpm_linearization;
     uint16_t govenorThrottleLimitLearningTimeMS;
     uint16_t govenor_idle_rpm;

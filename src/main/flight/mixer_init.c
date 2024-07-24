@@ -59,6 +59,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .govenor_idle_rpm = 17,
     .govenor_acceleration_limit = 60,
     .govenor_deceleration_limit = 60,
+    .govenor_k_factor = 800,
     .govenor_rpm_limit = 130.0f,
     .govenor_rpm_afterburner = 16,
     .govenor_rpm_afterburner_duration = 5,
@@ -332,6 +333,7 @@ mixerRuntime.govenorIGain = 15.0f * 0.0001f * pidGetDT();
 mixerRuntime.govenorDGain = 10.0f * 0.00000003f * pidGetPidFrequency();
 mixerRuntime.govenorAccelerationLimit = 60.0f * 1000.0f * pidGetDT();
 mixerRuntime.govenorDecelerationLimit = 60.0f * 1000.0f * pidGetDT();
+mixerRuntime.govenorKFactor = 800;
 mixerRuntime.afterburnerRPM = 16;
 mixerRuntime.afterburnerReset = false;
 mixerRuntime.afterburnerDuration = 5;
@@ -348,6 +350,7 @@ mixerRuntime.govenorIGain = mixerConfig()->govenor_i * 0.0001f * pidGetDT();
 mixerRuntime.govenorDGain = mixerConfig()->govenor_d * 0.00000003f * pidGetPidFrequency();
 mixerRuntime.govenorAccelerationLimit = mixerConfig()->govenor_acceleration_limit * 1000.0f * pidGetDT();
 mixerRuntime.govenorDecelerationLimit = mixerConfig()->govenor_deceleration_limit * 1000.0f * pidGetDT();
+mixerRuntime.govenorKFactor = mixerConfig()->govenor_k_factor;
 mixerRuntime.afterburnerRPM = mixerConfig()->govenor_rpm_afterburner;
 mixerRuntime.afterburnerReset = mixerConfig()->govenor_rpm_afterburner_reset;
 mixerRuntime.afterburnerDuration = mixerConfig()->govenor_rpm_afterburner_duration;
@@ -368,7 +371,7 @@ mixerRuntime.afterburnerInitiated = false;
 // mixerRuntime.govenorAverageStickThrottle = 0;
 mixerRuntime.govenorPreviousSmoothedRPMError = 0;
 // mixerRuntime.govenorIterationStep = 1.0f/(pidGetPidFrequency() * mixerConfig()->govenor_learning_threshold_window); // 3 is the averaging
-mixerRuntime.govenorDelayK = 800 * pidGetDT() / 20.0f;
+mixerRuntime.govenorDelayK = mixerRuntime.govenorKFactor * pidGetDT() / 20.0f;
 mixerRuntime.govenorLearningThrottleK = 0.5 / (pidGetPidFrequency() * mixerConfig()->govenorThrottleLimitLearningTimeMS / 1000); // 0.5 = value ^ (4000 * time)       0.99^(4000*(20/1000))
 mixerRuntime.govenor_init = false;
 

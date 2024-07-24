@@ -527,10 +527,11 @@ static void applyRPMLimiter(void)
         mixerRuntime.govenorPreviousSmoothedRPMError = smoothedRPMError;
         mixerRuntime.govenorPreviousRPMLimit = RPM_GOVENOR_LIMIT;
         
-        DEBUG_SET(DEBUG_RPM_LIMITER, 0, averageRPM);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 1, smoothedRPMError);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixerRuntime.govenorI*100.0f);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 3, govenorD*10000.0f);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 0, averageRPM);//unfiltered average rpm
+        DEBUG_SET(DEBUG_RPM_LIMITER, 1, averageRPM_smoothed); //filtered average rpm
+        DEBUG_SET(DEBUG_RPM_LIMITER, 2, smoothedRPMError); //P term
+        DEBUG_SET(DEBUG_RPM_LIMITER, 3, mixerRuntime.govenorI*100.0f); // I term
+        DEBUG_SET(DEBUG_RPM_LIMITER, 4, govenorD*10000.0f); // D term
         
         /*DEBUG_SET(DEBUG_RPM_LIMITER, 0, mixerRuntime.afterburnerInitiated);
         DEBUG_SET(DEBUG_RPM_LIMITER, 1, mixerRuntime.afterburnerTankPercent);
