@@ -936,6 +936,26 @@ const clivalue_t valueTable[] = {
     { "mixer_type",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_MIXER_TYPE }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, mixer_type) },
     { "crashflip_motor_percent",    VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, crashflip_motor_percent) },
     { "crashflip_expo",    VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, crashflip_expo) },
+    //Street League customization
+    { "rpm_limiter_idle_rpm",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 999 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_idle_rpm) },
+
+    //street league locked
+    // { "rpm_limiter",        VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor) },
+    // { "rpm_limiter_p",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 20, 20 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_p) },
+    // { "rpm_limiter_i",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 15, 15 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_i) },
+    // { "rpm_limiter_d",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 10, 10 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_d) },
+    // { "rpm_limiter_rpm_limit",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 130, 130 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_limit) },
+    // { "rpm_limiter_afterburner",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 16, 16 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner) },
+    // { "rpm_limiter_afterburner_duration",    VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 5, 5 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner_duration) },
+    // { "rpm_limiter_afterburner_hold_to_use",    VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner_hold_to_use) },
+    // { "rpm_limiter_afterburner_tank_count",    VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 3, 3 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner_tank_count) },
+    // { "rpm_limiter_afterburner_reset",        VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner_reset) },
+    // { "rpm_limiter_acceleration_limit",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 60, 60 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_acceleration_limit) },
+    // { "rpm_limiter_deceleration_limit",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 60, 60 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_deceleration_limit) },
+    // { "rpm_limiter_k_factor",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 1000, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_k_factor) },
+    // { "rpm_limiter_full_linearization",        VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_linearization) },
+    
+    //street league unlocked
     { "rpm_limiter",        VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor) },
     { "rpm_limiter_p",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 10000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_p) },
     { "rpm_limiter_i",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 10000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_i) },
@@ -946,9 +966,9 @@ const clivalue_t valueTable[] = {
     { "rpm_limiter_afterburner_hold_to_use",    VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner_hold_to_use) },
     { "rpm_limiter_afterburner_tank_count",    VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 255 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner_tank_count) },
     { "rpm_limiter_afterburner_reset",        VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_afterburner_reset) },
-    { "rpm_limiter_acceleration_limit",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_acceleration_limit) },
-    //Street League customization
-    { "rpm_limiter_idle_rpm",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 999 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_idle_rpm) },
+    { "rpm_limiter_acceleration_limit",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 50000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_acceleration_limit) },
+    { "rpm_limiter_deceleration_limit",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 50000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_deceleration_limit) },
+    { "rpm_limiter_k_factor",    VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 1, 50000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_k_factor) },
     { "rpm_limiter_full_linearization",        VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, govenor_rpm_linearization) },
     
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_RANGE_MIDDLE, PWM_PULSE_MAX }, PG_MOTOR_3D_CONFIG, offsetof(flight3DConfig_t, deadband3d_high) },

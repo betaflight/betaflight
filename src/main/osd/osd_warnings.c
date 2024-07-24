@@ -370,17 +370,19 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         }
     }
 #endif
-
+    if (mixerRuntime.afterburnerInitiated) {
+        tfp_sprintf(warningText, "BOOST ENGAGED");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
     if (osdWarnGetState(OSD_WARNING_BATTERY_WARNING) && batteryState == BATTERY_WARNING) {
         tfp_sprintf(warningText, "LOW BATTERY");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
-    }/*else if (mixerRuntime.afterburnerInitiated) {
-        tfp_sprintf(warningText, "BOOST ENGAGED");
-        *displayAttr = DISPLAYPORT_ATTR_CRITICAL;
-        return;
-    }*/
+    }
+
 
 #ifdef USE_RC_SMOOTHING_FILTER
     // Show warning if rc smoothing hasn't initialized the filters
