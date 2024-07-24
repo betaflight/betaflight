@@ -357,12 +357,12 @@ float getAfterburnerTankPercent(void)
 static void applyRPMLimiter(void)
 {
     if (mixerRuntime.govenorEnabled) {
-        float RPM_GOVENOR_LIMIT = 0;
-        float averageRPM = 0;
-        float averageRPM_smoothed = 0;
-        float PIDOutput = 0;
+        float RPM_GOVENOR_LIMIT = 0.0f;
+        float averageRPM = 0.0f;
+        float averageRPM_smoothed = 0.0f;
+        float PIDOutput = 0.0f;
         float rcCommandThrottle = (rcCommand[THROTTLE]-1000)/1000.0f;
-        float maxRPMLimit = 0;
+        float maxRPMLimit = 0.0f;
 
         maxRPMLimit = mixerRuntime.RPMLimit;
         
@@ -444,7 +444,7 @@ static void applyRPMLimiter(void)
         bool motorsSaturated = false;
         bool motorsDesaturated = false;
         for (int i = 0; i < getMotorCount(); i++) {
-            averageRPM += getDshotTelemetry(i);
+            averageRPM += (float)getDshotTelemetry(i);
             if (motor[i] >= motorConfig()->maxthrottle) {
                 motorsSaturated = true;
             }
@@ -452,10 +452,10 @@ static void applyRPMLimiter(void)
                 motorsDesaturated = false;
             }
         }
-        averageRPM = 100 * averageRPM / (getMotorCount()*mixerRuntime.motorPoleCount/2.0f);
+        averageRPM = 100.0f * averageRPM / (float)(getMotorCount()*mixerRuntime.motorPoleCount/2.0f);
 
         //get the smoothed rpm to avoid d term noise
-        averageRPM_smoothed = mixerRuntime.govenorPreviousSmoothedRPM + mixerRuntime.govenorDelayK * (averageRPM - mixerRuntime.govenorPreviousSmoothedRPM); //kinda braindead to convert to rps then back
+        averageRPM_smoothed = mixerRuntime.govenorPreviousSmoothedRPM + (float)mixerRuntime.govenorDelayK * (averageRPM - mixerRuntime.govenorPreviousSmoothedRPM); //kinda braindead to convert to rps then back
         
         float smoothedRPMError = averageRPM_smoothed - RPM_GOVENOR_LIMIT;
         float govenorP = smoothedRPMError * mixerRuntime.govenorPGain; //+ when overspped
