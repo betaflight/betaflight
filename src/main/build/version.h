@@ -28,6 +28,8 @@
 #define FC_VERSION_MINOR            4  // increment when a minor release is made (small new feature, change etc)
 #define FC_VERSION_PATCH_LEVEL      2  // increment when a bug is fixed
 
+#define SPEC_VERSION                "SL-1.3.0-locked"
+
 #define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
 
 extern const char* const targetName;

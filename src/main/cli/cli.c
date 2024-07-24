@@ -4957,6 +4957,7 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
         buildDate,
         buildTime,
         shortGitRevision,
+        SPEC_VERSION,
         MSP_API_VERSION_STRING
     );
 

@@ -27,6 +27,8 @@
 
 typedef enum {
     TABLE_OFF_ON = 0,
+    TABLE_ONLY_OFF,
+    TABLE_ONLY_ON,
     TABLE_UNIT,
     TABLE_ALIGNMENT,
 #ifdef USE_GPS
@@ -263,6 +265,10 @@ extern const char * const lookupTableOsdDisplayPortDevice[];
 extern const char * const lookupTableFeedforwardAveraging[];
 
 extern const char * const lookupTableOffOn[];
+
+extern const char * const lookupTableOnlyOff[];
+
+extern const char * const lookupTableOnlyOn[];
 
 extern const char * const lookupTableSimplifiedTuningPidsMode[];
 
