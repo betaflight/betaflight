@@ -286,19 +286,18 @@ void pidResetIterm(void)
 #ifdef USE_WING
 static float getWingTpaArgument(float throttle)
 {
-    static float previousTpaArgument = 0.0f;
+    const float throttleLpf = pt2FilterApply(&pidRuntime.tpaThrottleLpf, throttle);
 
     const float sinDiveAngle = getSinDiveAngle();
     DEBUG_SET(DEBUG_TPA, 1, lrintf(asin_approx(sinDiveAngle) * 180.0 / M_PIf));
     const float angleFactorAdjustment = pidRuntime.tpaGravityThr0 +
-            (pidRuntime.tpaGravityThr0 - pidRuntime.tpaGravityThr100) * previousTpaArgument;
+            (pidRuntime.tpaGravityThr0 - pidRuntime.tpaGravityThr100) * throttleLpf;
     const float noseAngleFactor = sinDiveAngle * angleFactorAdjustment;
     DEBUG_SET(DEBUG_TPA, 2, lrintf(noseAngleFactor * 1000.0f));
 
     float tpaArgument = throttle + noseAngleFactor;
     tpaArgument = scaleRangef(tpaArgument, 0.0f, 1.0 + pidRuntime.tpaGravityThr0, 0.0f, 1.0f);
     tpaArgument = pt2FilterApply(&pidRuntime.tpaLpf, tpaArgument);
-    previousTpaArgument = tpaArgument;
     DEBUG_SET(DEBUG_TPA, 3, lrintf(tpaArgument * 1000.0f));
     return tpaArgument;
 }
