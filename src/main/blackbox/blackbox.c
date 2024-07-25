@@ -1687,8 +1687,8 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_MS, "%d", currentPidProfile->tpa_delay_ms);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_FACTOR_MIN, "%d", currentPidProfile->tpa_gravity_factor_min);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_FACTOR_MAX, "%d", currentPidProfile->tpa_gravity_factor_max);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR0, "%d", currentPidProfile->tpa_gravity_thr0);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR100, "%d", currentPidProfile->tpa_gravity_thr100);
 #endif
 
         default:

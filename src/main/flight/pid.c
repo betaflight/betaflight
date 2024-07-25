@@ -231,8 +231,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_limit = 15,
         .ez_landing_speed = 50,
         .tpa_delay_ms = 0,
-        .tpa_gravity_factor_min = 0,
-        .tpa_gravity_factor_max = 0,
+        .tpa_gravity_thr0 = 0,
+        .tpa_gravity_thr100 = 0,
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
@@ -288,15 +288,15 @@ static float getWingTpaArgument(float throttle)
 {
     static float previousTpaArgument = 0.0f;
 
-    const float sinTiltAngle = getSinTiltAngle();
-    DEBUG_SET(DEBUG_TPA, 1, lrintf(asin_approx(sinTiltAngle) * 180.0 / M_PIf));
-    const float angleFactorAdjustment = pidRuntime.tpaGravityFactorMax + 
-            (pidRuntime.tpaGravityFactorMin - pidRuntime.tpaGravityFactorMax) * previousTpaArgument;
-    const float noseAngleFactor = sinTiltAngle * angleFactorAdjustment;
+    const float sinDiveAngle = getSinDiveAngle();
+    DEBUG_SET(DEBUG_TPA, 1, lrintf(asin_approx(sinDiveAngle) * 180.0 / M_PIf));
+    const float angleFactorAdjustment = pidRuntime.tpaGravityThr0 +
+            (pidRuntime.tpaGravityThr0 - pidRuntime.tpaGravityThr100) * previousTpaArgument;
+    const float noseAngleFactor = sinDiveAngle * angleFactorAdjustment;
     DEBUG_SET(DEBUG_TPA, 2, lrintf(noseAngleFactor * 1000.0f));
 
     float tpaArgument = throttle + noseAngleFactor;
-    tpaArgument = scaleRangef(tpaArgument, 0.0f, 1.0 + pidRuntime.tpaGravityFactorMax, 0.0f, 1.0f);
+    tpaArgument = scaleRangef(tpaArgument, 0.0f, 1.0 + pidRuntime.tpaGravityThr0, 0.0f, 1.0f);
     tpaArgument = pt2FilterApply(&pidRuntime.tpaLpf, tpaArgument);
     previousTpaArgument = tpaArgument;
     DEBUG_SET(DEBUG_TPA, 3, lrintf(tpaArgument * 1000.0f));
