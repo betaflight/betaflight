@@ -4951,13 +4951,13 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
 
     cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
+        SPEC_VERSION,
         targetName,
         systemConfig()->boardIdentifier,
         FC_VERSION_STRING,
         buildDate,
         buildTime,
         shortGitRevision,
-        SPEC_VERSION,
         MSP_API_VERSION_STRING
     );
 
