@@ -1048,7 +1048,7 @@ bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        gyro->dev.txBuf[0] = gyro->gyroDataReg | 0x80;
+        gyro->dev.txBuf[0] = LSM6DSV_OUTX_L_G | 0x80;
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
