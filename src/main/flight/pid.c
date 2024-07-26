@@ -286,16 +286,16 @@ void pidResetIterm(void)
 #ifdef USE_WING
 static float getWingTpaArgument(float throttle)
 {
-    const float sinPitchAngle = getSinPitchAngle();
     const float pitchFactorAdjustment = scaleRangef(throttle, 0.0f, 1.0f, pidRuntime.tpaGravityThr0, pidRuntime.tpaGravityThr100);
-    const float pitchAngleFactor = sinPitchAngle * pitchFactorAdjustment;
+    const float pitchAngleFactor = getSinPitchAngle() * pitchFactorAdjustment;
     DEBUG_SET(DEBUG_TPA, 1, lrintf(pitchAngleFactor * 1000.0f));
 
     float tpaArgument = throttle + pitchAngleFactor;
     const float maxTpaArgument = MAX(1.0 + pidRuntime.tpaGravityThr100, pidRuntime.tpaGravityThr0);
-    tpaArgument = scaleRangef(tpaArgument, 0.0f, maxTpaArgument, 0.0f, 1.0f);
+    tpaArgument = tpaArgument / maxTpaArgument;
     tpaArgument = pt2FilterApply(&pidRuntime.tpaLpf, tpaArgument);
     DEBUG_SET(DEBUG_TPA, 2, lrintf(tpaArgument * 1000.0f));
+
     return tpaArgument;
 }
 #endif // #ifndef USE_WING
@@ -312,7 +312,7 @@ void pidUpdateTpaFactor(float throttle)
     const float tpaArgument = throttle;
 #endif
 
-    bool isThrottlePastTpaLowBreakpoint = (tpaArgument < pidRuntime.tpaLowBreakpoint && pidRuntime.tpaLowBreakpoint > 0.01f) ? false : true;
+    bool isThrottlePastTpaLowBreakpoint = (tpaArgument >= pidRuntime.tpaLowBreakpoint || pidRuntime.tpaLowBreakpoint <= 0.01f);
     float tpaRate = 0.0f;
     if (isThrottlePastTpaLowBreakpoint || isTpaLowFaded) {
         tpaRate = pidRuntime.tpaMultiplier * fmaxf(tpaArgument - pidRuntime.tpaBreakpoint, 0.0f);
