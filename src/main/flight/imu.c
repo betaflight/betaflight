@@ -750,10 +750,10 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 #endif // USE_ACC
 
 // Angle in between the nose axis of the craft and the horizontal plane in ground reference.
-// Poitive angle - nose down, negative angle - nose up.
-float getSinDiveAngle(void)
+// Positive angle - nose down, negative angle - nose up.
+float getSinPitchAngle(void)
 {
-    return rMat[2][0];
+    return -rMat[2][0];
 }
 
 float getCosTiltAngle(void)
