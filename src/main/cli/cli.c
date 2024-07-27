@@ -4951,6 +4951,7 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
 
     cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
+        SPEC_VERSION,
         targetName,
         systemConfig()->boardIdentifier,
         FC_VERSION_STRING,
