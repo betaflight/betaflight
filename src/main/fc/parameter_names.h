@@ -59,6 +59,8 @@
 #define PARAM_NAME_TPA_LOW_ALWAYS "tpa_low_always"
 #define PARAM_NAME_TPA_MODE "tpa_mode"
 #define PARAM_NAME_TPA_DELAY_MS "tpa_delay_ms"
+#define PARAM_NAME_TPA_GRAVITY_THR0 "tpa_gravity_thr0"
+#define PARAM_NAME_TPA_GRAVITY_THR100 "tpa_gravity_thr100"
 #define PARAM_NAME_MIXER_TYPE "mixer_type"
 #define PARAM_NAME_EZ_LANDING_THRESHOLD "ez_landing_threshold"
 #define PARAM_NAME_EZ_LANDING_LIMIT "ez_landing_limit"

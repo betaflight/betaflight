@@ -105,6 +105,12 @@ float acos_approx(float x)
     else
         return result;
 }
+
+float asin_approx(float x)
+{
+    return (M_PIf * 0.5f) - acos_approx(x);
+}
+
 #endif
 
 int gcd(int num, int denom)

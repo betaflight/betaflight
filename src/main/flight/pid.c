@@ -231,6 +231,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_limit = 15,
         .ez_landing_speed = 50,
         .tpa_delay_ms = 0,
+        .tpa_gravity_thr0 = 0,
+        .tpa_gravity_thr100 = 0,
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
@@ -281,32 +283,48 @@ void pidResetIterm(void)
     }
 }
 
+#ifdef USE_WING
+static float getWingTpaArgument(float throttle)
+{
+    const float pitchFactorAdjustment = scaleRangef(throttle, 0.0f, 1.0f, pidRuntime.tpaGravityThr0, pidRuntime.tpaGravityThr100);
+    const float pitchAngleFactor = getSinPitchAngle() * pitchFactorAdjustment;
+    DEBUG_SET(DEBUG_TPA, 1, lrintf(pitchAngleFactor * 1000.0f));
+
+    float tpaArgument = throttle + pitchAngleFactor;
+    const float maxTpaArgument = MAX(1.0 + pidRuntime.tpaGravityThr100, pidRuntime.tpaGravityThr0);
+    tpaArgument = tpaArgument / maxTpaArgument;
+    tpaArgument = pt2FilterApply(&pidRuntime.tpaLpf, tpaArgument);
+    DEBUG_SET(DEBUG_TPA, 2, lrintf(tpaArgument * 1000.0f));
+
+    return tpaArgument;
+}
+#endif // #ifndef USE_WING
+
 void pidUpdateTpaFactor(float throttle)
 {
     static bool isTpaLowFaded = false;
     // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
     throttle = constrainf(throttle, 0.0f, 1.0f);
-    bool isThrottlePastTpaLowBreakpoint = (throttle < pidRuntime.tpaLowBreakpoint && pidRuntime.tpaLowBreakpoint > 0.01f) ? false : true;
+
+#ifdef USE_WING
+    const float tpaArgument = isFixedWing() ?  getWingTpaArgument(throttle) : throttle;
+#else
+    const float tpaArgument = throttle;
+#endif
+
+    bool isThrottlePastTpaLowBreakpoint = (tpaArgument >= pidRuntime.tpaLowBreakpoint || pidRuntime.tpaLowBreakpoint <= 0.01f);
     float tpaRate = 0.0f;
     if (isThrottlePastTpaLowBreakpoint || isTpaLowFaded) {
-        tpaRate = pidRuntime.tpaMultiplier * fmaxf(throttle - pidRuntime.tpaBreakpoint, 0.0f);
+        tpaRate = pidRuntime.tpaMultiplier * fmaxf(tpaArgument - pidRuntime.tpaBreakpoint, 0.0f);
         if (!pidRuntime.tpaLowAlways && !isTpaLowFaded) {
             isTpaLowFaded = true;
         }
     } else {
-        tpaRate = pidRuntime.tpaLowMultiplier * (pidRuntime.tpaLowBreakpoint - throttle);
+        tpaRate = pidRuntime.tpaLowMultiplier * (pidRuntime.tpaLowBreakpoint - tpaArgument);
     }
 
     float tpaFactor = 1.0f - tpaRate;
     DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
-
-#ifdef USE_WING
-    if (isFixedWing()) {
-        tpaFactor = pt2FilterApply(&pidRuntime.tpaLpf, tpaFactor);
-        DEBUG_SET(DEBUG_TPA, 1, lrintf(tpaFactor * 1000));
-    }    
-#endif
-
     pidRuntime.tpaFactor = tpaFactor;
 }
 

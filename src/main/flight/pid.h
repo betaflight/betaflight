@@ -72,6 +72,7 @@
 
 #ifdef USE_WING
 #define TPA_LOW_RATE_MIN INT8_MIN
+#define TPA_GRAVITY_MAX 5000
 #else
 #define TPA_LOW_RATE_MIN 0
 #endif
@@ -264,6 +265,8 @@ typedef struct pidProfile_s {
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
+    uint16_t tpa_gravity_thr0;               // For wings: addition to tpa argument in % when zero throttle
+    uint16_t tpa_gravity_thr100;             // For wings: addition to tpa argument in % when full throttle
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -447,6 +450,8 @@ typedef struct pidRuntime_s {
 #ifdef USE_WING
     pt2Filter_t tpaLpf;
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
+    float tpaGravityThr0;
+    float tpaGravityThr100;
 #endif
 } pidRuntime_t;
 
