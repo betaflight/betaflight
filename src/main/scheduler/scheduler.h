@@ -179,6 +179,9 @@ typedef enum {
 #ifdef USE_RC_STATS
     TASK_RC_STATS,
 #endif
+#ifdef USE_HEADTRACKER
+    TASK_HEADTRACKER,
+#endif // USE_HEADTRACKER
 
     /* Count of real tasks */
     TASK_COUNT,
