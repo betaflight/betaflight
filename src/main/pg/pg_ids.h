@@ -82,6 +82,7 @@
 #define PG_POSITION 56
 #define PG_VTX_IO_CONFIG 57
 #define PG_GPS_LAP_TIMER 58
+#define PG_ALTHOLD_CONFIG 59
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight
