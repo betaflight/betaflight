@@ -1180,14 +1180,15 @@ static void osdElementEfficiency(osdElementParms_t *element)
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && gpsSol.groundSpeed >= EFFICIENCY_MINIMUM_SPEED_CM_S) {
         const float speed = (float)osdGetSpeedToSelectedUnit(gpsSol.groundSpeed);
         const float mAmperage = (float)getAmperage() * 10.f; // Current in mA
-        efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed)));
+        const float batteryVoltage = getBatteryVoltage() / 100.0f;
+        efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed) * batteryVoltage / 1000.0f)); // returns Watt-hours per distance
     }
 
     const char unitSymbol = osdConfig()->units == UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
     if (efficiency > 0 && efficiency <= 9999) {
-        tfp_sprintf(element->buff, "%4d%c/%c", efficiency, SYM_MAH, unitSymbol);
+        tfp_sprintf(element->buff, "%4d%c/%c", efficiency, SYM_NONE, unitSymbol); // no Wh element, use NONE for now
     } else {
-        tfp_sprintf(element->buff, "----%c/%c", SYM_MAH, unitSymbol);
+        tfp_sprintf(element->buff, "----%c/%c", SYM_NONE, unitSymbol);
     }
 }
 #endif // USE_GPS
