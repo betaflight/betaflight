@@ -57,6 +57,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #elif defined(CONFIG_IN_FLASH) || defined(CONFIG_IN_FILE)
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         HAL_FLASH_Unlock();
+#elif defined(APM32F4)
+        DAL_FLASH_Unlock();
 #elif defined(AT32F4)
         flash_unlock();
 #else
@@ -79,6 +81,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     // NOP
 #elif defined(AT32F4)
     flash_flag_clear(FLASH_ODF_FLAG | FLASH_PRGMERR_FLAG | FLASH_EPPERR_FLAG);
+#elif defined(APM32F4)
+    __DAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -319,6 +323,55 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
         }
     }
 }
+#elif defined(APM32F4)
+/*
+Sector 0    0x08000000 - 0x08003FFF 16 Kbytes
+Sector 1    0x08004000 - 0x08007FFF 16 Kbytes
+Sector 2    0x08008000 - 0x0800BFFF 16 Kbytes
+Sector 3    0x0800C000 - 0x0800FFFF 16 Kbytes
+Sector 4    0x08010000 - 0x0801FFFF 64 Kbytes
+Sector 5    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 6    0x08040000 - 0x0805FFFF 128 Kbytes
+Sector 7    0x08060000 - 0x0807FFFF 128 Kbytes
+Sector 8    0x08080000 - 0x0809FFFF 128 Kbytes
+Sector 9    0x080A0000 - 0x080BFFFF 128 Kbytes
+Sector 10   0x080C0000 - 0x080DFFFF 128 Kbytes
+Sector 11   0x080E0000 - 0x080FFFFF 128 Kbytes
+*/
+
+static uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08003FFF)
+        return FLASH_SECTOR_0;
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return FLASH_SECTOR_1;
+    if ((uint32_t)&__config_start <= 0x0800BFFF)
+        return FLASH_SECTOR_2;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return FLASH_SECTOR_3;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return FLASH_SECTOR_4;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return FLASH_SECTOR_5;
+    if ((uint32_t)&__config_start <= 0x0805FFFF)
+        return FLASH_SECTOR_6;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
+        return FLASH_SECTOR_7;
+    if ((uint32_t)&__config_start <= 0x0809FFFF)
+        return FLASH_SECTOR_8;
+    if ((uint32_t)&__config_start <= 0x080DFFFF)
+        return FLASH_SECTOR_9;
+    if ((uint32_t)&__config_start <= 0x080BFFFF)
+        return FLASH_SECTOR_10;
+    if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return FLASH_SECTOR_11;
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_CONFIG_STORE_FAILURE);
+    }
+}
+
 #endif
 #endif // CONFIG_IN_FLASH
 
@@ -478,6 +531,26 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (status != FLASH_OPERATE_DONE) {
         return -2;
     }
+#elif defined(APM32F4)
+    if (c->address % FLASH_PAGE_SIZE == 0) {
+        FLASH_EraseInitTypeDef EraseInitStruct = {
+            .TypeErase     = FLASH_TYPEERASE_SECTORS,
+            .VoltageRange  = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
+            .NbSectors     = 1
+        };
+        EraseInitStruct.Sector = getFLASHSectorForEEPROM();
+        uint32_t SECTORError;
+        const DAL_StatusTypeDef status = DAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+        if (status != DAL_OK) {
+            return -1;
+        }
+    }
+
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+    const DAL_StatusTypeDef status = DAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, c->address, (uint64_t)*buffer);
+    if (status != DAL_OK) {
+        return -2;
+    }
 #else // !STM32H7 && !STM32F7 && !STM32G4
     if (c->address % FLASH_PAGE_SIZE == 0) {
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
@@ -543,6 +616,8 @@ int config_streamer_finish(config_streamer_t *c)
         HAL_FLASH_Lock();
 #elif defined(AT32F4)
         flash_lock();
+#elif defined(APM32F4)
+        DAL_FLASH_Lock();
 #else
         FLASH_Lock();
 #endif
