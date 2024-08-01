@@ -135,6 +135,7 @@ float sin_approx(float x);
 float cos_approx(float x);
 float atan2_approx(float y, float x);
 float acos_approx(float x);
+float asin_approx(float x);
 #define tan_approx(x)       (sin_approx(x) / cos_approx(x))
 float exp_approx(float val);
 float log_approx(float val);
@@ -156,7 +157,7 @@ int16_t qPercent(fix12_t q);
 int16_t qMultiply(fix12_t q, int16_t input);
 fix12_t qConstruct(int16_t num, int16_t den);
 
-float smoothStepDownTransition(const float x, const float center, const float width);
+float smoothStepUpTransition(const float x, const float center, const float width);
 
 static inline int constrain(int amt, int low, int high)
 {
