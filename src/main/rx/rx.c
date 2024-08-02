@@ -72,6 +72,8 @@
 #include "rx/targetcustomserial.h"
 #include "rx/msp_override.h"
 
+#include "drivers/pinio.h"
+
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
@@ -668,8 +670,12 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
+
+bool slctRx = 0;
 void detectAndApplySignalLossBehaviour(void)
 {
+    //GLEB ADDITION
+    
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     rxFlightChannelsValid = rxSignalReceived && !boxFailsafeSwitchIsOn;
@@ -678,8 +684,10 @@ void detectAndApplySignalLossBehaviour(void)
     // can also go false with good packets but where one flight channel is bad > 300ms (PPM type receiver error)
 
     for (int channel = 0; channel < rxChannelCount; channel++) {
+
         float sample = rcRaw[channel]; // sample has latest RC value, rcData has last 'accepted valid' value
         const bool thisChannelValid = rxFlightChannelsValid && isPulseValid(sample);
+        
         // if the whole packet is bad, or BOXFAILSAFE switch is actioned, consider all channels bad
         if (thisChannelValid) {
             //  reset the invalid pulse period timer for every good channel
@@ -687,6 +695,9 @@ void detectAndApplySignalLossBehaviour(void)
         }
 
         if (failsafeIsActive()) {
+            // GLEB ADDITION
+            
+            
             // we are in failsafe Stage 2, whether Rx loss or BOXFAILSAFE induced
             // pass valid incoming flight channel values to FC,
             // so that GPS Rescue can get the 30% requirement for termination of the rescue
@@ -706,6 +717,7 @@ void detectAndApplySignalLossBehaviour(void)
         } else {
             // we are normal, or in failsafe stage 1
             if (boxFailsafeSwitchIsOn) {
+                
                 // BOXFAILSAFE active, but not in stage 2 yet, use stage 1 values
                 sample = getRxfailValue(channel);
                 //  set channels to Stage 1 values immediately failsafe switch is activated
@@ -714,17 +726,22 @@ void detectAndApplySignalLossBehaviour(void)
                 if (cmp32(currentTimeMs, validRxSignalTimeout[channel]) < 0) {
                     // first 300ms of Stage 1 failsafe
                     sample = rcData[channel];
+                    
+                
                     //  HOLD last valid value on bad channel/s for MAX_INVALID_PULSE_TIME_MS (300ms)
                 } else {
                     // remaining Stage 1 failsafe period after 300ms
                     if (channel < NON_AUX_CHANNEL_COUNT) {
+                        
                         rxFlightChannelsValid = false;
                         //  declare signal lost after 300ms of any one bad flight channel
                     }
                     sample = getRxfailValue(channel);
+
+                    
                     // set channels that are invalid for more than 300ms to Stage 1 values
                 }
-            }
+            } 
             // everything is normal, ie rcData[channel] will be set to rcRaw(channel) via 'sample'
         }
 
@@ -743,10 +760,13 @@ void detectAndApplySignalLossBehaviour(void)
         }
     }
 
+
     if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();
         //  --> start the timer to exit stage 2 failsafe 100ms after losing all packets or the BOXFAILSAFE switch is actioned
     } else {
+        slctRx= !slctRx;
+        pinioSet(2, slctRx);
         failsafeOnValidDataFailed();
         //  -> start timer to enter stage2 failsafe the instant we get a good packet or the BOXFAILSAFE switch is reverted
     }

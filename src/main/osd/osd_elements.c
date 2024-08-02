@@ -883,7 +883,8 @@ static void osdElementCurrentDraw(osdElementParms_t *element)
 
 static void osdElementDebug(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
+    tfp_sprintf(element->buff, "BAND %d", slctRx);
+    //tfp_sprintf(element->buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
 }
 
 static void osdElementDisarmed(osdElementParms_t *element)

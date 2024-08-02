@@ -8,22 +8,22 @@ dump
 # start the command batch
 batch start
 
-board_name MATEKF411
+board_name MATEKH743
 manufacturer_id MTKS
 
 # name: Archer
 
 # resources
 resource BEEPER 1 NONE
-resource MOTOR 1 B04
-resource MOTOR 2 B05
-resource MOTOR 3 B06
-resource MOTOR 4 B07
+resource MOTOR 1 B00
+resource MOTOR 2 B01
+resource MOTOR 3 A00
+resource MOTOR 4 A01
 resource MOTOR 5 NONE
 resource MOTOR 6 NONE
 resource MOTOR 7 NONE
 resource MOTOR 8 NONE
-resource SERVO 1 A00
+resource SERVO 1 E05
 resource SERVO 2 NONE
 resource SERVO 3 NONE
 resource SERVO 4 NONE
@@ -40,9 +40,9 @@ resource PWM 5 NONE
 resource PWM 6 NONE
 resource PWM 7 NONE
 resource PWM 8 NONE
-resource SERIAL_TX 1 A09
-resource SERIAL_TX 2 A02
-resource SERIAL_TX 3 NONE
+resource SERIAL_TX 1 D05
+resource SERIAL_TX 2 E08
+resource SERIAL_TX 3 C06
 resource SERIAL_TX 4 NONE
 resource SERIAL_TX 5 NONE
 resource SERIAL_TX 6 NONE
@@ -50,10 +50,10 @@ resource SERIAL_TX 7 NONE
 resource SERIAL_TX 8 NONE
 resource SERIAL_TX 9 NONE
 resource SERIAL_TX 10 NONE
-resource SERIAL_TX 11 B10
+resource SERIAL_TX 11 NONE
 resource SERIAL_TX 12 NONE
-resource SERIAL_RX 1 A10
-resource SERIAL_RX 2 A03
+resource SERIAL_RX 1 D06
+resource SERIAL_RX 2 E07
 resource SERIAL_RX 3 NONE
 resource SERIAL_RX 4 NONE
 resource SERIAL_RX 5 NONE
@@ -76,31 +76,31 @@ resource INVERTER 9 NONE
 resource INVERTER 10 NONE
 resource INVERTER 11 NONE
 resource INVERTER 12 NONE
-resource I2C_SCL 1 B08
+resource I2C_SCL 1 NONE
 resource I2C_SCL 2 NONE
 resource I2C_SCL 3 NONE
-resource I2C_SDA 1 B09
+resource I2C_SDA 1 NONE
 resource I2C_SDA 2 NONE
 resource I2C_SDA 3 NONE
-resource LED 1 C13
-resource LED 2 C14
+resource LED 1 NONE
+resource LED 2 NONE
 resource LED 3 NONE
 resource RX_BIND 1 NONE
 resource RX_BIND_PLUG 1 NONE
 resource SPI_SCK 1 A05
-resource SPI_SCK 2 B13
+resource SPI_SCK 2 NONE
 resource SPI_SCK 3 NONE
 resource SPI_MISO 1 A06
-resource SPI_MISO 2 B14
+resource SPI_MISO 2 NONE
 resource SPI_MISO 3 NONE
-resource SPI_MOSI 1 A07
-resource SPI_MOSI 2 B15
+resource SPI_MOSI 1 D07
+resource SPI_MOSI 2 NONE
 resource SPI_MOSI 3 NONE
 resource ESCSERIAL 1 NONE
-resource ADC_BATT 1 B00
-resource ADC_RSSI 1 NONE
-resource ADC_CURR 1 B01
-resource ADC_NTEMP 1 A01
+resource ADC_BATT 1 C00
+resource ADC_RSSI 1 C05
+resource ADC_CURR 1 C01
+resource ADC_NTEMP 1 C04
 resource ADC_EXT 1 NONE
 resource BARO_CS 1 NONE
 resource BARO_EOC 1 NONE
@@ -109,10 +109,10 @@ resource COMPASS_CS 1 NONE
 resource COMPASS_EXTI 1 NONE
 resource SDCARD_CS 1 NONE
 resource SDCARD_DETECT 1 NONE
-resource PINIO 1 B02
-resource PINIO 2 B03
-resource PINIO 3 C15
-resource PINIO 4 B09
+resource PINIO 1 TODO
+resource PINIO 2 TODO
+resource PINIO 3 TODO
+resource PINIO 4 TODO
 resource USB_MSC_PIN 1 NONE
 resource FLASH_CS 1 NONE
 resource OSD_CS 1 B12
@@ -127,7 +127,7 @@ resource RX_SPI_EXPRESSLRS_RESET 1 NONE
 resource RX_SPI_EXPRESSLRS_BUSY 1 NONE
 resource GYRO_EXTI 1 NONE
 resource GYRO_EXTI 2 NONE
-resource GYRO_CS 1 A04
+resource GYRO_CS 1 TODO
 resource GYRO_CS 2 NONE
 resource USB_DETECT 1 NONE
 resource PULLUP 1 NONE
@@ -140,78 +140,97 @@ resource PULLDOWN 3 NONE
 resource PULLDOWN 4 NONE
 
 # timer
-timer A03 AF3
-# pin A03: TIM9 CH2 (AF3)
-timer B04 AF2
-# pin B04: TIM3 CH1 (AF2)
-timer B05 AF2
-# pin B05: TIM3 CH2 (AF2)
-timer B06 AF2
-# pin B06: TIM4 CH1 (AF2)
-timer B07 AF2
-# pin B07: TIM4 CH2 (AF2)
-timer B03 AF1
-# pin B03: TIM2 CH2 (AF1)
-timer B10 AF1
-# pin B10: TIM2 CH3 (AF1)
+
+
+#START BIG TODO
+# timer
+timer B00 AF2
+# pin B00: TIM3 CH3 (AF2)
+timer B01 AF2
+# pin B01: TIM3 CH4 (AF2)
 timer A00 AF2
 # pin A00: TIM5 CH1 (AF2)
+timer A01 AF2
+# pin A01: TIM5 CH2 (AF2)
 timer A02 AF2
 # pin A02: TIM5 CH3 (AF2)
+timer A03 AF2
+# pin A03: TIM5 CH4 (AF2)
+timer D12 AF2
+# pin D12: TIM4 CH1 (AF2)
+timer D13 AF2
+# pin D13: TIM4 CH2 (AF2)
+timer D14 AF2
+# pin D14: TIM4 CH3 (AF2)
+timer D15 AF2
+# pin D15: TIM4 CH4 (AF2)
+timer E05 AF4
+# pin E05: TIM15 CH1 (AF4)
+timer E06 AF4
+# pin E06: TIM15 CH2 (AF4)
 timer A08 AF1
 # pin A08: TIM1 CH1 (AF1)
+timer A15 AF1
+# pin A15: TIM2 CH1 (AF1)
+timer C07 AF3
+# pin C07: TIM8 CH2 (AF3)
+timer C06 AF3
+# pin C06: TIM8 CH1 (AF3)
+timer B08 AF1
+# pin B08: TIM16 CH1 (AF1)
+timer B09 AF1
+# pin B09: TIM17 CH1 (AF1)
+#END BIG TODO
 
 # dma
-dma SPI_MOSI 1 NONE
-dma SPI_MOSI 2 NONE
-dma SPI_MOSI 3 NONE
-dma SPI_MISO 1 NONE
-dma SPI_MISO 2 NONE
-dma SPI_MISO 3 NONE
-dma SPI_TX 1 NONE
-dma SPI_TX 2 NONE
-dma SPI_TX 3 NONE
-dma SPI_RX 1 NONE
-dma SPI_RX 2 NONE
-dma SPI_RX 3 NONE
-dma ADC 1 1
-# ADC 1: DMA2 Stream 4 Channel 0
-dma ADC 2 NONE
-dma ADC 3 NONE
-dma UART_TX 1 NONE
-dma UART_TX 2 NONE
-dma UART_TX 3 NONE
-dma UART_TX 4 NONE
-dma UART_TX 5 NONE
-dma UART_TX 6 NONE
-dma UART_TX 7 NONE
-dma UART_TX 8 NONE
-dma UART_RX 1 NONE
-dma UART_RX 2 NONE
-dma UART_RX 3 NONE
-dma UART_RX 4 NONE
-dma UART_RX 5 NONE
-dma UART_RX 6 NONE
-dma UART_RX 7 NONE
-dma UART_RX 8 NONE
-dma pin A03 NONE
-dma pin B04 0
-# pin B04: DMA1 Stream 4 Channel 5
-dma pin B05 0
-# pin B05: DMA1 Stream 5 Channel 5
-dma pin B06 0
-# pin B06: DMA1 Stream 0 Channel 2
-dma pin B07 0
-# pin B07: DMA1 Stream 3 Channel 2
-dma pin B03 0
-# pin B03: DMA1 Stream 6 Channel 3
-dma pin B10 NONE
-dma pin A00 0
-# pin A00: DMA1 Stream 2 Channel 6
-dma pin A02 0
-# pin A02: DMA1 Stream 0 Channel 6
-dma pin A08 0
-# pin A08: DMA2 Stream 6 Channel 0
+dma ADC 1 8
+# ADC 1: DMA2 Stream 0 Request 9
+dma ADC 3 9
+# ADC 3: DMA2 Stream 1 Request 115
+dma TIMUP 1 0
+# TIMUP 1: DMA1 Stream 0 Request 15
+dma TIMUP 2 0
+# TIMUP 2: DMA1 Stream 0 Request 22
+dma TIMUP 3 2
+# TIMUP 3: DMA1 Stream 2 Request 27
+dma TIMUP 4 1
+# TIMUP 4: DMA1 Stream 1 Request 32
+dma TIMUP 5 0
+# TIMUP 5: DMA1 Stream 0 Request 59
+dma TIMUP 8 0
+# TIMUP 8: DMA1 Stream 0 Request 51
+dma pin B00 0
+# pin B00: DMA1 Stream 0 Request 25
+dma pin B01 1
+# pin B01: DMA1 Stream 1 Request 26
+dma pin A00 2
+# pin A00: DMA1 Stream 2 Request 55
+dma pin A01 3
+# pin A01: DMA1 Stream 3 Request 56
+dma pin A02 4
+# pin A02: DMA1 Stream 4 Request 57
+dma pin A03 5
+# pin A03: DMA1 Stream 5 Request 58
+dma pin D12 6
+# pin D12: DMA1 Stream 6 Request 29
+dma pin D13 7
+# pin D13: DMA1 Stream 7 Request 30
+dma pin D14 12
+# pin D14: DMA2 Stream 4 Request 31
+dma pin E05 0
+# pin E05: DMA1 Stream 0 Request 105
+dma pin A08 14
+# pin A08: DMA2 Stream 6 Request 11
+dma pin A15 0
+# pin A15: DMA1 Stream 0 Request 18
+dma pin C07 0
+# pin C07: DMA1 Stream 0 Request 48
+dma pin C06 0
+# pin C06: DMA1 Stream 0 Request 47
+dma pin B08 0
+# pin B08: DMA1 Stream 0 Request 109
+dma pin B09 0
+# pin B09: DMA1 Stream 0 Request 111
 
 # feature
 feature -RX_PPM
