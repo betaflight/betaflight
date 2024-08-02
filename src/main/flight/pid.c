@@ -779,24 +779,24 @@ float pidGetAirmodeThrottleOffset(void)
 
 // ezLanding stuff
 static bool applyEzLandingLimiting = false;
-static float ezLandingLimit = PIDSUM_LIMIT;
+static float ezLandingLimit = PIDSUM_LIMIT; // 500
 static float maxDeflectionAbs = 1.0f;
 
 // EzLanding factors are updated only when new Rx data is received in rc.c
 // this will cause steps in PID as the limiting value changes
 FAST_CODE_NOINLINE void calcEzLandingLimit(float maxRcDeflectionAbs)
 {
+    ezLandingLimit = PIDSUM_LIMIT;
+    applyEzLandingLimiting = false;
     if (pidRuntime.useEzLanding && !isFlipOverAfterCrashActive()) {
         maxDeflectionAbs = fmaxf(maxRcDeflectionAbs, mixerGetRcThrottle());
         if (maxDeflectionAbs < pidRuntime.ezLandingThreshold) {
-            ezLandingLimit = fmaxf(pidRuntime.ezLandingLimit, PIDSUM_LIMIT * maxDeflectionAbs / pidRuntime.ezLandingThreshold);
-            // 15-500 with defaults
             applyEzLandingLimiting = true;
-        } else {
-            applyEzLandingLimiting = false;
+            ezLandingLimit = fmaxf(pidRuntime.ezLandingLimit, PIDSUM_LIMIT * maxDeflectionAbs / pidRuntime.ezLandingThreshold);
+            // min of default limit of 15, max of 500
         }
     }
-    DEBUG_SET(DEBUG_EZLANDING, 0, ezLandingLimit * 100);
+    DEBUG_SET(DEBUG_EZLANDING, 0, ezLandingLimit);
     DEBUG_SET(DEBUG_EZLANDING, 1, maxDeflectionAbs * 100);
 }
 
@@ -805,9 +805,12 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     // if both sticks are within 5% of center, check acc magnitude for impacts
     // at half the impact threshold, force iTerm to zero, to attenuate iTerm-mediated bouncing
     // threshold should be highe enough to avoid unwanted disarms in the air on throttle chops
+
+    // normally these lines would be inside the dedflection test, I just want to know the values all the time for now
+    float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
+    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
+
     if (isAirmodeActivated() && maxDeflectionAbs < 0.05f) {
-        float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
-        DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
         if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
             // disarm after big bumps
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
@@ -1136,12 +1139,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
         {
 
-            // *** EzLanding error limiter on error for the input to the ITerm accumulator ***
-            //  - unfortunately iTermErrorRate is different from errorRate used by P, otherwise this is wasteful
-            if (applyEzLandingLimiting) {
-                itermErrorRate = constrainf(itermErrorRate, -ezLandingLimit, ezLandingLimit);
-            }
-
             // handle yaw iTerm limit differently from other axes, and make yaw iTerm leaky
             if (axis == FD_YAW) {
                 iTermLeak = pidData[axis].I * pidRuntime.itermLeakRateYaw;
@@ -1155,6 +1152,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         //  - unfortunately iTermErrorRate is different from errorRate used by P, otherwise this is wasteful
         if (applyEzLandingLimiting) {
             itermErrorRate = constrainf(itermErrorRate, -ezLandingLimit, ezLandingLimit);
+        }
+        if (axis == FD_ROLL) {
+            DEBUG_SET(DEBUG_EZLANDING, 5, itermErrorRate); // after attenuation
         }
 
 //        // Alternate method for limiting iTerm growth when pidSum reaches pidSumLimit and change is in same direction as I
@@ -1245,6 +1245,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             if (applyEzLandingLimiting) {
                 preTpaD = constrainf(preTpaD, -ezLandingLimit, ezLandingLimit);
             }
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_EZLANDING, 6, preTpaD); // after attenuation
+            }
+
 
             pidData[axis].D = preTpaD * pidRuntime.tpaFactor;
 
