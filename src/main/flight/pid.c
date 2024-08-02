@@ -228,8 +228,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_low_breakpoint = 1050,
         .tpa_low_always = 0,
         .ez_landing_threshold = 25,
-        .ez_landing_limit = 15,
-        .ez_landing_disarm_threshold = 110,
+        .ez_landing_limit = 0, // off for this PR
+        .ez_landing_disarm_threshold = 110, // unlikely to trigger, ie off; 60 - 80 is more useful
         .tpa_delay_ms = 0,
         .tpa_gravity_thr0 = 0,
         .tpa_gravity_thr100 = 0,
