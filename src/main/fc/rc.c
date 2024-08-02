@@ -523,12 +523,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     float setpointAcceleration = 0.0f;
     float feedforward = 0.0f;
 
-    // for FrSky and other systems that send duplicate packets to the FC when sending telemetry
     if (!pid->feedforwardInterpolate) {
-        // don't interpolate CRSF, ELRS, and other systems without this problem
+        // don't interpolate CRSF, ELRS, and other systems that don't send duplicate packets during telemetry sends
         setpointSpeed *= rxRate;
     } else {
-        // for FrSky, interpolate setpointSpeed remove steps in setpointSpeed when telemetry packets are sent
+        // for those which do send duplicates, interpolate setpointSpeed to remove steps in feedforward
         if (rcCommandDeltaAbs) {
             // movement!
             // next valid step will be larger if a duplicate was sent because the time interval will be longer

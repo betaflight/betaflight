@@ -237,7 +237,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
         .itermLeak = 15,
-        .feedforward_interpolate = false,
     );
 
 #ifndef USE_D_MIN
