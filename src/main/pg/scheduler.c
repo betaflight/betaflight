@@ -23,7 +23,7 @@
 #include "pg/pg_ids.h"
 #include "pg/scheduler.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig, PG_SCHEDULER_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig, PG_SCHEDULER_CONFIG, 2);
 
 PG_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig,
     .rxRelaxDeterminism = SCHEDULER_RELAX_RX,
