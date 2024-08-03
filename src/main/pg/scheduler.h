@@ -38,6 +38,7 @@ typedef struct schedulerConfig_s {
     uint16_t rxRelaxDeterminism;
     uint16_t osdRelaxDeterminism;
     uint16_t cpuLatePercentageLimit;
+    uint8_t debugTask;
 } schedulerConfig_t;
 
 PG_DECLARE(schedulerConfig_t, schedulerConfig);
