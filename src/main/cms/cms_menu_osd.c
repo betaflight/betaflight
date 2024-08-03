@@ -143,6 +143,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"OSD PROFILE NAME",   OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PROFILE_NAME]},
 #endif
     {"DEBUG",              OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_DEBUG]},
+    {"DEBUG2",             OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_DEBUG2]},
     {"WARNINGS",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WARNINGS]},
     {"DISARMED",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_DISARMED]},
     {"PIT ANG",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE]},
