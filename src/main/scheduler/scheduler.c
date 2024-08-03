@@ -81,7 +81,8 @@
 // 3 - average (us)
 // 4 - estimated execution time (us)
 // 5 - actual execution time (us)
-// 6 - late count
+// 6 - difference between estimated and actual execution time
+// 7 - late count
 
 extern task_t tasks[];
 
@@ -460,7 +461,8 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
             DEBUG_SET(DEBUG_TASK, 3, selectedTask->movingSumExecutionTime10thUs / TASK_STATS_MOVING_SUM_COUNT / 10);
             DEBUG_SET(DEBUG_TASK, 4, estimatedExecutionUs);
             DEBUG_SET(DEBUG_TASK, 5, taskExecutionTimeUs);
-            DEBUG_SET(DEBUG_TASK, 6, selectedTask->lateCount);
+            DEBUG_SET(DEBUG_TASK, 6, estimatedExecutionUs - taskExecutionTimeUs);
+            DEBUG_SET(DEBUG_TASK, 7, selectedTask->lateCount);
         }
 #endif
     }
