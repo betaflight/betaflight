@@ -419,7 +419,9 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
 
         // Execute task
         const timeUs_t currentTimeBeforeTaskCallUs = micros();
+#if defined(USE_LATE_TASK_STATISTICS)
         const timeUs_t estimatedExecutionUs = selectedTask->execTime;
+#endif
         selectedTask->attribute->taskFunc(currentTimeBeforeTaskCallUs);
         taskExecutionTimeUs = micros() - currentTimeBeforeTaskCallUs;
         taskTotalExecutionTime += taskExecutionTimeUs;
