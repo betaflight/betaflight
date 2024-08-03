@@ -44,7 +44,9 @@ float pwlInterpolate(const pwl_t *pwl, float x)
 {
     if (x <= pwl->xMin) {
         return pwl->yValues[0];
-    } else if (x >= pwl->xMax) {
+    }
+    
+    if (x >= pwl->xMax) {
         return pwl->yValues[pwl->numPoints - 1];
     }
     
