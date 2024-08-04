@@ -29,7 +29,7 @@
 #define PWL_DECLARE(name, size, xMinV, xMaxV)                       \
     STATIC_ASSERT(xMinV < xMaxV, "xMinV must be less than xMaxV");  \
     STATIC_ASSERT(size > 1, "size must be more than 1");            \
-    STATIC_ASSERT(size < 256, "size must be less than 256");        \
+    STATIC_ASSERT(size < 33, "size must be less than 33");          \
     float name##_yValues[size];                                     \
     pwl_t name = {                                                  \
         .yValues = name##_yValues,                                  \
@@ -41,12 +41,12 @@
 
 typedef struct pwl_s {
     float *yValues;
-    uint8_t numPoints;
+    int numPoints;
     float xMin;
     float xMax;
     float dx;
 } pwl_t;
 
-void pwlInitialize(pwl_t *pwl, float *yValues, uint8_t numPoints, float xMin, float xMax);
+void pwlInitialize(pwl_t *pwl, float *yValues, int numPoints, float xMin, float xMax);
 void pwlFill(pwl_t *pwl, float (*function)(float));
 float pwlInterpolate(const pwl_t *pwl, float x);

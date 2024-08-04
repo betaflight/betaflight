@@ -24,7 +24,7 @@
 #include "pwl.h"
 
 
-void pwlInitialize(pwl_t *pwl, float *yValues, uint8_t numPoints, float xMin, float xMax) {
+void pwlInitialize(pwl_t *pwl, float *yValues, int numPoints, float xMin, float xMax) {
     pwl->numPoints = numPoints;
     pwl->xMin = xMin;
     pwl->xMax = xMax;
@@ -34,7 +34,7 @@ void pwlInitialize(pwl_t *pwl, float *yValues, uint8_t numPoints, float xMin, fl
 
 void pwlFill(pwl_t *pwl, float (*function)(float))
 {
-    for (uint8_t i = 0; i < pwl->numPoints; ++i) {
+    for (int i = 0; i < pwl->numPoints; ++i) {
         const float x = pwl->xMin + i * pwl->dx;
         pwl->yValues[i] = function(x);
     }
@@ -50,15 +50,14 @@ float pwlInterpolate(const pwl_t *pwl, float x)
         return pwl->yValues[pwl->numPoints - 1];
     }
     
-    const uint8_t index = (uint8_t)((x - pwl->xMin) / pwl->dx);
+    const int index = (int)((x - pwl->xMin) / pwl->dx);
     if (index >= pwl->numPoints - 1) {
         return pwl->yValues[pwl->numPoints - 1];
     }
 
     const float x0 = pwl->xMin + index * pwl->dx;
-    const float x1 = x0 + pwl->dx;
     const float y0 = pwl->yValues[index];
     const float y1 = pwl->yValues[index + 1];
 
-    return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+    return y0 + (x - x0) * (y1 - y0) / pwl->dx;
 }
