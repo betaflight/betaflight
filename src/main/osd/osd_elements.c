@@ -936,6 +936,11 @@ static void osdElementDebug(osdElementParms_t *element)
     tfp_sprintf(element->buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
 }
 
+static void osdElementDebug2(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "D2  %5d %5d %5d %5d", debug[4], debug[5], debug[6], debug[7]);
+}
+
 static void osdElementDisarmed(osdElementParms_t *element)
 {
     if (!ARMING_FLAG(ARMED)) {
@@ -1806,6 +1811,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_WARNINGS,
     OSD_AVG_CELL_VOLTAGE,
     OSD_DEBUG,
+    OSD_DEBUG2,
     OSD_PITCH_ANGLE,
     OSD_ROLL_ANGLE,
     OSD_MAIN_BATT_USAGE,
@@ -1919,6 +1925,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
 #endif
     [OSD_DEBUG]                   = osdElementDebug,
+    [OSD_DEBUG2]                  = osdElementDebug2,
 #ifdef USE_ACC
     [OSD_PITCH_ANGLE]             = osdElementAngleRollPitch,
     [OSD_ROLL_ANGLE]              = osdElementAngleRollPitch,
