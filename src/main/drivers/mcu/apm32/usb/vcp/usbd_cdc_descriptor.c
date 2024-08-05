@@ -28,6 +28,8 @@
 
 /* Private includes *******************************************************/
 #include "usbd_cdc.h"
+#include "platform.h"
+
 #include <string.h>
 
 /* Private macro **********************************************************/

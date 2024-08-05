@@ -24,6 +24,7 @@
 
 /* Private includes *******************************************************/
 #include "usbd_core.h"
+#include "platform.h"
 
 /* Private macro **********************************************************/
 #define USBD_FS_RX_FIFO_SIZE                128

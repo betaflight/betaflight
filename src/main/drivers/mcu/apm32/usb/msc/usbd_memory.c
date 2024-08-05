@@ -24,6 +24,8 @@
 
 /* Private includes *******************************************************/
 #include "usbd_storage.h"
+#include "platform.h"
+
 /* Private macro **********************************************************/
 #define MEMORY_LUN_NUM              1
 #define MEMORY_BLOCK_NUM            80

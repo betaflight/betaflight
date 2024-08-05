@@ -24,6 +24,8 @@
 
 /* Private includes *******************************************************/
 #include "usbd_msc.h"
+#include "platform.h"
+
 #include <string.h>
 
 /* Private macro **********************************************************/
