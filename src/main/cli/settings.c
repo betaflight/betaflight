@@ -126,6 +126,8 @@
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
 
+#include "scheduler/scheduler.h"
+
 #include "telemetry/frsky_hub.h"
 #include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
@@ -1747,6 +1749,8 @@ const clivalue_t valueTable[] = {
 
     { "scheduler_relax_rx",  VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, rxRelaxDeterminism) },
     { "scheduler_relax_osd", VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, osdRelaxDeterminism) },
+
+    { "scheduler_debug_task", VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, TASK_COUNT }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, debugTask) },
 
 #ifdef USE_LATE_TASK_STATISTICS
     { "cpu_late_limit_permille", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_SCHEDULER_CONFIG, offsetof(schedulerConfig_t, cpuLatePercentageLimit) },
