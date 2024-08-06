@@ -100,7 +100,7 @@ void stopMotors(void)
 }
 
 static FAST_DATA_ZERO_INIT float throttle = 0;
-static float basicThrottle = 0;
+static float rcThrottle = 0;
 static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
 static FAST_DATA_ZERO_INIT float motorOutputMin;
 static FAST_DATA_ZERO_INIT float motorRangeMin;
@@ -265,7 +265,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     }
 
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
-    basicThrottle = throttle;
+    rcThrottle = throttle;
 }
 
 #define CRASH_FLIP_DEADBAND 20
@@ -776,5 +776,5 @@ float mixerGetThrottle(void)
 
 float mixerGetRcThrottle(void)
 {
-    return basicThrottle;
+    return rcThrottle;
 }
