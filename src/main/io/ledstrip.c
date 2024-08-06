@@ -1483,13 +1483,13 @@ void setLedProfile(uint8_t profile)
 
 uint8_t getLedBrightness(void)
 {
-	return ledStripConfig()->ledstrip_brightness;
+    return ledStripConfig()->ledstrip_brightness;
 }
 
 void setLedBrightness (uint8_t brightness)
 {
-	if ( brightness <= 100 ) {
-		ledStripConfigMutable()->ledstrip_brightness = brightness;
-	}
+    if ( brightness <= 100 ) {
+        ledStripConfigMutable()->ledstrip_brightness = brightness;
+    }
 }
 #endif
