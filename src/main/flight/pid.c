@@ -778,7 +778,7 @@ float pidGetAirmodeThrottleOffset(void)
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
     // if all sticks are within 5% of center, and throttle low, check acc magnitude for impacts
-    // threshold should be highe enough to avoid unwanted disarms in the air on throttle chops
+    // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
 
     // normally the acc calculation would be done only when required, but having them here lets us log the acc magnitude in normal flight
     float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
