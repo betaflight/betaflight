@@ -1,7 +1,7 @@
 dump
 
 # version
-# Betaflight / STM32F411 (S411) 4.4.3 Jun  4 2024 / 18:28:26 (c5c31d7ee) MSP API: 1.45
+# Betaflight / STM32F411 (S411) 4.4.3 Aug  6 2024 / 11:47:08 (norevision) MSP API: 1.45
 
 # config: YES
 
@@ -110,7 +110,7 @@ resource COMPASS_EXTI 1 NONE
 resource SDCARD_CS 1 NONE
 resource SDCARD_DETECT 1 NONE
 resource PINIO 1 B02
-resource PINIO 2 B03
+resource PINIO 2 NONE
 resource PINIO 3 C15
 resource PINIO 4 B09
 resource USB_MSC_PIN 1 NONE
@@ -306,8 +306,8 @@ map AETR1234
 aux 0 0 0 1600 2100 0 0
 aux 1 1 4 1600 2100 0 0
 aux 2 40 1 900 1650 0 0
-aux 3 41 3 1600 2100 0 0
-aux 4 42 5 1600 2100 0 0
+aux 3 41 3 1725 2100 0 0
+aux 4 0 0 900 900 0 0
 aux 5 0 0 900 900 0 0
 aux 6 0 0 900 900 0 0
 aux 7 0 0 900 900 0 0
@@ -504,6 +504,7 @@ set blackbox_disable_gyro = OFF
 set blackbox_disable_acc = OFF
 set blackbox_disable_debug = OFF
 set blackbox_disable_motors = OFF
+set blackbox_disable_gps = OFF
 set blackbox_mode = NORMAL
 set blackbox_high_resolution = OFF
 set min_throttle = 1070
@@ -589,6 +590,42 @@ set small_angle = 180
 set imu_process_denom = 2
 set auto_disarm_delay = 5
 set gyro_cal_on_first_arm = OFF
+set gps_provider = UBLOX
+set gps_sbas_mode = NONE
+set gps_auto_config = ON
+set gps_auto_baud = OFF
+set gps_ublox_mode = AIRBORNE
+set gps_ublox_use_galileo = OFF
+set gps_set_home_point_once = OFF
+set gps_use_3d_speed = OFF
+set gps_sbas_integrity = OFF
+set gps_rescue_min_start_dist = 15
+set gps_rescue_alt_mode = MAX_ALT
+set gps_rescue_initial_climb = 10
+set gps_rescue_ascend_rate = 750
+set gps_rescue_return_alt = 30
+set gps_rescue_ground_speed = 750
+set gps_rescue_max_angle = 45
+set gps_rescue_roll_mix = 150
+set gps_rescue_pitch_cutoff = 75
+set gps_rescue_descent_dist = 20
+set gps_rescue_descend_rate = 150
+set gps_rescue_landing_alt = 4
+set gps_rescue_disarm_threshold = 20
+set gps_rescue_throttle_min = 1100
+set gps_rescue_throttle_max = 1700
+set gps_rescue_throttle_hover = 1275
+set gps_rescue_sanity_checks = RESCUE_SANITY_FS_ONLY
+set gps_rescue_min_sats = 8
+set gps_rescue_allow_arming_without_fix = OFF
+set gps_rescue_throttle_p = 15
+set gps_rescue_throttle_i = 15
+set gps_rescue_throttle_d = 20
+set gps_rescue_velocity_p = 8
+set gps_rescue_velocity_i = 40
+set gps_rescue_velocity_d = 12
+set gps_rescue_yaw_p = 20
+set gps_rescue_use_mag = ON
 set deadband = 0
 set yaw_deadband = 0
 set yaw_control_reversed = OFF
@@ -600,6 +637,10 @@ set simplified_gyro_filter = ON
 set simplified_gyro_filter_multiplier = 80
 set tlm_inverted = OFF
 set tlm_halfduplex = ON
+set frsky_default_lat = 0
+set frsky_default_long = 0
+set frsky_gps_format = 0
+set frsky_unit = METRIC
 set frsky_vfas_precision = 0
 set hott_alarm_int = 5
 set pid_in_tlm = OFF
@@ -674,11 +715,11 @@ set osd_wh_drawn_pos = 234
 set osd_motor_diag_pos = 234
 set osd_craft_name_pos = 14369
 set osd_pilot_name_pos = 14797
-set osd_gps_speed_pos = 234
+set osd_gps_speed_pos = 6273
 set osd_gps_lon_pos = 234
 set osd_gps_lat_pos = 234
 set osd_gps_sats_pos = 234
-set osd_home_dir_pos = 234
+set osd_home_dir_pos = 14497
 set osd_home_dist_pos = 234
 set osd_flight_dist_pos = 234
 set osd_compass_bar_pos = 234
@@ -686,7 +727,7 @@ set osd_altitude_pos = 234
 set osd_pid_roll_pos = 234
 set osd_pid_pitch_pos = 234
 set osd_pid_yaw_pos = 234
-set osd_debug_pos = 234
+set osd_debug_pos = 14433
 set osd_power_pos = 234
 set osd_pidrate_profile_pos = 234
 set osd_warnings_pos = 14761

@@ -78,3 +78,6 @@
 
 //GLEB ADDITION
 #define USE_N1_TEMP_SENSOR
+#define USE_GPS
+#define USE_GPS_UBLOX
+#define USE_GPS_RESCUE

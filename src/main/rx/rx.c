@@ -672,12 +672,22 @@ static void readRxChannelsApplyRanges(void)
 
 
 bool slctRx = 0;
+uint32_t startTimeMs = 0;
+uint32_t lastSwitchMs = 0;
+uint32_t lastRCdata = 0;
 void detectAndApplySignalLossBehaviour(void)
 {
-    //GLEB ADDITION
+    //GLEB ADDITION. Set a start time first time that this method is called
+    if(startTimeMs == 0){
+        startTimeMs = millis();
+    }
+    if(lastSwitchMs == 0){
+        lastSwitchMs = millis();
+    }
     
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    //AUX 7 CHANNEL 11 USED FOR CHECKING IF WE CAN SWITCH
     rxFlightChannelsValid = rxSignalReceived && !boxFailsafeSwitchIsOn;
     // rxFlightChannelsValid is false after 100ms of no packets, or as soon as use the BOXFAILSAFE switch is actioned
     // rxFlightChannelsValid is true the instant we get a good packet or the BOXFAILSAFE switch is reverted
@@ -759,14 +769,26 @@ void detectAndApplySignalLossBehaviour(void)
             rcData[channel] = sample;
         }
     }
-
+    
+    //GLEB ADDITION:  LISTEN FOR RX ON A SWITCH. KEEP TRACK OF SWITCH TIME ONLY IF WE JUST MADE THIS SWITCH IN CHANNELS
+    if(lastRCdata == 0){
+        lastRCdata = rcData[11];
+    }
+    if (rxFlightChannelsValid && (ABS(rcData[11] - lastRCdata) > 500)){
+        slctRx= !slctRx;
+        pinioSet(2, slctRx);
+    } 
+    lastRCdata = rcData[11];
 
     if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();
         //  --> start the timer to exit stage 2 failsafe 100ms after losing all packets or the BOXFAILSAFE switch is actioned
     } else {
-        slctRx= !slctRx;
-        pinioSet(2, slctRx);
+        //ONLY START SWITCHING AFTER 5 SECONDS
+        if((currentTimeMs - startTimeMs > 5000)){
+            slctRx= !slctRx;
+            pinioSet(2, slctRx);
+        }
         failsafeOnValidDataFailed();
         //  -> start timer to enter stage2 failsafe the instant we get a good packet or the BOXFAILSAFE switch is reverted
     }

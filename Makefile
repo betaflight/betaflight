@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-DEFAULT_TARGET    ?= STM32H743
+DEFAULT_TARGET    ?= STM32F411
 TARGET    ?= 
 CONFIG    ?= 
 
