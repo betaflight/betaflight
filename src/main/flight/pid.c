@@ -236,6 +236,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
+        .feedforward_yaw_hold_gain = 15,  // zero disables; 15-20 is OK for 5in
+        .feedforward_yaw_hold_time = 100,  // a value of 100 is a time constant of about 100ms, and is OK for a 5in; smaller values decay faster, eg for smaller props
     );
 
 #ifndef USE_D_MIN

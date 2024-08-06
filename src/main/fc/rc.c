@@ -63,6 +63,7 @@ static float rawSetpoint[XYZ_AXIS_COUNT];
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
 static float maxRcDeflectionAbs;
+
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 
@@ -140,6 +141,11 @@ float getRcDeflectionRaw(int axis)
 float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];
+}
+
+float getMaxRcDeflectionAbs(void)
+{
+    return maxRcDeflectionAbs;
 }
 
 #define THROTTLE_LOOKUP_LENGTH 12
@@ -490,11 +496,11 @@ NOINLINE void initAveraging(uint16_t feedforwardAveraging)
     }
 }
 
+#ifdef USE_FEEDFORWARD
 FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
     float rxRate = currentRxRateHz;                       // 1e6f / currentRxIntervalUs;
-    static float prevRxInterval;
 
     static float prevRcCommand[3];
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
@@ -502,82 +508,88 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     static float prevSetpointSpeed[3];
     static float prevAcceleration[3];               // for duplicate interpolation
     static bool prevDuplicatePacket[3];             // to identify multiple identical packets
-    static uint16_t feedforwardAveraging = 0;
-
+    static uint16_t feedforwardAveraging;
     if (feedforwardAveraging != pid->feedforwardAveraging) {
         feedforwardAveraging = pid->feedforwardAveraging;
         initAveraging(feedforwardAveraging);
     }
 
-    float rcCommandDeltaAbs = fabsf(rcCommand[axis] - prevRcCommand[axis]);
+    const float rcCommandDelta = rcCommand[axis] - prevRcCommand[axis];
     prevRcCommand[axis] = rcCommand[axis];
-
-    if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDeltaAbs * 10.0f));   // setpoint speed before smoothing
-    }
+    float rcCommandDeltaAbs = fabsf(rcCommandDelta);
 
     const float setpoint = rawSetpoint[axis];
-    float setpointSpeed = (setpoint - prevSetpoint[axis]);
+    const float setpointDelta = (setpoint - prevSetpoint[axis]);
     prevSetpoint[axis] = setpoint;
 
+    float setpointSpeed = 0.0f;
     float setpointAcceleration = 0.0f;
     float feedforward = 0.0f;
 
-    if (!pid->feedforwardInterpolate) {
-        // don't interpolate CRSF, ELRS, and other systems that don't send duplicate packets during telemetry sends
-        setpointSpeed *= rxRate;
-    } else {
-        // for those which do send duplicates, interpolate setpointSpeed to remove steps in feedforward
+    if (pid->feedforwardInterpolate) {
+        static float prevRxInterval;
+        // for Rx links which do send duplicate data packets when they send telemetry
+        // interpolate setpointSpeed to minimise steps in feedforward
         if (rcCommandDeltaAbs) {
             // movement!
-            // next valid step will be larger if a duplicate was sent because the time interval will be longer
+            // if the previous packet was a duplicate, calculate setpointSpeed over the last two intervals
             if (prevDuplicatePacket[axis] == true) {
                 rxRate = 1.0f / (rxInterval + prevRxInterval);
             }
-            setpointSpeed *= rxRate;
+            setpointSpeed = setpointDelta * rxRate;
             prevDuplicatePacket[axis] = false;
         } else {
             // no movement!
             if (prevDuplicatePacket[axis] == false) {
-                // first duplicate after normal movement, interpolate a replacement setpoint value
-                // unless sticks are near max, include the previous acceleration in the interpolated setpoint value
-                // need the check on stick position to avoid interpolating when just about to hit max deflection
+                // interpolate a replacement setpointSpeed value for the first duplicate after normal movement
+                // avoid interpolating when about to hit max deflection
                 if (fabsf(setpoint) < 0.90f * maxRcRate[axis]) {
                     setpointSpeed = prevSetpointSpeed[axis];
                     setpointSpeed += prevAcceleration[axis];
-                    // pretend that there was stick movement also, to hold the jitter value
+                    // pretend that there was stick movement also, to hold the same jitter value
                     rcCommandDeltaAbs = prevRcCommandDeltaAbs[axis];
                 }
-                // otherwise don't interpolate, and allow a low jitter value to suppress boost
             } else {
-                // zero the setpoint speed (and acceleration) for the second and all subsequent duplicates
-                setpointSpeed = 0.0f;
-                prevSetpointSpeed[axis] = 0.0f;
+                // for second and all subsequent duplicates...
+                // leave setpoint speed at zero
+                // zero the acceleration by setting previous speed to zero
+                // feedforward will smoothly decay and be attenuated by the jitter reduction value for zero rcCommandDelta
+                prevSetpointSpeed[axis] = 0.0f; // zero acceleration later on
             }
             prevDuplicatePacket[axis] = true;
         }
         prevRxInterval = rxInterval;
+    } else {
+        // don't interpolate for CRSF, ELRS, and maybe other systems that don't send duplicate packets on telemetry sends
+        setpointSpeed = setpointDelta * rxRate;
     }
 
     // calculate jitterAttenuation factor
-    // The intent is to attenuate feedforward when rcCommandDelta is small, ie when sticks move very slowly
-    // feedforwardJitterFactorInv will be 1 when user-set jitter factor is 0, 0.5 when user selects 1... 0.1 if they select 10
-    // If there is zero rcCommandDelta, jitterAttenuator will reduce setpoint by 0.5 if user selects 1, 0.1 if they select 10
-    // For non-zero rcCommandDelta values up to the user jitter value there is linear attenuation
-    // user config of zero results in a 1.0 multiplier, achieving nothing
-    // if user config is 10, setpoint values will be * 0.1 when rcCommandDelta = 0, * 0.2 when rcCommandDelta = 1 etc
-    // note that the jitter reduction attenuates a smoothed value of feedforward which has useful data even when rcCommandDelta is zero
-    float jitterAttenuator = 1.0f;
-    if (rcCommandDeltaAbs <= pid->feedforwardJitterFactor) {
-        jitterAttenuator = ((rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) * 0.5f + 1.0f) * pid->feedforwardJitterFactorInv;
-        jitterAttenuator = MIN(jitterAttenuator, 1.0f);
-    }
+    // The intent is to attenuate feedforward when absolute rcCommandDelta is small, ie when sticks move very slowly
+    // Greater feedforward_jitter_factor values widen the attenuation range, and increase the suppression at center
+    // Stick input is the average of the previous two absolute rcCommandDelta values
+    // Output is jitterAttenuator, a value 0-1.0 that is a simple multiplier of the final feedforward value
+    // For the CLI user setting of feedforward_jitter_factor:
+    // User setting of 0 returns feedforwardJitterFactorInv = 1.0 (and disables the function)
+    // User setting of 1 returns feedforwardJitterFactorInv = 0.5
+    // User setting of 9 returns feedforwardJitterFactorInv = 0.1
+    // rcCommandDelta has 500 unit values either side of center stick position
+    // For a 250Hz link, a one second stick sweep center->max returns rcCommandDelta around 2.0
+    // For a user jitter reduction setting of 2, the jitterAttenuator value ranges linearly
+    // from 0.33 when rcCommandDelta is close to zero, up to 1.0 for rcCommandDelta of 2.0 or more
+    // For a user jitter reduction setting of 9, the jitterAttenuator value ranges linearly
+    // from 0.1 when rcCommandDelta is close to zero, up to 1.0 for rcCommandDelta is 9.0 or more
+    // note that the jitter reduction multiplies the final smoothed value of feedforward
+    // allowing residual smooth feedforward offsets even if the sticks are not moving
+    // this is an improvement on the previous version which 'chopped' FF to zero when sticks stopped moving
+    float jitterAttenuator = ((rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) * 0.5f + 1.0f) * pid->feedforwardJitterFactorInv;
+    jitterAttenuator = MIN(jitterAttenuator, 1.0f);
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
     // smooth the setpointSpeed value
     setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
 
-    // calculate and smooth setpointAcceleration
+    // calculate setpointAcceleration from smoothed setpoint speed
     setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]);
     prevSetpointSpeed[axis] = setpointSpeed;
 
@@ -585,24 +597,52 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     setpointAcceleration = prevAcceleration[axis] + pid->feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
     prevAcceleration[axis] = setpointAcceleration;
 
-    // apply final gain factors to acceleration
+    // apply gain factor to acceleration
     setpointAcceleration *= rxRate * pid->feedforwardBoostFactor;
 
-    feedforward = setpointSpeed + setpointAcceleration;
+    feedforward = setpointSpeed;
 
-    if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));         // setpoint speed smoothed
-        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpointAcceleration * 0.01f));  // acceleration smoothed
-        if (prevDuplicatePacket[axis]) {
-            DEBUG_SET(DEBUG_FEEDFORWARD, 6, 0);  // it a duplicate
-        } else {
-            DEBUG_SET(DEBUG_FEEDFORWARD, 6, 1);  // not a duplicate
+    if (axis < FD_YAW) {
+        // for pitch and roll, add acceleration element (boost)
+        feedforward += setpointAcceleration;
+        // apply jitter reduction multiplier
+        feedforward *= jitterAttenuator;
+        // pull feedforward back towards zero as sticks approach max
+        if (pid->feedforwardMaxRateLimit) {
+            if (feedforward * setpoint > 0.0f) { // in same direction
+                const float limit = (maxRcRate[axis] - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
+                feedforward = (limit > 0.0f) ? constrainf(feedforward, -limit, limit) : 0.0f;
+            }
         }
-        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(jitterAttenuator * 100.0f));  // jitter factor
-    }
 
-    // apply jitter attenuation to final feedforward value
-    feedforward *= jitterAttenuator;
+    } else {
+        // for yaw, only apply jitter reduction only to the feedforward delta element
+        // can't be applied to the 'sustained' element since it will divide it to a small fraction of what is needed
+        feedforward *= jitterAttenuator;
+
+        // instead of adding setpoint acceleration, which is too aggressive,
+        // add a slow-fading high-pass filtered setpoint element
+        // this provides a 'sustained boost' with low noise
+        // it mimics the normal sustained yaw motor drive requirements, reducing P and I and hence reducing bounceback
+        // this doesn't add significant noise to feedforward
+        // too little yaw FF causes iTerm windup and slow bounce back when stopping a hard yaw
+        // too much causes fast bounce back when stopping a hard yaw
+
+        static float prevSetpointYaw;
+        // calculate lowpass gain factor from user specified time constant, can't exceed 1.0
+        const float kFY = fminf(rxInterval * pid->feedforwardYawHoldTime, 1.0f);
+        // subtract lowpass from input to get highpass
+        const float setpointLpfYaw = prevSetpointYaw + kFY * (setpoint - prevSetpointYaw);
+        prevSetpointYaw = setpointLpfYaw;
+        // provide separate boost gain for yaw; value of 20 works well for 5in, zero disables
+        const float feedforwardYawHoldGain = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
+
+        DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));  // yaw feedforward without boost
+        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHoldGain * 0.01f));  // boost element for yaw
+
+        feedforward += feedforwardYawHoldGain;
+        // NB: yaw doesn't need max rate limiting since it rarely overshoots
+    }
 
     // apply feedforward transition, if configured. Archaic (better to use jitter reduction)
     const bool useTransition = (pid->feedforwardTransition != 0.0f) && (rcDeflectionAbs[axis] < pid->feedforwardTransition);
@@ -610,47 +650,28 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         feedforward *= rcDeflectionAbs[axis] * pid->feedforwardTransitionInv;
     }
 
-    // apply max rate limiting, forcing to zero when sticks approach max, but not on yaw
-    if (axis < FD_YAW) {
-        if (pid->feedforwardMaxRateLimit) {
-            if (feedforward * setpoint > 0.0f) { // in same direction
-                const float limit = (maxRcRate[axis] - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
-                feedforward = (limit > 0.0f) ? constrainf(feedforward, -limit, limit) : 0.0f;
-            }
-        }
-    } else {
-        // add a very slow, high-pass filtered setpoint element to feedforward for yaw only
-        // this is a low-gain factor that doesn't add significant noise to yaw feedforward
-        // dropouts will cause a small flatter spot on the LPF, but won't drop to zero
-        // this provides a sustained FF on yaw that mimics the normal yaw motor drive requirements
-        static float prevSetpointYaw = 0.0f;
-        // const of 7.0 to get decay roughly right
-        const float setpointLpfYaw = prevSetpointYaw + 7.0f * rxInterval * (setpoint - prevSetpointYaw);
-        prevSetpointYaw = setpointLpfYaw;
-        // const of 20 to scale yaw setpoint factor to a decent number
-        feedforward += 20.0f * (setpoint - setpointLpfYaw);
-    }
-
     if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(feedforward * 0.01f));          // feedforward after maxRateLimit and jitter attenuation
+        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint)); // un-smoothed setpoint value used for FF
+        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));         // setpoint speed smoothed
+        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpointAcceleration * 0.01f));  // acceleration smoothed
+        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDelta * 10.0f));
+        DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));     // jitter attenuation percent
+        DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(prevDuplicatePacket[axis]));  // it a duplicate
+
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f)); // jitter attenuation factor in percent
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis])); // max RC rate
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint)); // setpoint used for FF
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforward * 0.01f)); // un-smoothed final feedforward
     }
 
-    // apply averaging to final values, for additional smoothing if needed
+    // apply averaging to final values, for additional smoothing if needed; not shown in logs
     if (feedforwardAveraging) {
         feedforward = laggedMovingAverageUpdate(&feedforwardDeltaAvg[axis].filter, feedforward);
     }
 
     feedforwardRaw[axis] = feedforward;
-
-    if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint)); // un-smoothed setpoint value used for FF
-        DEBUG_SET(DEBUG_FEEDFORWARD, 5, lrintf(feedforward * 0.01f)); // final feedforward
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f)); // jitter attenuation factor in percent
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis])); // max RC rate
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint)); // setpoint used for FF
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforwardRaw[axis])); // un-smoothed final feedforward
-    }
 }
+#endif // USE_FEEDFORWARD
 
 FAST_CODE void processRcCommand(void)
 {

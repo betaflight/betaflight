@@ -79,7 +79,6 @@ extern "C" {
     acc_t acc;
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
-    
     rxRuntimeState_t rxRuntimeState = {};
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);

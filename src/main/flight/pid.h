@@ -228,7 +228,9 @@ typedef struct pidProfile_s {
     uint8_t feedforward_jitter_factor;      // Number of RC steps below which to attenuate feedforward
     uint8_t feedforward_boost;              // amount of setpoint acceleration to add to feedforward, 10 means 100% added
     uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
-
+    uint8_t feedforward_yaw_hold_gain;          // Amount of sustained high-pass yaw setpoint to add to feedforward, zero disables
+    uint8_t feedforward_yaw_hold_time ;     // Time constant of the sustained yaw hold element in ms to add to feed forward, higher values decay slower
+    
     uint8_t dterm_lpf1_dyn_expo;            // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calculation is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
@@ -438,6 +440,8 @@ typedef struct pidRuntime_s {
     float feedforwardTransition;
     float feedforwardTransitionInv;
     uint8_t feedforwardMaxRateLimit;
+    uint8_t feedforwardYawHoldGain;
+    uint8_t feedforwardYawHoldTime;
     bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values 
 
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
