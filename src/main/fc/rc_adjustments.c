@@ -651,7 +651,6 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         break;
     case ADJUSTMENT_LED_DIMMER:
 #ifdef USE_LED_STRIP
-
         if (getLedBrightness() != position) {
             setLedBrightness(position);
         }
