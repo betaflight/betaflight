@@ -236,7 +236,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
-        .itermLeak = 15,
     );
 
 #ifndef USE_D_MIN
@@ -1129,7 +1128,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // -----calculate I component
         float Ki = pidRuntime.pidCoefficient[axis].Ki;
         float itermLimit = pidRuntime.itermLimit; // windup fraction of pidSumLimit
-        float iTermLeak = 0.0f;
 
 #ifdef USE_LAUNCH_CONTROL
         // if launch control is active override the iterm gains and apply iterm windup protection to all axes
@@ -1141,7 +1139,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
             // handle yaw iTerm limit differently from other axes, and make yaw iTerm leaky
             if (axis == FD_YAW) {
-                iTermLeak = pidData[axis].I * pidRuntime.itermLeakRateYaw;
                 itermLimit = pidRuntime.itermLimitYaw; // windup fraction of pidSumLimitYaw
                 // note that this is a stronger limit than previously
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
@@ -1162,12 +1159,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 //        // Existing iterm_Relax may need a lower cutoff for cases of motor saturation during yaws.
 //        // This may be too aggressive, limiting iTerm growth too much.
 //        // Also will apply for un-commanded errors, weakening ability to return to previous heading
-//        float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate - iTermLeak;
+//        float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate;
 //        if (fabsf(pidData[axis].Sum) >= pidSumLimit && iTermChange * pidData[axis].I > 0) {
 //            iTermChange = 0.0f;
 //        }
 
-        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate - iTermLeak;
+        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate;
 
 #ifdef USE_WING
         if (pidProfile->spa_mode[axis] != SPA_MODE_OFF) {

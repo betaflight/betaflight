@@ -316,7 +316,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
 
-    pidRuntime.itermLeakRateYaw = pidRuntime.dT * pidProfile->itermLeak / 10.0f;
     pidRuntime.itermLimit = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimit;
     pidRuntime.itermLimitYaw = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimitYaw;
 

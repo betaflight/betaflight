@@ -267,7 +267,6 @@ typedef struct pidProfile_s {
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
     uint16_t tpa_gravity_thr0;               // For wings: addition to tpa argument in % when zero throttle
     uint16_t tpa_gravity_thr100;             // For wings: addition to tpa argument in % when full throttle
-    uint8_t itermLeak;                      // Fractional rate at which iTerm on yaw leaks towards zero, arbitrary units
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -348,7 +347,6 @@ typedef struct pidRuntime_s {
     float crashDtermThreshold;
     float crashSetpointThreshold;
     float crashLimitYaw;
-    float itermLeakRateYaw;
     float itermLimit;
     float itermLimitYaw;
     bool itermRotation;

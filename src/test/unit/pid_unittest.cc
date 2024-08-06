@@ -135,7 +135,6 @@ void setDefaultTestSettings(void)
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
     pidProfile->itermWindup = 80;
-    pidProfile->itermLeak = 30;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->angle_limit = 60;
     pidProfile->feedforward_transition = 100;
