@@ -635,12 +635,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         const float setpointLpfYaw = prevSetpointYaw + kFY * (setpoint - prevSetpointYaw);
         prevSetpointYaw = setpointLpfYaw;
         // provide separate boost gain for yaw; value of 20 works well for 5in, zero disables
-        const float feedforwardYawHoldGain = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
+        const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
 
-        DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));  // yaw feedforward without boost
-        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHoldGain * 0.01f));  // boost element for yaw
+        DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));  // basic yaw feedforward without hold element
+        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHold * 0.01f));  // yaw feedforward hold element
 
-        feedforward += feedforwardYawHoldGain;
+        feedforward += feedforwardYawHold;
         // NB: yaw doesn't need max rate limiting since it rarely overshoots
     }
 
@@ -651,12 +651,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     }
 
     if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint)); // un-smoothed setpoint value used for FF
-        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));         // setpoint speed smoothed
-        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpointAcceleration * 0.01f));  // acceleration smoothed
+        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint)); // un-smoothed (raw) setpoint value used for FF
+        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));         // smoothed and interpolated basic feedfoward element
+        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpointAcceleration * 0.01f));  // acceleration (boost) smoothed
         DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDelta * 10.0f));
         DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));     // jitter attenuation percent
-        DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(prevDuplicatePacket[axis]));  // it a duplicate
+        DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(prevDuplicatePacket[axis]));  // previous packet was a duplicate
 
         DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f)); // jitter attenuation factor in percent
         DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis])); // max RC rate
