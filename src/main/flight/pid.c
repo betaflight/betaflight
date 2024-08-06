@@ -804,23 +804,16 @@ FAST_CODE_NOINLINE void calcEzLandingLimit(float maxRcDeflectionAbs)
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
     // if both sticks are within 5% of center, check acc magnitude for impacts
-    // at half the impact threshold, force iTerm to zero, to attenuate iTerm-mediated bouncing
     // threshold should be highe enough to avoid unwanted disarms in the air on throttle chops
 
-    // normally these lines would be inside the dedflection test, I just want to know the values all the time for now
+    // normally the acc calculation would be done only when required, but having them here lets us log the acc magnitude in normal flight
     float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
     DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
 
-    if (isAirmodeActivated() && maxDeflectionAbs < 0.05f) {
-        if (accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
-            // disarm after big bumps
-            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-            disarm(DISARM_REASON_LANDING);
-        } else if (accMagnitude > (0.3f * pidRuntime.ezLandingDisarmThreshold)) {
-            // force iTerm to zero on all axes on smaller bumps
-            pidResetIterm();
-            // after reset, iTerm will slowly re-accumulate
-        }
+    if (isAirmodeActivated() && maxDeflectionAbs < 0.05f && accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
+        // disarm after big bumps
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+        disarm(DISARM_REASON_LANDING);
     }
 }
 
