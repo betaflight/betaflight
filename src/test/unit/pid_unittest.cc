@@ -330,31 +330,31 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 
     // Add some rotation on YAW to generate error
-    gyro.gyroADCf[FD_YAW] = 100;
+    gyro.gyroADCf[FD_YAW] = 10;
     pidController(pidProfile, currentTestTime());
 
     // Loop 4 - Expect PID loop reaction to PITCH error, ROLL and PITCH are still in error
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
-    EXPECT_NEAR(-224.2, pidData[FD_YAW].P, calculateTolerance(-224.2));
+    EXPECT_NEAR(-22.4, pidData[FD_YAW].P, calculateTolerance(-22.4));
     EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
     EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
-    EXPECT_NEAR(-8.7, pidData[FD_YAW].I, calculateTolerance(-8.7));
+    EXPECT_NEAR(-0.9, pidData[FD_YAW].I, calculateTolerance(-0.9));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-    EXPECT_NEAR(-132.25, pidData[FD_YAW].D, calculateTolerance(-132.25));
+    EXPECT_NEAR(-13.2, pidData[FD_YAW].D, calculateTolerance(-13.2));
 
     // Simulate Iterm growth if not saturated
     pidController(pidProfile, currentTestTime());
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
-    EXPECT_NEAR(-17.6, pidData[FD_YAW].I, calculateTolerance(-17.6));
+    EXPECT_NEAR(-1.7, pidData[FD_YAW].I, calculateTolerance(-1.7));
     simulatedMotorMixRange = 0;
 
     // Match the stick to gyro to stop error
     simulatedSetpointRate[FD_ROLL] = 100;
     simulatedSetpointRate[FD_PITCH] = -100;
-    simulatedSetpointRate[FD_YAW] = 100;
+    simulatedSetpointRate[FD_YAW] = 10;
 
     for(int loop = 0; loop < 5; loop++) {
         pidController(pidProfile, currentTestTime());
@@ -365,7 +365,7 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
-    EXPECT_NEAR(-17, pidData[FD_YAW].I, calculateTolerance(-17)); 
+    EXPECT_NEAR(-1.7, pidData[FD_YAW].I, calculateTolerance(-1.7)); 
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
