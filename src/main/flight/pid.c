@@ -238,6 +238,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_mode = { 0, 0, 0 },
         .feedforward_yaw_hold_gain = 15,  // zero disables; 15-20 is OK for 5in
         .feedforward_yaw_hold_time = 100,  // a value of 100 is a time constant of about 100ms, and is OK for a 5in; smaller values decay faster, eg for smaller props
+        .ez_landing_disarm_threshold = 0                            ,
     );
 
 #ifndef USE_D_MIN
@@ -642,7 +643,7 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], const float rotation[XYZ_AXIS_
     }
 }
 
-STATIC_UNIT_TESTED FAST_CODE_NOINLINE void rotateItermAndAxisError(void)
+STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 {
     if (pidRuntime.itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -674,7 +675,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE void rotateItermAndAxisError(void)
 
 #if defined(USE_ITERM_RELAX)
 #if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED FAST_CODE_NOINLINE void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
+STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
 {
     if (pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR) {
         const float setpointLpf = pt1FilterApply(&pidRuntime.acLpf[axis], *currentPidSetpoint);
@@ -803,18 +804,16 @@ FAST_CODE_NOINLINE void calcEzLandingLimit(float maxRcDeflectionAbs)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
-    // if both sticks are within 5% of center, check acc magnitude for impacts
-    // threshold should be highe enough to avoid unwanted disarms in the air on throttle chops
-
-    // normally the acc calculation would be done only when required, but having them here lets us log the acc magnitude in normal flight
-    float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
-    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(accMagnitude * 10));
-
-    if (isAirmodeActivated() && maxDeflectionAbs < 0.05f && accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
-        // disarm after big bumps
+    // if all sticks are within 5% of center, and throttle low, check accDelta for impacts
+    // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
+    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f &&
+        fabsf(acc.accDelta) > pidRuntime.ezLandingDisarmThreshold) {
+        // disarm on accDelta transients
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         disarm(DISARM_REASON_LANDING);
     }
+    DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
+    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));
 }
 
 #ifdef USE_LAUNCH_CONTROL
@@ -860,7 +859,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-static FAST_CODE_NOINLINE float getSterm(int axis, const pidProfile_t *pidProfile)
+static float getSterm(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     const float sTerm = getSetpointRate(axis) / getMaxRcRate(axis) * 1000.0f *
@@ -876,7 +875,7 @@ static FAST_CODE_NOINLINE float getSterm(int axis, const pidProfile_t *pidProfil
 #endif
 }
 
-static FAST_CODE_NOINLINE void calculateSpaValues(const pidProfile_t *pidProfile)
+NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -890,7 +889,7 @@ static FAST_CODE_NOINLINE void calculateSpaValues(const pidProfile_t *pidProfile
 #endif // #ifdef USE_WING ... #else
 }
 
-static FAST_CODE_NOINLINE void applySpa(int axis, const pidProfile_t *pidProfile)
+NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     switch(pidProfile->spa_mode[axis]){
