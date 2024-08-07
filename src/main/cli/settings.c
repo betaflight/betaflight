@@ -1796,10 +1796,9 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_POSITION
-    { "altitude_source",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSITION_ALT_SOURCE }, PG_POSITION, offsetof(positionConfig_t, altitude_source) },
-    { "altitude_prefer_baro",  VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_POSITION, offsetof(positionConfig_t, altitude_prefer_baro) },
-    { "altitude_lpf",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_lpf) },
-    { "altitude_d_lpf",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_d_lpf) },
+    { PARAM_NAME_POSITION_ALTITUDE_SOURCE,       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSITION_ALT_SOURCE }, PG_POSITION, offsetof(positionConfig_t, altitude_source) },
+    { PARAM_NAME_POSITION_ALTITUDE_FUSE_RATIO,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = {  1,  100 }, PG_POSITION, offsetof(positionConfig_t, altitude_fuse_ratio) },
+    { PARAM_NAME_POSITION_ALTITUDE_VARIO_LPF,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_vario_lpf) },
 
 // PG_MODE_ACTIVATION_CONFIG
 #if defined(USE_CUSTOM_BOX_NAMES)

@@ -373,17 +373,6 @@ void baroSetGroundLevel(void)
     calibrationCycleCount = 0;
 }
 
-typedef enum {
-    BARO_STATE_TEMPERATURE_READ = 0,
-    BARO_STATE_TEMPERATURE_SAMPLE,
-    BARO_STATE_PRESSURE_START,
-    BARO_STATE_PRESSURE_READ,
-    BARO_STATE_PRESSURE_SAMPLE,
-    BARO_STATE_TEMPERATURE_START,
-    BARO_STATE_COUNT
-} barometerState_e;
-
-
 bool isBaroReady(void)
 {
     return baroReady;
@@ -511,7 +500,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
     return sleepTime;
 }
 
-float getBaroAltitude(void)
+float baroGetAltitudeCm(void)
 {
     return baro.altitude;
 }
