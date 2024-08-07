@@ -175,7 +175,7 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_visual_beeper;
     ioTag_t ioTag;
     ledStripFormatRGB_e ledstrip_grb_rgb;
-    ledProfile_e ledstrip_profile;
+    ledProfile_e ledstrip_mode;
     colorId_e ledstrip_race_color;
     colorId_e ledstrip_beacon_color;
     uint16_t ledstrip_beacon_period_ms;
