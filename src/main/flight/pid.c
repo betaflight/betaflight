@@ -775,19 +775,20 @@ float pidGetAirmodeThrottleOffset(void)
 }
 #endif
 
-static FAST_CODE_NOINLINE void disarmOnImpact(void)
+static FAST_CODE_NOINLINE void disarmOnImpact(const float delta, const float errorRate)
 {
     // if all sticks are within 5% of center, and throttle low, check acc magnitude for impacts
     // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
 
     DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accMagnitude * 10));
-
     DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100));
-    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f
-    && acc.accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
-        // disarm after big bumps
-        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-        disarm(DISARM_REASON_LANDING);
+    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f) {
+        if (acc.accMagnitude > pidRuntime.ezLandingDisarmThreshold || 
+            (fabsf(delta) > pidRuntime.crashDtermThreshold && fabsf(errorRate) > pidRuntime.crashGyroThreshold)) {
+            // disarm after acc transients or fast gyro transients
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            disarm(DISARM_REASON_LANDING);
+        }
     }
 }
 
@@ -991,10 +992,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
-    if (pidRuntime.useEzDisarm) {
-        disarmOnImpact();
-    }
-
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
@@ -1150,6 +1147,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #if defined(USE_ACC)
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
+            }
+            if (pidRuntime.useEzDisarm) {
+                disarmOnImpact(delta, errorRate);
             }
 #endif
 
