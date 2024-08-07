@@ -61,6 +61,7 @@ COMMON_SRC = \
             common/maths.c \
             common/printf.c \
             common/printf_serial.c \
+            common/pwl.c \
             common/sdft.c \
             common/sensor_alignment.c \
             common/stopwatch.c \
@@ -401,6 +402,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
+            common/pwl.c \
             common/sdft.c \
             common/stopwatch.c \
             common/typeconversion.c \
