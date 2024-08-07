@@ -780,13 +780,11 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     // if all sticks are within 5% of center, and throttle low, check acc magnitude for impacts
     // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
 
-    // normally the acc calculation would be done only when required, but having them here lets us log the acc magnitude in normal flight
-    float accMagnitude = sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec - 1.0f;
-    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(accMagnitude * 10));
+    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accMagnitude * 10));
 
     DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100));
     if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f
-    && accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
+    && acc.accMagnitude > pidRuntime.ezLandingDisarmThreshold) {
         // disarm after big bumps
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         disarm(DISARM_REASON_LANDING);
