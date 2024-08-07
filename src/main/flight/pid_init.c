@@ -443,7 +443,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.tpaLowAlways = pidProfile->tpa_low_always;
 
     pidRuntime.useEzDisarm = pidProfile->ez_landing_disarm_threshold > 0;
-    pidRuntime.ezLandingDisarmThreshold = pidProfile->ez_landing_disarm_threshold / 10.0f;
+    pidRuntime.ezLandingDisarmThreshold = pidProfile->ez_landing_disarm_threshold * 10.0f;
 
 }
 
