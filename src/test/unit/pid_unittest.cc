@@ -28,6 +28,8 @@ bool simulatedAirmodeEnabled = true;
 float simulatedSetpointRate[3] = { 0,0,0 };
 float simulatedPrevSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
+float simulatedMaxRcDeflectionAbs = 0;
+float simulatedMixerGetRcThrottle = 0;
 float simulatedRcCommandDelta[3] = { 1,1,1 };
 float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
@@ -72,6 +74,7 @@ extern "C" {
     #include "sensors/gyro.h"
     #include "sensors/acceleration.h"
 
+    acc_t acc;
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
 
@@ -85,6 +88,12 @@ extern "C" {
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
     bool isAirmodeActivated(void) { return simulatedAirmodeEnabled; }
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
+
+    // for ezLanding auto-disarm
+    // note that there is no test to check that this code works.
+    float getMaxRcDeflectionAbs() { return fabsf(simulatedMaxRcDeflectionAbs); }
+    float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
+
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }

@@ -56,6 +56,8 @@ typedef struct acc_s {
     uint16_t sampleRateHz;
     float accADC[XYZ_AXIS_COUNT];
     bool isAccelUpdatedAtLeastOnce;
+    float accMagnitude;
+    float accDelta;
 } acc_t;
 
 extern acc_t acc;
