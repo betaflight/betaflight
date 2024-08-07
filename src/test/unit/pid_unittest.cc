@@ -808,11 +808,11 @@ TEST(pidControllerTest, testItermRotationHandling)
     pidData[FD_ROLL].I = 10;
     pidData[FD_PITCH].I = 1000;
     pidData[FD_YAW].I = 1000;
-    gyro.gyroADCf[FD_ROLL] = -1000;
+    gyro.gyroADCf[FD_YAW] = -1000;
     rotateItermAndAxisError();
-    EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
-    EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
-    EXPECT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
+    EXPECT_NEAR(-86.294029235839844, pidData[FD_ROLL].I, calculateTolerance(-86.294029235839844));
+    EXPECT_NEAR(1001.396240234375, pidData[FD_PITCH].I, calculateTolerance(1001.396240234375));
+    EXPECT_FLOAT_EQ(1000, pidData[FD_YAW].I);
 
     pidProfile->abs_control_gain = 10;
     pidInit(pidProfile);
@@ -825,9 +825,9 @@ TEST(pidControllerTest, testItermRotationHandling)
     axisError[FD_PITCH] = 1000;
     axisError[FD_YAW] = 1000;
     rotateItermAndAxisError();
-    EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
-    EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
-    EXPECT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
+    EXPECT_NEAR(-86.294029235839844, pidData[FD_ROLL].I, calculateTolerance(-86.294029235839844));
+    EXPECT_NEAR(1001.396240234375, pidData[FD_PITCH].I, calculateTolerance(1001.396240234375));
+    EXPECT_FLOAT_EQ(1000, pidData[FD_YAW].I);
 }
 
 TEST(pidControllerTest, testLaunchControl)
