@@ -568,7 +568,8 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     DEBUG_SET(DEBUG_EZLANDING, 0, fminf(1.0f, ezLandFactor) * 10000U);
     // DEBUG_EZLANDING 1 is the adjusted throttle
     DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);
-    DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
+// ** temporarily stolen for accDelta
+//     DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
     // DEBUG_EZLANDING 4 and 5 is the upper limits based on stick input and speed respectively
 }
 
