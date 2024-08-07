@@ -675,6 +675,8 @@ bool slctRx = 0;
 uint32_t startTimeMs = 0;
 uint32_t lastSwitchMs = 0;
 uint32_t lastRCdata = 0;
+uint16_t lastChannelLQ = 0;
+bool justSwitched = false;
 void detectAndApplySignalLossBehaviour(void)
 {
     //GLEB ADDITION. Set a start time first time that this method is called
@@ -683,6 +685,9 @@ void detectAndApplySignalLossBehaviour(void)
     }
     if(lastSwitchMs == 0){
         lastSwitchMs = millis();
+    }
+    if(lastChannelLQ == 0){
+        lastChannelLQ = rxGetLinkQuality();
     }
     
     const uint32_t currentTimeMs = millis();
@@ -705,9 +710,6 @@ void detectAndApplySignalLossBehaviour(void)
         }
 
         if (failsafeIsActive()) {
-            // GLEB ADDITION
-            
-            
             // we are in failsafe Stage 2, whether Rx loss or BOXFAILSAFE induced
             // pass valid incoming flight channel values to FC,
             // so that GPS Rescue can get the 30% requirement for termination of the rescue
@@ -736,8 +738,6 @@ void detectAndApplySignalLossBehaviour(void)
                 if (cmp32(currentTimeMs, validRxSignalTimeout[channel]) < 0) {
                     // first 300ms of Stage 1 failsafe
                     sample = rcData[channel];
-                    
-                
                     //  HOLD last valid value on bad channel/s for MAX_INVALID_PULSE_TIME_MS (300ms)
                 } else {
                     // remaining Stage 1 failsafe period after 300ms
@@ -747,7 +747,7 @@ void detectAndApplySignalLossBehaviour(void)
                         //  declare signal lost after 300ms of any one bad flight channel
                     }
                     sample = getRxfailValue(channel);
-
+                    
                     
                     // set channels that are invalid for more than 300ms to Stage 1 values
                 }
@@ -763,7 +763,6 @@ void detectAndApplySignalLossBehaviour(void)
             rcData[channel] = calculateChannelMovingAverage(channel, sample);
         } else
 #endif
-
         {
             //  set rcData to either validated incoming values, or failsafe-modified values
             rcData[channel] = sample;
@@ -779,16 +778,20 @@ void detectAndApplySignalLossBehaviour(void)
         pinioSet(2, slctRx);
     } 
     lastRCdata = rcData[11];
+    uint16_t currLQ = rxGetLinkQuality();
+    if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 20) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 5000)){
+            slctRx= !slctRx;
+            pinioSet(2, slctRx);
+            lastChannelLQ = rxGetLinkQuality();
+            justSwitched=true;
+    } else {
+        justSwitched = false;
+    }
 
     if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();
         //  --> start the timer to exit stage 2 failsafe 100ms after losing all packets or the BOXFAILSAFE switch is actioned
     } else {
-        //ONLY START SWITCHING AFTER 5 SECONDS
-        if((currentTimeMs - startTimeMs > 5000)){
-            slctRx= !slctRx;
-            pinioSet(2, slctRx);
-        }
         failsafeOnValidDataFailed();
         //  -> start timer to enter stage2 failsafe the instant we get a good packet or the BOXFAILSAFE switch is reverted
     }
