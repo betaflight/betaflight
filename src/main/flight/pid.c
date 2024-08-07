@@ -777,14 +777,11 @@ float pidGetAirmodeThrottleOffset(void)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(const float delta, const float errorRate)
 {
-    // if all sticks are within 5% of center, and throttle low, check acc magnitude for impacts
+    // if all sticks are within 5% of center, and throttle low, check acc and gyro for impacts
     // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
-
-    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accMagnitude * 10));
-    DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100));
     if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f) {
         if (acc.accMagnitude > pidRuntime.ezLandingDisarmThreshold || 
-            (fabsf(delta) > pidRuntime.crashDtermThreshold && fabsf(errorRate) > pidRuntime.crashGyroThreshold)) {
+            (fabsf(delta) > (pidRuntime.crashDtermThreshold) && fabsf(errorRate) > pidRuntime.crashGyroThreshold)) {
             // disarm after acc transients or fast gyro transients
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             disarm(DISARM_REASON_LANDING);
@@ -1148,7 +1145,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
             }
+            // log the roll values only, since we can't log them all, for testing
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(fabsf(delta * 0.001f)));
+                DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(fabsf(errorRate)));
+                DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100));
+                DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accMagnitude * 10));
+            }
             if (pidRuntime.useEzDisarm) {
+                // monitor and check each axis for high gyro error and high gyro delta
                 disarmOnImpact(delta, errorRate);
             }
 #endif
