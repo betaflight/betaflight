@@ -90,7 +90,7 @@ typedef struct laggedMovingAverageCombined_s {
     float buf[4];
 } laggedMovingAverageCombined_t;
 laggedMovingAverageCombined_t  feedforwardDeltaAvg[XYZ_AXIS_COUNT];
-
+// static pt1Filter_t feedforwardYawHoldLpf;  // use this once I know how to init the filter
 float getFeedforward(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -500,8 +500,7 @@ NOINLINE void initAveraging(uint16_t feedforwardAveraging)
 FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
-    float rxRate = currentRxRateHz;                       // 1e6f / currentRxIntervalUs;
-
+    float rxRate = currentRxRateHz;                 // 1e6f / currentRxIntervalUs;
     static float prevRcCommand[3];
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
     static float prevSetpoint[3];                   // equals raw unless interpolated 
@@ -519,7 +518,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     float rcCommandDeltaAbs = fabsf(rcCommandDelta);
 
     const float setpoint = rawSetpoint[axis];
-    const float setpointDelta = (setpoint - prevSetpoint[axis]);
+    const float setpointDelta = setpoint - prevSetpoint[axis];
     prevSetpoint[axis] = setpoint;
 
     float setpointSpeed = 0.0f;
@@ -533,19 +532,18 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         if (rcCommandDeltaAbs) {
             // movement!
             // if the previous packet was a duplicate, calculate setpointSpeed over the last two intervals
-            if (prevDuplicatePacket[axis] == true) {
+            if (prevDuplicatePacket[axis]) {
                 rxRate = 1.0f / (rxInterval + prevRxInterval);
             }
             setpointSpeed = setpointDelta * rxRate;
             prevDuplicatePacket[axis] = false;
         } else {
             // no movement!
-            if (prevDuplicatePacket[axis] == false) {
+            if (!prevDuplicatePacket[axis]) {
                 // interpolate a replacement setpointSpeed value for the first duplicate after normal movement
                 // avoid interpolating when about to hit max deflection
                 if (fabsf(setpoint) < 0.90f * maxRcRate[axis]) {
-                    setpointSpeed = prevSetpointSpeed[axis];
-                    setpointSpeed += prevAcceleration[axis];
+                    setpointSpeed = prevSetpointSpeed[axis] + prevAcceleration[axis];
                     // pretend that there was stick movement also, to hold the same jitter value
                     rcCommandDeltaAbs = prevRcCommandDeltaAbs[axis];
                 }
@@ -607,12 +605,10 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         feedforward += setpointAcceleration;
         // apply jitter reduction multiplier
         feedforward *= jitterAttenuator;
-        // pull feedforward back towards zero as sticks approach max
-        if (pid->feedforwardMaxRateLimit) {
-            if (feedforward * setpoint > 0.0f) { // in same direction
-                const float limit = (maxRcRate[axis] - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
-                feedforward = (limit > 0.0f) ? constrainf(feedforward, -limit, limit) : 0.0f;
-            }
+        // pull feedforward back towards zero as sticks approach max if in same direction
+        if (pid->feedforwardMaxRateLimit && feedforward * setpoint > 0.0f) {
+            const float limit = (maxRcRate[axis] - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
+            feedforward = (limit > 0.0f) ? constrainf(feedforward, -limit, limit) : 0.0f;
         }
 
     } else {
@@ -630,10 +626,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 
         static float prevSetpointYaw;
         // calculate lowpass gain factor from user specified time constant, can't exceed 1.0
-        const float kFY = fminf(rxInterval * pid->feedforwardYawHoldTime, 1.0f);
+        const float kFY = pt1FilterGainFromDelay(pid->feedforwardYawHoldTime, rxInterval);
         // subtract lowpass from input to get highpass
         const float setpointLpfYaw = prevSetpointYaw + kFY * (setpoint - prevSetpointYaw);
         prevSetpointYaw = setpointLpfYaw;
+        // const float setpointLpfYaw = pt1FilterApply(& feedforwardYawHoldLpf, setpoint); // use this once I know how to init the filter
         // provide separate boost gain for yaw; value of 20 works well for 5in, zero disables
         const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
 
