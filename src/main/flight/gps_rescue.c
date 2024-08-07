@@ -101,7 +101,6 @@ typedef struct {
     float distanceToHomeM;
     uint16_t groundSpeedCmS;
     int16_t directionToHome;
-    float accMagnitude;
     bool healthy;
     float errorAngle;
     float gpsDataIntervalSeconds;
@@ -564,12 +563,6 @@ static void sensorUpdate(void)
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome); // computed from current GPS position in relation to home
     rescueState.sensor.healthy = gpsIsHealthy();
 
-    if (rescueState.phase == RESCUE_LANDING) {
-        // do this at sensor update rate, not the much slower GPS rate, for quick disarm
-        rescueState.sensor.accMagnitude = (float) sqrtf(sq(acc.accADC[Z] - acc.dev.acc_1G) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec;
-        // Note: subtracting 1G from Z assumes the quad is 'flat' with respect to the horizon.  A true non-gravity acceleration value, regardless of attitude, may be better.
-    }
-
     rescueState.sensor.directionToHome = GPS_directionToHome; // extern value from gps.c using current position relative to home
     rescueState.sensor.errorAngle = (attitude.values.yaw - rescueState.sensor.directionToHome) / 10.0f;
     // both attitude and direction are in degrees * 10, errorAngle is degrees
@@ -702,7 +695,7 @@ static bool checkGPSRescueIsAvailable(void)
 
 void disarmOnImpact(void)
 {
-    if (rescueState.sensor.accMagnitude > rescueState.intent.disarmThreshold) {
+    if (acc.accMagnitude > rescueState.intent.disarmThreshold) {
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         disarm(DISARM_REASON_GPS_RESCUE);
         rescueStop();

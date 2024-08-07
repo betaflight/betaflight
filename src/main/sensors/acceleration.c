@@ -78,10 +78,13 @@ void accUpdate(timeUs_t currentTimeUs)
 
     applyAccelerationTrims(accelerationRuntime.accelerationTrims);
 
+    float accAdcSquaredSum = 0.0f;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         const float val = acc.accADC[axis];
         acc.accADC[axis] = accelerationRuntime.accLpfCutHz ? pt2FilterApply(&accelerationRuntime.accFilter[axis], val) : val;
+        accAdcSquaredSum += sq(acc.accADC[axis]);
     }
+    acc.accMagnitude = sqrtf(accAdcSquaredSum) * acc.dev.acc_1G_rec - 1.0f; // used for disarm on impact detection
 }
 
 #endif
