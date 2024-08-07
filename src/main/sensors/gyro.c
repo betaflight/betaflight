@@ -96,7 +96,7 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyro.gyroSensor1.gyroDev;
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
 
-PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 9);
+PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 10);
 
 #ifndef DEFAULT_GYRO_TO_USE
 #define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_1
@@ -107,6 +107,11 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
     gyroConfig->gyroMovementCalibrationThreshold = 48;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
+    gyroConfig->gyro_delt = 6;
+    gyroConfig->gyro_deltSqr = 36;
+    gyroConfig->gyro_bitshift = 10;
+    gyroConfig->gyro_ui = 14;
+    gyroConfig->gyro_ui_ord = 1;
     gyroConfig->gyro_lpf1_type = FILTER_PT1;
     gyroConfig->gyro_lpf1_static_hz = GYRO_LPF1_DYN_MIN_HZ_DEFAULT;
         // NOTE: dynamic lpf is enabled by default so this setting is actually
