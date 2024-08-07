@@ -83,9 +83,11 @@
 
 #define USE_VCP
 
-#define USE_SOFTSERIAL
-
+#ifdef USE_SOFTSERIAL
 #define UNIFIED_SERIAL_PORT_COUNT       3
+#else
+#define UNIFIED_SERIAL_PORT_COUNT       1
+#endif
 
 #define USE_USB_DETECT
 
