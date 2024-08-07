@@ -25,18 +25,18 @@
 
 
 void pwlInitialize(pwl_t *pwl, float *yValues, int numPoints, float xMin, float xMax) {
+    pwl->yValues = yValues;
     pwl->numPoints = numPoints;
     pwl->xMin = xMin;
     pwl->xMax = xMax;
     pwl->dx = (xMax - xMin) / (numPoints - 1);
-    pwl->yValues = yValues;
 }
 
-void pwlFill(pwl_t *pwl, float (*function)(float, void*), void *arg)
+void pwlFill(pwl_t *pwl, float (*function)(float, void*), void *args)
 {
     for (int i = 0; i < pwl->numPoints; ++i) {
         const float x = pwl->xMin + i * pwl->dx;
-        pwl->yValues[i] = function(x, arg);
+        pwl->yValues[i] = function(x, args);
     }
 }
 
