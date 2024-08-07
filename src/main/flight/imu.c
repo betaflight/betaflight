@@ -326,7 +326,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 static bool imuIsAccelerometerHealthy(void)
 {
     // Accept accel readings only in range 0.9g - 1.1g
-    return (-0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
+    return (0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
 }
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, i.e., the default value
@@ -679,8 +679,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         gyroAverage[axis] = gyroGetFilteredDownsampled(axis);
     }
 
-    const bool useAcc = imuIsAccelerometerHealthy(); // all smoothed accADC values are within 10% of 1G !! Used to say 20% but was actually 10%
-
+    const bool useAcc = imuIsAccelerometerHealthy(); // all smoothed accADC values are within 10% of 1G
     imuMahonyAHRSupdate(dt,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
                         useAcc, acc.accADC[X], acc.accADC[Y], acc.accADC[Z],

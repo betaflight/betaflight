@@ -100,7 +100,7 @@ void stopMotors(void)
 }
 
 static FAST_DATA_ZERO_INIT float throttle = 0;
-static float rcThrottle = 0;
+static FAST_DATA_ZERO_INIT float rcThrottle = 0;
 static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
 static FAST_DATA_ZERO_INIT float motorOutputMin;
 static FAST_DATA_ZERO_INIT float motorRangeMin;
@@ -511,14 +511,12 @@ static float calcEzLandLimit(float maxDeflection, float speed)
     // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
     // 0.0 = no increas allowed, 1.0 = 100% increase allowed
     const float deflectionLimit = mixerRuntime.ezLandingThreshold > 0.0f ? fminf(1.0f, maxDeflection / mixerRuntime.ezLandingThreshold) : 0.0f;
-// *** temporarily stealing this debug
-//    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(deflectionLimit * 10000.0f));
+    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(deflectionLimit * 10000.0f));
 
     // calculate limit to where the mixer can raise the throttle based on speed
     // TODO sanity checks like number of sats, dop, accuracy?
     const float speedLimit = mixerRuntime.ezLandingSpeed > 0.0f ? fminf(1.0f, speed / mixerRuntime.ezLandingSpeed) : 0.0f;
-// *** temporarily stealing this debug
-//    DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speedLimit * 10000.0f));
+    DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speedLimit * 10000.0f));
 
     // get the highest of the limits from deflection, speed, and the base ez_landing_limit
     const float deflectionAndSpeedLimit = fmaxf(deflectionLimit, speedLimit);
@@ -568,8 +566,7 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
     DEBUG_SET(DEBUG_EZLANDING, 0, fminf(1.0f, ezLandFactor) * 10000U);
     // DEBUG_EZLANDING 1 is the adjusted throttle
     DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);
-// ** temporarily stolen for accDelta
-//     DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
+    DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
     // DEBUG_EZLANDING 4 and 5 is the upper limits based on stick input and speed respectively
 }
 

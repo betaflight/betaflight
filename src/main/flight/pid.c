@@ -775,18 +775,18 @@ float pidGetAirmodeThrottleOffset(void)
 }
 #endif
 
-static FAST_CODE_NOINLINE void disarmOnImpact(const float delta, const float errorRate)
+static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
-    // if all sticks are within 5% of center, and throttle low, check acc and gyro for impacts
+    // if all sticks are within 5% of center, and throttle low, check accDelta for impacts
     // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
-    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f) {
-        if (acc.accDelta > pidRuntime.ezLandingDisarmThreshold || 
-            (fabsf(delta) > (pidRuntime.crashDtermThreshold) && fabsf(errorRate) > pidRuntime.crashGyroThreshold)) {
-            // disarm after acc transients or fast gyro transients
-            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-            disarm(DISARM_REASON_LANDING);
-        }
+    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f &&
+        fabsf(acc.accDelta) > pidRuntime.ezLandingDisarmThreshold) {
+        // disarm on accDelta transients
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+        disarm(DISARM_REASON_LANDING);
     }
+    DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
+    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));
 }
 
 #ifdef USE_LAUNCH_CONTROL
@@ -989,6 +989,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
+    if (pidRuntime.useEzDisarm) {
+        disarmOnImpact();
+    }
+
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
@@ -1144,18 +1148,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #if defined(USE_ACC)
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
-            }
-            // log the roll values only, since we can't log them all, for testing
-            if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_EZLANDING, 3, lrintf(acc.accDelta));
-                DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(fabsf(delta * 0.001f)));
-                DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(fabsf(errorRate)));
-                DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
-                DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accMagnitude * 10.0f));
-            }
-            if (pidRuntime.useEzDisarm) {
-                // monitor and check each axis for high gyro error and high gyro delta
-                disarmOnImpact(delta, errorRate);
             }
 #endif
 
