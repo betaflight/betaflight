@@ -178,6 +178,11 @@ static const uint8_t beep_rcSmoothingInitFail[] = {
     10, 10, 10, 10, 10, 10, 50, 25, BEEPER_COMMAND_STOP
 };
 
+// Stick command executed - matches confirmation beep
+static const uint8_t beep_stickCommandExecuted[] = {
+    2, 20, BEEPER_COMMAND_STOP
+};
+
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS * 2 + 1];
 
@@ -234,7 +239,8 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   21, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  22, beep_camCloseBeep,    "CAM_CONNECTION_CLOSE") },
     { BEEPER_ENTRY(BEEPER_RC_SMOOTHING_INIT_FAIL,23, beep_rcSmoothingInitFail, "RC_SMOOTHING_INIT_FAIL") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   24, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_CONFIRM_STICK_COMMANDS,24, beep_stickCommandExecuted, "STICK_COMMAND_EXECUTED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   25, NULL,                 "ALL") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;

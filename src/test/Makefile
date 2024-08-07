@@ -313,6 +313,21 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
 
+stick_commands_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/drivers/vtx_common.c \
+		$(USER_DIR)/drivers/vtx_table.c \
+		$(USER_DIR)/fc/rc_controls.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/io/vtx.c \
+		$(USER_DIR)/pg/pg.c
+
+stick_commands_unittest_DEFINES := \
+		USE_VTX_COMMON= \
+		USE_VTX_CONTROL=
+
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \
