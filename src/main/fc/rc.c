@@ -90,7 +90,7 @@ typedef struct laggedMovingAverageCombined_s {
     float buf[4];
 } laggedMovingAverageCombined_t;
 laggedMovingAverageCombined_t  feedforwardDeltaAvg[XYZ_AXIS_COUNT];
-// static pt1Filter_t feedforwardYawHoldLpf;  // use this once I know how to init the filter
+static pt1Filter_t feedforwardYawHoldLpf;
 float getFeedforward(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -489,11 +489,14 @@ static FAST_CODE void processRcSmoothingFilter(void)
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
-NOINLINE void initAveraging(uint16_t feedforwardAveraging)
+NOINLINE void initFeedforwardFilters(uint16_t feedforwardAveraging)
 {
-    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-        laggedMovingAverageInit(&feedforwardDeltaAvg[i].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[i].buf[0]);
+    if (feedforwardAveraging) {
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            laggedMovingAverageInit(&feedforwardDeltaAvg[i].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[i].buf[0]);
+        }
     }
+    pt1FilterInit(&feedforwardYawHoldLpf, 0.0f);
 }
 
 #ifdef USE_FEEDFORWARD
@@ -507,10 +510,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     static float prevSetpointSpeed[3];
     static float prevAcceleration[3];               // for duplicate interpolation
     static bool prevDuplicatePacket[3];             // to identify multiple identical packets
-    static uint16_t feedforwardAveraging;
-    if (feedforwardAveraging != pid->feedforwardAveraging) {
+    static uint16_t feedforwardAveraging = 0; 
+    static bool initFilters = false;
+    if (!initFilters) {
         feedforwardAveraging = pid->feedforwardAveraging;
-        initAveraging(feedforwardAveraging);
+        initFeedforwardFilters(feedforwardAveraging);
+        initFilters = true;
     }
 
     const float rcCommandDelta = rcCommand[axis] - prevRcCommand[axis];
@@ -624,12 +629,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         // too little yaw FF causes iTerm windup and slow bounce back when stopping a hard yaw
         // too much causes fast bounce back when stopping a hard yaw
 
-        static float prevSetpointYaw;
         // calculate lowpass gain factor from user specified time constant, can't exceed 1.0
-        const float kFY = pt1FilterGainFromDelay(pid->feedforwardYawHoldTime, rxInterval);
+        const float gain = pt1FilterGainFromDelay(pid->feedforwardYawHoldTime, rxInterval);
         // subtract lowpass from input to get highpass
-        const float setpointLpfYaw = prevSetpointYaw + kFY * (setpoint - prevSetpointYaw);
-        prevSetpointYaw = setpointLpfYaw;
+        pt1FilterUpdateCutoff(&feedforwardYawHoldLpf, gain);
+        const float setpointLpfYaw = pt1FilterApply(& feedforwardYawHoldLpf, setpoint);
         // const float setpointLpfYaw = pt1FilterApply(& feedforwardYawHoldLpf, setpoint); // use this once I know how to init the filter
         // provide separate boost gain for yaw; value of 20 works well for 5in, zero disables
         const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
