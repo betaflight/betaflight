@@ -26,17 +26,17 @@
 #include "utils.h"
 
 
-#define PWL_DECLARE(name, size, xMinV, xMaxV)                       \
-    STATIC_ASSERT(xMinV < xMaxV, "xMinV must be less than xMaxV");  \
-    STATIC_ASSERT(size > 1, "size must be more than 1");            \
-    STATIC_ASSERT(size < 33, "size must be less than 33");          \
-    float name##_yValues[size];                                     \
-    pwl_t name = {                                                  \
-        .yValues = name##_yValues,                                  \
-        .numPoints = size,                                          \
-        .xMin = xMinV,                                              \
-        .xMax = xMaxV,                                              \
-        .dx = (xMaxV - xMinV) / (size - 1)                          \
+#define PWL_DECLARE(name, size, xMinV, xMaxV)                           \
+    STATIC_ASSERT((xMinV) < (xMaxV), "xMinV must be less than xMaxV");  \
+    STATIC_ASSERT((size) > 1, "size must be more than 1");              \
+    STATIC_ASSERT((size) < 33, "size must be less than 33");            \
+    float name##_yValues[(size)];                                       \
+    pwl_t name = {                                                      \
+        .yValues = name##_yValues,                                      \
+        .numPoints = (size),                                            \
+        .xMin = (xMinV),                                                \
+        .xMax = (xMaxV),                                                \
+        .dx = ((xMaxV) - (xMinV)) / ((size) - 1)                        \
     }
 
 typedef struct pwl_s {
@@ -48,5 +48,5 @@ typedef struct pwl_s {
 } pwl_t;
 
 void pwlInitialize(pwl_t *pwl, float *yValues, int numPoints, float xMin, float xMax);
-void pwlFill(pwl_t *pwl, float (*function)(float));
+void pwlFill(pwl_t *pwl, float (*function)(float, void*), void *arg);
 float pwlInterpolate(const pwl_t *pwl, float x);

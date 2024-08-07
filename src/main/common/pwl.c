@@ -32,11 +32,11 @@ void pwlInitialize(pwl_t *pwl, float *yValues, int numPoints, float xMin, float 
     pwl->yValues = yValues;
 }
 
-void pwlFill(pwl_t *pwl, float (*function)(float))
+void pwlFill(pwl_t *pwl, float (*function)(float, void*), void *arg)
 {
     for (int i = 0; i < pwl->numPoints; ++i) {
         const float x = pwl->xMin + i * pwl->dx;
-        pwl->yValues[i] = function(x);
+        pwl->yValues[i] = function(x, arg);
     }
 }
 
