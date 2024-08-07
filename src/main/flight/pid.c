@@ -884,9 +884,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     calculateSpaValues(pidProfile);
 
 #ifdef USE_TPA_MODE
-    const float tpaFactorKp = (pidProfile->tpa_mode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
+    const float tpaFactorKp = (pidProfile->tpa_mode == TPA_MODE_PD || pidProfile->tpa_mode == TPA_MODE_PID) ? pidRuntime.tpaFactor : 1.0f;
+    const float tpaFactorKi = (pidProfile->tpa_mode == TPA_MODE_PID) ? pidRuntime.tpaFactor : 1.0f;
 #else
     const float tpaFactorKp = pidRuntime.tpaFactor;
+    const float tpaFactorKi = 1.0f;
 #endif
 
 #ifdef USE_YAW_SPIN_RECOVERY
@@ -1225,7 +1227,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         applySpa(axis, pidProfile);
 
         // calculating the PID sum
-        const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
+        const float pidSum = pidData[axis].P + pidData[axis].I * tpaFactorKi + pidData[axis].D + pidData[axis].F + pidData[axis].S;
 #ifdef USE_INTEGRATED_YAW_CONTROL
         if (axis == FD_YAW && pidRuntime.useIntegratedYaw) {
             pidData[axis].Sum += pidSum * pidRuntime.dT * 100.0f;
