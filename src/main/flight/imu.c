@@ -326,7 +326,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 static bool imuIsAccelerometerHealthy(void)
 {
     // Accept accel readings only in range 0.9g - 1.1g
-    return (-0.1f < acc.accMagnitude) && (acc.accMagnitude < 0.1f);
+    return (-0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
 }
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, i.e., the default value

@@ -84,7 +84,7 @@ void accUpdate(timeUs_t currentTimeUs)
         acc.accADC[axis] = accelerationRuntime.accLpfCutHz ? pt2FilterApply(&accelerationRuntime.accFilter[axis], val) : val;
         accAdcSquaredSum += sq(acc.accADC[axis]);
     }
-    acc.accMagnitude = sqrtf(accAdcSquaredSum) * acc.dev.acc_1G_rec - 1.0f; // used for disarm on impact detection
+    acc.accMagnitude = sqrtf(accAdcSquaredSum) * acc.dev.acc_1G_rec; // normally 1.0; used for disarm on impact detection
 }
 
 #endif
