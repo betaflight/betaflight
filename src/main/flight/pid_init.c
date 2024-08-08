@@ -273,7 +273,7 @@ float tpaCurveHyperbolicFunction(float x, void *args)
 {
     const pidProfile_t *pidProfile = (const pidProfile_t*)args;
 
-    const float thrStall = pidProfile->tpa_rate_stall_throttle / 100.0f;
+    const float thrStall = pidProfile->tpa_curve_stall_throttle / 100.0f;
     const float pidThr0 = pidProfile->tpa_curve_pid_thr0 / 100.0f;
 
     if (x <= thrStall) {
