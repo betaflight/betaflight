@@ -11,86 +11,52 @@ CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 
 #STDPERIPH
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32H7/Drivers/STM32H7xx_HAL_Driver
-STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
-
-EXCLUDES        = \
-                stm32h7xx_hal_cec.c \
-                stm32h7xx_hal_comp.c \
-                stm32h7xx_hal_crc.c \
-                stm32h7xx_hal_crc_ex.c \
-                stm32h7xx_hal_cryp.c \
-                stm32h7xx_hal_cryp_ex.c \
-                stm32h7xx_hal_dcmi.c \
-                stm32h7xx_hal_dfsdm.c \
-                stm32h7xx_hal_dma2d.c \
-                stm32h7xx_hal_dsi.c \
-                stm32h7xx_hal_eth.c \
-                stm32h7xx_hal_eth_ex.c \
-                stm32h7xx_hal_fdcan.c \
-                stm32h7xx_hal_hash.c \
-                stm32h7xx_hal_hash_ex.c \
-                stm32h7xx_hal_hcd.c \
-                stm32h7xx_hal_hrtim.c \
-                stm32h7xx_hal_hsem.c \
-                stm32h7xx_hal_i2s.c \
-                stm32h7xx_hal_i2s_ex.c \
-                stm32h7xx_hal_irda.c \
-                stm32h7xx_hal_iwdg.c \
-                stm32h7xx_hal_jpeg.c \
-                stm32h7xx_hal_lptim.c \
-                stm32h7xx_hal_ltdc.c \
-                stm32h7xx_hal_ltdc_ex.c \
-                stm32h7xx_hal_mdios.c \
-                stm32h7xx_hal_mdma.c \
-                stm32h7xx_hal_mmc.c \
-                stm32h7xx_hal_mmc_ex.c \
-                stm32h7xx_hal_msp_template.c \
-                stm32h7xx_hal_nand.c \
-                stm32h7xx_hal_nor.c \
-                stm32h7xx_hal_opamp.c \
-                stm32h7xx_hal_opamp_ex.c \
-                stm32h7xx_hal_ramecc.c \
-                stm32h7xx_hal_rng.c \
-                stm32h7xx_hal_rtc.c \
-                stm32h7xx_hal_sai.c \
-                stm32h7xx_hal_sai_ex.c \
-                stm32h7xx_hal_sd_ex.c \
-                stm32h7xx_hal_sdram.c \
-                stm32h7xx_hal_smartcard.c \
-                stm32h7xx_hal_smartcard_ex.c \
-                stm32h7xx_hal_smbus.c \
-                stm32h7xx_hal_spdifrx.c \
-                stm32h7xx_hal_spi.c \
-                stm32h7xx_hal_sram.c \
-                stm32h7xx_hal_swpmi.c \
-                stm32h7xx_hal_usart.c \
-                stm32h7xx_hal_usart_ex.c \
-                stm32h7xx_hal_wwdg.c \
-                stm32h7xx_ll_adc.c \
-                stm32h7xx_ll_bdma.c \
-                stm32h7xx_ll_comp.c \
-                stm32h7xx_ll_crc.c \
-                stm32h7xx_ll_dac.c \
-                stm32h7xx_ll_delayblock.c \
-                stm32h7xx_ll_dma2d.c \
-                stm32h7xx_ll_exti.c \
-                stm32h7xx_ll_fmc.c \
-                stm32h7xx_ll_gpio.c \
-                stm32h7xx_ll_hrtim.c \
-                stm32h7xx_ll_i2c.c \
-                stm32h7xx_ll_lptim.c \
-                stm32h7xx_ll_lpuart.c \
-                stm32h7xx_ll_mdma.c \
-                stm32h7xx_ll_opamp.c \
-                stm32h7xx_ll_pwr.c \
-                stm32h7xx_ll_rcc.c \
-                stm32h7xx_ll_rng.c \
-                stm32h7xx_ll_rtc.c \
-                stm32h7xx_ll_swpmi.c \
-                stm32h7xx_ll_usart.c \
-                stm32h7xx_ll_utils.c
-
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
+STDPERIPH_SRC   = \
+            stm32h7xx_hal_adc.c \
+            stm32h7xx_hal_adc_ex.c \
+            stm32h7xx_hal.c \
+            stm32h7xx_hal_cordic.c \
+            stm32h7xx_hal_cortex.c \
+            stm32h7xx_hal_dac.c \
+            stm32h7xx_hal_dac_ex.c \
+            stm32h7xx_hal_dfsdm_ex.c \
+            stm32h7xx_hal_dma.c \
+            stm32h7xx_hal_dma_ex.c \
+            stm32h7xx_hal_dts.c \
+            stm32h7xx_hal_exti.c \
+            stm32h7xx_hal_flash.c \
+            stm32h7xx_hal_flash_ex.c \
+            stm32h7xx_hal_fmac.c \
+            stm32h7xx_hal_gfxmmu.c \
+            stm32h7xx_hal_gpio.c \
+            stm32h7xx_hal_i2c.c \
+            stm32h7xx_hal_i2c_ex.c \
+            stm32h7xx_hal_ospi.c \
+            stm32h7xx_hal_otfdec.c \
+            stm32h7xx_hal_pcd.c \
+            stm32h7xx_hal_pcd_ex.c \
+            stm32h7xx_hal_pssi.c \
+            stm32h7xx_hal_pwr.c \
+            stm32h7xx_hal_pwr_ex.c \
+            stm32h7xx_hal_qspi.c \
+            stm32h7xx_hal_rcc.c \
+            stm32h7xx_hal_rcc_ex.c \
+            stm32h7xx_hal_rng_ex.c \
+            stm32h7xx_hal_rtc_ex.c \
+            stm32h7xx_hal_sd.c \
+            stm32h7xx_hal_spi_ex.c \
+            stm32h7xx_hal_tim.c \
+            stm32h7xx_hal_tim_ex.c \
+            stm32h7xx_hal_uart.c \
+            stm32h7xx_hal_uart_ex.c \
+            stm32h7xx_ll_cordic.c \
+            stm32h7xx_ll_crs.c \
+            stm32h7xx_ll_dma.c \
+            stm32h7xx_ll_fmac.c \
+            stm32h7xx_ll_sdmmc.c \
+            stm32h7xx_ll_spi.c \
+            stm32h7xx_ll_tim.c \
+            stm32h7xx_ll_usb.c
 
 #USB
 USBCORE_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Core
@@ -124,6 +90,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32H7x
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(SRC_DIR)/startup/stm32 \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
@@ -131,8 +98,8 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
-                   $(ROOT)/src/main/drivers/stm32 \
-                   $(ROOT)/src/main/drivers/stm32/vcp_hal
+                   $(SRC_DIR)/drivers/mcu/stm32 \
+                   $(SRC_DIR)/drivers/mcu/stm32/vcp_hal
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
@@ -149,7 +116,7 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 ifeq ($(TARGET_MCU),STM32H743xx)
 DEVICE_FLAGS       += -DSTM32H743xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
-STARTUP_SRC         = startup_stm32h743xx.s
+STARTUP_SRC         = stm32/startup_stm32h743xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
@@ -164,7 +131,7 @@ endif
 else ifeq ($(TARGET_MCU),STM32H7A3xxQ)
 DEVICE_FLAGS       += -DSTM32H7A3xxQ
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_2m.ld
-STARTUP_SRC         = startup_stm32h7a3xx.s
+STARTUP_SRC         = stm32/startup_stm32h7a3xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
@@ -179,7 +146,7 @@ endif
 else ifeq ($(TARGET_MCU),STM32H7A3xx)
 DEVICE_FLAGS       += -DSTM32H7A3xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_2m.ld
-STARTUP_SRC         = startup_stm32h7a3xx.s
+STARTUP_SRC         = stm32/startup_stm32h7a3xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
@@ -194,7 +161,7 @@ endif
 else ifeq ($(TARGET_MCU),STM32H723xx)
 DEVICE_FLAGS       += -DSTM32H723xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
-STARTUP_SRC         = startup_stm32h723xx.s
+STARTUP_SRC         = stm32/startup_stm32h723xx.s
 DEFAULT_TARGET_FLASH := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
@@ -214,14 +181,14 @@ endif
 else ifeq ($(TARGET_MCU),STM32H725xx)
 DEVICE_FLAGS       += -DSTM32H725xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
-STARTUP_SRC         = startup_stm32h723xx.s
+STARTUP_SRC         = stm32/startup_stm32h723xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
 else ifeq ($(TARGET_MCU),STM32H730xx)
 DEVICE_FLAGS       += -DSTM32H730xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h730_128m.ld
-STARTUP_SRC         = startup_stm32h730xx.s
+STARTUP_SRC         = stm32/startup_stm32h730xx.s
 DEFAULT_TARGET_FLASH := 128
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
@@ -243,7 +210,7 @@ endif
 else ifeq ($(TARGET_MCU),STM32H750xx)
 DEVICE_FLAGS       += -DSTM32H750xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld
-STARTUP_SRC         = startup_stm32h743xx.s
+STARTUP_SRC         = stm32/startup_stm32h743xx.s
 DEFAULT_TARGET_FLASH := 128
 
 ifeq ($(TARGET_FLASH),)
@@ -288,11 +255,11 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 VCP_SRC = \
-            drivers/stm32/vcp_hal/usbd_desc.c \
-            drivers/stm32/vcp_hal/usbd_conf_stm32h7xx.c \
-            drivers/stm32/vcp_hal/usbd_cdc_hid.c \
-            drivers/stm32/vcp_hal/usbd_cdc_interface.c \
-            drivers/stm32/serial_usb_vcp.c \
+            drivers/mcu/stm32/vcp_hal/usbd_desc.c \
+            drivers/mcu/stm32/vcp_hal/usbd_conf_stm32h7xx.c \
+            drivers/mcu/stm32/vcp_hal/usbd_cdc_hid.c \
+            drivers/mcu/stm32/vcp_hal/usbd_cdc_interface.c \
+            drivers/mcu/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
@@ -300,42 +267,42 @@ MCU_COMMON_SRC = \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/stm32/adc_stm32h7xx.c \
-            drivers/stm32/audio_stm32h7xx.c \
-            drivers/stm32/bus_i2c_hal_init.c \
-            drivers/stm32/bus_i2c_hal.c \
-            drivers/stm32/bus_spi_ll.c \
-            drivers/stm32/bus_quadspi_hal.c \
-            drivers/stm32/bus_octospi_stm32h7xx.c \
-            drivers/stm32/debug.c \
-            drivers/stm32/dma_reqmap_mcu.c \
-            drivers/stm32/dma_stm32h7xx.c \
-            drivers/stm32/dshot_bitbang_ll.c \
-            drivers/stm32/dshot_bitbang.c \
-            drivers/stm32/exti.c \
-            drivers/stm32/io_stm32.c \
-            drivers/stm32/light_ws2811strip_hal.c \
-            drivers/stm32/memprot_hal.c \
-            drivers/stm32/memprot_stm32h7xx.c \
-            drivers/stm32/persistent.c \
-            drivers/stm32/pwm_output.c \
-            drivers/stm32/pwm_output_dshot_hal.c \
-            drivers/stm32/rcc_stm32.c \
-            drivers/stm32/sdio_h7xx.c \
-            drivers/stm32/serial_uart_hal.c \
-            drivers/stm32/serial_uart_stm32h7xx.c \
-            drivers/stm32/system_stm32h7xx.c \
-            drivers/stm32/timer_hal.c \
-            drivers/stm32/timer_stm32h7xx.c \
-            drivers/stm32/transponder_ir_io_hal.c \
-            drivers/stm32/camera_control.c \
-            startup/system_stm32h7xx.c
+            drivers/mcu/stm32/adc_stm32h7xx.c \
+            drivers/mcu/stm32/audio_stm32h7xx.c \
+            drivers/mcu/stm32/bus_i2c_hal_init.c \
+            drivers/mcu/stm32/bus_i2c_hal.c \
+            drivers/mcu/stm32/bus_spi_ll.c \
+            drivers/mcu/stm32/bus_quadspi_hal.c \
+            drivers/mcu/stm32/bus_octospi_stm32h7xx.c \
+            drivers/mcu/stm32/debug.c \
+            drivers/mcu/stm32/dma_reqmap_mcu.c \
+            drivers/mcu/stm32/dma_stm32h7xx.c \
+            drivers/mcu/stm32/dshot_bitbang_ll.c \
+            drivers/mcu/stm32/dshot_bitbang.c \
+            drivers/mcu/stm32/exti.c \
+            drivers/mcu/stm32/io_stm32.c \
+            drivers/mcu/stm32/light_ws2811strip_hal.c \
+            drivers/mcu/stm32/memprot_hal.c \
+            drivers/mcu/stm32/memprot_stm32h7xx.c \
+            drivers/mcu/stm32/persistent.c \
+            drivers/mcu/stm32/pwm_output.c \
+            drivers/mcu/stm32/pwm_output_dshot_hal.c \
+            drivers/mcu/stm32/rcc_stm32.c \
+            drivers/mcu/stm32/sdio_h7xx.c \
+            drivers/mcu/stm32/serial_uart_hal.c \
+            drivers/mcu/stm32/serial_uart_stm32h7xx.c \
+            drivers/mcu/stm32/system_stm32h7xx.c \
+            drivers/mcu/stm32/timer_hal.c \
+            drivers/mcu/stm32/timer_stm32h7xx.c \
+            drivers/mcu/stm32/transponder_ir_io_hal.c \
+            drivers/mcu/stm32/camera_control.c \
+            startup/stm32/system_stm32h7xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c
 
 MSC_SRC = \
-            drivers/stm32/usb_msc_h7xx.c \
+            drivers/mcu/stm32/usb_msc_hal.c \
             drivers/usb_msc_common.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \

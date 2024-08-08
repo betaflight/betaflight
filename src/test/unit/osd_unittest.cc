@@ -1357,6 +1357,10 @@ extern "C" {
         return simulationAltitude;
     }
 
+    int32_t getAltitudeAsl() {
+        return simulationAltitude;
+    }
+
     int32_t getEstimatedVario() {
         return simulationVerticalSpeed;
     }

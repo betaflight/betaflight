@@ -223,6 +223,13 @@ float getAltitude(void)
     return zeroedAltitudeCm;
 }
 
+#ifdef USE_GPS
+float getAltitudeAsl(void)
+{
+    return gpsSol.llh.altCm;
+}
+#endif
+
 #ifdef USE_VARIO
 int16_t getEstimatedVario(void)
 {

@@ -1,0 +1,66 @@
+;
+; This INF file is for linking a USB device that has a specific VID/PID to Windows serial device driver (usbser.sys).
+; Where to modify the VID/PID values and various strings is commented below.
+; For just getting a device to work, you should only need to modify the VID/PID values.
+;
+
+;
+; Modify these strings to change the names displayed for the device.
+;
+
+[Strings]
+DriverPackageDisplayName="Microsoft Azure RTOS Drivers"
+ManufacturerName="Microsoft Azure RTOS"
+ServiceName="USB RS-232 Emulation Driver"
+DeviceName="Microsoft Azure RTOS CDC-ACM Device"
+
+[DefaultInstall]
+CopyINF=cdc_acm_microsoft.inf
+
+[Version]
+Class=Ports
+ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318}
+Signature="$Windows NT$"
+Provider=%ManufacturerName%
+DriverVer=04/01/2014,1.3.0.0
+DriverPackageDisplayName=%DriverPackageDisplayName%
+
+[Manufacturer]
+%ManufacturerName%=DeviceList, NTamd64
+
+[DestinationDirs]
+FakeModemCopyFileSection=12
+DefaultDestDir=12
+
+;
+; Change the VID/PID in the following strings 'USB\VID_xxxx&PID_yyyyy&MI_00' to match your USB device.
+; For example, if the VID is '8484' and the PID is '0000', the string should be: USB\VID_8484&PID_0000&MI_00
+;
+
+[DeviceList]
+%DeviceName%=DriverInstall, USB\VID_xxxx&PID_yyyy&MI_00
+
+[DeviceList.NTamd64]
+%DeviceName%=DriverInstall, USB\VID_xxxx&PID_yyyy&MI_00
+
+[DriverInstall]
+include=mdmcpq.inf,usb.inf
+CopyFiles = FakeModemCopyFileSection
+AddReg=DriverAddReg
+
+[DriverAddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usbser.sys
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+
+[DriverInstall.Services]
+include=mdmcpq.inf
+AddService=usbser, 0x00000002, DriverService
+
+[DriverService]
+DisplayName=%ServiceName%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%12%\usbser.sys
+LoadOrderGroup=Base

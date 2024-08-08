@@ -31,7 +31,7 @@
 #include "common/time.h"
 #include "common/utils.h"
 
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/light_led.h"
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"

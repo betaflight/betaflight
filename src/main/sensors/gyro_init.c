@@ -56,7 +56,7 @@
 #endif
 
 #ifdef USE_GYRO_L3G4200D
-#include "drivers/accgyro_legacy/accgyro_l3g4200d.h"
+#include "drivers/accgyro/legacy/accgyro_l3g4200d.h"
 #endif
 
 #include "drivers/accgyro/gyro_sync.h"

@@ -42,7 +42,7 @@
 
 #include "build/debug.h"
 #include "common/printf.h"
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/light_led.h"
 
 #include "io/flashfs.h"
@@ -632,7 +632,6 @@ void flashfsInit(void)
 bool flashfsVerifyEntireFlash(void)
 {
     flashfsEraseCompletely();
-    flashfsInit();
 
     uint32_t address = 0;
     flashfsSeekAbs(address);
@@ -645,8 +644,12 @@ bool flashfsVerifyEntireFlash(void)
     for (address = 0; address < testLimit; address += bufferSize) {
         tfp_sprintf(buffer, "%08x >> **0123456789ABCDEF**", address);
         flashfsWrite((uint8_t*)buffer, strlen(buffer), true);
+        if ((address % 0x10000) == 0) {
+            LED0_TOGGLE;
+        }
+        // Don't overwrite the buffer if the FLASH is busy writing
+        flashfsFlushSync();
     }
-    flashfsFlushSync();
     flashfsClose();
 
     char expectedBuffer[bufferSize + 1];
@@ -663,6 +666,9 @@ bool flashfsVerifyEntireFlash(void)
         int result = strncmp(buffer, expectedBuffer, bufferSize);
         if (result != 0 || bytesRead != bufferSize) {
             verificationFailures++;
+        }
+        if ((address % 0x10000) == 0) {
+            LED0_TOGGLE;
         }
     }
     return verificationFailures == 0;

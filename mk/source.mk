@@ -1,3 +1,46 @@
+PG_SRC = \
+            pg/adc.c \
+            pg/beeper.c \
+            pg/beeper_dev.c \
+            pg/board.c \
+            pg/bus_i2c.c \
+            pg/bus_quadspi.c \
+            pg/bus_spi.c \
+            pg/dashboard.c \
+            pg/displayport_profiles.c \
+            pg/dyn_notch.c \
+            pg/flash.c \
+            pg/gps.c \
+            pg/gps_lap_timer.c \
+            pg/gps_rescue.c \
+            pg/gyrodev.c \
+            pg/max7456.c \
+            pg/mco.c \
+            pg/motor.c \
+            pg/msp.c \
+            pg/pg.c \
+            pg/piniobox.c \
+            pg/pinio.c \
+            pg/pin_pull_up_down.c \
+            pg/rcdevice.c \
+            pg/rpm_filter.c \
+            pg/rx.c \
+            pg/rx_pwm.c \
+            pg/rx_spi.c \
+            pg/rx_spi_cc2500.c \
+            pg/rx_spi_expresslrs.c \
+            pg/scheduler.c \
+            pg/sdcard.c \
+            pg/sdio.c \
+            pg/serial_uart.c \
+            pg/stats.c \
+            pg/timerio.c \
+            pg/timerup.c \
+            pg/usb.c \
+            pg/vcd.c \
+            pg/vtx_io.c \
+            pg/vtx_table.c
+
 COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
@@ -5,9 +48,34 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            $(addprefix pg/, $(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
-            $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
-            $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
+            $(PG_SRC) \
+            common/bitarray.c \
+            common/colorconversion.c \
+            common/crc.c \
+            common/encoding.c \
+            common/explog_approx.c \
+            common/filter.c \
+            common/gps_conversion.c \
+            common/huffman.c \
+            common/huffman_table.c \
+            common/maths.c \
+            common/printf.c \
+            common/printf_serial.c \
+            common/pwl.c \
+            common/sdft.c \
+            common/sensor_alignment.c \
+            common/stopwatch.c \
+            common/streambuf.c \
+            common/string_light.c \
+            common/strtol.c \
+            common/time.c \
+            common/typeconversion.c \
+            common/uvarint.c \
+            config/config.c \
+            config/config_eeprom.c \
+            config/config_streamer.c \
+            config/feature.c \
+            config/simplified_tuning.c \
             cli/cli.c \
             cli/settings.c \
             config/config.c \
@@ -207,10 +275,44 @@ COMMON_SRC = \
 ifneq ($(SIMULATOR_BUILD),yes)
 
 COMMON_SRC += \
-            $(addprefix drivers/accgyro/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro/*.c))) \
+            drivers/accgyro/accgyro_mpu3050.c \
+            drivers/accgyro/accgyro_mpu6050.c \
+            drivers/accgyro/accgyro_mpu6500.c \
+            drivers/accgyro/accgyro_mpu.c \
+            drivers/accgyro/accgyro_spi_bmi160.c \
+            drivers/accgyro/accgyro_spi_bmi270.c \
+            drivers/accgyro/accgyro_spi_icm20649.c \
+            drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm426xx.c \
+            drivers/accgyro/accgyro_spi_l3gd20.c \
+            drivers/accgyro/accgyro_spi_lsm6dso.c \
+            drivers/accgyro/accgyro_spi_lsm6dso_init.c \
+            drivers/accgyro/accgyro_spi_lsm6dsv16x.c \
+            drivers/accgyro/accgyro_spi_mpu6000.c \
+            drivers/accgyro/accgyro_spi_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu9250.c \
+            drivers/accgyro/accgyro_virtual.c \
+            drivers/accgyro/gyro_sync.c \
             $(ROOT)/lib/main/BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
-            $(addprefix drivers/barometer/,$(notdir $(wildcard $(SRC_DIR)/drivers/barometer/*.c))) \
-            $(addprefix drivers/compass/,$(notdir $(wildcard $(SRC_DIR)/drivers/compass/*.c))) \
+            drivers/barometer/barometer_2smpb_02b.c \
+            drivers/barometer/barometer_bmp085.c \
+            drivers/barometer/barometer_bmp280.c \
+            drivers/barometer/barometer_bmp388.c \
+            drivers/barometer/barometer_dps310.c \
+            drivers/barometer/barometer_lps22df.c \
+            drivers/barometer/barometer_lps.c \
+            drivers/barometer/barometer_ms5611.c \
+            drivers/barometer/barometer_qmp6988.c \
+            drivers/barometer/barometer_virtual.c \
+            drivers/compass/compass_ak8963.c \
+            drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_ist8310.c \
+            drivers/compass/compass_lis2mdl.c \
+            drivers/compass/compass_lis3mdl.c \
+            drivers/compass/compass_mpu925x_ak8963.c \
+            drivers/compass/compass_qmc5883l.c \
+            drivers/compass/compass_virtual.c \
             drivers/max7456.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_rtc6705_soft_spi.c
@@ -221,12 +323,27 @@ LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
 ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
 
 COMMON_SRC += \
-            $(addprefix drivers/accgyro_legacy/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro_legacy/*.c)))
+            drivers/accgyro/legacy/accgyro_adxl345.c \
+            drivers/accgyro/legacy/accgyro_bma280.c \
+            drivers/accgyro/legacy/accgyro_l3g4200d.c \
+            drivers/accgyro/legacy/accgyro_lsm303dlhc.c \
+            drivers/accgyro/legacy/accgyro_mma845x.c
+
 
 endif
 endif
 
 RX_SRC = \
+            drivers/rx/expresslrs_driver.c \
+            drivers/rx/rx_a7105.c \
+            drivers/rx/rx_cc2500.c \
+            drivers/rx/rx_cyrf6936.c \
+            drivers/rx/rx_nrf24l01.c \
+            drivers/rx/rx_pwm.c \
+            drivers/rx/rx_spi.c \
+            drivers/rx/rx_sx127x.c \
+            drivers/rx/rx_sx1280.c \
+            drivers/rx/rx_xn297.c \
             rx/cc2500_common.c \
             rx/cc2500_frsky_shared.c \
             rx/cc2500_frsky_d.c \
@@ -235,22 +352,16 @@ RX_SRC = \
             rx/cc2500_redpine.c \
             rx/a7105_flysky.c \
             rx/cyrf6936_spektrum.c \
-            drivers/rx/expresslrs_driver.c \
             rx/expresslrs.c \
             rx/expresslrs_common.c \
-            rx/expresslrs_telemetry.c \
-            drivers/rx/rx_cc2500.c \
-            drivers/rx/rx_a7105.c \
-            drivers/rx/rx_cyrf6936.c \
-            drivers/rx/rx_sx127x.c \
-            drivers/rx/rx_sx1280.c
+            rx/expresslrs_telemetry.c
 
 FLASH_SRC += \
-            drivers/flash.c \
-            drivers/flash_m25p16.c \
-            drivers/flash_w25n01g.c \
-            drivers/flash_w25q128fv.c \
-            drivers/flash_w25m.c \
+            drivers/flash/flash.c \
+            drivers/flash/flash_m25p16.c \
+            drivers/flash/flash_w25m.c \
+            drivers/flash/flash_w25n.c \
+            drivers/flash/flash_w25q128fv.c \
             io/flashfs.c
 
 SDCARD_SRC += \
@@ -292,6 +403,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
+            common/pwl.c \
             common/sdft.c \
             common/stopwatch.c \
             common/typeconversion.c \

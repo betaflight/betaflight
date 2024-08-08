@@ -54,19 +54,19 @@
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
 
 #ifdef USE_ACC_ADXL345
-#include "drivers/accgyro_legacy/accgyro_adxl345.h"
+#include "drivers/accgyro/legacy/accgyro_adxl345.h"
 #endif
 
 #ifdef USE_ACC_BMA280
-#include "drivers/accgyro_legacy/accgyro_bma280.h"
+#include "drivers/accgyro/legacy/accgyro_bma280.h"
 #endif
 
 #ifdef USE_ACC_LSM303DLHC
-#include "drivers/accgyro_legacy/accgyro_lsm303dlhc.h"
+#include "drivers/accgyro/legacy/accgyro_lsm303dlhc.h"
 #endif
 
 #ifdef USE_ACC_MMA8452
-#include "drivers/accgyro_legacy/accgyro_mma845x.h"
+#include "drivers/accgyro/legacy/accgyro_mma845x.h"
 #endif
 
 #include "drivers/bus_spi.h"

@@ -11,66 +11,37 @@ CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 
 #STDPERIPH
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32G4/Drivers/STM32G4xx_HAL_Driver
-STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
-EXCLUDES        = \
-                stm32g4xx_hal_comp.c \
-                stm32g4xx_hal_crc.c \
-                stm32g4xx_hal_crc_ex.c \
-                stm32g4xx_hal_cryp.c \
-                stm32g4xx_hal_cryp_ex.c \
-                stm32g4xx_hal_dac.c \
-                stm32g4xx_hal_dac_ex.c \
-                stm32g4xx_hal_dma_ex.c \
-                stm32g4xx_hal_flash_ramfunc.c \
-                stm33g4xx_hal_fmac.c \
-                stm32g4xx_hal_hrtim.c \
-                stm32g4xx_hal_i2s.c \
-                stm32g4xx_hal_irda.c \
-                stm32g4xx_hal_iwdg.c \
-                stm32g4xx_hal_lptim.c \
-                stm32g4xx_hal_msp_template.c \
-                stm32g4xx_hal_nand.c \
-                stm32g4xx_hal_nor.c \
-                stm32g4xx_hal_opamp.c \
-                stm32g4xx_hal_opamp_ex.c \
-                stm32g4xx_hal_qspi.c \
-                stm32g4xx_hal_rng.c \
-                stm32g4xx_hal_sai.c \
-                stm32g4xx_hal_sai_ex.c \
-                stm32g4xx_hal_smartcard.c \
-                stm32g4xx_hal_smartcard_ex.c \
-                stm32g4xx_hal_smbus.c \
-                stm32g4xx_hal_spi.c \
-                stm32g4xx_hal_spi_ex.c \
-                stm32g4xx_hal_sram.c \
-                stm32g4xx_hal_timebase_tim_template.c \
-                stm32g4xx_hal_usart.c \
-                stm32g4xx_hal_usart_ex.c \
-                stm32g4xx_hal_wwdg.c \
-                stm32g4xx_ll_adc.c \
-                stm32g4xx_ll_comp.c \
-                stm32g4xx_ll_cordic.c \
-                stm32g4xx_ll_crc.c \
-                stm32g4xx_ll_crs.c \
-                stm32g4xx_ll_dac.c \
-                stm32g4xx_ll_exti.c \
-                stm32g4xx_ll_fmac.c \
-                stm32g4xx_ll_fmc.c \
-                stm32g4xx_ll_gpio.c \
-                stm32g4xx_ll_hrtim.c \
-                stm32g4xx_ll_i2c.c \
-                stm32g4xx_ll_lptim.c \
-                stm32g4xx_ll_lpuart.c \
-                stm32g4xx_ll_opamp.c \
-                stm32g4xx_ll_pwr.c \
-                stm32g4xx_ll_rcc.c \
-                stm32g4xx_ll_rng.c \
-                stm32g4xx_ll_rtc.c \
-                stm32g4xx_ll_ucpd.c \
-                stm32g4xx_ll_usart.c \
-                stm32g4xx_ll_utils.c
-
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
+STDPERIPH_SRC   = \
+            stm32g4xx_hal_adc.c \
+            stm32g4xx_hal_adc_ex.c \
+            stm32g4xx_hal.c \
+            stm32g4xx_hal_cordic.c \
+            stm32g4xx_hal_cortex.c \
+            stm32g4xx_hal_dma.c \
+            stm32g4xx_hal_exti.c \
+            stm32g4xx_hal_fdcan.c \
+            stm32g4xx_hal_flash.c \
+            stm32g4xx_hal_flash_ex.c \
+            stm32g4xx_hal_fmac.c \
+            stm32g4xx_hal_gpio.c \
+            stm32g4xx_hal_i2c.c \
+            stm32g4xx_hal_i2c_ex.c \
+            stm32g4xx_hal_pcd.c \
+            stm32g4xx_hal_pcd_ex.c \
+            stm32g4xx_hal_pwr.c \
+            stm32g4xx_hal_pwr_ex.c \
+            stm32g4xx_hal_rcc.c \
+            stm32g4xx_hal_rcc_ex.c \
+            stm32g4xx_hal_rtc.c \
+            stm32g4xx_hal_rtc_ex.c \
+            stm32g4xx_hal_tim.c \
+            stm32g4xx_hal_tim_ex.c \
+            stm32g4xx_hal_uart.c \
+            stm32g4xx_hal_uart_ex.c \
+            stm32g4xx_ll_dma.c \
+            stm32g4xx_ll_spi.c \
+            stm32g4xx_ll_tim.c \
+            stm32g4xx_ll_usb.c
 
 #USB
 USBCORE_DIR = $(ROOT)/lib/main/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Core
@@ -104,6 +75,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32G4x
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(SRC_DIR)/startup/stm32 \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
@@ -111,8 +83,8 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32G4/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
-                   $(ROOT)/src/main/drivers/stm32 \
-                   $(ROOT)/src/main/drivers/stm32/vcp_hal
+                   $(SRC_DIR)/drivers/mcu/stm32 \
+                   $(SRC_DIR)/drivers/mcu/stm32/vcp_hal
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
@@ -124,7 +96,7 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER -DUSE_DMA_RAM -DMAX_MPU_
 ifeq ($(TARGET_MCU),STM32G474xx)
 DEVICE_FLAGS   += -DSTM32G474xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_g474.ld
-STARTUP_SRC     = startup_stm32g474xx.s
+STARTUP_SRC     = stm32/startup_stm32g474xx.s
 MCU_FLASH_SIZE  = 512
 # Override the OPTIMISE_SPEED compiler setting to save flash space on these 512KB targets.
 # Performance is only slightly affected but around 50 kB of flash are saved.
@@ -135,11 +107,11 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 VCP_SRC = \
-            drivers/stm32/vcp_hal/usbd_desc.c \
-            drivers/stm32/vcp_hal/usbd_conf_stm32g4xx.c \
-            drivers/stm32/vcp_hal/usbd_cdc_hid.c \
-            drivers/stm32/vcp_hal/usbd_cdc_interface.c \
-            drivers/stm32/serial_usb_vcp.c \
+            drivers/mcu/stm32/vcp_hal/usbd_desc.c \
+            drivers/mcu/stm32/vcp_hal/usbd_conf_stm32g4xx.c \
+            drivers/mcu/stm32/vcp_hal/usbd_cdc_hid.c \
+            drivers/mcu/stm32/vcp_hal/usbd_cdc_interface.c \
+            drivers/mcu/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
@@ -147,32 +119,32 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/stm32/adc_stm32g4xx.c \
-            drivers/stm32/bus_i2c_hal_init.c \
-            drivers/stm32/bus_i2c_hal.c \
-            drivers/stm32/bus_spi_ll.c \
-            drivers/stm32/debug.c \
-            drivers/stm32/dma_reqmap_mcu.c \
-            drivers/stm32/dma_stm32g4xx.c \
-            drivers/stm32/dshot_bitbang_ll.c \
-            drivers/stm32/dshot_bitbang.c \
-            drivers/stm32/exti.c \
-            drivers/stm32/io_stm32.c \
-            drivers/stm32/light_ws2811strip_hal.c \
-            drivers/stm32/memprot_hal.c \
-            drivers/stm32/memprot_stm32g4xx.c \
-            drivers/stm32/persistent.c \
-            drivers/stm32/pwm_output.c \
-            drivers/stm32/pwm_output_dshot_hal.c \
-            drivers/stm32/rcc_stm32.c \
-            drivers/stm32/serial_uart_hal.c \
-            drivers/stm32/serial_uart_stm32g4xx.c \
-            drivers/stm32/system_stm32g4xx.c \
-            drivers/stm32/timer_hal.c \
-            drivers/stm32/timer_stm32g4xx.c \
-            drivers/stm32/transponder_ir_io_hal.c \
-            drivers/stm32/camera_control.c \
-            startup/system_stm32g4xx.c
+            drivers/mcu/stm32/adc_stm32g4xx.c \
+            drivers/mcu/stm32/bus_i2c_hal_init.c \
+            drivers/mcu/stm32/bus_i2c_hal.c \
+            drivers/mcu/stm32/bus_spi_ll.c \
+            drivers/mcu/stm32/debug.c \
+            drivers/mcu/stm32/dma_reqmap_mcu.c \
+            drivers/mcu/stm32/dma_stm32g4xx.c \
+            drivers/mcu/stm32/dshot_bitbang_ll.c \
+            drivers/mcu/stm32/dshot_bitbang.c \
+            drivers/mcu/stm32/exti.c \
+            drivers/mcu/stm32/io_stm32.c \
+            drivers/mcu/stm32/light_ws2811strip_hal.c \
+            drivers/mcu/stm32/memprot_hal.c \
+            drivers/mcu/stm32/memprot_stm32g4xx.c \
+            drivers/mcu/stm32/persistent.c \
+            drivers/mcu/stm32/pwm_output.c \
+            drivers/mcu/stm32/pwm_output_dshot_hal.c \
+            drivers/mcu/stm32/rcc_stm32.c \
+            drivers/mcu/stm32/serial_uart_hal.c \
+            drivers/mcu/stm32/serial_uart_stm32g4xx.c \
+            drivers/mcu/stm32/system_stm32g4xx.c \
+            drivers/mcu/stm32/timer_hal.c \
+            drivers/mcu/stm32/timer_stm32g4xx.c \
+            drivers/mcu/stm32/transponder_ir_io_hal.c \
+            drivers/mcu/stm32/camera_control.c \
+            startup/stm32/system_stm32g4xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c
@@ -180,7 +152,7 @@ MCU_EXCLUDES = \
 # G4's MSC use the same driver layer file with F7
 MSC_SRC = \
             drivers/usb_msc_common.c \
-            drivers/stm32/usb_msc_f7xx.c \
+            drivers/mcu/stm32/usb_msc_hal.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \

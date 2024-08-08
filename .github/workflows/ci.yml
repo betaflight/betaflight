@@ -3,7 +3,7 @@
 
 name: CI
 
-on: 
+on:
   workflow_call:
     inputs:
       release_build:
@@ -71,9 +71,9 @@ jobs:
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
 
       - name: Publish build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Assets
+          name: ${{ matrix.target }}
           path: obj/*.hex
           retention-days: 60
 

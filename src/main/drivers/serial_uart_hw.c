@@ -93,11 +93,13 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             GPIO_MODE_MUX,
             GPIO_DRIVE_STRENGTH_STRONGER,
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
-            (options & SERIAL_INVERTED) ? GPIO_PULL_DOWN : GPIO_PULL_UP
+            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PULL_DOWN : GPIO_PULL_UP
         );
 #elif defined(STM32F4)
         // no inverter on F4
-        ioConfig_t ioCfg =  ((options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? IOCFG_AF_PP : IOCFG_AF_OD;
+        ioConfig_t ioCfg =  (options & SERIAL_BIDIR_PP_PD) ? IOCFG_AF_PP_PD
+                            : (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP
+                            : IOCFG_AF_OD;
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
 
