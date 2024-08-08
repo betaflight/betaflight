@@ -507,9 +507,9 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     float rxRate = currentRxRateHz;                 // 1e6f / currentRxIntervalUs;
     static float prevRcCommand[3];
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
-    static float prevSetpoint[3];                   // equals raw unless interpolated 
+    static float prevSetpoint[3];                   // equals raw unless extrapolated forward 
     static float prevSetpointSpeed[3];
-    static float prevAcceleration[3];               // for duplicate interpolation
+    static float prevSetpointSpeedDelta[3];               // for duplicate extrapolation
     static bool prevDuplicatePacket[3];             // to identify multiple identical packets
     static uint16_t feedforwardAveraging = 0; 
 
@@ -530,7 +530,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     prevSetpoint[axis] = setpoint;
 
     float setpointSpeed = 0.0f;
-    float setpointAcceleration = 0.0f;
+    float setpointSpeedDelta = 0.0f;
     float feedforward = 0.0f;
 
     if (pid->feedforwardInterpolate) {
@@ -551,7 +551,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
                 // interpolate a replacement setpointSpeed value for the first duplicate after normal movement
                 // avoid interpolating when about to hit max deflection
                 if (fabsf(setpoint) < 0.90f * maxRcRate[axis]) {
-                    setpointSpeed = prevSetpointSpeed[axis] + prevAcceleration[axis];
+                    // we assume here that this was a single packet duplicate, and that it is of approximately normal duration
+                    // hence no modification of prevSetpointSpeedDelta on the basis of rxInterval/preRxInterval
+                    // we could do add prevSetpointSpeedDelta[axis] * rxInterval / preRxInterval
+                    // but I think this won't materially improve the extrapolation
+                    setpointSpeed = prevSetpointSpeed[axis] + prevSetpointSpeedDelta[axis];
                     // pretend that there was stick movement also, to hold the same jitter value
                     rcCommandDeltaAbs = prevRcCommandDeltaAbs[axis];
                 }
@@ -595,22 +599,22 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     // smooth the setpointSpeed value
     setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
 
-    // calculate setpointAcceleration from smoothed setpoint speed
-    setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]);
+    // calculate setpointDelta from smoothed setpoint speed
+    setpointSpeedDelta  = (setpointSpeed - prevSetpointSpeed[axis]);
     prevSetpointSpeed[axis] = setpointSpeed;
 
-    // smooth the acceleration element (effectively a second order filter since incoming setpoint was already smoothed)
-    setpointAcceleration = prevAcceleration[axis] + pid->feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
-    prevAcceleration[axis] = setpointAcceleration;
+    // smooth the setpointDelta element (effectively a second order filter since incoming setpoint was already smoothed)
+    setpointSpeedDelta = prevSetpointSpeedDelta[axis] + pid->feedforwardSmoothFactor * (setpointSpeedDelta - prevSetpointSpeedDelta[axis]);
+    prevSetpointSpeedDelta[axis] = setpointSpeedDelta;
 
-    // apply gain factor to acceleration
-    setpointAcceleration *= rxRate * pid->feedforwardBoostFactor;
+    // apply gain factor to delta and adjust for rxRate
+    const float feedforwardBoost = setpointSpeedDelta * rxRate * pid->feedforwardBoostFactor;
 
     feedforward = setpointSpeed;
 
     if (axis < FD_YAW) {
-        // for pitch and roll, add acceleration element (boost)
-        feedforward += setpointAcceleration;
+        // for pitch and roll, add setpointSpeedDelta element (boost)
+        feedforward += feedforwardBoost;
         // apply jitter reduction multiplier
         feedforward *= jitterAttenuator;
         // pull feedforward back towards zero as sticks approach max if in same direction
@@ -655,17 +659,17 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     }
 
     if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint)); // un-smoothed (raw) setpoint value used for FF
-        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));         // smoothed and interpolated basic feedfoward element
-        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpointAcceleration * 0.01f));  // acceleration (boost) smoothed
+        DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));                       // un-smoothed (raw) setpoint value used for FF
+        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));          // smoothed and extrapolated basic feedfoward element
+        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));       // acceleration (boost) smoothed
         DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDelta * 10.0f));
-        DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));     // jitter attenuation percent
-        DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(prevDuplicatePacket[axis]));  // previous packet was a duplicate
+        DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));      // jitter attenuation percent
+        DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(prevDuplicatePacket[axis]));   // previous packet was a duplicate
 
         DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f)); // jitter attenuation factor in percent
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis])); // max RC rate
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint)); // setpoint used for FF
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforward * 0.01f)); // un-smoothed final feedforward
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis]));           // max Setpoint rate (badly named)
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint));                  // setpoint used for FF
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforward * 0.01f));       // un-smoothed final feedforward
     }
 
     // apply averaging to final values, for additional smoothing if needed; not shown in logs
