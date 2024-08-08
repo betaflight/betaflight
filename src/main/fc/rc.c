@@ -489,6 +489,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
+// should this be inside ifdef USE_FEEDFORWARD ??
 NOINLINE void initFeedforwardFilters(uint16_t feedforwardAveraging)
 {
     if (feedforwardAveraging) {
@@ -511,8 +512,10 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     static float prevAcceleration[3];               // for duplicate interpolation
     static bool prevDuplicatePacket[3];             // to identify multiple identical packets
     static uint16_t feedforwardAveraging = 0; 
+
+    // needs a 'proper' init function that respects profile change - this is a hack that wastes cycles
     static bool initFilters = false;
-    if (!initFilters) {
+    if (!initFilters || feedforwardAveraging != pid->feedforwardAveraging) {
         feedforwardAveraging = pid->feedforwardAveraging;
         initFeedforwardFilters(feedforwardAveraging);
         initFilters = true;
