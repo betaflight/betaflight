@@ -21,12 +21,16 @@
 #pragma once
 
 #include <stdbool.h>
+#include "common/streambuf.h"
 
 extern bool cliMode;
 
 void cliProcess(void);
 struct serialPort_s;
 void cliEnter(struct serialPort_s *serialPort);
+void cliMspEnter(sbuf_t *dst);
+void processCharacterInteractive(const char c);
+
 
 #ifdef USE_CLI_DEBUG_PRINT
 void cliPrint(const char *str);

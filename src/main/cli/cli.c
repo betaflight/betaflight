@@ -49,6 +49,7 @@ bool cliMode = false;
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/printf_serial.h"
+#include "common/streambuf.h"
 #include "common/strtol.h"
 #include "common/time.h"
 #include "common/typeconversion.h"
@@ -6683,6 +6684,7 @@ static void processCharacter(const char c)
             if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                 cmd->cliCommand(cmd->name, options);
             } else {
+                cliPrintLine(cliBuffer);
                 cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
             }
             bufferIndex = 0;
@@ -6704,7 +6706,7 @@ static void processCharacter(const char c)
     }
 }
 
-static void processCharacterInteractive(const char c)
+void processCharacterInteractive(const char c)
 {
     if (c == '\t' || c == '?') {
         // do tab completion
@@ -6776,6 +6778,37 @@ void cliProcess(void)
 
         processCharacterInteractive(c);
     }
+}
+
+sbuf_t *mspDst = NULL;
+
+void mspWriteBufShim(void *instance, const uint8_t *data, int count)
+{
+    UNUSED(instance);
+    if (mspDst)
+    {
+        for (const uint8_t *p = data; p < data + count; p++)
+        {
+            sbufWriteU8(mspDst, *p);
+        }
+    }
+}
+
+void cliMspEnter(sbuf_t *dst)
+{
+    mspDst = dst;
+    // TODO: we kind of need serial for passthroughs at least,
+    // but MSP is not passing it down to the proccessing, so
+    // need to figure out where to set it up.
+    // cliPort = serialPort;
+    // TODO: not sure if needed or not here.
+    // setPrintfSerialPort(cliPort);
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  // TODO: need to shim in the msp writer here
+                  (bufWrite_t)mspWriteBufShim,
+                  // TODO: this is missing the serial port which seems to be used mainly for passthroughts
+                  NULL);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
 }
 
 void cliEnter(serialPort_t *serialPort)
