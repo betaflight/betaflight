@@ -62,7 +62,7 @@
 #define PARAM_NAME_TPA_GRAVITY_THR0 "tpa_gravity_thr0"
 #define PARAM_NAME_TPA_GRAVITY_THR100 "tpa_gravity_thr100"
 #define PARAM_NAME_TPA_CURVE_TYPE "tpa_curve_type"
-#define PARAM_NAME_TPA_CURVE_STALL_THROTTLE "tpa_rate_stall_throttle"
+#define PARAM_NAME_TPA_CURVE_STALL_THROTTLE "tpa_curve_stall_throttle"
 #define PARAM_NAME_TPA_CURVE_PID_THR0 "tpa_curve_pid_thr0"
 #define PARAM_NAME_TPA_CURVE_PID_THR100 "tpa_curve_pid_thr100"
 #define PARAM_NAME_TPA_CURVE_EXPO "tpa_curve_expo"
