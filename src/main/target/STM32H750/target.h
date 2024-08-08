@@ -70,8 +70,6 @@
 
 #define USE_SOFTSERIAL
 
-#define UNIFIED_SERIAL_PORT_COUNT       3
-
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -81,8 +79,6 @@
 #define USE_UART7
 #define USE_UART8
 #define USE_LPUART1
-
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 9)
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

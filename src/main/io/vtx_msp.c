@@ -199,7 +199,7 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
             if (isCrsfPortConfig(portConfig)) {
                 mspCrsfPush(MSP_VTX_CONFIG, frame, sizeof(frame));
             } else {
-                mspSerialPush((serialPortIdentifier_e) portConfig->identifier, MSP_VTX_CONFIG, frame, sizeof(frame), MSP_DIRECTION_REPLY, MSP_V2_NATIVE);
+                mspSerialPush(portConfig->identifier, MSP_VTX_CONFIG, frame, sizeof(frame), MSP_DIRECTION_REPLY, MSP_V2_NATIVE);
             }
             packetCounter++;
             mspVtxLastTimeUs = currentTimeUs;

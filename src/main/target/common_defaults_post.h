@@ -94,16 +94,6 @@
 #endif
 #endif
 
-#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
-#define USE_UART
-#endif
-
-#ifdef USE_UART
-#if defined(INVERTER_PIN_UART1) || defined(INVERTER_PIN_UART2) || defined(INVERTER_PIN_UART3) || defined(INVERTER_PIN_UART4) || defined(INVERTER_PIN_UART5) || defined(INVERTER_PIN_UART6)
-#define USE_INVERTER
-#endif
-#endif
-
 #ifndef DEFAULT_MIXER
 #define DEFAULT_MIXER    MIXER_QUADX
 #endif

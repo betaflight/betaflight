@@ -96,7 +96,7 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-mspDescriptor_t getMspSerialPortDescriptor(const uint8_t portIdentifier)
+mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e portIdentifier)
 {
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t *candidateMspPort = &mspPorts[portIndex];

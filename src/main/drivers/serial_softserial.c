@@ -47,8 +47,6 @@
 #define RX_TOTAL_BITS 10
 #define TX_TOTAL_BITS 10
 
-#define MAX_SOFTSERIAL_PORTS 2
-
 typedef enum {
     TIMER_MODE_SINGLE,
     TIMER_MODE_DUAL,
@@ -87,7 +85,6 @@ typedef struct softSerial_s {
     uint16_t         transmissionErrors;
     uint16_t         receiveErrors;
 
-    uint8_t          softSerialPortIndex;
     timerMode_e      timerMode;
 
     timerOvrHandlerRec_t overCb;
@@ -95,8 +92,8 @@ typedef struct softSerial_s {
 } softSerial_t;
 
 static const struct serialPortVTable softSerialVTable; // Forward
-
-static softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
+// SERIAL_SOFTSERIAL_COUNT is fine, softserial ports must start from 1 and be continuous
+static softSerial_t softSerialPorts[SERIAL_SOFTSERIAL_COUNT];
 
 void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
@@ -187,7 +184,7 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
         timerPeriod = clock / baud;
         if (isTimerPeriodTooLarge(timerPeriod)) {
             if (clock > 1) {
-                clock = clock / 2;   // this is wrong - mhz stays the same ... This will double baudrate until ok (but minimum baudrate is < 1200)
+                clock = clock / 2;   // minimum baudrate is < 1200
             } else {
                 // TODO unable to continue, unable to determine clock and timerPeriods for the given baud
             }
@@ -195,7 +192,7 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
         }
     } while (isTimerPeriodTooLarge(timerPeriod));
 
-    timerConfigure(timerHardwarePtr, timerPeriod, baseClock);
+    timerConfigure(timerHardwarePtr, timerPeriod, clock);
 }
 
 static void resetBuffers(softSerial_t *softSerial)
@@ -211,15 +208,29 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options)
+softSerial_t* softSerialFromIdentifier(serialPortIdentifier_e identifier)
 {
-    softSerial_t *softSerial = &(softSerialPorts[portIndex]);
+    if (identifier >= SERIAL_PORT_SOFTSERIAL1 && identifier < SERIAL_PORT_SOFTSERIAL1 + SERIAL_SOFTSERIAL_COUNT) {
+        return &softSerialPorts[identifier - SERIAL_PORT_SOFTSERIAL1];
+    }
+    return NULL;
+}
 
-    ioTag_t tagRx = softSerialPinConfig()->ioTagRx[portIndex];
-    ioTag_t tagTx = softSerialPinConfig()->ioTagTx[portIndex];
+serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options)
+{
+    softSerial_t *softSerial = softSerialFromIdentifier(identifier);
+    if (!softSerial) {
+        return NULL;
+    }
+    const int resourceIndex = serialResourceIndex(identifier);
+    const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
+    const int ownerIndex = serialOwnerIndex(identifier);
 
-    const timerHardware_t *timerTx = timerAllocate(tagTx, OWNER_SOFTSERIAL_TX, RESOURCE_INDEX(portIndex));
-    const timerHardware_t *timerRx = (tagTx == tagRx) ? timerTx : timerAllocate(tagRx, OWNER_SOFTSERIAL_RX, RESOURCE_INDEX(portIndex));
+    const ioTag_t tagRx = serialPinConfig()->ioTagRx[resourceIndex];
+    const ioTag_t tagTx = serialPinConfig()->ioTagTx[resourceIndex];
+
+    const timerHardware_t *timerTx = timerAllocate(tagTx, ownerTxRx, ownerIndex);
+    const timerHardware_t *timerRx = (tagTx == tagRx) ? timerTx : timerAllocate(tagRx, ownerTxRx + 1, ownerIndex);
 
     IO_t rxIO = IOGetByTag(tagRx);
     IO_t txIO = IOGetByTag(tagTx);
@@ -235,7 +246,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         softSerial->timerHardware = timerTx;
         softSerial->txIO = txIO;
         softSerial->rxIO = txIO;
-        IOInit(txIO, OWNER_SOFTSERIAL_TX, RESOURCE_INDEX(portIndex));
+        IOInit(txIO, ownerTxRx, ownerIndex);
     } else {
         if (mode & MODE_RX) {
             // Need a pin & a timer on RX. Channel should not be N-Channel.
@@ -246,7 +257,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
             softSerial->rxIO = rxIO;
             softSerial->timerHardware = timerRx;
             if (!((mode & MODE_TX) && rxIO == txIO)) {
-                IOInit(rxIO, OWNER_SOFTSERIAL_RX, RESOURCE_INDEX(portIndex));
+                IOInit(rxIO, ownerTxRx + 1, ownerIndex);
             }
         }
 
@@ -266,7 +277,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
                 // Duplex
                 softSerial->exTimerHardware = timerTx;
             }
-            IOInit(txIO, OWNER_SOFTSERIAL_TX, RESOURCE_INDEX(portIndex));
+            IOInit(txIO, ownerTxRx, ownerIndex);
         }
     }
 
@@ -278,8 +289,6 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->port.rxCallbackData = rxCallbackData;
 
     resetBuffers(softSerial);
-
-    softSerial->softSerialPortIndex = portIndex;
 
     softSerial->transmissionErrors = 0;
     softSerial->receiveErrors = 0;
