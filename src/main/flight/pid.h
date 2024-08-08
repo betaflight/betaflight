@@ -21,9 +21,11 @@
 #pragma once
 
 #include <stdbool.h>
-#include "common/time.h"
-#include "common/filter.h"
+
 #include "common/axis.h"
+#include "common/filter.h"
+#include "common/pwl.h"
+#include "common/time.h"
 
 #include "pg/pg.h"
 
@@ -73,6 +75,11 @@
 #ifdef USE_WING
 #define TPA_LOW_RATE_MIN INT8_MIN
 #define TPA_GRAVITY_MAX 5000
+#define TPA_CURVE_STALL_THROTTLE_MAX 100
+#define TPA_CURVE_PID_MAX 1000
+#define TPA_CURVE_EXPO_MIN -100
+#define TPA_CURVE_EXPO_MAX 100
+#define TPA_CURVE_PWL_SIZE 16
 #else
 #define TPA_LOW_RATE_MIN 0
 #endif
@@ -146,6 +153,11 @@ typedef enum feedforwardAveraging_e {
     FEEDFORWARD_AVERAGING_3_POINT,
     FEEDFORWARD_AVERAGING_4_POINT,
 } feedforwardAveraging_t;
+
+typedef enum tpaCurveType_e {
+    TPA_CURVE_CLASSIC,
+    TPA_CURVE_HYPERBOLIC,
+} tpaCurveType_t;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
 
@@ -267,8 +279,13 @@ typedef struct pidProfile_s {
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
-    uint16_t tpa_gravity_thr0;               // For wings: addition to tpa argument in % when zero throttle
-    uint16_t tpa_gravity_thr100;             // For wings: addition to tpa argument in % when full throttle
+    uint16_t tpa_gravity_thr0;              // For wings: addition to tpa argument in % when zero throttle
+    uint16_t tpa_gravity_thr100;            // For wings: addition to tpa argument in % when full throttle
+    uint8_t tpa_curve_type;                 // Classic type - for multirotor, hyperbolic - for wings
+    uint8_t tpa_rate_stall_throttle;        // For wings: speed at which PIDs should be maxed out (stall speed)
+    uint16_t tpa_curve_pid_thr0;            // For wings: PIDs multiplier at stall speed
+    uint16_t tpa_curve_pid_thr100;          // For wings: PIDs multiplier at full speed
+    int8_t tpa_curve_expo;                  // For wings: how fast PIDs do transition as speed grows
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -456,6 +473,8 @@ typedef struct pidRuntime_s {
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
     float tpaGravityThr0;
     float tpaGravityThr100;
+    pwl_t tpaCurvePwl;
+    float tpaCurvePwl_yValues[TPA_CURVE_PWL_SIZE];
 #endif
 } pidRuntime_t;
 
@@ -478,7 +497,7 @@ void pidSetItermAccelerator(float newItermAccelerator);
 bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
-void pidUpdateTpaFactor(float throttle);
+void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
 void pidSetAntiGravityState(bool newState);

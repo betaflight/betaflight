@@ -25,7 +25,6 @@
 
 
 #define PWL_DECLARE(name, size, xMinV, xMaxV)                           \
-    STATIC_ASSERT((xMinV) < (xMaxV), "xMinV must be less than xMaxV");  \
     STATIC_ASSERT((size) > 1, "size must be more than 1");              \
     STATIC_ASSERT((size) < 33, "size must be less than 33");            \
     float name##_yValues[(size)];                                       \

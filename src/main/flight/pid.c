@@ -237,6 +237,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
         .ez_landing_disarm_threshold = 0                            ,
+        .tpa_curve_type = TPA_CURVE_CLASSIC,
+        .tpa_rate_stall_throttle = 30,
+        .tpa_curve_pid_thr0 = 200,
+        .tpa_curve_pid_thr100 = 70,
+        .tpa_curve_expo = 20,
     );
 
 #ifndef USE_D_MIN
@@ -301,18 +306,9 @@ static float getWingTpaArgument(float throttle)
 }
 #endif // #ifndef USE_WING
 
-void pidUpdateTpaFactor(float throttle)
+float getTpaFactorClassic(float tpaArgument)
 {
     static bool isTpaLowFaded = false;
-    // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
-    throttle = constrainf(throttle, 0.0f, 1.0f);
-
-#ifdef USE_WING
-    const float tpaArgument = isFixedWing() ?  getWingTpaArgument(throttle) : throttle;
-#else
-    const float tpaArgument = throttle;
-#endif
-
     bool isThrottlePastTpaLowBreakpoint = (tpaArgument >= pidRuntime.tpaLowBreakpoint || pidRuntime.tpaLowBreakpoint <= 0.01f);
     float tpaRate = 0.0f;
     if (isThrottlePastTpaLowBreakpoint || isTpaLowFaded) {
@@ -324,7 +320,32 @@ void pidUpdateTpaFactor(float throttle)
         tpaRate = pidRuntime.tpaLowMultiplier * (pidRuntime.tpaLowBreakpoint - tpaArgument);
     }
 
-    float tpaFactor = 1.0f - tpaRate;
+    return 1.0f - tpaRate;
+}
+
+void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile)
+{
+    // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
+    throttle = constrainf(throttle, 0.0f, 1.0f);
+    float tpaFactor;
+
+#ifdef USE_WING
+    const float tpaArgument = isFixedWing() ?  getWingTpaArgument(throttle) : throttle;
+
+    switch (pidProfile->tpa_curve_type) {
+        case TPA_CURVE_HYPERBOLIC:
+            tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
+            break;
+        case TPA_CURVE_CLASSIC:
+        default:
+            tpaFactor = getTpaFactorClassic(tpaArgument);    
+    }
+#else // USE_WING is undefined
+    UNUSED(pidProfile);
+    const float tpaArgument = throttle;
+    tpaFactor = getTpaFactorClassic(tpaArgument);
+#endif
+
     DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
     pidRuntime.tpaFactor = tpaFactor;
 }
