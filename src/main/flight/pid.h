@@ -439,8 +439,8 @@ typedef struct pidRuntime_s {
     float feedforwardTransition;
     float feedforwardTransitionInv;
     uint8_t feedforwardMaxRateLimit;
-    uint8_t feedforwardYawHoldGain;
-    uint8_t feedforwardYawHoldTime;
+    float feedforwardYawHoldGain;
+    float feedforwardYawHoldTime;
     bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values 
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
 #endif
