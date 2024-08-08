@@ -501,7 +501,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     static float prevSetpoint[3];                   // equals raw unless extrapolated forward 
     static float prevSetpointSpeed[3];              // for setpointDelta calculation
     static float prevSetpointSpeedDelta[3];         // for duplicate extrapolation
-    static bool prevDuplicatePacket[3];             // to identify multiple identical packets
+    static bool prevPacketWasADuplicate[3];             // to identify multiple identical packets
 
     const float rcCommandDelta = rcCommand[axis] - prevRcCommand[axis];
     prevRcCommand[axis] = rcCommand[axis];
@@ -522,14 +522,14 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         if (rcCommandDeltaAbs) {
             // movement!
             // if the previous packet was a duplicate, calculate setpointSpeed over the last two intervals
-            if (prevDuplicatePacket[axis]) {
+            if (prevPacketWasADuplicate[axis]) {
                 rxRate = 1.0f / (rxInterval + prevRxInterval);
             }
             setpointSpeed = setpointDelta * rxRate;
-            prevDuplicatePacket[axis] = false;
+            prevPacketWasADuplicate[axis] = false;
         } else {
             // no movement!
-            if (!prevDuplicatePacket[axis]) {
+            if (!prevPacketWasADuplicate[axis]) {
                 // interpolate a replacement setpointSpeed value for the first duplicate after normal movement
                 // avoid interpolating when about to hit max deflection
                 if (fabsf(setpoint) < 0.90f * maxRcRate[axis]) {
@@ -548,7 +548,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
                 // feedforward will smoothly decay and be attenuated by the jitter reduction value for zero rcCommandDelta
                 prevSetpointSpeed[axis] = 0.0f; // zero acceleration later on
             }
-            prevDuplicatePacket[axis] = true;
+            prevPacketWasADuplicate[axis] = true;
         }
         prevRxInterval = rxInterval;
     } else {
@@ -646,7 +646,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));       // acceleration (boost) smoothed
         DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDelta * 10.0f));
         DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));      // jitter attenuation percent
-        DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(prevDuplicatePacket[axis]));   // previous packet was a duplicate
+        DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(prevPacketWasADuplicate[axis]));   // previous packet was a duplicate
 
         DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f)); // jitter attenuation factor in percent
         DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis]));           // max Setpoint rate (badly named)
