@@ -85,11 +85,13 @@ enum {
 #ifdef USE_FEEDFORWARD
 static float feedforwardSmoothed[3];
 static float feedforwardRaw[3];
+static uint16_t feedforwardAveraging; 
 typedef struct laggedMovingAverageCombined_s {
     laggedMovingAverage_t filter;
     float buf[4];
 } laggedMovingAverageCombined_t;
 laggedMovingAverageCombined_t  feedforwardDeltaAvg[XYZ_AXIS_COUNT];
+
 static pt1Filter_t feedforwardYawHoldLpf;
 float getFeedforward(int axis)
 {
@@ -489,37 +491,17 @@ static FAST_CODE void processRcSmoothingFilter(void)
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
-// should this be inside ifdef USE_FEEDFORWARD ??
-NOINLINE void initFeedforwardFilters(uint16_t feedforwardAveraging)
-{
-    if (feedforwardAveraging) {
-        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            laggedMovingAverageInit(&feedforwardDeltaAvg[i].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[i].buf[0]);
-        }
-    }
-    pt1FilterInit(&feedforwardYawHoldLpf, 0.0f);
-}
-
 #ifdef USE_FEEDFORWARD
 FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
     float rxRate = currentRxRateHz;                 // 1e6f / currentRxIntervalUs;
-    static float prevRcCommand[3];
+    static float prevRcCommand[3];                  // for rcCommandDelta test
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
     static float prevSetpoint[3];                   // equals raw unless extrapolated forward 
-    static float prevSetpointSpeed[3];
-    static float prevSetpointSpeedDelta[3];               // for duplicate extrapolation
+    static float prevSetpointSpeed[3];              // for setpointDelta calculation
+    static float prevSetpointSpeedDelta[3];         // for duplicate extrapolation
     static bool prevDuplicatePacket[3];             // to identify multiple identical packets
-    static uint16_t feedforwardAveraging = 0; 
-
-    // needs a 'proper' init function that respects profile change - this is a hack that wastes cycles
-    static bool initFilters = false;
-    if (!initFilters || feedforwardAveraging != pid->feedforwardAveraging) {
-        feedforwardAveraging = pid->feedforwardAveraging;
-        initFeedforwardFilters(feedforwardAveraging);
-        initFilters = true;
-    }
 
     const float rcCommandDelta = rcCommand[axis] - prevRcCommand[axis];
     prevRcCommand[axis] = rcCommand[axis];
@@ -829,6 +811,12 @@ bool isMotorsReversed(void)
     return reverseMotors;
 }
 
+#ifdef USE_FEEDFORWARD
+void getFeedforwardAveraging (const pidRuntime_t *pid) {
+    feedforwardAveraging = pid->feedforwardAveraging;
+}
+#endif // USE_FEEDFORWARD
+
 void initRcProcessing(void)
 {
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
@@ -864,11 +852,19 @@ void initRcProcessing(void)
         break;
     }
 
-    for (int i = 0; i < 3; i++) {
+#ifdef USE_FEEDFORWARD
+    getFeedforwardAveraging(&pidRuntime);
+    pt1FilterInit(&feedforwardYawHoldLpf, 0.0f);
+#endif // USE_FEEDFORWARD
+
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         maxRcRate[i] = applyRates(i, 1.0f, 1.0f);
 #ifdef USE_FEEDFORWARD
         feedforwardSmoothed[i] = 0.0f;
         feedforwardRaw[i] = 0.0f;
+        if (feedforwardAveraging) {
+            laggedMovingAverageInit(&feedforwardDeltaAvg[i].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[i].buf[0]);
+        }
 #endif // USE_FEEDFORWARD
     }
 
