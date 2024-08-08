@@ -59,6 +59,9 @@
 #elif defined(STM32F4) || defined(AT32F4)
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
+#elif defined(APM32F4)
+#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
+#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 #else
 #error Undefined UART_{TX,RX}_BUFFER_ATTRIBUTE for this MCU
 #endif
@@ -399,6 +402,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
             uartPort->txDMAChannel = dmaChannelSpec->channel;
 #elif defined(AT32F4)
             uartPort->txDMAMuxId = dmaChannelSpec->dmaMuxId;
+#elif defined(APM32F4)
+            uartPort->txDMAChannel = dmaChannelSpec->channel;
 #endif
         }
     }
@@ -411,6 +416,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
             uartPort->rxDMAChannel = dmaChannelSpec->channel;
 #elif defined(AT32F4)
             uartPort->rxDMAMuxId = dmaChannelSpec->dmaMuxId;
+#elif defined(APM32F4)
+            uartPort->rxDMAChannel = dmaChannelSpec->channel;
 #endif
         }
     }
@@ -423,6 +430,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
         uartPort->rxDMAChannel = hardware->rxDMAChannel;
 #elif defined(AT32F4)
         uartPort->rxDMAMuxId = hardware->rxDMAMuxId;
+#elif defined(APM32F4)
+        uartPort->rxDMAChannel = hardware->rxDMAChannel;
 #endif
     }
 
@@ -432,6 +441,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
         uartPort->txDMAChannel = hardware->txDMAChannel;
 #elif defined(AT32F4)
         uartPort->txDMAMuxId = hardware->txDMAMuxId;
+#elif defined(APM32F4)
+        uartPort->txDMAChannel = hardware->txDMAChannel;
 #endif
     }
 #endif

@@ -37,7 +37,7 @@ typedef enum I2CDevice {
     I2CDEV_4,
 } I2CDevice;
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(APM32F4)
 #define I2CDEV_COUNT 3
 #elif defined(STM32F7)
 #define I2CDEV_COUNT 4
