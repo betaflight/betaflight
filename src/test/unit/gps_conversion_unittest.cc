@@ -42,6 +42,7 @@ typedef struct gpsConversionExpectation_s {
     uint32_t degrees;
 } gpsConversionExpectation_t;
 
+#ifdef USE_GPS_NMEA
 TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
 {
     const gpsConversionExpectation_t gpsConversionExpectations[] = {
@@ -72,3 +73,4 @@ TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
         EXPECT_EQ(result, expectation->degrees);
     }
 }
+#endif

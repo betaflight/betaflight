@@ -382,7 +382,6 @@
 #endif // !defined(CORE_BUILD)
 
 #ifdef USE_GPS
-#define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
 #endif // USE_GPS

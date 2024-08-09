@@ -1029,6 +1029,8 @@ void gpsConfigureNmea(void)
 }
 #endif // USE_GPS_NMEA
 
+
+
 #ifdef USE_GPS_UBLOX
 
 void gpsConfigureUblox(void)
@@ -1305,19 +1307,16 @@ void gpsConfigureUblox(void)
 void gpsConfigureHardware(void)
 {
     switch (gpsConfig()->provider) {
-    case GPS_NMEA:
 #ifdef USE_GPS_NMEA
+    case GPS_NMEA:
         gpsConfigureNmea();
-#endif
         break;
-
-    case GPS_UBLOX:
+#endif
 #ifdef USE_GPS_UBLOX
+    case GPS_UBLOX:
         gpsConfigureUblox();
+        break;
 #endif
-        break;
-    default:
-        break;
     }
 }
 
@@ -1507,18 +1506,14 @@ ubloxVersion_e ubloxParseVersion(const uint32_t version) {
 bool gpsNewFrame(uint8_t c)
 {
     switch (gpsConfig()->provider) {
-    case GPS_NMEA:          // NMEA
 #ifdef USE_GPS_NMEA
+    case GPS_NMEA:
         return gpsNewFrameNMEA(c);
 #endif
-        break;
-    case GPS_UBLOX:         // UBX binary
 #ifdef USE_GPS_UBLOX
+    case GPS_UBLOX:
         return gpsNewFrameUBLOX(c);
 #endif
-        break;
-    default:
-        break;
     }
     return false;
 }
