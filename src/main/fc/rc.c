@@ -93,6 +93,7 @@ typedef struct laggedMovingAverageCombined_s {
 laggedMovingAverageCombined_t  feedforwardDeltaAvg[XYZ_AXIS_COUNT];
 
 static pt1Filter_t feedforwardYawHoldLpf;
+
 float getFeedforward(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -594,23 +595,24 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 
     feedforward = setpointSpeed;
 
-    if (axis < FD_YAW) {
-        // for pitch and roll, add setpointSpeedDelta element (boost)
+    if (axis == FD_ROLL || axis == FD_PITCH) {
+        // for pitch and roll, add feedforwardBoost to deal with motor lag
         feedforward += feedforwardBoost;
-        // apply jitter reduction multiplier
+        // apply jitter reduction multiplier to reduce noise by attenuating when sticks move slowly
         feedforward *= jitterAttenuator;
         // pull feedforward back towards zero as sticks approach max if in same direction
+        // to avoid overshooting on the outwards leg of a fast roll or flip
         if (pid->feedforwardMaxRateLimit && feedforward * setpoint > 0.0f) {
             const float limit = (maxRcRate[axis] - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
             feedforward = (limit > 0.0f) ? constrainf(feedforward, -limit, limit) : 0.0f;
         }
 
     } else {
-        // for yaw, only apply jitter reduction only to the feedforward delta element
-        // can't be applied to the 'sustained' element since it will divide it to a small fraction of what is needed
+        // for yaw, apply jitter reduction only to the base feedforward delta element
+        // can't be applied to the 'sustained' element or jitter values will divide it down too much when sticks are still
         feedforward *= jitterAttenuator;
 
-        // instead of adding setpoint acceleration, which is too aggressive,
+        // instead of adding setpoint acceleration, which is too aggressive for yaw,
         // add a slow-fading high-pass filtered setpoint element
         // this provides a 'sustained boost' with low noise
         // it mimics the normal sustained yaw motor drive requirements, reducing P and I and hence reducing bounceback
@@ -618,13 +620,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         // too little yaw FF causes iTerm windup and slow bounce back when stopping a hard yaw
         // too much causes fast bounce back when stopping a hard yaw
 
-        // calculate lowpass gain factor from user specified time constant, can't exceed 1.0
+        // calculate lowpass filter gain factor from user specified time constant
         const float gain = pt1FilterGainFromDelay(pid->feedforwardYawHoldTime, rxInterval);
-        // subtract lowpass from input to get highpass
         pt1FilterUpdateCutoff(&feedforwardYawHoldLpf, gain);
         const float setpointLpfYaw = pt1FilterApply(& feedforwardYawHoldLpf, setpoint);
-        // const float setpointLpfYaw = pt1FilterApply(& feedforwardYawHoldLpf, setpoint); // use this once I know how to init the filter
-        // provide separate boost gain for yaw; value of 20 works well for 5in, zero disables
+        // subtract lowpass from input to get highpass of setpoint for sustained yaw 'boost'
         const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
 
         DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));  // basic yaw feedforward without hold element
@@ -640,7 +640,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         feedforward *= rcDeflectionAbs[axis] * pid->feedforwardTransitionInv;
     }
 
-    if (axis == FD_ROLL) {
+    if (axis == gyro.gyroDebugAxis) {
         DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));                       // un-smoothed (raw) setpoint value used for FF
         DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));          // smoothed and extrapolated basic feedfoward element
         DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));       // acceleration (boost) smoothed
@@ -697,7 +697,6 @@ FAST_CODE void processRcCommand(void)
 
                 angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
             }
-
 
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
             DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
@@ -811,12 +810,6 @@ bool isMotorsReversed(void)
     return reverseMotors;
 }
 
-#ifdef USE_FEEDFORWARD
-void getFeedforwardAveraging (const pidRuntime_t *pid) {
-    feedforwardAveraging = pid->feedforwardAveraging;
-}
-#endif // USE_FEEDFORWARD
-
 void initRcProcessing(void)
 {
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
@@ -853,7 +846,7 @@ void initRcProcessing(void)
     }
 
 #ifdef USE_FEEDFORWARD
-    getFeedforwardAveraging(&pidRuntime);
+    feedforwardAveraging = pidRuntime.feedforwardAveraging;
     pt1FilterInit(&feedforwardYawHoldLpf, 0.0f);
 #endif // USE_FEEDFORWARD
 
