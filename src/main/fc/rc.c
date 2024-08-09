@@ -518,33 +518,34 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
 
     if (pid->feedforwardInterpolate) {
         static float prevRxInterval;
-        // for Rx links which do send duplicate data packets when they send telemetry
-        // interpolate setpointSpeed to minimise steps in feedforward
-        if (rcCommandDeltaAbs) {
+        // for Rx links which send duplicate data packets when they send telemetry
+        // extrapolate setpointSpeed when a duplicate is detected, to minimise steps in feedforward
+        const bool isDuplicate = rcCommandDeltaAbs == 0;
+        if (!isDuplicate) {
             // movement!
-            // if the previous packet was a duplicate, calculate setpointSpeed over the last two intervals
+            // but, if the packet before this was also a duplicate,
+            // calculate setpointSpeed over the last two intervals
             if (prevPacketWasADuplicate[axis]) {
                 rxRate = 1.0f / (rxInterval + prevRxInterval);
             }
             setpointSpeed = setpointDelta * rxRate;
             prevPacketWasADuplicate[axis] = false;
         } else {
-            // no movement!
+            // no movement
             if (!prevPacketWasADuplicate[axis]) {
-                // interpolate a replacement setpointSpeed value for the first duplicate after normal movement
-                // avoid interpolating when about to hit max deflection
+                // extrapolate a replacement setpointSpeed value for the first duplicate after normal movement
+                // but not when about to hit max deflection
                 if (fabsf(setpoint) < 0.90f * maxRcRate[axis]) {
-                    // we assume here that this was a single packet duplicate, and that it is of approximately normal duration
-                    // hence no modification of prevSetpointSpeedDelta on the basis of rxInterval/preRxInterval
-                    // we could do add prevSetpointSpeedDelta[axis] * rxInterval / preRxInterval
-                    // but I think this won't materially improve the extrapolation
+                    // this is a single packet duplicate, and we assume that it is of approximately normal duration
+                    // hence no multiplication of prevSetpointSpeedDelta by rxInterval / prevRxInterval
                     setpointSpeed = prevSetpointSpeed[axis] + prevSetpointSpeedDelta[axis];
                     // pretend that there was stick movement also, to hold the same jitter value
                     rcCommandDeltaAbs = prevRcCommandDeltaAbs[axis];
                 }
             } else {
                 // for second and all subsequent duplicates...
-                // leave setpoint speed at zero
+                // force setpoint speed to zero
+                setpointSpeed = 0.0f;
                 // zero the acceleration by setting previous speed to zero
                 // feedforward will smoothly decay and be attenuated by the jitter reduction value for zero rcCommandDelta
                 prevSetpointSpeed[axis] = 0.0f; // zero acceleration later on
@@ -583,7 +584,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
     setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
 
     // calculate setpointDelta from smoothed setpoint speed
-    setpointSpeedDelta  = (setpointSpeed - prevSetpointSpeed[axis]);
+    setpointSpeedDelta  = setpointSpeed - prevSetpointSpeed[axis];
     prevSetpointSpeed[axis] = setpointSpeed;
 
     // smooth the setpointDelta element (effectively a second order filter since incoming setpoint was already smoothed)
@@ -623,7 +624,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
         // calculate lowpass filter gain factor from user specified time constant
         const float gain = pt1FilterGainFromDelay(pid->feedforwardYawHoldTime, rxInterval);
         pt1FilterUpdateCutoff(&feedforwardYawHoldLpf, gain);
-        const float setpointLpfYaw = pt1FilterApply(& feedforwardYawHoldLpf, setpoint);
+        const float setpointLpfYaw = pt1FilterApply(&feedforwardYawHoldLpf, setpoint);
         // subtract lowpass from input to get highpass of setpoint for sustained yaw 'boost'
         const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
 
