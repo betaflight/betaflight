@@ -346,9 +346,7 @@ extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or l
                                                         //     1 = carrier smoothed pseudorange used
 extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Ratio (Signal Strength)
 
-#define TASK_GPS_RATE       100     // default update rate of GPS task
-#define TASK_GPS_RATE_FAST  500    // update rate of GPS task while Rx buffer is not empty
-
+#define TASK_GPS_RATE       500    // default update rate of GPS task
 
 #ifdef USE_DASHBOARD
 // Data used *only* by the dashboard device (OLED display).

@@ -1349,27 +1349,12 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     if (gpsPort) {
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
-        static uint8_t wait = 0;
-        static bool isFast = false;
         while (serialRxBytesWaiting(gpsPort)) {
-            wait = 0;
-            if (!isFast) {
-                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
-                isFast = true;
-            }
             if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
                 break;
             }
             // Add every byte to _buffer, when enough bytes are received, convert data to values
             gpsNewData(serialRead(gpsPort));
-        }
-        if (wait < 1) {
-            wait++;
-        } else if (wait == 1) {
-            wait++;
-            // wait one iteration be sure the buffer is empty, then reset to the slower task interval
-            isFast = false;
-            rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
         }
     } else if (gpsConfig()->provider == GPS_MSP) {
         if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
