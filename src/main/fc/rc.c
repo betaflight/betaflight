@@ -493,7 +493,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
 #endif // USE_RC_SMOOTHING_FILTER
 
 #ifdef USE_FEEDFORWARD
-FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
+FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dynamics_index_t axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
     float rxRate = currentRxRateHz;                 // 1e6f / currentRxIntervalUs;
@@ -640,7 +640,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
         feedforward *= rcDeflectionAbs[axis] * pid->feedforwardTransitionInv;
     }
 
-    if (axis == (int)gyro.gyroDebugAxis) {
+    if (axis == gyro.gyroDebugAxis) {
         DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));                       // un-smoothed (raw) setpoint value used for FF
         DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));          // smoothed and extrapolated basic feedfoward element
         DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));       // acceleration (boost) smoothed
