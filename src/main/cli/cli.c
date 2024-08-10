@@ -4961,8 +4961,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
         if (rcSmoothingAutoCalculate()) {
             cliPrint("# Detected Rx frequency: ");
             if (getRxRateValid()) {
-	            const uint16_t smoothedRxRateHz = lrintf(rcSmoothingData->smoothedRxRateHz);
-                cliPrintLinef("%dHz", smoothedRxRateHz);
+	            cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
             } else {
             	cliPrintLine("NO SIGNAL");          
             }
