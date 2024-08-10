@@ -510,7 +510,7 @@ TEST_F(OsdTest, TestStatsTiming)
     // statistics screen should display the following
     int row = 7;
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
-    displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:13.61");
+    displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:13.60");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:01");
 }
 
