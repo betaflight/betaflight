@@ -116,7 +116,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 8);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 9);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -236,6 +236,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
+        .ez_landing_disarm_threshold = 0                            ,
     );
 
 #ifndef USE_D_MIN
@@ -774,6 +775,20 @@ float pidGetAirmodeThrottleOffset(void)
 }
 #endif
 
+static FAST_CODE_NOINLINE void disarmOnImpact(void)
+{
+    // if all sticks are within 5% of center, and throttle low, check accDelta for impacts
+    // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
+    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f &&
+        fabsf(acc.accDelta) > pidRuntime.ezLandingDisarmThreshold) {
+        // disarm on accDelta transients
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+        disarm(DISARM_REASON_LANDING);
+    }
+    DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
+    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));
+}
+
 #ifdef USE_LAUNCH_CONTROL
 #define LAUNCH_CONTROL_MAX_RATE 100.0f
 #define LAUNCH_CONTROL_MIN_RATE 5.0f
@@ -974,6 +989,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
+    if (pidRuntime.useEzDisarm) {
+        disarmOnImpact();
+    }
+
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
@@ -1043,6 +1062,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         const float previousIterm = pidData[axis].I;
         float itermErrorRate = errorRate;
+
 #ifdef USE_ABSOLUTE_CONTROL
         const float uncorrectedSetpoint = currentPidSetpoint;
 #endif
@@ -1081,12 +1101,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 
         float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
+
 #ifdef USE_WING
         if (pidProfile->spa_mode[axis] != SPA_MODE_OFF) {
             // slowing down I-term change, or even making it zero if setpoint is high enough
             iTermChange *= pidRuntime.spa[axis];
         }
 #endif // #ifdef USE_WING
+
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate D component
@@ -1151,6 +1173,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // Apply the dMinFactor
             preTpaD *= dMinFactor;
 #endif
+
             pidData[axis].D = preTpaD * pidRuntime.tpaFactor;
 
             // Log the value of D pre application of TPA

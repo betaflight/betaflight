@@ -316,8 +316,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashTimeDelayUs = pidProfile->crash_delay * 1000;
     pidRuntime.crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
     pidRuntime.crashRecoveryRate = pidProfile->crash_recovery_rate;
-    pidRuntime.crashGyroThreshold = pidProfile->crash_gthreshold;
-    pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold;
+    pidRuntime.crashGyroThreshold = pidProfile->crash_gthreshold; // error in deg/s
+    pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold * 1000.0f; // gyro delta in deg/s/s * 1000 to match original 2017 intent
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
     pidRuntime.itermLimit = pidProfile->itermLimit;
@@ -441,6 +441,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.tpaLowBreakpoint = MIN(pidRuntime.tpaLowBreakpoint, pidRuntime.tpaBreakpoint);
     pidRuntime.tpaLowMultiplier = pidProfile->tpa_low_rate / (100.0f * pidRuntime.tpaLowBreakpoint);
     pidRuntime.tpaLowAlways = pidProfile->tpa_low_always;
+
+    pidRuntime.useEzDisarm = pidProfile->ez_landing_disarm_threshold > 0;
+    pidRuntime.ezLandingDisarmThreshold = pidProfile->ez_landing_disarm_threshold * 10.0f;
+
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
