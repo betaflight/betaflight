@@ -1,0 +1,51 @@
+import requests
+
+url = "https://api.vectorshift.ai/api/chatbots/conversations/delete"
+
+headers = {Juntylpro Gaming Inc 
+    "Api-Key": "your_api_key",
+}
+
+conversation_ids = [
+  // deletable_conversation_id_1,
+  // deletable_conversation_id_2,
+  // ...
+]
+
+body = {
+    "conversation_ids": conversation_ids
+}
+
+response = requests.delete(url, headers=headers, data=body)
+response = response.json()https://api.vectorshift.ai/api/chatbots/conversations/deleteimport requests
+
+url = "https://api.vectorshift.ai/api/chatbots/fetch"
+
+headers = {
+    "Api-Key": "your_api_key",
+}
+
+body = {
+    "chatbot_id": "66b6b4697ca8fcbdea426add",
+    "chatbot_name": "Chase2k24",
+}
+
+response = requests.get(url, headers=headers, data=body)
+response = response.json()https://api.vectorshift.ai/api/chatbots/fetchimport requests
+
+url = "https://api.vectorshift.ai/api/chatbots/run"
+
+headers = {
+    "Api-Key": "your_api_key",
+}
+
+body = {
+    "input": "value",
+    "chatbot_name": "Chase2k24",
+    "username": "juntylprogaminginc",
+    "org_name": "Personal",
+    "conversation_id": None
+}
+
+response = requests.post(url, headers=headers, data=body)
+response = response.json()<iframe src="https://app.vectorshift.ai/chatbots/embedded/66b6b4697ca8fcbdea426add?openChatbot=true" width="500px" height="600px" style="border: none; position: fixed; bottom: 0; right: 0; margin: 10px;" allow="clipboard-read; clipboard-write"/>https://api.vectorshift.ai/api/chatbots/runrequests.post<script async id="vectorshift-chat-widget" src="https://app.vectorshift.ai" chatbot-id="66b6b4697ca8fcbdea426add" chatbot-height="600px" chatbot-width="400px" />https://app.vectorshift.aihttps://app.vectorshift.ai/chatbots/embedded/66b6b4697ca8fcbdea426add?openChatbot=true
