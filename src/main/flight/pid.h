@@ -279,8 +279,8 @@ typedef struct pidProfile_s {
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
-    uint16_t tpa_gravity_thr0;              // For wings: addition to tpa argument in % when zero throttle
-    uint16_t tpa_gravity_thr100;            // For wings: addition to tpa argument in % when full throttle
+    uint16_t tpa_gravity_thr0;              // For wings: gravity force addition to tpa argument in % when zero throttle
+    uint16_t tpa_gravity_thr100;            // For wings: gravity force addition to tpa argument in % when full throttle
     uint8_t tpa_curve_type;                 // Classic type - for multirotor, hyperbolic - for wings
     uint8_t tpa_curve_stall_throttle;        // For wings: speed at which PIDs should be maxed out (stall speed)
     uint16_t tpa_curve_pid_thr0;            // For wings: PIDs multiplier at stall speed

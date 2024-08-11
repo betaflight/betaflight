@@ -145,7 +145,7 @@ typedef enum {
 #ifdef USE_RX_EXPRESSLRS
     TABLE_FREQ_DOMAIN,
 #endif
-#ifdef USE_WING
+#ifdef USE_ADVANCED_TPA
     TABLE_TPA_CURVE_TYPE,
 #endif
     LOOKUP_TABLE_COUNT

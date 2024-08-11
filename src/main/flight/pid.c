@@ -331,18 +331,21 @@ void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile)
 
 #ifdef USE_WING
     const float tpaArgument = isFixedWing() ?  getWingTpaArgument(throttle) : throttle;
-
-    switch (pidProfile->tpa_curve_type) {
-        case TPA_CURVE_HYPERBOLIC:
-            tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
-            break;
-        case TPA_CURVE_CLASSIC:
-        default:
-            tpaFactor = getTpaFactorClassic(tpaArgument);    
-    }
-#else // USE_WING is undefined
-    UNUSED(pidProfile);
+#else
     const float tpaArgument = throttle;
+#endif
+
+#ifdef USE_ADVANCED_TPA
+    switch (pidProfile->tpa_curve_type) {
+    case TPA_CURVE_HYPERBOLIC:
+        tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
+        break;
+    case TPA_CURVE_CLASSIC:
+    default:
+        tpaFactor = getTpaFactorClassic(tpaArgument);
+    }
+#else
+    UNUSED(pidProfile);
     tpaFactor = getTpaFactorClassic(tpaArgument);
 #endif
 

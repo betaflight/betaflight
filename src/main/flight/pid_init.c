@@ -268,7 +268,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 
-#ifdef USE_WING
+#ifdef USE_ADVANCED_TPA
 float tpaCurveHyperbolicFunction(float x, void *args)
 {
     const pidProfile_t *pidProfile = (const pidProfile_t*)args;
@@ -282,7 +282,7 @@ float tpaCurveHyperbolicFunction(float x, void *args)
 
     const float pidThr100 = pidProfile->tpa_curve_pid_thr100 / 100.0f;
     const float expo = - 1.0f / (-pidProfile->tpa_curve_expo / 100.0f + 0.999f);
-    const float xShifted = (x - thrStall) / (1.0f - thrStall);
+    const float xShifted = scaleRangef(x, thrStall, 1.0f, 0.0f, 1.0f);
     const float base = (1 + (pow_approx(pidThr0 / pidThr100, 1.0f / expo) - 1) * xShifted);
     const float divisor = pow_approx(base, expo);
 
@@ -298,15 +298,15 @@ void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
 void tpaCurveInit(const pidProfile_t *pidProfile)
 {
         switch (pidProfile->tpa_curve_type) {
-            case TPA_CURVE_HYPERBOLIC:
-                tpaCurveHyperbolicInit(pidProfile);
-                return;
-            case TPA_CURVE_CLASSIC:
-            default:
-                return;
+        case TPA_CURVE_HYPERBOLIC:
+            tpaCurveHyperbolicInit(pidProfile);
+            return;
+        case TPA_CURVE_CLASSIC:
+        default:
+            return;
         }
 }
-#endif // #ifdef USE_WING
+#endif // #ifdef #ifdef USE_ADVANCED_TPA
 
 void pidInit(const pidProfile_t *pidProfile)
 {
@@ -316,7 +316,7 @@ void pidInit(const pidProfile_t *pidProfile)
 #ifdef USE_RPM_FILTER
     rpmFilterInit(rpmFilterConfig(), gyro.targetLooptime);
 #endif
-#ifdef USE_WING
+#ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif
 }
