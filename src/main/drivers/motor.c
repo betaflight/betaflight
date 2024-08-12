@@ -380,10 +380,7 @@ timeMs_t motorGetMotorEnableTimeMs(void)
 #ifdef USE_DSHOT_BITBANG
 bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 {
-#ifdef STM32F4
-    return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
-        (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);
-#elif defined(APM32F4)
+#if defined(STM32F4) || defined(APM32F4)
     return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
         (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);
 #else
