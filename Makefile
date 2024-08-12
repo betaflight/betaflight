@@ -516,9 +516,6 @@ $(CONFIGS_CLEAN):
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
 
-## configs           : Hydrate configuration
-configs: configs
-
 ## all_configs       : Build all configs
 all_configs: $(BASE_CONFIGS)
 
