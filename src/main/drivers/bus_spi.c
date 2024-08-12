@@ -358,7 +358,7 @@ uint8_t spiReadRegMsk(const extDevice_t *dev, uint8_t reg)
 
 uint16_t spiCalculateDivider(uint32_t freq)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
@@ -368,8 +368,6 @@ uint16_t spiCalculateDivider(uint32_t freq)
     }
 
     uint32_t spiClk = system_core_clock / 2;
-#elif defined(APM32F4)
-    uint32_t spiClk = SystemCoreClock / 2;
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -385,7 +383,7 @@ uint16_t spiCalculateDivider(uint32_t freq)
 
 uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
@@ -395,9 +393,6 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
     if ((spiClk / spiClkDivisor) > 36000000){
         return 36000000;
     }
-
-#elif defined(APM32F4)
-    uint32_t spiClk = SystemCoreClock / 2;
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -576,14 +571,12 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 void spiInitBusDMA(void)
 {
     uint32_t device;
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
     /* Check https://www.st.com/resource/en/errata_sheet/dm00037591-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
      * section 2.1.10 which reports an errata that corruption may occurs on DMA2 if AHB peripherals (eg GPIO ports) are
      * access concurrently with APB peripherals (eg SPI busses). Bitbang DSHOT uses DMA2 to write to GPIO ports. If this
      * is enabled, then don't enable DMA on an SPI bus using DMA2
      */
-    const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
-#elif defined(APM32F4) && defined(USE_DSHOT_BITBANG)
     const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
 #endif
 
@@ -612,12 +605,7 @@ void spiInitBusDMA(void)
 
             if (dmaTxChannelSpec) {
                 dmaTxIdentifier = dmaGetIdentifier(dmaTxChannelSpec->ref);
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
-                if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 2)) {
-                    dmaTxIdentifier = DMA_NONE;
-                    break;
-                }
-#elif defined(APM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 2)) {
                     dmaTxIdentifier = DMA_NONE;
                     break;
@@ -655,12 +643,7 @@ void spiInitBusDMA(void)
 
             if (dmaRxChannelSpec) {
                 dmaRxIdentifier = dmaGetIdentifier(dmaRxChannelSpec->ref);
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
-                if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 2)) {
-                    dmaRxIdentifier = DMA_NONE;
-                    break;
-                }
-#elif defined(APM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 2)) {
                     dmaRxIdentifier = DMA_NONE;
                     break;
