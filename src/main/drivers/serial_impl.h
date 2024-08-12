@@ -33,7 +33,7 @@ resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier);
 int serialOwnerIndex(serialPortIdentifier_e identifier);
 
 typedef enum { serialPullNone = 0, serialPullDown, serialPullUp } serialPullMode_t;
-serialPullMode_t seriaGetMode_pull(const serialPort_t* port);
-bool serialGetMode_isOpenDrain(const serialPort_t* port);
+serialPullMode_t serialOptions_pull(portOptions_e options);
+bool serialOptions_pushPull(portOptions_e options);
 
 

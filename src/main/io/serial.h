@@ -195,6 +195,8 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 
 serialType_e serialType(serialPortIdentifier_e identifier);
+// resource index of given identifier, or -1 if not available
+int serialResourceIndex(serialPortIdentifier_e identifier);
 
 
 //

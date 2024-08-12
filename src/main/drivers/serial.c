@@ -23,6 +23,7 @@
 
 #include "platform.h"
 
+#include "io/serial.h"
 #include "serial.h"
 
 void serialPrint(serialPort_t *instance, const char *str)
@@ -131,23 +132,3 @@ void serialWriteBufShim(void *instance, const uint8_t *data, int count)
     serialWriteBuf((serialPort_t *)instance, data, count);
 }
 
-// map identifier into index used to store port resources:
-//   pins(RX,TX), external inversion, port DMA configuration
-// order is UART, LPUART, SOFTSERIAL, with each group using index
-//  coresponding to port name (UART1 -> 0, UART5 -> 4, but LPUART -> 5 if
-//  there is no UART6 and higher on given target.
-// -1 is returned if given port is not defined or is not using resources
-// some code uses this ordering for optimizations, be carefull if reordering is necessary
-int serialResourceIndex(serialPortIdentifier_e identifier)
-{
-    switch (serialType(identifier)) {
-    case SERIALTYPE_UART:
-        return RESOURCE_UART_OFFSET + identifier - SERIAL_PORT_UART1;
-    case SERIALTYPE_LPUART:
-        return RESOURCE_LPUART_OFFSET + identifier - SERIAL_PORT_LPUART1;
-    case SERIALTYPE_SOFTSERIAL:
-        return RESOURCE_SOFTSERIAL_OFFSET + identifier - SERIAL_PORT_SOFTSERIAL1;
-    default:
-        return -1;
-    }
-}

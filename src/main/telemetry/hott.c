@@ -378,7 +378,7 @@ static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_e
 
 static bool hottIsUsingHardwareUART(void)
 {
-    return SerialType(portConfig->identifier) != SERIALTYPE_SOFTSERIAL;
+    return serialType(portConfig->identifier) != SERIALTYPE_SOFTSERIAL;
 }
 
 static void hottConfigurePortForTX(void)

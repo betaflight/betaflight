@@ -36,6 +36,7 @@
 #include "drivers/rcc.h"
 #include "drivers/inverter.h"
 #include "drivers/serial.h"
+#include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 

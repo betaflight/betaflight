@@ -253,44 +253,6 @@ int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
     return -1;
 }
 
-// convert identifier into port type
-serialType_e serialType(serialPortIdentifier_e identifier)
-{
-#ifdef USE_VCP
-    if (identifier == SERIAL_PORT_USB_VCP) {
-        return SERIALTYPE_USB_VCP;
-    }
-#endif
-#ifdef USE_UART
-    if (identifier > SERIAL_PORT_USART1 && identifier < SERIAL_PORT_USART1 + SERIAL_UART_MAX) {
-        unsigned idx = identifier - SERIAL_PORT_USART1;
-        if (BIT(idx) & SERIAL_UART_MASK) {
-            return SERIALTYPE_UART;
-        } else {
-            // no other type in this range
-            return SERIALTYPE_INVALID;
-        }
-    }
-#endif
-#ifdef USE_LPUART
-    if (identifier > SERIAL_PORT_LPUART1 && identifier < SERIAL_PORT_LPUART1 + SERIAL_LPUART_MAX) {
-        unsigned idx = identifier - SERIAL_PORT_LPUART1;
-        if (BIT(idx) & SERIAL_LPUART_MASK) {
-            return SERIALTYPE_LPUART;
-        } else {
-            // no other type in this range
-            return SERIALTYPE_INVALID;
-        }
-    }
-#endif
-#ifdef USE_SOFTSERIAL
-    if (identifier > SERIAL_PORT_SOFTSERIAL1 && identifier < SERIAL_PORT_SOFTSERIAL1 + SERIAL_SOFTSERIAL_MAX) {
-        // sotserials from 1, no holes
-        return SERIALTYPE_SOFTSERIAL;
-    }
-#endif
-    return SERIALTYPE_INVALID;
-}
 
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
 {

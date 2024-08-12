@@ -38,10 +38,13 @@
 #include <common/maths.h>
 #include "common/utils.h"
 
+#include "io/serial.h"
+
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/rcc.h"
 #include "drivers/serial.h"
+#include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 

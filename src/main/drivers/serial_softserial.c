@@ -37,9 +37,12 @@
 
 #include "common/utils.h"
 
+#include "io/serial.h"
+
 #include "drivers/nvic.h"
 #include "drivers/io.h"
 #include "drivers/serial.h"
+#include "drivers/serial_impl.h"
 #include "drivers/timer.h"
 
 #include "serial_softserial.h"

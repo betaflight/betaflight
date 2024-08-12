@@ -32,8 +32,8 @@
 #define RESOURCE_LPUART_COUNT SERIAL_LPUART_MAX
 #define RESOURCE_SOFTSERIAL_COUNT SERIAL_SOFTSERIAL_MAX
 #define RESOURCE_SERIAL_COUNT (RESOURCE_UART_COUNT + RESOURCE_LPUART_COUNT + RESOURCE_SOFTSERIAL_COUNT)
-// resources are stored in one array, in UART,LPUART,SOFTSERIAL order. Code does assume this ordering,
-//  do not change it without adaptine code.
+// resources are stored in one array, in UART, LPUART, SOFTSERIAL order. Code does assume this ordering,
+//  do not change it without adapting relevant code.
 #define RESOURCE_UART_OFFSET 0
 #define RESOURCE_LPUART_OFFSET RESOURCE_UART_COUNT
 #define RESOURCE_SOFTSERIAL_OFFSET (RESOURCE_UART_COUNT + RESOURCE_LPUART_COUNT)
