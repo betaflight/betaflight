@@ -123,10 +123,6 @@ typedef enum {
     SERIALTYPE_COUNT
 } serialType_e;
 
-serialType_e serialType(serialPortIdentifier_e identifier);
-
-// resource index of given identifier, or -1 if not available
-int serialResourceIndex(serialPortIdentifier_e identifier);
 // owner of Tx pin (+1 for Rx)
 resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier);
 // index for given owner
@@ -202,6 +198,8 @@ void closeSerialPort(serialPort_t *serialPort);
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate);
+
+serialType_e serialType(serialPortIdentifier_e identifier);
 
 
 //

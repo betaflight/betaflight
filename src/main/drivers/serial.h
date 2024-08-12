@@ -144,3 +144,6 @@ uint32_t serialGetBaudRate(serialPort_t *instance);
 void serialWriteBufShim(void *instance, const uint8_t *data, int count);
 void serialBeginWrite(serialPort_t *instance);
 void serialEndWrite(serialPort_t *instance);
+
+// resource index of given identifier, or -1 if not available
+int serialResourceIndex(serialPortIdentifier_e identifier);
