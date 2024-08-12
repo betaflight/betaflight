@@ -241,7 +241,9 @@ void altHoldUpdate(void)
 
 
     // check if the user has modified the target altitude using sticks while hovering
-    altHoldUpdateTargetAltitude();
+    if (altholdConfig()->altHoldTargetAdjustRate) {
+        altHoldUpdateTargetAltitude();
+    }
 
     // use PIDs to return the throttle adjustment value, and add it to the throttle value to use
     const float throttleAdjustment = altitudePidCalculate();
