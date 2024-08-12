@@ -266,7 +266,7 @@
 #endif
 
 // If USE_SERIALRX_SPEKTRUM was dropped by a target, drop all related options
-#ifndef USE_SERIALRX_SPEKTRUM
+#if !defined(USE_SERIALRX_SPEKTRUM) && !defined(USE_SERIALRX_SRXL2)
 #undef USE_SPEKTRUM_BIND
 #undef USE_SPEKTRUM_BIND_PLUG
 #undef USE_SPEKTRUM_REAL_RSSI
