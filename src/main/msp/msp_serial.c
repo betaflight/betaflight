@@ -101,7 +101,7 @@ mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e portIden
 {
     for (unsigned portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t *candidateMspPort = &mspPorts[portIndex];
-        if (candidateMspPort->port->identifier == portIdentifier) {
+        if (candidateMspPort->port && candidateMspPort->port->identifier == portIdentifier) {
             return candidateMspPort->descriptor;
         }
     }
