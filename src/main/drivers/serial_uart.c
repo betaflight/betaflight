@@ -56,10 +56,7 @@
 #elif defined(STM32F7)
 #define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
 #define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#elif defined(STM32F4) || defined(AT32F4)
-#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
-#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
-#elif defined(APM32F4)
+#elif defined(STM32F4) || defined(AT32F4) || defined(APM32F4)
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 #else
@@ -398,12 +395,10 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, device, serialUartConfig(device)->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->txDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
             uartPort->txDMAChannel = dmaChannelSpec->channel;
 #elif defined(AT32F4)
             uartPort->txDMAMuxId = dmaChannelSpec->dmaMuxId;
-#elif defined(APM32F4)
-            uartPort->txDMAChannel = dmaChannelSpec->channel;
 #endif
         }
     }
@@ -412,12 +407,10 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, device, serialUartConfig(device)->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
             uartPort->rxDMAChannel = dmaChannelSpec->channel;
 #elif defined(AT32F4)
             uartPort->rxDMAMuxId = dmaChannelSpec->dmaMuxId;
-#elif defined(APM32F4)
-            uartPort->rxDMAChannel = dmaChannelSpec->channel;
 #endif
         }
     }
@@ -426,23 +419,19 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
     if (hardware->rxDMAResource) {
         uartPort->rxDMAResource = hardware->rxDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
         uartPort->rxDMAChannel = hardware->rxDMAChannel;
 #elif defined(AT32F4)
         uartPort->rxDMAMuxId = hardware->rxDMAMuxId;
-#elif defined(APM32F4)
-        uartPort->rxDMAChannel = hardware->rxDMAChannel;
 #endif
     }
 
     if (hardware->txDMAResource) {
         uartPort->txDMAResource = hardware->txDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
         uartPort->txDMAChannel = hardware->txDMAChannel;
 #elif defined(AT32F4)
         uartPort->txDMAMuxId = hardware->txDMAMuxId;
-#elif defined(APM32F4)
-        uartPort->txDMAChannel = hardware->txDMAChannel;
 #endif
     }
 #endif
