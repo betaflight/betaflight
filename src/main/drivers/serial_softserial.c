@@ -123,13 +123,10 @@ static void serialEnableCC(softSerial_t *softSerial)
 // switch to receive mode
 static void serialInputPortActivate(softSerial_t *softSerial)
 {
-    if (softSerial->port.options & SERIAL_INVERTED) {
-        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_PD;
-        IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
-    } else {
-        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_UP;
-        IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
-    }
+    serialPullMode_t pull = serialOptions_pull(softSerial->port.options);
+    const uint8_t pinConfig = ((uint8_t[]){IOCFG_AF_PP, IOCFG_AF_PP_PD, IOCFG_AF_PP_UP})[pull];
+    // softserial can easily support opendrain mode
+    IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
 
     softSerial->rxActive = true;
     softSerial->isSearchingForStartBit = true;

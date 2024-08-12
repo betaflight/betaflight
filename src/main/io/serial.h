@@ -123,11 +123,6 @@ typedef enum {
     SERIALTYPE_COUNT
 } serialType_e;
 
-// owner of Tx pin (+1 for Rx)
-resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier);
-// index for given owner
-int serialOwnerIndex(serialPortIdentifier_e identifier);
-
 //
 // runtime
 //

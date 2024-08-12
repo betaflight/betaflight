@@ -76,30 +76,39 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
     uartdev->txPinState = TX_PIN_IGNORE;
 
-    const int ownerIndex = serialOwnerIndex(hardware->identifier); // s->port.identifier may not be initialized yet
-    const resourceOwner_e ownerTxRx = serialOwnerTxRx(hardware->identifier); // rx is always +1
+    const serialPortIdentifier_e identifier = uartdev->port.port.identifier;
+
+    const int ownerIndex = serialOwnerIndex(identifier);
+    const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
 
 // F4 - no txIO check
     if ((options & SERIAL_BIDIR) && txIO) {
+        // pushPull / openDrain
+        const bool pushPull = serialOptions_pushPull(options);
+        // pull direction
+        const serialPullMode_t pull = serialOptions_pull(options);
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         ioConfig_t ioCfg = IO_CONFIG(
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
+            pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
             GPIO_SPEED_FREQ_HIGH,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PULLDOWN : GPIO_PULLUP
-            // STM32G4 was: (options & SERIAL_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP
+            ((unsigned[]){GPIO_NOPULL, GPIO_PULLDOWN, GPIO_PULLUP})[pull]
         );
 #elif defined(AT32F4)
         ioConfig_t ioCfg = IO_CONFIG(
             GPIO_MODE_MUX,
             GPIO_DRIVE_STRENGTH_STRONGER,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PULL_DOWN : GPIO_PULL_UP
+            pushPull ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
+            ((gpio_pull_type[]){GPIO_PULL_NONE, GPIO_PULL_DOWN, GPIO_PULL_UP})[pull]
         );
 #elif defined(STM32F4)
-        // no inverter on F4
-        ioConfig_t ioCfg =  (options & SERIAL_BIDIR_PP_PD) ? IOCFG_AF_PP_PD
-                            : (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP
-                            : IOCFG_AF_OD;
+        // no inverter on F4, but keep it in line with other CPUs
+        // External inverter in bidir mode would be quite problematic anyway
+        ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_Mode_AF,
+            0,
+            pushPull ? GPIO_OType_PP : GPIO_OType_OD,
+            ((unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
+        );
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
 
