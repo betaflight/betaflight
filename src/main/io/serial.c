@@ -533,13 +533,6 @@ serialPort_t *openSerialPort(
 
     serialPort_t *serialPort = NULL;
 
-#if defined(USE_SOFTSERIAL) && !defined(USE_OVERRIDE_SOFTSERIAL_BAUDRATE)
-    if (((identifier == SERIAL_PORT_SOFTSERIAL1) || (identifier == SERIAL_PORT_SOFTSERIAL2)) && (baudRate > 19200)) {
-        // Don't continue if baud rate requested is higher then the limit set on soft serial ports
-        return NULL;
-    }
-#endif
-
     switch (serialType(identifier)) {
 #if defined(USE_VCP)
     case SERIALTYPE_USB_VCP:
@@ -559,9 +552,15 @@ serialPort_t *openSerialPort(
         break;
 #ifdef USE_SOFTSERIAL
     case SERIALTYPE_SOFTSERIAL:
+# if !defined(USE_OVERRIDE_SOFTSERIAL_BAUDRATE)
+        if (baudRate > 19200) {
+            // Don't continue if baud rate requested is higher then the limit set on soft serial ports
+            return NULL;
+        }
+# endif // !USE_OVERRIDE_SOFTSERIAL_BAUDRATE
         serialPort = softSerialOpen(identifier, rxCallback, rxCallbackData, baudRate, mode, options);
         break;
-#endif
+#endif // USE_SOFTSERIAL
         default:
             break;
     }

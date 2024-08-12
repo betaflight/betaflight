@@ -24,7 +24,7 @@
 
 #include "io/serial.h"
 
-serialPort_t *softSerialOpen(serialPortIdentifier_e portIndex, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options);
+serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options);
 
 // serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);

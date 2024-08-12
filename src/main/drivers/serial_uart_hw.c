@@ -113,9 +113,10 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, ownerTxRx, ownerIndex);
 
-            // AF$: if (((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) && !(options & SERIAL_BIDIR_PP_PD)) {
             if (options & SERIAL_CHECK_TX) {
-#if defined(STM32F7)  // TODO: Probably mistake
+#if defined(STM32F7)
+                // see https://github.com/betaflight/betaflight/pull/13021
+                // Allow for F7 UART idle preamble to be sent on startup
                 uartdev->txPinState = TX_PIN_MONITOR;
                 // Switch TX to UART output whilst UART sends idle preamble
                 checkUsartTxOutput(s);
@@ -126,6 +127,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 #endif
             } else {
 #if defined(STM32F4)
+                // TODO: no need for pullup on TX only pin
                 IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, hardware->af);
 #else
                 IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
@@ -138,6 +140,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 #if defined(STM32F4)
             IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, hardware->af);
 #else
+            // TODO: pullup/pulldown should be enabled for RX (based on inversion)
             IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rx.af);
 #endif
         }
@@ -171,11 +174,7 @@ void uartConfigureExternalPinInversion(uartPort_t *uartPort)
     UNUSED(uartPort);
 #else
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
-    if (inverted) {
-        // Enable hardware inverter if available.
-        const uartDevice_t* dev = container_of(uartPort, uartDevice_t, port);  // TODO
-        enableInverter(dev->hardware->identifier, true);
-    }
+    enableInverter(uartPort->port.identifier, inverted);
 #endif
 }
 

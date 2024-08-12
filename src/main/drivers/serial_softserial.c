@@ -120,6 +120,7 @@ static void serialEnableCC(softSerial_t *softSerial)
 #endif
 }
 
+// switch to receive mode
 static void serialInputPortActivate(softSerial_t *softSerial)
 {
     if (softSerial->port.options & SERIAL_INVERTED) {
@@ -148,7 +149,7 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
 #else
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 #endif
-
+    // TODO: use correct pull mode
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
     softSerial->rxActive = false;
 }

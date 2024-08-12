@@ -215,7 +215,7 @@ typedef struct uartDevice_s {
     txPinState_t txPinState;
 } uartDevice_t;
 
-extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDevice_e, used for LPUART too
+extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;
 
 uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier);
 uartDevice_t* uartDeviceFromIdentifier(serialPortIdentifier_e identifier);
@@ -252,9 +252,10 @@ void uartTxMonitor(uartPort_t *s);
 
 #define UART_BUFFER(type, n, rxtx) type volatile uint8_t uart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
 
-#define UART_BUFFERS_EXTERN(n) \
-    UART_BUFFER(extern, n, R); \
-    UART_BUFFER(extern, n, T); struct dummy_s
+#define UART_BUFFERS_EXTERN(n)                \
+    UART_BUFFER(extern, n, R);                \
+    UART_BUFFER(extern, n, T); struct dummy_s \
+/**/
 
 #ifdef USE_UART1
 UART_BUFFERS_EXTERN(1);

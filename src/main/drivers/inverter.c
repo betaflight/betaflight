@@ -33,7 +33,7 @@
 
 static const serialPinConfig_t *pSerialPinConfig;
 
-static IO_t findPin(serialPortIdentifier_e identifier)
+static IO_t findInverterPin(serialPortIdentifier_e identifier)
 {
     const int resourceIndex = serialResourceIndex(identifier);
     return (resourceIndex >= 0 && resourceIndex < (int)ARRAYLEN(pSerialPinConfig->ioTagInverter))
@@ -50,7 +50,7 @@ static void inverterSet(IO_t pin,  bool on)
 
 static void initInverter(serialPortIdentifier_e identifier)
 {
-    IO_t pin = findPin(identifier);
+    IO_t pin = findInverterPin(identifier);
     if (pin) {
         const int resourceIndex = serialResourceIndex(identifier);
         IOInit(pin, OWNER_INVERTER, resourceIndex);
@@ -71,7 +71,7 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 
 void enableInverter(serialPortIdentifier_e identifier, bool on)
 {
-    inverterSet(findPin(identifier), on);
+    inverterSet(findInverterPin(identifier), on);
 }
 
 #endif // USE_INVERTER

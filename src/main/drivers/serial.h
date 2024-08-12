@@ -53,7 +53,7 @@ typedef enum {
     SERIAL_BIDIR_OD        = 0 << 4,
     SERIAL_BIDIR_PP        = 1 << 4,
     SERIAL_BIDIR_NOPULL    = 1 << 5, // disable pulls in BIDIR RX mode
-    SERIAL_BIDIR_PP_PD     = 1 << 6, // PP mode, normall inverted, but with PullDowns, to fix SA after bidir issue fixed (#10220)
+    SERIAL_BIDIR_PP_PD     = 1 << 6, // PP mode, normally inverted, but with PullDowns, to fix SA after bidir issue fixed (#10220)
 
     // If this option is set then switch the TX line to input when not in use to detect it being pulled low
     SERIAL_CHECK_TX        = 1 << 7,
@@ -89,7 +89,7 @@ typedef struct serialPort_s {
 
     serialIdleCallbackPtr idleCallback;
 
-    uint8_t identifier;
+    uint8_t identifier;  // actually serialPortIdentifier_e
 } serialPort_t;
 
 typedef struct serialPinConfig_s {

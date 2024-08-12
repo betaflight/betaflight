@@ -38,7 +38,10 @@
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 
-//speed is packed inside modebits 5 and 2,
+// speed is packed between modebits 4 and 1,
+// 7       6        5        4         3         2        1        0
+// 0 <pupd-1> <pupd-0> <mode-4> <speed-1> <speed-0> <mode-1> <mode-0>
+// mode-4 is equivalent to STM32F4 otype (pushpull/od)
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
 #define IOCFG_OUT_PP         IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW,  GPIO_NOPULL)
@@ -86,7 +89,7 @@
 #define IOCFG_IPD            IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0,             GPIO_PULL_DOWN)
 #define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0,             GPIO_PULL_UP)
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0,             GPIO_PULL_NONE)
-#define IOCFG_IPU_25         IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE , 0, GPIO_PULL_UP)
+#define IOCFG_IPU_25         IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0, GPIO_PULL_UP)
 
 
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)

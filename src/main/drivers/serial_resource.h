@@ -27,7 +27,7 @@
  */
 
 // use _MAX value here, resource command needs linear mapping
-//  (UART8 is always index RESOURCE_UART_OFFSET + 7, no matter which other ports are enabled
+//  (UART8 is always at index RESOURCE_UART_OFFSET + 7, no matter which other ports are enabled)
 #define RESOURCE_UART_COUNT SERIAL_UART_MAX
 #define RESOURCE_LPUART_COUNT SERIAL_LPUART_MAX
 #define RESOURCE_SOFTSERIAL_COUNT SERIAL_SOFTSERIAL_MAX

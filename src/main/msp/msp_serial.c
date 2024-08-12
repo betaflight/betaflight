@@ -69,7 +69,8 @@ void mspSerialAllocatePorts(void)
 
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
-        } else if ((portConfig->identifier >= SERIAL_PORT_USART1) && (portConfig->identifier <= SERIAL_PORT_USART_MAX)){
+        } else if (serialType(portConfig->identifier) == SERIALTYPE_UART
+                   || serialType(portConfig->identifier) == SERIALTYPE_LPUART) {
             options |= SERIAL_CHECK_TX;
         }
 
@@ -98,7 +99,7 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 
 mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e portIdentifier)
 {
-    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+    for (unsigned portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t *candidateMspPort = &mspPorts[portIndex];
         if (candidateMspPort->port->identifier == portIdentifier) {
             return candidateMspPort->descriptor;

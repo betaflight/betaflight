@@ -63,9 +63,10 @@
 #error Undefined UART_{TX,RX}_BUFFER_ATTRIBUTE for this MCU
 #endif
 
-#define UART_BUFFERS(n) \
-    UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
-    UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
+#define UART_BUFFERS(n)                                         \
+    UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T);                \
+    UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s \
+/**/
 
 #ifdef USE_UART1
 UART_BUFFERS(1);
@@ -114,7 +115,7 @@ UART_BUFFERS(Lp1);  // TODO - maybe some other naming scheme ?
 #undef UART_BUFFERS
 
 // store only devices configured for target (USE_UARTx)
-// some entries may be unused, for example because off pin configuration
+// some entries may be unused, for example because of pin configuration
 // uartDeviceIdx_e is direct index into this table
 FAST_DATA_ZERO_INIT uartDevice_t uartDevice[UARTDEV_COUNT];
 
@@ -127,7 +128,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     }
 #endif
 
-#if 1 // TODO ... 
+#if 1 // TODO ...
     // store +1 in table - unset values default to 0
     // table is for UART only to save space (LPUART is handled separately)
 #define _R(id, dev) [id] = (dev) + 1
@@ -165,7 +166,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     };
 #undef _R
     if (identifier >= 0 && identifier < (int)ARRAYLEN(uartMap)) {
-        // UART case, but given USE_UARtx may not be defined
+        // UART case, but given USE_UARTx may not be defined
         return uartMap[identifier] ? uartMap[identifier] - 1 : UARTDEV_INVALID;
     }
 #else
@@ -181,7 +182,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
         }
     }
 #endif
-  // neither LPUART, nor UART
+    // neither LPUART, nor UART
     return UARTDEV_INVALID;
 }
 
@@ -197,6 +198,8 @@ serialPort_t *uartOpen(serialPortIdentifier_e identifier, serialReceiveCallbackP
     if (!uartDevice) {
         return NULL;
     }
+    // fill identifier early, so initialization code can use it
+    uartDevice->port.port.identifier = identifier;
 
     uartPort_t *uartPort = serialUART(uartDevice, baudRate, mode, options);
     if (!uartPort) {
@@ -465,9 +468,11 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
 #ifdef USE_DMA_SPEC
     const serialPortIdentifier_e uartPortIdentifier = hardware->identifier;
-    const int resourceIdx = serialResourceIndex(uartPortIdentifier);
-    // TODO - check <= LPUART
     const uartDeviceIdx_e uartDeviceIdx = uartDeviceIdxFromIdentifier(uartPortIdentifier);
+    if (uartDeviceIdx == UARTDEV_INVALID) {
+        return;
+    }
+    const int resourceIdx = serialResourceIndex(uartPortIdentifier);
     const int ownerIndex = serialOwnerIndex(uartPortIdentifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(uartPortIdentifier); // rx is always +1
 
@@ -519,7 +524,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 #endif /* USE_DMA_SPEC */
 
     if (uartPort->txDMAResource) {
-        dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
+        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
         if (dmaAllocate(identifier, ownerTxRx, ownerIndex)) {
             dmaEnable(identifier);
 #if defined(AT32F4)
@@ -531,7 +536,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
     }
 
     if (uartPort->rxDMAResource) {
-        dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
+        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
         if (dmaAllocate(identifier, ownerTxRx + 1, ownerIndex)) {
             dmaEnable(identifier);
 #if defined(AT32F4)

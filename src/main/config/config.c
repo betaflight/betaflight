@@ -540,7 +540,7 @@ static void validateAndFixConfig(void)
     // Find the first serial port on which MSP Displayport is enabled
     displayPortMspSetSerial(SERIAL_PORT_NONE);
 
-    for (const serialPortConfig_t *portConfig =  serialConfig()->portConfigs;
+    for (const serialPortConfig_t *portConfig = serialConfig()->portConfigs;
          portConfig < ARRAYEND(serialConfig()->portConfigs);
          portConfig++) {
         if ((portConfig->identifier != SERIAL_PORT_USB_VCP)
