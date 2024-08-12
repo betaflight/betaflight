@@ -608,8 +608,8 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             if (serialPortUsageList[index].identifier == serialPortToDisable) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
                 serialPortCount--;
+                continue;  // this index is deleted
             }
-            continue;  // this index is deleted
         }
         {
 #if !defined(SIMULATOR_BUILD)  // no serialPinConfig on SITL
