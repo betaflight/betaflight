@@ -510,7 +510,7 @@ serialPort_t *openSerialPort(
         return NULL;
     }
 
-    serialPort->identifier = identifier;
+    serialPort->identifier = identifier; // Some versions of *Open() set this member sooner
 
     serialPortUsage->function = function;
     serialPortUsage->serialPort = serialPort;

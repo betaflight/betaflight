@@ -220,6 +220,9 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
     if (!softSerial) {
         return NULL;
     }
+    // fill identifier early, so initialization code can use it
+    softSerial->port.identifier = identifier;
+
     const int resourceIndex = serialResourceIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
     const int ownerIndex = serialOwnerIndex(identifier);
