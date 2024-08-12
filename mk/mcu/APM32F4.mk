@@ -4,16 +4,16 @@
 
 #CMSIS
 CMSIS_DIR      := $(ROOT)/lib/main/APM32F4/Libraries/Device
-STDPERIPH_DIR   = $(ROOT)/lib/main/APM32F4/Libraries/APM32F4xx_DAL_Driver
-STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Source/*.c))
+DAL_DIR   = $(ROOT)/lib/main/APM32F4/Libraries/APM32F4xx_DAL_Driver
+DAL_SRC   = $(notdir $(wildcard $(DAL_DIR)/Source/*.c))
 EXCLUDES        = apm32f4xx_dal_timebase_rtc_alarm_template.c \
                   apm32f4xx_dal_timebase_rtc_wakeup_template.c \
                   apm32f4xx_dal_timebase_tmr_template.c \
                   apm32f4xx_device_cfg_template.c
 
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
+DAL_SRC   := $(filter-out ${EXCLUDES}, $(DAL_SRC))
 
-VPATH       := $(VPATH):$(STDPERIPH_DIR)/Source
+VPATH       := $(VPATH):$(DAL_DIR)/Source
 
 #USB
 USBCORE_DIR = $(ROOT)/lib/main/APM32F4/Middlewares/APM32_USB_Library/Device/Core
@@ -30,10 +30,10 @@ USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
 
 VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBMSC_DIR)/Src
 
-DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
-                        $(USBCORE_SRC) \
-                        $(USBCDC_SRC) \
-                        $(USBMSC_SRC)
+DEVICE_DAL_SRC := $(DAL_SRC) \
+                  $(USBCORE_SRC) \
+                  $(USBCDC_SRC) \
+                  $(USBMSC_SRC)
 #CMSIS
 VPATH           := $(VPATH):$(ROOT)/lib/main/APM32F4/Libraries/Device/Geehy/APM32F4xx
 
@@ -43,7 +43,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(STDPERIPH_DIR)/Include \
+                   $(DAL_DIR)/Include \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
                    $(USBMSC_DIR)/Inc \
@@ -68,6 +68,8 @@ DEVICE_FLAGS    = -DUSE_DAL_DRIVER -DAPM32F407xx -DHSE_VALUE=$(HSE_VALUE) -DAPM3
 LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f407.ld
 STARTUP_SRC     = apm32/startup_apm32f407xx.S
 MCU_FLASH_SIZE  := 1024
+else
+$(error TARGET_MCU [$(TARGET_MCU] is not supported)
 endif
 
 MCU_COMMON_SRC = \
