@@ -156,7 +156,7 @@ static uint8_t lookupTimerIndex(const TMR_TypeDef *tim)
 #undef _CASE_
 }
 
-TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
+TMR_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 #define _DEF(i) TMR##i
 
 #if USED_TIMERS & TIM_N(1)
