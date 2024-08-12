@@ -262,6 +262,8 @@ typedef struct pidProfile_s {
     uint8_t ez_landing_threshold;           // Threshold stick position below which motor output is limited
     uint8_t ez_landing_limit;               // Maximum motor output when all sticks centred and throttle zero
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
+    uint8_t ez_landing_disarm_threshold;    // Accelerometer vector threshold which disarms if exceeded
+
     uint16_t tpa_delay_ms;                  // TPA delay for fixed wings using pt2 filter (time constant)
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
@@ -360,6 +362,8 @@ typedef struct pidRuntime_s {
     float tpaLowBreakpoint;
     float tpaLowMultiplier;
     bool tpaLowAlways;
+    bool useEzDisarm;
+    float ezLandingDisarmThreshold;
 
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
