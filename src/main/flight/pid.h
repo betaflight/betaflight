@@ -290,6 +290,7 @@ typedef struct pidAxisData_s {
     float D;
     float F;
     float S;
+    float I_afterTpa;
 
     float Sum;
 } pidAxisData_t;

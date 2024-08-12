@@ -1133,7 +1133,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_P[i] = lrintf(pidData[i].P);
-        blackboxCurrent->axisPID_I[i] = lrintf(pidData[i].I);
+        blackboxCurrent->axisPID_I[i] = lrintf(pidData[i].I_afterTpa);
         blackboxCurrent->axisPID_D[i] = lrintf(pidData[i].D);
         blackboxCurrent->axisPID_F[i] = lrintf(pidData[i].F);
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i] * blackboxHighResolutionScale);
