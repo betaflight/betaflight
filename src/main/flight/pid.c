@@ -284,7 +284,9 @@ void getTpaFactors(const pidProfile_t *pidProfile, float tpaFactor, tpaFactors_t
     default:
         break;
     }
-#endif // #ifdef USE_TPA_MODE
+#else // USE_TPA_MODE undefined
+    UNUSED(pidProfile);
+#endif
 }
 
 void pidSetItermAccelerator(float newItermAccelerator)
