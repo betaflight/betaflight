@@ -76,13 +76,16 @@
 #define TPA_LOW_RATE_MIN INT8_MIN
 #define TPA_GRAVITY_MAX 5000
 #define TPA_CURVE_STALL_THROTTLE_MAX 100
-#define TPA_CURVE_PID_MAX 1000
-#define TPA_CURVE_EXPO_MIN -100
-#define TPA_CURVE_EXPO_MAX 100
-#define TPA_CURVE_PWL_SIZE 16
 #else
 #define TPA_LOW_RATE_MIN 0
 #endif
+
+#ifdef USE_ADVANCED_TPA
+#define TPA_CURVE_PID_MAX 1000
+#define TPA_CURVE_EXPO_MIN -100
+#define TPA_CURVE_EXPO_MAX 100
+#define TPA_CURVE_PWL_SIZE 1600
+#endif // #ifdef USE_ADVANCED_TPA
 
 typedef enum {
     TPA_MODE_PD,
@@ -473,9 +476,12 @@ typedef struct pidRuntime_s {
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
     float tpaGravityThr0;
     float tpaGravityThr100;
+#endif // #ifdef USE_WING
+
+#ifdef USE_ADVANCED_TPA
     pwl_t tpaCurvePwl;
     float tpaCurvePwl_yValues[TPA_CURVE_PWL_SIZE];
-#endif
+#endif // #ifdef USE_ADVANCED_TPA
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
