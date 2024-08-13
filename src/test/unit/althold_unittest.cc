@@ -93,22 +93,22 @@ extern "C" {
 TEST(AltholdUnittest, altHoldTransitionsTest)
 {
     altHoldInit();
-    EXPECT_EQ(altHoldState.altHoldActive, false);
+    EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
     flightModeFlags |= ALTHOLD_MODE;
     millisRW = 42;
     altHoldUpdate();
-    EXPECT_EQ(altHoldState.altHoldActive, true);
+    EXPECT_EQ(altHoldState.isAltHoldActive, true);
 
     millisRW = 56;
     flightModeFlags ^= ALTHOLD_MODE;
     altHoldUpdate();
-    EXPECT_EQ(altHoldState.altHoldActive, false);
+    EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
     flightModeFlags |= ALTHOLD_MODE;
     millisRW = 64;
     altHoldUpdate();
-    EXPECT_EQ(altHoldState.altHoldActive, true);
+    EXPECT_EQ(altHoldState.isAltHoldActive, true);
 
 //     millisRW = 64 + 0.3f * ALTHOLD_ENTER_PERIOD;
 //     altHoldUpdate();
@@ -134,12 +134,12 @@ TEST(AltholdUnittest, altHoldTransitionsTest)
 TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 {
     altHoldInit();
-    EXPECT_EQ(altHoldState.altHoldActive, false);
+    EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
     flightModeFlags |= ALTHOLD_MODE;
     millisRW = 42;
     altHoldUpdate();
-    EXPECT_EQ(altHoldState.altHoldActive, true);
+    EXPECT_EQ(altHoldState.isAltHoldActive, true);
 //     EXPECT_EQ(altHoldState.enterTime, 42);
 //     EXPECT_EQ(altHoldState.exitTime, 0);
 // 

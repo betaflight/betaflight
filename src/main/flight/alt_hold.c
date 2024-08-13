@@ -41,16 +41,16 @@ typedef struct {
     float kp;
     float kd;
     float ki;
-    float lastAltError;
+    float lastAltitude;
     float integral;
-} simplePid_s;
+} simplePid_t;
 
-simplePid_s simplePid;
+simplePid_t simplePid;
 
 altHoldState_s altHoldState;
 
 #define ALT_HOLD_PID_P_GAIN  0.01f
-#define ALT_HOLD_PID_I_GAIN  0.001f
+#define ALT_HOLD_PID_I_GAIN  0.003f
 #define ALT_HOLD_PID_D_GAIN  0.01f
 
 PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 3);
@@ -69,7 +69,7 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
 
 static pt2Filter_t altHoldDeltaLpf;
 static pt2Filter_t altHoldAccVerticalLpf;
-const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_PERIOD; // i.e. 0.01 s
+const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 
 float altitudePidCalculate(void)
 {
@@ -81,18 +81,28 @@ float altitudePidCalculate(void)
     // arbitrary limit on iTerm, same as for gps_rescue, +/-20% throttle
     iOut = constrainf(iOut, -200.0f, 200.0f); 
 
-    const float derivative = (altErrorCm - simplePid.lastAltError) / taskIntervalSeconds; // cm/s
-    simplePid.lastAltError = altErrorCm;
+    const float derivative = (simplePid.lastAltitude - altHoldState.measuredAltitudeCm) / taskIntervalSeconds; // cm/s
+    simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
     float dOut = simplePid.kd * derivative;
-    // PT2 filtering like for GPS Rescue
-    dOut = pt2FilterApply(&altHoldDeltaLpf, dOut);
-    // error is used as source so that we get a 'kick' in derivative from changes in target altitude
 
-    const float output = pOut + iOut + dOut;
+//    I can't make anything useful out of vertical acceleration or velocity in place of altitude D
+//    Velocity from integrated acc is very delayed, acc itself wants to oscillate.
+//    This is what I did, for testing, without good results, even after optimising the filtering for least delay
+//    float dOut = altHoldState.verticalAcceleration * simplePid.kd * 100.0f;
+
+    // PT2 filtering at altitude_d_lpf / 100 cutoff, default 1s, the same as for GPS Rescue 
+    dOut = pt2FilterApply(&altHoldDeltaLpf, dOut);
+
+    const float fOut = altholdConfig()->altHoldPidD * altHoldState.targetAltitudeDelta;
+    // if error is used as source we get a 'free kick' in derivative from changes in target altitude
+    // but if we want to use acc for D, we need FF kick separately
+    // adding it late also removes the filter lag, reducing overshoot.
+
+    const float output = pOut + iOut + dOut + fOut;
 
     DEBUG_SET(DEBUG_ALTHOLD, 5, (lrintf)(pOut));
     DEBUG_SET(DEBUG_ALTHOLD, 6, (lrintf)(iOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 7, (lrintf)(dOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 7, (lrintf)(dOut + fOut));
 
     return output;
 }
@@ -102,17 +112,18 @@ void simplePidInit(float kp, float ki, float kd)
     simplePid.kp = kp;
     simplePid.ki = ki;
     simplePid.kd = kd;
-    simplePid.lastAltError = 0.0f;
+    simplePid.lastAltitude = 0.0f;
     simplePid.integral = 0.0f;
 }
 
 void altHoldReset(void)
 {
     altHoldState.targetAltitudeCm = getAltitude(); // current altitude in cm
-    simplePid.lastAltError = 0.0f;
+    simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
     simplePid.integral = 0.0f;
-    altHoldState.velocityFromAcc = 0.0f; // reset the integral accumulator to zero
+    altHoldState.velocityFromAcc = 0.0f;
     altHoldState.throttleOut = altholdConfig()->altHoldThrottleHover;
+    altHoldState.targetAltitudeDelta = 0.0f;
 }
 
 void altHoldInit(void)
@@ -123,8 +134,8 @@ void altHoldInit(void)
         ALT_HOLD_PID_D_GAIN * altholdConfig()->altHoldPidD);
         // the multipliers are base scale factors
         // iTerm is relatively weak, intended to be slow moving to adjust baseline errors
-        // hence Hover value is important otherwise takes time for iTerm to correct
-        // and high P will wobble readily
+        // the Hover value is important otherwise takes time for iTerm to correct
+        // High P will wobble readily
         // with these scalers, the same numbers as for GPS Rescue work OK for altHold
         // the goal is to share these gain factors, if practical for all altitude controllers
 
@@ -137,22 +148,21 @@ void altHoldInit(void)
     const float gainAcc = pt2FilterGain((float)accelerometerConfig()->acc_lpf_hz, taskIntervalSeconds);
     pt2FilterInit(&altHoldAccVerticalLpf, gainAcc);
 
-    altHoldState.altHoldActive = false;
+    altHoldState.isAltHoldActive = false;
     altHoldReset();
 }
-
 
 void altHoldProcessTransitions(void) {
     bool altHoldRequested = FLIGHT_MODE(ALTHOLD_MODE);
 
-    if (altHoldRequested && !altHoldState.altHoldActive) {
+    if (altHoldRequested && !altHoldState.isAltHoldActive) {
         altHoldReset();
     }
-    altHoldState.altHoldActive = altHoldRequested;
+    altHoldState.isAltHoldActive = altHoldRequested;
 
     // ** the transition out of alt hold (exiting altHold) may be rough.  Some notes... **
     // The original PR had a gradual transition from hold throttle to pilot control throttle
-    // using !(altHoldRequested && altHoldState.altHoldActive) to run an exit function
+    // using !(altHoldRequested && altHoldState.isAltHoldActive) to run an exit function
     // a cross-fade factor was sent to mixer.c based on time since the flight mode request was terminated
     // it was removed primarily to simplify this PR
 
@@ -168,29 +178,30 @@ void altHoldUpdateTargetAltitude(void)
     // The user van raise or lower the target altitude with throttle up;  there is a big deadband
     // Max rate for climb/descend is 1m/s by default (up to 2.5 is allowed but overshoots a fair bit)
 
-    // some people may not like making the target altitude adustable, because 
+    // some people may not like making the target altitude adjustable, because 
     // with throttle adjustment, hitting the switch won't always hold altitude if throttle is bumped
     // eg if the throttle is bumped low accidentally, quad will start descending.
     // on the plus side, the pilot has control nice control over altitude, and the deadband is wide
     // if the craft is stable, the throttle can't be full up or full down
     // this is helpful when exiting the hold, avoiding bad sudden climbs or falls
+    
+    // WARNING - the rate of change assumes a task rate of 100Hz
 
     const float rcThrottle = rcCommand[THROTTLE];
 
     const float lowThreshold = 0.5f * (altholdConfig()->altHoldThrottleHover + PWM_RANGE_MIN); // around 1150
     const float highThreshold = 0.5f * (altholdConfig()->altHoldThrottleHover + PWM_RANGE_MAX); // around 1500
     
-    float scaler = 0.0f;
+    float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {
-        scaler = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
+        throttleAdjustmentFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
     } else if (rcThrottle > highThreshold) {
-        scaler = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+        throttleAdjustmentFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
     }
 
-    const float altitudeTargetDelta = scaler * altholdConfig()->altHoldTargetAdjustRate * 0.01f;
-    // task is 100Hz, default adjustRate of 100 adds/subtracts 1m every second at full stick position
-    const float newTargetAltitude = altHoldState.targetAltitudeCm + altitudeTargetDelta;
-    altHoldState.targetAltitudeCm = newTargetAltitude;
+    altHoldState.targetAltitudeDelta = throttleAdjustmentFactor * altholdConfig()->altHoldTargetAdjustRate * taskIntervalSeconds;
+    // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second at full stick position
+    altHoldState.targetAltitudeCm += altHoldState.targetAltitudeDelta;
 }
 
 void altHoldUpdate(void)
@@ -202,7 +213,7 @@ void altHoldUpdate(void)
     DEBUG_SET(DEBUG_ALTHOLD, 1, (lrintf)(altHoldState.measuredAltitudeCm));
 
     // exit unless altHold is active
-    if (!altHoldState.altHoldActive) {
+    if (!altHoldState.isAltHoldActive) {
         DEBUG_SET(DEBUG_ALTHOLD, 0, 0);
         return;
     }
@@ -212,8 +223,6 @@ void altHoldUpdate(void)
 
     // estimate the vertical velocity from vertical accelerometer
     // not used at present, but logged.
-    // my testing doesn't support using Accelerometer data for altitude control
-    // simple Z axis value might be OK when altHold is active mode since, unless windy, quad is close to level
     t_fp_vector accelerationVector = {{
         acc.accADC[X],
         acc.accADC[Y],
@@ -221,20 +230,23 @@ void altHoldUpdate(void)
     }};
     imuTransformVectorBodyToEarth(&accelerationVector);
     float measuredAccel = 9.8f * (accelerationVector.V.Z - acc.dev.acc_1G) / acc.dev.acc_1G; // m/s^2
-
+    // ??? logging shows that measuredAccel tracks altitude delta (velocity) very well - not vertical acceleration 
+    // it actually just slightly lags altitude delta from baro or gps.
+    
     // integrate into velocityFromAcc
+    // ?? logging shows that this integral closely tracks altitude, not velocity
+    // with the re-centering, it appears to best track altitude P, which tends to recenter to current setpoint
     // note that on commencing we may need to set the initial integral value to something derived from baro/GPS
     altHoldState.velocityFromAcc += measuredAccel * taskIntervalSeconds; // m/s
 
-    // apply a leaky integrator or lowpass of time constant approx 10s (from original code *0.999)
-    // modified to leak with time constant approx 1s at 100Hz - can be detailed better later.
+    // apply a leaky integrator or lowpass of time constant approx 1s (10s from original code *0.999)
     altHoldState.velocityFromAcc *= 0.99f;
 
     // smooth the accelerometer values with its PT2
-    measuredAccel = pt2FilterApply(&altHoldAccVerticalLpf, measuredAccel);
+    altHoldState.verticalAcceleration = pt2FilterApply(&altHoldAccVerticalLpf, measuredAccel);
 
     // log at 100x for resolution
-    DEBUG_SET(DEBUG_ALTHOLD, 3, (lrintf)(measuredAccel * 100.0f)); // cm/s^2
+    DEBUG_SET(DEBUG_ALTHOLD, 3, (lrintf)(altHoldState.verticalAcceleration * 100.0f)); // cm/s^2
     DEBUG_SET(DEBUG_ALTHOLD, 4, (lrintf)(altHoldState.velocityFromAcc * 100.0f)); // cm/s * 10 ??
 
     // ** end vertical acceleration stuff **
@@ -269,6 +281,6 @@ float altHoldGetThrottle(void) {
 }
 
 bool altHoldIsActive(void){
-    return altHoldState.altHoldActive;
+    return altHoldState.isAltHoldActive;
 }
 #endif

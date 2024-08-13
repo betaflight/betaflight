@@ -24,14 +24,16 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#define ALTHOLD_TASK_PERIOD 100         // hz
+#define ALTHOLD_TASK_RATE_HZ 100         // hz
 #define ALTHOLD_ENTER_PERIOD 50         // ms
 #define ALTHOLD_MAX_ENTER_PERIOD 3000   // ms
 
 typedef struct {
-    bool altHoldActive;
+    bool isAltHoldActive;
     float targetAltitudeCm;
+    float targetAltitudeDelta;
     float measuredAltitudeCm;
+    float verticalAcceleration; // vertical acceleration
     float velocityFromAcc; // vertical velocity estimate based on integrated vertical acceleration
     float throttleOut;
 } altHoldState_s;

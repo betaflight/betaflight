@@ -120,6 +120,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "TPA",
     "S_TERM",
     "SPA",
-    "ALTHOLD",
     "TASK",
+    "ALTHOLD",
 };

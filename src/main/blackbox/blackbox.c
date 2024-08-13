@@ -1697,9 +1697,9 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_USE_MAG, "%d",         gpsRescueConfig()->useMag)
-#endif
-#endif
-#endif
+#endif // USE_MAG
+#endif // USE_GPS_RESCUE
+#endif // USE_GPS
 
 #ifdef USE_ALTHOLD
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_P, "%d", altholdConfig()->altHoldPidP);
