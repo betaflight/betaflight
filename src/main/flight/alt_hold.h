@@ -33,8 +33,6 @@ typedef struct {
     float targetAltitudeCm;
     float targetAltitudeDelta;
     float measuredAltitudeCm;
-    float verticalAcceleration; // vertical acceleration
-    float velocityFromAcc; // vertical velocity estimate based on integrated vertical acceleration
     float throttleOut;
 } altHoldState_s;
 

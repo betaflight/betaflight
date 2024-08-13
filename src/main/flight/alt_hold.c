@@ -16,26 +16,20 @@
  */
 
 #include "platform.h"
-#include "alt_hold.h"
 
 #ifdef USE_ALTHOLD_MODE
 
-#include "drivers/time.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/position.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "config/config.h"
-#include "rx/rx.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
-#include "fc/rc.h"
-#include "osd/osd.h"
-#include "common/printf.h"
-#include "common/maths.h"
 #include "math.h"
 #include "build/debug.h"
+
+#include "config/config.h"
+#include "fc/runtime_config.h"
+#include "fc/rc.h"
+#include "flight/position.h"
+#include "sensors/acceleration.h"
+#include "rx/rx.h"
+
+#include "alt_hold.h"
 
 typedef struct {
     float kp;
@@ -74,35 +68,36 @@ const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 float altitudePidCalculate(void)
 {
     const float altErrorCm = altHoldState.targetAltitudeCm - altHoldState.measuredAltitudeCm;
+
+    // P
     const float pOut = simplePid.kp * altErrorCm;
 
+    // I
     simplePid.integral += altErrorCm * taskIntervalSeconds; // cm * seconds
     float iOut = simplePid.ki * simplePid.integral;
     // arbitrary limit on iTerm, same as for gps_rescue, +/-20% throttle
     iOut = constrainf(iOut, -200.0f, 200.0f); 
 
+    // D
     const float derivative = (simplePid.lastAltitude - altHoldState.measuredAltitudeCm) / taskIntervalSeconds; // cm/s
     simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
     float dOut = simplePid.kd * derivative;
-
-//    I can't make anything useful out of vertical acceleration or velocity in place of altitude D
-//    Velocity from integrated acc is very delayed, acc itself wants to oscillate.
-//    This is what I did, for testing, without good results, even after optimising the filtering for least delay
-//    float dOut = altHoldState.verticalAcceleration * simplePid.kd * 100.0f;
-
     // PT2 filtering at altitude_d_lpf / 100 cutoff, default 1s, the same as for GPS Rescue 
     dOut = pt2FilterApply(&altHoldDeltaLpf, dOut);
 
+    // F
     const float fOut = altholdConfig()->altHoldPidD * altHoldState.targetAltitudeDelta;
-    // if error is used as source we get a 'free kick' in derivative from changes in target altitude
-    // but if we want to use acc for D, we need FF kick separately
-    // adding it late also removes the filter lag, reducing overshoot.
+    // if error is used, we get a 'free kick' in derivative from changes in the target value
+    // but this is delayed by the smoothing, leading to lag and overshoot.
+    // calculating feedforward separately avoids the filter lag.
 
     const float output = pOut + iOut + dOut + fOut;
 
-    DEBUG_SET(DEBUG_ALTHOLD, 5, (lrintf)(pOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 6, (lrintf)(iOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 7, (lrintf)(dOut + fOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 3, (lrintf)(output));
+    DEBUG_SET(DEBUG_ALTHOLD, 4, (lrintf)(pOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 5, (lrintf)(iOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 6, (lrintf)(dOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 7, (lrintf)(fOut));
 
     return output;
 }
@@ -121,7 +116,6 @@ void altHoldReset(void)
     altHoldState.targetAltitudeCm = getAltitude(); // current altitude in cm
     simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
     simplePid.integral = 0.0f;
-    altHoldState.velocityFromAcc = 0.0f;
     altHoldState.throttleOut = altholdConfig()->altHoldThrottleHover;
     altHoldState.targetAltitudeDelta = 0.0f;
 }
@@ -173,19 +167,18 @@ void altHoldProcessTransitions(void) {
 
 void altHoldUpdateTargetAltitude(void)
 {
-    // this was part of the oritinal code, modifed a bit to be either side of hover point.
-    // it works very well.
-    // The user van raise or lower the target altitude with throttle up;  there is a big deadband
+    // The user van raise or lower the target altitude with throttle up;  there is a big deadband.
     // Max rate for climb/descend is 1m/s by default (up to 2.5 is allowed but overshoots a fair bit)
+    // If set to zero, the throttle has no effect.
 
-    // some people may not like making the target altitude adjustable, because 
-    // with throttle adjustment, hitting the switch won't always hold altitude if throttle is bumped
-    // eg if the throttle is bumped low accidentally, quad will start descending.
-    // on the plus side, the pilot has control nice control over altitude, and the deadband is wide
-    // if the craft is stable, the throttle can't be full up or full down
-    // this is helpful when exiting the hold, avoiding bad sudden climbs or falls
-    
-    // WARNING - the rate of change assumes a task rate of 100Hz
+    // Some people may not like throttle being able to change the target altitude, because:
+    // - with throttle adjustment, hitting the switch won't always hold altitude if throttle is bumped
+    // - eg if the throttle is bumped low accidentally, quad will start descending.
+    // On the plus side:
+    // - the pilot has control nice control over altitude, and the deadband is wide
+    // - Slow controlled descents are possible, eg for landing
+    // - fine-tuning height is possible, eg if there is slow sensor drift
+    // - to keep the craft stable, throttle must be in the deadband, making exits smoother
 
     const float rcThrottle = rcCommand[THROTTLE];
 
@@ -200,13 +193,13 @@ void altHoldUpdateTargetAltitude(void)
     }
 
     altHoldState.targetAltitudeDelta = throttleAdjustmentFactor * altholdConfig()->altHoldTargetAdjustRate * taskIntervalSeconds;
-    // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second at full stick position
+    // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
     altHoldState.targetAltitudeCm += altHoldState.targetAltitudeDelta;
 }
 
 void altHoldUpdate(void)
 {
-    altHoldProcessTransitions(); // and initialise values if we start
+    altHoldProcessTransitions(); // initialise values at the start
 
     // things that always need to happen in the background should go here
     altHoldState.measuredAltitudeCm = getAltitude();
@@ -218,48 +211,13 @@ void altHoldUpdate(void)
         return;
     }
 
-
-    // ** for testing purposes... **
-
-    // estimate the vertical velocity from vertical accelerometer
-    // not used at present, but logged.
-    t_fp_vector accelerationVector = {{
-        acc.accADC[X],
-        acc.accADC[Y],
-        acc.accADC[Z]
-    }};
-    imuTransformVectorBodyToEarth(&accelerationVector);
-    float measuredAccel = 9.8f * (accelerationVector.V.Z - acc.dev.acc_1G) / acc.dev.acc_1G; // m/s^2
-    // ??? logging shows that measuredAccel tracks altitude delta (velocity) very well - not vertical acceleration 
-    // it actually just slightly lags altitude delta from baro or gps.
-    
-    // integrate into velocityFromAcc
-    // ?? logging shows that this integral closely tracks altitude, not velocity
-    // with the re-centering, it appears to best track altitude P, which tends to recenter to current setpoint
-    // note that on commencing we may need to set the initial integral value to something derived from baro/GPS
-    altHoldState.velocityFromAcc += measuredAccel * taskIntervalSeconds; // m/s
-
-    // apply a leaky integrator or lowpass of time constant approx 1s (10s from original code *0.999)
-    altHoldState.velocityFromAcc *= 0.99f;
-
-    // smooth the accelerometer values with its PT2
-    altHoldState.verticalAcceleration = pt2FilterApply(&altHoldAccVerticalLpf, measuredAccel);
-
-    // log at 100x for resolution
-    DEBUG_SET(DEBUG_ALTHOLD, 3, (lrintf)(altHoldState.verticalAcceleration * 100.0f)); // cm/s^2
-    DEBUG_SET(DEBUG_ALTHOLD, 4, (lrintf)(altHoldState.velocityFromAcc * 100.0f)); // cm/s * 10 ??
-
-    // ** end vertical acceleration stuff **
-
-
-    // check if the user has modified the target altitude using sticks while hovering
+    // check if the user has changed the target altitude using sticks
     if (altholdConfig()->altHoldTargetAdjustRate) {
         altHoldUpdateTargetAltitude();
     }
 
-    // use PIDs to return the throttle adjustment value, and add it to the throttle value to use
+    // use PIDs to return the throttle adjustment value, add it to the hover value, and constrain
     const float throttleAdjustment = altitudePidCalculate();
-
     float newThrottle = altholdConfig()->altHoldThrottleHover + throttleAdjustment;
     altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->altHoldThrottleMin, altholdConfig()->altHoldThrottleMax);
 
