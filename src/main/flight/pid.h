@@ -84,7 +84,7 @@
 #define TPA_CURVE_PID_MAX 1000
 #define TPA_CURVE_EXPO_MIN -100
 #define TPA_CURVE_EXPO_MAX 100
-#define TPA_CURVE_PWL_SIZE 1600
+#define TPA_CURVE_PWL_SIZE 16
 #endif // #ifdef USE_ADVANCED_TPA
 
 typedef enum {
