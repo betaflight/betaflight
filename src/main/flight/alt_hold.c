@@ -41,7 +41,7 @@ typedef struct {
 
 simplePid_t simplePid;
 
-altHoldState_s altHoldState;
+altHoldState_t altHoldState;
 
 #define ALT_HOLD_PID_P_GAIN  0.01f
 #define ALT_HOLD_PID_I_GAIN  0.003f

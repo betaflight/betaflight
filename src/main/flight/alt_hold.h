@@ -34,7 +34,7 @@ typedef struct {
     float targetAltitudeDelta;
     float measuredAltitudeCm;
     float throttleOut;
-} altHoldState_s;
+} altHoldState_t;
 
 typedef struct altholdConfig_s {
     uint8_t altHoldPidP;

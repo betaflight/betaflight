@@ -42,7 +42,7 @@ extern "C" {
     #include "sensors/acceleration.h"
 
     // ** why must these be here??
-    extern altHoldState_s altHoldState;
+    extern altHoldState_t altHoldState;
     void altHoldReset(void);
     void altHoldProcessTransitions(void);
     void altHoldInit(void);
