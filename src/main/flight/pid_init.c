@@ -286,8 +286,8 @@ float tpaCurveHyperbolicFunction(float x, void *args)
 
     const float pidThr100 = pidProfile->tpa_curve_pid_thr100 / 100.0f;
     const float xShifted = scaleRangef(x, thrStall, 1.0f, 0.0f, 1.0f);
-    const float base = (1 + (pow(pidThr0 / pidThr100, 1.0f / expo) - 1) * xShifted);
-    const float divisor = pow(base, expo);
+    const float base = (1 + (pow_approx(pidThr0 / pidThr100, 1.0f / expo) - 1) * xShifted);
+    const float divisor = pow_approx(base, expo);
 
     return pidThr0 / divisor;
 }

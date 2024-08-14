@@ -1035,7 +1035,7 @@ TEST(pidControllerTest, testTpaHyperbolic)
     EXPECT_FLOAT_EQ(5.0f, pidRuntime.tpaFactor);
 
     pidUpdateTpaFactor(0.5, pidProfile);
-    EXPECT_NEAR(2.588f, pidRuntime.tpaFactor, 0.01f);
+    EXPECT_NEAR(2.565f, pidRuntime.tpaFactor, 0.01f);
 
     pidUpdateTpaFactor(0.9, pidProfile);
     EXPECT_NEAR(0.693f, pidRuntime.tpaFactor, 0.01f);
@@ -1089,7 +1089,7 @@ TEST(pidControllerTest, testTpaHyperbolic)
     EXPECT_NEAR(7.364f, pidRuntime.tpaFactor, 0.01f);
 
     pidUpdateTpaFactor(1.0, pidProfile);
-    EXPECT_NEAR(0.6f, pidRuntime.tpaFactor, 0.01f);
+    EXPECT_NEAR(0.625f, pidRuntime.tpaFactor, 0.01f);
 
     // curve bends down
     pidProfile->tpa_curve_type = TPA_CURVE_HYPERBOLIC;
