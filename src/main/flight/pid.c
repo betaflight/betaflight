@@ -883,7 +883,7 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
     }    
 #else
     UNUSED(pidProfile);
-#endif // USE_WING ... #else
+#endif // USE_WING
 }
 
 NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
@@ -910,7 +910,7 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 #else
     UNUSED(axis);
     UNUSED(pidProfile);
-#endif // USE_WING ... #else
+#endif // USE_WING
 }
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
