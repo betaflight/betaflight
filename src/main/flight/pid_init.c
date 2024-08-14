@@ -280,13 +280,9 @@ float tpaCurveHyperbolicFunction(float x, void *args)
         return pidThr0;
     }
 
-    const float expoCliDivider = 10.0f;
-    float expo = 1000.0f; // big value for when tpa_curve_expo is 10, to avoid division by zero.
 
-    if (pidProfile->tpa_curve_expo != expoCliDivider) // if no division by zero - calculate expo
-    {
-        expo = 1.0f / (pidProfile->tpa_curve_expo / expoCliDivider - 1.0f);
-    }
+    const float expoDivider = pidProfile->tpa_curve_expo / 10.0f - 1.0f;
+    const float expo = (fabsf(expoDivider) > 1e-3f) ?  1.0f / expoDivider : 1e3f; // avoiding division by zero for const float base = ...
 
     const float pidThr100 = pidProfile->tpa_curve_pid_thr100 / 100.0f;
     const float xShifted = scaleRangef(x, thrStall, 1.0f, 0.0f, 1.0f);
@@ -313,7 +309,7 @@ void tpaCurveInit(const pidProfile_t *pidProfile)
             return;
         }
 }
-#endif // #ifdef #ifdef USE_ADVANCED_TPA
+#endif // USE_ADVANCED_TPA
 
 void pidInit(const pidProfile_t *pidProfile)
 {

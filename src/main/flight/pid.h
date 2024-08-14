@@ -84,8 +84,8 @@
 #define TPA_CURVE_PID_MAX 1000
 #define TPA_CURVE_EXPO_MIN -100
 #define TPA_CURVE_EXPO_MAX 100
-#define TPA_CURVE_PWL_SIZE 16
-#endif // #ifdef USE_ADVANCED_TPA
+#define TPA_CURVE_PWL_SIZE 17
+#endif // USE_ADVANCED_TPA
 
 typedef enum {
     TPA_MODE_PD,
@@ -284,7 +284,7 @@ typedef struct pidProfile_s {
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
     uint16_t tpa_gravity_thr0;              // For wings: gravity force addition to tpa argument in % when zero throttle
     uint16_t tpa_gravity_thr100;            // For wings: gravity force addition to tpa argument in % when full throttle
-    uint8_t tpa_curve_type;                 // Classic type - for multirotor, hyperbolic - for wings
+    uint8_t tpa_curve_type;                 // Classic type - for multirotor, hyperbolic - usually for wings
     uint8_t tpa_curve_stall_throttle;        // For wings: speed at which PIDs should be maxed out (stall speed)
     uint16_t tpa_curve_pid_thr0;            // For wings: PIDs multiplier at stall speed
     uint16_t tpa_curve_pid_thr100;          // For wings: PIDs multiplier at full speed
@@ -476,12 +476,12 @@ typedef struct pidRuntime_s {
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
     float tpaGravityThr0;
     float tpaGravityThr100;
-#endif // #ifdef USE_WING
+#endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
     pwl_t tpaCurvePwl;
     float tpaCurvePwl_yValues[TPA_CURVE_PWL_SIZE];
-#endif // #ifdef USE_ADVANCED_TPA
+#endif // USE_ADVANCED_TPA
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
