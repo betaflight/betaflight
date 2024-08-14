@@ -37,4 +37,4 @@ REGION_ALIAS("VECTAB", RAM)
 
 REGION_ALIAS("MOVABLE_FLASH", FLASH1)
 
-INCLUDE "apm32_flash_f4_split.ld"
+INCLUDE "stm32_flash_f4_split.ld"
