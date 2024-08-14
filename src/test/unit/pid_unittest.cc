@@ -955,6 +955,66 @@ TEST(pidControllerTest, testLaunchControl)
     EXPECT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
 }
 
+TEST(pidControllerTest, testTpaClassic)
+{
+    resetTest();
+
+    pidProfile->tpa_curve_type = TPA_CURVE_CLASSIC;
+    pidProfile->tpa_rate = 30;
+    pidProfile->tpa_breakpoint = 1600;
+    pidProfile->tpa_low_rate = -50;
+    pidProfile->tpa_low_breakpoint = 1200;
+    pidProfile->tpa_low_always = 1;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(1.5f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.1f, pidProfile);
+    EXPECT_FLOAT_EQ(1.25f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.2f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.6f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.8f, pidProfile);
+    EXPECT_FLOAT_EQ(0.85f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(1.0f, pidProfile);
+    EXPECT_FLOAT_EQ(0.7f, pidRuntime.tpaFactor);
+
+
+    pidProfile->tpa_curve_type = TPA_CURVE_CLASSIC;
+    pidProfile->tpa_rate = 30;
+    pidProfile->tpa_breakpoint = 1600;
+    pidProfile->tpa_low_rate = -50;
+    pidProfile->tpa_low_breakpoint = 1000;
+    pidProfile->tpa_low_always = 1;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.1f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.2f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.6f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.8f, pidProfile);
+    EXPECT_FLOAT_EQ(0.85f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(1.0f, pidProfile);
+    EXPECT_FLOAT_EQ(0.7f, pidRuntime.tpaFactor);
+}
+
 TEST(pidControllerTest, testTpaHyperbolic)
 {
     resetTest();
