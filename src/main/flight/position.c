@@ -86,6 +86,7 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_prefer_baro = 100, // percentage 'trust' of baro data
     .altitude_lpf = 300,
     .altitude_d_lpf = 100,
+    .hover_throttle = 1275,
 );
 
 #if defined(USE_BARO) || defined(USE_GPS)

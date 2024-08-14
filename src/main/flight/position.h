@@ -29,6 +29,7 @@ typedef struct positionConfig_s {
     uint8_t altitude_prefer_baro;
     uint16_t altitude_lpf;                // lowpass cutoff (value / 100) Hz for altitude smoothing
     uint16_t altitude_d_lpf;              // lowpass for (value / 100) Hz for altitude derivative smoothing
+    uint16_t hover_throttle;              // value used at the start of a rescue or position hold
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);

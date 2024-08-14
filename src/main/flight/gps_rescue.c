@@ -241,7 +241,7 @@ static void rescueAttainPosition(void)
         // 20s of slow descent for switch induced sanity failures to allow time to recover
         gpsRescueAngle[AI_PITCH] = 0.0f;
         gpsRescueAngle[AI_ROLL] = 0.0f;
-        rescueThrottle = gpsRescueConfig()->throttleHover - 100;
+        rescueThrottle = positionConfig()->hover_throttle - 100;
         return;
      default:
         break;
@@ -277,13 +277,13 @@ static void rescueAttainPosition(void)
     // acceleration component not currently implemented - was needed previously due to GPS lag, maybe not needed now.
 
     float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, gets to 0.2 correcting on a windy day
-    tiltAdjustment *= (gpsRescueConfig()->throttleHover - 1000);
+    tiltAdjustment *= (positionConfig()->hover_throttle - 1000);
     // if hover is 1300, and adjustment .2, this gives us 0.2*300 or 60 of extra throttle, not much, but useful
     // too much and landings with lots of pitch adjustment, eg windy days, can be a problem
 
     throttleAdjustment = throttleP + throttleI + throttleD + tiltAdjustment;
 
-    rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
+    rescueThrottle = positionConfig()->hover_throttle + throttleAdjustment;
     rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
 
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, lrintf(throttleP));

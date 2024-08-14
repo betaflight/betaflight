@@ -42,7 +42,6 @@ typedef struct altholdConfig_s {
     uint8_t altHoldPidD;
     uint16_t altHoldThrottleMin;
     uint16_t altHoldThrottleMax;
-    uint16_t altHoldThrottleHover;
     uint8_t altHoldTargetAdjustRate;
 } altholdConfig_t;
 

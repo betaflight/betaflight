@@ -53,11 +53,8 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .altHoldPidP = 15,
     .altHoldPidI = 15,
     .altHoldPidD = 15,
-
     .altHoldThrottleMin = 1100,
     .altHoldThrottleMax = 1700,
-    .altHoldThrottleHover = 1275,
-
     .altHoldTargetAdjustRate = 100, // max rate of change of altitude target using sticks in mm/s
 );
 
@@ -116,7 +113,7 @@ void altHoldReset(void)
     altHoldState.targetAltitudeCm = getAltitude(); // current altitude in cm
     simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
     simplePid.integral = 0.0f;
-    altHoldState.throttleOut = altholdConfig()->altHoldThrottleHover;
+    altHoldState.throttleOut = positionConfig()->hover_throttle;
     altHoldState.targetAltitudeDelta = 0.0f;
 }
 
@@ -182,8 +179,8 @@ void altHoldUpdateTargetAltitude(void)
 
     const float rcThrottle = rcCommand[THROTTLE];
 
-    const float lowThreshold = 0.5f * (altholdConfig()->altHoldThrottleHover + PWM_RANGE_MIN); // around 1150
-    const float highThreshold = 0.5f * (altholdConfig()->altHoldThrottleHover + PWM_RANGE_MAX); // around 1500
+    const float lowThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MIN); // around 1150
+    const float highThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MAX); // around 1500
     
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {
@@ -218,7 +215,7 @@ void altHoldUpdate(void)
 
     // use PIDs to return the throttle adjustment value, add it to the hover value, and constrain
     const float throttleAdjustment = altitudePidCalculate();
-    float newThrottle = altholdConfig()->altHoldThrottleHover + throttleAdjustment;
+    float newThrottle = positionConfig()->hover_throttle + throttleAdjustment;
     altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->altHoldThrottleMin, altholdConfig()->altHoldThrottleMax);
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, (lrintf)(altHoldState.targetAltitudeCm));
