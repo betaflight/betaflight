@@ -381,7 +381,6 @@ rcdevice_unittest_SRC := \
 
 pid_unittest_SRC :=  \
 		$(USER_DIR)/common/crc.c \
-		$(USER_DIR)/common/explog_approx.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/pwl.c \

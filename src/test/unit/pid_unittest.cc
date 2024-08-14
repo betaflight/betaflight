@@ -1035,7 +1035,7 @@ TEST(pidControllerTest, testTpaHyperbolic)
     EXPECT_FLOAT_EQ(5.0f, pidRuntime.tpaFactor);
 
     pidUpdateTpaFactor(0.5, pidProfile);
-    EXPECT_NEAR(2.565f, pidRuntime.tpaFactor, 0.01f);
+    EXPECT_NEAR(2.588f, pidRuntime.tpaFactor, 0.01f);
 
     pidUpdateTpaFactor(0.9, pidProfile);
     EXPECT_NEAR(0.693f, pidRuntime.tpaFactor, 0.01f);
