@@ -62,6 +62,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/alt_hold.h"
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
