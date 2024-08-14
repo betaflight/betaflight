@@ -890,16 +890,19 @@ float amperageShown = 0;
 
 static void osdElementCurrentDraw(osdElementParms_t *element)
 {
-    if(bufferIndex == 5) {
-        amperageShown= avgAmps;
-    }
-    osdPrintFloat(element->buff, SYM_NONE, amperageShown, "%3u", 2, false, SYM_AMP);
+    const float amperage = fabsf(getAmperage() / 100.0f);
+    osdPrintFloat(element->buff, SYM_NONE, amperage, "%3u", 2, false, SYM_AMP);
 }
 
 static void osdElementDebug(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "BAND %d", slctRx);
-    //tfp_sprintf(element->buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
+    int lowBand = 785;
+    int highBand = 970;
+    int band = 0;
+
+    if(slctRx == 0){ band = lowBand;}
+    else {band = highBand;}
+    tfp_sprintf(element->buff, "%d M", band);
 }
 
 static void osdElementDisarmed(osdElementParms_t *element)
@@ -959,7 +962,7 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
 }
 #endif
 
-#if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
+
 
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
@@ -974,6 +977,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
 #endif
 }
 
+#if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
 static void osdElementEscRpm(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpm,element);

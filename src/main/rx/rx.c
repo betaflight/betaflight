@@ -686,9 +686,6 @@ void detectAndApplySignalLossBehaviour(void)
     if(lastSwitchMs == 0){
         lastSwitchMs = millis();
     }
-    if(lastChannelLQ == 0){
-        lastChannelLQ = rxGetLinkQuality();
-    }
     
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
@@ -779,10 +776,10 @@ void detectAndApplySignalLossBehaviour(void)
     } 
     lastRCdata = rcData[11];
     uint16_t currLQ = rxGetLinkQuality();
-    if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 20) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 5000)){
+    if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 40) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 20000)){
             slctRx= !slctRx;
             pinioSet(2, slctRx);
-            lastChannelLQ = rxGetLinkQuality();
+            lastChannelLQ = currLQ;
             justSwitched=true;
     } else {
         justSwitched = false;
