@@ -1001,7 +1001,7 @@ void init(void)
 #endif
 
 #ifdef USE_ALTHOLD_MODE
-    initAltHoldState();
+    altHoldInit();
 #endif
 
     debugInit();

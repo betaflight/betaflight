@@ -48,7 +48,7 @@ typedef struct altholdConfig_s {
 
 PG_DECLARE(altholdConfig_t, altholdConfig);
 
-void initAltHoldState(void);
+void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
 float altHoldGetThrottle(void);
 bool altHoldIsActive(void);

@@ -225,10 +225,6 @@ void altHoldUpdate(void)
     DEBUG_SET(DEBUG_ALTHOLD, 2, (lrintf)(throttleAdjustment));
 }
 
-void initAltHoldState(void) {
-    altHoldInit();
-}
-
 void updateAltHoldState(timeUs_t currentTimeUs) {
     altHoldUpdate();
     UNUSED(currentTimeUs);
