@@ -24,11 +24,7 @@ extern "C" {
 
     #include "platform.h"
     #include "build/debug.h"
-
-    #include "pg/pg.h"
     #include "pg/pg_ids.h"
-
-    #include "drivers/time.h"
 
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
@@ -41,7 +37,10 @@ extern "C" {
 
     #include "sensors/acceleration.h"
 
-    // ** why must these be here??
+    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+    PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 0);
+
     extern altHoldState_t altHoldState;
     void altHoldReset(void);
     void altHoldProcessTransitions(void);
@@ -129,10 +128,6 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 extern "C" {
     acc_t acc;
 
-    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
-    PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
-
-
     void pt2FilterInit(pt2Filter_t *altHoldDeltaLpf, float) {
         UNUSED(altHoldDeltaLpf);
     }
@@ -159,12 +154,10 @@ extern "C" {
         UNUSED(rxConfig);
     }
 
-
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
 
     uint8_t armingFlags = 0;
     uint8_t stateFlags = 0;
     uint16_t flightModeFlags = 0;
-
 }
