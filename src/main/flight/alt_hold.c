@@ -47,17 +47,6 @@ altHoldState_t altHoldState;
 #define ALT_HOLD_PID_I_GAIN  0.003f
 #define ALT_HOLD_PID_D_GAIN  0.01f
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 3);
-
-PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
-    .altHoldPidP = 15,
-    .altHoldPidI = 15,
-    .altHoldPidD = 15,
-    .altHoldThrottleMin = 1100,
-    .altHoldThrottleMax = 1700,
-    .altHoldTargetAdjustRate = 100, // max rate of change of altitude target using sticks in mm/s
-);
-
 static pt2Filter_t altHoldDeltaLpf;
 static pt2Filter_t altHoldAccVerticalLpf;
 const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s

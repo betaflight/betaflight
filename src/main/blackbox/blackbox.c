@@ -64,12 +64,12 @@
 
 #include "flight/alt_hold.h"
 #include "flight/failsafe.h"
+#include "flight/gps_rescue.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
-#include "flight/gps_rescue.h"
-#include "flight/position.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -94,7 +94,7 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_NONE
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 4);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .fields_disabled_mask = 0, // default log all fields
@@ -1695,7 +1695,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_VELOCITY_D, "%d",      gpsRescueConfig()->velD)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_YAW_P, "%d",           gpsRescueConfig()->yawP)
 
-
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_USE_MAG, "%d",         gpsRescueConfig()->useMag)
 #endif // USE_MAG
@@ -1706,15 +1705,24 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_P, "%d",                  altholdConfig()->altHoldPidP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_I, "%d",                  altholdConfig()->altHoldPidI);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_D, "%d",                  altholdConfig()->altHoldPidD);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_THROTTLE_MIN, "%d",       altholdConfig()->alt_hold_throttle_min);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_THROTTLE_MAX, "%d",       altholdConfig()->alt_hold_throttle_max);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_TARGET_ADJUST_RATE, "%d", altholdConfig()->alt_hold_target_adjust_rate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_THROTTLE_MIN, "%d",       altholdConfig()->altHoldThrottleMin);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_THROTTLE_MAX, "%d",       altholdConfig()->altHoldThrottleMax);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_TARGET_ADJUST_RATE, "%d", altholdConfig()->altHoldTargetAdjustRate);
 #endif
 
 #ifdef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_MS,       "%d", currentPidProfile->tpa_delay_ms);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR0,   "%d", currentPidProfile->tpa_gravity_thr0);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR100, "%d", currentPidProfile->tpa_gravity_thr100);
+#endif
+
+#ifdef USE_ALTHOLD
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_P, "%d",                  altholdConfig()->altHoldPidP);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_I, "%d",                  altholdConfig()->altHoldPidI);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_D, "%d",                  altholdConfig()->altHoldPidD);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_THROTTLE_MIN, "%d",       altholdConfig()->altHoldThrottleMin);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_THROTTLE_MAX, "%d",       altholdConfig()->altHoldThrottleMax);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTHOLD_TARGET_ADJUST_RATE, "%d", altholdConfig()->altHoldTargetAdjustRate);
 #endif
 
         default:

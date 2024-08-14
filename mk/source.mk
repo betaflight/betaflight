@@ -1,5 +1,6 @@
 PG_SRC = \
             pg/adc.c \
+            pg/alt_hold.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \

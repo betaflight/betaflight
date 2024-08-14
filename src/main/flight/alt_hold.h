@@ -17,12 +17,10 @@
 
 #pragma once
 
-#include "platform.h"
+#include "pg/alt_hold.h"
 
 #ifdef USE_ALTHOLD_MODE
 #include "common/time.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #define ALTHOLD_TASK_RATE_HZ 100         // hz
 #define ALTHOLD_ENTER_PERIOD 50         // ms
@@ -35,17 +33,6 @@ typedef struct {
     float measuredAltitudeCm;
     float throttleOut;
 } altHoldState_t;
-
-typedef struct altholdConfig_s {
-    uint8_t altHoldPidP;
-    uint8_t altHoldPidI;
-    uint8_t altHoldPidD;
-    uint16_t altHoldThrottleMin;
-    uint16_t altHoldThrottleMax;
-    uint8_t altHoldTargetAdjustRate;
-} altholdConfig_t;
-
-PG_DECLARE(altholdConfig_t, altholdConfig);
 
 void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
