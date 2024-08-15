@@ -322,9 +322,10 @@ typedef enum {
 } rebootTarget_e;
 
 typedef struct serialPassthroughPort_s {
-    int id;
+    serialPortIdentifier_e id;
     uint32_t baud;
-    unsigned mode;
+    portMode_e mode;
+    portOptions_e options;
     serialPort_t *port;
 } serialPassthroughPort_t;
 
@@ -1386,24 +1387,24 @@ static void cliSerial(const char *cmdName, char *cmdline)
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)
-static void cbCtrlLine(void *context, uint16_t ctrl)
+static void cbCtrlLine_reset(void *context, uint16_t ctrl)
 {
-#ifdef USE_PINIO
-    int contextValue = (int)(long)context;
-    if (contextValue) {
-        pinioSet(contextValue - 1, !(ctrl & CTRL_LINE_STATE_DTR));
-    } else
-#endif /* USE_PINIO */
     UNUSED(context);
-
     if (!(ctrl & CTRL_LINE_STATE_DTR)) {
         systemReset();
     }
 }
 
-static int cliParseSerialMode(const char *tok)
+#ifdef USE_PINIO
+static void cbCtrlLine_pinIO(void *context, uint16_t ctrl)
 {
-    int mode = 0;
+    pinioSet((intptr_t)context, !(ctrl & CTRL_LINE_STATE_DTR));
+}
+#endif
+
+static portMode_e cliParseSerialMode(const char *tok)
+{
+    portMode_e mode = 0;
 
     if (strcasestr(tok, "rx")) {
         mode |= MODE_RX;
@@ -1415,6 +1416,29 @@ static int cliParseSerialMode(const char *tok)
     return mode;
 }
 
+static portOptions_e cliParseSerialOptions(const char *tok)
+{
+    struct {
+        const char* tag;
+        portOptions_e val;
+    } map[] = {
+        {"Invert", SERIAL_INVERTED},
+        {"Stop2", SERIAL_STOPBITS_2},
+        {"Even", SERIAL_PARITY_EVEN},
+        {"Bidir", SERIAL_BIDIR},
+        {"Pushpull", SERIAL_BIDIR_PP},
+        {"Pulldown", SERIAL_PULL_PD},
+        {"Check", SERIAL_CHECK_TX},
+    };
+    portOptions_e options = 0;
+    for (unsigned i = 0; i < ARRAYLEN(map); i++) {
+        if (strstr(tok, map[i].tag) != 0) {
+            options |= map[i].val;
+        }
+    }
+    return options;
+}
+
 static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -1422,64 +1446,90 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         return;
     }
 
-    serialPassthroughPort_t ports[2] = { {SERIAL_PORT_NONE, 0, 0, NULL}, {cliPort->identifier, 0, 0, cliPort} };
+    serialPassthroughPort_t ports[2] = { {SERIAL_PORT_NONE, 0, 0, 0, NULL}, {cliPort->identifier, 0, 0, 0, cliPort} };
     bool enableBaudCb = false;
-    int port1PinioDtr = 0;
-    bool port1ResetOnDtr = false;
-#ifdef USE_PWM_OUTPUT
-    bool escSensorPassthrough = false;
-#endif
-    char *saveptr;
-    char* tok = strtok_r(cmdline, " ", &saveptr);
-    int index = 0;
-
-    while (tok != NULL) {
-        switch (index) {
-        case 0:
-            if (strcasestr(tok, "esc_sensor")) {
-#ifdef USE_PWM_OUTPUT
-                escSensorPassthrough = true;
-#endif
-                const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
-                ports[0].id = portConfig->identifier;
-            } else {
-                ports[0].id = atoi(tok);
-            }
-            break;
-        case 1:
-            ports[0].baud = atoi(tok);
-            break;
-        case 2:
-            ports[0].mode = cliParseSerialMode(tok);
-            break;
-        case 3:
-            if (strncasecmp(tok, "reset", strlen(tok)) == 0) {
-                port1ResetOnDtr = true;
 #ifdef USE_PINIO
-            } else if (strncasecmp(tok, "none", strlen(tok)) == 0) {
-                port1PinioDtr = 0;
+    int port1PinioDtr = -1;          // route port2 USB DTR to pinio
+#endif
+    bool port1ResetOnDtr = false;    // reset board with DTR
+    bool escSensorPassthrough = false;
+
+    char* nexttok = cmdline;
+    char* tok;
+    int index = 0;
+    while ((tok = strsep(&nexttok, " ")) != NULL) {
+        if (*tok == '\0') { // skip adjacent delimiters
+            continue;
+        }
+        unsigned portN = (index < 4) ? 0 : 1;  // port1 / port2
+        switch (index) {
+        case 0: // port1 to open: esc_sensor, portName, port ID port1
+        case 4: // port2 to use (defaults to CLI serial if no more arguments)
+        {
+            serialPortIdentifier_e portId;
+            char* endptr;
+            if (portN == 0 && strcasestr(tok, "esc_sensor") != NULL) {
+                escSensorPassthrough = true;
+                const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
+                portId = portConfig ? portConfig->identifier : SERIAL_PORT_NONE;
+            } else if (strcasecmp(tok, "cli") == 0) {
+                portId = cliPort->identifier;
+            } else if ((portId = findSerialPortByName(tok, strcasecmp)) >= 0) {
+                // empty
+            } else if ((portId = strtol(tok, &endptr, 10)) >= 0 && *endptr == '\0') {
+                // empty
             } else {
-                port1PinioDtr = atoi(tok);
-                if (port1PinioDtr < 0 || port1PinioDtr > PINIO_COUNT) {
-                    cliPrintLinef("Invalid PinIO number %d", port1PinioDtr);
-                    return ;
-                }
-#endif /* USE_PINIO */
+                cliPrintLinef("Failed parsing port%d (%s)", portN + 1, tok);
+                return;
             }
-            break;
-        case 4:
-            ports[1].id = atoi(tok);
-            ports[1].port = NULL;
-            break;
-        case 5:
-            ports[1].baud = atoi(tok);
-            break;
-        case 6:
-            ports[1].mode = cliParseSerialMode(tok);
+            if (portN == 1) { // port1 is specified, don't use CLI port
+                ports[portN].port = NULL;
+            }
+            ports[portN].id = portId;
             break;
         }
+        case 1: // baudrate
+        case 5: {
+            int baud = atoi(tok);
+            ports[portN].baud = baud;
+            break;
+        }
+        case 2: // port1 mode (rx/tx/rxtx) + options
+        case 6: // port2 mode + options
+            ports[portN].mode = cliParseSerialMode(tok);
+            ports[portN].options = cliParseSerialOptions(tok);
+            break;
+        case 3: // DTR action
+            if (strcasecmp(tok, "reset") == 0) {
+                port1ResetOnDtr = true;
+                break;
+            }
+            if (strcasecmp(tok, "none") == 0) {
+                break;
+            }
+#ifdef USE_PINIO
+            port1PinioDtr = atoi(tok);
+            if (port1PinioDtr < 0 || port1PinioDtr >= PINIO_COUNT) {
+                cliPrintLinef("Invalid PinIO number %d", port1PinioDtr);
+                return;
+            }
+#endif /* USE_PINIO */
+            break;
+        default:
+            cliPrintLinef("Unexpected argument %d (%s)", index + 1, tok);
+            return;
+        }
         index++;
-        tok = strtok_r(NULL, " ", &saveptr);
+    }
+
+
+    for (unsigned i = 0; i < ARRAYLEN(ports); i++) {
+        if (findSerialPortIndexByIdentifier(ports[i].id) < 0) {
+            cliPrintLinef("Invalid port%d %d", i + 1, ports[i].id);
+            return;
+        } else {
+            cliPrintLinef("Port%d: %s", i + 1, serialName(ports[i].id, "<invalid>"));
+        }
     }
 
     // Port checks
@@ -1488,74 +1538,70 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         return ;
     }
 
-    for (int i = 0; i < 2; i++) {
-        if (findSerialPortIndexByIdentifier(ports[i].id) == -1) {
-            cliPrintLinef("Invalid port%d %d", i + 1, ports[i].id);
-            return ;
-        } else {
-            cliPrintLinef("Port%d: %d ", i + 1, ports[i].id);
-        }
-    }
-
     if (ports[0].baud == 0 && ports[1].id == SERIAL_PORT_USB_VCP) {
         enableBaudCb = true;
     }
 
     for (int i = 0; i < 2; i++) {
-        serialPort_t **port = &(ports[i].port);
-        if (*port != NULL) {
+        serialPassthroughPort_t* cfg = &ports[i];
+        if (cfg->port != NULL) {  // port already selected, don't touch it (used when port2 defaults to cli)
             continue;
         }
 
         int portIndex = i + 1;
-        serialPortUsage_t *portUsage = findSerialPortUsageByIdentifier(ports[i].id);
+        serialPortUsage_t *portUsage = findSerialPortUsageByIdentifier(cfg->id);
         if (!portUsage || portUsage->serialPort == NULL) {
-            bool isUseDefaultBaud = false;
-            if (ports[i].baud == 0) {
+            // serial port is not open yet
+            const bool isUseDefaultBaud = cfg->baud == 0;
+            if (isUseDefaultBaud) {
                 // Set default baud
-                ports[i].baud = 57600;
-                isUseDefaultBaud = true;
+                cfg->baud = 57600;
             }
 
-            if (!ports[i].mode) {
-                ports[i].mode = MODE_RXTX;
+            if (!cfg->mode) {
+                cliPrintLinef("Using RXTX mode as default");
+                cfg->mode = MODE_RXTX;
             }
 
-            *port = openSerialPort(ports[i].id, FUNCTION_NONE, NULL, NULL,
-                                            ports[i].baud, ports[i].mode,
-                                            SERIAL_NOT_INVERTED);
-            if (!*port) {
+            if (cfg->options) {
+                cliPrintLinef("Port%d: using options 0x%x",
+                              portIndex, cfg->options);
+            }
+            cfg->port = openSerialPort(cfg->id, FUNCTION_NONE,
+                                       NULL, NULL,   // rxCallback
+                                       cfg->baud, cfg->mode, cfg->options);
+            if (!cfg->port) {
                 cliPrintLinef("Port%d could not be opened.", portIndex);
                 return;
             }
 
-            if (isUseDefaultBaud) {
-                cliPrintf("Port%d opened, default baud = %d.\r\n", portIndex, ports[i].baud);
-            } else {
-                cliPrintf("Port%d opened, baud = %d.\r\n", portIndex, ports[i].baud);
-            }
+            cliPrintf("Port%d opened, %sbaud = %d.\r\n", portIndex, isUseDefaultBaud ? "default ":"", cfg->baud);
         } else {
-            *port = portUsage->serialPort;
+            cfg->port = portUsage->serialPort;
             // If the user supplied a mode, override the port's mode, otherwise
             // leave the mode unchanged. serialPassthrough() handles one-way ports.
             // Set the baud rate if specified
-            if (ports[i].baud) {
-                cliPrintf("Port%d is already open, setting baud = %d.\r\n", portIndex, ports[i].baud);
-                serialSetBaudRate(*port, ports[i].baud);
-            } else {
-                cliPrintf("Port%d is already open, baud = %d.\r\n", portIndex, (*port)->baudRate);
+            if (cfg->baud) {
+                serialSetBaudRate(cfg->port, cfg->baud);
+            }
+            cliPrintLinef("Port%d is already open, %sbaud = %d.", portIndex, cfg->baud ? "new " : "", cfg->port->baudRate);
+
+            if (cfg->mode && cfg->port->mode != cfg->mode) {
+                cliPrintLinef("Port%d mode changed from %d to %d.",
+                          portIndex, cfg->port->mode, cfg->mode);
+                serialSetMode(cfg->port, cfg->mode);
             }
 
-            if (ports[i].mode && (*port)->mode != ports[i].mode) {
-                cliPrintf("Port%d mode changed from %d to %d.\r\n",
-                    portIndex, (*port)->mode, ports[i].mode);
-                serialSetMode(*port, ports[i].mode);
+            if (cfg->options) {
+                cliPrintLinef("Port%d is open, can't change options from 0x%x to 0x%x",
+                              portIndex, cfg->port->options, cfg->options);
             }
 
             // If this port has a rx callback associated we need to remove it now.
             // Otherwise no data will be pushed in the serial port buffer!
-            if ((*port)->rxCallback) {
-                (*port)->rxCallback = NULL;
+            if (cfg->port->rxCallback) {
+                cliPrintLinef("Port%d: Callback removed", portIndex);
+                cfg->port->rxCallback = NULL;
             }
         }
     }
@@ -1568,20 +1614,26 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         serialSetBaudRateCb(ports[1].port, serialSetBaudRate, ports[0].port);
     }
 
-    char *resetMessage = "";
+    const char *resetMessage = "";
     if (port1ResetOnDtr && ports[1].id == SERIAL_PORT_USB_VCP) {
         resetMessage = "or drop DTR ";
     }
 
     cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
 
-    if ((ports[1].id == SERIAL_PORT_USB_VCP) && (port1ResetOnDtr
+    if ((ports[1].id == SERIAL_PORT_USB_VCP)) {
+        do {
+            if (port1ResetOnDtr) {
+                serialSetCtrlLineStateCb(ports[1].port, cbCtrlLine_reset, NULL);
+                break;
+            }
 #ifdef USE_PINIO
-        || port1PinioDtr
+            if (port1PinioDtr >= 0) {
+                serialSetCtrlLineStateCb(ports[1].port, cbCtrlLine_pinIO, (void *)(intptr_t)(port1PinioDtr));
+                break;
+            }
 #endif /* USE_PINIO */
-        )) {
-        // Register control line state callback
-        serialSetCtrlLineStateCb(ports[0].port, cbCtrlLine, (void *)(intptr_t)(port1PinioDtr));
+        } while (0);
     }
 
 // XXX Review ESC pass through under refactored motor handling
@@ -1596,7 +1648,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
                 const timerHardware_t *timerHardware = timerGetConfiguredByTag(tag);
                 if (timerHardware) {
                     IO_t io = IOGetByTag(tag);
-                    IOInit(io, OWNER_MOTOR, 0);
+                    IOInit(io, OWNER_MOTOR, i);
                     IOConfigGPIO(io, IOCFG_OUT_PP);
                     if (timerHardware->output & TIMER_OUTPUT_INVERTED) {
                         IOLo(io);
