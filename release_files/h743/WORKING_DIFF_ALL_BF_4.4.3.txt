@@ -1,7 +1,7 @@
 diff all
 
 # version
-# Betaflight / STM32H743 (SH74) 4.4.3 Aug 14 2024 / 10:02:10 (norevision) MSP API: 1.45
+# Betaflight / STM32H743 (SH74) 4.4.3 Aug 14 2024 / 18:20:11 (norevision) MSP API: 1.45
 
 # config: YES
 
@@ -44,7 +44,10 @@ resource SPI_MOSI 3 B05
 resource ADC_BATT 1 C00
 resource ADC_CURR 1 C01
 resource ADC_NTEMP 1 C04
-resource PINIO 1 A10
+resource PINIO 1 C02
+resource PINIO 2 C03
+resource PINIO 3 A08
+resource PINIO 4 D11
 resource FLASH_CS 1 D04
 resource OSD_CS 1 B12
 resource GYRO_EXTI 1 B02
@@ -92,23 +95,35 @@ beacon RX_SET
 
 # aux
 aux 0 0 0 1600 2100 0 0
-aux 1 40 1 1275 1700 0 0
-aux 2 41 3 1725 2100 0 0
+aux 1 1 4 1600 2100 0 0
+aux 2 40 1 900 1600 0 0
+aux 3 41 3 1725 2100 0 0
+aux 4 43 5 1700 2100 0 0
 
 # adjrange
-adjrange 0 0 0 900 925 0 0 0 0
+adjrange 0 0 3 900 2100 29 3 0 0
 
 # vtxtable
 vtxtable bands 5
 vtxtable channels 8
-vtxtable band 1 BAND_A   A CUSTOM  5865 5845 5825 5805 5785 5765 5745 5725
-vtxtable band 2 BAND_B   B CUSTOM  5733 5752 5771 5790 5809 5828 5847 5866
-vtxtable band 3 BAND_E   E CUSTOM  5705 5685 5665 5665 5885 5905 5905 5905
-vtxtable band 4 AIRWAVE  F CUSTOM  5740 5760 5780 5800 5820 5840 5860 5880
-vtxtable band 5 RACEBAND R CUSTOM  5658 5695 5732 5769 5806 5843 5880 5917
-vtxtable powerlevels 4
-vtxtable powervalues 14 27 30 34
-vtxtable powerlabels 25 500 1K MAX
+vtxtable band 1 BOSCAM_A A FACTORY 5865 5845 5825 5805 5785 5765 5745 5725
+vtxtable band 2 BOSCAM_B B FACTORY 5733 5752 5771 5790 5809 5828 5847 5866
+vtxtable band 3 BOSCAM_E E FACTORY 5705 5685 5665 5645 5885 5905 5925 5945
+vtxtable band 4 FATSHARK F FACTORY 5740 5760 5780 5800 5820 5840 5860 5880
+vtxtable band 5 RACEBAND R FACTORY 5658 5695 5732 5769 5806 5843 5880 5917
+vtxtable powerlevels 7
+vtxtable powervalues 14 20 23 26 27 30 36
+vtxtable powerlabels 25 100 200 400 500 1K MAX
+
+# vtx
+vtx 0 6 0 0 1 950 1050
+vtx 1 6 0 0 2 1100 1200
+vtx 2 6 0 0 3 1250 1350
+vtx 3 6 0 0 4 1400 1500
+vtx 4 6 0 0 5 1550 1650
+vtx 5 6 0 0 6 1700 1800
+vtx 6 6 0 0 7 1850 1950
+vtx 7 6 0 0 7 1950 2100
 
 # rxfail
 rxfail 3 h
@@ -195,7 +210,7 @@ set osd_canvas_height = 16
 set debug_mode = GYRO_SCALED
 set vtx_band = 5
 set vtx_channel = 1
-set vtx_power = 4
+set vtx_power = 2
 set vtx_freq = 5658
 set vcd_video_system = PAL
 set max7456_spi_bus = 2

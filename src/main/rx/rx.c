@@ -674,17 +674,14 @@ static void readRxChannelsApplyRanges(void)
 bool slctRx = 0;
 uint32_t startTimeMs = 0;
 uint32_t lastSwitchMs = 0;
-uint32_t lastRCdata = 0;
 uint16_t lastChannelLQ = 0;
+bool switchTurnedOn = false;
 bool justSwitched = false;
 void detectAndApplySignalLossBehaviour(void)
 {
     //GLEB ADDITION. Set a start time first time that this method is called
     if(startTimeMs == 0){
         startTimeMs = millis();
-    }
-    if(lastSwitchMs == 0){
-        lastSwitchMs = millis();
     }
     
     const uint32_t currentTimeMs = millis();
@@ -767,16 +764,15 @@ void detectAndApplySignalLossBehaviour(void)
     }
     
     //GLEB ADDITION:  LISTEN FOR RX ON A SWITCH. KEEP TRACK OF SWITCH TIME ONLY IF WE JUST MADE THIS SWITCH IN CHANNELS
-    if(lastRCdata == 0){
-        lastRCdata = rcData[11];
-    }
-    if (rxFlightChannelsValid && (ABS(rcData[11] - lastRCdata) > 500)){
+    uint16_t currLQ = rxGetLinkQuality();
+    if ((rcData[11] > 1500) && ((currentTimeMs - lastSwitchMs) > 1000)){
         slctRx= !slctRx;
         pinioSet(2, slctRx);
+        lastSwitchMs = currentTimeMs;
+        lastChannelLQ = currLQ;
+        justSwitched = true;
     } 
-    lastRCdata = rcData[11];
-    uint16_t currLQ = rxGetLinkQuality();
-    if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 40) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 20000)){
+    else if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 40) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 20000)){
             slctRx= !slctRx;
             pinioSet(2, slctRx);
             lastChannelLQ = currLQ;
