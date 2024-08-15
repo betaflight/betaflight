@@ -115,7 +115,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
 #if defined(STM32F4)
         uint8_t af = hardware->af;
-#else   // all except F4 per-pin definitions
+#else   // all mcus except F4 use per-pin definitions
         uint8_t af = uartdev->tx.af;
 #endif
         IOConfigGPIOAF(txIO, ioCfg, af);
@@ -148,6 +148,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         if ((mode & MODE_RX) && rxIO) {
             IOInit(rxIO, ownerTxRx + 1, ownerIndex);
 #if defined(STM32F4)
+            // no inversion possible on F4, always use pullup
             IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, hardware->af);
 #else
             // TODO: pullup/pulldown should be enabled for RX (based on inversion)

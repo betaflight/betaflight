@@ -242,7 +242,7 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
     if (options & SERIAL_BIDIR) {
         // If RX and TX pins are both assigned, we CAN use either with a timer.
         // However, for consistency with hardware UARTs, we only use TX pin,
-        // and this pin must have a timer, and it should not be N-Channel.
+        // and this pin must have a timer, and it must not be N-Channel.
         if (!timerTx || (timerTx->output & TIMER_OUTPUT_N_CHANNEL)) {
             return NULL;
         }
@@ -253,7 +253,7 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
         IOInit(txIO, ownerTxRx, ownerIndex);
     } else {
         if (mode & MODE_RX) {
-            // Need a pin & a timer on RX. Channel should not be N-Channel.
+            // Need a pin & a timer on RX. Channel must not be N-Channel.
             if (!timerRx || (timerRx->output & TIMER_OUTPUT_N_CHANNEL)) {
                 return NULL;
             }
@@ -261,6 +261,7 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
             softSerial->rxIO = rxIO;
             softSerial->timerHardware = timerRx;
             if (!((mode & MODE_TX) && rxIO == txIO)) {
+                // RX only on pin
                 IOInit(rxIO, ownerTxRx + 1, ownerIndex);
             }
         }
@@ -274,11 +275,12 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
 
             if (!(mode & MODE_RX)) {
                 // TX Simplex, must have a timer
-                if (!timerTx)
+                if (!timerTx) {
                     return NULL;
+                }
                 softSerial->timerHardware = timerTx;
             } else {
-                // Duplex
+                // Duplex, use timerTx if available
                 softSerial->exTimerHardware = timerTx;
             }
             IOInit(txIO, ownerTxRx, ownerIndex);
@@ -350,7 +352,7 @@ void processTxState(softSerial_t *softSerial)
     if (!softSerial->isTransmittingData) {
         if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
             // Transmit buffer empty.
-            // Start listening if not already in if half-duplex
+            // Switch to RX mode if not already listening and running in half-duplex mode
             if (!softSerial->rxActive && softSerial->port.options & SERIAL_BIDIR) {
                 serialOutputPortDeActivate(softSerial);
                 serialInputPortActivate(softSerial);
@@ -365,7 +367,7 @@ void processTxState(softSerial_t *softSerial)
         }
 
         // build internal buffer, MSB = Stop Bit (1) + data bits (MSB to LSB) + start bit(0) LSB
-        softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
+        softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1) | 0;
         softSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
         softSerial->isTransmittingData = true;
 

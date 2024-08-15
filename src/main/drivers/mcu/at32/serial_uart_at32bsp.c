@@ -101,16 +101,16 @@ void uartReconfigure(uartPort_t *uartPort)
         if (uartPort->rxDMAResource) {
 
             dma_default_para_init(&DMA_InitStructure);
-            DMA_InitStructure.loop_mode_enable=TRUE;
-            DMA_InitStructure.peripheral_base_addr=uartPort->rxDMAPeripheralBaseAddr;
+            DMA_InitStructure.loop_mode_enable = TRUE;
+            DMA_InitStructure.peripheral_base_addr = uartPort->rxDMAPeripheralBaseAddr;
             DMA_InitStructure.priority  = DMA_PRIORITY_MEDIUM;
-            DMA_InitStructure.peripheral_inc_enable =FALSE;
-            DMA_InitStructure.peripheral_data_width =DMA_PERIPHERAL_DATA_WIDTH_BYTE;
-            DMA_InitStructure.memory_inc_enable =TRUE;
+            DMA_InitStructure.peripheral_inc_enable = FALSE;
+            DMA_InitStructure.peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
+            DMA_InitStructure.memory_inc_enable = TRUE;
             DMA_InitStructure.memory_data_width = DMA_MEMORY_DATA_WIDTH_BYTE;
-            DMA_InitStructure.memory_base_addr=(uint32_t)uartPort->port.rxBuffer;
+            DMA_InitStructure.memory_base_addr = (uint32_t)uartPort->port.rxBuffer;
             DMA_InitStructure.buffer_size = uartPort->port.rxBufferSize;
-            DMA_InitStructure.direction= DMA_DIR_PERIPHERAL_TO_MEMORY;
+            DMA_InitStructure.direction = DMA_DIR_PERIPHERAL_TO_MEMORY;
 
             xDMA_DeInit(uartPort->rxDMAResource);
             xDMA_Init(uartPort->rxDMAResource, &DMA_InitStructure);
@@ -128,16 +128,16 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_TX) {
         if (uartPort->txDMAResource) {
             dma_default_para_init(&DMA_InitStructure);
-            DMA_InitStructure.loop_mode_enable=FALSE;
-            DMA_InitStructure.peripheral_base_addr=uartPort->txDMAPeripheralBaseAddr;
-            DMA_InitStructure.priority  = DMA_PRIORITY_MEDIUM;
-            DMA_InitStructure.peripheral_inc_enable =FALSE;
-            DMA_InitStructure.peripheral_data_width =DMA_PERIPHERAL_DATA_WIDTH_BYTE;
-            DMA_InitStructure.memory_inc_enable =TRUE;
+            DMA_InitStructure.loop_mode_enable = FALSE;
+            DMA_InitStructure.peripheral_base_addr = uartPort->txDMAPeripheralBaseAddr;
+            DMA_InitStructure.priority = DMA_PRIORITY_MEDIUM;
+            DMA_InitStructure.peripheral_inc_enable = FALSE;
+            DMA_InitStructure.peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
+            DMA_InitStructure.memory_inc_enable = TRUE;
             DMA_InitStructure.memory_data_width = DMA_MEMORY_DATA_WIDTH_BYTE;
-            DMA_InitStructure.memory_base_addr=(uint32_t)uartPort->port.txBuffer;
+            DMA_InitStructure.memory_base_addr = (uint32_t)uartPort->port.txBuffer;
             DMA_InitStructure.buffer_size = uartPort->port.txBufferSize;
-            DMA_InitStructure.direction= DMA_DIR_MEMORY_TO_PERIPHERAL;
+            DMA_InitStructure.direction = DMA_DIR_MEMORY_TO_PERIPHERAL;
 
             xDMA_DeInit(uartPort->txDMAResource);
             xDMA_Init(uartPort->txDMAResource, &DMA_InitStructure);
@@ -150,7 +150,7 @@ void uartReconfigure(uartPort_t *uartPort)
         }
         usart_interrupt_enable(uartPort->USARTx, USART_TDC_INT, TRUE);
     }
-
+    // TODO: usart_enable is called twice
     usart_enable(uartPort->USARTx,TRUE);
 }
 

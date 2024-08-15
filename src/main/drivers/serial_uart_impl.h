@@ -202,6 +202,7 @@ typedef enum {
     TX_PIN_IGNORE
 } txPinState_t;
 
+// TODO: merge uartPort_t and uartDevice_t
 typedef struct uartDevice_s {
     uartPort_t port;
     const uartHardware_t *hardware;
