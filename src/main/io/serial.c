@@ -111,6 +111,51 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #endif
 };
 
+const char* serialPortNames[SERIAL_PORT_COUNT] = {
+#ifdef USE_VCP
+    "VCP",
+#endif
+#ifdef USE_UART1
+    "UART1",
+#endif
+#ifdef USE_UART2
+    "UART2",
+#endif
+#ifdef USE_UART3
+    "UART3",
+#endif
+#ifdef USE_UART4
+    "UART4",
+#endif
+#ifdef USE_UART5
+    "UART5",
+#endif
+#ifdef USE_UART6
+    "UART6",
+#endif
+#ifdef USE_UART7
+    "UART7",
+#endif
+#ifdef USE_UART8
+    "UART8",
+#endif
+#ifdef USE_UART9
+    "UART9",
+#endif
+#ifdef USE_UART10
+    "UART10",
+#endif
+#ifdef USE_SOFTSERIAL1
+    "SOFT1",
+#endif
+#ifdef USE_SOFTSERIAL2
+    "SOFT2",
+#endif
+#ifdef USE_LPUART1
+    "LPUART1",
+#endif
+};
+
 static uint8_t serialPortCount;
 
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
@@ -250,6 +295,33 @@ int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
         }
     }
     return -1;
+}
+
+// find serial port by name.
+// NULL cmp defaults to case-insensitive compare
+// cmp is strcmp-like function
+serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *test))
+{
+    if (!cmp) { // use strcasecmp by default
+        cmp = strcasecmp;
+    }
+    for (unsigned i = 0; i < (int)ARRAYLEN(serialPortNames); i++) {
+        if (cmp(portName, serialPortNames[i]) == 0) {
+            return serialPortIdentifiers[i];  // 1:1 map between names and identifiers
+        }
+    }
+    return SERIAL_PORT_NONE;
+}
+
+
+const char* serialName(serialPortIdentifier_e identifier, const char* notFound)
+{
+    const int idx = findSerialPortIndexByIdentifier(identifier);
+    if (idx >= 0) {
+        return serialPortNames[idx];
+    } else {
+        return notFound;
+    }
 }
 
 
