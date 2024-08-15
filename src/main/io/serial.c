@@ -372,7 +372,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
             return false;
         }
 
-        uint8_t bitCount = BITCOUNT(portConfig->functionMask); // TODO popcount
+        uint8_t bitCount = popcount(portConfig->functionMask);
 
 #ifdef USE_VTX_MSP
         if ((portConfig->functionMask & FUNCTION_VTX_MSP) && bitCount == 1) { // VTX MSP has to be shared with RX or MSP serial

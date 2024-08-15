@@ -174,7 +174,7 @@ IO_t IOGetByTag(ioTag_t tag)
         return NULL;
     }
     // count bits before this pin on single port
-    int offset = __builtin_popcount(((1 << pinIdx) - 1) & ioDefUsedMask[portIdx]);
+    int offset = popcount(((1 << pinIdx) - 1) & ioDefUsedMask[portIdx]);
     // and add port offset
     offset += ioDefUsedOffset[portIdx];
     return ioRecs + offset;
