@@ -48,7 +48,6 @@ altHoldState_t altHoldState;
 #define ALT_HOLD_PID_D_GAIN  0.01f
 
 static pt2Filter_t altHoldDeltaLpf;
-static pt2Filter_t altHoldAccVerticalLpf;
 const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 
 float altitudePidCalculate(void)
@@ -79,11 +78,11 @@ float altitudePidCalculate(void)
 
     const float output = pOut + iOut + dOut + fOut;
 
-    DEBUG_SET(DEBUG_ALTHOLD, 3, (lrintf)(output));
-    DEBUG_SET(DEBUG_ALTHOLD, 4, (lrintf)(pOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 5, (lrintf)(iOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 6, (lrintf)(dOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 7, (lrintf)(fOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 3, lrintf(output));
+    DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 6, lrintf(dOut));
+    DEBUG_SET(DEBUG_ALTHOLD, 7, lrintf(fOut));
 
     return output;
 }
@@ -123,10 +122,6 @@ void altHoldInit(void)
     const float cutoffHz = 0.01f * positionConfig()->altitude_d_lpf; // default 1Hz, time constant about 160ms
     const float gain = pt2FilterGain(cutoffHz, taskIntervalSeconds);
     pt2FilterInit(&altHoldDeltaLpf, gain); 
-
-    // similar PT2 on accelerometer to remove noise
-    const float gainAcc = pt2FilterGain((float)accelerometerConfig()->acc_lpf_hz, taskIntervalSeconds);
-    pt2FilterInit(&altHoldAccVerticalLpf, gainAcc);
 
     altHoldState.isAltHoldActive = false;
     altHoldReset();
@@ -189,7 +184,7 @@ void altHoldUpdate(void)
 
     // things that always need to happen in the background should go here
     altHoldState.measuredAltitudeCm = getAltitude();
-    DEBUG_SET(DEBUG_ALTHOLD, 1, (lrintf)(altHoldState.measuredAltitudeCm));
+    DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(altHoldState.measuredAltitudeCm));
 
     // exit unless altHold is active
     if (!altHoldState.isAltHoldActive) {
@@ -207,8 +202,8 @@ void altHoldUpdate(void)
     float newThrottle = positionConfig()->hover_throttle + throttleAdjustment;
     altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->altHoldThrottleMin, altholdConfig()->altHoldThrottleMax);
 
-    DEBUG_SET(DEBUG_ALTHOLD, 0, (lrintf)(altHoldState.targetAltitudeCm));
-    DEBUG_SET(DEBUG_ALTHOLD, 2, (lrintf)(throttleAdjustment));
+    DEBUG_SET(DEBUG_ALTHOLD, 0, lrintf(altHoldState.targetAltitudeCm));
+    DEBUG_SET(DEBUG_ALTHOLD, 2, lrintf(throttleAdjustment));
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
