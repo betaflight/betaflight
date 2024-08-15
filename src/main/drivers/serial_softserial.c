@@ -268,7 +268,7 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
 
         if (mode & MODE_TX) {
             // Need a pin on TX
-            if (!tagTx)
+            if (!txIO)
                 return NULL;
 
             softSerial->txIO = txIO;

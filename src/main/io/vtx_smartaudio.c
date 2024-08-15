@@ -498,16 +498,8 @@ static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
 #ifndef AT32F4
-        switch (smartAudioSerialPort->identifier) {
-        case SERIAL_PORT_SOFTSERIAL1:
-        case SERIAL_PORT_SOFTSERIAL2:
-            if (vtxSettingsConfig()->softserialAlt) {
-                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
-            }
-            break;
-        default:
+        if (serialType(smartAudioSerialPort->identifier) != SERIALTYPE_SOFTSERIAL || vtxSettingsConfig()->softserialAlt) {
             serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
-            break;
         }
 #endif //AT32F4
 

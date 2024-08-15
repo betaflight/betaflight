@@ -116,26 +116,25 @@ static uint8_t serialPortCount;
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
-serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e identifier)
+static serialPortConfig_t* findInPortConfigs_identifier(const serialPortConfig_t cfgs[], size_t count, serialPortIdentifier_e identifier)
 {
-    for (unsigned index = 0; index < ARRAYLEN(serialConfigMutable()->portConfigs); index++) {
-        serialPortConfig_t *candidate = &serialConfigMutable()->portConfigs[index];
-        if (candidate->identifier == identifier) {
-            return candidate;
+    for (unsigned i = 0; i < count; i++) {
+        if (cfgs[i].identifier == identifier) {
+            // drop const on return - wrapper function will add it back is necessary
+            return (serialPortConfig_t*)&cfgs[i];
         }
     }
     return NULL;
 }
 
-const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier)
+serialPortConfig_t* serialFindPortConfigurationMutable(serialPortIdentifier_e identifier)
 {
-    for (unsigned index = 0; index < ARRAYLEN(serialConfig()->portConfigs); index++) {
-        const serialPortConfig_t *candidate = &serialConfig()->portConfigs[index];
-        if (candidate->identifier == identifier) {
-            return candidate;
-        }
-    }
-    return NULL;
+    return findInPortConfigs_identifier(serialConfigMutable()->portConfigs, ARRAYLEN(serialConfigMutable()->portConfigs), identifier);
+}
+
+const serialPortConfig_t* serialFindPortConfiguration(serialPortIdentifier_e identifier)
+{
+    return findInPortConfigs_identifier(serialConfigMutable()->portConfigs, ARRAYLEN(serialConfig()->portConfigs), identifier);
 }
 
 PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 1);
