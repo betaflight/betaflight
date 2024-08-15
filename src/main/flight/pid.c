@@ -470,7 +470,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
     angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
 
-    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | ALTHOLD_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE)) {
         currentPidSetpoint = angleRate;
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
@@ -953,8 +953,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
     levelMode_e levelMode;
-    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | ALTHOLD_MODE) || gpsRescueIsActive) {
-        if (pidRuntime.levelRaceMode && !gpsRescueIsActive) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE) || gpsRescueIsActive) {
+        if (pidRuntime.levelRaceMode && !gpsRescueIsActive && !altHoldIsActive()) {
             levelMode = LEVEL_MODE_R;
         } else {
             levelMode = LEVEL_MODE_RP;

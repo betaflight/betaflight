@@ -98,8 +98,8 @@ void simplePidInit(float kp, float ki, float kd)
 
 void altHoldReset(void)
 {
-    altHoldState.targetAltitudeCm = getAltitude(); // current altitude in cm
-    simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
+    altHoldState.targetAltitudeCm = altHoldState.measuredAltitudeCm; // avoid jump at start
+    simplePid.lastAltitude = altHoldState.measuredAltitudeCm;        // avoid jump at start
     simplePid.integral = 0.0f;
     altHoldState.throttleOut = positionConfig()->hover_throttle;
     altHoldState.targetAltitudeDelta = 0.0f;
@@ -128,12 +128,14 @@ void altHoldInit(void)
 }
 
 void altHoldProcessTransitions(void) {
-    bool altHoldRequested = FLIGHT_MODE(ALTHOLD_MODE);
 
-    if (altHoldRequested && !altHoldState.isAltHoldActive) {
+    // need Altitude data on entry, but if handle losing altitude data while in alt hold elsewhere
+    if (FLIGHT_MODE(ALTHOLD_MODE) && !altHoldState.isAltHoldActive && isAltitudeAvailable()) {
         altHoldReset();
+        altHoldState.isAltHoldActive = true;
+    } else {
+        altHoldState.isAltHoldActive = false;
     }
-    altHoldState.isAltHoldActive = altHoldRequested;
 
     // ** the transition out of alt hold (exiting altHold) may be rough.  Some notes... **
     // The original PR had a gradual transition from hold throttle to pilot control throttle
@@ -180,16 +182,27 @@ void altHoldUpdateTargetAltitude(void)
 
 void altHoldUpdate(void)
 {
-    altHoldProcessTransitions(); // initialise values at the start
-
     // things that always need to happen in the background should go here
     altHoldState.measuredAltitudeCm = getAltitude();
     DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(altHoldState.measuredAltitudeCm));
+
+    altHoldProcessTransitions(); // initialise values, don't start without altitude data
 
     // exit unless altHold is active
     if (!altHoldState.isAltHoldActive) {
         DEBUG_SET(DEBUG_ALTHOLD, 0, 0);
         return;
+    }
+
+    // if active, and we lose altitude readings (lose GPS 3D fix for example)
+    // if the last measured altitude was below target, we will climb indefinitelym, and vice versa
+    // we can set current altitude to target, making PIDs zero, and must force zero iTerm
+    // quad then gets the un-modified hover value and may climb or descend, but this should be slow
+    // user will havbe NO control user needs a warning (how? esp LOS) and should exit
+    if (!isAltitudeAvailable()) {
+        altHoldState.measuredAltitudeCm = altHoldState.targetAltitudeCm;
+        // force integral to zero or will accumulate
+        simplePid.integral = 0.0f;
     }
 
     // check if the user has changed the target altitude using sticks

@@ -728,7 +728,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #ifdef USE_ALTHOLD_MODE
     // If gps rescue is active then override the throttle. This prevents things
     // like throttle boost or throttle limit from negatively affecting the throttle.
-    if (FLIGHT_MODE(ALTHOLD_MODE)) {
+    if (altHoldIsActive()) {
         throttle = altHoldGetThrottle();
     }
 #endif

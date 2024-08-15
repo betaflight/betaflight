@@ -40,3 +40,4 @@ int32_t getEstimatedAltitudeCm(void);
 float getAltitude(void);
 float getAltitudeAsl(void);
 int16_t getEstimatedVario(void);
+bool isAltitudeAvailable(void);

@@ -986,8 +986,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_ALTHOLD_MODE
-    if (ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXALTHOLD) && (sensors(SENSOR_ACC)) && !failsafeIsActive()) {
-        // do we need an explicit block on althold_mode if FLIGHT_MODE(GPS_RESCUE_MODE?
+    if (ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXALTHOLD) && (sensors(SENSOR_ACC)) && !failsafeIsActive() && isAirmodeActivated()) {
         if (!FLIGHT_MODE(ALTHOLD_MODE)) {
             ENABLE_FLIGHT_MODE(ALTHOLD_MODE);
         }
