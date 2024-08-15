@@ -982,7 +982,7 @@ static void cliShowParseError(const char *cmdName)
 
 static void cliShowInvalidArgumentCountError(const char *cmdName)
 {
-    cliPrintErrorLinef(cmdName, "INVALID ARGUMENT COUNT", cmdName);
+    cliPrintErrorLinef(cmdName, "INVALID ARGUMENT COUNT");
 }
 
 static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, int max)
@@ -5201,10 +5201,10 @@ const cliResourceValue_t resourceTable[] = {
 #undef DEFA
 #undef DEFW
 
-static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
+static ioTag_t* getIoTag(const cliResourceValue_t value, uint8_t index)
 {
     const pgRegistry_t* rec = pgFind(value.pgn);
-    return CONST_CAST(ioTag_t *, rec->address + value.stride * index + value.offset);
+    return (ioTag_t *)(rec->address + value.stride * index + value.offset);
 }
 
 static void printResource(dumpFlags_t dumpMask, const char *headingStr)
@@ -6113,13 +6113,13 @@ static void cliResource(const char *cmdName, char *cmdline)
         }
 
         const char *resourceName = ownerNames[resourceTable[resourceIndex].owner];
-        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
+        if (strcasecmp(pch, resourceName) == 0) {
             break;
         }
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    int index = atoi(pch);
+    int index = pch ? atoi(pch) : 0;
 
     if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
         if (index <= 0 || index > RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex)) {
@@ -6131,11 +6131,13 @@ static void cliResource(const char *cmdName, char *cmdline)
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
+    ioTag_t *resourceTag = getIoTag(resourceTable[resourceIndex], index);
 
-    if (strlen(pch) > 0) {
-        if (strToPin(pch, tag)) {
-            if (*tag == IO_TAG_NONE) {
+    if (pch && strlen(pch) > 0) {
+        ioTag_t tag;
+        if (strToPin(pch, &tag)) {
+            if (!tag) {
+                *resourceTag = tag;
 #ifdef MINIMAL_CLI
                 cliPrintLine("Freed");
 #else
@@ -6143,9 +6145,10 @@ static void cliResource(const char *cmdName, char *cmdline)
 #endif
                 return;
             } else {
-                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
+                ioRec_t *rec = IO_Rec(IOGetByTag(tag));
                 if (rec) {
-                    resourceCheck(resourceIndex, index, *tag);
+                    *resourceTag = tag;
+                    resourceCheck(resourceIndex, index, tag);
 #ifdef MINIMAL_CLI
                     cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
 #else
@@ -6154,12 +6157,18 @@ static void cliResource(const char *cmdName, char *cmdline)
                 } else {
                     cliShowParseError(cmdName);
                 }
-                return;
             }
+        } else {
+            cliPrintErrorLinef(cmdName, "Failed to parse '%s' as pin", pch);
         }
+    } else {
+        ioTag_t tag = *resourceTag;
+        char ioName[5];
+        if (tag) {
+            tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
+        }
+        cliPrintLinef("# resource %s %d %s", ownerNames[resourceTable[resourceIndex].owner], RESOURCE_INDEX(index), tag ? ioName : "NONE");
     }
-
-    cliShowParseError(cmdName);
 }
 #endif
 
