@@ -380,6 +380,8 @@ void processTxState(softSerial_t *softSerial)
             // and continuing here may cause bit period to decrease causing sampling errors
             // at the receiver under high rates.
             // Note that there will be (little less than) 1-bit delay; take it as "turn around time".
+            // This time is important in noninverted pulldown bidir mode (SmartAudio).
+            //   During this period, pin is in idle state (1) so next startbit can/will be detected
             // XXX We may be able to reload counter and continue. (Future work.)
             return;
         }

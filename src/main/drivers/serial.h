@@ -44,18 +44,24 @@ typedef enum {
     SERIAL_BIDIR         = 1 << 3,
 
     /*
-     * Note on SERIAL_BIDIR_PP
+     * Note on SERIAL_BIDIR_PP *on some MCU families*
      * With SERIAL_BIDIR_PP, the very first start bit of back-to-back bytes
      * is lost and the first data byte will be lost by a framing error.
      * To ensure the first start bit to be sent, prepend a zero byte (0x00)
      * to actual data bytes.
      */
-    SERIAL_BIDIR_OD        = 0 << 4,
-    SERIAL_BIDIR_PP        = 1 << 4,
-    SERIAL_BIDIR_NOPULL    = 1 << 5, // disable pulls in BIDIR RX mode
-    SERIAL_BIDIR_PP_PD     = 1 << 6, // PP mode, normally inverted, but with PullDowns, to fix SA after bidir issue fixed (#10220)
+    // output configuration in BIDIR non-inverted mode
+    // pushpull is used in UNIDIR or inverted mode by default
+    // SERIAL_BIDIR must be specified explicitly
+    SERIAL_BIDIR_OD        = 0 << 4, // default in BIDIR non-inverted mode
+    SERIAL_BIDIR_PP        = 1 << 4, // force pushpull
+
+    SERIAL_PULL_DEFAULT    = 0 << 5, // pulldown in inverted mode, pullup otherwise
+    SERIAL_PULL_NONE       = 1 << 5, // disable pulls in RX or opendrain TX mode
+    SERIAL_PULL_PD         = 1 << 6, // set PULLDOWN on RX, even when not inverted
 
     // If this option is set then switch the TX line to input when not in use to detect it being pulled low
+    // (and prevent powering external device by TX pin)
     SERIAL_CHECK_TX        = 1 << 7,
 } portOptions_e;
 

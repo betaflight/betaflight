@@ -12,9 +12,9 @@
 // convert options into pin pull mode (up/down/none)
 serialPullMode_t serialOptions_pull(portOptions_e options)
 {
-    if (options & SERIAL_BIDIR_NOPULL) {
+    if (options & SERIAL_PULL_NONE) {
         return serialPullNone;                            // explicit nopull
-    } else if (options & (SERIAL_INVERTED | SERIAL_BIDIR_PP_PD)) {
+    } else if (options & (SERIAL_INVERTED | SERIAL_PULL_PD)) {
         return serialPullDown;
     } else {
         return serialPullUp;
@@ -24,7 +24,7 @@ serialPullMode_t serialOptions_pull(portOptions_e options)
 // is pushPull mode necessary
 bool serialOptions_pushPull(portOptions_e options)
 {
-    return options & (SERIAL_INVERTED | SERIAL_BIDIR_PP | SERIAL_BIDIR_PP_PD);
+    return options & (SERIAL_INVERTED | SERIAL_BIDIR_PP);
 }
 
 
