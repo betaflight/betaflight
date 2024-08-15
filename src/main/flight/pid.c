@@ -947,14 +947,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
-    static bool gpsRescuePreviousState = false;
+    static bool angleModePreviouslyRequested = false;
     const rollAndPitchTrims_t *angleTrim = &accelerometerConfig()->accelerometerTrims;
     float horizonLevelStrength = 0.0f;
 
-    const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+    const bool isAngleModeRequested = FLIGHT_MODE(GPS_RESCUE_MODE | ALTHOLD_MODE);
     levelMode_e levelMode;
-    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE) || gpsRescueIsActive) {
-        if (pidRuntime.levelRaceMode && !gpsRescueIsActive && !altHoldIsActive()) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE) || isAngleModeRequested) {
+        if (pidRuntime.levelRaceMode && !isAngleModeRequested) {
             levelMode = LEVEL_MODE_R;
         } else {
             levelMode = LEVEL_MODE_RP;
@@ -963,7 +963,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // Keep track of when we entered a self-level mode so that we can
         // add a guard time before crash recovery can activate.
         // Also reset the guard time whenever GPS Rescue is activated.
-        if ((levelModeStartTimeUs == 0) || (gpsRescueIsActive && !gpsRescuePreviousState)) {
+        if ((levelModeStartTimeUs == 0) || (isAngleModeRequested && !angleModePreviouslyRequested)) {
             levelModeStartTimeUs = currentTimeUs;
         }
 
@@ -976,7 +976,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         levelModeStartTimeUs = 0;
     }
 
-    gpsRescuePreviousState = gpsRescueIsActive;
+    angleModePreviouslyRequested = isAngleModeRequested;
 #else
     UNUSED(pidProfile);
     UNUSED(currentTimeUs);
