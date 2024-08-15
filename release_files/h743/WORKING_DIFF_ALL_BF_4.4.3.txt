@@ -1,7 +1,7 @@
 diff all
 
 # version
-# Betaflight / STM32H743 (SH74) 4.4.3 Aug 14 2024 / 18:20:11 (norevision) MSP API: 1.45
+# Betaflight / STM32H743 (SH74) 4.4.3 Aug 14 2024 / 21:25:44 (norevision) MSP API: 1.45
 
 # config: YES
 
@@ -23,6 +23,7 @@ resource MOTOR 1 A00
 resource MOTOR 2 A01
 resource MOTOR 3 A02
 resource MOTOR 4 A03
+resource SERVO 1 E05
 resource SERIAL_TX 4 B09
 resource SERIAL_TX 6 C07
 resource SERIAL_TX 7 E08
@@ -62,6 +63,8 @@ timer A02 AF1
 # pin A02: TIM2 CH3 (AF1)
 timer A03 AF1
 # pin A03: TIM2 CH4 (AF1)
+timer E05 AF4
+# pin E05: TIM15 CH1 (AF4)
 
 # dma
 dma ADC 1 8
@@ -210,7 +213,7 @@ set osd_canvas_height = 16
 set debug_mode = GYRO_SCALED
 set vtx_band = 5
 set vtx_channel = 1
-set vtx_power = 2
+set vtx_power = 1
 set vtx_freq = 5658
 set vcd_video_system = PAL
 set max7456_spi_bus = 2
