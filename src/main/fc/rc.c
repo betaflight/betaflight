@@ -584,7 +584,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
     setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
 
     // calculate setpointDelta from smoothed setpoint speed
-    setpointSpeedDelta  = setpointSpeed - prevSetpointSpeed[axis];
+    setpointSpeedDelta = setpointSpeed - prevSetpointSpeed[axis];
     prevSetpointSpeed[axis] = setpointSpeed;
 
     // smooth the setpointDelta element (effectively a second order filter since incoming setpoint was already smoothed)
@@ -725,7 +725,6 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     isRxDataNew = true;
 
     for (int axis = 0; axis < 3; axis++) {
-        // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
 
         float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
         if (axis == ROLL || axis == PITCH) {
