@@ -552,6 +552,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 
     pidProfile.d_min[FD_PITCH] = 19;
     pidProfile.d_min[FD_ROLL] = 19;
+    pidProfile.d_min[FD_YAW] = 19;
 
     // and
     controlRateConfig_t controlRateConfig;
@@ -603,7 +604,8 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     EXPECT_EQ(20, pidProfile.d_min[FD_ROLL]);
     EXPECT_EQ(8,  pidProfile.pid[PID_YAW].P);
     EXPECT_EQ(18, pidProfile.pid[PID_YAW].I);
-    EXPECT_EQ(28, pidProfile.pid[PID_YAW].D);
+    EXPECT_EQ(27, pidProfile.pid[PID_YAW].D);
+    EXPECT_EQ(20, pidProfile.d_min[FD_YAW]);
 }
 
 extern "C" {
