@@ -437,7 +437,7 @@ static const char * const lookupTableLaunchControlMode[] = {
 
 #ifdef USE_TPA_MODE
 static const char * const lookupTableTpaMode[] = {
-    "PD", "D", "PID"
+    "PD", "D"
 };
 #endif
 

@@ -277,10 +277,6 @@ void getTpaFactors(const pidProfile_t *pidProfile, float tpaFactor, tpaFactors_t
     case TPA_MODE_PD:
         tpaFactors->tpaFactorKp = tpaFactor;
         break;
-    case TPA_MODE_PID:
-        tpaFactors->tpaFactorKp = tpaFactor;
-        tpaFactors->tpaFactorKi = tpaFactor;
-        break;
     default:
         break;
     }
