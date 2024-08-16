@@ -702,8 +702,8 @@ bool vtxSmartAudioInit(void)
         return false;
     }
     // Note, for SA, which uses bidirectional mode, would normally require pullups.
-    // the SA protocol instead requires pulldowns, and therefore uses SERIAL_PULL_PD together with SERIAL_BIDIR_PP
-    portOptions_e portOptions = (SERIAL_NOT_INVERTED | SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP | SERIAL_PULL_PD);
+    // the SA protocol instead requires pulldowns, and therefore uses SERIAL_PULL_SMARTAUDIO together with SERIAL_BIDIR_PP
+    const portOptions_e portOptions = (SERIAL_NOT_INVERTED | SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP | SERIAL_PULL_SMARTAUDIO);
     smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
 
     if (!smartAudioSerialPort) {

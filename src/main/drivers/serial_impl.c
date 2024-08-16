@@ -14,7 +14,7 @@ serialPullMode_t serialOptions_pull(portOptions_e options)
 {
     if (options & SERIAL_PULL_NONE) {
         return serialPullNone;                            // explicit nopull
-    } else if (options & (SERIAL_INVERTED | SERIAL_PULL_PD)) {
+    } else if (options & (SERIAL_INVERTED | SERIAL_PULL_SMARTAUDIO)) {
         return serialPullDown;
     } else {
         return serialPullUp;

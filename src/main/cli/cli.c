@@ -1427,7 +1427,7 @@ static portOptions_e cliParseSerialOptions(const char *tok)
         {"Even", SERIAL_PARITY_EVEN},
         {"Bidir", SERIAL_BIDIR},
         {"Pushpull", SERIAL_BIDIR_PP},
-        {"Pulldown", SERIAL_PULL_PD},
+        {"Saudio", SERIAL_PULL_SMARTAUDIO},
         {"Check", SERIAL_CHECK_TX},
     };
     portOptions_e options = 0;

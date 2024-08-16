@@ -58,7 +58,10 @@ typedef enum {
 
     SERIAL_PULL_DEFAULT    = 0 << 5, // pulldown in inverted mode, pullup otherwise
     SERIAL_PULL_NONE       = 1 << 5, // disable pulls in RX or opendrain TX mode
-    SERIAL_PULL_PD         = 1 << 6, // set PULLDOWN on RX, even when not inverted
+    // option for Smartaudio serial port - line is in MARK state when idle - break condition.
+    // DO NOT USE unless absolutely necessary
+    // SERIAL_PULL_NONE has precedence
+    SERIAL_PULL_SMARTAUDIO = 1 << 6, // set PULLDOWN on RX, even when not inverted.
 
     // If this option is set then switch the TX line to input when not in use to detect it being pulled low
     // (and prevent powering external device by TX pin)
