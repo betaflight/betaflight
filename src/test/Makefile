@@ -158,7 +158,8 @@ flight_imu_unittest_SRC := \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/position.c \
-		$(USER_DIR)/flight/imu.c
+		$(USER_DIR)/flight/imu.c \
+		$(USER_DIR)/common/filter.c
 
 
 flight_mixer_unittest :=  \

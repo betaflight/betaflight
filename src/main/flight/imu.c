@@ -34,6 +34,7 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/time.h"
+#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
 
@@ -102,6 +103,8 @@ static const float IMU_ACC_COVARIANCE_CALC_GYRO_NORM_LIMIT = 50.0f;
 static const float IMU_GYRO_COVARIANCE_CALC_RATE_SCALING = 1.0f / 10.0f;
 // 500 is the guestimated gyro drift in deg/s when the gyro is saturated
 static const float IMU_GYRO_PSD_SATURATED = sq(DEGREES_TO_RADIANS(500.0f));
+// Cut of frequency for downsampling incoming gyro data [Hz]
+static const float IMU_GYRO_DOWNSAMPLE_CUTOFF_HZ = 200.0f;
 
 STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
 static const float IMU_ESTIMATE_COVARIANCE_MAXIMUM = sq(DEGREES_TO_RADIANS(180.0f));
@@ -156,6 +159,75 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .gyro_noise_asd = 5,           // 0.5 (deg/s)/sqrt(s)
     .acc_noise_std = 50,           // 5.0 deg
 );
+
+static imuGyroReceiveState_s imuGyroRecieveState = {
+    .deltaCycles = 0,
+    .deltaCyclesSpentSaturated = 0,
+    .previousStamp = 0,
+    .gyroData = {{ 0.0f, 0.0f, 0.0f }},
+    .imuGyroFilters = {{ .state = 0.0f, .k = 0.0f }, { .state = 0.0f, .k = 0.0f }, { .state = 0.0f, .k = 0.0f }},
+    .isInitiated = false,
+};
+
+// should be called from gyro when new data is available
+void gyroSendTo_imu(const vector3_t* g, const uint32_t stampCycles, const bool overflow)
+{
+    IMU_LOCK;
+    if (imuGyroRecieveState.isInitiated && !overflow) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            imuGyroRecieveState.imuGyroFilters[axis].state = g->v[axis];
+        }
+        imuGyroRecieveState.previousStamp = stampCycles;
+        imuGyroRecieveState.isInitiated = true;
+    }
+    const int32_t delta = cmpTimeCycles(stampCycles, imuGyroRecieveState.previousStamp);
+
+    if (!overflow) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            pt1FilterApply(&imuGyroRecieveState.imuGyroFilters[axis], g->v[axis]);
+            imuGyroRecieveState.gyroData.v[axis] = imuGyroRecieveState.imuGyroFilters[axis].state;
+        }
+    }
+
+    // consider gyro saturated if abs rate exceeds 1950 deg/s
+    // exactly 2000 degrees would be better, but gyroADC includes a zeroing offset
+    // so the gyro might saturate at lower levels
+    static const float saturationLimit = 1950.0f;
+    if (fabsf(gyro.gyroADC[X]) > saturationLimit ||
+        fabsf(gyro.gyroADC[Y]) > saturationLimit ||
+        fabsf(gyro.gyroADC[Z]) > saturationLimit ||
+        overflow) {
+        imuGyroRecieveState.deltaCyclesSpentSaturated += delta;
+    }
+    imuGyroRecieveState.deltaCycles += delta;
+    imuGyroRecieveState.previousStamp = stampCycles;
+    IMU_UNLOCK;
+}
+
+static void imuResetGyroData(void)
+{
+    vector3Zero(&imuGyroRecieveState.gyroData);
+    imuGyroRecieveState.deltaCycles = 0;
+    imuGyroRecieveState.deltaCyclesSpentSaturated = 0;
+}
+
+// g - out: downsampled gyro rates in [radians/s]
+// deltaTime - out: time between last gyro data before previous call to receive, and last gyro data before this call [s]
+// saturated - out: as deltaTime, but only when the gyro was saturated [s]
+static void imuReceiveFrom_gyro(vector3_t* g, float* deltaTime, float* saturated)
+{
+    IMU_LOCK;
+    vector3Scale(g, &imuGyroRecieveState.gyroData, (float)(DEGREES_TO_RADIANS(1.0f)));
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
+    *deltaTime = imuDeltaT * 1e-6f;
+    *saturated = 0.0f;
+#else
+    *deltaTime = clockCyclesToMicrosf(imuGyroRecieveState.deltaCycles) * 1e-6f;
+    *saturated = clockCyclesToMicrosf(imuGyroRecieveState.deltaCyclesSpentSaturated) * 1e-6f;
+#endif
+    imuResetGyroData();
+    IMU_UNLOCK;
+}
 
 static void imuResetEstimateCovariance(imuAhrsState_t* ahrsState)
 {
@@ -235,6 +307,11 @@ void imuInit(void)
 #endif
 
     imuComputeRotationMatrix(&rMat, &ahrsState.nominal.attitude);
+
+    const float k = pt1FilterGain(IMU_GYRO_DOWNSAMPLE_CUTOFF_HZ, gyro.targetLooptime);
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        pt1FilterInit(&imuGyroRecieveState.imuGyroFilters[axis], k);
+    }
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     if (pthread_mutex_init(&imuUpdateLock, NULL) != 0) {
@@ -673,7 +750,10 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(IMU_ACC_COVARIANCE_CALC_GYRO_NORM_LIMIT);
     UNUSED(IMU_GYRO_COVARIANCE_CALC_RATE_SCALING);
     UNUSED(IMU_ESTIMATE_COVARIANCE_MAXIMUM);
+    UNUSED(IMU_GYRO_DOWNSAMPLE_CUTOFF_HZ);
     UNUSED(imuCalcGyroPsd);
+    UNUSED(imuReceiveFrom_gyro);
+    UNUSED(imuCalcAccError);
 
     UNUSED(currentTimeUs);
 }
@@ -681,24 +761,24 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
-    // Simulator-based timing
-    //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
-    const timeDelta_t deltaT = imuDeltaT;
-#else
-    static timeUs_t previousIMUUpdateTime = 0;
-    static float stickSuppression = 0.0f;
-    const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
-    previousIMUUpdateTime = currentTimeUs;
-    if (deltaT > 100000) { // do not update attitude if the time delta is over 0.1s, to prevent weirdnes at startup
+    UNUSED(currentTimeUs);
+
+    // receive data from gyro
+    vector3_t gyroAverage;
+    float dt;
+    float dtSaturated;
+    imuReceiveFrom_gyro(&gyroAverage, &dt, &dtSaturated);
+
+    if (dt <= 0.0f || dt > 0.1f ) { // do not update attitude if the time delta is 0 or over 0.1s, to prevent weirdnes at startup
 #if defined(USE_ACC)
         imuResetEstimateCovariance(&ahrsState);
 #endif
+        IMU_LOCK;
+        imuResetGyroData();
+        IMU_UNLOCK;
         return;
     }
-    DEBUG_SET(DEBUG_IMU_GAIN, 6, deltaT);
-
-    const float dt = deltaT * 1e-6f;
+    DEBUG_SET(DEBUG_IMU_GAIN, 6, lrintf(dt * 1e6));
 
     // *** magnetometer based error estimate ***
     bool useMag = false;   // mag will suppress GPS correction
@@ -725,6 +805,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag
         && sensors(SENSOR_GPS)
         && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+        static float stickSuppression = 0.0f;  // used to adjust cog gain
         static bool gpsHeadingInitialized = false;  // TODO - remove
         if (gpsHeadingInitialized) {
             imuCalcCourseErr(&ahrsState, &imuRuntimeConfig, dt, gpsSol.groundSpeed, &rMat);
@@ -744,25 +825,17 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     vector3_t acc_bf;
     vector3Scale(&acc_bf, &acc.accADC, acc.dev.acc_1G_rec);
 
-    const vector3_t gyroAverage = {
-        .x = DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(X)),
-        .y = DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Y)),
-        .z = DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(Z)),
-    };
-
     imuCalcAccError(&ahrsState, &imuRuntimeConfig, dt, &gyroAverage, acc_bf, &rMat);
 
     imuAhrsUpdate(&ahrsState, &imuRuntimeConfig, dt,
                   &gyroAverage,
-                  gyroGetDurationSpentSaturated(), &rMat);
+                  dtSaturated, &rMat);
 
     // Pre-compute rotation matrix from quaternion
     imuComputeRotationMatrix(&rMat, &ahrsState.nominal.attitude);
     imuUpdateEulerAngles(&rMat);
 
     attitudeIsEstablished = true;  // TODO conditional on RP covariance
-
-#endif
 }
 
 #endif

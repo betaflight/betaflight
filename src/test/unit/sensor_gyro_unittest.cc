@@ -164,4 +164,14 @@ void sensorsSet(uint32_t) {}
 void schedulerResetTaskStatistics(taskId_e) {}
 int getArmingDisableFlags(void) {return 0;}
 void writeEEPROM(void) {}
+void gyroSendTo_imu(const vector3_t* g, const uint32_t stampCycles, const bool overflow)
+{
+    UNUSED(g);
+    UNUSED(stampCycles);
+    UNUSED(overflow);
+};
+uint32_t clockMicrosToCycles(uint32_t micros)
+{
+    return micros;
+}
 }

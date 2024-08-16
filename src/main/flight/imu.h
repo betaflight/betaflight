@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/time.h"
 #include "common/maths.h"
 #include "common/vector.h"
@@ -93,8 +94,17 @@ typedef struct imuRuntimeConfig_s {
     vector2_t north_ef;   // reference mag field vector heading due North in EF (2D ground plane projection) adjusted for magnetic declination
     float smallAngleCosZ;
     float throttleAngleScale;
-    int throttleAngleValue; 
+    int throttleAngleValue;
 } imuRuntimeConfig_t;
+
+typedef struct imuGyroReceiveState_s {
+    int32_t deltaCycles;   // clock cycles between last gyro data before previous call to receive, and last gyro data before most recent call
+    int32_t deltaCyclesSpentSaturated;
+    uint32_t previousStamp;
+    vector3_t gyroData;
+    pt1Filter_t imuGyroFilters[XYZ_AXIS_COUNT];
+    bool isInitiated;
+} imuGyroReceiveState_s;
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value);
 

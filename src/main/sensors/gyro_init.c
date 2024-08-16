@@ -277,11 +277,6 @@ void gyroInitFilters(void)
 #ifdef USE_DYN_NOTCH_FILTER
     dynNotchInit(dynNotchConfig(), gyro.targetLooptime);
 #endif
-
-    const float k = pt1FilterGain(GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ, gyro.targetLooptime);
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        pt1FilterInit(&gyro.imuGyroFilter[axis], k);
-    }
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)

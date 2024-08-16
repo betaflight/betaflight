@@ -458,18 +458,11 @@ extern "C" {
     bool schedulerGetIgnoreTaskExecTime() { return false; }
     float gyroGetFilteredDownsampled(int) { return 0.0f; }
     float baroUpsampleAltitude()  { return 0.0f; }
-    float pt2FilterGain(float, float)  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }
     float gyroGetDurationSpentSaturated(void) { return 0.0f; }
     bool gyroIsCalibrationComplete(void) { return true; }
+    float clockCyclesToMicrosf(int32_t clockCycles) { return clockCycles; }
 
-    void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
-        UNUSED(baroDerivativeLpf);
-    }
-    float pt2FilterApply(pt2Filter_t *baroDerivativeLpf, float) {
-        UNUSED(baroDerivativeLpf);
-        return 0.0f;
-    }
 }

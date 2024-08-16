@@ -469,7 +469,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
                 // compare squared norm of rotation rate to GYRO_NORM_SQUARED_MIN
             float gyroNormSquared = 0.0f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
+                gyroNormSquared += sq(DEGREES_TO_RADIANS(gyro.gyroADCf[axis]));
             }
             if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
                 // movement has started
