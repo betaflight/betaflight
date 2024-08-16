@@ -1416,4 +1416,5 @@ extern "C" {
     void schedulerIgnoreTaskExecTime(void) { }
     bool schedulerGetIgnoreTaskExecTime() { return false; }
     void schedulerSetNextStateTime(timeDelta_t) {}
+    void imuGetRotMatrix(matrix33_t* rotMat) { UNUSED(rotMat); return; }
 }

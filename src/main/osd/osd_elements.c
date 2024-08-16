@@ -761,6 +761,8 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
 static void osdElementUpDownReference(osdElementParms_t *element)
 {
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
+    matrix33_t rMat;
+    imuGetRotMatrix(&rMat);
     const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; //transforum the up vector to the body frame
 
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {

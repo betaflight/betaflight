@@ -58,17 +58,20 @@ extern "C" {
     #include "sensors/gyro.h"
     #include "sensors/sensors.h"
 
-    void imuComputeRotationMatrix(void);
-    void imuUpdateEulerAngles(void);
-    void imuMahonyAHRSupdate(float dt, const imuRuntimeConfig_t* config,
-                             float gx, float gy, float gz,
-                             float* rpEstimateCovariance, const float durationSaturated,
-                             float ax, float ay, float az,
-                             float headingErrMag, float headingErrCog);
-    float imuCalcMagErr(void);
-    float imuCalcCourseErr(float courseOverGround);
-    extern quaternion q;
-    extern matrix33_t rMat;
+    void imuComputeRotationMatrix(matrix33_t* outMat, const quaternion* q);
+    void imuUpdateEulerAngles(const matrix33_t* rotMat);
+    void imuAhrsUpdate(imuAhrsState_t* state,
+                       const imuRuntimeConfig_t* config, const float dt,
+                       const vector3_t* gyro,
+                       const float durationSaturated,
+                       const matrix33_t* rotMat);
+    void imuCalcAccError(imuAhrsState_t* state, const imuRuntimeConfig_t* config, const float dt, const vector3_t* gyro, vector3_t acc_bf, const matrix33_t* rotMat);
+    void imuCalcMagErr(imuAhrsState_t* state, const imuRuntimeConfig_t* config, const float dt, const vector3_t* mag_bf, const matrix33_t* rotMat);
+    void imuCalcCourseErr(imuAhrsState_t* state, const imuRuntimeConfig_t* config, const float dt, float courseOverGround, const matrix33_t* rotMat);
+    
+    void imuResetAhrsState(imuAhrsState_t* state);
+    void imuSetQuaternion(const quaternion* inQuat);
+    void imuSetRotMatrix(const matrix33_t* inMatrix);
     extern bool attitudeIsEstablished;
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
@@ -99,12 +102,10 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     #define TOL 1e-6
 
     // No rotation
-    q.w = 1.0f;
-    q.x = 0.0f;
-    q.y = 0.0f;
-    q.z = 0.0f;
+    quaternion q = { .w = 1.0f, .x = 0.0f, .y = 0.0f, .z = 0.0f };
 
-    imuComputeRotationMatrix();
+    matrix33_t rMat;
+    imuComputeRotationMatrix(&rMat, &q);
 
     EXPECT_FLOAT_EQ(1.0f, rMat.m[0][0]);
     EXPECT_FLOAT_EQ(0.0f, rMat.m[0][1]);
@@ -122,7 +123,7 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     q.y = 0.0f;
     q.z = sqrt2over2;
 
-    imuComputeRotationMatrix();
+    imuComputeRotationMatrix(&rMat, &q);
 
     EXPECT_NEAR(0.0f, rMat.m[0][0], TOL);
     EXPECT_NEAR(-1.0f, rMat.m[0][1], TOL);
@@ -140,7 +141,7 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     q.y = 0.0f;
     q.z = 0.0f;
 
-    imuComputeRotationMatrix();
+    imuComputeRotationMatrix(&rMat, &q);
 
     EXPECT_NEAR(1.0f, rMat.m[0][0], TOL);
     EXPECT_NEAR(0.0f, rMat.m[0][1], TOL);
@@ -156,22 +157,26 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 TEST(FlightImuTest, TestUpdateEulerAngles)
 {
     // No rotation
-    memset(&rMat, 0.0, sizeof(float) * 9);
+    matrix33_t rMat;
+    memset(rMat.m, 0.0, sizeof(float) * 9);
+    rMat.m[0][0] = 1.0f;
+    rMat.m[1][1] = 1.0f;
+    rMat.m[2][2] = 1.0f;
 
-    imuUpdateEulerAngles();
+    imuUpdateEulerAngles(&rMat);
 
     EXPECT_EQ(0, attitude.values.roll);
     EXPECT_EQ(0, attitude.values.pitch);
     EXPECT_EQ(0, attitude.values.yaw);
 
     // 45 degree yaw
-    memset(&rMat, 0.0, sizeof(float) * 9);
+    memset(rMat.m, 0.0, sizeof(float) * 9);
     rMat.m[0][0] = sqrt2over2;
     rMat.m[0][1] = sqrt2over2;
     rMat.m[1][0] = -sqrt2over2;
     rMat.m[1][1] = sqrt2over2;
 
-    imuUpdateEulerAngles();
+    imuUpdateEulerAngles(&rMat);
 
     EXPECT_EQ(0, attitude.values.roll);
     EXPECT_EQ(0, attitude.values.pitch);
@@ -189,31 +194,33 @@ TEST(FlightImuTest, TestSmallAngle)
     attitudeIsEstablished = true;
 
     // and
-    memset(&rMat, 0.0, sizeof(float) * 9);
-
+    quaternion q;
+    imuGetQuaternion(&q);
+    matrix33_t rMat;
     // when
-    imuComputeRotationMatrix();
-
+    imuComputeRotationMatrix(&rMat, &q);
+    imuSetRotMatrix(&rMat);
     // expect
-    EXPECT_FALSE(isUpright());
+    EXPECT_TRUE(isUpright());
 
     // given
+    memset(rMat.m, 0.0, sizeof(float) * 9);
     rMat.m[0][0] = r1;
     rMat.m[0][2] = r2;
     rMat.m[2][0] = -r2;
     rMat.m[2][2] = r1;
 
     // when
-    imuComputeRotationMatrix();
+    imuSetRotMatrix(&rMat);
 
     // expect
     EXPECT_FALSE(isUpright());
 
     // given
-    memset(&rMat, 0.0, sizeof(float) * 9);
+    memset(rMat.m, 0.0, sizeof(float) * 9);
 
     // when
-    imuComputeRotationMatrix();
+    imuComputeRotationMatrix(&rMat, &q);
 
     // expect
     EXPECT_FALSE(isUpright());
@@ -245,40 +252,51 @@ testing::AssertionResult DoubleNearWrapPredFormat(const char* expr1, const char*
 static const imuRuntimeConfig_t DEFAULT_RUNTIME_CONFIG = {
     .imuDcmKi = 0.0,
     .imuDcmKp = 0.25,
-    .gyro_noise_psd = 0.5f,
-    .acc_covariance = 5.0f,
+    .gyroNoisePsd = 0.5f,
+    .accCovariance = 5.0f,
+    .north_ef = { .x = 1.0f, .y = 0.0f },
+    .smallAngleCosZ = 0.0f,
+    .throttleAngleScale = 0.0f,
+    .throttleAngleValue = 0
 };
 
 class MahonyFixture : public ::testing::Test {
 protected:
     vector3_t gyro;
-    float rpEstimateCovariance;
+    imuAhrsState_t ahrsState;
+    matrix33_s rMat;
     float timeSaturated;
     vector3_t acc;
     bool useMag;
-    vector3_t magEF;
+    vector3_t mag;
     float cogGain;
     float cogDeg;
     float dcmKp;
     float dt;
     imuRuntimeConfig_t config;
+    float stickSuppression;
+
     void SetUp() override {
-        vector3Zero(&gyro);
-        rpEstimateCovariance = sq(DEGREES_TO_RADIANS(180.0f));
+        imuConfigure(0, 0);
+        imuGetState(&ahrsState);
+        imuComputeRotationMatrix(&rMat, &ahrsState.nominal.attitude); 
         timeSaturated = 0.0f;
+        vector3Zero(&gyro);
         vector3Zero(&acc);
+        vector3Zero(&mag);
         cogGain = 0.0;   // no cog
         cogDeg  = 0.0;
         dcmKp = .25;     // default dcm_kp
         dt = 1e-2;       // 100Hz update
         config = DEFAULT_RUNTIME_CONFIG;
-        imuConfigure(0, 0);
+        useMag = false;
         // level, poiting north
         setOrientationAA(0, {{1,0,0}});        // identity
     }
     virtual void setOrientationAA(float angleDeg, vector3_t axis) {
-        quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(angleDeg), axis.x, axis.y, axis.z);
-        imuComputeRotationMatrix();
+        quaternion_from_axis_angle(&ahrsState.nominal.attitude, DEGREES_TO_RADIANS(angleDeg), axis.x, axis.y, axis.z);
+        imuComputeRotationMatrix(&rMat, &ahrsState.nominal.attitude);
+        imuUpdateEulerAngles(&rMat);
     }
 
     float wrap(float angle) {
@@ -302,21 +320,21 @@ protected:
         float alignTime = -1;
         for (float t = 0; t < runTime; t += dt) {
             //     if (fmod(t, 1) < dt) printf("MagBF=%.2f %.2f %.2f\n", magBF.x, magBF.y, magBF.z);
-            float headingErrMag = 0;
             if (useMag) {   // not implemented yet
-                headingErrMag = imuCalcMagErr();
+                imuCalcMagErr(&ahrsState, &config, dt, &mag, &rMat);
             }
-            float headingErrCog = 0;
-            if (cogGain > 0) {
-                headingErrCog = imuCalcCourseErr(DEGREES_TO_RADIANS(cogDeg)) * cogGain;
+            if (cogGain > 0 && !useMag) {
+                imuCalcCourseErr(&ahrsState, &config, dt, DEGREES_TO_RADIANS(cogDeg), &rMat);
+                if (fmod(t, 1) < dt) printf("t: %.2f, Heading err: %.2f, gain: %.5f\n", t, ahrsState.error.heading, ahrsState.headingGain);
+                if (fmod(t, 1) < dt) printf("nominal w: %.4f, x: %.4f, y: %.4f, z: %.4f,\n", ahrsState.nominal.attitude.w, ahrsState.nominal.attitude.x, ahrsState.nominal.attitude.y, ahrsState.nominal.attitude.z);
             }
 
-            imuMahonyAHRSupdate(dt, &config,
-                                gyro.x, gyro.y, gyro.z,
-                                &rpEstimateCovariance, timeSaturated,
-                                acc.x, acc.y, acc.z,
-                                headingErrMag, headingErrCog);
-            imuUpdateEulerAngles();
+            imuCalcAccError(&ahrsState, &config, dt, &gyro, acc, &rMat);
+
+            imuAhrsUpdate(&ahrsState, &config, dt, &gyro, timeSaturated, &rMat);
+
+            imuComputeRotationMatrix(&rMat, &ahrsState.nominal.attitude);
+            imuUpdateEulerAngles(&rMat);
             // if (fmod(t, 1) < dt) printf("%3.1fs - %3.1f %3.1f %3.1f\n", t, attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f);
             // remember how long it took
             if (alignTime < 0) {
@@ -343,7 +361,7 @@ TEST_P(YawTest, TestCogAlign)
     // integrate IMU. about 25s is enough in worst case
     float alignTime = imuIntegrate(80, &expect);
 
-    imuUpdateEulerAngles();
+    imuUpdateEulerAngles(&rMat);
     // quad stays level
     EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, .1);
     EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, .1);
@@ -359,20 +377,18 @@ TEST_P(YawTest, TestMagAlign)
     float initialAngle = GetParam();
 
     // level, rotate to param heading
-    quaternion_from_axis_angle(&q, -DEGREES_TO_RADIANS(initialAngle), 0, 0, 1);
-    imuComputeRotationMatrix();
+    quaternion_from_axis_angle(&ahrsState.nominal.attitude, -DEGREES_TO_RADIANS(initialAngle), 0, 0, 1);
+    imuComputeRotationMatrix(&rMat, &ahrsState.nominal.attitude);
 
     vector3_t expect = {{0, 0, 0}};    // expect zero yaw
 
-    vector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
-
-    mag.magADC = magBF;
+    mag = {{1, 0, .5}};    // use arbitrary Z component, point north
 
     useMag = true;
     // integrate IMU. about 25s is enough in worst case
     float alignTime = imuIntegrate(30, &expect);
 
-    imuUpdateEulerAngles();
+    imuUpdateEulerAngles(&rMat);
     // quad stays level
     EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, .1);
     EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, .1);

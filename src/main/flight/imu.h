@@ -26,6 +26,7 @@
 #include "common/vector.h"
 
 #include "pg/pg.h"
+#include "common/vector.h"
 
 // Exported symbols
 extern bool canUseGPSHeading;
@@ -51,8 +52,26 @@ typedef union {
 } attitudeEulerAngles_t;
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
+typedef struct {
+    quaternion attitude;
+    vector3_t integralErr;
+} imuAhrsNominalState_t;
+
+typedef struct {
+    vector3_t rp;
+    float heading;
+} imuAhrsErrorState;
+
+typedef struct {
+    imuAhrsNominalState_t nominal;
+    imuAhrsErrorState error;
+    float rpEstimateCovariance;
+    // float headingEstimateCovariance;
+    float rpCovariance;
+    float headingGain;
+} imuAhrsState_t;
+
 extern attitudeEulerAngles_t attitude;
-extern matrix33_t rMat;
 
 typedef struct imuConfig_s {
     uint16_t imu_dcm_kp;          // DCM filter proportional gain ( x 10000)
@@ -69,15 +88,21 @@ PG_DECLARE(imuConfig_t, imuConfig);
 typedef struct imuRuntimeConfig_s {
     float imuDcmKi;
     float imuDcmKp;
-    float gyro_noise_psd;   // gyro noise power spectral density, (deg/s)^2/s, i.e. gyro_noise_asd squared
-    float acc_covariance;
+    float gyroNoisePsd;   // gyro noise power spectral density, (rad/s)^2/s, i.e. gyro_noise_asd squared
+    float accCovariance;   // base accelerometer covariance rad^2
+    vector2_t north_ef;   // reference mag field vector heading due North in EF (2D ground plane projection) adjusted for magnetic declination
+    float smallAngleCosZ;
+    float throttleAngleScale;
+    int throttleAngleValue; 
 } imuRuntimeConfig_t;
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value);
 
 float getSinPitchAngle(void);
 float getCosTiltAngle(void);
-void getQuaternion(quaternion * q);
+void imuGetQuaternion(quaternion * q);
+void imuGetState(imuAhrsState_t* state);
+void imuGetRotMatrix(matrix33_t* m);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 
 void imuInit(void);
