@@ -497,11 +497,26 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-#ifndef AT32F4
-        if (serialType(smartAudioSerialPort->identifier) != SERIALTYPE_SOFTSERIAL || vtxSettingsConfig()->softserialAlt) {
-            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
+        bool prepend00 = true;
+        switch (serialType(smartAudioSerialPort->identifier)) {
+        case SERIALTYPE_SOFTSERIAL:
+            prepend00 = vtxSettingsConfig()->softserialAlt;
+            break;
+        case SERIALTYPE_UART:
+        case SERIALTYPE_LPUART:
+            // decide by MCU type
+#ifdef AT32F4
+            prepend00 = false;
+#endif
+            break;
+        default:
+            prepend00 = false;
         }
-#endif //AT32F4
+        if (prepend00) {
+            // line is in MARK/BREAK, so only 2 stopbits will be visible (startbit and zeroes are not visible)
+            // startbit of next byte (0xaa) can be recognized
+            serialWrite(smartAudioSerialPort, 0x00);
+        }
 
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
