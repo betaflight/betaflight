@@ -129,10 +129,11 @@ void altHoldInit(void)
 
 void altHoldProcessTransitions(void) {
 
-    // need Altitude data on entry, but if handle losing altitude data while in alt hold elsewhere
-    if (FLIGHT_MODE(ALTHOLD_MODE) && !altHoldState.isAltHoldActive && isAltitudeAvailable()) {
-        altHoldReset();
-        altHoldState.isAltHoldActive = true;
+    if (FLIGHT_MODE(ALTHOLD_MODE)) {
+        if (altHoldState.isAltHoldActive == false && isAltitudeAvailable()) {
+            altHoldReset();
+            altHoldState.isAltHoldActive = true;
+        }
     } else {
         altHoldState.isAltHoldActive = false;
     }
@@ -190,7 +191,8 @@ void altHoldUpdate(void)
 
     // exit unless altHold is active
     if (!altHoldState.isAltHoldActive) {
-        DEBUG_SET(DEBUG_ALTHOLD, 0, 0);
+        const uint8_t altitudeDataAvailable = isAltitudeAvailable();
+        DEBUG_SET(DEBUG_ALTHOLD, 0, altitudeDataAvailable);
         return;
     }
 
