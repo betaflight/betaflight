@@ -6044,7 +6044,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         }
 
         const char *resourceName = ownerNames[resourceTable[resourceIndex].owner];
-        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
+        if (strcasecmp(pch, resourceName) == 0) {
             break;
         }
     }
