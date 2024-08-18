@@ -1225,6 +1225,28 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
                 }
             }
             break;
+        case OME_FLOAT16:
+            if (p->data) {
+                OSD_UINT16_t *ptr = p->data;
+                const uint16_t previousValue = *ptr->val;
+                if (key == CMS_KEY_RIGHT) {
+                    if (*ptr->val < ptr->max) {
+                        *ptr->val += ptr->step;
+                    }
+                } else {
+                    if (*ptr->val > ptr->min) {
+                        *ptr->val -= ptr->step;
+                    }
+                }
+                SET_PRINTVALUE(runtimeEntryFlags[currentCtx.cursorRow]);
+                if ((p->flags & REBOOT_REQUIRED) && (*ptr->val != previousValue)) {
+                    setRebootRequired();
+                }
+                if (p->func) {
+                    p->func(pDisplay, p);
+                }
+            }
+            break;
 
         case OME_TAB:
             if ((p->flags & OSD_MENU_ELEMENT_MASK) == OME_TAB) {
