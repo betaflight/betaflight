@@ -430,6 +430,62 @@ const spiHardware_t spiHardware[] = {
         .rcc = RCC_APB2(SPI4),
     },
 #endif
+#ifdef APM32F4
+    {
+        .device = SPIDEV_1,
+        .reg = SPI1,
+        .sckPins = {
+            { DEFIO_TAG_E(PA5), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PB3), GPIO_AF5_SPI1 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PA6), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PB4), GPIO_AF5_SPI1 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PA7), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PB5), GPIO_AF5_SPI1 },
+        },
+        .rcc = RCC_APB2(SPI1),
+        .dmaIrqHandler = DMA2_ST3_HANDLER,
+    },
+    {
+        .device = SPIDEV_2,
+        .reg = SPI2,
+        .sckPins = {
+            { DEFIO_TAG_E(PB10), GPIO_AF5_SPI2 },
+            { DEFIO_TAG_E(PB13), GPIO_AF5_SPI2 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PC2), GPIO_AF5_SPI2 },
+            { DEFIO_TAG_E(PB14), GPIO_AF5_SPI2 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PC3), GPIO_AF5_SPI2 },
+            { DEFIO_TAG_E(PB15), GPIO_AF5_SPI2 },
+        },
+        .rcc = RCC_APB1(SPI2),
+        .dmaIrqHandler = DMA1_ST4_HANDLER,
+    },
+    {
+        .device = SPIDEV_3,
+        .reg = SPI3,
+        .sckPins = {
+            { DEFIO_TAG_E(PB3), GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PC10), GPIO_AF6_SPI3 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB4), GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PC11), GPIO_AF6_SPI3 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB5), GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PC12), GPIO_AF6_SPI3 },
+        },
+        .rcc = RCC_APB1(SPI3),
+        .dmaIrqHandler = DMA1_ST7_HANDLER,
+    },
+#endif
 };
 
 void spiPinConfigure(const spiPinConfig_t *pConfig)

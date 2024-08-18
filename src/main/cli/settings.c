@@ -367,6 +367,8 @@ static const char * const lookupOverclock[] = {
     "108MHZ", "120MHZ"
 #elif defined(STM32F7)
     "240MHZ"
+#elif defined(APM32F405xx) || defined(APM32F407xx)
+    "192MHZ", "216MHZ", "240MHZ"
 #endif
 };
 #endif
@@ -1561,7 +1563,7 @@ const clivalue_t valueTable[] = {
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     { "system_hse_mhz",             VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, hseMhz) },
 #endif
     { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, task_statistics) },
