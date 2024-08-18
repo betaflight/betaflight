@@ -190,10 +190,10 @@ typedef struct
 
 typedef struct
 {
-    uint8_t *val;
-    uint8_t min;
+    uint16_t *val;
+    uint16_t min;
     uint16_t max;
-    uint8_t step;
+    uint16_t step;
     uint16_t multipler;
 } OSD_FLOAT16_t;
 
