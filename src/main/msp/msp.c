@@ -1653,8 +1653,8 @@ case MSP_NAME:
 #endif
         break;
     case MSP_FAILSAFE_CONFIG:
-        sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
-        sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_delay);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_off_delay);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
         sbufWriteU8(dst, failsafeConfig()->failsafe_switch_mode);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
@@ -3810,8 +3810,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         break;
     case MSP_SET_FAILSAFE_CONFIG:
-        failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
-        failsafeConfigMutable()->failsafe_off_delay = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_delay = sbufReadU16(src);
+        failsafeConfigMutable()->failsafe_off_delay = sbufReadU16(src);
         failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
         failsafeConfigMutable()->failsafe_switch_mode = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16(src);
