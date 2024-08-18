@@ -78,7 +78,6 @@ float altitudePidCalculate(void)
 
     const float output = pOut + iOut + dOut + fOut;
 
-    DEBUG_SET(DEBUG_ALTHOLD, 3, lrintf(output));
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
     DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
     DEBUG_SET(DEBUG_ALTHOLD, 6, lrintf(dOut));
