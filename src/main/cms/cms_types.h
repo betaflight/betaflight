@@ -182,7 +182,7 @@ typedef struct
 {
     uint8_t *val;
     uint8_t min;
-    uint8_t max;
+    uint16_t max;
     uint8_t step;
     uint16_t multipler;
 } OSD_FLOAT_t;
