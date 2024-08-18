@@ -589,6 +589,15 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
         }
         break;
 
+    case OME_FLOAT16:
+        if (IS_PRINTVALUE(*flags) && p->data) {
+            OSD_FLOAT16_t *ptr = p->data;
+            cmsFormatFloat(*ptr->val * ptr->multipler, buff);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
+            CLR_PRINTVALUE(*flags);
+        }
+        break;
+
     case OME_Label:
         if (IS_PRINTVALUE(*flags) && p->data) {
             // A label with optional string, immediately following text

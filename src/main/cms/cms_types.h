@@ -53,7 +53,8 @@ typedef enum
     // Debug aid
     OME_MENU,
 
-    OME_MAX = OME_MENU
+    OME_MAX = OME_MENU,
+    OME_FLOAT16, // up to 65k
 } OSD_MenuElement;
 
 typedef const void *(*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
@@ -182,10 +183,19 @@ typedef struct
 {
     uint8_t *val;
     uint8_t min;
-    uint16_t max;
+    uint8_t max;
     uint8_t step;
     uint16_t multipler;
 } OSD_FLOAT_t;
+
+typedef struct
+{
+    uint8_t *val;
+    uint8_t min;
+    uint16_t max;
+    uint8_t step;
+    uint16_t multipler;
+} OSD_FLOAT16_t;
 
 typedef struct
 {

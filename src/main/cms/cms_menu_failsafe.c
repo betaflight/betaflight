@@ -78,8 +78,8 @@ static const OSD_Entry cmsx_menuFailsafeEntries[] =
     { "-- FAILSAFE --", OME_Label, NULL, NULL},
 
     { "PROCEDURE",        OME_TAB | REBOOT_REQUIRED,    NULL, &(OSD_TAB_t)    { &failsafeConfig_failsafe_procedure, FAILSAFE_PROCEDURE_COUNT - 1, failsafeProcedureNames } },
-    { "GUARD TIME",       OME_FLOAT | REBOOT_REQUIRED,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_delay, PERIOD_RXDATA_RECOVERY / MILLIS_PER_TENTH_SECOND, UINT16_MAX, 1, 100 } },
-    { "STAGE 2 DELAY",    OME_FLOAT | REBOOT_REQUIRED,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_off_delay, 0, UINT16_MAX, 1, 100 } },
+    { "GUARD TIME",       OME_FLOAT16 | REBOOT_REQUIRED,  NULL, &(OSD_FLOAT16_t)  { &failsafeConfig_failsafe_delay, PERIOD_RXDATA_RECOVERY / MILLIS_PER_TENTH_SECOND, UINT16_MAX, 1, 100 } },
+    { "STAGE 2 DELAY",    OME_FLOAT16 | REBOOT_REQUIRED,  NULL, &(OSD_FLOAT16_t)  { &failsafeConfig_failsafe_off_delay, 0, UINT16_MAX, 1, 100 } },
     { "STAGE 2 THROTTLE", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t) { &failsafeConfig_failsafe_throttle, PWM_PULSE_MIN, PWM_PULSE_MAX, 1 } },
 #ifdef USE_CMS_GPS_RESCUE_MENU
     { "GPS RESCUE",       OME_Submenu, cmsMenuChange, &cmsx_menuGpsRescue},
