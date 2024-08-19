@@ -129,7 +129,7 @@ void altHoldInit(void)
 void altHoldProcessTransitions(void) {
 
     if (FLIGHT_MODE(ALTHOLD_MODE)) {
-        if (altHoldState.isAltHoldActive == false && isAltitudeAvailable()) {
+        if (!altHoldState.isAltHoldActive && isAltitudeAvailable()) {
             altHoldReset();
             altHoldState.isAltHoldActive = true;
         }

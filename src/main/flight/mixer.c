@@ -726,8 +726,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_ALTHOLD_MODE
-    // If gps rescue is active then override the throttle. This prevents things
-    // like throttle boost or throttle limit from negatively affecting the throttle.
+    // Throttle value to be used during altitude hold mode (and failsafe landing mode)
     if (altHoldIsActive()) {
         throttle = altHoldGetThrottle();
     }
