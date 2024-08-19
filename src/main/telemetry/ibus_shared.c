@@ -416,7 +416,7 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
 #ifdef USE_VARIO
         case IBUS_SENSOR_TYPE_VERTICAL_SPEED:
         case IBUS_SENSOR_TYPE_CLIMB_RATE:
-            value.int16 = (int16_t) constrain(getEstimatedVario(), SHRT_MIN, SHRT_MAX);
+            value.int16 = getEstimatedVario();
             break;
 #endif
 #ifdef USE_BARO

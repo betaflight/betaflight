@@ -49,6 +49,7 @@ extern "C" {
     #include "sensors/battery.h"
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
 
     #include "config/config.h"
 
@@ -396,6 +397,7 @@ extern "C" {
     uint8_t armingFlags;
     uint8_t stateFlags;
     uint16_t flightModeFlags;
+    baro_t baro;
 
     uint32_t microsISR(void) {return 0; }
 
