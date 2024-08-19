@@ -1271,6 +1271,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_WING
     { PARAM_NAME_TPA_DELAY_MS, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_delay_ms) },
+    { PARAM_NAME_TPA_DELAY_DECREASE_RATIO, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_delay_decrease_ratio) },
     { PARAM_NAME_TPA_GRAVITY_THR0, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, TPA_GRAVITY_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_gravity_thr0) },
     { PARAM_NAME_TPA_GRAVITY_THR100, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, TPA_GRAVITY_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_gravity_thr100) },
 #endif

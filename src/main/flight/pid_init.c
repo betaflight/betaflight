@@ -258,7 +258,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
 #ifdef USE_WING
-    pt2FilterInit(&pidRuntime.tpaLpf, pt2FilterGainFromDelay(pidProfile->tpa_delay_ms / 1000.0f, pidRuntime.dT));
+    pidRuntime.tpaLpfGainUp = pt2FilterGainFromDelay(pidProfile->tpa_delay_ms / 1000.0f, pidRuntime.dT);
+    pidRuntime.tpaLpfGainDown = pt2FilterGainFromDelay(pidProfile->tpa_delay_ms * pidProfile->tpa_delay_decrease_ratio / 1000.0f / 100.0f, pidRuntime.dT);
+    pt2FilterInit(&pidRuntime.tpaLpf, pidRuntime.tpaLpfGainUp);
     pidRuntime.tpaGravityThr0 = pidProfile->tpa_gravity_thr0 / 100.0f;
     pidRuntime.tpaGravityThr100 = pidProfile->tpa_gravity_thr100 / 100.0f;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

@@ -1517,7 +1517,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_ROLL,  "%d", currentPidProfile->pid[PID_ROLL].S);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_PITCH, "%d", currentPidProfile->pid[PID_PITCH].S);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_S_YAW,   "%d", currentPidProfile->pid[PID_YAW].S);
-#endif // #ifdef USE_WING
+#endif // USE_WING
 
         // End of Betaflight controller parameters
 
@@ -1689,6 +1689,7 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_MS, "%d", currentPidProfile->tpa_delay_ms);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_DECREASE_RATIO, "%d", currentPidProfile->tpa_delay_decrease_ratio);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR0, "%d", currentPidProfile->tpa_gravity_thr0);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR100, "%d", currentPidProfile->tpa_gravity_thr100);
 #endif

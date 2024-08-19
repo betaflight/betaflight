@@ -231,6 +231,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_limit = 15,
         .ez_landing_speed = 50,
         .tpa_delay_ms = 0,
+        .tpa_delay_decrease_ratio = 200,
         .tpa_gravity_thr0 = 0,
         .tpa_gravity_thr100 = 0,
         .spa_center = { 0, 0, 0 },
@@ -287,6 +288,8 @@ void pidResetIterm(void)
 #ifdef USE_WING
 static float getWingTpaArgument(float throttle)
 {
+    static float up = 1.0;
+
     const float pitchFactorAdjustment = scaleRangef(throttle, 0.0f, 1.0f, pidRuntime.tpaGravityThr0, pidRuntime.tpaGravityThr100);
     const float pitchAngleFactor = getSinPitchAngle() * pitchFactorAdjustment;
     DEBUG_SET(DEBUG_TPA, 1, lrintf(pitchAngleFactor * 1000.0f));
@@ -294,7 +297,18 @@ static float getWingTpaArgument(float throttle)
     float tpaArgument = throttle + pitchAngleFactor;
     const float maxTpaArgument = MAX(1.0 + pidRuntime.tpaGravityThr100, pidRuntime.tpaGravityThr0);
     tpaArgument = tpaArgument / maxTpaArgument;
+
+    if (up * (tpaArgument - pidRuntime.tpaLpf.state) < 0.0f) { // tpa argument trend changed the sign
+        up = -up;
+        if (up > 0.0f) {
+            pt2FilterUpdateCutoff(&pidRuntime.tpaLpf, pidRuntime.tpaLpfGainUp);
+        } else {
+            pt2FilterUpdateCutoff(&pidRuntime.tpaLpf, pidRuntime.tpaLpfGainDown);
+        }
+    }
+
     tpaArgument = pt2FilterApply(&pidRuntime.tpaLpf, tpaArgument);
+    tpaArgument = MAX(tpaArgument, 0.0f);
     DEBUG_SET(DEBUG_TPA, 2, lrintf(tpaArgument * 1000.0f));
 
     return tpaArgument;
