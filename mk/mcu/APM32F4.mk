@@ -5,28 +5,101 @@
 #CMSIS
 CMSIS_DIR      := $(ROOT)/lib/main/APM32F4/Libraries/Device
 STDPERIPH_DIR   = $(ROOT)/lib/main/APM32F4/Libraries/APM32F4xx_DAL_Driver
-STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Source/*.c))
-EXCLUDES        = apm32f4xx_dal_timebase_rtc_alarm_template.c \
-                  apm32f4xx_dal_timebase_rtc_wakeup_template.c \
-                  apm32f4xx_dal_timebase_tmr_template.c \
-                  apm32f4xx_device_cfg_template.c
-
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
+STDPERIPH_SRC   = \
+            apm32f4xx_dal_adc.c \
+            apm32f4xx_dal_adc_ex.c \
+            apm32f4xx_dal.c \
+            apm32f4xx_dal_can.c \
+            apm32f4xx_dal_comp.c \
+            apm32f4xx_dal_cortex.c \
+            apm32f4xx_dal_crc.c \
+            apm32f4xx_dal_cryp.c \
+            apm32f4xx_dal_cryp_ex.c \
+            apm32f4xx_dal_dac.c \
+            apm32f4xx_dal_dac_ex.c \
+            apm32f4xx_dal_dci.c \
+            apm32f4xx_dal_dci_ex.c \
+            apm32f4xx_dal_dma.c \
+            apm32f4xx_dal_dma_ex.c \
+            apm32f4xx_dal_eint.c \
+            apm32f4xx_dal_eth.c \
+            apm32f4xx_dal_flash.c \
+            apm32f4xx_dal_flash_ex.c \
+            apm32f4xx_dal_flash_ramfunc.c \
+            apm32f4xx_dal_gpio.c \
+            apm32f4xx_dal_hash.c \
+            apm32f4xx_dal_hash_ex.c \
+            apm32f4xx_dal_hcd.c \
+            apm32f4xx_dal_i2c.c \
+            apm32f4xx_dal_i2c_ex.c \
+            apm32f4xx_dal_i2s.c \
+            apm32f4xx_dal_i2s_ex.c \
+            apm32f4xx_dal_irda.c \
+            apm32f4xx_dal_iwdt.c \
+            apm32f4xx_dal_log.c \
+            apm32f4xx_dal_mmc.c \
+            apm32f4xx_dal_nand.c \
+            apm32f4xx_dal_nor.c \
+            apm32f4xx_dal_pccard.c \
+            apm32f4xx_dal_pcd.c \
+            apm32f4xx_dal_pcd_ex.c \
+            apm32f4xx_dal_pmu.c \
+            apm32f4xx_dal_pmu_ex.c \
+            apm32f4xx_dal_qspi.c \
+            apm32f4xx_dal_rcm.c \
+            apm32f4xx_dal_rcm_ex.c \
+            apm32f4xx_dal_rng.c \
+            apm32f4xx_dal_rtc.c \
+            apm32f4xx_dal_rtc_ex.c \
+            apm32f4xx_dal_sd.c \
+            apm32f4xx_dal_sdram.c \
+            apm32f4xx_dal_smartcard.c \
+            apm32f4xx_dal_smbus.c \
+            apm32f4xx_dal_spi.c \
+            apm32f4xx_dal_sram.c \
+            apm32f4xx_dal_tmr.c \
+            apm32f4xx_dal_tmr_ex.c \
+            apm32f4xx_dal_uart.c \
+            apm32f4xx_dal_usart.c \
+            apm32f4xx_dal_wwdt.c \
+            apm32f4xx_ddl_adc.c \
+            apm32f4xx_ddl_comp.c \
+            apm32f4xx_ddl_crc.c \
+            apm32f4xx_ddl_dac.c \
+            apm32f4xx_ddl_dma.c \
+            apm32f4xx_ddl_dmc.c \
+            apm32f4xx_ddl_eint.c \
+            apm32f4xx_ddl_gpio.c \
+            apm32f4xx_ddl_i2c.c \
+            apm32f4xx_ddl_pmu.c \
+            apm32f4xx_ddl_rcm.c \
+            apm32f4xx_ddl_rng.c \
+            apm32f4xx_ddl_rtc.c \
+            apm32f4xx_ddl_sdmmc.c \
+            apm32f4xx_ddl_smc.c \
+            apm32f4xx_ddl_spi.c \
+            apm32f4xx_ddl_tmr.c \
+            apm32f4xx_ddl_usart.c \
+            apm32f4xx_ddl_usb.c \
+            apm32f4xx_ddl_utils.c
 
 VPATH       := $(VPATH):$(STDPERIPH_DIR)/Source
 
 #USB
 USBCORE_DIR = $(ROOT)/lib/main/APM32F4/Middlewares/APM32_USB_Library/Device/Core
-USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
-USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
+USBCORE_SRC = \
+        usbd_core.c \
+        usbd_dataXfer.c \
+        usbd_stdReq.c
 
 USBCDC_DIR = $(ROOT)/lib/main/APM32F4/Middlewares/APM32_USB_Library/Device/Class/CDC
-USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
-USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
+USBCDC_SRC = usbd_cdc.c
 
 USBMSC_DIR = $(ROOT)/lib/main/APM32F4/Middlewares/APM32_USB_Library/Device/Class/MSC
-USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
-USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
+USBMSC_SRC = \
+        usbd_msc.c \
+        usbd_msc_bot.c \
+        usbd_msc_scsi.c
 
 VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBMSC_DIR)/Src
 
@@ -57,14 +130,16 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 
+DEVICE_FLAGS    = -DUSE_DAL_DRIVER -DHSE_VALUE=$(HSE_VALUE) -DAPM32
+
 ifeq ($(TARGET_MCU),APM32F405xx)
-DEVICE_FLAGS    = -DUSE_DAL_DRIVER -DAPM32F405xx -DHSE_VALUE=$(HSE_VALUE) -DAPM32
+DEVICE_FLAGS    += -DAPM32F405xx
 LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f405.ld
 STARTUP_SRC     = apm32/startup_apm32f405xx.S
 MCU_FLASH_SIZE  := 1024
 
 else ifeq ($(TARGET_MCU),APM32F407xx)
-DEVICE_FLAGS    = -DUSE_DAL_DRIVER -DAPM32F407xx -DHSE_VALUE=$(HSE_VALUE) -DAPM32
+DEVICE_FLAGS    += -DAPM32F407xx
 LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f407.ld
 STARTUP_SRC     = apm32/startup_apm32f407xx.S
 MCU_FLASH_SIZE  := 1024

@@ -60,22 +60,23 @@ STDPERIPH_SRC   = \
 
 #USB
 USBCORE_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Core
-USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
-EXCLUDES    = usbd_conf_template.c
-USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
+USBCORE_SRC = \
+            usbd_core.c \
+            usbd_ctlreq.c \
+            usbd_ioreq.c
 
 USBCDC_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
-USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
-EXCLUDES   = usbd_cdc_if_template.c
-USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
+USBCDC_SRC = usbd_cdc.c
 
 USBHID_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Class/HID
-USBHID_SRC = $(notdir $(wildcard $(USBHID_DIR)/Src/*.c))
+USBHID_SRC = usbd_hid.c
 
 USBMSC_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Class/MSC
-USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
-EXCLUDES   = usbd_msc_storage_template.c
-USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
+USBMSC_SRC = \
+            usbd_msc_bot.c \
+            usbd_msc.c \
+            usbd_msc_data.c \
+            usbd_msc_scsi.c
 
 VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src:$(STDPERIPH_DIR)/src
 

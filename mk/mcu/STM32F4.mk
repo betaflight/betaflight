@@ -65,28 +65,33 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC)
 else
 USBCORE_DIR = $(ROOT)/lib/main/STM32_USB_Device_Library/Core
-USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/src/*.c))
-USBOTG_DIR  = $(ROOT)/lib/main/STM32_USB_OTG_Driver
-USBOTG_SRC  = $(notdir $(wildcard $(USBOTG_DIR)/src/*.c))
-EXCLUDES    = usb_bsp_template.c \
-              usb_conf_template.c \
-              usb_hcd_int.c \
-              usb_hcd.c \
-              usb_otg.c
+USBCORE_SRC = \
+            usbd_core.c \
+            usbd_ioreq.c \
+            usbd_req.c
 
-USBOTG_SRC  := $(filter-out ${EXCLUDES}, $(USBOTG_SRC))
+USBOTG_DIR  = $(ROOT)/lib/main/STM32_USB_OTG_Driver
+USBOTG_SRC  = \
+            usb_core.c \
+            usb_dcd.c \
+            usb_dcd_int.c
+
 USBCDC_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/cdc
-USBCDC_SRC  = $(notdir $(wildcard $(USBCDC_DIR)/src/*.c))
-EXCLUDES    = usbd_cdc_if_template.c
-USBCDC_SRC  := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
+USBCDC_SRC  = usbd_cdc_core.c
+
 USBMSC_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/msc
-USBMSC_SRC  = $(notdir $(wildcard $(USBMSC_DIR)/src/*.c))
-EXCLUDES    = usbd_storage_template.c
-USBMSC_SRC  := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
+USBMSC_SRC  = \
+            usbd_msc_bot.c \
+            usbd_msc_core.c \
+            usbd_msc_data.c \
+            usbd_msc_scsi.c
+
 USBHID_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/hid
-USBHID_SRC  = $(notdir $(wildcard $(USBHID_DIR)/src/*.c))
+USBHID_SRC  = usbd_hid_core.c
+
 USBWRAPPER_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/hid_cdc_wrapper
-USBWRAPPER_SRC  = $(notdir $(wildcard $(USBWRAPPER_DIR)/src/*.c))
+USBWRAPPER_SRC  = usbd_hid_cdc_wrapper.c
+
 VPATH       := $(VPATH):$(USBOTG_DIR)/src:$(USBCORE_DIR)/src:$(USBCDC_DIR)/src:$(USBMSC_DIR)/src:$(USBHID_DIR)/src:$(USBWRAPPER_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
@@ -107,27 +112,31 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_SRC       :=
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(STDPERIPH_DIR)/Inc \
-                   $(USBCORE_DIR)/Inc \
-                   $(USBCDC_DIR)/Inc \
-                   $(CMSIS_DIR)/Include \
-                   $(CMSIS_DIR)/Device/ST/STM32F4xx/Include \
-                   $(SRC_DIR)/drivers/mcu/stm32/vcp_hal
+INCLUDE_DIRS    := \
+                $(INCLUDE_DIRS) \
+                $(STDPERIPH_DIR)/Inc \
+                $(USBCORE_DIR)/Inc \
+                $(USBCDC_DIR)/Inc \
+                $(CMSIS_DIR)/Include \
+                $(CMSIS_DIR)/Device/ST/STM32F4xx/Include \
+                $(SRC_DIR)/drivers/mcu/stm32/vcp_hal
 else
-CMSIS_SRC       := $(notdir $(wildcard $(CMSIS_DIR)/CoreSupport/*.c \
-                   $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/*.c))
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(STDPERIPH_DIR)/inc \
-                   $(USBOTG_DIR)/inc \
-                   $(USBCORE_DIR)/inc \
-                   $(USBCDC_DIR)/inc \
-                   $(USBHID_DIR)/inc \
-                   $(USBWRAPPER_DIR)/inc \
-                   $(USBMSC_DIR)/inc \
-                   $(CMSIS_DIR)/Core/Include \
-                   $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
-                   $(SRC_DIR)/drivers/mcu/stm32/vcpf4
+CMSIS_SRC       := \
+                stm32f4xx_gpio.c \
+                stm32f4xx_rcc.c
+
+INCLUDE_DIRS    := \
+                $(INCLUDE_DIRS) \
+                $(STDPERIPH_DIR)/inc \
+                $(USBOTG_DIR)/inc \
+                $(USBCORE_DIR)/inc \
+                $(USBCDC_DIR)/inc \
+                $(USBHID_DIR)/inc \
+                $(USBWRAPPER_DIR)/inc \
+                $(USBMSC_DIR)/inc \
+                $(CMSIS_DIR)/Core/Include \
+                $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
+                $(SRC_DIR)/drivers/mcu/stm32/vcpf4
 endif
 
 #Flags
