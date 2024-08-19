@@ -30,8 +30,9 @@ extern "C" {
     #include "fc/runtime_config.h"
 
     #include "flight/alt_hold.h"
-    #include "flight/position.h"
+    #include "flight/failsafe.h"
     #include "flight/imu.h"
+    #include "flight/position.h"
 
     #include "rx/rx.h"
 
@@ -46,7 +47,7 @@ extern "C" {
     void altHoldProcessTransitions(void);
     void altHoldInit(void);
     void altHoldUpdate(void);
-    // end why ??
+    bool failsafeIsActive(void) { return false; }
 }
 
 #include "unittest_macros.h"

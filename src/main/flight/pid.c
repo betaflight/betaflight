@@ -806,13 +806,20 @@ float pidGetAirmodeThrottleOffset(void)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
-    // if all sticks are within 5% of center, and throttle low, check accDelta for impacts
-    // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
-    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f &&
-        fabsf(acc.accDelta) > pidRuntime.landingDisarmThreshold) {
-        // disarm on accDelta transients
-        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+    // if, after takeoff...
+    if (isAirmodeActivated()
+#ifdef USE_ALTHOLD_MODE
+        // either always when altitude hold mode is active, including when activated by failsafe landing mode,
+        && (altHoldIsActive() ||
+#endif
+            // or in normal flight when throttle is near zero and sticks centered,
+            (getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f))
+        // and accelerometer jerk exceeds threshold...
+        && fabsf(acc.accDelta) > pidRuntime.ezLandingDisarmThreshold){
+        // then disarm
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
         disarm(DISARM_REASON_LANDING);
+        // note: threshold should be high enough to avoid unwanted disarms in the air on throttle chops, eg around 10
     }
     DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
     DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));

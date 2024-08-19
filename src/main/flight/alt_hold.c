@@ -26,6 +26,7 @@
 #include "fc/runtime_config.h"
 #include "fc/rc.h"
 #include "flight/position.h"
+#include "flight/failsafe.h"
 #include "sensors/acceleration.h"
 #include "rx/rx.h"
 
@@ -173,6 +174,11 @@ void altHoldUpdateTargetAltitude(void)
         throttleAdjustmentFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
     } else if (rcThrottle > highThreshold) {
         throttleAdjustmentFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+    }
+
+    // if failsafe is active, and we get here, we are in landing mode, so descend at configured max rate
+    if (failsafeIsActive()) {
+        throttleAdjustmentFactor = -1.0f;
     }
 
     altHoldState.targetAltitudeDelta = throttleAdjustmentFactor * altholdConfig()->altHoldTargetAdjustRate * taskIntervalSeconds;
