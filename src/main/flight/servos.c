@@ -209,13 +209,10 @@ int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
     const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeState.channelCount) {
-        return scaleRangef(
-            constrainf(rcData[channelToForwardFrom], PWM_RANGE_MIN, PWM_RANGE_MAX),
-            PWM_RANGE_MIN,
-            PWM_RANGE_MAX,
-            MIN(servoParams(servoIndex)->min, servoParams(servoIndex)->max),
-            MAX(servoParams(servoIndex)->min, servoParams(servoIndex)->max)
-        );
+        if (rcData[channelToForwardFrom] < PWM_RANGE_MIN || rcData[channelToForwardFrom] > PWM_RANGE_MAX) {
+            return scaleRangef(constrainf(rcData[channelToForwardFrom], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, servoParams(servoIndex)->min, servoParams(servoIndex)->max);
+        }
+        return rcData[channelToForwardFrom];
     }
 
     return servoParams(servoIndex)->middle;
