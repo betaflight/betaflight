@@ -65,7 +65,7 @@
 #define PARAM_NAME_EZ_LANDING_THRESHOLD "ez_landing_threshold"
 #define PARAM_NAME_EZ_LANDING_LIMIT "ez_landing_limit"
 #define PARAM_NAME_EZ_LANDING_SPEED "ez_landing_speed"
-#define PARAM_NAME_EZ_DISARM_THRESHOLD "ez_landing_disarm_threshold"
+#define PARAM_NAME_EZ_DISARM_THRESHOLD "ez_disarm_threshold"
 #define PARAM_NAME_SPA_ROLL_CENTER "spa_roll_center"
 #define PARAM_NAME_SPA_ROLL_WIDTH "spa_roll_width"
 #define PARAM_NAME_SPA_ROLL_MODE "spa_roll_mode"

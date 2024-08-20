@@ -236,7 +236,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
-        .ez_landing_disarm_threshold = 0                            ,
+        .ez_disarm_threshold = 0, // relatively safe values are around 100
     );
 
 #ifndef USE_D_MIN
@@ -780,7 +780,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     // if all sticks are within 5% of center, and throttle low, check accDelta for impacts
     // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
     if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f &&
-        fabsf(acc.accDelta) > pidRuntime.ezLandingDisarmThreshold) {
+        fabsf(acc.accDelta) > pidRuntime.ezDisarmThreshold) {
         // disarm on accDelta transients
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         disarm(DISARM_REASON_LANDING);
