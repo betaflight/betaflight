@@ -223,7 +223,7 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
     }, {
-        .adjustmentFunction = ADJUSTMENT_LED_PROFILE,
+        .adjustmentFunction = ADJUSTMENT_LED_STRIP_MODE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
     }
@@ -636,10 +636,10 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         }
 #endif
         break;
-    case ADJUSTMENT_LED_PROFILE:
+    case ADJUSTMENT_LED_STRIP_MODE:
 #ifdef USE_LED_STRIP
-        if (getLedProfile() != position) {
-            setLedProfile(position);
+        if (getledStripMode() != position) {
+            setledStripMode(position);
         }
 #endif
         break;

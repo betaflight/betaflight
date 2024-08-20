@@ -30,12 +30,12 @@
 
 #define TASK_LEDSTRIP_RATE_HZ 60
 
-#define LED_CONFIGURABLE_COLOR_COUNT   16
-#define LED_MODE_COUNT                  6
-#define LED_DIRECTION_COUNT             6
-#define LED_BASEFUNCTION_COUNT          10
-#define LED_OVERLAY_COUNT               7
-#define LED_SPECIAL_COLOR_COUNT        11
+#define LED_CONFIGURABLE_COLOR_COUNT     16
+#define LED_FCSTATE_COUNT                6
+#define LED_DIRECTION_COUNT               6
+#define LED_BASEFUNCTION_COUNT           10
+#define LED_OVERLAY_COUNT                 7
+#define LED_SPECIAL_FCSTATE_COLOR_COUNT 11
 
 #define LED_POS_OFFSET                  0
 #define LED_FUNCTION_OFFSET             8
@@ -92,15 +92,15 @@ typedef enum {
 } colorId_e;
 
 typedef enum {
-    LED_MODE_ORIENTATION = 0,
-    LED_MODE_HEADFREE,
-    LED_MODE_HORIZON,
-    LED_MODE_ANGLE,
-    LED_MODE_MAG,
-    LED_MODE_BARO,
-    LED_SPECIAL,
-    LED_AUX_CHANNEL
-} ledModeIndex_e;
+    LED_FCSTATE_ORIENTATION = 0,
+    LED_FCSTATE_HEADFREE,
+    LED_FCSTATE_HORIZON,
+    LED_FCSTATE_ANGLE,
+    LED_FCSTATE_MAG,
+    LED_FCSTATE_BARO,
+    LED_FCSTATE_SPECIAL,
+    LED_FCSTATE_AUX_CHANNEL
+} ledFCStates_e;
 
 typedef enum {
     LED_SCOLOR_DISARMED = 0,
@@ -146,20 +146,20 @@ typedef enum {
 } ledOverlayId_e;
 
 typedef enum {
-    LED_PROFILE_RACE = 0,
-    LED_PROFILE_BEACON,
-#ifdef USE_LED_STRIP_STATUS_MODE
-    LED_PROFILE_STATUS,
+    LED_STRIP_MODE_RACE = 0,
+    LED_STRIP_MODE_BEACON,
+#ifdef USE_LED_STRIP_MASTER_MODE
+    LED_STRIP_MODE_MASTER,
 #endif
-    LED_PROFILE_COUNT
-} ledProfile_e;
+    LED_STRIP_MODE_COUNT
+} ledStripMode_e;
 
 typedef struct modeColorIndexes_s {
     uint8_t color[LED_DIRECTION_COUNT];
 } modeColorIndexes_t;
 
 typedef struct specialColorIndexes_s {
-    uint8_t color[LED_SPECIAL_COLOR_COUNT];
+    uint8_t color[LED_SPECIAL_FCSTATE_COLOR_COUNT];
 } specialColorIndexes_t;
 
 typedef uint32_t ledConfig_t;
@@ -175,7 +175,7 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_visual_beeper;
     ioTag_t ioTag;
     ledStripFormatRGB_e ledstrip_grb_rgb;
-    ledProfile_e ledstrip_mode;
+    ledStripMode_e ledstrip_mode;
     colorId_e ledstrip_race_color;
     colorId_e ledstrip_beacon_color;
     uint16_t ledstrip_beacon_period_ms;
@@ -189,16 +189,16 @@ typedef struct ledStripConfig_s {
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
-#if defined(USE_LED_STRIP_STATUS_MODE)
-typedef struct ledStripStatusModeConfig_s {
+#if defined(USE_LED_STRIP_MASTER_MODE)
+typedef struct ledStripMasterModeConfig_t_s {
     ledConfig_t ledConfigs[LED_STRIP_MAX_LENGTH];
     hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
-    modeColorIndexes_t modeColors[LED_MODE_COUNT];
+    modeColorIndexes_t modeColors[LED_FCSTATE_COUNT];
     specialColorIndexes_t specialColors;
     uint8_t ledstrip_aux_channel;
-} ledStripStatusModeConfig_t;
+} ledStripMasterModeConfig_t_t;
 
-PG_DECLARE(ledStripStatusModeConfig_t, ledStripStatusModeConfig);
+PG_DECLARE(ledStripMasterModeConfig_t_t, ledStripMasterModeConfig_t);
 #endif
 
 #define LF(name) LED_FUNCTION_ ## name
@@ -228,7 +228,7 @@ void ledStripEnable(void);
 void ledStripDisable(void);
 void ledStripUpdate(timeUs_t currentTimeUs);
 
-bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
+bool setModeColor(ledFCStates_e fcStatusIndex, int modeColorIndex, int colorIndex);
 
 void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
 void applyDefaultColors(hsvColor_t *colors);
@@ -237,5 +237,5 @@ void applyDefaultSpecialColors(specialColorIndexes_t *specialColors);
 
 void updateRequiredOverlay(void);
 
-uint8_t getLedProfile(void);
-void setLedProfile(uint8_t profile);
+uint8_t getledStripMode(void);
+void setledStripMode(uint8_t profile);

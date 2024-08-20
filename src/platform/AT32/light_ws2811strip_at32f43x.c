@@ -199,4 +199,4 @@ void ws2811LedStripDMAEnable(void)
     xDMA_Cmd(dmaRef, TRUE);
 
 }
-#endif
+#endif // USE_LED_STRIP

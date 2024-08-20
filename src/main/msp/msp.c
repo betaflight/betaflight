@@ -1711,10 +1711,10 @@ case MSP_NAME:
         break;
     }
 
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP_MASTER_MODE
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
+            const hsvColor_t *color = &ledStripMasterModeConfig_t()->colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
             sbufWriteU8(dst, color->v);
@@ -1725,8 +1725,8 @@ case MSP_NAME:
 #ifdef USE_LED_STRIP
     case MSP_LED_STRIP_CONFIG:
         for (int i = 0; i < LED_STRIP_MAX_LENGTH; i++) {
-#ifdef USE_LED_STRIP_STATUS_MODE
-            const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
+#ifdef USE_LED_STRIP_MASTER_MODE
+            const ledConfig_t *ledConfig = &ledStripMasterModeConfig_t()->ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
 #else
             sbufWriteU32(dst, 0);
@@ -1736,7 +1736,7 @@ case MSP_NAME:
         // API 1.41 - add indicator for advanced profile support and the current profile selection
         // 0 = basic ledstrip available
         // 1 = advanced ledstrip available
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP_MASTER_MODE
         sbufWriteU8(dst, 1);   // advanced ledstrip available
 #else
         sbufWriteU8(dst, 0);   // only simple ledstrip available
@@ -1745,25 +1745,25 @@ case MSP_NAME:
         break;
 #endif
 
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP_MASTER_MODE
     case MSP_LED_STRIP_MODECOLOR:
-        for (int i = 0; i < LED_MODE_COUNT; i++) {
+        for (int i = 0; i < LED_FCSTATE_COUNT; i++) {
             for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
                 sbufWriteU8(dst, i);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, ledStripStatusModeConfig()->modeColors[i].color[j]);
+                sbufWriteU8(dst, ledStripMasterModeConfig_t()->modeColors[i].color[j]);
             }
         }
 
-        for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
-            sbufWriteU8(dst, LED_MODE_COUNT);
+        for (int j = 0; j < LED_SPECIAL_FCSTATE_COLOR_COUNT; j++) {
+            sbufWriteU8(dst, LED_FCSTATE_COUNT);
             sbufWriteU8(dst, j);
-            sbufWriteU8(dst, ledStripStatusModeConfig()->specialColors.color[j]);
+            sbufWriteU8(dst, ledStripMasterModeConfig_t()->specialColors.color[j]);
         }
 
-        sbufWriteU8(dst, LED_AUX_CHANNEL);
+        sbufWriteU8(dst, LED_FCSTATE_AUX_CHANNEL);
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, ledStripStatusModeConfig()->ledstrip_aux_channel);
+        sbufWriteU8(dst, ledStripMasterModeConfig_t()->ledstrip_aux_channel);
         break;
 #endif
 
@@ -3907,10 +3907,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
     }
 
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP_MASTER_MODE
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &ledStripStatusModeConfigMutable()->colors[i];
+            hsvColor_t *color = &ledStripMasterModeConfig_tMutable()->colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
@@ -3925,8 +3925,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             if (i >= LED_STRIP_MAX_LENGTH || dataSize != (1 + 4)) {
                 return MSP_RESULT_ERROR;
             }
-#ifdef USE_LED_STRIP_STATUS_MODE
-            ledConfig_t *ledConfig = &ledStripStatusModeConfigMutable()->ledConfigs[i];
+#ifdef USE_LED_STRIP_MASTER_MODE
+            ledConfig_t *ledConfig = &ledStripMasterModeConfig_tMutable()->ledConfigs[i];
             *ledConfig = sbufReadU32(src);
             reevaluateLedConfig();
 #else
@@ -3940,10 +3940,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
-#ifdef USE_LED_STRIP_STATUS_MODE
+#ifdef USE_LED_STRIP_MASTER_MODE
     case MSP_SET_LED_STRIP_MODECOLOR:
         {
-            ledModeIndex_e modeIdx = sbufReadU8(src);
+            ledFCStates_e modeIdx = sbufReadU8(src);
             int funIdx = sbufReadU8(src);
             int color = sbufReadU8(src);
 

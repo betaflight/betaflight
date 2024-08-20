@@ -451,12 +451,12 @@ static const char * const lookupTableSpaMode[] = {
 };
 
 #ifdef USE_LED_STRIP
-#ifdef USE_LED_STRIP_STATUS_MODE
-static const char * const lookupTableLEDProfile[] = {
-    "RACE", "BEACON", "NORMAL"
+#ifdef USE_LED_STRIP_MASTER_MODE
+static const char * const lookupTableLEDStripMode[] = {
+    "RACE", "BEACON", "MASTER"
 };
 #else
-static const char * const lookupTableLEDProfile[] = {
+static const char * const lookupTableLEDStripMode[] = {
     "RACE", "BEACON"
 };
 #endif
@@ -652,7 +652,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
     LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
 #ifdef USE_LED_STRIP
-    LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
+    LOOKUP_TABLE_ENTRY(lookupTableLEDStripMode),
     LOOKUP_TABLE_ENTRY(lookupTableLedstripColors),
 #endif
 
@@ -1385,7 +1385,7 @@ const clivalue_t valueTable[] = {
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
     { "ledstrip_visual_beeper_color",VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LEDSTRIP_COLOR }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper_color) },
     { "ledstrip_grb_rgb",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RGB_GRB }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_grb_rgb) },
-    { "ledstrip_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_PROFILE }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_mode) },
+    { "ledstrip_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_STRIP_MODE }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_mode) },
     { "ledstrip_race_color",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LEDSTRIP_COLOR }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_race_color) },
     { "ledstrip_beacon_color",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LEDSTRIP_COLOR }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_beacon_color) },
     { "ledstrip_beacon_period_ms",  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 10000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_beacon_period_ms) },

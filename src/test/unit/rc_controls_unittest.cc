@@ -652,8 +652,8 @@ armingDisableFlags_e getArmingDisableFlags(void)
 }
 bool isTryingToArm(void) { return false; }
 void resetTryingToArm(void) {}
-void setLedProfile(uint8_t profile) { UNUSED(profile); }
-uint8_t getLedProfile(void) { return 0; }
+void setledStripMode(uint8_t mode) { UNUSED(mode); }
+uint8_t getledStripMode(void) { return 0; }
 void compassStartCalibration(void) {}
 void pinioBoxTaskControl(void) {}
 void schedulerIgnoreTaskExecTime(void) {}

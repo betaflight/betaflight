@@ -78,7 +78,7 @@ extern "C" {
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
-    PG_REGISTER(ledStripStatusModeConfig_t, ledStripStatusModeConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 0);
+    PG_REGISTER(ledStripMasterModeConfig_t_t, ledStripMasterModeConfig_t, PG_LED_STRIP_MASTER_MODE_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
     PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
@@ -301,7 +301,7 @@ const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 void parseRcChannels(const char *, rxConfig_t *){}
 void mixerLoadMix(int, motorMixer_t *) {}
-bool setModeColor(ledModeIndex_e, int, int) { return false; }
+bool setModeColor(ledFCStates_e, int, int) { return false; }
 float motorConvertFromExternal(uint16_t) { return 1.0; }
 void motorShutdown(void) { }
 uint8_t getCurrentPidProfileIndex(void){ return 1; }

@@ -48,7 +48,7 @@
 #ifdef USE_LED_STRIP
 
 static uint8_t cmsx_FeatureLedstrip;
-static uint8_t cmsx_ledProfile;
+static uint8_t cmsx_ledStripMode;
 static uint8_t cmsx_ledRaceColor;
 static uint8_t cmsx_ledBeaconColor;
 static uint16_t cmsx_ledBeaconPeriod;
@@ -57,11 +57,11 @@ static uint8_t cmsx_ledBeaconArmedOnly;
 static uint8_t cmsx_ledVisualBeeper;
 static uint8_t cmsx_ledVisualBeeperColor;
 
-const char * const ledProfileNames[LED_PROFILE_COUNT] = {
+const char * const ledStripModeNames[LED_STRIP_MODE_COUNT] = {
     "RACE",
     "BEACON",
-#ifdef USE_LED_STRIP_STATUS_MODE
-    "NORMAL"
+#ifdef USE_LED_STRIP_MASTER_MODE
+    "MASTER"
 #endif
 };
 
@@ -70,7 +70,7 @@ static const void *cmsx_Ledstrip_OnEnter(displayPort_t *pDisp)
     UNUSED(pDisp);
 
     cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
-    cmsx_ledProfile = getLedProfile();
+    cmsx_ledStripMode = getledStripMode();
     cmsx_ledRaceColor = ledStripConfig()->ledstrip_race_color;
     cmsx_ledBeaconColor = ledStripConfig()->ledstrip_beacon_color;
     cmsx_ledBeaconPeriod = ledStripConfig()->ledstrip_beacon_period_ms;
@@ -95,7 +95,7 @@ static const void *cmsx_Ledstrip_OnExit(displayPort_t *pDisp, const OSD_Entry *s
         featureDisableImmediate(FEATURE_LED_STRIP);
     }
 
-    setLedProfile(cmsx_ledProfile);
+    setledStripMode(cmsx_ledStripMode);
     ledStripConfigMutable()->ledstrip_race_color = cmsx_ledRaceColor;
     ledStripConfigMutable()->ledstrip_beacon_color = cmsx_ledBeaconColor;
     ledStripConfigMutable()->ledstrip_beacon_period_ms = cmsx_ledBeaconPeriod;
@@ -111,7 +111,7 @@ static const OSD_Entry cmsx_menuLedstripEntries[] =
 {
     { "-- LED STRIP --",  OME_Label, NULL, NULL },
     { "ENABLED",          OME_Bool,  NULL, &cmsx_FeatureLedstrip },
-    { "PROFILE",          OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledProfile, LED_PROFILE_COUNT - 1, ledProfileNames } },
+    { "MODE",             OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledStripMode, LED_STRIP_MODE_COUNT - 1, ledStripModeNames } },
     { "RACE COLOR",       OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledRaceColor, COLOR_COUNT - 1, lookupTableLedstripColors } },
     { "BEACON COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledBeaconColor, COLOR_COUNT -1, lookupTableLedstripColors } },
     { "BEACON PERIOD",    OME_UINT16,NULL, &(OSD_UINT16_t){ &cmsx_ledBeaconPeriod, 50, 10000, 10 } },
