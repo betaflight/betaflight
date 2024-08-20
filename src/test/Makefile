@@ -464,7 +464,7 @@ althold_unittest_SRC := \
 		$(USER_DIR)/pg/rx.c
 
 althold_unittest_DEFINES := \
-		USE_ALTHOLD_MODE= \
+		USE_ALT_HOLD_MODE= \
 
 vtx_msp_unittest_SRC := \
         $(USER_DIR)/common/crc.c \

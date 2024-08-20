@@ -17,7 +17,7 @@
 
 #include "platform.h"
 
-#ifdef USE_ALTHOLD_MODE
+#ifdef USE_ALT_HOLD_MODE
 
 #include "math.h"
 #include "build/debug.h"
@@ -49,7 +49,7 @@ altHoldState_t altHoldState;
 #define ALT_HOLD_PID_D_GAIN  0.01f
 
 static pt2Filter_t altHoldDeltaLpf;
-const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
+static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 
 float altitudePidCalculate(void)
 {
@@ -72,7 +72,7 @@ float altitudePidCalculate(void)
     dOut = pt2FilterApply(&altHoldDeltaLpf, dOut);
 
     // F
-    const float fOut = altholdConfig()->altHoldPidD * altHoldState.targetAltitudeDelta;
+    const float fOut = altholdConfig()->alt_hold_pid_d * altHoldState.targetAltitudeDelta;
     // if error is used, we get a 'free kick' in derivative from changes in the target value
     // but this is delayed by the smoothing, leading to lag and overshoot.
     // calculating feedforward separately avoids the filter lag.
@@ -108,9 +108,9 @@ void altHoldReset(void)
 void altHoldInit(void)
 {
     simplePidInit(
-        ALT_HOLD_PID_P_GAIN * altholdConfig()->altHoldPidP,
-        ALT_HOLD_PID_I_GAIN * altholdConfig()->altHoldPidI,
-        ALT_HOLD_PID_D_GAIN * altholdConfig()->altHoldPidD);
+        ALT_HOLD_PID_P_GAIN * altholdConfig()->alt_hold_pid_p,
+        ALT_HOLD_PID_I_GAIN * altholdConfig()->alt_hold_pid_i,
+        ALT_HOLD_PID_D_GAIN * altholdConfig()->alt_hold_pid_d);
         // the multipliers are base scale factors
         // iTerm is relatively weak, intended to be slow moving to adjust baseline errors
         // the Hover value is important otherwise takes time for iTerm to correct
@@ -129,7 +129,7 @@ void altHoldInit(void)
 
 void altHoldProcessTransitions(void) {
 
-    if (FLIGHT_MODE(ALTHOLD_MODE)) {
+    if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         if (!altHoldState.isAltHoldActive && isAltitudeAvailable()) {
             altHoldReset();
             altHoldState.isAltHoldActive = true;
@@ -181,7 +181,7 @@ void altHoldUpdateTargetAltitude(void)
         throttleAdjustmentFactor = -1.0f;
     }
 
-    altHoldState.targetAltitudeDelta = throttleAdjustmentFactor * altholdConfig()->altHoldTargetAdjustRate * taskIntervalSeconds;
+    altHoldState.targetAltitudeDelta = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate * taskIntervalSeconds;
     // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
     altHoldState.targetAltitudeCm += altHoldState.targetAltitudeDelta;
 }
@@ -213,14 +213,14 @@ void altHoldUpdate(void)
     }
 
     // check if the user has changed the target altitude using sticks
-    if (altholdConfig()->altHoldTargetAdjustRate) {
+    if (altholdConfig()->alt_hold_target_adjust_rate) {
         altHoldUpdateTargetAltitude();
     }
 
     // use PIDs to return the throttle adjustment value, add it to the hover value, and constrain
     const float throttleAdjustment = altitudePidCalculate();
     float newThrottle = positionConfig()->hover_throttle + throttleAdjustment;
-    altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->altHoldThrottleMin, altholdConfig()->altHoldThrottleMax);
+    altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->alt_hold_throttle_min, altholdConfig()->alt_hold_throttle_max);
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, lrintf(altHoldState.targetAltitudeCm));
     DEBUG_SET(DEBUG_ALTHOLD, 2, lrintf(throttleAdjustment));

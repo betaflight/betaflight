@@ -19,7 +19,7 @@
 
 #include "pg/alt_hold.h"
 
-#ifdef USE_ALTHOLD_MODE
+#ifdef USE_ALT_HOLD_MODE
 #include "common/time.h"
 
 #define ALTHOLD_TASK_RATE_HZ 100         // hz

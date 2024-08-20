@@ -63,17 +63,17 @@ TEST(AltholdUnittest, altHoldTransitionsTest)
     altHoldInit();
     EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
-    flightModeFlags |= ALTHOLD_MODE;
+    flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
     altHoldUpdate();
     EXPECT_EQ(altHoldState.isAltHoldActive, true);
 
     millisRW = 56;
-    flightModeFlags ^= ALTHOLD_MODE;
+    flightModeFlags ^= ALT_HOLD_MODE;
     altHoldUpdate();
     EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
-    flightModeFlags |= ALTHOLD_MODE;
+    flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 64;
     altHoldUpdate();
     EXPECT_EQ(altHoldState.isAltHoldActive, true);
@@ -88,7 +88,7 @@ TEST(AltholdUnittest, altHoldTransitionsTest)
 //     altHoldUpdate();
 // 
 //     millisRW = 10042;
-//     flightModeFlags ^= ALTHOLD_MODE;
+//     flightModeFlags ^= ALT_HOLD_MODE;
 //     altHoldUpdate();
 // 
 //     millisRW = 10042 + 0.3f * ALTHOLD_MAX_ENTER_PERIOD;
@@ -104,7 +104,7 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
     altHoldInit();
     EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
-    flightModeFlags |= ALTHOLD_MODE;
+    flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
     altHoldUpdate();
     EXPECT_EQ(altHoldState.isAltHoldActive, true);
@@ -114,12 +114,12 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 //     millisRW += ALTHOLD_ENTER_PERIOD * 2;
 //     altHoldUpdate();
 // 
-//     flightModeFlags ^= ALTHOLD_MODE;
+//     flightModeFlags ^= ALT_HOLD_MODE;
 //     altHoldUpdate();
 //     millisRW += 0.5f * ALTHOLD_MAX_ENTER_PERIOD;
 //     altHoldUpdate();
 // 
-//     flightModeFlags |= ALTHOLD_MODE;
+//     flightModeFlags |= ALT_HOLD_MODE;
 //     millisRW += 1;
 //     altHoldUpdate();
 }

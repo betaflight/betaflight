@@ -970,8 +970,9 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
     bool canUseHorizonMode = true;
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeIsActive() 
-#ifdef USE_ALTHOLD_MODE
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE)
+        || failsafeIsActive() 
+#ifdef USE_ALT_HOLD_MODE
         || altHoldIsActive()
 #endif
         ) && (sensors(SENSOR_ACC))) {
@@ -985,22 +986,23 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
-#ifdef USE_ALTHOLD_MODE
+#ifdef USE_ALT_HOLD_MODE
     // only if armed
-    if (ARMING_FLAG(ARMED) && 
-    // and either switch activated, or are in failsafe
-    (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive()) &&
-    // if in failsafe, don't activate if in GPS Rescue Mode, ie, activate only in failsafe landing mode
-    !(failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) &&
+    if (ARMING_FLAG(ARMED) 
+    // and either the alt_hold switch is activated
+    && (IS_RC_MODE_ACTIVE(BOXALTHOLD)
+        // or are in failsafe, but not in GPS Rescue Mode ie, in failsafe Landing Mode
+        || (failsafeIsActive()
+            && (failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE)))
     // and, provided that we have Acc for self-levelling
-    (sensors(SENSOR_ACC)) &&
+    && (sensors(SENSOR_ACC))
     // and that we have already taken off (to prevent activation on the ground), then enable althold
-    isAirmodeActivated()) {
-        if (!FLIGHT_MODE(ALTHOLD_MODE)) {
-            ENABLE_FLIGHT_MODE(ALTHOLD_MODE);
+    && isAirmodeActivated()) {
+        if (!FLIGHT_MODE(ALT_HOLD_MODE)) {
+            ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
         }
     } else {
-        DISABLE_FLIGHT_MODE(ALTHOLD_MODE);
+        DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
     }
 #endif
 
@@ -1023,7 +1025,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (FLIGHT_MODE(ANGLE_MODE | ALTHOLD_MODE | HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
         rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / (float)imuConfig()->imu_process_denom));

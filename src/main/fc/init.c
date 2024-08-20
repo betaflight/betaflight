@@ -1000,7 +1000,7 @@ void init(void)
     spiInitBusDMA();
 #endif
 
-#ifdef USE_ALTHOLD_MODE
+#ifdef USE_ALT_HOLD_MODE
     altHoldInit();
 #endif
 

@@ -254,7 +254,7 @@ static uint16_t getRPM(void)
 static uint16_t getMode(void)
 {
     uint16_t flightMode = 1; //Acro
-    if (FLIGHT_MODE(ANGLE_MODE | ALTHOLD_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE)) {
          flightMode = 0; //Stab
     }
     if (FLIGHT_MODE(PASSTHRU_MODE)) {

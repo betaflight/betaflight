@@ -107,7 +107,6 @@ bool isUsingSticksForArming(void)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
-
     if (featureIsEnabled(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
             if (rcData[THROTTLE] < rxConfig()->mincheck) {

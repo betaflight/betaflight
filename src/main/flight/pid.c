@@ -462,7 +462,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // earthRef code here takes about 76 cycles, if conditional on angleEarthRef it takes about 100.  sin_approx costs most of those cycles.
     float sinAngle = sin_approx(DEGREES_TO_RADIANS(pidRuntime.angleTarget[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
     sinAngle *= (axis == FD_ROLL) ? -1.0f : 1.0f; // must be negative for Roll
-    const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE | ALTHOLD_MODE) ? 1.0f : pidRuntime.angleEarthRef;
+    const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE) ? 1.0f : pidRuntime.angleEarthRef;
     angleRate += pidRuntime.angleYawSetpoint * sinAngle * earthRefGain;
     pidRuntime.angleTarget[axis] = angleTarget;  // set target for alternate axis to current axis, for use in preceding calculation
 
@@ -591,7 +591,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 {
     float ret = setPoint;
 
-    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALTHOLD_MODE)) {
+    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE)) {
         bool resetIterm = false;
         float projectedAngle = 0;
         const int setpointSign = acroTrainerSign(setPoint);
@@ -815,7 +815,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
             // or in normal flight when throttle is near zero and sticks centered,
             (getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f))
         // and accelerometer jerk exceeds threshold...
-        && fabsf(acc.accDelta) > pidRuntime.ezLandingDisarmThreshold){
+        && fabsf(acc.accDelta) > pidRuntime.LandingDisarmThreshold){
         // then disarm
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
         disarm(DISARM_REASON_LANDING);
@@ -959,7 +959,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     float horizonLevelStrength = 0.0f;
 
     const bool isExternalAngleModeRequest = FLIGHT_MODE(GPS_RESCUE_MODE)
-#ifdef USE_ALTHOLD
+#ifdef USE_ALT_HOLD_MODE
                 || altHoldIsActive() 
 #endif
                 ;

@@ -406,7 +406,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "MANU";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "STAB";
-    } else if (FLIGHT_MODE(ALTHOLD_MODE)) {
+    } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         flightMode = "AHM ";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
