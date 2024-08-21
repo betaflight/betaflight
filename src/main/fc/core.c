@@ -989,14 +989,13 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_ALT_HOLD_MODE
     // only if armed
     if (ARMING_FLAG(ARMED) 
-    // and either the alt_hold switch is activated
-    && (IS_RC_MODE_ACTIVE(BOXALTHOLD)
-        // or are in failsafe, but not in GPS Rescue Mode ie, in failsafe Landing Mode
-        || (failsafeIsActive()
-            && (failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE)))
-    // and, provided that we have Acc for self-levelling
+    // and either the alt_hold switch is activated, or are in failsafe
+    && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
+    // but not in GPS_RESCUE_MODE, ie if failsafe is active, must be in Landing Mode
+    && (!FLIGHT_MODE(GPS_RESCUE_MODE))
+    // and we have Acc for self-levelling
     && (sensors(SENSOR_ACC))
-    // and that we have already taken off (to prevent activation on the ground), then enable althold
+    // and we have already taken off (to prevent activation on the ground), then enable althold
     && isAirmodeActivated()) {
         if (!FLIGHT_MODE(ALT_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
