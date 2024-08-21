@@ -77,7 +77,14 @@ float altitudePidCalculate(void)
     // but this is delayed by the smoothing, leading to lag and overshoot.
     // calculating feedforward separately avoids the filter lag.
 
-    const float output = pOut + iOut + dOut + fOut;
+    float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, 0.24 at 40 degrees of tilt
+    tiltAdjustment *= (positionConfig()->hover_throttle - 1000);
+    // if hover is 1300, and adjustment .2, this gives us 0.2*300 or 60 of extra throttle, not much, but useful
+    // same code as in GPS Rescue
+
+    const float output = pOut + iOut + dOut + fOut + tiltAdjustment;
+
+
 
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
     DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
