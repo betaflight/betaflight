@@ -2263,7 +2263,7 @@ static bool UBLOX_parse_gps(void)
             dt.hours = ubxRcvMsgPayload.ubxNavPvt.hour;
             dt.minutes = ubxRcvMsgPayload.ubxNavPvt.min;
             dt.seconds = ubxRcvMsgPayload.ubxNavPvt.sec;
-            dt.millis = (ubxRcvMsgPayload.ubxNavPvt.nano > 0) ? ubxRcvMsgPayload.ubxNavPvt.nano / 1000 : 0; //up to 5ms of error
+            dt.millis = (ubxRcvMsgPayload.ubxNavPvt.nano > 0) ? ubxRcvMsgPayload.ubxNavPvt.nano / 1000000 : 0; // up to 5ms of error
             rtcSetDateTime(&dt);
         }
 #endif
