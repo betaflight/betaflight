@@ -50,6 +50,7 @@
 static float displayAltitudeCm = 0.0f;
 static float zeroedAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
+static bool altitudeIsLow = false;
 
 #if defined(USE_BARO) || defined(USE_GPS)
 
@@ -90,6 +91,7 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_lpf = 300,
     .altitude_d_lpf = 100,
     .hover_throttle = 1275,
+    .landing_altitude_m = 4,
 );
 
 #if defined(USE_BARO) || defined(USE_GPS)
@@ -200,6 +202,9 @@ void calculateEstimatedAltitude(void)
     zeroedAltitudeDerivative = (zeroedAltitudeCm - previousZeroedAltitudeCm) * TASK_ALTITUDE_RATE_HZ; // cm/s
     previousZeroedAltitudeCm = zeroedAltitudeCm;
 
+    // assess if altitude is low here, only when we get new data, rather than in pid loop etc
+    altitudeIsLow = zeroedAltitudeCm < 100.0f * positionConfig()->landing_altitude_m;
+
     zeroedAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, zeroedAltitudeDerivative);
 
 #ifdef USE_VARIO
@@ -231,6 +236,11 @@ int32_t getEstimatedAltitudeCm(void)
 float getAltitude(void)
 {
     return zeroedAltitudeCm;
+}
+
+bool isAltitudeLow(void)
+{
+    return altitudeIsLow;
 }
 
 #ifdef USE_GPS

@@ -1587,6 +1587,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_LPF, "%d",         positionConfig()->altitude_lpf);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D_LPF, "%d",       positionConfig()->altitude_d_lpf);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_HOVER_THROTTLE, "%d",       positionConfig()->hover_throttle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_ALTITUDE, "%d",     positionConfig()->landing_altitude_m);
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
@@ -1677,7 +1678,6 @@ static bool blackboxWriteSysinfo(void)
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCENT_DIST, "%d",    gpsRescueConfig()->descentDistanceM)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCEND_RATE, "%d",    gpsRescueConfig()->descendRate)
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_LANDING_ALT, "%d",     gpsRescueConfig()->targetLandingAltitudeM)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DISARM_THRESHOLD, "%d", gpsRescueConfig()->disarmThreshold)
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_THROTTLE_MIN, "%d",    gpsRescueConfig()->throttleMin)

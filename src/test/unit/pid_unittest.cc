@@ -65,7 +65,8 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/pid_init.h"
-
+    #include "flight/position.h"
+    
     #include "io/gps.h"
 
     #include "pg/pg.h"
@@ -85,6 +86,7 @@ extern "C" {
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
+    PG_REGISTER(positionConfig_t, positionConfig, PG_SYSTEM_CONFIG, 4);
 
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
@@ -94,9 +96,12 @@ extern "C" {
     bool isAirmodeActivated(void) { return simulatedAirmodeEnabled; }
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
 
-    // used by ezDisarm auto-disarm code
+    // used by auto-disarm code
     float getMaxRcDeflectionAbs() { return fabsf(simulatedMaxRcDeflectionAbs); }
     float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
+
+
+    bool isAltitudeLow(void) { return false; }
 
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }

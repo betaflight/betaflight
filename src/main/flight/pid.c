@@ -50,6 +50,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/position.h"
 #include "flight/rpm_filter.h"
 
 #include "io/gps.h"
@@ -808,20 +809,26 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
     // if, after takeoff...
     if (isAirmodeActivated()
-        // and, either sticks are deflected,
+        // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
         // or in altitude hold mode
 #ifdef USE_ALTHOLD_MODE
             || altHoldIsActive()
 #endif
-        )
-        // and accelerometer jerk exceeds threshold...
-        && (fabsf(acc.accDelta) > pidRuntime.landingDisarmThreshold)) {
-
-        // then disarm
-        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
-        disarm(DISARM_REASON_LANDING);
-        // note: threshold should be high enough to avoid unwanted disarms in the air on throttle chops, eg around 10
+        )) {
+        // increase sensitivity increase by 2 when low and in altitude hold
+        // for disarm with gentle controlled landings
+        float lowAltitudeSensitivity = 1.0f;
+#ifdef USE_ALTHOLD_MODE
+        lowAltitudeSensitivity = altHoldIsActive() && isAltitudeLow() ? 2.0f : 1.0f;
+#endif
+        // and disarm if accelerometer jerk exceeds threshold...
+        if ((fabsf(acc.accDelta) * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
+            // then disarm
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
+            disarm(DISARM_REASON_LANDING);
+            // note: threshold should be high enough to avoid unwanted disarms in the air on throttle chops, eg around 10
+        }
     }
     DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
     DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));

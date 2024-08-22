@@ -79,7 +79,6 @@ typedef struct {
     float maxAltitudeCm;
     float returnAltitudeCm;
     float targetAltitudeCm;
-    float targetLandingAltitudeCm;
     float targetVelocityCmS;
     float pitchAngleLimitDeg;
     float rollAngleLimitDeg;
@@ -706,7 +705,7 @@ void descend(void)
 {
     if (newGPSData) {
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
-        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (rescueState.intent.targetLandingAltitudeCm / 200.0f);
+        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * positionConfig()->landing_altitude_m);
         const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
      
         // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home
@@ -801,13 +800,12 @@ void gpsRescueUpdate(void)
 
     case RESCUE_INITIALIZE:
         // Things that should be done at the start of a Rescue
-        rescueState.intent.targetLandingAltitudeCm = 100.0f * gpsRescueConfig()->targetLandingAltitudeM;
         if (!STATE(GPS_FIX_HOME)) {
             // we didn't get a home point on arming
             rescueState.failure = RESCUE_NO_HOME_POINT;
             // will result in a disarm via the sanity check system, or float around if switch induced
         } else {
-            if (rescueState.sensor.distanceToHomeM < 5.0f && rescueState.sensor.currentAltitudeCm < rescueState.intent.targetLandingAltitudeCm) {
+            if (rescueState.sensor.distanceToHomeM < 5.0f && isAltitudeLow()) {
                 // attempted initiation within 5m of home, and 'on the ground' -> instant disarm, for safety reasons
                 rescueState.phase = RESCUE_ABORT;
             } else {
@@ -898,7 +896,7 @@ void gpsRescueUpdate(void)
 
     case RESCUE_DESCENT:
         // attenuate velocity and altitude targets while updating the heading to home
-        if (rescueState.sensor.currentAltitudeCm < rescueState.intent.targetLandingAltitudeCm) {
+        if (isAltitudeLow()) {
             // enter landing mode once below landing altitude
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing

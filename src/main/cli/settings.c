@@ -1061,7 +1061,6 @@ const clivalue_t valueTable[] = {
 
     { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
     { PARAM_NAME_GPS_RESCUE_DESCEND_RATE,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 25, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descendRate) },
-    { PARAM_NAME_GPS_RESCUE_LANDING_ALT,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 15 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, targetLandingAltitudeM) },
     { PARAM_NAME_GPS_RESCUE_DISARM_THRESHOLD, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 250 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, disarmThreshold) },
 
     { PARAM_NAME_GPS_RESCUE_THROTTLE_MIN,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleMin) },
@@ -1833,6 +1832,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ALTITUDE_LPF,          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_lpf) },
     { PARAM_NAME_ALTITUDE_D_LPF,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_d_lpf) },
     { PARAM_NAME_HOVER_THROTTLE,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1100, 1700 }, PG_POSITION, offsetof(positionConfig_t, hover_throttle) },
+    { PARAM_NAME_LANDING_ALTITUDE,      VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_POSITION, offsetof(positionConfig_t, landing_altitude_m) },
 
 // PG_MODE_ACTIVATION_CONFIG
 #if defined(USE_CUSTOM_BOX_NAMES)

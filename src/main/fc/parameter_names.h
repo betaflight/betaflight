@@ -153,6 +153,7 @@
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 #define PARAM_NAME_HOVER_THROTTLE "hover_throttle"
+#define PARAM_NAME_LANDING_ALTITUDE "landing_altitude_m"
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"
@@ -198,7 +199,6 @@
 
 #define PARAM_NAME_GPS_RESCUE_DESCENT_DIST "gps_rescue_descent_dist"
 #define PARAM_NAME_GPS_RESCUE_DESCEND_RATE "gps_rescue_descend_rate"
-#define PARAM_NAME_GPS_RESCUE_LANDING_ALT "gps_rescue_landing_alt"
 #define PARAM_NAME_GPS_RESCUE_DISARM_THRESHOLD "gps_rescue_disarm_threshold"
 
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_MIN "gps_rescue_throttle_min"

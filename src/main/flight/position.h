@@ -30,6 +30,7 @@ typedef struct positionConfig_s {
     uint16_t altitude_lpf;                // lowpass cutoff (value / 100) Hz for altitude smoothing
     uint16_t altitude_d_lpf;              // lowpass for (value / 100) Hz for altitude derivative smoothing
     uint16_t hover_throttle;              // value used at the start of a rescue or position hold
+    uint8_t landing_altitude_m;           // altitude below which landing behaviours can change, metres
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);
@@ -38,6 +39,7 @@ void calculateEstimatedAltitude(void);
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);
 float getAltitude(void);
+bool isAltitudeLow(void);
 float getAltitudeAsl(void);
 int16_t getEstimatedVario(void);
 bool isAltitudeAvailable(void);
