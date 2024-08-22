@@ -1,7 +1,7 @@
 diff all
 
 # version
-# Betaflight / STM32H743 (SH74) 4.4.3 Aug 15 2024 / 19:27:02 (norevision) MSP API: 1.45
+# Betaflight / STM32H743 (SH74) 4.4.3 Aug 21 2024 / 16:29:04 (norevision) MSP API: 1.45
 
 # config: YES
 
@@ -13,7 +13,7 @@ defaults nosave
 
 board_name NEROSH743
 manufacturer_id NEROS
-mcu_id 0034002e3233510537393630
+mcu_id 003e002f3233510537393630
 signature 
 
 # name: Archer
@@ -99,9 +99,8 @@ beacon RX_SET
 # aux
 aux 0 0 0 1600 2100 0 0
 aux 1 1 4 1600 2100 0 0
-aux 2 40 1 900 1600 0 0
-aux 3 41 3 1725 2100 0 0
-aux 4 43 5 1700 2100 0 0
+aux 2 40 1 1600 2100 0 0
+aux 3 43 5 1600 2100 0 0
 
 # adjrange
 adjrange 0 0 3 900 2100 29 3 0 0
@@ -166,7 +165,6 @@ set ibata_offset = -25350
 set beeper_inversion = ON
 set beeper_od = OFF
 set beeper_dshot_beacon_tone = 3
-set yaw_motors_reversed = ON
 set small_angle = 180
 set simplified_gyro_filter = OFF
 set simplified_gyro_filter_multiplier = 30
