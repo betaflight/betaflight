@@ -109,8 +109,6 @@ static const gpsInitData_t gpsInitData[] = {
     { GPS_BAUDRATE_9600,     BAUD_9600,   "$PUBX,41,1,0003,0001,9600,0*16\r\n" }
 };
 
-#define GPS_INIT_DATA_ENTRY_COUNT ARRAYLEN(gpsInitData)
-
 #define DEFAULT_BAUD_RATE_INDEX 0
 
 #ifdef USE_GPS_UBLOX
@@ -356,11 +354,7 @@ uint32_t dashboardGpsNavSvInfoRcvCount = 0;                         // Count of 
 
 static void shiftPacketLog(void)
 {
-    uint32_t i;
-
-    for (i = ARRAYLEN(dashboardGpsPacketLog) - 1; i > 0 ; i--) {
-        dashboardGpsPacketLog[i] = dashboardGpsPacketLog[i-1];
-    }
+    memmove(dashboardGpsPacketLog + 1, dashboardGpsPacketLog, (ARRAYLEN(dashboardGpsPacketLog) - 1) * sizeof(dashboardGpsPacketLog[0]));
 }
 
 static void logErrorToPacketLog(void)
@@ -445,7 +439,7 @@ void gpsInit(void)
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
-    for (unsigned i = 0; i < GPS_INIT_DATA_ENTRY_COUNT; i++) {
+    for (unsigned i = 0; i < ARRAYLEN(gpsInitData); i++) {
       if (gpsInitData[i].baudrateIndex == gpsPortConfig->gps_baudrateIndex) {
         gpsData.userBaudRateIndex = i;
         break;
@@ -1092,7 +1086,7 @@ void gpsConfigureUblox(void)
                 if (cmp32(gpsData.now, gpsData.state_ts) > GPS_CONFIG_BAUD_CHANGE_INTERVAL) {
                     gpsData.state_ts = gpsData.now;
                     messageSent = false;
-                    ++ messageCounter;
+                    messageCounter++;
                 }
                 return;
             }
@@ -1104,7 +1098,7 @@ void gpsConfigureUblox(void)
             if (gpsData.tempBaudRateIndex == 0) {
                 gpsData.tempBaudRateIndex = GPS_BAUDRATE_MAX; // slowest baud rate 9600
             } else {
-                gpsData.tempBaudRateIndex--; 
+                gpsData.tempBaudRateIndex--;
             }
             // set the FC baud rate to the new temp baud rate
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
@@ -1160,7 +1154,7 @@ void gpsConfigureUblox(void)
             if (cmp32(gpsData.now, gpsData.state_ts) < 1000) {
                 return;
             }
-    
+
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
 
                 // short delay before between commands, including the first command
@@ -1310,7 +1304,7 @@ void gpsConfigureUblox(void)
                     default:
                         break;
                 }
-            } 
+            }
 
             // check the ackState after changing CONFIG state, or every iteration while not UBLOX_ACK_IDLE
             switch (gpsData.ackState) {
@@ -1368,7 +1362,7 @@ void gpsConfigureHardware(void)
 static void updateGpsIndicator(timeUs_t currentTimeUs)
 {
     static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) {
+    if (cmp32(currentTimeUs, GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) {
         GPSLEDTime = currentTimeUs + 150000;
         LED1_TOGGLE;
     }
