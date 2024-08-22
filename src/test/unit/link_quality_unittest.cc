@@ -426,7 +426,7 @@ TEST(LQTest, TestLQAlarm)
     // elements showing values in alarm range should flash
     simulationTime += 1000000;
     simulationTime -= simulationTime % 1000000;
-    startTime = simulationTime;
+    startTime = simulationTime + 0.25e6;
     for (int i = 0; i < 15; i++) {
         // Blinking should happen at 2Hz
         simulationTime = startTime + i*0.25e6;
@@ -438,6 +438,7 @@ TEST(LQTest, TestLQAlarm)
 #ifdef DEBUG_OSD
         displayPortTestPrint();
 #endif
+
         if (i % 2 == 0) {
             displayPortTestBufferSubstring(8,  1, "%c5", SYM_LINK_QUALITY);
         } else {
