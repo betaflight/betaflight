@@ -77,10 +77,7 @@ gpsSolutionData_t gpsSol;
 uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                              // Details on numCh/svinfo in gps.h
-uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];
-uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];
-uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];
-uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
+GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
 // GPS LOST_COMMUNICATION timeout in ms (max time between received nav solutions)
 #define GPS_TIMEOUT_MS 2500
@@ -1716,8 +1713,8 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
             switch (svSatParam) {
                 case 1:
                     // SV PRN number
-                    GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
-                    GPS_svinfo_svid[svSatNum - 1] = grab_fields(str, 0);
+                    GPS_svinfo[svSatNum - 1].chn  = svSatNum;
+                    GPS_svinfo[svSatNum - 1].svid = grab_fields(str, 0);
                     break;
                 /*case 2:
                     // Elevation, in degrees, 90 maximum
@@ -1727,8 +1724,8 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
                     break; */
                 case 4:
                     // SNR, 00 through 99 dB (null when not tracking)
-                    GPS_svinfo_cno[svSatNum - 1] = grab_fields(str, 0);
-                    GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
+                    GPS_svinfo[svSatNum - 1].cno = grab_fields(str, 0);
+                    GPS_svinfo[svSatNum - 1].quality = 0; // only used by ublox
                     break;
             }
 
@@ -2121,8 +2118,6 @@ static uint16_t ubxFrameParsePayloadCounter;
 
 static bool UBLOX_parse_gps(void)
 {
-    uint32_t i;
-
 //    lastUbxRcvMsgClass = ubxRcvMsgClass;
 //    lastUbxRcvMsgID = ubxRcvMsgID;
 
@@ -2235,26 +2230,22 @@ static bool UBLOX_parse_gps(void)
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SVINFO;
 #endif
-        GPS_numCh = ubxRcvMsgPayload.ubxNavSvinfo.numCh;
+        GPS_numCh = MIN(ubxRcvMsgPayload.ubxNavSvinfo.numCh, GPS_SV_MAXSATS_LEGACY);
         // If we're receiving UBX-NAV-SVINFO messages, we detected a module version M7 or older.
         // We can receive far more sats than we can handle for Configurator, which is the primary consumer for sat info.
         // We're using the max for legacy (16) for our sizing, this smaller sizing triggers Configurator to know it's
         // an M7 or earlier module and to use the older sat list format.
         // We simply ignore any sats above that max, the down side is we may not see sats used for the solution, but
         // the intent in Configurator is to see if sats are being acquired and their strength, so this is not an issue.
-        if (GPS_numCh > GPS_SV_MAXSATS_LEGACY)
-            GPS_numCh = GPS_SV_MAXSATS_LEGACY;
-        for (i = 0; i < GPS_numCh; i++) {
-            GPS_svinfo_chn[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].chn;
-            GPS_svinfo_svid[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].svid;
-            GPS_svinfo_quality[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].quality;
-            GPS_svinfo_cno[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].cno;
-        }
-        for (; i < GPS_SV_MAXSATS_LEGACY; i++) {
-            GPS_svinfo_chn[i] = 0;
-            GPS_svinfo_svid[i] = 0;
-            GPS_svinfo_quality[i] = 0;
-            GPS_svinfo_cno[i] = 0;
+        for (unsigned i = 0; i < ARRAYLEN(GPS_svinfo); i++) {
+            if (i < GPS_numCh) {
+                GPS_svinfo[i].chn = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].chn;
+                GPS_svinfo[i].svid = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].svid;
+                GPS_svinfo[i].quality = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].quality;
+                GPS_svinfo[i].cno = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].cno;
+            } else {
+                GPS_svinfo[i] = (GPS_svinfo_t){0};
+            }
         }
 #ifdef USE_DASHBOARD
         dashboardGpsNavSvInfoRcvCount++;
@@ -2264,31 +2255,28 @@ static bool UBLOX_parse_gps(void)
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SVINFO; // The display log only shows SVINFO for both SVINFO and SAT.
 #endif
-        GPS_numCh = ubxRcvMsgPayload.ubxNavSat.numSvs;
+        GPS_numCh = MIN(ubxRcvMsgPayload.ubxNavSat.numSvs, GPS_SV_MAXSATS_M8N);
         // If we're receiving UBX-NAV-SAT messages, we detected a module M8 or newer.
         // We can receive far more sats than we can handle for Configurator, which is the primary consumer for sat info.
         // We're using the max for M8 (32) for our sizing, since Configurator only supports a max of 32 sats and we
         // want to limit the payload buffer space used.
         // We simply ignore any sats above that max, the down side is we may not see sats used for the solution, but
         // the intent in Configurator is to see if sats are being acquired and their strength, so this is not an issue.
-        if (GPS_numCh > GPS_SV_MAXSATS_M8N)
-            GPS_numCh = GPS_SV_MAXSATS_M8N;
-        for (i = 0; i < GPS_numCh; i++) {
-            GPS_svinfo_chn[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].gnssId;
-            GPS_svinfo_svid[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].svId;
-            GPS_svinfo_cno[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].cno;
-            GPS_svinfo_quality[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].flags;
-        }
-        for (; i < GPS_SV_MAXSATS_M8N; i++) {
-            GPS_svinfo_chn[i] = 255;
-            GPS_svinfo_svid[i] = 0;
-            GPS_svinfo_quality[i] = 0;
-            GPS_svinfo_cno[i] = 0;
+        for (unsigned i = 0; i < ARRAYLEN(GPS_svinfo); i++) {
+            if (i < GPS_numCh) {
+                GPS_svinfo[i].chn = ubxRcvMsgPayload.ubxNavSat.svs[i].gnssId;
+                GPS_svinfo[i].svid = ubxRcvMsgPayload.ubxNavSat.svs[i].svId;
+                GPS_svinfo[i].cno = ubxRcvMsgPayload.ubxNavSat.svs[i].cno;
+                GPS_svinfo[i].quality = ubxRcvMsgPayload.ubxNavSat.svs[i].flags;
+            } else {
+                GPS_svinfo[i] = (GPS_svinfo_t){ .chn = 255 };
+            }
         }
 
         // Setting the number of channels higher than GPS_SV_MAXSATS_LEGACY is the only way to tell BF Configurator we're sending the
         // enhanced sat list info without changing the MSP protocol. Also, we're sending the complete list each time even if it's empty, so
         // BF Conf can erase old entries shown on screen when channels are removed from the list.
+        // TODO: GPS_numCh = MAX(GPS_numCh, GPS_SV_MAXSATS_LEGACY + 1);
         GPS_numCh = GPS_SV_MAXSATS_M8N;
 #ifdef USE_DASHBOARD
         dashboardGpsNavSvInfoRcvCount++;

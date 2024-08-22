@@ -1529,12 +1529,12 @@ case MSP_NAME:
 
     case MSP_GPSSVINFO:
         sbufWriteU8(dst, GPS_numCh);
-       for (int i = 0; i < GPS_numCh; i++) {
-           sbufWriteU8(dst, GPS_svinfo_chn[i]);
-           sbufWriteU8(dst, GPS_svinfo_svid[i]);
-           sbufWriteU8(dst, GPS_svinfo_quality[i]);
-           sbufWriteU8(dst, GPS_svinfo_cno[i]);
-       }
+        for (int i = 0; i < GPS_numCh; i++) {
+           sbufWriteU8(dst, GPS_svinfo[i].chn);
+           sbufWriteU8(dst, GPS_svinfo[i].svid);
+           sbufWriteU8(dst, GPS_svinfo[i].quality);
+           sbufWriteU8(dst, GPS_svinfo[i].cno);
+        }
         break;
 
 #ifdef USE_GPS_RESCUE
