@@ -808,14 +808,16 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
     // if, after takeoff...
     if (isAirmodeActivated()
+        // and, either sticks are deflected,
+        && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
+        // or in altitude hold mode
 #ifdef USE_ALTHOLD_MODE
-        // either always when altitude hold mode is active, including when activated by failsafe landing mode,
-        && (altHoldIsActive() ||
+            || altHoldIsActive()
 #endif
-            // or in normal flight when throttle is near zero and sticks centered,
-            (getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f))
+        )
         // and accelerometer jerk exceeds threshold...
-        && fabsf(acc.accDelta) > pidRuntime.LandingDisarmThreshold){
+        && (fabsf(acc.accDelta) > pidRuntime.landingDisarmThreshold)) {
+
         // then disarm
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
         disarm(DISARM_REASON_LANDING);

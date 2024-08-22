@@ -25,8 +25,9 @@
 #include "config/config.h"
 #include "fc/runtime_config.h"
 #include "fc/rc.h"
-#include "flight/position.h"
 #include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/position.h"
 #include "sensors/acceleration.h"
 #include "rx/rx.h"
 
