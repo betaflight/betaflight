@@ -1,4 +1,6 @@
-diff all
+
+
+# diff all
 
 # version
 # Betaflight / STM32H743 (SH74) 4.4.3 Aug 15 2024 / 19:27:02 (norevision) MSP API: 1.45
@@ -13,7 +15,7 @@ defaults nosave
 
 board_name NEROSH743
 manufacturer_id NEROS
-mcu_id 0034002e3233510537393630
+mcu_id 003e002f3233510537393630
 signature 
 
 # name: Archer
@@ -27,8 +29,10 @@ resource SERVO 1 E05
 resource SERIAL_TX 4 B09
 resource SERIAL_TX 6 C07
 resource SERIAL_TX 7 E08
+resource SERIAL_TX 8 E01
 resource SERIAL_RX 4 B08
 resource SERIAL_RX 7 E07
+resource SERIAL_RX 8 E00
 resource I2C_SCL 2 B10
 resource I2C_SDA 2 B11
 resource LED 1 E03
@@ -82,12 +86,14 @@ dma pin A03 0
 
 # feature
 feature SERVO_TILT
+feature GPS
 feature OSD
 
 # serial
 serial 3 1 115200 57600 0 115200
 serial 5 2048 115200 57600 0 115200
 serial 6 64 115200 57600 0 115200
+serial 7 2 115200 57600 0 115200
 
 # servo
 servo 0 1000 2000 1500 100 6
@@ -140,7 +146,7 @@ set dyn_notch_max_hz = 650
 set gyro_lpf1_dyn_min_hz = 150
 set gyro_lpf1_dyn_max_hz = 300
 set acc_lpf_hz = 10
-set acc_calibration = 36,-7,48,1
+set acc_calibration = 1,40,13,1
 set baro_bustype = I2C
 set baro_i2c_device = 2
 set baro_i2c_address = 119
@@ -153,7 +159,7 @@ set dshot_burst = AUTO
 set dshot_bidir = ON
 set motor_pwm_protocol = DSHOT300
 set failsafe_delay = 100
-set failsafe_throttle_low_delay = 20
+set failsafe_throttle_low_delay = 40
 set bat_capacity = 20000
 set vbat_max_cell_voltage = 440
 set vbat_min_cell_voltage = 280
@@ -168,6 +174,7 @@ set beeper_od = OFF
 set beeper_dshot_beacon_tone = 3
 set yaw_motors_reversed = ON
 set small_angle = 180
+set gps_ublox_use_galileo = ON
 set simplified_gyro_filter = OFF
 set simplified_gyro_filter_multiplier = 30
 set osd_warn_bitmask = 17147
@@ -177,37 +184,40 @@ set osd_alt_alarm = 10000
 set osd_logo_on_arming = ON
 set osd_tim1 = 0
 set osd_tim2 = 5121
-set osd_vbat_pos = 14561
+set osd_vbat_pos = 14401
 set osd_rssi_pos = 388
-set osd_link_quality_pos = 14401
-set osd_rssi_dbm_pos = 129
+set osd_link_quality_pos = 14785
+set osd_rssi_dbm_pos = 14817
 set osd_tim_1_pos = 55
 set osd_tim_2_pos = 14839
 set osd_flymode_pos = 77
-set osd_throttle_pos = 14585
-set osd_vtx_channel_pos = 14389
-set osd_crosshairs_pos = 14605
-set osd_ah_pos = 14478
-set osd_current_pos = 14646
-set osd_mah_drawn_pos = 14626
+set osd_throttle_pos = 14600
+set osd_vtx_channel_pos = 14805
+set osd_crosshairs_pos = 14573
+set osd_ah_pos = 142
+set osd_current_pos = 14464
+set osd_mah_drawn_pos = 14432
 set osd_craft_name_pos = 257
-set osd_pilot_name_pos = 14828
-set osd_gps_speed_pos = 97
+set osd_pilot_name_pos = 14829
+set osd_gps_speed_pos = 129
+set osd_gps_sats_pos = 449
 set osd_home_dir_pos = 161
-set osd_compass_bar_pos = 14378
-set osd_altitude_pos = 14817
-set osd_debug_pos = 14369
-set osd_power_pos = 14614
-set osd_warnings_pos = 14793
-set osd_avg_cell_voltage_pos = 14593
-set osd_pit_ang_pos = 14551
-set osd_nheading_pos = 14433
+set osd_home_dist_pos = 161
+set osd_flight_dist_pos = 353
+set osd_compass_bar_pos = 43
+set osd_altitude_pos = 481
+set osd_debug_pos = 14752
+set osd_power_pos = 14576
+set osd_warnings_pos = 14761
+set osd_avg_cell_voltage_pos = 257
+set osd_pit_ang_pos = 14609
+set osd_nheading_pos = 321
 set osd_esc_tmp_pos = 375
 set osd_esc_rpm_pos = 152
 set osd_esc_rpm_freq_pos = 161
 set osd_core_temp_pos = 225
 set osd_profile_name_pos = 65
-set osd_efficiency_pos = 327
+set osd_efficiency_pos = 193
 set osd_total_flights_pos = 97
 set osd_stat_bitmask = 17209060
 set osd_profile_1_name = day
@@ -217,7 +227,7 @@ set osd_canvas_width = 30
 set osd_canvas_height = 16
 set vtx_band = 5
 set vtx_channel = 1
-set vtx_power = 1
+set vtx_power = 7
 set vtx_freq = 5658
 set vcd_video_system = PAL
 set max7456_spi_bus = 2
@@ -228,9 +238,10 @@ set scheduler_relax_rx = 1
 set scheduler_relax_osd = 1
 set rpm_filter_harmonics = 2
 set stats_min_armed_time_s = 70
-set stats_total_flights = 64
-set stats_total_time_s = 10493
-set stats_mah_used = 1031
+set stats_total_flights = 67
+set stats_total_time_s = 12545
+set stats_total_dist_m = 38288
+set stats_mah_used = 17280
 set craft_name = Archer
 set pilot_name = Name
 

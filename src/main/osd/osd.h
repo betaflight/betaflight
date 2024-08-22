@@ -379,6 +379,7 @@ extern escSensorData_t *osdEscDataCombined;
 extern uint16_t osdAuxValue;
 #ifdef USE_N1_TEMP_SENSOR
 extern uint16_t osdTempValue;
+extern uint16_t maxOsdTempValue;
 #endif
 
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);

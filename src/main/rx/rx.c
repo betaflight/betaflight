@@ -670,7 +670,7 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
-
+bool threeOutput=false;
 bool slctRx = 0;
 uint32_t startTimeMs = 0;
 uint32_t lastSwitchMs = 0;
@@ -780,6 +780,10 @@ void detectAndApplySignalLossBehaviour(void)
     } else {
         justSwitched = false;
     }
+
+    //set threeOutput according to if we want to output 3v3 or not
+    if(rxFlightChannelsValid && (rcData[9]>1500)){threeOutput=true;}
+    else {threeOutput=false;}
 
     if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();

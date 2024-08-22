@@ -282,13 +282,17 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
 {
     int x = element->elemPosX;
     int y = element->elemPosY;
+    float averagedRpm = 0;
+    
     for (int i=0; i < getMotorCount(); i++) {
-        char rpmStr[6];
-        const int rpm = MIN((*escFnPtr)(i),99999);
-        const int len = tfp_sprintf(rpmStr, "%d", rpm);
-        rpmStr[len] = '\0';
-        osdDisplayWrite(element, x, y + i, DISPLAYPORT_SEVERITY_NORMAL, rpmStr);
+        averagedRpm += (*escFnPtr)(i);
     }
+    averagedRpm = averagedRpm / ((float) getMotorCount());
+    const int intRpm = MIN((int)averagedRpm,99999);
+    char rpmStr[6];
+    const int len = tfp_sprintf(rpmStr, "%d", intRpm);
+    rpmStr[len] = '\0';
+    osdDisplayWrite(element, x, y, DISPLAYPORT_SEVERITY_NORMAL, rpmStr);
     element->drawElement = false;
 }
 #endif
@@ -547,18 +551,18 @@ static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, unsigned directi
     return direction; // return segment number
 }
 
-static uint8_t osdGetDirectionSymbolFromHeading(int heading)
-{
-    heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
+// static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+// {
+//     heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
 
-    // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
-    // Our symbols are Down=0, Right=4, Up=8 and Left=12
-    // There're 16 arrow symbols. Transform it.
-    heading = 16 - heading;
-    heading = (heading + 8) % 16;
+//     // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
+//     // Our symbols are Down=0, Right=4, Up=8 and Left=12
+//     // There're 16 arrow symbols. Transform it.
+//     heading = 16 - heading;
+//     heading = (heading + 8) % 16;
 
-    return SYM_ARROW_SOUTH + heading;
-}
+//     return SYM_ARROW_SOUTH + heading;
+// }
 
 
 /**
@@ -896,13 +900,7 @@ static void osdElementCurrentDraw(osdElementParms_t *element)
 
 static void osdElementDebug(osdElementParms_t *element)
 {
-    int lowBand = 785;
-    int highBand = 970;
-    int band = 0;
-
-    if(slctRx == 0){ band = lowBand;}
-    else {band = highBand;}
-    tfp_sprintf(element->buff, "%d M", band);
+    tfp_sprintf(element->buff, "BAND %d", slctRx+1);
 }
 
 static void osdElementDisarmed(osdElementParms_t *element)
@@ -1342,8 +1340,8 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
 
 static void osdElementNumericalHeading(osdElementParms_t *element)
 {
-    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-    tfp_sprintf(element->buff, "%c%03d", osdGetDirectionSymbolFromHeading(heading), heading);
+    if(threeOutput){tfp_sprintf(element->buff, "3V3 HIGH");}
+    else{tfp_sprintf(element->buff, "3V3 LOW");}
 }
 
 #ifdef USE_VARIO

@@ -152,6 +152,7 @@ escSensorData_t *osdEscDataCombined;
 
 #ifdef USE_N1_TEMP_SENSOR
 uint16_t osdTempValue = 10;
+uint16_t maxOsdTempValue = 10;
 #endif
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
@@ -901,11 +902,12 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #ifdef USE_ESC_SENSOR
     case OSD_STAT_MAX_ESC_TEMP:
     {
-        uint16_t ix = 0;
-        if (stats.max_esc_temp_ix > 0) {
-            ix = tfp_sprintf(buff, "%d ", stats.max_esc_temp_ix);
-        }
-        tfp_sprintf(buff + ix, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
+        //uint16_t ix = 0;
+        //if (stats.max_esc_temp_ix > 0) {
+        //    ix = tfp_sprintf(buff, "%d ", stats.max_esc_temp_ix);
+        //}
+        //tfp_sprintf(buff + ix, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(buff, "%d%c", osdConvertTemperatureToSelectedUnit(maxOsdTempValue), osdGetTemperatureSymbolForSelectedUnit());
         osdDisplayStatisticLabel(midCol, displayRow, "MAX ESC TEMP", buff);
         return true;
     }
@@ -1158,6 +1160,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
             osdStatsEnabled = false;
             osdStatsVisible = false;
             osdResetStats();
+            maxOsdTempValue = 0;
             resumeRefreshAt = osdShowArmed() + currentTimeUs;
         } else if (isSomeStatEnabled()
                    && !suppressStatsDisplay
@@ -1238,6 +1241,9 @@ void osdProcessStats2(timeUs_t currentTimeUs)
 
 #ifdef USE_N1_TEMP_SENSOR
         osdTempValue = getExternalTemperature();
+        if(osdTempValue > maxOsdTempValue) {
+            maxOsdTempValue = osdTempValue;
+        }   
 #endif
 
 #ifdef USE_ESC_SENSOR
