@@ -54,19 +54,20 @@ static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.
 
 float altitudePidCalculate(void)
 {
-    const float altErrorCm = altHoldState.targetAltitudeCm - altHoldState.measuredAltitudeCm;
+    const float altitude = altHoldState.measuredAltitudeCm;
+    const float altErrorCm = altHoldState.targetAltitudeCm - altitude;
 
     // P
     const float pOut = simplePid.kp * altErrorCm;
 
     // I
-    simplePid.integral += altErrorCm * taskIntervalSeconds; // cm * seconds
-    float iOut = simplePid.ki * simplePid.integral;
+    simplePid.integral += altErrorCm * taskIntervalSeconds * simplePid.ki; // cm * seconds * ki
     // arbitrary limit on iTerm, same as for gps_rescue, +/-20% throttle
-    iOut = constrainf(iOut, -200.0f, 200.0f); 
+    simplePid.integral = constrainf(simplePid.integral, -200.0f, 200.0f); 
+    const float iOut = simplePid.integral;
 
     // D
-    const float derivative = (simplePid.lastAltitude - altHoldState.measuredAltitudeCm) / taskIntervalSeconds; // cm/s
+    const float derivative = (simplePid.lastAltitude - altitude) / taskIntervalSeconds; // cm/s
     simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
     float dOut = simplePid.kd * derivative;
     // PT2 filtering at altitude_d_lpf / 100 cutoff, default 1s, the same as for GPS Rescue 
@@ -78,14 +79,10 @@ float altitudePidCalculate(void)
     // but this is delayed by the smoothing, leading to lag and overshoot.
     // calculating feedforward separately avoids the filter lag.
 
-    float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, 0.24 at 40 degrees of tilt
-    tiltAdjustment *= (positionConfig()->hover_throttle - 1000);
-    // if hover is 1300, and adjustment .2, this gives us 0.2*300 or 60 of extra throttle, not much, but useful
-    // same code as in GPS Rescue
+//    float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, 0.24 at 40 degrees of tilt
+//    tiltAdjustment *= (positionConfig()->hover_throttle - 1000);
 
-    const float output = pOut + iOut + dOut + fOut + tiltAdjustment;
-
-
+    const float output = pOut + iOut + dOut + fOut;
 
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
     DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
@@ -130,7 +127,7 @@ void altHoldInit(void)
     const float cutoffHz = 0.01f * positionConfig()->altitude_d_lpf; // default 1Hz, time constant about 160ms
     const float gain = pt2FilterGain(cutoffHz, taskIntervalSeconds);
     pt2FilterInit(&altHoldDeltaLpf, gain); 
-
+    altHoldState.hover = positionConfig()->hover_throttle - PWM_RANGE_MIN;
     altHoldState.isAltHoldActive = false;
     altHoldReset();
 }
@@ -227,7 +224,10 @@ void altHoldUpdate(void)
 
     // use PIDs to return the throttle adjustment value, add it to the hover value, and constrain
     const float throttleAdjustment = altitudePidCalculate();
-    float newThrottle = positionConfig()->hover_throttle + throttleAdjustment;
+
+    const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
+    // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
+    const float newThrottle = PWM_RANGE_MIN + (altHoldState.hover + throttleAdjustment) * tiltMultiplier;
     altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->alt_hold_throttle_min, altholdConfig()->alt_hold_throttle_max);
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, lrintf(altHoldState.targetAltitudeCm));

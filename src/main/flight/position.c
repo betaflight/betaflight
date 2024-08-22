@@ -83,7 +83,7 @@ typedef enum {
     GPS_ONLY
 } altitudeSource_e;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 5);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = DEFAULT,
