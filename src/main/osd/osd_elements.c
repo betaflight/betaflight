@@ -2220,6 +2220,7 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
     static bool backgroundRendered = false;
 
     if (activeElementNumber >= activeOsdElementCount) {
+        activeElementNumber = 0;
         return false;
     }
 
