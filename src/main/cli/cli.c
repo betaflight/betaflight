@@ -4819,7 +4819,7 @@ if (buildKey) {
         if (gpsData.state <= GPS_STATE_CONFIGURE) {
             cliPrint("NOT CONFIGURED");
         } else {
-            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
+            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF || gpsConfig()->autoConfig == GPS_AUTOCONFIG_NOTX) {
                 cliPrint("auto config OFF");
             } else {
                 cliPrint("configured");

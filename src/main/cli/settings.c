@@ -204,6 +204,10 @@ static const char * const lookupTableGpsProvider[] = {
     "NMEA", "UBLOX", "MSP"
 };
 
+static const char * const lookupTableGpsAutoConfig[] = {
+    "OFF", "ON", "NOTX"
+};
+
 static const char * const lookupTableGpsSbasMode[] = {
     "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN", "NONE"
 };
@@ -538,6 +542,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableUnit),
     LOOKUP_TABLE_ENTRY(lookupTableAlignment),
 #ifdef USE_GPS
+    LOOKUP_TABLE_ENTRY(lookupTableGpsAutoConfig),
     LOOKUP_TABLE_ENTRY(lookupTableGpsProvider),
     LOOKUP_TABLE_ENTRY(lookupTableGpsSbasMode),
     LOOKUP_TABLE_ENTRY(lookupTableGpsUbloxModels),
@@ -1021,7 +1026,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_GPS
     { PARAM_NAME_GPS_PROVIDER,               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_PROVIDER },   PG_GPS_CONFIG, offsetof(gpsConfig_t, provider) },
     { PARAM_NAME_GPS_SBAS_MODE,              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_SBAS_MODE },  PG_GPS_CONFIG, offsetof(gpsConfig_t, sbasMode) },
-    { PARAM_NAME_GPS_AUTO_CONFIG,            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },         PG_GPS_CONFIG, offsetof(gpsConfig_t, autoConfig) },
+    { PARAM_NAME_GPS_AUTO_CONFIG,            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_AUTO_CONFIG }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoConfig) },
     { PARAM_NAME_GPS_AUTO_BAUD,              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },         PG_GPS_CONFIG, offsetof(gpsConfig_t, autoBaud) },
     { PARAM_NAME_GPS_UBLOX_ACQUIRE_MODEL,    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_UBLOX_MODELS }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_ublox_acquire_model) },
     { PARAM_NAME_GPS_UBLOX_FLIGHT_MODEL,     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_UBLOX_MODELS }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_ublox_flight_model) },
