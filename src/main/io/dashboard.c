@@ -364,7 +364,7 @@ static void showRateProfilePage(void)
     i2c_OLED_send_string(dev, lineBuffer);
 }
 
-#define SATELLITE_COUNT ARRAYLEN(GPS_svinfo_cno)
+#define SATELLITE_COUNT ARRAYLEN(GPS_svinfo)
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
 #ifdef USE_GPS
@@ -392,7 +392,7 @@ static void showGpsPage(void)
 
     uint32_t index;
     for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
-        uint8_t bargraphOffset = ((uint16_t) GPS_svinfo_cno[index] * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
+        uint8_t bargraphOffset = ((uint16_t) GPS_svinfo[index].cno * VERTICAL_BARGRAPH_CHARACTER_COUNT) / (GPS_DBHZ_MAX - 1);
         bargraphOffset = MIN(bargraphOffset, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
         i2c_OLED_send_char(dev, VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphOffset);
     }
