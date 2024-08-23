@@ -303,8 +303,6 @@ extern uint16_t GPS_distanceToHome;        // distance to home point in meters
 extern uint32_t GPS_distanceToHomeCm;      // distance to home point in cm
 extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
-extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
-extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
 
 typedef enum {
     GPS_DIRECT_TICK = 1 << 0,
@@ -316,7 +314,6 @@ extern gpsSolutionData_t gpsSol;
 
 #define GPS_SV_MAXSATS_LEGACY   16U
 #define GPS_SV_MAXSATS_M8N      32U
-#define GPS_SV_MAXSATS_M9N      42U
 
 extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
 extern uint8_t GPS_numCh;                               // Number of channels
