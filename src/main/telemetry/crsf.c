@@ -316,21 +316,13 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 // range from 0 to 2276m might be sent with dm- or m-precision. But this function always use dm-precision.
 static inline uint16_t getAltitudePacked(int32_t altitude_dm) 
 {
-    enum { // function constants
-        ALT_MAX_NEGATIVE_DM = 10000,                        // maximum negative altitude in dm (so, minimum altutude is -ALT_MAX_NEGATIVE_DM)
-        ALT_TRESHOLD_DM     = 0x8000 - ALT_MAX_NEGATIVE_DM, // altitude of precision changing in dm
-        ALT_MAX_POSITIVE_DM = 0x7ffe * 10 - 5,              // maximum altitude in dm
-    };
-    if (altitude_dm < -ALT_MAX_NEGATIVE_DM) {   // less than minimum
-        return 0;   // send minimum
-    }
-    if (altitude_dm < ALT_TRESHOLD_DM) {
-        return altitude_dm + ALT_MAX_NEGATIVE_DM; // decimeter-resolution range
-    }
-    if (altitude_dm > ALT_MAX_POSITIVE_DM) { // more than maximum
-        return 0xfffe; // send maximum
-    }
-    return ((altitude_dm + 5) / 10) | 0x8000; // meter-resolution range
+    static const ALT_DM_OFFSET = 10000;
+    int valDm = altitude_dm - ALT_DM_OFFSET;
+
+    if (valDm < 0) return 0;   // too low, return minimum
+    if (valDm < 0x8000) return valDm;  // 15 bits to return dm value with offset
+
+    return MIN((altitude_dm + 5) / 10), 0x7fffe) | 0x8000; // positive 15bit value in meters, with OpenTX limit
 }
 
 static inline int8_t getVerticalSpeedPacked(int16_t verticalSpeed) // Vertical speed in m/s (meters per second)
