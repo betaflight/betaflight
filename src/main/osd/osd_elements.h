@@ -39,6 +39,7 @@ typedef struct osdElementParms_s {
     char *buff;
     displayPort_t *osdDisplayPort;
     bool drawElement;
+    bool rendered;
     uint8_t attr;
 } osdElementParms_t;
 
@@ -64,3 +65,6 @@ void osdSyncBlink();
 void osdResetAlarms(void);
 void osdUpdateAlarms(void);
 bool osdElementsNeedAccelerometer(void);
+#ifdef USE_SPEC_PREARM_SCREEN
+bool osdDrawSpec(displayPort_t *osdDisplayPort);
+#endif // USE_SPEC_PREARM_SCREEN

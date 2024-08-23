@@ -23,7 +23,20 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "drivers/osd.h"
+
 #include "vcd.h"
 
 // no template required since defaults are zero
-PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
+
+void pgResetFn_vcdProfile(vcdProfile_t *vcdProfile)
+{
+    // Make it obvious on the configurator that the FC doesn't support HD
+#ifdef USE_OSD_HD
+    vcdProfile->video_system = VIDEO_SYSTEM_HD;
+#else
+    vcdProfile->video_system = VIDEO_SYSTEM_AUTO;
+#endif
+
+}

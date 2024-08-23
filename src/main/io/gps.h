@@ -35,6 +35,138 @@
 #define GPS_Y 0
 #define GPS_MIN_SAT_COUNT 4      // number of sats to trigger low sat count sanity check
 
+#ifdef USE_GPS_UBLOX
+typedef enum {
+    UBX_VERSION_UNDEF = 0,
+    UBX_VERSION_M5,
+    UBX_VERSION_M6,
+    UBX_VERSION_M7,
+    UBX_VERSION_M8,
+    UBX_VERSION_M9,
+    UBX_VERSION_M10,
+    UBX_VERSION_COUNT
+} ubloxVersion_e;
+
+typedef enum {
+    CFG_RATE_MEAS = 0x30210001, // U2
+    CFG_RATE_NAV = 0x30210002, // U2
+    CFG_RATE_TIMEREF = 0x20210003, // E1
+    CFG_NAVSPG_FIXMODE = 0x20110011, // E1
+    CFG_NAVSPG_DYNMODEL = 0x20110021, // E1
+    CFG_NAVSPG_UTCSTANDARD = 0x2011001c, // E1
+    CFG_NAVSPG_CONSTR_ALT = 0x401100c1, // I4
+    CFG_NAVSPG_CONSTR_ALTVAR = 0x401100c2, // U4
+    CFG_NAVSPG_CONSTR_DGNSSTO = 0x201100c4, // U1
+    CFG_NAVSPG_INFIL_MINELEV = 0x201100a4, // I1
+    CFG_NAVSPG_INFIL_CNOTHRS = 0x201100ab, // U1
+    CFG_NAVSPG_INFIL_NCNOTHRS = 0x201100aa, // U1
+    CFG_NAVSPG_OUTFIL_PDOP = 0x301100b1, // U2
+    CFG_NAVSPG_OUTFIL_TDOP = 0x301100b2, // U2
+    CFG_NAVSPG_OUTFIL_PACC = 0x301100b3, // U2
+    CFG_NAVSPG_OUTFIL_TACC = 0x301100b4, // U2
+    CFG_MOT_GNSSSPEED_THRS = 0x20250038, // U1
+    CFG_MOT_GNSSDIST_THRS = 0x3025003b, // U2
+    CFG_ANA_USE_ANA = 0x10230001, // L
+    CFG_MSGOUT_NMEA_ID_VTG_I2C = 0x209100b0, // U1
+    CFG_MSGOUT_NMEA_ID_VTG_SPI = 0x209100b4, // U1
+    CFG_MSGOUT_NMEA_ID_VTG_UART1 = 0x209100b1, // U1
+    CFG_MSGOUT_NMEA_ID_GSV_I2C = 0x209100c4, // U1
+    CFG_MSGOUT_NMEA_ID_GSV_SPI = 0x209100c8, // U1
+    CFG_MSGOUT_NMEA_ID_GSV_UART1 = 0x209100c5, // U1
+    CFG_MSGOUT_NMEA_ID_GLL_I2C = 0x209100c9, // U1
+    CFG_MSGOUT_NMEA_ID_GLL_SPI = 0x209100cd, // U1
+    CFG_MSGOUT_NMEA_ID_GLL_UART1 = 0x209100ca, // U1
+    CFG_MSGOUT_NMEA_ID_GGA_I2C = 0x209100ba, // U1
+    CFG_MSGOUT_NMEA_ID_GGA_SPI = 0x209100be, // U1
+    CFG_MSGOUT_NMEA_ID_GGA_UART1 = 0x209100bb, // U1
+    CFG_MSGOUT_NMEA_ID_GSA_I2C = 0x209100bf, // U1
+    CFG_MSGOUT_NMEA_ID_GSA_SPI = 0x209100c3, // U1
+    CFG_MSGOUT_NMEA_ID_GSA_UART1 = 0x209100c0, // U1
+    CFG_MSGOUT_NMEA_ID_RMC_I2C = 0x209100ab, // U1
+    CFG_MSGOUT_NMEA_ID_RMC_SPI = 0x209100af, // U1
+    CFG_MSGOUT_NMEA_ID_RMC_UART1 = 0x209100ac, // U1
+    CFG_MSGOUT_UBX_NAV_PVT_I2C = 0x20910006, // U1
+    CFG_MSGOUT_UBX_NAV_PVT_SPI = 0x2091000a, // U1
+    CFG_MSGOUT_UBX_NAV_PVT_UART1 = 0x20910007, // U1
+    CFG_MSGOUT_UBX_NAV_SAT_I2C = 0x20910015, // U1
+    CFG_MSGOUT_UBX_NAV_SAT_SPI = 0x20910019, // U1
+    CFG_MSGOUT_UBX_NAV_SAT_UART1 = 0x20910016, // U1
+    CFG_MSGOUT_UBX_NAV_DOP_I2C = 0x20910038, // U1
+    CFG_MSGOUT_UBX_NAV_DOP_SPI = 0x2091003c, // U1
+    CFG_MSGOUT_UBX_NAV_DOP_UART1 = 0x20910039, // U1
+    CFG_SBAS_USE_TESTMODE = 0x10360002, // L
+    CFG_SBAS_USE_RANGING = 0x10360003, // L
+    CFG_SBAS_USE_DIFFCORR = 0x10360004, // L
+    CFG_SBAS_USE_INTEGRITY = 0x10360005, // L
+    CFG_SBAS_PRNSCANMASK = 0x50360006, // X8
+    CFG_SIGNAL_GPS_ENA = 0x1031001f, // L
+    CFG_SIGNAL_SBAS_ENA = 0x10310020, // L
+    CFG_SIGNAL_GAL_ENA = 0x10310021, // L
+    CFG_SIGNAL_BDS_ENA = 0x10310022, // L
+    CFG_SIGNAL_QZSS_ENA = 0x10310024, // L
+    CFG_SIGNAL_GLO_ENA = 0x10310025, // L
+    CFG_PM_OPERATEMODE = 0x20d00001, // E1
+} ubxValGetSetBytes_e;
+
+/*
+ * replaced by following macro, to save space; keeping for reference
+typedef enum {
+    SBAS_SEARCH_ALL = 0,
+    SBAS_SEARCH_PRN120,
+    SBAS_SEARCH_PRN121,
+    // repeat to 158
+    SBAS_SEARCH_PRN158,
+} ubxSbasPrnScan_e;
+*/
+
+#define SBAS_SEARCH_ALL    0x0
+#define SBAS_SEARCH_PRN(i) (1 << (i - 120))
+
+typedef enum {
+    UBX_VAL_LAYER_RAM = 0x01,
+    UBX_VAL_LAYER_BBR = 0x02,
+    UBX_VAL_LAYER_FLASH = 0x04,
+} ubloxValLayer_e;
+
+typedef enum {
+    UBLOX_MODEL_PORTABLE = 0,
+    UBLOX_MODEL_STATIONARY,
+    UBLOX_MODEL_PEDESTRIAN,
+    UBLOX_MODEL_AUTOMOTIVE,
+    UBLOX_MODEL_AT_SEA,
+    UBLOX_MODEL_AIRBORNE_1G,
+    UBLOX_MODEL_AIRBORNE_2G,
+    UBLOX_MODEL_AIRBORNE_4G,
+} ubloxModel_e;
+
+typedef enum {
+    UBLOX_UTC_STANDARD_AUTO = 0,
+    UBLOX_UTC_STANDARD_USNO = 3,
+    UBLOX_UTC_STANDARD_EU = 5,
+    UBLOX_UTC_STANDARD_SU = 6,
+    UBLOX_UTC_STANDARD_NTSC = 7,
+} ubloxUtcStandard_e;
+
+struct ubloxVersion_s {
+    uint32_t hw;
+    const char* str;
+};
+extern struct ubloxVersion_s ubloxVersionMap[];
+
+#endif // USE_GPS_UBLOX
+
+typedef enum {
+    GPS_STATE_UNKNOWN = 0,
+    GPS_STATE_DETECT_BAUD,
+    GPS_STATE_INITIALIZED,
+    GPS_STATE_CHANGE_BAUD,
+    GPS_STATE_CONFIGURE,
+    GPS_STATE_RECEIVING_DATA,
+    GPS_STATE_PROCESS_DATA,
+    GPS_STATE_LOST_COMMUNICATION,
+    GPS_STATE_COUNT
+} gpsState_e;
+
 typedef enum {
     GPS_LATITUDE,
     GPS_LONGITUDE
@@ -56,17 +188,6 @@ typedef enum {
 } sbasMode_e;
 
 #define SBAS_MODE_MAX SBAS_GAGAN
-
-typedef enum {
-    UBLOX_MODEL_PORTABLE = 0,
-    UBLOX_MODEL_STATIONARY,
-    UBLOX_MODEL_PEDESTRIAN,
-    UBLOX_MODEL_AUTOMOTIVE,
-    UBLOX_MODEL_AT_SEA,
-    UBLOX_MODEL_AIRBORNE_1G,
-    UBLOX_MODEL_AIRBORNE_2G,
-    UBLOX_MODEL_AIRBORNE_4G,
-} ubloxModel_e;
 
 typedef enum {
     GPS_BAUDRATE_115200 = 0,
@@ -129,28 +250,53 @@ typedef struct gpsSolutionData_s {
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
     uint8_t numSat;
+    uint32_t time;                  // GPS msToW
+    uint32_t navIntervalMs;         // interval between nav solutions in ms
 } gpsSolutionData_t;
+
+/*
+* keeping this table for reference
+typedef enum {
+    UBX_CAP_SAT_NONE = 0x0,
+    UBX_CAP_SAT_GPS = 0x0001,
+    UBX_CAP_SAT_GLO = 0x0002,
+    UBX_CAP_SAT_GAL = 0x0004,
+    UBX_CAP_SAT_BDS = 0x0008,
+    UBX_CAP_SAT_SBAS = 0x0010,
+    UBX_CAP_SAT_QZSS = 0x0020,
+} ubxCapabilities_e;
+*/
+
+typedef struct ubxMonVer_s {
+        char swVersion[30];
+        char hwVersion[10];
+        char extension[300]; // variable size but not more than 300 values
+} ubxMonVer_t;
 
 typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
-    uint32_t lastMessage;           // last time valid GPS data was received (millis)
-    uint32_t lastLastMessage;       // last-last valid GPS message. Used to calculate delta.
-
+    uint32_t lastNavMessage;        // time of last valid GPS speed and position data
+    uint32_t now;
+    uint32_t lastMessageSent;       // time last message was sent
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
-    uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
+    uint8_t userBaudRateIndex;          // index into auto-detecting or current baudrate
+    uint8_t tempBaudRateIndex;          // index into auto-detecting or current baudrate
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
-    uint8_t ackTimeoutCounter;      // Ack timeout counter
-    ubloxAckState_e ackState;
-    bool ubloxUsePVT;
-    bool ubloxUseSAT;
+    ubloxAckState_e ackState;       // Ack State
+    uint8_t updateRateHz;
+    bool ubloxM7orAbove;
+    bool ubloxM8orAbove;
+    bool ubloxM9orAbove;
+    bool ubloxUsingFlightModel;     // false = Acquire model, true = Flight model
+#ifdef USE_GPS_UBLOX
+    uint32_t lastNavSolTs;          // time stamp of last UBCX message.  Used to calculate message delta
+    ubloxVersion_e platformVersion; // module platform version, mapped from reported hardware version
+#endif
 } gpsData_t;
-
-#define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
-extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 
 extern gpsLocation_t GPS_home_llh;
 extern uint16_t GPS_distanceToHome;        // distance to home point in meters
@@ -159,7 +305,6 @@ extern int16_t GPS_directionToHome;        // direction to home or hol point in 
 extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
 extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
-extern int16_t nav_takeoff_bearing;
 
 typedef enum {
     GPS_DIRECT_TICK = 1 << 0,
@@ -173,9 +318,7 @@ extern gpsSolutionData_t gpsSol;
 #define GPS_SV_MAXSATS_M8N      32U
 #define GPS_SV_MAXSATS_M9N      42U
 
-extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
-extern uint32_t GPS_packetCount;
-extern uint32_t GPS_svInfoReceivedCount;
+extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
 extern uint8_t GPS_numCh;                               // Number of channels
 extern uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];      // When NumCh is 16 or less: Channel number
                                                         // When NumCh is more than 16: GNSS Id
@@ -203,16 +346,48 @@ extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or l
                                                         //     1 = carrier smoothed pseudorange used
 extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Ratio (Signal Strength)
 
+#define TASK_GPS_RATE       100     // default update rate of GPS task
+#define TASK_GPS_RATE_FAST  500    // update rate of GPS task while Rx buffer is not empty
+
+
+#ifdef USE_DASHBOARD
+// Data used *only* by the dashboard device (OLED display).
+// Note this data should probably be in the dashboard module, not here. On the refactor list...
+
+// OLED display shows a scrolling string of chars for each packet type/event received.
+#define DASHBOARD_LOG_ERROR        '?'
+#define DASHBOARD_LOG_IGNORED      '!'
+#define DASHBOARD_LOG_SKIPPED      '>'
+#define DASHBOARD_LOG_NMEA_GGA     'g'
+#define DASHBOARD_LOG_NMEA_GSA     's'
+#define DASHBOARD_LOG_NMEA_RMC     'r'
+#define DASHBOARD_LOG_UBLOX_DOP    'D'
+#define DASHBOARD_LOG_UBLOX_SOL    'O'
+#define DASHBOARD_LOG_UBLOX_STATUS 'S'
+#define DASHBOARD_LOG_UBLOX_SVINFO 'I'
+#define DASHBOARD_LOG_UBLOX_POSLLH 'P'
+#define DASHBOARD_LOG_UBLOX_VELNED 'V'
+#define DASHBOARD_LOG_UBLOX_MONVER 'M'
+
+#define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
+extern char dashboardGpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];  // OLED display of a char for each packet type/event received.
+extern uint32_t dashboardGpsPacketCount;                        // Packet received count.
+extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of times sat info received & updated.
+
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
+#endif  // USE_DASHBOARD
 
-#define TASK_GPS_RATE       100
-#define TASK_GPS_RATE_FAST  1000
+
+#ifdef USE_GPS_UBLOX
+ubloxVersion_e ubloxParseVersion(const uint32_t version);
+void setSatInfoMessageRate(uint8_t divisor);
+#endif
 
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
-bool gpsIsHealthy(void); // Check for healthy communications
+bool gpsIsHealthy(void); // Returns true when the gps state is RECEIVING_DATA
 struct serialPort_s;
 void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);
@@ -220,5 +395,5 @@ void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
 void GPS_distance_cm_bearing(gpsLocation_t *from, gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing);
 void gpsSetFixState(bool state);
-float getGpsDataIntervalSeconds(void);
+float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue
 baudRate_e getGpsPortActualBaudRateIndex(void);

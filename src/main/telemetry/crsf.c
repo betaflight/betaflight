@@ -258,6 +258,19 @@ void crsfFrameGps(sbuf_t *dst)
 }
 
 /*
+0x07 Vario sensor
+Payload:
+int16_t     Vertical speed ( cm/s )
+*/
+void crsfFrameVarioSensor(sbuf_t *dst)
+{
+    // use sbufWrite since CRC does not include frame length
+    sbufWriteU8(dst, CRSF_FRAME_VARIO_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_VARIO_SENSOR);
+    sbufWriteU16BigEndian(dst, getEstimatedVario()); // vario, cm/s(Z));
+}
+
+/*
 0x08 Battery sensor
 Payload:
 uint16_t    Voltage ( mV * 100 )
@@ -378,11 +391,6 @@ void crsfFrameFlightMode(sbuf_t *dst)
     // Acro is the default mode
     const char *flightMode = "ACRO";
 
-    // Modes that are only relevant when disarmed
-    if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
-        flightMode = "!ERR";
-    } else
-
 #if defined(USE_GPS)
     if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
         flightMode = "WAIT"; // Waiting for GPS lock
@@ -461,7 +469,7 @@ void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
-static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart)
+static void crsfProcessSpeedNegotiationCmd(const uint8_t *frameStart)
 {
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
     uint8_t ii = 0;
@@ -627,6 +635,7 @@ typedef enum {
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
     CRSF_FRAME_GPS_INDEX,
+    CRSF_FRAME_VARIO_SENSOR_INDEX,
     CRSF_FRAME_HEARTBEAT_INDEX,
     CRSF_SCHEDULE_COUNT_MAX
 } crsfFrameTypeIndex_e;
@@ -697,7 +706,13 @@ static void processCrsf(void)
         crsfFinalize(dst);
     }
 #endif
-
+#ifdef USE_VARIO
+    if (currentSchedule & BIT(CRSF_FRAME_VARIO_SENSOR_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameVarioSensor(dst);
+        crsfFinalize(dst);
+    }
+#endif
 #if defined(USE_CRSF_V3)
     if (currentSchedule & BIT(CRSF_FRAME_HEARTBEAT_INDEX)) {
         crsfInitializeFrame(dst);
@@ -763,6 +778,11 @@ void initCrsfTelemetry(void)
     if (featureIsEnabled(FEATURE_GPS)
        && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
         crsfSchedule[index++] = BIT(CRSF_FRAME_GPS_INDEX);
+    }
+#endif
+#ifdef USE_VARIO
+    if ((sensors(SENSOR_BARO) || featureIsEnabled(FEATURE_GPS)) && telemetryIsSensorEnabled(SENSOR_VARIO)) {
+        crsfSchedule[index++] = BIT(CRSF_FRAME_VARIO_SENSOR_INDEX);
     }
 #endif
 
@@ -962,6 +982,11 @@ int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
 #if defined(USE_GPS)
     case CRSF_FRAMETYPE_GPS:
         crsfFrameGps(sbuf);
+        break;
+#endif
+#if defined(USE_VARIO)
+    case CRSF_FRAMETYPE_VARIO_SENSOR:
+        crsfFrameVarioSensor(sbuf);
         break;
 #endif
 #if defined(USE_MSP_OVER_TELEMETRY)

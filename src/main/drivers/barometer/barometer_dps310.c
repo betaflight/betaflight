@@ -35,6 +35,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 #include "common/utils.h"
+#include "common/maths.h"
 
 #include "drivers/io.h"
 #include "drivers/bus.h"
@@ -68,8 +69,8 @@
 #define DPS310_REG_COEF             0x10
 #define DPS310_REG_COEF_SRCE        0x28
 
-
-#define DPS310_ID_REV_AND_PROD_ID       (0x10)
+#define DPS310_ID_REV_AND_PROD_ID       (0x10)  // Infineon DPS310
+#define SPL07_003_CHIP_ID               (0x11)  // SPL07_003
 
 #define DPS310_RESET_BIT_SOFT_RST       (0x09)    // 0b1001
 
@@ -101,6 +102,8 @@ typedef struct {
     int16_t c20;    // 16bit
     int16_t c21;    // 16bit
     int16_t c30;    // 16bit
+    int16_t c31;    // 12bit
+    int16_t c40;    // 12bit
 } calibrationCoefficients_t;
 
 typedef struct {
@@ -115,6 +118,7 @@ static baroState_t  baroState;
 #define busWrite   busWriteRegister
 
 static uint8_t buf[6];
+static uint8_t chipId[1];
 
 // Helper functions
 static uint8_t registerRead(const extDevice_t *dev, uint8_t reg)
@@ -167,20 +171,21 @@ static bool deviceConfigure(const extDevice_t *dev)
         return false;
     }
 
-    // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21) from the Calibration Coefficient register.
+    // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21, c31, c40) from the Calibration Coefficient register.
     //   Note: The coefficients read from the coefficient register are 2's complement numbers.
     // Do the read of the coefficients in multiple parts, as the chip will return a read failure when trying to read all at once over I2C.
-#define COEFFICIENT_LENGTH 18
-#define READ_LENGTH (COEFFICIENT_LENGTH / 2)
+    unsigned coefficientLength = chipId[0] == SPL07_003_CHIP_ID ? 22 : 18;
+    uint8_t coef[coefficientLength];
 
-    uint8_t coef[COEFFICIENT_LENGTH];
-    if (!busReadBuf(dev, DPS310_REG_COEF, coef, READ_LENGTH)) {
-        return false;
-    }
-     if (!busReadBuf(dev, DPS310_REG_COEF + READ_LENGTH, coef + READ_LENGTH, COEFFICIENT_LENGTH - READ_LENGTH)) {
-        return false;
-    }
+#define READ_LENGTH 9
 
+    for (unsigned i = 0; i < sizeof(coef); ) {
+        int chunk = MIN((unsigned)READ_LENGTH, (sizeof(coef) - i));
+        if (!busReadBuf(dev, DPS310_REG_COEF + i,  coef + i, chunk)) {
+            return false;
+        }
+        i += chunk;
+    }
     // See section 8.11, Calibration Coefficients (COEF), of datasheet
 
     // 0x11 c0 [3:0] + 0x10 c0 [11:4]
@@ -210,12 +215,27 @@ static bool deviceConfigure(const extDevice_t *dev)
     // 0x20 c30 [15:8] + 0x21 c30 [7:0]
     baroState.calib.c30 = getTwosComplement(((uint32_t)coef[16] << 8) | (uint32_t)coef[17], 16);
 
+    if (chipId[0] == SPL07_003_CHIP_ID) {
+        // 0x23 c31 [3:0] + 0x22 c31 [11:4]
+        baroState.calib.c31 = getTwosComplement(((uint32_t)coef[18] << 4) | (((uint32_t)coef[19] >> 4) & 0x0F), 12);
+
+        // 0x23 c40 [11:8] + 0x24 c40 [7:0]
+        baroState.calib.c40 = getTwosComplement((((uint32_t)coef[19] & 0x0F) << 8) | (uint32_t)coef[20], 12);
+    } else {
+        baroState.calib.c31 = 0;
+        baroState.calib.c40 = 0; 
+    }
+
     // PRS_CFG: pressure measurement rate (32 Hz) and oversampling (16 time standard)
     registerSetBits(dev, DPS310_REG_PRS_CFG, DPS310_PRS_CFG_BIT_PM_RATE_32HZ | DPS310_PRS_CFG_BIT_PM_PRC_16);
 
     // TMP_CFG: temperature measurement rate (32 Hz) and oversampling (16 times)
-    const uint8_t TMP_COEF_SRCE = registerRead(dev, DPS310_REG_COEF_SRCE) & DPS310_COEF_SRCE_BIT_TMP_COEF_SRCE;
-    registerSetBits(dev, DPS310_REG_TMP_CFG, DPS310_TMP_CFG_BIT_TMP_RATE_32HZ | DPS310_TMP_CFG_BIT_TMP_PRC_16 | TMP_COEF_SRCE);
+    if (chipId[0] == SPL07_003_CHIP_ID) {
+        registerSetBits(dev, DPS310_REG_TMP_CFG, DPS310_TMP_CFG_BIT_TMP_RATE_32HZ | DPS310_TMP_CFG_BIT_TMP_PRC_16);
+    } else {
+        const uint8_t tempCoefSource = registerRead(dev, DPS310_REG_COEF_SRCE) & DPS310_COEF_SRCE_BIT_TMP_COEF_SRCE;
+        registerSetBits(dev, DPS310_REG_TMP_CFG, DPS310_TMP_CFG_BIT_TMP_RATE_32HZ | DPS310_TMP_CFG_BIT_TMP_PRC_16 | tempCoefSource);
+    }
 
     // CFG_REG: set pressure and temperature result bit-shift (required when the oversampling rate is >8 times)
     registerSetBits(dev, DPS310_REG_CFG_REG, DPS310_CFG_REG_BIT_T_SHIFT | DPS310_CFG_REG_BIT_P_SHIFT);
@@ -235,9 +255,7 @@ static bool dps310ReadUP(baroDev_t *baro)
     // 1. Kick off read
     // No need to poll for data ready as the conversion rate is 32Hz and this is sampling at 20Hz
     // Read PSR_B2, PSR_B1, PSR_B0, TMP_B2, TMP_B1, TMP_B0
-     busReadRegisterBufferStart(&baro->dev, DPS310_REG_PSR_B2, buf, 6);
-
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, DPS310_REG_PSR_B2, buf, 6);
 }
 
 static bool dps310GetUP(baroDev_t *baro)
@@ -266,9 +284,15 @@ static bool dps310GetUP(baroDev_t *baro)
     const float c20 = baroState.calib.c20;
     const float c21 = baroState.calib.c21;
     const float c30 = baroState.calib.c30;
+    const float c31 = baroState.calib.c31;
+    const float c40 = baroState.calib.c40;
 
     // See section 4.9.1, How to Calculate Compensated Pressure Values, of datasheet
-    baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * c30)) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * c21);
+    if (chipId[0] == SPL07_003_CHIP_ID) {
+        baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * (c30 + Praw_sc * c40))) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * (c21 + Praw_sc * c31));
+    } else {
+        baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * c30)) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * c21);
+    }
 
     const float c0 = baroState.calib.c0;
     const float c1 = baroState.calib.c1;
@@ -296,13 +320,11 @@ static void deviceCalculate(int32_t *pressure, int32_t *temperature)
 static bool deviceDetect(const extDevice_t *dev)
 {
     for (int retry = 0; retry < DETECTION_MAX_RETRY_COUNT; retry++) {
-        uint8_t chipId[1];
-
         delay(100);
 
         bool ack = busReadBuf(dev, DPS310_REG_ID, chipId, 1);
 
-        if (ack && chipId[0] == DPS310_ID_REV_AND_PROD_ID) {
+        if (ack && (chipId[0] == DPS310_ID_REV_AND_PROD_ID || chipId[0] == SPL07_003_CHIP_ID)) {
             return true;
         }
     };
@@ -310,9 +332,11 @@ static bool deviceDetect(const extDevice_t *dev)
     return false;
 }
 
-static void dps310StartUT(baroDev_t *baro)
+static bool dps310StartUT(baroDev_t *baro)
 {
     UNUSED(baro);
+
+    return true;
 }
 
 static bool dps310ReadUT(baroDev_t *baro)
@@ -329,9 +353,11 @@ static bool dps310GetUT(baroDev_t *baro)
     return true;
 }
 
-static void dps310StartUP(baroDev_t *baro)
+static bool dps310StartUP(baroDev_t *baro)
 {
     UNUSED(baro);
+
+    return true;
 }
 
 static void deviceInit(const extDevice_t *dev, resourceOwner_e owner)

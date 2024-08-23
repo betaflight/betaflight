@@ -31,9 +31,14 @@
 #define SCHEDULER_RELAX_OSD 25
 #endif
 
+// Tenths of a % of tasks late
+#define CPU_LOAD_LATE_LIMIT 10
+
 typedef struct schedulerConfig_s {
     uint16_t rxRelaxDeterminism;
     uint16_t osdRelaxDeterminism;
+    uint16_t cpuLatePercentageLimit;
+    uint8_t debugTask;
 } schedulerConfig_t;
 
 PG_DECLARE(schedulerConfig_t, schedulerConfig);

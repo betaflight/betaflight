@@ -33,8 +33,15 @@
 #include "pg/timerio.h"
 
 #define CC_CHANNELS_PER_TIMER         4 // TIM_Channel_1..4
-#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
+#ifdef AT32F435
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x) - 1)
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) + 1)
+#else
 #define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) << 2)
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
+#endif
+
+#define TIM_CH_TO_SELCHANNEL(ch)  ((ch - 1) * 2)
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
@@ -42,19 +49,6 @@ typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
-
-typedef enum {
-    TIM_USE_ANY            = 0x0,
-    TIM_USE_NONE           = 0x0,
-    TIM_USE_PPM            = 0x1,
-    TIM_USE_PWM            = 0x2,
-    TIM_USE_MOTOR          = 0x4,
-    TIM_USE_SERVO          = 0x8,
-    TIM_USE_LED            = 0x10,
-    TIM_USE_TRANSPONDER    = 0x20,
-    TIM_USE_BEEPER         = 0x40,
-    TIM_USE_CAMERA_CONTROL = 0x80,
-} timerUsageFlag_e;
 
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
 struct timerCCHandlerRec_s;
@@ -81,12 +75,10 @@ typedef struct timerHardware_s {
     TIM_TypeDef *tim;
     ioTag_t tag;
     uint8_t channel;
-    timerUsageFlag_e usageFlags;
     uint8_t output;
     uint8_t alternateFunction;
 
 #if defined(USE_TIMER_DMA)
-
 #if defined(USE_DMA_SPEC)
     dmaResource_t *dmaRefConfigured;
     uint32_t dmaChannelConfigured;
@@ -142,7 +134,13 @@ void timerConfigure(const timerHardware_t *timHw, uint16_t period, uint32_t hz);
 // Initialisation
 //
 void timerInit(void);
-void timerStart(void);
+
+//
+// per-timer
+//
+
+// once-upon-a-time all the timers were started on boot, now they are started when needed.
+void timerStart(TIM_TypeDef *tim);
 
 //
 // per-channel
@@ -175,13 +173,13 @@ void timerForceOverflow(TIM_TypeDef *tim);
 
 void timerConfigUpdateCallback(const TIM_TypeDef *tim, timerOvrHandlerRec_t *updateCallback);
 
-uint32_t timerClock(TIM_TypeDef *tim);
+uint32_t timerClock(const TIM_TypeDef *tim);
 
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);  // TODO - just for migration
 void timerReconfigureTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);
 
-rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
-uint8_t timerInputIrq(TIM_TypeDef *tim);
+rccPeriphTag_t timerRCC(const TIM_TypeDef *tim);
+uint8_t timerInputIrq(const TIM_TypeDef *tim);
 
 #if defined(USE_TIMER_MGMT)
 extern const resourceOwner_t freeOwner;
@@ -195,7 +193,6 @@ const resourceOwner_t *timerGetOwner(const timerHardware_t *timer);
 const timerHardware_t *timerGetConfiguredByTag(ioTag_t ioTag);
 const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex);
 const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex);
-ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index);
 
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);

@@ -26,6 +26,9 @@
 #define MSP2_GET_OSD_WARNINGS               0x3005  // returns active OSD warning message text
 #define MSP2_GET_TEXT                       0x3006
 #define MSP2_SET_TEXT                       0x3007
+#define MSP2_GET_LED_STRIP_CONFIG_VALUES    0x3008
+#define MSP2_SET_LED_STRIP_CONFIG_VALUES    0x3009
+#define MSP2_SENSOR_CONFIG_ACTIVE           0x300A
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
@@ -33,3 +36,4 @@
 #define MSP2TEXT_PID_PROFILE_NAME                3
 #define MSP2TEXT_RATE_PROFILE_NAME               4
 #define MSP2TEXT_BUILDKEY                        5
+#define MSP2TEXT_RELEASENAME                     6

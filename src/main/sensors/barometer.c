@@ -44,6 +44,7 @@
 #include "drivers/barometer/barometer_ms5611.h"
 #include "drivers/barometer/barometer_lps.h"
 #include "drivers/barometer/barometer_2smpb_02b.h"
+#include "drivers/barometer/barometer_lps22df.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/bus_spi.h"
@@ -77,7 +78,11 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     //   a. Precedence is in the order of popularity; BMP388, BMP280, MS5611 then BMP085, then
     //   b. If SPI variant is specified, it is likely onboard, so take it.
 
-#if !(defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_QMP6988) || defined(DEFAULT_BARO_QMP6988)) || defined(DEFAULT_BARO_DPS310) || defined(DEFAULT_BARO_SPI_DPS310)
+#if !(defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || \
+    defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || \
+    defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_QMP6988) || \
+    defined(DEFAULT_BARO_QMP6988)) || defined(DEFAULT_BARO_DPS310) || defined(DEFAULT_BARO_SPI_DPS310) || \
+    defined(DEFAULT_BARO_LPS22DF) || defined(DEFAULT_BARO_SPI_LPS22DF)
 
 #if defined(USE_BARO_DPS310) || defined(USE_BARO_SPI_DPS310)
 #if defined(USE_BARO_SPI_DPS310)
@@ -120,6 +125,12 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #else
 #define DEFAULT_BARO_2SMBP_02B
 #endif
+#elif defined(USE_BARO_LPS22DF) || defined(USE_BARO_SPI_LPS22DF)
+#if defined(USE_BARO_LPS22DF)
+#define DEFAULT_BARO_SPI_LPS22DF
+#else
+#define DEFAULT_BARO_LPS22DF
+#endif
 #endif
 
 #ifndef DEFAULT_BARO_I2C_ADDRESS
@@ -160,6 +171,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #define NUM_GROUND_LEVEL_CYCLES   10        // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
 
 static uint16_t calibrationCycles = 0;      // baro calibration = get new ground pressure value
+static uint16_t calibrationCycleCount = 0;
 static float baroGroundAltitude = 0.0f;
 static bool baroCalibrated = false;
 static bool baroReady = false;
@@ -217,13 +229,11 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
         {
-            static bmp085Config_t defaultBMP085Config;
-            defaultBMP085Config.xclrTag = barometerConfig()->baro_xclr_tag;
-            defaultBMP085Config.eocTag = barometerConfig()->baro_eoc_tag;
-
-            static const bmp085Config_t *bmp085Config = &defaultBMP085Config;
-
-            if (bmp085Detect(bmp085Config, baroDev)) {
+            const bmp085Config_t defaultBMP085Config = {
+                .xclrTag = barometerConfig()->baro_xclr_tag,
+                .eocTag = barometerConfig()->baro_eoc_tag
+            };
+            if (bmp085Detect(&defaultBMP085Config, baroDev)) {
                 baroHardware = BARO_BMP085;
                 break;
             }
@@ -263,13 +273,10 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     case BARO_BMP388:
 #if defined(USE_BARO_BMP388) || defined(USE_BARO_SPI_BMP388)
         {
-            static bmp388Config_t defaultBMP388Config;
-
-            defaultBMP388Config.eocTag = barometerConfig()->baro_eoc_tag;
-
-            static const bmp388Config_t *bmp388Config = &defaultBMP388Config;
-
-            if (bmp388Detect(bmp388Config, baroDev)) {
+            const bmp388Config_t defaultBMP388Config = {
+                .eocTag = barometerConfig()->baro_eoc_tag,
+            };
+            if (bmp388Detect(&defaultBMP388Config, baroDev)) {
                 baroHardware = BARO_BMP388;
                 break;
             }
@@ -299,6 +306,15 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 #if defined(USE_BARO_2SMBP_02B) || defined(USE_BARO_SPI_2SMBP_02B)
         if (baro2SMPB02BDetect(baroDev)) {
             baroHardware = BARO_2SMPB_02B;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+     case BARO_LPS22DF:
+#if defined(USE_BARO_LPS22DF) || defined(USE_BARO_SPI_LPS22DF)
+        if (lps22dfDetect(baroDev)) {
+            baroHardware = BARO_LPS22DF;
             break;
         }
 #endif
@@ -341,23 +357,20 @@ bool baroIsCalibrated(void)
     return baroCalibrated;
 }
 
-static void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
-{
-    calibrationCycles = calibrationCyclesRequired;
-}
-
 void baroStartCalibration(void)
 {
-    baroSetCalibrationCycles(NUM_CALIBRATION_CYCLES);
     baroGroundAltitude = 0;
     baroCalibrated = false;
+    calibrationCycles = NUM_CALIBRATION_CYCLES;
+    calibrationCycleCount = 0;
 }
 
 void baroSetGroundLevel(void)
 {
-    baroSetCalibrationCycles(NUM_GROUND_LEVEL_CYCLES);
     baroGroundAltitude = 0;
     baroCalibrated = false;
+    calibrationCycles = NUM_GROUND_LEVEL_CYCLES;
+    calibrationCycleCount = 0;
 }
 
 typedef enum {
@@ -449,20 +462,30 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 
             // update baro data
             baro.dev.calculate(&baro.pressure, &baro.temperature);
-            baro.altitude = pressureToAltitude(baro.pressure);
 
-            if (baroIsCalibrated()) {
-                // zero baro altitude
-                baro.altitude -= baroGroundAltitude;
+            // If baro.pressure is invalid then skip altitude counting / call of calibration cycle
+            if (baro.pressure > 0) {
+                const float altitude = pressureToAltitude(baro.pressure);
+                if (baroIsCalibrated()) {
+                    // zero baro altitude
+                    baro.altitude = altitude - baroGroundAltitude;
+                } else {
+                    // establish stable baroGroundAltitude value to zero baro altitude with
+                    performBaroCalibrationCycle(altitude);
+                    baro.altitude = 0.0f;
+                }
             } else {
-                // establish stable baroGroundAltitude value to zero baro altitude with
-                performBaroCalibrationCycle(baro.altitude);
-                baro.altitude = 0.0f;
+                // return 0 during calibration, reuse last value otherwise
+                if (!baroIsCalibrated()) {
+                    baro.altitude = 0.0f;
+                }
             }
 
-            DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));   // hPa
-            DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                 // c°C
-            DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));            // cm
+            if (debugMode == DEBUG_BARO) {
+                DEBUG_SET(DEBUG_BARO, 1, lrintf(baro.pressure / 100.0f));   // hPa
+                DEBUG_SET(DEBUG_BARO, 2, baro.temperature);                 // c°C
+                DEBUG_SET(DEBUG_BARO, 3, lrintf(baro.altitude));            // cm
+            }
 
             if (baro.dev.combined_read) {
                 state = BARO_STATE_PRESSURE_START;
@@ -495,15 +518,13 @@ float getBaroAltitude(void)
 
 static void performBaroCalibrationCycle(const float altitude)
 {
-    static uint16_t cycleCount = 0;
-
     baroGroundAltitude += altitude;
-    cycleCount++;
+    calibrationCycleCount++;
 
-    if (cycleCount >= calibrationCycles) {
-        baroGroundAltitude /= cycleCount;  // simple average
+    if (calibrationCycleCount >= calibrationCycles) {
+        baroGroundAltitude /= calibrationCycleCount;  // simple average
         baroCalibrated = true;
-        cycleCount = 0;
+        calibrationCycleCount = 0;
     }
 }
 

@@ -110,7 +110,7 @@ static uint8_t suart_getc_(uint8_t *bt)
     return 1;
 }
 
-static void suart_putc_(uint8_t *tx_b)
+static void suart_putc_(const uint8_t *tx_b)
 {
     // shift out stopbit first
     uint16_t bitmask = (*tx_b << 2) | 1 | (1 << 10);
@@ -132,7 +132,7 @@ static void suart_putc_(uint8_t *tx_b)
 static uint8_16_u CRC_16;
 static uint8_16_u LastCRC_16;
 
-static void ByteCrc(uint8_t *bt)
+static void ByteCrc(const uint8_t *bt)
 {
     uint8_t xb = *bt;
     for (uint8_t i = 0; i < 8; i++)

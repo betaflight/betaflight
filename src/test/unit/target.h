@@ -32,6 +32,8 @@
 #define USE_MAG
 #define USE_BARO
 #define USE_GPS
+#define USE_GPS_NMEA
+#define USE_GPS_UBLOX
 #define USE_DASHBOARD
 #define USE_SERIALRX
 #define USE_RX_MSP
@@ -62,8 +64,7 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
+#define USE_SOFTSERIAL
 
 #define SERIAL_PORT_COUNT 8
 
@@ -71,10 +72,6 @@
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6  // needed for unittest
 
 #define TARGET_BOARD_IDENTIFIER "TEST"
-
-#define LED_STRIP_TIMER 1
-#define SOFTSERIAL_1_TIMER 2
-#define SOFTSERIAL_2_TIMER 3
 
 #define USABLE_TIMER_CHANNEL_COUNT 0
 

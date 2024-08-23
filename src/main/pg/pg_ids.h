@@ -81,6 +81,7 @@
 #define PG_GPS_RESCUE 55 // struct OK
 #define PG_POSITION 56
 #define PG_VTX_IO_CONFIG 57
+#define PG_GPS_LAP_TIMER 58
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight
@@ -154,7 +155,8 @@
 #define PG_RX_EXPRESSLRS_SPI_CONFIG 555
 #define PG_SCHEDULER_CONFIG         556
 #define PG_MSP_CONFIG               557
-#define PG_BETAFLIGHT_END           557
+#define PG_SOFTSERIAL_PIN_CONFIG    558
+#define PG_BETAFLIGHT_END           558
 
 
 // OSD configuration (subject to change)

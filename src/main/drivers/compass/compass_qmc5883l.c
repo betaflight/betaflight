@@ -67,7 +67,11 @@
 #define QMC5883L_RST 0x80
 
 #define QMC5883L_REG_DATA_OUTPUT_X 0x00
+#define QMC5883L_REG_DATA_UNLOCK 0x05
 #define QMC5883L_REG_STATUS 0x06
+#define QMC5883L_REG_STATUS_DRDY 0x01
+#define QMC5883L_REG_STATUS_OVL  0x02
+#define QMC5883L_REG_STATUS_DOR  0x04
 
 #define QMC5883L_REG_ID 0x0D
 #define QMC5883_ID_VAL 0xFF
@@ -86,45 +90,49 @@ static bool qmc5883lInit(magDev_t *magDev)
         return false;
     }
 
+    magDev->magOdrHz = 200; // QMC5883L_ODR_200HZ
     return true;
 }
 
 static bool qmc5883lRead(magDev_t *magDev, int16_t *magData)
 {
     static uint8_t buf[6];
-    static uint8_t status;
+    static uint8_t status = 0; // request status on first read
     static enum {
-        STATE_READ_STATUS,
-        STATE_WAIT_STATUS,
-        STATE_WAIT_READ,
-    } state = STATE_READ_STATUS;
+        STATE_WAIT_DRDY,
+        STATE_READ,
+    } state = STATE_WAIT_DRDY;
 
     extDevice_t *dev = &magDev->dev;
 
     switch (state) {
         default:
-        case STATE_READ_STATUS:
-            busReadRegisterBufferStart(dev, QMC5883L_REG_STATUS, &status, sizeof(status));
-            state = STATE_WAIT_STATUS;
-            return false;
-
-        case STATE_WAIT_STATUS:
-            if ((status & 0x04) == 0) {
-                state = STATE_READ_STATUS;
-                return false;
+        case STATE_WAIT_DRDY:
+            if (status & QMC5883L_REG_STATUS_DRDY) {
+                // New data is available
+                if (busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_OUTPUT_X, buf, sizeof(buf))) {
+                    state = STATE_READ;
+                }
+            } else if (status & QMC5883L_REG_STATUS_DOR) {
+                // Data overrun (and data not ready). Data registers may be locked, read unlock regiter (ZH)
+                if (busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_UNLOCK, buf + sizeof(buf) - 1, 1)) {
+                    status = 0;   // force status read next
+                }
+            } else {
+                // Read status register to check for data ready - status will be untouched if read fails
+                busReadRegisterBufferStart(dev, QMC5883L_REG_STATUS, &status, sizeof(status));
             }
-
-            busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_OUTPUT_X, buf, sizeof(buf));
-            state = STATE_WAIT_READ;
             return false;
 
-        case STATE_WAIT_READ:
-
+        case STATE_READ:
             magData[X] = (int16_t)(buf[1] << 8 | buf[0]);
             magData[Y] = (int16_t)(buf[3] << 8 | buf[2]);
             magData[Z] = (int16_t)(buf[5] << 8 | buf[4]);
 
-            state = STATE_READ_STATUS;
+            state = STATE_WAIT_DRDY;
+
+            // Indicate that new data is required
+            status = 0;
 
             return true;
     }

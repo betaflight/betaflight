@@ -33,12 +33,14 @@
 #include "config/feature.h"
 
 #include "drivers/dshot.h" // for DSHOT_ constants in initEscEndpoints; may be gone in the future
-#include "drivers/pwm_output.h" // for PWM_TYPE_* and others
-#include "drivers/time.h"
 #include "drivers/dshot_bitbang.h"
 #include "drivers/dshot_dpwm.h"
+#include "drivers/pwm_output.h" // for PWM_TYPE_* and others
+#include "drivers/time.h"
 
 #include "fc/rc_controls.h" // for flight3DConfig_t
+
+#include "sensors/battery.h"
 
 #include "motor.h"
 
@@ -114,9 +116,9 @@ unsigned motorDeviceCount(void)
     return motorDevice->count;
 }
 
-motorVTable_t motorGetVTable(void)
+motorVTable_t *motorGetVTable(void)
 {
-    return motorDevice->vTable;
+    return &motorDevice->vTable;
 }
 
 // This is not motor generic anymore; should be moved to analog pwm module
@@ -293,6 +295,11 @@ bool isMotorProtocolDshot(void)
     return motorProtocolDshot;
 }
 
+bool isMotorProtocolBidirDshot(void)
+{
+    return isMotorProtocolDshot() && useDshotTelemetry;
+}
+
 void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     memset(motors, 0, sizeof(motors));
@@ -343,6 +350,16 @@ void motorEnable(void)
     }
 }
 
+float motorEstimateMaxRpm(void)
+{
+    // Empirical testing found this relationship between estimated max RPM without props attached
+    // (unloaded) and measured max RPM with props attached (loaded), independent from prop size
+    float unloadedMaxRpm = 0.01f * getBatteryVoltage() * motorConfig()->kv;
+    float loadDerating = -5.44e-6f * unloadedMaxRpm + 0.944f;
+
+    return unloadedMaxRpm * loadDerating;
+}
+
 bool motorIsEnabled(void)
 {
     return motorDevice->enabled;
@@ -363,7 +380,7 @@ timeMs_t motorGetMotorEnableTimeMs(void)
 #ifdef USE_DSHOT_BITBANG
 bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 {
-#ifdef STM32F4
+#if defined(STM32F4) || defined(APM32F4)
     return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
         (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);
 #else

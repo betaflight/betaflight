@@ -26,9 +26,12 @@ extern "C" {
     #include "platform.h"
     #include "target.h"
     #include "build/version.h"
+    #include "io/gps.h"
     #include "cli/cli.h"
     #include "cli/settings.h"
     #include "common/printf.h"
+    #include "common/maths.h"
+    #include "common/gps_conversion.h"
     #include "config/feature.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
@@ -39,7 +42,6 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/servos.h"
     #include "io/beeper.h"
-    #include "io/gps.h"
     #include "io/ledstrip.h"
     #include "io/serial.h"
     #include "io/vtx.h"
@@ -47,6 +49,7 @@ extern "C" {
     #include "msp/msp_box.h"
     #include "osd/osd.h"
     #include "pg/pg.h"
+    #include "pg/gps_rescue.h"
     #include "pg/pg_ids.h"
     #include "pg/beeper.h"
     #include "pg/gps.h"
@@ -61,13 +64,15 @@ extern "C" {
     void *cliGetValuePointer(const clivalue_t *value);
     
     const clivalue_t valueTable[] = {
-        { "array_unit_test",   VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config.array.length = 3,      PG_RESERVED_FOR_TESTING_1, 0 },
-        { "str_unit_test",     VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config.string = { 0, 16, 0 }, PG_RESERVED_FOR_TESTING_1, 0 },
-        { "wos_unit_test",     VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config.string = { 0, 16, STRING_FLAGS_WRITEONCE }, PG_RESERVED_FOR_TESTING_1, 0 },
+        { .name = "array_unit_test",   .type = VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config = { .array = { .length = 3}},                     .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
+        { .name = "str_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, 0 }},                      .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
+        { .name = "wos_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, STRING_FLAGS_WRITEONCE }}, .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
     const char * const lookupTableOsdDisplayPortDevice[] = {};
+    const char * const buildKey = NULL;
+    const char * const releaseName = NULL;
 
 
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
@@ -90,12 +95,15 @@ extern "C" {
     PG_REGISTER(pidConfig_t, pidConfig, PG_PID_CONFIG, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
     PG_REGISTER_WITH_RESET_FN(int8_t, unitTestData, PG_RESERVED_FOR_TESTING_1, 0);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
+
+const bool PRINT_TEST_DATA = false;
 
 TEST(CLIUnittest, TestCliSetArray)
 {
@@ -106,14 +114,15 @@ TEST(CLIUnittest, TestCliSetArray)
     EXPECT_LT(index, valueTableEntryCount);
 
     const clivalue_t val = valueTable[index];
-
-    printf("\n===============================\n");
     int8_t *data = (int8_t *)cliGetValuePointer(&val);
-    for(int i=0; i < val.config.array.length; i++){
-        printf("data[%d] = %d\n", i, data[i]);
-    }
-    printf("\n===============================\n");
 
+    if (PRINT_TEST_DATA) {
+        printf("\n===============================\n");
+        for(int i = 0; i < val.config.array.length; i++){
+            printf("data[%d] = %d\n", i, data[i]);
+        }
+        printf("\n===============================\n");
+    }
 
     EXPECT_EQ(123, data[0]);
     EXPECT_EQ( -3, data[1]);
@@ -129,14 +138,15 @@ TEST(CLIUnittest, TestCliSetStringNoFlags)
     EXPECT_LT(index, valueTableEntryCount);
 
     const clivalue_t val = valueTable[index];
-
-    printf("\n===============================\n");
     uint8_t *data = (uint8_t *)cliGetValuePointer(&val);
-    for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
-        printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
-    }
-    printf("\n===============================\n");
 
+    if (PRINT_TEST_DATA) {
+        printf("\n===============================\n");
+        for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
+            printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+        }
+        printf("\n===============================\n");
+    }
 
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
@@ -158,13 +168,14 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
 
     const clivalue_t val = valueTable[index];
 
-    printf("\n===============================\n");
     uint8_t *data = (uint8_t *)cliGetValuePointer(&val);
-    for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
-        printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+    if (PRINT_TEST_DATA) {
+        printf("\n===============================\n");
+        for(int i = 0; i < val.config.string.maxlength && data[i] != 0; i++){
+            printf("data[%d] = %d (%c)\n", i, data[i], data[i]);
+        }
+        printf("\n===============================\n");
     }
-    printf("\n===============================\n");
-
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
     EXPECT_EQ('M', data[2]);
@@ -192,13 +203,12 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ('L', data[4]);
     EXPECT_EQ('E', data[5]);
     EXPECT_EQ(0,   data[6]);
-
-    printf("\n");
 }
 
 // STUBS
 extern "C" {
 
+int16_t debug[8];
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 uint16_t batteryWarningVoltage;
@@ -278,9 +288,13 @@ bool parseColor(int, const char *) {return false; }
 bool resetEEPROM(void) { return true; }
 void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
-void gpsEnablePassthrough(struct serialPort_s *) {}
-bool gpsIsHealthy(void) { return true; }
-baudRate_e getGpsPortActualBaudRateIndex(void) { return BAUD_AUTO; }
+
+typedef enum {
+    DUMMY
+} pageId_e;
+
+void dashboardShowFixedPage(pageId_e){}
+void dashboardUpdate(timeUs_t) {}
 
 bool parseLedStripConfig(int, const char *){return false; }
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
@@ -300,8 +314,6 @@ baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
 const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL; }
-void serialSetBaudRate(serialPort_t *, uint32_t) {}
-void serialSetMode(serialPort_t *, portMode_e) {}
 void serialPassthrough(serialPort_t *, serialPort_t *, serialConsumer *, serialConsumer *) {}
 uint32_t millis(void) { return 0; }
 uint8_t getBatteryCellCount(void) { return 1; }
@@ -318,11 +330,10 @@ uint16_t averageSystemLoadPercent = 0;
 
 timeDelta_t getTaskDeltaTimeUs(taskId_e){ return 0; }
 uint16_t currentRxIntervalUs = 9000;
-armingDisableFlags_e getArmingDisableFlags(void) { return ARMING_DISABLED_NO_GYRO; }
 
-const char *armingDisableFlagNames[]= {
+/*const char *armingDisableFlagNames[]= {
 "DUMMYDISABLEFLAGNAME"
-};
+};*/
 
 void getTaskInfo(taskId_e, taskInfo_t *) {}
 void getCheckFuncInfo(cfCheckFuncInfo_t *) {}
@@ -334,13 +345,13 @@ const char* const buildDate = "Jan 01 2017";
 const char * const buildTime = "00:00:00";
 const char * const shortGitRevision = "MASTER";
 
-uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
-uint8_t serialRead(serialPort_t *){return 0;}
+//uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
+//uint8_t serialRead(serialPort_t *){return 0;}
 
 void bufWriterAppend(bufWriter_t *, uint8_t ch){ printf("%c", ch); }
-void serialWriteBufShim(void *, const uint8_t *, int) {}
+//void serialWriteBufShim(void *, const uint8_t *, int) {}
 void bufWriterInit(bufWriter_t *, uint8_t *, int, bufWrite_t, void *) { }
-void setArmingDisabled(armingDisableFlags_e) {}
+//void setArmingDisabled(armingDisableFlags_e) {}
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *) {}
 void systemResetToBootloader(void) {}
@@ -351,15 +362,16 @@ void writeUnmodifiedConfigToEEPROM(void) {}
 void changePidProfile(uint8_t) {}
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
 void generateLedConfig(ledConfig_t *, char *, size_t) {}
-bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
-void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
+//bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
+//void serialWrite(serialPort_t *, uint8_t ch) { printf("%c", ch);}
 
-void serialSetCtrlLineStateCb(serialPort_t *, void (*)(void *, uint16_t ), void *) {}
+//void serialSetCtrlLineStateCb(serialPort_t *, void (*)(void *, uint16_t ), void *) {}
 void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
 void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
 
-void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
-
+//void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
+void rescheduleTask(taskId_e, timeDelta_t){}
+void schedulerSetNextStateTime(timeDelta_t ){}
 char *getBoardName(void) { return NULL; }
 char *getManufacturerId(void) { return NULL; }
 bool boardInformationIsSet(void) { return true; }

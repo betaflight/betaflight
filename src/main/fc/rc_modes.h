@@ -78,6 +78,7 @@ typedef enum {
     BOXSTICKCOMMANDDISABLE,
     BOXBEEPERMUTE,
     BOXREADY,
+    BOXLAPTIMERRESET,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -140,7 +141,7 @@ typedef struct modeActivationProfile_s {
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId);
-void rcModeUpdate(boxBitmask_t *newState);
+void rcModeUpdate(const boxBitmask_t *newState);
 
 bool airmodeIsEnabled(void);
 

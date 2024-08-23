@@ -43,6 +43,7 @@
 #include "cms/cms.h"
 #include "cms/cms_menu_main.h"
 #include "cms/cms_menu_saveexit.h"
+#include "cms/cms_menu_quick.h"
 #include "cms/cms_types.h"
 
 #include "common/maths.h"
@@ -129,7 +130,7 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
     return cmsDisplayPorts[cmsCurrentDevice];
 }
 
-bool cmsDisplayPortSelect(displayPort_t *instance)
+bool cmsDisplayPortSelect(const displayPort_t *instance)
 {
     for (unsigned i = 0; i < cmsDeviceCount; i++) {
         if (cmsDisplayPortSelectNext() == instance) {
@@ -845,7 +846,7 @@ const void *cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
     if (pMenu != currentCtx.menu) {
         saveMenuInhibited = false;
 
-        if (currentCtx.menu) {
+        if (currentCtx.menu && pMenu != &cmsx_menuMain) {
             // If we are opening the initial top-level menu, then currentCtx.menu will be NULL and nothing to do.
             // Otherwise stack the current menu before moving to the selected menu.
             if (menuStackIdx >= CMS_MENU_STACK_LIMIT - 1) {
@@ -896,6 +897,13 @@ void cmsMenuOpen(void)
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ NULL, 0, 0 };
         startMenu = &cmsx_menuMain;
+
+#ifdef USE_OSD_QUICK_MENU
+        if (osdConfig()->osd_use_quick_menu) {
+            startMenu = &cmsx_menuQuick;
+        }
+#endif // USE_OSD_QUICK_MENU
+
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
         displayLayerSelect(pCurrentDisplay, DISPLAYPORT_LAYER_FOREGROUND); // make sure the foreground layer is active
@@ -976,7 +984,7 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 
 const void *cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 {
-    int exitType = (int)ptr;
+    int exitType = (intptr_t)ptr;
     switch (exitType) {
     case CMS_EXIT_SAVE:
     case CMS_EXIT_SAVEREBOOT:

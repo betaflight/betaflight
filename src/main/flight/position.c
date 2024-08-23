@@ -99,7 +99,7 @@ void calculateEstimatedAltitude(void)
     static float newBaroAltOffsetCm = 0.0f;
 
     float baroAltCm = 0.0f;
-    float gpsTrust = 0.3f; // if no hDOP value, use 0.3
+    float gpsTrust = 0.3f; // if no pDOP value, use 0.3, intended range 0-1;
     bool haveBaroAlt = false; // true if baro exists and has been calibrated on power up
     bool haveGpsAlt = false; // true if GPS is connected and while it has a 3D fix, set each run to false
 
@@ -116,8 +116,10 @@ void calculateEstimatedAltitude(void)
         // On loss of 3D fix, gpsAltCm remains at the last value, haveGpsAlt becomes false, and gpsTrust goes to zero.
         gpsAltCm = gpsSol.llh.altCm; // static, so hold last altitude value if 3D fix is lost to prevent fly to moon
         haveGpsAlt = true; // stays false if no 3D fix
-        if (gpsSol.dop.hdop != 0) {
-            gpsTrust = 100.0f / gpsSol.dop.hdop;
+        if (gpsSol.dop.pdop != 0) {
+            // pDOP of 1.0 is good.  100 is very bad.  Our gpsSol.dop.pdop values are *100
+            // When pDOP is a value less than 3.3, GPS trust will be stronger than default.
+            gpsTrust = 100.0f / gpsSol.dop.pdop;
             // *** TO DO - investigate if we should use vDOP or vACC with UBlox units;
         }
         // always use at least 10% of other sources besides gps if available
@@ -143,7 +145,7 @@ void calculateEstimatedAltitude(void)
             }
         }
         zeroedAltitudeCm = 0.0f; // always hold relativeAltitude at zero while disarmed
-
+        DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm / 100.0f); // Absolute altitude ASL in metres, max 32,767m
     //  ***  ARMED  ***
     } else {
         if (!wasArmed) { // things to run once, on arming, after being disarmed
@@ -165,7 +167,8 @@ void calculateEstimatedAltitude(void)
             gpsTrust = 0.0f;
             // TO DO - smoothly reduce GPS trust, rather than immediately dropping to zero for what could be only a very brief loss of 3D fix 
         }
-
+        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
+        
         // Empirical mixing of GPS and Baro altitudes
         if (useZeroedGpsAltitude && (positionConfig()->altitude_source == DEFAULT || positionConfig()->altitude_source == GPS_ONLY)) {
             if (haveBaroAlt && positionConfig()->altitude_source == DEFAULT) {
@@ -181,8 +184,8 @@ void calculateEstimatedAltitude(void)
         }
     }
 
-      zeroedAltitudeCm = pt2FilterApply(&altitudeLpf, zeroedAltitudeCm);
-      // NOTE: this filter must receive 0 as its input, for the whole disarmed time, to ensure correct zeroed values on arming
+    zeroedAltitudeCm = pt2FilterApply(&altitudeLpf, zeroedAltitudeCm);
+    // NOTE: this filter must receive 0 as its input, for the whole disarmed time, to ensure correct zeroed values on arming
 
     if (wasArmed) {
         displayAltitudeCm = zeroedAltitudeCm; // while armed, show filtered relative altitude in OSD / sensors tab
@@ -202,13 +205,11 @@ void calculateEstimatedAltitude(void)
  
     // *** set debugs
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
-    DEBUG_SET(DEBUG_ALTITUDE, 1, baroAltCm);
-    DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm);
+    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroAltCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
 #ifdef USE_VARIO
     DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
-    DEBUG_SET(DEBUG_RTH, 1, displayAltitudeCm);
-    DEBUG_SET(DEBUG_BARO, 3, baroAltCm);
+    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
 }
 #endif //defined(USE_BARO) || defined(USE_GPS)
 
@@ -221,6 +222,13 @@ float getAltitude(void)
 {
     return zeroedAltitudeCm;
 }
+
+#ifdef USE_GPS
+float getAltitudeAsl(void)
+{
+    return gpsSol.llh.altCm;
+}
+#endif
 
 #ifdef USE_VARIO
 int16_t getEstimatedVario(void)

@@ -20,14 +20,24 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "SH74"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32H743"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
 #define USE_I2C_DEVICE_4
+
+#define USE_VCP
+
+#define USE_SOFTSERIAL
+
+#define UNIFIED_SERIAL_PORT_COUNT       3
 
 #define USE_UART1
 #define USE_UART2
@@ -70,13 +80,6 @@
 #define SPI_FULL_RECONFIGURABILITY
 #define USE_SPI_DMA_ENABLE_LATE
 
-#define USE_VCP
-
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
-
 #define USE_USB_DETECT
 
 #define USE_ESCSERIAL
@@ -86,3 +89,7 @@
 #define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
+
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
+#define USE_LED_STRIP_CACHE_MGMT
+#endif

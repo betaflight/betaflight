@@ -77,7 +77,7 @@
 #define BEEPER_PWM_HZ   0
 #endif
 
-#define MAX_MULTI_BEEPS 64   //size limit for 'beep_multiBeeps[]'
+#define MAX_MULTI_BEEPS 32   // number of beeps (including pause) for 'beep_multiBeeps[]'
 
 #define BEEPER_COMMAND_REPEAT 0xFE
 #define BEEPER_COMMAND_STOP   0xFF
@@ -87,6 +87,9 @@ static timeUs_t lastDshotBeaconCommandTimeUs;
 #endif
 
 #ifdef USE_BEEPER
+
+STATIC_ASSERT(BEEPER_ALL - 1 < sizeof(uint32_t) * 8, "BEEPER_GET_FLAG bits exceeded");
+
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -94,6 +97,9 @@ static timeUs_t lastDshotBeaconCommandTimeUs;
  * "Sound" Sequences are made so that 1st, 3rd, 5th.. are the delays how
  * long the beeper is on and 2nd, 4th, 6th.. are the delays how long beeper
  * is off. Delays are in milliseconds/10 (i.e., 5 => 50ms).
+ *
+ * if first value is zero, sequence starts with pause
+ *
  */
 // short fast beep
 static const uint8_t beep_shortBeep[] = {
@@ -173,7 +179,7 @@ static const uint8_t beep_rcSmoothingInitFail[] = {
 };
 
 // array used for variable # of beeps (reporting GPS sat count, etc)
-static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
+static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS * 2 + 1];
 
 #define BEEPER_CONFIRMATION_BEEP_DURATION 2
 #define BEEPER_CONFIRMATION_BEEP_GAP_DURATION 20
@@ -186,14 +192,12 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 
 static bool beeperIsOn = false;
 
-// Place in current sequence
+// Index in current sequence (currentBeeperEntry->sequence[])
 static uint16_t beeperPos = 0;
-// Time when beeper routine must act next time
+// Time when beeper routine must act next time (zero when not waiting)
 static uint32_t beeperNextToggleTime = 0;
-// Time of last arming beep in microseconds (for blackbox)
+// Timestamp of last arming beep in microseconds (for blackbox)
 static uint32_t armingBeepTimeMicros = 0;
-
-static void beeperProcessCommand(timeUs_t currentTimeUs);
 
 typedef struct beeperTableEntry_s {
     uint8_t mode;
@@ -220,7 +224,7 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       11, beep_2shortBeeps,     "ACC_CALIBRATION") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  12, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
     { BEEPER_ENTRY(BEEPER_READY_BEEP,            13, beep_readyBeep,       "READY_BEEP") },
-    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME This entry must not be called directly.
     { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         15, beep_disarmRepeatBeep, "DISARM_REPEAT") },
     { BEEPER_ENTRY(BEEPER_ARMED,                 16, beep_armedBeep,       "ARMED") },
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           17, NULL,                 "SYSTEM_INIT") },
@@ -235,49 +239,45 @@ static const beeperTableEntry_t beeperTable[] = {
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
 
-#define BEEPER_TABLE_ENTRY_COUNT (sizeof(beeperTable) / sizeof(beeperTableEntry_t))
+
+// find entry by mode
+static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
+{
+    for (const beeperTableEntry_t* e = beeperTable; e < ARRAYEND(beeperTable); e++) {
+        if (e->mode == mode) {
+            return e;
+        }
+    }
+    return NULL;
+}
 
 /*
  * Called to activate/deactivate beeper, using the given "BEEPER_..." value.
  * This function returns immediately (does not block).
+ * TODO - use led for beeps even for BEEPER_USB / BOXBEEPERMUTE
  */
 void beeper(beeperMode_e mode)
 {
-    if (
-        mode == BEEPER_SILENCE || (
-            (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-            && getBatteryState() == BATTERY_NOT_PRESENT
-        ) || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE)
-    ) {
+    if (mode == BEEPER_SILENCE
+        || ((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && getBatteryState() == BATTERY_NOT_PRESENT )
+        || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE) ) {
         beeperSilence();
         return;
     }
 
-    const beeperTableEntry_t *selectedCandidate = NULL;
-    for (uint32_t i = 0; i < BEEPER_TABLE_ENTRY_COUNT; i++) {
-        const beeperTableEntry_t *candidate = &beeperTable[i];
-        if (candidate->mode != mode) {
-            continue;
-        }
-
-        if (!currentBeeperEntry) {
-            selectedCandidate = candidate;
-            break;
-        }
-
-        if (candidate->priority < currentBeeperEntry->priority) {
-            selectedCandidate = candidate;
-        }
-
-        break;
+    const beeperTableEntry_t *candidate = beeperFind(mode);
+    if (!candidate || candidate->sequence == NULL) {
+        // invalid mode for beeper()
+        return;
     }
-
-    if (!selectedCandidate) {
+    if (currentBeeperEntry && candidate->priority >= currentBeeperEntry->priority) {
+        // already got better beeper
+        // this will also prevent restarting sequence for identical mode
         return;
     }
 
-    currentBeeperEntry = selectedCandidate;
-
+    currentBeeperEntry = candidate;
     beeperPos = 0;
     beeperNextToggleTime = 0;
 }
@@ -290,10 +290,28 @@ void beeperSilence(void)
     warningLedDisable();
     warningLedRefresh();
 
-    beeperNextToggleTime = 0;
-    beeperPos = 0;
-
     currentBeeperEntry = NULL;
+    beeperPos = 0;
+    beeperNextToggleTime = 0;
+}
+
+
+// helper function, add count beeps starting at pos to beep_multiBeeps
+// `off` is used as interval between beeps
+// if offLast is nonzero, it is used after sequence
+// if offLast is zero, no delay is appended after last beep (and BEEPER_COMMAND_STOP must follow)
+// returns new pos
+// will always keep enough space for stop-/repeat command
+static unsigned beep_multiBeepsAdd(unsigned pos, int count, uint8_t on, uint8_t off, uint8_t offLast)
+{
+    while (pos < MAX_MULTI_BEEPS * 2 - 1 && count > 0) {   // make sure both entries fit
+        beep_multiBeeps[pos++] = on;
+        if (count > 1 || offLast) {
+            beep_multiBeeps[pos++] = count > 1 ? off : offLast;
+        }
+        count--;
+    }
+    return pos;
 }
 
 /*
@@ -302,17 +320,11 @@ void beeperSilence(void)
  */
 void beeperConfirmationBeeps(uint8_t beepCount)
 {
-    uint32_t i = 0;
-    uint32_t cLimit = beepCount * 2;
-    if (cLimit > MAX_MULTI_BEEPS) {
-        cLimit = MAX_MULTI_BEEPS;
-    }
-    do {
-        beep_multiBeeps[i++] = BEEPER_CONFIRMATION_BEEP_DURATION;
-        beep_multiBeeps[i++] = BEEPER_CONFIRMATION_BEEP_GAP_DURATION;
-    } while (i < cLimit);
+    unsigned i = 0;
+    i = beep_multiBeepsAdd(i, beepCount,
+                           BEEPER_CONFIRMATION_BEEP_DURATION,
+                           BEEPER_CONFIRMATION_BEEP_GAP_DURATION, BEEPER_CONFIRMATION_BEEP_GAP_DURATION);
     beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
-
     beeper(BEEPER_MULTI_BEEPS);
 }
 
@@ -323,32 +335,15 @@ void beeperWarningBeeps(uint8_t beepCount)
 
     unsigned i = 0;
 
-    unsigned count = 0;
-    while (i < MAX_MULTI_BEEPS - 1 && count < WARNING_FLASH_COUNT) {
-        beep_multiBeeps[i++] = WARNING_FLASH_DURATION_MS / 10;
-        if (++count < WARNING_FLASH_COUNT) {
-            beep_multiBeeps[i++] = WARNING_FLASH_DURATION_MS / 10;
-        } else {
-            beep_multiBeeps[i++] = WARNING_PAUSE_DURATION_MS / 10;
-        }
-    }
-
-    while (i < MAX_MULTI_BEEPS - 1 && longBeepCount > 0) {
-        beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
-        if (--longBeepCount > 0) {
-            beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
-        } else {
-            beep_multiBeeps[i++] = WARNING_PAUSE_DURATION_MS / 10;
-        }
-    }
-
-    while (i < MAX_MULTI_BEEPS - 1 && shortBeepCount > 0) {
-        beep_multiBeeps[i++] = WARNING_CODE_DURATION_SHORT_MS / 10;
-        if (--shortBeepCount > 0) {
-            beep_multiBeeps[i++] = WARNING_CODE_DURATION_LONG_MS / 10;
-        }
-    }
-
+    i = beep_multiBeepsAdd(i, WARNING_FLASH_COUNT - 1,
+                           WARNING_FLASH_DURATION_MS / 10,
+                           WARNING_FLASH_DURATION_MS / 10, WARNING_PAUSE_DURATION_MS / 10);
+    i = beep_multiBeepsAdd(i, longBeepCount,
+                           WARNING_CODE_DURATION_LONG_MS / 10,
+                           WARNING_CODE_DURATION_LONG_MS / 10,  WARNING_PAUSE_DURATION_MS / 10);
+    i = beep_multiBeepsAdd(i, shortBeepCount,
+                           WARNING_CODE_DURATION_SHORT_MS / 10,
+                           WARNING_CODE_DURATION_LONG_MS / 10, 0);
     beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
     beeper(BEEPER_MULTI_BEEPS);
@@ -360,20 +355,60 @@ static void beeperGpsStatus(void)
     if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_GPS_STATUS))) {
         // if GPS 3D fix and at least the minimum number available, then beep out number of satellites
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
-            uint8_t i = 0;
-            do {
-                beep_multiBeeps[i++] = 5;
-                beep_multiBeeps[i++] = 10;
-            } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
-
-            beep_multiBeeps[i - 1] = 50; // extend last pause
+            unsigned i = 0;
+            i = beep_multiBeepsAdd(i, gpsSol.numSat,
+                                   5,
+                                   10, 50);
             beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
-            beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
+            beeper(BEEPER_MULTI_BEEPS);
         }
     }
 }
 #endif
+
+/*
+ * Calculates array position when next to change beeper state is due.
+ */
+enum beeperState_e {
+    BeepOnFirst,
+    BeepOn,
+    BeepOff,
+    BeepDone,
+    BeepError,
+};
+
+static enum beeperState_e beeperSequenceAdvance(timeUs_t currentTimeUs)
+{
+    unsigned origPos = beeperPos;
+    bool wasRepeat = false;
+    while (true) {  // evaluate commands until return statement
+        switch (currentBeeperEntry->sequence[beeperPos]) {
+        case BEEPER_COMMAND_REPEAT:
+            if (wasRepeat) {     // prevent infinite loop on badly formed beep sequence
+                return BeepError;
+            }
+            wasRepeat = true;
+            beeperPos = 0;
+            continue;
+        case BEEPER_COMMAND_STOP:
+            return BeepDone;
+        case 0:
+            beeperPos++;  // skip 0 in data
+            continue;
+        default:   // Otherwise advance the sequence and calculate next toggle time
+            beeperNextToggleTime = currentTimeUs + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
+            beeperPos++;
+            // on/off is strictly index-based
+            if ((beeperPos % 2) == 1) {
+                return origPos ? BeepOn : BeepOnFirst;
+            } else {
+                return BeepOff;
+            }
+        }
+    }
+}
+
 
 /*
  * Beeper handler function to be called periodically in loop. Updates beeper
@@ -384,89 +419,85 @@ void beeperUpdate(timeUs_t currentTimeUs)
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
-#ifdef USE_GPS
-    } else if (featureIsEnabled(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
-        beeperGpsStatus();
-#endif
     }
+#ifdef USE_GPS
+    else if (featureIsEnabled(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
+        // Note: this may overwrite current beep_multiBeeps sequence
+        beeperGpsStatus();
+    }
+#endif
 
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
         return;
     }
 
-    if (beeperNextToggleTime > currentTimeUs) {
+    if (beeperNextToggleTime && cmp32(beeperNextToggleTime, currentTimeUs) > 0) {
         schedulerIgnoreTaskExecTime();
         return;
     }
 
 #ifdef USE_DSHOT
-    if (!areMotorsRunning() && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)
-        && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
-        if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US && !isTryingToArm()) {
-            const timeDelta_t dShotBeaconInterval = (currentBeeperEntry->mode == BEEPER_RX_SET) ? DSHOT_BEACON_MODE_INTERVAL_US : DSHOT_BEACON_RXLOSS_INTERVAL_US;
+    if (!areMotorsRunning()
+        && (DSHOT_BEACON_ALLOWED_MODES & BEEPER_GET_FLAG(currentBeeperEntry->mode))
+        && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(currentBeeperEntry->mode)) ) {
+        const timeDelta_t dShotBeaconInterval = (currentBeeperEntry->mode == BEEPER_RX_SET)
+            ? DSHOT_BEACON_MODE_INTERVAL_US
+            : DSHOT_BEACON_RXLOSS_INTERVAL_US;
+        if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
+            && !isTryingToArm() ) {
             if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
                 // at least 500ms between DShot beacons to allow time for the sound to fully complete
                 // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
                 dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
             }
+        } else {
+            // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
+            lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
         }
     }
 #endif
 
-    if (!beeperIsOn) {
-        if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
-                BEEP_ON;
-                beeperIsOn = true;
-            }
-
-            warningLedEnable();
-            warningLedRefresh();
-            // if this was arming beep then mark time (for blackbox)
-            if (
-                beeperPos == 0
-                && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX
-                || currentBeeperEntry->mode == BEEPER_ARMING_GPS_NO_FIX)) {
-                armingBeepTimeMicros = micros();
-            }
+    bool visualBeep = false;
+    switch (beeperSequenceAdvance(currentTimeUs)) {
+    case BeepOnFirst:
+        // if this is arming beep then mark time (for blackbox)
+        // note that ARM sequence must start with beep
+        if (BEEPER_GET_FLAG(currentBeeperEntry->mode) & BEEPER_ARMING_MODES) {
+            armingBeepTimeMicros = micros();
         }
-    } else {
-        if (currentBeeperEntry->sequence[beeperPos] != 0) {
-            BEEP_OFF;
-            beeperIsOn = false;
-
-            warningLedDisable();
-            warningLedRefresh();
+        FALLTHROUGH;
+    case BeepOn:
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
+            BEEP_ON;
+            beeperIsOn = true;
+            visualBeep = true;
         }
+        warningLedEnable();
+        warningLedRefresh();
+        break;
+    case BeepOff:
+        BEEP_OFF;
+        beeperIsOn = false;
+        warningLedDisable();
+        warningLedRefresh();
+        break;
+    case BeepDone:
+    case BeepError:
+        beeperSilence();
+        break;
     }
 
 #if defined(USE_OSD)
-    static bool beeperWasOn = false;
-    if (beeperIsOn && !beeperWasOn) {
+    static bool visualWasOn = false;
+    if (visualBeep && !visualWasOn) {
         osdSetVisualBeeperState(true);
     }
-    beeperWasOn = beeperIsOn;
+    visualWasOn = visualBeep;
+#else
+    UNUSED(visualBeep);
 #endif
-    
-    beeperProcessCommand(currentTimeUs);
-}
-
-/*
- * Calculates array position when next to change beeper state is due.
- */
-static void beeperProcessCommand(timeUs_t currentTimeUs)
-{
-    if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_REPEAT) {
-        beeperPos = 0;
-    } else if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_STOP) {
-        beeperSilence();
-    } else {
-        // Otherwise advance the sequence and calculate next toggle time
-        beeperNextToggleTime = currentTimeUs + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
-        beeperPos++;
-    }
 }
 
 /*
@@ -478,13 +509,18 @@ uint32_t getArmingBeepTimeMicros(void)
     return armingBeepTimeMicros;
 }
 
+static bool beeperModeIndexValid(int idx)
+{
+    return (idx >= 0 && idx < (int)ARRAYLEN(beeperTable));
+}
+
 /*
  * Returns the 'beeperMode_e' value for the given beeper-table index,
  * or BEEPER_SILENCE if none.
  */
 beeperMode_e beeperModeForTableIndex(int idx)
 {
-    return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ? beeperTable[idx].mode : BEEPER_SILENCE;
+    return beeperModeIndexValid(idx) ? beeperTable[idx].mode : BEEPER_SILENCE;
 }
 
 /*
@@ -504,7 +540,7 @@ uint32_t beeperModeMaskForTableIndex(int idx)
  */
 const char *beeperNameForTableIndex(int idx)
 {
-    return (idx >= 0 && idx < (int)BEEPER_TABLE_ENTRY_COUNT) ? beeperTable[idx].name : NULL;
+    return beeperModeIndexValid(idx) ? beeperTable[idx].name : NULL;
 }
 
 /*
@@ -512,7 +548,7 @@ const char *beeperNameForTableIndex(int idx)
  */
 int beeperTableEntryCount(void)
 {
-    return (int)BEEPER_TABLE_ENTRY_COUNT;
+    return ARRAYLEN(beeperTable);
 }
 
 /*

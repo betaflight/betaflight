@@ -39,6 +39,9 @@
 
 #endif // DEFAULT_RX_FEATURE
 
+// features must be listed in
+//  config/feature.c:featuresSupportedByBuild
+//  cli/cli.c:featureNames
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
@@ -59,7 +62,6 @@ typedef enum {
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
-    FEATURE_VTX = 1 << 24,
     FEATURE_RX_SPI = 1 << 25,
     //FEATURE_SOFTSPI = 1 << 26, (removed)
     FEATURE_ESC_SENSOR = 1 << 27,
@@ -72,6 +74,10 @@ typedef struct featureConfig_s {
 } featureConfig_t;
 
 PG_DECLARE(featureConfig_t, featureConfig);
+
+// Mask of features that have code compiled in with current config.
+//  Other restrictions on available features may apply.
+extern uint32_t featuresSupportedByBuild;
 
 void featureInit(void);
 bool featureIsEnabled(const uint32_t mask);

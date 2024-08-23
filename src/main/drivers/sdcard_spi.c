@@ -71,11 +71,6 @@ static bool sdcardSpi_isFunctional(void)
     return sdcard.state != SDCARD_STATE_NOT_PRESENT;
 }
 
-static void sdcard_select(void)
-{
-    IOLo(sdcard.dev.busType_u.spi.csnPin);
-}
-
 static void sdcard_deselect(void)
 {
     // As per the SD-card spec, give the card 8 dummy clocks so it can finish its operation
@@ -84,7 +79,9 @@ static void sdcard_deselect(void)
     spiWait(&sdcard.dev);
 
     delayMicroseconds(10);
-    IOHi(sdcard.dev.busType_u.spi.csnPin);
+
+    // Negate CS
+    spiRelease(&sdcard.dev);
 }
 
 /**
@@ -214,8 +211,6 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
  * with the given argument, waits up to SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY bytes for a reply, and returns the
  * first non-0xFF byte of the reply.
  *
- * You must select the card first with sdcard_select() and deselect it afterwards with sdcard_deselect().
- *
  * Upon failure, 0xFF is returned.
  */
 static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
@@ -270,8 +265,6 @@ static bool sdcard_validateInterfaceCondition(void)
 
     sdcard.version = 0;
 
-    sdcard_select();
-
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SEND_IF_COND, (SDCARD_VOLTAGE_ACCEPTED_2_7_to_3_6 << 8) | SDCARD_IF_COND_CHECK_PATTERN);
 
     // Don't deselect the card right away, because we'll want to read the rest of its reply if it's a V2 card
@@ -308,8 +301,6 @@ static bool sdcard_validateInterfaceCondition(void)
 
 static bool sdcard_readOCRRegister(uint32_t *result)
 {
-    sdcard_select();
-
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_READ_OCR, 0);
 
     uint8_t response[4];
@@ -467,8 +458,6 @@ static bool sdcard_fetchCSD(void)
     uint32_t readBlockLen, blockCount, blockCountMult;
     uint64_t capacityBytes;
 
-    sdcard_select();
-
     /* The CSD command's data block should always arrive within 8 idle clock cycles (SD card spec). This is because
      * the information about card latency is stored in the CSD register itself, so we can't use that yet!
      */
@@ -511,8 +500,6 @@ static bool sdcard_fetchCSD(void)
  */
 static bool sdcard_checkInitDone(void)
 {
-    sdcard_select();
-
     uint8_t status = sdcard_sendAppCommand(SDCARD_ACOMMAND_SEND_OP_COND, sdcard.version == 2 ? 1 << 30 /* We support high capacity cards */ : 0);
 
     sdcard_deselect();
@@ -586,8 +573,6 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
 
 static bool sdcard_setBlockLength(uint32_t blockLen)
 {
-    sdcard_select();
-
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SET_BLOCKLEN, blockLen);
 
     sdcard_deselect();
@@ -666,8 +651,6 @@ static bool sdcardSpi_poll(void)
     doMore:
     switch (sdcard.state) {
         case SDCARD_STATE_RESET:
-            sdcard_select();
-
             initStatus = sdcard_sendCommand(SDCARD_COMMAND_GO_IDLE_STATE, 0);
 
             sdcard_deselect();
@@ -704,8 +687,6 @@ static bool sdcardSpi_poll(void)
 
                 // Now fetch the CSD and CID registers
                 if (sdcard_fetchCSD()) {
-                    sdcard_select();
-
                     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_SEND_CID, 0);
 
                     if (status == 0) {
@@ -942,8 +923,6 @@ static sdcardOperationStatus_e sdcardSpi_writeBlock(uint32_t blockIndex, uint8_t
         break;
         case SDCARD_STATE_READY:
             // We're not continuing a multi-block write so we need to send a single-block write command
-            sdcard_select();
-
             // Standard size cards use byte addressing, high capacity cards use block addressing
             status = sdcard_sendCommand(SDCARD_COMMAND_WRITE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE);
 
@@ -999,8 +978,6 @@ static sdcardOperationStatus_e sdcardSpi_beginWriteBlocks(uint32_t blockIndex, u
         }
     }
 
-    sdcard_select();
-
     if (
         sdcard_sendAppCommand(SDCARD_ACOMMAND_SET_WR_BLOCK_ERASE_COUNT, blockCount) == 0
         && sdcard_sendCommand(SDCARD_COMMAND_WRITE_MULTIPLE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE) == 0
@@ -1047,8 +1024,6 @@ static bool sdcardSpi_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_ope
 #ifdef SDCARD_PROFILING
     sdcard.pendingOperation.profileStartTime = micros();
 #endif
-
-    sdcard_select();
 
     // Standard size cards use byte addressing, high capacity cards use block addressing
     uint8_t status = sdcard_sendCommand(SDCARD_COMMAND_READ_SINGLE_BLOCK, sdcard.highCapacity ? blockIndex : blockIndex * SDCARD_BLOCK_SIZE);

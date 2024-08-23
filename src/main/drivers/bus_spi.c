@@ -50,7 +50,7 @@ static uint8_t spiRegisteredDeviceCount = 0;
 spiDevice_t spiDevice[SPIDEV_COUNT];
 busDevice_t spiBusDevice[SPIDEV_COUNT];
 
-SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
+SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance)
 {
 #ifdef USE_SPI_DEVICE_1
     if (instance == SPI1) {
@@ -160,10 +160,6 @@ bool spiInit(SPIDevice device)
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev)
 {
-    if (dev->bus->csLockDevice && (dev->bus->csLockDevice != dev)) {
-        // If CS is still asserted, but not by the current device, the bus is busy
-        return true;
-    }
     return (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
 }
 
@@ -172,6 +168,13 @@ void spiWait(const extDevice_t *dev)
 {
     // Wait for completion
     while (spiIsBusy(dev));
+}
+
+// Negate CS if held asserted after a transfer
+void spiRelease(const extDevice_t *dev)
+{
+    // Negate Chip Select
+    IOHi(dev->busType_u.spi.csnPin);
 }
 
 // Wait for bus to become free, then read/write block of data
@@ -355,7 +358,7 @@ uint8_t spiReadRegMsk(const extDevice_t *dev, uint8_t reg)
 
 uint16_t spiCalculateDivider(uint32_t freq)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
@@ -380,7 +383,7 @@ uint16_t spiCalculateDivider(uint32_t freq)
 
 uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
@@ -390,7 +393,6 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
     if ((spiClk / spiClkDivisor) > 36000000){
         return 36000000;
     }
-
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -414,8 +416,13 @@ FAST_IRQ_HANDLER static void spiIrqHandler(const extDevice_t *dev)
             break;
 
         case BUS_ABORT:
-            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
-            return;
+            // Skip to the end of the segment list
+            nextSegment = (busSegment_t *)bus->curSegment + 1;
+            while (nextSegment->len != 0) {
+                bus->curSegment = nextSegment;
+                nextSegment = (busSegment_t *)bus->curSegment + 1;
+            }
+            break;
 
         case BUS_READY:
         default:
@@ -440,11 +447,6 @@ FAST_IRQ_HANDLER static void spiIrqHandler(const extDevice_t *dev)
             spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
-            if (bus->curSegment->negateCS) {
-                bus->csLockDevice = (extDevice_t *)NULL;
-             } else {
-                bus->csLockDevice = (extDevice_t *)dev;
-            }
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
         }
     } else {
@@ -569,7 +571,7 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 void spiInitBusDMA(void)
 {
     uint32_t device;
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
     /* Check https://www.st.com/resource/en/errata_sheet/dm00037591-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
      * section 2.1.10 which reports an errata that corruption may occurs on DMA2 if AHB peripherals (eg GPIO ports) are
      * access concurrently with APB peripherals (eg SPI busses). Bitbang DSHOT uses DMA2 to write to GPIO ports. If this
@@ -603,7 +605,7 @@ void spiInitBusDMA(void)
 
             if (dmaTxChannelSpec) {
                 dmaTxIdentifier = dmaGetIdentifier(dmaTxChannelSpec->ref);
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 2)) {
                     dmaTxIdentifier = DMA_NONE;
                     break;
@@ -614,7 +616,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -641,7 +643,7 @@ void spiInitBusDMA(void)
 
             if (dmaRxChannelSpec) {
                 dmaRxIdentifier = dmaGetIdentifier(dmaRxChannelSpec->ref);
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 2)) {
                     dmaRxIdentifier = DMA_NONE;
                     break;
@@ -652,7 +654,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif
@@ -746,6 +748,19 @@ uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
     return dev->bus->deviceCount;
 }
 
+// Link two segment lists
+// Note that there is no need to unlink segment lists as this is done automatically as they are processed
+void spiLinkSegments(const extDevice_t *dev, busSegment_t *firstSegment, busSegment_t *secondSegment)
+{
+    busSegment_t *endSegment;
+
+    // Find the last segment of the new transfer
+    for (endSegment = firstSegment; endSegment->len; endSegment++);
+
+    endSegment->u.link.dev = dev;
+    endSegment->u.link.segments = secondSegment;
+}
+
 // DMA transfer setup and start
 void spiSequence(const extDevice_t *dev, busSegment_t *segments)
 {
@@ -763,11 +778,6 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
             // Safe to discard the volatile qualifier as we're in an atomic block
             busSegment_t *endCmpSegment = (busSegment_t *)bus->curSegment;
 
-            /* It is possible that the endCmpSegment may be NULL as the bus is held busy by csLockDevice.
-             * If this is the case this transfer will be silently dropped. Therefore holding CS low after a transfer,
-             * as is done with the SD card, MUST not be done on a bus where interrupts may trigger a transfer
-             * on an idle bus, such as would be the case with a gyro. This would be result in skipped gyro transfers.
-             */
             if (endCmpSegment) {
                 while (true) {
                     // Find the last segment of the current transfer

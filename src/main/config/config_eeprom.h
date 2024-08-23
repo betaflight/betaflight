@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define EEPROM_CONF_VERSION 175
+#define EEPROM_CONF_VERSION 177
 
 bool isEEPROMVersionValid(void);
 bool isEEPROMStructureValid(void);
@@ -32,3 +32,6 @@ void writeConfigToEEPROM(void);
 
 uint16_t getEEPROMConfigSize(void);
 size_t getEEPROMStorageSize(void);
+
+bool saveEEPROMToSDCard(void);
+void saveEEPROMToMemoryMappedFlash(void);

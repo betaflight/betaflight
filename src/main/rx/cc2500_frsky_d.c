@@ -114,7 +114,7 @@ static void frSkyDTelemetryWriteByte(const char data)
 }
 #endif
 
-static void buildTelemetryFrame(uint8_t *packet)
+static void buildTelemetryFrame(const uint8_t *packet)
 {
     uint8_t a1Value;
     switch (rxCc2500SpiConfig()->a1Source) {

@@ -20,10 +20,15 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "platform.h"
 
 #include "common/time.h"
+
 #include "pg/pg.h"
+
 #include "drivers/io_types.h"
 #include "drivers/pwm_output.h"
 
@@ -66,6 +71,7 @@ typedef enum mixerType
     MIXER_LEGACY = 0,
     MIXER_LINEAR = 1,
     MIXER_DYNAMIC = 2,
+    MIXER_EZLANDING = 3,
 } mixerType_e;
 
 // Custom mixer data per motor
@@ -91,11 +97,24 @@ typedef struct mixerConfig_s {
     uint8_t crashflip_motor_percent;
     uint8_t crashflip_expo;
     uint8_t mixer_type;
+#ifdef USE_RPM_LIMIT
+    bool rpm_limit;
+    uint16_t rpm_limit_p;
+    uint16_t rpm_limit_i;
+    uint16_t rpm_limit_d;
+    uint16_t rpm_limit_value;
+#endif
 } mixerConfig_t;
 
 PG_DECLARE(mixerConfig_t, mixerConfig);
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
+
+#ifdef USE_RPM_LIMIT
+#define RPM_LIMIT_ACTIVE mixerConfig()->rpm_limit
+#else
+#define RPM_LIMIT_ACTIVE false
+#endif
 
 extern const mixer_t mixers[];
 extern float motor[MAX_SUPPORTED_MOTORS];
@@ -105,12 +124,13 @@ struct rxConfig_s;
 uint8_t getMotorCount(void);
 float getMotorMixRange(void);
 bool areMotorsRunning(void);
+bool areMotorsSaturated(void);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void initEscEndpoints(void);
 void mixerInit(mixerMode_e mixerMode);
 void mixerInitProfile(void);
-
+void mixerResetRpmLimiter(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(timeUs_t currentTimeUs);
 void stopMotors(void);
@@ -120,6 +140,7 @@ bool mixerIsTricopter(void);
 
 void mixerSetThrottleAngleCorrection(int correctionValue);
 float mixerGetThrottle(void);
+float mixerGetRcThrottle(void);
 mixerMode_e getMixerMode(void);
 bool mixerModeIsFixedWing(mixerMode_e mixerMode);
 bool isFixedWing(void);

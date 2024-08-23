@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #define DEBUG16_VALUE_COUNT 8
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
@@ -102,6 +104,7 @@ typedef enum {
     DEBUG_GPS_RESCUE_VELOCITY,
     DEBUG_GPS_RESCUE_HEADING,
     DEBUG_GPS_RESCUE_TRACKING,
+    DEBUG_GPS_CONNECTION,
     DEBUG_ATTITUDE,
     DEBUG_VTX_MSP,
     DEBUG_GPS_DOP,
@@ -111,6 +114,15 @@ typedef enum {
     DEBUG_ANGLE_TARGET,
     DEBUG_CURRENT_ANGLE,
     DEBUG_DSHOT_TELEMETRY_COUNTS,
+    DEBUG_RPM_LIMIT,
+    DEBUG_RC_STATS,
+    DEBUG_MAG_CALIB,
+    DEBUG_MAG_TASK_RATE,
+    DEBUG_EZLANDING,
+    DEBUG_TPA,
+    DEBUG_S_TERM,
+    DEBUG_SPA,
+    DEBUG_TASK,
     DEBUG_COUNT
 } debugType_e;
 

@@ -66,6 +66,12 @@
 
 #define USE_SPI_DMA_ENABLE_LATE
 
+#define USE_VCP
+
+#define USE_SOFTSERIAL
+
+#define UNIFIED_SERIAL_PORT_COUNT       3
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -87,13 +93,6 @@
 
 #define USE_BEEPER
 
-#define USE_VCP
-
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
-
 #define USE_USB_DETECT
 
 #define USE_ESCSERIAL
@@ -113,3 +112,7 @@
 #endif
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
+
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
+#define USE_LED_STRIP_CACHE_MGMT
+#endif

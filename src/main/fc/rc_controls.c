@@ -35,7 +35,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/camera_control.h"
+#include "drivers/camera_control_impl.h"
 
 #include "config/config.h"
 #include "fc/core.h"
@@ -177,7 +177,7 @@ void processRcStickPositions(void)
                 // in a true signal loss situation, allow disarm only once we regain validated RxData (failsafeIsReceivingRxData = true),
                 // to avoid potentially false disarm signals soon after link recover
                 // Note that BOXFAILSAFE will also drive failsafeIsReceivingRxData false (immediately at start or end)
-                // That's why we explicitly allow disarm here BOXFAILSAFE switch is active
+                // That's why we explicitly allow disarm here if BOXFAILSAFE switch is active
                 // Note that BOXGPSRESCUE mode does not trigger failsafe - we can always disarm in that mode
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {

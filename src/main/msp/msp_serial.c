@@ -69,6 +69,8 @@ void mspSerialAllocatePorts(void)
 
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
+        } else if ((portConfig->identifier >= SERIAL_PORT_USART1) && (portConfig->identifier <= SERIAL_PORT_USART_MAX)){
+            options |= SERIAL_CHECK_TX;
         }
 
         serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, options);
@@ -315,9 +317,9 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
 
     // Transmit frame
     serialBeginWrite(msp->port);
-    serialWriteBuf(msp->port, hdr, hdrLen);
-    serialWriteBuf(msp->port, data, dataLen);
-    serialWriteBuf(msp->port, crc, crcLen);
+    serialWriteBufNoFlush(msp->port, hdr, hdrLen);
+    serialWriteBufNoFlush(msp->port, data, dataLen);
+    serialWriteBufNoFlush(msp->port, crc, crcLen);
     serialEndWrite(msp->port);
 
     return totalFrameLength;
@@ -450,10 +452,6 @@ static void mspEvaluateNonMspData(mspPort_t * mspPort, uint8_t receivedChar)
 #ifdef USE_CLI
    } else if (receivedChar == '#') {
         mspPort->pendingRequest = MSP_PENDING_CLI;
-#endif
-#if defined(USE_FLASH_BOOT_LOADER)
-   } else if (receivedChar == 'F') {
-        mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_FLASH;
 #endif
     }
 }

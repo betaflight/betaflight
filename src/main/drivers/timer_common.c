@@ -158,10 +158,4 @@ const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8
 }
 #endif
 
-ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
-{
-    UNUSED(usageFlag);
-    UNUSED(index);
-    return IO_TAG_NONE;
-}
 #endif

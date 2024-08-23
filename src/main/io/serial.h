@@ -92,6 +92,7 @@ typedef enum {
     SERIAL_PORT_USART8,
     SERIAL_PORT_UART9,
     SERIAL_PORT_USART10,
+    SERIAL_PORT_USART_MAX = SERIAL_PORT_USART10,
     SERIAL_PORT_USB_VCP = 20,
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2,
@@ -101,9 +102,21 @@ typedef enum {
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
-#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) < RESOURCE_SOFT_OFFSET) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
+#define SOFTSERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_SOFTSERIAL1)
+
+#if defined(USE_LPUART1)
+
+#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) \
+    (((x) <= SERIAL_PORT_USART_MAX) ? ((x) - SERIAL_PORT_USART1) : ((x) - SERIAL_PORT_LPUART1) + LPUARTDEV_1)
+#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) \
+    (((x) <= SERIAL_PORT_USART_MAX) ? ((x) - SERIAL_PORT_USART1 + UARTDEV_1) : ((x) - SERIAL_PORT_LPUART1) + LPUARTDEV_1)
+
+#else
+
+#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_USART1)
 #define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
 
+#endif
 //
 // runtime
 //
@@ -144,7 +157,7 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
 void serialRemovePort(serialPortIdentifier_e identifier);
 uint8_t serialGetAvailablePortCount(void);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
-bool isSerialConfigValid(const serialConfig_t *serialConfig);
+bool isSerialConfigValid(serialConfig_t *serialConfig);
 const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
 serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e identifier);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);

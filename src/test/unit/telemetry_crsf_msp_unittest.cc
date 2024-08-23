@@ -256,7 +256,7 @@ extern "C" {
 
     gpsSolutionData_t gpsSol;
     attitudeEulerAngles_t attitude = { { 0, 0, 0 } };
-    uint8_t responseBuffer[MSP_TLM_OUTBUF_SIZE];
+    extern uint8_t responseBuffer[MSP_TLM_OUTBUF_SIZE];
 
     uint32_t micros(void) {return dummyTimeUs;}
     uint32_t microsISR(void) {return micros();}
@@ -284,6 +284,8 @@ extern "C" {
     int32_t getEstimatedAltitudeCm(void) {
     	return 0;
     }
+
+    int16_t getEstimatedVario(void) { return 0; }
 
     bool featureIsEnabled(uint32_t) {return false;}
 

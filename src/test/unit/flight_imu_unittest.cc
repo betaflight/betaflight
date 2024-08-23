@@ -26,6 +26,7 @@ extern "C" {
 
     #include "common/axis.h"
     #include "common/maths.h"
+    #include "common/vector.h"
 
     #include "config/feature.h"
     #include "pg/pg.h"
@@ -39,12 +40,14 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
-
+    #include "fc/rc.h"
+    
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/position.h"
 
+    
     #include "io/gps.h"
 
     #include "rx/rx.h"
@@ -57,7 +60,13 @@ extern "C" {
 
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
-
+    void imuMahonyAHRSupdate(float dt,
+                             float gx, float gy, float gz,
+                             bool useAcc, float ax, float ay, float az,
+                             float headingErrMag, float headingErrCog,
+                             const float dcmKpGain);
+    float imuCalcMagErr(void);
+    float imuCalcCourseErr(float courseOverGround);
     extern quaternion q;
     extern float rMat[3][3];
     extern bool attitudeIsEstablished;
@@ -75,6 +84,15 @@ extern "C" {
 #include "gtest/gtest.h"
 
 const float sqrt2over2 = sqrtf(2) / 2.0f;
+
+void quaternion_from_axis_angle(quaternion* q, float angle, float x, float y, float z) {
+    fpVector3_t a = {{x, y, z}};
+    vectorNormalize(&a, &a);
+    q->w = cos(angle / 2);
+    q->x = a.x * sin(angle / 2);
+    q->y = a.y * sin(angle / 2);
+    q->z = a.z * sin(angle / 2);
+}
 
 TEST(FlightImuTest, TestCalculateRotationMatrix)
 {
@@ -201,10 +219,173 @@ TEST(FlightImuTest, TestSmallAngle)
     EXPECT_FALSE(isUpright());
 }
 
+testing::AssertionResult DoubleNearWrapPredFormat(const char* expr1, const char* expr2,
+                                                  const char* abs_error_expr, const char* wrap_expr, double val1,
+                                                  double val2, double abs_error, double wrap) {
+    const double diff = remainder(val1 - val2, wrap);
+    if (fabs(diff) <= abs_error) return testing::AssertionSuccess();
+
+    return testing::AssertionFailure()
+        << "The difference between " << expr1 << " and " << expr2 << " is "
+        << diff << " (wrapped to 0 .. " << wrap_expr << ")"
+        << ", which exceeds " << abs_error_expr << ", where\n"
+        << expr1 << " evaluates to " << val1 << ",\n"
+        << expr2 << " evaluates to " << val2 << ", and\n"
+        << abs_error_expr << " evaluates to " << abs_error << ".";
+}
+
+#define EXPECT_NEAR_DEG(val1, val2, abs_error)                \
+    EXPECT_PRED_FORMAT4(DoubleNearWrapPredFormat, val1, val2, \
+                        abs_error, 360.0)
+
+#define EXPECT_NEAR_RAD(val1, val2, abs_error)                \
+    EXPECT_PRED_FORMAT4(DoubleNearWrapPredFormat, val1, val2, \
+                        abs_error, 2 * M_PI)
+
+
+
+class MahonyFixture : public ::testing::Test {
+protected:
+    fpVector3_t gyro;
+    bool useAcc;
+    fpVector3_t acc;
+    bool useMag;
+    fpVector3_t magEF;
+    float cogGain;
+    float cogDeg;
+    float dcmKp;
+    float dt;
+    void SetUp() override {
+        vectorZero(&gyro);
+        useAcc = false;
+        vectorZero(&acc);
+        cogGain = 0.0;   // no cog
+        cogDeg  = 0.0;
+        dcmKp = .25;     // default dcm_kp
+        dt = 1e-2;       // 100Hz update
+
+        imuConfigure(0, 0);
+        // level, poiting north
+        setOrientationAA(0, {{1,0,0}});        // identity
+    }
+    virtual void setOrientationAA(float angleDeg, fpVector3_t axis) {
+        quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(angleDeg), axis.x, axis.y, axis.z);
+        imuComputeRotationMatrix();
+    }
+
+    float wrap(float angle) {
+        angle = fmod(angle, 360);
+        if (angle < 0) angle += 360;
+        return angle;
+    }
+    float angleDiffNorm(fpVector3_t *a, fpVector3_t* b, fpVector3_t weight = {{1,1,1}}) {
+        fpVector3_t tmp;
+        vectorScale(&tmp, b, -1);
+        vectorAdd(&tmp, &tmp, a);
+        for (int i = 0; i < 3; i++)
+            tmp.v[i] *= weight.v[i];
+        for (int i = 0; i < 3; i++)
+            tmp.v[i] = std::remainder(tmp.v[i], 360.0);
+        return vectorNorm(&tmp);
+    }
+    // run Mahony for some time
+    // return time it took to get within 1deg from target
+    float imuIntegrate(float runTime, fpVector3_t * target) {
+        float alignTime = -1;
+        for (float t = 0; t < runTime; t += dt) {
+            //     if (fmod(t, 1) < dt) printf("MagBF=%.2f %.2f %.2f\n", magBF.x, magBF.y, magBF.z);
+            float headingErrMag = 0;
+            if (useMag) {   // not implemented yet
+                headingErrMag = imuCalcMagErr();
+            }
+            float headingErrCog = 0;
+            if (cogGain > 0) {
+                headingErrCog = imuCalcCourseErr(DEGREES_TO_RADIANS(cogDeg)) * cogGain;
+            }
+
+            imuMahonyAHRSupdate(dt,
+                                gyro.x, gyro.y, gyro.z,
+                                useAcc, acc.x, acc.y, acc.z,
+                                headingErrMag, headingErrCog,
+                                dcmKp);
+            imuUpdateEulerAngles();
+            // if (fmod(t, 1) < dt) printf("%3.1fs - %3.1f %3.1f %3.1f\n", t, attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f);
+            // remember how long it took
+            if (alignTime < 0) {
+                fpVector3_t rpy = {{attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f}};
+                float error = angleDiffNorm(&rpy, target);
+                if (error < 1)
+                    alignTime = t;
+            }
+        }
+        return alignTime;
+    }
+};
+
+class YawTest: public MahonyFixture, public testing::WithParamInterface<float> {
+};
+
+TEST_P(YawTest, TestCogAlign)
+{
+    cogGain = 1.0;
+    cogDeg = GetParam();
+    const float rollDeg = 30;    // 30deg pitch forward
+    setOrientationAA(rollDeg, {{0, 1, 0}});
+    fpVector3_t expect = {{0, rollDeg, wrap(cogDeg)}};
+    // integrate IMU. about 25s is enough in worst case
+    float alignTime = imuIntegrate(80, &expect);
+
+    imuUpdateEulerAngles();
+    // quad stays level
+    EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, .1);
+    EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, .1);
+    // yaw is close to CoG direction
+    EXPECT_NEAR_DEG(attitude.values.yaw / 10.0, expect.z, 1);  // error < 1 deg
+    if (alignTime >= 0) {
+        printf("[          ] Aligned to %.f deg in %.2fs\n", cogDeg, alignTime);
+    }
+}
+
+TEST_P(YawTest, TestMagAlign)
+{
+    float initialAngle = GetParam();
+
+    // level, rotate to param heading
+    quaternion_from_axis_angle(&q, -DEGREES_TO_RADIANS(initialAngle), 0, 0, 1);
+    imuComputeRotationMatrix();
+
+    fpVector3_t expect = {{0, 0, 0}};    // expect zero yaw
+
+    fpVector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
+
+    for (int i = 0; i < 3; i++)
+        mag.magADC[i] = magBF.v[i];
+
+    useMag = true;
+    // integrate IMU. about 25s is enough in worst case
+    float alignTime = imuIntegrate(30, &expect);
+
+    imuUpdateEulerAngles();
+    // quad stays level
+    EXPECT_NEAR_DEG(attitude.values.roll / 10.0, expect.x, .1);
+    EXPECT_NEAR_DEG(attitude.values.pitch / 10.0, expect.y, .1);
+    // yaw is close to north (0 deg)
+    EXPECT_NEAR_DEG(attitude.values.yaw / 10.0, expect.z, 1.0);  // error < 1 deg
+    if (alignTime >= 0) {
+        printf("[          ] Aligned from %.f deg in %.2fs\n", initialAngle, alignTime);
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  TestAngles, YawTest,
+  ::testing::Values(
+      0, 45, -45, 90, 180, 270, 720+45
+      ));
+
 // STUBS
 
 extern "C" {
-    boxBitmask_t rcModeActivationMask;
+    extern boxBitmask_t rcModeActivationMask;
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
@@ -257,6 +438,7 @@ extern "C" {
     float pt2FilterGain(float, float)  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
+    float getRcDeflectionAbs(int) { return 0.0f; }
 
     void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
         UNUSED(baroDerivativeLpf);

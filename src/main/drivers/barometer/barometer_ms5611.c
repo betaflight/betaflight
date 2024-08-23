@@ -138,9 +138,9 @@ static void ms5611ReadAdc(const extDevice_t *dev)
     busRawReadRegisterBufferStart(dev, CMD_ADC_READ, sensor_data, MS5611_DATA_FRAME_SIZE); // read ADC
 }
 
-static void ms5611StartUT(baroDev_t *baro)
+static bool ms5611StartUT(baroDev_t *baro)
 {
-    busRawWriteRegisterStart(&baro->dev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
+    return busRawWriteRegisterStart(&baro->dev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
 }
 
 static bool ms5611ReadUT(baroDev_t *baro)
@@ -165,9 +165,9 @@ static bool ms5611GetUT(baroDev_t *baro)
     return true;
 }
 
-static void ms5611StartUP(baroDev_t *baro)
+static bool ms5611StartUP(baroDev_t *baro)
 {
-    busRawWriteRegisterStart(&baro->dev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
+    return busRawWriteRegisterStart(&baro->dev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
 }
 
 static bool ms5611ReadUP(baroDev_t *baro)

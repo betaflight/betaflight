@@ -30,8 +30,14 @@ const char * const shortConfigGitRevision = __CONFIG_REVISION__;
 const char * const buildDate = __DATE__;
 const char * const buildTime = __TIME__;
 
-#if defined(BUILD_KEY)
-const char * const buildKey = STR(BUILD_KEY);
+#ifdef BUILD_KEY
+    const char * const buildKey = STR(BUILD_KEY);
 #else
-const char * const buildKey = " ";
+    const char * const buildKey = NULL;
+#endif
+
+#if defined(BUILD_KEY) && defined(RELEASE_NAME)
+    const char * const releaseName = STR(RELEASE_NAME);
+#else
+    const char * const releaseName = NULL;
 #endif

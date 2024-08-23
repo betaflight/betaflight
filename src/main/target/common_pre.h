@@ -25,17 +25,17 @@
     The purpose of this file is to enable the firmware "gates" for features and drivers
     prior to entering the target.h.
 
-    CLOUD_BUILD is used to signify that the build is a user requested build and that the 
+    CLOUD_BUILD is used to signify that the build is a user requested build and that the
     features to be enabled will be defined ALREADY.
 
-    CORE_BUILD is used to signify that the build is a user requested build and that the 
+    CORE_BUILD is used to signify that the build is a user requested build and that the
     features to be enabled will be the minimal set, and all the drivers should be present.
 
-    If neither of the above are present then the build should simply be a baseline build 
+    If neither of the above are present then the build should simply be a baseline build
     for continuous integration, i.e. the compilation of the majority of features and drivers
     dependent on the size of the flash available.
 
-    NOTE: for 4.5 we will be removing any conditions related to specific MCU types, instead 
+    NOTE: for 4.5 we will be removing any conditions related to specific MCU types, instead
     these should be defined in the target.h or in a file that is imported by target.h (in the
     case of common settings for a given MCU group)
 
@@ -94,6 +94,8 @@
 #define USE_BARO_BMP085
 #define USE_BARO_2SMBP_02B
 #define USE_BARO_SPI_2SMBP_02B
+#define USE_BARO_LPS22DF
+#define USE_BARO_SPI_LPS22DF
 #endif
 
 #if !defined(USE_GYRO) && !defined(USE_ACC)
@@ -114,8 +116,9 @@
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
+#define USE_ACCGYRO_LSM6DSV16X
 
-#if defined(STM32F405) || defined(STM32F745) || defined(STM32G4) || defined(STM32H7)
+#if TARGET_FLASH_SIZE > 512
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
@@ -135,10 +138,12 @@
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
 #define USE_FLASH_W25N01G    // 1Gb NAND flash support
+#define USE_FLASH_W25N02K    // 2Gb NAND flash support
 #define USE_FLASH_W25M       // Stacked die support
 #define USE_FLASH_W25M512    // 512Kb (256Kb x 2 stacked) NOR flash support
 #define USE_FLASH_W25M02G    // 2Gb (1Gb x 2 stacked) NAND flash support
 #define USE_FLASH_W25Q128FV  // 16MB Winbond 25Q128
+#define USE_FLASH_PY25Q128HA // 16MB PUYA SEMI 25Q128
 #endif // USE_EXST
 
 #endif // USE_FLASH
@@ -162,17 +167,6 @@
 #endif
 
 #endif // !defined(USE_CONFIG)
-
-#if defined(STM32F405) || defined(STM32F745) || defined(STM32H7)
-#define USE_VTX_RTC6705
-#define USE_VTX_RTC6705_SOFTSPI
-
-#define USE_TRANSPONDER
-
-#define USE_RANGEFINDER
-#define USE_RANGEFINDER_HCSR04
-#define USE_RANGEFINDER_TF
-#endif
 
 #define USE_RX_PPM
 #define USE_RX_PWM
@@ -208,11 +202,13 @@
 
 #define USE_VTX
 #define USE_OSD
+#if !defined(USE_OSD_SD) && !defined(USE_OSD_HD)
 #define USE_OSD_SD
 #define USE_OSD_HD
+#endif
 #define USE_BLACKBOX
 
-#if TARGET_FLASH_SIZE > 512
+#if TARGET_FLASH_SIZE >= 1024
 
 #if defined(USE_SERIALRX)
 
@@ -233,41 +229,60 @@
 
 #endif // USE_TELEMETRY
 
+#ifdef USE_DSHOT_TELEMETRY
+#define USE_RPM_LIMIT
+#endif
+
+#ifdef USE_OSD
+// Dependency for CMS is defined outside this block.
+#define USE_OSD_QUICK_MENU
+#define USE_RC_STATS
+#define USE_SPEC_PREARM_SCREEN
+#endif
+
 #define USE_BATTERY_CONTINUE
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_ESCSERIAL_SIMONK
+
+#if !defined(USE_GPS)
 #define USE_GPS
-#define USE_GPS_PLUS_CODES
-#define USE_LED_STRIP
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
 #endif
+
+#if !defined(USE_GPS_PLUS_CODES)
+#define USE_GPS_PLUS_CODES
+#endif
+
+#if !defined(USE_LED_STRIP)
+#define USE_LED_STRIP
+#endif
+
+#define USE_SERIAL_4WAY_SK_BOOTLOADER
+
+#define USE_VTX_RTC6705
+#define USE_VTX_RTC6705_SOFTSPI
+
+#define USE_TRANSPONDER
+
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define USE_RANGEFINDER_TF
+
+#endif // TARGET_FLASH_SIZE > 512
 
 #endif // !defined(CLOUD_BUILD)
 
-#if !defined(LED_MAX_STRIP_LENGTH)
+#if !defined(LED_STRIP_MAX_LENGTH)
 #ifdef USE_LED_STRIP_64
-#define LED_MAX_STRIP_LENGTH           64
+#define LED_STRIP_MAX_LENGTH           64
 #else
-#define LED_MAX_STRIP_LENGTH           32
+#define LED_STRIP_MAX_LENGTH           32
 #endif
-#endif // # !defined(LED_MAX_STRIP_LENGTH)
+#endif // # !defined(LED_STRIP_MAX_LENGTH)
 
 #if defined(USE_LED_STRIP)
 #define USE_LED_STRIP_STATUS_MODE
-#endif
-
-#if defined(USE_SDCARD)
-#define USE_SDCARD_SPI
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-#define USE_SDCARD_SDIO
-#endif
-#endif
-
-#if defined(USE_PINIO)
-#define USE_PINIOBOX
-#define USE_PIN_PULL_UP_DOWN
 #endif
 
 #if defined(USE_VTX)
@@ -315,7 +330,7 @@
 #define USE_THRUST_LINEARIZATION
 #define USE_TPA_MODE
 
-#ifdef USE_SERIALRX_SPEKTRUM
+#if defined(USE_SERIALRX_SPEKTRUM) || defined(USE_SERIALRX_SRXL2)
 #define USE_SPEKTRUM_BIND
 #define USE_SPEKTRUM_BIND_PLUG
 #define USE_SPEKTRUM_REAL_RSSI
@@ -324,7 +339,7 @@
 #define USE_SPEKTRUM_VTX_CONTROL
 #define USE_SPEKTRUM_VTX_TELEMETRY
 #define USE_SPEKTRUM_CMS_TELEMETRY
-#endif // USE_SERIALRX_SPEKTRUM
+#endif // defined(USE_SERIALRX_SPEKTRUM) || defined USE_SERIALRX_SRXL2
 
 #define USE_BOARD_INFO
 #define USE_RTC_TIME
@@ -408,7 +423,6 @@
 
 #endif // defined(USE_OSD)
 
-
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
@@ -419,3 +433,26 @@
 #endif
 
 #endif // defined(USE_SERIALRX_CRSF)
+
+// USE_RACE_PRO feature pack
+#ifdef USE_RACE_PRO
+
+#ifdef USE_DSHOT_TELEMETRY
+#ifndef USE_RPM_LIMIT
+#define USE_RPM_LIMIT
+#endif
+#endif
+
+#ifdef USE_OSD
+#ifndef USE_OSD_QUICK_MENU
+#define USE_OSD_QUICK_MENU
+#endif
+#ifndef USE_RC_STATS
+#define USE_RC_STATS
+#endif
+#ifndef USE_SPEC_PREARM_SCREEN
+#define USE_SPEC_PREARM_SCREEN
+#endif
+#endif
+
+#endif // USE_RACE_PRO

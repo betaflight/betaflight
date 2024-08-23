@@ -3,7 +3,7 @@
 
 name: CI
 
-on: 
+on:
   workflow_call:
     inputs:
       release_build:
@@ -19,14 +19,14 @@ jobs:
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Cache build toolchain
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
+          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
 
       - name: Download and install toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -49,14 +49,14 @@ jobs:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch toolchain from cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
+          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
 
       - name: Hydrate configuration
         id: get-config
@@ -71,9 +71,9 @@ jobs:
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
 
       - name: Publish build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Assets
+          name: ${{ matrix.target }}
           path: obj/*.hex
           retention-days: 60
 
@@ -81,10 +81,10 @@ jobs:
     name: Test
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get install -y libblocksruntime-dev
+        run: sudo apt-get install -y libblocksruntime-dev clang-15
 
       - name: Run sanity checks
         run: make EXTRA_FLAGS=-Werror checks

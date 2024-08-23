@@ -86,13 +86,15 @@ uint16_t motorConvertToExternal(float motorValue);
 struct motorDevConfig_s; // XXX Shouldn't be needed once pwm_output* is really cleaned up.
 void motorDevInit(const struct motorDevConfig_s *motorConfig, uint16_t idlePulse, uint8_t motorCount);
 unsigned motorDeviceCount(void);
-motorVTable_t motorGetVTable(void);
+motorVTable_t *motorGetVTable(void);
 bool checkMotorProtocolEnabled(const motorDevConfig_t *motorConfig, bool *protocolIsDshot);
 bool isMotorProtocolDshot(void);
+bool isMotorProtocolBidirDshot(void);
 bool isMotorProtocolEnabled(void);
 
 void motorDisable(void);
 void motorEnable(void);
+float motorEstimateMaxRpm(void);
 bool motorIsEnabled(void);
 bool motorIsMotorEnabled(uint8_t index);
 timeMs_t motorGetMotorEnableTimeMs(void);

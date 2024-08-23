@@ -176,6 +176,9 @@ typedef enum {
 #ifdef USE_CRSF_V3
     TASK_SPEED_NEGOTIATION,
 #endif
+#ifdef USE_RC_STATS
+    TASK_RC_STATS,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,
@@ -240,6 +243,7 @@ void schedulerInit(void);
 void scheduler(void);
 timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs);
 void taskSystemLoad(timeUs_t currentTimeUs);
+uint32_t getCpuPercentageLate(void);
 void schedulerEnableGyro(void);
 uint16_t getAverageSystemLoadPercent(void);
 float schedulerGetCycleTimeMultiplier(void);

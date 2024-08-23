@@ -18,8 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
@@ -54,6 +52,8 @@
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
+
+#include "io/gps.h"
 
 #include "pg/rx.h"
 
@@ -100,6 +100,7 @@ void stopMotors(void)
 }
 
 static FAST_DATA_ZERO_INIT float throttle = 0;
+static FAST_DATA_ZERO_INIT float rcThrottle = 0;
 static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
 static FAST_DATA_ZERO_INIT float motorOutputMin;
 static FAST_DATA_ZERO_INIT float motorRangeMin;
@@ -218,12 +219,11 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     } else {
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = PWM_RANGE;
-
 #ifdef USE_DYN_IDLE
         if (mixerRuntime.dynIdleMinRps > 0.0f) {
             const float maxIncrease = isAirmodeActivated()
                 ? mixerRuntime.dynIdleMaxIncrease : mixerRuntime.dynIdleStartIncrease;
-            float minRps = getMinMotorFrequency();
+            float minRps = getMinMotorFrequencyHz();
             DEBUG_SET(DEBUG_DYN_IDLE, 3, lrintf(minRps * 10.0f));
             float rpsError = mixerRuntime.dynIdleMinRps - minRps;
             // PT1 type lowpass delay and smoothing for D
@@ -258,7 +258,6 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #else
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
-
         motorRangeMin = mixerRuntime.motorOutputLow + motorRangeMinIncrease * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;
@@ -266,6 +265,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     }
 
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
+    rcThrottle = throttle;
 }
 
 #define CRASH_FLIP_DEADBAND 20
@@ -347,7 +347,50 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
+#ifdef USE_RPM_LIMIT
+#define STICK_HIGH_DEADBAND 5    // deadband to make sure throttle cap can raise, even with maxcheck set around 2000
+static void applyRpmLimiter(mixerRuntime_t *mixer)
+{
+    static float prevError = 0.0f;
+    const float unsmoothedAverageRpm = getDshotRpmAverage();
+    const float averageRpm = pt1FilterApply(&mixer->rpmLimiterAverageRpmFilter, unsmoothedAverageRpm);
+    const float error = averageRpm - mixer->rpmLimiterRpmLimit;
+
+    // PID
+    const float p = error * mixer->rpmLimiterPGain;
+    const float d = (error - prevError) * mixer->rpmLimiterDGain; // rpmLimiterDGain already adjusted for looprate (see mixer_init.c)
+    mixer->rpmLimiterI += error * mixer->rpmLimiterIGain;         // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
+    mixer->rpmLimiterI = MAX(0.0f, mixer->rpmLimiterI);
+    float pidOutput = p + mixer->rpmLimiterI + d;
+
+    // Throttle limit learning
+    if (error > 0.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
+        mixer->rpmLimiterThrottleScale *= 1.0f - 4.8f * pidGetDT();
+    } else if (pidOutput < -400.0f * pidGetDT() && lrintf(rcCommand[THROTTLE]) >= rxConfig()->maxcheck - STICK_HIGH_DEADBAND && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
+        mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
+    }
+    mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
+
+    float rpmLimiterThrottleScaleOffset = pt1FilterApply(&mixer->rpmLimiterThrottleScaleOffsetFilter, constrainf(mixer->rpmLimiterRpmLimit / motorEstimateMaxRpm(), 0.0f, 1.0f) - mixer->rpmLimiterInitialThrottleScale);
+    throttle *= constrainf(mixer->rpmLimiterThrottleScale + rpmLimiterThrottleScaleOffset, 0.0f, 1.0f);
+
+    // Output
+    pidOutput = MAX(0.0f, pidOutput);
+    throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
+    prevError = error;
+
+    DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(rpmLimiterThrottleScaleOffset * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 4, lrintf(error));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 5, lrintf(p * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 6, lrintf(mixer->rpmLimiterI * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 7, lrintf(d * 100.0f));
+}
+#endif // USE_RPM_LIMIT
+
+static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
@@ -382,11 +425,13 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
             motor[i] = motor_disarmed[i];
         }
     }
+    DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);
+    // DEBUG_EZLANDING 0 is the ezLanding factor 2 is the throttle limit
 }
 
 static float applyThrottleLimit(float throttle)
 {
-    if (currentControlRateProfile->throttle_limit_percent < 100) {
+    if (currentControlRateProfile->throttle_limit_percent < 100 && !RPM_LIMIT_ACTIVE) {
         const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
         switch (currentControlRateProfile->throttle_limit_type) {
             case THROTTLE_LIMIT_TYPE_SCALE:
@@ -461,6 +506,70 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
 }
 
+static float calcEzLandLimit(float maxDeflection, float speed)
+{
+    // calculate limit to where the mixer can raise the throttle based on RPY stick deflection
+    // 0.0 = no increas allowed, 1.0 = 100% increase allowed
+    const float deflectionLimit = mixerRuntime.ezLandingThreshold > 0.0f ? fminf(1.0f, maxDeflection / mixerRuntime.ezLandingThreshold) : 0.0f;
+    DEBUG_SET(DEBUG_EZLANDING, 4, lrintf(deflectionLimit * 10000.0f));
+
+    // calculate limit to where the mixer can raise the throttle based on speed
+    // TODO sanity checks like number of sats, dop, accuracy?
+    const float speedLimit = mixerRuntime.ezLandingSpeed > 0.0f ? fminf(1.0f, speed / mixerRuntime.ezLandingSpeed) : 0.0f;
+    DEBUG_SET(DEBUG_EZLANDING, 5, lrintf(speedLimit * 10000.0f));
+
+    // get the highest of the limits from deflection, speed, and the base ez_landing_limit
+    const float deflectionAndSpeedLimit = fmaxf(deflectionLimit, speedLimit);
+    return fmaxf(mixerRuntime.ezLandingLimit, deflectionAndSpeedLimit);
+}
+
+static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
+{
+    // Calculate factor for normalizing motor mix range to <= 1.0
+    const float baseNormalizationFactor = motorMixRange > 1.0f ? 1.0f / motorMixRange : 1.0f;
+    const float normalizedMotorMixMin = motorMixMin * baseNormalizationFactor;
+    const float normalizedMotorMixMax = motorMixMax * baseNormalizationFactor;
+
+#ifdef USE_GPS
+    const float speed = STATE(GPS_FIX) ? gpsSol.speed3d / 100.0f : 0.0f;  // m/s
+#else
+    const float speed = 0.0f;
+#endif
+
+    const float ezLandLimit = calcEzLandLimit(getMaxRcDeflectionAbs(), speed);
+    // use the largest of throttle and limit calculated from RPY stick positions
+    float upperLimit = fmaxf(ezLandLimit, throttle);
+    // limit throttle to avoid clipping the highest motor output
+    upperLimit = fminf(upperLimit, 1.0f - normalizedMotorMixMax);
+
+    // Lower throttle Limit
+    const float epsilon = 1.0e-6f;  // add small value to avoid divisions by zero
+    const float absMotorMixMin = fabsf(normalizedMotorMixMin) + epsilon;
+    const float lowerLimit = fminf(upperLimit, absMotorMixMin);
+
+    // represents how much motor values have to be scaled to avoid clipping
+    const float ezLandFactor = upperLimit / absMotorMixMin;
+
+    // scale motor values
+    const float normalizationFactor = baseNormalizationFactor * fminf(1.0f, ezLandFactor);
+    for (int i = 0; i < mixerRuntime.motorCount; i++) {
+        motorMix[i] *= normalizationFactor;
+    }
+    motorMixRange *= baseNormalizationFactor;
+    // Make anti windup recognize reduced authority range
+    motorMixRange = fmaxf(motorMixRange, 1.0f / ezLandFactor);
+
+    // Constrain throttle
+    throttle = constrainf(throttle, lowerLimit, upperLimit);
+
+    // Log ezLandFactor, upper throttle limit, and ezLandFactor if throttle was zero
+    DEBUG_SET(DEBUG_EZLANDING, 0, fminf(1.0f, ezLandFactor) * 10000U);
+    // DEBUG_EZLANDING 1 is the adjusted throttle
+    DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);
+    DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
+    // DEBUG_EZLANDING 4 and 5 is the upper limits based on stick input and speed respectively
+}
+
 static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
 {
 #ifdef USE_AIRMODE_LPF
@@ -499,7 +608,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     if (isFlipOverAfterCrashActive()) {
         applyFlipOverAfterCrashModeToMotors();
-
         return;
     }
 
@@ -573,12 +681,17 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     throttle = pidCompensateThrustLinearization(throttle);
 #endif
 
+#ifdef USE_RPM_LIMIT
+    if (RPM_LIMIT_ACTIVE && useDshotTelemetry && ARMING_FLAG(ARMED)) {
+        applyRpmLimiter(&mixerRuntime);
+    }
+#endif
+
     // Find roll/pitch/yaw desired output
     // ??? Where is the optimal location for this code?
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
-
         float mix =
             scaledAxisPidRoll  * activeMixer[i].roll +
             scaledAxisPidPitch * activeMixer[i].pitch +
@@ -620,10 +733,21 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
     motorMixRange = motorMixMax - motorMixMin;
-    if (mixerConfig()->mixer_type > MIXER_LEGACY) {
-        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
-    } else {
+
+    switch (mixerConfig()->mixer_type) {
+    case MIXER_LEGACY:
         applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        break;
+    case MIXER_LINEAR:
+    case MIXER_DYNAMIC:
+        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
+        break;
+    case MIXER_EZLANDING:
+        applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax);
+        break;
+    default:
+        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        break;
     }
 
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
@@ -648,4 +772,9 @@ void mixerSetThrottleAngleCorrection(int correctionValue)
 float mixerGetThrottle(void)
 {
     return mixerThrottle;
+}
+
+float mixerGetRcThrottle(void)
+{
+    return rcThrottle;
 }

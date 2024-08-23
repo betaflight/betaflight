@@ -29,6 +29,7 @@ extern "C" {
     #include "platform.h"
     #include "target.h"
     #include "cms/cms.h"
+    #include "cms/cms_menu_quick.h"
     #include "cms/cms_types.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
@@ -46,6 +47,14 @@ extern "C" {
 #include "unittest_macros.h"
 #include "unittest_displayport.h"
 #include "gtest/gtest.h"
+
+CMS_Menu cmsx_menuQuick = {
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onDisplayUpdate = NULL,
+    .entries = NULL,
+};
+
 
 TEST(CMSUnittest, TestCmsDisplayPortRegister)
 {
@@ -141,7 +150,7 @@ CMS_Menu cmsx_menuMain = {
 };
 uint8_t armingFlags;
 int16_t debug[4];
-int16_t rcData[18];
+float rcData[18];
 void delay(uint32_t) {}
 uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }

@@ -23,6 +23,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -47,7 +48,8 @@
 #define BMP388_MAX_SPI_CLK_HZ 10000000
 
 #define BMP388_I2C_ADDR                                 (0x76) // same as BMP280/BMP180
-#define BMP388_DEFAULT_CHIP_ID                          (0x50) // from https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3_defs.h#L130
+#define BMP388_CHIP_ID_BMP3                             (0x50) // from https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3_defs.h#L130
+#define BMP388_CHIP_ID_BMP390                           (0x60) // from https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3_defs.h#L133
 
 #define BMP388_CMD_REG                                  (0x7E)
 #define BMP388_RESERVED_UPPER_REG                       (0x7D)
@@ -165,18 +167,37 @@ STATIC_UNIT_TESTED bmp388_calib_param_t bmp388_cal;
 // uncompensated pressure and temperature
 uint32_t bmp388_up = 0;
 uint32_t bmp388_ut = 0;
-static DMA_DATA_ZERO_INIT uint8_t sensor_data[BMP388_DATA_FRAME_SIZE];
+
+// make space for dummy SPI byte
+static DMA_DATA_ZERO_INIT uint8_t sensor_data_buffer[BMP388_DATA_FRAME_SIZE + 1];
+static uint8_t * sensor_data = sensor_data_buffer;
 
 STATIC_UNIT_TESTED int64_t t_lin = 0;
 
-static void bmp388StartUT(baroDev_t *baro);
+static bool bmp388StartUT(baroDev_t *baro);
 static bool bmp388GetUT(baroDev_t *baro);
 static bool bmp388ReadUT(baroDev_t *baro);
-static void bmp388StartUP(baroDev_t *baro);
+static bool bmp388StartUP(baroDev_t *baro);
 static bool bmp388GetUP(baroDev_t *baro);
 static bool bmp388ReadUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void bmp388Calculate(int32_t *pressure, int32_t *temperature);
+
+
+static bool bmp388ReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+    if (dev->bus->busType == BUS_TYPE_SPI) {
+        // dummy byte is returned first on BMP3xx read
+        uint8_t buf[length + 1];
+        bool ret = busReadRegisterBuffer(dev, reg, buf, length + 1);
+        if (ret) {
+            memcpy(data, buf + 1, length);
+        }
+        return ret;
+    } else {
+        return busReadRegisterBuffer(dev, reg, data, length);
+    }
+}
 
 void bmp388_extiHandler(extiCallbackRec_t* cb)
 {
@@ -189,7 +210,7 @@ void bmp388_extiHandler(extiCallbackRec_t* cb)
     baroDev_t *baro = container_of(cb, baroDev_t, exti);
 
     uint8_t intStatus = 0;
-    busReadRegisterBuffer(&baro->dev, BMP388_INT_STATUS_REG, &intStatus, 1);
+    bmp388ReadRegisterBuffer(&baro->dev, BMP388_INT_STATUS_REG, &intStatus, 1);
 }
 
 void bmp388BusInit(const extDevice_t *dev)
@@ -217,11 +238,11 @@ void bmp388BusDeinit(const extDevice_t *dev)
 #endif
 }
 
-void bmp388BeginForcedMeasurement(const extDevice_t *dev)
+bool bmp388BeginForcedMeasurement(const extDevice_t *dev)
 {
     // enable pressure measurement, temperature measurement, set power mode and start sampling
     uint8_t mode = BMP388_MODE_FORCED << 4 | 1 << 1 | 1 << 0;
-    busWriteRegisterStart(dev, BMP388_PWR_CTRL_REG, mode);
+    return busWriteRegisterStart(dev, BMP388_PWR_CTRL_REG, mode);
 }
 
 bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
@@ -246,10 +267,14 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
         dev->busType_u.i2c.address = BMP388_I2C_ADDR;
         defaultAddressApplied = true;
     }
+    if (dev->bus->busType == BUS_TYPE_SPI) {
+        // dummy byte is returned first on BMP3xx read
+        sensor_data = sensor_data_buffer + 1;
+    }
 
-    busReadRegisterBuffer(dev, BMP388_CHIP_ID_REG, &bmp388_chip_id, 1);
+    bmp388ReadRegisterBuffer(dev, BMP388_CHIP_ID_REG, &bmp388_chip_id, 1);
 
-    if (bmp388_chip_id != BMP388_DEFAULT_CHIP_ID) {
+    if (bmp388_chip_id != BMP388_CHIP_ID_BMP3 && bmp388_chip_id != BMP388_CHIP_ID_BMP390) {
         bmp388BusDeinit(dev);
         if (defaultAddressApplied) {
             dev->busType_u.i2c.address = 0;
@@ -270,7 +295,7 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
     }
 
     // read calibration
-    busReadRegisterBuffer(dev, BMP388_TRIMMING_NVM_PAR_T1_LSB_REG, (uint8_t *)&bmp388_cal, sizeof(bmp388_calib_param_t));
+    bmp388ReadRegisterBuffer(dev, BMP388_TRIMMING_NVM_PAR_T1_LSB_REG, (uint8_t *)&bmp388_cal, sizeof(bmp388_calib_param_t));
 
 
     // set oversampling
@@ -303,10 +328,12 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
     return true;
 }
 
-static void bmp388StartUT(baroDev_t *baro)
+static bool bmp388StartUT(baroDev_t *baro)
 {
     UNUSED(baro);
     // dummy
+
+    return true;
 }
 
 static bool bmp388ReadUT(baroDev_t *baro)
@@ -323,10 +350,10 @@ static bool bmp388GetUT(baroDev_t *baro)
     return true;
 }
 
-static void bmp388StartUP(baroDev_t *baro)
+static bool bmp388StartUP(baroDev_t *baro)
 {
     // start measurement
-    bmp388BeginForcedMeasurement(&baro->dev);
+    return bmp388BeginForcedMeasurement(&baro->dev);
 }
 
 static bool bmp388ReadUP(baroDev_t *baro)
@@ -336,9 +363,7 @@ static bool bmp388ReadUP(baroDev_t *baro)
     }
 
     // read data from sensor
-    busReadRegisterBufferStart(&baro->dev, BMP388_DATA_0_REG, sensor_data, BMP388_DATA_FRAME_SIZE);
-
-    return true;
+    return busReadRegisterBufferStart(&baro->dev, BMP388_DATA_0_REG, sensor_data_buffer, BMP388_DATA_FRAME_SIZE + (sensor_data - sensor_data_buffer));
 }
 
 static bool bmp388GetUP(baroDev_t *baro)

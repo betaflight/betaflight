@@ -32,6 +32,7 @@
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
+#include "cms/cms_menu_gps_lap_timer.h"
 #include "cms/cms_menu_ledstrip.h"
 
 #include "common/utils.h"
@@ -161,6 +162,9 @@ static const OSD_Entry menuMiscEntries[]=
     { "DIGITAL IDLE",  OME_UINT8 | REBOOT_REQUIRED,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,    0,  200, 1 } },
     { "FPV CAM ANGLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &rxConfig_fpvCamAngleDegrees,           0,   90, 1 } },
     { "RC PREV",       OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview},
+#ifdef USE_GPS_LAP_TIMER
+    { "GPS LAP TIMER", OME_Submenu, cmsMenuChange, &cms_menuGpsLapTimer },
+#endif // USE_GPS_LAP_TIMER
 
     { "BACK", OME_Back, NULL, NULL},
     { NULL, OME_END, NULL, NULL}
