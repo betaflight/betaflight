@@ -1107,11 +1107,11 @@ void gpsConfigureUblox(void)
             break;
         case GPS_STATE_DETECT_BAUD_PASSIVE: {
             static uint32_t lastMessages = 0;
-            if (gpsData.messages != lastMessages) { // received at some message since last check
+            if (gpsData.messages != lastMessages) { // received message since last check
                 lastMessages = gpsData.messages;
                 gpsData.state_position++;
                 if (++gpsData.state_position >= 3) { // at least 2 messages correctly received
-                    // GPS is responding and configure phase is impossible
+                    // GPS is responding and configure phase is disabled
                     gpsSetState(GPS_STATE_RECEIVING_DATA);
                 } else {
                     gpsData.state_ts = gpsData.now; // restart message timeout

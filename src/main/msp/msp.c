@@ -1534,7 +1534,7 @@ case MSP_NAME:
            sbufWriteU8(dst, GPS_svinfo[i].svid);
            sbufWriteU8(dst, GPS_svinfo[i].quality);
            sbufWriteU8(dst, GPS_svinfo[i].cno);
-       }
+        }
         break;
 
 #ifdef USE_GPS_RESCUE
