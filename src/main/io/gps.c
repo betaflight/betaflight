@@ -2564,7 +2564,7 @@ void GPS_reset_home_position(void)
 #define EARTH_ANGLE_TO_CM (111.3195f * 1000 * 100 / GPS_DEGREES_DIVIDER)  // latitude unit to cm at equator (111km/deg)
 // Get distance between two points in cm
 // Get bearing from pos1 to pos2, returns an 1deg = 100 precision
-void GPS_distance_cm_bearing(gpsLocation_t *from, gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
+void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
 {
     float dLat = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;
     float dLon = (to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // convert to local angle
