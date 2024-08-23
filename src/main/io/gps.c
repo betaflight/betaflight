@@ -36,6 +36,10 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#ifdef USE_GPS_POLARIS
+#include "common/crc.h"
+#endif
+
 #include "config/feature.h"
 
 #include "drivers/light_led.h"
@@ -342,6 +346,15 @@ baudRate_e initBaudRateIndex;
 size_t initBaudRateCycleCount;
 #endif // USE_GPS_UBLOX
 
+#ifdef USE_GPS_POLARIS
+typedef enum {
+    PAS_PREAMBLE1 = 0x42,
+    PAS_PREAMBLE2 = 0x4b,
+    PAS_CLASS_NAV = 0x41,
+    PAS_MSG_NAV_PVT = 0
+} pasProtocolBytes_e;
+#endif // USE_GPS_POLARIS
+
 gpsData_t gpsData;
 
 #ifdef USE_DASHBOARD
@@ -372,6 +385,9 @@ static bool gpsNewFrameNMEA(char c);
 #endif
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
+#endif
+#ifdef USE_GPS_POLARIS
+static bool gpsNewFramePOLARIS(uint8_t data);
 #endif
 
 static void gpsSetState(gpsState_e state)
@@ -1293,6 +1309,34 @@ void gpsConfigureUblox(void)
 }
 #endif // USE_GPS_UBLOX
 
+#ifdef USE_GPS_POLARIS
+void gpsConfigurePolaris(void) {
+    DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));
+
+    // wait 500ms between changes
+    if (cmp32(gpsData.now, gpsData.state_ts) < 500) {
+        return;
+    }
+    gpsData.state_ts = gpsData.now;
+
+    // Check that the GPS transmit buffer is empty
+    if (!isSerialTransmitBufferEmpty(gpsPort)) {
+        return;
+    }
+
+    switch (gpsData.state) {
+        case GPS_STATE_DETECT_BAUD:
+            // no attempt to read the baud rate of the GPS module, or change it
+            gpsSetState(GPS_STATE_CHANGE_BAUD);
+            break;
+
+        case GPS_STATE_CHANGE_BAUD:
+            gpsSetState(GPS_STATE_RECEIVING_DATA);
+            break;
+    }
+}
+#endif // USE_GPS_POLARIS
+
 void gpsConfigureHardware(void)
 {
     switch (gpsConfig()->provider) {
@@ -1305,6 +1349,12 @@ void gpsConfigureHardware(void)
     case GPS_UBLOX:
 #ifdef USE_GPS_UBLOX
         gpsConfigureUblox();
+#endif
+        break;
+
+    case GPS_POLARIS:
+#ifdef USE_GPS_POLARIS
+        gpsConfigurePolaris();
 #endif
         break;
     default:
@@ -1408,7 +1458,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_STATE_RECEIVING_DATA:
 #ifdef USE_GPS_UBLOX
-            if (gpsConfig()->provider != GPS_MSP) {
+            if (gpsConfig()->provider == GPS_NMEA || gpsConfig()->provider == GPS_UBLOX) {
                 if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
                     // when we are connected up, and get a 3D fix, enable the 'flight' fix model
                     if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
@@ -1506,6 +1556,11 @@ bool gpsNewFrame(uint8_t c)
     case GPS_UBLOX:         // UBX binary
 #ifdef USE_GPS_UBLOX
         return gpsNewFrameUBLOX(c);
+#endif
+        break;
+    case GPS_POLARIS:
+#ifdef USE_GPS_POLARIS
+        return gpsNewFramePOLARIS(c);
 #endif
         break;
     default:
@@ -2455,6 +2510,435 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return newPositionDataReceived;
 }
 #endif // USE_GPS_UBLOX
+
+#ifdef USE_GPS_POLARIS
+/**
+ * POLARIS GNSS binary frame structure looks like below
+ * ---------------------------------------------------------------------------------------------------------------------------
+ * | 'B' | 'K' | CRC16 0 | CRC16 1 | MAIN TYPE | SUB TYPE | SEQ_ID(4bits) | DATA_LENGTH(12bits)|DATA_BYTE0|...|DATA_BYTE(N-1)|
+ * ---------------------------------------------------------------------------------------------------------------------------
+ * 
+ * DATA_LENGTH range[0, 4096-8]
+ * 
+ * if DATA_LENGTH counldn't module 4, then the last will be filled with 0
+ * 
+ */
+typedef enum
+{
+    PAS_PARSE_PREAMBLE1 = 0,
+    PAS_PARSE_PREAMBLE2,
+    PAS_PARSE_CHECKING,
+    PAS_PARSE_PAYLOAD,
+} pasFrameParseState_e;
+
+typedef enum
+{
+    PAS_PVT_SOL_NO_FIX = 0,
+    PAS_PVT_SOL_DR     = 1,
+    PAS_PVT_SOL_2D_FIX,
+    PAS_PVT_SOL_3D_FIX,
+    PAS_PVT_SOL_GNSS_DR_COMBINED,
+    PAS_PVT_SOL_SBAS_OR_RTD_FIX,
+    PAS_PVT_SOL_RTK_FLOAT,
+    PAS_PVT_SOL_RTK_FIX,
+} pasPvtSolState_e;
+
+typedef enum
+{
+    PAS_SENSOR_DISABLED,
+    PAS_SENDOR_ENABLED,
+} pasPvtSensorState_e;
+
+typedef enum
+{
+    PAS_PVT_DF_INPUT_LONG_DELAYED = 0,
+    PAS_PVT_DF_INPUT_ON_TIME,
+    PAS_PVT_DF_INPUT_DELAYED,
+    PAS_PVT_DF_INPUT_UNDEFINED
+} pasPvtDiffInputState_e;
+
+typedef enum
+{
+    PAS_PVT_TIME_INVALID = 0,
+    PAS_PVT_TIME_DATE_VALID,
+    PAS_PVT_TIME_COARSE,
+    PAS_PVT_TIME_FINE
+} pasPvtTimeState_e;
+
+typedef enum {
+    PAS_FREQ_GPS_L1 = 0,
+    PAS_FREQ_GPS_L5,
+    PAS_FREQ_GPS_L2C,
+    PAS_FREQ_BDS_B1I,
+    PAS_FREQ_BDS_B2A,
+    PAS_FREQ_BDS_B2B,
+    PAS_FREQ_BDS_B3I,
+    PAS_FREQ_BDS_B1C,
+    PAS_FREQ_BDS_B2I,
+    PAS_FREQ_GLO_G1,
+    PAS_FREQ_GLO_G2,
+    PAS_FREQ_GAL_E1,
+    PAS_FREQ_GAL_E5A,
+    PAS_FREQ_GAL_E5B,
+    PAS_FREQ_IRS_L5,
+    PAS_FREQ_SBS_L1
+} pasFreqId_e;
+
+#define PAS_FRAME_TYPE_OFFSET    (4)
+#define PAS_FRAME_LENGTH_OFFSET  (6u)
+#define PAS_FRAME_MSG_LENGTH     (60u)
+#define PAS_FRAME_MAX_BYTES      (PAS_FRAME_MSG_LENGTH + 6)
+#define PAS_MAX_FREQ_NUM         (8)
+
+// restore a uint16_t word in little endian order 
+#define TWO_BYTES_TO_UINT16(byte0, byte1) \
+        (((uint16_t)byte1 << 8) | byte0)
+
+// restore a int32_t word in little endian order
+#define FOUR_BYTES_TO_INT32(byte0, byte1, byte2, byte3) \
+        ((int32_t)(((uint32_t)byte3 << 24) | \
+                  ((uint32_t)byte2 << 16) | \
+                  ((uint32_t)byte1 <<  8) | \
+                  ((uint32_t)byte0)))
+
+// check if message type is message type or not
+#define IS_MSG_PVT_TYPE(byte0, byte1)     (byte0 == PAS_CLASS_NAV && byte1 == PAS_MSG_NAV_PVT)
+
+// check if message length is pvt message or not
+#define IS_VALID_PVT_MSG_LENGTH(length)   (length == PAS_FRAME_MSG_LENGTH)
+
+static uint8_t pasRawBytes[PAS_FRAME_MAX_BYTES];
+static uint8_t pasByteCounter;
+static uint8_t pasMsgLength;
+static pasFrameParseState_e pasFrameParseState;
+
+// Fast half-precision to single-precision floating point conversion
+//  - Supports signed zero and denormals-as-zero (DAZ)
+//  - Does not support infinities or NaN
+//  - Few, partially pipelinable, non-branching instructions,
+//  - Core opreations ~6 clock cycles on modern x86-64
+typedef union pasFloat_s {
+    uint32_t uval;
+    float fval;
+} pasFloat_t;
+
+static void fp16_to_float(float *out, const uint16_t in) {
+    pasFloat_t ret;
+    uint32_t t2;
+    uint32_t t3;
+
+    ret.uval = in & 0x7fffu;                      // Non-sign bits
+    t2 = in & 0x8000u;                            // Sign bit
+    t3 = in & 0x7c00u;                            // Exponent
+
+    (ret.uval) <<= 13u;                           // Align mantissa on MSB
+    t2 <<= 16u;                                   // Shift sign bit into position
+
+    (ret.uval) += 0x38000000;                     // Adjust bias
+
+    ret.uval = (t3 == 0 ? 0 : ret.uval);          // Denormals-as-zero
+
+    ret.uval |= t2;                               // Re-insert sign bit
+
+    *out = ret.fval;
+}
+
+// Parse POLARIS PVT message, get pos/vel, sv used information, etc
+static void parsePolarisPvtMsg(void) {
+    uint8_t *ptrBytes = pasRawBytes + PAS_FRAME_LENGTH_OFFSET;
+    uint16_t ms = TWO_BYTES_TO_UINT16(ptrBytes[0], ptrBytes[1]);
+
+    uint8_t sec = ptrBytes[2];
+    uint8_t minutes = ptrBytes[3];
+    uint8_t hour = ptrBytes[4];
+    uint8_t valid = ptrBytes[8];
+
+    // first 3 bits of valid
+    pasPvtSolState_e    soluState   = valid & 0x07;
+    gpsSetFixState(soluState >= PAS_PVT_SOL_3D_FIX);
+
+    // bit3 of valid
+    // bit4 and bit5 of valid
+
+    // bit6 and bit7 of valid
+    pasPvtTimeState_e timeState     = valid >> 6;
+
+    if (timeState >= PAS_PVT_TIME_COARSE) {
+        // calculate the interval between nav packets, handling wraparound of a day
+        int navDeltaTimeMs = 100;
+        const uint32_t dayDurationMs = 24 * 3600 * 1000;        
+
+        gpsSol.time = hour * 3600 + minutes * 60 + sec;
+        gpsSol.time *= 1000;
+
+        navDeltaTimeMs = (dayDurationMs + gpsSol.time - gpsData.lastNavSolTs) % dayDurationMs;
+        gpsData.lastNavSolTs = gpsSol.time;
+
+        // constrain the interval between 50ms / 20hz or 2.5s, when we would get a connection failure anyway
+        gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 100, 2500);
+    }
+
+#ifdef USE_RTC_TIME
+    if (!rtcHasTime() && timeState == PAS_PVT_TIME_FINE) {
+        uint8_t day = ptrBytes[5];
+        uint8_t mon = ptrBytes[6];
+        uint8_t year = ptrBytes[7];
+
+        dateTime_t dt;
+
+        dt.year = year + 2000;
+        dt.month = mon;
+        dt.day = day;
+        dt.hours = hour;
+        dt.minutes = minutes;
+        dt.seconds = sec;
+        dt.millis = ms;
+
+        rtcSetDateTime(&dt);
+    }
+#endif
+
+    gpsSol.numSat   = ptrBytes[9];
+    // pdop * 10 rescaled to pdop * 100
+    gpsSol.dop.pdop = (uint16_t)ptrBytes[10] * 10;
+
+    // somehow system bitmask use big endian
+    uint16_t sysBitMask = ((uint16_t)ptrBytes[12] << 8) | ptrBytes[13];
+    pasFreqId_e freq[PAS_MAX_FREQ_NUM] = { PAS_FREQ_GPS_L1, };
+
+    uint8_t i = 0;
+    uint8_t numFreq = 0;
+    for (i = 0; i < 16 && numFreq < PAS_MAX_FREQ_NUM; ++i) {
+        if ((sysBitMask & 0x01) == 0x01) {
+            freq[numFreq] = (pasFreqId_e)(i);
+            numFreq++;
+        }
+
+        sysBitMask >>= 1;
+    }
+
+    uint8_t cn0Top4[PAS_MAX_FREQ_NUM] = { 0 };
+    for (i = 0; i < 8; ++i) {
+        cn0Top4[i] = ptrBytes[14 + i] & 0x3F;
+    }
+
+    uint8_t svUsedPerCh[PAS_MAX_FREQ_NUM] = { 0 };
+    for (i = 0; i < 8; ++i) {
+        svUsedPerCh[i] = ptrBytes[22 + i];
+    }
+
+    for (i = 0; i < numFreq; i++) {
+        GPS_svinfo[i].chn = freq[i];
+        GPS_svinfo[i].svid = i;
+
+        if (cn0Top4[i] > 0) {
+            GPS_svinfo[i].quality = 7;
+        }
+        else {
+            GPS_svinfo[i].quality = 0;
+        }
+
+        if (svUsedPerCh[i] > 0) {
+            GPS_svinfo[i].quality |= 0x08;
+        }
+
+        if (soluState >= PAS_PVT_SOL_RTK_FLOAT) {
+            GPS_svinfo[i].quality |= 0x20;
+        }
+
+        GPS_svinfo[i].cno = cn0Top4[i];
+    }
+
+    GPS_numCh = numFreq;
+    for (; i < GPS_SV_MAXSATS_LEGACY; i++) {
+        GPS_svinfo[i].chn = 0;
+        GPS_svinfo[i].svid = 0;
+        GPS_svinfo[i].quality = 0;
+        GPS_svinfo[i].cno = 0;
+    }
+
+#ifdef USE_DASHBOARD
+    dashboardGpsNavSvInfoRcvCount++;
+#endif
+
+    float val;
+    uint16_t word = TWO_BYTES_TO_UINT16(ptrBytes[30], ptrBytes[31]);
+    fp16_to_float(&val, word);
+    // meter rescaled to mm
+    gpsSol.acc.hAcc = (uint32_t)(val * 1000);
+
+    word = TWO_BYTES_TO_UINT16(ptrBytes[32], ptrBytes[33]);
+    fp16_to_float(&val, word);
+    // meter rescaled to mm
+    gpsSol.acc.vAcc = (uint32_t)(val * 1000);
+
+    word = TWO_BYTES_TO_UINT16(ptrBytes[34], ptrBytes[35]);
+    fp16_to_float(&val, word);
+    // m/s rescaled to mm/s
+    gpsSol.acc.sAcc = (uint32_t)(val * 1000);
+
+    // downward speed in m/s, vel_down
+    word = TWO_BYTES_TO_UINT16(ptrBytes[42], ptrBytes[43]);
+    fp16_to_float(&val, word);
+
+    // ground speed in m/s
+    float gSpeed;
+    word = TWO_BYTES_TO_UINT16(ptrBytes[44], ptrBytes[45]);
+    fp16_to_float(&gSpeed, word);
+
+    // m/s rescaled to cm/s
+    gpsSol.groundSpeed = (uint16_t)(gSpeed * 100.0f);
+    gpsSol.speed3d = (uint16_t)sqrtf(powf(val * 100.0f, 2.0f) + powf(gSpeed * 100.0f, 2.0f));
+
+    word = TWO_BYTES_TO_UINT16(ptrBytes[46], ptrBytes[47]);
+    fp16_to_float(&val, word);
+
+    // deg rescaled to deg * 10
+    gpsSol.groundCourse = (uint16_t)(val * 10.0f);
+
+    // lon * 1E7
+    gpsSol.llh.lon = FOUR_BYTES_TO_INT32(ptrBytes[48], ptrBytes[49], ptrBytes[50], ptrBytes[51]);
+
+    // lat * 1E7
+    gpsSol.llh.lat = FOUR_BYTES_TO_INT32(ptrBytes[52], ptrBytes[53], ptrBytes[54], ptrBytes[55]);
+
+    // mm rescaled to cm
+    gpsSol.llh.altCm = FOUR_BYTES_TO_INT32(ptrBytes[56], ptrBytes[57], ptrBytes[58], ptrBytes[59]) / 10;
+}
+
+static bool gpsNewFramePOLARIS(uint8_t data)
+{
+    bool hasNewSol = false;
+
+    switch (pasFrameParseState) {
+    case PAS_PARSE_PREAMBLE1:
+        if (data == PAS_PREAMBLE1) {
+            pasFrameParseState = PAS_PARSE_PREAMBLE2;
+        }
+
+        break;
+    case PAS_PARSE_PREAMBLE2:
+        if (data == PAS_PREAMBLE2) {
+            pasFrameParseState = PAS_PARSE_CHECKING;
+
+            pasByteCounter = 0;
+            pasMsgLength = 0;
+        }
+        // go back to step1 unless it's the first preamble
+        else if (data != PAS_PREAMBLE1) {
+            pasFrameParseState = PAS_PARSE_PREAMBLE1;
+        }
+
+        break;
+    case PAS_PARSE_CHECKING:
+        pasRawBytes[pasByteCounter++] = data;
+        if (pasByteCounter >= PAS_FRAME_LENGTH_OFFSET) {
+            // something wrong, reset
+            pasFrameParseState = PAS_PARSE_PREAMBLE1;
+        }
+
+        // only msg(65,0) is needed
+        if (PAS_FRAME_TYPE_OFFSET == pasByteCounter) {
+            if (!IS_MSG_PVT_TYPE(pasRawBytes[2], pasRawBytes[3])) {
+                // discard unwanted message
+                pasFrameParseState = PAS_PARSE_PREAMBLE1;
+            }
+        }
+
+        // message length is fixed, 56 bytes
+        if (PAS_FRAME_LENGTH_OFFSET == pasByteCounter) {
+            if (IS_VALID_PVT_MSG_LENGTH(pasRawBytes[5])) {
+                pasMsgLength = pasRawBytes[5] + 6;
+                pasFrameParseState = PAS_PARSE_PAYLOAD;
+            }
+            else {
+                pasFrameParseState = PAS_PARSE_PREAMBLE1;
+            }
+        }
+
+        break;
+    case PAS_PARSE_PAYLOAD:
+        pasRawBytes[pasByteCounter++] = data;
+        if (pasByteCounter >= pasMsgLength) {
+            uint16_t crc = pasRawBytes[0];
+            crc = crc << 8 | (uint16_t)pasRawBytes[1];
+
+            if (crc == crc16_ccitt_update(0, pasRawBytes + 2, pasMsgLength - 2)) {
+                parsePolarisPvtMsg();
+
+                hasNewSol = true;
+                pasFrameParseState = PAS_PARSE_PREAMBLE1;
+#ifdef USE_DASHBOARD
+                dashboardGpsPacketCount++;  // Packet counter used by dashboard device.
+                shiftPacketLog();           // Make space for message handling to add the message type char to the dashboard device packet log.
+#endif
+            }
+            else
+            {
+                bool foundNewFrame = false;
+                uint8_t i, leftDataBytes;
+                uint8_t* ptrData = pasRawBytes;
+#ifdef USE_DASHBOARD
+                    *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_ERROR;
+#endif                
+
+                for (i = 1; i < pasByteCounter; ++i) {
+                    if (pasRawBytes[i - 1] == PAS_PREAMBLE1 && pasRawBytes[i] == PAS_PREAMBLE2) {
+                        // discard two preamble
+                        leftDataBytes = pasByteCounter - (i + 1);
+                        ptrData = pasRawBytes + (i + 1);
+
+                        if (leftDataBytes >= PAS_FRAME_LENGTH_OFFSET)
+                        {
+                            //check pvt message length and type
+                            if (IS_MSG_PVT_TYPE(ptrData[2], ptrData[3]) && IS_VALID_PVT_MSG_LENGTH(ptrData[5]))
+                            {
+                                foundNewFrame = true;
+                                pasMsgLength = ptrData[5] + 6;
+                                pasFrameParseState = PAS_PARSE_PAYLOAD;
+                            }
+                        }
+                        else if (leftDataBytes >= PAS_FRAME_TYPE_OFFSET)
+                        {
+                            if (IS_MSG_PVT_TYPE(pasRawBytes[2], pasRawBytes[3]))
+                            {
+                                foundNewFrame = true;
+                                pasFrameParseState = PAS_PARSE_CHECKING;
+                            }
+                        }
+                        else {
+                            foundNewFrame = true;
+                            pasFrameParseState = PAS_PARSE_CHECKING;
+                        }
+
+                        if (foundNewFrame) {
+                            pasByteCounter = leftDataBytes;
+                            memcpy(pasRawBytes, ptrData, leftDataBytes);
+                            break;
+                        }
+                    }
+                }
+
+                if (!foundNewFrame) {
+                    if (pasRawBytes[pasByteCounter - 1] == PREAMBLE1) {
+                        pasFrameParseState = PAS_PARSE_PREAMBLE2;
+                    }
+                    else {
+                        pasFrameParseState = PAS_PARSE_PREAMBLE1;
+                    }
+                }
+            }
+        }
+
+        break;
+    default:
+        pasFrameParseState = PAS_PARSE_PREAMBLE1;
+        break;
+    }
+
+    return hasNewSol;
+}
+#endif // USE_GPS_POLARIS
 
 static void gpsHandlePassthrough(uint8_t data)
 {

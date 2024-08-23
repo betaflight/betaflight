@@ -175,7 +175,8 @@ typedef enum {
 typedef enum {
     GPS_NMEA = 0,
     GPS_UBLOX,
-    GPS_MSP
+    GPS_MSP,
+    GPS_POLARIS,
 } gpsProvider_e;
 
 typedef enum {
@@ -317,13 +318,20 @@ extern gpsSolutionData_t gpsSol;
 
 extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
 
-extern uint8_t GPS_numCh;                               // Number of svinfo channels
+extern uint8_t GPS_numCh;                               // Number of channels
 
 typedef struct GPS_svinfo_s {
     uint8_t chn;      // When NumCh is 16 or less: Channel number
                       // When NumCh is more than 16: GNSS Id
                       //   0 = GPS, 1 = SBAS, 2 = Galileo, 3 = BeiDou
                       //   4 = IMES, 5 = QZSS, 6 = Glonass
+                      // When provider is POLARIS: Signal Id
+                      //   0 = GPS_L1 1 = GPS_L5, 2 = GPS_L5C
+                      //   3 = BDS_B1I 4 = BDS_B2A 5 = BDS_B2B 6 = BDS_B3I
+                      //   7 = BDS_B1C 8 = BDS_B2I 9 = GLO_G1  10 = GLO_G2
+                      //   11 = GAL_E1 12 = GAL_E5A 13 = GAL_E5B
+                      //   14 = IRS_L5 15 = SBS_L1
+
     uint8_t svid;     // Satellite ID
     uint8_t quality;  // When NumCh is 16 or less: Bitfield Qualtity
                       // When NumCh is more than 16: flags
@@ -345,6 +353,8 @@ typedef struct GPS_svinfo_s {
                       //   bit 7:
                       //     1 = carrier smoothed pseudorange used
     uint8_t cno;      // Carrier to Noise Ratio (Signal Strength)
+                      // When provider is POLARIS, average CN0 of top 4 satellites per signal
+
 } GPS_svinfo_t;
 extern GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
