@@ -89,8 +89,7 @@ extern "C" {
     bool isAirmodeActivated(void) { return simulatedAirmodeEnabled; }
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
 
-    // for ezLanding auto-disarm
-    // note that there is no test to check that this code works.
+    // used by ezDisarm auto-disarm code
     float getMaxRcDeflectionAbs() { return fabsf(simulatedMaxRcDeflectionAbs); }
     float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
 
