@@ -518,7 +518,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
 
     if (pid->feedforwardInterpolate) {
         static float prevRxInterval;
-        // for Rx links which send duplicate data packets when they send telemetry
+        // for Rx links which send frequent duplicate data packets, use a per-axis duplicate test
         // extrapolate setpointSpeed when a duplicate is detected, to minimise steps in feedforward
         const bool isDuplicate = rcCommandDeltaAbs == 0;
         if (!isDuplicate) {
@@ -529,7 +529,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
                 rxRate = 1.0f / (rxInterval + prevRxInterval);
             }
             setpointSpeed = setpointDelta * rxRate;
-            isPrevPacketDuplicate[axis] = false;
+            isPrevPacketDuplicate[axis] = isDuplicate;
         } else {
             // no movement
             if (!isPrevPacketDuplicate[axis]) {
@@ -550,11 +550,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
                 // feedforward will smoothly decay and be attenuated by the jitter reduction value for zero rcCommandDelta
                 prevSetpointSpeed[axis] = 0.0f; // zero acceleration later on
             }
-            isPrevPacketDuplicate[axis] = true;
+            isPrevPacketDuplicate[axis] = isDuplicate;
         }
         prevRxInterval = rxInterval;
     } else {
-        // don't interpolate for CRSF, ELRS, and maybe other systems that don't send duplicate packets on telemetry sends
+        // don't interpolate for radio systems that rarely send duplicate packets, eg CRSF/ELRS
         setpointSpeed = setpointDelta * rxRate;
     }
 
