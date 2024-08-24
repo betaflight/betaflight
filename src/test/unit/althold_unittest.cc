@@ -26,6 +26,7 @@ extern "C" {
     #include "build/debug.h"
     #include "pg/pg_ids.h"
 
+    #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
 
@@ -46,8 +47,9 @@ extern "C" {
     void altHoldReset(void);
     void altHoldProcessTransitions(void);
     void altHoldInit(void);
-    void altHoldUpdate(void);
+    void updateAltHoldState(timeUs_t);
     bool failsafeIsActive(void) { return false; }
+    timeUs_t currentTimeUs = 0;
 }
 
 #include "unittest_macros.h"
@@ -60,43 +62,23 @@ uint32_t millis() {
 
 TEST(AltholdUnittest, altHoldTransitionsTest)
 {
-    altHoldInit();
+    updateAltHoldState(currentTimeUs);
     EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
-    altHoldUpdate();
+    updateAltHoldState(currentTimeUs);
     EXPECT_EQ(altHoldState.isAltHoldActive, true);
 
-    millisRW = 56;
     flightModeFlags ^= ALT_HOLD_MODE;
-    altHoldUpdate();
+    millisRW = 56;
+    updateAltHoldState(currentTimeUs);
     EXPECT_EQ(altHoldState.isAltHoldActive, false);
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 64;
-    altHoldUpdate();
+    updateAltHoldState(currentTimeUs);
     EXPECT_EQ(altHoldState.isAltHoldActive, true);
-
-//     millisRW = 64 + 0.3f * ALTHOLD_ENTER_PERIOD;
-//     altHoldUpdate();
-// 
-//     millisRW = 64 + 0.9f * ALTHOLD_ENTER_PERIOD;
-//     altHoldUpdate();
-// 
-//     millisRW = 64 + 1.4f * ALTHOLD_ENTER_PERIOD;
-//     altHoldUpdate();
-// 
-//     millisRW = 10042;
-//     flightModeFlags ^= ALT_HOLD_MODE;
-//     altHoldUpdate();
-// 
-//     millisRW = 10042 + 0.3f * ALTHOLD_MAX_ENTER_PERIOD;
-//     altHoldUpdate();
-// 
-//     millisRW = 10042 + 0.5f * ALTHOLD_MAX_ENTER_PERIOD;
-//     altHoldState.throttleOut = 0.5f;
-//     altHoldUpdate();
 }
 
 TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
@@ -106,22 +88,8 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
-    altHoldUpdate();
+    updateAltHoldState(currentTimeUs);
     EXPECT_EQ(altHoldState.isAltHoldActive, true);
-//     EXPECT_EQ(altHoldState.enterTime, 42);
-//     EXPECT_EQ(altHoldState.exitTime, 0);
-// 
-//     millisRW += ALTHOLD_ENTER_PERIOD * 2;
-//     altHoldUpdate();
-// 
-//     flightModeFlags ^= ALT_HOLD_MODE;
-//     altHoldUpdate();
-//     millisRW += 0.5f * ALTHOLD_MAX_ENTER_PERIOD;
-//     altHoldUpdate();
-// 
-//     flightModeFlags |= ALT_HOLD_MODE;
-//     millisRW += 1;
-//     altHoldUpdate();
 }
 
 // STUBS
@@ -140,9 +108,9 @@ extern "C" {
         return 0.0f;
     }
 
-
     bool isAltitudeAvailable(void) { return true; }
     float getAltitude(void) { return 0.0f; }
+    bool isAltitudeLow(void) { return true; }
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
 

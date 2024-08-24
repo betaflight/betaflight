@@ -727,7 +727,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
 #ifdef USE_ALT_HOLD_MODE
     // Throttle value to be used during altitude hold mode (and failsafe landing mode)
-    if (altHoldIsActive()) {
+    if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         throttle = altHoldGetThrottle();
     }
 #endif

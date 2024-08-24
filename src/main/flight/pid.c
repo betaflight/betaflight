@@ -811,16 +811,19 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     if (isAirmodeActivated()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
-        // or in altitude hold mode
-#ifdef USE_ALTHOLD_MODE
-            || altHoldIsActive()
+            // or in stage 2 failsafe (including both landing or GPS Rescue)
+            // *** Not sure why this is needed, but without it, won't disarm on impact in failsafe landing mode ***
+            // this may permit removing the GPS Rescue disarm method
+#ifdef USE_ALT_HOLD_MODE
+            // or in altitude hold mode, including failsafe landing mode, indirectly
+            || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
         )) {
-        // increase sensitivity increase by 2 when low and in altitude hold
+        // increase sensitivity by 50% when low and in altitude hold
         // for disarm with gentle controlled landings
         float lowAltitudeSensitivity = 1.0f;
-#ifdef USE_ALTHOLD_MODE
-        lowAltitudeSensitivity = altHoldIsActive() && isAltitudeLow() ? 2.0f : 1.0f;
+#ifdef USE_ALT_HOLD_MODE
+        lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isAltitudeLow()) ? 1.5f : 1.0f;
 #endif
         // and disarm if accelerometer jerk exceeds threshold...
         if ((fabsf(acc.accDelta) * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
@@ -963,13 +966,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
-    static bool prevExternalAngleRequest= false;
+    static bool prevExternalAngleRequest = false;
     const rollAndPitchTrims_t *angleTrim = &accelerometerConfig()->accelerometerTrims;
     float horizonLevelStrength = 0.0f;
 
     const bool isExternalAngleModeRequest = FLIGHT_MODE(GPS_RESCUE_MODE)
 #ifdef USE_ALT_HOLD_MODE
-                || altHoldIsActive() 
+                || FLIGHT_MODE(ALT_HOLD_MODE) 
 #endif
                 ;
     levelMode_e levelMode;

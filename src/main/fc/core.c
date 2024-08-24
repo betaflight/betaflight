@@ -973,7 +973,7 @@ void processRxModes(timeUs_t currentTimeUs)
     if ((IS_RC_MODE_ACTIVE(BOXANGLE)
         || failsafeIsActive() 
 #ifdef USE_ALT_HOLD_MODE
-        || altHoldIsActive()
+        || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
         ) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
@@ -995,6 +995,8 @@ void processRxModes(timeUs_t currentTimeUs)
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
+        // and we have altitude data
+        && isAltitudeAvailable()
         // and we have already taken off (to prevent activation on the ground), then enable althold
         && isAirmodeActivated()) {
         if (!FLIGHT_MODE(ALT_HOLD_MODE)) {

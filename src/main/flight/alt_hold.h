@@ -23,21 +23,19 @@
 #include "common/time.h"
 
 #define ALTHOLD_TASK_RATE_HZ 100         // hz
-#define ALTHOLD_ENTER_PERIOD 50         // ms
-#define ALTHOLD_MAX_ENTER_PERIOD 3000   // ms
 
 typedef struct {
     bool isAltHoldActive;
     float targetAltitudeCm;
-    float targetAltitudeDelta;
+    float targetAltitudeAdjustRate;
     float measuredAltitudeCm;
     float throttleOut;
     float hover;
+    float smoothedAltitudeDelta;
 } altHoldState_t;
 
 void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
 float altHoldGetThrottle(void);
-bool altHoldIsActive(void);
 
 #endif

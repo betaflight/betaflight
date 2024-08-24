@@ -37,7 +37,7 @@ typedef struct {
     float kp;
     float kd;
     float ki;
-    float lastAltitude;
+    float previousAltitude;
     float integral;
 } simplePid_t;
 
@@ -45,17 +45,16 @@ simplePid_t simplePid;
 
 altHoldState_t altHoldState;
 
-#define ALT_HOLD_PID_P_GAIN  0.01f
-#define ALT_HOLD_PID_I_GAIN  0.003f
-#define ALT_HOLD_PID_D_GAIN  0.01f
+#define ALT_HOLD_PID_P_SCALE  0.01f
+#define ALT_HOLD_PID_I_SCALE  0.003f
+#define ALT_HOLD_PID_D_SCALE  0.01f
 
 static pt2Filter_t altHoldDeltaLpf;
 static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 
 float altitudePidCalculate(void)
 {
-    const float altitude = altHoldState.measuredAltitudeCm;
-    const float altErrorCm = altHoldState.targetAltitudeCm - altitude;
+    const float altErrorCm = altHoldState.targetAltitudeCm - altHoldState.measuredAltitudeCm;
 
     // P
     const float pOut = simplePid.kp * altErrorCm;
@@ -67,20 +66,13 @@ float altitudePidCalculate(void)
     const float iOut = simplePid.integral;
 
     // D
-    const float derivative = (simplePid.lastAltitude - altitude) / taskIntervalSeconds; // cm/s
-    simplePid.lastAltitude = altHoldState.measuredAltitudeCm;
-    float dOut = simplePid.kd * derivative;
-    // PT2 filtering at altitude_d_lpf / 100 cutoff, default 1s, the same as for GPS Rescue 
-    dOut = pt2FilterApply(&altHoldDeltaLpf, dOut);
+    float dOut = simplePid.kd * altHoldState.smoothedAltitudeDelta;
 
     // F
-    const float fOut = altholdConfig()->alt_hold_pid_d * altHoldState.targetAltitudeDelta;
+    const float fOut = altholdConfig()->alt_hold_pid_d * altHoldState.targetAltitudeAdjustRate;
     // if error is used, we get a 'free kick' in derivative from changes in the target value
     // but this is delayed by the smoothing, leading to lag and overshoot.
     // calculating feedforward separately avoids the filter lag.
-
-//    float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, 0.24 at 40 degrees of tilt
-//    tiltAdjustment *= (positionConfig()->hover_throttle - 1000);
 
     const float output = pOut + iOut + dOut + fOut;
 
@@ -97,25 +89,23 @@ void simplePidInit(float kp, float ki, float kd)
     simplePid.kp = kp;
     simplePid.ki = ki;
     simplePid.kd = kd;
-    simplePid.lastAltitude = 0.0f;
+    simplePid.previousAltitude = 0.0f;
     simplePid.integral = 0.0f;
 }
 
 void altHoldReset(void)
 {
-    altHoldState.targetAltitudeCm = altHoldState.measuredAltitudeCm; // avoid jump at start
-    simplePid.lastAltitude = altHoldState.measuredAltitudeCm;        // avoid jump at start
+    altHoldState.targetAltitudeCm = altHoldState.measuredAltitudeCm;
     simplePid.integral = 0.0f;
-    altHoldState.throttleOut = positionConfig()->hover_throttle;
-    altHoldState.targetAltitudeDelta = 0.0f;
+    altHoldState.targetAltitudeAdjustRate = 0.0f;
 }
 
 void altHoldInit(void)
 {
     simplePidInit(
-        ALT_HOLD_PID_P_GAIN * altholdConfig()->alt_hold_pid_p,
-        ALT_HOLD_PID_I_GAIN * altholdConfig()->alt_hold_pid_i,
-        ALT_HOLD_PID_D_GAIN * altholdConfig()->alt_hold_pid_d);
+        ALT_HOLD_PID_P_SCALE * altholdConfig()->alt_hold_pid_p,
+        ALT_HOLD_PID_I_SCALE * altholdConfig()->alt_hold_pid_i,
+        ALT_HOLD_PID_D_SCALE * altholdConfig()->alt_hold_pid_d);
         // the multipliers are base scale factors
         // iTerm is relatively weak, intended to be slow moving to adjust baseline errors
         // the Hover value is important otherwise takes time for iTerm to correct
@@ -126,7 +116,8 @@ void altHoldInit(void)
     //setup altitude D filter
     const float cutoffHz = 0.01f * positionConfig()->altitude_d_lpf; // default 1Hz, time constant about 160ms
     const float gain = pt2FilterGain(cutoffHz, taskIntervalSeconds);
-    pt2FilterInit(&altHoldDeltaLpf, gain); 
+    pt2FilterInit(&altHoldDeltaLpf, gain);
+
     altHoldState.hover = positionConfig()->hover_throttle - PWM_RANGE_MIN;
     altHoldState.isAltHoldActive = false;
     altHoldReset();
@@ -135,7 +126,7 @@ void altHoldInit(void)
 void altHoldProcessTransitions(void) {
 
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
-        if (!altHoldState.isAltHoldActive && isAltitudeAvailable()) {
+        if (!altHoldState.isAltHoldActive) {
             altHoldReset();
             altHoldState.isAltHoldActive = true;
         }
@@ -156,7 +147,7 @@ void altHoldProcessTransitions(void) {
 
 void altHoldUpdateTargetAltitude(void)
 {
-    // The user van raise or lower the target altitude with throttle up;  there is a big deadband.
+    // The user can raise or lower the target altitude with throttle up;  there is a big deadband.
     // Max rate for climb/descend is 1m/s by default (up to 2.5 is allowed but overshoots a fair bit)
     // If set to zero, the throttle has no effect.
 
@@ -171,8 +162,8 @@ void altHoldUpdateTargetAltitude(void)
 
     const float rcThrottle = rcCommand[THROTTLE];
 
-    const float lowThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MIN); // around 1150
-    const float highThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MAX); // around 1500
+    const float lowThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
+    const float highThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
     
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {
@@ -181,42 +172,23 @@ void altHoldUpdateTargetAltitude(void)
         throttleAdjustmentFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
     }
 
-    // if failsafe is active, and we get here, we are in landing mode, so descend at configured max rate
+    // if failsafe is active, and we get here, we are in failsafe landing mode
     if (failsafeIsActive()) {
-        throttleAdjustmentFactor = -1.0f;
+        // descend at twice the configured descent rate if higher up, to minimise the time taken to reach ground
+        // default landing time is now 60s so won't time out, in defaults, unless height at start is above about 110m
+        // max allowed landing time is 250s ie up to about 500m high is possible without timeout disarm on default descent rate
+        // or 1000m on double the default descent rate
+        // very high altitude initiations are unsafe fue to drift potential
+        throttleAdjustmentFactor = isAltitudeLow() ? -1.0f : -2.0f;
     }
 
-    altHoldState.targetAltitudeDelta = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate * taskIntervalSeconds;
+    altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate * taskIntervalSeconds;
     // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
-    altHoldState.targetAltitudeCm += altHoldState.targetAltitudeDelta;
+    altHoldState.targetAltitudeCm += altHoldState.targetAltitudeAdjustRate;
 }
 
 void altHoldUpdate(void)
 {
-    // things that always need to happen in the background should go here
-    altHoldState.measuredAltitudeCm = getAltitude();
-    DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(altHoldState.measuredAltitudeCm));
-
-    altHoldProcessTransitions(); // initialise values, don't start without altitude data
-
-    // exit unless altHold is active
-    if (!altHoldState.isAltHoldActive) {
-        const uint8_t altitudeDataAvailable = isAltitudeAvailable();
-        DEBUG_SET(DEBUG_ALTHOLD, 0, altitudeDataAvailable);
-        return;
-    }
-
-    // if active, and we lose altitude readings (lose GPS 3D fix for example)
-    // if the last measured altitude was below target, we will climb indefinitelym, and vice versa
-    // we can set current altitude to target, making PIDs zero, and must force zero iTerm
-    // quad then gets the un-modified hover value and may climb or descend, but this should be slow
-    // user will havbe NO control user needs a warning (how? esp LOS) and should exit
-    if (!isAltitudeAvailable()) {
-        altHoldState.measuredAltitudeCm = altHoldState.targetAltitudeCm;
-        // force integral to zero or will accumulate
-        simplePid.integral = 0.0f;
-    }
-
     // check if the user has changed the target altitude using sticks
     if (altholdConfig()->alt_hold_target_adjust_rate) {
         altHoldUpdateTargetAltitude();
@@ -235,15 +207,29 @@ void altHoldUpdate(void)
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
-    altHoldUpdate();
     UNUSED(currentTimeUs);
+
+    // things that always happen
+    // calculate smoothed altitude Delta always, for effective value on 1st pass
+    altHoldState.measuredAltitudeCm = getAltitude();
+    float derivative = (simplePid.previousAltitude - altHoldState.measuredAltitudeCm) / taskIntervalSeconds; // cm/s
+    simplePid.previousAltitude = altHoldState.measuredAltitudeCm;
+
+    // smooth altitude delta here to always have a current value, without delay due to filter lag
+    // this way we immediately have useful D on initialising the hold
+    altHoldState.smoothedAltitudeDelta = pt2FilterApply(&altHoldDeltaLpf, derivative);
+
+    DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(altHoldState.measuredAltitudeCm));
+
+    altHoldProcessTransitions();
+
+    if (altHoldState.isAltHoldActive) {
+        altHoldUpdate();
+    }
 }
 
 float altHoldGetThrottle(void) {
     return scaleRangef(altHoldState.throttleOut, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 }
 
-bool altHoldIsActive(void){
-    return altHoldState.isAltHoldActive;
-}
 #endif
