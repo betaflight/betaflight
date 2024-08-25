@@ -60,13 +60,13 @@ float altitudePidCalculate(void)
     const float pOut = simplePid.kp * altErrorCm;
 
     // I
-    simplePid.integral += altErrorCm * taskIntervalSeconds * simplePid.ki; // cm * seconds * ki
-    // arbitrary limit on iTerm, same as for gps_rescue, +/-20% throttle
+    simplePid.integral += altErrorCm * taskIntervalSeconds * simplePid.ki;
+    // arbitrary limit on iTerm, same as for gps_rescue, +/-20% of full throttle range
     simplePid.integral = constrainf(simplePid.integral, -200.0f, 200.0f); 
     const float iOut = simplePid.integral;
 
     // D
-    float dOut = simplePid.kd * altHoldState.smoothedAltitudeDelta;
+    const float dOut = simplePid.kd * altHoldState.smoothedAltitudeDelta;
 
     // F
     const float fOut = altholdConfig()->alt_hold_pid_d * altHoldState.targetAltitudeAdjustRate;
@@ -75,13 +75,12 @@ float altitudePidCalculate(void)
     // calculating feedforward separately avoids the filter lag.
 
     const float output = pOut + iOut + dOut + fOut;
-
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
     DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
     DEBUG_SET(DEBUG_ALTHOLD, 6, lrintf(dOut));
     DEBUG_SET(DEBUG_ALTHOLD, 7, lrintf(fOut));
 
-    return output;
+    return output; // motor units, eg 100 means 10% of available throttle 
 }
 
 void simplePidInit(float kp, float ki, float kd)
@@ -174,12 +173,13 @@ void altHoldUpdateTargetAltitude(void)
 
     // if failsafe is active, and we get here, we are in failsafe landing mode
     if (failsafeIsActive()) {
-        // descend at twice the configured descent rate if higher up, to minimise the time taken to reach ground
-        // default landing time is now 60s so won't time out, in defaults, unless height at start is above about 110m
-        // max allowed landing time is 250s ie up to about 500m high is possible without timeout disarm on default descent rate
-        // or 1000m on double the default descent rate
-        // very high altitude initiations are unsafe fue to drift potential
-        throttleAdjustmentFactor = isAltitudeLow() ? -1.0f : -2.0f;
+        // descend at up to 10 times faster when high
+        // default landing time is now 60s; need to get the quad down in this time from reasonable height
+        // need a rapid descent if high to avoid that timeout, and must slow down closer to ground
+        // this code doubles descent rate at 20m, to max 10x (10m/s on defaults) at 200m
+        // user should be able to descend within 60s from around 150m high without disarming, on defaults
+        // the deceleration may be a bit rocky if it starts very high up
+        throttleAdjustmentFactor = 1.0f + constrainf(altHoldState.measuredAltitudeCm * 0.0005f, 0.0f, 9.0f);
     }
 
     altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate * taskIntervalSeconds;
