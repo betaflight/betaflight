@@ -1245,7 +1245,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 
         pidData[axis].S = getSterm(axis, pidProfile);
-        applySpa(axis, pidProfile);
+
+        if (!pidRuntime.axisInAngleMode[axis]) {
+            applySpa(axis, pidProfile);
+        }
 
         // calculating the PID sum
         const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
