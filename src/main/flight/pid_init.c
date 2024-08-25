@@ -256,6 +256,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
     pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
+
 #ifdef USE_WING
     pt2FilterInit(&pidRuntime.tpaLpf, pt2FilterGainFromDelay(pidProfile->tpa_delay_ms / 1000.0f, pidRuntime.dT));
     pidRuntime.tpaGravityThr0 = pidProfile->tpa_gravity_thr0 / 100.0f;

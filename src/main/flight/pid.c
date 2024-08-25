@@ -306,7 +306,7 @@ static float getWingTpaArgument(float throttle)
 
     return tpaArgument;
 }
-#endif // #ifndef USE_WING
+#endif // USE_WING
 
 float getTpaFactorClassic(float tpaArgument)
 {
@@ -860,39 +860,29 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
+#ifdef USE_WING
 static float getSterm(int axis, const pidProfile_t *pidProfile)
 {
-#ifdef USE_WING
     const float sTerm = getSetpointRate(axis) / getMaxRcRate(axis) * 1000.0f *
         (float)pidProfile->pid[axis].S / 100.0f;
 
     DEBUG_SET(DEBUG_S_TERM, axis, lrintf(sTerm));
 
     return sTerm;
-#else
-    UNUSED(axis);
-    UNUSED(pidProfile);
-    return 0.0f;
-#endif
 }
 
 NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 {
-#ifdef USE_WING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         float currentRate = getSetpointRate(axis);
         pidRuntime.spa[axis] = 1.0f - smoothStepUpTransition(
             fabsf(currentRate), pidProfile->spa_center[axis], pidProfile->spa_width[axis]);
         DEBUG_SET(DEBUG_SPA, axis, lrintf(pidRuntime.spa[axis] * 1000));
-    }    
-#else
-    UNUSED(pidProfile);
-#endif // USE_WING
+    }
 }
 
 NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 {
-#ifdef USE_WING
     spaMode_e mode = pidProfile->spa_mode[axis];
 
     if (pidRuntime.axisInAngleMode[axis]) {
@@ -917,11 +907,8 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
         default:
             break;
     }
-#else
-    UNUSED(axis);
-    UNUSED(pidProfile);
-#endif // USE_WING
 }
+#endif // USE_WING
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
@@ -930,7 +917,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
+#ifdef USE_WING
     calculateSpaValues(pidProfile);
+#endif // USE_WING
 
 #ifdef USE_TPA_MODE
     const float tpaFactorKp = (pidProfile->tpa_mode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
@@ -1278,8 +1267,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 
+#ifdef USE_WING
         pidData[axis].S = getSterm(axis, pidProfile);
         applySpa(axis, pidProfile);
+#endif // USE_WING
 
         // calculating the PID sum
         const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
