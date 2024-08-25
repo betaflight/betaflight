@@ -811,16 +811,15 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     if (isAirmodeActivated()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
-            // or in stage 2 failsafe (including both landing or GPS Rescue)
-            // *** Not sure why this is needed, but without it, won't disarm on impact in failsafe landing mode ***
-            // this may permit removing the GPS Rescue disarm method
+            // we could test here for stage 2 failsafe (including both landing or GPS Rescue)
+            // this may permit removing the GPS Rescue disarm method altogether
 #ifdef USE_ALT_HOLD_MODE
             // or in altitude hold mode, including failsafe landing mode, indirectly
             || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
         )) {
-        // increase sensitivity by 50% when low and in altitude hold
-        // for disarm with gentle controlled landings
+        // increase sensitivity by 50% when low and in altitude hold or failsafe landing
+        // for more reliable disarm with gentle controlled landings
         float lowAltitudeSensitivity = 1.0f;
 #ifdef USE_ALT_HOLD_MODE
         lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isAltitudeLow()) ? 1.5f : 1.0f;
