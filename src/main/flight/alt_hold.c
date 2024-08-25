@@ -179,7 +179,7 @@ void altHoldUpdateTargetAltitude(void)
         // this code doubles descent rate at 20m, to max 10x (10m/s on defaults) at 200m
         // user should be able to descend within 60s from around 150m high without disarming, on defaults
         // the deceleration may be a bit rocky if it starts very high up
-        throttleAdjustmentFactor = 1.0f + constrainf(altHoldState.measuredAltitudeCm * 0.0005f, 0.0f, 9.0f);
+        throttleAdjustmentFactor = -1.0f - constrainf(altHoldState.measuredAltitudeCm * 0.0005f, 0.0f, 9.0f);
     }
 
     altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate * taskIntervalSeconds;
