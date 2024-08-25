@@ -54,25 +54,65 @@ static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.
 
 float altitudePidCalculate(void)
 {
+    // * introductory notes *
+    // this is a simple PID controller with heuristic D boost and iTerm relax
+    // the basic parameters provide good control when initiated in stable situations
+    
+    // tuning:
+    // -reduce P I and D by 1/3 or until it doesn't oscillate but has sloppy / slow control
+    // increase P until there is definite oscillation, then back off until barely noticeable
+    // increase D until there is definite oscillation (will be faster than P), then back off until barely noticeable
+    // try to add a little more P, then try to add a little more D, but not to oscillation
+    // iTerm isn't very important if hover throttle is set carefully and sag compensation is used
+
+    // The altitude D lowpass filter is very important.
+    // The only way to get enough D is to filter the oscillations out.
+    // More D filtering is needed with Baro than with GPS, since GPS is smoother and slower.
+
+    // A major problem is the lag time for motors to arrest pre-existing drops or climbs,
+    // compounded by the lag time from filtering.
+    // If the quad is dropping fast, the motors have to be high for a long time to arrest the drop
+    // this is very difficult for a 'simple' PID controller;
+    // if the PIDs are high enough to arrest a fast drop, they will oscillate under normal conditions
+    // Hence we:
+    // - Enhance D when the absolute velocity is high, ie when we need to strongly oppose a fast drop,
+    //   even though it may cause throttle oscillations while dropping quickly - the average D is what we need
+    // - Prevent excessive iTerm growth when error is impossibly large for iTerm to resolve
+
     const float altErrorCm = altHoldState.targetAltitudeCm - altHoldState.measuredAltitudeCm;
 
     // P
     const float pOut = simplePid.kp * altErrorCm;
 
     // I
-    simplePid.integral += altErrorCm * taskIntervalSeconds * simplePid.ki;
+    // input limit iTerm so that it doesn't grow fast with large errors
+    // very important at the start if there are massive initial errors to prevent iTerm windup
+
+    // no iTerm change for error greater than 2m, otherwise it winds up badly
+    const float itermNormalRange = 200.0f; // 2m
+    const float itermRelax = (fabsf(altErrorCm) < itermNormalRange) ? 1.0f : 0.0f;
+    simplePid.integral += altErrorCm * taskIntervalSeconds * simplePid.ki * itermRelax;
     // arbitrary limit on iTerm, same as for gps_rescue, +/-20% of full throttle range
+    // ** might not be needed with input limiting **
     simplePid.integral = constrainf(simplePid.integral, -200.0f, 200.0f); 
     const float iOut = simplePid.integral;
 
     // D
-    const float dOut = simplePid.kd * altHoldState.smoothedAltitudeDelta;
+    // boost D when altitude velocity exceeds 5 m/s ( D of 75 on defaults)
+    // the velocity trigger is arbitrary at this point
+    // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
+    // this is important primarily to arrest pre-existing fast drops or climbs at the start;
+    float dBoost =  fabsf(altHoldState.smoothedAltitudeDelta * 0.002f); // 1 at 500 cm/s
+    dBoost = constrainf(dBoost, 1.0f, 3.0f);
+
+    const float dOut = simplePid.kd * altHoldState.smoothedAltitudeDelta * dBoost;
 
     // F
     const float fOut = altholdConfig()->alt_hold_pid_d * altHoldState.targetAltitudeAdjustRate;
     // if error is used, we get a 'free kick' in derivative from changes in the target value
     // but this is delayed by the smoothing, leading to lag and overshoot.
     // calculating feedforward separately avoids the filter lag.
+    // on defaults, a 1m/s fall rate results in FF of -15
 
     const float output = pOut + iOut + dOut + fOut;
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
