@@ -1101,8 +1101,8 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ALT_HOLD_I, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_pid_i) },
     { PARAM_NAME_ALT_HOLD_D, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_pid_d) },
 
-    { PARAM_NAME_ALT_HOLD_THROTTLE_MIN,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_throttle_min) },
-    { PARAM_NAME_ALT_HOLD_THROTTLE_MAX,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_throttle_max) },
+    { PARAM_NAME_ALT_HOLD_THROTTLE_MIN,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1050, 1400 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_throttle_min) },
+    { PARAM_NAME_ALT_HOLD_THROTTLE_MAX,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1400, 2000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_throttle_max) },
     { PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_target_adjust_rate) },
 #endif
 
