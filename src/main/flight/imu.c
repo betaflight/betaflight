@@ -96,7 +96,7 @@ void imuSetRotMatrix(const matrix33_t* inMatrix) { rMat = *inMatrix; }
 
 #if defined(USE_ACC)
 // Do not use accelerometer if the norm of the reading differs more than this from 1g [g]
-static const float IMU_ACC_COVARIANCE_CALC_ACC_NORM_LIMIT = 0.2f;
+static const float IMU_ACC_COVARIANCE_CALC_ACC_NORM_LIMIT = 0.1f;
 // Do not use accelerometer if the gyro norm is greater than this [deg/s]
 static const float IMU_ACC_COVARIANCE_CALC_GYRO_NORM_LIMIT = 50.0f;
 // How fast the gyro covaraince will increase with higher rates
@@ -296,6 +296,8 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     imuRuntimeConfig.throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 
     imuRuntimeConfig.throttleAngleValue = throttle_correction_value;
+
+    imuRuntimeConfig.accFilterDependency = 2.0f * M_PIf * accelerometerConfig()->acc_lpf_hz;
 }
 
 void imuInit(void)
@@ -367,7 +369,7 @@ static float imuCalcGyroPsd(const float basePsd, const float gyroNorm)
 /// @arg baseAccCovariance best case scenario accelerometer covariance
 /// @arg accNorm norm of the accelerometer vector in g
 /// @arg gyroNorm norm of the gyrp rate vector in degrees per second
-static float imuAccCovariance(const float baseAccCovariance, const float accNorm, const float gyroNorm)
+static float imuAccCovariance(const imuRuntimeConfig_t* config, const float dt, const float accNorm, const float gyroNorm)
 {   // return 0 if the norm of the accelerometer vector differs more than this from 1.0g (ca 9.8 m/s)
     const float accLimit = IMU_ACC_COVARIANCE_CALC_ACC_NORM_LIMIT;
     // [deg/s] return 0 if the norm of the gyro rates are above this value
@@ -376,8 +378,12 @@ static float imuAccCovariance(const float baseAccCovariance, const float accNorm
     // gyro and acc vector norms differs from the ideal
     const float accTrust = tent(accNorm - 1.0f, accLimit) * tent(RADIANS_TO_DEGREES(gyroNorm), gyroLimit);
 
+    // Adjust for the acc filter causing values to be dependent
+    float omega = config->accFilterDependency * dt;
+    const float filterAdjustment = 1.0f + 1.0f/omega;
+
     const float epsilon = 0.01f;
-    return accTrust > epsilon ? baseAccCovariance / accTrust : 0.0f;
+    return accTrust > epsilon ? (config->accCovariance / accTrust) * filterAdjustment : 0.0f;
 }
 
 // Calculate Kalman gain
@@ -399,7 +405,7 @@ static bool imuIsMahalanobisOutlier(const float estimateCovariance, const float 
 
 STATIC_UNIT_TESTED void imuCalcAccError(imuAhrsState_t* state, const imuRuntimeConfig_t* config, const float dt, const vector3_t* gyro, vector3_t acc_bf, const matrix33_t* rotMat)
 {
-    UNUSED(dt);
+    // UNUSED(dt);
 
     const float gyroNorm = vector3Norm(gyro);
 
@@ -421,7 +427,7 @@ STATIC_UNIT_TESTED void imuCalcAccError(imuAhrsState_t* state, const imuRuntimeC
     const float outlierThreshold = gpsRescueActive || !(ARMING_FLAG(ARMED)) ? 0.0f : 2.0f;
     const bool notOutlier = !imuIsMahalanobisOutlier(state->rpEstimateCovariance, config->accCovariance, accAngleError, outlierThreshold);
 
-    const float accCovariance = notOutlier ? imuAccCovariance(config->accCovariance, accNorm, gyroNorm) : 0.0f;
+    const float accCovariance = notOutlier ? imuAccCovariance(config, dt, accNorm, gyroNorm) : 0.0f;
 
     if (accCovariance > 0.0f) {
         // Difference is the cross product between estimated direction and measured direction of gravity

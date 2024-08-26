@@ -95,6 +95,7 @@ typedef struct imuRuntimeConfig_s {
     float smallAngleCosZ;
     float throttleAngleScale;
     int throttleAngleValue;
+    float accFilterDependency;  // compensation factor applied to acc covariance to compensate for the acc filter causing values to be dependent
 } imuRuntimeConfig_t;
 
 typedef struct imuGyroReceiveState_s {
