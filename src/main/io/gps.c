@@ -400,6 +400,14 @@ static gpsState_e autobaudFirstState(void)
     }
 }
 
+// only RX channel from GPS is available, do not try to communicate with GPS module
+// in rxOnly mode, GPxS configuration phase is skipped, so only few places need to check this
+static bool isRxOnly(void)
+{
+    // only RX pin may be connected to GPS. Handle GPS initialization without sending anything
+    return gpsConfig()->autoConfig == GPS_AUTOCONFIG_NOTX;
+}
+
 void gpsInit(void)
 {
     gpsDataIntervalSeconds = 0.1f;
@@ -428,7 +436,7 @@ void gpsInit(void)
     }
 
     // only RX pin may be connected to GPS. Handle GPS initialization without sending anything
-    const bool rxOnly = gpsConfig()->autoConfig == GPS_AUTOCONFIG_NOTX;
+    const bool rxOnly = isRxOnly();
 
     const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
@@ -840,6 +848,9 @@ static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef
     uint16_t measRateMilliseconds = 1000 / measRate;
 
     ubxMessage_t tx_buffer;
+    if (isRxOnly()) {
+        return ;
+    }
     if (gpsData.ubloxM9orAbove) {
         uint8_t offset = 0;
         uint8_t payload[2];
@@ -997,7 +1008,7 @@ void gpsConfigureNmea(void)
             gpsSetState(GPS_STATE_CHANGE_BAUD);
             break;
         case GPS_STATE_CHANGE_BAUD:
-            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_NOTX
+            if (isRxOnly()
 #if defined(GPS_NMEA_TX_ONLY)
                 || true
 #endif
@@ -2590,7 +2601,7 @@ void GPS_reset_home_position(void)
 
 #ifdef USE_GPS_UBLOX
     // disable Sat Info requests on arming
-    if (gpsConfig()->provider == GPS_UBLOX) {
+    if (gpsConfig()->provider == GPS_UBLOX && !isRxOnly()) {
         setSatInfoMessageRate(0);
     }
 #endif
