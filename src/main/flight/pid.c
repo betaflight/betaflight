@@ -865,7 +865,11 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
-    switch(pidProfile->spa_mode[axis]){
+    if (pidRuntime.axisInAngleMode[axis]) {
+        return;
+    }
+
+    switch(pidProfile->spa_mode[axis]) {
         case SPA_MODE_PID:
             pidData[axis].P *= pidRuntime.spa[axis];
             pidData[axis].D *= pidRuntime.spa[axis];
@@ -1245,10 +1249,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 
         pidData[axis].S = getSterm(axis, pidProfile);
-
-        if (!pidRuntime.axisInAngleMode[axis]) {
-            applySpa(axis, pidProfile);
-        }
+        applySpa(axis, pidProfile);
 
         // calculating the PID sum
         const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F + pidData[axis].S;
