@@ -383,12 +383,6 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 #define GPS_DBHZ_MAX 55
 #endif  // USE_DASHBOARD
 
-
-#ifdef USE_GPS_UBLOX
-ubloxVersion_e ubloxParseVersion(const uint32_t version);
-void setSatInfoMessageRate(uint8_t divisor);
-#endif
-
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);

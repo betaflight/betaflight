@@ -934,7 +934,7 @@ static void ubloxSetSbas(void)
     }
 }
 
-void setSatInfoMessageRate(uint8_t divisor)
+static void setSatInfoMessageRate(uint8_t divisor)
 {
     // enable satInfoMessage at 1:5 of the nav rate if configurator is connected
     if (gpsData.ubloxM9orAbove) {
@@ -1484,7 +1484,7 @@ static void gpsNewData(uint16_t c)
 }
 
 #ifdef USE_GPS_UBLOX
-ubloxVersion_e ubloxParseVersion(const uint32_t version) {
+static ubloxVersion_e ubloxParseVersion(const uint32_t version) {
     for (size_t i = 0; i < ARRAYLEN(ubloxVersionMap); ++i) {
         if (version == ubloxVersionMap[i].hw) {
             return (ubloxVersion_e) i;
