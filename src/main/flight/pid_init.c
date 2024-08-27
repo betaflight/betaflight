@@ -280,7 +280,6 @@ float tpaCurveHyperbolicFunction(float x, void *args)
         return pidThr0;
     }
 
-
     const float expoDivider = pidProfile->tpa_curve_expo / 10.0f - 1.0f;
     const float expo = (fabsf(expoDivider) > 1e-3f) ?  1.0f / expoDivider : 1e3f; // avoiding division by zero for const float base = ...
 
