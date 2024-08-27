@@ -212,7 +212,6 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
             DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
         }
 
-        // Set telemetry type
         *pType = DSHOT_TELEMETRY_TYPE_eRPM;
     } else {
         // Decode Extended DSHOT telemetry
@@ -221,56 +220,42 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
         case DSHOT_TELEMETRY_RANGE_TEMPERATURE:
             // Temperature frame (in degree Celsius, just like Blheli_32 and KISS)
             dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_TEMPERATURE);
-
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_TEMPERATURE;
             break;
 
         case DSHOT_TELEMETRY_RANGE_VOLTAGE:
             // Voltage frame (0-63,75V step 0,25V)
             dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_VOLTAGE);
-
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_VOLTAGE;
             break;
 
         case DSHOT_TELEMETRY_RANGE_CURRENT:
             // Current frame (0-255A step 1A)
             dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_CURRENT);
-
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_CURRENT;
             break;
 
         case DSHOT_TELEMETRY_RANGE_DEBUG1:
             // Debug 1 frame
             dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_DEBUG1);
-
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_DEBUG1;
             break;
 
         case DSHOT_TELEMETRY_RANGE_DEBUG2:
             // Debug 2 frame
             dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_DEBUG2);
-
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_DEBUG2;
             break;
 
         case DSHOT_TELEMETRY_RANGE_STRESS_LEVEL:
             // Stress level frame
             dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_STRESS_LVL);
-
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_STRESS_LEVEL;
             break;
 
         case DSHOT_TELEMETRY_RANGE_STATUS:
             // State / events frame
             *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
-
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_STATUS;
             break;
 
@@ -286,7 +271,6 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
                 DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
             }
 
-            // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_eRPM;
             break;
 
