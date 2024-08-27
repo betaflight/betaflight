@@ -187,6 +187,17 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
     return (1000000 * 60 / 100 + value / 2) / value;
 }
 
+static void dshotDecodeAndSetTelemetryValue(uint32_t *pDecoded, uint16_t *pHighByte, uint8_t motorIndex, uint16_t value, debugType_e debugType)
+{
+    *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
+
+    // Update debug buffer (motorIndex < motorCount guaranteed by caller)
+    if (motorIndex < DEBUG16_VALUE_COUNT) {
+        *pHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << SHIFT_BYTE;
+        DEBUG_SET(debugType, motorIndex, *pHighByte | *pDecoded);
+    }
+}
+
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t dshotDebugHighByte;
@@ -209,13 +220,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         case DSHOT_TELEMETRY_RANGE_TEMPERATURE:
             // Temperature frame (in degree Celsius, just like Blheli_32 and KISS)
-            *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
-
-            // Update debug buffer (motorIndex < motorCount guaranteed by caller)
-            if (motorIndex < DEBUG16_VALUE_COUNT) {
-                dshotDebugHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << SHIFT_BYTE;
-                DEBUG_SET(DEBUG_DSHOT_STATUS_N_TEMPERATURE, motorIndex, dshotDebugHighByte | *pDecoded);
-            }
+            dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_TEMPERATURE);
 
             // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_TEMPERATURE;
@@ -223,13 +228,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         case DSHOT_TELEMETRY_RANGE_VOLTAGE:
             // Voltage frame (0-63,75V step 0,25V)
-            *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
-
-            // Update debug buffer (motorIndex < motorCount guaranteed by caller)
-            if (motorIndex < DEBUG16_VALUE_COUNT) {
-                dshotDebugHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << SHIFT_BYTE;
-                DEBUG_SET(DEBUG_DSHOT_STATUS_N_VOLTAGE, motorIndex, dshotDebugHighByte | *pDecoded);
-            }
+            dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_VOLTAGE);
 
             // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_VOLTAGE;
@@ -237,13 +236,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         case DSHOT_TELEMETRY_RANGE_CURRENT:
             // Current frame (0-255A step 1A)
-            *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
-
-            // Update debug buffer (motorIndex < motorCount guaranteed by caller)
-            if (motorIndex < DEBUG16_VALUE_COUNT) {
-                dshotDebugHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << SHIFT_BYTE;
-                DEBUG_SET(DEBUG_DSHOT_STATUS_N_CURRENT, motorIndex, dshotDebugHighByte | *pDecoded);
-            }
+            dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_CURRENT);
 
             // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_CURRENT;
@@ -251,13 +244,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         case DSHOT_TELEMETRY_RANGE_DEBUG1:
             // Debug 1 frame
-            *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
-
-            // Update debug buffer (motorIndex < motorCount guaranteed by caller)
-            if (motorIndex < DEBUG16_VALUE_COUNT) {
-                dshotDebugHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << SHIFT_BYTE;
-                DEBUG_SET(DEBUG_DSHOT_STATUS_N_DEBUG1, motorIndex, dshotDebugHighByte | *pDecoded);
-            }
+            dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_DEBUG1);
 
             // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_DEBUG1;
@@ -265,13 +252,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         case DSHOT_TELEMETRY_RANGE_DEBUG2:
             // Debug 2 frame
-            *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
-
-            // Update debug buffer (motorIndex < motorCount guaranteed by caller)
-            if (motorIndex < DEBUG16_VALUE_COUNT) {
-                dshotDebugHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << SHIFT_BYTE;
-                DEBUG_SET(DEBUG_DSHOT_STATUS_N_DEBUG2, motorIndex, dshotDebugHighByte | *pDecoded);
-            }
+            dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_DEBUG2);
 
             // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_DEBUG2;
@@ -279,13 +260,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         case DSHOT_TELEMETRY_RANGE_STRESS_LEVEL:
             // Stress level frame
-            *pDecoded = value & DSHOT_TELEMETRY_VALUE_MASK;
-
-            // Update debug buffer (motorIndex < motorCount guaranteed by caller)
-            if (motorIndex < DEBUG16_VALUE_COUNT) {
-                dshotDebugHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << SHIFT_BYTE;
-                DEBUG_SET(DEBUG_DSHOT_STATUS_N_STRESS_LVL, motorIndex, dshotDebugHighByte | *pDecoded);
-            }
+            dshotDecodeAndSetTelemetryValue(pDecoded, &dshotDebugHighByte, motorIndex, value, DEBUG_DSHOT_STATUS_N_STRESS_LVL);
 
             // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_STRESS_LEVEL;
