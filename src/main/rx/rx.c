@@ -674,9 +674,10 @@ bool threeOutput=false;
 bool slctRx = 0;
 uint32_t startTimeMs = 0;
 uint32_t lastSwitchMs = 0;
-uint16_t lastChannelLQ = 0;
-bool switchTurnedOn = false;
-bool justSwitched = false;
+uint8_t bandOneLQ = 100;
+uint8_t bandTwoLQ = 100;
+bool bandOneBelowThresh = false;
+bool bandTwoBelowThresh = false;
 void detectAndApplySignalLossBehaviour(void)
 {
     //GLEB ADDITION. Set a start time first time that this method is called
@@ -762,28 +763,75 @@ void detectAndApplySignalLossBehaviour(void)
             rcData[channel] = sample;
         }
     }
-    
-    //GLEB ADDITION:  LISTEN FOR RX ON A SWITCH. KEEP TRACK OF SWITCH TIME ONLY IF WE JUST MADE THIS SWITCH IN CHANNELS
+
+    const uint8_t switchPinio = 2;
+    const uint8_t threeVThreeChannel= 9;
+    const uint8_t switchChannel = 11;
+    const int16_t midValue = 1500;
+
+    const uint16_t switchSleepTimeMs = 1000;
+    const uint16_t switchStartTimeoutMs = 20000;
+
+    const uint8_t lqThreshold = 40;
+    const uint8_t lqDifference = 5;
     uint16_t currLQ = rxGetLinkQuality();
-    if ((rcData[11] > 1500) && ((currentTimeMs - lastSwitchMs) > 1000)){
-        slctRx= !slctRx;
-        pinioSet(2, slctRx);
+    uint16_t otherBandLQ = 0;
+    bool performSwitch = false;
+
+    if(slctRx == 0){
+        bandOneLQ = currLQ;
+        otherBandLQ = bandTwoLQ;
+    }
+    else{
+        bandTwoLQ = currLQ;
+        otherBandLQ = bandOneLQ;
+    }
+    
+
+    //Listen for user input to switch bands. Only switch bands every switchSleepTimeMs
+    if ((rcData[switchChannel] > midValue) && ((currentTimeMs - lastSwitchMs) > switchSleepTimeMs)){
+        performSwitch=true;
         lastSwitchMs = currentTimeMs;
-        lastChannelLQ = currLQ;
-        justSwitched = true;
     } 
-    else if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 40) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 20000)){
-            slctRx= !slctRx;
-            pinioSet(2, slctRx);
-            lastChannelLQ = currLQ;
-            justSwitched=true;
-    } else {
-        justSwitched = false;
+    //This is the main logic used for automatically switching bands. We automatically switch if the LQ is below a certain threshold, 
+    //or if we just switched and the LQ is worse than it was on the last band
+    
+    if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && (currentTimeMs - startTimeMs > switchStartTimeoutMs))
+    {
+        //switch bands if our current band LQ is below threshold but the other band LQ is above threshold
+        if((currLQ < lqThreshold) && (otherBandLQ > lqThreshold))
+        {
+            performSwitch=true;
+        }
+        //if both are below the threshold, switch if the other band is slightly better
+        if((currLQ < lqThreshold) && (otherBandLQ < lqThreshold))
+        {
+            if((otherBandLQ-currLQ) > lqDifference)
+            {
+                performSwitch=true;
+            }
+        }
+        //If the current band is at 0, just perform the switch, no need to check the other band
+        if(currLQ == 0)
+        {
+            performSwitch=true;
+        }
+    } 
+    if(performSwitch)
+    {
+        slctRx= !slctRx;
+        pinioSet(switchPinio, slctRx);
     }
 
     //set threeOutput according to if we want to output 3v3 or not
-    if(rxFlightChannelsValid && (rcData[9]>1500)){threeOutput=true;}
-    else {threeOutput=false;}
+    if(rxFlightChannelsValid && (rcData[threeVThreeChannel]>midValue))
+    {
+        threeOutput=true;
+    }
+    else 
+    {
+        threeOutput=false;
+    }
 
     if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();

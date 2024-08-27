@@ -1418,7 +1418,7 @@ static void osdElementPower(osdElementParms_t *element) {
     if(bufferIndex == 5) {
         lastValue = avgVolts*avgAmps;
     }
-    osdPrintFloat(element->buff, SYM_NONE, lastValue, "%3u", 2, false, SYM_WATT);
+    tfp_sprintf(element->buff, "%4dW", (int)lastValue);
 }
 
 
