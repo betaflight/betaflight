@@ -35,8 +35,9 @@
 
 typedef struct {
     float kp;
-    float kd;
     float ki;
+    float kd;
+    float kf;
     float previousAltitude;
     float integral;
 } simplePid_t;
@@ -98,21 +99,28 @@ float altitudePidCalculate(void)
     const float iOut = simplePid.integral;
 
     // D
-    // boost D when altitude velocity exceeds 5 m/s ( D of 75 on defaults)
+    // boost D by 'increasing apparent velocity' when vertical velocity exceeds 5 m/s ( D of 75 on defaults)
     // the velocity trigger is arbitrary at this point
     // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
     // this is important primarily to arrest pre-existing fast drops or climbs at the start;
-    float dBoost =  fabsf(altHoldState.smoothedAltitudeDelta * 0.002f); // 1 at 500 cm/s
-    dBoost = constrainf(dBoost, 1.0f, 3.0f);
 
-    const float dOut = simplePid.kd * altHoldState.smoothedAltitudeDelta * dBoost;
+    float vel = altHoldState.smoothedVerticalVelocity;
+    const float kinkPoint = 500.0f; // velocity at which D should start to increase
+    const float kinkPointAdjustment = kinkPoint * 2.0f; // Precompute constant
+    const float sign = (vel > 0) ? 1.0f : -1.0f;
+    if (fabsf(vel) > kinkPoint) {
+        vel = vel * 3.0f - sign * kinkPointAdjustment;
+    }
+
+    const float dOut = simplePid.kd * vel;
 
     // F
-    const float fOut = altholdConfig()->alt_hold_pid_d * altHoldState.targetAltitudeAdjustRate;
     // if error is used, we get a 'free kick' in derivative from changes in the target value
     // but this is delayed by the smoothing, leading to lag and overshoot.
     // calculating feedforward separately avoids the filter lag.
-    // on defaults, a 1m/s fall rate results in FF of -15
+    // Use user's D gain for the feedforward gain factor, works OK with a scaling factor of 0.01
+    // A commanded drop at 100cm/s will return feedforward of the user's D value. or 15 on defaults
+    const float fOut = simplePid.kf * altHoldState.targetAltitudeAdjustRate;
 
     const float output = pOut + iOut + dOut + fOut;
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
@@ -123,11 +131,12 @@ float altitudePidCalculate(void)
     return output; // motor units, eg 100 means 10% of available throttle 
 }
 
-void simplePidInit(float kp, float ki, float kd)
+void simplePidInit(float kp, float ki, float kd, float kf)
 {
     simplePid.kp = kp;
     simplePid.ki = ki;
     simplePid.kd = kd;
+    simplePid.kf = kf;
     simplePid.previousAltitude = 0.0f;
     simplePid.integral = 0.0f;
 }
@@ -144,7 +153,8 @@ void altHoldInit(void)
     simplePidInit(
         ALT_HOLD_PID_P_SCALE * altholdConfig()->alt_hold_pid_p,
         ALT_HOLD_PID_I_SCALE * altholdConfig()->alt_hold_pid_i,
-        ALT_HOLD_PID_D_SCALE * altholdConfig()->alt_hold_pid_d);
+        ALT_HOLD_PID_D_SCALE * altholdConfig()->alt_hold_pid_d,
+        0.01f * altholdConfig()->alt_hold_pid_d); // use D gain for feedforward with simple scaling
         // the multipliers are base scale factors
         // iTerm is relatively weak, intended to be slow moving to adjust baseline errors
         // the Hover value is important otherwise takes time for iTerm to correct
@@ -219,12 +229,13 @@ void altHoldUpdateTargetAltitude(void)
         // this code doubles descent rate at 20m, to max 10x (10m/s on defaults) at 200m
         // user should be able to descend within 60s from around 150m high without disarming, on defaults
         // the deceleration may be a bit rocky if it starts very high up
-        throttleAdjustmentFactor = -1.0f - constrainf(altHoldState.measuredAltitudeCm * 0.0005f, 0.0f, 9.0f);
+        // constant (set) deceleration target in the last 2m
+        throttleAdjustmentFactor = -(0.9f + constrainf(altHoldState.measuredAltitudeCm * (1.0f / 2000.f), 0.1f, 9.0f));
     }
 
-    altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate * taskIntervalSeconds;
+    altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate;
     // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
-    altHoldState.targetAltitudeCm += altHoldState.targetAltitudeAdjustRate;
+    altHoldState.targetAltitudeCm += altHoldState.targetAltitudeAdjustRate  * taskIntervalSeconds;
 }
 
 void altHoldUpdate(void)
@@ -255,9 +266,9 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
     float derivative = (simplePid.previousAltitude - altHoldState.measuredAltitudeCm) / taskIntervalSeconds; // cm/s
     simplePid.previousAltitude = altHoldState.measuredAltitudeCm;
 
-    // smooth altitude delta here to always have a current value, without delay due to filter lag
+    // smooth the derivative here to always have a current value, without delay due to filter lag
     // this way we immediately have useful D on initialising the hold
-    altHoldState.smoothedAltitudeDelta = pt2FilterApply(&altHoldDeltaLpf, derivative);
+    altHoldState.smoothedVerticalVelocity = pt2FilterApply(&altHoldDeltaLpf, derivative);
 
     DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(altHoldState.measuredAltitudeCm));
 
