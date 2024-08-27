@@ -1465,7 +1465,7 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);
 #endif
 
-        // API 1.46
+        // API 1.47
 #ifdef USE_DSHOT_TELEMETRY
         sbufWriteU8(dst, motorConfig()->dev.useDshotEdt);
 #else
@@ -2861,7 +2861,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         }
 
-        // Version 1.46
+        // Version 1.47
         if (sbufBytesRemaining(src) >= 1) {
 #if defined(USE_DSHOT_TELEMETRY)
             motorConfigMutable()->dev.useDshotEdt = sbufReadU8(src);
