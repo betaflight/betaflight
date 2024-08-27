@@ -71,12 +71,17 @@ extern "C" {
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
 
+    #include "pg/rx.h"
+    #include "rx/rx.h"
+
     #include "sensors/gyro.h"
     #include "sensors/acceleration.h"
 
     acc_t acc;
     gyro_t gyro;
     attitudeEulerAngles_t attitude;
+
+    rxRuntimeState_t rxRuntimeState = {};
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
