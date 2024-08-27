@@ -1,7 +1,7 @@
 diff all
 
 # version
-# Betaflight / STM32H743 (SH74) 4.4.3 Aug 26 2024 / 15:51:29 (norevision) MSP API: 1.45
+# Betaflight / STM32H743 (SH74) 4.4.3 Aug 26 2024 / 19:05:23 (fba679841) MSP API: 1.45
 
 # config: YES
 
@@ -13,7 +13,7 @@ defaults nosave
 
 board_name NEROSH743
 manufacturer_id NEROS
-mcu_id 003e002f3233510537393630
+mcu_id 0030002e3233510537393630
 signature 
 
 # name: Archer
@@ -283,12 +283,15 @@ rateprofile 0
 
 # rateprofile 0
 set rates_type = BETAFLIGHT
-set roll_rc_rate = 100
-set pitch_rc_rate = 100
-set yaw_rc_rate = 100
-set roll_srate = 70
-set pitch_srate = 70
-set yaw_srate = 70
+set roll_rc_rate = 90
+set pitch_rc_rate = 80
+set yaw_rc_rate = 80
+set roll_expo = 5
+set pitch_expo = 5
+set yaw_expo = 5
+set roll_srate = 60
+set pitch_srate = 60
+set yaw_srate = 60
 
 rateprofile 1
 
