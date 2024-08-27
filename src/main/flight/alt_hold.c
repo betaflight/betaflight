@@ -250,6 +250,7 @@ void altHoldUpdate(void)
 
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
     // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
+    // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
     const float newThrottle = PWM_RANGE_MIN + (altHoldState.hover + throttleAdjustment) * tiltMultiplier;
     altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->alt_hold_throttle_min, altholdConfig()->alt_hold_throttle_max);
 
