@@ -157,7 +157,8 @@ extern struct ubloxVersion_s ubloxVersionMap[];
 
 typedef enum {
     GPS_STATE_UNKNOWN = 0,
-    GPS_STATE_DETECT_BAUD,
+    GPS_STATE_DETECT_BAUD_ACTIVE,     // poll GPS module until version is received
+    GPS_STATE_DETECT_BAUD_PASSIVE,    // wait for correct packet
     GPS_STATE_INITIALIZED,
     GPS_STATE_CHANGE_BAUD,
     GPS_STATE_CONFIGURE,
@@ -275,7 +276,8 @@ typedef struct ubxMonVer_s {
 
 typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
-    uint32_t timeouts;
+    uint32_t timeouts;              // incremented when leaving RECEIVING_DATA state because of timeout
+    uint32_t messages;              // count of correctly received messages
     uint32_t lastNavMessage;        // time of last valid GPS speed and position data
     uint32_t now;
     uint32_t lastMessageSent;       // time last message was sent
@@ -371,7 +373,6 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 
 #define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
 extern char dashboardGpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];  // OLED display of a char for each packet type/event received.
-extern uint32_t dashboardGpsPacketCount;                        // Packet received count.
 extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of times sat info received & updated.
 
 #define GPS_DBHZ_MIN 0
