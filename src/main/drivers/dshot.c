@@ -170,7 +170,7 @@ void initDshotTelemetry(const timeUs_t looptimeUs)
     }
 }
 
-static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
+static uint32_t dshotDecodeErpmTelemetryValue(uint16_t value)
 {
     // eRPM range
     if (value == 0x0fff) {
@@ -198,14 +198,14 @@ static void dshotDecodeAndSetTelemetryValue(uint32_t *pDecoded, uint16_t *pHighB
     }
 }
 
-static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
+static void dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t dshotDebugHighByte;
     const uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
 
     if (dshotTelemetryState.motorState[motorIndex].telemetryTypes == DSHOT_NORMAL_TELEMETRY_MASK) {   /* Check DSHOT_TELEMETRY_TYPE_eRPM mask */
         // Decode eRPM telemetry
-        *pDecoded = dshot_decode_eRPM_telemetry_value(value);
+        *pDecoded = dshotDecodeErpmTelemetryValue(value);
 
         // Update debug buffer (motorIndex < motorCount guaranteed by caller)
         if (motorIndex < DEBUG16_VALUE_COUNT) {
@@ -261,7 +261,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         default:
             // Decode as eRPM
-            *pDecoded = dshot_decode_eRPM_telemetry_value(value);
+            *pDecoded = dshotDecodeErpmTelemetryValue(value);
 
             // Update debug buffer (motorIndex < motorCount guaranteed by caller)
             if (motorIndex < DEBUG16_VALUE_COUNT) {
@@ -310,7 +310,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
         dshotTelemetryType_t type;
         uint32_t value;
 
-        dshot_decode_telemetry_value(k, &value, &type);
+        dshotDecodeTelemetryValue(k, &value, &type);
 
         if (value != DSHOT_TELEMETRY_INVALID) {
             dshotUpdateTelemetryData(k, type, value);
