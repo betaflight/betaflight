@@ -209,10 +209,10 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestFlightMode)
     getNextTelemetryPayload(&payloadSize, &payload);
     EXPECT_EQ(currentPayloadIndex, 0);
 
-    EXPECT_EQ('W', payload[3]);
-    EXPECT_EQ('A', payload[4]);
-    EXPECT_EQ('I', payload[5]);
-    EXPECT_EQ('T', payload[6]);
+    EXPECT_EQ('A', payload[3]);
+    EXPECT_EQ('C', payload[4]);
+    EXPECT_EQ('R', payload[5]);
+    EXPECT_EQ('O', payload[6]);
     EXPECT_EQ('*', payload[7]);
     EXPECT_EQ(0, payload[8]);
 

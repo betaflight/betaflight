@@ -391,12 +391,6 @@ void crsfFrameFlightMode(sbuf_t *dst)
     // Acro is the default mode
     const char *flightMode = "ACRO";
 
-#if defined(USE_GPS)
-    if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
-        flightMode = "WAIT"; // Waiting for GPS lock
-    } else
-#endif
-
     // Flight modes in decreasing order of importance
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         flightMode = "!FS!";
@@ -416,7 +410,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
 
     sbufWriteString(dst, flightMode);
     if (!ARMING_FLAG(ARMED)) {
-        sbufWriteU8(dst, '*');
+        sbufWriteU8(dst, isArmingDisabled() ? '!' : '*');
     }
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
