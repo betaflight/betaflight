@@ -322,7 +322,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
     // Show esc error
     if (osdWarnGetState(OSD_WARNING_ESC_FAIL)) {
-        uint32_t telemetryStatus;
         uint32_t dshotEscErrorLengthMotorBegin;
         uint32_t dshotEscErrorLength = 0;
 
@@ -363,7 +362,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
                 // Status frame events
                 if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_STATUS)) != 0) {
-                    telemetryStatus = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS];
+                    uint32_t telemetryStatus = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS];
 
 #if defined(DEBUG_DSHOT_STRESS_LVL)
                     // Notify alert event
