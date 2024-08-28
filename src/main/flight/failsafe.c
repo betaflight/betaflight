@@ -72,7 +72,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_throttle = 1000,                           // default throttle off.
     .failsafe_throttle_low_delay = 100,                  // default throttle low delay for "just disarm" on failsafe condition
     .failsafe_delay = 15,                                // 1.5 sec stage 1 period, can regain control on signal recovery, at idle in drop mode
-    .failsafe_off_delay = 60,                            // 60 sec allowed in landing phase, if enabled, before disarm
+    .failsafe_landing_time = 60,                         // 60 sec allowed in landing phase, if enabled, before disarm
     .failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE1, // default failsafe switch action is identical to rc link loss
     .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT,    // default full failsafe procedure is 0: auto-landing
     .failsafe_recovery_delay = DEFAULT_FAILSAFE_RECOVERY_DELAY,
@@ -319,7 +319,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             //  Enter Stage 2 with settings for landing mode
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                             failsafeState.phase = FAILSAFE_LANDING;
-                            failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_SECOND;
+                            failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
                             break;
 
                         case FAILSAFE_PROCEDURE_DROP_IT:
