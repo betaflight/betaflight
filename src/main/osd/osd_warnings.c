@@ -353,7 +353,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 // RPM and current warnings
                 if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
                     && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) != 0
-                    && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) <= osdConfig()->esc_rpm_alarm)
+                    && (erpmToRpm(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]) <= osdConfig()->esc_rpm_alarm))
                     warningText[dshotEscErrorLength++] = 'R';
                 if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
                     && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0
