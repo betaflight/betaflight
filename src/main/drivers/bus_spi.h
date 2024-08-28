@@ -33,7 +33,7 @@
 #define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
 #define SPI_IO_AF_SDI_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
@@ -78,6 +78,8 @@ typedef enum SPIDevice {
 #define SPIDEV_COUNT 4
 #elif defined(STM32H7)
 #define SPIDEV_COUNT 6
+#elif defined(APM32F4)
+#define SPIDEV_COUNT 3
 #else
 #define SPIDEV_COUNT 4
 #endif

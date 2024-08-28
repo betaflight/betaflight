@@ -116,7 +116,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 9);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 10);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -236,7 +236,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
-        .ez_landing_disarm_threshold = 0                            ,
+        .landing_disarm_threshold = 0, // relatively safe values are around 100
+        .feedforward_yaw_hold_gain = 15,  // zero disables; 15-20 is OK for 5in
+        .feedforward_yaw_hold_time = 100,  // a value of 100 is a time constant of about 100ms, and is OK for a 5in; smaller values decay faster, eg for smaller props
     );
 
 #ifndef USE_D_MIN
@@ -780,7 +782,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     // if all sticks are within 5% of center, and throttle low, check accDelta for impacts
     // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
     if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f &&
-        fabsf(acc.accDelta) > pidRuntime.ezLandingDisarmThreshold) {
+        fabsf(acc.accDelta) > pidRuntime.landingDisarmThreshold) {
         // disarm on accDelta transients
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         disarm(DISARM_REASON_LANDING);
@@ -865,7 +867,13 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
-    switch(pidProfile->spa_mode[axis]){
+    spaMode_e mode = pidProfile->spa_mode[axis];
+
+    if (pidRuntime.axisInAngleMode[axis]) {
+        mode = SPA_MODE_OFF;
+    }
+
+    switch(mode) {
         case SPA_MODE_PID:
             pidData[axis].P *= pidRuntime.spa[axis];
             pidData[axis].D *= pidRuntime.spa[axis];

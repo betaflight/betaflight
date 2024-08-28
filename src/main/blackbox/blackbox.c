@@ -356,8 +356,8 @@ typedef struct blackboxMainState_s {
 } blackboxMainState_t;
 
 typedef struct blackboxGpsState_s {
-    int32_t GPS_home[2];
-    int32_t GPS_coord[2];
+    gpsLocation_t GPS_home;     // height is not used in blackbox logging
+    gpsLocation_t GPS_coord;
     uint8_t GPS_numSat;
 } blackboxGpsState_t;
 
@@ -1085,12 +1085,11 @@ static void writeGPSHomeFrame(void)
 {
     blackboxWrite('H');
 
-    blackboxWriteSignedVB(GPS_home[0]);
-    blackboxWriteSignedVB(GPS_home[1]);
+    blackboxWriteSignedVB(GPS_home_llh.lat);
+    blackboxWriteSignedVB(GPS_home_llh.lon);
     //TODO it'd be great if we could grab the GPS current time and write that too
 
-    gpsHistory.GPS_home[0] = GPS_home[0];
-    gpsHistory.GPS_home[1] = GPS_home[1];
+    gpsHistory.GPS_home = GPS_home_llh;
 }
 
 static void writeGPSFrame(timeUs_t currentTimeUs)
@@ -1109,15 +1108,20 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
     }
 
     blackboxWriteUnsignedVB(gpsSol.numSat);
-    blackboxWriteSignedVB(gpsSol.llh.lat - gpsHistory.GPS_home[GPS_LATITUDE]);
-    blackboxWriteSignedVB(gpsSol.llh.lon - gpsHistory.GPS_home[GPS_LONGITUDE]);
+    blackboxWriteSignedVB(gpsSol.llh.lat - gpsHistory.GPS_home.lat);
+    blackboxWriteSignedVB(gpsSol.llh.lon - gpsHistory.GPS_home.lon);
     blackboxWriteSignedVB(gpsSol.llh.altCm / 10);  // log altitude in increments of 0.1m
-    blackboxWriteUnsignedVB(gpsSol.groundSpeed);
+
+    if (gpsConfig()->gps_use_3d_speed) {
+        blackboxWriteUnsignedVB(gpsSol.speed3d);
+    } else {
+        blackboxWriteUnsignedVB(gpsSol.groundSpeed);
+    }
+
     blackboxWriteUnsignedVB(gpsSol.groundCourse);
 
     gpsHistory.GPS_numSat = gpsSol.numSat;
-    gpsHistory.GPS_coord[GPS_LATITUDE] = gpsSol.llh.lat;
-    gpsHistory.GPS_coord[GPS_LONGITUDE] = gpsSol.llh.lon;
+    gpsHistory.GPS_coord = gpsSol.llh;
 }
 #endif
 
@@ -1359,9 +1363,10 @@ static bool blackboxWriteSysinfo(void)
 
     const controlRateConfig_t *currentControlRateProfile = controlRateProfiles(systemConfig()->activeRateProfile);
     switch (xmitState.headerIndex) {
-        BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
+        BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Betaflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("DeviceUID", "%08x%08x%08x",             U_ID_0, U_ID_1, U_ID_2);
 #ifdef USE_BOARD_INFO
         BLACKBOX_PRINT_HEADER_LINE("Board information", "%s %s",            getManufacturerId(), getBoardName());
 #endif
@@ -1412,7 +1417,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_LANDING_THRESHOLD, "%d",   currentPidProfile->ez_landing_threshold);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_LANDING_LIMIT, "%d",       currentPidProfile->ez_landing_limit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_LANDING_SPEED, "%d",       currentPidProfile->ez_landing_speed);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_EZ_DISARM_THRESHOLD, "%d",    currentPidProfile->ez_landing_disarm_threshold);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_DISARM_THRESHOLD, "%d", currentPidProfile->landing_disarm_threshold);
 
 #ifdef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_ROLL_CENTER, "%d",        currentPidProfile->spa_center[FD_ROLL]);
@@ -1501,6 +1506,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_FEEDFORWARD_MAX_RATE_LIMIT, "%d", currentPidProfile->feedforward_max_rate_limit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_FEEDFORWARD, "%d",          currentPidProfile->pid[PID_LEVEL].F);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_FF_SMOOTHING_MS, "%d",      currentPidProfile->angle_feedforward_smoothing_ms);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_FEEDFORWARD_YAW_HOLD_GAIN, "%d",  currentPidProfile->feedforward_yaw_hold_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_FEEDFORWARD_YAW_HOLD_TIME, "%d",  currentPidProfile->feedforward_yaw_hold_time);
 #endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_LIMIT, "%d",                currentPidProfile->angle_limit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_EARTH_REF, "%d",            currentPidProfile->angle_earth_ref);
@@ -1794,8 +1801,10 @@ STATIC_UNIT_TESTED bool blackboxShouldLogIFrame(void)
 #ifdef USE_GPS
 STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
 {
-    if ((GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
-        || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0)) && isFieldEnabled(FIELD_SELECT(GPS))) {
+    if ((GPS_home_llh.lat != gpsHistory.GPS_home.lat
+         || GPS_home_llh.lon != gpsHistory.GPS_home.lon
+         || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0))
+        && isFieldEnabled(FIELD_SELECT(GPS))) {
         return true;
     }
     return false;
@@ -1852,8 +1861,8 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
                 writeGPSHomeFrame();
                 writeGPSFrame(currentTimeUs);
             } else if (gpsSol.numSat != gpsHistory.GPS_numSat
-                    || gpsSol.llh.lat != gpsHistory.GPS_coord[GPS_LATITUDE]
-                    || gpsSol.llh.lon != gpsHistory.GPS_coord[GPS_LONGITUDE]) {
+                       || gpsSol.llh.lat != gpsHistory.GPS_coord.lat
+                       || gpsSol.llh.lon != gpsHistory.GPS_coord.lon) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
                 writeGPSFrame(currentTimeUs);
             }

@@ -5,27 +5,58 @@
 CMSIS_DIR      := $(ROOT)/lib/main/AT32F43x/cmsis
 STDPERIPH_DIR   = $(ROOT)/lib/main/AT32F43x/drivers
 MIDDLEWARES_DIR = $(ROOT)/lib/main/AT32F43x/middlewares
-STDPERIPH_SRC   = $(wildcard $(STDPERIPH_DIR)/src/*.c) \
-                  $(wildcard $(MIDDLEWARES_DIR)/usb_drivers/src/*.c) \
-                  $(wildcard $(MIDDLEWARES_DIR)/usbd_class/msc/*.c)
-
-EXCLUDES        = at32f435_437_dvp.c \
-                  at32f435_437_can.c \
-                  at32f435_437_xmc.c \
-                  at32f435_437_emac
+STDPERIPH_SRC   = \
+        at32f435_437_acc.c \
+        at32f435_437_adc.c \
+        at32f435_437_can.c \
+        at32f435_437_crc.c \
+        at32f435_437_crm.c \
+        at32f435_437_dac.c \
+        at32f435_437_debug.c \
+        at32f435_437_dma.c \
+        at32f435_437_dvp.c \
+        at32f435_437_edma.c \
+        at32f435_437_emac.c \
+        at32f435_437_ertc.c \
+        at32f435_437_exint.c \
+        at32f435_437_flash.c \
+        at32f435_437_gpio.c \
+        at32f435_437_i2c.c \
+        at32f435_437_misc.c \
+        at32f435_437_pwc.c \
+        at32f435_437_qspi.c \
+        at32f435_437_scfg.c \
+        at32f435_437_sdio.c \
+        at32f435_437_spi.c \
+        at32f435_437_tmr.c \
+        at32f435_437_usart.c \
+        at32f435_437_usb.c \
+        at32f435_437_wdt.c \
+        at32f435_437_wwdt.c \
+        at32f435_437_xmc.c \
+        usb_drivers/src/usb_core.c \
+        usb_drivers/src/usbd_core.c \
+        usb_drivers/src/usbd_int.c \
+        usb_drivers/src/usbd_sdr.c \
+        usb_drivers/src/usbh_core.c \
+        usb_drivers/src/usbh_ctrl.c \
+        usb_drivers/src/usbh_int.c \
+        usbd_class/msc/msc_bot_scsi.c \
+        usbd_class/msc/msc_class.c \
+        usbd_class/msc/msc_desc.c
 
 STARTUP_SRC     = at32/startup_at32f435_437.s
-STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
-VPATH           := $(VPATH):$(ROOT)/lib/main/AT32F43x/cmsis/cm4/core_support:$(STDPERIPH_DIR)/src:$(STDPERIPH_DIR)/inc:$(SRC_DIR)/startup/at32
+VPATH           := $(VPATH):$(ROOT)/lib/main/AT32F43x/cmsis/cm4/core_support:$(STDPERIPH_DIR)/src:$(MIDDLEWARES_DIR):$(SRC_DIR)/startup/at32
 
 VCP_SRC =  \
-            $(ROOT)/lib/main/AT32F43x/middlewares/usbd_class/cdc/cdc_class.c \
-            $(ROOT)/lib/main/AT32F43x/middlewares/usbd_class/cdc/cdc_desc.c \
+            usbd_class/cdc/cdc_class.c \
+            usbd_class/cdc/cdc_desc.c \
             drivers/usb_io.c
 
-VCP_INCLUDES =     $(ROOT)/lib/main/AT32F43x/middlewares/usb_drivers/inc \
-                   $(ROOT)/lib/main/AT32F43x/middlewares/usbd_class/cdc
+VCP_INCLUDES = \
+        $(MIDDLEWARES_DIR)/usb_drivers/inc \
+        $(MIDDLEWARES_DIR)/usbd_class/cdc
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
