@@ -980,7 +980,9 @@ void setSatInfoMessageRate(uint8_t divisor)
     // enable satInfoMessage at 1:5 of the nav rate if configurator is connected
     if (isRxOnly()) {
         // can't configure GPS
-    } else if (gpsData.ubloxM9orAbove) {
+        return;
+    }
+    if (gpsData.ubloxM9orAbove) {
          ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_SAT_UART1, divisor);
     } else if (gpsData.ubloxM8orAbove) {
         ubloxSetMessageRate(CLASS_NAV, MSG_NAV_SAT, divisor);
