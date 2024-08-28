@@ -867,7 +867,13 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
-    switch(pidProfile->spa_mode[axis]){
+    spaMode_e mode = pidProfile->spa_mode[axis];
+
+    if (pidRuntime.axisInAngleMode[axis]) {
+        mode = SPA_MODE_OFF;
+    }
+
+    switch(mode) {
         case SPA_MODE_PID:
             pidData[axis].P *= pidRuntime.spa[axis];
             pidData[axis].D *= pidRuntime.spa[axis];

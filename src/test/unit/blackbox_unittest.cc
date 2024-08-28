@@ -348,7 +348,7 @@ uint8_t debugMode = 0;
 int16_t debug[DEBUG16_VALUE_COUNT];
 extern int32_t blackboxHeaderBudget;
 gpsSolutionData_t gpsSol;
-int32_t GPS_home[2];
+gpsLocation_t GPS_home_llh;
 
 gyro_t gyro;
 
