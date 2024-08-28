@@ -55,7 +55,6 @@
 #include "dshot.h"
 
 #define ERPM_PER_LSB                        (100.0f)
-#define MULTIPLE_RPM300_ERPM_FRACTION       (18u)
 
 void dshotInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
@@ -266,7 +265,7 @@ static bool dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, ds
             if (motorIndex < DEBUG16_VALUE_COUNT) {
                 // In this case two debug options to maximize logging info
                 dshotDebugHighByte = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS] << (sizeof(uint8_t) * 8);
-                DEBUG_SET(DEBUG_DSHOT_STATUS_N_ERPM_FRACTION_18, motorIndex, dshotDebugHighByte | ((*pDecoded) / MULTIPLE_RPM300_ERPM_FRACTION));
+                DEBUG_SET(DEBUG_DSHOT_STATUS_N_ERPM_FRACTION_18, motorIndex, dshotDebugHighByte | ((*pDecoded) / 18));
                 DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
             }
 
