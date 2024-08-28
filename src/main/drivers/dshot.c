@@ -198,7 +198,7 @@ static void dshotDecodeAndSetTelemetryValue(uint32_t *pDecoded, uint16_t *pHighB
     }
 }
 
-static void dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
+static bool dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t dshotDebugHighByte;
     const uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
@@ -273,9 +273,10 @@ static void dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, ds
 
             *pType = DSHOT_TELEMETRY_TYPE_eRPM;
             break;
-
         }
     }
+
+    return *pDecoded != DSHOT_TELEMETRY_INVALID;
 }
 
 static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint32_t value)
@@ -310,9 +311,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
         dshotTelemetryType_t type;
         uint32_t value;
 
-        dshotDecodeTelemetryValue(k, &value, &type);
-
-        if (value != DSHOT_TELEMETRY_INVALID) {
+        if (dshotDecodeTelemetryValue(k, &value, &type)) {
             dshotUpdateTelemetryData(k, type, value);
 
             if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
