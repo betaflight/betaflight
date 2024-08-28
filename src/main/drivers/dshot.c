@@ -54,7 +54,7 @@
 
 #include "dshot.h"
 
-#define ERPM_PER_LSB                        (100.0f)
+#define ERPM_PER_LSB                        100.0f
 
 void dshotInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
