@@ -409,7 +409,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
     }
 
     sbufWriteString(dst, flightMode);
-    if (!ARMING_FLAG(ARMED)) {
+    if (!ARMING_FLAG(ARMED) && !FLIGHT_MODE(FAILSAFE_MODE)) {
         sbufWriteU8(dst, isArmingDisabled() ? '!' : '*');
     }
     sbufWriteU8(dst, '\0');     // zero-terminate string
