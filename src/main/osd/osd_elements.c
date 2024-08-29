@@ -280,20 +280,15 @@ static int getEscRpmFreq(int i)
 
 static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms_t *element)
 {
-    int x = element->elemPosX;
-    int y = element->elemPosY;
     float averagedRpm = 0;
     
     for (int i=0; i < getMotorCount(); i++) {
         averagedRpm += (*escFnPtr)(i);
     }
     averagedRpm = averagedRpm / ((float) getMotorCount());
-    const int intRpm = MIN((int)averagedRpm,99999);
-    char rpmStr[6];
-    const int len = tfp_sprintf(rpmStr, "%d", intRpm);
-    rpmStr[len] = '\0';
-    osdDisplayWrite(element, x, y, DISPLAYPORT_SEVERITY_NORMAL, rpmStr);
-    element->drawElement = false;
+    averagedRpm /= 1000.0f;
+
+    osdPrintFloat(element->buff, SYM_NONE, averagedRpm, "", 1, true, SYM_NONE);
 }
 #endif
 
