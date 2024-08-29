@@ -123,6 +123,7 @@ typedef enum {
 #ifdef USE_TPA_MODE
     TABLE_TPA_MODE,
 #endif
+    TABLE_SPA_MODE,
 #ifdef USE_LED_STRIP
     TABLE_LED_PROFILE,
     TABLE_LEDSTRIP_COLOR,
@@ -143,7 +144,9 @@ typedef enum {
 #endif
 #ifdef USE_RX_EXPRESSLRS
     TABLE_FREQ_DOMAIN,
-    TABLE_SWITCH_MODE,
+#endif
+#ifdef USE_ADVANCED_TPA
+    TABLE_TPA_CURVE_TYPE,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
@@ -224,6 +227,12 @@ typedef union {
     int32_t d32Max;                           // used for MODE_DIRECT with VAR_INT32
 } cliValueConfig_t;
 
+#ifdef __APPLE__
+#define PTR_PACKING
+#else
+#define PTR_PACKING __attribute__((packed))
+#endif
+
 typedef struct clivalue_s {
     const char *name;
     const uint8_t type;                       // see cliValueFlag_e
@@ -231,7 +240,7 @@ typedef struct clivalue_s {
 
     pgn_t pgn;
     uint16_t offset;
-} __attribute__((packed)) clivalue_t;
+} PTR_PACKING clivalue_t;
 
 
 extern const lookupTableEntry_t lookupTables[];
@@ -269,4 +278,8 @@ extern const char * const lookupTableOffOn[];
 
 extern const char * const lookupTableSimplifiedTuningPidsMode[];
 
+extern const char * const lookupTableMixerType[];
+
 extern const char * const lookupTableCMSMenuBackgroundType[];
+
+extern const char * const lookupTableThrottleLimitType[];

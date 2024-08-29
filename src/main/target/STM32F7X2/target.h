@@ -20,9 +20,13 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "S7X2"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32F7x2"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -70,6 +74,13 @@
 
 #define USE_USB_DETECT
 
+#define USE_ESCSERIAL
+
 #define USE_ADC
+
 #define USE_EXTI
+
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
+
+// ITCM is in short supply so excluding fast code where preferred, not required.
+#define FAST_CODE_PREF

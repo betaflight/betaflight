@@ -21,9 +21,13 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER         "S446"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING             "Betaflight STM32F446"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -57,6 +61,8 @@
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
+
+#define USE_DSHOT_BITBAND
 
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI

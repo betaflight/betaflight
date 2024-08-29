@@ -85,7 +85,7 @@ extern "C" {
     } dsmReceiver_t;
 
     extern dsmReceiver_t dsmReceiver;
-    extern bool isError = false;
+    bool isError = false;
 
     static const dsmReceiver_t empty = dsmReceiver_t();
     static rxRuntimeState_t config = rxRuntimeState_t();

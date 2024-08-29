@@ -42,6 +42,9 @@
 
 #include "drivers/dma.h"
 #include "drivers/io.h"
+#include "drivers/time.h"
+
+#include "io/ledstrip.h"
 
 #include "light_ws2811strip.h"
 
@@ -136,10 +139,12 @@ void ws2811LedStripEnable(void)
 
         const hsvColor_t hsv_black = { 0, 0, 0 };
         setStripColor(&hsv_black);
-        // RGB or GRB ordering doesn't matter for black, use 4-channel LED configuraton to make sure all channels are zero
-        ws2811UpdateStrip(LED_GRBW, 100);
 
         ws2811Initialised = true;
+
+        // RGB or GRB ordering doesn't matter for black, use 4-channel LED configuraton to make sure all channels are zero
+        // Multiple calls may be required as normally broken into multiple parts
+        while (!ws2811UpdateStrip(LED_GRBW, 100));
     }
 }
 
@@ -176,8 +181,8 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbCol
     }
 
     unsigned dmaBufferOffset = 0;
-    for (int index = bits_per_led-1; index >= 0; index--) {
-        ledStripDMABuffer[ledIndex * bits_per_led + dmaBufferOffset++] = (packed_colour & (1 << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
+    for (int index = bits_per_led - 1; index >= 0; index--) {
+        ledStripDMABuffer[ledIndex * bits_per_led + dmaBufferOffset++] = (packed_colour & (1U << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
     }
 }
 
@@ -185,15 +190,16 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbCol
  * This method is non-blocking unless an existing LED update is in progress.
  * it does not wait until all the LEDs have been updated, that happens in the background.
  */
-void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
+bool ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
 {
+    static uint8_t ledIndex = 0;
+    timeUs_t startTime = micros();
     // don't wait - risk of infinite block, just get an update next time round
     if (!ws2811Initialised || ws2811LedDataTransferInProgress) {
         schedulerIgnoreTaskStateTime();
-        return;
+        return false;
     }
 
-    unsigned ledIndex = 0;              // reset led index
 
     // fill transmit buffer with correct compare values to achieve
     // correct pulse widths according to color values
@@ -207,7 +213,12 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
         rgbColor24bpp_t *rgb24 = hsvToRgb24(&scaledLed);
 
         updateLEDDMABuffer(ledFormat, rgb24, ledIndex++);
+
+        if (cmpTimeUs(micros(), startTime) > LED_TARGET_UPDATE_US) {
+            return false;
+        }
     }
+    ledIndex = 0;
     needsFullRefresh = false;
 
 #ifdef USE_LED_STRIP_CACHE_MGMT
@@ -216,6 +227,8 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
 
     ws2811LedDataTransferInProgress = true;
     ws2811LedStripDMAEnable();
+
+    return true;
 }
 
 #endif

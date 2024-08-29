@@ -98,16 +98,19 @@ typedef struct meanAccumulator_s {
 float nullFilterApply(filter_t *filter, float input);
 
 float pt1FilterGain(float f_cut, float dT);
+float pt1FilterGainFromDelay(float delay, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
 void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 
 float pt2FilterGain(float f_cut, float dT);
+float pt2FilterGainFromDelay(float delay, float dT);
 void pt2FilterInit(pt2Filter_t *filter, float k);
 void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k);
 float pt2FilterApply(pt2Filter_t *filter, float input);
 
 float pt3FilterGain(float f_cut, float dT);
+float pt3FilterGainFromDelay(float delay, float dT);
 void pt3FilterInit(pt3Filter_t *filter, float k);
 void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k);
 float pt3FilterApply(pt3Filter_t *filter, float input);

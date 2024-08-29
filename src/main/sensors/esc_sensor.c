@@ -18,6 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -271,7 +272,7 @@ static uint8_t decodeEscFrame(void)
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
         if (escSensorMotor < 4) {
-            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, erpmToRpm(escSensorData[escSensorMotor].rpm) / 10); // output actual rpm/10 to fit in 16bit signed.
+            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, lrintf(erpmToRpm(escSensorData[escSensorMotor].rpm) / 10.0f)); // output actual rpm/10 to fit in 16bit signed.
             DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
         }
     } else {

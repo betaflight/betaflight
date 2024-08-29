@@ -92,12 +92,6 @@
                                                          DMA2_DTERR7_FLAG)
 
 /**
-  * @brief i2c transmission status
-  */
-#define I2C_START                        0
-#define I2C_END                          1
-
-/**
   * @brief  initializes peripherals used by the i2c.
   * @param  none
   * @retval none
@@ -156,26 +150,6 @@ void i2c_reset_ctrl2_register(i2c_handle_type* hi2c)
   hi2c->i2cx->ctrl2_bit.cnt     = 0;
   hi2c->i2cx->ctrl2_bit.rlden   = 0;
   hi2c->i2cx->ctrl2_bit.dir     = 0;
-}
-
-/**
-  * @brief  wait for the transfer to end.
-  * @param  hi2c: the handle points to the operation information.
-  * @param  timeout: maximum waiting time.
-  * @retval i2c status.
-  */
-i2c_status_type i2c_wait_end(i2c_handle_type* hi2c, uint32_t timeout)
-{
-  while(hi2c->status != I2C_END)
-  {
-    /* check timeout */
-    if((timeout--) == 0)
-    {
-      hi2c->error_code = I2C_ERR_TIMEOUT;
-    }
-  }
-
-  return hi2c->error_code;
 }
 
 /**
@@ -272,6 +246,14 @@ i2c_status_type i2c_wait_flag(i2c_handle_type* hi2c, uint32_t flag, uint32_t eve
   return hi2c->error_code;
 }
 
+// Initialise the data buffer
+static void i2c_set_buffer(i2c_handle_type* hi2c, i2cStep_t step, uint8_t *buf, uint16_t len)
+{
+	  hi2c->step = step;
+	  hi2c->pbuff[step] = buf;
+	  hi2c->pcount[step] = len;
+}
+
 /**
   * @brief  dma transfer cofiguration.
   * @param  hi2c: the handle points to the operation information.
@@ -315,7 +297,14 @@ void i2c_dma_config(i2c_handle_type* hi2c, dma_channel_type* dma_channel, uint8_
   */
 void i2c_start_transfer(i2c_handle_type* hi2c, uint16_t address, i2c_start_mode_type start)
 {
-  if (hi2c->pcount > MAX_TRANSFER_CNT)
+  uint16_t totalLen = hi2c->pcount[hi2c->step];
+
+  // Writes are done in a continuous block
+  if ((hi2c->step == I2C_STEP_REG) && (hi2c->mode == I2C_INT_MA_TX)) {
+    totalLen = hi2c->pcount[I2C_STEP_REG] + hi2c->pcount[I2C_STEP_DATA];
+  }
+
+  if (totalLen > MAX_TRANSFER_CNT)
   {
     hi2c->psize = MAX_TRANSFER_CNT;
 
@@ -323,9 +312,18 @@ void i2c_start_transfer(i2c_handle_type* hi2c, uint16_t address, i2c_start_mode_
   }
   else
   {
-    hi2c->psize = hi2c->pcount;
+    hi2c->psize = totalLen;
 
-    i2c_transmit_set(hi2c->i2cx, address, hi2c->psize, I2C_AUTO_STOP_MODE, start);
+    if ((hi2c->step == I2C_STEP_DATA) && (hi2c->mode == I2C_INT_MA_TX)) {
+      // Don't send a stop as a restart will be necessary to advance to I2C_STEP_DATA
+      i2c_transmit_set(hi2c->i2cx, address, hi2c->psize, I2C_RELOAD_MODE, start);
+    } else {
+      if ((hi2c->mode == I2C_INT_MA_RX) || (hi2c->mode == I2C_INT_MA_TX)) {
+        i2c_transmit_set(hi2c->i2cx, address, hi2c->psize, I2C_SOFT_STOP_MODE, start);
+      } else {
+        i2c_transmit_set(hi2c->i2cx, address, hi2c->psize, I2C_AUTO_STOP_MODE, start);
+      }
+    }
   }
 }
 
@@ -342,21 +340,21 @@ void i2c_start_transfer(i2c_handle_type* hi2c, uint16_t address, i2c_start_mode_
   */
 void i2c_start_transfer_dma(i2c_handle_type* hi2c, dma_channel_type* dma_channelx, uint16_t address, i2c_start_mode_type start)
 {
-  if (hi2c->pcount > MAX_TRANSFER_CNT)
+  if (hi2c->pcount[hi2c->step] > MAX_TRANSFER_CNT)
   {
     hi2c->psize = MAX_TRANSFER_CNT;
 
     /* config dma */
-    i2c_dma_config(hi2c, dma_channelx, hi2c->pbuff, hi2c->psize);
+    i2c_dma_config(hi2c, dma_channelx, hi2c->pbuff[hi2c->step], hi2c->psize);
 
     i2c_transmit_set(hi2c->i2cx, address, hi2c->psize, I2C_RELOAD_MODE, start);
   }
   else
   {
-    hi2c->psize = hi2c->pcount;
+    hi2c->psize = hi2c->pcount[hi2c->step];
 
     /* config dma */
-    i2c_dma_config(hi2c, dma_channelx, hi2c->pbuff, hi2c->psize);
+    i2c_dma_config(hi2c, dma_channelx, hi2c->pbuff[hi2c->step], hi2c->psize);
 
     i2c_transmit_set(hi2c->i2cx, address, hi2c->psize, I2C_AUTO_STOP_MODE, start);
   }
@@ -374,8 +372,8 @@ void i2c_start_transfer_dma(i2c_handle_type* hi2c, dma_channel_type* dma_channel
 i2c_status_type i2c_master_transmit(i2c_handle_type* hi2c, uint16_t address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -389,7 +387,7 @@ i2c_status_type i2c_master_transmit(i2c_handle_type* hi2c, uint16_t address, uin
   /* start transfer */
   i2c_start_transfer(hi2c, address, I2C_GEN_START_WRITE);
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the tdis flag to be set */
     if(i2c_wait_flag(hi2c, I2C_TDIS_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -399,11 +397,11 @@ i2c_status_type i2c_master_transmit(i2c_handle_type* hi2c, uint16_t address, uin
     }
 
     /* send data */
-    i2c_data_send(hi2c->i2cx, *hi2c->pbuff++);
+    i2c_data_send(hi2c->i2cx, *hi2c->pbuff[hi2c->step]++);
     hi2c->psize--;
-    hi2c->pcount--;
+    hi2c->pcount[hi2c->step]--;
 
-    if ((hi2c->psize == 0) && (hi2c->pcount != 0))
+    if ((hi2c->psize == 0) && (hi2c->pcount[hi2c->step] != 0))
     {
       /* wait for the tcrld flag to be set  */
       if (i2c_wait_flag(hi2c, I2C_TCRLD_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -444,8 +442,8 @@ i2c_status_type i2c_master_transmit(i2c_handle_type* hi2c, uint16_t address, uin
 i2c_status_type i2c_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -469,7 +467,7 @@ i2c_status_type i2c_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, uint16_
   /* clear addr flag */
   i2c_flag_clear(hi2c->i2cx, I2C_ADDRF_FLAG);
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the rdbf flag to be set  */
     if(i2c_wait_flag(hi2c, I2C_RDBF_FLAG, I2C_EVENT_CHECK_STOP, timeout) != I2C_OK)
@@ -481,8 +479,8 @@ i2c_status_type i2c_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, uint16_
       if (i2c_flag_get(hi2c->i2cx, I2C_RDBF_FLAG) == SET)
       {
         /* read data */
-        (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-        hi2c->pcount--;
+        (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+        hi2c->pcount[hi2c->step]--;
       }
 
       hi2c->error_code = I2C_ERR_STEP_4;
@@ -490,8 +488,8 @@ i2c_status_type i2c_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, uint16_
     }
 
     /* read data */
-    (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-    hi2c->pcount--;
+    (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+    hi2c->pcount[hi2c->step]--;
   }
 
   /* wait for the stop flag to be set */
@@ -532,8 +530,8 @@ i2c_status_type i2c_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, uint16_
 i2c_status_type i2c_master_receive(i2c_handle_type* hi2c, uint16_t address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -547,7 +545,7 @@ i2c_status_type i2c_master_receive(i2c_handle_type* hi2c, uint16_t address, uint
   /* start transfer */
   i2c_start_transfer(hi2c, address, I2C_GEN_START_READ);
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the rdbf flag to be set  */
     if(i2c_wait_flag(hi2c, I2C_RDBF_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -557,11 +555,11 @@ i2c_status_type i2c_master_receive(i2c_handle_type* hi2c, uint16_t address, uint
     }
 
     /* read data */
-    (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-    hi2c->pcount--;
+    (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+    hi2c->pcount[hi2c->step]--;
     hi2c->psize--;
 
-    if ((hi2c->psize == 0) && (hi2c->pcount != 0))
+    if ((hi2c->psize == 0) && (hi2c->pcount[hi2c->step] != 0))
     {
       /* wait for the tcrld flag to be set  */
       if (i2c_wait_flag(hi2c, I2C_TCRLD_FLAG, I2C_EVENT_CHECK_NONE, timeout) != I2C_OK)
@@ -602,8 +600,8 @@ i2c_status_type i2c_master_receive(i2c_handle_type* hi2c, uint16_t address, uint
 i2c_status_type i2c_slave_transmit(i2c_handle_type* hi2c, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -646,7 +644,7 @@ i2c_status_type i2c_slave_transmit(i2c_handle_type* hi2c, uint8_t* pdata, uint16
     i2c_flag_clear(hi2c->i2cx, I2C_ADDRF_FLAG);
   }
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the tdis flag to be set */
     if(i2c_wait_flag(hi2c, I2C_TDIS_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -659,8 +657,8 @@ i2c_status_type i2c_slave_transmit(i2c_handle_type* hi2c, uint8_t* pdata, uint16
     }
 
     /* send data */
-    i2c_data_send(hi2c->i2cx, *hi2c->pbuff++);
-    hi2c->pcount--;
+    i2c_data_send(hi2c->i2cx, *hi2c->pbuff[hi2c->step]++);
+    hi2c->pcount[hi2c->step]--;
   }
 
   /* wait for the ackfail flag to be set */
@@ -715,10 +713,10 @@ i2c_status_type i2c_master_transmit_int(i2c_handle_type* hi2c, uint16_t address,
 {
   /* initialization parameters */
   hi2c->mode   = I2C_INT_MA_TX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -750,10 +748,10 @@ i2c_status_type i2c_slave_receive_int(i2c_handle_type* hi2c, uint8_t* pdata, uin
 {
   /* initialization parameters */
   hi2c->mode   = I2C_INT_SLA_RX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -785,10 +783,10 @@ i2c_status_type i2c_master_receive_int(i2c_handle_type* hi2c, uint16_t address, 
 {
   /* initialization parameters */
   hi2c->mode   = I2C_INT_MA_RX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -819,10 +817,10 @@ i2c_status_type i2c_slave_transmit_int(i2c_handle_type* hi2c, uint8_t* pdata, ui
 {
   /* initialization parameters */
   hi2c->mode   = I2C_INT_SLA_TX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -856,10 +854,10 @@ i2c_status_type i2c_master_transmit_dma(i2c_handle_type* hi2c, uint16_t address,
 {
   /* initialization parameters */
   hi2c->mode   = I2C_DMA_MA_TX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -896,10 +894,10 @@ i2c_status_type i2c_slave_receive_dma(i2c_handle_type* hi2c, uint8_t* pdata, uin
 {
   /* initialization parameters */
   hi2c->mode   = I2C_DMA_SLA_RX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -912,7 +910,7 @@ i2c_status_type i2c_slave_receive_dma(i2c_handle_type* hi2c, uint8_t* pdata, uin
       i2c_dma_enable(hi2c->i2cx, I2C_DMA_REQUEST_RX, FALSE);
 
       /* config dma */
-      i2c_dma_config(hi2c, hi2c->dma_rx_channel, hi2c->pbuff, size);
+      i2c_dma_config(hi2c, hi2c->dma_rx_channel, hi2c->pbuff[hi2c->step], size);
 
       /* enable acknowledge */
       i2c_ack_enable(hi2c->i2cx, TRUE);
@@ -940,10 +938,10 @@ i2c_status_type i2c_master_receive_dma(i2c_handle_type* hi2c, uint16_t address, 
 {
   /* initialization parameters */
   hi2c->mode   = I2C_DMA_MA_RX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -980,10 +978,10 @@ i2c_status_type i2c_slave_transmit_dma(i2c_handle_type* hi2c, uint8_t* pdata, ui
 {
   /* initialization parameters */
   hi2c->mode   = I2C_DMA_SLA_TX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -996,7 +994,7 @@ i2c_status_type i2c_slave_transmit_dma(i2c_handle_type* hi2c, uint8_t* pdata, ui
       i2c_dma_enable(hi2c->i2cx, I2C_DMA_REQUEST_TX, FALSE);
 
       /* config dma */
-      i2c_dma_config(hi2c, hi2c->dma_tx_channel, hi2c->pbuff, size);
+      i2c_dma_config(hi2c, hi2c->dma_tx_channel, hi2c->pbuff[hi2c->step], size);
 
       /* enable acknowledge */
       i2c_ack_enable(hi2c->i2cx, TRUE);
@@ -1069,8 +1067,10 @@ i2c_status_type i2c_memory_address_send(i2c_handle_type* hi2c, i2c_mem_address_w
 i2c_status_type i2c_memory_write(i2c_handle_type* hi2c, i2c_mem_address_width_type mem_address_width, uint16_t address, uint16_t mem_address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size + mem_address_width;
+  hi2c->mode   = I2C_MA_TX;
+
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size + mem_address_width);
 
   hi2c->error_code = I2C_OK;
 
@@ -1099,9 +1099,9 @@ i2c_status_type i2c_memory_write(i2c_handle_type* hi2c, i2c_mem_address_width_ty
   }
 
   hi2c->psize -= mem_address_width;
-  hi2c->pcount -= mem_address_width;
+  hi2c->pcount[hi2c->step] -= mem_address_width;
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the tdis flag to be set */
     if(i2c_wait_flag(hi2c, I2C_TDIS_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -1111,11 +1111,11 @@ i2c_status_type i2c_memory_write(i2c_handle_type* hi2c, i2c_mem_address_width_ty
     }
 
     /* send data */
-    i2c_data_send(hi2c->i2cx, *hi2c->pbuff++);
+    i2c_data_send(hi2c->i2cx, *hi2c->pbuff[hi2c->step]++);
     hi2c->psize--;
-    hi2c->pcount--;
+    hi2c->pcount[hi2c->step]--;
 
-    if ((hi2c->psize == 0) && (hi2c->pcount != 0))
+    if ((hi2c->psize == 0) && (hi2c->pcount[hi2c->step] != 0))
     {
       /* wait for the tcrld flag to be set  */
       if (i2c_wait_flag(hi2c, I2C_TCRLD_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -1162,8 +1162,10 @@ i2c_status_type i2c_memory_write(i2c_handle_type* hi2c, i2c_mem_address_width_ty
 i2c_status_type i2c_memory_read(i2c_handle_type* hi2c, i2c_mem_address_width_type mem_address_width, uint16_t address, uint16_t mem_address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  hi2c->mode   = I2C_MA_RX;
+
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -1201,7 +1203,7 @@ i2c_status_type i2c_memory_read(i2c_handle_type* hi2c, i2c_mem_address_width_typ
   /* start transfer */
   i2c_start_transfer(hi2c, address, I2C_GEN_START_READ);
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the rdbf flag to be set  */
     if (i2c_wait_flag(hi2c, I2C_RDBF_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -1210,11 +1212,11 @@ i2c_status_type i2c_memory_read(i2c_handle_type* hi2c, i2c_mem_address_width_typ
     }
 
     /* read data */
-    (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-    hi2c->pcount--;
+    (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+    hi2c->pcount[hi2c->step]--;
     hi2c->psize--;
 
-    if ((hi2c->psize == 0) && (hi2c->pcount != 0))
+    if ((hi2c->psize == 0) && (hi2c->pcount[hi2c->step] != 0))
     {
       /* wait for the tcrld flag to be set  */
       if (i2c_wait_flag(hi2c, I2C_TCRLD_FLAG, I2C_EVENT_CHECK_NONE, timeout) != I2C_OK)
@@ -1260,41 +1262,39 @@ i2c_status_type i2c_memory_read(i2c_handle_type* hi2c, i2c_mem_address_width_typ
   */
 i2c_status_type i2c_memory_write_int(i2c_handle_type* hi2c, i2c_mem_address_width_type mem_address_width, uint16_t address, uint16_t mem_address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
-  /* initialization parameters */
-  hi2c->mode   = I2C_INT_MA_TX;
-  hi2c->status = I2C_START;
+  if (mem_address_width == I2C_MEM_ADDR_WIDIH_8) {
+	  // Note that this works for little endian without adjusting the address
+	  hi2c->pcount[I2C_STEP_REG] = 1;
+	  // address is on the stack and we need a copy on the heap for the interrupt processing to use
+	  hi2c->reg = mem_address;
+  } else {
+	  hi2c->pcount[I2C_STEP_REG] = 2;
+	  // I2C address is big endian, so swap the address bytes
+	  hi2c->reg = ((mem_address >> 8) & 0xff) | ((mem_address & 0xff) << 8);
+  }
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size + mem_address_width;
+  hi2c->step = I2C_STEP_REG;
+  hi2c->pbuff[I2C_STEP_REG] = (uint8_t *)&hi2c->reg;
+
+  hi2c->pbuff[I2C_STEP_DATA] = pdata;
+  hi2c->pcount[I2C_STEP_DATA] = size;
 
   hi2c->error_code = I2C_OK;
 
   /* wait for the busy flag to be reset */
-  if (i2c_wait_flag(hi2c, I2C_BUSYF_FLAG, I2C_EVENT_CHECK_NONE, timeout) != I2C_OK)
+  if(i2c_wait_flag(hi2c, I2C_BUSYF_FLAG, I2C_EVENT_CHECK_NONE, timeout) != I2C_OK)
   {
-      hi2c->error_code = I2C_ERR_STEP_1;
-      return hi2c->error_code;
+	  hi2c->error_code = I2C_ERR_STEP_1;
+	  return hi2c->error_code;
   }
+
+  hi2c->state  = I2C_START;
+
+  /* initialization parameters */
+  hi2c->mode = I2C_INT_MA_TX;
 
   /* start transfer */
   i2c_start_transfer(hi2c, address, I2C_GEN_START_WRITE);
-
-  /* wait for the tdis flag to be set */
-  if(i2c_wait_flag(hi2c, I2C_TDIS_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
-  {
-      hi2c->error_code = I2C_ERR_STEP_2;
-      return hi2c->error_code;
-  }
-
-  /* send memory address */
-  if(i2c_memory_address_send(hi2c, mem_address_width, mem_address, timeout) != I2C_OK)
-  {
-      hi2c->error_code = I2C_ERR_STEP_3;
-      return hi2c->error_code;
-  }
-  
-  hi2c->psize--;
-  hi2c->pcount--;
 
   /* enable interrupt */
   i2c_interrupt_enable(hi2c->i2cx, I2C_ERR_INT | I2C_TDC_INT | I2C_STOP_INT | I2C_ACKFIAL_INT | I2C_TD_INT, TRUE);
@@ -1318,12 +1318,22 @@ i2c_status_type i2c_memory_write_int(i2c_handle_type* hi2c, i2c_mem_address_widt
   */
 i2c_status_type i2c_memory_read_int(i2c_handle_type* hi2c, i2c_mem_address_width_type mem_address_width, uint16_t address, uint16_t mem_address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
-  /* initialization parameters */
-  hi2c->mode   = I2C_INT_MA_RX;
-  hi2c->status = I2C_START;
+  if (mem_address_width == I2C_MEM_ADDR_WIDIH_8) {
+	  // Note that this works for little endian without adjusting the address
+	  hi2c->pcount[I2C_STEP_REG] = 1;
+	  // address is on the stack and we need a copy on the heap for the interrupt processing to use
+	  hi2c->reg = mem_address;
+  } else {
+	  hi2c->pcount[I2C_STEP_REG] = 2;
+	  // I2C address is big endian, so swap the address bytes
+	  hi2c->reg = ((mem_address >> 8) & 0xff) | ((mem_address & 0xff) << 8);
+  }
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  hi2c->step = I2C_STEP_REG;
+  hi2c->pbuff[I2C_STEP_REG] = (uint8_t *)&hi2c->reg;
+
+  hi2c->pbuff[I2C_STEP_DATA] = pdata;
+  hi2c->pcount[I2C_STEP_DATA] = size;
 
   hi2c->error_code = I2C_OK;
 
@@ -1334,35 +1344,16 @@ i2c_status_type i2c_memory_read_int(i2c_handle_type* hi2c, i2c_mem_address_width
       return hi2c->error_code;
   }
 
-  /* start transfer */
-  i2c_transmit_set(hi2c->i2cx, address, mem_address_width, I2C_SOFT_STOP_MODE, I2C_GEN_START_WRITE);
+  hi2c->state  = I2C_START;
 
-  /* wait for the tdis flag to be set */
-  if(i2c_wait_flag(hi2c, I2C_TDIS_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
-  {
-      hi2c->error_code = I2C_ERR_STEP_2;
-      return hi2c->error_code;
-  }
+  /* initialization parameters */
+  hi2c->mode   = I2C_INT_MA_RX;
 
-  /* send memory address */
-  if(i2c_memory_address_send(hi2c, mem_address_width, mem_address, timeout) != I2C_OK)
-  {
-      hi2c->error_code = I2C_ERR_STEP_3;
-      return hi2c->error_code;
-  }
-
-  /* wait for the tdc flag to be set */
-  if (i2c_wait_flag(hi2c, I2C_TDC_FLAG, I2C_EVENT_CHECK_NONE, timeout) != I2C_OK)
-  {
-      hi2c->error_code = I2C_ERR_STEP_4;
-      return hi2c->error_code;
-  }
-
-  /* start transfer */
-  i2c_start_transfer(hi2c, address, I2C_GEN_START_READ);
+  /* start transfer, initially a write with the register number */
+  i2c_start_transfer(hi2c, address, I2C_GEN_START_WRITE);
 
   /* enable i2c interrupt */
-  i2c_interrupt_enable(hi2c->i2cx, I2C_ERR_INT | I2C_TDC_INT | I2C_STOP_INT | I2C_ACKFIAL_INT | I2C_RD_INT, TRUE);
+  i2c_interrupt_enable(hi2c->i2cx, I2C_ERR_INT | I2C_TDC_INT | I2C_STOP_INT | I2C_ACKFIAL_INT | I2C_TD_INT | I2C_RD_INT, TRUE);
 
   return hi2c->error_code;
 }
@@ -1385,10 +1376,10 @@ i2c_status_type i2c_memory_write_dma(i2c_handle_type* hi2c, i2c_mem_address_widt
 {
   /* initialization parameters */
   hi2c->mode   = I2C_DMA_MA_TX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -1456,10 +1447,10 @@ i2c_status_type i2c_memory_read_dma(i2c_handle_type* hi2c, i2c_mem_address_width
 {
   /* initialization parameters */
   hi2c->mode   = I2C_DMA_MA_RX;
-  hi2c->status = I2C_START;
+  hi2c->state = I2C_START;
 
-  hi2c->pbuff  = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -1521,8 +1512,8 @@ i2c_status_type i2c_memory_read_dma(i2c_handle_type* hi2c, i2c_mem_address_width
 i2c_status_type i2c_smbus_master_transmit(i2c_handle_type* hi2c, uint16_t address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -1542,9 +1533,9 @@ i2c_status_type i2c_smbus_master_transmit(i2c_handle_type* hi2c, uint16_t addres
   /* start transfer */
   i2c_start_transfer(hi2c, address, I2C_GEN_START_WRITE);
 
-  hi2c->pcount--;
+  hi2c->pcount[hi2c->step]--;
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the tdis flag to be set */
     if(i2c_wait_flag(hi2c, I2C_TDIS_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -1554,11 +1545,11 @@ i2c_status_type i2c_smbus_master_transmit(i2c_handle_type* hi2c, uint16_t addres
     }
 
     /* send data */
-    i2c_data_send(hi2c->i2cx, *hi2c->pbuff++);
+    i2c_data_send(hi2c->i2cx, *hi2c->pbuff[hi2c->step]++);
     hi2c->psize--;
-    hi2c->pcount--;
+    hi2c->pcount[hi2c->step]--;
 
-    if ((hi2c->psize == 0) && (hi2c->pcount != 0))
+    if ((hi2c->psize == 0) && (hi2c->pcount[hi2c->step] != 0))
     {
       /* wait for the tcrld flag to be set  */
       if (i2c_wait_flag(hi2c, I2C_TCRLD_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -1599,8 +1590,8 @@ i2c_status_type i2c_smbus_master_transmit(i2c_handle_type* hi2c, uint16_t addres
 i2c_status_type i2c_smbus_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -1624,12 +1615,12 @@ i2c_status_type i2c_smbus_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, u
   i2c_pec_transmit_enable(hi2c->i2cx, TRUE);
 
   /* configure the number of bytes to be transmitted */
-  i2c_cnt_set(hi2c->i2cx, hi2c->pcount);
+  i2c_cnt_set(hi2c->i2cx, hi2c->pcount[hi2c->step]);
 
   /* clear addr flag */
   i2c_flag_clear(hi2c->i2cx, I2C_ADDRF_FLAG);
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the rdbf flag to be set  */
     if(i2c_wait_flag(hi2c, I2C_RDBF_FLAG, I2C_EVENT_CHECK_STOP, timeout) != I2C_OK)
@@ -1641,8 +1632,8 @@ i2c_status_type i2c_smbus_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, u
       if (i2c_flag_get(hi2c->i2cx, I2C_RDBF_FLAG) == SET)
       {
         /* read data */
-        (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-        hi2c->pcount--;
+        (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+        hi2c->pcount[hi2c->step]--;
       }
 
       hi2c->error_code = I2C_ERR_STEP_3;
@@ -1650,8 +1641,8 @@ i2c_status_type i2c_smbus_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, u
     }
 
     /* read data */
-    (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-    hi2c->pcount--;
+    (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+    hi2c->pcount[hi2c->step]--;
   }
 
   /* wait for the stop flag to be set */
@@ -1695,8 +1686,8 @@ i2c_status_type i2c_smbus_slave_receive(i2c_handle_type* hi2c, uint8_t* pdata, u
 i2c_status_type i2c_smbus_master_receive(i2c_handle_type* hi2c, uint16_t address, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -1716,7 +1707,7 @@ i2c_status_type i2c_smbus_master_receive(i2c_handle_type* hi2c, uint16_t address
   /* start transfer */
   i2c_start_transfer(hi2c, address, I2C_GEN_START_READ);
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the rdbf flag to be set  */
     if(i2c_wait_flag(hi2c, I2C_RDBF_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -1726,11 +1717,11 @@ i2c_status_type i2c_smbus_master_receive(i2c_handle_type* hi2c, uint16_t address
     }
 
     /* read data */
-    (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-    hi2c->pcount--;
+    (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+    hi2c->pcount[hi2c->step]--;
     hi2c->psize--;
 
-    if ((hi2c->psize == 0) && (hi2c->pcount != 0))
+    if ((hi2c->psize == 0) && (hi2c->pcount[hi2c->step] != 0))
     {
       /* wait for the tcrld flag to be set  */
       if (i2c_wait_flag(hi2c, I2C_TCRLD_FLAG, I2C_EVENT_CHECK_NONE, timeout) != I2C_OK)
@@ -1771,8 +1762,8 @@ i2c_status_type i2c_smbus_master_receive(i2c_handle_type* hi2c, uint16_t address
 i2c_status_type i2c_smbus_slave_transmit(i2c_handle_type* hi2c, uint8_t* pdata, uint16_t size, uint32_t timeout)
 {
   /* initialization parameters */
-  hi2c->pbuff = pdata;
-  hi2c->pcount = size;
+  // Initialise the data buffer
+  i2c_set_buffer(hi2c, I2C_STEP_DATA, pdata, size);
 
   hi2c->error_code = I2C_OK;
 
@@ -1801,7 +1792,7 @@ i2c_status_type i2c_smbus_slave_transmit(i2c_handle_type* hi2c, uint8_t* pdata, 
     i2c_pec_transmit_enable(hi2c->i2cx, TRUE);
 
     /* configure the number of bytes to be transmitted */
-    i2c_cnt_set(hi2c->i2cx, hi2c->pcount);
+    i2c_cnt_set(hi2c->i2cx, hi2c->pcount[hi2c->step]);
   }
 
   /* clear addr flag */
@@ -1824,15 +1815,15 @@ i2c_status_type i2c_smbus_slave_transmit(i2c_handle_type* hi2c, uint8_t* pdata, 
     i2c_pec_transmit_enable(hi2c->i2cx, TRUE);
 
     /* configure the number of bytes to be transmitted */
-    i2c_cnt_set(hi2c->i2cx, hi2c->pcount);
+    i2c_cnt_set(hi2c->i2cx, hi2c->pcount[hi2c->step]);
 
     /* clear addr flag */
     i2c_flag_clear(hi2c->i2cx, I2C_ADDRF_FLAG);
   }
 
-  hi2c->pcount--;
+  hi2c->pcount[hi2c->step]--;
 
-  while (hi2c->pcount > 0)
+  while (hi2c->pcount[hi2c->step] > 0)
   {
     /* wait for the tdis flag to be set */
     if(i2c_wait_flag(hi2c, I2C_TDIS_FLAG, I2C_EVENT_CHECK_ACKFAIL, timeout) != I2C_OK)
@@ -1845,8 +1836,8 @@ i2c_status_type i2c_smbus_slave_transmit(i2c_handle_type* hi2c, uint8_t* pdata, 
     }
 
     /* send data */
-    i2c_data_send(hi2c->i2cx, *hi2c->pbuff++);
-    hi2c->pcount--;
+    i2c_data_send(hi2c->i2cx, *hi2c->pbuff[hi2c->step]++);
+    hi2c->pcount[hi2c->step]--;
   }
 
   /* wait for the ackfail flag to be set */
@@ -1909,53 +1900,59 @@ i2c_status_type i2c_master_irq_handler_int(i2c_handle_type* hi2c)
     /* refresh tx register */
     i2c_refresh_txdt_register(hi2c);
 
-    if(hi2c->pcount != 0)
+    if(hi2c->pcount[hi2c->step] != 0)
     {
       hi2c->error_code = I2C_ERR_ACKFAIL;
-      return hi2c->error_code;
     }
   }
   else if (i2c_flag_get(hi2c->i2cx, I2C_TDIS_FLAG) != RESET)
   {
     /* send data */
-    i2c_data_send(hi2c->i2cx, *hi2c->pbuff++);
-    hi2c->pcount--;
+    i2c_data_send(hi2c->i2cx, *hi2c->pbuff[hi2c->step]++);
+    hi2c->pcount[hi2c->step]--;
     hi2c->psize--;
+	if ((hi2c->pcount[hi2c->step] == 0) && (hi2c->step == I2C_STEP_REG) && (hi2c->mode == I2C_INT_MA_TX)) {
+	  // Advance to next step
+	  hi2c->step = I2C_STEP_DATA;
+	}
   }
   else if (i2c_flag_get(hi2c->i2cx, I2C_TCRLD_FLAG) != RESET)
   {
-    if ((hi2c->psize == 0) && (hi2c->pcount != 0))
-    {
-      /* continue transfer */
-      i2c_start_transfer(hi2c, i2c_transfer_addr_get(hi2c->i2cx), I2C_WITHOUT_START);
-    }
-    else
-    {
-        hi2c->error_code =  I2C_ERR_TCRLD;
-        return hi2c->error_code;
+	if ((hi2c->psize == 0) && (hi2c->pcount[hi2c->step] != 0))
+	{
+	  i2c_start_transfer(hi2c, i2c_transfer_addr_get(hi2c->i2cx), I2C_WITHOUT_START);
+	} else {
+	  hi2c->error_code = I2C_ERR_TCRLD;
     }
   }
   else if (i2c_flag_get(hi2c->i2cx, I2C_RDBF_FLAG) != RESET)
   {
     /* read data */
-    (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-    hi2c->pcount--;
+    (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+    hi2c->pcount[hi2c->step]--;
     hi2c->psize--;
   }
   else if (i2c_flag_get(hi2c->i2cx, I2C_TDC_FLAG) != RESET)
   {
-    if (hi2c->pcount == 0)
+    if (hi2c->pcount[hi2c->step] == 0)
     {
-      if (hi2c->i2cx->ctrl2_bit.astopen == 0)
-      {
-        /* generate stop condtion */
-        i2c_stop_generate(hi2c->i2cx);
-      }
+		if ((hi2c->step == I2C_STEP_REG) && (hi2c->mode == I2C_INT_MA_RX)) {
+		  // Advance to next step
+		  hi2c->step = I2C_STEP_DATA;
+
+		  /* restart transfer as a read */
+		  i2c_start_transfer(hi2c, i2c_transfer_addr_get(hi2c->i2cx), I2C_GEN_START_READ);
+		} else {
+		  if (hi2c->i2cx->ctrl2_bit.astopen == 0)
+		  {
+			/* generate stop condtion */
+			i2c_stop_generate(hi2c->i2cx);
+		  }
+		}
     }
     else
     {
         hi2c->error_code =  I2C_ERR_TDC;
-        return hi2c->error_code;
     }
   }
   else if (i2c_flag_get(hi2c->i2cx, I2C_STOPF_FLAG) != RESET)
@@ -1979,9 +1976,7 @@ i2c_status_type i2c_master_irq_handler_int(i2c_handle_type* hi2c)
     i2c_interrupt_enable(hi2c->i2cx, I2C_ERR_INT | I2C_TDC_INT | I2C_STOP_INT | I2C_ACKFIAL_INT | I2C_TD_INT | I2C_RD_INT, FALSE);
 
     /* transfer complete */
-    hi2c->status = I2C_END;
-    hi2c->error_code =  I2C_OK;
-    return hi2c->error_code;
+    hi2c->state = I2C_END;
   }
 
   return hi2c->error_code;
@@ -1997,7 +1992,7 @@ i2c_status_type i2c_slave_irq_handler_int(i2c_handle_type* hi2c)
   if (i2c_flag_get(hi2c->i2cx, I2C_ACKFAIL_FLAG) != RESET)
   {
     /* transfer complete */
-    if (hi2c->pcount == 0)
+    if (hi2c->pcount[hi2c->step] == 0)
     {
       i2c_refresh_txdt_register(hi2c);
 
@@ -2018,21 +2013,21 @@ i2c_status_type i2c_slave_irq_handler_int(i2c_handle_type* hi2c)
   }
   else if (i2c_flag_get(hi2c->i2cx, I2C_TDIS_FLAG) != RESET)
   {
-    if (hi2c->pcount > 0)
+    if (hi2c->pcount[hi2c->step] > 0)
     {
       /* send data */
-      hi2c->i2cx->txdt = (*(hi2c->pbuff++));
+      hi2c->i2cx->txdt = (*(hi2c->pbuff[hi2c->step]++));
       hi2c->psize--;
-      hi2c->pcount--;
+      hi2c->pcount[hi2c->step]--;
     }
   }
   else if (i2c_flag_get(hi2c->i2cx, I2C_RDBF_FLAG) != RESET)
   {
-    if (hi2c->pcount > 0)
+    if (hi2c->pcount[hi2c->step] > 0)
     {
       /* read data */
-      (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
-      hi2c->pcount--;
+      (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
+      hi2c->pcount[hi2c->step]--;
       hi2c->psize--;
     }
   }
@@ -2054,17 +2049,17 @@ i2c_status_type i2c_slave_irq_handler_int(i2c_handle_type* hi2c)
     if (i2c_flag_get(hi2c->i2cx, I2C_RDBF_FLAG) != RESET)
     {
       /* read data */
-      (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
+      (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
 
       if ((hi2c->psize > 0))
       {
-        hi2c->pcount--;
+        hi2c->pcount[hi2c->step]--;
         hi2c->psize--;
       }
     }
 
     /* transfer complete */
-    hi2c->status = I2C_END;
+    hi2c->state = I2C_END;
   }
 
   return hi2c->error_code;
@@ -2088,7 +2083,7 @@ i2c_status_type i2c_master_irq_handler_dma(i2c_handle_type* hi2c)
     /* refresh tx dt register */
     i2c_refresh_txdt_register(hi2c);
 
-    if(hi2c->pcount != 0)
+    if(hi2c->pcount[hi2c->step] != 0)
     {
       hi2c->error_code = I2C_ERR_ACKFAIL;
       return hi2c->error_code;
@@ -2099,7 +2094,7 @@ i2c_status_type i2c_master_irq_handler_dma(i2c_handle_type* hi2c)
     /* disable tdc interrupt */
     i2c_interrupt_enable(hi2c->i2cx, I2C_TDC_INT, FALSE);
 
-    if (hi2c->pcount != 0)
+    if (hi2c->pcount[hi2c->step] != 0)
     {
       /* continue transfer */
       i2c_start_transfer(hi2c, i2c_transfer_addr_get(hi2c->i2cx), I2C_WITHOUT_START);
@@ -2141,7 +2136,7 @@ i2c_status_type i2c_master_irq_handler_dma(i2c_handle_type* hi2c)
     i2c_interrupt_enable(hi2c->i2cx, I2C_ERR_INT | I2C_TDC_INT | I2C_STOP_INT | I2C_ACKFIAL_INT | I2C_TD_INT | I2C_RD_INT, FALSE);
 
     /* transfer complete */
-    hi2c->status = I2C_END;
+    hi2c->state = I2C_END;
   }
 
   return hi2c->error_code;
@@ -2182,17 +2177,17 @@ i2c_status_type i2c_slave_irq_handler_dma(i2c_handle_type* hi2c)
     if (i2c_flag_get(hi2c->i2cx, I2C_RDBF_FLAG) != RESET)
     {
       /* read data */
-      (*hi2c->pbuff++) = i2c_data_receive(hi2c->i2cx);
+      (*hi2c->pbuff[hi2c->step]++) = i2c_data_receive(hi2c->i2cx);
 
       if ((hi2c->psize > 0))
       {
-        hi2c->pcount--;
+        hi2c->pcount[hi2c->step]--;
         hi2c->psize--;
       }
     }
 
     /* transfer complete */
-    hi2c->status = I2C_END;
+    hi2c->state = I2C_END;
   }
 
   return hi2c->error_code;
@@ -2226,10 +2221,10 @@ void i2c_dma_tx_rx_irq_handler(i2c_handle_type* hi2c, dma_channel_type* dma_chan
       case I2C_DMA_MA_RX:
       {
         /* update the number of transfers */
-        hi2c->pcount -= hi2c->psize;
+        hi2c->pcount[hi2c->step] -= hi2c->psize;
 
         /* transfer complete */
-        if (hi2c->pcount == 0)
+        if (hi2c->pcount[hi2c->step] == 0)
         {
           /* enable stop interrupt */
           i2c_interrupt_enable(hi2c->i2cx, I2C_STOP_INT, TRUE);
@@ -2238,20 +2233,20 @@ void i2c_dma_tx_rx_irq_handler(i2c_handle_type* hi2c, dma_channel_type* dma_chan
         else
         {
           /* update the buffer pointer of transfers */
-          hi2c->pbuff += hi2c->psize;
+          hi2c->pbuff[hi2c->step] += hi2c->psize;
 
           /* set the number to be transferred */
-          if (hi2c->pcount > MAX_TRANSFER_CNT)
+          if (hi2c->pcount[hi2c->step] > MAX_TRANSFER_CNT)
           {
             hi2c->psize = MAX_TRANSFER_CNT;
           }
           else
           {
-            hi2c->psize = hi2c->pcount;
+            hi2c->psize = hi2c->pcount[hi2c->step];
           }
 
           /* config dma channel, continue to transfer data */
-          i2c_dma_config(hi2c, dma_channel, hi2c->pbuff, hi2c->psize);
+          i2c_dma_config(hi2c, dma_channel, hi2c->pbuff[hi2c->step], hi2c->psize);
 
           /* enable tdc interrupt */
           i2c_interrupt_enable(hi2c->i2cx, I2C_TDC_INT, TRUE);

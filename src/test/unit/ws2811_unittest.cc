@@ -31,6 +31,8 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
+    uint32_t simulatedTime = 0;
+    uint32_t micros(void) { return simulatedTime; }
     void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color, unsigned ledIndex);
     void schedulerIgnoreTaskExecTime(void) {}
     void schedulerIgnoreTaskStateTime(void) {}

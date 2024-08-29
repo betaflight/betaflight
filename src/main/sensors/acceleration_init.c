@@ -51,21 +51,22 @@
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
 
 #ifdef USE_ACC_ADXL345
-#include "drivers/accgyro_legacy/accgyro_adxl345.h"
+#include "drivers/accgyro/legacy/accgyro_adxl345.h"
 #endif
 
 #ifdef USE_ACC_BMA280
-#include "drivers/accgyro_legacy/accgyro_bma280.h"
+#include "drivers/accgyro/legacy/accgyro_bma280.h"
 #endif
 
 #ifdef USE_ACC_LSM303DLHC
-#include "drivers/accgyro_legacy/accgyro_lsm303dlhc.h"
+#include "drivers/accgyro/legacy/accgyro_lsm303dlhc.h"
 #endif
 
 #ifdef USE_ACC_MMA8452
-#include "drivers/accgyro_legacy/accgyro_mma845x.h"
+#include "drivers/accgyro/legacy/accgyro_mma845x.h"
 #endif
 
 #include "drivers/bus_spi.h"
@@ -86,12 +87,15 @@
 
 #include "acceleration_init.h"
 
-#if !defined(USE_ACC_MPU6000) && !defined(USE_ACC_SPI_MPU6000) && !defined(USE_ACC_MPU6050) && !defined(USE_ACC_MPU6500) && \
-    !defined(USE_ACC_SPI_MPU6500) && !defined(USE_ACC_SPI_MPU9250) && !defined(USE_ACC_SPI_ICM20602) && \
-    !defined(USE_ACC_SPI_ICM20689) && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_BMI160) && \
-    !defined(USE_ACCGYRO_BMI270) && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) && \
-    !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) && \
-    !defined(USE_ACC_MMA8452) && !defined(USE_VIRTUAL_ACC)
+#if !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) \
+    && !defined(USE_ACC_MMA8452) && !defined(USE_ACC_LSM303DLHC) \
+    && !defined(USE_ACC_MPU6000) && !defined(USE_ACC_MPU6050) && !defined(USE_ACC_MPU6500) \
+    && !defined(USE_ACC_SPI_MPU6000) && !defined(USE_ACC_SPI_MPU6500) && !defined(USE_ACC_SPI_MPU9250) \
+    && !defined(USE_ACC_SPI_ICM20602) && !defined(USE_ACC_SPI_ICM20649) && !defined(USE_ACC_SPI_ICM20689) \
+    && !defined(USE_ACCGYRO_BMI160) && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif
 
@@ -238,7 +242,7 @@ retry:
     case ACC_ICM20608G:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
-        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
+        if (mpu6500SpiAccDetect(dev)) {
 #else
         if (mpu6500AccDetect(dev)) {
 #endif
@@ -323,6 +327,15 @@ retry:
     case ACC_LSM6DSO:
         if (lsm6dsoSpiAccDetect(dev)) {
             accHardware = ACC_LSM6DSO;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSV16X
+    case ACC_LSM6DSV16X:
+        if (lsm6dsv16xSpiAccDetect(dev)) {
+            accHardware = ACC_LSM6DSV16X;
             break;
         }
         FALLTHROUGH;

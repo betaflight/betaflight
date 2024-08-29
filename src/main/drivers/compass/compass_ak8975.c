@@ -108,10 +108,11 @@ static bool ak8975Init(magDev_t *mag)
 
     // Trigger first measurement
     busWriteRegister(dev, AK8975_MAG_REG_CNTL, CNTL_BIT_16_BIT | CNTL_MODE_ONCE);
+    mag->magOdrHz = 50; // arbitrary value, need to check what ODR is actually returned
     return true;
 }
 
-static int16_t parseMag(uint8_t *raw, int16_t gain)
+static int16_t parseMag(const uint8_t *raw, int16_t gain)
 {
   int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
   return constrain(ret, INT16_MIN, INT16_MAX);
@@ -134,8 +135,9 @@ static bool ak8975Read(magDev_t *mag, int16_t *magData)
     switch (state) {
         default:
         case STATE_READ_STATUS1:
-            busReadRegisterBufferStart(dev, AK8975_MAG_REG_ST1, &status, sizeof(status));
-            state = STATE_WAIT_STATUS1;
+            if (busReadRegisterBufferStart(dev, AK8975_MAG_REG_ST1, &status, sizeof(status))) {
+                state = STATE_WAIT_STATUS1;
+            }
             return false;
 
         case STATE_WAIT_STATUS1:
@@ -144,18 +146,21 @@ static bool ak8975Read(magDev_t *mag, int16_t *magData)
                 return false;
             }
 
-            busReadRegisterBufferStart(dev, AK8975_MAG_REG_HXL, buf, sizeof(buf));
-
-            state = STATE_READ_STATUS2;
+            if (busReadRegisterBufferStart(dev, AK8975_MAG_REG_HXL, buf, sizeof(buf))) {
+                state = STATE_READ_STATUS2;
+            }
             return false;
 
         case STATE_READ_STATUS2:
-            busReadRegisterBufferStart(dev, AK8975_MAG_REG_ST2, &status, sizeof(status));
-            state = STATE_WAIT_STATUS2;
+            if (busReadRegisterBufferStart(dev, AK8975_MAG_REG_ST2, &status, sizeof(status))) {
+                state = STATE_WAIT_STATUS2;
+            }
             return false;
 
         case STATE_WAIT_STATUS2:
-            busWriteRegisterStart(dev, AK8975_MAG_REG_CNTL, CNTL_BIT_16_BIT | CNTL_MODE_ONCE); // start reading again
+            if (!busWriteRegisterStart(dev, AK8975_MAG_REG_CNTL, CNTL_BIT_16_BIT | CNTL_MODE_ONCE)) { // start reading again
+                return false;
+            }
 
             if ((status & ST2_REG_DATA_ERROR) || (status & ST2_REG_MAG_SENSOR_OVERFLOW)) {
                 state = STATE_READ_STATUS1;

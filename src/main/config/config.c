@@ -126,7 +126,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_MHZ,  // Only used for F4 and G4 targets
-    .configurationState = CONFIGURATION_STATE_DEFAULTS_BARE,
+    .configurationState = CONFIGURATION_STATE_UNCONFIGURED,
     .enableStickArming = false,
 );
 
@@ -230,7 +230,7 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-    if (!isSerialConfigValid(serialConfig())) {
+    if (!isSerialConfigValid(serialConfigMutable())) {
         pgResetFn_serialConfig(serialConfigMutable());
     }
 
@@ -360,8 +360,7 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
 
-    if (
-        featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS) || mixerModeIsFixedWing(mixerConfig()->mixerMode)
+    if (featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS) || mixerModeIsFixedWing(mixerConfig()->mixerMode)
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif
@@ -412,108 +411,24 @@ static void validateAndFixConfig(void)
 #endif
 #endif // USE_ADC
 
+    // Bounds check gyro filter selection in case prior build had USE_GYRO_DLPF_EXPERIMENTAL defined
+    if (gyroConfig()->gyro_hardware_lpf >= GYRO_HARDWARE_LPF_COUNT) {
+        gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
+    }
 
-// clear features that are not supported.
-// I have kept them all here in one place, some could be moved to sections of code above.
+    // clear features that are not supported.
+    featureDisableImmediate(~featuresSupportedByBuild);
 
-#ifndef USE_RX_PPM
-    featureDisableImmediate(FEATURE_RX_PPM);
-#endif
-
-#ifndef USE_SERIALRX
-    featureDisableImmediate(FEATURE_RX_SERIAL);
-#endif
-
-#if !defined(USE_SOFTSERIAL)
-    featureDisableImmediate(FEATURE_SOFTSERIAL);
-#endif
-
-#ifndef USE_RANGEFINDER
-    featureDisableImmediate(FEATURE_RANGEFINDER);
-#endif
-
-#ifndef USE_TELEMETRY
-    featureDisableImmediate(FEATURE_TELEMETRY);
-#endif
-
-#ifndef USE_PWM
-    featureDisableImmediate(FEATURE_RX_PARALLEL_PWM);
-#endif
-
-#ifndef USE_RX_MSP
-    featureDisableImmediate(FEATURE_RX_MSP);
-#endif
-
-#ifndef USE_LED_STRIP
-    featureDisableImmediate(FEATURE_LED_STRIP);
-#endif
-
-#ifndef USE_DASHBOARD
-    featureDisableImmediate(FEATURE_DASHBOARD);
-#endif
-
-#ifndef USE_OSD
-    featureDisableImmediate(FEATURE_OSD);
-#endif
-
-#ifndef USE_SERVOS
-    featureDisableImmediate(FEATURE_SERVO_TILT | FEATURE_CHANNEL_FORWARDING);
-#endif
-
-#ifndef USE_TRANSPONDER
-    featureDisableImmediate(FEATURE_TRANSPONDER);
-#endif
-
-#ifndef USE_RX_SPI
-    featureDisableImmediate(FEATURE_RX_SPI);
-#endif
-
-#ifndef USE_ESC_SENSOR
-    featureDisableImmediate(FEATURE_ESC_SENSOR);
-#endif
-
-#if !defined(USE_ADC)
-    featureDisableImmediate(FEATURE_RSSI_ADC);
-#endif
-
-// Enable features in Cloud Build
-#ifdef CLOUD_BUILD
-
-if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
-
-#ifdef USE_DASHBOARD
-    featureEnableImmediate(FEATURE_DASHBOARD);
-#endif
-#ifdef USE_GPS
-    featureEnableImmediate(FEATURE_GPS);
-#endif
-#ifdef USE_LED_STRIP
-    featureEnableImmediate(FEATURE_LED_STRIP);
-#endif
-#ifdef USE_OSD
-    featureEnableImmediate(FEATURE_OSD);
-#endif
-#ifdef USE_RANGEFINDER
-    featureEnableImmediate(FEATURE_RANGEFINDER);
-#endif
-#ifdef USE_SERVOS
-    featureEnableImmediate(FEATURE_CHANNEL_FORWARDING);
-    featureEnableImmediate(FEATURE_SERVO_TILT);
-#endif
+    if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
+        // enable some compiled-in features by default
+        uint32_t autoFeatures =
+            FEATURE_OSD | FEATURE_LED_STRIP
 #if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
-    featureEnableImmediate(FEATURE_SOFTSERIAL);
+            | FEATURE_SOFTSERIAL
 #endif
-#ifdef USE_TELEMETRY
-    featureEnableImmediate(FEATURE_TELEMETRY);
-#endif
-#ifdef USE_TRANSPONDER
-    featureEnableImmediate(FEATURE_TRANSPONDER);
-#endif
-
-}
-
-#endif // CLOUD_BUILD
-
+            ;
+        featureEnableImmediate(autoFeatures & featuresSupportedByBuild);
+    }
 
 #if defined(USE_BEEPER)
 #ifdef USE_TIMER
@@ -528,7 +443,7 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
 
 #ifdef USE_DSHOT
     if (beeperConfig()->dshotBeaconOffFlags & ~DSHOT_BEACON_ALLOWED_MODES) {
-        beeperConfigMutable()->dshotBeaconOffFlags = 0;
+        beeperConfigMutable()->dshotBeaconOffFlags = DEFAULT_DSHOT_BEACON_OFF_FLAGS;
     }
 
     if (beeperConfig()->dshotBeaconTone < DSHOT_CMD_BEACON1
@@ -674,15 +589,24 @@ void validateAndFixGyroConfig(void)
         // check for looptime restrictions based on motor protocol. Motor times have safety margin
         float motorUpdateRestriction;
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(USE_DSHOT) && defined(USE_PID_DENOM_CHECK)
         /* If bidirectional DSHOT is being used on an F4 or G4 then force DSHOT300. The motor update restrictions then applied
          * will automatically consider the loop time and adjust pid_process_denom appropriately
          */
-        if (motorConfig()->dev.useDshotTelemetry && (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600)) {
-            motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
-        }
+        if (true
+#ifdef USE_PID_DENOM_OVERCLOCK_LEVEL
+        && (systemConfig()->cpu_overclock < USE_PID_DENOM_OVERCLOCK_LEVEL) 
 #endif
-
+        && motorConfig()->dev.useDshotTelemetry
+        ) {
+            if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600) {
+                motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+            }
+            if (gyro.sampleRateHz > 4000) {
+                pidConfigMutable()->pid_process_denom = MAX(2, pidConfig()->pid_process_denom);
+            }
+        }
+#endif // USE_DSHOT && USE_PID_DENOM_CHECK
         switch (motorConfig()->dev.motorPwmProtocol) {
         case PWM_TYPE_STANDARD:
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;

@@ -28,12 +28,12 @@
 
 #include "pg/pg.h"
 
-#define TASK_LEDSTRIP_RATE_HZ 100
+#define TASK_LEDSTRIP_RATE_HZ 60
 
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6
 #define LED_DIRECTION_COUNT             6
-#define LED_BASEFUNCTION_COUNT          7
+#define LED_BASEFUNCTION_COUNT          10
 #define LED_OVERLAY_COUNT               7
 #define LED_SPECIAL_COLOR_COUNT        11
 
@@ -70,6 +70,8 @@
 #define LED_Y_BIT_OFFSET 0
 #define LED_XY_MASK      0x0F
 #define CALCULATE_LED_XY(x, y) ((((x) & LED_XY_MASK) << LED_X_BIT_OFFSET) | (((y) & LED_XY_MASK) << LED_Y_BIT_OFFSET))
+
+#define LED_TARGET_UPDATE_US 20
 
 typedef enum {
     COLOR_BLACK = 0,
@@ -127,7 +129,10 @@ typedef enum {
     LED_FUNCTION_BATTERY,
     LED_FUNCTION_RSSI,
     LED_FUNCTION_GPS,
-    LED_FUNCTION_THRUST_RING
+    LED_FUNCTION_THRUST_RING,
+    LED_FUNCTION_GPS_BAR,
+    LED_FUNCTION_BATTERY_BAR,
+    LED_FUNCTION_ALTITUDE
 } ledBaseFunctionId_e;
 
 typedef enum {

@@ -101,6 +101,16 @@ uint16_t getBatteryAverageCellVoltage(void)
     return testBatteryVoltage / testBatteryCellCount;
 }
 
+uint16_t getBatteryVoltage(void)
+{
+    return testBatteryVoltage;
+}
+
+uint8_t getBatteryCellCount(void)
+{
+    return testBatteryCellCount;
+}
+
 int32_t getMAhDrawn(void)
 {
     return 0;
@@ -120,7 +130,7 @@ bool sensors(sensors_e sensor)
 {
     return (definedSensors & sensor) != 0;
 }
-}
+} /* extern "C" */
 
 #define SERIAL_BUFFER_SIZE 256
 
@@ -130,25 +140,14 @@ typedef struct serialPortStub_s {
     int end = 0;
 } serialPortStub_t;
 
-
-uint16_t getBatteryVoltage(void)
-{
-    return testBatteryVoltage;
-}
-
-uint8_t getBatteryCellCount(void)
-{
-    return testBatteryCellCount;
-}
-
 static serialPortStub_t serialWriteStub;
 static serialPortStub_t serialReadStub;
 
 #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x12
 serialPort_t serialTestInstance;
 serialPortConfig_t serialTestInstanceConfig = {
+    .functionMask = 0,
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
-    .functionMask = 0
 };
 
 static serialPortConfig_t *findSerialPortConfig_stub_retval;
@@ -273,8 +272,8 @@ uint8_t serialRead(serialPort_t *instance)
 
 void serialTestResetBuffers()
 {
-    memset(&serialReadStub, 0, sizeof(serialReadStub));
-    memset(&serialWriteStub, 0, sizeof(serialWriteStub));
+    serialReadStub = { {0} }; 
+    serialWriteStub = { {0} };
 }
 
 void setTestSensors()

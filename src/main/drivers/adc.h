@@ -29,7 +29,7 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
 #ifndef ADC1_DMA_STREAM
 #define ADC1_DMA_STREAM DMA2_Stream4 // ST0 or ST4
 #endif
@@ -114,5 +114,5 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 #endif
 
 #if !defined(SIMULATOR_BUILD)
-ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
 #endif

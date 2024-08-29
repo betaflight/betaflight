@@ -70,7 +70,7 @@ void ws2811LedStripEnable(void);
 bool ws2811LedStripHardwareInit(ioTag_t ioTag);
 void ws2811LedStripDMAEnable(void);
 
-void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness);
+bool ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness);
 
 void setLedHsv(uint16_t index, const hsvColor_t *color);
 void getLedHsv(uint16_t index, hsvColor_t *color);

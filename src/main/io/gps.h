@@ -292,20 +292,17 @@ typedef struct gpsData_s {
     bool ubloxM8orAbove;
     bool ubloxM9orAbove;
     bool ubloxUsingFlightModel;     // false = Acquire model, true = Flight model
-    bool satMessagesDisabled;
 #ifdef USE_GPS_UBLOX
     uint32_t lastNavSolTs;          // time stamp of last UBCX message.  Used to calculate message delta
     ubloxVersion_e platformVersion; // module platform version, mapped from reported hardware version
 #endif
 } gpsData_t;
 
-extern int32_t GPS_home[2];
-extern uint16_t GPS_distanceToHome;             // distance to home point in meters
-extern uint32_t GPS_distanceToHomeCm;           // distance to home point in cm
-extern int16_t GPS_directionToHome;             // direction to home or hol point in degrees
-extern uint32_t GPS_distanceFlownInCm;          // distance flown since armed in centimeters
-extern int16_t GPS_angle[ANGLE_INDEX_COUNT];    // it's the angles that must be applied for GPS correction
-extern float GPS_scaleLonDown;                  // this is used to offset the shrinking longitude as we go towards the poles
+extern gpsLocation_t GPS_home_llh;
+extern uint16_t GPS_distanceToHome;        // distance to home point in meters
+extern uint32_t GPS_distanceToHomeCm;      // distance to home point in cm
+extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 
 typedef enum {
     GPS_DIRECT_TICK = 1 << 0,
@@ -317,7 +314,6 @@ extern gpsSolutionData_t gpsSol;
 
 #define GPS_SV_MAXSATS_LEGACY   16U
 #define GPS_SV_MAXSATS_M8N      32U
-#define GPS_SV_MAXSATS_M9N      42U
 
 extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
 extern uint8_t GPS_numCh;                               // Number of channels
@@ -382,7 +378,9 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
+void setSatInfoMessageRate(uint8_t divisor);
 #endif
+
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
@@ -392,7 +390,7 @@ void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);
 void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
-void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
+void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing);
 void gpsSetFixState(bool state);
 float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue
 baudRate_e getGpsPortActualBaudRateIndex(void);

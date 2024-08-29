@@ -189,6 +189,7 @@ typedef enum {
     OSD_GPS_LAP_TIME_CURRENT,
     OSD_GPS_LAP_TIME_PREVIOUS,
     OSD_GPS_LAP_TIME_BEST3,
+    OSD_DEBUG2,
     OSD_CUSTOM_MSG0,
     OSD_CUSTOM_MSG1,
     OSD_CUSTOM_MSG2,
@@ -291,6 +292,7 @@ typedef enum {
     OSD_WARNING_RSSI_DBM,
     OSD_WARNING_OVER_CAP,
     OSD_WARNING_RSNR,
+    OSD_WARNING_LOAD,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -339,7 +341,7 @@ typedef struct osdConfig_s {
     uint16_t link_quality_alarm;
     int16_t rssi_dbm_alarm;
     int16_t rsnr_alarm;
-    uint8_t gps_sats_show_hdop;
+    uint8_t gps_sats_show_pdop;
     int8_t rcChannels[OSD_RCCHANNELS_COUNT];  // RC channel values to display, -1 if none
     uint8_t displayPortDevice;                // osdDisplayPortDevice_e
     uint16_t distance_alarm;
@@ -350,17 +352,21 @@ typedef struct osdConfig_s {
     uint16_t framerate_hz;
     uint8_t cms_background_type;              // For supporting devices, determines whether the CMS background is transparent or opaque
     uint8_t stat_show_cell_value;
-    #ifdef USE_CRAFTNAME_MSGS
+#ifdef USE_CRAFTNAME_MSGS
     uint8_t osd_craftname_msgs;               // Insert LQ/RSSI-dBm and warnings into CraftName
-    #endif //USE_CRAFTNAME_MSGS
+#endif //USE_CRAFTNAME_MSGS
     uint8_t aux_channel;
     uint16_t aux_scale;
     uint8_t aux_symbol;
     uint8_t canvas_cols;                      // Canvas dimensions for HD display
     uint8_t canvas_rows;
-    #ifdef USE_QUICK_OSD_MENU
+#ifdef USE_OSD_QUICK_MENU
     uint8_t osd_use_quick_menu;               // use QUICK menu YES/NO
-    #endif // USE_QUICK_OSD_MENU
+#endif // USE_OSD_QUICK_MENU
+#ifdef USE_SPEC_PREARM_SCREEN
+    uint8_t osd_show_spec_prearm;
+#endif // USE_SPEC_PREARM_SCREEN
+    displayPortSeverity_e arming_logo;        // font from which to display logo on arming
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

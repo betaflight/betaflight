@@ -54,7 +54,7 @@ const char *armingDisableFlagNames[]= {
     "PARALYZE",
     "GPS",
     "RESCUE_SW",
-    "RPMFILTER",
+    "DSHOT_TELEM",
     "REBOOT_REQD",
     "DSHOT_BBANG",
     "NO_ACC_CAL",

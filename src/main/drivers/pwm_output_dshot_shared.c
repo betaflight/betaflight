@@ -146,7 +146,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 void dshotEnableChannels(uint8_t motorCount);
 
 
-static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
+static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
 {
     uint32_t value = 0;
     uint32_t oldValue = buffer[0];

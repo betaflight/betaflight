@@ -3,7 +3,7 @@ name: Release
 on:
   release:
     types: [published]
-        
+
 jobs:
   ci:
     name: CI
@@ -17,10 +17,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Code Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: List assets
         run: ls -al Assets
@@ -28,12 +28,12 @@ jobs:
       - name: Attach assets to release
         run: |
           set -x
-          assets=()
-          for asset in Assets/*.hex; do
-            assets+=("-a" "$asset")
+          ASSETS=()
+          for asset in ./*/*.hex; do
+            ASSETS+=("$asset")
             echo "$asset"
           done
-          tag_name="${GITHUB_REF##*/}"
-          hub release edit "${assets[@]}" -m "" "$tag_name"
+          TAG_NAME="${GITHUB_REF##*/}"
+          gh release upload "${TAG_NAME}" "${ASSETS[@]}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

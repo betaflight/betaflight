@@ -29,7 +29,7 @@
 #include "drivers/resource.h"
 #include "drivers/system.h"
 
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/max7456.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/sdcard.h"
@@ -104,7 +104,7 @@ void spiPreinit(void)
     }
 }
 
-void spiPreinitByIO(IO_t io)
+void spiPreinitByIO(const IO_t io)
 {
     for (int i = 0; i < spiPreinitCount; i++) {
         if (io == IOGetByTag(spiPreinitArray[i].iotag)) {

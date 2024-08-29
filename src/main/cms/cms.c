@@ -130,7 +130,7 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
     return cmsDisplayPorts[cmsCurrentDevice];
 }
 
-bool cmsDisplayPortSelect(displayPort_t *instance)
+bool cmsDisplayPortSelect(const displayPort_t *instance)
 {
     for (unsigned i = 0; i < cmsDeviceCount; i++) {
         if (cmsDisplayPortSelectNext() == instance) {
@@ -898,11 +898,11 @@ void cmsMenuOpen(void)
         currentCtx = (cmsCtx_t){ NULL, 0, 0 };
         startMenu = &cmsx_menuMain;
 
-#ifdef USE_QUICK_OSD_MENU
+#ifdef USE_OSD_QUICK_MENU
         if (osdConfig()->osd_use_quick_menu) {
             startMenu = &cmsx_menuQuick;
         }
-#endif // USE_QUICK_OSD_MENU
+#endif // USE_OSD_QUICK_MENU
 
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
@@ -984,7 +984,7 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 
 const void *cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 {
-    int exitType = (int)ptr;
+    int exitType = (intptr_t)ptr;
     switch (exitType) {
     case CMS_EXIT_SAVE:
     case CMS_EXIT_SAVEREBOOT:

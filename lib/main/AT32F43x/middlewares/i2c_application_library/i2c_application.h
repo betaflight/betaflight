@@ -70,7 +70,9 @@ typedef enum
 
 typedef enum
 {
-  I2C_INT_MA_TX = 0,
+  I2C_MA_TX = 0,
+  I2C_MA_RX,
+  I2C_INT_MA_TX,
   I2C_INT_MA_RX,
   I2C_INT_SLA_TX,
   I2C_INT_SLA_RX,
@@ -120,14 +122,30 @@ typedef enum
   * @{
   */
 
+/**
+  * @brief i2c transmission status
+  */
+typedef enum {
+	I2C_START,
+	I2C_END
+} i2cState_t;
+
+typedef enum {
+	I2C_STEP_REG, // Preliminary transfer to write register address prior to a read
+	I2C_STEP_DATA,
+	I2C_STEP_COUNT
+} i2cStep_t;
+
 typedef struct
 {
   i2c_type                               *i2cx;                   /*!< i2c registers base address      */
-  uint8_t                                *pbuff;                  /*!< pointer to i2c transfer buffer  */
+  uint16_t                               reg;
+  uint8_t                                *pbuff[I2C_STEP_COUNT];  /*!< pointer to i2c transfer buffer  */
   __IO uint16_t                          psize;                   /*!< i2c transfer size               */
-  __IO uint16_t                          pcount;                  /*!< i2c transfer counter            */
+  __IO uint16_t                          pcount[I2C_STEP_COUNT];  /*!< i2c transfer counter            */
   __IO uint32_t                          mode;                    /*!< i2c communication mode          */
-  __IO uint32_t                          status;                  /*!< i2c communication status        */
+  __IO i2cStep_t                         step;                    /*!< 0 based phased count            */
+  __IO i2cState_t                        state;                   /*!< i2c communication state         */
   __IO i2c_status_type                   error_code;              /*!< i2c error code                  */
   dma_channel_type                       *dma_tx_channel;         /*!< dma transmit channel            */
   dma_channel_type                       *dma_rx_channel;         /*!< dma receive channel             */
@@ -145,7 +163,6 @@ typedef struct
 void            i2c_config                (i2c_handle_type* hi2c);
 void            i2c_lowlevel_init         (i2c_handle_type* hi2c);
 void            i2c_reset_ctrl2_register  (i2c_handle_type* hi2c);
-i2c_status_type i2c_wait_end              (i2c_handle_type* hi2c, uint32_t timeout);
 i2c_status_type i2c_wait_flag             (i2c_handle_type* hi2c, uint32_t flag, uint32_t event_check, uint32_t timeout);
 
 i2c_status_type i2c_master_transmit       (i2c_handle_type* hi2c, uint16_t address, uint8_t* pdata, uint16_t size, uint32_t timeout);

@@ -54,8 +54,10 @@
 #define FREQ_HZ_TO_REG_VAL_900(freq) ((uint32_t)(freq / SX127x_FREQ_STEP))
 #define FREQ_HZ_TO_REG_VAL_24(freq) ((uint32_t)(freq / SX1280_FREQ_STEP))
 
-#define ELRS_RATE_MAX 4
-#define ELRS_BINDING_RATE_24 3
+#define ELRS_RATE_MAX_24  6
+#define ELRS_RATE_MAX_900 4
+#define ELRS_RATE_MAX     ((ELRS_RATE_MAX_24 > ELRS_RATE_MAX_900) ? ELRS_RATE_MAX_24 : ELRS_RATE_MAX_900)
+#define ELRS_BINDING_RATE_24  5
 #define ELRS_BINDING_RATE_900 2
 
 #define ELRS_MAX_CHANNELS 16
@@ -121,8 +123,15 @@ typedef enum {
     RATE_FLRC_1000HZ,
 } elrsRfRate_e; // Max value of 16 since only 4 bits have been assigned in the sync package.
 
+typedef enum {
+    RADIO_TYPE_SX127x_LORA,
+    RADIO_TYPE_SX128x_LORA,
+    RADIO_TYPE_SX128x_FLRC,
+} elrsRadioType_e;
+
 typedef struct elrsModSettings_s {
     uint8_t index;
+    elrsRadioType_e radioType;        // elrsRadioType_e
     elrsRfRate_e enumRate;            // Max value of 16 since only 4 bits have been assigned in the sync package.
     uint8_t bw;
     uint8_t sf;
@@ -202,7 +211,9 @@ typedef struct elrsOtaPacket_s {
 } __attribute__ ((__packed__)) elrsOtaPacket_t;
 
 typedef bool (*elrsRxInitFnPtr)(IO_t resetPin, IO_t busyPin);
-typedef void (*elrsRxConfigFnPtr)(const uint8_t bw, const uint8_t sf, const uint8_t cr, const uint32_t freq, const uint8_t preambleLen, const bool iqInverted);
+typedef void (*elrsRxConfigFnPtr)(const uint8_t bw, const uint8_t sfbt, const uint8_t cr,
+    const uint32_t freq, const uint8_t preambleLength, const bool iqInverted,
+    const uint32_t flrcSyncWord, const uint16_t flrcCrcSeed, const bool isFlrc);
 typedef void (*elrsRxStartReceivingFnPtr)(void);
 typedef void (*elrsRxISRFnPtr)(void);
 typedef void (*elrsRxHandleFromTockFnPtr)(void);
@@ -211,7 +222,7 @@ typedef void (*elrsRxTransmitDataFnPtr)(const uint8_t *data, const uint8_t lengt
 typedef void (*elrsRxReceiveDataFnPtr)(uint8_t *data, const uint8_t length);
 typedef void (*elrsRxgetRfLinkInfoFnPtr)(int8_t *rssi, int8_t *snr);
 typedef void (*elrsRxSetFrequencyFnPtr)(const uint32_t freq);
-typedef void (*elrsRxHandleFreqCorrectionFnPtr)(int32_t offset, const uint32_t freq);
+typedef void (*elrsRxHandleFreqCorrectionFnPtr)(int32_t *offset, const uint32_t freq);
 
 extern elrsModSettings_t airRateConfig[][ELRS_RATE_MAX];
 extern elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX];
@@ -224,11 +235,11 @@ uint8_t fhssGetNumEntries(void);
 uint8_t fhssGetCurrIndex(void);
 void fhssSetCurrIndex(const uint8_t value);
 uint32_t fhssGetNextFreq(const int32_t freqCorrection);
-void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom);
+void fhssGenSequence(const uint32_t uidSeed, const elrsFreqDomain_e dom);
 uint8_t tlmRatioEnumToValue(const elrsTlmRatio_e enumval);
 uint16_t rateEnumToHz(const elrsRfRate_e eRate);
 uint16_t txPowerIndexToValue(const uint8_t index);
-
+uint32_t elrsUidToSeed(const uint8_t UID[]);
 //
 // Link Quality
 //

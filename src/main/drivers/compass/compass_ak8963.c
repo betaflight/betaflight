@@ -295,7 +295,7 @@ static bool ak8963DirectReadData(const extDevice_t *dev, uint8_t *buf)
     return ak8963ReadRegisterBuffer(dev, AK8963_MAG_REG_HXL, buf, 7);
 }
 
-static int16_t parseMag(uint8_t *raw, int16_t gain)
+static int16_t parseMag(const uint8_t *raw, int16_t gain)
 {
   int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
   return constrain(ret, INT16_MIN, INT16_MAX);
@@ -368,6 +368,7 @@ static bool ak8963Init(magDev_t *mag)
 
     // Trigger first measurement
     ak8963WriteRegister(dev, AK8963_MAG_REG_CNTL1, CNTL1_BIT_16_BIT | CNTL1_MODE_ONCE);
+    mag->magOdrHz = 50; // arbitrary value, need to check what ODR is actually returned
     return true;
 }
 
@@ -391,7 +392,6 @@ void ak8963BusInit(const extDevice_t *dev)
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
     case BUS_TYPE_MPU_SLAVE:
-        rescheduleTask(TASK_COMPASS, TASK_PERIOD_HZ(40));
 
         // Disable DMA on gyro as this upsets slave access timing
         spiDmaEnable(dev->bus->busType_u.mpuSlave.master, false);

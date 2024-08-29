@@ -213,8 +213,8 @@ static void ltm_oframe(void)
 {
     ltm_initialise_packet('O');
 #if defined(USE_GPS)
-    ltm_serialise_32(GPS_home[GPS_LATITUDE]);
-    ltm_serialise_32(GPS_home[GPS_LONGITUDE]);
+    ltm_serialise_32(GPS_home_llh.lat);
+    ltm_serialise_32(GPS_home_llh.lon);
 #else
     ltm_serialise_32(0);
     ltm_serialise_32(0);

@@ -25,6 +25,13 @@
 #define SLOW_VOLTAGE_TASK_FREQ_HZ 50
 #define FAST_VOLTAGE_TASK_FREQ_HZ 200
 
+#define VOLTAGE_STABLE_TICK_MS        100
+#define VOLTAGE_STABLE_BITS_TOTAL     11    // number of samples to test
+#define VOLTAGE_STABLE_BITS_THRESHOLD 10    // number of samples tham must be within delta (~1s)
+#define VOLTAGE_STABLE_MAX_DELTA      10    // 100mV
+
+STATIC_ASSERT(VOLTAGE_STABLE_BITS_TOTAL < sizeof(uint16_t) * 8, "not enough voltageStableBits");
+
 //
 // meters
 //
@@ -41,8 +48,11 @@ extern const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT];
 // WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
 
 typedef struct voltageMeter_s {
-    uint16_t displayFiltered;               // voltage in 0.01V steps
-    uint16_t unfiltered;                    // voltage in 0.01V steps
+    uint16_t displayFiltered;                // voltage in 0.01V steps
+    uint16_t voltageStablePrevFiltered;      // last filtered voltage sample
+    timeMs_t voltageStableLastUpdate;
+    uint16_t voltageStableBits;              // rolling bitmask, bit 1 if battery difference is within threshold, shifted left
+    uint16_t unfiltered;                     // voltage in 0.01V steps
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     uint16_t sagFiltered;                   // voltage in 0.01V steps
 #endif
@@ -111,6 +121,12 @@ void voltageMeterESCRefresh(void);
 void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter);
 void voltageMeterESCReadMotor(uint8_t motor, voltageMeter_t *voltageMeter);
 
+//
+// api for battery stable voltage detection
+//
+
+void voltageStableUpdate(voltageMeter_t* vm);
+bool voltageIsStable(voltageMeter_t* vm);
 
 //
 // API for reading/configuring current meters by id.

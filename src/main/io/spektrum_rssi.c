@@ -153,7 +153,7 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[])
                                                        0,resolution));
 #else
             // Do a direkt dBm to percent mapping, keeping the non-linear dBm logarithmic curve.
-            spekChannelData[rssi_channel] = (uint16_t)(map(rssi),
+            spekChannelData[rssi_channel] = (uint16_t)(map(rssi,
                                                        SPEKTRUM_RSSI_MIN, SPEKTRUM_RSSI_MAX,
                                                        0,resolution));
 #endif

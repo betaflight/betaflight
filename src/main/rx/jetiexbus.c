@@ -93,13 +93,12 @@ uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 static uint16_t jetiExBusChannelData[JETIEXBUS_CHANNEL_COUNT];
 
 // Jeti Ex Bus CRC calculations for a frame
-uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen)
+uint16_t jetiExBusCalcCRC16(const uint8_t *pt, uint8_t msgLen)
 {
     uint16_t crc16_data = 0;
-    uint8_t data=0;
 
     for (uint8_t mlen = 0; mlen < msgLen; mlen++) {
-        data = pt[mlen] ^ ((uint8_t)(crc16_data) & (uint8_t)(0xFF));
+        uint8_t data = pt[mlen] ^ (crc16_data & 0xff);
         data ^= data << 4;
         crc16_data = ((((uint16_t)data << 8) | ((crc16_data & 0xFF00) >> 8))
                       ^ (uint8_t)(data >> 4)
@@ -153,6 +152,7 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
 
     static timeUs_t jetiExBusTimeLast = 0;
     static uint8_t *jetiExBusFrame;
+    static uint8_t jetiExBusFrameMaxSize;
     const timeUs_t now = microsISR();
 
     // Check if we shall reset frame position due to time
@@ -169,16 +169,27 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
         case EXBUS_START_CHANNEL_FRAME:
             jetiExBusFrameState = EXBUS_STATE_IN_PROGRESS;
             jetiExBusFrame = jetiExBusChannelFrame;
+            jetiExBusFrameMaxSize = EXBUS_MAX_CHANNEL_FRAME_SIZE;
             break;
 
         case EXBUS_START_REQUEST_FRAME:
             jetiExBusRequestState = EXBUS_STATE_IN_PROGRESS;
             jetiExBusFrame = jetiExBusRequestFrame;
+            jetiExBusFrameMaxSize = EXBUS_MAX_REQUEST_FRAME_SIZE;
             break;
 
         default:
             return;
         }
+    }
+
+    if (jetiExBusFramePosition == jetiExBusFrameMaxSize) {
+        // frame overrun
+        jetiExBusFrameReset();
+        jetiExBusFrameState = EXBUS_STATE_ZERO;
+        jetiExBusRequestState = EXBUS_STATE_ZERO;
+
+        return;
     }
 
     // Store in frame copy

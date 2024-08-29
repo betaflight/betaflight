@@ -59,9 +59,9 @@ typedef enum {
     RESCUE_FLY_HOME,
     RESCUE_DESCENT,
     RESCUE_LANDING,
+    RESCUE_DO_NOTHING,
     RESCUE_ABORT,
-    RESCUE_COMPLETE,
-    RESCUE_DO_NOTHING
+    RESCUE_COMPLETE
 } rescuePhase_e;
 
 typedef enum {
@@ -101,7 +101,6 @@ typedef struct {
     float distanceToHomeM;
     uint16_t groundSpeedCmS;
     int16_t directionToHome;
-    float accMagnitude;
     bool healthy;
     float errorAngle;
     float gpsDataIntervalSeconds;
@@ -124,6 +123,7 @@ typedef struct {
 
 #define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
 #define GPS_RESCUE_MAX_THROTTLE_ITERM    200    // max iterm value for throttle in degrees * 100
+#define GPS_RESCUE_ALLOWED_YAW_RANGE   30.0f   // yaw error must be less than this to enter fly home phase, and to pitch during descend()
 
 static float rescueThrottle;
 static float rescueYaw;
@@ -193,17 +193,19 @@ static void setReturnAltitude(void)
         // Intended descent distance for rescues that start outside the minStartDistM distance
         // Set this to the user's intended descent distance, but not more than half the distance to home to ensure some fly home time
         rescueState.intent.descentDistanceM = fminf(0.5f * rescueState.sensor.distanceToHomeM, gpsRescueConfig()->descentDistanceM);
- 
+
+        const float initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
         switch (gpsRescueConfig()->altitudeMode) {
             case GPS_RESCUE_ALT_MODE_FIXED:
                 rescueState.intent.returnAltitudeCm = gpsRescueConfig()->returnAltitudeM * 100.0f;
                 break;
             case GPS_RESCUE_ALT_MODE_CURRENT:
-                rescueState.intent.returnAltitudeCm = rescueState.sensor.currentAltitudeCm + gpsRescueConfig()->initialClimbM * 100.0f;
+                // climb above current altitude, but always return at least initial height above takeoff point, in case current altitude was negative
+                rescueState.intent.returnAltitudeCm = fmaxf(initialClimbCm, rescueState.sensor.currentAltitudeCm + initialClimbCm);
                 break;
             case GPS_RESCUE_ALT_MODE_MAX:
             default:
-                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + gpsRescueConfig()->initialClimbM * 100.0f;
+                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + initialClimbCm;
                 break;
         }
     }
@@ -561,12 +563,6 @@ static void sensorUpdate(void)
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome); // computed from current GPS position in relation to home
     rescueState.sensor.healthy = gpsIsHealthy();
 
-    if (rescueState.phase == RESCUE_LANDING) {
-        // do this at sensor update rate, not the much slower GPS rate, for quick disarm
-        rescueState.sensor.accMagnitude = (float) sqrtf(sq(acc.accADC[Z] - acc.dev.acc_1G) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec;
-        // Note: subtracting 1G from Z assumes the quad is 'flat' with respect to the horizon.  A true non-gravity acceleration value, regardless of attitude, may be better.
-    }
-
     rescueState.sensor.directionToHome = GPS_directionToHome; // extern value from gps.c using current position relative to home
     rescueState.sensor.errorAngle = (attitude.values.yaw - rescueState.sensor.directionToHome) / 10.0f;
     // both attitude and direction are in degrees * 10, errorAngle is degrees
@@ -699,7 +695,7 @@ static bool checkGPSRescueIsAvailable(void)
 
 void disarmOnImpact(void)
 {
-    if (rescueState.sensor.accMagnitude > rescueState.intent.disarmThreshold) {
+    if (acc.accMagnitude > rescueState.intent.disarmThreshold) {
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         disarm(DISARM_REASON_GPS_RESCUE);
         rescueStop();
@@ -718,13 +714,19 @@ void descend(void)
         rescueState.intent.velocityPidCutoffModifier = 2.5f - proximityToLandingArea;
 
         // reduce target velocity as we get closer to home. Zero within 2m of home, reducing risk of overshooting.
-        // if it does overshoot, allow pitch angle limit to build up to correct the overshoot once rotated
         rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * proximityToLandingArea;
+
+        // attenuate velocity target unless pointing towards home, to minimise circling behaviour during overshoots
+        if (rescueState.sensor.absErrorAngle > GPS_RESCUE_ALLOWED_YAW_RANGE) {
+            rescueState.intent.targetVelocityCmS = 0;
+        } else {
+            rescueState.intent.targetVelocityCmS *= (GPS_RESCUE_ALLOWED_YAW_RANGE - rescueState.sensor.absErrorAngle) / GPS_RESCUE_ALLOWED_YAW_RANGE;
+        }
 
         // attenuate velocity iterm towards zero as we get closer to the landing area
         rescueState.intent.velocityItermAttenuator = fminf(proximityToLandingArea, rescueState.intent.velocityItermAttenuator);
 
-        // reduce pitch angle limit if there is a significant groundspeed error - eg on overshooting home
+        // full pitch angle available all the time
         rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
 
         // limit roll angle to half the allowed pitch angle and attenuate when closer to home
@@ -850,8 +852,8 @@ void gpsRescueUpdate(void)
         if (rescueState.intent.yawAttenuator < 1.0f) { // acquire yaw authority over one second
             rescueState.intent.yawAttenuator += rescueState.sensor.gpsRescueTaskIntervalSeconds;
         }
-        if (rescueState.sensor.absErrorAngle < 30.0f) {
-            // allow pitch, limiting allowed angle if we are drifting away from home
+        if (rescueState.sensor.absErrorAngle < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+            // enter fly home phase, and enable pitch, when the yaw angle error is small enough
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
             rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
@@ -981,7 +983,9 @@ bool gpsRescueIsDisabled(void)
 #ifdef USE_MAG
 bool gpsRescueDisableMag(void)
 {
-    return ((!gpsRescueConfig()->useMag || magForceDisable) && (rescueState.phase >= RESCUE_INITIALIZE) && (rescueState.phase <= RESCUE_LANDING));
+    // Enable mag on user request, but don't use it during fly home or if force disabled 
+    // Note that while flying home the course over ground from GPS provides a heading that is less affected by wind
+    return !(gpsRescueConfig()->useMag && rescueState.phase != RESCUE_FLY_HOME && !magForceDisable);
 }
 #endif
 #endif

@@ -427,8 +427,8 @@ TEST(HuffmanUnittest, TestHuffmanEncodeStreaming)
     // 1110 1101
     // e    d
     huffmanState_t state1 = {
-        .bytesWritten = 0,
         .outByte = outBuf,
+        .bytesWritten = 0,
         .outBufLen = OUTBUF_LEN,
         .outBit = 0x80,
     };
@@ -453,8 +453,8 @@ TEST(HuffmanUnittest, TestHuffmanEncodeStreaming)
     // 1110 1100 1100 01
     // e    c    c    8
     huffmanState_t state2 = {
-        .bytesWritten = 0,
         .outByte = outBuf,
+        .bytesWritten = 0,
         .outBufLen = OUTBUF_LEN,
         .outBit = 0x80,
     };
@@ -481,8 +481,8 @@ TEST(HuffmanUnittest, TestHuffmanEncodeStreaming)
     // 1110 1100 1100 0110 0000 1110 1011 1000 1101 1
     // e    c    c    6    0    e    b    8    d    8
     huffmanState_t state3 = {
-        .bytesWritten = 0,
         .outByte = outBuf,
+        .bytesWritten = 0,
         .outBufLen = OUTBUF_LEN,
         .outBit = 0x80,
     };

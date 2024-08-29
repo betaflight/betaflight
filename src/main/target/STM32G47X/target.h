@@ -20,9 +20,13 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "SG47"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32G47x"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -72,5 +76,9 @@
 #define USE_ESCSERIAL
 
 #define USE_ADC
+
 #define USE_EXTI
+
+#define USE_PID_DENOM_CHECK
+
 #define USE_TIMER_UP_CONFIG
