@@ -278,6 +278,9 @@ static int getEscRpmFreq(int i)
     return getEscRpm(i) / 60;
 }
 
+float slowedRpm = 0;
+static int rpmBufferIndex = 0;
+const int resetSize=3;
 static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms_t *element)
 {
     float averagedRpm = 0;
@@ -288,7 +291,12 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
     averagedRpm = averagedRpm / ((float) getMotorCount());
     averagedRpm /= 1000.0f;
 
-    osdPrintFloat(element->buff, SYM_NONE, averagedRpm, "", 1, true, SYM_NONE);
+    if(rpmBufferIndex==0) {
+        slowedRpm=averagedRpm;
+    }
+    rpmBufferIndex = (rpmBufferIndex + 1) % resetSize;
+
+    osdPrintFloat(element->buff, SYM_NONE, slowedRpm, "", 1, true, SYM_NONE);
 }
 #endif
 
