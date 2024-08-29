@@ -958,3 +958,164 @@ TEST(pidControllerTest, testLaunchControl)
     EXPECT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
     EXPECT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
 }
+
+TEST(pidControllerTest, testTpaClassic)
+{
+    resetTest();
+
+    pidProfile->tpa_curve_type = TPA_CURVE_CLASSIC;
+    pidProfile->tpa_rate = 30;
+    pidProfile->tpa_breakpoint = 1600;
+    pidProfile->tpa_low_rate = -50;
+    pidProfile->tpa_low_breakpoint = 1200;
+    pidProfile->tpa_low_always = 1;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(1.5f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.1f, pidProfile);
+    EXPECT_FLOAT_EQ(1.25f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.2f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.6f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.8f, pidProfile);
+    EXPECT_FLOAT_EQ(0.85f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(1.0f, pidProfile);
+    EXPECT_FLOAT_EQ(0.7f, pidRuntime.tpaFactor);
+
+
+    pidProfile->tpa_curve_type = TPA_CURVE_CLASSIC;
+    pidProfile->tpa_rate = 30;
+    pidProfile->tpa_breakpoint = 1600;
+    pidProfile->tpa_low_rate = -50;
+    pidProfile->tpa_low_breakpoint = 1000;
+    pidProfile->tpa_low_always = 1;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.1f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.2f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.6f, pidProfile);
+    EXPECT_FLOAT_EQ(1.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.8f, pidProfile);
+    EXPECT_FLOAT_EQ(0.85f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(1.0f, pidProfile);
+    EXPECT_FLOAT_EQ(0.7f, pidRuntime.tpaFactor);
+}
+
+TEST(pidControllerTest, testTpaHyperbolic)
+{
+    resetTest();
+
+    // curve sligly down - edge case where internal expo -> inf
+    pidProfile->tpa_curve_type = TPA_CURVE_HYPERBOLIC;
+    pidProfile->tpa_curve_pid_thr100 = 50;
+    pidProfile->tpa_curve_pid_thr0 = 500;
+    pidProfile->tpa_curve_expo = 10;
+    pidProfile->tpa_curve_stall_throttle = 30;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(5.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.15f, pidProfile);
+    EXPECT_FLOAT_EQ(5.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.5, pidProfile);
+    EXPECT_NEAR(2.588f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(0.9, pidProfile);
+    EXPECT_NEAR(0.693f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(1.0, pidProfile);
+    EXPECT_NEAR(0.5f, pidRuntime.tpaFactor, 0.01f);
+
+    // linear curve
+    pidProfile->tpa_curve_type = TPA_CURVE_HYPERBOLIC;
+    pidProfile->tpa_curve_pid_thr100 = 10;
+    pidProfile->tpa_curve_pid_thr0 = 300;
+    pidProfile->tpa_curve_expo = 0;
+    pidProfile->tpa_curve_stall_throttle = 0;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(3.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.15f, pidProfile);
+    EXPECT_NEAR(2.565f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(0.5, pidProfile);
+    EXPECT_NEAR(1.550f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(0.9, pidProfile);
+    EXPECT_NEAR(0.390f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(1.0, pidProfile);
+    EXPECT_NEAR(0.1f, pidRuntime.tpaFactor, 0.01f);
+
+    // curve bends up
+    pidProfile->tpa_curve_type = TPA_CURVE_HYPERBOLIC;
+    pidProfile->tpa_curve_pid_thr100 = 60;
+    pidProfile->tpa_curve_pid_thr0 = 1000;
+    pidProfile->tpa_curve_expo = -50;
+    pidProfile->tpa_curve_stall_throttle = 40;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(10.0f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.15f, pidProfile);
+    EXPECT_NEAR(10.0f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(0.5, pidProfile);
+    EXPECT_NEAR(9.700f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(0.9, pidProfile);
+    EXPECT_NEAR(7.364f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(1.0, pidProfile);
+    EXPECT_NEAR(0.625f, pidRuntime.tpaFactor, 0.01f);
+
+    // curve bends down
+    pidProfile->tpa_curve_type = TPA_CURVE_HYPERBOLIC;
+    pidProfile->tpa_curve_pid_thr100 = 90;
+    pidProfile->tpa_curve_pid_thr0 = 250;
+    pidProfile->tpa_curve_expo = 60;
+    pidProfile->tpa_curve_stall_throttle = 60;
+
+    pidInit(pidProfile);
+
+    pidUpdateTpaFactor(0.0f, pidProfile);
+    EXPECT_FLOAT_EQ(2.5f, pidRuntime.tpaFactor);
+
+    pidUpdateTpaFactor(0.15f, pidProfile);
+    EXPECT_NEAR(2.5f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(0.5, pidProfile);
+    EXPECT_NEAR(2.5f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(0.9, pidProfile);
+    EXPECT_NEAR(0.954f, pidRuntime.tpaFactor, 0.01f);
+
+    pidUpdateTpaFactor(1.0, pidProfile);
+    EXPECT_NEAR(0.9f, pidRuntime.tpaFactor, 0.01f);
+}

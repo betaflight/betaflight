@@ -239,6 +239,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .landing_disarm_threshold = 0, // relatively safe values are around 100
         .feedforward_yaw_hold_gain = 15,  // zero disables; 15-20 is OK for 5in
         .feedforward_yaw_hold_time = 100,  // a value of 100 is a time constant of about 100ms, and is OK for a 5in; smaller values decay faster, eg for smaller props
+        .tpa_curve_type = TPA_CURVE_CLASSIC,
+        .tpa_curve_stall_throttle = 30,
+        .tpa_curve_pid_thr0 = 200,
+        .tpa_curve_pid_thr100 = 70,
+        .tpa_curve_expo = 20,
     );
 
 #ifndef USE_D_MIN
@@ -303,18 +308,9 @@ static float getWingTpaArgument(float throttle)
 }
 #endif // #ifndef USE_WING
 
-void pidUpdateTpaFactor(float throttle)
+float getTpaFactorClassic(float tpaArgument)
 {
     static bool isTpaLowFaded = false;
-    // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
-    throttle = constrainf(throttle, 0.0f, 1.0f);
-
-#ifdef USE_WING
-    const float tpaArgument = isFixedWing() ?  getWingTpaArgument(throttle) : throttle;
-#else
-    const float tpaArgument = throttle;
-#endif
-
     bool isThrottlePastTpaLowBreakpoint = (tpaArgument >= pidRuntime.tpaLowBreakpoint || pidRuntime.tpaLowBreakpoint <= 0.01f);
     float tpaRate = 0.0f;
     if (isThrottlePastTpaLowBreakpoint || isTpaLowFaded) {
@@ -326,7 +322,35 @@ void pidUpdateTpaFactor(float throttle)
         tpaRate = pidRuntime.tpaLowMultiplier * (pidRuntime.tpaLowBreakpoint - tpaArgument);
     }
 
-    float tpaFactor = 1.0f - tpaRate;
+    return 1.0f - tpaRate;
+}
+
+void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile)
+{
+    // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
+    throttle = constrainf(throttle, 0.0f, 1.0f);
+    float tpaFactor;
+
+#ifdef USE_WING
+    const float tpaArgument = isFixedWing() ?  getWingTpaArgument(throttle) : throttle;
+#else
+    const float tpaArgument = throttle;
+#endif
+
+#ifdef USE_ADVANCED_TPA
+    switch (pidProfile->tpa_curve_type) {
+    case TPA_CURVE_HYPERBOLIC:
+        tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
+        break;
+    case TPA_CURVE_CLASSIC:
+    default:
+        tpaFactor = getTpaFactorClassic(tpaArgument);
+    }
+#else
+    UNUSED(pidProfile);
+    tpaFactor = getTpaFactorClassic(tpaArgument);
+#endif
+
     DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
     pidRuntime.tpaFactor = tpaFactor;
 }
@@ -861,7 +885,7 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
     }    
 #else
     UNUSED(pidProfile);
-#endif // #ifdef USE_WING ... #else
+#endif // USE_WING
 }
 
 NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
@@ -894,7 +918,7 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 #else
     UNUSED(axis);
     UNUSED(pidProfile);
-#endif // #ifdef USE_WING ... #else
+#endif // USE_WING
 }
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
@@ -1115,7 +1139,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // slowing down I-term change, or even making it zero if setpoint is high enough
             iTermChange *= pidRuntime.spa[axis];
         }
-#endif // #ifdef USE_WING
+#endif // USE_WING
 
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
