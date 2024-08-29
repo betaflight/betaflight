@@ -456,3 +456,12 @@
 #endif
 
 #endif // USE_RACE_PRO
+
+#ifdef USE_WING
+#ifndef USE_SERVOS
+#define USE_SERVOS
+#endif
+#ifndef USE_ADVANCED_TPA
+#define USE_ADVANCED_TPA
+#endif
+#endif // USE_WING
