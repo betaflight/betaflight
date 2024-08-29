@@ -410,7 +410,10 @@ void crsfFrameFlightMode(sbuf_t *dst)
 
     sbufWriteString(dst, flightMode);
     if (!ARMING_FLAG(ARMED) && !FLIGHT_MODE(FAILSAFE_MODE)) {
-        sbufWriteU8(dst, isArmingDisabled() ? '!' : '*');
+        // * - ready to arm
+        // ! - arming disabled
+        // ? - GPS fix not available
+        sbufWriteU8(dst, featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME)) ? '?' : isArmingDisabled() ? '!' : '*');
     }
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
