@@ -413,7 +413,11 @@ void crsfFrameFlightMode(sbuf_t *dst)
         // * - ready to arm
         // ! - arming disabled
         // ? - GPS fix not available
-        sbufWriteU8(dst, featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME)) ? '?' : isArmingDisabled() ? '!' : '*');
+        bool isGpsReady = false;
+#ifdef USE_GPS
+        isGpsReady = featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME));
+#endif
+        sbufWriteU8(dst, isGpsReady ? '?' : isArmingDisabled() ? '!' : '*');
     }
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
