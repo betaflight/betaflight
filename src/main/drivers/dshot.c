@@ -148,7 +148,6 @@ FAST_DATA_ZERO_INIT static float motorFrequencyHz[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT static float minMotorFrequencyHz;
 FAST_DATA_ZERO_INIT static float erpmToHz;
 FAST_DATA_ZERO_INIT static float dshotRpmAverage;
-FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 
 void initDshotTelemetry(const timeUs_t looptimeUs)
 {
@@ -289,21 +288,13 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
     }
 
     const unsigned motorCount = motorDeviceCount();
-    uint32_t erpmTotal = 0;
-    uint32_t rpmSamples = 0;
 
     // Decode all telemetry data now to discharge interrupt from this task
     for (unsigned k = 0; k < motorCount; k++) {
         dshotTelemetryType_e type;
         uint32_t value;
-
         if (dshotDecodeTelemetryValue(k, &value, &type)) {
             dshotUpdateTelemetryData(k, type, value);
-
-            if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
-                dshotRpm[k] = erpmToRpm(value);
-                erpmTotal += value;
-                rpmSamples++;
             // Update max temp
             if ((type == DSHOT_TELEMETRY_TYPE_TEMPERATURE) && (value > dshotTelemetryState.motorState[k].maxTemp)) {
                 dshotTelemetryState.motorState[k].maxTemp = value;
@@ -311,18 +302,23 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
         }
     }
 
-    // Update average
-    if (rpmSamples > 0) {
-        dshotRpmAverage = erpmToRpm(erpmTotal) / (float)rpmSamples;
-    }
-
     // update filtered rotation speed of motors for features (e.g. "RPM filter")
+    // calculate average RPM
     minMotorFrequencyHz = FLT_MAX;
+    float motorHzSum = 0;
+    int  motorHzCount = 0;
     for (int motor = 0; motor < getMotorCount(); motor++) {
-        motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], erpmToHz * getDshotErpm(motor));
+        const float motorHz = erpmToHz * getDshotErpm(motor);
+        motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], motorHz);
         minMotorFrequencyHz = MIN(minMotorFrequencyHz, motorFrequencyHz[motor]);
+        if (motorHz > 0) {  // sum and count all nonzero rps values for average
+            motorHzSum += motorHz;
+            motorHzCount++;
+        }
     }
-
+    if (motorHzCount) {
+        dshotRpmAverage = motorHzSum * 60.0f / motorHzCount;
+    }
     // Set state to processed
     dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_PROCESSED;
 }
@@ -334,7 +330,7 @@ uint16_t getDshotErpm(uint8_t motorIndex)
 
 float getDshotRpm(uint8_t motorIndex)
 {
-    return dshotRpm[motorIndex];
+    return erpmToRpm(getDshotErpm(motorIndex));
 }
 
 float getDshotRpmAverage(void)
