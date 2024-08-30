@@ -251,7 +251,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
         pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
-        pidRuntime.maxRcRateInv[axis] = 1.0f / getMaxRcRate(axis);
     }
     pidRuntime.angleYawSetpoint = 0.0f;
 #endif
