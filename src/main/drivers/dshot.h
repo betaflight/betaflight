@@ -59,7 +59,8 @@ extern dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
 
 #define DSHOT_NORMAL_TELEMETRY_MASK                 (1 << DSHOT_TELEMETRY_TYPE_eRPM)
 #define DSHOT_EXTENDED_TELEMETRY_MASK               (~DSHOT_NORMAL_TELEMETRY_MASK)
-#define DSHOT_TELEMETRY_RANGE_MASK                  (0x0f00u)
+#define DSHOT_TELEMETRY_RANGE_MASK                  0x0e00u   // bits 9-11. bit 8 is always 0 for telemetry
+#define DSHOT_TELEMETRY_RANGE_SHIFT                 9u
 #define DSHOT_TELEMETRY_VALUE_MASK                  (0x00ffu)
 #define DSHOT_TELEMETRY_STATUS_ALERT_EVENT_MASK     (0x80u)
 #define DSHOT_TELEMETRY_STATUS_WARNING_EVENT_MASK   (0x40u)
@@ -68,7 +69,7 @@ extern dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
 #define DSHOT_MAX_STRESS_LVL_WARNING_THRESHOLD      (9u)
 #define DSHOT_TELEMETRY_ENABLE_RESPONSE             (DSHOT_TELEMETRY_RANGE_STATUS)
 
-typedef enum dshotTelemetryType_e {
+typedef enum {
     DSHOT_TELEMETRY_TYPE_eRPM,
     DSHOT_TELEMETRY_TYPE_TEMPERATURE,
     DSHOT_TELEMETRY_TYPE_VOLTAGE,
@@ -78,7 +79,7 @@ typedef enum dshotTelemetryType_e {
     DSHOT_TELEMETRY_TYPE_STRESS_LEVEL,
     DSHOT_TELEMETRY_TYPE_STATUS,
     DSHOT_TELEMETRY_TYPE_COUNT
-} dshotTelemetryType_t;
+} dshotTelemetryType_e;
 
 typedef enum dshotTelemetryRange_e {
     DSHOT_TELEMETRY_RANGE_TEMPERATURE   = 0x200,
@@ -115,6 +116,7 @@ typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
     uint8_t telemetryTypes;
+    bool extendedTelemetryEnabled;
     uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
 

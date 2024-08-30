@@ -240,7 +240,7 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
                 if (rawValue != DSHOT_TELEMETRY_INVALID) {
                     // Check EDT enable or store raw value
                     if ((rawValue == DSHOT_TELEMETRY_ENABLE_RESPONSE) && (dshotCommandGetCurrent(i) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
-                        dshotTelemetryState.motorState[i].telemetryTypes = 1 << DSHOT_TELEMETRY_TYPE_STATUS;
+                        dshotTelemetryState.motorState[i].extendedTelemetryEnabled = true;
                     } else {
                         dshotTelemetryState.motorState[i].rawValue = rawValue;
                     }

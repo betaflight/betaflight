@@ -332,7 +332,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
         for (uint8_t k = 0; k < getMotorCount(); k++) {
             // Skip if no extended telemetry at all
-            if ((dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) == 0) {
+            if (!dshotTelemetryState.motorState[k].extendedTelemetryEnabled) {
                 continue;
             }
 
