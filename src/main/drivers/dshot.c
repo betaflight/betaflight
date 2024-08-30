@@ -192,7 +192,7 @@ static void dshotStoreDebugWithStatus(unsigned motorIndex, uint32_t decodedValue
     }
 }
 
-static bool dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
+static bool dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_e *pType)
 {
     bool useDebug = false;
     debugType_e debugType;
@@ -286,7 +286,7 @@ static bool dshotDecodeTelemetryValue(uint8_t motorIndex, uint32_t *pDecoded, ds
     return *pDecoded != DSHOT_TELEMETRY_INVALID;
 }
 
-static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint32_t value)
+static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_e type, uint32_t value)
 {
     // Update telemetry data
     dshotTelemetryState.motorState[motorIndex].telemetryData[type] = value;
@@ -315,7 +315,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
 
     // Decode all telemetry data now to discharge interrupt from this task
     for (uint8_t k = 0; k < motorCount; k++) {
-        dshotTelemetryType_t type;
+        dshotTelemetryType_e type;
         uint32_t value;
 
         if (dshotDecodeTelemetryValue(k, &value, &type)) {

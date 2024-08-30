@@ -68,7 +68,7 @@ extern dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
 #define DSHOT_MAX_STRESS_LVL_WARNING_THRESHOLD      (9u)
 #define DSHOT_TELEMETRY_ENABLE_RESPONSE             (DSHOT_TELEMETRY_RANGE_STATUS)
 
-typedef enum dshotTelemetryType_e {
+typedef enum {
     DSHOT_TELEMETRY_TYPE_eRPM,
     DSHOT_TELEMETRY_TYPE_TEMPERATURE,
     DSHOT_TELEMETRY_TYPE_VOLTAGE,
@@ -78,9 +78,9 @@ typedef enum dshotTelemetryType_e {
     DSHOT_TELEMETRY_TYPE_STRESS_LEVEL,
     DSHOT_TELEMETRY_TYPE_STATUS,
     DSHOT_TELEMETRY_TYPE_COUNT
-} dshotTelemetryType_t;
+} dshotTelemetryType_e;
 
-typedef enum dshotTelemetryRange_e {
+typedef enum {
     DSHOT_TELEMETRY_RANGE_TEMPERATURE   = 0x200,
     DSHOT_TELEMETRY_RANGE_VOLTAGE       = 0x400,
     DSHOT_TELEMETRY_RANGE_CURRENT       = 0x600,
@@ -88,7 +88,7 @@ typedef enum dshotTelemetryRange_e {
     DSHOT_TELEMETRY_RANGE_DEBUG2        = 0xA00,
     DSHOT_TELEMETRY_RANGE_STRESS_LEVEL  = 0xC00,
     DSHOT_TELEMETRY_RANGE_STATUS        = 0xE00
-} dshotTelemetryRange_t;
+} dshotTelemetryRange_e;
 
 typedef enum dshotRawValueState_e {
     DSHOT_RAW_VALUE_STATE_INVALID,
