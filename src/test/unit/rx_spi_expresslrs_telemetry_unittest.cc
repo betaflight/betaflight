@@ -44,6 +44,7 @@ extern "C" {
     #include "telemetry/msp_shared.h"
     #include "rx/crsf_protocol.h"
     #include "rx/expresslrs_telemetry.h"
+    #include "fc/rc_modes.h"
     #include "flight/imu.h"
 
     #include "sensors/battery.h"
@@ -213,7 +214,7 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestFlightMode)
     EXPECT_EQ('C', payload[4]);
     EXPECT_EQ('R', payload[5]);
     EXPECT_EQ('O', payload[6]);
-    EXPECT_EQ('*', payload[7]);
+    EXPECT_EQ('?', payload[7]);
     EXPECT_EQ(0, payload[8]);
 
     testSetDataToTransmit(payloadSize, payload);
@@ -464,4 +465,5 @@ extern "C" {
 
     timeUs_t rxFrameTimeUs(void) { return 0; }
 
+    bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
 }

@@ -43,6 +43,7 @@ extern "C" {
 
     #include "config/config.h"
     #include "fc/runtime_config.h"
+    #include "fc/rc_modes.h"
 
     #include "flight/pid.h"
     #include "flight/imu.h"
@@ -264,10 +265,10 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
     EXPECT_EQ(0x21, frame[2]); // type
-    EXPECT_EQ('S', frame[3]);
-    EXPECT_EQ('T', frame[4]);
-    EXPECT_EQ('A', frame[5]);
-    EXPECT_EQ('B', frame[6]);
+    EXPECT_EQ('A', frame[3]);
+    EXPECT_EQ('N', frame[4]);
+    EXPECT_EQ('G', frame[5]);
+    EXPECT_EQ('L', frame[6]);
     EXPECT_EQ(0, frame[7]);
     EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
 
@@ -389,4 +390,5 @@ bool handleMspFrame(uint8_t *, uint8_t, uint8_t *)  { return false; }
 bool isBatteryVoltageConfigured(void) { return true; }
 bool isAmperageConfigured(void) { return true; }
 timeUs_t rxFrameTimeUs(void) { return 0; }
+bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
 }
