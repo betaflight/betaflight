@@ -80,6 +80,11 @@ ifneq ($(wildcard $(MAKE_SCRIPT_DIR)/local.mk),)
 include $(MAKE_SCRIPT_DIR)/local.mk
 endif
 
+# some targets use parallel build by default
+# MAKEFLAGS is valid only inside target, do not use this at parse phase
+DEFAULT_PARALLEL_JOBS 	:=    # all jobs in parallel (for backward compatibility)
+MAKE_PARALLEL 		= $(if $(filter -j%, $(MAKEFLAGS)),$(EMPTY),-j$(DEFAULT_PARALLEL_JOBS))
+
 # pre-build sanity checks
 include $(MAKE_SCRIPT_DIR)/checks.mk
 
@@ -507,11 +512,11 @@ test_clean:
 
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN):
-	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
+	$(V0) $(MAKE) $(MAKE_PARALLEL) TARGET=$(subst _clean,,$@) clean
 
 ## <CONFIG>_clean    : clean up one specific target (alias for above)
 $(CONFIGS_CLEAN):
-	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
+	$(V0) $(MAKE) $(MAKE_PARALLEL) CONFIG=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
@@ -568,10 +573,10 @@ zip:
 	$(V0) zip $(TARGET_ZIP) $(TARGET_HEX)
 
 binary:
-	$(V0) $(MAKE) -j $(TARGET_BIN)
+	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 hex:
-	$(V0) $(MAKE) -j $(TARGET_HEX)
+	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
