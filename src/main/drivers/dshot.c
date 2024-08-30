@@ -175,7 +175,7 @@ static uint32_t dshotDecodeErpmTelemetryValue(uint16_t value)
     }
 
     // Convert value to 16 bit from the GCR telemetry format (eeem mmmm mmmm)
-    value = (value & 0x01ff) << ((value & 0xfe00) >> 9);
+    value = (value & 0x01ff) << ((value & 0x0e00) >> 9);
     if (!value) {
         return DSHOT_TELEMETRY_INVALID;
     }
