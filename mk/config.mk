@@ -59,9 +59,9 @@ endif
 
 $(BASE_CONFIGS):
 	@echo "Building target config $@"
-	$(V0) $(MAKE) -j hex CONFIG=$@
+	$(V0) $(MAKE) $(MAKE_PARALLEL) hex CONFIG=$@
 	@echo "Building target config $@ succeeded."
 
 ## <CONFIG>_rev    : build configured target and add revision to filename
 $(addsuffix _rev,$(BASE_CONFIGS)):
-	$(V0) $(MAKE) -j hex CONFIG=$(subst _rev,,$@) REV=yes
+	$(V0) $(MAKE) $(MAKE_PARALLEL) hex CONFIG=$(subst _rev,,$@) REV=yes
