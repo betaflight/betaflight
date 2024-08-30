@@ -473,7 +473,6 @@ typedef struct pidRuntime_s {
     float angleEarthRef;
     float angleTarget[2];
     bool axisInAngleMode[3];
-    float maxRcRateInv[2];
 #endif
 
 #ifdef USE_WING
