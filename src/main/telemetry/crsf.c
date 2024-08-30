@@ -415,7 +415,8 @@ void crsfFrameFlightMode(sbuf_t *dst)
         // ? - GPS fix not available
         bool isGpsWaiting = false;
 #ifdef USE_GPS
-        isGpsWaiting = featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME));
+        // check if GPS settings are preventing arming
+        isGpsWaiting = getArmingDisableFlags() & ARMING_DISABLED_GPS;
 #endif
         sbufWriteU8(dst, isGpsWaiting ? '?' : isArmingDisabled() ? '!' : '*');
     }
