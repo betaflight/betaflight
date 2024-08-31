@@ -418,7 +418,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
         // check if GPS settings are preventing arming
         isGpsWaiting = getArmingDisableFlags() & ARMING_DISABLED_GPS;
 #endif
-        sbufWriteU8(dst, isGpsWaiting ? '?' : isArmingDisabled() ? '!' : '*');
+        sbufWriteU8(dst, isArmingDisabled() ? '!' : isGpsWaiting ? '?' : '*');
     }
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
