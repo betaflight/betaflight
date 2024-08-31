@@ -349,39 +349,42 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm))
                 warningText[dshotEscErrorLength++] = 'T';
 
-            if (ARMING_FLAG(ARMED)) {
-                // RPM and current warnings
-                if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
-                    && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) != 0
-                    && (erpmToRpm(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]) <= osdConfig()->esc_rpm_alarm))
-                    warningText[dshotEscErrorLength++] = 'R';
-                if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
-                    && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0
-                    && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] >= osdConfig()->esc_current_alarm))
-                    warningText[dshotEscErrorLength++] = 'C';
+            // RPM warning
+            if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
+                && ARMING_FLAG(ARMED)
+                && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) != 0
+                && (erpmToRpm(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]) <= osdConfig()->esc_rpm_alarm))
+                warningText[dshotEscErrorLength++] = 'R';
 
-                // Status frame events
-                if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_STATUS)) != 0) {
-                    uint32_t telemetryStatus = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS];
+            // Current warning
+            if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
+                && ARMING_FLAG(ARMED)
+                && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0
+                && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] >= osdConfig()->esc_current_alarm))
+                warningText[dshotEscErrorLength++] = 'C';
+
+            // Status frame events
+            if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_STATUS)) != 0
+                && ARMING_FLAG(ARMED)) {
+                uint32_t telemetryStatus = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS];
 
 #if defined(DEBUG_DSHOT_STRESS_LVL)
-                    // Notify alert event
-                    if (telemetryStatus & DSHOT_TELEMETRY_STATUS_ALERT_EVENT_MASK)
-                        warningText[dshotEscErrorLength++] = 'A';
+                // Notify alert event
+                if (telemetryStatus & DSHOT_TELEMETRY_STATUS_ALERT_EVENT_MASK)
+                    warningText[dshotEscErrorLength++] = 'A';
 
-                    // Notify warning event
-                    if (telemetryStatus & DSHOT_TELEMETRY_STATUS_WARNING_EVENT_MASK)
-                        warningText[dshotEscErrorLength++] = 'W';
+                // Notify warning event
+                if (telemetryStatus & DSHOT_TELEMETRY_STATUS_WARNING_EVENT_MASK)
+                    warningText[dshotEscErrorLength++] = 'W';
 
-                    // Notify max stress lvl too high (bad commutation issue in normal flights or during aggressive with high rates flights)
-                    if ((telemetryStatus & DSHOT_TELEMETRY_STATUS_MAX_STRESS_LVL_MASK) > DSHOT_MAX_STRESS_LVL_WARNING_THRESHOLD)
-                        warningText[dshotEscErrorLength++] = 'X';
+                // Notify max stress lvl too high (bad commutation issue in normal flights or during aggressive with high rates flights)
+                if ((telemetryStatus & DSHOT_TELEMETRY_STATUS_MAX_STRESS_LVL_MASK) > DSHOT_MAX_STRESS_LVL_WARNING_THRESHOLD)
+                    warningText[dshotEscErrorLength++] = 'X';
 #endif
 
-                    // Notify error event
-                    if (telemetryStatus & DSHOT_TELEMETRY_STATUS_ERROR_EVENT_MASK)
-                        warningText[dshotEscErrorLength++] = 'E';
-                }
+                // Notify error event
+                if (telemetryStatus & DSHOT_TELEMETRY_STATUS_ERROR_EVENT_MASK)
+                    warningText[dshotEscErrorLength++] = 'E';
             }
 
             // If no esc warning data undo esc nr (esc telemetry data types depends on the esc hw/sw)
