@@ -57,16 +57,15 @@ typedef struct dshotTelemetryQuality_s {
 extern dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
 #endif // USE_DSHOT_TELEMETRY_STATS
 
-#define DSHOT_NORMAL_TELEMETRY_MASK                 (1 << DSHOT_TELEMETRY_TYPE_eRPM)
-#define DSHOT_EXTENDED_TELEMETRY_MASK               (~DSHOT_NORMAL_TELEMETRY_MASK)
-#define DSHOT_TELEMETRY_RANGE_MASK                  (0x0f00u)
+#define DSHOT_TELEMETRY_RANGE_MASK                  0x0e00u   // bits 9-11. bit 8 is always 0 for telemetry
+#define DSHOT_TELEMETRY_RANGE_SHIFT                 9u
 #define DSHOT_TELEMETRY_VALUE_MASK                  (0x00ffu)
 #define DSHOT_TELEMETRY_STATUS_ALERT_EVENT_MASK     (0x80u)
 #define DSHOT_TELEMETRY_STATUS_WARNING_EVENT_MASK   (0x40u)
 #define DSHOT_TELEMETRY_STATUS_ERROR_EVENT_MASK     (0x20u)
 #define DSHOT_TELEMETRY_STATUS_MAX_STRESS_LVL_MASK  (0x0Fu)
 #define DSHOT_MAX_STRESS_LVL_WARNING_THRESHOLD      (9u)
-#define DSHOT_TELEMETRY_ENABLE_RESPONSE             (DSHOT_TELEMETRY_RANGE_STATUS)
+#define DSHOT_TELEMETRY_ENABLE_RESPONSE             (DSHOT_TELEMETRY_RANGE_STATUS | 0)
 
 typedef enum {
     DSHOT_TELEMETRY_TYPE_eRPM,
@@ -94,7 +93,6 @@ typedef enum dshotRawValueState_e {
     DSHOT_RAW_VALUE_STATE_INVALID,
     DSHOT_RAW_VALUE_STATE_NOT_PROCESSED,
     DSHOT_RAW_VALUE_STATE_PROCESSED,
-    DSHOT_RAW_VALUE_STATE_COUNT
 } dshotRawValueState_t;
 
 typedef struct dshotProtocolControl_s {
@@ -115,12 +113,12 @@ typedef struct dshotTelemetryMotorState_s {
     uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
     uint8_t telemetryTypes;
+    bool extendedTelemetryEnabled;
     uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
 
 
 typedef struct dshotTelemetryState_s {
-    bool useDshotTelemetry;
     uint32_t invalidPacketCount;
     uint32_t readCount;
     dshotTelemetryMotorState_t motorState[MAX_SUPPORTED_MOTORS];
