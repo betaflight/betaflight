@@ -3794,7 +3794,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 6) {
             // Added in MSP API 1.45
 #ifdef USE_RX_EXPRESSLRS
-            sbufReadData(src, rxExpressLrsSpiConfigMutable()->UID, 6);
+            for (int i = 0; i < 6; i++) {
+                rxExpressLrsSpiConfigMutable()->UID[i] = sbufReadU8(src);
+            }
 #else
             uint8_t emptyUid[6];
             sbufReadData(src, emptyUid, 6);
