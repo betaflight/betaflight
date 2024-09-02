@@ -193,8 +193,8 @@ static void dshotStoreDebug(unsigned motorIndex, uint32_t decodedValue, debugTyp
 
     uint16_t highByte = 0;
     switch (debugType) {
-    case DEBUG_DSHOT_RPM_TELEMETRY:  // eprm value is 16bit, all of debug is used
-    case DEBUG_DSHOT_STATUS:         // store status as value, no need to duplicate it in upper byte (TODO: store upper 4 status bits)
+    case DEBUG_DSHOT_RPM_TELEMETRY:  // eprm value is 16bit, all of debug is used (TODO: store upper 4 status bits, 12bits is enough for erpm)
+    case DEBUG_DSHOT_STATUS:         // store status as value, no need to duplicate it in upper byte 
         break;
     default:
         // piggyback status byte on 8-bit telemetry values
