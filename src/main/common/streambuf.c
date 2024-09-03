@@ -114,6 +114,7 @@ uint32_t sbufReadU32(sbuf_t *src)
 void sbufReadData(sbuf_t *src, void *data, int len)
 {
     memcpy(data, src->ptr, len);
+    src->ptr += len;
 }
 
 // reader - return bytes remaining in buffer
