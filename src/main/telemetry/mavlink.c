@@ -344,25 +344,25 @@ void mavlinkSendPosition(void)
 
     // Global position
     mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
-        // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        micros(),
-        // lat Latitude in 1E7 degrees
-        gpsSol.llh.lat,
-        // lon Longitude in 1E7 degrees
-        gpsSol.llh.lon,
-        // alt Altitude in 1E3 meters (millimeters) above MSL
-        gpsSol.llh.altCm * 10,
-        // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
-        getEstimatedAltitudeCm() * 10,
-        // Ground X Speed (Latitude), expressed as m/s * 100
-        0,
-        // Ground Y Speed (Longitude), expressed as m/s * 100
-        0,
-        // Ground Z Speed (Altitude), expressed as m/s * 100
-        0,
-        // heading Current heading in degrees, in compass units (0..360, 0=north)
-        headingOrScaledMilliAmpereHoursDrawn()
-    );
+                                         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
+                                         micros(),
+                                         // lat Latitude in 1E7 degrees
+                                         gpsSol.llh.lat,
+                                         // lon Longitude in 1E7 degrees
+                                         gpsSol.llh.lon,
+                                         // alt Altitude in 1E3 meters (millimeters) above MSL
+                                         gpsSol.llh.altCm * 10,
+                                         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
+                                         getEstimatedAltitudeCm() * 10,
+                                         // Ground X Speed (Latitude), expressed as m/s * 100
+                                         0,
+                                         // Ground Y Speed (Longitude), expressed as m/s * 100
+                                         0,
+                                         // Ground Z Speed (Altitude), expressed as m/s * 100
+                                         0,
+                                         // heading Current heading in degrees, in compass units (0..360, 0=north)
+                                         headingOrScaledMilliAmpereHoursDrawn()
+                                        );
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 

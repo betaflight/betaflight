@@ -95,12 +95,12 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 3);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
-    .fields_disabled_mask = 0, // default log all fields
-    .sample_rate = BLACKBOX_RATE_QUARTER,
-    .device = DEFAULT_BLACKBOX_DEVICE,
-    .mode = BLACKBOX_MODE_NORMAL,
-    .high_resolution = false
-);
+                  .fields_disabled_mask = 0, // default log all fields
+                  .sample_rate = BLACKBOX_RATE_QUARTER,
+                  .device = DEFAULT_BLACKBOX_DEVICE,
+                  .mode = BLACKBOX_MODE_NORMAL,
+                  .high_resolution = false
+                 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
 
@@ -119,7 +119,7 @@ static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
     "H Data version:2\n";
 
-static const char* const blackboxFieldHeaderNames[] = {
+static const char *const blackboxFieldHeaderNames[] = {
     "name",
     "signed",
     "predictor",
@@ -181,7 +181,7 @@ typedef struct blackboxDeltaFieldDefinition_s {
  */
 static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     /* loopIteration doesn't appear in P frames since it always increments */
-    {"loopIteration",-1, UNSIGNED, .Ipredict = PREDICT(0),     .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
+    {"loopIteration", -1, UNSIGNED, .Ipredict = PREDICT(0),     .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
     /* Time advances pretty steadily so the P-frame prediction is a straight line */
     {"time",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(STRAIGHT_LINE), .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"axisP",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
@@ -469,7 +469,8 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case CONDITION(MOTOR_6_HAS_RPM):
     case CONDITION(MOTOR_7_HAS_RPM):
     case CONDITION(MOTOR_8_HAS_RPM):
-        return (getMotorCount() >= condition - CONDITION(MOTOR_1_HAS_RPM) + 1) && useDshotTelemetry && isFieldEnabled(FIELD_SELECT(RPM));
+        return (getMotorCount() >= condition - CONDITION(MOTOR_1_HAS_RPM) + 1) && useDshotTelemetry
+               && isFieldEnabled(FIELD_SELECT(RPM));
 #endif
 
     case CONDITION(TRICOPTER):
@@ -724,9 +725,9 @@ static void writeIntraframe(void)
 
 static void blackboxWriteMainStateArrayUsingAveragePredictor(int arrOffsetInHistory, int count)
 {
-    int16_t *curr  = (int16_t*) ((char*) (blackboxHistory[0]) + arrOffsetInHistory);
-    int16_t *prev1 = (int16_t*) ((char*) (blackboxHistory[1]) + arrOffsetInHistory);
-    int16_t *prev2 = (int16_t*) ((char*) (blackboxHistory[2]) + arrOffsetInHistory);
+    int16_t *curr  = (int16_t *) ((char *) (blackboxHistory[0]) + arrOffsetInHistory);
+    int16_t *prev1 = (int16_t *) ((char *) (blackboxHistory[1]) + arrOffsetInHistory);
+    int16_t *prev2 = (int16_t *) ((char *) (blackboxHistory[2]) + arrOffsetInHistory);
 
     for (int i = 0; i < count; i++) {
         // Predictor is the average of the previous two history states
@@ -1214,7 +1215,7 @@ static void loadMainState(timeUs_t currentTimeUs)
  * Returns true if there is still header left to transmit (so call again to continue transmission).
  */
 static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const void *fieldDefinitions,
-        const void *secondFieldDefinition, int fieldCount, const uint8_t *conditions, const uint8_t *secondCondition)
+                                const void *secondFieldDefinition, int fieldCount, const uint8_t *conditions, const uint8_t *secondCondition)
 {
     const blackboxFieldDefinition_t *def;
     unsigned int headerCount;
@@ -1378,11 +1379,11 @@ static bool blackboxWriteSysinfo(void)
 #endif
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
-            if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbat_scale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
-            } else {
-                xmitState.headerIndex += 2; // Skip the next two vbat fields too
-            }
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
+        blackboxPrintfHeaderLine("vbat_scale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
+        } else {
+            xmitState.headerIndex += 2; // Skip the next two vbat fields too
+        }
         );
 
         BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage", "%u,%u,%u",           batteryConfig()->vbatmincellvoltage,
@@ -1894,7 +1895,8 @@ void blackboxUpdate(timeUs_t currentTimeUs)
          */
         if (millis() > xmitState.u.startTime + 100) {
             if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
-                for (int i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
+                for (int i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION
+                     && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
                     blackboxWrite(blackboxHeader[xmitState.headerIndex]);
                     blackboxHeaderBudget--;
                 }

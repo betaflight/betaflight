@@ -153,7 +153,10 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // CLang version, using Objective C-style block
 // based on https://stackoverflow.com/questions/24959440/rewrite-gcc-cleanup-macro-with-nested-function-for-clang
 typedef void (^__cleanup_block)(void);
-static inline void __do_cleanup(__cleanup_block * b) { (*b)(); }
+static inline void __do_cleanup(__cleanup_block *b)
+{
+    (*b)();
+}
 
 #define ATOMIC_BARRIER(data)                                            \
     typeof(data) *__UNIQL(__barrier) = &data;                           \

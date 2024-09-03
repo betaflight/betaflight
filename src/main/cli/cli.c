@@ -811,7 +811,8 @@ static void dumpAllValues(const char *cmdName, uint16_t valueSection, dumpFlags_
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         const clivalue_t *value = &valueTable[i];
         cliWriterFlush();
-        if ((value->type & VALUE_SECTION_MASK) == valueSection || ((valueSection == MASTER_VALUE) && (value->type & VALUE_SECTION_MASK) == HARDWARE_VALUE)) {
+        if ((value->type & VALUE_SECTION_MASK) == valueSection || ((valueSection == MASTER_VALUE)
+                                                                   && (value->type & VALUE_SECTION_MASK) == HARDWARE_VALUE)) {
             headingStr = dumpPgValue(cmdName, value, dumpMask, headingStr);
         }
     }
@@ -1043,10 +1044,10 @@ static void printRxFailsafe(dumpFlags_t dumpMask, const rxFailsafeChannelConfig_
         if (requireValue) {
             const char *format = "rxfail %u %c %d";
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
-                channel,
-                rxFailsafeModeCharacters[defaultChannelFailsafeConfig->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(defaultChannelFailsafeConfig->step)
-            );
+                                 channel,
+                                 rxFailsafeModeCharacters[defaultChannelFailsafeConfig->mode],
+                                 RXFAIL_STEP_TO_CHANNEL_VALUE(defaultChannelFailsafeConfig->step)
+                                );
             cliDumpPrintLinef(dumpMask, equalsDefault, format,
                 channel,
                 rxFailsafeModeCharacters[channelFailsafeConfig->mode],
@@ -3738,14 +3739,13 @@ static void printEscInfo(const char *cmdName, const uint8_t *escInfoBuffer, uint
                     }
 
                     break;
-                case ESC_INFO_BLHELI32:
-                    {
-                        char *escType = (char *)(escInfoBuffer + 31);
-                        escType[32] = 0;
-                        cliPrintLine(escType);
-                    }
+                case ESC_INFO_BLHELI32: {
+                    char *escType = (char *)(escInfoBuffer + 31);
+                    escType[32] = 0;
+                    cliPrintLine(escType);
+                }
 
-                    break;
+                break;
                 }
 
                 cliPrint("MCU Serial No: 0x");
@@ -6193,7 +6193,8 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
     } else if ((options = checkCommand(cmdline, "rates"))) {
         dumpMask = DUMP_RATES; // only
     } else if ((options = checkCommand(cmdline, "hardware"))) {
-        dumpMask = DUMP_MASTER | HARDWARE_ONLY;   // Show only hardware related settings (useful to generate unified target configs).
+        dumpMask = DUMP_MASTER |
+                   HARDWARE_ONLY;   // Show only hardware related settings (useful to generate unified target configs).
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
     } else {
