@@ -329,8 +329,13 @@ lint:
 		echo >&2 "Error: astyle version $(LINTER_ASTYLE_VERSION) is required. Aborting."; \
 		exit 1; \
 	fi
-	@echo "Applying astyle formatting..."
 	@if [ -z "$(LINT_TARGETS)" ]; then \
+		read -p "Linting all files -- Are you sure [Y/N]? " confirm; \
+		if [ "$$(echo $$confirm | tr '[:lower:]' '[:upper:]')" != "Y" ]; then \
+			echo "Aborting."; \
+			exit 1; \
+		fi; \
+		echo "Applying astyle formatting..." \
 		echo "Linting all C and header files in $(SRC_DIR)..."; \
 		find $(SRC_DIR) -type f \( -name '*.c' -o -name '*.h' \) -exec astyle --options=.astylerc {} +; \
 	else \
