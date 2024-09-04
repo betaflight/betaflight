@@ -392,10 +392,14 @@ void crsfFrameFlightMode(sbuf_t *dst)
     const char *flightMode = "ACRO";
 
     // Flight modes in decreasing order of importance
-    if (FLIGHT_MODE(FAILSAFE_MODE) || IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+    if (FLIGHT_MODE(FAILSAFE_MODE)) {
         flightMode = "!FS!";
-    } else if (FLIGHT_MODE(GPS_RESCUE_MODE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         flightMode = "RTH";
+    } else if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+        flightMode = "FSS";
+    } else if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
+        flightMode = "RTHS";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = "MANU";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
@@ -409,14 +413,15 @@ void crsfFrameFlightMode(sbuf_t *dst)
     }
 
     sbufWriteString(dst, flightMode);
+
     if (!ARMING_FLAG(ARMED) && !FLIGHT_MODE(FAILSAFE_MODE)) {
         // * - ready to arm
         // ! - arming disabled
         // ? - GPS fix not available
         bool isAllowedArmingWithoutFix = false;
 #ifdef USE_GPS
-        // check for home fix
-        isAllowedArmingWithoutFix = !STATE(GPS_FIX_HOME);
+        // check for gps fix - after we passed arming disable flags
+        isAllowedArmingWithoutFix = featureIsEnabled(FEATURE_GPS) && !STATE(GPS_FIX);
 #endif
         sbufWriteU8(dst, isArmingDisabled() ? '!' : isAllowedArmingWithoutFix ? '?' : '*');
     }
