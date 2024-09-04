@@ -333,13 +333,14 @@ lint:
 		read -p "Linting all files -- Are you sure [Y/N]? " confirm; \
 		if [ "$$(echo $$confirm | tr '[:lower:]' '[:upper:]')" != "Y" ]; then \
 			echo "Aborting."; \
-			exit 1; \
+			exit 0; \
 		fi; \
 		echo "Applying astyle formatting..." \
 		echo "Linting all C and header files in $(SRC_DIR)..."; \
 		find $(SRC_DIR) -type f \( -name '*.c' -o -name '*.h' \) -exec astyle --options=.astylerc {} +; \
+		echo "Formatting complete."; \
 	else \
 		echo "Linting specified files: $(LINT_TARGETS)"; \
 		astyle --options=.astylerc $(LINT_TARGETS); \
+		echo "Formatting complete."; \
 	fi
-	@echo "Formatting complete."
