@@ -351,11 +351,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * pidRuntime.dT;
-    pidRuntime.itermWindupPointInv = 1.0f;
-    if (pidProfile->itermWindupPointPercent < 100) {
-        const float itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
-        pidRuntime.itermWindupPointInv = 1.0f / (1.0f - itermWindupPoint);
-    }
     pidRuntime.antiGravityGain = pidProfile->anti_gravity_gain;
     pidRuntime.crashTimeLimitUs = pidProfile->crash_time * 1000;
     pidRuntime.crashTimeDelayUs = pidProfile->crash_delay * 1000;
@@ -365,7 +360,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold * 1000.0f; // gyro delta in deg/s/s * 1000 to match original 2017 intent
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
-    pidRuntime.itermLimit = pidProfile->itermLimit;
+
+    pidRuntime.itermLimit = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimit;
+    pidRuntime.itermLimitYaw = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimitYaw;
+
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
