@@ -94,6 +94,7 @@
 #include "fc/stats.h"
 #include "fc/tasks.h"
 
+#include "flight/alt_hold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -997,6 +998,10 @@ void init(void)
 #if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_LATE) && !defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
+#endif
+
+#ifdef USE_ALT_HOLD_MODE
+    altHoldInit();
 #endif
 
     debugInit();

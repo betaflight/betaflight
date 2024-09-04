@@ -38,6 +38,7 @@
 #include "config/config.h"
 
 #include "flight/gps_rescue.h"
+#include "flight/position.h"
 
 static uint16_t gpsRescueConfig_minStartDistM; //meters
 static uint8_t gpsRescueConfig_altitudeMode;
@@ -50,11 +51,11 @@ static uint8_t gpsRescueConfig_angle; //degrees
 
 static uint16_t gpsRescueConfig_descentDistanceM; //meters
 static uint16_t gpsRescueConfig_descendRate;
-static uint8_t gpsRescueConfig_targetLandingAltitudeM;
+static uint8_t positionConfig_landingAltitudeM;
 
 static uint16_t gpsRescueConfig_throttleMin;
 static uint16_t gpsRescueConfig_throttleMax;
-static uint16_t gpsRescueConfig_throttleHover;
+static uint16_t positionConfig_hoverThrottle;
 
 static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
@@ -154,11 +155,11 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
     gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
-    gpsRescueConfig_targetLandingAltitudeM = gpsRescueConfig()->targetLandingAltitudeM;
+    positionConfig_landingAltitudeM = positionConfig()->landing_altitude_m;
 
     gpsRescueConfig_throttleMin = gpsRescueConfig()->throttleMin;
     gpsRescueConfig_throttleMax = gpsRescueConfig()->throttleMax;
-    gpsRescueConfig_throttleHover = gpsRescueConfig()->throttleHover;
+    positionConfig_hoverThrottle = positionConfig()->hover_throttle;
 
     gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
     gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
@@ -182,11 +183,11 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
 
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
     gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
-    gpsRescueConfigMutable()->targetLandingAltitudeM = gpsRescueConfig_targetLandingAltitudeM;
+    positionConfigMutable()->landing_altitude_m = positionConfig_landingAltitudeM;
 
     gpsRescueConfigMutable()->throttleMin = gpsRescueConfig_throttleMin;
     gpsRescueConfigMutable()->throttleMax = gpsRescueConfig_throttleMax;
-    gpsRescueConfigMutable()->throttleHover = gpsRescueConfig_throttleHover;
+    positionConfigMutable()->hover_throttle = positionConfig_hoverThrottle;
 
     gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
     gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;
@@ -209,11 +210,11 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
 
     { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 5, 500, 1 } },
     { "DESCENT RATE CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 25, 500, 1 } },
-    { "LANDING ALT     M", OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_targetLandingAltitudeM, 3, 15, 1 } },
+    { "LANDING ALT     M", OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &positionConfig_landingAltitudeM, 1, 15, 1 } },
 
     { "THROTTLE MIN",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMin, 1000, 2000, 1 } },
     { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMax, 1000, 2000, 1 } },
-    { "THROTTLE HOV",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleHover, 1000, 2000, 1 } },
+    { "THROTTLE HOV",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &positionConfig_hoverThrottle, 1100, 1700, 1 } },
 
     { "SATS REQUIRED",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_minSats, 5, 50, 1 } },
     { "ARM WITHOUT FIX",   OME_Bool | REBOOT_REQUIRED,  NULL, &gpsRescueConfig_allowArmingWithoutFix },

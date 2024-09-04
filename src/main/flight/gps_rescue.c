@@ -79,7 +79,6 @@ typedef struct {
     float maxAltitudeCm;
     float returnAltitudeCm;
     float targetAltitudeCm;
-    float targetLandingAltitudeCm;
     float targetVelocityCmS;
     float pitchAngleLimitDeg;
     float rollAngleLimitDeg;
@@ -241,7 +240,7 @@ static void rescueAttainPosition(void)
         // 20s of slow descent for switch induced sanity failures to allow time to recover
         gpsRescueAngle[AI_PITCH] = 0.0f;
         gpsRescueAngle[AI_ROLL] = 0.0f;
-        rescueThrottle = gpsRescueConfig()->throttleHover - 100;
+        rescueThrottle = positionConfig()->hover_throttle - 100;
         return;
      default:
         break;
@@ -277,13 +276,13 @@ static void rescueAttainPosition(void)
     // acceleration component not currently implemented - was needed previously due to GPS lag, maybe not needed now.
 
     float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, gets to 0.2 correcting on a windy day
-    tiltAdjustment *= (gpsRescueConfig()->throttleHover - 1000);
+    tiltAdjustment *= (positionConfig()->hover_throttle - 1000);
     // if hover is 1300, and adjustment .2, this gives us 0.2*300 or 60 of extra throttle, not much, but useful
     // too much and landings with lots of pitch adjustment, eg windy days, can be a problem
 
     throttleAdjustment = throttleP + throttleI + throttleD + tiltAdjustment;
 
-    rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
+    rescueThrottle = positionConfig()->hover_throttle + throttleAdjustment;
     rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
 
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, lrintf(throttleP));
@@ -706,7 +705,7 @@ void descend(void)
 {
     if (newGPSData) {
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
-        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (rescueState.intent.targetLandingAltitudeCm / 200.0f);
+        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * positionConfig()->landing_altitude_m);
         const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
      
         // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home
@@ -801,13 +800,12 @@ void gpsRescueUpdate(void)
 
     case RESCUE_INITIALIZE:
         // Things that should be done at the start of a Rescue
-        rescueState.intent.targetLandingAltitudeCm = 100.0f * gpsRescueConfig()->targetLandingAltitudeM;
         if (!STATE(GPS_FIX_HOME)) {
             // we didn't get a home point on arming
             rescueState.failure = RESCUE_NO_HOME_POINT;
             // will result in a disarm via the sanity check system, or float around if switch induced
         } else {
-            if (rescueState.sensor.distanceToHomeM < 5.0f && rescueState.sensor.currentAltitudeCm < rescueState.intent.targetLandingAltitudeCm) {
+            if (rescueState.sensor.distanceToHomeM < 5.0f && isAltitudeLow()) {
                 // attempted initiation within 5m of home, and 'on the ground' -> instant disarm, for safety reasons
                 rescueState.phase = RESCUE_ABORT;
             } else {
@@ -898,7 +896,7 @@ void gpsRescueUpdate(void)
 
     case RESCUE_DESCENT:
         // attenuate velocity and altitude targets while updating the heading to home
-        if (rescueState.sensor.currentAltitudeCm < rescueState.intent.targetLandingAltitudeCm) {
+        if (isAltitudeLow()) {
             // enter landing mode once below landing altitude
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing

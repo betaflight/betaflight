@@ -61,6 +61,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
+#include "flight/alt_hold.h"
 
 #if defined(USE_DYN_NOTCH_FILTER)
 #include "flight/dyn_notch_filter.h"
@@ -232,6 +233,7 @@ static bool accNeedsCalibration(void)
         // Check for any configured modes that use the ACC
         if (isModeActivationConditionPresent(BOXANGLE) ||
             isModeActivationConditionPresent(BOXHORIZON) ||
+            isModeActivationConditionPresent(BOXALTHOLD) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
@@ -968,7 +970,12 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
     bool canUseHorizonMode = true;
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeIsActive()) && (sensors(SENSOR_ACC))) {
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE)
+        || failsafeIsActive() 
+#ifdef USE_ALT_HOLD_MODE
+        || FLIGHT_MODE(ALT_HOLD_MODE)
+#endif
+        ) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 
@@ -979,10 +986,29 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
+#ifdef USE_ALT_HOLD_MODE
+    // only if armed
+    if (ARMING_FLAG(ARMED) 
+        // and either the alt_hold switch is activated, or are in failsafe
+        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
+        // but not in GPS_RESCUE_MODE, ie if failsafe is active, must be in Landing Mode
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        // and we have Acc for self-levelling
+        && sensors(SENSOR_ACC)
+        // and we have altitude data
+        && isAltitudeAvailable()
+        // and we have already taken off (to prevent activation on the ground), then enable althold
+        && isAirmodeActivated()) {
+        if (!FLIGHT_MODE(ALT_HOLD_MODE)) {
+            ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    }
+#endif
+
     if (IS_RC_MODE_ACTIVE(BOXHORIZON) && canUseHorizonMode) {
-
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
-
         if (!FLIGHT_MODE(HORIZON_MODE)) {
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
@@ -1000,7 +1026,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
         rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / (float)imuConfig()->imu_process_denom));

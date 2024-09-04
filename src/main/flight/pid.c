@@ -46,9 +46,11 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/alt_hold.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/position.h"
 #include "flight/rpm_filter.h"
 
 #include "io/gps.h"
@@ -461,7 +463,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // earthRef code here takes about 76 cycles, if conditional on angleEarthRef it takes about 100.  sin_approx costs most of those cycles.
     float sinAngle = sin_approx(DEGREES_TO_RADIANS(pidRuntime.angleTarget[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
     sinAngle *= (axis == FD_ROLL) ? -1.0f : 1.0f; // must be negative for Roll
-    const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
+    const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE) ? 1.0f : pidRuntime.angleEarthRef;
     angleRate += pidRuntime.angleYawSetpoint * sinAngle * earthRefGain;
     pidRuntime.angleTarget[axis] = angleTarget;  // set target for alternate axis to current axis, for use in preceding calculation
 
@@ -469,7 +471,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
     angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
 
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE)) {
         currentPidSetpoint = angleRate;
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
@@ -590,7 +592,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 {
     float ret = setPoint;
 
-    if (!FLIGHT_MODE(ANGLE_MODE) && !FLIGHT_MODE(HORIZON_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE)) {
         bool resetIterm = false;
         float projectedAngle = 0;
         const int setpointSign = acroTrainerSign(setPoint);
@@ -805,13 +807,30 @@ float pidGetAirmodeThrottleOffset(void)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
-    // if all sticks are within 5% of center, and throttle low, check accDelta for impacts
-    // threshold should be high enough to avoid unwanted disarms in the air on throttle chops
-    if (isAirmodeActivated() && getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f &&
-        fabsf(acc.accDelta) > pidRuntime.landingDisarmThreshold) {
-        // disarm on accDelta transients
-        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-        disarm(DISARM_REASON_LANDING);
+    // if, after takeoff...
+    if (isAirmodeActivated()
+        // and, either sticks are centred and throttle zeroed,
+        && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
+            // we could test here for stage 2 failsafe (including both landing or GPS Rescue)
+            // this may permit removing the GPS Rescue disarm method altogether
+#ifdef USE_ALT_HOLD_MODE
+            // or in altitude hold mode, including failsafe landing mode, indirectly
+            || FLIGHT_MODE(ALT_HOLD_MODE)
+#endif
+        )) {
+        // increase sensitivity by 50% when low and in altitude hold or failsafe landing
+        // for more reliable disarm with gentle controlled landings
+        float lowAltitudeSensitivity = 1.0f;
+#ifdef USE_ALT_HOLD_MODE
+        lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isAltitudeLow()) ? 1.5f : 1.0f;
+#endif
+        // and disarm if accelerometer jerk exceeds threshold...
+        if ((fabsf(acc.accDelta) * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
+            // then disarm
+            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
+            disarm(DISARM_REASON_LANDING);
+            // note: threshold should be high enough to avoid unwanted disarms in the air on throttle chops, eg around 10
+        }
     }
     DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
     DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));
@@ -946,14 +965,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
-    static bool gpsRescuePreviousState = false;
+    static bool prevExternalAngleRequest = false;
     const rollAndPitchTrims_t *angleTrim = &accelerometerConfig()->accelerometerTrims;
     float horizonLevelStrength = 0.0f;
 
-    const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
+    const bool isExternalAngleModeRequest = FLIGHT_MODE(GPS_RESCUE_MODE)
+#ifdef USE_ALT_HOLD_MODE
+                || FLIGHT_MODE(ALT_HOLD_MODE) 
+#endif
+                ;
     levelMode_e levelMode;
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive) {
-        if (pidRuntime.levelRaceMode && !gpsRescueIsActive) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (pidRuntime.levelRaceMode && !isExternalAngleModeRequest) {
             levelMode = LEVEL_MODE_R;
         } else {
             levelMode = LEVEL_MODE_RP;
@@ -962,7 +985,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // Keep track of when we entered a self-level mode so that we can
         // add a guard time before crash recovery can activate.
         // Also reset the guard time whenever GPS Rescue is activated.
-        if ((levelModeStartTimeUs == 0) || (gpsRescueIsActive && !gpsRescuePreviousState)) {
+        if ((levelModeStartTimeUs == 0) || (isExternalAngleModeRequest && !prevExternalAngleRequest)) {
             levelModeStartTimeUs = currentTimeUs;
         }
 
@@ -975,7 +998,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         levelModeStartTimeUs = 0;
     }
 
-    gpsRescuePreviousState = gpsRescueIsActive;
+    prevExternalAngleRequest = isExternalAngleModeRequest;
 #else
     UNUSED(pidProfile);
     UNUSED(currentTimeUs);

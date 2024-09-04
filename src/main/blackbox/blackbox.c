@@ -62,13 +62,14 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/alt_hold.h"
 #include "flight/failsafe.h"
+#include "flight/gps_rescue.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
-#include "flight/gps_rescue.h"
-#include "flight/position.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -93,7 +94,7 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_NONE
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 4);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .fields_disabled_mask = 0, // default log all fields
@@ -1581,10 +1582,12 @@ static bool blackboxWriteSysinfo(void)
 #ifdef USE_BARO
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_HARDWARE, "%d",           barometerConfig()->baro_hardware);
 #endif
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_SOURCE, "%d",      positionConfig()->altitude_source);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_PREFER_BARO, "%d", positionConfig()->altitude_prefer_baro);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_LPF, "%d",         positionConfig()->altitude_lpf);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_D_LPF, "%d",       positionConfig()->altitude_d_lpf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_SOURCE, "%d",      positionConfig()->altitude_source);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_PREFER_BARO, "%d", positionConfig()->altitude_prefer_baro);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_LPF, "%d",         positionConfig()->altitude_lpf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D_LPF, "%d",       positionConfig()->altitude_d_lpf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_HOVER_THROTTLE, "%d",       positionConfig()->hover_throttle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_ALTITUDE, "%d",     positionConfig()->landing_altitude_m);
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
@@ -1675,12 +1678,10 @@ static bool blackboxWriteSysinfo(void)
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCENT_DIST, "%d",    gpsRescueConfig()->descentDistanceM)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCEND_RATE, "%d",    gpsRescueConfig()->descendRate)
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_LANDING_ALT, "%d",     gpsRescueConfig()->targetLandingAltitudeM)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DISARM_THRESHOLD, "%d", gpsRescueConfig()->disarmThreshold)
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_THROTTLE_MIN, "%d",    gpsRescueConfig()->throttleMin)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_THROTTLE_MAX, "%d",    gpsRescueConfig()->throttleMax)
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_THROTTLE_HOVER, "%d",  gpsRescueConfig()->throttleHover)
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_SANITY_CHECKS, "%d",   gpsRescueConfig()->sanityChecks)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_SATS, "%d",        gpsRescueConfig()->minSats)
@@ -1694,16 +1695,24 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_VELOCITY_D, "%d",      gpsRescueConfig()->velD)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_YAW_P, "%d",           gpsRescueConfig()->yawP)
 
-
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_USE_MAG, "%d",         gpsRescueConfig()->useMag)
-#endif
-#endif
+#endif // USE_MAG
+#endif // USE_GPS_RESCUE
+#endif // USE_GPS
+
+#ifdef USE_ALT_HOLD_MODE
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_P, "%d",                  altholdConfig()->alt_hold_pid_p);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_I, "%d",                  altholdConfig()->alt_hold_pid_i);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_D, "%d",                  altholdConfig()->alt_hold_pid_d);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_THROTTLE_MIN, "%d",       altholdConfig()->alt_hold_throttle_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_THROTTLE_MAX, "%d",       altholdConfig()->alt_hold_throttle_max);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE, "%d", altholdConfig()->alt_hold_target_adjust_rate);
 #endif
 
 #ifdef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_MS, "%d", currentPidProfile->tpa_delay_ms);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR0, "%d", currentPidProfile->tpa_gravity_thr0);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_MS,       "%d", currentPidProfile->tpa_delay_ms);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR0,   "%d", currentPidProfile->tpa_gravity_thr0);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR100, "%d", currentPidProfile->tpa_gravity_thr100);
 #endif
 

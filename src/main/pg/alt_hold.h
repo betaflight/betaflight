@@ -24,30 +24,14 @@
 
 #include "pg/pg.h"
 
-typedef struct gpsRescue_s {
+typedef struct altholdConfig_s {
+    uint8_t alt_hold_pid_p;
+    uint8_t alt_hold_pid_i;
+    uint8_t alt_hold_pid_d;
+    uint8_t alt_hold_target_adjust_rate;
+    uint16_t alt_hold_throttle_min;
+    uint16_t alt_hold_throttle_max;
+} altholdConfig_t;
 
-    uint16_t maxRescueAngle; // degrees
-    uint16_t returnAltitudeM; // meters
-    uint16_t descentDistanceM; // meters
-    uint16_t groundSpeedCmS; // centimeters per second
-    uint8_t  throttleP, throttleI, throttleD;
-    uint8_t  yawP;
-    uint16_t throttleMin;
-    uint16_t throttleMax;
-    uint8_t  minSats;
-    uint8_t  velP, velI, velD;
-    uint16_t minStartDistM; // meters
-    uint8_t  sanityChecks;
-    uint8_t  allowArmingWithoutFix;
-    uint8_t  useMag;
-    uint8_t  altitudeMode;
-    uint16_t ascendRate;
-    uint16_t descendRate;
-    uint16_t initialClimbM; // meters
-    uint8_t  rollMix;
-    uint8_t  disarmThreshold;
-    uint8_t  pitchCutoffHz;
-    uint8_t  imuYawGain;
-} gpsRescueConfig_t;
+PG_DECLARE(altholdConfig_t, altholdConfig);
 
-PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);

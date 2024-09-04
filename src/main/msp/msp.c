@@ -1545,7 +1545,7 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsRescueConfig()->groundSpeedCmS);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMin);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
-        sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
+        sbufWriteU16(dst, positionConfig()->hover_throttle);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
         sbufWriteU8(dst,  gpsRescueConfig()->minSats);
 
@@ -1654,7 +1654,7 @@ case MSP_NAME:
         break;
     case MSP_FAILSAFE_CONFIG:
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
-        sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_landing_time);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
         sbufWriteU8(dst, failsafeConfig()->failsafe_switch_mode);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
@@ -2880,7 +2880,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMin = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMax = sbufReadU16(src);
-        gpsRescueConfigMutable()->throttleHover = sbufReadU16(src);
+        positionConfigMutable()->hover_throttle = sbufReadU16(src);
         gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
         gpsRescueConfigMutable()->minSats = sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 6) {
@@ -3811,7 +3811,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
     case MSP_SET_FAILSAFE_CONFIG:
         failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
-        failsafeConfigMutable()->failsafe_off_delay = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_landing_time = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
         failsafeConfigMutable()->failsafe_switch_mode = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16(src);

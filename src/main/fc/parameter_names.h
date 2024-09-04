@@ -148,10 +148,12 @@
 #define PARAM_NAME_RPM_FILTER_MIN_HZ "rpm_filter_min_hz"
 #define PARAM_NAME_RPM_FILTER_FADE_RANGE_HZ "rpm_filter_fade_range_hz"
 #define PARAM_NAME_RPM_FILTER_LPF_HZ "rpm_filter_lpf_hz"
-#define PARAM_NAME_POSITION_ALTITUDE_SOURCE "altitude_source"
-#define PARAM_NAME_POSITION_ALTITUDE_PREFER_BARO "altitude_prefer_baro"
-#define PARAM_NAME_POSITION_ALTITUDE_LPF "altitude_lpf"
-#define PARAM_NAME_POSITION_ALTITUDE_D_LPF "altitude_d_lpf"
+#define PARAM_NAME_ALTITUDE_SOURCE "altitude_source"
+#define PARAM_NAME_ALTITUDE_PREFER_BARO "altitude_prefer_baro"
+#define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
+#define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
+#define PARAM_NAME_HOVER_THROTTLE "hover_throttle"
+#define PARAM_NAME_LANDING_ALTITUDE "landing_altitude_m"
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"
@@ -197,12 +199,10 @@
 
 #define PARAM_NAME_GPS_RESCUE_DESCENT_DIST "gps_rescue_descent_dist"
 #define PARAM_NAME_GPS_RESCUE_DESCEND_RATE "gps_rescue_descend_rate"
-#define PARAM_NAME_GPS_RESCUE_LANDING_ALT "gps_rescue_landing_alt"
 #define PARAM_NAME_GPS_RESCUE_DISARM_THRESHOLD "gps_rescue_disarm_threshold"
 
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_MIN "gps_rescue_throttle_min"
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_MAX "gps_rescue_throttle_max"
-#define PARAM_NAME_GPS_RESCUE_THROTTLE_HOVER "gps_rescue_throttle_hover"
 
 #define PARAM_NAME_GPS_RESCUE_SANITY_CHECKS "gps_rescue_sanity_checks"
 #define PARAM_NAME_GPS_RESCUE_MIN_SATS "gps_rescue_min_sats"
@@ -218,8 +218,9 @@
 
 #ifdef USE_MAG
 #define PARAM_NAME_GPS_RESCUE_USE_MAG "gps_rescue_use_mag"
-#endif
-#endif
+#endif // USE_MAG
+
+#endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_LAT "gps_lap_timer_gate_lat"
@@ -227,7 +228,17 @@
 #define PARAM_NAME_GPS_LAP_TIMER_MIN_LAP_TIME "gps_lap_timer_min_lap_time_s"
 #define PARAM_NAME_GPS_LAP_TIMER_GATE_TOLERANCE "gps_lap_timer_gate_tolerance_m"
 #endif // USE_GPS_LAP_TIMER
-#endif
+
+#endif // USE_GPS
+
+#ifdef USE_ALT_HOLD_MODE
+#define PARAM_NAME_ALT_HOLD_P "alt_hold_p"
+#define PARAM_NAME_ALT_HOLD_I "alt_hold_i"
+#define PARAM_NAME_ALT_HOLD_D "alt_hold_d"
+#define PARAM_NAME_ALT_HOLD_THROTTLE_MIN "alt_hold_throttle_min"
+#define PARAM_NAME_ALT_HOLD_THROTTLE_MAX "alt_hold_throttle_max"
+#define PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE "alt_hold_target_adjust_rate"
+#endif // USE_ALT_HOLD_MODE
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
 #define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"

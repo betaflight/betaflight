@@ -58,6 +58,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/alt_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -382,6 +383,10 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_GPS_RESCUE] = DEFINE_TASK("GPS_RESCUE", NULL, NULL, taskGpsRescue, TASK_PERIOD_HZ(TASK_GPS_RESCUE_RATE_HZ), TASK_PRIORITY_MEDIUM),
 #endif
 
+#ifdef USE_ALT_HOLD_MODE
+    [TASK_ALTHOLD] = DEFINE_TASK("ALTHOLD", NULL, NULL, updateAltHoldState, TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
+#endif
+
 #ifdef USE_MAG
     [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, taskUpdateMag, TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
@@ -535,6 +540,10 @@ void tasksInit(void)
 
 #ifdef USE_GPS_RESCUE
     setTaskEnabled(TASK_GPS_RESCUE, featureIsEnabled(FEATURE_GPS));
+#endif
+
+#ifdef USE_ALT_HOLD_MODE
+    setTaskEnabled(TASK_ALTHOLD, true);
 #endif
 
 #ifdef USE_MAG

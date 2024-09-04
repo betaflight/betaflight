@@ -123,6 +123,7 @@ typedef enum {
     DEBUG_S_TERM,
     DEBUG_SPA,
     DEBUG_TASK,
+    DEBUG_ALTHOLD,
     DEBUG_COUNT
 } debugType_e;
 
