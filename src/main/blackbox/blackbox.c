@@ -1382,6 +1382,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt, motorOutputHighInt);
+        BLACKBOX_PRINT_HEADER_LINE("motor_kv", "%d",                        motorConfig()->kv);
 #if defined(USE_ACC)
         BLACKBOX_PRINT_HEADER_LINE("acc_1G", "%u",                          acc.dev.acc_1G);
 #endif
@@ -1712,9 +1713,15 @@ static bool blackboxWriteSysinfo(void)
 #endif
 
 #ifdef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_DELAY_MS,       "%d", currentPidProfile->tpa_delay_ms);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR0,   "%d", currentPidProfile->tpa_gravity_thr0);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_GRAVITY_THR100, "%d", currentPidProfile->tpa_gravity_thr100);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_EST_TYPE, "%d", currentPidProfile->tpa_speed_est_type);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_BASIC_DELAY, "%d", currentPidProfile->tpa_speed_est_basic_delay);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_BASIC_GRAVITY, "%d", currentPidProfile->tpa_speed_est_basic_gravity);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_EST_ADV_PROP_PITCH, "%d", currentPidProfile->tpa_speed_est_adv_prop_pitch);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_EST_ADV_MASS, "%d", currentPidProfile->tpa_speed_est_adv_mass);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_EST_ADV_DRAG_K, "%d", currentPidProfile->tpa_speed_est_adv_drag_k);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_EST_ADV_THRUST, "%d", currentPidProfile->tpa_speed_est_adv_thrust);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_EST_MAX_VOLTAGE, "%d", currentPidProfile->tpa_speed_est_max_voltage);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_EST_PITCH_OFFSET, "%d", currentPidProfile->tpa_speed_est_pitch_offset);
 #endif
 
         default:

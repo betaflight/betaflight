@@ -86,6 +86,8 @@
 #define TPA_CURVE_PWL_SIZE 17
 #endif // USE_ADVANCED_TPA
 
+#define G_ACCELERATION 9.80665f // gravitational acceleration in m/s^2
+
 typedef enum {
     TPA_MODE_PD,
     TPA_MODE_D
@@ -160,6 +162,11 @@ typedef enum tpaCurveType_e {
     TPA_CURVE_CLASSIC,
     TPA_CURVE_HYPERBOLIC,
 } tpaCurveType_t;
+
+typedef enum tpaSpeedEstType_e {
+    TPA_SPEED_EST_BASIC,
+    TPA_SPEED_EST_ADVANCED,
+} tpaSpeedEstType_t;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
 
@@ -243,7 +250,7 @@ typedef struct pidProfile_s {
     uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
     uint8_t feedforward_yaw_hold_gain;          // Amount of sustained high-pass yaw setpoint to add to feedforward, zero disables
     uint8_t feedforward_yaw_hold_time ;     // Time constant of the sustained yaw hold element in ms to add to feed forward, higher values decay slower
-    
+
     uint8_t dterm_lpf1_dyn_expo;            // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calculation is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
@@ -278,17 +285,23 @@ typedef struct pidProfile_s {
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
     uint8_t landing_disarm_threshold;            // Accelerometer vector delta (jerk) threshold with disarms if exceeded
 
-    uint16_t tpa_delay_ms;                  // TPA delay for fixed wings using pt2 filter (time constant)
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
-    uint16_t tpa_gravity_thr0;              // For wings: gravity force addition to tpa argument in % when zero throttle
-    uint16_t tpa_gravity_thr100;            // For wings: gravity force addition to tpa argument in % when full throttle
     uint8_t tpa_curve_type;                 // Classic type - for multirotor, hyperbolic - usually for wings
-    uint8_t tpa_curve_stall_throttle;        // For wings: speed at which PIDs should be maxed out (stall speed)
+    uint8_t tpa_curve_stall_throttle;       // For wings: speed at which PIDs should be maxed out (stall speed)
     uint16_t tpa_curve_pid_thr0;            // For wings: PIDs multiplier at stall speed
     uint16_t tpa_curve_pid_thr100;          // For wings: PIDs multiplier at full speed
     int8_t tpa_curve_expo;                  // For wings: how fast PIDs do transition as speed grows
+    uint8_t tpa_speed_est_type;             // For wings: relative air speed estimation model type
+    uint16_t tpa_speed_est_basic_delay;     // For wings when tpa_speed_est_type = BASIC: delay of air speed estimation from throttle in milliseconds (time of reaching 50% of terminal speed in horizontal flight at full throttle)
+    uint16_t tpa_speed_est_basic_gravity;   // For wings when tpa_speed_est_type = BASIC: gravity effect on air speed estimation in percents
+    uint16_t tpa_speed_est_adv_prop_pitch;  // For wings when tpa_speed_est_type = ADVANCED: prop pitch in inches * 100
+    uint16_t tpa_speed_est_adv_mass;        // For wings when tpa_speed_est_type = ADVANCED: craft mass in grams
+    uint16_t tpa_speed_est_adv_drag_k;      // For wings when tpa_speed_est_type = ADVANCED: craft drag coefficient
+    uint16_t tpa_speed_est_adv_thrust;      // For wings when tpa_speed_est_type = ADVANCED: stationary thrust in grams
+    uint16_t tpa_speed_est_max_voltage;     // For wings: theoretical max voltage; used for throttle scailing with voltage for air speed estimation
+    int16_t tpa_speed_est_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -328,6 +341,16 @@ typedef struct pidCoefficient_s {
     float Kd;
     float Kf;
 } pidCoefficient_t;
+
+typedef struct tpaSpeedEstParams_s {
+    float maxSpeed;
+    float massDragRatio;
+    float propMaxSpeed;
+    float twr;
+    float speed;
+    float maxVoltage;
+    float pitchOffset;
+} tpaSpeedEstParams_t;
 
 typedef struct pidRuntime_s {
     float dT;
@@ -460,7 +483,7 @@ typedef struct pidRuntime_s {
     uint8_t feedforwardMaxRateLimit;
     float feedforwardYawHoldGain;
     float feedforwardYawHoldTime;
-    bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values 
+    bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
 #endif
 
@@ -475,10 +498,8 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_WING
-    pt2Filter_t tpaLpf;
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
-    float tpaGravityThr0;
-    float tpaGravityThr100;
+    tpaSpeedEstParams_t tpaSpeedEst;
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
