@@ -1,19 +1,21 @@
-
+# 
 
 # diff all
 
 # version
-# Betaflight / STM32H743 (SH74) 4.4.3 Aug 15 2024 / 19:27:02 (norevision) MSP API: 1.45
+# Betaflight / STM32H743 (SH74) 4.4.3 Aug 31 2024 / 20:32:35 (norevision) MSP API: 1.45
 
 # config: YES
 
 # start the command batch
 batch start
 
+# reset configuration to default settings
+defaults nosave
 
 board_name NEROSH743
 manufacturer_id NEROS
-mcu_id 0045002e3233510537393630
+mcu_id 003e002f3233510537393630
 signature 
 
 # name: Archer
@@ -31,7 +33,9 @@ resource SERIAL_TX 8 E01
 resource SERIAL_RX 4 B08
 resource SERIAL_RX 7 E07
 resource SERIAL_RX 8 E00
+resource I2C_SCL 1 B06
 resource I2C_SCL 2 B10
+resource I2C_SDA 1 B07
 resource I2C_SDA 2 B11
 resource LED 1 E03
 resource LED 2 E04
@@ -103,23 +107,30 @@ beacon RX_SET
 # aux
 aux 0 0 0 1600 2100 0 0
 aux 1 1 4 1600 2100 0 0
-aux 2 40 1 900 1600 0 0
-aux 3 41 3 1725 2100 0 0
-aux 4 43 5 1700 2100 0 0
+aux 2 40 1 900 1400 0 0
+aux 3 43 5 1600 2100 0 0
 
 # adjrange
 adjrange 0 0 3 900 2100 29 3 0 0
 
+# vtxtable
+vtxtable bands 5
+vtxtable channels 8
+vtxtable band 1 BOSCAM_A A FACTORY 5865 5845 5825 5805 5785 5765 5745 5725
+vtxtable band 2 BOSCAM_B B FACTORY 5733 5752 5771 5790 5809 5828 5847 5866
+vtxtable band 3 BOSCAM_E E FACTORY 5705 5685 5665 5645 5885 5905 5925 5945
+vtxtable band 4 FATSHARK F FACTORY 5740 5760 5780 5800 5820 5840 5860 5880
+vtxtable band 5 RACEBAND R FACTORY 5658 5695 5732 5769 5806 5843 5880 5917
+vtxtable powerlevels 5
+vtxtable powervalues 14 20 24 27 29
+vtxtable powerlabels 40 150 300 800 2.5
 
 # vtx
-vtx 0 6 0 0 1 950 1050
-vtx 1 6 0 0 2 1100 1200
-vtx 2 6 0 0 3 1250 1350
-vtx 3 6 0 0 4 1400 1500
-vtx 4 6 0 0 5 1550 1650
-vtx 5 6 0 0 6 1700 1800
-vtx 6 6 0 0 7 1850 1950
-vtx 7 6 0 0 7 1950 2100
+vtx 0 6 0 0 1 900 1250
+vtx 1 6 0 0 2 1250 1450
+vtx 2 6 0 0 3 1450 1650
+vtx 3 6 0 0 4 1650 1850
+vtx 4 6 0 0 5 1850 2100
 
 # rxfail
 rxfail 3 h
@@ -133,10 +144,16 @@ set dyn_notch_max_hz = 650
 set gyro_lpf1_dyn_min_hz = 150
 set gyro_lpf1_dyn_max_hz = 300
 set acc_lpf_hz = 10
-set acc_calibration = 1,40,13,1
+set acc_calibration = 36,-7,48,1
+set align_mag = CW0
+set mag_bustype = I2C
+set mag_i2c_device = 1
+set mag_i2c_address = 13
+set mag_calibration = 105,-225,-650
 set baro_bustype = I2C
 set baro_i2c_device = 2
 set baro_i2c_address = 119
+set baro_hardware = BMP280
 set rssi_scale = 217
 set rc_smoothing_auto_factor = 200
 set serialrx_provider = CRSF
@@ -145,7 +162,7 @@ set blackbox_device = SPIFLASH
 set dshot_burst = AUTO
 set dshot_bidir = ON
 set motor_pwm_protocol = DSHOT300
-set failsafe_delay = 100
+set failsafe_delay = 20
 set failsafe_throttle_low_delay = 20
 set bat_capacity = 20000
 set vbat_max_cell_voltage = 440
@@ -154,18 +171,18 @@ set vbat_warning_cell_voltage = 310
 set current_meter = ADC
 set battery_meter = ADC
 set vbat_scale = 210
-set ibata_scale = 133
+set ibata_scale = 136
 set ibata_offset = -25350
 set beeper_inversion = ON
 set beeper_od = OFF
 set beeper_dshot_beacon_tone = 3
-set yaw_motors_reversed = ON
 set small_angle = 180
 set gps_ublox_use_galileo = ON
 set simplified_gyro_filter = OFF
 set simplified_gyro_filter_multiplier = 30
-set osd_warn_bitmask = 17147
+set osd_warn_bitmask = 17131
 set osd_rssi_alarm = 0
+set osd_link_quality_alarm = 50
 set osd_cap_alarm = 17000
 set osd_alt_alarm = 10000
 set osd_logo_on_arming = ON
@@ -174,7 +191,7 @@ set osd_tim2 = 5121
 set osd_vbat_pos = 14561
 set osd_rssi_pos = 388
 set osd_link_quality_pos = 14401
-set osd_rssi_dbm_pos = 14433
+set osd_rssi_dbm_pos = 129
 set osd_tim_1_pos = 55
 set osd_tim_2_pos = 14839
 set osd_flymode_pos = 77
@@ -186,24 +203,23 @@ set osd_current_pos = 14646
 set osd_mah_drawn_pos = 14626
 set osd_craft_name_pos = 257
 set osd_pilot_name_pos = 14828
-set osd_gps_speed_pos = 14465
-set osd_gps_sats_pos = 14785
+set osd_gps_speed_pos = 97
 set osd_home_dir_pos = 161
-set osd_home_dist_pos = 14497
+set osd_flight_dist_pos = 6615
 set osd_compass_bar_pos = 14378
 set osd_altitude_pos = 14817
 set osd_debug_pos = 14369
-set osd_power_pos = 14614
+set osd_power_pos = 14616
 set osd_warnings_pos = 14793
 set osd_avg_cell_voltage_pos = 14593
 set osd_pit_ang_pos = 14551
-set osd_nheading_pos = 14657
+set osd_nheading_pos = 14410
 set osd_esc_tmp_pos = 375
-set osd_esc_rpm_pos = 152
+set osd_esc_rpm_pos = 14521
 set osd_esc_rpm_freq_pos = 161
 set osd_core_temp_pos = 225
 set osd_profile_name_pos = 65
-set osd_efficiency_pos = 14529
+set osd_efficiency_pos = 327
 set osd_total_flights_pos = 97
 set osd_stat_bitmask = 17209060
 set osd_profile_1_name = day
@@ -213,20 +229,21 @@ set osd_canvas_width = 30
 set osd_canvas_height = 16
 set vtx_band = 5
 set vtx_channel = 1
-set vtx_power = 1
+set vtx_power = 3
 set vtx_freq = 5658
 set vcd_video_system = PAL
 set max7456_spi_bus = 2
 set pinio_box = 40,41,255,43
 set flash_spi_bus = 3
 set gyro_1_spibus = 1
+set i2c2_pullup = ON
 set scheduler_relax_rx = 1
 set scheduler_relax_osd = 1
 set rpm_filter_harmonics = 2
 set stats_min_armed_time_s = 70
-set stats_total_flights = 65
-set stats_total_time_s = 10601
-set stats_mah_used = 444
+set stats_total_flights = 70
+set stats_total_time_s = 11900
+set stats_mah_used = 740
 set craft_name = Archer
 set pilot_name = Name
 
@@ -282,12 +299,15 @@ rateprofile 0
 
 # rateprofile 0
 set rates_type = BETAFLIGHT
-set roll_rc_rate = 100
-set pitch_rc_rate = 100
-set yaw_rc_rate = 100
-set roll_srate = 70
-set pitch_srate = 70
-set yaw_srate = 70
+set roll_rc_rate = 90
+set pitch_rc_rate = 80
+set yaw_rc_rate = 80
+set roll_expo = 5
+set pitch_expo = 5
+set yaw_expo = 5
+set roll_srate = 60
+set pitch_srate = 60
+set yaw_srate = 60
 
 rateprofile 1
 
