@@ -3603,7 +3603,9 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-    gpsEnablePassthrough(cliPort);
+    if (!gpsPassthrough(cliPort)) {
+        cliPrintErrorLinef(cmdName, "GPS forwarding failed");
+    }
 }
 #endif
 

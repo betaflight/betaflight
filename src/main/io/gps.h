@@ -386,7 +386,7 @@ void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
 bool gpsIsHealthy(void); // Returns true when the gps state is RECEIVING_DATA
 struct serialPort_s;
-void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
+bool gpsPassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);
 void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);

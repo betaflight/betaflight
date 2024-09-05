@@ -2486,13 +2486,22 @@ static void gpsHandlePassthrough(uint8_t data)
 #endif
 }
 
-void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
+// forward GPS data to specified port (used by CLI)
+// return false if forwarding failed
+// curently only way to stop forwarding is to reset the board
+bool gpsPassthrough(serialPort_t *gpsPassthroughPort)
 {
+    if (!gpsPort) {
+        // GPS port is not open for some reason - no GPS, MSP GPS, ..
+        return false;
+    }
     waitForSerialPortToFinishTransmitting(gpsPort);
     waitForSerialPortToFinishTransmitting(gpsPassthroughPort);
 
-    if (!(gpsPort->mode & MODE_TX))
+    if (!(gpsPort->mode & MODE_TX)) {
+        // try to switch TX mode on
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
+    }
 
 #ifdef USE_DASHBOARD
     if (featureIsEnabled(FEATURE_DASHBOARD)) {
@@ -2502,6 +2511,8 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 #endif
 
     serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
+    // allow exitting passthrough mode in future
+    return true;
 }
 
 float GPS_cosLat = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
