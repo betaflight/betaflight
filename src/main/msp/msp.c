@@ -1714,7 +1714,7 @@ case MSP_NAME:
 #ifdef USE_LED_STRIP_DETAILED_MODE
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            const hsvColor_t *color = &ledStripDetailedModeConfig_t()->colors[i];
+            const hsvColor_t *color = &ledStripDetailedModeConfig()->colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
             sbufWriteU8(dst, color->v);
@@ -1726,7 +1726,7 @@ case MSP_NAME:
     case MSP_LED_STRIP_CONFIG:
         for (int i = 0; i < LED_STRIP_MAX_LENGTH; i++) {
 #ifdef USE_LED_STRIP_DETAILED_MODE
-            const ledConfig_t *ledConfig = &ledStripDetailedModeConfig_t()->ledConfigs[i];
+            const ledConfig_t *ledConfig = &ledStripDetailedModeConfig()->ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
 #else
             sbufWriteU32(dst, 0);
@@ -1751,19 +1751,19 @@ case MSP_NAME:
             for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
                 sbufWriteU8(dst, i);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, ledStripDetailedModeConfig_t()->modeColors[i].color[j]);
+                sbufWriteU8(dst, ledStripDetailedModeConfig()->modeColors[i].color[j]);
             }
         }
 
         for (int j = 0; j < LED_SPECIAL_FCSTATE_COLOR_COUNT; j++) {
             sbufWriteU8(dst, LED_FCSTATE_COUNT);
             sbufWriteU8(dst, j);
-            sbufWriteU8(dst, ledStripDetailedModeConfig_t()->specialColors.color[j]);
+            sbufWriteU8(dst, ledStripDetailedModeConfig()->specialColors.color[j]);
         }
 
         sbufWriteU8(dst, LED_FCSTATE_AUX_CHANNEL);
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, ledStripDetailedModeConfig_t()->ledstrip_aux_channel);
+        sbufWriteU8(dst, ledStripDetailedModeConfig()->ledstrip_aux_channel);
         break;
 #endif
 
@@ -3910,7 +3910,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_LED_STRIP_DETAILED_MODE
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &ledStripDetailedModeConfig_tMutable()->colors[i];
+            hsvColor_t *color = &ledStripDetailedModeConfigMutable()->colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
@@ -3926,7 +3926,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 return MSP_RESULT_ERROR;
             }
 #ifdef USE_LED_STRIP_DETAILED_MODE
-            ledConfig_t *ledConfig = &ledStripDetailedModeConfig_tMutable()->ledConfigs[i];
+            ledConfig_t *ledConfig = &ledStripDetailedModeConfigMutable()->ledConfigs[i];
             *ledConfig = sbufReadU32(src);
             reevaluateLedConfig();
 #else

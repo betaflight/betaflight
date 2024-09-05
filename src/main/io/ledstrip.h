@@ -149,7 +149,7 @@ typedef enum {
     LED_STRIP_MODE_RACE = 0,
     LED_STRIP_MODE_BEACON,
 #ifdef USE_LED_STRIP_DETAILED_MODE
-    LED_STRIP_MODE_MASTER,
+    LED_STRIP_MODE_DETAILED,
 #endif
     LED_STRIP_MODE_COUNT
 } ledStripMode_e;
@@ -190,15 +190,15 @@ typedef struct ledStripConfig_s {
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
 #if defined(USE_LED_STRIP_DETAILED_MODE)
-typedef struct ledStripDetailedModeConfig_t_s {
+typedef struct ledStripDetailedModeConfig_s {
     ledConfig_t ledConfigs[LED_STRIP_MAX_LENGTH];
     hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
     modeColorIndexes_t modeColors[LED_FCSTATE_COUNT];
     specialColorIndexes_t specialColors;
     uint8_t ledstrip_aux_channel;
-} ledStripDetailedModeConfig_t_t;
+} ledStripDetailedModeConfig_t;
 
-PG_DECLARE(ledStripDetailedModeConfig_t_t, ledStripDetailedModeConfig_t);
+PG_DECLARE(ledStripDetailedModeConfig_t, ledStripDetailedModeConfig);
 #endif
 
 #define LF(name) LED_FUNCTION_ ## name
