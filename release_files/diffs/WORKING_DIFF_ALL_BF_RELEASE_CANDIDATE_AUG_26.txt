@@ -1,6 +1,4 @@
-# 
-
-# diff all
+diff all
 
 # version
 # Betaflight / STM32H743 (SH74) 4.4.3 Aug 29 2024 / 11:25:19 (norevision) MSP API: 1.45
@@ -147,6 +145,7 @@ set baro_i2c_device = 2
 set baro_i2c_address = 119
 set rssi_scale = 217
 set rc_smoothing_auto_factor = 200
+set rc_smoothing_auto_factor_throttle = 200
 set serialrx_provider = CRSF
 set blackbox_sample_rate = 1/16
 set blackbox_device = SPIFLASH
@@ -218,7 +217,7 @@ set osd_canvas_width = 30
 set osd_canvas_height = 16
 set vtx_band = 5
 set vtx_channel = 1
-set vtx_power = 1
+set vtx_power = 3
 set vtx_freq = 5658
 set vcd_video_system = PAL
 set max7456_spi_bus = 2
