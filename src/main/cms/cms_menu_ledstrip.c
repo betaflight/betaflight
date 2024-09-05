@@ -60,8 +60,8 @@ static uint8_t cmsx_ledVisualBeeperColor;
 const char * const ledStripModeNames[LED_STRIP_MODE_COUNT] = {
     "RACE",
     "BEACON",
-#ifdef USE_LED_STRIP_MASTER_MODE
-    "MASTER"
+#ifdef USE_LED_STRIP_DETAILED_MODE
+    "DETAILED"
 #endif
 };
 

@@ -451,9 +451,9 @@ static const char * const lookupTableSpaMode[] = {
 };
 
 #ifdef USE_LED_STRIP
-#ifdef USE_LED_STRIP_MASTER_MODE
+#ifdef USE_LED_STRIP_DETAILED_MODE
 static const char * const lookupTableLEDStripMode[] = {
-    "RACE", "BEACON", "MASTER"
+    "RACE", "BEACON", "DETAILED"
 };
 #else
 static const char * const lookupTableLEDStripMode[] = {

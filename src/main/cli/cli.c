@@ -1981,7 +1981,7 @@ static void cliRxRange(const char *cmdName, char *cmdline)
     }
 }
 
-#ifdef USE_LED_STRIP_MASTER_MODE
+#ifdef USE_LED_STRIP_DETAILED_MODE
 static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const ledConfig_t *defaultLedConfigs, const char *headingStr)
 {
     const char *format = "led %u %s";
@@ -2011,14 +2011,14 @@ static void cliLed(const char *cmdName, char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printLed(DUMP_MASTER, ledStripMasterModeConfig_t()->ledConfigs, NULL, NULL);
+        printLed(DUMP_MASTER, ledStripDetailedModeConfig_t()->ledConfigs, NULL, NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
         if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
             if (parseLedStripConfig(i, ptr)) {
-                generateLedConfig((ledConfig_t *)&ledStripMasterModeConfig_t()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
+                generateLedConfig((ledConfig_t *)&ledStripDetailedModeConfig_t()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
                 cliShowParseError(cmdName);
@@ -2050,14 +2050,14 @@ static void cliColor(const char *cmdName, char *cmdline)
 {
     const char *format = "color %u %d,%u,%u";
     if (isEmpty(cmdline)) {
-        printColor(DUMP_MASTER, ledStripMasterModeConfig_t()->colors, NULL, NULL);
+        printColor(DUMP_MASTER, ledStripDetailedModeConfig_t()->colors, NULL, NULL);
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
             if (parseColor(i, ptr)) {
-                const hsvColor_t *color = &ledStripMasterModeConfig_t()->colors[i];
+                const hsvColor_t *color = &ledStripDetailedModeConfig_t()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
                 cliShowParseError(cmdName);
@@ -2068,13 +2068,13 @@ static void cliColor(const char *cmdName, char *cmdline)
     }
 }
 
-static void printModeColor(dumpFlags_t dumpMask, const ledStripMasterModeConfig_t_t *ledStripMasterModeConfig_t, const ledStripMasterModeConfig_t_t *defaultLedStripConfig, const char *headingStr)
+static void printModeColor(dumpFlags_t dumpMask, const ledStripDetailedModeConfig_t_t *ledStripDetailedModeConfig_t, const ledStripDetailedModeConfig_t_t *defaultLedStripConfig, const char *headingStr)
 {
     const char *format = "mode_color %u %u %u";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (uint32_t i = 0; i < LED_FCSTATE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
-            int colorIndex = ledStripMasterModeConfig_t->modeColors[i].color[j];
+            int colorIndex = ledStripDetailedModeConfig_t->modeColors[i].color[j];
             bool equalsDefault = false;
             if (defaultLedStripConfig) {
                 int colorIndexDefault = defaultLedStripConfig->modeColors[i].color[j];
@@ -2087,7 +2087,7 @@ static void printModeColor(dumpFlags_t dumpMask, const ledStripMasterModeConfig_
     }
 
     for (uint32_t j = 0; j < LED_SPECIAL_FCSTATE_COLOR_COUNT; j++) {
-        const int colorIndex = ledStripMasterModeConfig_t->specialColors.color[j];
+        const int colorIndex = ledStripDetailedModeConfig_t->specialColors.color[j];
         bool equalsDefault = false;
         if (defaultLedStripConfig) {
             const int colorIndexDefault = defaultLedStripConfig->specialColors.color[j];
@@ -2098,7 +2098,7 @@ static void printModeColor(dumpFlags_t dumpMask, const ledStripMasterModeConfig_
         cliDumpPrintLinef(dumpMask, equalsDefault, format, LED_FCSTATE_SPECIAL, j, colorIndex);
     }
 
-    const int ledStripAuxChannel = ledStripMasterModeConfig_t->ledstrip_aux_channel;
+    const int ledStripAuxChannel = ledStripDetailedModeConfig_t->ledstrip_aux_channel;
     bool equalsDefault = false;
     if (defaultLedStripConfig) {
         const int ledStripAuxChannelDefault = defaultLedStripConfig->ledstrip_aux_channel;
@@ -2112,7 +2112,7 @@ static void printModeColor(dumpFlags_t dumpMask, const ledStripMasterModeConfig_
 static void cliModeColor(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        printModeColor(DUMP_MASTER, ledStripMasterModeConfig_t(), NULL, NULL);
+        printModeColor(DUMP_MASTER, ledStripDetailedModeConfig_t(), NULL, NULL);
     } else {
         enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
         int args[ARGS_COUNT];
@@ -6378,12 +6378,12 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 
             printMap(dumpMask, &rxConfig_Copy, rxConfig(), "map");
 
-#ifdef USE_LED_STRIP_MASTER_MODE
-            printLed(dumpMask, ledStripMasterModeConfig_t_Copy.ledConfigs, ledStripMasterModeConfig_t()->ledConfigs, "led");
+#ifdef USE_LED_STRIP_DETAILED_MODE
+            printLed(dumpMask, ledStripDetailedModeConfig_t_Copy.ledConfigs, ledStripDetailedModeConfig_t()->ledConfigs, "led");
 
-            printColor(dumpMask, ledStripMasterModeConfig_t_Copy.colors, ledStripMasterModeConfig_t()->colors, "color");
+            printColor(dumpMask, ledStripDetailedModeConfig_t_Copy.colors, ledStripDetailedModeConfig_t()->colors, "color");
 
-            printModeColor(dumpMask, &ledStripMasterModeConfig_t_Copy, ledStripMasterModeConfig_t(), "mode_color");
+            printModeColor(dumpMask, &ledStripDetailedModeConfig_t_Copy, ledStripDetailedModeConfig_t(), "mode_color");
 #endif
 
             printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0), "aux");
@@ -6560,7 +6560,7 @@ const clicmd_t cmdTable[] = {
 #if defined(USE_BOARD_INFO)
     CLI_COMMAND_DEF("board_name", "get / set the name of the board model", "[board name]", cliBoardName),
 #endif
-#ifdef USE_LED_STRIP_MASTER_MODE
+#ifdef USE_LED_STRIP_DETAILED_MODE
         CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "{nosave}", cliDefaults),
@@ -6610,7 +6610,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
-#ifdef USE_LED_STRIP_MASTER_MODE
+#ifdef USE_LED_STRIP_DETAILED_MODE
         CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
 #if defined(USE_BOARD_INFO)
@@ -6622,7 +6622,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("mixer", "configure mixer", "list\r\n\t<name>", cliMixer),
 #endif
     CLI_COMMAND_DEF("mmix", "custom motor mixer", NULL, cliMotorMix),
-#ifdef USE_LED_STRIP_MASTER_MODE
+#ifdef USE_LED_STRIP_DETAILED_MODE
     CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("motor",  "get/set motor", "<index> [<value>]", cliMotor),

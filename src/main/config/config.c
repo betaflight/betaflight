@@ -179,7 +179,7 @@ static void activateConfig(void)
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle, throttleCorrectionConfig()->throttle_correction_value);
 
-#if defined(USE_LED_STRIP_MASTER_MODE)
+#if defined(USE_LED_STRIP_DETAILED_MODE)
     reevaluateLedConfig();
 #endif
 

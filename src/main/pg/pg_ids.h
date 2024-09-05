@@ -142,7 +142,7 @@
 #define PG_RX_SPEKTRUM_SPI_CONFIG   542
 #define PG_SERIAL_UART_CONFIG       543
 #define PG_RPM_FILTER_CONFIG        544
-#define PG_LED_STRIP_MASTER_MODE_CONFIG 545 // Used to hold the configuration for the LED_STRIP master mode (not built on targets with limited flash)
+#define PG_LED_STRIP_DETAILED_MODE_CONFIG 545 // Used to hold the configuration for the LED_STRIP master mode (not built on targets with limited flash)
 #define PG_VTX_TABLE_CONFIG         546
 #define PG_STATS_CONFIG             547
 #define PG_QUADSPI_CONFIG           548

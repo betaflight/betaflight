@@ -283,7 +283,7 @@
 #endif // # !defined(LED_STRIP_MAX_LENGTH)
 
 #if defined(USE_LED_STRIP)
-#define USE_LED_STRIP_MASTER_MODE
+#define USE_LED_STRIP_DETAILED_MODE
 #endif
 
 #if defined(USE_VTX)

@@ -76,7 +76,7 @@ extern "C" {
 TEST(LedStripTest, parseLedStripConfig)
 {
     // given
-    memset(&ledStripMasterModeConfig_tMutable()->ledConfigs, 0, sizeof(ledStripMasterModeConfig_tMutable()->ledConfigs));
+    memset(&ledStripDetailedModeConfig_tMutable()->ledConfigs, 0, sizeof(ledStripDetailedModeConfig_tMutable()->ledConfigs));
 
     // and
     static const ledConfig_t expectedLedStripConfig[WS2811_LED_STRIP_LENGTH] = {
@@ -181,7 +181,7 @@ TEST(LedStripTest, parseLedStripConfig)
 #ifdef DEBUG_LEDSTRIP
         printf("iteration: %d\n", index);
 #endif
-        EXPECT_EQ(expectedLedStripConfig[index], ledStripMasterModeConfig_t()->ledConfigs[index]);
+        EXPECT_EQ(expectedLedStripConfig[index], ledStripDetailedModeConfig_t()->ledConfigs[index]);
     }
 
     // then
@@ -197,7 +197,7 @@ TEST(LedStripTest, parseLedStripConfig)
 TEST(LedStripTest, smallestGridWithCenter)
 {
     // given
-    memset(&ledStripMasterModeConfig_tMutable()->ledConfigs, 0, sizeof(ledStripMasterModeConfig_tMutable()->ledConfigs));
+    memset(&ledStripDetailedModeConfig_tMutable()->ledConfigs, 0, sizeof(ledStripDetailedModeConfig_tMutable()->ledConfigs));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -209,7 +209,7 @@ TEST(LedStripTest, smallestGridWithCenter)
         DEFINE_LED(0, 1, 0, LD(SOUTH) | LD(WEST), LF(FLIGHT_MODE), LO(WARNING)),
         DEFINE_LED(0, 2, 0, LD(SOUTH), LF(ARM_STATE), LO(INDICATOR))
     };
-    memcpy(&ledStripMasterModeConfig_tMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(&ledStripDetailedModeConfig_tMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     reevaluateLedConfig();
@@ -225,7 +225,7 @@ TEST(LedStripTest, smallestGridWithCenter)
 TEST(LedStripTest, smallestGrid)
 {
     // given
-    memset(&ledStripMasterModeConfig_tMutable()->ledConfigs, 0, sizeof(ledStripMasterModeConfig_tMutable()->ledConfigs));
+    memset(&ledStripDetailedModeConfig_tMutable()->ledConfigs, 0, sizeof(ledStripDetailedModeConfig_tMutable()->ledConfigs));
 
     // and
     static const ledConfig_t testLedConfigs[] = {
@@ -234,7 +234,7 @@ TEST(LedStripTest, smallestGrid)
         DEFINE_LED(0, 0, 0, LD(NORTH) | LD(WEST), LF(FLIGHT_MODE), LO(INDICATOR)),
         DEFINE_LED(0, 1, 0, LD(SOUTH) | LD(WEST), LF(FLIGHT_MODE), LO(INDICATOR))
     };
-    memcpy(&ledStripMasterModeConfig_tMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
+    memcpy(&ledStripDetailedModeConfig_tMutable()->ledConfigs, &testLedConfigs, sizeof(testLedConfigs));
 
     // when
     reevaluateLedConfig();
@@ -256,7 +256,7 @@ extern hsvColor_t *colors;
 TEST(ColorTest, parseColor)
 {
     // given
-    memset(ledStripMasterModeConfig_tMutable()->colors, 0, sizeof(hsvColor_t) * LED_CONFIGURABLE_COLOR_COUNT);
+    memset(ledStripDetailedModeConfig_tMutable()->colors, 0, sizeof(hsvColor_t) * LED_CONFIGURABLE_COLOR_COUNT);
 
     // and
     const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
@@ -290,9 +290,9 @@ TEST(ColorTest, parseColor)
         printf("iteration: %d\n", index);
 #endif
 
-        EXPECT_EQ(expectedColors[index].h, ledStripMasterModeConfig_t()->colors[index].h);
-        EXPECT_EQ(expectedColors[index].s, ledStripMasterModeConfig_t()->colors[index].s);
-        EXPECT_EQ(expectedColors[index].v, ledStripMasterModeConfig_t()->colors[index].v);
+        EXPECT_EQ(expectedColors[index].h, ledStripDetailedModeConfig_t()->colors[index].h);
+        EXPECT_EQ(expectedColors[index].s, ledStripDetailedModeConfig_t()->colors[index].s);
+        EXPECT_EQ(expectedColors[index].v, ledStripDetailedModeConfig_t()->colors[index].v);
     }
 }
 
