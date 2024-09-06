@@ -1755,7 +1755,7 @@ case MSP_NAME:
             }
         }
 
-        for (int j = 0; j < LED_SPECIAL_FCSTATE_COLOR_COUNT; j++) {
+        for (int j = 0; j < LED_FCSTATE_SPECIAL_COLOR_COUNT; j++) {
             sbufWriteU8(dst, LED_FCSTATE_COUNT);
             sbufWriteU8(dst, j);
             sbufWriteU8(dst, ledStripDetailedModeConfig()->specialColors.color[j]);

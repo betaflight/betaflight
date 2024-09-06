@@ -2086,7 +2086,7 @@ static void printModeColor(dumpFlags_t dumpMask, const ledStripDetailedModeConfi
         }
     }
 
-    for (uint32_t j = 0; j < LED_SPECIAL_FCSTATE_COLOR_COUNT; j++) {
+    for (uint32_t j = 0; j < LED_FCSTATE_SPECIAL_COLOR_COUNT; j++) {
         const int colorIndex = ledStripDetailedModeConfig->specialColors.color[j];
         bool equalsDefault = false;
         if (defaultLedStripConfig) {

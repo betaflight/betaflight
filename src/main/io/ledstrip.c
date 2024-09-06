@@ -105,7 +105,7 @@ static uint8_t previousColorIndex = COLOR_UNDEFINED;
 // Decay the estimated max task duration by 1/(1 << LED_EXEC_TIME_SHIFT) on every invocation
 #define LED_EXEC_TIME_SHIFT             7
 
-#define COLOR_UPDATE_INTERVAL_US 1e6  // normally updates when color changes but this is a 1 second forced update
+#define COLOR_UPDATE_INTERVAL_US ((unsigned)1e6)  // normally updates when color changes but this is a 1 second forced update
 
 #define VISUAL_BEEPER_COLOR COLOR_WHITE
 
@@ -1326,12 +1326,12 @@ bool setModeColor(ledFCStates_e fcStatusIndex, int modeColorIndex, int colorInde
     // check color
     if (colorIndex < 0 || colorIndex >= LED_CONFIGURABLE_COLOR_COUNT)
         return false;
-    if (fcStatusIndex < LED_FCSTATE_COUNT) {  // ledFCStates_e is unsigned, so one-sided test is enough
+    if (fcStatusIndex >= 0 && fcStatusIndex < LED_FCSTATE_COUNT) {
         if (modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
             return false;
         ledStripDetailedModeConfigMutable()->modeColors[fcStatusIndex].color[modeColorIndex] = colorIndex;
     } else if (fcStatusIndex == LED_FCSTATE_SPECIAL) {
-        if (modeColorIndex < 0 || modeColorIndex >= LED_SPECIAL_FCSTATE_COLOR_COUNT)
+        if (modeColorIndex < 0 || modeColorIndex >= LED_FCSTATE_SPECIAL_COLOR_COUNT)
             return false;
         ledStripDetailedModeConfigMutable()->specialColors.color[modeColorIndex] = colorIndex;
     } else if (fcStatusIndex == LED_FCSTATE_AUX_CHANNEL) {
@@ -1459,7 +1459,7 @@ static ledStripUpdateStep_t applySimpleMode(timeUs_t currentTimeUs)
     }
 
     if ((colorIndex != previousColorIndex) || (currentTimeUs >= colorUpdateTimeUs)) {
-        setStripColor((useCustomColors) ? &ledStripDetailedModeConfig()->colors[colorIndex] : &hsv[colorIndex]);
+        setStripColor(useCustomColors ? &ledStripDetailedModeConfig()->colors[colorIndex] : &hsv[colorIndex]);
         previousColorIndex = colorIndex;
         colorUpdateTimeUs = currentTimeUs + COLOR_UPDATE_INTERVAL_US;
         return LED_STRIP_UPDATE_STEP_ADVANCE;
@@ -1496,7 +1496,7 @@ void ledStripUpdate(timeUs_t currentTimeUs)
 
     if (ledStripEnabled) {
         if (isModeApplied) {
-            ledStripUpdateStep_t ledStripUpdateStep = LED_STRIP_UPDATE_STEP_SLOW;
+            ledStripUpdateStep_t ledStripUpdateStep;
 
             if (updateStartTimeUs == 0) {
                 updateStartTimeUs = currentTimeUs;
@@ -1516,6 +1516,7 @@ void ledStripUpdate(timeUs_t currentTimeUs)
                 }
 
                 default:
+                    ledStripUpdateStep = LED_STRIP_UPDATE_STEP_SLOW;
                     break;
             }
 

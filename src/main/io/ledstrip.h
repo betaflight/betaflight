@@ -31,11 +31,11 @@
 #define TASK_LEDSTRIP_RATE_HZ 60
 
 #define LED_CONFIGURABLE_COLOR_COUNT     16
-#define LED_FCSTATE_COUNT                6
+#define LED_FCSTATE_COUNT                 (LED_FCSTATE_BARO + 1)
 #define LED_DIRECTION_COUNT               6
 #define LED_BASEFUNCTION_COUNT           10
 #define LED_OVERLAY_COUNT                 7
-#define LED_SPECIAL_FCSTATE_COLOR_COUNT 11
+#define LED_FCSTATE_SPECIAL_COLOR_COUNT  11
 
 #define LED_POS_OFFSET                  0
 #define LED_FUNCTION_OFFSET             8
@@ -159,7 +159,7 @@ typedef struct modeColorIndexes_s {
 } modeColorIndexes_t;
 
 typedef struct specialColorIndexes_s {
-    uint8_t color[LED_SPECIAL_FCSTATE_COLOR_COUNT];
+    uint8_t color[LED_FCSTATE_SPECIAL_COLOR_COUNT];
 } specialColorIndexes_t;
 
 typedef uint32_t ledConfig_t;
