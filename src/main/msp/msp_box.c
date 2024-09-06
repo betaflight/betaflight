@@ -87,7 +87,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXBEEPGPSCOUNT, .boxName = "GPS BEEP SATELLITE COUNT", .permanentId = 37 },
 //    { .boxId = BOX3DONASWITCH, .boxName = "3D ON A SWITCH", .permanentId = 38 }, (removed)
     { .boxId = BOXVTXPITMODE, .boxName = "VTX PIT MODE", .permanentId = 39 },
-    { .boxId = BOXUSER1, .boxName = BOX_USER_1_NAME, .permanentId = 40 },
+    { .boxId = BOXUSER1, .boxName = BOX_USER_1_NAME, .permanentId = 40 }, // may be overridden by modeActivationConfig
     { .boxId = BOXUSER2, .boxName = BOX_USER_2_NAME, .permanentId = 41 },
     { .boxId = BOXUSER3, .boxName = BOX_USER_3_NAME, .permanentId = 42 },
     { .boxId = BOXUSER4, .boxName = BOX_USER_4_NAME, .permanentId = 43 },
