@@ -97,6 +97,14 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 extern "C" {
     acc_t acc;
 
+
+    void getAltitudeData(altitudeData_t* data)
+    {
+        if (data != NULL) {
+            data->altitudeCm = 0.0f; // Mock value for altitudeCm
+            data->altitudeDerivativeCmS = 0.0f; // Mock value for altitudeDerivativeCmS
+        }
+    }
     void pt2FilterInit(pt2Filter_t *altHoldDeltaLpf, float) {
         UNUSED(altHoldDeltaLpf);
     }
@@ -109,8 +117,6 @@ extern "C" {
     }
 
     bool isAltitudeAvailable(void) { return true; }
-    float getAltitudeCm(void) { return 0.0f; }
-    bool isAltitudeLow(void) { return true; }
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
 

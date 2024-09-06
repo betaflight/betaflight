@@ -29,6 +29,7 @@ typedef struct {
     float targetAltitudeCm;
     float targetAltitudeAdjustRate;
     float measuredAltitudeCm;
+    float altitudeDerivativeCmS;
     float throttleOut;
     float hover;
 } altHoldState_t;

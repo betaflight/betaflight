@@ -234,14 +234,12 @@ int32_t getEstimatedAltitudeCm(void)
     return lrintf(displayAltitudeCm);
 }
 
-float getAltitudeCm(void)
+void getAltitudeData(altitudeData_t* data)
 {
-    return zeroedAltitudeCm;
-}
-
-float getAltitudeDerivativeCmS(void)
-{
-    return zeroedAltitudeDerivative; // cm/s
+    if (data != NULL) {
+        data->altitudeCm = zeroedAltitudeCm;
+        data->altitudeDerivativeCmS = zeroedAltitudeDerivative;
+    }
 }
 
 bool isAltitudeLow(void)

@@ -35,12 +35,17 @@ typedef struct positionConfig_s {
 
 PG_DECLARE(positionConfig_t, positionConfig);
 
+typedef struct altitudeData_s {
+    float altitudeCm;
+    float altitudeDerivativeCmS;
+} altitudeData_t;
+void getAltitudeData(altitudeData_t* data);
+
 void calculateEstimatedAltitude(void);
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);
-float getAltitudeCm(void);
-float getAltitudeDerivativeCmS(void);
 bool isAltitudeLow(void);
 float getAltitudeAsl(void);
 int16_t getEstimatedVario(void);
 bool isAltitudeAvailable(void);
+

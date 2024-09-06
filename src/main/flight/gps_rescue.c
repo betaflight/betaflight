@@ -97,6 +97,7 @@ typedef struct {
 
 typedef struct {
     float currentAltitudeCm;
+    float altitudeDerivativeCmS;
     float distanceToHomeCm;
     float distanceToHomeM;
     uint16_t groundSpeedCmS;
@@ -261,7 +262,7 @@ static void rescueAttainPosition(void)
 
     // D component
     const float kd = gpsRescueConfig()->throttleD * 0.01f; // same scale factor as alt_hold 
-    const float throttleD = -getAltitudeDerivativeCmS() * kd * rescueState.intent.throttleDMultiplier;
+    const float throttleD = -rescueState.sensor.altitudeDerivativeCmS * kd * rescueState.intent.throttleDMultiplier;
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 6, lrintf(throttleD)); // throttle D before lowpass smoothing
 
     // F component
@@ -538,7 +539,11 @@ static void sensorUpdate(void)
 {
     static float prevDistanceToHomeCm = 0.0f;
 
-    rescueState.sensor.currentAltitudeCm = getAltitudeCm();
+    altitudeData_t data;
+    getAltitudeData(&data);
+    rescueState.sensor.currentAltitudeCm = data.altitudeCm;
+    rescueState.sensor.altitudeDerivativeCmS = data.altitudeDerivativeCmS;
+
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueState.sensor.currentAltitudeCm));

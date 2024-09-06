@@ -102,7 +102,7 @@ float altitudePidCalculate(void)
     // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
     // this is important primarily to arrest pre-existing fast drops or climbs at the start;
 
-    float vel = getAltitudeDerivativeCmS(); // cm/s altitude derivative is always available
+    float vel = altHoldState.altitudeDerivativeCmS; // cm/s altitude derivative is always available
     const float kinkPoint = 500.0f; // velocity at which D should start to increase
     const float kinkPointAdjustment = kinkPoint * 2.0f; // Precompute constant
     const float sign = (vel > 0) ? 1.0f : -1.0f;
@@ -237,9 +237,12 @@ void altHoldUpdateTargetAltitude(void)
 
 void altHoldUpdate(void)
 {
-    // get current altitude
-    altHoldState.measuredAltitudeCm = getAltitudeCm();
-    
+    // get current altitude and derivative
+    altitudeData_t data;
+    getAltitudeData(&data);
+    altHoldState.measuredAltitudeCm = data.altitudeCm;
+    altHoldState.altitudeDerivativeCmS = data.altitudeDerivativeCmS;
+
     // check if the user has changed the target altitude using sticks
     if (altholdConfig()->alt_hold_target_adjust_rate) {
         altHoldUpdateTargetAltitude();
