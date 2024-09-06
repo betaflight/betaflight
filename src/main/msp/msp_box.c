@@ -87,10 +87,10 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXBEEPGPSCOUNT, .boxName = "GPS BEEP SATELLITE COUNT", .permanentId = 37 },
 //    { .boxId = BOX3DONASWITCH, .boxName = "3D ON A SWITCH", .permanentId = 38 }, (removed)
     { .boxId = BOXVTXPITMODE, .boxName = "VTX PIT MODE", .permanentId = 39 },
-    { .boxId = BOXUSER1, .boxName = BOX_USER_1_NAME, .permanentId = 40 }, // may be overridden by modeActivationConfig
-    { .boxId = BOXUSER2, .boxName = BOX_USER_2_NAME, .permanentId = 41 },
-    { .boxId = BOXUSER3, .boxName = BOX_USER_3_NAME, .permanentId = 42 },
-    { .boxId = BOXUSER4, .boxName = BOX_USER_4_NAME, .permanentId = 43 },
+    { .boxId = BOXUSER1, .boxName = BOX_USER1_NAME, .permanentId = 40 }, // may be overridden by modeActivationConfig
+    { .boxId = BOXUSER2, .boxName = BOX_USER2_NAME, .permanentId = 41 },
+    { .boxId = BOXUSER3, .boxName = BOX_USER3_NAME, .permanentId = 42 },
+    { .boxId = BOXUSER4, .boxName = BOX_USER4_NAME, .permanentId = 43 },
     { .boxId = BOXPIDAUDIO, .boxName = "PID AUDIO", .permanentId = 44 },
     { .boxId = BOXPARALYZE, .boxName = "PARALYZE", .permanentId = 45 },
     { .boxId = BOXGPSRESCUE, .boxName = "GPS RESCUE", .permanentId = 46 },
