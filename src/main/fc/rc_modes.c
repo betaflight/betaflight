@@ -59,14 +59,7 @@ static uint8_t activeLinkedMacArray[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 3);
 
 #if defined(USE_CUSTOM_BOX_NAMES)
-PG_REGISTER_WITH_RESET_TEMPLATE(modeActivationConfig_t, modeActivationConfig, PG_MODE_ACTIVATION_CONFIG, 0);
-
-PG_RESET_TEMPLATE(modeActivationConfig_t, modeActivationConfig,
-    .box_user_1_name = { 0 },
-    .box_user_2_name = { 0 },
-    .box_user_3_name = { 0 },
-    .box_user_4_name = { 0 },
-);
+PG_REGISTER(modeActivationConfig_t, modeActivationConfig, PG_MODE_ACTIVATION_CONFIG, 0);
 #endif
 
 bool IS_RC_MODE_ACTIVE(boxId_e boxId)
