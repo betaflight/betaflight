@@ -56,6 +56,8 @@
 
 #include "rc.h"
 
+#define RX_INTERVAL_MIN_US     950 // 0.950ms to fit 1kHz without an issue
+#define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 // note that rcCommand[] is an external float
@@ -68,8 +70,6 @@ static float maxRcDeflectionAbs;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 
-#define RX_INTERVAL_MIN_US     950 // 0.950ms to fit 1kHz without an issue
-#define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
 static uint16_t currentRxIntervalUs;  // packet interval in microseconds, constrained to above range
 static uint16_t previousRxIntervalUs; // previous packet interval in microseconds
 static float currentRxRateHz;         // packet interval in Hz, constrained as above
