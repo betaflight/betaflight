@@ -1326,7 +1326,7 @@ bool setModeColor(ledFCStates_e fcStatusIndex, int modeColorIndex, int colorInde
     // check color
     if (colorIndex < 0 || colorIndex >= LED_CONFIGURABLE_COLOR_COUNT)
         return false;
-    if (fcStatusIndex >= 0 && fcStatusIndex < LED_FCSTATE_COUNT) {
+    if (fcStatusIndex < LED_FCSTATE_COUNT) {
         if (modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
             return false;
         ledStripDetailedModeConfigMutable()->modeColors[fcStatusIndex].color[modeColorIndex] = colorIndex;
