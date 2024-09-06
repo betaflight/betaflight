@@ -238,6 +238,11 @@ float getAltitude(void)
     return zeroedAltitudeCm;
 }
 
+float getAltitudeDerivative(void)
+{
+    return zeroedAltitudeDerivative; // cm/s
+}
+
 bool isAltitudeLow(void)
 {
     return altitudeIsLow;
