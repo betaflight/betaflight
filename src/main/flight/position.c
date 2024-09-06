@@ -219,6 +219,7 @@ void calculateEstimatedAltitude(void)
     DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
+    DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(zeroedAltitudeCm));
 
     altitudeAvailable = haveGpsAlt || haveBaroAlt;
 }
@@ -233,12 +234,12 @@ int32_t getEstimatedAltitudeCm(void)
     return lrintf(displayAltitudeCm);
 }
 
-float getAltitude(void)
+float getAltitudeCm(void)
 {
     return zeroedAltitudeCm;
 }
 
-float getAltitudeDerivative(void)
+float getAltitudeDerivativeCmS(void)
 {
     return zeroedAltitudeDerivative; // cm/s
 }

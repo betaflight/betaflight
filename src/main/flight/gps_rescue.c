@@ -241,49 +241,46 @@ static void rescueAttainPosition(void)
         Altitude (throttle) controller
     */
     // currentAltitudeCm is updated at TASK_GPS_RESCUE_RATE_HZ
-    const float altitudeErrorCm = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) / 100.0f; // m
+    const float altitudeErrorCm = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm);
     // height above target in metres (negative means too low)
     // at the start, the target starts at current altitude plus one step.  Increases stepwise to intended value.
 
     // P component
-    const float throttleP = gpsRescueConfig()->throttleP * altitudeErrorCm;
+    const float kp = gpsRescueConfig()->throttleP * 0.01f; // same scale factor as alt_hold
+    const float throttleP = kp * altitudeErrorCm;
 
     // I component
-    // reduce the iTerm gain for errors greater than 2m, otherwise it winds up badly
+    // reduce the iTerm gain for errors greater than 2m, otherwise it winds up too much
     const float itermNormalRange = 200.0f; // 2m
     const float itermRelax = (fabsf(altitudeErrorCm) < itermNormalRange) ? 1.0f : 0.1f;
 
-    const float ki = 0.3f;
-    throttleI += altitudeErrorCm * ki * gpsRescueConfig()->throttleI *  taskIntervalSeconds;
+    const float ki = gpsRescueConfig()->throttleI * 0.003f;  // same scale factor as alt_hold
+    throttleI += altitudeErrorCm * ki * itermRelax * taskIntervalSeconds;
     throttleI = constrainf(throttleI, -1.0f * GPS_RESCUE_MAX_THROTTLE_ITERM, 1.0f * GPS_RESCUE_MAX_THROTTLE_ITERM);
-    // up to 20% increase in throttle from I alone
+    // up to 20% increase in throttle from I alone, need to check if this is needed, in practice.
 
     // D component
-    float throttleD = - getAltitudeDerivative(); // cm/s
-    // increase by up to 2x when descent rate is faster
-    throttleD *= rescueState.intent.throttleDMultiplier;
-    // add a feedforward element that is proportional to the ascend or descend rate
-    throttleD += rescueState.intent.targetAltitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
-    // apply user's throttle D gain
-    throttleD *= gpsRescueConfig()->throttleD / 100.0f;
+    const float kd = gpsRescueConfig()->throttleD * 0.01f; // same scale factor as alt_hold 
+    const float throttleD = -getAltitudeDerivativeCmS() * kd * rescueState.intent.throttleDMultiplier;
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 6, lrintf(throttleD)); // throttle D before lowpass smoothing
 
-    // acceleration component not currently implemented - was needed previously due to GPS lag, maybe not needed now.
+    // F component
+    // add a feedforward element that is proportional to the ascend or descend rate
+    const float throttleF = rescueState.intent.targetAltitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
 
-    float tiltAdjustment = 1.0f - getCosTiltAngle(); // 0 = flat, gets to 0.2 correcting on a windy day
-    tiltAdjustment *= (positionConfig()->hover_throttle - 1000);
-    // if hover is 1300, and adjustment .2, this gives us 0.2*300 or 60 of extra throttle, not much, but useful
-    // too much and landings with lots of pitch adjustment, eg windy days, can be a problem
+    const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f); // same code as alt_hold
+    // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
+    // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
 
-    throttleAdjustment = throttleP + throttleI + throttleD + tiltAdjustment;
+    const float hoverOffset = positionConfig()->hover_throttle - PWM_RANGE_MIN;
 
-    rescueThrottle = positionConfig()->hover_throttle + throttleAdjustment;
+    rescueThrottle = PWM_RANGE_MIN + (throttleP + throttleI + throttleD + throttleF + hoverOffset) * tiltMultiplier;
     rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
 
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, lrintf(throttleP));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, lrintf(throttleD));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 4, lrintf(throttleI));
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 5, lrintf(tiltAdjustment));     // factor that adjusts throttle based on tilt angle
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 5, lrintf(tiltMultiplier));     // factor that adjusts throttle based on tilt angle
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 7, lrintf(throttleAdjustment)); // pidSum; amount to add/subtract from hover throttle value
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 6, lrintf(rescueThrottle));         // throttle value to use during a rescue
 
@@ -541,7 +538,7 @@ static void sensorUpdate(void)
 {
     static float prevDistanceToHomeCm = 0.0f;
 
-    rescueState.sensor.currentAltitudeCm = getAltitude();
+    rescueState.sensor.currentAltitudeCm = getAltitudeCm();
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueState.sensor.currentAltitudeCm));
@@ -946,12 +943,13 @@ float gpsRescueGetImuYawCogGain(void)
 
 float gpsRescueGetThrottle(void)
 {
-    // Calculated a desired commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
-    // We need to compensate for min_check since the throttle value set by gps rescue
-    // is based on the raw rcCommand value commanded by the pilot.
+    // Calculate the commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
+    // minCheck can be less than, or greater than, PWM_RANGE_MIN, but is usually at default of 1050
+    // it is the value at which the user expects the motors to start spinning (leaving a deadband from 1000 to 1050)
+    // rescue throttle min can't be less than gps_rescue_throttle_min (1100) or greater than max (1750)
+    // we scale throttle from mincheck to PWM_RANGE_MAX when mincheck is greater than PWM_RANGE_MIN, otherwise from PWM_RANGE_MIN to PWM_RANGE_MAX
     float commandedThrottle = scaleRangef(rescueThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
-    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
-
+    // if mincheck is set below PWRM_RANGE_MIN, the gps rescue throttle may seem greater than expected
     return commandedThrottle;
 }
 

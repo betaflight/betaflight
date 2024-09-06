@@ -109,7 +109,7 @@ extern "C" {
     }
 
     bool isAltitudeAvailable(void) { return true; }
-    float getAltitude(void) { return 0.0f; }
+    float getAltitudeCm(void) { return 0.0f; }
     bool isAltitudeLow(void) { return true; }
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];

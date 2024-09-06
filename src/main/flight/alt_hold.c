@@ -79,19 +79,19 @@ float altitudePidCalculate(void)
     //   even though it may cause throttle oscillations while dropping quickly - the average D is what we need
     // - Prevent excessive iTerm growth when error is impossibly large for iTerm to resolve
 
-    const float altErrorCm = altHoldState.targetAltitudeCm - altHoldState.measuredAltitudeCm;
+    const float altitudeErrorCm = altHoldState.targetAltitudeCm - altHoldState.measuredAltitudeCm;
 
     // P
-    const float pOut = simplePid.kp * altErrorCm;
+    const float pOut = simplePid.kp * altitudeErrorCm;
 
     // I
     // input limit iTerm so that it doesn't grow fast with large errors
     // very important at the start if there are massive initial errors to prevent iTerm windup
 
-    // no iTerm change for error greater than 2m, otherwise it winds up badly
+    // much less iTerm change for errors greater than 2m, otherwise it winds up badly
     const float itermNormalRange = 200.0f; // 2m
-    const float itermRelax = (fabsf(altErrorCm) < itermNormalRange) ? 1.0f : 0.0f;
-    simplePid.integral += altErrorCm * simplePid.ki * itermRelax * taskIntervalSeconds;
+    const float itermRelax = (fabsf(altitudeErrorCm) < itermNormalRange) ? 1.0f : 0.1f;
+    simplePid.integral += altitudeErrorCm * simplePid.ki * itermRelax * taskIntervalSeconds;
     // arbitrary limit on iTerm, same as for gps_rescue, +/-20% of full throttle range
     // ** might not be needed with input limiting **
     simplePid.integral = constrainf(simplePid.integral, -200.0f, 200.0f); 
@@ -99,11 +99,10 @@ float altitudePidCalculate(void)
 
     // D
     // boost D by 'increasing apparent velocity' when vertical velocity exceeds 5 m/s ( D of 75 on defaults)
-    // the velocity trigger is arbitrary at this point
     // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
     // this is important primarily to arrest pre-existing fast drops or climbs at the start;
 
-    float vel = getAltitudeDerivative(); // altitude derivative is always available
+    float vel = getAltitudeDerivativeCmS(); // cm/s altitude derivative is always available
     const float kinkPoint = 500.0f; // velocity at which D should start to increase
     const float kinkPointAdjustment = kinkPoint * 2.0f; // Precompute constant
     const float sign = (vel > 0) ? 1.0f : -1.0f;
@@ -238,6 +237,9 @@ void altHoldUpdateTargetAltitude(void)
 
 void altHoldUpdate(void)
 {
+    // get current altitude
+    altHoldState.measuredAltitudeCm = getAltitudeCm();
+    
     // check if the user has changed the target altitude using sticks
     if (altholdConfig()->alt_hold_target_adjust_rate) {
         altHoldUpdateTargetAltitude();
@@ -257,12 +259,7 @@ void altHoldUpdate(void)
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
-    UNUSED(currentTimeUs);
-
-    // things that always happen
-    altHoldState.measuredAltitudeCm = getAltitude();
-
-    DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(altHoldState.measuredAltitudeCm));
+    UNUSED(currentTimeUs); 
 
     altHoldProcessTransitions();
 
@@ -272,6 +269,7 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
 }
 
 float altHoldGetThrottle(void) {
+    // see notes in gpsRescueGetThrottle() about mincheck
     return scaleRangef(altHoldState.throttleOut, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 }
 
