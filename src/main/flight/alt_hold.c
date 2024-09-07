@@ -138,8 +138,17 @@ void simplePidInit(float kp, float ki, float kd, float kf)
     simplePid.integral = 0.0f;
 }
 
+void getCurrentAltitudeValues(void)
+{
+    altitudeData_t data;
+    getAltitudeData(&data);
+    altHoldState.measuredAltitudeCm = data.altitudeCm;
+    altHoldState.altitudeDerivativeCmS = data.altitudeDerivativeCmS;
+}
+
 void altHoldReset(void)
 {
+    getCurrentAltitudeValues(); // need current altitude to set target altitude
     altHoldState.targetAltitudeCm = altHoldState.measuredAltitudeCm;
     simplePid.integral = 0.0f;
     altHoldState.targetAltitudeAdjustRate = 0.0f;
@@ -238,10 +247,7 @@ void altHoldUpdateTargetAltitude(void)
 void altHoldUpdate(void)
 {
     // get current altitude and derivative
-    altitudeData_t data;
-    getAltitudeData(&data);
-    altHoldState.measuredAltitudeCm = data.altitudeCm;
-    altHoldState.altitudeDerivativeCmS = data.altitudeDerivativeCmS;
+    getCurrentAltitudeValues();
 
     // check if the user has changed the target altitude using sticks
     if (altholdConfig()->alt_hold_target_adjust_rate) {
