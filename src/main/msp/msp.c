@@ -2374,30 +2374,29 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             if (sbufBytesRemaining(src) == 0) {
                 return MSP_RESULT_ERROR;
             }
-            int bytesRemaining = sbufBytesRemaining(dst) - 1; // need to keep one byte for checksum
+            int bytesRemaining = sbufBytesRemaining(dst);
             mspPacket_t packetIn, packetOut;
-            sbufInit(&packetIn.buf, src->end, src->end);
-            uint8_t* resetInputPtr = src->ptr;
+            sbufInit(&packetIn.buf, src->end, src->end); // there is no paramater for MSP_MULTIPLE_MSP
+            uint8_t* initialInputPtr = src->ptr;
             while (sbufBytesRemaining(src) && bytesRemaining > 0) {
                 uint8_t newMSP = sbufReadU8(src);
-                sbufInit(&packetOut.buf, dst->ptr, dst->end);
+                sbufInit(&packetOut.buf, dst->ptr + 1, dst->end); // reserve 1 byte for length
                 packetIn.cmd = newMSP;
                 mspFcProcessCommand(srcDesc, &packetIn, &packetOut, NULL);
-                uint8_t mspSize = sbufPtr(&packetOut.buf) - dst->ptr;
-                mspSize++; // need to add length information for each MSP
+                uint8_t mspSize = sbufPtr(&packetOut.buf) - dst->ptr; // length included
                 bytesRemaining -= mspSize;
                 if (bytesRemaining >= 0) {
                     maxMSPs++;
                 }
             }
-            src->ptr = resetInputPtr;
+            src->ptr = initialInputPtr;
             sbufInit(&packetOut.buf, dst->ptr, dst->end);
             for (int i = 0; i < maxMSPs; i++) {
                 uint8_t* sizePtr = sbufPtr(&packetOut.buf);
-                sbufWriteU8(&packetOut.buf, 0); // dummy
+                sbufWriteU8(&packetOut.buf, 0); // placeholder for reply size
                 packetIn.cmd = sbufReadU8(src);
                 mspFcProcessCommand(srcDesc, &packetIn, &packetOut, NULL);
-                (*sizePtr) = sbufPtr(&packetOut.buf) - (sizePtr + 1);
+                *sizePtr = sbufPtr(&packetOut.buf) - (sizePtr + 1);
             }
             dst->ptr = packetOut.buf.ptr;
         }
