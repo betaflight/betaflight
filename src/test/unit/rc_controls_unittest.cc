@@ -271,6 +271,7 @@ protected:
         .rate_limit = {0, 0, 0},
         .profileName = "default",
         .quickRatesRcExpo = 0,
+        .vectorRcExpo = 0,
     };
 
     channelRange_t fullRange = {
@@ -376,6 +377,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
         .rate_limit = {0, 0, 0},
         .profileName = "default",
         .quickRatesRcExpo = 0,
+        .vectorRcExpo = 0,
     };
 
     // and

@@ -689,48 +689,96 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
 }
 #endif // USE_FEEDFORWARD
 
+FAST_CODE void preProcessRcCommandAxis(int axis) {
+    // scale rcCommandf to range [-1.0, 1.0]
+    float rcCommandf;
+    if (axis == FD_YAW) {
+        rcCommandf = rcCommand[axis] / rcCommandYawDivider;
+    } else {
+        rcCommandf = rcCommand[axis] / rcCommandDivider;
+    }
+    rcDeflection[axis] = rcCommandf;
+    const float rcCommandfAbs = fabsf(rcCommandf);
+    rcDeflectionAbs[axis] = rcCommandfAbs;
+    maxRcDeflectionAbs = fmaxf(maxRcDeflectionAbs, rcCommandfAbs);
+}
+
+FAST_CODE void writeSetpointAxis(int axis, float angleRate) {
+    rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
+    DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
+}
+
 FAST_CODE void processRcCommand(void)
 {
     if (isRxDataNew) {
         maxRcDeflectionAbs = 0.0f;
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
-            float angleRate;
+        float angleRateRoll = 0;
+        float angleRatePitch = 0;
+        float angleRateYaw = 0;
 
+        // Apply rates and expo for yaw axis independently
 #ifdef USE_GPS_RESCUE
-            if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
-                // If GPS Rescue is active then override the setpointRate used in the
-                // pid controller with the value calculated from the desired heading logic.
-                angleRate = gpsRescueGetYawRate();
-                // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
-                rcDeflection[axis] = 0;
-                rcDeflectionAbs[axis] = 0;
-            } else
+        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            // If GPS Rescue is active then override the setpointRate used in the
+            // pid controller with the value calculated from the desired heading logic.
+            angleRateYaw = gpsRescueGetYawRate();
+            // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
+            rcDeflection[FD_YAW] = 0;
+            rcDeflectionAbs[FD_YAW] = 0;
+        } else
 #endif
-            {
-                // scale rcCommandf to range [-1.0, 1.0]
-                float rcCommandf;
-                if (axis == FD_YAW) {
-                    rcCommandf = rcCommand[axis] / rcCommandYawDivider;
-                } else {
-                    rcCommandf = rcCommand[axis] / rcCommandDivider;
+        {
+            preProcessRcCommandAxis(FD_YAW); // Yaw normalize rcCommand [-1.0, 1.0], store in rcDeflection, rcDeflectionAbs, maxRcDeflectionAbs
+            angleRateYaw = applyRates(FD_YAW, rcDeflection[FD_YAW], rcDeflectionAbs[FD_YAW]);
+        }
+
+        // Apply rates for pitch and roll
+        preProcessRcCommandAxis(FD_ROLL); // normalize rcCommand [-1.0, 1.0], store in rcDeflection, rcDeflectionAbs, maxRcDeflectionAbs
+        preProcessRcCommandAxis(FD_PITCH); // normalize rcCommand [-1.0, 1.0], store in rcDeflection, rcDeflectionAbs, maxRcDeflectionAbs
+
+        if (currentControlRateProfile->vectorRcExpo) {
+            /* vector expo - apply rates and expo for pitch and roll together for consistent feel in all directions */
+            float r = rcDeflection[FD_ROLL];
+            float p = rcDeflection[FD_PITCH];
+            float length = sqrtf(r*r + p*p);
+            if (length < 0.00001f) { // ensure no divide by zero, rc stick resolution is limited to 1/1000 due to PWM etc, though it is then low passed, so 1/100,000 as a limit is plenty
+                angleRateRoll = 0;
+                angleRatePitch = 0;
+            } else {
+                if (length > 1.0f) { // constrain to circular area of max length 1.0 in case of square RC control
+                    r /= length;
+                    p /= length;
+                    length = 1.0f;
                 }
-                rcDeflection[axis] = rcCommandf;
-                const float rcCommandfAbs = fabsf(rcCommandf);
-                rcDeflectionAbs[axis] = rcCommandfAbs;
-                maxRcDeflectionAbs = fmaxf(maxRcDeflectionAbs, rcCommandfAbs);
-
-                angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
+                /* interpolate between pitch and roll expo settings depending on the stick angle (how much pitch vs roll is the user requesting?) */
+                float stickAngle = fabs(atan(r/p));
+                float stickRatio = stickAngle / M_PI_2;
+                float lengthExpoPitch = applyRates(FD_PITCH, length, length);
+                float lengthExpoRoll = applyRates(FD_ROLL, length, length);
+                float lengthExpoCombined = lengthExpoPitch * (1.f - stickRatio) + lengthExpoRoll * stickRatio;
+                
+                /* apply same final expo to both pitch and roll, therby preserving the user's stick direction intent, and ensuring a consistent amount of expo when tracing any circle around the center of the stick. */
+                angleRateRoll = (r / length) * lengthExpoCombined;
+                angleRatePitch = (p / length) * lengthExpoCombined;
             }
+        } else {
+            /* traditional independent pitch and roll */
+            angleRateRoll = applyRates(FD_ROLL, rcDeflection[FD_ROLL], rcDeflectionAbs[FD_ROLL]);
+            angleRatePitch = applyRates(FD_PITCH, rcDeflection[FD_PITCH], rcDeflectionAbs[FD_PITCH]);
+        }
 
-            rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
-            DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
+        // Write all axes to rawSetpoint after constraining values
+        writeSetpointAxis(FD_ROLL, angleRateRoll);
+        writeSetpointAxis(FD_PITCH, angleRatePitch);
+        writeSetpointAxis(FD_YAW, angleRateYaw);
 
 #ifdef USE_FEEDFORWARD
-        calculateFeedforward(&pidRuntime, axis);
+        calculateFeedforward(&pidRuntime, FD_ROLL);
+        calculateFeedforward(&pidRuntime, FD_PITCH);
+        calculateFeedforward(&pidRuntime, FD_YAW);
 #endif // USE_FEEDFORWARD
 
-        }
         // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
             scaleRawSetpointToFpvCamAngle();
