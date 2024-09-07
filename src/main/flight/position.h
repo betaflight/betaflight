@@ -31,6 +31,10 @@ typedef struct positionConfig_s {
     uint16_t altitude_d_lpf;              // lowpass for (value / 100) Hz for altitude derivative smoothing
     uint16_t hover_throttle;              // value used at the start of a rescue or position hold
     uint8_t landing_altitude_m;           // altitude below which landing behaviours can change, metres
+    uint8_t altitude_P;
+    uint8_t altitude_I;
+    uint8_t altitude_D;
+    uint8_t altitude_F;
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);
@@ -40,6 +44,14 @@ typedef struct altitudeData_s {
     float altitudeDerivativeCmS;
 } altitudeData_t;
 void getAltitudeData(altitudeData_t* data);
+
+typedef struct altitudePids_s {
+    float kp;
+    float ki;
+    float kd;
+    float kf;
+} altitudePids_t;
+void getAltitudePidCoeffs(altitudePids_t* data);
 
 void calculateEstimatedAltitude(void);
 void positionInit(void);

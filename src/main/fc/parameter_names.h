@@ -147,12 +147,18 @@
 #define PARAM_NAME_RPM_FILTER_MIN_HZ "rpm_filter_min_hz"
 #define PARAM_NAME_RPM_FILTER_FADE_RANGE_HZ "rpm_filter_fade_range_hz"
 #define PARAM_NAME_RPM_FILTER_LPF_HZ "rpm_filter_lpf_hz"
+
 #define PARAM_NAME_ALTITUDE_SOURCE "altitude_source"
 #define PARAM_NAME_ALTITUDE_PREFER_BARO "altitude_prefer_baro"
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 #define PARAM_NAME_HOVER_THROTTLE "hover_throttle"
 #define PARAM_NAME_LANDING_ALTITUDE "landing_altitude_m"
+#define PARAM_NAME_ALTITUDE_P "altitude_P"
+#define PARAM_NAME_ALTITUDE_I "altitude_I"
+#define PARAM_NAME_ALTITUDE_D "altitude_D"
+#define PARAM_NAME_ALTITUDE_F "altitude_F"
+
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"

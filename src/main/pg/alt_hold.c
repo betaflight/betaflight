@@ -29,12 +29,9 @@
 
 #include "alt_hold.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 4);
 
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
-    .alt_hold_pid_p = 15,
-    .alt_hold_pid_i = 15,
-    .alt_hold_pid_d = 15,
     .alt_hold_target_adjust_rate = 100, // max rate of change of altitude target using sticks in cm/s
     .alt_hold_throttle_min = 1100,
     .alt_hold_throttle_max = 1700,

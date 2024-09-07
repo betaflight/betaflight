@@ -47,6 +47,20 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#define ALTITUDE_P_SCALE  0.01f
+#define ALTITUDE_I_SCALE  0.003f
+#define ALTITUDE_D_SCALE  0.01f
+#define ALTITUDE_F_SCALE  0.01f
+
+typedef struct {
+    float kp;
+    float ki;
+    float kd;
+    float kf;
+} altitudePidCoeffs_t;
+
+altitudePidCoeffs_t pidCoeffs;
+
 static float displayAltitudeCm = 0.0f;
 static float zeroedAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
@@ -66,6 +80,11 @@ static int16_t estimatedVario = 0; // in cm/s
 
 void positionInit(void)
 {
+    pidCoeffs.kp = positionConfig()->altitude_P * ALTITUDE_P_SCALE;
+    pidCoeffs.ki = positionConfig()->altitude_I * ALTITUDE_I_SCALE;
+    pidCoeffs.kd = positionConfig()->altitude_D * ALTITUDE_D_SCALE;
+    pidCoeffs.kf = positionConfig()->altitude_F * ALTITUDE_F_SCALE;
+
     const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
 
     const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
@@ -83,7 +102,7 @@ typedef enum {
     GPS_ONLY
 } altitudeSource_e;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 5);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 6);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = DEFAULT,
@@ -92,6 +111,10 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_d_lpf = 100,
     .hover_throttle = 1275,
     .landing_altitude_m = 4,
+    .altitude_P = 15,
+    .altitude_I = 15,
+    .altitude_D = 15,
+    .altitude_F = 15,
 );
 
 #if defined(USE_BARO) || defined(USE_GPS)
@@ -239,6 +262,16 @@ void getAltitudeData(altitudeData_t* data)
     if (data != NULL) {
         data->altitudeCm = zeroedAltitudeCm;
         data->altitudeDerivativeCmS = zeroedAltitudeDerivative;
+    }
+}
+
+void getAltitudePidCoeffs(altitudePids_t* data)
+{
+    if (data != NULL) {
+        data->kp = pidCoeffs.kp;
+        data->ki = pidCoeffs.ki;
+        data->kd = pidCoeffs.kd;
+        data->kf = pidCoeffs.kf;
     }
 }
 
