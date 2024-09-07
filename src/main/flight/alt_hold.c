@@ -256,7 +256,8 @@ void altHoldUpdate(void)
     altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->alt_hold_throttle_min, altholdConfig()->alt_hold_throttle_max);
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, lrintf(altHoldState.targetAltitudeCm));
-    DEBUG_SET(DEBUG_ALTHOLD, 2, lrintf(throttleAdjustment));
+    DEBUG_SET(DEBUG_ALTHOLD, 2, lrintf(newThrottle)); // normal range 1000-2000, but is beforeconstraint 
+    DEBUG_SET(DEBUG_ALTHOLD, 3, lrintf(tiltMultiplier * 100));
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
