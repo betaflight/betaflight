@@ -62,12 +62,11 @@ typedef struct {
 altitudePidCoeffs_t pidCoeffs;
 
 static float displayAltitudeCm = 0.0f;
-static float zeroedAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
 static bool altitudeIsLow = false;
 
 #if defined(USE_BARO) || defined(USE_GPS)
-
+static float zeroedAltitudeCm = 0.0f;
 static float zeroedAltitudeDerivative = 0.0f;
 #endif
 
@@ -247,16 +246,6 @@ void calculateEstimatedAltitude(void)
 
     altitudeAvailable = haveGpsAlt || haveBaroAlt;
 }
-#endif //defined(USE_BARO) || defined(USE_GPS)
-
-bool isAltitudeAvailable(void) {
-    return altitudeAvailable;
-}
-
-int32_t getEstimatedAltitudeCm(void)
-{
-    return lrintf(displayAltitudeCm);
-}
 
 void getAltitudeData(altitudeData_t* data)
 {
@@ -274,6 +263,17 @@ void getAltitudePidCoeffs(altitudePids_t* data)
         data->kd = pidCoeffs.kd;
         data->kf = pidCoeffs.kf;
     }
+}
+
+#endif //defined(USE_BARO) || defined(USE_GPS)
+
+bool isAltitudeAvailable(void) {
+    return altitudeAvailable;
+}
+
+int32_t getEstimatedAltitudeCm(void)
+{
+    return lrintf(displayAltitudeCm);
 }
 
 bool isAltitudeLow(void)
