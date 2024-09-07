@@ -97,13 +97,18 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 extern "C" {
     acc_t acc;
 
+    void getAltitudePidCoeffs(altitudePids_t* data)
+    {
+        data->kp = 0.0f;
+        data->ki = 0.0f;
+        data->kd = 0.0f;
+        data->kf = 0.0f;
+    }
 
     void getAltitudeData(altitudeData_t* data)
     {
-        if (data != NULL) {
-            data->altitudeCm = 0.0f; // Mock value for altitudeCm
-            data->altitudeDerivativeCmS = 0.0f; // Mock value for altitudeDerivativeCmS
-        }
+        data->altitudeCm = 0.0f; // Mock value for altitudeCm
+        data->altitudeDerivativeCmS = 0.0f; // Mock value for altitudeDerivativeCmS
     }
     void pt2FilterInit(pt2Filter_t *altHoldDeltaLpf, float) {
         UNUSED(altHoldDeltaLpf);

@@ -1135,12 +1135,18 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
 
+    void getAltitudePidCoeffs(altitudePids_t* data)
+    {
+        data->kp = 0.0f;
+        data->ki = 0.0f;
+        data->kd = 0.0f;
+        data->kf = 0.0f;
+    }
+
     void getAltitudeData(altitudeData_t* data)
     {
-        if (data != NULL) {
-            data->altitudeCm = 0.0f;
-            data->altitudeDerivativeCmS = 0.0f;
-        }
+        data->altitudeCm = 0.0f;
+        data->altitudeDerivativeCmS = 0.0f;
     }
 
     float pt1FilterGain(float, float) { return 0.5f; }
