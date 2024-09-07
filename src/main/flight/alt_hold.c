@@ -151,6 +151,7 @@ void getCurrentAltitudeValues(void)
 
 void altHoldReset(void)
 {
+    altHoldPidInit(); // initialise PID coefficients with values from position.c, force iTerm to zero
     getCurrentAltitudeValues(); // need current altitude to set target altitude
     altHoldState.targetAltitudeCm = altHoldState.measuredAltitudeCm;
     altHoldPid.integral = 0.0f;
@@ -159,8 +160,6 @@ void altHoldReset(void)
 
 void altHoldInit(void)
 {
-    altHoldPidInit(); // initialise PID coefficients with values from position.c
-
     //setup altitude D filter
     const float cutoffHz = 0.01f * positionConfig()->altitude_d_lpf; // default 1Hz, time constant about 160ms
     const float gain = pt2FilterGain(cutoffHz, taskIntervalSeconds);
