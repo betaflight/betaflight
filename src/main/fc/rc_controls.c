@@ -48,6 +48,7 @@
 #include "io/beeper.h"
 #include "io/usb_cdc_hid.h"
 #include "io/dashboard.h"
+#include "io/gimbal_control.h"
 #include "io/gps.h"
 #include "io/vtx_control.h"
 
