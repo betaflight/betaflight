@@ -392,20 +392,16 @@ void crsfFrameFlightMode(sbuf_t *dst)
     const char *flightMode = "ACRO";
 
     // Flight modes in decreasing order of importance
-    if (FLIGHT_MODE(FAILSAFE_MODE)) {
+    if (FLIGHT_MODE(FAILSAFE_MODE) || IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
         flightMode = "!FS!";
-    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
         flightMode = "RTH";
-    } else if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
-        flightMode = "FSS";
-    } else if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
-        flightMode = "RTHS";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = "MANU";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "ANGL";
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
-        flightMode = "ALTH ";
+        flightMode = "ALTH";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
     } else if (airmodeIsEnabled()) {
@@ -425,6 +421,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
 #endif
         sbufWriteU8(dst, isArmingDisabled() ? '!' : isAllowedArmingWithoutFix ? '?' : '*');
     }
+
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;
