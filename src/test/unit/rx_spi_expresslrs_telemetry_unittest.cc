@@ -45,6 +45,7 @@ extern "C" {
     #include "rx/crsf_protocol.h"
     #include "rx/expresslrs_telemetry.h"
     #include "fc/rc_modes.h"
+    #include "flight/gps_rescue.h"
     #include "flight/imu.h"
 
     #include "sensors/battery.h"
@@ -71,6 +72,7 @@ extern "C" {
 
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 }
 
 #include "unittest_macros.h"
@@ -214,7 +216,7 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestFlightMode)
     EXPECT_EQ('C', payload[4]);
     EXPECT_EQ('R', payload[5]);
     EXPECT_EQ('O', payload[6]);
-    EXPECT_EQ('?', payload[7]);
+    EXPECT_EQ('*', payload[7]);
     EXPECT_EQ(0, payload[8]);
 
     testSetDataToTransmit(payloadSize, payload);
@@ -468,4 +470,6 @@ extern "C" {
     bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
 
     int getArmingDisableFlags(void) { return 0; }
+
+    bool gpsRescueIsConfigured(void) { return false; }
 }

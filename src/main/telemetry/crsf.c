@@ -48,6 +48,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/position.h"
 
@@ -413,13 +414,13 @@ void crsfFrameFlightMode(sbuf_t *dst)
     if (!ARMING_FLAG(ARMED) && !FLIGHT_MODE(FAILSAFE_MODE)) {
         // * - ready to arm
         // ! - arming disabled
-        // ? - GPS fix not available
-        bool isAllowedArmingWithoutFix = false;
+        // ? - GPS rescue disabled (when allowArmingWithoutFix is enabled)
+        bool isGpsRescueDisabled = false;
 #ifdef USE_GPS
         // check for gps fix - after we passed arming disable flags
-        isAllowedArmingWithoutFix = featureIsEnabled(FEATURE_GPS) && !STATE(GPS_FIX);
+        isGpsRescueDisabled = featureIsEnabled(FEATURE_GPS) && gpsRescueIsConfigured() && gpsSol.numSat < gpsRescueConfig()->minSats && !STATE(GPS_FIX);
 #endif
-        sbufWriteU8(dst, isArmingDisabled() ? '!' : isAllowedArmingWithoutFix ? '?' : '*');
+        sbufWriteU8(dst, isArmingDisabled() ? '!' : isGpsRescueDisabled ? '?' : '*');
     }
 
     sbufWriteU8(dst, '\0');     // zero-terminate string
