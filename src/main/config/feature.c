@@ -39,7 +39,7 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 uint32_t featuresSupportedByBuild =
     0
 #ifdef USE_PPM
-    | FEATURE_RX_PPM,
+    | FEATURE_RX_PPM
 #endif
     | FEATURE_INFLIGHT_ACC_CAL // always available
 #ifdef USE_SERIALRX
