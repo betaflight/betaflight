@@ -412,12 +412,11 @@ void crsfFrameFlightMode(sbuf_t *dst)
     sbufWriteString(dst, flightMode);
 
     if (!ARMING_FLAG(ARMED) && !FLIGHT_MODE(FAILSAFE_MODE)) {
-        // * - ready to arm
-        // ! - arming disabled
-        // ? - GPS rescue disabled (when allowArmingWithoutFix is enabled)
+        // * = ready to arm
+        // ! = arming disabled
+        // ? = GPS rescue disabled
         bool isGpsRescueDisabled = false;
 #ifdef USE_GPS
-        // check for gps fix - after we passed arming disable flags
         isGpsRescueDisabled = featureIsEnabled(FEATURE_GPS) && gpsRescueIsConfigured() && gpsSol.numSat < gpsRescueConfig()->minSats && !STATE(GPS_FIX);
 #endif
         sbufWriteU8(dst, isArmingDisabled() ? '!' : isGpsRescueDisabled ? '?' : '*');
