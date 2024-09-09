@@ -1507,8 +1507,6 @@ case MSP_NAME:
         // Added in API version 1.43
         sbufWriteU8(dst, gpsConfig()->gps_set_home_point_once);
         sbufWriteU8(dst, gpsConfig()->gps_ublox_use_galileo);
-        // Added in API version 1.47
-        sbufWriteU8(dst, gpsData.platformVersion);
         break;
 
     case MSP_RAW_GPS:
