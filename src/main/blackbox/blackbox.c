@@ -294,6 +294,7 @@ static const blackboxSimpleFieldDefinition_t blackboxGpsHFields[] = {
 // Rarely-updated fields
 static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
     {"flightModeFlags",       -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
+    {"actualFlightModeFlags", -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
     {"stateFlags",            -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
 
     {"failsafePhase",         -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
@@ -365,20 +366,22 @@ typedef struct blackboxGpsState_s {
 // This data is updated really infrequently:
 typedef struct blackboxSlowState_s {
     uint32_t flightModeFlags; // extend this data size (from uint16_t)
+    uint32_t actualFlightModeFlags;
     uint8_t stateFlags;
     uint8_t failsafePhase;
     bool rxSignalReceived;
     bool rxFlightChannelsValid;
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
-//From rc_controls.c
+//From rc_modes.c
 extern boxBitmask_t rcModeActivationMask;
 
+extern uint16_t flightModeFlags;
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
 static uint32_t blackboxLastArmingBeep = 0;
 static uint32_t blackboxLastFlightModeFlags = 0; // New event tracking of flight modes
-
+static uint16_t blackboxLastActualFlightModeFlags = 0;
 static struct {
     uint32_t headerIndex;
 
@@ -883,6 +886,7 @@ static void writeSlowFrame(void)
     blackboxWrite('S');
 
     blackboxWriteUnsignedVB(slowHistory.flightModeFlags);
+    blackboxWriteUnsignedVB(slowHistory.actualFlightModeFlags);
     blackboxWriteUnsignedVB(slowHistory.stateFlags);
 
     /*
@@ -902,6 +906,7 @@ static void writeSlowFrame(void)
 static void loadSlowState(blackboxSlowState_t *slow)
 {
     memcpy(&slow->flightModeFlags, &rcModeActivationMask, sizeof(slow->flightModeFlags)); //was flightModeFlags;
+    slow->actualFlightModeFlags = flightModeFlags;
     slow->stateFlags = stateFlags;
     slow->failsafePhase = failsafePhase();
     slow->rxSignalReceived = rxIsReceivingSignal();
@@ -1007,7 +1012,7 @@ static void blackboxStart(void)
      */
     blackboxLastArmingBeep = getArmingBeepTimeMicros();
     memcpy(&blackboxLastFlightModeFlags, &rcModeActivationMask, sizeof(blackboxLastFlightModeFlags)); // record startup status
-
+    blackboxLastActualFlightModeFlags = flightModeFlags;
     blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
 }
 
@@ -1745,6 +1750,7 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         blackboxWriteUnsignedVB(data->syncBeep.time);
         break;
     case FLIGHT_LOG_EVENT_FLIGHTMODE: // New flightmode flags write
+    case FLIGHT_LOG_EVENT_ACTUAL_FLIGHTMODE: // New RC BOX flightmode flags write
         blackboxWriteUnsignedVB(data->flightMode.flags);
         blackboxWriteUnsignedVB(data->flightMode.lastFlags);
         break;
@@ -1795,6 +1801,13 @@ static void blackboxCheckAndLogFlightMode(void)
         memcpy(&blackboxLastFlightModeFlags, &rcModeActivationMask, sizeof(blackboxLastFlightModeFlags));
         memcpy(&eventData.flags, &rcModeActivationMask, sizeof(eventData.flags));
         blackboxLogEvent(FLIGHT_LOG_EVENT_FLIGHTMODE, (flightLogEventData_t *)&eventData);
+    }
+    if (flightModeFlags != blackboxLastActualFlightModeFlags) {
+        flightLogEvent_flightMode_t eventData; // Add new data for current actual flight mode flags
+        eventData.lastFlags = blackboxLastActualFlightModeFlags;
+        blackboxLastActualFlightModeFlags = flightModeFlags;
+        eventData.flags = flightModeFlags;
+        blackboxLogEvent(FLIGHT_LOG_EVENT_ACTUAL_FLIGHTMODE, (flightLogEventData_t *)&eventData);
     }
 }
 
