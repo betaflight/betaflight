@@ -68,7 +68,7 @@ typedef enum {
 } mspPendingSystemRequest_e;
 
 #define MSP_PORT_INBUF_SIZE 192
-#define MSP_PORT_OUTBUF_SIZE_MIN 512
+#define MSP_PORT_OUTBUF_SIZE_MIN 512 // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1. There has been overflow issues with 320 byte buffer.
 
 #ifdef USE_FLASHFS
 #define MSP_PORT_DATAFLASH_BUFFER_SIZE 4096
