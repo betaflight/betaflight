@@ -137,28 +137,39 @@ static bool activeBoxIdGet(boxId_e boxId)
     return bitArrayGet(&activeBoxIds, boxId);
 }
 
-void serializeBoxNameFn(sbuf_t *dst, const box_t *box)
+int serializeBoxNameFn(sbuf_t *dst, const box_t *box)
 {
+    const char* name = NULL;
+    int len;
 #if defined(USE_CUSTOM_BOX_NAMES)
-    if (box->boxId == BOXUSER1 && strlen(modeActivationConfig()->box_user_1_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_1_name);
-    } else if (box->boxId == BOXUSER2 && strlen(modeActivationConfig()->box_user_2_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_2_name);
-    } else if (box->boxId == BOXUSER3 && strlen(modeActivationConfig()->box_user_3_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_3_name);
-    } else if (box->boxId == BOXUSER4 && strlen(modeActivationConfig()->box_user_4_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_4_name);
-    } else
-#endif
-    {
-        sbufWriteString(dst, box->boxName);
+    if (name == NULL
+        && box->boxId >= BOXUSER1 && box->boxId <= BOXUSER4) {
+        const int n = box->boxId - BOXUSER1;
+        name = modeActivationConfig()->box_user_names[n];
+        // possibly there is no '\0' in boxname
+        len = strnlen(name, sizeof(modeActivationConfig()->box_user_names[0]));
     }
+#endif
+    if (name == NULL) {
+        name = box->boxName;
+        len = strlen(name);
+    }
+    if (sbufBytesRemaining(dst) < len + 1) {
+        // boxname or separator won't fit
+        return -1;
+    }
+    sbufWriteData(dst, name, len);
     sbufWriteU8(dst, ';');
+    return len + 1;
 }
 
-void serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
+int serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
 {
+    if (sbufBytesRemaining(dst) < 1) {
+        return -1;
+    }
     sbufWriteU8(dst, box->permanentId);
+    return 1;
 }
 
 // serialize 'page' of boxNames.
@@ -171,7 +182,10 @@ void serializeBoxReply(sbuf_t *dst, int page, serializeBoxFn *serializeBox)
     for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
         if (activeBoxIdGet(id)) {
             if (boxIdx >= pageStart && boxIdx < pageEnd) {
-                (*serializeBox)(dst, findBoxByBoxId(id));
+                if ((*serializeBox)(dst, findBoxByBoxId(id)) < 0) {
+                    // failed to serialize, abort
+                    return;
+                }
             }
             boxIdx++;                 // count active boxes
         }
