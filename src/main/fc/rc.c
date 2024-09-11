@@ -428,7 +428,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         const float kF = 0.1f; // first order lowpass smoothing filter coefficient
                         const float smoothedRxRateHz = prevRxRateHz + kF * (currentRxRateHz - prevRxRateHz);
                         prevRxRateHz = smoothedRxRateHz;
-
+      
                         // recalculate cutoffs every 3 acceptable samples
                         if (rcSmoothingData.sampleCount) {
                             rcSmoothingData.sampleCount --;
@@ -672,7 +672,7 @@ FAST_CODE void processRcCommand(void)
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
             float angleRate;
-
+            
 #ifdef USE_GPS_RESCUE
             if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
                 // If GPS Rescue is active then override the setpointRate used in the

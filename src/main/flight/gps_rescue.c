@@ -150,7 +150,7 @@ void gpsRescueInit(void)
     gain = pt1FilterGain(cutoffHz, 1.0f);
     pt1FilterInit(&velocityDLpf, gain);
 
-    cutoffHz *= 4.0f;
+    cutoffHz *= 4.0f; 
     gain = pt3FilterGain(cutoffHz, rescueState.sensor.gpsRescueTaskIntervalSeconds);
     pt3FilterInit(&velocityUpsampleLpf, gain);
 }
@@ -707,7 +707,7 @@ void descend(void)
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
         const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * positionConfig()->landing_altitude_m);
         const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
-
+     
         // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home
         // 1.5x when starting descent, 2.5x (smoother) when almost landed
         rescueState.intent.velocityPidCutoffModifier = 2.5f - proximityToLandingArea;
@@ -748,7 +748,7 @@ void descend(void)
 
     // descend faster while the quad is at higher altitudes
     const float descentRateMultiplier = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
-    altitudeStep *= 1.0f + (2.0f * descentRateMultiplier);
+    altitudeStep *= 1.0f + (2.0f * descentRateMultiplier); 
     // maximum descent rate increase is 3x default above 50m, 2x above 25m, 1.2x at 5m, default by ground level
 
     // also increase throttle D up to 2x in the descent phase when altitude descent rate is faster, for better control
@@ -879,14 +879,14 @@ void gpsRescueUpdate(void)
         rescueState.intent.velocityItermRelax += 0.5f * rescueState.sensor.gpsRescueTaskIntervalSeconds * (1.0f - rescueState.intent.velocityItermRelax);
         // there is always a lot of lag at the start, this gradual start avoids excess iTerm accumulation
 
-        rescueState.intent.velocityPidCutoffModifier = 2.0f - rescueState.intent.velocityItermRelax;
+        rescueState.intent.velocityPidCutoffModifier = 2.0f - rescueState.intent.velocityItermRelax; 
         // higher velocity filter cutoff for initial few seconds to improve accuracy; can be smoother later
 
         if (newGPSData) {
             // cut back on allowed angle if there is a high groundspeed error
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
             // introduce roll slowly and limit to half the max pitch angle; earth referenced yaw may add more roll via angle code
-            rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * rescueState.intent.velocityItermRelax;
+            rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * rescueState.intent.velocityItermRelax; 
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
                 rescueState.phase = RESCUE_DESCENT;
                 rescueState.intent.secondsFailing = 0; // reset sanity timer for descent
