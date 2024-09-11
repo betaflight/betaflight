@@ -511,18 +511,18 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
 
     // remove saved cal/bias; this is zero while calibrating
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC[axis] -= magZero->raw[axis];
+        mag.magADC.v[axis] -= magZero->raw[axis];
     }
 
     if (debugMode == DEBUG_MAG_CALIB) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            // DEBUG 0-2: magADC[X], magADC[Y], magADC[Z]
-            DEBUG_SET(DEBUG_MAG_CALIB, axis, lrintf(mag.magADC[axis]));
+            // DEBUG 0-2: magADC.x, magADC.y, magADC.z
+            DEBUG_SET(DEBUG_MAG_CALIB, axis, lrintf(mag.magADC.v[axis]));
             // DEBUG 4-6: estimated magnetometer bias, increases above zero when calibration starts
             DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));
         }
         // DEBUG 3: absolute vector length of magADC, should stay constant independent of the orientation of the quad
-        DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(sqrtf(sq(mag.magADC[X]) + sq(mag.magADC[Y]) + sq(mag.magADC[Z]))));
+        DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(vector3Norm(&mag.magADC)));
         // DEBUG 7: adaptive forgetting factor lambda, only while analysing cal data
         // after the transient phase it should converge to 2000
         // set dsiplayed lambda to zero unless calibrating, to indicate start and finish in Sensors tab

@@ -68,7 +68,7 @@ extern "C" {
     float imuCalcMagErr(void);
     float imuCalcCourseErr(float courseOverGround);
     extern quaternion q;
-    extern float rMat[3][3];
+    extern matrix33_t rMat;
     extern bool attitudeIsEstablished;
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
@@ -106,15 +106,15 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_FLOAT_EQ(1.0f, rMat[0][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[0][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[0][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[1][0]);
-    EXPECT_FLOAT_EQ(1.0f, rMat[1][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[1][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[2][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[2][1]);
-    EXPECT_FLOAT_EQ(1.0f, rMat[2][2]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[0][0]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[0][1]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[0][2]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[1][0]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[1][1]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[1][2]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[2][0]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[2][1]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[2][2]);
 
     // 90 degrees around Z axis
     q.w = sqrt2over2;
@@ -124,15 +124,15 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_NEAR(0.0f, rMat[0][0], TOL);
-    EXPECT_NEAR(-1.0f, rMat[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][2], TOL);
-    EXPECT_NEAR(1.0f, rMat[1][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][1], TOL);
-    EXPECT_NEAR(1.0f, rMat[2][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][0], TOL);
+    EXPECT_NEAR(-1.0f, rMat.m[0][1], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][2], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[1][0], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[1][1], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[1][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[2][0], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[2][1], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[2][2], TOL);
 
     // 60 degrees around X axis
     q.w = 0.866f;
@@ -142,21 +142,21 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_NEAR(1.0f, rMat[0][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][0], TOL);
-    EXPECT_NEAR(0.5f, rMat[1][1], TOL);
-    EXPECT_NEAR(-0.866f, rMat[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][0], TOL);
-    EXPECT_NEAR(0.866f, rMat[2][1], TOL);
-    EXPECT_NEAR(0.5f, rMat[2][2], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[0][0], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][1], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[1][0], TOL);
+    EXPECT_NEAR(0.5f, rMat.m[1][1], TOL);
+    EXPECT_NEAR(-0.866f, rMat.m[1][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[2][0], TOL);
+    EXPECT_NEAR(0.866f, rMat.m[2][1], TOL);
+    EXPECT_NEAR(0.5f, rMat.m[2][2], TOL);
 }
 
 TEST(FlightImuTest, TestUpdateEulerAngles)
 {
     // No rotation
-    memset(rMat, 0.0, sizeof(float) * 9);
+    memset(&rMat, 0.0, sizeof(float) * 9);
 
     imuUpdateEulerAngles();
 
@@ -165,11 +165,11 @@ TEST(FlightImuTest, TestUpdateEulerAngles)
     EXPECT_EQ(0, attitude.values.yaw);
 
     // 45 degree yaw
-    memset(rMat, 0.0, sizeof(float) * 9);
-    rMat[0][0] = sqrt2over2;
-    rMat[0][1] = sqrt2over2;
-    rMat[1][0] = -sqrt2over2;
-    rMat[1][1] = sqrt2over2;
+    memset(&rMat, 0.0, sizeof(float) * 9);
+    rMat.m[0][0] = sqrt2over2;
+    rMat.m[0][1] = sqrt2over2;
+    rMat.m[1][0] = -sqrt2over2;
+    rMat.m[1][1] = sqrt2over2;
 
     imuUpdateEulerAngles();
 
@@ -189,7 +189,7 @@ TEST(FlightImuTest, TestSmallAngle)
     attitudeIsEstablished = true;
 
     // and
-    memset(rMat, 0.0, sizeof(float) * 9);
+    memset(&rMat, 0.0, sizeof(float) * 9);
 
     // when
     imuComputeRotationMatrix();
@@ -198,10 +198,10 @@ TEST(FlightImuTest, TestSmallAngle)
     EXPECT_FALSE(isUpright());
 
     // given
-    rMat[0][0] = r1;
-    rMat[0][2] = r2;
-    rMat[2][0] = -r2;
-    rMat[2][2] = r1;
+    rMat.m[0][0] = r1;
+    rMat.m[0][2] = r2;
+    rMat.m[2][0] = -r2;
+    rMat.m[2][2] = r1;
 
     // when
     imuComputeRotationMatrix();
@@ -210,7 +210,7 @@ TEST(FlightImuTest, TestSmallAngle)
     EXPECT_FALSE(isUpright());
 
     // given
-    memset(rMat, 0.0, sizeof(float) * 9);
+    memset(&rMat, 0.0, sizeof(float) * 9);
 
     // when
     imuComputeRotationMatrix();

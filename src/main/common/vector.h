@@ -71,3 +71,5 @@ void matrixTrnVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_
 
 void buildRotationMatrix(matrix33_t *result, const fp_angles_t *rpy);
 void applyRotationMatrix(vector3_t *v, const matrix33_t *rotationMatrix);
+
+void yawToRotationMatrixZ(matrix33_t *result, const float yaw);

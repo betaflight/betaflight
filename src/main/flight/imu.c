@@ -93,8 +93,8 @@ static float smallAngleCosZ = 0;
 
 static imuRuntimeConfig_t imuRuntimeConfig;
 
-float rMat[3][3];
-static fpVector2_t north_ef;
+matrix33_t rMat;
+static vector2_t north_ef;
 
 #if defined(USE_ACC)
 STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
@@ -144,21 +144,21 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
     imuQuaternionComputeProducts(&q, &qP);
 
-    rMat[0][0] = 1.0f - 2.0f * qP.yy - 2.0f * qP.zz;
-    rMat[0][1] = 2.0f * (qP.xy + -qP.wz);
-    rMat[0][2] = 2.0f * (qP.xz - -qP.wy);
+    rMat.m[0][0] = 1.0f - 2.0f * qP.yy - 2.0f * qP.zz;
+    rMat.m[0][1] = 2.0f * (qP.xy + -qP.wz);
+    rMat.m[0][2] = 2.0f * (qP.xz - -qP.wy);
 
-    rMat[1][0] = 2.0f * (qP.xy - -qP.wz);
-    rMat[1][1] = 1.0f - 2.0f * qP.xx - 2.0f * qP.zz;
-    rMat[1][2] = 2.0f * (qP.yz + -qP.wx);
+    rMat.m[1][0] = 2.0f * (qP.xy - -qP.wz);
+    rMat.m[1][1] = 1.0f - 2.0f * qP.xx - 2.0f * qP.zz;
+    rMat.m[1][2] = 2.0f * (qP.yz + -qP.wx);
 
-    rMat[2][0] = 2.0f * (qP.xz + -qP.wy);
-    rMat[2][1] = 2.0f * (qP.yz - -qP.wx);
-    rMat[2][2] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
+    rMat.m[2][0] = 2.0f * (qP.xz + -qP.wy);
+    rMat.m[2][1] = 2.0f * (qP.yz - -qP.wx);
+    rMat.m[2][2] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
 #if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
-    rMat[1][0] = -2.0f * (qP.xy - -qP.wz);
-    rMat[2][0] = -2.0f * (qP.xz + -qP.wy);
+    rMat.m[1][0] = -2.0f * (qP.xy - -qP.wz);
+    rMat.m[2][0] = -2.0f * (qP.xz + -qP.wy);
 #endif
 }
 
@@ -227,9 +227,9 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
 
     // Add error from magnetometer and Cog
     // just rotate input value to body frame
-    ex += rMat[Z][X] * (headingErrCog + headingErrMag);
-    ey += rMat[Z][Y] * (headingErrCog + headingErrMag);
-    ez += rMat[Z][Z] * (headingErrCog + headingErrMag);
+    ex += rMat.m[Z][X] * (headingErrCog + headingErrMag);
+    ey += rMat.m[Z][Y] * (headingErrCog + headingErrMag);
+    ez += rMat.m[Z][Z] * (headingErrCog + headingErrMag);
 
     DEBUG_SET(DEBUG_ATTITUDE, 3, (headingErrCog * 100));
     DEBUG_SET(DEBUG_ATTITUDE, 7, lrintf(dcmKpGain * 100.0f));
@@ -245,9 +245,9 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
         az *= recipAccNorm;
 
         // Error is sum of cross product between estimated direction and measured direction of gravity
-        ex += (ay * rMat[2][2] - az * rMat[2][1]);
-        ey += (az * rMat[2][0] - ax * rMat[2][2]);
-        ez += (ax * rMat[2][1] - ay * rMat[2][0]);
+        ex += (ay * rMat.m[2][2] - az * rMat.m[2][1]);
+        ey += (az * rMat.m[2][0] - ax * rMat.m[2][2]);
+        ez += (ax * rMat.m[2][1] - ay * rMat.m[2][0]);
     }
 
     // Compute and apply integral feedback if enabled
@@ -310,9 +310,9 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
        attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(+2.0f * (buffer.wy - buffer.xz))) * (1800.0f / M_PIf));
        attitude.values.yaw = lrintf((-atan2_approx((+2.0f * (buffer.wz + buffer.xy)), (+1.0f - 2.0f * (buffer.yy + buffer.zz))) * (1800.0f / M_PIf)));
     } else {
-       attitude.values.roll = lrintf(atan2_approx(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
-       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
-       attitude.values.yaw = lrintf((-atan2_approx(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf)));
+       attitude.values.roll = lrintf(atan2_approx(rMat.m[2][1], rMat.m[2][2]) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat.m[2][0])) * (1800.0f / M_PIf));
+       attitude.values.yaw = lrintf((-atan2_approx(rMat.m[1][0], rMat.m[0][0]) * (1800.0f / M_PIf)));
     }
 
     if (attitude.values.yaw < 0) {
@@ -452,10 +452,10 @@ STATIC_UNIT_TESTED float imuCalcCourseErr(float courseOverGround)
 {
     // Compute COG heading unit vector in earth frame (ef) from scalar GPS CourseOverGround
     // Earth frame X is pointing north and sin/cos argument is anticlockwise. (|cog_ef| == 1.0)
-    const fpVector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
+    const vector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
 
     // Compute and normalise craft Earth frame heading vector from body X axis
-    fpVector2_t heading_ef = {.x = rMat[X][X], .y = rMat[Y][X]};
+    vector2_t heading_ef = {.x = rMat.m[X][X], .y = rMat.m[Y][X]};
     vector2Normalize(&heading_ef, &heading_ef); // XY only, normalised to magnitude 1.0
 
     // cross (vector product) = |heading| * |cog| * sin(angle) = 1 * 1 * sin(angle)
@@ -488,14 +488,17 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
     // Encapsulate additional operations in a block so that it is only executed when the according debug mode is used
     // Only re-calculate magYaw when there is a new Mag data reading, to avoid spikes
     if (debugMode == DEBUG_GPS_RESCUE_HEADING && mag.isNewMagADCFlag) {
-        fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
-        fpVector3_t mag_ef;
-        matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf); // BF->EF true north
+        
+        vector3_t mag_bf = mag.magADC;
+        vector3_t mag_ef;
+        matrixVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north
 
-        fpMat33_t rMatZTrans;
-        yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat[1][0], rMat[0][0]));
-        fpVector3_t mag_ef_yawed;
+        matrix33_t rMatZTrans;
+        yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat.m[1][0], rMat.m[0][0]));
+
+        vector3_t mag_ef_yawed;
         matrixVectorMul(&mag_ef_yawed, &rMatZTrans, &mag_ef); // EF->EF yawed
+        
         // Magnetic yaw is the angle between true north and the X axis of the body frame
         int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
         if (magYaw < 0) {
@@ -515,19 +518,19 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
 STATIC_UNIT_TESTED float imuCalcMagErr(void)
 {
     // Use measured magnetic field vector
-    fpVector3_t mag_bf = {{mag.magADC[X], mag.magADC[Y], mag.magADC[Z]}};
-    float magNormSquared = vectorNormSquared(&mag_bf);
+    vector3_t mag_bf = mag.magADC;
+    float magNormSquared = vector3NormSq(&mag_bf);
 
     if (magNormSquared > 0.01f) {
         // project magnetometer reading into Earth frame
-        fpVector3_t mag_ef;
-        matrixVectorMul(&mag_ef, (const fpMat33_t*)&rMat, &mag_bf); // BF->EF true north
+        vector3_t mag_ef;
+        matrixVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north
         // Normalise magnetometer measurement
-        vectorScale(&mag_ef, &mag_ef, 1.0f / sqrtf(magNormSquared));
+        vector3Scale(&mag_ef, &mag_ef, 1.0f / sqrtf(magNormSquared));
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles
-        fpVector2_t mag2d_ef = {.x = mag_ef.x, .y = mag_ef.y};
+        vector2_t mag2d_ef = {.x = mag_ef.x, .y = mag_ef.y};
         // mag2d_ef - measured mag field vector in EF (2D ground plane projection)
         // north_ef - reference mag field vector heading due North in EF (2D ground plane projection).
         //              Adjusted for magnetic declination (in imuConfigure)
@@ -743,12 +746,12 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 // Positive angle - nose down, negative angle - nose up.
 float getSinPitchAngle(void)
 {
-    return -rMat[2][0];
+    return -rMat.m[2][0];
 }
 
 float getCosTiltAngle(void)
 {
-    return rMat[2][2];
+    return rMat.m[2][2];
 }
 
 void getQuaternion(quaternion *quat)

@@ -68,7 +68,7 @@ extern "C" {
     #include "sensors/battery.h"
 
     attitudeEulerAngles_t attitude;
-    float rMat[3][3];
+    matrix33_t rMat;
 
     pidProfile_t *currentPidProfile;
     extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
