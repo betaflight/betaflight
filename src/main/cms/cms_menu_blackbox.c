@@ -49,6 +49,7 @@
 #include "drivers/flash/flash.h"
 #include "drivers/time.h"
 #include "drivers/sdcard.h"
+#include "drivers/usb_msc.h"
 
 #include "config/config.h"
 
@@ -188,6 +189,23 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 
     return MENU_CHAIN_BACK;
 }
+
+static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(ptr);
+
+    if (!flashfsIsSupported()) {
+        return NULL;
+    }
+
+    displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
+    displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "STORAGE DEVICE MODE");
+    displayRedraw(pDisplay);
+    beeper(BEEPER_USB);
+    systemResetToMsc(0);
+
+    return MENU_CHAIN_BACK;
+}
 #endif // USE_FLASHFS
 
 static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
@@ -243,6 +261,25 @@ static CMS_Menu cmsx_menuEraseFlashCheck = {
     .onDisplayUpdate = NULL,
     .entries = menuEraseFlashCheckEntries
 };
+
+static const OSD_Entry menuStorageDeviceCheckEntries[] = {
+    { "CONFIRM STORAGE", OME_Label, NULL, NULL},
+    { "YES",           OME_Funcall, cmsx_StorageDevice, NULL },
+
+    { "NO",            OME_Back, NULL, NULL },
+    { NULL,            OME_END, NULL, NULL }
+};
+
+static CMS_Menu cmsx_menuStorageDeviceCheck = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "STORAGEDEVICE",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onDisplayUpdate = NULL,
+    .entries = menuStorageDeviceCheckEntries
+};
 #endif
 
 static const OSD_Entry cmsx_menuBlackboxEntries[] =
@@ -258,6 +295,7 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
+    { "STORAGE DEVICE", OME_Submenu, cmsMenuChange,   &cmsx_menuStorageDeviceCheck },
 #endif // USE_FLASHFS
 
     { "BACK", OME_Back, NULL, NULL },
