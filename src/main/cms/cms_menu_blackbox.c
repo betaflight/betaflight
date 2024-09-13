@@ -217,8 +217,6 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
       beeper(BEEPER_USB);
       return MENU_CHAIN_BACK;
     }
-
-    return MENU_CHAIN_BACK;
 }
 #endif //USE_USB_MSC
 
