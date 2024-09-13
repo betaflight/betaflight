@@ -309,7 +309,7 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
     { "DEBUG MODE",  OME_TAB | REBOOT_REQUIRED,     NULL,            &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames } },
 
 #ifdef USE_USB_MSC
-    { "USB MASS STORAGE", OME_Submenu, cmsMenuChange,   &cmsx_menuStorageDeviceCheck },
+    { "USB MASS STORAGE", OME_Submenu, cmsMenuChange, &cmsx_menuStorageDeviceCheck },
 #endif // USE_USB_MSC
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
