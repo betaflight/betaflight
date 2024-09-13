@@ -2151,8 +2151,9 @@ static bool osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     activeElement.type = OSD_TYPE(osdElementConfig()->item_pos[item]);
     activeElement.buff = elementBuff;
     activeElement.osdDisplayPort = osdDisplayPort;
-    activeElement.rendered = true;
     activeElement.drawElement = true;
+    activeElement.rendered = true;
+    activeElement.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element background drawing function
     osdElementBackgroundFunction[item](&activeElement);
