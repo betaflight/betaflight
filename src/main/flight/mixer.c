@@ -272,29 +272,22 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #define CRASH_FLIP_DEADBAND 20
 #define CRASH_FLIP_STICK_MINF 0.15f
 
-static void applyFlipOverAfterCrashModeToMotors(void)
+static void applyFlipOverAfterCrashModeToMotors(const float flipAngleModifier)
 {
     if (ARMING_FLAG(ARMED)) {
-        const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
         const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
         const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
         const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
-
-        const float stickDeflectionPitchExpo = flipPowerFactor * stickDeflectionPitchAbs + power3(stickDeflectionPitchAbs) * (1 - flipPowerFactor);
-        const float stickDeflectionRollExpo = flipPowerFactor * stickDeflectionRollAbs + power3(stickDeflectionRollAbs) * (1 - flipPowerFactor);
-        const float stickDeflectionYawExpo = flipPowerFactor * stickDeflectionYawAbs + power3(stickDeflectionYawAbs) * (1 - flipPowerFactor);
 
         float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
         float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
         float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
 
         float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
-        float stickDeflectionExpoLength = sqrtf(sq(stickDeflectionPitchExpo) + sq(stickDeflectionRollExpo));
 
         if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
             // If yaw is the dominant, disable pitch and roll
             stickDeflectionLength = stickDeflectionYawAbs;
-            stickDeflectionExpoLength = stickDeflectionYawExpo;
             signRoll = 0;
             signPitch = 0;
         } else {
@@ -314,10 +307,29 @@ static void applyFlipOverAfterCrashModeToMotors(void)
             }
         }
 
+        // temporarily use the expo value as a turn rate limit value
+        const float flipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
+        float flipRateAttenuator = 1.0f;
+        if (flipRateLimit > 0) {
+            // get the gyro rate for the fastest controlled axis
+            float gyroRate = 0.0f;
+            if (signYaw != 0) {
+                // only yaw is used
+                gyroRate = fabsf(gyro.gyroADCf[FD_YAW]);
+            } else {
+                // otherwise either pitch or roll could have the highest requested rate
+                if (signRoll != 0) {
+                    gyroRate = fabsf(gyro.gyroADCf[FD_ROLL]);
+                }
+                if (signPitch != 0) {
+                    gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[FD_PITCH]));
+                }
+            }
+            flipRateAttenuator = fmaxf((flipRateLimit - gyroRate) / flipRateLimit, 0.0f);
+        }
+
         // Apply a reasonable amount of stick deadband
-        const float crashFlipStickMinExpo = flipPowerFactor * CRASH_FLIP_STICK_MINF + power3(CRASH_FLIP_STICK_MINF) * (1 - flipPowerFactor);
-        const float flipStickRange = 1.0f - crashFlipStickMinExpo;
-        const float flipPower = MAX(0.0f, stickDeflectionExpoLength - crashFlipStickMinExpo) / flipStickRange;
+        const float flipPower = stickDeflectionLength > CRASH_FLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
 
         for (int i = 0; i < mixerRuntime.motorCount; ++i) {
             float motorOutputNormalised =
@@ -332,7 +344,8 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     motorOutputNormalised = 0;
                 }
             }
-            motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
+
+            motorOutputNormalised = MIN(1.0f, flipPower * flipAngleModifier * flipRateAttenuator * motorOutputNormalised);
             float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
 
             // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
@@ -607,9 +620,22 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
+    static bool turtleModeStarted = false;
     if (isFlipOverAfterCrashActive()) {
-        applyFlipOverAfterCrashModeToMotors();
+        static float tiltAngleAtStart = 1.0f;
+        const float tiltAngle = getCosTiltAngle(); // -1 if inverted, 0 when 90 degrees, 1 when flat and upright
+        if (!turtleModeStarted) {
+            tiltAngleAtStart = tiltAngle;
+        }
+        turtleModeStarted = true;
+        // send a factor that attenuates motor drive to zero as the flip approaches 90 degrees of rotation
+        // automatically stops the motors, even though momentum typically causes more rotation than intended
+        float flipAngleModifier = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
+        // flipAngleModifier = power3(flipAngleModifier); // commented out may not be needed
+        applyFlipOverAfterCrashModeToMotors(flipAngleModifier);
         return;
+    } else {
+        turtleModeStarted = false;
     }
 
     const bool launchControlActive = isLaunchControlActive();
