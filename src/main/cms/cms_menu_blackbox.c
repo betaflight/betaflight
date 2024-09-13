@@ -191,7 +191,9 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 
     return MENU_CHAIN_BACK;
 }
+#endif // USE_FLASHFS
 
+#ifdef USE_USB_MSC
 static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
@@ -215,7 +217,8 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
 
     return MENU_CHAIN_BACK;
 }
-#endif // USE_FLASHFS
+#endif //USE_USB_MSC 
+
 
 static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
 {
@@ -270,7 +273,9 @@ static CMS_Menu cmsx_menuEraseFlashCheck = {
     .onDisplayUpdate = NULL,
     .entries = menuEraseFlashCheckEntries
 };
+#endif //USE_FLASHFS
 
+#ifdef USE_USB_MSC
 static const OSD_Entry menuStorageDeviceCheckEntries[] = {
     { "CONFIRM USB MASS STORAGE", OME_Label, NULL, NULL},
     { "NO",            OME_Back, NULL, NULL },
@@ -289,7 +294,7 @@ static CMS_Menu cmsx_menuStorageDeviceCheck = {
     .onDisplayUpdate = NULL,
     .entries = menuStorageDeviceCheckEntries
 };
-#endif
+#endif //USE_USB_MSC
 
 static const OSD_Entry cmsx_menuBlackboxEntries[] =
 {
@@ -302,8 +307,10 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree },
     { "DEBUG MODE",  OME_TAB | REBOOT_REQUIRED,     NULL,            &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames } },
 
-#ifdef USE_FLASHFS
+#ifdef USE_USB_MSC
     { "USB MASS STORAGE", OME_Submenu, cmsMenuChange,   &cmsx_menuStorageDeviceCheck },
+#endif // USE_USB_MSC
+#ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
 #endif // USE_FLASHFS
 
