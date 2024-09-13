@@ -295,7 +295,7 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
-    { "STORAGE DEVICE", OME_Submenu, cmsMenuChange,   &cmsx_menuStorageDeviceCheck },
+    { "STORAGE DEVICE", OME_Submenu, cmsMenuChange,  &cmsx_menuStorageDeviceCheck },
 #endif // USE_FLASHFS
 
     { "BACK", OME_Back, NULL, NULL },
