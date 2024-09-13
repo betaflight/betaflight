@@ -264,10 +264,10 @@ static CMS_Menu cmsx_menuEraseFlashCheck = {
 
 static const OSD_Entry menuStorageDeviceCheckEntries[] = {
     { "CONFIRM STORAGE", OME_Label, NULL, NULL},
-    { "YES",           OME_Funcall, cmsx_StorageDevice, NULL },
+    { "YES",            OME_Funcall, cmsx_StorageDevice, NULL },
 
-    { "NO",            OME_Back, NULL, NULL },
-    { NULL,            OME_END, NULL, NULL }
+    { "NO",             OME_Back, NULL, NULL },
+    { NULL,             OME_END, NULL, NULL }
 };
 
 static CMS_Menu cmsx_menuStorageDeviceCheck = {
