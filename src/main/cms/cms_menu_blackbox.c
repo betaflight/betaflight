@@ -245,9 +245,9 @@ static const void *cmsx_Blackbox_onExit(displayPort_t *pDisp, const OSD_Entry *s
 #ifdef USE_FLASHFS
 static const OSD_Entry menuEraseFlashCheckEntries[] = {
     { "CONFIRM ERASE", OME_Label, NULL, NULL},
-    { "YES",           OME_Funcall, cmsx_EraseFlash, NULL },
-
     { "NO",            OME_Back, NULL, NULL },
+
+    { "YES",           OME_Funcall, cmsx_EraseFlash, NULL },
     { NULL,            OME_END, NULL, NULL }
 };
 
@@ -264,9 +264,9 @@ static CMS_Menu cmsx_menuEraseFlashCheck = {
 
 static const OSD_Entry menuStorageDeviceCheckEntries[] = {
     { "CONFIRM USB MASS STORAGE", OME_Label, NULL, NULL},
-    { "YES",           OME_Funcall, cmsx_StorageDevice, NULL },
-
     { "NO",            OME_Back, NULL, NULL },
+
+    { "YES",           OME_Funcall, cmsx_StorageDevice, NULL },
     { NULL,            OME_END, NULL, NULL }
 };
 
