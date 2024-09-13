@@ -43,6 +43,7 @@
 
 #include "common/printf.h"
 #include "common/utils.h"
+#include "common/time.h"
 
 #include "config/feature.h"
 
@@ -56,6 +57,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
+#include "io/usb_msc.h"
 
 #include "pg/pg.h"
 
@@ -194,15 +196,22 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
-    if (!flashfsIsSupported()) {
-        return NULL;
+    if (mscCheckFilesystemReady()) {
+      displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
+      displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "USB MASS STORAGE MODE: CONNECT YOUR DEVICE");
+      displayRedraw(pDisplay);
+#ifdef USE_RTC_TIME
+      int timezoneOffsetMinutes = timeConfig()->tz_offsetMinutes;
+#else
+      int timezoneOffsetMinutes = 0;
+#endif
+      beeper(BEEPER_USB);
+      systemResetToMsc(timezoneOffsetMinutes);
+    } else {
+      displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "STORAGE NOT PRESENT OR FAILED TO INITIALIZE!");
+      displayRedraw(pDisplay);
+      beeper(BEEPER_USB);
     }
-
-    displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
-    displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "USB MASS STORAGE MODE: CONNECT YOUR DEVICE");
-    displayRedraw(pDisplay);
-    beeper(BEEPER_USB);
-    systemResetToMsc(0);
 
     return MENU_CHAIN_BACK;
 }
@@ -294,8 +303,8 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
     { "DEBUG MODE",  OME_TAB | REBOOT_REQUIRED,     NULL,            &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames } },
 
 #ifdef USE_FLASHFS
-    { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
     { "USB MASS STORAGE", OME_Submenu, cmsMenuChange,   &cmsx_menuStorageDeviceCheck },
+    { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
 #endif // USE_FLASHFS
 
     { "BACK", OME_Back, NULL, NULL },
