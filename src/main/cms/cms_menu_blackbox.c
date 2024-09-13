@@ -199,7 +199,7 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
     }
 
     displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
-    displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "STORAGE DEVICE MODE");
+    displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "USB MASS STORAGE MODE: CONNECT YOUR DEVICE");
     displayRedraw(pDisplay);
     beeper(BEEPER_USB);
     systemResetToMsc(0);
@@ -216,7 +216,7 @@ static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
     cmsx_BlackboxDevice = blackboxConfig()->device;
     cmsx_BlackboxRate = blackboxConfig()->sample_rate;
     systemConfig_debug_mode = systemConfig()->debug_mode;
-    
+
     const uint16_t pidFreq = (uint16_t)pidGetPidFrequency();
     if (pidFreq > 1000) {
         tfp_sprintf(cmsx_pidFreq, "%1d.%02dKHZ", (pidFreq / 10) / 100, (pidFreq / 10) % 100);
@@ -263,11 +263,11 @@ static CMS_Menu cmsx_menuEraseFlashCheck = {
 };
 
 static const OSD_Entry menuStorageDeviceCheckEntries[] = {
-    { "CONFIRM STORAGE", OME_Label, NULL, NULL},
-    { "YES",            OME_Funcall, cmsx_StorageDevice, NULL },
+    { "CONFIRM USB MASS STORAGE", OME_Label, NULL, NULL},
+    { "YES",           OME_Funcall, cmsx_StorageDevice, NULL },
 
-    { "NO",             OME_Back, NULL, NULL },
-    { NULL,             OME_END, NULL, NULL }
+    { "NO",            OME_Back, NULL, NULL },
+    { NULL,            OME_END, NULL, NULL }
 };
 
 static CMS_Menu cmsx_menuStorageDeviceCheck = {
@@ -295,7 +295,7 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
-    { "STORAGE DEVICE", OME_Submenu, cmsMenuChange,  &cmsx_menuStorageDeviceCheck },
+    { "USB MASS STORAGE", OME_Submenu, cmsMenuChange,   &cmsx_menuStorageDeviceCheck },
 #endif // USE_FLASHFS
 
     { "BACK", OME_Back, NULL, NULL },
