@@ -200,7 +200,8 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
 
     if (mscCheckFilesystemReady()) {
       displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
-      displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "USB MASS STORAGE MODE: CONNECT YOUR DEVICE");
+      displayWrite(pDisplay, 2, 4, DISPLAYPORT_SEVERITY_INFO, "USB MASS STORAGE MODE IS ON");
+      displayWrite(pDisplay, 4, 5, DISPLAYPORT_SEVERITY_INFO, "CONNECT YOUR GADGET");
       displayRedraw(pDisplay);
 #ifdef USE_RTC_TIME
       int timezoneOffsetMinutes = timeConfig()->tz_offsetMinutes;
@@ -217,7 +218,7 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
 
     return MENU_CHAIN_BACK;
 }
-#endif //USE_USB_MSC 
+#endif //USE_USB_MSC
 
 
 static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
