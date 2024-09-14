@@ -47,11 +47,11 @@
 
 #include "pid_init.h"
 
-#if defined(USE_D_MIN)
-#define D_MIN_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
-#define D_MIN_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
-#define D_MIN_GAIN_FACTOR 0.00008f
-#define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
+#ifdef USE_D_MAX
+#define D_MAX_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
+#define D_MAX_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
+#define D_MAX_GAIN_FACTOR 0.00008f
+#define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
 #define ATTITUDE_CUTOFF_HZ 50
@@ -219,14 +219,14 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 
-#if defined(USE_D_MIN)
-    // Initialize the filters for all axis even if the d_min[axis] value is 0
-    // Otherwise if the pidProfile->d_min_xxx parameters are ever added to
+#ifdef USE_D_MAX
+    // Initialize the filters for all axis even if the d_max[axis] value is 0
+    // Otherwise if the pidProfile->d_max_xxx parameters are ever added to
     // in-flight adjustments and transition from 0 to > 0 in flight the feature
     // won't work because the filter wasn't initialized.
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        pt2FilterInit(&pidRuntime.dMinRange[axis], pt2FilterGain(D_MIN_RANGE_HZ, pidRuntime.dT));
-        pt2FilterInit(&pidRuntime.dMinLowpass[axis], pt2FilterGain(D_MIN_LOWPASS_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMaxRange[axis], pt2FilterGain(D_MAX_RANGE_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMaxLowpass[axis], pt2FilterGain(D_MAX_LOWPASS_HZ, pidRuntime.dT));
      }
 #endif
 
@@ -445,17 +445,17 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * sq(pidRuntime.thrustLinearization);
 #endif
 
-#if defined(USE_D_MIN)
+#ifdef USE_D_MAX
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-        const uint8_t dMin = pidProfile->d_min[axis];
-        if ((dMin > 0) && (dMin < pidProfile->pid[axis].D)) {
-            pidRuntime.dMinPercent[axis] = dMin / (float)(pidProfile->pid[axis].D);
+        const uint8_t dMax = pidProfile->d_max[axis];
+        if ((dMax > 0) && (dMax < pidProfile->pid[axis].D)) {
+            pidRuntime.dMaxPercent[axis] = dMax / (float)(pidProfile->pid[axis].D);
         } else {
-            pidRuntime.dMinPercent[axis] = 0;
+            pidRuntime.dMaxPercent[axis] = 0;
         }
     }
-    pidRuntime.dMinGyroGain = D_MIN_GAIN_FACTOR * pidProfile->d_min_gain / D_MIN_LOWPASS_HZ;
-    pidRuntime.dMinSetpointGain = D_MIN_SETPOINT_GAIN_FACTOR * pidProfile->d_min_gain * pidProfile->d_min_advance / 100.0f / D_MIN_LOWPASS_HZ;
+    pidRuntime.dMaxGyroGain = D_MAX_GAIN_FACTOR * pidProfile->d_max_gain / D_MAX_LOWPASS_HZ;
+    pidRuntime.dMaxSetpointGain = D_MAX_SETPOINT_GAIN_FACTOR * pidProfile->d_max_gain * pidProfile->d_max_advance / 100.0f / D_MAX_LOWPASS_HZ;
     // lowpass included inversely in gain since stronger lowpass decreases peak effect
 #endif
 

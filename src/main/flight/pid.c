@@ -186,9 +186,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .d_min = D_MIN_DEFAULT,
-        .d_min_gain = 37,
-        .d_min_advance = 20,
+        .d_max = D_MAX_DEFAULT,
+        .d_max_gain = 37,
+        .d_max_advance = 20,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 0,
@@ -213,7 +213,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_i_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_d_gain = SIMPLIFIED_TUNING_D_DEFAULT,
         .simplified_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_dmin_ratio = SIMPLIFIED_TUNING_D_DEFAULT,
+        .simplified_d_max_ratio = SIMPLIFIED_TUNING_D_DEFAULT,
         .simplified_feedforward_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_pitch_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dterm_filter = true,
@@ -248,7 +248,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_curve_expo = 20,
     );
 
-#ifndef USE_D_MIN
+#ifndef USE_D_MAX
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
 #endif
@@ -1187,7 +1187,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidSetpointDelta = getFeedforward(axis);
         }
 #endif
-        pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint; // this is the value sent to blackbox, and used for Dmin setpoint
+        pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint; // this is the value sent to blackbox, and used for D-max setpoint
 
         // disable D if launch control is active
         if ((pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive) {
@@ -1205,27 +1205,27 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 #endif
 
-#if defined(USE_D_MIN)
-            float dMinFactor = 1.0f;
-            if (pidRuntime.dMinPercent[axis] > 0) {
-                float dMinGyroFactor = pt2FilterApply(&pidRuntime.dMinRange[axis], delta);
-                dMinGyroFactor = fabsf(dMinGyroFactor) * pidRuntime.dMinGyroGain;
-                const float dMinSetpointFactor = (fabsf(pidSetpointDelta)) * pidRuntime.dMinSetpointGain;
-                dMinFactor = MAX(dMinGyroFactor, dMinSetpointFactor);
-                dMinFactor = pidRuntime.dMinPercent[axis] + (1.0f - pidRuntime.dMinPercent[axis]) * dMinFactor;
-                dMinFactor = pt2FilterApply(&pidRuntime.dMinLowpass[axis], dMinFactor);
-                dMinFactor = MIN(dMinFactor, 1.0f);
+#ifdef USE_D_MAX
+            float dMaxFactor = 1.0f;
+            if (pidRuntime.dMaxPercent[axis] > 0) {
+                float dMaxGyroFactor = pt2FilterApply(&pidRuntime.dMaxRange[axis], delta);
+                dMaxGyroFactor = fabsf(dMaxGyroFactor) * pidRuntime.dMaxGyroGain;
+                const float dMaxSetpointFactor = (fabsf(pidSetpointDelta)) * pidRuntime.dMaxSetpointGain;
+                dMaxFactor = MAX(dMaxGyroFactor, dMaxSetpointFactor);
+                dMaxFactor = pidRuntime.dMaxPercent[axis] + (1.0f - pidRuntime.dMaxPercent[axis]) * dMaxFactor;
+                dMaxFactor = pt2FilterApply(&pidRuntime.dMaxLowpass[axis], dMaxFactor);
+                dMaxFactor = MIN(dMaxFactor, 1.0f);
                 if (axis == FD_ROLL) {
-                    DEBUG_SET(DEBUG_D_MIN, 0, lrintf(dMinGyroFactor * 100));
-                    DEBUG_SET(DEBUG_D_MIN, 1, lrintf(dMinSetpointFactor * 100));
-                    DEBUG_SET(DEBUG_D_MIN, 2, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMinFactor * 10 / DTERM_SCALE));
+                    DEBUG_SET(DEBUG_D_MAX, 0, lrintf(dMaxGyroFactor * 100));
+                    DEBUG_SET(DEBUG_D_MAX, 1, lrintf(dMaxSetpointFactor * 100));
+                    DEBUG_SET(DEBUG_D_MAX, 2, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMaxFactor * 10 / DTERM_SCALE));
                 } else if (axis == FD_PITCH) {
-                    DEBUG_SET(DEBUG_D_MIN, 3, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMinFactor * 10 / DTERM_SCALE));
+                    DEBUG_SET(DEBUG_D_MAX, 3, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMaxFactor * 10 / DTERM_SCALE));
                 }
             }
 
-            // Apply the dMinFactor
-            preTpaD *= dMinFactor;
+            // Apply the dMaxFactor
+            preTpaD *= dMaxFactor;
 #endif
 
             pidData[axis].D = preTpaD * pidRuntime.tpaFactor;

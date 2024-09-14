@@ -458,7 +458,7 @@ static void osdFormatPID(char * buff, const char * label, uint8_t axis)
         currentPidProfile->pid[axis].P,
         currentPidProfile->pid[axis].I,
         currentPidProfile->pid[axis].D,
-        currentPidProfile->d_min[axis],
+        currentPidProfile->d_max[axis],
         currentPidProfile->pid[axis].F);
 }
 
