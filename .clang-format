@@ -1,1 +1,3 @@
 BasedOnStyle: LLVM
+BreakBeforeBraces: Allman
+SortIncludes: false
