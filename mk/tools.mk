@@ -324,4 +324,4 @@ lint:
 	@command -v git >/dev/null 2>&1 || { echo >&2 "Error: git is required for linting, but it's not installed. Aborting."; exit 1; }
 	@command -v clang-format >/dev/null 2>&1 || { echo >&2 "Error: clang-format is required for linting, but it's not installed. Aborting."; exit 1; }
 	@command -v git-clang-format >/dev/null 2>&1 || { echo >&2 "Error: git-clang-format is required for linting, but it's not installed. Aborting."; exit 1; }
-	git clang-format --style=file --extensions=c,h --verbose -- src
+	git clang-format --style=file --extensions=c,h --staged --verbose -- src
