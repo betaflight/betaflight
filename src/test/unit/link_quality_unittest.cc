@@ -32,6 +32,7 @@ extern "C" {
     #include "common/streambuf.h"
     #include "common/time.h"
     #include "common/utils.h"
+    #include "common/vector.h"
 
     #include "config/config.h"
 
@@ -67,7 +68,7 @@ extern "C" {
     #include "sensors/battery.h"
 
     attitudeEulerAngles_t attitude;
-    float rMat[3][3];
+    matrix33_t rMat;
 
     pidProfile_t *currentPidProfile;
     extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];

@@ -29,6 +29,7 @@
 
 #include "common/axis.h"
 #include "common/utils.h"
+#include "common/vector.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -781,20 +782,20 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         }
     }
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        static t_fp_vector_def  rcCommandBuff;
+        static vector3_t rcCommandBuff;
 
-        rcCommandBuff.X = rcCommand[ROLL];
-        rcCommandBuff.Y = rcCommand[PITCH];
+        rcCommandBuff.x = rcCommand[ROLL];
+        rcCommandBuff.y = rcCommand[PITCH];
         if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
-            rcCommandBuff.Z = rcCommand[YAW];
+            rcCommandBuff.z = rcCommand[YAW];
         } else {
-            rcCommandBuff.Z = 0;
+            rcCommandBuff.z = 0;
         }
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
-        rcCommand[ROLL] = rcCommandBuff.X;
-        rcCommand[PITCH] = rcCommandBuff.Y;
+        rcCommand[ROLL] = rcCommandBuff.x;
+        rcCommand[PITCH] = rcCommandBuff.y;
         if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
-            rcCommand[YAW] = rcCommandBuff.Z;
+            rcCommand[YAW] = rcCommandBuff.z;
         }
     }
 }

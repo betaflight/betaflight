@@ -380,15 +380,15 @@ int32_t getSensorValue(uint8_t sensor)
 
 #if defined(USE_ACC)
     case EX_GFORCE_X:
-       return (int16_t)(((float)acc.accADC[0] / acc.dev.acc_1G) * 1000);
+       return (int16_t)(((float)acc.accADC.x / acc.dev.acc_1G) * 1000);
     break;
 
     case EX_GFORCE_Y:
-       return (int16_t)(((float)acc.accADC[1] / acc.dev.acc_1G) * 1000);
+       return (int16_t)(((float)acc.accADC.y / acc.dev.acc_1G) * 1000);
     break;
 
     case EX_GFORCE_Z:
-        return (int16_t)(((float)acc.accADC[2] / acc.dev.acc_1G) * 1000);
+        return (int16_t)(((float)acc.accADC.z / acc.dev.acc_1G) * 1000);
     break;
 #endif
 

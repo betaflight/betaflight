@@ -43,9 +43,9 @@ FAST_DATA_ZERO_INIT acc_t acc;                       // acc access functions
 
 static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
 {
-    acc.accADC[X] -= accelerationTrims->raw[X];
-    acc.accADC[Y] -= accelerationTrims->raw[Y];
-    acc.accADC[Z] -= accelerationTrims->raw[Z];
+    acc.accADC.x -= accelerationTrims->raw[X];
+    acc.accADC.y -= accelerationTrims->raw[Y];
+    acc.accADC.z -= accelerationTrims->raw[Z];
 }
 
 void accUpdate(timeUs_t currentTimeUs)
@@ -60,13 +60,13 @@ void accUpdate(timeUs_t currentTimeUs)
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         const int16_t val =  acc.dev.ADCRaw[axis];
-        acc.accADC[axis] = val;
+        acc.accADC.v[axis] = val;
     }
 
     if (acc.dev.accAlign == ALIGN_CUSTOM) {
-        alignSensorViaMatrix(acc.accADC, &acc.dev.rotationMatrix);
+        alignSensorViaMatrix(&acc.accADC, &acc.dev.rotationMatrix);
     } else {
-        alignSensorViaRotation(acc.accADC, acc.dev.accAlign);
+        alignSensorViaRotation(&acc.accADC, acc.dev.accAlign);
     }
 
     if (!accIsCalibrationComplete()) {
@@ -81,9 +81,9 @@ void accUpdate(timeUs_t currentTimeUs)
 
     float accAdcSquaredSum = 0.0f;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        const float val = acc.accADC[axis];
-        acc.accADC[axis] = accelerationRuntime.accLpfCutHz ? pt2FilterApply(&accelerationRuntime.accFilter[axis], val) : val;
-        accAdcSquaredSum += sq(acc.accADC[axis]);
+        const float val = acc.accADC.v[axis];
+        acc.accADC.v[axis] = accelerationRuntime.accLpfCutHz ? pt2FilterApply(&accelerationRuntime.accFilter[axis], val) : val;
+        accAdcSquaredSum += sq(acc.accADC.v[axis]);
     }
     acc.accMagnitude = sqrtf(accAdcSquaredSum) * acc.dev.acc_1G_rec; // normally 1.0; used for disarm on impact detection
     acc.accDelta = (acc.accMagnitude - previousAccMagnitude) * acc.sampleRateHz;
