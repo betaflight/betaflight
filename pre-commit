@@ -1,3 +1,13 @@
 #!/bin/bash
 
+echo "Running linting checks before commit..."
 make lint
+
+# Check if there are any differences after formatting
+if ! git diff --cached --exit-code --quiet; then
+    echo "Formatting changes detected. Please review and re-stage the changes. Then commit again."
+    exit 1
+else
+    echo "No formatting changes detected."
+    exit 0
+fi
