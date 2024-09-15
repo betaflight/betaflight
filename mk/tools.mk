@@ -21,8 +21,6 @@ ARM_SDK_BASE_DIR ?= $(TOOLS_DIR)/arm-gnu-toolchain-13.2.Rel1
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
 GCC_REQUIRED_VERSION ?= 13.2.1
 
-LINTER_ASTYLE_VERSION ?= 3.1
-
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
