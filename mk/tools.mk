@@ -323,24 +323,7 @@ breakpad_clean:
 
 .PHONY: lint
 lint:
-	@command -v astyle >/dev/null 2>&1 || { echo >&2 "Error: astyle is required for linting, but it's not installed. Aborting."; exit 1; }
-	@echo "Found astyle: $$(astyle --version)"
-	@if ! astyle --version | grep -q "$(LINTER_ASTYLE_VERSION)"; then \
-		echo >&2 "Error: astyle version $(LINTER_ASTYLE_VERSION) is required. Aborting."; \
-		exit 1; \
-	fi
-	@if [ -z "$(LINT_TARGETS)" ]; then \
-		read -p "Linting all files -- Are you sure [Y/N]? " confirm; \
-		if [ "$$(echo $$confirm | tr '[:lower:]' '[:upper:]')" != "Y" ]; then \
-			echo "Aborting."; \
-			exit 0; \
-		fi; \
-		echo "Applying astyle formatting..." \
-		echo "Linting all C and header files in $(SRC_DIR)..."; \
-		find $(SRC_DIR) -type f \( -name '*.c' -o -name '*.h' \) -exec astyle --options=.astylerc {} +; \
-		echo "Formatting complete."; \
-	else \
-		echo "Linting specified files: $(LINT_TARGETS)"; \
-		astyle --options=.astylerc $(LINT_TARGETS); \
-		echo "Formatting complete."; \
-	fi
+	@command -v git >/dev/null 2>&1 || { echo >&2 "Error: git is required for linting, but it's not installed. Aborting."; exit 1; }
+	@command -v clang-format >/dev/null 2>&1 || { echo >&2 "Error: clang-format is required for linting, but it's not installed. Aborting."; exit 1; }
+	@command -v git-clang-format >/dev/null 2>&1 || { echo >&2 "Error: git-clang-format is required for linting, but it's not installed. Aborting."; exit 1; }
+	git clang-format --style=file --extensions=c,h --verbose -- src
