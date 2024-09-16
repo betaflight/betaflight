@@ -358,6 +358,7 @@ struct pidProfile_s *currentPidProfile;
 uint32_t targetPidLooptime;
 
 boxBitmask_t rcModeActivationMask;
+uint16_t flightModeFlags;
 
 void mspSerialAllocatePorts(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
