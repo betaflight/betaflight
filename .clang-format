@@ -4,6 +4,7 @@ ColumnLimit: 120
 UseTab: Never
 SortIncludes: false
 AllowShortFunctionsOnASingleLine: Inline
+AlignAfterOpenBracket: BlockIndent
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterFunction: true
