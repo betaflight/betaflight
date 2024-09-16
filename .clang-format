@@ -9,10 +9,11 @@ BreakBeforeBraces: Custom
 BraceWrapping:
   AfterFunction: true
   AfterCaseLabel: true
+  AfterControlStatement: true
+  BeforeElse: true
   # AfterStruct: true
   # AfterEnum: true
   # AfterClass: true
-  # AfterControlStatement: true
   # AfterNamespace: true
   # AfterObjCDeclaration: true
   # AfterUnion: true
