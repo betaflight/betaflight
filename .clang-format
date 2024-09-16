@@ -11,3 +11,15 @@ BraceWrapping:
   # AfterStruct: true
   # AfterEnum: true
   # AfterClass: true
+  # AfterControlStatement: true
+  # AfterNamespace: true
+  # AfterObjCDeclaration: true
+  # AfterUnion: true
+  # BeforeCatch: true
+  # BeforeElse: true
+  # BeforeLambdaBody: true
+  # BeforeWhile: true
+  # IndentBraces: true
+  # SplitEmptyFunction: true
+  # SplitEmptyRecord: true
+  # SplitEmptyNamespace: true
