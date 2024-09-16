@@ -48,6 +48,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/position.h"
 
@@ -391,23 +392,17 @@ void crsfFrameFlightMode(sbuf_t *dst)
     // Acro is the default mode
     const char *flightMode = "ACRO";
 
-#if defined(USE_GPS)
-    if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
-        flightMode = "WAIT"; // Waiting for GPS lock
-    } else
-#endif
-
     // Flight modes in decreasing order of importance
-    if (FLIGHT_MODE(FAILSAFE_MODE)) {
+    if (FLIGHT_MODE(FAILSAFE_MODE) || IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
         flightMode = "!FS!";
-    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
         flightMode = "RTH";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = "MANU";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
-        flightMode = "STAB";
+        flightMode = "ANGL";
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
-        flightMode = "ALTH ";
+        flightMode = "ALTH";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
     } else if (airmodeIsEnabled()) {
@@ -415,9 +410,18 @@ void crsfFrameFlightMode(sbuf_t *dst)
     }
 
     sbufWriteString(dst, flightMode);
-    if (!ARMING_FLAG(ARMED)) {
-        sbufWriteU8(dst, '*');
+
+    if (!ARMING_FLAG(ARMED) && !FLIGHT_MODE(FAILSAFE_MODE)) {
+        // * = ready to arm
+        // ! = arming disabled
+        // ? = GPS rescue disabled
+        bool isGpsRescueDisabled = false;
+#ifdef USE_GPS
+        isGpsRescueDisabled = featureIsEnabled(FEATURE_GPS) && gpsRescueIsConfigured() && gpsSol.numSat < gpsRescueConfig()->minSats && !STATE(GPS_FIX);
+#endif
+        sbufWriteU8(dst, isArmingDisabled() ? '!' : isGpsRescueDisabled ? '?' : '*');
     }
+
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;

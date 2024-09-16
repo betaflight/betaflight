@@ -425,8 +425,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
         }
 
-    DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.boxFailsafeSwitchWasOn);
-    DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);
+        DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.boxFailsafeSwitchWasOn);
+        DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);
 
     } while (reprocessState);
 
