@@ -213,7 +213,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_i_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_d_gain = SIMPLIFIED_TUNING_D_DEFAULT,
         .simplified_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_d_max_ratio = SIMPLIFIED_TUNING_D_DEFAULT,
+        .simplified_d_max_gain = SIMPLIFIED_TUNING_D_DEFAULT,
         .simplified_feedforward_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_pitch_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dterm_filter = true,
@@ -1206,15 +1206,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
 #ifdef USE_D_MAX
+// TODO: pidProfile use ITCM_RAM
             float dMaxFactor = 1.0f;
             if (pidRuntime.dMaxPercent[axis] > 0) {
                 float dMaxGyroFactor = pt2FilterApply(&pidRuntime.dMaxRange[axis], delta);
                 dMaxGyroFactor = fabsf(dMaxGyroFactor) * pidRuntime.dMaxGyroGain;
-                const float dMaxSetpointFactor = (fabsf(pidSetpointDelta)) * pidRuntime.dMaxSetpointGain;
+                const float dMaxSetpointFactor = fabsf(pidSetpointDelta) * pidRuntime.dMaxSetpointGain;
                 dMaxFactor = MAX(dMaxGyroFactor, dMaxSetpointFactor);
                 dMaxFactor = pidRuntime.dMaxPercent[axis] + (1.0f - pidRuntime.dMaxPercent[axis]) * dMaxFactor;
+                dMaxFactor = 1.0f + (1.0f - pidRuntime.dMaxPercent[axis]) * dMaxFactor;
                 dMaxFactor = pt2FilterApply(&pidRuntime.dMaxLowpass[axis], dMaxFactor);
-                dMaxFactor = MIN(dMaxFactor, 1.0f);
+                dMaxFactor = MIN(dMaxFactor, 1.0f / pidRuntime.dMaxPercent[axis]);
                 if (axis == FD_ROLL) {
                     DEBUG_SET(DEBUG_D_MAX, 0, lrintf(dMaxGyroFactor * 100));
                     DEBUG_SET(DEBUG_D_MAX, 1, lrintf(dMaxSetpointFactor * 100));

@@ -252,7 +252,7 @@ static uint8_t cmsx_simplified_i_gain;
 static uint8_t cmsx_simplified_d_gain;
 static uint8_t cmsx_simplified_pi_gain;
 #ifdef USE_D_MAX
-static uint8_t cmsx_simplified_d_max_ratio;
+static uint8_t cmsx_simplified_d_max_gain;
 #endif
 static uint8_t cmsx_simplified_feedforward_gain;
 static uint8_t cmsx_simplified_pitch_pi_gain;
@@ -281,7 +281,7 @@ static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
     cmsx_simplified_d_gain = pidProfile->simplified_d_gain;
     cmsx_simplified_pi_gain = pidProfile->simplified_pi_gain;
 #ifdef USE_D_MAX
-    cmsx_simplified_d_max_ratio = pidProfile->simplified_d_max_ratio;
+    cmsx_simplified_d_max_gain = pidProfile->simplified_d_max_gain;
 #endif
     cmsx_simplified_feedforward_gain = pidProfile->simplified_feedforward_gain;
     cmsx_simplified_pitch_pi_gain = pidProfile->simplified_pitch_pi_gain;
@@ -308,7 +308,7 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
         || pidProfile->simplified_d_gain != cmsx_simplified_d_gain
         || pidProfile->simplified_pi_gain != cmsx_simplified_pi_gain
 #ifdef USE_D_MAX
-        || pidProfile->simplified_d_max_ratio != cmsx_simplified_d_max_ratio
+        || pidProfile->simplified_d_max_gain != cmsx_simplified_d_max_gain
 #endif
         || pidProfile->simplified_feedforward_gain != cmsx_simplified_feedforward_gain
         || pidProfile->simplified_pitch_pi_gain != cmsx_simplified_pitch_pi_gain
@@ -325,7 +325,7 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
         pidProfile->simplified_d_gain = cmsx_simplified_d_gain;
         pidProfile->simplified_pi_gain = cmsx_simplified_pi_gain;
 #ifdef USE_D_MAX
-        pidProfile->simplified_d_max_ratio = cmsx_simplified_d_max_ratio;
+        pidProfile->simplified_d_max_gain = cmsx_simplified_d_max_gain;
 #endif
         pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
         pidProfile->simplified_pitch_pi_gain = cmsx_simplified_pitch_pi_gain;
@@ -353,7 +353,7 @@ static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
 
     { "-- EXPERT --",      OME_Label, NULL, NULL},
 #ifdef USE_D_MAX
-    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_max_ratio,       SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_max_gain,       SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 #endif
     { "I GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 

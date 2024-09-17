@@ -1641,7 +1641,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_I_GAIN, "%d",               currentPidProfile->simplified_i_gain);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_D_GAIN, "%d",               currentPidProfile->simplified_d_gain);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_PI_GAIN, "%d",              currentPidProfile->simplified_pi_gain);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_D_MAX_GAIN, "%d",            currentPidProfile->simplified_d_max_ratio);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_D_MAX_GAIN, "%d",            currentPidProfile->simplified_d_max_gain);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_FEEDFORWARD_GAIN, "%d",     currentPidProfile->simplified_feedforward_gain);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_PITCH_D_GAIN, "%d",         currentPidProfile->simplified_roll_pitch_ratio);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SIMPLIFIED_PITCH_PI_GAIN, "%d",        currentPidProfile->simplified_pitch_pi_gain);

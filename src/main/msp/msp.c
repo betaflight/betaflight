@@ -2198,7 +2198,7 @@ static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
     pidProfile->simplified_d_gain = sbufReadU8(src);
     pidProfile->simplified_pi_gain = sbufReadU8(src);
 #ifdef USE_D_MAX
-    pidProfile->simplified_d_max_ratio = sbufReadU8(src);
+    pidProfile->simplified_d_max_gain = sbufReadU8(src);
 #else
     sbufReadU8(src);
 #endif
@@ -2218,7 +2218,7 @@ static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
     sbufWriteU8(dst, pidProfile->simplified_d_gain);
     sbufWriteU8(dst, pidProfile->simplified_pi_gain);
 #ifdef USE_D_MAX
-    sbufWriteU8(dst, pidProfile->simplified_d_max_ratio);
+    sbufWriteU8(dst, pidProfile->simplified_d_max_gain);
 #else
     sbufWriteU8(dst, 0);
 #endif
