@@ -1206,7 +1206,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
 #ifdef USE_D_MAX
-// TODO: pidProfile use ITCM_RAM
             float dMaxFactor = 1.0f;
             if (pidRuntime.dMaxPercent[axis] > 0) {
                 float dMaxGyroFactor = pt2FilterApply(&pidRuntime.dMaxRange[axis], delta);

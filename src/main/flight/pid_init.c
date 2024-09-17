@@ -449,7 +449,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         const uint8_t dMax = pidProfile->d_max[axis];
         if ((dMax > 0) && (dMax < pidProfile->pid[axis].D)) {
-            pidRuntime.dMaxPercent[axis] = dMax / (float)(pidProfile->pid[axis].D);
+            pidRuntime.dMaxPercent[axis] = (float) pidProfile->pid[axis].D / dMax;
         } else {
             pidRuntime.dMaxPercent[axis] = 0;
         }

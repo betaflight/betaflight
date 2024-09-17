@@ -60,10 +60,10 @@
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 250
 
-#define PID_ROLL_DEFAULT  { 45, 80, 40, 120, 0 }
-#define PID_PITCH_DEFAULT { 47, 84, 46, 125, 0 }
+#define PID_ROLL_DEFAULT  { 45, 80, 30, 120, 0 }
+#define PID_PITCH_DEFAULT { 47, 84, 34, 125, 0 }
 #define PID_YAW_DEFAULT   { 45, 80,  0, 120, 0 }
-#define D_MAX_DEFAULT     { 30, 34, 0 }
+#define D_MAX_DEFAULT     { 40, 46, 0 }
 
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
 #define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
@@ -255,7 +255,7 @@ typedef struct pidProfile_s {
     uint8_t simplified_i_gain;
     uint8_t simplified_d_gain;
     uint8_t simplified_pi_gain;
-    uint8_t simplified_d_max_ratio;
+    uint8_t simplified_d_max_gain;
     uint8_t simplified_feedforward_gain;
     uint8_t simplified_dterm_filter;
     uint8_t simplified_dterm_filter_multiplier;
@@ -404,6 +404,7 @@ typedef struct pidRuntime_s {
     pt2Filter_t dMaxRange[XYZ_AXIS_COUNT];
     pt2Filter_t dMaxLowpass[XYZ_AXIS_COUNT];
     float dMaxPercent[XYZ_AXIS_COUNT];
+    uint8_t dMax[XYZ_AXIS_COUNT];
     float dMaxGyroGain;
     float dMaxSetpointGain;
 #endif
