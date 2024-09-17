@@ -1212,7 +1212,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 dMaxGyroFactor = fabsf(dMaxGyroFactor) * pidRuntime.dMaxGyroGain;
                 const float dMaxSetpointFactor = fabsf(pidSetpointDelta) * pidRuntime.dMaxSetpointGain;
                 dMaxFactor = MAX(dMaxGyroFactor, dMaxSetpointFactor);
-                dMaxFactor = pidRuntime.dMaxPercent[axis] + (1.0f - pidRuntime.dMaxPercent[axis]) * dMaxFactor;
                 dMaxFactor = 1.0f + (1.0f - pidRuntime.dMaxPercent[axis]) * dMaxFactor;
                 dMaxFactor = pt2FilterApply(&pidRuntime.dMaxLowpass[axis], dMaxFactor);
                 dMaxFactor = MIN(dMaxFactor, 1.0f / pidRuntime.dMaxPercent[axis]);
