@@ -362,6 +362,10 @@
 #define DEF_TIM_AF__PA5__TCH_TMR8_CH1N     D(3, 8)
 #define DEF_TIM_AF__PA7__TCH_TMR8_CH1N     D(3, 8)
 
+// PORTA MUX 9
+#define DEF_TIM_AF__PA6__TCH_TMR13_CH1    D(9, 13)
+#define DEF_TIM_AF__PA7__TCH_TMR14_CH1    D(9, 14)
+
 // PORTB MUX 1
 #define DEF_TIM_AF__PB0__TCH_TMR1_CH2N     D(1, 1)
 #define DEF_TIM_AF__PB1__TCH_TMR1_CH3N     D(1, 1)
