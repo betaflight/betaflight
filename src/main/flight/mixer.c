@@ -307,7 +307,6 @@ static void applyFlipOverAfterCrashModeToMotors(const float flipAngleModifier)
             }
         }
 
-        // temporarily use the expo value as a turn rate limit value
         const float flipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
         float flipRateAttenuator = 1.0f;
         if (flipRateLimit > 0) {
@@ -345,6 +344,8 @@ static void applyFlipOverAfterCrashModeToMotors(const float flipAngleModifier)
                 }
             }
 
+            // if ACC is available, flipAngleModifier will be zero after a 90 degree rotation, stopping motors automatically
+            // without ACC, the user must manually return stick to centre to stop the motors, or exit crashflip mode
             motorOutputNormalised = MIN(1.0f, flipPower * flipAngleModifier * flipRateAttenuator * motorOutputNormalised);
             float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
 
@@ -623,6 +624,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     static bool turtleModeStarted = false;
     if (isFlipOverAfterCrashActive()) {
         static float tiltAngleAtStart = 1.0f;
+        float flipAngleModifier = 1.0f;
+#ifdef USE_ACC
         const float tiltAngle = getCosTiltAngle(); // -1 if inverted, 0 when 90 degrees, 1 when flat and upright
         if (!turtleModeStarted) {
             tiltAngleAtStart = tiltAngle;
@@ -630,8 +633,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         turtleModeStarted = true;
         // send a factor that attenuates motor drive to zero as the flip approaches 90 degrees of rotation
         // automatically stops the motors, even though momentum typically causes more rotation than intended
-        float flipAngleModifier = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
+        flipAngleModifier = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
         // flipAngleModifier = power3(flipAngleModifier); // commented out may not be needed
+#endif // USE_ACC
         applyFlipOverAfterCrashModeToMotors(flipAngleModifier);
         return;
     } else {
