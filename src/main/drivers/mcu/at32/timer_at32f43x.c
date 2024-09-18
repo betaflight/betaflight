@@ -71,6 +71,10 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TMR1,  CH2,  PA9,  0, 0,  0),
     DEF_TIM(TMR1,  CH3,  PA10, 0, 0,  0),
     DEF_TIM(TMR1,  CH4,  PA11, 0, 0,  0),
+    DEF_TIM(TMR9,  CH1,  PA2,  0, 0,  0),
+    DEF_TIM(TMR9,  CH2,  PA3,  0, 0,  0),
+    DEF_TIM(TMR13, CH1,  PA6,  0, 0,  0),
+    DEF_TIM(TMR14, CH1,  PA7,  0, 0,  0),
 
 // PORTB MUX1
     DEF_TIM(TMR1,  CH2N, PB0,  0, 0,  0),
@@ -102,6 +106,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TMR8,  CH3N, PB1,  0, 0,  0),
     DEF_TIM(TMR8,  CH2N, PB14, 0, 0,  0),
     DEF_TIM(TMR8,  CH3N, PB15, 0, 0,  0),
+    DEF_TIM(TMR10, CH1,  PB8,  0, 0,  0),
+    DEF_TIM(TMR11, CH1,  PB9,  0, 0,  0),
 // PORTB MUX9
     DEF_TIM(TMR12, CH1,  PB14, 0, 0,  0),
     DEF_TIM(TMR12, CH2,  PB15, 0, 0,  0),
