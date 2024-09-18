@@ -127,7 +127,6 @@
 #define PARAM_NAME_DYN_IDLE_I_GAIN "dyn_idle_i_gain"
 #define PARAM_NAME_DYN_IDLE_D_GAIN "dyn_idle_d_gain"
 #define PARAM_NAME_DYN_IDLE_MAX_INCREASE "dyn_idle_max_increase"
-#define PARAM_NAME_DYN_IDLE_START_INCREASE "dyn_idle_start_increase"
 #define PARAM_NAME_SIMPLIFIED_PIDS_MODE "simplified_pids_mode"
 #define PARAM_NAME_SIMPLIFIED_MASTER_MULTIPLIER "simplified_master_multiplier"
 #define PARAM_NAME_SIMPLIFIED_I_GAIN "simplified_i_gain"
