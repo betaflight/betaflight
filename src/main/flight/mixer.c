@@ -273,7 +273,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #define CRASH_FLIP_DEADBAND 20
 #define CRASH_FLIP_STICK_MINF 0.15f
 
-static void applyFlipOverAfterCrashModeToMotors(const float flipAngleModifier)
+static void applyFlipOverAfterCrashModeToMotors(float flipAngleModifier)
 {
     if (ARMING_FLAG(ARMED)) {
         const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
@@ -326,6 +326,9 @@ static void applyFlipOverAfterCrashModeToMotors(const float flipAngleModifier)
                 }
             }
             flipRateAttenuator = fmaxf((flipRateLimit - gyroRate) / flipRateLimit, 0.0f);
+        } else {
+            // disable all auto attenuation if crashflip_rate is set to zero, for very low power whoops
+            flipAngleModifier = 1.0f;
         }
 
         // Apply a reasonable amount of stick deadband
