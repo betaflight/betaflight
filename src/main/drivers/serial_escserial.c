@@ -694,7 +694,7 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
         }
 
 #ifdef USE_HAL_DRIVER
-    escSerial->txTimerHandle = timerFindTimerHandle(escSerial->txTimerHardware->tim);
+        escSerial->txTimerHandle = timerFindTimerHandle(escSerial->txTimerHardware->tim);
 #endif
 
     	// Workaround to ensure that the timerHandle is configured before use, timer will be reconfigured to a different frequency below
