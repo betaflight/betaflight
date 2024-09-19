@@ -26,7 +26,7 @@
 
 #define USED_TIMERS  ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(8) | BIT(9) | BIT(10) | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(20) )
 #define TIMUP_TIMERS ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(8) | BIT(20) )
-#define FULL_TIMER_CHANNEL_COUNT        103
+#define FULL_TIMER_CHANNEL_COUNT        109
 #define HARDWARE_TIMER_DEFINITION_COUNT 15
 
 // allow conditional definition of DMA related members
@@ -361,6 +361,10 @@
 #define DEF_TIM_AF__PA3__TCH_TMR9_CH2      D(3, 9)
 #define DEF_TIM_AF__PA5__TCH_TMR8_CH1N     D(3, 8)
 #define DEF_TIM_AF__PA7__TCH_TMR8_CH1N     D(3, 8)
+
+// PORTA MUX 9
+#define DEF_TIM_AF__PA6__TCH_TMR13_CH1     D(9, 13)
+#define DEF_TIM_AF__PA7__TCH_TMR14_CH1     D(9, 14)
 
 // PORTB MUX 1
 #define DEF_TIM_AF__PB0__TCH_TMR1_CH2N     D(1, 1)
