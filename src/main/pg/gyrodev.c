@@ -50,6 +50,10 @@
 #define GYRO_2_EXTI_PIN NONE
 #endif
 
+#ifndef GYRO_CLKIN_PIN
+#define GYRO_CLKIN_PIN NONE
+#endif
+
 #ifdef MPU_ADDRESS
 #define GYRO_I2C_ADDRESS MPU_ADDRESS
 #else
@@ -76,6 +80,9 @@ static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *i
     devconf->extiTag = extiTag;
     devconf->alignment = alignment;
     devconf->customAlignment = customAlignment;
+#if defined(USE_GYRO_EXT_CLK)
+    devconf->clkIn = IO_TAG(GYRO_CLKIN_PIN);
+#endif
 }
 #endif
 

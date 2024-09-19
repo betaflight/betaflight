@@ -30,6 +30,13 @@
 
 #if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
 
+#if defined(USE_GYRO_EXT_CLK)
+#ifndef GYRO_1_EXTI_PIN
+#define GYRO_1_EXTI_PIN NONE
+#endif
+#include "drivers/pwm_output.h"
+#endif
+
 #include "common/axis.h"
 #include "common/utils.h"
 #include "build/debug.h"
@@ -168,9 +175,67 @@ static aafConfig_t aafLUT42605[AAF_CONFIG_COUNT] = {  // see table in section 5.
     [AAF_CONFIG_1962HZ] = { 63, 3968,  3 }, // 995 Hz is the max cutoff on the 42605
 };
 
+#if defined(USE_GYRO_EXT_CLK)
+static pwmOutputPort_t PwmGyroClk = {0};
+
+static bool initExternalClock(void)
+{
+    const ioTag_t tag = IO_TAG(GYRO_CLKIN_PIN);
+    const IO_t io = IOGetByTag(tag);
+
+    PwmGyroClk.io = io;
+    PwmGyroClk.enabled = true;
+
+    const timerHardware_t *timer = timerAllocate(tag, OWNER_GYRO_CLKIN, 0);
+    if (!timer) {
+        // Error handling: failed to allocate timer
+        return false;
+    }
+
+    IOInit(io, OWNER_GYRO_CLKIN, 0);
+    IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
+
+    uint32_t pwmFrequency = 32000;  // PWM frequency set to 32 kHz
+    const uint32_t clock = timerClock(timer->tim);  // Get the timer clock frequency
+
+    const uint16_t period = (clock / pwmFrequency) - 1;
+
+    // Calculate duty cycle value for 50%
+    const uint16_t value = (period / 2) - 1;
+
+    // Configure PWM output
+    pwmOutConfig(&PwmGyroClk.channel, timer, clock, period, value, 0);
+
+    // Set CCR value
+    *PwmGyroClk.channel.ccr = value;
+
+    // enable timer
+    PwmGyroClk.enabled = true;
+
+    return true;
+}
+
+static void icm426xxEnableExternalClock(const extDevice_t *dev)
+{
+    if (initExternalClock()) {
+
+        uint8_t reg_val;
+
+        reg_val = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG1);
+        reg_val |= (1 << 5); // enable CLKIN for external clock 
+        spiWriteReg(dev, ICM426XX_INTF_CONFIG1, reg_val);
+    }
+
+}
+#endif
+
 uint8_t icm426xxSpiDetect(const extDevice_t *dev)
 {
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
+
+#if defined(USE_GYRO_EXT_CLK)
+    icm426xxEnableExternalClock(dev);
+#endif
 
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
