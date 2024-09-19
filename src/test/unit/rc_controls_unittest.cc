@@ -549,10 +549,6 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     pidProfile.pid[PID_YAW].P = 7;
     pidProfile.pid[PID_YAW].I = 17;
     pidProfile.pid[PID_YAW].D = 27;
-
-    pidProfile.d_min[FD_PITCH] = 19;
-    pidProfile.d_min[FD_ROLL] = 19;
-
     // and
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof(controlRateConfig));
