@@ -60,6 +60,7 @@
 
 #include "rx/rx.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
@@ -626,15 +627,17 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         static float tiltAngleAtStart = 1.0f;
         float flipAngleModifier = 1.0f;
 #ifdef USE_ACC
-        const float tiltAngle = getCosTiltAngle(); // -1 if inverted, 0 when 90 degrees, 1 when flat and upright
-        if (!turtleModeStarted) {
-            tiltAngleAtStart = tiltAngle;
+        if (sensors(SENSOR_ACC)) {
+            const float tiltAngle = getCosTiltAngle(); // -1 if inverted, 0 when 90 degrees, 1 when flat and upright
+            if (!turtleModeStarted) {
+                tiltAngleAtStart = tiltAngle;
+            }
+            turtleModeStarted = true;
+            // send a factor that attenuates motor drive to zero as the flip approaches 90 degrees of rotation
+            // automatically stops the motors, even though momentum typically causes more rotation than intended
+            flipAngleModifier = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
+            // flipAngleModifier = power3(flipAngleModifier); // commented out may not be needed
         }
-        turtleModeStarted = true;
-        // send a factor that attenuates motor drive to zero as the flip approaches 90 degrees of rotation
-        // automatically stops the motors, even though momentum typically causes more rotation than intended
-        flipAngleModifier = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
-        // flipAngleModifier = power3(flipAngleModifier); // commented out may not be needed
 #endif // USE_ACC
         applyFlipOverAfterCrashModeToMotors(flipAngleModifier);
         return;
