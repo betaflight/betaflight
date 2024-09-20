@@ -325,6 +325,12 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
+        if (flipOverAfterCrashActive && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
+        }
+
 #if defined(USE_LATE_TASK_STATISTICS)
         if ((getCpuPercentageLate() > schedulerConfig()->cpuLatePercentageLimit)) {
             setArmingDisabled(ARMING_DISABLED_LOAD);
@@ -962,6 +968,14 @@ void processRxModes(timeUs_t currentTimeUs)
     /* Enable beep warning when the crash flip mode is active */
     if (flipOverAfterCrashActive) {
         beeper(BEEPER_CRASH_FLIP_MODE);
+        if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH))) {
+            // user reverted crashFlip switch while in crashFlip mode, so disable it
+            // if armed, tryArm() will, if throttle is zero, immediately enter armed idle state
+            // pilot can then take off without disarm/re-arm being required
+            // if, however, throttle is not zero, arming will be blocked until both
+            // throttle is zero, and a disarm-rearm cycle has been actioned.
+            flipOverAfterCrashActive = false;
+        }
     }
 #endif
 
