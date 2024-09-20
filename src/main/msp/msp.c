@@ -2049,6 +2049,9 @@ case MSP_NAME:
         sbufWriteU8(dst, currentPidProfile->tpa_mode);
         sbufWriteU8(dst, currentPidProfile->tpa_rate);
         sbufWriteU16(dst, currentPidProfile->tpa_breakpoint);   // was currentControlRateProfile->tpa_breakpoint
+
+        // Added in MSP API 1.47
+        sbufWriteU8(dst, currentPidProfile->dyn_idle_start_increase);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -3268,6 +3271,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             currentPidProfile->tpa_mode = sbufReadU8(src);
             currentPidProfile->tpa_rate = MIN(sbufReadU8(src), TPA_MAX);
             currentPidProfile->tpa_breakpoint = sbufReadU16(src);
+        }
+
+        if (sbufBytesRemaining(src) >= 1) {
+            // Added in API 1.47
+            currentPidProfile->dyn_idle_start_increase = sbufReadU8(src);
         }
 
         pidInitConfig(currentPidProfile);
