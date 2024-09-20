@@ -130,6 +130,7 @@ CMS_Menu cmsx_menuRcPreview = {
 static uint16_t motorConfig_minthrottle;
 static uint8_t motorConfig_digitalIdleOffsetValue;
 static uint8_t rxConfig_fpvCamAngleDegrees;
+static uint8_t mixerConfig_crashflip_rate;
 
 static const void *cmsx_menuMiscOnEnter(displayPort_t *pDisp)
 {
@@ -138,6 +139,7 @@ static const void *cmsx_menuMiscOnEnter(displayPort_t *pDisp)
     motorConfig_minthrottle = motorConfig()->minthrottle;
     motorConfig_digitalIdleOffsetValue = motorConfig()->digitalIdleOffsetValue / 10;
     rxConfig_fpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
+    mixerConfig_crashflip_rate = mixerConfig()->crashflip_rate;
 
     return NULL;
 }
@@ -150,6 +152,7 @@ static const void *cmsx_menuMiscOnExit(displayPort_t *pDisp, const OSD_Entry *se
     motorConfigMutable()->minthrottle = motorConfig_minthrottle;
     motorConfigMutable()->digitalIdleOffsetValue = 10 * motorConfig_digitalIdleOffsetValue;
     rxConfigMutable()->fpvCamAngleDegrees = rxConfig_fpvCamAngleDegrees;
+    mixerConfigMutable()->crashflip_rate = mixerConfig_crashflip_rate;
 
     return NULL;
 }
@@ -158,12 +161,13 @@ static const OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL },
 
-    { "MIN THR",       OME_UINT16 | REBOOT_REQUIRED,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,            1000, 2000, 1 } },
-    { "DIGITAL IDLE",  OME_UINT8 | REBOOT_REQUIRED,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,    0,  200, 1 } },
-    { "FPV CAM ANGLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &rxConfig_fpvCamAngleDegrees,           0,   90, 1 } },
-    { "RC PREV",       OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview},
+    { "MIN THR",        OME_UINT16 | REBOOT_REQUIRED,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,            1000, 2000, 1 } },
+    { "DIGITAL IDLE",   OME_UINT8 | REBOOT_REQUIRED,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,    0,  200, 1 } },
+    { "FPV CAM ANGLE",  OME_UINT8,                     NULL,          &(OSD_UINT8_t) { &rxConfig_fpvCamAngleDegrees,           0,   90, 1 } },
+    { "CRASHFLIP RATE", OME_UINT8 | REBOOT_REQUIRED,   NULL,          &(OSD_UINT8_t) { &mixerConfig_crashflip_rate,           0,  100, 1 } },
+    { "RC PREV",        OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview},
 #ifdef USE_GPS_LAP_TIMER
-    { "GPS LAP TIMER", OME_Submenu, cmsMenuChange, &cms_menuGpsLapTimer },
+    { "GPS LAP TIMER",  OME_Submenu, cmsMenuChange, &cms_menuGpsLapTimer },
 #endif // USE_GPS_LAP_TIMER
 
     { "BACK", OME_Back, NULL, NULL},
