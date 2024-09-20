@@ -30,11 +30,10 @@
 
 #if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
 
-#if defined(USE_GYRO_EXT_CLK)
-#ifndef GYRO_1_EXTI_PIN
-#define GYRO_1_EXTI_PIN NONE
+#if defined(USE_GYRO_CLKIN)
+#ifndef GYRO_CLKIN_PIN
+#define GYRO_CLKIN_PIN NONE
 #endif
-#include "drivers/pwm_output.h"
 #endif
 
 #include "common/axis.h"
@@ -49,6 +48,7 @@
 #include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+#include "drivers/pwm_output.h"
 
 #include "sensors/gyro.h"
 
@@ -127,6 +127,7 @@
 #define ICM426XX_RA_INT_SOURCE0                     0x65  // User Bank 0
 #define ICM426XX_UI_DRDY_INT1_EN_DISABLED           (0 << 3)
 #define ICM426XX_UI_DRDY_INT1_EN_ENABLED            (1 << 3)
+#define ICM426XX_INTF_CONFIG1_CLKIN                 (1 << 5)
 
 typedef enum {
     ODR_CONFIG_8K = 0,
@@ -175,16 +176,16 @@ static aafConfig_t aafLUT42605[AAF_CONFIG_COUNT] = {  // see table in section 5.
     [AAF_CONFIG_1962HZ] = { 63, 3968,  3 }, // 995 Hz is the max cutoff on the 42605
 };
 
-#if defined(USE_GYRO_EXT_CLK)
-static pwmOutputPort_t PwmGyroClk = {0};
+#if defined(USE_GYRO_CLKIN)
+static pwmOutputPort_t pwmGyroClk = {0};
 
 static bool initExternalClock(void)
 {
     const ioTag_t tag = IO_TAG(GYRO_CLKIN_PIN);
     const IO_t io = IOGetByTag(tag);
 
-    PwmGyroClk.io = io;
-    PwmGyroClk.enabled = true;
+    pwmGyroClk.io = io;
+    pwmGyroClk.enabled = true;
 
     const timerHardware_t *timer = timerAllocate(tag, OWNER_GYRO_CLKIN, 0);
     if (!timer) {
@@ -198,19 +199,16 @@ static bool initExternalClock(void)
     uint32_t pwmFrequency = 32000;  // PWM frequency set to 32 kHz
     const uint32_t clock = timerClock(timer->tim);  // Get the timer clock frequency
 
-    const uint16_t period = (clock / pwmFrequency) - 1;
+    const uint16_t period = clock / pwmFrequency;
 
     // Calculate duty cycle value for 50%
-    const uint16_t value = (period / 2) - 1;
+    const uint16_t value = period / 2;
 
     // Configure PWM output
-    pwmOutConfig(&PwmGyroClk.channel, timer, clock, period, value, 0);
+    pwmOutConfig(&pwmGyroClk.channel, timer, clock, period - 1, value - 1, 0);
 
     // Set CCR value
-    *PwmGyroClk.channel.ccr = value;
-
-    // enable timer
-    PwmGyroClk.enabled = true;
+    *pwmGyroClk.channel.ccr = value - 1;
 
     return true;
 }
@@ -218,14 +216,10 @@ static bool initExternalClock(void)
 static void icm426xxEnableExternalClock(const extDevice_t *dev)
 {
     if (initExternalClock()) {
-
-        uint8_t reg_val;
-
-        reg_val = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG1);
-        reg_val |= (1 << 5); // enable CLKIN for external clock 
-        spiWriteReg(dev, ICM426XX_INTF_CONFIG1, reg_val);
+        uint8_t cfg1 = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG1);
+        cfg1 |= ICM426XX_INTF_CONFIG1_CLKIN; // enable CLKIN for external clock
+        spiWriteReg(dev, ICM426XX_INTF_CONFIG1, cfg1);
     }
-
 }
 #endif
 
@@ -233,7 +227,7 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
 {
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
 
-#if defined(USE_GYRO_EXT_CLK)
+#if defined(USE_GYRO_CLKIN)
     icm426xxEnableExternalClock(dev);
 #endif
 

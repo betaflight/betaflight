@@ -80,9 +80,7 @@ static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *i
     devconf->extiTag = extiTag;
     devconf->alignment = alignment;
     devconf->customAlignment = customAlignment;
-#if defined(USE_GYRO_EXT_CLK)
     devconf->clkIn = IO_TAG(GYRO_CLKIN_PIN);
-#endif
 }
 #endif
 
@@ -95,6 +93,7 @@ static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cb
     devconf->extiTag = extiTag;
     devconf->alignment = alignment;
     devconf->customAlignment = customAlignment;
+    devconf->clkIn = IO_TAG(GYRO_CLKIN_PIN);
 }
 #endif
 
