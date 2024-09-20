@@ -66,8 +66,11 @@
 
 #include "mixer.h"
 
-#define DYN_LPF_THROTTLE_STEPS           100
-#define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
+#define DYN_LPF_THROTTLE_STEPS             100
+#define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
+
+#define CRASH_FLIP_DEADBAND       20
+#define CRASH_FLIP_STICK_MINF   0.15f
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -270,11 +273,22 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     rcThrottle = throttle;
 }
 
-#define CRASH_FLIP_DEADBAND 20
-#define CRASH_FLIP_STICK_MINF 0.15f
-
-static void applyFlipOverAfterCrashModeToMotors(float flipAngleModifier)
+static bool applyFlipOverAfterCrashModeToMotors(void)
 {
+#ifdef USE_ACC
+    static bool isFirstTiltAngleRead = true;
+    static float tiltAngleAtStart = 1.0f;
+#endif
+
+    if (!isFlipOverAfterCrashActive()) {
+#ifdef USE_ACC
+        // while not in crashFlip mode, require a tilt angle read when crashFlip activates
+        isFirstTiltAngleRead = true;
+#endif
+        // do nothing else, and allow mixTable() to continue normally
+        return false;
+    }
+
     if (ARMING_FLAG(ARMED)) {
         const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
         const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
@@ -308,31 +322,47 @@ static void applyFlipOverAfterCrashModeToMotors(float flipAngleModifier)
             }
         }
 
-        const float flipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
+        // Calculate flipPower from stick deflection with a reasonable amount of stick deadband
+        float flipPower = stickDeflectionLength > CRASH_FLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
+
+        // calculate flipPower attenuators
         float flipRateAttenuator = 1.0f;
+        float flipAttitudeAttenuator = 1.0f;
+        const float flipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
+
+        // disable both attenuators if the user's crashflip_rate is zero
         if (flipRateLimit > 0) {
-            // get the gyro rate for the fastest controlled axis
+#ifdef USE_ACC
+            // Calculate the attitude-based attenuator (requires Acc)
+            // with Acc, flipAttitudeAttenuator will be zero after approx 90 degree rotation
+            // hence motors will be stopped while attitude remains more than ~90 degrees from initial attitude
+            // if flipping on the ground, that's exactly what we want; auto-off once flipped.
+            // if stuck in a tree, and is still stuck despite rotating...
+            // re-initialisation of crashFlip mode will be required to be able to drive the motors again
+            // without Acc, the user must manually center the stick, or exit crashflip mode, or disarm, to stop the motors
+            if (sensors(SENSOR_ACC)) {
+                const float tiltAngle = getCosTiltAngle();  // -1 if inverted, 0 when 90°, 1 when flat and upright
+                if (isFirstTiltAngleRead) {
+                    tiltAngleAtStart = tiltAngle;
+                    isFirstTiltAngleRead = false;
+                }
+                flipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
+            }
+#endif // USE_ACC
+            // Calculate attenuation factor for rate of rotation
+            // get the gyro rate for the fastest axis, probably doesn't matter which one
+            // if driving roll or pitch, quad usually turns on that axis, but if one motor sticks, could be a diagonal rotation
+            // if driving diagonally, the turn could be either roll or pitch
+            // if driving yaw, typically one motor sticks, and the quad yaws only a little then flips diagonally
             float gyroRate = 0.0f;
-            if (signYaw != 0) {
-                // only yaw is used
-                gyroRate = fabsf(gyro.gyroADCf[FD_YAW]);
-            } else {
-                // otherwise either pitch or roll could have the highest requested rate
-                if (signRoll != 0) {
-                    gyroRate = fabsf(gyro.gyroADCf[FD_ROLL]);
-                }
-                if (signPitch != 0) {
-                    gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[FD_PITCH]));
-                }
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
             }
             flipRateAttenuator = fmaxf((flipRateLimit - gyroRate) / flipRateLimit, 0.0f);
-        } else {
-            // disable all auto attenuation if crashflip_rate is set to zero, for very low power whoops
-            flipAngleModifier = 1.0f;
+            // it's possible that fminf(flipAttitudeAttenuator, flipRateAttenuator) may work better for low power quads
+            // but the multiply works very well for higher power quads since it cuts motors back fast
+            flipPower *= flipAttitudeAttenuator * flipRateAttenuator;
         }
-
-        // Apply a reasonable amount of stick deadband
-        const float flipPower = stickDeflectionLength > CRASH_FLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
 
         for (int i = 0; i < mixerRuntime.motorCount; ++i) {
             float motorOutputNormalised =
@@ -348,9 +378,7 @@ static void applyFlipOverAfterCrashModeToMotors(float flipAngleModifier)
                 }
             }
 
-            // if ACC is available, flipAngleModifier will be zero after a 90 degree rotation, stopping motors automatically
-            // without ACC, the user must manually return stick to centre to stop the motors, or exit crashflip mode
-            motorOutputNormalised = MIN(1.0f, flipPower * flipAngleModifier * flipRateAttenuator * motorOutputNormalised);
+            motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
             float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
 
             // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
@@ -359,11 +387,19 @@ static void applyFlipOverAfterCrashModeToMotors(float flipAngleModifier)
             motor[i] = motorOutput;
         }
     } else {
-        // Disarmed mode
+        // When disarmed, but still in crashFlip mode, disarm value is sent to motors, ie stopped
+        // ** I am not sure it is possible to be in crashFlip mode while disarmed.
+        // because in core.c updateArmingStatus(), flipOverAfterCrashActive is set false when disarmed
+        // and in core.c disarm() sets it false also
+        // and flipOverAfterCrashActive can only be set true in core.c tryArm()
+        // so how would we ever get here?  It's not possible to be disrmed and in crashflip mode
         for (int i = 0; i < mixerRuntime.motorCount; i++) {
             motor[i] = motor_disarmed[i];
         }
     }
+
+    // force mixTable() to exit after the crashFlip code is complete
+    return true;
 }
 
 #ifdef USE_RPM_LIMIT
@@ -625,27 +661,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
-    static bool turtleModeStarted = false;
-    if (isFlipOverAfterCrashActive()) {
-        static float tiltAngleAtStart = 1.0f;
-        float flipAngleModifier = 1.0f;
-#ifdef USE_ACC
-        if (sensors(SENSOR_ACC)) {
-            const float tiltAngle = getCosTiltAngle(); // -1 if inverted, 0 when 90 degrees, 1 when flat and upright
-            if (!turtleModeStarted) {
-                tiltAngleAtStart = tiltAngle;
-            }
-            turtleModeStarted = true;
-            // send a factor that attenuates motor drive to zero as the flip approaches 90 degrees of rotation
-            // automatically stops the motors, even though momentum typically causes more rotation than intended
-            flipAngleModifier = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
-            // flipAngleModifier = power3(flipAngleModifier); // commented out may not be needed
-        }
-#endif // USE_ACC
-        applyFlipOverAfterCrashModeToMotors(flipAngleModifier);
+    if (applyFlipOverAfterCrashModeToMotors()) {
         return;
-    } else {
-        turtleModeStarted = false;
     }
 
     const bool launchControlActive = isLaunchControlActive();
