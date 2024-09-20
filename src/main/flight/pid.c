@@ -247,11 +247,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_curve_pid_thr100 = 70,
         .tpa_curve_expo = 20,
     );
-
-#ifndef USE_D_MAX
-    pidProfile->pid[PID_ROLL].D = 30;
-    pidProfile->pid[PID_PITCH].D = 32;
-#endif
 }
 
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)

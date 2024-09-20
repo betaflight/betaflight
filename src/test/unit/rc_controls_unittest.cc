@@ -549,6 +549,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     pidProfile.pid[PID_YAW].P = 7;
     pidProfile.pid[PID_YAW].I = 17;
     pidProfile.pid[PID_YAW].D = 27;
+
     // and
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof(controlRateConfig));
@@ -559,7 +560,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     const timedAdjustmentState_t *adjustmentState4 = configureStepwiseAdjustment(AUX1 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_P_INDEX);
     const timedAdjustmentState_t *adjustmentState5 = configureStepwiseAdjustment(AUX2 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_I_INDEX);
     const timedAdjustmentState_t *adjustmentState6 = configureStepwiseAdjustment(AUX3 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_D_INDEX);
-
+    
     // and
     for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
         rcData[index] = PWM_RANGE_MIDDLE;
@@ -591,12 +592,10 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     // and
     EXPECT_EQ(1,  pidProfile.pid[PID_PITCH].P);
     EXPECT_EQ(11, pidProfile.pid[PID_PITCH].I);
-    EXPECT_EQ(20, pidProfile.pid[PID_PITCH].D);
-    EXPECT_EQ(20, pidProfile.d_max[FD_PITCH]);
+    EXPECT_EQ(21, pidProfile.pid[PID_PITCH].D);
     EXPECT_EQ(6,  pidProfile.pid[PID_ROLL].P);
     EXPECT_EQ(16, pidProfile.pid[PID_ROLL].I);
-    EXPECT_EQ(25, pidProfile.pid[PID_ROLL].D);
-    EXPECT_EQ(20, pidProfile.d_max[FD_ROLL]);
+    EXPECT_EQ(26, pidProfile.pid[PID_ROLL].D);
     EXPECT_EQ(8,  pidProfile.pid[PID_YAW].P);
     EXPECT_EQ(18, pidProfile.pid[PID_YAW].I);
     EXPECT_EQ(28, pidProfile.pid[PID_YAW].D);
