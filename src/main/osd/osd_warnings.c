@@ -135,8 +135,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
     // Warn when in flip over after crash mode
-    if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
-        if (isFlipOverAfterCrashActive()) { // if was armed in crashflip mode
+    if (osdWarnGetState(OSD_WARNING_CRASHFLIP) && IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+        if (isCrashFlipModeActive()) { // if was armed in crashflip mode
             tfp_sprintf(warningText, CRASHFLIP_WARNING);
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;

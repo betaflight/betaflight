@@ -56,7 +56,7 @@ typedef enum {
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
     BEEPER_USB,                     // Some boards have beeper powered USB connected
     BEEPER_BLACKBOX_ERASE,          // Beep when blackbox erase completes
-    BEEPER_CRASH_FLIP_MODE,         // Crashflip mode is active
+    BEEPER_CRASHFLIP_MODE,          // Crashflip mode is active
     BEEPER_CAM_CONNECTION_OPEN,     // When the 5 key simulation stated
     BEEPER_CAM_CONNECTION_CLOSE,    // When the 5 key simulation stop
     BEEPER_RC_SMOOTHING_INIT_FAIL,  // Warning beep pattern when armed and rc smoothing has not initialized filters
@@ -87,7 +87,7 @@ STATIC_ASSERT(BEEPER_ALL < sizeof(uint32_t) * 8, "BEEPER bits exhausted");
     | BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT) \
     | BEEPER_GET_FLAG(BEEPER_USB) \
     | BEEPER_GET_FLAG(BEEPER_BLACKBOX_ERASE) \
-    | BEEPER_GET_FLAG(BEEPER_CRASH_FLIP_MODE) \
+    | BEEPER_GET_FLAG(BEEPER_CRASHFLIP_MODE) \
     | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_OPEN) \
     | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) \
     | BEEPER_GET_FLAG(BEEPER_RC_SMOOTHING_INIT_FAIL) \

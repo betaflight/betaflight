@@ -69,8 +69,8 @@
 #define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
 
-#define CRASH_FLIP_DEADBAND       20
-#define CRASH_FLIP_STICK_MINF   0.15f
+#define CRASHFLIP_DEADBAND       20
+#define CRASHFLIP_STICK_MINF   0.15f
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -143,7 +143,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
         const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
 
-        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isFlipOverAfterCrashActive()) {
+        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isCrashFlipModeActive()) {
             // INVERTED
             motorRangeMin = mixerRuntime.motorOutputLow;
             motorRangeMax = mixerRuntime.deadbandMotor3dLow;
@@ -259,7 +259,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));
             DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));
         }
-        motorRangeMax = isFlipOverAfterCrashActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
+        motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
 #else
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
@@ -273,14 +273,14 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     rcThrottle = throttle;
 }
 
-static bool applyFlipOverAfterCrashModeToMotors(void)
+static bool applyCrashFlipModeToMotors(void)
 {
 #ifdef USE_ACC
     static bool isFirstTiltAngleRead = true;
     static float tiltAngleAtStart = 1.0f;
 #endif
 
-    if (!isFlipOverAfterCrashActive()) {
+    if (!isCrashFlipModeActive()) {
 #ifdef USE_ACC
         // trigger the capture of initial tilt angle on next activation of crashflip mode
         isFirstTiltAngleRead = true;
@@ -321,19 +321,19 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
         }
     }
 
-    // Calculate flipPower from stick deflection with a reasonable amount of stick deadband
-    float flipPower = stickDeflectionLength > CRASH_FLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
+    // Calculate crashflipPower from stick deflection with a reasonable amount of stick deadband
+    float crashflipPower = stickDeflectionLength > CRASHFLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
 
     // calculate flipPower attenuators
-    float flipRateAttenuator = 1.0f;
-    float flipAttitudeAttenuator = 1.0f;
-    const float flipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
+    float crashflipRateAttenuator = 1.0f;
+    float crashflipAttitudeAttenuator = 1.0f;
+    const float crashflipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
 
     // disable both attenuators if the user's crashflip_rate is zero
-    if (flipRateLimit > 0) {
+    if (crashflipRateLimit > 0) {
 #ifdef USE_ACC
         // Calculate an attenuator based on change of attitude (requires Acc)
-        // with Acc, flipAttitudeAttenuator will be zero after approx 90 degree rotation, and
+        // with Acc, crashflipAttitudeAttenuator will be zero after approx 90 degree rotation, and
         // motors will stop / not spin while attitude remains more than ~90 degrees from initial attitude
         // without Acc, the user must manually center the stick, or exit crashflip mode, or disarm, to stop the motors
         // re-initialisation of crashFlip mode by arm/disarm is required to reset the initial tilt angle
@@ -343,7 +343,7 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
                 tiltAngleAtStart = tiltAngle;
                 isFirstTiltAngleRead = false;
             }
-            flipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
+            crashflipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
@@ -354,8 +354,8 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
         }
-        flipRateAttenuator = fmaxf((flipRateLimit - gyroRate) / flipRateLimit, 0.0f);
-        flipPower *= flipAttitudeAttenuator * flipRateAttenuator;
+        crashflipRateAttenuator = fmaxf((crashflipRateLimit - gyroRate) / crashflipRateLimit, 0.0f);
+        crashflipPower *= crashflipAttitudeAttenuator * crashflipRateAttenuator;
     }
 
     for (int i = 0; i < mixerRuntime.motorCount; ++i) {
@@ -372,11 +372,11 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
             }
         }
 
-        motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
+        motorOutputNormalised = MIN(1.0f, crashflipPower * motorOutputNormalised);
         float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
 
         // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-        motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
+        motorOutput = (motorOutput < motorOutputMin + CRASHFLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASHFLIP_DEADBAND);
 
         motor[i] = motorOutput;
     }
@@ -644,7 +644,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
-    if (applyFlipOverAfterCrashModeToMotors()) {
+    if (applyCrashFlipModeToMotors()) {
         return; // if crash flip mode has been applied to the motors, mixing is done
     }
 

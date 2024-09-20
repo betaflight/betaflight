@@ -148,7 +148,7 @@ int16_t magHold;
 
 static FAST_DATA_ZERO_INIT uint8_t pidUpdateCounter;
 
-static bool flipOverAfterCrashActive = false;
+static bool crashFlipModeActive = false;
 
 static timeUs_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
@@ -287,7 +287,7 @@ void updateArmingStatus(void)
         }
 
         // Clear the crashflip active status
-        flipOverAfterCrashActive = false;
+        crashFlipModeActive = false;
 
         // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
         if (!isUsingSticksForArming()) {
@@ -319,7 +319,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_THROTTLE);
         }
 
-        if (!isUpright() && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+        if (!isUpright() && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
             setArmingDisabled(ARMING_DISABLED_ANGLE);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
@@ -350,7 +350,7 @@ void updateArmingStatus(void)
 #ifdef USE_GPS_RESCUE
         if (gpsRescueIsConfigured()) {
             if (gpsRescueConfig()->allowArmingWithoutFix || (STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) ||
-            ARMING_FLAG(WAS_EVER_ARMED) || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            ARMING_FLAG(WAS_EVER_ARMED) || IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
             } else {
                 setArmingDisabled(ARMING_DISABLED_GPS);
@@ -438,14 +438,14 @@ void updateArmingStatus(void)
 void disarm(flightLogDisarmReason_e reason)
 {
     if (ARMING_FLAG(ARMED)) {
-        if (!flipOverAfterCrashActive) {
+        if (!crashFlipModeActive) {
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
         }
         DISABLE_ARMING_FLAG(ARMED);
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
-        if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || isLaunchControlActive()) {
+        if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP) || isLaunchControlActive()) {
             osdSuppressStats(true);
         }
 #endif
@@ -463,17 +463,17 @@ void disarm(flightLogDisarmReason_e reason)
 #endif
         BEEP_OFF;
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
+        if (isMotorProtocolDshot() && crashFlipModeActive && !featureIsEnabled(FEATURE_3D)) {
             dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
         }
 #endif
 #ifdef USE_PERSISTENT_STATS
-        if (!flipOverAfterCrashActive) {
+        if (!crashFlipModeActive) {
             statsOnDisarm();
         }
 #endif
 
-        flipOverAfterCrashActive = false;
+        crashFlipModeActive = false;
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
@@ -500,7 +500,7 @@ void tryArm(void)
 #ifdef USE_DSHOT
         if (cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs()) < DSHOT_BEACON_GUARD_DELAY_US) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
-                if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
 #ifdef USE_LAUNCH_CONTROL
                 } else if (canUseLaunchControl()) {
@@ -524,15 +524,15 @@ void tryArm(void)
             }
 #endif
 
-            if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
+            if (isModeActivationConditionPresent(BOXCRASHFLIP)) {
                 // Set motor spin direction
-                if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
-                    flipOverAfterCrashActive = false;
+                if (!(IS_RC_MODE_ACTIVE(BOXCRASHFLIP) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
+                    crashFlipModeActive = false;
                     if (!featureIsEnabled(FEATURE_3D)) {
                         dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
                     }
                 } else {
-                    flipOverAfterCrashActive = true;
+                    crashFlipModeActive = true;
 #ifdef USE_RUNAWAY_TAKEOFF
                     runawayTakeoffCheckDisabled = false;
 #endif
@@ -545,7 +545,7 @@ void tryArm(void)
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
-        if (!flipOverAfterCrashActive && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
+        if (!crashFlipModeActive && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
             if (launchControlState == LAUNCH_CONTROL_DISABLED) {  // only activate if it hasn't already been triggered
                 launchControlState = LAUNCH_CONTROL_ACTIVE;
             }
@@ -807,7 +807,7 @@ bool processRx(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
-        && !flipOverAfterCrashActive
+        && !crashFlipModeActive
         && !runawayTakeoffTemporarilyDisabled
         && !isFixedWing()) {
 
@@ -960,15 +960,15 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #ifdef USE_DSHOT
     /* Enable beep warning when the crashflip mode is active */
-    if (flipOverAfterCrashActive) {
-        beeper(BEEPER_CRASH_FLIP_MODE);
-        if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+    if (crashFlipModeActive) {
+        beeper(BEEPER_CRASHFLIP_MODE);
+        if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
             // user reverted crashFlip switch while armed and in crashFlip mode
             // if armed, and if throttle < min, tryArm() will immediately enter armed (idle) state
             // if small angle is 180, motors will spin at idle regardless of attitude of the quad
             // if motors spin freely, pilot can then take off without disarm/re-arm being required
             // if throttle is > min, arming will be blocked, and a disarm-rearm cycle at throttle < min is required
-            flipOverAfterCrashActive = false;
+            crashFlipModeActive = false;
         }
     }
 #endif
@@ -1139,7 +1139,7 @@ static FAST_CODE_NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
         && !isFixedWing()
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
-        && !flipOverAfterCrashActive
+        && !crashFlipModeActive
         && !runawayTakeoffTemporarilyDisabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable Runaway Takeoff triggering if GPS Rescue is active
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
@@ -1334,9 +1334,9 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());
 }
 
-bool isFlipOverAfterCrashActive(void)
+bool isCrashFlipModeActive(void)
 {
-    return flipOverAfterCrashActive;
+    return crashFlipModeActive;
 }
 
 timeUs_t getLastDisarmTimeUs(void)
