@@ -64,7 +64,7 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
-const char CRASH_FLIP_WARNING[] = "> CRASH FLIP <";
+const char CRASHFLIP_WARNING[] = "> CRASH FLIP <";
 
 void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 {
@@ -136,11 +136,11 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
     // Warn when in flip over after crash mode
     if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
-        if (isFlipOverAfterCrashActive()) { // if was armed in crash flip mode
-            tfp_sprintf(warningText, CRASH_FLIP_WARNING);
+        if (isFlipOverAfterCrashActive()) { // if was armed in crashflip mode
+            tfp_sprintf(warningText, CRASHFLIP_WARNING);
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;
-        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crash flip mode is activated
+        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crashflip mode is activated (not allowed / can't happen)
             tfp_sprintf(warningText, "CRASH FLIP SWITCH");
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;

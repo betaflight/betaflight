@@ -282,10 +282,10 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
 
     if (!isFlipOverAfterCrashActive()) {
 #ifdef USE_ACC
-        // while not in crashFlip mode, require a tilt angle read when crashFlip activates
+        // trigger the capture of initial tilt angle on next activation of crashflip mode
         isFirstTiltAngleRead = true;
 #endif
-        // do nothing else, and allow mixTable() to continue normally
+        // signal that crashflip mode is off
         return false;
     }
 
@@ -332,15 +332,13 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
     // disable both attenuators if the user's crashflip_rate is zero
     if (flipRateLimit > 0) {
 #ifdef USE_ACC
-        // Calculate the attitude-based attenuator (requires Acc)
-        // with Acc, flipAttitudeAttenuator will be zero after approx 90 degree rotation
-        // hence motors will be stopped while attitude remains more than ~90 degrees from initial attitude
-        // if flipping on the ground, that's exactly what we want; auto-off once flipped.
-        // if stuck in a tree, and is still stuck despite rotating...
-        // re-initialisation of crashFlip mode will be required to be able to drive the motors again
+        // Calculate an attenuator based on change of attitude (requires Acc)
+        // with Acc, flipAttitudeAttenuator will be zero after approx 90 degree rotation, and
+        // motors will stop / not spin while attitude remains more than ~90 degrees from initial attitude
         // without Acc, the user must manually center the stick, or exit crashflip mode, or disarm, to stop the motors
+        // re-initialisation of crashFlip mode by arm/disarm is required to reset the initial tilt angle
         if (sensors(SENSOR_ACC)) {
-            const float tiltAngle = getCosTiltAngle();  // -1 if inverted, 0 when 90°, 1 when flat and upright
+            const float tiltAngle = getCosTiltAngle();  // -1 if flat inverted, 0 when 90° (on edge), +1 when flat and upright
             if (isFirstTiltAngleRead) {
                 tiltAngleAtStart = tiltAngle;
                 isFirstTiltAngleRead = false;
@@ -348,18 +346,15 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
             flipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
         }
 #endif // USE_ACC
-        // Calculate attenuation factor for rate of rotation
-        // get the gyro rate for the fastest axis, probably doesn't matter which one
+        // Calculate an attenuation factor based on rate of rotation... note:
         // if driving roll or pitch, quad usually turns on that axis, but if one motor sticks, could be a diagonal rotation
         // if driving diagonally, the turn could be either roll or pitch
-        // if driving yaw, typically one motor sticks, and the quad yaws only a little then flips diagonally
+        // if driving yaw, typically one motor sticks, and the quad yaws a little then flips diagonally
         float gyroRate = 0.0f;
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
         }
         flipRateAttenuator = fmaxf((flipRateLimit - gyroRate) / flipRateLimit, 0.0f);
-        // it's possible that fminf(flipAttitudeAttenuator, flipRateAttenuator) may work better for low power quads
-        // but the multiply works very well for higher power quads since it cuts motors back fast
         flipPower *= flipAttitudeAttenuator * flipRateAttenuator;
     }
 
@@ -386,7 +381,7 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
         motor[i] = motorOutput;
     }
 
-    // true forces mixTable() to exit after the crashFlip code is complete
+    // signal that crashflip mode has been applied to motors
     return true;
 }
 
@@ -650,7 +645,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     if (applyFlipOverAfterCrashModeToMotors()) {
-        return;
+        return; // if crash flip mode has been applied to the motors, mixing is done
     }
 
     const bool launchControlActive = isLaunchControlActive();
