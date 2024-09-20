@@ -93,7 +93,6 @@ static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cb
     devconf->extiTag = extiTag;
     devconf->alignment = alignment;
     devconf->customAlignment = customAlignment;
-    devconf->clkIn = IO_TAG(GYRO_CLKIN_PIN);
 }
 #endif
 

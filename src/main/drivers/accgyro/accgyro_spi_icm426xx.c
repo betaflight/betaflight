@@ -51,6 +51,7 @@
 #include "drivers/pwm_output.h"
 
 #include "sensors/gyro.h"
+#include "pg/gyrodev.h"
 
 // Allows frequency to be set from the compile line EXTRA_FLAGS by adding e.g.
 // -D'ICM426XX_CLOCK=12000000'. If using the configurator this simply becomes
@@ -179,13 +180,14 @@ static aafConfig_t aafLUT42605[AAF_CONFIG_COUNT] = {  // see table in section 5.
 #if defined(USE_GYRO_CLKIN)
 static pwmOutputPort_t pwmGyroClk = {0};
 
-static bool initExternalClock(void)
+static bool initExternalClock(const extDevice_t *dev)
 {
-    const ioTag_t tag = IO_TAG(GYRO_CLKIN_PIN);
+    if (&gyro.gyroSensor1.gyroDev.dev != dev) {
+        // only gyro1 clkin supported. TODO: support two gyros, must be implemented in the next PR
+        return false;
+    }
+    const ioTag_t tag = gyroDeviceConfig(0)->clkIn;
     const IO_t io = IOGetByTag(tag);
-
-    pwmGyroClk.io = io;
-    pwmGyroClk.enabled = true;
 
     const timerHardware_t *timer = timerAllocate(tag, OWNER_GYRO_CLKIN, 0);
     if (!timer) {
@@ -193,10 +195,13 @@ static bool initExternalClock(void)
         return false;
     }
 
+    pwmGyroClk.io = io;
+    pwmGyroClk.enabled = true;
+
     IOInit(io, OWNER_GYRO_CLKIN, 0);
     IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
 
-    uint32_t pwmFrequency = 32000;  // PWM frequency set to 32 kHz
+    uint32_t pwmFrequency = 32000;  // PWM frequency set to 32 kHz TODO: move to config: available freq 31-50kHz
     const uint32_t clock = timerClock(timer->tim);  // Get the timer clock frequency
 
     const uint16_t period = clock / pwmFrequency;
@@ -215,7 +220,7 @@ static bool initExternalClock(void)
 
 static void icm426xxEnableExternalClock(const extDevice_t *dev)
 {
-    if (initExternalClock()) {
+    if (initExternalClock(dev)) {
         uint8_t cfg1 = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG1);
         cfg1 |= ICM426XX_INTF_CONFIG1_CLKIN; // enable CLKIN for external clock
         spiWriteReg(dev, ICM426XX_INTF_CONFIG1, cfg1);
