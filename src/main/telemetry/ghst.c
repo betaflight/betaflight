@@ -209,7 +209,7 @@ typedef enum {
     GHST_FRAME_START_INDEX = 0,
     GHST_FRAME_PACK_INDEX = GHST_FRAME_START_INDEX, // Battery (Pack) data
     GHST_FRAME_GPS_PRIMARY_INDEX,                   // GPS, primary values (Lat, Long, Alt)
-    GHST_FRAME_GPS_SECONDARY_INDEX,                 // GPS, secondary values (Sat Count, HDOP, etc.)
+    GHST_FRAME_GPS_SECONDARY_INDEX,                 // GPS, secondary values (Sat Count, DOP, etc.)
     GHST_FRAME_MAGBARO_INDEX,                       // Magnetometer/Baro values
     GHST_SCHEDULE_COUNT_MAX
 } ghstFrameTypeIndex_e;

@@ -10,8 +10,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 | Date  | Event |
 | - | - |
-| 01-11-2022 | Firmware 4.4 Feature freeze |
-| 29-01-2023 | Firmware 4.4 Release |
+| 28-04-2024 | Firmware 4.5 Release |
 
 
 ## News
@@ -20,7 +19,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 The following new requirements for pull requests adding new targets or modifying existing targets are put in place from now on:
 
-1. Read the [hardware specification](https://betaflight.com/docs/manufacturer/manufacturer-design-guidelines)
+1. Read the [hardware specification](https://betaflight.com/docs/development/manufacturer/manufacturer-design-guidelines)
 
 2. No new F3 based targets will be accepted;
 
@@ -120,7 +119,7 @@ https://github.com/betaflight/betaflight/releases
 
 Betaflight is software that is **open source** and is available free of charge without warranty to all users.
 
-Betaflight is forked from Cleanflight, so thanks goes to all those whom have contributed to Cleanflight and its origins.
+Betaflight is forked from Cleanflight, so thanks goes to all those who have contributed to Cleanflight and its origins.
 
 Origins for this fork (Thanks!):
 * **Alexinparis** (for MultiWii),

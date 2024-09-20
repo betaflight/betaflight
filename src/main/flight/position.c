@@ -99,7 +99,7 @@ void calculateEstimatedAltitude(void)
     static float newBaroAltOffsetCm = 0.0f;
 
     float baroAltCm = 0.0f;
-    float gpsTrust = 0.3f; // if no hDOP value, use 0.3
+    float gpsTrust = 0.3f; // if no pDOP value, use 0.3, intended range 0-1;
     bool haveBaroAlt = false; // true if baro exists and has been calibrated on power up
     bool haveGpsAlt = false; // true if GPS is connected and while it has a 3D fix, set each run to false
 
@@ -116,8 +116,10 @@ void calculateEstimatedAltitude(void)
         // On loss of 3D fix, gpsAltCm remains at the last value, haveGpsAlt becomes false, and gpsTrust goes to zero.
         gpsAltCm = gpsSol.llh.altCm; // static, so hold last altitude value if 3D fix is lost to prevent fly to moon
         haveGpsAlt = true; // stays false if no 3D fix
-        if (gpsSol.dop.hdop != 0) {
-            gpsTrust = 100.0f / gpsSol.dop.hdop;
+        if (gpsSol.dop.pdop != 0) {
+            // pDOP of 1.0 is good.  100 is very bad.  Our gpsSol.dop.pdop values are *100
+            // When pDOP is a value less than 3.3, GPS trust will be stronger than default.
+            gpsTrust = 100.0f / gpsSol.dop.pdop;
             // *** TO DO - investigate if we should use vDOP or vACC with UBlox units;
         }
         // always use at least 10% of other sources besides gps if available
@@ -208,7 +210,6 @@ void calculateEstimatedAltitude(void)
     DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
-    DEBUG_SET(DEBUG_BARO, 3, lrintf(baroAltCm / 10.0f));
 }
 #endif //defined(USE_BARO) || defined(USE_GPS)
 
@@ -221,6 +222,13 @@ float getAltitude(void)
 {
     return zeroedAltitudeCm;
 }
+
+#ifdef USE_GPS
+float getAltitudeAsl(void)
+{
+    return gpsSol.llh.altCm;
+}
+#endif
 
 #ifdef USE_VARIO
 int16_t getEstimatedVario(void)

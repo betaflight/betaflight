@@ -77,7 +77,6 @@
 #include "io/gps.h"
 #include "io/pidaudio.h"
 #include "io/serial.h"
-#include "io/servos.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
@@ -297,10 +296,10 @@ void updateArmingStatus(void)
 
             if (justGotRxBack && IS_RC_MODE_ACTIVE(BOXARM)) {
                 // If the RX has just started to receive a signal again and the arm switch is on, apply arming restriction
-                setArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+                setArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
             } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
                 // If RX signal is OK and the arm switch is off, remove arming restriction
-                unsetArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+                unsetArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
             }
 
             hadRx = haveRx;
@@ -324,11 +323,13 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        if (getAverageSystemLoadPercent() > LOAD_PERCENTAGE_ONE) {
+#if defined(USE_LATE_TASK_STATISTICS)
+        if ((getCpuPercentageLate() > schedulerConfig()->cpuLatePercentageLimit)) {
             setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_LOAD);
         }
+#endif // USE_LATE_TASK_STATISTICS
 
         if (isCalibrating()) {
             setArmingDisabled(ARMING_DISABLED_CALIBRATING);
@@ -360,13 +361,12 @@ void updateArmingStatus(void)
         }
 #endif
 
-#ifdef USE_RPM_FILTER
-        // USE_RPM_FILTER will only be defined if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
-        // If the RPM filter is enabled and any motor isn't providing telemetry, then disable arming
-        if (isRpmFilterEnabled() && !isDshotTelemetryActive()) {
-            setArmingDisabled(ARMING_DISABLED_RPMFILTER);
+#ifdef USE_DSHOT_TELEMETRY
+        // If Dshot Telemetry is enabled and any motor isn't providing telemetry, then disable arming
+        if (useDshotTelemetry && !isDshotTelemetryActive()) {
+            setArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
         } else {
-            unsetArmingDisabled(ARMING_DISABLED_RPMFILTER);
+            unsetArmingDisabled(ARMING_DISABLED_DSHOT_TELEM);
         }
 #endif
 
@@ -514,7 +514,7 @@ void tryArm(void)
         if (isMotorProtocolDshot()) {
 #if defined(USE_ESC_SENSOR) && defined(USE_DSHOT_TELEMETRY)
             // Try to activate extended DSHOT telemetry only if no esc sensor exists and dshot telemetry is active
-            if (!featureIsEnabled(FEATURE_ESC_SENSOR) && motorConfig()->dev.useDshotTelemetry) {
+            if (!featureIsEnabled(FEATURE_ESC_SENSOR) && useDshotTelemetry) {
                 dshotCleanTelemetryData();
                 if (motorConfig()->dev.useDshotEdt) {
                     dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE, DSHOT_CMD_TYPE_INLINE);
@@ -553,6 +553,9 @@ void tryArm(void)
 #ifdef USE_OSD
         osdSuppressStats(false);
 #endif
+#ifdef USE_RPM_LIMIT
+        mixerResetRpmLimiter();
+#endif
         ENABLE_ARMING_FLAG(ARMED);
 
 #ifdef USE_RC_STATS
@@ -579,9 +582,10 @@ void tryArm(void)
         lastArmingDisabledReason = 0;
 
 #ifdef USE_GPS
-        GPS_reset_home_position();
         //beep to indicate arming
         if (featureIsEnabled(FEATURE_GPS)) {
+            GPS_reset_home_position();
+
             if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
                 beeper(BEEPER_ARMING_GPS_FIX);
             } else {
@@ -770,30 +774,25 @@ bool processRx(timeUs_t currentTimeUs)
         failsafeStartMonitoring();
     }
 
-    const throttleStatus_e throttleStatus = calculateThrottleStatus();
+    const bool throttleActive = calculateThrottleStatus() != THROTTLE_LOW;
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
-
     const bool launchControlActive = isLaunchControlActive();
 
     if (airmodeIsEnabled() && ARMING_FLAG(ARMED) && !launchControlActive) {
+        // once throttle exceeds activate threshold, airmode latches active until disarm
         if (throttlePercent >= rxConfig()->airModeActivateThreshold) {
-            airmodeIsActivated = true; // Prevent iterm from being reset
+            airmodeIsActivated = true;
         }
     } else {
         airmodeIsActivated = false;
     }
 
-    /* In airmode iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
-     This is needed to prevent iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
-    if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated && !launchControlActive) {
-        pidSetItermReset(true);
-        if (currentPidProfile->pidAtMinThrottle)
-            pidStabilisationState(PID_STABILISATION_ON);
-        else
-            pidStabilisationState(PID_STABILISATION_OFF);
-    } else {
+    if (ARMING_FLAG(ARMED) && (airmodeIsActivated || throttleActive || launchControlActive || isFixedWing())) {
         pidSetItermReset(false);
         pidStabilisationState(PID_STABILISATION_ON);
+    } else {
+        pidSetItermReset(true);
+        pidStabilisationState(currentPidProfile->pidAtMinThrottle ? PID_STABILISATION_ON : PID_STABILISATION_OFF);
     }
 
 #ifdef USE_RUNAWAY_TAKEOFF
@@ -816,7 +815,7 @@ bool processRx(timeUs_t currentTimeUs)
         //   - sticks are active and have deflection greater than runaway_takeoff_deactivate_stick_percent
         //   - pidSum on all axis is less then runaway_takeoff_deactivate_pidlimit
         bool inStableFlight = false;
-        if (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled() || (throttleStatus != THROTTLE_LOW)) { // are motors running?
+        if (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled() || throttleActive) { // are motors running?
             const uint8_t lowThrottleLimit = pidConfig()->runaway_takeoff_deactivate_throttle;
             const uint8_t midThrottleLimit = constrain(lowThrottleLimit * 2, lowThrottleLimit * 2, RUNAWAY_TAKEOFF_HIGH_THROTTLE_PERCENT);
             if ((((throttlePercent >= lowThrottleLimit) && areSticksActive(RUNAWAY_TAKEOFF_DEACTIVATE_STICK_PERCENT)) || (throttlePercent >= midThrottleLimit))
@@ -1271,8 +1270,10 @@ FAST_CODE bool pidLoopReady(void)
 
 FAST_CODE void taskFiltering(timeUs_t currentTimeUs)
 {
+#ifdef USE_DSHOT_TELEMETRY
+    updateDshotTelemetry();  // decode and update Dshot telemetry
+#endif
     gyroFiltering(currentTimeUs);
-
 }
 
 // Function for loop trigger

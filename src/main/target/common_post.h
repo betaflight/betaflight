@@ -51,13 +51,13 @@
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
-// Handle case where we'd prefer code to be in ITCM, but it won't fit on the F745
-#ifdef STM32F745xx
-#define FAST_CODE_PREF
-#else
-#define FAST_CODE_PREF                  __attribute__((section(".tcm_code")))
+// Handle case where we'd prefer code to be in ITCM, but it won't fit on the device
+#ifndef FAST_CODE_PREF
+#define FAST_CODE_PREF              FAST_CODE
 #endif
+
 #define FAST_CODE_NOINLINE          NOINLINE
+
 #else
 #define FAST_CODE
 #define FAST_CODE_PREF
@@ -98,6 +98,9 @@
 #endif
 #ifndef USE_MAG_QMC5883
 #define USE_MAG_QMC5883
+#endif
+#ifndef USE_MAG_LIS2MDL
+#define USE_MAG_LIS2MDL
 #endif
 #ifndef USE_MAG_LIS3MDL
 #define USE_MAG_LIS3MDL
@@ -194,6 +197,7 @@
 
 #if !defined(USE_SERIALRX)
 #undef USE_SERIALRX_CRSF
+#undef USE_SERIALRX_GHST
 #undef USE_SERIALRX_IBUS
 #undef USE_SERIALRX_JETIEXBUS
 #undef USE_SERIALRX_SBUS
@@ -216,6 +220,7 @@
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_SMARTPORT
 #undef USE_TELEMETRY_SRXL
+#endif
 
 #ifdef USE_SERIALRX_FPORT
 #ifndef USE_TELEMETRY
@@ -223,7 +228,6 @@
 #endif
 #ifndef USE_TELEMETRY_SMARTPORT
 #define USE_TELEMETRY_SMARTPORT
-#endif
 #endif
 #endif
 
@@ -261,8 +265,8 @@
 #undef USE_TELEMETRY_IBUS_EXTENDED
 #endif
 
-// If USE_SERIALRX_SPEKTRUM was dropped by a target, drop all related options
-#ifndef USE_SERIALRX_SPEKTRUM
+// If USE_SERIALRX_SPEKTRUM or SERIALRX_SRXL2 was dropped by a target, drop all related options
+#if !defined(USE_SERIALRX_SPEKTRUM) && !defined(USE_SERIALRX_SRXL2)
 #undef USE_SPEKTRUM_BIND
 #undef USE_SPEKTRUM_BIND_PLUG
 #undef USE_SPEKTRUM_REAL_RSSI
@@ -271,14 +275,16 @@
 #undef USE_SPEKTRUM_VTX_CONTROL
 #undef USE_SPEKTRUM_VTX_TELEMETRY
 #undef USE_TELEMETRY_SRXL
-#endif
+#endif // !defined(USE_SERIALRX_SPEKTRUM) && !defined(USE_SERIALRX_SRXL2)
 
 #if !defined(USE_CMS) || !defined(USE_TELEMETRY_SRXL)
 #undef USE_SPEKTRUM_CMS_TELEMETRY
 #endif
 
 #if defined(USE_SERIALRX_SBUS) || defined(USE_SERIALRX_FPORT)
+#if !defined(USE_SBUS_CHANNELS)
 #define USE_SBUS_CHANNELS
+#endif
 #endif
 
 #if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF) && !defined(USE_TELEMETRY_GHST)
@@ -309,11 +315,15 @@
 #endif
 
 #ifdef USE_FLASH
+#if !defined(USE_FLASH_TOOLS)
 #define USE_FLASH_TOOLS
+#endif
+#if !defined(USE_FLASHFS)
 #define USE_FLASHFS
 #endif
+#endif
 
-#if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV)) && !defined(USE_FLASH_M25P16)
+#if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_PY25Q128HA)) && !defined(USE_FLASH_M25P16)
 #define USE_FLASH_M25P16
 #endif
 
@@ -321,24 +331,36 @@
 #define USE_FLASH_W25N01G
 #endif
 
-#if (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)) && !defined(USE_FLASH_W25M)
+#if defined(USE_FLASH_W25N02K) || defined(USE_FLASH_W25N01G)
+#define USE_FLASH_W25N
+#endif
+
+#if (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N)) && !defined(USE_FLASH_W25M)
 #define USE_FLASH_W25M
 #endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25Q128FV)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV)
+#if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
+#endif
 
-#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25M02G))
+#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25M02G))
+#if !defined(USE_FLASH_SPI)
 #define USE_FLASH_SPI
 #endif
-
-#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N01G))
-#define USE_FLASH_QUADSPI
 #endif
 
-#if defined(USE_OCTOSPI) && (defined(USE_FLASH_W25Q128FV))
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N))
+#if !defined(USE_FLASH_QUADSPI)
+#define USE_FLASH_QUADSPI
+#endif
+#endif
+
+#if defined(USE_OCTOSPI) && defined(USE_FLASH_W25Q128FV)
+#if !defined(USE_FLASH_OCTOSPI)
 #define USE_FLASH_OCTOSPI
+#endif
 #endif
 
 #ifndef USE_FLASH_CHIP
@@ -392,7 +414,9 @@
 #endif
 #endif
 
-#if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270)
+#if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
+    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_BMI160) \
+    || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
@@ -482,6 +506,7 @@
 #ifndef USE_DSHOT_TELEMETRY
 #undef USE_RPM_FILTER
 #undef USE_DSHOT_TELEMETRY_STATS
+#undef USE_DYN_IDLE
 #endif
 
 #if !defined(USE_BOARD_INFO)
@@ -568,10 +593,6 @@ extern uint8_t __config_end;
 #define RAM_CODE                   __attribute__((section(".ram_code")))
 #endif
 
-#if !defined(USE_RPM_FILTER)
-#undef USE_DYN_IDLE
-#endif
-
 #ifndef USE_ITERM_RELAX
 #undef USE_ABSOLUTE_CONTROL
 #endif
@@ -592,7 +613,7 @@ extern uint8_t __config_end;
 #endif
 #endif
 
-#if defined(USE_RX_SPI) || defined(USE_SERIALRX_SRXL2)
+#if defined(USE_RX_SPI) || defined(USE_SERIALRX_SRXL2) || defined(USE_SERIALRX_CRSF)
 #define USE_RX_BIND
 #endif
 
@@ -604,3 +625,17 @@ extern uint8_t __config_end;
 #ifdef USE_GPS_LAP_TIMER
 #define USE_CMS_GPS_LAP_TIMER_MENU
 #endif
+
+// Enable PINIO by default if any PIN is defined
+#if !defined(USE_PINIO) && (defined(PINIO1_BOX) || defined(PINIO2_BOX) || defined(PINIO3_BOX) || defined(PINIO4_BOX))
+#define USE_PINIO
+#endif
+
+#ifdef USE_PINIO
+#ifndef USE_PINIOBOX
+#define USE_PINIOBOX
+#endif
+#ifndef USE_PIN_PULL_UP_DOWN
+#define USE_PIN_PULL_UP_DOWN
+#endif
+#endif // USE_PINIO

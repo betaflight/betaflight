@@ -89,8 +89,8 @@ void gpsLapTimerEndSetGate(void)
 
 void gpsLapTimerNewGpsData(void)
 {
-    GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &gpsLapTimerData.gateLocation.lat, &gpsLapTimerData.gateLocation.lon, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
-    
+    GPS_distance_cm_bearing(&gpsSol.llh, &gpsLapTimerData.gateLocation, false, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
+
     if (settingGate) {
         gpsLapTimerProcessSettingGate();
         return;
@@ -120,6 +120,7 @@ void gpsLapTimerNewGpsData(void)
                 // Not the first time through the gate
                 if (gpsLapTimerData.timerRunning) {
                     uint32_t lapTime = minDistanceTime - gpsLapTimerData.timeOfLastLap;
+                    gpsLapTimerData.numberOfLapsRecorded++;
 
                     // Update best lap time
                     if (gpsLapTimerData.numberOfLapsRecorded >= 1 && (lapTime < gpsLapTimerData.bestLapTime || gpsLapTimerData.bestLapTime == 0)) {

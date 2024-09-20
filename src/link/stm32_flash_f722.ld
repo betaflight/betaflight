@@ -49,6 +49,6 @@ REGION_ALIAS("RAM", SRAM1)
 
 /* Put various bits and bobs of data into the free space after the vector table in sector 0 to save flash space. */
 
-REGION_ALIAS("MOVABLE_FLASH", AXIM_FLASH)
+REGION_ALIAS("MOVABLE_FLASH", AXIM_FLASH1)
 
 INCLUDE "stm32_flash_f7_split.ld"

@@ -28,6 +28,7 @@
 
 #include "cli/cli.h"
 
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/time.h"
@@ -252,7 +253,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
     return NULL;
 }
 
-serialPortUsage_t *findSerialPortUsageByPort(serialPort_t *serialPort)
+serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
 {
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
@@ -324,9 +325,8 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP)
 #endif
 
-bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
+bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 {
-    UNUSED(serialConfigToCheck);
     /*
      * rules:
      * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
@@ -340,6 +340,20 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
 
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         const serialPortConfig_t *portConfig = &serialConfigToCheck->portConfigs[index];
+
+#ifdef USE_SOFTSERIAL
+        if ((portConfig->identifier == SERIAL_PORT_SOFTSERIAL1) ||
+            (portConfig->identifier == SERIAL_PORT_SOFTSERIAL2)) {
+            // Ensure MSP or serial RX is not enabled on soft serial ports
+            serialConfigToCheck->portConfigs[index].functionMask &= ~(FUNCTION_MSP | FUNCTION_RX_SERIAL);
+            // Ensure that the baud rate on soft serial ports is limited to 19200
+#ifndef USE_OVERRIDE_SOFTSERIAL_BAUDRATE
+            serialConfigToCheck->portConfigs[index].gps_baudrateIndex = constrain(portConfig->gps_baudrateIndex, BAUD_AUTO, BAUD_19200);
+            serialConfigToCheck->portConfigs[index].blackbox_baudrateIndex = constrain(portConfig->blackbox_baudrateIndex, BAUD_AUTO, BAUD_19200);
+            serialConfigToCheck->portConfigs[index].telemetry_baudrateIndex = constrain(portConfig->telemetry_baudrateIndex, BAUD_AUTO, BAUD_19200);
+#endif
+        }
+#endif // USE_SOFTSERIAL
 
         if (portConfig->functionMask & FUNCTION_MSP) {
             mspPortCount++;
@@ -422,6 +436,13 @@ serialPort_t *openSerialPort(
     }
 
     serialPort_t *serialPort = NULL;
+
+#if defined(USE_SOFTSERIAL) && !defined(USE_OVERRIDE_SOFTSERIAL_BAUDRATE)
+    if (((identifier == SERIAL_PORT_SOFTSERIAL1) || (identifier == SERIAL_PORT_SOFTSERIAL2)) && (baudRate > 19200)) {
+        // Don't continue if baud rate requested is higher then the limit set on soft serial ports
+        return NULL;
+    }
+#endif
 
     switch (identifier) {
 #ifdef USE_VCP
@@ -544,9 +565,10 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
         }
 #endif
 #ifdef USE_SOFTSERIAL
-        else if (!softserialEnabled &&
-            ((softSerialPinConfig()->ioTagTx[SOFTSERIAL1] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) ||
-            (softSerialPinConfig()->ioTagTx[SOFTSERIAL2] || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2)))
+        else if (((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) &&
+                   (!softserialEnabled || !(softSerialPinConfig()->ioTagRx[SOFTSERIAL1] || softSerialPinConfig()->ioTagTx[SOFTSERIAL1]))) ||
+                  ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2) &&
+                   (!softserialEnabled || !(softSerialPinConfig()->ioTagRx[SOFTSERIAL2] || softSerialPinConfig()->ioTagTx[SOFTSERIAL2]))))
 #else
         else if (
             (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1) ||

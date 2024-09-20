@@ -27,6 +27,7 @@
 #include "pg/pg.h"
 #include "sensors/sensors.h"
 
+#define TASK_COMPASS_RATE_HZ 40 // the base mag update rate; faster intervals will apply for higher ODR mags
 
 // Type of magnetometer used/detected
 typedef enum {
@@ -36,12 +37,14 @@ typedef enum {
     MAG_AK8975 = 3,
     MAG_AK8963 = 4,
     MAG_QMC5883 = 5,
-    MAG_LIS3MDL = 6,
-    MAG_MPU925X_AK8963 = 7,
-    MAG_IST8310 = 8
+    MAG_LIS2MDL = 6,
+    MAG_LIS3MDL = 7,
+    MAG_MPU925X_AK8963 = 8,
+    MAG_IST8310 = 9
 } magSensor_e;
 
 typedef struct mag_s {
+    bool isNewMagADCFlag;
     float magADC[XYZ_AXIS_COUNT];
 } mag_t;
 
@@ -60,6 +63,14 @@ typedef struct compassConfig_s {
     sensorAlignment_t mag_customAlignment;
 } compassConfig_t;
 
+typedef struct compassBiasEstimator_s {
+    float lambda_min, lambda;
+    float b[3];
+    float theta[4];
+    float U[4][4];
+    float D[4];
+} compassBiasEstimator_t;
+
 PG_DECLARE(compassConfig_t, compassConfig);
 
 bool compassIsHealthy(void);
@@ -68,4 +79,6 @@ bool compassInit(void);
 void compassPreInit(void);
 void compassStartCalibration(void);
 bool compassIsCalibrationComplete(void);
-
+void compassBiasEstimatorInit(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
+void compassBiasEstimatorUpdate(compassBiasEstimator_t *compassBiasEstimator, const float lambda_min, const float p0);
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag);

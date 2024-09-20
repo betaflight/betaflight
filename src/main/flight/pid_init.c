@@ -257,7 +257,58 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
     pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
+#ifdef USE_WING
+    pt2FilterInit(&pidRuntime.tpaLpf, pt2FilterGainFromDelay(pidProfile->tpa_delay_ms / 1000.0f, pidRuntime.dT));
+    pidRuntime.tpaGravityThr0 = pidProfile->tpa_gravity_thr0 / 100.0f;
+    pidRuntime.tpaGravityThr100 = pidProfile->tpa_gravity_thr100 / 100.0f;
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        pidRuntime.spa[axis] = 1.0f; // 1.0 = no PID attenuation in runtime. 0 - full attenuation (no PIDs)
+    }
+#endif
 }
+
+
+#ifdef USE_ADVANCED_TPA
+float tpaCurveHyperbolicFunction(float x, void *args)
+{
+    const pidProfile_t *pidProfile = (const pidProfile_t*)args;
+
+    const float thrStall = pidProfile->tpa_curve_stall_throttle / 100.0f;
+    const float pidThr0 = pidProfile->tpa_curve_pid_thr0 / 100.0f;
+
+    if (x <= thrStall) {
+        return pidThr0;
+    }
+
+    const float expoDivider = pidProfile->tpa_curve_expo / 10.0f - 1.0f;
+    const float expo = (fabsf(expoDivider) > 1e-3f) ?  1.0f / expoDivider : 1e3f; // avoiding division by zero for const float base = ...
+
+    const float pidThr100 = pidProfile->tpa_curve_pid_thr100 / 100.0f;
+    const float xShifted = scaleRangef(x, thrStall, 1.0f, 0.0f, 1.0f);
+    const float base = (1 + (powf(pidThr0 / pidThr100, 1.0f / expo) - 1) * xShifted);
+    const float divisor = powf(base, expo);
+
+    return pidThr0 / divisor;
+}
+
+void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
+{
+    pwlInitialize(&pidRuntime.tpaCurvePwl, pidRuntime.tpaCurvePwl_yValues, TPA_CURVE_PWL_SIZE, 0.0f, 1.0f);
+    pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicFunction, (void*)pidProfile);
+}
+
+void tpaCurveInit(const pidProfile_t *pidProfile)
+{
+        switch (pidProfile->tpa_curve_type) {
+        case TPA_CURVE_HYPERBOLIC:
+            tpaCurveHyperbolicInit(pidProfile);
+            return;
+        case TPA_CURVE_CLASSIC:
+        default:
+            return;
+        }
+}
+#endif // USE_ADVANCED_TPA
 
 void pidInit(const pidProfile_t *pidProfile)
 {
@@ -266,6 +317,9 @@ void pidInit(const pidProfile_t *pidProfile)
     pidInitConfig(pidProfile);
 #ifdef USE_RPM_FILTER
     rpmFilterInit(rpmFilterConfig(), gyro.targetLooptime);
+#endif
+#ifdef USE_ADVANCED_TPA
+    tpaCurveInit(pidProfile);
 #endif
 }
 
@@ -308,8 +362,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashTimeDelayUs = pidProfile->crash_delay * 1000;
     pidRuntime.crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
     pidRuntime.crashRecoveryRate = pidProfile->crash_recovery_rate;
-    pidRuntime.crashGyroThreshold = pidProfile->crash_gthreshold;
-    pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold;
+    pidRuntime.crashGyroThreshold = pidProfile->crash_gthreshold; // error in deg/s
+    pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold * 1000.0f; // gyro delta in deg/s/s * 1000 to match original 2017 intent
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
     pidRuntime.itermLimit = pidProfile->itermLimit;
@@ -403,8 +457,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
             pidRuntime.dMinPercent[axis] = 0;
         }
     }
-    pidRuntime.dMinGyroGain = pidProfile->d_min_gain * D_MIN_GAIN_FACTOR / D_MIN_LOWPASS_HZ;
-    pidRuntime.dMinSetpointGain = pidProfile->d_min_gain * D_MIN_SETPOINT_GAIN_FACTOR * pidProfile->d_min_advance * pidRuntime.pidFrequency / (100 * D_MIN_LOWPASS_HZ);
+    pidRuntime.dMinGyroGain = D_MIN_GAIN_FACTOR * pidProfile->d_min_gain / D_MIN_LOWPASS_HZ;
+    pidRuntime.dMinSetpointGain = D_MIN_SETPOINT_GAIN_FACTOR * pidProfile->d_min_gain * pidProfile->d_min_advance / 100.0f / D_MIN_LOWPASS_HZ;
     // lowpass included inversely in gain since stronger lowpass decreases peak effect
 #endif
 
@@ -418,16 +472,31 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
     pidRuntime.feedforwardSmoothFactor = 1.0f - (0.01f * pidProfile->feedforward_smooth_factor);
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
-    pidRuntime.feedforwardJitterFactorInv = 1.0f / (2.0f * pidProfile->feedforward_jitter_factor);
-    // the extra division by 2 is to average the sum of the two previous rcCommandAbs values
-    pidRuntime.feedforwardBoostFactor = 0.1f * pidProfile->feedforward_boost;
+    pidRuntime.feedforwardJitterFactorInv = 1.0f / (1.0f + pidProfile->feedforward_jitter_factor);
+    pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
+    pidRuntime.feedforwardInterpolate = !(rxRuntimeState.serialrxProvider == SERIALRX_CRSF);
+    pidRuntime.feedforwardYawHoldTime = 0.001f * pidProfile->feedforward_yaw_hold_time; // input time constant in milliseconds, converted to seconds
+    pidRuntime.feedforwardYawHoldGain = pidProfile->feedforward_yaw_hold_gain;
+    // normalise/maintain boost when time constant is small, 1.5x at 50ms, 2x at 25ms, almost 3x at 10ms
+    if (pidProfile->feedforward_yaw_hold_time < 100) {
+        pidRuntime.feedforwardYawHoldGain *= 150.0f / (float)(pidProfile->feedforward_yaw_hold_time + 50);
+    }
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
     pidRuntime.tpaBreakpoint = constrainf((pidProfile->tpa_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, 0.99f);
     // default of 1350 returns 0.35. range limited to 0 to 0.99
     pidRuntime.tpaMultiplier = (pidProfile->tpa_rate / 100.0f) / (1.0f - pidRuntime.tpaBreakpoint);
+    // it is assumed that tpaLowBreakpoint is always less than or equal to tpaBreakpoint
+    pidRuntime.tpaLowBreakpoint = constrainf((pidProfile->tpa_low_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.01f, 1.0f);
+    pidRuntime.tpaLowBreakpoint = MIN(pidRuntime.tpaLowBreakpoint, pidRuntime.tpaBreakpoint);
+    pidRuntime.tpaLowMultiplier = pidProfile->tpa_low_rate / (100.0f * pidRuntime.tpaLowBreakpoint);
+    pidRuntime.tpaLowAlways = pidProfile->tpa_low_always;
+
+    pidRuntime.useEzDisarm = pidProfile->landing_disarm_threshold > 0;
+    pidRuntime.landingDisarmThreshold = pidProfile->landing_disarm_threshold * 10.0f;
+
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)

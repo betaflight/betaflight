@@ -24,7 +24,7 @@
 
 #include "pg/pg.h"
 
-#define GET_FRAME_ERR_LPF_FREQUENCY(period) (1 / (period / 10.0f))
+#define GET_FRAME_ERR_LPF_FREQUENCY(period) (10.0f / period)  // period in deciseconds (0.1s)
 #define FRAME_ERR_RESAMPLE_US 100000
 
 typedef struct rxConfig_s {
@@ -62,6 +62,7 @@ typedef struct rxConfig_s {
     uint8_t srxl2_baud_fast;                   // Select Spektrum SRXL2 fast baud rate
     uint8_t sbus_baud_fast;                    // Select SBus fast baud rate
     uint32_t msp_override_channels_mask;       // Channels to override when the MSP override mode is enabled
+    uint8_t msp_override_failsafe;             // if false then extra RC link is always required in msp_override mode, true - allows control via msp_override without extra RC link (autonomous use case)
     uint8_t crsf_use_negotiated_baud;          // Use negotiated baud rate for CRSF V3
 } rxConfig_t;
 

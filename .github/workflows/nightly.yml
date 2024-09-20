@@ -10,7 +10,7 @@ env:
     This is an automated development build.
     It may be unstable and result in craft loss or damage.
     **Use only for testing.**
-  release_notes: This is a release build. 
+  release_notes: This is a release build.
 
 name: Nightly
 
@@ -32,15 +32,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Code Checkout
-        uses: actions/checkout@v3
-        
+        uses: actions/checkout@v4
+
       - name: Fetch build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Select release notes
         id: notes
         run: |
-          set -- Assets/*.hex
+          set -- ./*/*.hex
           echo "notes=$(test -e "$1" && echo '${{ env.debug_release_notes }}' || echo '${{ env.release_notes }}')" >> $GITHUB_OUTPUT
 
       - name: Get current date
@@ -48,12 +48,12 @@ jobs:
         run: echo "today=$(date '+%Y%m%d')" >> $GITHUB_OUTPUT
 
       - name: Release
-        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v0.1.14
+        uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.REPO_TOKEN }}
           repository: ${{ env.repo_nightly }}
           tag_name: v${{ steps.date.outputs.today }}.${{ github.run_number }}
-          files: Assets/*.hex
+          files: ./*/*.hex
           draft: false
           prerelease: false
           fail_on_unmatched_files: true

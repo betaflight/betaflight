@@ -74,7 +74,7 @@ bool cliMode = false;
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -207,7 +207,6 @@ static bool signatureUpdated = false;
 #endif // USE_BOARD_INFO
 
 static const char* const emptyName = "-";
-static const char* const emptyString = "";
 
 #define MAX_CHANGESET_ID_LENGTH 8
 #define MAX_DATE_LENGTH 20
@@ -228,14 +227,31 @@ static const char * const mixerNames[] = {
 #endif
 
 // sync this with features_e
+#define _R(_flag, _name) [LOG2(_flag)] = _name
 static const char * const featureNames[] = {
-    "RX_PPM", "", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
-    "SERVO_TILT", "SOFTSERIAL", "GPS", "",
-    "RANGEFINDER", "TELEMETRY", "", "3D", "RX_PARALLEL_PWM",
-    "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
-    "", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    "", "", "RX_SPI", "", "ESC_SENSOR", "ANTI_GRAVITY", "", NULL
+    _R(FEATURE_RX_PPM, "RX_PPM"),
+    _R(FEATURE_INFLIGHT_ACC_CAL, "INFLIGHT_ACC_CAL"),
+    _R(FEATURE_RX_SERIAL, "RX_SERIAL"),
+    _R(FEATURE_MOTOR_STOP, "MOTOR_STOP"),
+    _R(FEATURE_SERVO_TILT, "SERVO_TILT"),
+    _R(FEATURE_SOFTSERIAL, "SOFTSERIAL"),
+    _R(FEATURE_GPS, "GPS"),
+    _R(FEATURE_RANGEFINDER, "RANGEFINDER"),
+    _R(FEATURE_TELEMETRY, "TELEMETRY"),
+    _R(FEATURE_3D, "3D"),
+    _R(FEATURE_RX_PARALLEL_PWM, "RX_PARALLEL_PWM"),
+    _R(FEATURE_RSSI_ADC, "RSSI_ADC"),
+    _R(FEATURE_LED_STRIP, "LED_STRIP"),
+    _R(FEATURE_DASHBOARD, "DISPLAY"),
+    _R(FEATURE_OSD, "OSD"),
+    _R(FEATURE_CHANNEL_FORWARDING, "CHANNEL_FORWARDING"),
+    _R(FEATURE_TRANSPONDER, "TRANSPONDER"),
+    _R(FEATURE_AIRMODE, "AIRMODE"),
+    _R(FEATURE_RX_SPI, "RX_SPI"),
+    _R(FEATURE_ESC_SENSOR, "ESC_SENSOR"),
+    _R(FEATURE_ANTI_GRAVITY, "ANTI_GRAVITY"),
 };
+#undef _R
 
 // sync this with rxFailsafeChannelMode_e
 static const char rxFailsafeModeCharacters[] = "ahs";
@@ -277,10 +293,15 @@ static const char *mcuTypeNames[] = {
     "H723/H725",
     "G474",
     "H730",
-    "AT32F435"
+    "AT32F435",
+    "APM32F405",
+    "APM32F407",
 };
 
-static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
+static const char *configurationStates[] = {
+    [CONFIGURATION_STATE_UNCONFIGURED] = "UNCONFIGURED",
+    [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
+};
 
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
@@ -450,6 +471,7 @@ static void cliPrintError(const char *cmdName, const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(cmdName, format, va);
+    va_end(va);
 
     if (!cliWriter) {
         // Supply our own linefeed in case we are printing inside a custom defaults operation
@@ -464,6 +486,7 @@ static void cliPrintErrorLinef(const char *cmdName, const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(cmdName, format, va);
+    va_end(va);
     cliPrintInternal(cliErrorWriter, "\r\n");
 }
 
@@ -1631,28 +1654,26 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
 static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 {
     const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
-    int i, val = 0;
     const char *ptr;
 
     if (isEmpty(cmdline)) {
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL, NULL);
     } else {
         ptr = cmdline;
-        i = atoi(ptr++);
+        int i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
                 // Was: slot
                 // Keeping the parameter to retain backwards compatibility for the command format.
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1663,7 +1684,7 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
                     ar->adjustmentConfig = val;
                     validArgumentCount++;
@@ -1671,7 +1692,7 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxSwitchChannelIndex = val;
                     validArgumentCount++;
@@ -1690,13 +1711,13 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 ar->adjustmentCenter = val;
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 ar->adjustmentScale = val;
                 validArgumentCount++;
             }
@@ -2175,8 +2196,8 @@ static void cliServo(const char *cmdName, char *cmdline)
         servo = servoParamsMutable(i);
 
         if (
-            arguments[MIN] < PWM_PULSE_MIN || arguments[MIN] > PWM_PULSE_MAX ||
-            arguments[MAX] < PWM_PULSE_MIN || arguments[MAX] > PWM_PULSE_MAX ||
+            arguments[MIN] < PWM_SERVO_MIN || arguments[MIN] > PWM_SERVO_MAX ||
+            arguments[MAX] < PWM_SERVO_MIN || arguments[MAX] > PWM_SERVO_MAX ||
             arguments[MIDDLE] < arguments[MIN] || arguments[MIDDLE] > arguments[MAX] ||
             arguments[MIN] > arguments[MAX] ||
             arguments[RATE] < -100 || arguments[RATE] > 100 ||
@@ -2611,7 +2632,6 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
 static void cliVtx(const char *cmdName, char *cmdline)
 {
     const char *format = "vtx %u %u %u %u %u %u %u";
-    int i, val = 0;
     const char *ptr;
 
     if (isEmpty(cmdline)) {
@@ -2627,13 +2647,13 @@ static void cliVtx(const char *cmdName, char *cmdline)
         const uint8_t maxPowerIndex = VTX_TABLE_MAX_POWER_LEVELS;
 #endif
         ptr = cmdline;
-        i = atoi(ptr++);
+        int i = atoi(ptr++);
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     cac->auxChannelIndex = val;
                     validArgumentCount++;
@@ -2641,7 +2661,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxBandIndex) {
                     cac->band = val;
                     validArgumentCount++;
@@ -2649,7 +2669,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxChannelIndex) {
                     cac->channel = val;
                     validArgumentCount++;
@@ -2657,7 +2677,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxPowerIndex) {
                     cac->power= val;
                     validArgumentCount++;
@@ -3230,23 +3250,23 @@ static void cliMcuId(const char *cmdName, char *cmdline)
 static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32_t defaultMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
-    for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
-        if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
+    for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) { // disabled features first
+        if (featureNames[i]) { //Skip unused
             const char *format = "feature -%s";
-            const bool equalsDefault = (~defaultMask | mask) & (1 << i);
+            const bool equalsDefault = (~defaultMask | mask) & (1U << i);
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
-            cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1U << i), format, featureNames[i]);
             cliDumpPrintLinef(dumpMask, equalsDefault, format, featureNames[i]);
         }
     }
-    for (uint32_t i = 0; featureNames[i]; i++) {  // enabled features
-        if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
+    for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {  // enabled features
+        if (featureNames[i]) { //Skip unused
             const char *format = "feature %s";
-            if (defaultMask & (1 << i)) {
-                cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+            if (defaultMask & (1U << i)) {
+                cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1U << i), format, featureNames[i]);
             }
-            if (mask & (1 << i)) {
-                const bool equalsDefault = (defaultMask | ~mask) & (1 << i);
+            if (mask & (1U << i)) {
+                const bool equalsDefault = (defaultMask | ~mask) & (1U << i);
                 headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
                 cliDumpPrintLinef(dumpMask, equalsDefault, format, featureNames[i]);
             }
@@ -3254,34 +3274,31 @@ static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32
     }
 }
 
+static void printFeatureList(const char* header, uint32_t mask, const char* delimiter, bool lineFeed)
+{
+    if (header) {
+        cliPrint(header);
+    }
+    for (unsigned i = 0; i < ARRAYLEN(featureNames); i++) {
+        if (featureNames[i] && (mask & (1U << i))) {
+            cliPrintf("%s%s", i ? delimiter : "", featureNames[i]);
+        }
+    }
+    if (lineFeed) {
+        cliPrintLinefeed();
+    }
+}
+
 static void cliFeature(const char *cmdName, char *cmdline)
 {
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
-    if (len == 0) {
-        cliPrint("Enabled: ");
-        for (uint32_t i = 0; ; i++) {
-            if (featureNames[i] == NULL) {
-                break;
-            }
-            if (mask & (1 << i)) {
-                cliPrintf("%s ", featureNames[i]);
-            }
-        }
-        cliPrintLinefeed();
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available:");
-        for (uint32_t i = 0; ; i++) {
-            if (featureNames[i] == NULL)
-                break;
-            if (strcmp(featureNames[i], emptyString) != 0) //Skip unused
-                cliPrintf(" %s", featureNames[i]);
-        }
-        cliPrintLinefeed();
-        return;
+    if (len == 0                                      // `feature`
+        || strncasecmp(cmdline, "list", len) == 0) {  // old `feature list` invocation
+        printFeatureList("Enabled: ", mask, " ", true);
+        printFeatureList("Available: ", ~mask & featuresSupportedByBuild, " ", true);
+        printFeatureList("Unavailable: ", ~featuresSupportedByBuild, " ", true);
     } else {
-        uint32_t feature;
-
         bool remove = false;
         if (cmdline[0] == '-') {
             // remove feature
@@ -3290,36 +3307,31 @@ static void cliFeature(const char *cmdName, char *cmdline)
             len--;
         }
 
-        for (uint32_t i = 0; ; i++) {
-            if (featureNames[i] == NULL) {
-                cliPrintErrorLinef(cmdName, ERROR_INVALID_NAME, cmdline);
-                break;
+        unsigned found = 0;
+        int featureIdx = -1;
+        for (unsigned i = 0; !found && i < ARRAYLEN(featureNames); i++) {
+            if (featureNames[i] && strncasecmp(cmdline, featureNames[i], len) == 0) {
+                found++;
+                featureIdx = i;
             }
-
-            if (strncasecmp(cmdline, featureNames[i], len) == 0) {
-                feature = 1 << i;
-#ifndef USE_GPS
-                if (feature & FEATURE_GPS) {
-                    cliPrintLine("unavailable");
-                    break;
-                }
-#endif
-#ifndef USE_RANGEFINDER
-                if (feature & FEATURE_RANGEFINDER) {
-                    cliPrintLine("unavailable");
-                    break;
-                }
-#endif
-                if (remove) {
-                    featureConfigClear(feature);
-                    cliPrint("Disabled");
-                } else {
-                    featureConfigSet(feature);
-                    cliPrint("Enabled");
-                }
-                cliPrintLinef(" %s", featureNames[i]);
-                break;
+        }
+        if (found == 1) {
+            uint32_t feature = 1U << featureIdx;
+            const char *verb;
+            if ((feature & featuresSupportedByBuild) == 0) {
+                verb = "Unavailable";
+            } else if (remove) {
+                featureConfigClear(feature);
+                verb = (mask & feature) ? "Disabled" : "AlreadyDisabled";
+            } else {
+                featureConfigSet(feature);
+                verb = (mask & feature) ? "AlreadyEnabled" : "Enabled";
             }
+            cliPrintLinef("%s %s", verb, featureNames[featureIdx]);
+        } else if (found > 1) {
+            cliPrintErrorLinef(cmdName, "Multiple features match %s", cmdline);
+        } else /* found <= 0 */ {
+            cliPrintErrorLinef(cmdName, ERROR_INVALID_NAME, cmdline);
         }
     }
 }
@@ -3330,12 +3342,12 @@ static void printBeeper(dumpFlags_t dumpMask, const uint32_t offFlags, const uin
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     const uint8_t beeperCount = beeperTableEntryCount();
     for (int32_t i = 0; i < beeperCount - 1; i++) {
-        if (beeperModeMaskForTableIndex(i) & allowedFlags) {
+        const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
+        if (beeperModeMask & allowedFlags) {
             const char *formatOff = "%s -%s";
             const char *formatOn = "%s %s";
-            const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
-            cliDefaultPrintLinef(dumpMask, ~(offFlags ^ offFlagsDefault) & beeperModeMask, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
             const bool equalsDefault = ~(offFlags ^ offFlagsDefault) & beeperModeMask;
+            cliDefaultPrintLinef(dumpMask, equalsDefault, offFlags & beeperModeMask ? formatOn : formatOff, name, beeperNameForTableIndex(i));
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             cliDumpPrintLinef(dumpMask, equalsDefault, offFlags & beeperModeMask ? formatOff : formatOn, name, beeperNameForTableIndex(i));
         }
@@ -4247,7 +4259,6 @@ static void cliDefaults(const char *cmdName, char *cmdline)
 
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
-    int index = 0;
     bool expectParameterGroupId = false;
     while (tok != NULL) {
         if (expectParameterGroupId) {
@@ -4268,7 +4279,6 @@ static void cliDefaults(const char *cmdName, char *cmdline)
             return;
         }
 
-        index++;
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
@@ -4374,7 +4384,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
     }
 }
 
-static uint8_t getWordLength(char *bufBegin, char *bufEnd)
+static uint8_t getWordLength(const char *bufBegin, const char *bufEnd)
 {
     while (*(bufEnd - 1) == ' ') {
         bufEnd--;
@@ -4383,13 +4393,13 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd)
     return bufEnd - bufBegin;
 }
 
-uint16_t cliGetSettingIndex(char *name, uint8_t length)
+uint16_t cliGetSettingIndex(const char *name, size_t length)
 {
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         const char *settingName = valueTable[i].name;
 
-        // ensure exact match when setting to prevent setting variables with shorter names
-        if (strncasecmp(name, settingName, strlen(settingName)) == 0 && length == strlen(settingName)) {
+        // ensure exact match when setting to prevent setting variables with longer names
+        if (strncasecmp(name, settingName, length) == 0 && length == strlen(settingName)) {
             return i;
         }
     }
@@ -4579,7 +4589,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                 if (updatable && len > 0 && len <= max) {
                     memset((char *)cliGetValuePointer(val), 0, max);
                     if (len >= min && strncmp(valPtr, emptyName, len)) {
-                        strncpy((char *)cliGetValuePointer(val), valPtr, len);
+                        memcpy((char *)cliGetValuePointer(val), valPtr, len);
                     }
                     valueChanged = true;
                 } else {
@@ -4622,7 +4632,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     cliPrintf("MCU %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
     int sysclkSource = SystemSYSCLKSource();
 
@@ -4817,12 +4827,7 @@ if (buildKey) {
                 cliPrint("configured");
             }
         }
-        if (gpsData.platformVersion != UBX_VERSION_UNDEF) {
-            cliPrint(", version = ");
-            cliPrintf("%s", ubloxVersionMap[gpsData.platformVersion].str);
-        } else {
-            cliPrint("unknown");
-        }
+        cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
     } else {
         cliPrint("NOT ENABLED");
     }
@@ -5027,15 +5032,19 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, ledStripConfig_t, ioTag ),
 #endif
 #ifdef USE_UART
-    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[0], SERIAL_PORT_MAX_INDEX ),
-    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[0], SERIAL_PORT_MAX_INDEX ),
+    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[0], SERIAL_UART_COUNT ),
+    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[0], SERIAL_UART_COUNT ),
 #endif
 #ifdef USE_INVERTER
     DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[0], SERIAL_PORT_MAX_INDEX ),
 #endif
 #if defined(USE_SOFTSERIAL)
-    DEFA( OWNER_SOFTSERIAL_TX,     PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagTx[0], SOFTSERIAL_COUNT ),
-    DEFA( OWNER_SOFTSERIAL_RX,     PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagRx[0], SOFTSERIAL_COUNT ),
+    DEFA( OWNER_SOFTSERIAL_TX, PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagTx[0], SOFTSERIAL_COUNT ),
+    DEFA( OWNER_SOFTSERIAL_RX, PG_SOFTSERIAL_PIN_CONFIG, softSerialPinConfig_t, ioTagRx[0], SOFTSERIAL_COUNT ),
+#endif
+#ifdef USE_LPUART1
+    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[SERIAL_UART_COUNT], SERIAL_LPUART_COUNT ),
+    DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[SERIAL_UART_COUNT], SERIAL_LPUART_COUNT ),
 #endif
 #ifdef USE_I2C
     DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),
@@ -5051,8 +5060,8 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_SPI
     DEFW( OWNER_SPI_SCK,       PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagSck, SPIDEV_COUNT ),
-    DEFW( OWNER_SPI_SDI,      PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMiso, SPIDEV_COUNT ),
-    DEFW( OWNER_SPI_SDO,      PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMosi, SPIDEV_COUNT ),
+    DEFW( OWNER_SPI_SDI,       PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMiso, SPIDEV_COUNT ),
+    DEFW( OWNER_SPI_SDO,       PG_SPI_PIN_CONFIG, spiPinConfig_t, ioTagMosi, SPIDEV_COUNT ),
 #endif
 #ifdef USE_ESCSERIAL
     DEFS( OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, escSerialConfig_t, ioTag ),
@@ -5331,13 +5340,13 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
 #define DMA_CHANREQ_STRING "Request"
 #else
 #define DMA_CHANREQ_STRING "Channel"
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(APM32F4)
 #define DMA_STCH_STRING    "Stream"
 #else
 #define DMA_STCH_STRING    "Channel"
@@ -5436,9 +5445,8 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
 
         if (printDetails) {
             const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, dmaopt);
-            dmaCode_t dmaCode = 0;
             if (dmaChannelSpec) {
-                dmaCode = dmaChannelSpec->code;
+                dmaCode_t dmaCode = dmaChannelSpec->code;
                 printValue(dumpMask, false,
                     "# pin %c%02d: " DMASPEC_FORMAT_STRING,
                     IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
@@ -6044,7 +6052,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         }
 
         const char *resourceName = ownerNames[resourceTable[resourceIndex].owner];
-        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
+        if (strcasecmp(pch, resourceName) == 0) {
             break;
         }
     }
@@ -6119,8 +6127,8 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 #endif
 
         for (uint8_t i = 0; i < getMotorCount(); i++) {
-            const uint16_t erpm = getDshotTelemetry(i);
-            const uint16_t rpm = erpmToRpm(erpm);
+            const uint16_t erpm = getDshotErpm(i);
+            const uint16_t rpm = lrintf(getDshotRpm(i));
 
             cliPrintf("%5d   %c%c%c%c%c %6d %6d %6d",
                     i + 1,
@@ -6465,7 +6473,7 @@ const clicmd_t cmdTable[] = {
         "\t<->[name]", cliBeeper),
 #endif // USE_BEEPER
 #if defined(USE_RX_BIND)
-    CLI_COMMAND_DEF("bind_rx", "initiate binding for RX SPI or SRXL2", NULL, cliRxBind),
+    CLI_COMMAND_DEF("bind_rx", "initiate binding for RX SPI, SRXL2 or CRSF", NULL, cliRxBind),
 #endif
 #if defined(USE_FLASH_BOOT_LOADER)
     CLI_COMMAND_DEF("bl", "reboot into bootloader", "[flash|rom]", cliBootloader),

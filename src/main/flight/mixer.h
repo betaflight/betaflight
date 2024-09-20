@@ -71,6 +71,7 @@ typedef enum mixerType
     MIXER_LEGACY = 0,
     MIXER_LINEAR = 1,
     MIXER_DYNAMIC = 2,
+    MIXER_EZLANDING = 3,
 } mixerType_e;
 
 // Custom mixer data per motor
@@ -139,6 +140,7 @@ bool mixerIsTricopter(void);
 
 void mixerSetThrottleAngleCorrection(int correctionValue);
 float mixerGetThrottle(void);
+float mixerGetRcThrottle(void);
 mixerMode_e getMixerMode(void);
 bool mixerModeIsFixedWing(mixerMode_e mixerMode);
 bool isFixedWing(void);

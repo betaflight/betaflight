@@ -50,7 +50,7 @@ static uint8_t spiRegisteredDeviceCount = 0;
 spiDevice_t spiDevice[SPIDEV_COUNT];
 busDevice_t spiBusDevice[SPIDEV_COUNT];
 
-SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
+SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance)
 {
 #ifdef USE_SPI_DEVICE_1
     if (instance == SPI1) {
@@ -358,7 +358,7 @@ uint8_t spiReadRegMsk(const extDevice_t *dev, uint8_t reg)
 
 uint16_t spiCalculateDivider(uint32_t freq)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
@@ -383,7 +383,7 @@ uint16_t spiCalculateDivider(uint32_t freq)
 
 uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
@@ -393,7 +393,6 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
     if ((spiClk / spiClkDivisor) > 36000000){
         return 36000000;
     }
-
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -417,8 +416,13 @@ FAST_IRQ_HANDLER static void spiIrqHandler(const extDevice_t *dev)
             break;
 
         case BUS_ABORT:
-            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
-            return;
+            // Skip to the end of the segment list
+            nextSegment = (busSegment_t *)bus->curSegment + 1;
+            while (nextSegment->len != 0) {
+                bus->curSegment = nextSegment;
+                nextSegment = (busSegment_t *)bus->curSegment + 1;
+            }
+            break;
 
         case BUS_READY:
         default:
@@ -567,7 +571,7 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 void spiInitBusDMA(void)
 {
     uint32_t device;
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
     /* Check https://www.st.com/resource/en/errata_sheet/dm00037591-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
      * section 2.1.10 which reports an errata that corruption may occurs on DMA2 if AHB peripherals (eg GPIO ports) are
      * access concurrently with APB peripherals (eg SPI busses). Bitbang DSHOT uses DMA2 to write to GPIO ports. If this
@@ -601,7 +605,7 @@ void spiInitBusDMA(void)
 
             if (dmaTxChannelSpec) {
                 dmaTxIdentifier = dmaGetIdentifier(dmaTxChannelSpec->ref);
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 2)) {
                     dmaTxIdentifier = DMA_NONE;
                     break;
@@ -612,7 +616,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -639,7 +643,7 @@ void spiInitBusDMA(void)
 
             if (dmaRxChannelSpec) {
                 dmaRxIdentifier = dmaGetIdentifier(dmaRxChannelSpec->ref);
-#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 2)) {
                     dmaRxIdentifier = DMA_NONE;
                     break;
@@ -650,7 +654,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif
@@ -742,6 +746,19 @@ uint8_t spiGetRegisteredDeviceCount(void)
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
 {
     return dev->bus->deviceCount;
+}
+
+// Link two segment lists
+// Note that there is no need to unlink segment lists as this is done automatically as they are processed
+void spiLinkSegments(const extDevice_t *dev, busSegment_t *firstSegment, busSegment_t *secondSegment)
+{
+    busSegment_t *endSegment;
+
+    // Find the last segment of the new transfer
+    for (endSegment = firstSegment; endSegment->len; endSegment++);
+
+    endSegment->u.link.dev = dev;
+    endSegment->u.link.segments = secondSegment;
 }
 
 // DMA transfer setup and start

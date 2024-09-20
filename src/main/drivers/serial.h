@@ -55,6 +55,9 @@ typedef enum {
     SERIAL_BIDIR_PP        = 1 << 4,
     SERIAL_BIDIR_NOPULL    = 1 << 5, // disable pulls in BIDIR RX mode
     SERIAL_BIDIR_PP_PD     = 1 << 6, // PP mode, normall inverted, but with PullDowns, to fix SA after bidir issue fixed (#10220)
+
+    // If this option is set then switch the TX line to input when not in use to detect it being pulled low
+    SERIAL_CHECK_TX        = 1 << 7,
 } portOptions_e;
 
 // Define known line control states which may be passed up by underlying serial driver callback
@@ -91,6 +94,8 @@ typedef struct serialPort_s {
 } serialPort_t;
 
 #define SERIAL_PORT_MAX_INDEX 11
+#define SERIAL_UART_COUNT 10
+#define SERIAL_LPUART_COUNT 1
 
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
@@ -138,6 +143,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch);
 uint32_t serialRxBytesWaiting(const serialPort_t *instance);
 uint32_t serialTxBytesFree(const serialPort_t *instance);
 void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);
+void serialWriteBufNoFlush(serialPort_t *instance, const uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_e mode);

@@ -44,16 +44,16 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
 }
 
 
-void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
+void serialWriteBufNoFlush(serialPort_t *instance, const uint8_t *data, int count)
 {
     if (instance->vTable->writeBuf) {
         instance->vTable->writeBuf(instance, data, count);
     } else {
+        // The transmit buffer is large enough to hold any single message, so only wait once
+        while (serialTxBytesFree(instance) < (uint32_t)count) {
+        };
+
         for (const uint8_t *p = data; count > 0; count--, p++) {
-
-            while (!serialTxBytesFree(instance)) {
-            };
-
             serialWrite(instance, *p);
         }
     }
@@ -107,11 +107,6 @@ void serialSetBaudRateCb(serialPort_t *serialPort, void (*cb)(serialPort_t *cont
     }
 }
 
-void serialWriteBufShim(void *instance, const uint8_t *data, int count)
-{
-    serialWriteBuf((serialPort_t *)instance, data, count);
-}
-
 void serialBeginWrite(serialPort_t *instance)
 {
     if (instance->vTable->beginWrite)
@@ -122,4 +117,15 @@ void serialEndWrite(serialPort_t *instance)
 {
     if (instance->vTable->endWrite)
         instance->vTable->endWrite(instance);
+}
+
+void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
+{
+    serialBeginWrite(instance);
+    serialWriteBufNoFlush(instance, data, count);
+    serialEndWrite(instance);
+}
+void serialWriteBufShim(void *instance, const uint8_t *data, int count)
+{
+    serialWriteBuf((serialPort_t *)instance, data, count);
 }

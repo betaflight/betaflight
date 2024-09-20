@@ -18,8 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-
 #include "platform.h"
 
 #include "debug.h"
@@ -116,4 +114,11 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "DSHOT_TELEMETRY_COUNTS",
     "RPM_LIMIT",
     "RC_STATS",
+    "MAG_CALIB",
+    "MAG_TASK_RATE",
+    "EZLANDING",
+    "TPA",
+    "S_TERM",
+    "SPA",
+    "TASK",
 };

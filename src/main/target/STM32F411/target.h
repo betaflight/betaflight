@@ -20,9 +20,13 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "S411"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32F411"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -55,6 +59,8 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
+#define USE_DSHOT_BITBAND
+
 #define USE_BEEPER
 
 #define DEFAULT_MOTOR_DSHOT_SPEED PWM_TYPE_DSHOT300
@@ -75,5 +81,11 @@
 #define USE_ADC
 
 #define USE_EXTI
+
+#define USE_PID_DENOM_CHECK
+
+#ifdef USE_LED_STRIP_64
+#error USE_LED_STRIP_64 is not supported for this MCU, please use USE_LED_STRIP
+#endif
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors

@@ -26,10 +26,11 @@
 #include "common/maths.h"
 #include "common/sensor_alignment.h"
 #include "common/time.h"
-#include "drivers/exti.h"
-#include "drivers/bus.h"
-#include "drivers/sensor.h"
+
 #include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/bus.h"
+#include "drivers/exti.h"
+#include "drivers/sensor.h"
 
 #pragma GCC diagnostic push
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
@@ -59,6 +60,7 @@ typedef enum {
     GYRO_BMI160,
     GYRO_BMI270,
     GYRO_LSM6DSO,
+    GYRO_LSM6DSV16X,
     GYRO_VIRTUAL
 } gyroHardware_e;
 

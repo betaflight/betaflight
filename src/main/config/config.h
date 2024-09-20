@@ -28,15 +28,14 @@
 #define MAX_NAME_LENGTH 16u
 
 typedef enum {
-    CONFIGURATION_STATE_DEFAULTS_BARE = 0,
-    CONFIGURATION_STATE_DEFAULTS_CUSTOM,
+    CONFIGURATION_STATE_UNCONFIGURED = 0,
     CONFIGURATION_STATE_CONFIGURED,
 } configurationState_e;
 
 typedef struct pilotConfig_s {
     char craftName[MAX_NAME_LENGTH + 1];
     char pilotName[MAX_NAME_LENGTH + 1];
-    char message[3][MAX_NAME_LENGTH + 1];
+    char message[OSD_CUSTOM_MSG_COUNT][MAX_NAME_LENGTH + 1];
 } pilotConfig_t;
 
 PG_DECLARE(pilotConfig_t, pilotConfig);

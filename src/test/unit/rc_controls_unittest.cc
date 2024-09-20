@@ -260,14 +260,11 @@ extern "C" {
 class RcControlsAdjustmentsTest : public ::testing::Test {
 protected:
     controlRateConfig_t controlRateConfig = {
-            .rcRates[FD_ROLL] = 90,
-            .rcRates[FD_PITCH] = 90,
-            .rcExpo[FD_ROLL] = 0,
-            .rcExpo[FD_PITCH] = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0, 0, 0},
-            .rcExpo[FD_YAW] = 0,
+        .thrMid8 = 0,
+        .thrExpo8 = 0,
+        .rcRates = {[FD_ROLL] = 90, [FD_PITCH] = 90},
+        .rcExpo = {[FD_ROLL] = 0, [FD_PITCH] = 0, [FD_YAW] = 0},
+        .rates = {0, 0, 0},
     };
 
     channelRange_t fullRange = {
@@ -362,14 +359,11 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 {
     // given
     controlRateConfig_t controlRateConfig = {
-            .rcRates[FD_ROLL] = 90,
-            .rcRates[FD_PITCH] = 90,
-            .rcExpo[FD_ROLL] = 0,
-            .rcExpo[FD_PITCH] = 0,
-            .thrMid8 = 0,
-            .thrExpo8 = 0,
-            .rates = {0,0,0},
-            .rcExpo[FD_YAW] = 0,
+        .thrMid8 = 0,
+        .thrExpo8 = 0,
+        .rcRates = {[FD_ROLL] = 90, [FD_PITCH] = 90},
+        .rcExpo = {[FD_ROLL] = 0, [FD_PITCH] = 0, [FD_YAW] = 0},
+        .rates = {0,0,0},
     };
 
     // and
@@ -555,6 +549,11 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     pidProfile.pid[PID_YAW].P = 7;
     pidProfile.pid[PID_YAW].I = 17;
     pidProfile.pid[PID_YAW].D = 27;
+
+    pidProfile.d_min[FD_PITCH] = 19;
+    pidProfile.d_min[FD_ROLL] = 19;
+    pidProfile.d_min[FD_YAW] = 19;
+
     // and
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof(controlRateConfig));
@@ -597,13 +596,16 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     // and
     EXPECT_EQ(1,  pidProfile.pid[PID_PITCH].P);
     EXPECT_EQ(11, pidProfile.pid[PID_PITCH].I);
-    EXPECT_EQ(21, pidProfile.pid[PID_PITCH].D);
+    EXPECT_EQ(20, pidProfile.pid[PID_PITCH].D);
+    EXPECT_EQ(20, pidProfile.d_min[FD_PITCH]);
     EXPECT_EQ(6,  pidProfile.pid[PID_ROLL].P);
     EXPECT_EQ(16, pidProfile.pid[PID_ROLL].I);
-    EXPECT_EQ(26, pidProfile.pid[PID_ROLL].D);
+    EXPECT_EQ(25, pidProfile.pid[PID_ROLL].D);
+    EXPECT_EQ(20, pidProfile.d_min[FD_ROLL]);
     EXPECT_EQ(8,  pidProfile.pid[PID_YAW].P);
     EXPECT_EQ(18, pidProfile.pid[PID_YAW].I);
-    EXPECT_EQ(28, pidProfile.pid[PID_YAW].D);
+    EXPECT_EQ(27, pidProfile.pid[PID_YAW].D);
+    EXPECT_EQ(20, pidProfile.d_min[FD_YAW]);
 }
 
 extern "C" {

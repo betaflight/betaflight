@@ -78,10 +78,6 @@ static uint8_t rateProfileIndex;
 static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static controlRateConfig_t rateProfile;
 
-static const char * const osdTableThrottleLimitType[] = {
-    "OFF", "SCALE", "CLIP"
-};
-
 #ifdef USE_MULTI_GYRO
 static const char * const osdTableGyroToUse[] = {
     "FIRST", "SECOND", "BOTH"
@@ -267,6 +263,10 @@ static uint8_t cmsx_simplified_gyro_filter;
 static uint8_t cmsx_simplified_gyro_filter_multiplier;
 static uint8_t cmsx_tpa_rate;
 static uint16_t cmsx_tpa_breakpoint;
+static int8_t cmsx_tpa_low_rate;
+static uint16_t cmsx_tpa_low_breakpoint;
+static uint8_t cmsx_tpa_low_always;
+static uint8_t cmsx_landing_disarm_threshold;
 
 static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
 {
@@ -432,7 +432,7 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
     { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1} },
     { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1} },
 
-    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
+    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType} },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
 
     { "BACK", OME_Back, NULL, NULL },
@@ -553,6 +553,9 @@ static uint8_t cmsx_feedforward_jitter_factor;
 
 static uint8_t cmsx_tpa_rate;
 static uint16_t cmsx_tpa_breakpoint;
+static int8_t cmsx_tpa_low_rate;
+static uint16_t cmsx_tpa_low_breakpoint;
+static uint8_t cmsx_tpa_low_always;
 
 static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 {
@@ -605,7 +608,10 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 #endif
     cmsx_tpa_rate = pidProfile->tpa_rate;
     cmsx_tpa_breakpoint = pidProfile->tpa_breakpoint;
-
+    cmsx_tpa_low_rate = pidProfile->tpa_low_rate;
+    cmsx_tpa_low_breakpoint = pidProfile->tpa_low_breakpoint;
+    cmsx_tpa_low_always = pidProfile->tpa_low_always;
+    cmsx_landing_disarm_threshold = pidProfile->landing_disarm_threshold;
     return NULL;
 }
 
@@ -660,6 +666,10 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 #endif
     pidProfile->tpa_rate = cmsx_tpa_rate;
     pidProfile->tpa_breakpoint = cmsx_tpa_breakpoint;
+    pidProfile->tpa_low_rate = cmsx_tpa_low_rate;
+    pidProfile->tpa_low_breakpoint = cmsx_tpa_low_breakpoint;
+    pidProfile->tpa_low_always = cmsx_tpa_low_always;
+    pidProfile->landing_disarm_threshold = cmsx_landing_disarm_threshold;
 
     initEscEndpoints();
     return NULL;
@@ -715,8 +725,12 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "VBAT_SAG_COMP", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_vbat_sag_compensation, 0, 150, 1 } },
 #endif
 
-    { "TPA RATE",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate,          0,  100,  1, 10} },
-    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint, 1000, 2000, 10} },
+    { "TPA RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate, 0, 100, 1, 10} },
+    { "TPA BRKPT",     OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint, 1000, 2000, 10} },
+    { "TPA LOW RATE",  OME_INT8,   NULL, &(OSD_INT8_t) { &cmsx_tpa_low_rate, TPA_LOW_RATE_MIN, TPA_MAX , 1} },
+    { "TPA LOW BRKPT", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_low_breakpoint, 1000, 2000, 10} },
+    { "TPA LOW ALWYS", OME_Bool,   NULL, &cmsx_tpa_low_always },
+    { "EZDISARM THR",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_landing_disarm_threshold, 0, 150, 1} },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

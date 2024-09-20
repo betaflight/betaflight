@@ -87,14 +87,30 @@
 // Disable OCTOSPI pins PB2/CLK, PB6/NCS, PD11/IO0, PD12/IO1, PD13/IO3, PE2/IO2
 // PE7/IO4, PE8/IO5, PE9/IO6, PE10/IO7
 
+#if !defined(TARGET_IO_PORTA)
 #define TARGET_IO_PORTA 0xffff
+#endif
+#if !defined(TARGET_IO_PORTB)
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)|BIT(6)))
+#endif
+#if !defined(TARGET_IO_PORTC)
 #define TARGET_IO_PORTC 0xffff
+#endif
+#if !defined(TARGET_IO_PORTD)
 #define TARGET_IO_PORTD (0xffff & ~(BIT(11)|BIT(12)|BIT(13)))
+#endif
+#if !defined(TARGET_IO_PORTE)
 #define TARGET_IO_PORTE (0xffff & ~(BIT(2)|BIT(7)|BIT(8)|BIT(9)|BIT(10)))
+#endif
+#if !defined(TARGET_IO_PORTF)
 #define TARGET_IO_PORTF 0xffff
+#endif
+#if !defined(TARGET_IO_PORTG)
 #define TARGET_IO_PORTG 0xffff
+#endif
+#if !defined(TARGET_IO_PORTH)
 #define TARGET_IO_PORTH 0xffff
+#endif
 
 #define USE_BEEPER
 

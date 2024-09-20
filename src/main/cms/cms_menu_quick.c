@@ -25,7 +25,7 @@
 #include "platform.h"
 
 #ifdef USE_CMS
-#ifdef USE_QUICK_OSD_MENU
+#ifdef USE_OSD_QUICK_MENU
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -44,6 +44,8 @@
 #include "flight/pid_init.h"
 
 #include "sensors/battery.h"
+
+#include "cli/settings.h"
 
 #include "cms_menu_quick.h"
 
@@ -85,11 +87,6 @@ static const void *cmsx_RateProfileWriteback(displayPort_t *pDisp, const OSD_Ent
     return NULL;
 }
 
-
-static const char * const osdTableThrottleLimitType[] = {
-    "OFF", "SCALE", "CLIP"
-};
-
 static const OSD_Entry menuMainEntries[] =
 {
     { "-- QUICK --",  OME_Label, NULL, NULL },
@@ -97,10 +94,10 @@ static const OSD_Entry menuMainEntries[] =
 #if defined(USE_RPM_LIMIT)
     { "RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit },
 #endif
-    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
-    { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
-    { "MTR OUT LIM %",OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1} },
-    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1} },
+    { "THR LIM TYPE",  OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType } },
+    { "THR LIM %",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1 } },
+    { "MTR OUT LIM %", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1 } },
+    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1 } },
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
@@ -123,5 +120,5 @@ CMS_Menu cmsx_menuQuick = {
     .entries = menuMainEntries,
 };
 
-#endif // USE_QUICK_OSD_MENU
+#endif // USE_OSD_QUICK_MENU
 #endif // USE_CMS

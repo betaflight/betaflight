@@ -99,7 +99,9 @@
 
 #define USE_PARAMETER_GROUPS
 
+#ifndef USE_PWM_OUTPUT
 #define USE_PWM_OUTPUT
+#endif
 
 #undef USE_STACK_CHECK // I think SITL don't need this
 #undef USE_DASHBOARD
@@ -145,10 +147,6 @@
 
 #define TARGET_FLASH_SIZE 2048
 
-
-#define LED_STRIP_TIMER 1
-#define SOFTSERIAL_1_TIMER 2
-#define SOFTSERIAL_2_TIMER 3
 
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 

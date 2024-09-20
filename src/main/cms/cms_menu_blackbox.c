@@ -46,7 +46,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/time.h"
 #include "drivers/sdcard.h"
 

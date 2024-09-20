@@ -124,10 +124,11 @@
 #define HMC_CONFA_NORMAL            0x00
 #define HMC_CONFA_POS_BIAS          0x01
 #define HMC_CONFA_NEG_BIAS          0x02
-#define HMC_CONFA_DOR_15HZ          0X10
-#define HMC_CONFA_8_SAMLES          0X60
-#define HMC_CONFB_GAIN_2_5GA        0X60
-#define HMC_CONFB_GAIN_1_3GA        0X20
+#define HMC_CONFA_DOR_15HZ          (0x4 << 2)
+#define HMC_CONFA_DOR_75HZ          (0x6 << 2)
+#define HMC_CONFA_8_SAMLES          (0x3 << 5)
+#define HMC_CONFB_GAIN_2_5GA        (0x3 << 5)
+#define HMC_CONFB_GAIN_1_3GA        (0x1 << 5)
 #define HMC_MODE_CONTINOUS          0X00
 #define HMC_MODE_SINGLE             0X01
 
@@ -206,9 +207,9 @@ static bool hmc5883lRead(magDev_t *mag, int16_t *magData)
     extDevice_t *dev = &mag->dev;
 
     if (pendingRead) {
-        busReadRegisterBufferStart(dev, HMC58X3_REG_DATA, buf, sizeof(buf));
-
-        pendingRead = false;
+        if (busReadRegisterBufferStart(dev, HMC58X3_REG_DATA, buf, sizeof(buf))) {
+            pendingRead = false;
+        }
         return false;
     }
 
@@ -227,13 +228,14 @@ static bool hmc5883lInit(magDev_t *mag)
     extDevice_t *dev = &mag->dev;
 
     // leave test mode
-    busWriteRegister(dev, HMC58X3_REG_CONFA, HMC_CONFA_8_SAMLES | HMC_CONFA_DOR_15HZ | HMC_CONFA_NORMAL);    // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+    busWriteRegister(dev, HMC58X3_REG_CONFA, HMC_CONFA_8_SAMLES | HMC_CONFA_DOR_75HZ | HMC_CONFA_NORMAL);    // Configuration Register A  -- 0 11 110 00  num samples: 8 ; output rate: 75Hz ; normal measurement mode
     busWriteRegister(dev, HMC58X3_REG_CONFB, HMC_CONFB_GAIN_1_3GA);                                          // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
     busWriteRegister(dev, HMC58X3_REG_MODE, HMC_MODE_CONTINOUS);                                             // Mode register             -- 000000 00    continuous Conversion Mode
 
     delay(100);
 
     hmc5883lConfigureDataReadyInterruptHandling(mag);
+    mag->magOdrHz = 75; // HMC_CONFA_DOR_75HZ
     return true;
 }
 

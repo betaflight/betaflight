@@ -221,12 +221,6 @@ static void lpsOff(const extDevice_t *dev)
     lpsWriteCommand(dev, LPS_CTRL1, 0x00 | (0x01 << 2));
 }
 
-static void lpsNothing(baroDev_t *baro)
-{
-    UNUSED(baro);
-    return;
-}
-
 static bool lpsNothingBool(baroDev_t *baro)
 {
     UNUSED(baro);
@@ -291,10 +285,10 @@ bool lpsDetect(baroDev_t *baro)
     baro->combined_read = true;
     baro->ut_delay = 1;
     baro->up_delay = 1000000 / 24;
-    baro->start_ut = lpsNothing;
+    baro->start_ut = lpsNothingBool;
     baro->get_ut = lpsNothingBool;
     baro->read_ut = lpsNothingBool;
-    baro->start_up = lpsNothing;
+    baro->start_up = lpsNothingBool;
     baro->get_up = lpsRead;
     baro->read_up = lpsNothingBool;
     baro->calculate = lpsCalculate;

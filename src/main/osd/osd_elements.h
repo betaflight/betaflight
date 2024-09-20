@@ -35,10 +35,13 @@ typedef struct osdElementParms_s {
     uint8_t item;
     uint8_t elemPosX;
     uint8_t elemPosY;
+    uint8_t elemOffsetX;
+    uint8_t elemOffsetY;
     osdElementType_e type;
     char *buff;
     displayPort_t *osdDisplayPort;
     bool drawElement;
+    bool rendered;
     uint8_t attr;
 } osdElementParms_t;
 
@@ -55,12 +58,17 @@ int32_t osdGetSpeedToSelectedUnit(int32_t value);
 char osdGetSpeedToSelectedUnitSymbol(void);
 char osdGetTemperatureSymbolForSelectedUnit(void);
 void osdAddActiveElements(void);
-uint8_t osdGetActiveElement();
-uint8_t osdGetActiveElementCount();
-bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs);
+bool osdIsRenderPending(void);
+uint8_t osdGetActiveElement(void);
+uint8_t osdGetActiveElementCount(void);
+bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort);
+bool osdDisplayActiveElement(void);
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort);
 void osdElementsInit(bool backgroundLayerFlag);
-void osdSyncBlink();
+void osdSyncBlink(timeUs_t currentTimeUs);
 void osdResetAlarms(void);
 void osdUpdateAlarms(void);
 bool osdElementsNeedAccelerometer(void);
+#ifdef USE_SPEC_PREARM_SCREEN
+bool osdDrawSpec(displayPort_t *osdDisplayPort);
+#endif // USE_SPEC_PREARM_SCREEN
