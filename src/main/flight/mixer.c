@@ -289,116 +289,104 @@ static bool applyFlipOverAfterCrashModeToMotors(void)
         return false;
     }
 
-    if (ARMING_FLAG(ARMED)) {
-        const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
-        const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
-        const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
+    const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
+    const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
+    const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
 
-        float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
-        float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
-        float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
+    float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
+    float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
+    float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
 
-        float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
+    float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
 
-        if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
-            // If yaw is the dominant, disable pitch and roll
-            stickDeflectionLength = stickDeflectionYawAbs;
-            signRoll = 0;
+    if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
+        // If yaw is the dominant, disable pitch and roll
+        stickDeflectionLength = stickDeflectionYawAbs;
+        signRoll = 0;
+        signPitch = 0;
+    } else {
+        // If pitch/roll dominant, disable yaw
+        signYaw = 0;
+    }
+
+    const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
+    const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
+
+    if (cosPhi < cosThreshold) {
+        // Enforce either roll or pitch exclusively, if not on diagonal
+        if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
             signPitch = 0;
         } else {
-            // If pitch/roll dominant, disable yaw
-            signYaw = 0;
-        }
-
-        const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
-        const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
-
-        if (cosPhi < cosThreshold) {
-            // Enforce either roll or pitch exclusively, if not on diagonal
-            if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
-                signPitch = 0;
-            } else {
-                signRoll = 0;
-            }
-        }
-
-        // Calculate flipPower from stick deflection with a reasonable amount of stick deadband
-        float flipPower = stickDeflectionLength > CRASH_FLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
-
-        // calculate flipPower attenuators
-        float flipRateAttenuator = 1.0f;
-        float flipAttitudeAttenuator = 1.0f;
-        const float flipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
-
-        // disable both attenuators if the user's crashflip_rate is zero
-        if (flipRateLimit > 0) {
-#ifdef USE_ACC
-            // Calculate the attitude-based attenuator (requires Acc)
-            // with Acc, flipAttitudeAttenuator will be zero after approx 90 degree rotation
-            // hence motors will be stopped while attitude remains more than ~90 degrees from initial attitude
-            // if flipping on the ground, that's exactly what we want; auto-off once flipped.
-            // if stuck in a tree, and is still stuck despite rotating...
-            // re-initialisation of crashFlip mode will be required to be able to drive the motors again
-            // without Acc, the user must manually center the stick, or exit crashflip mode, or disarm, to stop the motors
-            if (sensors(SENSOR_ACC)) {
-                const float tiltAngle = getCosTiltAngle();  // -1 if inverted, 0 when 90°, 1 when flat and upright
-                if (isFirstTiltAngleRead) {
-                    tiltAngleAtStart = tiltAngle;
-                    isFirstTiltAngleRead = false;
-                }
-                flipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
-            }
-#endif // USE_ACC
-            // Calculate attenuation factor for rate of rotation
-            // get the gyro rate for the fastest axis, probably doesn't matter which one
-            // if driving roll or pitch, quad usually turns on that axis, but if one motor sticks, could be a diagonal rotation
-            // if driving diagonally, the turn could be either roll or pitch
-            // if driving yaw, typically one motor sticks, and the quad yaws only a little then flips diagonally
-            float gyroRate = 0.0f;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
-            }
-            flipRateAttenuator = fmaxf((flipRateLimit - gyroRate) / flipRateLimit, 0.0f);
-            // it's possible that fminf(flipAttitudeAttenuator, flipRateAttenuator) may work better for low power quads
-            // but the multiply works very well for higher power quads since it cuts motors back fast
-            flipPower *= flipAttitudeAttenuator * flipRateAttenuator;
-        }
-
-        for (int i = 0; i < mixerRuntime.motorCount; ++i) {
-            float motorOutputNormalised =
-                signPitch * mixerRuntime.currentMixer[i].pitch +
-                signRoll * mixerRuntime.currentMixer[i].roll +
-                signYaw * mixerRuntime.currentMixer[i].yaw;
-
-            if (motorOutputNormalised < 0) {
-                if (mixerConfig()->crashflip_motor_percent > 0) {
-                    motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
-                } else {
-                    motorOutputNormalised = 0;
-                }
-            }
-
-            motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
-            float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
-
-            // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
-
-            motor[i] = motorOutput;
-        }
-    } else {
-        // When disarmed, but still in crashFlip mode, disarm value is sent to motors, ie stopped
-        // ** I am not sure it is possible to be in crashFlip mode while disarmed.
-        // because in core.c updateArmingStatus(), flipOverAfterCrashActive is set false when disarmed
-        // and in core.c disarm() sets it false also
-        // and flipOverAfterCrashActive can only be set true in core.c tryArm()
-        // so how would we ever get here?  It's not possible to be disrmed and in crashflip mode
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motor[i] = motor_disarmed[i];
+            signRoll = 0;
         }
     }
 
-    // force mixTable() to exit after the crashFlip code is complete
+    // Calculate flipPower from stick deflection with a reasonable amount of stick deadband
+    float flipPower = stickDeflectionLength > CRASH_FLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
+
+    // calculate flipPower attenuators
+    float flipRateAttenuator = 1.0f;
+    float flipAttitudeAttenuator = 1.0f;
+    const float flipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
+
+    // disable both attenuators if the user's crashflip_rate is zero
+    if (flipRateLimit > 0) {
+#ifdef USE_ACC
+        // Calculate the attitude-based attenuator (requires Acc)
+        // with Acc, flipAttitudeAttenuator will be zero after approx 90 degree rotation
+        // hence motors will be stopped while attitude remains more than ~90 degrees from initial attitude
+        // if flipping on the ground, that's exactly what we want; auto-off once flipped.
+        // if stuck in a tree, and is still stuck despite rotating...
+        // re-initialisation of crashFlip mode will be required to be able to drive the motors again
+        // without Acc, the user must manually center the stick, or exit crashflip mode, or disarm, to stop the motors
+        if (sensors(SENSOR_ACC)) {
+            const float tiltAngle = getCosTiltAngle();  // -1 if inverted, 0 when 90°, 1 when flat and upright
+            if (isFirstTiltAngleRead) {
+                tiltAngleAtStart = tiltAngle;
+                isFirstTiltAngleRead = false;
+            }
+            flipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
+        }
+#endif // USE_ACC
+        // Calculate attenuation factor for rate of rotation
+        // get the gyro rate for the fastest axis, probably doesn't matter which one
+        // if driving roll or pitch, quad usually turns on that axis, but if one motor sticks, could be a diagonal rotation
+        // if driving diagonally, the turn could be either roll or pitch
+        // if driving yaw, typically one motor sticks, and the quad yaws only a little then flips diagonally
+        float gyroRate = 0.0f;
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
+        }
+        flipRateAttenuator = fmaxf((flipRateLimit - gyroRate) / flipRateLimit, 0.0f);
+        // it's possible that fminf(flipAttitudeAttenuator, flipRateAttenuator) may work better for low power quads
+        // but the multiply works very well for higher power quads since it cuts motors back fast
+        flipPower *= flipAttitudeAttenuator * flipRateAttenuator;
+    }
+
+    for (int i = 0; i < mixerRuntime.motorCount; ++i) {
+        float motorOutputNormalised =
+            signPitch * mixerRuntime.currentMixer[i].pitch +
+            signRoll * mixerRuntime.currentMixer[i].roll +
+            signYaw * mixerRuntime.currentMixer[i].yaw;
+
+        if (motorOutputNormalised < 0) {
+            if (mixerConfig()->crashflip_motor_percent > 0) {
+                motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
+            } else {
+                motorOutputNormalised = 0;
+            }
+        }
+
+        motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
+        float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
+
+        // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
+        motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
+
+        motor[i] = motorOutput;
+    }
+
+    // true forces mixTable() to exit after the crashFlip code is complete
     return true;
 }
 
