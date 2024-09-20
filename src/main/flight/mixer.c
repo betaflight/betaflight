@@ -60,9 +60,9 @@
 
 #include "rx/rx.h"
 
-#include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "mixer.h"
 
