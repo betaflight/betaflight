@@ -69,10 +69,48 @@ static int putchw(void *putp, putcf putf, int n, char z, char *bf)
     return written;
 }
 
-// retrun number of bytes written
+// function to convert float to string
+static void tfp_ftoa(double f, char *buf, int precision) {
+    int ipart = (int)f;
+    double fpart = f - (double)ipart;
+    int i = 0;
+
+    // Convert integer part
+    if (ipart == 0) {
+        buf[i++] = '0';
+    } else {
+        if (ipart < 0) {
+            buf[i++] = '-';
+            ipart = -ipart;
+        }
+        char temp[10];
+        int j = 0;
+        while (ipart) {
+            temp[j++] = (ipart % 10) + '0';
+            ipart /= 10;
+        }
+        while (j > 0) {
+            buf[i++] = temp[--j];
+        }
+    }
+
+    buf[i++] = '.';
+
+    // Convert fractional part
+    for (int j = 0; j < precision; j++) {
+        fpart *= 10;
+        int digit = (int)fpart;
+        buf[i++] = digit + '0';
+        fpart -= digit;
+    }
+
+    buf[i] = '\0';
+}
+
+// return number of bytes written
 int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 {
-    char bf[12];
+    char bf[32]; // Increased buffer size for float
     int written = 0;
     char ch;
 
@@ -85,6 +123,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             char lng = 0;
 #endif
             int w = 0;
+            int precision = 6; // Default float precision
             ch = *(fmt++);
             if (ch == '0') {
                 ch = *(fmt++);
@@ -92,6 +131,12 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             }
             if (ch >= '0' && ch <= '9') {
                 ch = a2i(ch, &fmt, 10, &w);
+            }
+            if (ch == '.') {
+                ch = *(fmt++);
+                if (ch >= '0' && ch <= '9') {
+                    ch = a2i(ch, &fmt, 10, &precision);
+                }
             }
 #ifdef  REQUIRE_PRINTF_LONG_SUPPORT
             if (ch == 'l') {
@@ -144,6 +189,12 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             case 'n':
                 *va_arg(va, int*) = written;
                 break;
+            case 'f': {
+                double f = va_arg(va, double);
+                tfp_ftoa(f, bf, precision);
+                written += putchw(putp, putf, w, lz, bf);
+                break;
+            }
             default:
                 break;
             }
