@@ -3926,7 +3926,7 @@ static void cliEscPassthrough(const char *cmdName, char *cmdline)
             } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
                 mode = PROTOCOL_KISS;
             } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
-                mode = PROTOCOL_KISSALL;
+                mode = PROTOCOL_CASTLE;
             } else {
                 cliShowParseError(cmdName);
 
