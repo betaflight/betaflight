@@ -962,14 +962,15 @@ void processRxModes(timeUs_t currentTimeUs)
     /* Enable beep warning when the crashflip mode is active */
     if (crashFlipModeActive) {
         beeper(BEEPER_CRASHFLIP_MODE);
-        if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+// UNDO THIS SINCE MOTORS REMAIN REVERSED
+//        if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
             // user reverted crashFlip switch while armed and in crashFlip mode
             // if armed, and if throttle < min, tryArm() will immediately enter armed (idle) state
             // if small angle is 180, motors will spin at idle regardless of attitude of the quad
             // if motors spin freely, pilot can then take off without disarm/re-arm being required
             // if throttle is > min, arming will be blocked, and a disarm-rearm cycle at throttle < min is required
-            crashFlipModeActive = false;
-        }
+//            crashFlipModeActive = false;
+//        }
     }
 #endif
 
