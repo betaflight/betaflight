@@ -245,7 +245,8 @@ bool i2cBusy(I2CDevice device, bool *error)
         *error = pHandle->error_code;
     }
 
-    if (pHandle->error_code == I2C_OK) {
+    // I2C_ERR_ACKFAIL indicates that the last access wasn't acknowledged, but doesn't mean the bus is busy
+    if ((pHandle->error_code == I2C_OK) || (pHandle->error_code == I2C_ERR_ACKFAIL)) {
         if (i2c_flag_get(pHandle->i2cx, I2C_BUSYF_FLAG) == SET) {
             return true;
         }
