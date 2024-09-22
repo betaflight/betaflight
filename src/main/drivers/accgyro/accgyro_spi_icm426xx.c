@@ -58,6 +58,8 @@
 #define ICM426XX_MAX_SPI_CLK_HZ ICM426XX_CLOCK
 #endif
 
+#define ICM426XX_CLKIN_FREQ                         32000
+
 #define ICM426XX_RA_REG_BANK_SEL                    0x76
 #define ICM426XX_BANK_SELECT0                       0x00
 #define ICM426XX_BANK_SELECT1                       0x01
@@ -122,7 +124,11 @@
 #define ICM426XX_RA_INT_SOURCE0                     0x65  // User Bank 0
 #define ICM426XX_UI_DRDY_INT1_EN_DISABLED           (0 << 3)
 #define ICM426XX_UI_DRDY_INT1_EN_ENABLED            (1 << 3)
-#define ICM426XX_INTF_CONFIG1_CLKIN                 (1 << 5)
+
+// specific to CLKIN configuration
+#define ICM426XX_INTF_CONFIG5                       0x7B  // User Bank 1
+#define ICM426XX_INTF_CONFIG1_CLKIN                 (1 << 2)
+#define ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_CLKIN   (2 << 1)   // Set bits 2:1 to 10 for CLKIN (PIN9 as CLKIN)
 
 typedef enum {
     ODR_CONFIG_8K = 0,
@@ -171,19 +177,33 @@ static aafConfig_t aafLUT42605[AAF_CONFIG_COUNT] = {  // see table in section 5.
     [AAF_CONFIG_1962HZ] = { 63, 3968,  3 }, // 995 Hz is the max cutoff on the 42605
 };
 
+static void setUserBank(const extDevice_t *dev, const uint8_t user_bank)
+{
+    spiWriteReg(dev, ICM426XX_RA_REG_BANK_SEL, user_bank & 7);
+}
+
 #if defined(USE_GYRO_CLKIN)
 static pwmOutputPort_t pwmGyroClk = {0};
 
 static bool initExternalClock(const extDevice_t *dev)
 {
-    if (&gyro.gyroSensor1.gyroDev.dev != dev) {
-        // only gyro1 clkin supported. TODO: support two gyros, must be implemented in the next PR
+    int cfg;
+    if (&gyro.gyroSensor1.gyroDev.dev == dev) {
+        cfg = 0;
+    } else if (&gyro.gyroSensor2.gyroDev.dev == dev) {
+        cfg = 1;
+    } else {
+        // only gyroSensor<n> device supported
         return false;
     }
-    const ioTag_t tag = gyroDeviceConfig(0)->clkIn;
+    const ioTag_t tag = gyroDeviceConfig(cfg)->clkIn;
     const IO_t io = IOGetByTag(tag);
+    if (pwmGyroClk.enabled) {
+       // pwm is already taken, but test for shared clkIn pin
+       return pwmGyroClk.io == io;
+    }
 
-    const timerHardware_t *timer = timerAllocate(tag, OWNER_GYRO_CLKIN, 0);
+    const timerHardware_t *timer = timerAllocate(tag, OWNER_GYRO_CLKIN, RESOURCE_INDEX(cfg));
     if (!timer) {
         // Error handling: failed to allocate timer
         return false;
@@ -192,13 +212,11 @@ static bool initExternalClock(const extDevice_t *dev)
     pwmGyroClk.io = io;
     pwmGyroClk.enabled = true;
 
-    IOInit(io, OWNER_GYRO_CLKIN, 0);
+    IOInit(io, OWNER_GYRO_CLKIN, RESOURCE_INDEX(cfg));
     IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
 
-    uint32_t pwmFrequency = 32000;  // PWM frequency set to 32 kHz TODO: move to config: available freq 31-50kHz
     const uint32_t clock = timerClock(timer->tim);  // Get the timer clock frequency
-
-    const uint16_t period = clock / pwmFrequency;
+    const uint16_t period = clock / ICM426XX_CLKIN_FREQ;
 
     // Calculate duty cycle value for 50%
     const uint16_t value = period / 2;
@@ -215,9 +233,17 @@ static bool initExternalClock(const extDevice_t *dev)
 static void icm426xxEnableExternalClock(const extDevice_t *dev)
 {
     if (initExternalClock(dev)) {
-        uint8_t cfg1 = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG1);
-        cfg1 |= ICM426XX_INTF_CONFIG1_CLKIN; // enable CLKIN for external clock
-        spiWriteReg(dev, ICM426XX_INTF_CONFIG1, cfg1);
+        // Switch to Bank 1 and set bits 2:1 in INTF_CONFIG5 (0x7B) to enable CLKIN on PIN9
+        setUserBank(dev, ICM426XX_BANK_SELECT1);
+        uint8_t intf_config5 = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG5);
+        intf_config5 |= ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_CLKIN;  // Set bits 2:1 to 0b10 for CLKIN
+        spiWriteReg(dev, ICM426XX_INTF_CONFIG5, intf_config5);
+
+        // Switch to Bank 0 and set bit 2 in RTC_MODE (0x4D) to enable external CLK signal
+        setUserBank(dev, ICM426XX_BANK_SELECT0);
+        uint8_t rtc_mode = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG1);
+        rtc_mode |= ICM426XX_INTF_CONFIG1_CLKIN; // Enable external CLK signal
+        spiWriteReg(dev, ICM426XX_INTF_CONFIG1, rtc_mode);
     }
 }
 #endif
@@ -291,11 +317,6 @@ static void turnGyroAccOn(const extDevice_t *dev)
 {
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, ICM426XX_PWR_MGMT0_TEMP_DISABLE_OFF | ICM426XX_PWR_MGMT0_ACCEL_MODE_LN | ICM426XX_PWR_MGMT0_GYRO_MODE_LN);
     delay(1);
-}
-
-static void setUserBank(const extDevice_t *dev, const uint8_t user_bank)
-{
-    spiWriteReg(dev, ICM426XX_RA_REG_BANK_SEL, user_bank & 7);
 }
 
 void icm426xxGyroInit(gyroDev_t *gyro)
