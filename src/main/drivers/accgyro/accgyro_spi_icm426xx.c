@@ -30,12 +30,6 @@
 
 #if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
 
-#if defined(USE_GYRO_CLKIN)
-#ifndef GYRO_CLKIN_PIN
-#define GYRO_CLKIN_PIN NONE
-#endif
-#endif
-
 #include "common/axis.h"
 #include "common/utils.h"
 #include "build/debug.h"
