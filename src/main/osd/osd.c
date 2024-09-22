@@ -75,6 +75,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/position.h"
+#include "flight/position_control.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"

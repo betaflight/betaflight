@@ -28,6 +28,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/position.h"
+#include "flight/position_control.h"
 #include "sensors/acceleration.h"
 #include "rx/rx.h"
 
@@ -132,7 +133,7 @@ float altitudePidCalculate(void)
 
 void altHoldPidInit(void)
 {
-    altitudePids_t data;
+    altitudePidCoeffs_t data;
     getAltitudePidCoeffs(&data);
     altHoldPid.kp = data.kp;
     altHoldPid.ki = data.ki;
@@ -151,7 +152,7 @@ void getCurrentAltitudeValues(void)
 
 void altHoldReset(void)
 {
-    altHoldPidInit(); // initialise PID coefficients with values from position.c, force iTerm to zero
+    altHoldPidInit(); // initialise PID coefficients with values from position_control.c, force iTerm to zero
     getCurrentAltitudeValues(); // need current altitude to set target altitude
     altHoldState.targetAltitudeCm = altHoldState.measuredAltitudeCm;
     altHoldPid.integral = 0.0f;
@@ -165,7 +166,7 @@ void altHoldInit(void)
     const float gain = pt2FilterGain(cutoffHz, taskIntervalSeconds);
     pt2FilterInit(&altHoldDeltaLpf, gain);
 
-    altHoldState.hover = positionConfig()->hover_throttle - PWM_RANGE_MIN;
+    altHoldState.hover = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
     altHoldState.isAltHoldActive = false;
     altHoldReset();
 }
@@ -209,8 +210,8 @@ void altHoldUpdateTargetAltitude(void)
 
     const float rcThrottle = rcCommand[THROTTLE];
 
-    const float lowThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
-    const float highThreshold = 0.5f * (positionConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
+    const float lowThreshold = 0.5f * (positionControlConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
+    const float highThreshold = 0.5f * (positionControlConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
     
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {

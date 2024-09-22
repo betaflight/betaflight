@@ -42,6 +42,7 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/position.h"
+    #include "flight/position_control.h"
     #include "flight/servos.h"
 
     #include "io/beeper.h"
@@ -77,6 +78,7 @@ extern "C" {
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
 
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint16_t averageSystemLoadPercent = 0;
@@ -1135,7 +1137,7 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
 
-    void getAltitudePidCoeffs(altitudePids_t* data)
+    void getAltitudePidCoeffs(altitudePidCoeffs_t* data)
     {
         data->kp = 0.0f;
         data->ki = 0.0f;

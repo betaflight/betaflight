@@ -34,6 +34,7 @@ extern "C" {
     #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/position.h"
+    #include "flight/position_control.h"
 
     #include "rx/rx.h"
 
@@ -41,6 +42,7 @@ extern "C" {
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
     PG_REGISTER(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 0);
 
     extern altHoldState_t altHoldState;
@@ -97,7 +99,7 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 extern "C" {
     acc_t acc;
 
-    void getAltitudePidCoeffs(altitudePids_t* data)
+    void getAltitudePidCoeffs(altitudePidCoeffs_t* data)
     {
         data->kp = 0.0f;
         data->ki = 0.0f;

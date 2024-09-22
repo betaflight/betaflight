@@ -68,6 +68,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/position_control.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -1588,12 +1589,12 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_PREFER_BARO, "%d", positionConfig()->altitude_prefer_baro);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_LPF, "%d",         positionConfig()->altitude_lpf);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D_LPF, "%d",       positionConfig()->altitude_d_lpf);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_HOVER_THROTTLE, "%d",       positionConfig()->hover_throttle);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_ALTITUDE, "%d",     positionConfig()->landing_altitude_m);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_P, "%d",           positionConfig()->altitude_P);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_I, "%d",           positionConfig()->altitude_I);;
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D, "%d",           positionConfig()->altitude_D);;
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_F, "%d",           positionConfig()->altitude_F);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_HOVER_THROTTLE, "%d",       positionControlConfig()->hover_throttle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_ALTITUDE, "%d",     positionControlConfig()->landing_altitude_m);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_P, "%d",           positionControlConfig()->altitude_P);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_I, "%d",           positionControlConfig()->altitude_I);;
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D, "%d",           positionControlConfig()->altitude_D);;
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_F, "%d",           positionControlConfig()->altitude_F);
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);

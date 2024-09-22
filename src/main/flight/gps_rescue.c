@@ -44,6 +44,7 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/position_control.h"
 
 #include "rx/rx.h"
 
@@ -239,7 +240,7 @@ static void rescueAttainPosition(void)
         // 20s of slow descent for switch induced sanity failures to allow time to recover
         gpsRescueAngle[AI_PITCH] = 0.0f;
         gpsRescueAngle[AI_ROLL] = 0.0f;
-        rescueThrottle = positionConfig()->hover_throttle - 100;
+        rescueThrottle = positionControlConfig()->hover_throttle - 100;
         return;
      default:
         break;
@@ -272,7 +273,7 @@ static void rescueAttainPosition(void)
     // add a feedforward element that is proportional to the ascend or descend rate
     const float throttleF = throttlePidCoeffs.kf * rescueState.intent.targetAltitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
 
-    const float hoverOffset = positionConfig()->hover_throttle - PWM_RANGE_MIN;
+    const float hoverOffset = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
 
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f); // same code as alt_hold
     // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
@@ -701,7 +702,7 @@ void descend(void)
 {
     if (newGPSData) {
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
-        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * positionConfig()->landing_altitude_m);
+        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * positionControlConfig()->landing_altitude_m);
         const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
      
         // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home
@@ -767,8 +768,8 @@ void initialiseRescueValues (void)
     rescueState.intent.velocityItermRelax = 0.0f; // but don't accumulate any at the start, not until fly home
     rescueState.intent.targetAltitudeStepCm = 0.0f;
 
-    // get throttle pid coefficients from position.c
-    altitudePids_t data;
+    // get throttle pid coefficients from position_control.c
+    altitudePidCoeffs_t data;
     getAltitudePidCoeffs(&data);
     throttlePidCoeffs.kp = data.kp;
     throttlePidCoeffs.ki = data.ki;
