@@ -340,7 +340,7 @@ void updateArmingStatus(void)
         }
 
         if (isModeActivationConditionPresent(BOXPREARM)) {
-            if (IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
+            if ((IS_RC_MODE_ACTIVE(BOXPREARM) || (armingConfig()->prearm_until_first_arm && ARMING_FLAG(WAS_EVER_ARMED))) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
                 unsetArmingDisabled(ARMING_DISABLED_NOPREARM);
             } else {
                 setArmingDisabled(ARMING_DISABLED_NOPREARM);
