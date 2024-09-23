@@ -128,7 +128,8 @@
 // specific to CLKIN configuration
 #define ICM426XX_INTF_CONFIG5                       0x7B  // User Bank 1
 #define ICM426XX_INTF_CONFIG1_CLKIN                 (1 << 2)
-#define ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_CLKIN   (2 << 1)   // Set bits 2:1 to 10 for CLKIN (PIN9 as CLKIN)
+#define ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_MASK    (3 << 1)   // PIN9 mode config
+#define ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_CLKIN   (2 << 1)   // PIN9 as CLKIN
 
 typedef enum {
     ODR_CONFIG_8K = 0,
@@ -236,7 +237,7 @@ static void icm426xxEnableExternalClock(const extDevice_t *dev)
         // Switch to Bank 1 and set bits 2:1 in INTF_CONFIG5 (0x7B) to enable CLKIN on PIN9
         setUserBank(dev, ICM426XX_BANK_SELECT1);
         uint8_t intf_config5 = spiReadRegMsk(dev, ICM426XX_INTF_CONFIG5);
-        intf_config5 |= ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_CLKIN;  // Set bits 2:1 to 0b10 for CLKIN
+        intf_config5 = (intf_config5 & ~ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_MASK) | ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_CLKIN;  // Clear & set bits 2:1 to 0b10 for CLKIN
         spiWriteReg(dev, ICM426XX_INTF_CONFIG5, intf_config5);
 
         // Switch to Bank 0 and set bit 2 in RTC_MODE (0x4D) to enable external CLK signal

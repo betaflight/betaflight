@@ -129,7 +129,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 #endif // GYRO_2_CUSTOM_ALIGN
 
 #ifdef GYRO_2_SPI_INSTANCE
-    // TODO: CLKIN gyro 2 not suported yet. need to imlement it 
+    // TODO: CLKIN gyro 2 on separate pin is not supported yet. need to implement it
     gyroResetSpiDeviceConfig(&devconf[1], GYRO_2_SPI_INSTANCE, IO_TAG(GYRO_2_CS_PIN), IO_TAG(GYRO_2_EXTI_PIN), IO_TAG(GYRO_2_CLKIN_PIN), GYRO_2_ALIGN, customAlignment2);
 #else
     devconf[1].busType = BUS_TYPE_NONE;
