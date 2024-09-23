@@ -71,22 +71,26 @@ static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 
 // function to convert float to string
 static void tfp_ftoa(double f, char *buf, int precision) {
+    int i = 0;
+
+    // Handle negative numbers
+    if (f < 0) {
+        buf[i++] = '-';
+        f = -f;  // Make f positive
+    }
+
+    // Extract integer part
     int ipart = (int)f;
     double fpart = f - (double)ipart;
-    int i = 0;
 
     // Convert integer part
     if (ipart == 0) {
         buf[i++] = '0';
     } else {
-        if (ipart < 0) {
-            buf[i++] = '-';
-            ipart = -ipart;
-        }
         char temp[10];
         int j = 0;
         while (ipart) {
-            temp[j++] = (ipart % 10) + '0';
+            temp[j++] = (ipart % 10) + '0'; // + '0' ASCII 48
             ipart /= 10;
         }
         while (j > 0) {
@@ -104,15 +108,21 @@ static void tfp_ftoa(double f, char *buf, int precision) {
         fpart -= digit;
     }
 
+    // Round last digit in case of precision overflow
+    if ((int)(fpart * 10) >= 5) {
+        buf[i - 1] += 1;  // Round up the last digit
+    }
+
     buf[i] = '\0';
 }
 
 // return number of bytes written
 int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 {
-    char bf[32]; // Increased buffer size for float
+    char bf[32];
     int written = 0;
     char ch;
+    const int buffer_size = sizeof(bf) - 1; // Reserve one byte for '\0'
 
     while ((ch = *(fmt++))) {
         if (ch != '%') {
@@ -192,7 +202,8 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             case 'f': {
                 double f = va_arg(va, double);
                 tfp_ftoa(f, bf, precision);
-                written += putchw(putp, putf, w, lz, bf);
+                written = putchw(putp, putf, w, lz, bf);
+                if (written > buffer_size) written = buffer_size; // buffer overflow
                 break;
             }
             default:
