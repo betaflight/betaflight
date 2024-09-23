@@ -70,7 +70,7 @@ static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 }
 
 // function to convert float to string
-static void tfp_ftoa(double f, char *buf, int precision) {
+static void tfp_ftoa(double f, char *buf, int buf_size, int precision) {
     int i = 0;
 
     // Handle negative numbers
@@ -90,11 +90,15 @@ static void tfp_ftoa(double f, char *buf, int precision) {
         char temp[10];
         int j = 0;
         while (ipart) {
-            temp[j++] = (ipart % 10) + '0'; // + '0' ASCII 48
+            temp[j++] = (ipart % 10) + '0'; // part + '0' ASCII 48
             ipart /= 10;
         }
         while (j > 0) {
-            buf[i++] = temp[--j];
+            if (i < buf_size) {
+                buf[i++] = temp[--j];
+            } else {
+                break;  // buffer overflow
+            }
         }
     }
 
@@ -104,16 +108,22 @@ static void tfp_ftoa(double f, char *buf, int precision) {
     for (int j = 0; j < precision; j++) {
         fpart *= 10;
         int digit = (int)fpart;
-        buf[i++] = digit + '0';
+        if (i < buf_size) {
+            buf[i++] = digit + '0'; // part + '0' ASCII 48
+        }
         fpart -= digit;
     }
 
     // Round last digit in case of precision overflow
-    if ((int)(fpart * 10) >= 5) {
+    if ((int)(fpart * 10) >= 5 && i > 0 && i < buf_size) {
         buf[i - 1] += 1;  // Round up the last digit
     }
 
-    buf[i] = '\0';
+    if (i < buf_size) {
+        buf[i] = '\0';
+    } else {
+        buf[buf_size - 1] = '\0';
+    }
 }
 
 // return number of bytes written
@@ -201,9 +211,8 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                 break;
             case 'f': {
                 double f = va_arg(va, double);
-                tfp_ftoa(f, bf, precision);
+                tfp_ftoa(f, bf, buffer_size, precision);
                 written = putchw(putp, putf, w, lz, bf);
-                if (written > buffer_size) written = buffer_size; // buffer overflow
                 break;
             }
             default:
