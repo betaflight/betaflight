@@ -100,7 +100,7 @@ static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cb
 }
 #endif
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDeviceConfig, PG_GYRO_DEVICE_CONFIG, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDeviceConfig, PG_GYRO_DEVICE_CONFIG, 1);
 
 void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 {
