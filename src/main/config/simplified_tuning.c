@@ -54,7 +54,9 @@ static void calculateNewPidValues(pidProfile_t *pidProfile)
         pidProfile->pid[axis].F = constrain(pidDefaults[axis].F * masterMultiplier * pitchPiGain * feedforwardGain, 0, F_GAIN_MAX);
         
 #ifdef USE_D_MAX
-        const float dMaxGain = pidProfile->simplified_d_max_gain / 100.0f;
+        const float dMaxGain = (dMaxDefaults[axis] > 0) 
+            ? pidProfile->simplified_d_max_gain / 100.0f + (1 - pidProfile->simplified_d_max_gain / 100.0f) * pidDefaults[axis].D / dMaxDefaults[axis]
+            : 1.0f;
         pidProfile->d_max[axis] = constrain(dMaxDefaults[axis] * masterMultiplier * dGain * pitchDGain * dMaxGain, 0, PID_GAIN_MAX);
 #endif
     }
