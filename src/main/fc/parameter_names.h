@@ -133,7 +133,7 @@
 #define PARAM_NAME_SIMPLIFIED_I_GAIN "simplified_i_gain"
 #define PARAM_NAME_SIMPLIFIED_D_GAIN "simplified_d_gain"
 #define PARAM_NAME_SIMPLIFIED_PI_GAIN "simplified_pi_gain"
-#define PARAM_NAME_SIMPLIFIED_DMAX_GAIN "simplified_dmax_gain"
+#define PARAM_NAME_SIMPLIFIED_D_MAX_GAIN "simplified_d_max_gain"
 #define PARAM_NAME_SIMPLIFIED_FEEDFORWARD_GAIN "simplified_feedforward_gain"
 #define PARAM_NAME_SIMPLIFIED_PITCH_D_GAIN "simplified_pitch_d_gain"
 #define PARAM_NAME_SIMPLIFIED_PITCH_PI_GAIN "simplified_pitch_pi_gain"

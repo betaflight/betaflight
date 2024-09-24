@@ -1988,12 +1988,12 @@ case MSP_NAME:
         sbufWriteU16(dst, currentPidProfile->pid[PID_PITCH].F);
         sbufWriteU16(dst, currentPidProfile->pid[PID_YAW].F);
         sbufWriteU8(dst, 0); // was currentPidProfile->antiGravityMode
-#if defined(USE_D_MIN)
-        sbufWriteU8(dst, currentPidProfile->d_min[PID_ROLL]);
-        sbufWriteU8(dst, currentPidProfile->d_min[PID_PITCH]);
-        sbufWriteU8(dst, currentPidProfile->d_min[PID_YAW]);
-        sbufWriteU8(dst, currentPidProfile->d_min_gain);
-        sbufWriteU8(dst, currentPidProfile->d_min_advance);
+#ifdef USE_D_MAX
+        sbufWriteU8(dst, currentPidProfile->d_max[PID_ROLL]);
+        sbufWriteU8(dst, currentPidProfile->d_max[PID_PITCH]);
+        sbufWriteU8(dst, currentPidProfile->d_max[PID_YAW]);
+        sbufWriteU8(dst, currentPidProfile->d_max_gain);
+        sbufWriteU8(dst, currentPidProfile->d_max_advance);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -2197,8 +2197,8 @@ static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
     pidProfile->simplified_i_gain = sbufReadU8(src);
     pidProfile->simplified_d_gain = sbufReadU8(src);
     pidProfile->simplified_pi_gain = sbufReadU8(src);
-#ifdef USE_D_MIN
-    pidProfile->simplified_dmin_ratio = sbufReadU8(src);
+#ifdef USE_D_MAX
+    pidProfile->simplified_d_max_gain = sbufReadU8(src);
 #else
     sbufReadU8(src);
 #endif
@@ -2217,8 +2217,8 @@ static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
     sbufWriteU8(dst, pidProfile->simplified_i_gain);
     sbufWriteU8(dst, pidProfile->simplified_d_gain);
     sbufWriteU8(dst, pidProfile->simplified_pi_gain);
-#ifdef USE_D_MIN
-    sbufWriteU8(dst, pidProfile->simplified_dmin_ratio);
+#ifdef USE_D_MAX
+    sbufWriteU8(dst, pidProfile->simplified_d_max_gain);
 #else
     sbufWriteU8(dst, 0);
 #endif
@@ -2307,7 +2307,7 @@ static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
         sbufWriteU8(dst, pidProfile->pid[i].P);
         sbufWriteU8(dst, pidProfile->pid[i].I);
         sbufWriteU8(dst, pidProfile->pid[i].D);
-        sbufWriteU8(dst, pidProfile->d_min[i]);
+        sbufWriteU8(dst, pidProfile->d_max[i]);
         sbufWriteU16(dst, pidProfile->pid[i].F);
     }
 }
@@ -2495,7 +2495,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     tempPidProfile.pid[i].P == currentPidProfile->pid[i].P &&
                     tempPidProfile.pid[i].I == currentPidProfile->pid[i].I &&
                     tempPidProfile.pid[i].D == currentPidProfile->pid[i].D &&
-                    tempPidProfile.d_min[i] == currentPidProfile->d_min[i] &&
+                    tempPidProfile.d_max[i] == currentPidProfile->d_max[i] &&
                     tempPidProfile.pid[i].F == currentPidProfile->pid[i].F;
             }
 
@@ -3197,12 +3197,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.41
-#if defined(USE_D_MIN)
-            currentPidProfile->d_min[PID_ROLL] = sbufReadU8(src);
-            currentPidProfile->d_min[PID_PITCH] = sbufReadU8(src);
-            currentPidProfile->d_min[PID_YAW] = sbufReadU8(src);
-            currentPidProfile->d_min_gain = sbufReadU8(src);
-            currentPidProfile->d_min_advance = sbufReadU8(src);
+#ifdef USE_D_MAX
+            currentPidProfile->d_max[PID_ROLL] = sbufReadU8(src);
+            currentPidProfile->d_max[PID_PITCH] = sbufReadU8(src);
+            currentPidProfile->d_max[PID_YAW] = sbufReadU8(src);
+            currentPidProfile->d_max_gain = sbufReadU8(src);
+            currentPidProfile->d_max_advance = sbufReadU8(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);

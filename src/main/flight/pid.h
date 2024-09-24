@@ -40,7 +40,6 @@
 
 #define PID_GAIN_MAX 250
 #define F_GAIN_MAX 1000
-#define D_MIN_GAIN_MAX 250
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -61,10 +60,10 @@
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 250
 
-#define PID_ROLL_DEFAULT  { 45, 80, 40, 120, 0 }
-#define PID_PITCH_DEFAULT { 47, 84, 46, 125, 0 }
+#define PID_ROLL_DEFAULT  { 45, 80, 30, 120, 0 }
+#define PID_PITCH_DEFAULT { 47, 84, 34, 125, 0 }
 #define PID_YAW_DEFAULT   { 45, 80,  0, 120, 0 }
-#define D_MIN_DEFAULT     { 30, 34, 0 }
+#define D_MAX_DEFAULT     { 40, 46, 0 }
 
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
 #define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
@@ -222,9 +221,9 @@ typedef struct pidProfile_s {
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
     uint8_t thrustLinearization;            // Compensation factor for pid linearization
-    uint8_t d_min[XYZ_AXIS_COUNT];          // Minimum D value on each axis
-    uint8_t d_min_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
-    uint8_t d_min_advance;                  // Percentage multiplier for setpoint input to boost algorithm
+    uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
+    uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
+    uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
@@ -256,7 +255,7 @@ typedef struct pidProfile_s {
     uint8_t simplified_i_gain;
     uint8_t simplified_d_gain;
     uint8_t simplified_pi_gain;
-    uint8_t simplified_dmin_ratio;
+    uint8_t simplified_d_max_gain;
     uint8_t simplified_feedforward_gain;
     uint8_t simplified_dterm_filter;
     uint8_t simplified_dterm_filter_multiplier;
@@ -401,12 +400,13 @@ typedef struct pidRuntime_s {
     float oldSetpointCorrection[XYZ_AXIS_COUNT];
 #endif
 
-#ifdef USE_D_MIN
-    pt2Filter_t dMinRange[XYZ_AXIS_COUNT];
-    pt2Filter_t dMinLowpass[XYZ_AXIS_COUNT];
-    float dMinPercent[XYZ_AXIS_COUNT];
-    float dMinGyroGain;
-    float dMinSetpointGain;
+#ifdef USE_D_MAX
+    pt2Filter_t dMaxRange[XYZ_AXIS_COUNT];
+    pt2Filter_t dMaxLowpass[XYZ_AXIS_COUNT];
+    float dMaxPercent[XYZ_AXIS_COUNT];
+    uint8_t dMax[XYZ_AXIS_COUNT];
+    float dMaxGyroGain;
+    float dMaxSetpointGain;
 #endif
 
 #ifdef USE_AIRMODE_LPF

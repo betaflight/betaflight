@@ -321,7 +321,7 @@
 
 #define USE_GYRO_LPF2
 #define USE_DYN_LPF
-#define USE_D_MIN
+#define USE_D_MAX
 
 #define USE_THROTTLE_BOOST
 #define USE_INTEGRATED_YAW_CONTROL
