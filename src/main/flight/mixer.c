@@ -351,7 +351,7 @@ static bool applyCrashFlipModeToMotors(void)
         // if driving diagonally, the turn could be either roll or pitch
         // if driving yaw, typically one motor sticks, and the quad yaws a little then flips diagonally
         float gyroRate = 0.0f;
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        for (int axis = 0; axis < FD_YAW; axis++) {
             gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
         }
         crashflipRateAttenuator = fmaxf((crashflipRateLimit - gyroRate) / crashflipRateLimit, 0.0f);
