@@ -86,7 +86,8 @@ typedef enum FlightLogFieldSelect_e { // no more than 32
     FLIGHT_LOG_FIELD_SELECT_GPS,
     FLIGHT_LOG_FIELD_SELECT_RPM,
     FLIGHT_LOG_FIELD_SELECT_GYROUNFILT,
-    FLIGHT_LOG_FIELD_SELECT_COUNT
+    FLIGHT_LOG_FIELD_SELECT_COUNT,
+    FLIGHT_LOG_FIELD_SELECT_SERVO,
 } FlightLogFieldSelect_e;
 
 typedef enum FlightLogFieldPredictor {
