@@ -54,7 +54,7 @@ void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
     mixerConfig->mixerMode = DEFAULT_MIXER;
     mixerConfig->yaw_motors_reversed = false;
     mixerConfig->crashflip_motor_percent = 0;
-    mixerConfig->crashflip_rate = 35;
+    mixerConfig->crashflip_rate = 0;
     mixerConfig->mixer_type = MIXER_LEGACY;
 #ifdef USE_RPM_LIMIT
     mixerConfig->rpm_limit = false;
