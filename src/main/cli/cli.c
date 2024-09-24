@@ -3594,7 +3594,7 @@ static void cliExit(const char *cmdName, char *cmdline)
     cliMode = false;
     // incase a motor was left running during motortest, clear it here
     mixerResetDisarmedMotors();
-    if (strncasecmp(cmdline, "-n", 2) == 0) {
+    if (strcasecmp(cmdline, "noreboot") == 0) {
         return;
     }
     cliReboot();
@@ -4251,7 +4251,7 @@ static void cliSave(const char *cmdName, char *cmdline)
         writeEEPROM();
         cliPrintHashLine("saving");
 
-        if (strncasecmp(cmdline, "-n", 2) == 0) {
+        if (strcasecmp(cmdline, "noreboot") == 0) {
             return;
         }
         cliReboot();
