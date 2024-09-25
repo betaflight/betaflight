@@ -343,7 +343,7 @@ static bool applyCrashFlipModeToMotors(void)
                 tiltAngleAtStart = tiltAngle;
                 isFirstTiltAngleRead = false;
             }
-            crashflipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngleAtStart - tiltAngle), 0.0f);
+            crashflipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
@@ -354,7 +354,7 @@ static bool applyCrashFlipModeToMotors(void)
         for (int axis = 0; axis < FD_YAW; axis++) {
             gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
         }
-        crashflipRateAttenuator = fmaxf((crashflipRateLimit - gyroRate) / crashflipRateLimit, 0.0f);
+        crashflipRateAttenuator = fmaxf(1.0f - gyroRate / crashflipRateLimit, 0.0f);
         crashflipPower *= crashflipAttitudeAttenuator * crashflipRateAttenuator;
     }
 
