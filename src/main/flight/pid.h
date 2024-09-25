@@ -484,6 +484,7 @@ typedef struct pidRuntime_s {
 #ifdef USE_ADVANCED_TPA
     pwl_t tpaCurvePwl;
     float tpaCurvePwl_yValues[TPA_CURVE_PWL_SIZE];
+    tpaCurveType_t tpaCurveType;
 #endif // USE_ADVANCED_TPA
 } pidRuntime_t;
 
@@ -506,7 +507,7 @@ void pidSetItermAccelerator(float newItermAccelerator);
 bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
-void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile);
+void pidUpdateTpaFactor(float throttle);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
 void pidSetAntiGravityState(bool newState);

@@ -298,7 +298,8 @@ void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
 
 void tpaCurveInit(const pidProfile_t *pidProfile)
 {
-        switch (pidProfile->tpa_curve_type) {
+        pidRuntime.tpaCurveType = pidProfile->tpa_curve_type;
+        switch (pidRuntime.tpaCurveType) {
         case TPA_CURVE_HYPERBOLIC:
             tpaCurveHyperbolicInit(pidProfile);
             return;
