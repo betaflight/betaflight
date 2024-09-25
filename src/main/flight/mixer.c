@@ -343,7 +343,9 @@ static bool applyCrashFlipModeToMotors(void)
                 tiltAngleAtStart = tiltAngle;
                 isFirstTiltAngleRead = false;
             }
-            crashflipAttitudeAttenuator = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
+            // attenuate by attitude only when a significant attitude change has occurred
+            const float attitudeChange = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
+            crashflipAttitudeAttenuator = attitudeChange > 0.5f ? 1.0f : attitudeChange * 2.0f;
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
