@@ -72,6 +72,7 @@
 #define PARAM_NAME_TPA_SPEED_ADV_THRUST "tpa_speed_adv_thrust"
 #define PARAM_NAME_TPA_SPEED_MAX_VOLTAGE "tpa_speed_max_voltage"
 #define PARAM_NAME_TPA_SPEED_PITCH_OFFSET "tpa_speed_pitch_offset"
+#define PARAM_NAME_YAW_TYPE "yaw_type"
 #define PARAM_NAME_MIXER_TYPE "mixer_type"
 #define PARAM_NAME_EZ_LANDING_THRESHOLD "ez_landing_threshold"
 #define PARAM_NAME_EZ_LANDING_LIMIT "ez_landing_limit"
