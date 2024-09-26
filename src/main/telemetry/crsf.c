@@ -317,7 +317,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 static inline uint16_t getAltitudePacked(int32_t altitude_dm) 
 {
     static const int ALT_DM_OFFSET = 10000;
-    int valDm = altitude_dm - ALT_DM_OFFSET;
+    int valDm = altitude_dm + ALT_DM_OFFSET;
 
     if (valDm < 0) return 0;   // too low, return minimum
     if (valDm < 0x8000) return valDm;  // 15 bits to return dm value with offset
