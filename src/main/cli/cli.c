@@ -6516,7 +6516,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
-    CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
+    CLI_COMMAND_DEF("exit", "exit command line interface and reboot (default)", "[noreboot]", cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
         "\t<->[name]", cliFeature),
@@ -6575,7 +6575,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
-    CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
+    CLI_COMMAND_DEF("save", "save and reboot (default)", "[noreboot]", cliSave),
 #ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
