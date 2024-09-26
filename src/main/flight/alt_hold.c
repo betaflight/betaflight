@@ -46,7 +46,6 @@ altHoldPid_t altHoldPid;
 
 altHoldState_t altHoldState;
 
-static pt2Filter_t altHoldDeltaLpf;
 static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 
 float altitudePidCalculate(void)
@@ -161,11 +160,6 @@ void altHoldReset(void)
 
 void altHoldInit(void)
 {
-    //setup altitude D filter
-    const float cutoffHz = 0.01f * positionConfig()->altitude_d_lpf; // default 1Hz, time constant about 160ms
-    const float gain = pt2FilterGain(cutoffHz, taskIntervalSeconds);
-    pt2FilterInit(&altHoldDeltaLpf, gain);
-
     altHoldState.hover = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
     altHoldState.isAltHoldActive = false;
     altHoldReset();
