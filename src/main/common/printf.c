@@ -47,6 +47,8 @@
 
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
+#define DEFAULT_FLOAT_PRECISION 6
+
 putcf stdout_putf;
 void *stdout_putp;
 
@@ -72,6 +74,7 @@ static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 // function to convert float to string
 static void tfp_ftoa(double f, char *buf, int buf_size, int precision) {
     int i = 0;
+    const double scales[] = { 1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6 };
 
     // Handle negative numbers
     if (f < 0) {
@@ -80,43 +83,63 @@ static void tfp_ftoa(double f, char *buf, int buf_size, int precision) {
     }
 
     // Extract integer part
-    int ipart = (int)f;
-    double fpart = f - (double)ipart;
+    long int_part = (long)f;
 
-    // Convert integer part
-    if (ipart == 0) {
+    // Extract fractional part
+    double frac_part = f - (double)int_part;
+
+    // Scale the fractional part for rounding
+    double scaled_frac_part = frac_part * scales[precision];
+
+    // Get the rounded fractional part
+    long rounded_frac = (long)(scaled_frac_part);
+    double last_digit = scaled_frac_part - rounded_frac; // Get last digit for rounding
+
+    // Handle rounding based on the last digit
+    if (last_digit >= (double)0.5) {
+        rounded_frac++;  // Round up if the last digit is 5 or more
+    }
+
+    // Check for overflow in the fractional part
+    if (rounded_frac >= scales[precision]) {
+        rounded_frac = 0;
+        int_part++;  // Increment the integer part if necessary
+    }
+
+    // Convert the integer part to string
+    if (int_part == 0) {
         buf[i++] = '0';
     } else {
-        char temp[10];
-        int j = 0;
-        while (ipart) {
-            temp[j++] = (ipart % 10) + '0'; // part + '0' ASCII 48
-            ipart /= 10;
+        long num = int_part;
+        int digits = 0;
+
+        // Calculate the number of digits in the integer part
+        long temp = num;
+        while (temp > 0) {
+            temp /= 10;
+            digits++;
         }
-        while (j > 0) {
-            if (i < buf_size) {
-                buf[i++] = temp[--j];
-            } else {
-                break;  // buffer overflow
+
+        // Write digits starting from the highest digit
+        for (int j = digits - 1; j >= 0; j--) {
+            if (i < buf_size - 1) {
+                buf[i + j] = (num % 10) + '0';
+                num /= 10;
             }
         }
+        i += digits;
     }
 
-    buf[i++] = '.';
+    // Add decimal point and fractional part if precision > 0
+    if (precision > 0 && i < buf_size - 1) {
+        buf[i++] = '.';
 
-    // Convert fractional part
-    for (int j = 0; j < precision; j++) {
-        fpart *= 10;
-        int digit = (int)fpart;
-        if (i < buf_size) {
-            buf[i++] = digit + '0'; // part + '0' ASCII 48
+        // Convert the fractional part to string
+        for (int j = 0; j < precision && i < buf_size - 1; j++) {
+            rounded_frac *= 10;  // Shift left
+            buf[i++] = (char)(rounded_frac / scales[precision]) + '0';
+            rounded_frac %= (long)scales[precision];
         }
-        fpart -= digit;
-    }
-
-    // Round last digit in case of precision overflow
-    if ((int)(fpart * 10) >= 5 && i > 0 && i < buf_size) {
-        buf[i - 1] += 1;  // Round up the last digit
     }
 
     if (i < buf_size) {
@@ -132,7 +155,6 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
     char bf[32];
     int written = 0;
     char ch;
-    const int buffer_size = sizeof(bf) - 1; // Reserve one byte for '\0'
 
     while ((ch = *(fmt++))) {
         if (ch != '%') {
@@ -143,7 +165,7 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
             char lng = 0;
 #endif
             int w = 0;
-            int precision = 6; // Default float precision
+            int precision = DEFAULT_FLOAT_PRECISION; // Default float precision
             ch = *(fmt++);
             if (ch == '0') {
                 ch = *(fmt++);
@@ -211,7 +233,8 @@ int tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                 break;
             case 'f': {
                 double f = va_arg(va, double);
-                tfp_ftoa(f, bf, buffer_size, precision);
+                if (precision > DEFAULT_FLOAT_PRECISION) precision = DEFAULT_FLOAT_PRECISION;
+                tfp_ftoa(f, bf, sizeof(bf) - 1, precision);
                 written = putchw(putp, putf, w, lz, bf);
                 break;
             }
