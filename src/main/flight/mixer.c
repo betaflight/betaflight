@@ -328,6 +328,8 @@ static bool applyCrashFlipModeToMotors(void)
     float crashflipRateAttenuator = 1.0f;
     float crashflipAttitudeAttenuator = 1.0f;
     const float crashflipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
+    const float smallAttChange = 0.5f; // attenuation factors less that this will be ignored
+    const float smallAttChangeInv = 1.0f / smallAttChange;
 
     // disable both attenuators if the user's crashflip_rate is zero
     if (crashflipRateLimit > 0) {
@@ -343,9 +345,9 @@ static bool applyCrashFlipModeToMotors(void)
                 tiltAngleAtStart = tiltAngle;
                 isFirstTiltAngleRead = false;
             }
-            // attenuate by attitude only when a significant attitude change has occurred
             const float attitudeChange = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
-            crashflipAttitudeAttenuator = attitudeChange > 0.5f ? 1.0f : attitudeChange * 2.0f;
+            // no attenuation unless a significant attitude change has occurred
+            crashflipAttitudeAttenuator = attitudeChange > smallAttChange ? 1.0f : attitudeChange * smallAttChangeInv;
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
@@ -356,7 +358,10 @@ static bool applyCrashFlipModeToMotors(void)
         for (int axis = 0; axis < FD_YAW; axis++) {
             gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
         }
-        crashflipRateAttenuator = fmaxf(1.0f - gyroRate / crashflipRateLimit, 0.0f);
+        const float gyroRateChange = fmaxf(1.0f - gyroRate / crashflipRateLimit, 0.0f);
+        // no attenuation unless a significant gyro rate change has occurred
+        crashflipRateAttenuator = gyroRateChange > smallAttChange ? 1.0f : gyroRateChange * smallAttChangeInv;
+
         crashflipPower *= crashflipAttitudeAttenuator * crashflipRateAttenuator;
     }
 
