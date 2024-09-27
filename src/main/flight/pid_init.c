@@ -448,10 +448,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #ifdef USE_D_MAX
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         const uint8_t dMax = pidProfile->d_max[axis];
-        if ((dMax > 0) && (dMax > pidProfile->pid[axis].D)) {
-            pidRuntime.dMaxPercent[axis] = (float) pidProfile->pid[axis].D / dMax;
+        if ((pidProfile->pid[axis].D > 0) && dMax > pidProfile->pid[axis].D) {
+            pidRuntime.dMaxPercent[axis] = (float) dMax / pidProfile->pid[axis].D;
+            // fraction that Dmax is higher than D, eg if D is 8 and Dmax is 10, Dmax is 1.25 times bigger
         } else {
-            pidRuntime.dMaxPercent[axis] = 0;
+            pidRuntime.dMaxPercent[axis] = 1.0f;
         }
     }
     pidRuntime.dMaxGyroGain = D_MAX_GAIN_FACTOR * pidProfile->d_max_gain / D_MAX_LOWPASS_HZ;
