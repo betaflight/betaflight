@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "flight/pid.h"
+
 typedef struct positionControlConfig_s {
     uint16_t hover_throttle;      // value used at the start of a rescue or position hold
     uint8_t landing_altitude_m;   // altitude below which landing behaviours can change, metres
@@ -28,12 +30,5 @@ typedef struct positionControlConfig_s {
 
 PG_DECLARE(positionControlConfig_t, positionControlConfig);
 
-typedef struct {
-    float kp;
-    float ki;
-    float kd;
-    float kf;
-} altitudePidCoeffs_t;
-
 void positionControlInit(void);
-void getAltitudePidCoeffs(altitudePidCoeffs_t* data);
+void getAltitudePidCoeffs(pidCoefficient_t* data);

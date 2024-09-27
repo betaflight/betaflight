@@ -26,6 +26,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "flight/pid.h"
 #include "flight/position_control.h"
 
 #define ALTITUDE_P_SCALE  0.01f
@@ -33,7 +34,7 @@
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
 
-static altitudePidCoeffs_t altitudePidCoeffs;
+static pidCoefficient_t altitudePidCoeffs;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
 
@@ -48,18 +49,18 @@ PG_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig,
 
 void positionControlInit(void)
 {
-    altitudePidCoeffs.kp = positionControlConfig()->altitude_P * ALTITUDE_P_SCALE;
-    altitudePidCoeffs.ki = positionControlConfig()->altitude_I * ALTITUDE_I_SCALE;
-    altitudePidCoeffs.kd = positionControlConfig()->altitude_D * ALTITUDE_D_SCALE;
-    altitudePidCoeffs.kf = positionControlConfig()->altitude_F * ALTITUDE_F_SCALE;
+    altitudePidCoeffs.Kp = positionControlConfig()->altitude_P * ALTITUDE_P_SCALE;
+    altitudePidCoeffs.Ki = positionControlConfig()->altitude_I * ALTITUDE_I_SCALE;
+    altitudePidCoeffs.Kd = positionControlConfig()->altitude_D * ALTITUDE_D_SCALE;
+    altitudePidCoeffs.Kf = positionControlConfig()->altitude_F * ALTITUDE_F_SCALE;
 }
 
-void getAltitudePidCoeffs(altitudePidCoeffs_t* data)
+void getAltitudePidCoeffs(pidCoefficient_t* data)
 {
     if (data != NULL) {
-        data->kp = altitudePidCoeffs.kp;
-        data->ki = altitudePidCoeffs.ki;
-        data->kd = altitudePidCoeffs.kd;
-        data->kf = altitudePidCoeffs.kf;
+        data->Kp = altitudePidCoeffs.Kp;
+        data->Ki = altitudePidCoeffs.Ki;
+        data->Kd = altitudePidCoeffs.Kd;
+        data->Kf = altitudePidCoeffs.Kf;
     }
 }

@@ -35,6 +35,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/position.h"
     #include "flight/position_control.h"
+    #include "flight/pid.h"
 
     #include "rx/rx.h"
 
@@ -99,12 +100,12 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 extern "C" {
     acc_t acc;
 
-    void getAltitudePidCoeffs(altitudePidCoeffs_t* data)
+    void getAltitudePidCoeffs(pidCoefficient_t* data)
     {
-        data->kp = 0.0f;
-        data->ki = 0.0f;
-        data->kd = 0.0f;
-        data->kf = 0.0f;
+        data->Kp = 0.0f;
+        data->Ki = 0.0f;
+        data->Kd = 0.0f;
+        data->Kf = 0.0f;
     }
 
     float getAltitudeCm(void) {return 0.0f;}
