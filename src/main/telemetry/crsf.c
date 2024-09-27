@@ -66,9 +66,7 @@
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-#if defined(USE_BARO) && defined(USE_VARIO)
 #include "sensors/barometer.h"
-#endif
 
 #include "telemetry/telemetry.h"
 #include "telemetry/msp_shared.h"
@@ -314,7 +312,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 // altitude lower  than -1000m is sent as zero   (should be displayed as "<-1000m" or something).
 // altitude higher than 32767m is sent as 0xfffe (should be displayed as ">32766m" or something).
 // range from 0 to 2276m might be sent with dm- or m-precision. But this function always use dm-precision.
-static inline uint16_t getAltitudePacked(int32_t altitude_dm) 
+static inline uint16_t calcAltitudePacked(int32_t altitude_dm) 
 {
     static const int ALT_DM_OFFSET = 10000;
     int valDm = altitude_dm + ALT_DM_OFFSET;
@@ -337,7 +335,7 @@ static inline int8_t getVerticalSpeedPacked(int16_t verticalSpeed) // Vertical s
     static const float Kr = .026f;
 
     int8_t sign = verticalSpeed < 0 ? -1 : 1;
-    const int result32 = lrintf(logf((float)(verticalSpeed * sign) / Kl + 1) / Kr) * sign;
+    const int result32 = lrintf(log_approx(verticalSpeed * sign / Kl + 1) / Kr) * sign;
     int8_t result8 = constrain(result32, SCHAR_MIN, SCHAR_MAX);
     return result8;
 
@@ -347,12 +345,12 @@ static inline int8_t getVerticalSpeedPacked(int16_t verticalSpeed) // Vertical s
 }
 
 // pack barometric altitude
-static void crsfFrameAltitude(sbuf_t* dst)
+static void crsfFrameAltitude(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_BARO_ALTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BARO_ALTITUDE);
-    sbufWriteU16BigEndian(dst, getAltitudePacked((baro.altitude + 5) / 10));
+    sbufWriteU16BigEndian(dst, calcAltitudePacked((baro.altitude + 5) / 10));
     sbufWriteU8(dst, getVerticalSpeedPacked(getEstimatedVario()));
 }
 #endif
