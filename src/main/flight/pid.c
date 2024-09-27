@@ -321,7 +321,7 @@ float getTpaFactorClassic(float tpaArgument)
     return 1.0f - tpaRate;
 }
 
-void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile)
+void pidUpdateTpaFactor(float throttle)
 {
     // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
     throttle = constrainf(throttle, 0.0f, 1.0f);
@@ -334,7 +334,7 @@ void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_ADVANCED_TPA
-    switch (pidProfile->tpa_curve_type) {
+    switch (pidRuntime.tpaCurveType) {
     case TPA_CURVE_HYPERBOLIC:
         tpaFactor = pwlInterpolate(&pidRuntime.tpaCurvePwl, tpaArgument);
         break;
@@ -343,7 +343,6 @@ void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile)
         tpaFactor = getTpaFactorClassic(tpaArgument);
     }
 #else
-    UNUSED(pidProfile);
     tpaFactor = getTpaFactorClassic(tpaArgument);
 #endif
 
