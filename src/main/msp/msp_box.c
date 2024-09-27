@@ -146,7 +146,9 @@ int serializeBoxNameFn(sbuf_t *dst, const box_t *box)
         const int n = box->boxId - BOXUSER1;
         name = modeActivationConfig()->box_user_names[n];
         // possibly there is no '\0' in boxname
-        if (!(len = strnlen(name, sizeof(modeActivationConfig()->box_user_names[n])))) {
+        if (*name) {
+            len = strnlen(name, sizeof(modeActivationConfig()->box_user_names[n]));
+        } else {
             name = NULL;
         }
     }
