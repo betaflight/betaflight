@@ -287,7 +287,8 @@ static const blackboxConditionalFieldDefinition_t blackboxGpsGFields[] = {
 // GPS home frame
 static const blackboxSimpleFieldDefinition_t blackboxGpsHFields[] = {
     {"GPS_home",           0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
-    {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
+    {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
+    {"GPS_home",           2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
 };
 #endif
 
@@ -357,7 +358,7 @@ typedef struct blackboxMainState_s {
 } blackboxMainState_t;
 
 typedef struct blackboxGpsState_s {
-    gpsLocation_t GPS_home;     // height is not used in blackbox logging
+    gpsLocation_t GPS_home;
     gpsLocation_t GPS_coord;
     uint8_t GPS_numSat;
 } blackboxGpsState_t;
@@ -1088,6 +1089,7 @@ static void writeGPSHomeFrame(void)
 
     blackboxWriteSignedVB(GPS_home_llh.lat);
     blackboxWriteSignedVB(GPS_home_llh.lon);
+    blackboxWriteSignedVB(GPS_home_llh.altCm / 10); //log homes altitude, in increments of 0.1m
     //TODO it'd be great if we could grab the GPS current time and write that too
 
     gpsHistory.GPS_home = GPS_home_llh;
