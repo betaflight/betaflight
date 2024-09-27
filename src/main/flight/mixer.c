@@ -66,11 +66,11 @@
 
 #include "mixer.h"
 
-#define DYN_LPF_THROTTLE_STEPS             100
+#define DYN_LPF_THROTTLE_STEPS             100 
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
 
-#define CRASHFLIP_DEADBAND       20
-#define CRASHFLIP_STICK_MINF   0.15f
+#define CRASHFLIP_MOTOR_DEADBAND            20 // motor output deadband
+#define CRASHFLIP_STICK_DEADBAND         0.15f // stick deadband
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -276,14 +276,14 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 static bool applyCrashFlipModeToMotors(void)
 {
 #ifdef USE_ACC
-    static bool isFirstTiltAngleRead = true;
+    static bool isFirstTiltAngleSet = false;
     static float tiltAngleAtStart = 1.0f;
 #endif
 
     if (!isCrashFlipModeActive()) {
 #ifdef USE_ACC
         // trigger the capture of initial tilt angle on next activation of crashflip mode
-        isFirstTiltAngleRead = true;
+        isFirstTiltAngleSet = false;
 #endif
         // signal that crashflip mode is off
         return false;
@@ -310,7 +310,7 @@ static bool applyCrashFlipModeToMotors(void)
     }
 
     const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
-    const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
+    const float cosThreshold = sqrtf(3.0f) / 2.0f; // cos(30 deg)
 
     if (cosPhi < cosThreshold) {
         // Enforce either roll or pitch exclusively, if not on diagonal
@@ -322,7 +322,7 @@ static bool applyCrashFlipModeToMotors(void)
     }
 
     // Calculate crashflipPower from stick deflection with a reasonable amount of stick deadband
-    float crashflipPower = stickDeflectionLength > CRASHFLIP_STICK_MINF ? stickDeflectionLength : 0.0f;
+    float crashflipPower = stickDeflectionLength > CRASHFLIP_STICK_DEADBAND ? stickDeflectionLength : 0.0f;
 
     // calculate flipPower attenuators
     float crashflipRateAttenuator = 1.0f;
@@ -341,10 +341,11 @@ static bool applyCrashFlipModeToMotors(void)
         // re-initialisation of crashFlip mode by arm/disarm is required to reset the initial tilt angle
         if (sensors(SENSOR_ACC)) {
             const float tiltAngle = getCosTiltAngle();  // -1 if flat inverted, 0 when 90° (on edge), +1 when flat and upright
-            if (isFirstTiltAngleRead) {
+            if (!isFirstTiltAngleSet) {
                 tiltAngleAtStart = tiltAngle;
-                isFirstTiltAngleRead = false;
+                isFirstTiltAngleSet = true;
             }
+            // attitudeChange is 1.0, decreasing to 0 as quad turns
             const float attitudeChange = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
             // no attenuation unless a significant attitude change has occurred
             crashflipAttitudeAttenuator = attitudeChange > smallAttChange ? 1.0f : attitudeChange * smallAttChangeInv;
@@ -354,10 +355,7 @@ static bool applyCrashFlipModeToMotors(void)
         // if driving roll or pitch, quad usually turns on that axis, but if one motor sticks, could be a diagonal rotation
         // if driving diagonally, the turn could be either roll or pitch
         // if driving yaw, typically one motor sticks, and the quad yaws a little then flips diagonally
-        float gyroRate = 0.0f;
-        for (int axis = 0; axis < FD_YAW; axis++) {
-            gyroRate = fmaxf(gyroRate, fabsf(gyro.gyroADCf[axis]));
-        }
+        const float gyroRate = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]), fabsf(gyro.gyroADCf[FD_PITCH]));
         const float gyroRateChange = fmaxf(1.0f - gyroRate / crashflipRateLimit, 0.0f);
         // no attenuation unless a significant gyro rate change has occurred
         crashflipRateAttenuator = gyroRateChange > smallAttChange ? 1.0f : gyroRateChange * smallAttChangeInv;
@@ -382,8 +380,8 @@ static bool applyCrashFlipModeToMotors(void)
         motorOutputNormalised = MIN(1.0f, crashflipPower * motorOutputNormalised);
         float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
 
-        // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-        motorOutput = (motorOutput < motorOutputMin + CRASHFLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASHFLIP_DEADBAND);
+        // Force motors to disarm value unless motor signal exceeds crashflip motor deadband
+        motorOutput = (motorOutput < motorOutputMin + CRASHFLIP_MOTOR_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASHFLIP_MOTOR_DEADBAND);
 
         motor[i] = motorOutput;
     }
