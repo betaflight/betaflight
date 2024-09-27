@@ -52,10 +52,8 @@ static float displayAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
 static bool altitudeIsLow = false;
 
-#if defined(USE_BARO) || defined(USE_GPS)
 static float zeroedAltitudeCm = 0.0f;
 static float zeroedAltitudeDerivative = 0.0f;
-#endif
 
 static pt2Filter_t altitudeLpf;
 static pt2Filter_t altitudeDerivativeLpf;
@@ -223,6 +221,8 @@ void calculateEstimatedAltitude(void)
     altitudeAvailable = haveGpsAlt || haveBaroAlt;
 }
 
+#endif //defined(USE_BARO) || defined(USE_GPS)
+
 float getAltitudeCm(void)
 {
     return zeroedAltitudeCm;
@@ -232,8 +232,6 @@ float getAltitudeDerivative(void)
 {
     return zeroedAltitudeDerivative; // cm/s
 }
-
-#endif //defined(USE_BARO) || defined(USE_GPS)
 
 bool isAltitudeAvailable(void) {
     return altitudeAvailable;
