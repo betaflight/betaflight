@@ -132,14 +132,10 @@ static bool newGPSData = false;
 static pt1Filter_t velocityDLpf;
 static pt3Filter_t velocityUpsampleLpf;
 
-pidCoefficient_t altitudePidCoeff;
 rescueState_s rescueState;
 
 void gpsRescueInit(void)
 {
-    // get altitude / throttle pid coefficients from position_control.c
-    getAltitudePidCoeffs(&altitudePidCoeff);
-
     float cutoffHz, gain;
     cutoffHz = gpsRescueConfig()->pitchCutoffHz / 100.0f;
     rescueState.intent.velocityPidCutoff = cutoffHz;
@@ -247,23 +243,23 @@ static void rescueAttainPosition(void)
     // at the start, the target starts at current altitude plus one step.  Increases stepwise to intended value.
 
     // P component
-    const float throttleP = altitudePidCoeff.Kp * altitudeErrorCm;
+    const float throttleP = getAltitudePidCoeffs()->Kp * altitudeErrorCm;
 
     // I component
     // reduce the iTerm gain for errors greater than 2m, otherwise it winds up too much
     const float itermNormalRange = 200.0f; // 2m
     const float itermRelax = (fabsf(altitudeErrorCm) < itermNormalRange) ? 1.0f : 0.1f;
 
-    throttleI += altitudeErrorCm * altitudePidCoeff.Ki * itermRelax * taskIntervalSeconds;
+    throttleI += altitudeErrorCm * getAltitudePidCoeffs()->Ki * itermRelax * taskIntervalSeconds;
     throttleI = constrainf(throttleI, -1.0f * GPS_RESCUE_MAX_THROTTLE_ITERM, 1.0f * GPS_RESCUE_MAX_THROTTLE_ITERM);
     // up to 20% increase in throttle from I alone, need to check if this is needed, in practice.
 
     // D component
-    const float throttleD = -getAltitudeDerivative() * altitudePidCoeff.Kd * rescueState.intent.throttleDMultiplier;
+    const float throttleD = -getAltitudeDerivative() * getAltitudePidCoeffs()->Kd * rescueState.intent.throttleDMultiplier;
 
     // F component
     // add a feedforward element that is proportional to the ascend or descend rate
-    const float throttleF = altitudePidCoeff.Kf * rescueState.intent.targetAltitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
+    const float throttleF = getAltitudePidCoeffs()->Kf * rescueState.intent.targetAltitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
 
     const float hoverOffset = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
 

@@ -36,7 +36,6 @@
 #include "alt_hold.h"
 
 static float integral = 0.0f;
-static pidCoefficient_t altitudePidCoeff;
 
 altHoldState_t altHoldState;
 
@@ -72,7 +71,7 @@ float altitudePidCalculate(void)
     const float altitudeErrorCm = altHoldState.targetAltitudeCm - getAltitudeCm();
 
     // P
-    const float pOut = altitudePidCoeff.Kp * altitudeErrorCm;
+    const float pOut = getAltitudePidCoeffs()->Kp * altitudeErrorCm;
 
     // I
     // input limit iTerm so that it doesn't grow fast with large errors
@@ -81,7 +80,7 @@ float altitudePidCalculate(void)
     // much less iTerm change for errors greater than 2m, otherwise it winds up badly
     const float itermNormalRange = 200.0f; // 2m
     const float itermRelax = (fabsf(altitudeErrorCm) < itermNormalRange) ? 1.0f : 0.1f;
-    integral += altitudeErrorCm * altitudePidCoeff.Ki * itermRelax * taskIntervalSeconds;
+    integral += altitudeErrorCm * getAltitudePidCoeffs()->Ki * itermRelax * taskIntervalSeconds;
     // arbitrary limit on iTerm, same as for gps_rescue, +/-20% of full throttle range
     // ** might not be needed with input limiting **
     integral = constrainf(integral, -200.0f, 200.0f); 
@@ -100,7 +99,7 @@ float altitudePidCalculate(void)
         vel = vel * 3.0f - sign * kinkPointAdjustment;
     }
 
-    const float dOut = altitudePidCoeff.Kd * -vel;
+    const float dOut = getAltitudePidCoeffs()->Kd * -vel;
 
     // F
     // if error is used, we get a 'free kick' in derivative from changes in the target value
@@ -108,7 +107,7 @@ float altitudePidCalculate(void)
     // calculating feedforward separately avoids the filter lag.
     // Use user's D gain for the feedforward gain factor, works OK with a scaling factor of 0.01
     // A commanded drop at 100cm/s will return feedforward of the user's D value. or 15 on defaults
-    const float fOut = altitudePidCoeff.Kf * altHoldState.targetAltitudeAdjustRate;
+    const float fOut = getAltitudePidCoeffs()->Kf * altHoldState.targetAltitudeAdjustRate;
     
     // to further improve performance...
     // adding a high-pass filtered amount of FF would give a boost when altitude changes were requested
@@ -124,15 +123,9 @@ float altitudePidCalculate(void)
     return output; // motor units, eg 100 means 10% of available throttle 
 }
 
-void altHoldPidInit(void)
-{
-    getAltitudePidCoeffs(&altitudePidCoeff); // Populate coeffs with current values
-    integral = 0.0f;
-}
-
 void altHoldReset(void)
 {
-    altHoldPidInit(); // initialise PID coefficients with values from position_control.c, force iTerm to zero
+    integral = 0.0f;
     altHoldState.targetAltitudeCm = getAltitudeCm();
     altHoldState.targetAltitudeAdjustRate = 0.0f;
 }

@@ -61,7 +61,7 @@ static uint16_t positionControlConfig_hoverThrottle;
 static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
-static uint8_t gpsRescueConfig_throttleP, gpsRescueConfig_throttleI, gpsRescueConfig_throttleD;
+static uint8_t positionControlConfig_altitude_P, positionControlConfig_altitude_I, positionControlConfig_altitude_D, positionControlConfig_altitude_F;
 static uint8_t gpsRescueConfig_yawP;
 static uint8_t gpsRescueConfig_velP, gpsRescueConfig_velI, gpsRescueConfig_velD;
 
@@ -72,9 +72,10 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    gpsRescueConfig_throttleP = gpsRescueConfig()->throttleP;
-    gpsRescueConfig_throttleI = gpsRescueConfig()->throttleI;
-    gpsRescueConfig_throttleD = gpsRescueConfig()->throttleD;
+    positionControlConfig_altitude_P = positionControlConfig()->altitude_P;
+    positionControlConfig_altitude_I = positionControlConfig()->altitude_I;
+    positionControlConfig_altitude_D = positionControlConfig()->altitude_D;
+    positionControlConfig_altitude_F = positionControlConfig()->altitude_F;
 
     gpsRescueConfig_yawP = gpsRescueConfig()->yawP;
 
@@ -93,9 +94,10 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     UNUSED(pDisp);
     UNUSED(self);
 
-    gpsRescueConfigMutable()->throttleP = gpsRescueConfig_throttleP;
-    gpsRescueConfigMutable()->throttleI = gpsRescueConfig_throttleI;
-    gpsRescueConfigMutable()->throttleD = gpsRescueConfig_throttleD;
+    positionControlConfigMutable()->altitude_P = positionControlConfig_altitude_P;
+    positionControlConfigMutable()->altitude_I = positionControlConfig_altitude_I;
+    positionControlConfigMutable()->altitude_D = positionControlConfig_altitude_D;
+    positionControlConfigMutable()->altitude_F = positionControlConfig_altitude_F;
 
     gpsRescueConfigMutable()->yawP = gpsRescueConfig_yawP;
 
@@ -113,9 +115,10 @@ const OSD_Entry cms_menuGpsRescuePidEntries[] =
 {
     {"--- GPS RESCUE PID---", OME_Label, NULL, NULL},
 
-    { "THROTTLE P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_throttleP, 0, 255, 1 } },
-    { "THROTTLE I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_throttleI, 0, 255, 1 } },
-    { "THROTTLE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_throttleD, 0, 255, 1 } },
+    { "ALTITUDE P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &positionControlConfig_altitude_P, 0, 255, 1 } },
+    { "ALTITUDE I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &positionControlConfig_altitude_I, 0, 255, 1 } },
+    { "ALTITUDE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &positionControlConfig_altitude_D, 0, 255, 1 } },
+    { "ALTITUDE F",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &positionControlConfig_altitude_F, 0, 255, 1 } },
 
     { "YAW P",             OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_yawP, 0, 255, 1 } },
 

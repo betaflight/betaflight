@@ -31,4 +31,4 @@ typedef struct positionControlConfig_s {
 PG_DECLARE(positionControlConfig_t, positionControlConfig);
 
 void positionControlInit(void);
-void getAltitudePidCoeffs(pidCoefficient_t* data);
+const pidCoefficient_t *getAltitudePidCoeffs(void);

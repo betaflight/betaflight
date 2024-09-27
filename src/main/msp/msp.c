@@ -1562,9 +1562,10 @@ case MSP_NAME:
         break;
 
     case MSP_GPS_RESCUE_PIDS:
-        sbufWriteU16(dst, gpsRescueConfig()->throttleP);
-        sbufWriteU16(dst, gpsRescueConfig()->throttleI);
-        sbufWriteU16(dst, gpsRescueConfig()->throttleD);
+        sbufWriteU16(dst, positionControlConfig()->altitude_P);
+        sbufWriteU16(dst, positionControlConfig()->altitude_I);
+        sbufWriteU16(dst, positionControlConfig()->altitude_D);
+        // altitude_F not implemented yet
         sbufWriteU16(dst, gpsRescueConfig()->velP);
         sbufWriteU16(dst, gpsRescueConfig()->velI);
         sbufWriteU16(dst, gpsRescueConfig()->velD);
@@ -2901,9 +2902,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
-        gpsRescueConfigMutable()->throttleP = sbufReadU16(src);
-        gpsRescueConfigMutable()->throttleI = sbufReadU16(src);
-        gpsRescueConfigMutable()->throttleD = sbufReadU16(src);
+        positionControlConfigMutable()->altitude_P = sbufReadU16(src);
+        positionControlConfigMutable()->altitude_I = sbufReadU16(src);
+        positionControlConfigMutable()->altitude_D = sbufReadU16(src);
+        // altitude_F not implemented yet
         gpsRescueConfigMutable()->velP = sbufReadU16(src);
         gpsRescueConfigMutable()->velI = sbufReadU16(src);
         gpsRescueConfigMutable()->velD = sbufReadU16(src);

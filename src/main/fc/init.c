@@ -1000,7 +1000,7 @@ void init(void)
     spiInitBusDMA();
 #endif
 
-// position must be initialised before modes that require the position pids
+// position_control must be initialised before modes that require the position_control pids
 #ifdef USE_ALT_HOLD_MODE
     altHoldInit();
 #endif

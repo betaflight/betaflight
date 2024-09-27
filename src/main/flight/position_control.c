@@ -55,12 +55,17 @@ void positionControlInit(void)
     altitudePidCoeffs.Kf = positionControlConfig()->altitude_F * ALTITUDE_F_SCALE;
 }
 
-void getAltitudePidCoeffs(pidCoefficient_t* data)
+// void getAltitudePidCoeffs(pidCoefficient_t* data)
+// {
+//     if (data != NULL) {
+//         data->Kp = altitudePidCoeffs.Kp;
+//         data->Ki = altitudePidCoeffs.Ki;
+//         data->Kd = altitudePidCoeffs.Kd;
+//         data->Kf = altitudePidCoeffs.Kf;
+//     }
+// }
+
+const pidCoefficient_t *getAltitudePidCoeffs(void)
 {
-    if (data != NULL) {
-        data->Kp = altitudePidCoeffs.Kp;
-        data->Ki = altitudePidCoeffs.Ki;
-        data->Kd = altitudePidCoeffs.Kd;
-        data->Kf = altitudePidCoeffs.Kf;
-    }
+    return &altitudePidCoeffs;
 }
