@@ -98,7 +98,6 @@ typedef struct {
 
 typedef struct {
     float currentAltitudeCm;
-    float altitudeDerivativeCmS;
     float distanceToHomeCm;
     float distanceToHomeM;
     uint16_t groundSpeedCmS;
@@ -121,15 +120,6 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
-typedef struct {
-    float kp;
-    float ki;
-    float kd;
-    float kf;
-} throttlePidCoeffs_s;
-
-throttlePidCoeffs_s throttlePidCoeffs;
-
 #define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
 #define GPS_RESCUE_MAX_THROTTLE_ITERM    200    // max iterm value for throttle in degrees * 100
 #define GPS_RESCUE_ALLOWED_YAW_RANGE   30.0f   // yaw error must be less than this to enter fly home phase, and to pitch during descend()
@@ -143,10 +133,14 @@ static bool newGPSData = false;
 static pt1Filter_t velocityDLpf;
 static pt3Filter_t velocityUpsampleLpf;
 
+altitudePidCoeffs_t altitudePidCoeff;
 rescueState_s rescueState;
 
 void gpsRescueInit(void)
 {
+    // get altitude / throttle pid coefficients from position_control.c
+    getAltitudePidCoeffs(&altitudePidCoeff);
+
     float cutoffHz, gain;
     cutoffHz = gpsRescueConfig()->pitchCutoffHz / 100.0f;
     rescueState.intent.velocityPidCutoff = cutoffHz;
@@ -255,23 +249,23 @@ static void rescueAttainPosition(void)
     // at the start, the target starts at current altitude plus one step.  Increases stepwise to intended value.
 
     // P component
-    const float throttleP = throttlePidCoeffs.kp * altitudeErrorCm;
+    const float throttleP = altitudePidCoeff.kp * altitudeErrorCm;
 
     // I component
     // reduce the iTerm gain for errors greater than 2m, otherwise it winds up too much
     const float itermNormalRange = 200.0f; // 2m
     const float itermRelax = (fabsf(altitudeErrorCm) < itermNormalRange) ? 1.0f : 0.1f;
 
-    throttleI += altitudeErrorCm * throttlePidCoeffs.ki * itermRelax * taskIntervalSeconds;
+    throttleI += altitudeErrorCm * altitudePidCoeff.ki * itermRelax * taskIntervalSeconds;
     throttleI = constrainf(throttleI, -1.0f * GPS_RESCUE_MAX_THROTTLE_ITERM, 1.0f * GPS_RESCUE_MAX_THROTTLE_ITERM);
     // up to 20% increase in throttle from I alone, need to check if this is needed, in practice.
 
     // D component
-    const float throttleD = -rescueState.sensor.altitudeDerivativeCmS * throttlePidCoeffs.kp * rescueState.intent.throttleDMultiplier;
+    const float throttleD = -getAltitudeDerivative() * altitudePidCoeff.kd * rescueState.intent.throttleDMultiplier;
 
     // F component
     // add a feedforward element that is proportional to the ascend or descend rate
-    const float throttleF = throttlePidCoeffs.kf * rescueState.intent.targetAltitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
+    const float throttleF = altitudePidCoeff.kf * rescueState.intent.targetAltitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
 
     const float hoverOffset = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
 
@@ -547,10 +541,7 @@ static void sensorUpdate(void)
 {
     static float prevDistanceToHomeCm = 0.0f;
 
-    altitudeData_t data;
-    getAltitudeData(&data);
-    rescueState.sensor.currentAltitudeCm = data.altitudeCm;
-    rescueState.sensor.altitudeDerivativeCmS = data.altitudeDerivativeCmS;
+    rescueState.sensor.currentAltitudeCm = getAltitudeCm();
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS);  // groundspeed cm/s
@@ -767,14 +758,6 @@ void initialiseRescueValues (void)
     rescueState.intent.velocityItermAttenuator = 1.0f; // allow iTerm to accumulate normally unless constrained by IMU error or descent phase
     rescueState.intent.velocityItermRelax = 0.0f; // but don't accumulate any at the start, not until fly home
     rescueState.intent.targetAltitudeStepCm = 0.0f;
-
-    // get throttle pid coefficients from position_control.c
-    altitudePidCoeffs_t data;
-    getAltitudePidCoeffs(&data);
-    throttlePidCoeffs.kp = data.kp;
-    throttlePidCoeffs.ki = data.ki;
-    throttlePidCoeffs.kd = data.kd;
-    throttlePidCoeffs.kf = data.kf;
 }
 
 void gpsRescueUpdate(void)

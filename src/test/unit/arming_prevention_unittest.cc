@@ -1145,11 +1145,8 @@ extern "C" {
         data->kf = 0.0f;
     }
 
-    void getAltitudeData(altitudeData_t* data)
-    {
-        data->altitudeCm = 0.0f;
-        data->altitudeDerivativeCmS = 0.0f;
-    }
+    float getAltitudeCm(void) {return 0.0f;}
+    float getAltitudeDerivative(void) {return 0.0f;}
 
     float pt1FilterGain(float, float) { return 0.5f; }
     float pt2FilterGain(float, float)  { return 0.1f; }

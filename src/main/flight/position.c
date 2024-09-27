@@ -66,8 +66,6 @@ static int16_t estimatedVario = 0; // in cm/s
 
 void positionInit(void)
 {
-    positionControlInit();
-
     const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
 
     const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
@@ -225,12 +223,14 @@ void calculateEstimatedAltitude(void)
     altitudeAvailable = haveGpsAlt || haveBaroAlt;
 }
 
-void getAltitudeData(altitudeData_t* data)
+float getAltitudeCm(void)
 {
-    if (data != NULL) {
-        data->altitudeCm = zeroedAltitudeCm;
-        data->altitudeDerivativeCmS = zeroedAltitudeDerivative;
-    }
+    return zeroedAltitudeCm;
+}
+
+float getAltitudeDerivative(void)
+{
+    return zeroedAltitudeDerivative; // cm/s
 }
 
 #endif //defined(USE_BARO) || defined(USE_GPS)

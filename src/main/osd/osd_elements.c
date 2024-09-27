@@ -149,7 +149,6 @@
 
 #include "flight/gps_rescue.h"
 #include "flight/position.h"
-#include "flight/position_control.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"

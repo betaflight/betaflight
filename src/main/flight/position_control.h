@@ -35,6 +35,5 @@ typedef struct {
     float kf;
 } altitudePidCoeffs_t;
 
-void getAltitudePidCoeffs(altitudePidCoeffs_t* data);
-
 void positionControlInit(void);
+void getAltitudePidCoeffs(altitudePidCoeffs_t* data);

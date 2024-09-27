@@ -33,7 +33,7 @@
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
 
-altitudePidCoeffs_t altitudePidCoeffs;
+static altitudePidCoeffs_t altitudePidCoeffs;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
 

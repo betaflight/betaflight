@@ -107,11 +107,9 @@ extern "C" {
         data->kf = 0.0f;
     }
 
-    void getAltitudeData(altitudeData_t* data)
-    {
-        data->altitudeCm = 0.0f; // Mock value for altitudeCm
-        data->altitudeDerivativeCmS = 0.0f; // Mock value for altitudeDerivativeCmS
-    }
+    float getAltitudeCm(void) {return 0.0f;}
+    float getAltitudeDerivative(void) {return 0.0f;}
+
     void pt2FilterInit(pt2Filter_t *altHoldDeltaLpf, float) {
         UNUSED(altHoldDeltaLpf);
     }
