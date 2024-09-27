@@ -142,12 +142,13 @@ int serializeBoxNameFn(sbuf_t *dst, const box_t *box)
     const char* name = NULL;
     int len;
 #if defined(USE_CUSTOM_BOX_NAMES)
-    if (name == NULL
-        && box->boxId >= BOXUSER1 && box->boxId <= BOXUSER4) {
+    if (box->boxId >= BOXUSER1 && box->boxId <= BOXUSER4) {
         const int n = box->boxId - BOXUSER1;
         name = modeActivationConfig()->box_user_names[n];
         // possibly there is no '\0' in boxname
-        len = strnlen(name, sizeof(modeActivationConfig()->box_user_names[0]));
+        if (!(len = strnlen(name, sizeof(modeActivationConfig()->box_user_names[n])))) {
+            name = NULL;
+        }
     }
 #endif
     if (name == NULL) {
