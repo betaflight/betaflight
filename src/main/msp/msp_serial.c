@@ -476,6 +476,7 @@ static void mspProcessPendingRequest(mspPort_t * mspPort)
 #endif
 #ifdef USE_CLI
     case MSP_PENDING_CLI:
+        mspPort->pendingRequest = MSP_PENDING_NONE;
         cliEnter(mspPort->port);
         break;
 #endif
