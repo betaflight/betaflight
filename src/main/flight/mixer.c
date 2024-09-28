@@ -66,7 +66,7 @@
 
 #include "mixer.h"
 
-#define DYN_LPF_THROTTLE_STEPS             100 
+#define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
 
 #define CRASHFLIP_MOTOR_DEADBAND            20 // motor output deadband
