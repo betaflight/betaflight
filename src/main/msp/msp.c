@@ -1445,7 +1445,7 @@ case MSP_NAME:
         break;
 
     case MSP_MOTOR_CONFIG:
-        sbufWriteU16(dst, motorConfig()->minthrottle);
+        sbufWriteU16(dst, 0); // was minthrottle until 4.6
         sbufWriteU16(dst, motorConfig()->maxthrottle);
         sbufWriteU16(dst, motorConfig()->mincommand);
 
@@ -1857,7 +1857,7 @@ case MSP_NAME:
         sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
-        sbufWriteU16(dst, motorConfig()->digitalIdleOffsetValue);
+        sbufWriteU16(dst, motorConfig()->idleOffset);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_use_32kHz
         sbufWriteU8(dst, motorConfig()->dev.motorPwmInversion);
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
@@ -2837,7 +2837,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
     case MSP_SET_MOTOR_CONFIG:
-        motorConfigMutable()->minthrottle = sbufReadU16(src);
+        sbufReadU16(src);   // minthrottle deprecated in 4.6
         motorConfigMutable()->maxthrottle = sbufReadU16(src);
         motorConfigMutable()->mincommand = sbufReadU16(src);
 
@@ -3023,7 +3023,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         motorConfigMutable()->dev.motorPwmProtocol = sbufReadU8(src);
         motorConfigMutable()->dev.motorPwmRate = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
-            motorConfigMutable()->digitalIdleOffsetValue = sbufReadU16(src);
+            motorConfigMutable()->idleOffset = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src)) {
             sbufReadU8(src); // DEPRECATED: gyro_use_32khz
