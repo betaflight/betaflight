@@ -32,7 +32,6 @@ extern "C" {
 extern "C" {
 
 bool featureIsEnabled(uint8_t f);
-float getIdleOffset(const motorConfig_t *motorConfig);
 float scaleRangef(float a, float b, float c, float d, float e);
 
 // Mocking functions
@@ -41,12 +40,6 @@ bool featureIsEnabled(uint8_t f)
 {
     UNUSED(f);
     return true;
-}
-
-float getIdleOffset(const motorConfig_t *motorConfig)
-{
-    UNUSED(motorConfig);
-    return 0;
 }
 
 float scaleRangef(float a, float b, float c, float d, float e)

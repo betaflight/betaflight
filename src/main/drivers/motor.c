@@ -390,9 +390,4 @@ bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 #endif
 }
 #endif
-
-float getIdleOffset(const motorConfig_t *motorConfig)
-{
-    return CONVERT_PARAMETER_TO_PERCENT(motorConfig->idleOffset * 0.01f);
-}
 #endif // USE_MOTOR
