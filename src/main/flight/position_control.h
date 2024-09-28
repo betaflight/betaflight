@@ -17,18 +17,8 @@
 
 #pragma once
 
+#include "pg/position_control.h"
 #include "flight/pid.h"
-
-typedef struct positionControlConfig_s {
-    uint16_t hover_throttle;      // value used at the start of a rescue or position hold
-    uint8_t landing_altitude_m;   // altitude below which landing behaviours can change, metres
-    uint8_t altitude_P;
-    uint8_t altitude_I;
-    uint8_t altitude_D;
-    uint8_t altitude_F;
-} positionControlConfig_t;
-
-PG_DECLARE(positionControlConfig_t, positionControlConfig);
 
 void positionControlInit(void);
 const pidCoefficient_t *getAltitudePidCoeffs(void);
