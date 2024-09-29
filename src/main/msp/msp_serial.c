@@ -142,6 +142,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                 case 0x2:
                     mspPort->c_state = MSP_CLI_CMD;
                     mspPort->mspVersion = MSP_V1;
+                    cliEnterNonInteractive(mspPort->port);
                     break;
 #endif
                 case 'M':
@@ -165,7 +166,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                 cliBufferClear();
                 mspPort->c_state = MSP_IDLE;
             } else {
-                cliProcessCharacter(mspPort->port, c);
+                cliProcessCharacter(c);
             }
             break;
 #endif

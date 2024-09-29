@@ -6695,14 +6695,14 @@ static void processCharacter(const char c)
             if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                 cmd->cliCommand(cmd->name, options);
                 if (!cliMode) {
-                    cliWrite(0x4); // send end of transmission
+                    cliWrite(0x3); // send end of text
                 }
             } else {
                 if (cliMode) {
                     cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
                 } else {
                     cliPrintLine("ERROR");
-                    cliWrite(0x4); // send end of transmission
+                    cliWrite(0x3); // send end of text
                 }
             }
             bufferIndex = 0;
@@ -6802,15 +6802,10 @@ void cliProcess(void)
     }
 }
 
-void cliProcessCharacter(struct serialPort_s *serialPort, uint8_t c)
+void cliProcessCharacter(uint8_t c)
 {
-    static bool cliSetup = false;
-
-    if (!cliSetup) {
-        cliSetup = true;
-        cliPort = serialPort;
-        bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
-        cliErrorWriter = cliWriter = &cliWriterDesc;
+    if (!cliWriter) {
+        return;
     }
 
     processCharacter(c);
@@ -6822,6 +6817,16 @@ void cliBufferClear(void)
     *cliBuffer = '\0';
     bufferIndex = 0;
     memset(cliBuffer, 0, sizeof(cliBuffer));
+}
+
+void cliEnterNonInteractive(struct serialPort_s *serialPort)
+{
+    cliPort = serialPort;
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+
+    cliWrite('$'); // send start of MSP frame
+    cliWrite(0x2); // send start of text
 }
 
 void cliEnter(serialPort_t *serialPort)
