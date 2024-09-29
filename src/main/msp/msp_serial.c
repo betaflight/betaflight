@@ -524,6 +524,20 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             continue;
         }
 
+#ifdef USE_CLI
+        // this port is in cli mode, so all serial for this port should be handled by cli.
+        // enter interactive cli mode by sending #
+        if (mspPort->c_state == MSP_CLI_ACTIVE || mspPort->c_state == MSP_CLI_CMD) {
+            if (cliMode) {
+                cliProcess();
+                return;
+            } else {
+                // incorrect setting. Reset to idle state.
+                mspPort->c_state = MSP_IDLE;
+            }
+        }
+#endif
+
         mspPostProcessFnPtr mspPostProcessFn = NULL;
 
         if (serialRxBytesWaiting(mspPort->port)) {
