@@ -6804,6 +6804,7 @@ void cliProcess(void)
 
 static void cliExit(const bool reboot)
 {
+    cliWriterFlush();
     waitForSerialPortToFinishTransmitting(cliPort);
     *cliBuffer = '\0';
     bufferIndex = 0;
