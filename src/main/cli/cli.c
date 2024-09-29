@@ -6664,8 +6664,10 @@ static void cliHelp(const char *cmdName, char *cmdline)
 static void processCharacter(const char c)
 {
     if (bufferIndex && (c == '\n' || c == '\r')) {
-        // enter pressed
-        cliPrintLinefeed();
+        if (cliMode) {
+            // enter pressed, and in cli mode - so output a newline
+            cliPrintLinefeed();
+        }
 
         // Strip comment starting with # from line
         char *p = cliBuffer;
@@ -6692,8 +6694,16 @@ static void processCharacter(const char c)
             }
             if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                 cmd->cliCommand(cmd->name, options);
+                if (!cliMode) {
+                    cliWrite(0x4); // send end of transmission
+                }
             } else {
-                cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
+                if (cliMode) {
+                    cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
+                } else {
+                    cliPrintLine("ERROR");
+                    cliWrite(0x4); // send end of transmission
+                }
             }
             bufferIndex = 0;
         }
@@ -6707,10 +6717,14 @@ static void processCharacter(const char c)
 
         cliPrompt();
     } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
-        if (!bufferIndex && c == ' ')
+        if (!bufferIndex && c == ' ') {
             return; // Ignore leading spaces
+        }
         cliBuffer[bufferIndex++] = c;
-        cliWrite(c);
+
+        if (cliMode) {
+            cliWrite(c);
+        }
     }
 }
 
@@ -6786,6 +6800,28 @@ void cliProcess(void)
 
         processCharacterInteractive(c);
     }
+}
+
+void cliProcessCharacter(struct serialPort_s *serialPort, uint8_t c)
+{
+    static bool cliSetup = false;
+
+    if (!cliSetup) {
+        cliSetup = true;
+        cliPort = serialPort;
+        bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+        cliErrorWriter = cliWriter = &cliWriterDesc;
+    }
+
+    processCharacter(c);
+}
+
+void cliBufferClear(void)
+{
+    cliWriterFlush();
+    *cliBuffer = '\0';
+    bufferIndex = 0;
+    memset(cliBuffer, 0, sizeof(cliBuffer));
 }
 
 void cliEnter(serialPort_t *serialPort)

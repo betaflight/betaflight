@@ -132,11 +132,18 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
             }
             break;
 
-        case MSP_HEADER_START:  // Waiting for 'M' (MSPv1 / MSPv2_over_v1) or 'X' (MSPv2 native)
+        case MSP_HEADER_START:  // Waiting for 'M' (MSPv1 / MSPv2_over_v1) or 'X' (MSPv2 native) or STX (MSP CLI)
             mspPort->offset = 0;
             mspPort->checksum1 = 0;
             mspPort->checksum2 = 0;
             switch (c) {
+
+#ifdef USE_CLI
+                case 0x2:
+                    mspPort->c_state = MSP_CLI_CMD;
+                    mspPort->mspVersion = MSP_V1;
+                    break;
+#endif
                 case 'M':
                     mspPort->c_state = MSP_HEADER_M;
                     mspPort->mspVersion = MSP_V1;
@@ -150,6 +157,18 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                     break;
             }
             break;
+
+#ifdef USE_CLI
+        case MSP_CLI_CMD:
+            if (c == 0x3) {
+                waitForSerialPortToFinishTransmitting(mspPort->port);
+                cliBufferClear();
+                mspPort->c_state = MSP_IDLE;
+            } else {
+                cliProcessCharacter(mspPort->port, c);
+            }
+            break;
+#endif
 
         case MSP_HEADER_M:      // Waiting for '<' / '>'
             mspPort->c_state = MSP_HEADER_V1;
@@ -477,6 +496,7 @@ static void mspProcessPendingRequest(mspPort_t * mspPort)
 #ifdef USE_CLI
     case MSP_PENDING_CLI:
         mspPort->pendingRequest = MSP_PENDING_NONE;
+        mspPort->c_state = MSP_CLI_ACTIVE;
         cliEnter(mspPort->port);
         break;
 #endif
@@ -585,7 +605,8 @@ int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int d
 #ifndef USE_MSP_PUSH_OVER_VCP
             || mspPort->port->identifier == SERIAL_PORT_USB_VCP
 #endif
-            || (port != SERIAL_PORT_ALL && mspPort->port->identifier != port)) {
+            || (port != SERIAL_PORT_ALL && mspPort->port->identifier != port)
+            || mspPort->c_state == MSP_CLI_CMD) {
             continue;
         }
 
@@ -600,7 +621,6 @@ int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int d
     }
     return ret; // return the number of bytes written
 }
-
 
 uint32_t mspSerialTxBytesFree(void)
 {

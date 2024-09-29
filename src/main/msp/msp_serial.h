@@ -47,6 +47,9 @@ typedef enum {
     MSP_PAYLOAD_V2_NATIVE,
     MSP_CHECKSUM_V2_NATIVE,
 
+    MSP_CLI_ACTIVE,
+    MSP_CLI_CMD,
+
     MSP_COMMAND_RECEIVED
 } mspState_e;
 
