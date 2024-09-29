@@ -211,8 +211,7 @@ void calculateEstimatedAltitude(void)
     DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
-    DEBUG_SET(DEBUG_ALTHOLD, 1, lrintf(zeroedAltitudeCm));
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, lrintf(zeroedAltitudeCm));
+    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 1, lrintf(zeroedAltitudeCm));
 
     altitudeAvailable = haveGpsAlt || haveBaroAlt;
 }

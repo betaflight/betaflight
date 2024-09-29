@@ -26,6 +26,8 @@
 
 typedef struct positionControlConfig_s {
     uint16_t hover_throttle;      // value used at the start of a rescue or position hold
+    uint16_t alt_control_throttle_min;
+    uint16_t alt_control_throttle_max;
     uint8_t landing_altitude_m;   // altitude below which landing behaviours can change, metres
     uint8_t altitude_P;
     uint8_t altitude_I;

@@ -153,6 +153,9 @@
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 #define PARAM_NAME_HOVER_THROTTLE "hover_throttle"
+#define PARAM_NAME_ALT_CONTROL_THROTTLE_MIN "alt_control_throttle_min"
+#define PARAM_NAME_ALT_CONTROL_THROTTLE_MAX "alt_control_throttle_max"
+
 #define PARAM_NAME_LANDING_ALTITUDE "landing_altitude_m"
 #define PARAM_NAME_ALTITUDE_P "altitude_P"
 #define PARAM_NAME_ALTITUDE_I "altitude_I"
@@ -206,9 +209,6 @@
 #define PARAM_NAME_GPS_RESCUE_DESCEND_RATE "gps_rescue_descend_rate"
 #define PARAM_NAME_GPS_RESCUE_DISARM_THRESHOLD "gps_rescue_disarm_threshold"
 
-#define PARAM_NAME_GPS_RESCUE_THROTTLE_MIN "gps_rescue_throttle_min"
-#define PARAM_NAME_GPS_RESCUE_THROTTLE_MAX "gps_rescue_throttle_max"
-
 #define PARAM_NAME_GPS_RESCUE_SANITY_CHECKS "gps_rescue_sanity_checks"
 #define PARAM_NAME_GPS_RESCUE_MIN_SATS "gps_rescue_min_sats"
 #define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
@@ -234,8 +234,6 @@
 #endif // USE_GPS
 
 #ifdef USE_ALT_HOLD_MODE
-#define PARAM_NAME_ALT_HOLD_THROTTLE_MIN "alt_hold_throttle_min"
-#define PARAM_NAME_ALT_HOLD_THROTTLE_MAX "alt_hold_throttle_max"
 #define PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE "alt_hold_target_adjust_rate"
 #endif // USE_ALT_HOLD_MODE
 

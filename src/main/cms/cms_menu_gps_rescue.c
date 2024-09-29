@@ -54,8 +54,8 @@ static uint16_t gpsRescueConfig_descentDistanceM; //meters
 static uint16_t gpsRescueConfig_descendRate;
 static uint8_t positionControlConfig_landingAltitudeM;
 
-static uint16_t gpsRescueConfig_throttleMin;
-static uint16_t gpsRescueConfig_throttleMax;
+static uint16_t positionControlConfig_throttleMin;
+static uint16_t positionControlConfig_throttleMax;
 static uint16_t positionControlConfig_hoverThrottle;
 
 static uint8_t gpsRescueConfig_minSats;
@@ -161,8 +161,8 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
     gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
     positionControlConfig_landingAltitudeM = positionControlConfig()->landing_altitude_m;
 
-    gpsRescueConfig_throttleMin = gpsRescueConfig()->throttleMin;
-    gpsRescueConfig_throttleMax = gpsRescueConfig()->throttleMax;
+    positionControlConfig_throttleMin = positionControlConfig()->alt_control_throttle_min;
+    positionControlConfig_throttleMax = positionControlConfig()->alt_control_throttle_max;
     positionControlConfig_hoverThrottle = positionControlConfig()->hover_throttle;
 
     gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
@@ -189,8 +189,8 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
     positionControlConfigMutable()->landing_altitude_m = positionControlConfig_landingAltitudeM;
 
-    gpsRescueConfigMutable()->throttleMin = gpsRescueConfig_throttleMin;
-    gpsRescueConfigMutable()->throttleMax = gpsRescueConfig_throttleMax;
+    positionControlConfigMutable()->alt_control_throttle_min = positionControlConfig_throttleMin;
+    positionControlConfigMutable()->alt_control_throttle_max = positionControlConfig_throttleMax;
     positionControlConfigMutable()->hover_throttle = positionControlConfig_hoverThrottle;
 
     gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
@@ -216,8 +216,8 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
     { "DESCENT RATE CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 25, 500, 1 } },
     { "LANDING ALT     M", OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &positionControlConfig_landingAltitudeM, 1, 15, 1 } },
 
-    { "THROTTLE MIN",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMin, 1000, 2000, 1 } },
-    { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMax, 1000, 2000, 1 } },
+    { "THROTTLE MIN",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &positionControlConfig_throttleMin, 1000, 2000, 1 } },
+    { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &positionControlConfig_throttleMax, 1000, 2000, 1 } },
     { "THROTTLE HOV",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &positionControlConfig_hoverThrottle, 1100, 1700, 1 } },
 
     { "SATS REQUIRED",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_minSats, 5, 50, 1 } },

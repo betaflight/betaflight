@@ -1137,10 +1137,6 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
 
-    pidCoefficient_t testAltitudePidCoeffs = {15.0f, 15.0f, 15.1f, 15.0f};
-    const pidCoefficient_t *getAltitudePidCoeffs(void) {
-        return &testAltitudePidCoeffs;
-    }
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
 
@@ -1164,5 +1160,4 @@ extern "C" {
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
     bool crashFlipSuccessful(void) { return false; }
-    bool isBelowLandingAltitude(void) { return false; };
 }

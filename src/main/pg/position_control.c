@@ -27,10 +27,12 @@
 
 #include "position_control.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 1);
 
 PG_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig,
     .hover_throttle = 1275,
+    .alt_control_throttle_min = 1100,
+    .alt_control_throttle_max = 1700,
     .landing_altitude_m = 4,
     .altitude_P = 15,
     .altitude_I = 15,
