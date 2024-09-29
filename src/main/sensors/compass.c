@@ -438,9 +438,9 @@ bool compassInit(void)
     return true;
 }
 
-bool compassIsHealthy(void)
+bool compassEnabledAndCalibrated(void)
 {
-    return (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
+    return sensors(SENSOR_MAG) && (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
 }
 
 void compassStartCalibration(void)
