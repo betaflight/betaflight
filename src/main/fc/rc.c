@@ -271,8 +271,6 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
     // every time a new frame is detected,
     // and after RXLOSS_TRIGGER_INTERVAL since the last good frame, and
     // then every RX_FRAME_RECHECK_INTERVAL, until a new frame is detected
-    //   (rxReceivingSignal == false)
-
     // it provides values for use in RCSmoothing, Feedforward, etc.
     static timeUs_t lastRxTimeUs = 0;
     timeDelta_t delta = 0;

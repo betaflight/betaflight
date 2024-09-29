@@ -133,7 +133,7 @@ uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define RSSI_UPDATE_INTERVAL (20 * 1000)                // 20ms in us
-#define RX_FRAME_RECHECK_INTERVAL (50 * 1000)             // 50ms in us
+#define RX_FRAME_RECHECK_INTERVAL (50 * 1000)           // 50ms in us
 #define RXLOSS_TRIGGER_INTERVAL (150 * 1000)            // 150ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
