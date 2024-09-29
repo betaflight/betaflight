@@ -34,6 +34,8 @@ bool cliMode = false;
 
 #ifdef USE_CLI
 
+bool cliInteractive = false;
+
 #include "blackbox/blackbox.h"
 
 #include "build/build_config.h"
@@ -315,6 +317,7 @@ typedef enum dumpFlags_e {
     BARE = (1 << 8),
 } dumpFlags_t;
 
+static void cliExit(const bool reboot);
 typedef bool printFn(dumpFlags_t dumpMask, bool equalsDefault, const char *format, ...);
 
 typedef enum {
@@ -3581,23 +3584,14 @@ static void cliBootloader(const char *cmdName, char *cmdline)
     cliRebootEx(rebootTarget);
 }
 
-static void cliExit(const char *cmdName, char *cmdline)
+static void cliExitCmd(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
-    UNUSED(cmdline);
 
     cliPrintHashLine("leaving CLI mode, unsaved changes lost");
     cliWriterFlush();
 
-    *cliBuffer = '\0';
-    bufferIndex = 0;
-    cliMode = false;
-    // incase a motor was left running during motortest, clear it here
-    mixerResetDisarmedMotors();
-    if (strcasecmp(cmdline, "noreboot") == 0) {
-        return;
-    }
-    cliReboot();
+    cliExit(strcasecmp(cmdline, "noreboot") == 0);
 }
 
 #ifdef USE_GPS
@@ -6518,7 +6512,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
-    CLI_COMMAND_DEF("exit", "exit command line interface and reboot (default)", "[noreboot]", cliExit),
+    CLI_COMMAND_DEF("exit", "exit command line interface and reboot (default)", "[noreboot]", cliExitCmd),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
         "\t<->[name]", cliFeature),
@@ -6664,7 +6658,7 @@ static void cliHelp(const char *cmdName, char *cmdline)
 static void processCharacter(const char c)
 {
     if (bufferIndex && (c == '\n' || c == '\r')) {
-        if (cliMode) {
+        if (cliInteractive) {
             // enter pressed, and in cli mode - so output a newline
             cliPrintLinefeed();
         }
@@ -6694,15 +6688,12 @@ static void processCharacter(const char c)
             }
             if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                 cmd->cliCommand(cmd->name, options);
-                if (!cliMode) {
-                    cliWrite(0x3); // send end of text
-                }
             } else {
-                if (cliMode) {
+                if (cliInteractive) {
                     cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
                 } else {
-                    cliPrintLine("ERROR");
-                    cliWrite(0x3); // send end of text
+                    cliPrint("ERROR: ");
+                    cliPrintLine(cliBuffer);
                 }
             }
             bufferIndex = 0;
@@ -6710,8 +6701,8 @@ static void processCharacter(const char c)
 
         memset(cliBuffer, 0, sizeof(cliBuffer));
 
-        // 'exit' will reset this flag, so we don't need to print prompt again
-        if (!cliMode) {
+        // do not prompt unless in interactive mode
+        if (!cliInteractive) {
             return;
         }
 
@@ -6722,7 +6713,8 @@ static void processCharacter(const char c)
         }
         cliBuffer[bufferIndex++] = c;
 
-        if (cliMode) {
+        // return the character to the terminal if interative
+        if (cliInteractive) {
             cliWrite(c);
         }
     }
@@ -6769,7 +6761,7 @@ static void processCharacterInteractive(const char c)
         for (; i < bufferIndex; i++)
             cliWrite(cliBuffer[i]);
     } else if (!bufferIndex && c == 4) {   // CTRL-D
-        cliExit("", cliBuffer);
+        cliExit(true);
         return;
     } else if (c == 12) {                  // NewPage / CTRL-L
         // clear screen
@@ -6797,54 +6789,59 @@ void cliProcess(void)
 
     while (serialRxBytesWaiting(cliPort)) {
         uint8_t c = serialRead(cliPort);
-
-        processCharacterInteractive(c);
+        if (cliInteractive) {
+            processCharacterInteractive(c);
+        } else {
+            // handle terminating flow control character
+            if (c == 0x3) { // CTRL-C
+                cliExit(false);
+                return;
+            }
+            processCharacter(c);
+        }
     }
 }
 
-void cliProcessCharacter(uint8_t c)
+static void cliExit(const bool reboot)
 {
-    if (!cliWriter) {
-        return;
-    }
-
-    processCharacter(c);
-}
-
-void cliBufferClear(void)
-{
-    cliWriterFlush();
+    waitForSerialPortToFinishTransmitting(cliPort);
     *cliBuffer = '\0';
     bufferIndex = 0;
-    memset(cliBuffer, 0, sizeof(cliBuffer));
+    cliMode = false;
+    cliInteractive = false;
+    // incase a motor was left running during motortest, clear it here
+    mixerResetDisarmedMotors();
+
+    if (reboot) {
+        cliReboot();
+    }
 }
 
-void cliEnterNonInteractive(struct serialPort_s *serialPort)
-{
-    cliPort = serialPort;
-    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
-    cliErrorWriter = cliWriter = &cliWriterDesc;
-
-    cliWrite('$'); // send start of MSP frame
-    cliWrite(0x2); // send start of text
-}
-
-void cliEnter(serialPort_t *serialPort)
+void cliEnter(serialPort_t *serialPort, bool interactive)
 {
     cliMode = true;
+    cliInteractive = interactive;
     cliPort = serialPort;
-    setPrintfSerialPort(cliPort);
+
+    if (interactive) {
+        setPrintfSerialPort(cliPort);
+    }
+
     bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
     cliErrorWriter = cliWriter = &cliWriterDesc;
 
+    if (interactive) {
 #ifndef MINIMAL_CLI
     cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
 #else
     cliPrintLine("\r\nCLI");
 #endif
-    setArmingDisabled(ARMING_DISABLED_CLI);
-
-    cliPrompt();
+        setArmingDisabled(ARMING_DISABLED_CLI);
+        cliPrompt();
+    } else {
+        cliWrite('$'); // send start of flow control frame
+        cliWrite(0x2); // send start of text, initiating flow control
+    }
 
 #ifdef USE_CLI_BATCH
     resetCommandBatch();

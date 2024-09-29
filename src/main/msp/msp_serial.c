@@ -142,7 +142,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                 case 0x2:
                     mspPort->c_state = MSP_CLI_CMD;
                     mspPort->mspVersion = MSP_V1;
-                    cliEnterNonInteractive(mspPort->port);
+                    cliEnter(mspPort->port, false);
                     break;
 #endif
                 case 'M':
@@ -158,18 +158,6 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                     break;
             }
             break;
-
-#ifdef USE_CLI
-        case MSP_CLI_CMD:
-            if (c == 0x3) {
-                waitForSerialPortToFinishTransmitting(mspPort->port);
-                cliBufferClear();
-                mspPort->c_state = MSP_IDLE;
-            } else {
-                cliProcessCharacter(c);
-            }
-            break;
-#endif
 
         case MSP_HEADER_M:      // Waiting for '<' / '>'
             mspPort->c_state = MSP_HEADER_V1;
@@ -498,7 +486,7 @@ static void mspProcessPendingRequest(mspPort_t * mspPort)
     case MSP_PENDING_CLI:
         mspPort->pendingRequest = MSP_PENDING_NONE;
         mspPort->c_state = MSP_CLI_ACTIVE;
-        cliEnter(mspPort->port);
+        cliEnter(mspPort->port, true);
         break;
 #endif
 
