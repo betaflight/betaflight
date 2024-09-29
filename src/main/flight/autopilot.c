@@ -23,7 +23,6 @@
 #include "platform.h"
 #include "build/debug.h"
 #include "common/maths.h"
-
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/position.h"
@@ -46,6 +45,11 @@ void autopilotInit(const autopilotConfig_t *config)
     altitudePidCoeffs.Ki = config->altitude_I * ALTITUDE_I_SCALE;
     altitudePidCoeffs.Kd = config->altitude_D * ALTITUDE_D_SCALE;
     altitudePidCoeffs.Kf = config->altitude_F * ALTITUDE_F_SCALE;
+}
+
+const pidCoefficient_t *getAltitudePidCoeffs(void)
+{
+    return &altitudePidCoeffs;
 }
 
 void resetAltitudeControl (void) {
