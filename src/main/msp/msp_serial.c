@@ -530,7 +530,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             if (cliMode) {
                 // this port is in cli mode, so all serial for this port should be handled by cli.
                 cliProcess();
-                return;
+                continue;
             } else {
                 // incorrect state. Reset to idle state.
                 mspPort->c_state = MSP_IDLE;
