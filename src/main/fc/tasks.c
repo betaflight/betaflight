@@ -204,7 +204,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         break;
 
     case RX_STATE_UPDATE:
-        // updateRcCommands sets rcCommand, which is needed by updateAltHold and updateSonarAltHoldState
+        // updateRcCommands sets rcCommand, which is needed by updateAltHold
         updateRcCommands();
         updateArmingStatus();
 

@@ -121,6 +121,7 @@ static void altHoldUpdateTargetAltitude(void)
         // constant (set) deceleration target in the last 2m
         stickFactor = -(0.9f + constrainf(getAltitudeCm() / 2000.0f, 0.1f, 9.0f));
     }
+
     altHold.targetVelocity = stickFactor * altHold.maxVelocity;
 
     // prevent stick input from moving target altitude too far away from current altitude
@@ -143,7 +144,7 @@ static void altHoldUpdate(void)
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {
-    UNUSED(currentTimeUs);
+    UNUSED(currentTimeUs); 
 
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
     altHoldProcessTransitions();

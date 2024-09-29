@@ -101,6 +101,7 @@ static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
+    compassConfig->use_mag = MAG_IN_BUILD;
     compassConfig->mag_alignment = ALIGN_DEFAULT;
     memset(&compassConfig->mag_customAlignment, 0x00, sizeof(compassConfig->mag_customAlignment));
     compassConfig->mag_hardware = MAG_DEFAULT;
@@ -386,9 +387,9 @@ bool compassInit(void)
     return true;
 }
 
-bool compassIsHealthy(void)
+bool compassEnabledAndCalibrated(void)
 {
-    return (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
+    return sensors(SENSOR_MAG) && compassConfig()->use_mag && (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
 }
 
 void compassStartCalibration(void)

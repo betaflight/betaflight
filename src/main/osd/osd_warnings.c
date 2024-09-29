@@ -76,6 +76,20 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     static armingDisableFlags_e armingDisabledDisplayFlag = 0;
 
     warningText[0] = '\0';
+
+#ifdef USE_GPS_RESCUE
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_FAILING) &&
+      ARMING_FLAG(ARMED) &&
+      FLIGHT_MODE(GPS_RESCUE_MODE) &&
+      !gpsRescueIsOK()) {
+        tfp_sprintf(warningText, "RESCUE FAIL");
+        // more important than RXLOSS which otherwise takes precendence
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif
+
     *displayAttr = DISPLAYPORT_SEVERITY_NORMAL;
     *blinking = false;
 
@@ -223,30 +237,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&
-       ARMING_FLAG(ARMED) &&
-       gpsRescueIsConfigured() &&
-       !gpsRescueIsDisabled() &&
-       !gpsRescueIsAvailable()) {
+      ARMING_FLAG(ARMED) &&
+      gpsRescueIsConfigured() &&
+      !gpsRescueIsAvailable()) {
         tfp_sprintf(warningText, "RESCUE N/A");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
     }
-
-    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_DISABLED) &&
-       ARMING_FLAG(ARMED) &&
-       gpsRescueIsConfigured() &&
-       gpsRescueIsDisabled()) {
-
-        statistic_t *stats = osdGetStats();
-        if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
-            tfp_sprintf(warningText, "RESCUE OFF");
-            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-            *blinking = true;
-            return;
-        }
-    }
-
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_POSITION_HOLD

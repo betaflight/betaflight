@@ -97,7 +97,6 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds = 0.1f;
 static float gpsDataFrequencyHz = 10.0f;
-
 static uint16_t currentGpsStamp = 0; // logical timer for received position update
 
 typedef struct gpsInitData_s {
@@ -2612,7 +2611,7 @@ void GPS_reset_home_position(void)
 // Get distance between two points in cm using spherical to Cartesian transform
 // One one latitude unit, or one longitude unit at the equator, equals 1.113195 cm.
 // Get bearing from pos1 to pos2, returns values with 0.01 degree precision
-void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
+void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
 {
     // TO DO : handle crossing the 180 degree meridian, as in `GPS_distance2d()`
     float dLat = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;
@@ -2652,7 +2651,7 @@ static void GPS_calculateDistanceAndDirectionToHome(void)
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     int32_t deltaLon = to->lon - from->lon;
-    // In case we crossed the 180° meridian:
+    // In case we crossed the 180° meridian
     const int32_t deg180 = 180 * GPS_DEGREES_DIVIDER; // number of integer longitude steps in 180 degrees
     if (deltaLon > deg180) {
         deltaLon -= deg180;  // 360 * GPS_DEGREES_DIVIDER overflows int32_t, so use 180 twice
@@ -2718,6 +2717,11 @@ float getGpsDataIntervalSeconds(void)
 float getGpsDataFrequencyHz(void)
 {
     return gpsDataFrequencyHz;
+}
+
+float getGpsCosLat(void)
+{
+    return GPS_cosLat;
 }
 
 baudRate_e getGpsPortActualBaudRateIndex(void)

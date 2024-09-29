@@ -86,7 +86,7 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
 #define GPS_COG_MIN_GROUNDSPEED 100        // 1.0m/s - min groundspeed for GPS Heading reinitialisation etc
 
-bool canUseGPSHeading = false;
+bool canUseGPSHeading;
 
 static float throttleAngleScale;
 static int throttleAngleValue;
@@ -227,9 +227,6 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     ex += rMat.m[Z][X] * (headingErrCog + headingErrMag);
     ey += rMat.m[Z][Y] * (headingErrCog + headingErrMag);
     ez += rMat.m[Z][Z] * (headingErrCog + headingErrMag);
-
-    DEBUG_SET(DEBUG_ATTITUDE, 3, (headingErrCog * 100));
-    DEBUG_SET(DEBUG_ATTITUDE, 7, lrintf(dcmKpGain * 100.0f));
 
     // Use measured acceleration vector
     float recipAccNorm = sq(ax) + sq(ay) + sq(az);
@@ -389,58 +386,65 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
 
 #ifdef USE_GPS
 
-// IMU groundspeed gain heuristic.
-// GPS_RESCUE_MODE overrides this
+// IMU groundspeed gain heuristic, not used while in GPS Rescue
 static float imuCalcGroundspeedGain(float dt)
 {
-    // 1. suppress ez_ef at low groundspeed, and boost at high groundspeed, via
-    // groundspeedGain, calculated in `imuCalculateEstimatedAttitude`, range 0 - 10.0
-    // groundspeedGain is the primary multiplier of ez_ef
-    // Otherwise, groundspeedGain is determined by GPS COG groundspeed / GPS_COG_MIN_GROUNDSPEED
-
-    // in normal flight, IMU should:
-    // - heavily average GPS heading values at low speed, since they are random, almost
-    // - respond more quickly at higher speeds.
-    // GPS typically returns quite good heading estimates at or above 0.5- 1.0 m/s, quite solid by 2m/s
-    // groundspeedGain will be 0 at 0.0m/s, rising slowly towards 1.0 at 1.0 m/s, and reaching max of 10.0 at 10m/s
-    const float speedRatio = (float)gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
-    float speedBasedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : sq(speedRatio);
-
     const bool isWing = isFixedWing();  // different weighting for airplane aerodynamic
 
-    // 2. suppress heading correction during and after yaw inputs, down to zero at 100% yaw
-    const float yawStickDeflectionInv = 1.0f - getRcDeflectionAbs(FD_YAW);
-    float stickDeflectionFactor = power5(yawStickDeflectionInv);
-    // negative peak detector with decay over a 2.5s time constant, to sustain the suppression
-    static float stickSuppressionPrev = 0.0f;
-    const float k = 0.4f * dt; // k = 0.004 at 100Hz, dt in seconds, 2.5s time constant
-    const float stickSuppression = stickSuppressionPrev + k * (stickDeflectionFactor - stickSuppressionPrev);
-    stickSuppressionPrev = fminf(stickSuppression, stickDeflectionFactor);
+    // 1. Groundspeed
+    const float speedRatio = 0.2f * gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
+    float speedBasedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : sq(speedRatio);
+    // speedBasedGain is 0 at 0.0m/s, 0.04 at 1.0 m/s, 0.16 at 2 m/s, rising slowly towards
+    // 1.0 at 5.0 m/s, 2.0 at 10m/s, to max 10.0 at 50m/s
+    // need a lot of speed since forward flight speed must exceed lateral wind drift by a significant margin 
 
-    // 3. suppress heading correction unless roll is centered, from 1.0 to zero if Roll is more than 12 degrees from flat
+    // 2. suppress heading correction during and after yaw movements, down to zero at more than 10 deg/s
+    float yawGyroRateFactor = fminf(fabsf(gyro.gyroADCf[FD_YAW] * 0.1f), 1.0f);
+    yawGyroRateFactor = 1.0f - sq(yawGyroRateFactor);
+    // 1.0 at zero gyro rate, 0 at 10 deg/s
+    // significant persistent yaw while flying forwards will result in an IMU orientation error
+    // negative peak detector with decay over a 1s time constant, to sustain the suppression after a transient
+    static float yawGyroRateFactorPrev = 0.0f;
+    const float k = 1.0f * dt; // near enough to 1.0s time constant for any reasonable IMU update rate
+    const float yawSuppression = yawGyroRateFactorPrev + k * (yawGyroRateFactor - yawGyroRateFactorPrev);
+    yawGyroRateFactorPrev = fminf(yawSuppression, yawGyroRateFactor);
+
+    // 3. Roll angle
+    // from 1.0 with no Roll to zero more than 10 degrees from flat
     // this is to prevent adaptation to GPS while flying sideways, or with a significant sideways element
-    const float absRollAngle = fabsf(attitude.values.roll * .1f);  // degrees
-    float rollMax = isWing ? 25.0f : 12.0f; // 25 degrees for wing, 12 degrees for quad
+    const float absRollAngle = fabsf(attitude.values.roll * 0.1f);  // degrees
+    float rollMax = isWing ? 25.0f : 10.0f; // 25 degrees for wing, 10 degrees for quad
     // note: these value are 'educated guesses' - for quads it must be very tight
     // for wings, which can't fly sideways, it can be wider
     const float rollSuppression = (absRollAngle < rollMax) ? (rollMax - absRollAngle) / rollMax : 0.0f;
 
-    // 4. attenuate heading correction by pitch angle, will be zero if flat or negative (ie flying tail first)
-    // allow faster adaptation for quads at higher pitch angles; returns 1.0 at 45 degrees
+    // 4. Pitch angle
+    // most importantly, zero if flat (drifting) or pitched backwards (ie flying tail first)
+    // allow faster adaptation for aircraft at higher pitch angles, eg  1.0 at 10, 2.0 at 20, etc
+    // for a quad, pitching forward strongly, with no roll, means that the groundspeed is most likely nose forward
     // but not if a wing, because they typically are flat when flying.
     // need to test if anything special is needed for pitch with wings, for now do nothing.
     float pitchSuppression = 1.0f;
     if (!isWing) {
-        const float pitchAngle = attitude.values.pitch * .1f; // degrees, negative is backwards
-        pitchSuppression = pitchAngle / 45.0f; // 1.0 at 45 degrees, 2.0 at 90 degrees
+        const float pitchFactor = attitude.values.pitch * 0.1f / 10.0f; // negative is backwards
+        pitchSuppression = fminf(pitchFactor , 5.0f); // 1.0 at 10 degrees, 5.0 at 50 degrees or more
         pitchSuppression = (pitchSuppression >= 0) ? pitchSuppression : 0.0f; // zero if flat or pitched backwards
     }
 
-    // NOTE : these suppressions make sense with normal pilot inputs and normal flight
-    // Flying straight ahead for 1s at > 3m/s at pitch of say 22.5 degrees returns a final multiplier of 5
-    // They are not used in GPS Rescue, and probably should be bypassed in position hold, and other situations when we know we are still
+    // NOTES : these heuristic suppressions make sense with normal pilot inputs and normal flight patterns
+    // Flying straight ahead at 5m/s at pitch of 10 degrees returns a final multiplier of 1.0
+    // At 10m/s and pitch of 20 degrees, 4.0, and at 15m/s and 30 degrees, 9.0
+    // The more pitch-only, and the faster the forward flight:
+    // - the more likely the GPS course over ground reflects the true heading of the craft
+    // - the ez_ef factor that promotes more rapid adaptation of IMU heading to GPS CoG will be faster
+    // Conversely, the IMU heading won't change, or only very slowly, if the craft is:
+    // - flown backwards, or sideways
+    // - flat on the pitch axis
+    // - moving very slowly
+    // - yawing, or has been recently yawed
 
-    return speedBasedGain * stickSuppression * rollSuppression * pitchSuppression;
+
+    return fminf (speedBasedGain * yawSuppression * rollSuppression * pitchSuppression, 10.0f);
 }
 
 // *** Calculate heading error derived from IMU heading vs GPS heading ***
@@ -503,7 +507,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
         if (magYaw < 0) {
             magYaw += 3600;
         }
-        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw); // mag heading in degrees * 10
+//        DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 4, magYaw); // mag heading in degrees * 10
         // reset new mag data flag to false to initiate monitoring for new Mag data.
         // note that if the debug doesn't run, this reset will not occur, and we won't waste cycles on the comparison
         mag.isNewMagADCFlag = false;
@@ -617,22 +621,28 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #if defined(USE_GPS)
 static void updateGpsHeadingUsable(float groundspeedGain, float imuCourseError, float dt)
 {
+    static float gpsHeadingConfidence = 0.0f;
     if (!canUseGPSHeading) {
-        static float gpsHeadingConfidence = 0;
-        // groundspeedGain can be 5.0 in clean forward flight, up to 10.0 max
-        // fabsf(imuCourseError) is 0 when headings are aligned, 1 when 90 degrees error or worse
-        // accumulate 'points' based on alignment and likelihood of accumulation being good
-        gpsHeadingConfidence += fmaxf(groundspeedGain - fabsf(imuCourseError), 0.0f) * dt;
-        // recenter at 2.5s time constant
-        // TODO: intent is to match IMU time constant, approximately, but I don't exactly know how to do that
-        gpsHeadingConfidence -= 0.4 * dt * gpsHeadingConfidence; 
-        // if we accumulate enough 'points' over time, the IMU probably is OK
-        // will need to reaccumulate after a disarm (will be retained partly for very brief disarms)
-        canUseGPSHeading = gpsHeadingConfidence > 2.0f;
-        // canUseGPSHeading blocks position hold until suitable GPS heading, when GPS is the only heading source
-        // NOTE: I think that this check only runs once after power up
-        // If the GPS heading is lost on disarming, then it will need to be reset each disarm
+        const float alignment = fmaxf(1.0f - fabsf(imuCourseError) * 4.0f, 0.0f);
+        // fabsf(imuCourseError) = 0 when perfectly aligned, 0.25 at 15 degrees error, 1 for 90 degrees or greater error
+        // hence alignment is 1.0 when perfectly aligned, falling to zero when more than 15 degrees error.
+        // an alignment of zero can be false, eg when wind drift angle matches an incorrect 'heading' angle
+        const float confidence = groundspeedGain * alignment;
+        // groundspeedGain is high when groundspeed is more than 1m/s
+        // and when the movement is likely to be due to nose forward pitch alone
+        gpsHeadingConfidence += 0.5f * dt * (confidence - gpsHeadingConfidence);
+        // 2s time constant to require some time to reach the threshold
+        // time constant accurate enough for dt's from 0.1 to 0.001s
+        canUseGPSHeading = gpsHeadingConfidence > 1.5f;
+        // canUseGPSHeading, when true, allows position hold and GPS Rescue
+    } else {
+        gpsHeadingConfidence = 0.0f;
+        // re-evaluate from scratch on arming
+        // if the alignment is already good when arming, confidence is re-gained more quickly
+        // powering up the aircraft with its nose facing North helps a lot, since default heading is North
     }
+    DEBUG_SET(DEBUG_ATTITUDE, 1, lrintf(gpsHeadingConfidence * 100.0f));
+    DEBUG_SET(DEBUG_ATTITUDE, 4, canUseGPSHeading ? 0 : 1);
 }
 #endif
 
@@ -654,8 +664,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     float magErr = 0;
 
 #ifdef USE_MAG
-    if (sensors(SENSOR_MAG)
-        && compassIsHealthy()
+    if (compassEnabledAndCalibrated()
 #ifdef USE_GPS_RESCUE
         && !gpsRescueDisableMag()
 #endif
@@ -676,22 +685,16 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag
         && sensors(SENSOR_GPS)
         && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
-        static bool gpsHeadingInitialized = false;  // TODO - remove
+        static bool gpsHeadingInitialized = false;  // TODO - this really should relate to whether or not the imu is oriented
+
         if (gpsHeadingInitialized) {
-            float groundspeedGain;  // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course,
-            if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-                // GPS_Rescue adjusts groundspeedGain during a rescue in a range 0 - 4.5,
-                //   depending on GPS Rescue state and groundspeed relative to speed to home.
-                groundspeedGain = gpsRescueGetImuYawCogGain();
-            } else {
-                // 0.0 - 10.0, heuristic based on GPS speed and stick state
-                groundspeedGain = imuCalcGroundspeedGain(dt);
-            }
-
-            DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(groundspeedGain * 100.0f));
-
+            // IMU yaw gain to be applied in imuMahonyAHRSupdate is modified by likely association between heading of the aircraft and GPS ground course
+            const float groundspeedGain = imuCalcGroundspeedGain(dt); // 0.0 - 10.0, heuristic based on GPS speed, pitch angle, roll angle, and yaw inputs
             const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             const float imuCourseError = imuCalcCourseErr(courseOverGround);
+
+            DEBUG_SET(DEBUG_ATTITUDE, 3, lrintf(imuCourseError * 100.0f));
+
             cogErr = imuCourseError * groundspeedGain;
             // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight
 
@@ -770,9 +773,6 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         acc.jerkMagnitude = 0.0f;
         schedulerIgnoreTaskStateTime();
     }
-
-    DEBUG_SET(DEBUG_ATTITUDE, 0, attitude.values.roll);
-    DEBUG_SET(DEBUG_ATTITUDE, 1, attitude.values.pitch);
 }
 #endif // USE_ACC
 

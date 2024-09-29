@@ -625,6 +625,8 @@ void tryArm(void)
         if (featureIsEnabled(FEATURE_GPS)) {
             GPS_reset_home_position();
             canUseGPSHeading = false; // block use of GPS Heading in position hold after each arm, until quad can set IMU to GPS COG
+
+            // note: temporary, for testing IMU reset each taekoff
             if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
                 beeper(BEEPER_ARMING_GPS_FIX);
             } else {
@@ -1033,6 +1035,16 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
+#ifdef USE_GPS_RESCUE
+    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+        if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+#endif
+
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED) 
@@ -1081,16 +1093,6 @@ void processRxModes(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
-
-#ifdef USE_GPS_RESCUE
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
-        if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-        }
-    } else {
-        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-    }
-#endif
 
 #ifdef USE_CHIRP
     if (IS_RC_MODE_ACTIVE(BOXCHIRP) && !FLIGHT_MODE(FAILSAFE_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {

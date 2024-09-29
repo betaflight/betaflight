@@ -44,7 +44,6 @@ extern "C" {
 
     #include "pg/alt_hold.h"
     #include "pg/autopilot.h"
-    
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
 
@@ -113,11 +112,17 @@ extern "C" {
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
 
+    acc_t acc;
+    attitudeEulerAngles_t attitude;
+    gpsSolutionData_t gpsSol;
+
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 0.0f; }
-    float getGpsDataIntervalSeconds(void) { return 0.01f; }
+    float getGpsDataIntervalSeconds(void) { return 0.01f; }//    gpsSolutionData_t gpsSol;
     float getGpsDataFrequencyHz(void) { return 10.0f; }
+    uint16_t getGpsStamp(void){ return 0; }
+
     float rcCommand[4];
 
     bool gpsHasNewData(uint16_t* gpsStamp) {
