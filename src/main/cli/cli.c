@@ -3591,7 +3591,8 @@ static void cliExitCmd(const char *cmdName, char *cmdline)
     cliPrintHashLine("leaving CLI mode, unsaved changes lost");
     cliWriterFlush();
 
-    cliExit(strcasecmp(cmdline, "noreboot") == 0);
+    const bool reboot = strcasecmp(cmdline, "noreboot") != 0;
+    cliExit(reboot);
 }
 
 #ifdef USE_GPS
@@ -6794,6 +6795,7 @@ void cliProcess(void)
         } else {
             // handle terminating flow control character
             if (c == 0x3) { // CTRL-C
+                cliWrite(0x3); // send end of text, terminating flow control
                 cliExit(false);
                 return;
             }
@@ -6839,14 +6841,14 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
 #endif
         setArmingDisabled(ARMING_DISABLED_CLI);
         cliPrompt();
+
+#ifdef USE_CLI_BATCH
+        resetCommandBatch();
+#endif
     } else {
         cliWrite('$'); // send start of flow control frame
         cliWrite(0x2); // send start of text, initiating flow control
     }
-
-#ifdef USE_CLI_BATCH
-    resetCommandBatch();
-#endif
 }
 
 #endif // USE_CLI

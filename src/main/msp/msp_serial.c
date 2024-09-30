@@ -549,6 +549,11 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 const uint8_t c = serialRead(mspPort->port);
                 const bool consumed = mspSerialProcessReceivedData(mspPort, c);
 
+                if (mspPort->c_state == MSP_CLI_CMD) {
+                    cliProcess();
+                    break;
+                }
+
                 if (!consumed && evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA) {
                     mspEvaluateNonMspData(mspPort, c);
                 }
