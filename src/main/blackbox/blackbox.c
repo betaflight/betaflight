@@ -256,8 +256,17 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"motor",       6, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_7)},
     {"motor",       7, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_8)},
 
-    /* Tricopter tail servo */
-    {"servo",       5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)},
+#ifdef USE_SERVOS
+    /* NOTE (ledvinap, hwarhurst): Decoding would fail if previous encoding is also TAG8_8SVB and does not have exactly 8 values. To fix it, inserting ENCODING_NULL dummy value should force end of previous group. */
+    {"servo",       0, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       1, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       2, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       3, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       4, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       6, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+    {"servo",       7, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(TAG8_8SVB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(SERVOS)},
+#endif
 
 #ifdef USE_DSHOT_TELEMETRY
     // eRPM / 100
@@ -475,8 +484,10 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         return (getMotorCount() >= condition - CONDITION(MOTOR_1_HAS_RPM) + 1) && useDshotTelemetry && isFieldEnabled(FIELD_SELECT(RPM));
 #endif
 
-    case CONDITION(TRICOPTER):
-        return (mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && isFieldEnabled(FIELD_SELECT(MOTOR));
+#ifdef USE_SERVOS
+    case CONDITION(SERVOS):
+        return isFieldEnabled(FIELD_SELECT(SERVO));
+#endif
 
     case CONDITION(PID):
         return isFieldEnabled(FIELD_SELECT(PID));
@@ -695,12 +706,18 @@ static void writeIntraframe(void)
         for (int x = 1; x < motorCount; x++) {
             blackboxWriteSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
         }
-
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
-            //Assume the tail spends most of its time around the center
-            blackboxWriteSignedVB(blackboxCurrent->servo[5] - 1500);
-        }
     }
+
+#ifdef USE_SERVOS
+    if (isFieldEnabled(FIELD_SELECT(SERVO))) {
+        int32_t out[ARRAYLEN(servo)];
+        for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {
+            out[x] = blackboxCurrent->servo[x] - DEFAULT_SERVO_MIDDLE;
+        }
+        
+        blackboxWriteTag8_8SVB(out, ARRAYLEN(out));
+    }
+#endif
 
 #ifdef USE_DSHOT_TELEMETRY
     if (isFieldEnabled(FIELD_SELECT(RPM))) {
@@ -851,11 +868,20 @@ static void writeInterframe(void)
 
     if (isFieldEnabled(FIELD_SELECT(MOTOR))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor),     getMotorCount());
-
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
-            blackboxWriteSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
-        }
     }
+
+#ifdef USE_SERVOS
+    if (isFieldEnabled(FIELD_SELECT(SERVO))) {
+        STATIC_ASSERT(ARRAYLEN(servo) <= 8, "TAG8_8SVB supports at most 8 values"); 
+        int32_t out[ARRAYLEN(servo)];
+        for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {
+            out[x] = blackboxCurrent->servo[x] - blackboxLast->servo[x];
+        }
+        
+        blackboxWriteTag8_8SVB(out, ARRAYLEN(out));
+    }
+#endif
+
 #ifdef USE_DSHOT_TELEMETRY
     if (isFieldEnabled(FIELD_SELECT(RPM))) {
         const int motorCount = getMotorCount();
@@ -1194,8 +1220,9 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->rssi = getRssi();
 
 #ifdef USE_SERVOS
-    //Tail servo for tricopters
-    blackboxCurrent->servo[5] = servo[5];
+    for (unsigned i = 0; i < ARRAYLEN(blackboxCurrent->servo); i++) {
+        blackboxCurrent->servo[i] = servo[i];
+    }
 #endif
 #else
     UNUSED(currentTimeUs);
