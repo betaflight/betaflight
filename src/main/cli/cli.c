@@ -6713,7 +6713,7 @@ static void processCharacter(const char c)
         }
         cliBuffer[bufferIndex++] = c;
 
-        // return the character to the terminal if interative
+        // return the character to the terminal if interactive
         if (cliInteractive) {
             cliWrite(c);
         }
