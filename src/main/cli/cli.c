@@ -34,8 +34,6 @@ bool cliMode = false;
 
 #ifdef USE_CLI
 
-bool cliInteractive = false;
-
 #include "blackbox/blackbox.h"
 
 #include "build/build_config.h"
@@ -177,9 +175,11 @@ bool cliInteractive = false;
 #include "cli.h"
 
 static serialPort_t *cliPort = NULL;
+static bool cliInteractive = false;
+static timeMs_t cliEntryTime = 0;
 
 // Space required to set array parameters
-#define CLI_IN_BUFFER_SIZE 256
+#define CLI_IN_BUFFER_SIZE  256
 #define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t cliWriterDesc;
@@ -6798,7 +6798,7 @@ void cliProcess(void)
             processCharacterInteractive(c);
         } else {
             // handle terminating flow control character
-            if (c == 0x3) { // CTRL-C (ETX)
+            if (c == 0x3 || (millis() - cliEntryTime < 2000)) { // CTRL-C (ETX) or 2 seconds timeout
                 cliWrite(0x3); // send end of text, terminating flow control
                 cliExit(false);
                 return;
@@ -6829,6 +6829,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
     cliMode = true;
     cliInteractive = interactive;
     cliPort = serialPort;
+    cliEntryTime = millis();
 
     if (interactive) {
         setPrintfSerialPort(cliPort);
