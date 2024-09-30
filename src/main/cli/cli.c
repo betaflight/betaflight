@@ -6798,7 +6798,7 @@ void cliProcess(void)
             processCharacterInteractive(c);
         } else {
             // handle terminating flow control character
-            if (c == 0x3 || (millis() - cliEntryTime < 2000)) { // CTRL-C (ETX) or 2 seconds timeout
+            if (c == 0x3 || (millis() - cliEntryTime > 2000)) { // CTRL-C (ETX) or 2 seconds timeout
                 cliWrite(0x3); // send end of text, terminating flow control
                 cliExit(false);
                 return;
