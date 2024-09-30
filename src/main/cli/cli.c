@@ -6833,9 +6833,9 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
 
     if (interactive) {
 #ifndef MINIMAL_CLI
-    cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
+        cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
 #else
-    cliPrintLine("\r\nCLI");
+        cliPrintLine("\r\nCLI");
 #endif
         setArmingDisabled(ARMING_DISABLED_CLI);
         cliPrompt();
