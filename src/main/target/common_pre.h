@@ -459,10 +459,19 @@
 #endif // USE_RACE_PRO
 
 #ifdef USE_WING
+
 #ifndef USE_SERVOS
 #define USE_SERVOS
 #endif
+
 #ifndef USE_ADVANCED_TPA
 #define USE_ADVANCED_TPA
 #endif
+
+#undef USE_YAW_SPIN_RECOVERY
+#undef USE_LAUNCH_CONTROL
+#undef USE_ABSOLUTE_CONTROL
+#undef USE_INTEGRATED_YAW_CONTROL
+#undef USE_RUNAWAY_TAKEOFF
+
 #endif // USE_WING
