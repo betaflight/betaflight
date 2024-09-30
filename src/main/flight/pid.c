@@ -944,11 +944,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     calculateSpaValues(pidProfile);
 
-#ifdef USE_TPA_MODE
     const float tpaFactorKp = (pidProfile->tpa_mode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
-#else
-    const float tpaFactorKp = pidRuntime.tpaFactor;
-#endif
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
