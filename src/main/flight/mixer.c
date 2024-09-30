@@ -69,7 +69,7 @@
 #define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
 
-#define CRASHFLIP_MOTOR_DEADBAND            20 // motor output deadband
+#define CRASHFLIP_MOTOR_DEADBAND         0.02f // send disarm value to motors below this drive value
 #define CRASHFLIP_STICK_DEADBAND         0.15f // stick deadband
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
@@ -276,14 +276,14 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 static bool applyCrashFlipModeToMotors(void)
 {
 #ifdef USE_ACC
-    static bool isFirstTiltAngleSet = false;
+    static bool isTiltAngleAtStartSet = false;
     static float tiltAngleAtStart = 1.0f;
 #endif
 
     if (!isCrashFlipModeActive()) {
 #ifdef USE_ACC
         // trigger the capture of initial tilt angle on next activation of crashflip mode
-        isFirstTiltAngleSet = false;
+        isTiltAngleAtStartSet = false;
 #endif
         // signal that crashflip mode is off
         return false;
@@ -328,8 +328,7 @@ static bool applyCrashFlipModeToMotors(void)
     float crashflipRateAttenuator = 1.0f;
     float crashflipAttitudeAttenuator = 1.0f;
     const float crashflipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
-    const float smallAttChange = 0.5f; // attenuation factors less that this will be ignored
-    const float smallAttChangeInv = 1.0f / smallAttChange;
+    const float halfComplete = 0.5f; // attitude or rate changes less that this will be ignored
 
     // disable both attenuators if the user's crashflip_rate is zero
     if (crashflipRateLimit > 0) {
@@ -341,14 +340,14 @@ static bool applyCrashFlipModeToMotors(void)
         // re-initialisation of crashFlip mode by arm/disarm is required to reset the initial tilt angle
         if (sensors(SENSOR_ACC)) {
             const float tiltAngle = getCosTiltAngle();  // -1 if flat inverted, 0 when 90° (on edge), +1 when flat and upright
-            if (!isFirstTiltAngleSet) {
+            if (!isTiltAngleAtStartSet) {
                 tiltAngleAtStart = tiltAngle;
-                isFirstTiltAngleSet = true;
+                isTiltAngleAtStartSet = true;
             }
-            // attitudeChange is 1.0, decreasing to 0 as quad turns
-            const float attitudeChange = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
+            // attitudeChangeNeeded is 1.0 at the start, decreasing to 0 when attitude change exceeds approx 90 degrees
+            const float attitudeChangeNeeded = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
             // no attenuation unless a significant attitude change has occurred
-            crashflipAttitudeAttenuator = attitudeChange > smallAttChange ? 1.0f : attitudeChange * smallAttChangeInv;
+            crashflipAttitudeAttenuator = attitudeChangeNeeded > halfComplete ? 1.0f : attitudeChangeNeeded / halfComplete;
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
@@ -358,7 +357,7 @@ static bool applyCrashFlipModeToMotors(void)
         const float gyroRate = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]), fabsf(gyro.gyroADCf[FD_PITCH]));
         const float gyroRateChange = fmaxf(1.0f - gyroRate / crashflipRateLimit, 0.0f);
         // no attenuation unless a significant gyro rate change has occurred
-        crashflipRateAttenuator = gyroRateChange > smallAttChange ? 1.0f : gyroRateChange * smallAttChangeInv;
+        crashflipRateAttenuator = gyroRateChange > halfComplete ? 1.0f : gyroRateChange / halfComplete;
 
         crashflipPower *= crashflipAttitudeAttenuator * crashflipRateAttenuator;
     }
@@ -380,8 +379,9 @@ static bool applyCrashFlipModeToMotors(void)
         motorOutputNormalised = MIN(1.0f, crashflipPower * motorOutputNormalised);
         float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
 
-        // Force motors to disarm value unless motor signal exceeds crashflip motor deadband
-        motorOutput = (motorOutput < motorOutputMin + CRASHFLIP_MOTOR_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASHFLIP_MOTOR_DEADBAND);
+        // set motors to disarm value when intended increase is less than deadband value
+        motorOutput = (motorOutputNormalised < CRASHFLIP_MOTOR_DEADBAND) ? mixerRuntime.disarmMotorOutput : motorOutput;
+
 
         motor[i] = motorOutput;
     }

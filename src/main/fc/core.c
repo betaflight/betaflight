@@ -959,8 +959,8 @@ void processRxModes(timeUs_t currentTimeUs)
     updateActivatedModes();
 
 #ifdef USE_DSHOT
-    /* Enable beep warning when the crashflip mode is active */
     if (crashFlipModeActive) {
+        // Enable beep warning when the crashflip mode is active
         beeper(BEEPER_CRASHFLIP_MODE);
         if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
             // user reverted crashFlip switch while armed and in crashFlip mode
