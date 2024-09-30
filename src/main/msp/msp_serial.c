@@ -132,19 +132,11 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
             }
             break;
 
-        case MSP_HEADER_START:  // Waiting for 'M' (MSPv1 / MSPv2_over_v1) or 'X' (MSPv2 native) or STX (MSP CLI)
+        case MSP_HEADER_START:  // Waiting for 'M' (MSPv1 / MSPv2_over_v1) or 'X' (MSPv2 native)
             mspPort->offset = 0;
             mspPort->checksum1 = 0;
             mspPort->checksum2 = 0;
             switch (c) {
-
-#ifdef USE_CLI
-                case 0x2:
-                    mspPort->c_state = MSP_CLI_CMD;
-                    mspPort->mspVersion = MSP_V1;
-                    cliEnter(mspPort->port, false);
-                    break;
-#endif
                 case 'M':
                     mspPort->c_state = MSP_HEADER_M;
                     mspPort->mspVersion = MSP_V1;
@@ -455,11 +447,20 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
 
 static void mspEvaluateNonMspData(mspPort_t * mspPort, uint8_t receivedChar)
 {
-   if (receivedChar == serialConfig()->reboot_character) {
+    if (receivedChar == serialConfig()->reboot_character) {
         mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
 #ifdef USE_CLI
-   } else if (receivedChar == '#') {
-        mspPort->pendingRequest = MSP_PENDING_CLI;
+    } else {
+        switch(receivedChar) {
+            case '#':
+                mspPort->pendingRequest = MSP_PENDING_CLI;
+                break;
+            case 0x2:
+                mspPort->c_state = MSP_CLI_CMD;
+                cliEnter(mspPort->port, false);
+                cliProcess();
+                break;
+        }
 #endif
     }
 }
@@ -527,7 +528,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 #ifdef USE_CLI
         // enter interactive cli mode by sending #
         if (mspPort->c_state == MSP_CLI_ACTIVE || mspPort->c_state == MSP_CLI_CMD) {
-            if (cliMode) {
+            if (cliMode) { // TODO: cliMode is insufficient (need to match on port also)
                 // this port is in cli mode, so all serial for this port should be handled by cli.
                 cliProcess();
                 continue;
@@ -548,11 +549,6 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             while (serialRxBytesWaiting(mspPort->port)) {
                 const uint8_t c = serialRead(mspPort->port);
                 const bool consumed = mspSerialProcessReceivedData(mspPort, c);
-
-                if (mspPort->c_state == MSP_CLI_CMD) {
-                    cliProcess();
-                    break;
-                }
 
                 if (!consumed && evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA) {
                     mspEvaluateNonMspData(mspPort, c);

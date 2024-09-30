@@ -3588,10 +3588,13 @@ static void cliExitCmd(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
 
-    cliPrintHashLine("leaving CLI mode, unsaved changes lost");
-    cliWriterFlush();
-
     const bool reboot = strcasecmp(cmdline, "noreboot") != 0;
+    if (reboot) {
+        cliPrintHashLine("leaving CLI mode, unsaved changes lost");
+    } else {
+        cliPrintHashLine("leaving CLI mode, no reboot");
+    }
+    cliWriterFlush();
     cliExit(reboot);
 }
 
@@ -6660,7 +6663,7 @@ static void processCharacter(const char c)
 {
     if (bufferIndex && (c == '\n' || c == '\r')) {
         if (cliInteractive) {
-            // enter pressed, and in cli mode - so output a newline
+            // echo new line back to terminal
             cliPrintLinefeed();
         }
 
@@ -6693,7 +6696,7 @@ static void processCharacter(const char c)
                 if (cliInteractive) {
                     cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
                 } else {
-                    cliPrint("ERROR: ");
+                    cliPrint("ERR_CMD_NA: ");
                     cliPrintLine(cliBuffer);
                 }
             }
@@ -6702,19 +6705,18 @@ static void processCharacter(const char c)
 
         memset(cliBuffer, 0, sizeof(cliBuffer));
 
-        // do not prompt unless in interactive mode
-        if (!cliInteractive) {
-            return;
+        // prompt if in interactive mode
+        if (cliInteractive) {
+            cliPrompt();
         }
 
-        cliPrompt();
     } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
         if (!bufferIndex && c == ' ') {
             return; // Ignore leading spaces
         }
         cliBuffer[bufferIndex++] = c;
 
-        // return the character to the terminal if interactive
+        // echo the character if interactive
         if (cliInteractive) {
             cliWrite(c);
         }
@@ -6785,8 +6787,10 @@ void cliProcess(void)
         return;
     }
 
-    // Flush the buffer to get rid of any MSP data polls sent by configurator after CLI was invoked
-    cliWriterFlush();
+    if (!cliInteractive) {
+        // Flush the buffer to get rid of any MSP data polls sent by configurator after CLI was invoked
+        cliWriterFlush();
+    }
 
     while (serialRxBytesWaiting(cliPort)) {
         uint8_t c = serialRead(cliPort);
@@ -6794,7 +6798,7 @@ void cliProcess(void)
             processCharacterInteractive(c);
         } else {
             // handle terminating flow control character
-            if (c == 0x3) { // CTRL-C
+            if (c == 0x3) { // CTRL-C (ETX)
                 cliWrite(0x3); // send end of text, terminating flow control
                 cliExit(false);
                 return;
@@ -6839,6 +6843,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
 #else
         cliPrintLine("\r\nCLI");
 #endif
+        // arming flag not released if exiting cli with no reboot for safety
         setArmingDisabled(ARMING_DISABLED_CLI);
         cliPrompt();
 
@@ -6846,7 +6851,6 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         resetCommandBatch();
 #endif
     } else {
-        cliWrite('$'); // send start of flow control frame
         cliWrite(0x2); // send start of text, initiating flow control
     }
 }
