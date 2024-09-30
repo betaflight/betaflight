@@ -130,7 +130,7 @@ extern "C" {
     uint8_t activePidLoopDenom = 1;
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
-    bool rxIsReceivingSignal(void) { return simulationHaveRx; }
+    bool isRxReceivingSignal(void) { return simulationHaveRx; }
 
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
     void warningLedFlash(void) {}

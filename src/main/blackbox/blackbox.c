@@ -905,7 +905,7 @@ static void loadSlowState(blackboxSlowState_t *slow)
     memcpy(&slow->flightModeFlags, &rcModeActivationMask, sizeof(slow->flightModeFlags)); //was flightModeFlags;
     slow->stateFlags = stateFlags;
     slow->failsafePhase = failsafePhase();
-    slow->rxSignalReceived = rxIsReceivingSignal();
+    slow->rxSignalReceived = isRxReceivingSignal();
     slow->rxFlightChannelsValid = rxAreFlightChannelsValid();
 }
 

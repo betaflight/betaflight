@@ -292,7 +292,7 @@ void updateArmingStatus(void)
         // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
         if (!isUsingSticksForArming()) {
             static bool hadRx = false;
-            const bool haveRx = rxIsReceivingSignal();
+            const bool haveRx = isRxReceivingSignal();
 
             const bool justGotRxBack = !hadRx && haveRx;
 
@@ -762,7 +762,7 @@ bool processRx(timeUs_t currentTimeUs)
         return false;
     }
 
-    updateRcRefreshRate(currentTimeUs, rxIsReceivingSignal());
+    updateRcRefreshRate(currentTimeUs, isRxReceivingSignal());
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {

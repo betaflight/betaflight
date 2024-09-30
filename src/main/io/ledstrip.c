@@ -962,7 +962,7 @@ static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
     static bool flash = 0;
 
     if (updateNow) {
-        if (rxIsReceivingSignal()) {
+        if (isRxReceivingSignal()) {
             // calculate update frequency
             int scale = MAX(fabsf(rcCommand[ROLL]), fabsf(rcCommand[PITCH]));  // 0 - 500
             scale = scale - INDICATOR_DEADBAND;  // start increasing frequency right after deadband

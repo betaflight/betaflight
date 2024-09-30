@@ -386,7 +386,7 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax)
 }
 
 bool failsafeIsActive() { return false; }
-bool rxIsReceivingSignal() { return true; }
+bool isRxReceivingSignal() { return true; }
 
 bool isBeeperOn() { return false; };
 

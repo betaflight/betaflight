@@ -397,7 +397,7 @@ void rxInit(void)
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeState.channelCount);
 }
 
-bool rxIsReceivingSignal(void)
+bool isRxReceivingSignal(void)
 {
     return rxSignalReceived;
 }
@@ -561,10 +561,10 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     } else {
         //  watch for next packet
         if (cmpTimeUs(currentTimeUs, needRxSignalBefore) > 0) {
-            //  initial time to rxDataReceived failure is RXLOSS_TRIGGER_INTERVAL, then we check every RX_FRAME_RECHECK_INTERVAL
-            rxSignalReceived = false;
-            needRxSignalBefore = currentTimeUs + reCheckRxSignalInterval;
-            //  review and process rcData values every 50ms in case failsafe changed them
+            // initial time to rxDataReceived failure is RXLOSS_TRIGGER_INTERVAL (150ms),
+            // after that, we check every RX_FRAME_RECHECK_INTERVAL (50ms)
+            rxSignalReceived = false; // results in `RXLOSS` message etc
+            needRxSignalBefore += reCheckRxSignalInterval;
             rxDataProcessingRequired = true;
         }
     }

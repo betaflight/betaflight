@@ -175,7 +175,7 @@ void rxInit(void);
 void rxProcessPending(bool state);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
-bool rxIsReceivingSignal(void);
+bool isRxReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
@@ -224,6 +224,6 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRange
 void suspendRxSignal(void);
 void resumeRxSignal(void);
 
-timeDelta_t rxGetFrameDelta();
+timeDelta_t rxGetFrameDelta(void);
 
 timeUs_t rxFrameTimeUs(void);
