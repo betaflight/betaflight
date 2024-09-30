@@ -425,7 +425,7 @@ static void performSanityChecks(void)
     // Handle events that set a failure mode to other than healthy.
     // Disarm via Abort when sanity on, or for hard Rx loss in FS_ONLY mode
     // Otherwise allow 20s of semi-controlled descent with impact disarm detection
-    const bool hardFailsafe = !rxIsReceivingSignal();
+    const bool hardFailsafe = !isRxReceivingSignal();
 
     if (rescueState.failure != RESCUE_HEALTHY) {
         // Default to 20s semi-controlled descent with impact detection, then abort

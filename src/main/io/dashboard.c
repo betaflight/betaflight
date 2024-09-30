@@ -203,7 +203,7 @@ static void updateRxStatus(void)
 {
     i2c_OLED_set_xy(dev, SCREEN_CHARACTER_COLUMN_COUNT - 2, 0);
     char rxStatus = '!';
-    if (rxIsReceivingSignal()) {
+    if (isRxReceivingSignal()) {
         rxStatus = 'r';
     } if (rxAreFlightChannelsValid()) {
         rxStatus = 'R';

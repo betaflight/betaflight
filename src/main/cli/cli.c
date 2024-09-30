@@ -4770,10 +4770,9 @@ if (buildKey) {
     // Run status
 
     const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
-    int rxRate = getCurrentRxIntervalUs();
-    if (rxRate != 0) {
-        rxRate = (int)(1000000.0f / ((float)rxRate));
-    }
+
+    int rxRate = getRxRateValid() ? getCurrentRxRateHz() : 0;
+
     const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
@@ -4960,12 +4959,11 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     if (rxConfig()->rc_smoothing_mode) {
         cliPrintLine("FILTER");
         if (rcSmoothingAutoCalculate()) {
-            const uint16_t smoothedRxRateHz = lrintf(rcSmoothingData->smoothedRxRateHz);
             cliPrint("# Detected Rx frequency: ");
-            if (getCurrentRxIntervalUs() == 0) {
-                cliPrintLine("NO SIGNAL");
+            if (getRxRateValid()) {
+	            cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
             } else {
-                cliPrintLinef("%dHz", smoothedRxRateHz);
+            	cliPrintLine("NO SIGNAL");          
             }
         }
         cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);

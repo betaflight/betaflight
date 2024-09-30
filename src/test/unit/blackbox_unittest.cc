@@ -380,7 +380,7 @@ void closeSerialPort(serialPort_t *) {}
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
 bool rxAreFlightChannelsValid(void) {return false;}
-bool rxIsReceivingSignal(void) {return false;}
+bool isRxReceivingSignal(void) {return false;}
 bool isRssiConfigured(void) {return false;}
 float getMotorOutputLow(void) {return 0.0;}
 float getMotorOutputHigh(void) {return 0.0;}
