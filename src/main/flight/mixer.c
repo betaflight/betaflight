@@ -70,7 +70,7 @@
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
 
 #define CRASHFLIP_MOTOR_DEADBAND         0.02f // send disarm value to motors below this drive value
-#define CRASHFLIP_STICK_DEADBAND         0.15f // stick deadband
+#define CRASHFLIP_STICK_DEADBAND         0.15f // 15%
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -355,9 +355,9 @@ static bool applyCrashFlipModeToMotors(void)
         // if driving diagonally, the turn could be either roll or pitch
         // if driving yaw, typically one motor sticks, and the quad yaws a little then flips diagonally
         const float gyroRate = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]), fabsf(gyro.gyroADCf[FD_PITCH]));
-        const float gyroRateChange = fmaxf(1.0f - gyroRate / crashflipRateLimit, 0.0f);
+        const float gyroRateChange = fminf(gyroRate / crashflipRateLimit, 1.0f);
         // no attenuation unless a significant gyro rate change has occurred
-        crashflipRateAttenuator = gyroRateChange > halfComplete ? 1.0f : gyroRateChange / halfComplete;
+        crashflipRateAttenuator = gyroRateChange < halfComplete ? 1.0f : (1.0f - gyroRateChange) / halfComplete;
 
         crashflipPower *= crashflipAttitudeAttenuator * crashflipRateAttenuator;
     }
