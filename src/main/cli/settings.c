@@ -438,11 +438,9 @@ static const char * const lookupTableLaunchControlMode[] = {
 };
 #endif
 
-#ifdef USE_TPA_MODE
 static const char * const lookupTableTpaMode[] = {
     "PD", "D"
 };
-#endif
 
 static const char * const lookupTableSpaMode[] = {
     "OFF", "I_FREEZE", "I", "PID", "PD_I_FREEZE"
@@ -637,9 +635,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_LAUNCH_CONTROL
     LOOKUP_TABLE_ENTRY(lookupTableLaunchControlMode),
 #endif
-#ifdef USE_TPA_MODE
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
-#endif
     LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
 #ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
@@ -1278,9 +1274,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_SIMPLIFIED_GYRO_FILTER,             VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, simplified_gyro_filter) },
     { PARAM_NAME_SIMPLIFIED_GYRO_FILTER_MULTIPLIER,  VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, simplified_gyro_filter_multiplier) },
 #endif
-#ifdef USE_TPA_MODE
     { PARAM_NAME_TPA_MODE,             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_mode) },
-#endif
     { PARAM_NAME_TPA_RATE,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, TPA_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_rate) },
     { PARAM_NAME_TPA_BREAKPOINT,    VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { PWM_RANGE_MIN, PWM_RANGE_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_breakpoint) },
     { PARAM_NAME_TPA_LOW_RATE,            VAR_INT8  | PROFILE_VALUE, .config.minmax = { TPA_LOW_RATE_MIN, TPA_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_low_rate) },
