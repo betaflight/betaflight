@@ -3594,7 +3594,6 @@ static void cliExitCmd(const char *cmdName, char *cmdline)
     } else {
         cliPrintHashLine("leaving CLI mode, no reboot");
     }
-    cliWriterFlush();
     cliExit(reboot);
 }
 
@@ -6826,6 +6825,8 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
     cliInteractive = interactive;
     cliPort = serialPort;
     cliEntryTime = millis();
+    *cliBuffer = '\0';
+    bufferIndex = 0;
 
     if (interactive) {
         setPrintfSerialPort(cliPort);
@@ -6836,7 +6837,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
 
     if (interactive) {
 #ifndef MINIMAL_CLI
-        cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
+        cliPrintLine("\r\nEntering CLI Mode, type 'exit' to reboot, or 'help'");
 #else
         cliPrintLine("\r\nCLI");
 #endif

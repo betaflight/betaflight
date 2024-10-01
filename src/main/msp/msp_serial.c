@@ -445,24 +445,21 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     return mspPostProcessFn;
 }
 
-static void mspEvaluateNonMspData(mspPort_t * mspPort, uint8_t receivedChar)
+static bool mspEvaluateNonMspData(mspPort_t * mspPort, uint8_t receivedChar)
 {
     if (receivedChar == serialConfig()->reboot_character) {
         mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
 #ifdef USE_CLI
-    } else {
-        switch(receivedChar) {
-            case '#':
-                mspPort->pendingRequest = MSP_PENDING_CLI;
-                break;
-            case 0x2:
-                mspPort->c_state = MSP_CLI_CMD;
-                cliEnter(mspPort->port, false);
-                cliProcess();
-                break;
-        }
+    } else if (receivedChar == '#') {
+        mspPort->pendingRequest = MSP_PENDING_CLI;
+    } else if (receivedChar == 0x2) {
+        mspPort->c_state = MSP_CLI_CMD;
+        cliEnter(mspPort->port, false);
+        cliProcess(); // leaving this here for now, but it should be removed once we break out of existing process loop
+        return true;
 #endif
     }
+    return false;
 }
 
 static void mspProcessPendingRequest(mspPort_t * mspPort)
@@ -525,6 +522,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             continue;
         }
 
+// TODO: move to handle this better so we are not waiting for commands to process in next task cycle.
 #ifdef USE_CLI
         // enter interactive cli mode by sending #
         if (mspPort->c_state == MSP_CLI_ACTIVE || mspPort->c_state == MSP_CLI_CMD) {
@@ -533,7 +531,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 cliProcess();
                 continue;
             } else {
-                // incorrect state. Reset to idle state.
+                // cli is no longer active reset to idle state.
                 mspPort->c_state = MSP_IDLE;
             }
         }
@@ -551,7 +549,9 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 const bool consumed = mspSerialProcessReceivedData(mspPort, c);
 
                 if (!consumed && evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA) {
-                    mspEvaluateNonMspData(mspPort, c);
+                    if (mspEvaluateNonMspData(mspPort, c)) {
+                        break;
+                    }
                 }
 
                 if (mspPort->c_state == MSP_COMMAND_RECEIVED) {
@@ -610,7 +610,7 @@ int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int d
             || mspPort->port->identifier == SERIAL_PORT_USB_VCP
 #endif
             || (port != SERIAL_PORT_ALL && mspPort->port->identifier != port)
-            || mspPort->c_state == MSP_CLI_CMD) {
+            || mspPort->c_state == MSP_CLI_CMD || mspPort->c_state == MSP_CLI_ACTIVE) {
             continue;
         }
 
