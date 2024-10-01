@@ -147,3 +147,4 @@ bool isFixedWing(void);
 
 float getMotorOutputLow(void);
 float getMotorOutputHigh(void);
+bool crashFlipSuccessful(void);

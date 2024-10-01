@@ -112,6 +112,7 @@ static FAST_DATA_ZERO_INIT float motorRangeMin;
 static FAST_DATA_ZERO_INIT float motorRangeMax;
 static FAST_DATA_ZERO_INIT float motorOutputRange;
 static FAST_DATA_ZERO_INIT int8_t motorOutputMixSign;
+static FAST_DATA_ZERO_INIT bool crashflipSuccess = false;
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
@@ -284,6 +285,7 @@ static bool applyCrashFlipModeToMotors(void)
 #ifdef USE_ACC
         // trigger the capture of initial tilt angle on next activation of crashflip mode
         isTiltAngleAtStartSet = false;
+        // default the success flag to false, to block quick re-arming unless successful
 #endif
         // signal that crashflip mode is off
         return false;
@@ -343,11 +345,15 @@ static bool applyCrashFlipModeToMotors(void)
             if (!isTiltAngleAtStartSet) {
                 tiltAngleAtStart = tiltAngle;
                 isTiltAngleAtStartSet = true;
+                crashflipSuccess = false;
             }
             // attitudeChangeNeeded is 1.0 at the start, decreasing to 0 when attitude change exceeds approx 90 degrees
             const float attitudeChangeNeeded = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
             // no attenuation unless a significant attitude change has occurred
             crashflipAttitudeAttenuator = attitudeChangeNeeded > halfComplete ? 1.0f : attitudeChangeNeeded / halfComplete;
+
+            // signal success to enable quick restart, if attitude change implies success when reverting the switch
+            crashflipSuccess = crashflipAttitudeAttenuator == 0.0f;
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
@@ -381,8 +387,7 @@ static bool applyCrashFlipModeToMotors(void)
 
         // set motors to disarm value when intended increase is less than deadband value
         motorOutput = (motorOutputNormalised < CRASHFLIP_MOTOR_DEADBAND) ? mixerRuntime.disarmMotorOutput : motorOutput;
-
-
+        
         motor[i] = motorOutput;
     }
 
@@ -826,4 +831,9 @@ float mixerGetThrottle(void)
 float mixerGetRcThrottle(void)
 {
     return rcThrottle;
+}
+
+bool crashFlipSuccessful(void)
+{
+    return crashflipSuccess;
 }

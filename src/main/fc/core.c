@@ -962,8 +962,9 @@ void processRxModes(timeUs_t currentTimeUs)
     if (crashFlipModeActive) {
         // Enable beep warning when the crashflip mode is active
         beeper(BEEPER_CRASHFLIP_MODE);
-        if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-            // user reverted crashFlip switch while armed and in crashFlip mode
+        if (crashFlipSuccessful() && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+            // user reverted crashFlip switch while armed and in crashFlip mode,
+            // and user enabled auto-flip control, had acc enabled, and quad seemed to turn enough
             crashFlipModeActive = false;
             disarm(DISARM_REASON_SWITCH);
             // if arm switch is set, and if throttle < min, tryArm() will enter armed state
