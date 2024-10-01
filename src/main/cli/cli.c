@@ -6787,11 +6787,6 @@ void cliProcess(void)
         return;
     }
 
-    if (!cliInteractive) {
-        // Flush the buffer to get rid of any MSP data polls sent by configurator after CLI was invoked
-        cliWriterFlush();
-    }
-
     while (serialRxBytesWaiting(cliPort)) {
         uint8_t c = serialRead(cliPort);
         if (cliInteractive) {
@@ -6806,6 +6801,7 @@ void cliProcess(void)
             processCharacter(c);
         }
     }
+    cliWriterFlush();
 }
 
 static void cliExit(const bool reboot)
