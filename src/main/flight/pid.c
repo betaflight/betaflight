@@ -331,7 +331,7 @@ static float calcWingAccelerationBasic(float throttle, float pitchAngle)
 }
 
 
-static float calcWingTpaArgument(const pidProfile_t *pidProfile)
+static float calcWingTpaArgument(void)
 {
     const float t = calcWingThrottle();
     float pitchAngleRad = asin_approx(getSinPitchAngle());
@@ -340,7 +340,7 @@ static float calcWingTpaArgument(const pidProfile_t *pidProfile)
     float a = 0.0f;
     pitchAngleRad += pidRuntime.tpaSpeed.pitchOffset;
 
-    switch (pidProfile->tpa_speed_type) {
+    switch (currentPidProfile->tpa_speed_type) {
     case TPA_SPEED_BASIC:
         a = calcWingAccelerationBasic(t, pitchAngleRad);
         break;
@@ -381,14 +381,14 @@ float getTpaFactorClassic(float tpaArgument)
 }
 
 
-void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile)
+void pidUpdateTpaFactor(float throttle)
 {
     // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
     throttle = constrainf(throttle, 0.0f, 1.0f);
     float tpaFactor;
 
 #ifdef USE_WING
-    const float tpaArgument = isFixedWing() ?  calcWingTpaArgument(pidProfile) : throttle;
+    const float tpaArgument = isFixedWing() ?  calcWingTpaArgument() : throttle;
 #else
     const float tpaArgument = throttle;
 #endif
