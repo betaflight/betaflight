@@ -333,6 +333,12 @@ typedef struct serialPassthroughPort_s {
     serialPort_t *port;
 } serialPassthroughPort_t;
 
+static void cliClearInputBuffer(void)
+{
+    memset(cliBuffer, 0, sizeof(cliBuffer));
+    bufferIndex = 0;
+}
+
 static void cliWriterFlushInternal(bufWriter_t *writer)
 {
     if (writer) {
@@ -6703,10 +6709,9 @@ static void processCharacter(const char c)
                     cliPrintLine(cliBuffer);
                 }
             }
-            bufferIndex = 0;
         }
 
-        memset(cliBuffer, 0, sizeof(cliBuffer));
+        cliClearInputBuffer();
 
         // prompt if in interactive mode
         if (cliInteractive) {
@@ -6812,8 +6817,7 @@ static void cliExit(const bool reboot)
 {
     cliWriterFlush();
     waitForSerialPortToFinishTransmitting(cliPort);
-    memset(cliBuffer, 0, sizeof(cliBuffer));
-    bufferIndex = 0;
+    cliClearInputBuffer();
     cliMode = false;
     cliInteractive = false;
     // incase a motor was left running during motortest, clear it here
@@ -6830,8 +6834,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
     cliInteractive = interactive;
     cliPort = serialPort;
     cliEntryTime = millis();
-    *cliBuffer = '\0';
-    bufferIndex = 0;
+    cliClearInputBuffer();
 
     if (interactive) {
         setPrintfSerialPort(cliPort);
