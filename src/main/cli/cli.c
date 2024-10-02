@@ -6691,6 +6691,10 @@ static void processCharacter(const char c)
             }
             if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                 cmd->cliCommand(cmd->name, options);
+                if (!cliMode) {
+                    // cli session ended
+                    return;
+                }
             } else {
                 if (cliInteractive) {
                     cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
@@ -6808,7 +6812,7 @@ static void cliExit(const bool reboot)
 {
     cliWriterFlush();
     waitForSerialPortToFinishTransmitting(cliPort);
-    *cliBuffer = '\0';
+    memset(cliBuffer, 0, sizeof(cliBuffer));
     bufferIndex = 0;
     cliMode = false;
     cliInteractive = false;
