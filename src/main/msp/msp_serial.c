@@ -439,7 +439,7 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
 static void mspProcessPendingRequest(mspPort_t * mspPort)
 {
     // If no request is pending or 100ms guard time has not elapsed - do nothing
-    if ((mspPort->pendingRequest == MSP_PENDING_NONE) || (millis() - mspPort->lastActivityMs < 100)) {
+    if ((mspPort->pendingRequest == MSP_PENDING_NONE) || (cmp32(millis(), mspPort->lastActivityMs) < 100)) {
         return;
     }
 
