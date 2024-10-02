@@ -6780,10 +6780,10 @@ static void processCharacterInteractive(const char c)
     }
 }
 
-void cliProcess(void)
+bool cliProcess(void)
 {
     if (!cliWriter || !cliMode) {
-        return;
+        return false;
     }
 
     while (serialRxBytesWaiting(cliPort)) {
@@ -6795,12 +6795,13 @@ void cliProcess(void)
             if (c == 0x3 || (millis() - cliEntryTime > 2000)) { // CTRL-C (ETX) or 2 seconds timeout
                 cliWrite(0x3); // send end of text, terminating flow control
                 cliExit(false);
-                return;
+                return cliMode;
             }
             processCharacter(c);
         }
     }
     cliWriterFlush();
+    return cliMode;
 }
 
 static void cliExit(const bool reboot)
