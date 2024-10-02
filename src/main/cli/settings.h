@@ -147,7 +147,7 @@ typedef enum {
     TABLE_TPA_CURVE_TYPE,
 #endif
 #ifdef USE_WING
-    TABLE_TPA_SPEED_EST_TYPE,
+    TABLE_TPA_SPEED_TYPE,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;

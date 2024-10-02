@@ -70,51 +70,51 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 
 
 #ifdef USE_WING
-void tpaSpeedEstBasicInit(const pidProfile_t *pidProfile)
+void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
 {
-    const float gravityFactor =  pidProfile->tpa_speed_est_basic_gravity / 100.0f;
-    const float delaySec = pidProfile->tpa_speed_est_basic_delay / 1000.0f;
+    const float gravityFactor =  pidProfile->tpa_speed_basic_gravity / 100.0f;
+    const float delaySec = pidProfile->tpa_speed_basic_delay / 1000.0f;
 
-    pidRuntime.tpaSpeedEst.twr = 1.0f / (gravityFactor * gravityFactor);
-    pidRuntime.tpaSpeedEst.massDragRatio = (2.0f/logf(3.0f)) * (2.0f/logf(3.0f)) * pidRuntime.tpaSpeedEst.twr * G_ACCELERATION * delaySec * delaySec;
-    pidRuntime.tpaSpeedEst.maxSpeed = sqrtf(pidRuntime.tpaSpeedEst.massDragRatio * pidRuntime.tpaSpeedEst.twr * G_ACCELERATION + G_ACCELERATION);
+    pidRuntime.tpaSpeed.twr = 1.0f / (gravityFactor * gravityFactor);
+    pidRuntime.tpaSpeed.massDragRatio = (2.0f/logf(3.0f)) * (2.0f/logf(3.0f)) * pidRuntime.tpaSpeed.twr * G_ACCELERATION * delaySec * delaySec;
+    pidRuntime.tpaSpeed.maxSpeed = sqrtf(pidRuntime.tpaSpeed.massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
 }
 
 
-void tpaSpeedEstAdvancedInit(const pidProfile_t *pidProfile)
+void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
 {
-    pidRuntime.tpaSpeedEst.twr = (float)pidProfile->tpa_speed_est_adv_thrust/(float)pidProfile->tpa_speed_est_adv_mass;
-    const float mass = pidProfile->tpa_speed_est_adv_mass / 1000.0f;
-    const float dragK = pidProfile->tpa_speed_est_adv_drag_k / 10000.0f;
-    const float propPitch = pidProfile->tpa_speed_est_adv_prop_pitch / 100.0f;
-    pidRuntime.tpaSpeedEst.massDragRatio = mass / dragK;
-    pidRuntime.tpaSpeedEst.propMaxSpeed = 0.0004233f * propPitch * motorConfig()->kv * pidRuntime.tpaSpeedEst.maxVoltage;
+    pidRuntime.tpaSpeed.twr = (float)pidProfile->tpa_speed_adv_thrust/(float)pidProfile->tpa_speed_adv_mass;
+    const float mass = pidProfile->tpa_speed_adv_mass / 1000.0f;
+    const float dragK = pidProfile->tpa_speed_adv_drag_k / 10000.0f;
+    const float propPitch = pidProfile->tpa_speed_adv_prop_pitch / 100.0f;
+    pidRuntime.tpaSpeed.massDragRatio = mass / dragK;
+    pidRuntime.tpaSpeed.propMaxSpeed = 0.0004233f * propPitch * motorConfig()->kv * pidRuntime.tpaSpeed.maxVoltage;
 
     const float maxFallSpeed = sqrtf(mass * G_ACCELERATION / dragK);
 
     const float a = dragK;
-    const float b = mass * pidRuntime.tpaSpeedEst.twr * G_ACCELERATION / pidRuntime.tpaSpeedEst.propMaxSpeed;
-    const float c = -mass * (pidRuntime.tpaSpeedEst.twr + 1) * G_ACCELERATION;
+    const float b = mass * pidRuntime.tpaSpeed.twr * G_ACCELERATION / pidRuntime.tpaSpeed.propMaxSpeed;
+    const float c = -mass * (pidRuntime.tpaSpeed.twr + 1) * G_ACCELERATION;
 
     const float maxDiveSpeed = (-b + sqrtf(b*b - 4.0f * a * c)) / (2.0f * a);
 
-    pidRuntime.tpaSpeedEst.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
+    pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
     UNUSED(pidProfile);
 }
 
 
-void tpaSpeedEstInit(const pidProfile_t *pidProfile)
+void tpaSpeedInit(const pidProfile_t *pidProfile)
 {
-    pidRuntime.tpaSpeedEst.speed = 0.0f;
-    pidRuntime.tpaSpeedEst.maxVoltage = pidProfile->tpa_speed_est_max_voltage / 100.0f;
-    pidRuntime.tpaSpeedEst.pitchOffset = pidProfile->tpa_speed_est_pitch_offset * M_PIf / 10.0f / 180.0f;
+    pidRuntime.tpaSpeed.speed = 0.0f;
+    pidRuntime.tpaSpeed.maxVoltage = pidProfile->tpa_speed_max_voltage / 100.0f;
+    pidRuntime.tpaSpeed.pitchOffset = pidProfile->tpa_speed_pitch_offset * M_PIf / 10.0f / 180.0f;
 
-    switch (pidProfile->tpa_speed_est_type) {
-    case TPA_SPEED_EST_BASIC:
-        tpaSpeedEstBasicInit(pidProfile);
+    switch (pidProfile->tpa_speed_type) {
+    case TPA_SPEED_BASIC:
+        tpaSpeedBasicInit(pidProfile);
         break;
-    case TPA_SPEED_EST_ADVANCED:
-        tpaSpeedEstAdvancedInit(pidProfile);
+    case TPA_SPEED_ADVANCED:
+        tpaSpeedAdvancedInit(pidProfile);
         break;
     default:
         break;
@@ -551,7 +551,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.landingDisarmThreshold = pidProfile->landing_disarm_threshold * 10.0f;
 
 #ifdef USE_WING
-    tpaSpeedEstInit(pidProfile);
+    tpaSpeedInit(pidProfile);
 #endif
 }
 

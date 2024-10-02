@@ -163,10 +163,10 @@ typedef enum tpaCurveType_e {
     TPA_CURVE_HYPERBOLIC,
 } tpaCurveType_t;
 
-typedef enum tpaSpeedEstType_e {
-    TPA_SPEED_EST_BASIC,
-    TPA_SPEED_EST_ADVANCED,
-} tpaSpeedEstType_t;
+typedef enum tpaSpeedType_e {
+    TPA_SPEED_BASIC,
+    TPA_SPEED_ADVANCED,
+} tpaSpeedType_t;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
 
@@ -293,15 +293,15 @@ typedef struct pidProfile_s {
     uint16_t tpa_curve_pid_thr0;            // For wings: PIDs multiplier at stall speed
     uint16_t tpa_curve_pid_thr100;          // For wings: PIDs multiplier at full speed
     int8_t tpa_curve_expo;                  // For wings: how fast PIDs do transition as speed grows
-    uint8_t tpa_speed_est_type;             // For wings: relative air speed estimation model type
-    uint16_t tpa_speed_est_basic_delay;     // For wings when tpa_speed_est_type = BASIC: delay of air speed estimation from throttle in milliseconds (time of reaching 50% of terminal speed in horizontal flight at full throttle)
-    uint16_t tpa_speed_est_basic_gravity;   // For wings when tpa_speed_est_type = BASIC: gravity effect on air speed estimation in percents
-    uint16_t tpa_speed_est_adv_prop_pitch;  // For wings when tpa_speed_est_type = ADVANCED: prop pitch in inches * 100
-    uint16_t tpa_speed_est_adv_mass;        // For wings when tpa_speed_est_type = ADVANCED: craft mass in grams
-    uint16_t tpa_speed_est_adv_drag_k;      // For wings when tpa_speed_est_type = ADVANCED: craft drag coefficient
-    uint16_t tpa_speed_est_adv_thrust;      // For wings when tpa_speed_est_type = ADVANCED: stationary thrust in grams
-    uint16_t tpa_speed_est_max_voltage;     // For wings: theoretical max voltage; used for throttle scailing with voltage for air speed estimation
-    int16_t tpa_speed_est_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
+    uint8_t tpa_speed_type;             // For wings: relative air speed estimation model type
+    uint16_t tpa_speed_basic_delay;     // For wings when tpa_speed_type = BASIC: delay of air speed estimation from throttle in milliseconds (time of reaching 50% of terminal speed in horizontal flight at full throttle)
+    uint16_t tpa_speed_basic_gravity;   // For wings when tpa_speed_type = BASIC: gravity effect on air speed estimation in percents
+    uint16_t tpa_speed_adv_prop_pitch;  // For wings when tpa_speed_type = ADVANCED: prop pitch in inches * 100
+    uint16_t tpa_speed_adv_mass;        // For wings when tpa_speed_type = ADVANCED: craft mass in grams
+    uint16_t tpa_speed_adv_drag_k;      // For wings when tpa_speed_type = ADVANCED: craft drag coefficient
+    uint16_t tpa_speed_adv_thrust;      // For wings when tpa_speed_type = ADVANCED: stationary thrust in grams
+    uint16_t tpa_speed_max_voltage;     // For wings: theoretical max voltage; used for throttle scailing with voltage for air speed estimation
+    int16_t tpa_speed_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -342,7 +342,7 @@ typedef struct pidCoefficient_s {
     float Kf;
 } pidCoefficient_t;
 
-typedef struct tpaSpeedEstParams_s {
+typedef struct tpaSpeedParams_s {
     float maxSpeed;
     float massDragRatio;
     float propMaxSpeed;
@@ -350,7 +350,7 @@ typedef struct tpaSpeedEstParams_s {
     float speed;
     float maxVoltage;
     float pitchOffset;
-} tpaSpeedEstParams_t;
+} tpaSpeedParams_t;
 
 typedef struct pidRuntime_s {
     float dT;
@@ -499,7 +499,7 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_WING
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
-    tpaSpeedEstParams_t tpaSpeedEst;
+    tpaSpeedParams_t tpaSpeed;
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
