@@ -211,6 +211,15 @@ bool canUseLaunchControl(void)
 }
 #endif
 
+#ifdef USE_DSHOT
+void setMotorSpinDirection(uint8_t spinDirection)
+{
+    if (isMotorProtocolDshot() && !featureIsEnabled(FEATURE_3D)) {
+        dshotCommandWrite(ALL_MOTORS, getMotorCount(), spinDirection, DSHOT_CMD_TYPE_INLINE);
+    }
+}
+#endif
+
 void resetArmingDisabled(void)
 {
     lastArmingDisabledReason = 0;
@@ -322,13 +331,17 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        // handle disabling turtle switch while crashflip is active as a disarm, unless
-        // we know that the quad flipped successfully, in which case we can fly away
+        // if, while armed:
+        // - the user switches off crashflip,
+        // - and it was active, 
+        // - and the quad did not flip successfully, or we don't have that information
+        // require an arm-disarm cycle by blocking tryArm()
         if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && !crashFlipSuccessful()) {
             crashFlipModeActive = false;
-            // stop arming (require a disarm/rearm cycle)
+            // stay disarmed, and block arming (require a disarm/rearm cycle)
             setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
         } else {
+            // allow arming
             unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
         }
 
@@ -468,11 +481,18 @@ void disarm(flightLogDisarmReason_e reason)
 #else
         UNUSED(reason);
 #endif
+
         BEEP_OFF;
+
 #ifdef USE_PERSISTENT_STATS
         if (!crashFlipModeActive) {
             statsOnDisarm();
         }
+#endif
+
+        // always set motor direction to normal on disarming
+#ifdef USE_DSHOT
+        setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
 #endif
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
@@ -525,20 +545,27 @@ void tryArm(void)
             }
 #endif
 
-            // choose crashflip outcome if no arming disabled flags and arm switch enabled... 
+            // choose crashflip outcome on arming
+            // disarm can arise in processRx() if the crashflip switch is reversed while in crashflip mode
+            // if we were unsuccessful, or cannot determin success, arming will be blocked and we can't get here
+            // hence we only get here with crashFlipModeActive if the switch was reversed and result successful
             if (crashFlipModeActive) {
-                if (tryingToArm == ARMING_DELAYED_CRASHFLIP || (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && crashFlipSuccessful())) {
-                    // arming delayed, or user switched turtle mode off after successful flip
-                    crashFlipModeActive = false; // continue into normal flight without need to disarm/rearm
-                }
+                // flip was successful, continue into normal flight without need to disarm/rearm
+                crashFlipModeActive = false; 
+#ifdef USE_DSHOT
+                setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+#endif
             } else {
-                if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-                    crashFlipModeActive = true; // continue into crashflip mode
+                // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
+                // otherwise consider only the switch position
+                crashFlipModeActive = (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
+#ifdef USE_DSHOT
+                // previous disarm will have set direction to normal
+                // at this point we only need to reverse the motors if crashflipMode is active
+                if (crashFlipModeActive) {
+                    setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_REVERSED);
                 }
-            }
-            const uint8_t spinDirection = crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL;
-            if (!featureIsEnabled(FEATURE_3D)) {
-                dshotCommandWrite(ALL_MOTORS, getMotorCount(), spinDirection, DSHOT_CMD_TYPE_INLINE);
+#endif
             }
         }
 #endif // USE_DSHOT
@@ -962,7 +989,7 @@ void processRxModes(timeUs_t currentTimeUs)
         // Enable beep warning when the crashflip mode is active
         beeper(BEEPER_CRASHFLIP_MODE);
         if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-            // allow the option of staying disarmed if user disabled the turtle mode switch
+            // permit the option of staying disarmed if the crashflip switch is set to off while armed
             disarm(DISARM_REASON_SWITCH); 
         }
     }
