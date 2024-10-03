@@ -232,8 +232,20 @@
 #endif
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED) && !defined(USE_TELEMETRY_IBUS)
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
 #define USE_TELEMETRY_IBUS
 #endif
+
+#ifdef USE_SERIALRX_JETIEXBUS
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
+#ifndef USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_JETIEXBUS
+#endif
+#endif // USE_SERIALRX_JETIEXBUS
 
 #if !defined(USE_SERIALRX_CRSF)
 #undef USE_TELEMETRY_CRSF
