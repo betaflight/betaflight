@@ -24,9 +24,9 @@
 
 extern bool cliMode;
 
-void cliProcess(void);
+bool cliProcess(void);
 struct serialPort_s;
-void cliEnter(struct serialPort_s *serialPort);
+void cliEnter(struct serialPort_s *serialPort, bool interactive);
 
 #ifdef USE_CLI_DEBUG_PRINT
 void cliPrint(const char *str);

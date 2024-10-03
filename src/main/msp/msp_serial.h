@@ -30,6 +30,13 @@
 #define MAX_MSP_PORT_COUNT 3
 
 typedef enum {
+    PORT_IDLE,
+    PORT_MSP_PACKET,
+    PORT_CLI_ACTIVE,
+    PORT_CLI_CMD
+} mspPortState_e;
+
+typedef enum {
     MSP_IDLE,
     MSP_HEADER_START,
     MSP_HEADER_M,
@@ -48,7 +55,7 @@ typedef enum {
     MSP_CHECKSUM_V2_NATIVE,
 
     MSP_COMMAND_RECEIVED
-} mspState_e;
+} mspPacketState_e;
 
 typedef enum {
     MSP_PACKET_COMMAND,
@@ -100,7 +107,8 @@ typedef struct mspPort_s {
     struct serialPort_s *port; // null when port unused.
     timeMs_t lastActivityMs;
     mspPendingSystemRequest_e pendingRequest;
-    mspState_e c_state;
+    mspPortState_e portState;
+    mspPacketState_e packetState;
     mspPacketType_e packetType;
     uint8_t inBuf[MSP_PORT_INBUF_SIZE];
     uint16_t cmdMSP;
