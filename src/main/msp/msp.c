@@ -1445,7 +1445,7 @@ case MSP_NAME:
         break;
 
     case MSP_MOTOR_CONFIG:
-        sbufWriteU16(dst, 0); // was minthrottle until 4.6
+        sbufWriteU16(dst, 0); // was minthrottle until after 4.5
         sbufWriteU16(dst, motorConfig()->maxthrottle);
         sbufWriteU16(dst, motorConfig()->mincommand);
 
