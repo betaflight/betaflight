@@ -316,6 +316,7 @@ typedef struct pidProfile_s {
     uint16_t tpa_speed_max_voltage;     // For wings: theoretical max voltage; used for throttle scailing with voltage for air speed estimation
     int16_t tpa_speed_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
     uint8_t yaw_type;                   // For wings: type of yaw (rudder or differential thrust)
+    int8_t angle_pitch_offset;          // For wings: pitch offset for angle modes; in decidegrees
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
