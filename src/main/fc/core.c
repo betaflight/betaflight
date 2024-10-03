@@ -331,14 +331,14 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        // if, while armed:
+        // if, while the arm switch is enabled:
         // - the user switches off crashflip,
         // - and it was active, 
         // - and the quad did not flip successfully, or we don't have that information
         // require an arm-disarm cycle by blocking tryArm()
         if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && !crashFlipSuccessful()) {
             crashFlipModeActive = false;
-            // stay disarmed, and block arming (require a disarm/rearm cycle)
+            // stay disarmed (motor direction normal), and block arming (require a disarm/rearm cycle)
             setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
         } else {
             // allow arming
@@ -551,10 +551,8 @@ void tryArm(void)
             // hence we only get here with crashFlipModeActive if the switch was reversed and result successful
             if (crashFlipModeActive) {
                 // flip was successful, continue into normal flight without need to disarm/rearm
+                // note: preceding disarm will have set motors to normal rotation direction
                 crashFlipModeActive = false; 
-#ifdef USE_DSHOT
-                setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-#endif
             } else {
                 // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
                 // otherwise consider only the switch position
