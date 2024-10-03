@@ -69,7 +69,7 @@
 #define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
 
-#define CRASHFLIP_MOTOR_DEADBAND         0.02f // send disarm value to motors below this drive value
+#define CRASHFLIP_MOTOR_DEADBAND         0.02f // 2%; send 'disarm' value to motors below this drive value
 #define CRASHFLIP_STICK_DEADBAND         0.15f // 15%
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
@@ -353,7 +353,7 @@ static bool applyCrashFlipModeToMotors(void)
             crashflipAttitudeAttenuator = attitudeChangeNeeded > halfComplete ? 1.0f : attitudeChangeNeeded / halfComplete;
 
             // signal success to enable quick restart, if attitude change implies success when reverting the switch
-            crashflipSuccess = crashflipAttitudeAttenuator == 0.0f;
+            crashflipSuccess = attitudeChangeNeeded == 0.0f;
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
