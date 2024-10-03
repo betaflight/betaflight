@@ -58,7 +58,6 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/position_control.h"
 #include "flight/alt_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"

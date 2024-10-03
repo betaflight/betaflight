@@ -1164,5 +1164,5 @@ extern "C" {
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
     bool crashFlipSuccessful(void) {return false; }
-    bool isAltitudeLow(void) {return false; }
+    bool isBelowLandingAltitude(void) {return false ;};
 }

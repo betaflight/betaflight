@@ -38,7 +38,6 @@ float getAltitudeDerivative(void);
 void calculateEstimatedAltitude(void);
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);
-bool isAltitudeLow(void);
 float getAltitudeAsl(void);
 int16_t getEstimatedVario(void);
 bool isAltitudeAvailable(void);

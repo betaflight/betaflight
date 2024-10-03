@@ -55,7 +55,6 @@
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 #include "flight/position.h"
-#include "flight/position_control.h"
 
 #include "io/beeper.h"
 #include "io/displayport_msp.h"

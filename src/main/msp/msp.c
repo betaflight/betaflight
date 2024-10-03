@@ -2905,7 +2905,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         positionControlConfigMutable()->altitude_P = sbufReadU16(src);
         positionControlConfigMutable()->altitude_I = sbufReadU16(src);
         positionControlConfigMutable()->altitude_D = sbufReadU16(src);
-        // altitude_F not implemented yet
+        // altitude_F not included in msp yet
         gpsRescueConfigMutable()->velP = sbufReadU16(src);
         gpsRescueConfigMutable()->velI = sbufReadU16(src);
         gpsRescueConfigMutable()->velD = sbufReadU16(src);

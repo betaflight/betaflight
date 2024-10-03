@@ -123,7 +123,7 @@ typedef struct {
 #define GPS_RESCUE_MAX_THROTTLE_ITERM    200    // max iterm value for throttle in degrees * 100
 #define GPS_RESCUE_ALLOWED_YAW_RANGE   30.0f   // yaw error must be less than this to enter fly home phase, and to pitch during descend()
 
-static const float taskIntervalSeconds = 1.0f / TASK_GPS_RESCUE_RATE_HZ; // i.e. 0.01 s
+static const float taskIntervalSeconds = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ); // i.e. 0.01 s
 static float rescueThrottle;
 static float rescueYaw;
 float gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
@@ -789,7 +789,7 @@ void gpsRescueUpdate(void)
             rescueState.failure = RESCUE_NO_HOME_POINT;
             // will result in a disarm via the sanity check system, or float around if switch induced
         } else {
-            if (rescueState.sensor.distanceToHomeM < 5.0f && isAltitudeLow()) {
+            if (rescueState.sensor.distanceToHomeM < 5.0f && isBelowLandingAltitude()) {
                 // attempted initiation within 5m of home, and 'on the ground' -> instant disarm, for safety reasons
                 rescueState.phase = RESCUE_ABORT;
             } else {
@@ -882,7 +882,7 @@ void gpsRescueUpdate(void)
 
     case RESCUE_DESCENT:
         // attenuate velocity and altitude targets while updating the heading to home
-        if (isAltitudeLow()) {
+        if (isBelowLandingAltitude()) {
             // enter landing mode once below landing altitude
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing

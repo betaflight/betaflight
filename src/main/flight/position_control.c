@@ -21,8 +21,7 @@
 
 #include "platform.h"
 
-#include "flight/pid.h" // for pidCoefficient_t
-
+#include "position.h"
 #include "position_control.h"
 
 #define ALTITUDE_P_SCALE  0.01f
@@ -32,15 +31,20 @@
 
 static pidCoefficient_t altitudePidCoeffs;
 
-void positionControlInit(void)
+void positionControlInit(const positionControlConfig_t *config)
 {
-    altitudePidCoeffs.Kp = positionControlConfig()->altitude_P * ALTITUDE_P_SCALE;
-    altitudePidCoeffs.Ki = positionControlConfig()->altitude_I * ALTITUDE_I_SCALE;
-    altitudePidCoeffs.Kd = positionControlConfig()->altitude_D * ALTITUDE_D_SCALE;
-    altitudePidCoeffs.Kf = positionControlConfig()->altitude_F * ALTITUDE_F_SCALE;
+    altitudePidCoeffs.Kp = config->altitude_P * ALTITUDE_P_SCALE;
+    altitudePidCoeffs.Ki = config->altitude_I * ALTITUDE_I_SCALE;
+    altitudePidCoeffs.Kd = config->altitude_D * ALTITUDE_D_SCALE;
+    altitudePidCoeffs.Kf = config->altitude_F * ALTITUDE_F_SCALE;
 }
 
 const pidCoefficient_t *getAltitudePidCoeffs(void)
 {
     return &altitudePidCoeffs;
+}
+
+bool isBelowLandingAltitude(void)
+{
+    return getAltitudeCm() < 100.0f * positionControlConfig()->landing_altitude_m;
 }

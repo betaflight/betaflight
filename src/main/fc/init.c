@@ -828,7 +828,7 @@ void init(void)
 #endif
 
     positionInit();
-    positionControlInit();
+    positionControlInit(positionControlConfig());
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -1005,11 +1005,9 @@ void init(void)
     altHoldInit();
 #endif
 
-#ifdef USE_GPS
-    if (featureIsEnabled(FEATURE_GPS)) {
 #ifdef USE_GPS_RESCUE
+    if (featureIsEnabled(FEATURE_GPS)) {
         gpsRescueInit();
-#endif
     }
 #endif
 

@@ -50,7 +50,6 @@
 
 static float displayAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
-static bool altitudeIsLow = false;
 
 static float zeroedAltitudeCm = 0.0f;
 static float zeroedAltitudeDerivative = 0.0f;
@@ -198,9 +197,6 @@ void calculateEstimatedAltitude(void)
     zeroedAltitudeDerivative = (zeroedAltitudeCm - previousZeroedAltitudeCm) * TASK_ALTITUDE_RATE_HZ; // cm/s
     previousZeroedAltitudeCm = zeroedAltitudeCm;
 
-    // assess if altitude is low here, only when we get new data, rather than in pid loop etc
-    altitudeIsLow = zeroedAltitudeCm < 100.0f * positionControlConfig()->landing_altitude_m;
-
     zeroedAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, zeroedAltitudeDerivative);
 
 #ifdef USE_VARIO
@@ -240,11 +236,6 @@ bool isAltitudeAvailable(void) {
 int32_t getEstimatedAltitudeCm(void)
 {
     return lrintf(displayAltitudeCm);
-}
-
-bool isAltitudeLow(void)
-{
-    return altitudeIsLow;
 }
 
 #ifdef USE_GPS
