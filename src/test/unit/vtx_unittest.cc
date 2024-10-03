@@ -211,4 +211,6 @@ extern "C" {
     void sbufWriteU16(sbuf_t *, uint16_t) {}
     void sbufWriteU32(sbuf_t *, uint32_t) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
+    bool crashFlipSuccessful(void) {return false; }
+
 }
