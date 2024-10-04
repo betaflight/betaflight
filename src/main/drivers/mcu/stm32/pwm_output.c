@@ -35,10 +35,6 @@
 
 #include "pg/motor.h"
 
-#ifndef PWM_SHUTDOWN_DELAY
-#define PWM_SHUTDOWN_DELAY 600
-#endif
-
 FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
@@ -141,16 +137,6 @@ void pwmDisableMotors(void)
     pwmShutdownPulsesForAllMotors();
 }
 
-void pwmShutdown(void)
-{
-    pwmShutdownPulsesForAllMotors();
-    /*
-        This delay ensures the output remains low for a period of time.
-        After motor shutdown the fc will reset. If the output in high level may cause motor unexpected spin.
-    */
-    delay(PWM_SHUTDOWN_DELAY);
-}
-
 static motorVTable_t motorPwmVTable;
 bool pwmEnableMotors(void)
 {
@@ -190,7 +176,7 @@ static motorVTable_t motorPwmVTable = {
     .enable = pwmEnableMotors,
     .disable = pwmDisableMotors,
     .isMotorEnabled = pwmIsMotorEnabled,
-    .shutdown = pwmShutdown,
+    .shutdown = pwmShutdownPulsesForAllMotors,
     .convertExternalToMotor = pwmConvertFromExternal,
     .convertMotorToExternal = pwmConvertToExternal,
 };
