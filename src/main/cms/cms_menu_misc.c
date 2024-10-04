@@ -127,7 +127,7 @@ CMS_Menu cmsx_menuRcPreview = {
     .entries = cmsx_menuRcEntries
 };
 
-static uint8_t motorConfig_idleOffset;
+static uint8_t motorConfig_motorIdle;
 static uint8_t rxConfig_fpvCamAngleDegrees;
 static uint8_t mixerConfig_crashflip_rate;
 
@@ -135,7 +135,7 @@ static const void *cmsx_menuMiscOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    motorConfig_idleOffset = motorConfig()->idleOffset / 10;
+    motorConfig_motorIdle = motorConfig()->motorIdle / 10;
     rxConfig_fpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
     mixerConfig_crashflip_rate = mixerConfig()->crashflip_rate;
 
@@ -147,7 +147,7 @@ static const void *cmsx_menuMiscOnExit(displayPort_t *pDisp, const OSD_Entry *se
     UNUSED(pDisp);
     UNUSED(self);
 
-    motorConfigMutable()->idleOffset = 10 * motorConfig_idleOffset;
+    motorConfigMutable()->motorIdle = 10 * motorConfig_motorIdle;
     rxConfigMutable()->fpvCamAngleDegrees = rxConfig_fpvCamAngleDegrees;
     mixerConfigMutable()->crashflip_rate = mixerConfig_crashflip_rate;
 
@@ -158,7 +158,7 @@ static const OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL },
 
-    { "IDLE OFFSET",   OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &motorConfig_idleOffset,      0,  200, 1 } },
+    { "IDLE OFFSET",   OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &motorConfig_motorIdle,      0,  200, 1 } },
     { "FPV CAM ANGLE", OME_UINT8,                   NULL, &(OSD_UINT8_t) { &rxConfig_fpvCamAngleDegrees, 0,   90, 1 } },
     { "CRASHFLIP RATE", OME_UINT8 | REBOOT_REQUIRED,   NULL,          &(OSD_UINT8_t) { &mixerConfig_crashflip_rate,           0,  100, 1 } },
     { "RC PREV",       OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview},

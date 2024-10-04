@@ -73,9 +73,9 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
 #ifdef BRUSHED_MOTORS
-    motorConfig->idleOffset = 700; // historical default minThrottle for brushed was 1070
+    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
 #else
-    motorConfig->idleOffset = 550;
+    motorConfig->motorIdle = 550;
 #endif // BRUSHED_MOTORS
     motorConfig->kv = 1960;
 
