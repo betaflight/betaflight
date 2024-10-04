@@ -35,11 +35,10 @@
 
 #include "alt_hold.h"
 
-static float integral = 0.0f;
+static float pidIntegral = 0.0f;
+static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 
 altHoldState_t altHoldState;
-
-static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
 
 float altitudePidCalculate(void)
 {
@@ -68,10 +67,12 @@ float altitudePidCalculate(void)
     //   even though it may cause throttle oscillations while dropping quickly - the average D is what we need
     // - Prevent excessive iTerm growth when error is impossibly large for iTerm to resolve
 
+    const pidCoefficient_t *pidCoefs =  getAltitudePidCoeffs();
+
     const float altitudeErrorCm = altHoldState.targetAltitudeCm - getAltitudeCm();
 
     // P
-    const float pOut = getAltitudePidCoeffs()->Kp * altitudeErrorCm;
+    const float pOut = pidCoefs->Kp * altitudeErrorCm;
 
     // I
     // input limit iTerm so that it doesn't grow fast with large errors
@@ -80,11 +81,11 @@ float altitudePidCalculate(void)
     // much less iTerm change for errors greater than 2m, otherwise it winds up badly
     const float itermNormalRange = 200.0f; // 2m
     const float itermRelax = (fabsf(altitudeErrorCm) < itermNormalRange) ? 1.0f : 0.1f;
-    integral += altitudeErrorCm * getAltitudePidCoeffs()->Ki * itermRelax * taskIntervalSeconds;
+    pidIntegral += altitudeErrorCm * pidCoefs->Ki * itermRelax * taskIntervalSeconds;
     // arbitrary limit on iTerm, same as for gps_rescue, +/-20% of full throttle range
     // ** might not be needed with input limiting **
-    integral = constrainf(integral, -200.0f, 200.0f); 
-    const float iOut = integral;
+    pidIntegral = constrainf(pidIntegral, -200.0f, 200.0f); 
+    const float iOut = pidIntegral;
 
     // D
     // boost D by 'increasing apparent velocity' when vertical velocity exceeds 5 m/s ( D of 75 on defaults)
@@ -99,7 +100,7 @@ float altitudePidCalculate(void)
         vel = vel * 3.0f - sign * kinkPointAdjustment;
     }
 
-    const float dOut = getAltitudePidCoeffs()->Kd * -vel;
+    const float dOut = pidCoefs->Kd * -vel;
 
     // F
     // if error is used, we get a 'free kick' in derivative from changes in the target value
@@ -107,7 +108,7 @@ float altitudePidCalculate(void)
     // calculating feedforward separately avoids the filter lag.
     // Use user's D gain for the feedforward gain factor, works OK with a scaling factor of 0.01
     // A commanded drop at 100cm/s will return feedforward of the user's D value. or 15 on defaults
-    const float fOut = getAltitudePidCoeffs()->Kf * altHoldState.targetAltitudeAdjustRate;
+    const float fOut = pidCoefs->Kf * altHoldState.targetAltitudeAdjustRate;
     
     // to further improve performance...
     // adding a high-pass filtered amount of FF would give a boost when altitude changes were requested
@@ -125,14 +126,14 @@ float altitudePidCalculate(void)
 
 void altHoldReset(void)
 {
-    integral = 0.0f;
+    pidIntegral = 0.0f;
     altHoldState.targetAltitudeCm = getAltitudeCm();
     altHoldState.targetAltitudeAdjustRate = 0.0f;
 }
 
 void altHoldInit(void)
 {
-    altHoldState.hover = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
+    altHoldState.hoverThrottle = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
     altHoldState.isAltHoldActive = false;
     altHoldReset();
 }
@@ -216,7 +217,7 @@ void altHoldUpdate(void)
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
     // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
     // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
-    const float newThrottle = PWM_RANGE_MIN + (altHoldState.hover + throttleAdjustment) * tiltMultiplier;
+    const float newThrottle = PWM_RANGE_MIN + (altHoldState.hoverThrottle + throttleAdjustment) * tiltMultiplier;
     altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->alt_hold_throttle_min, altholdConfig()->alt_hold_throttle_max);
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, lrintf(altHoldState.targetAltitudeCm));

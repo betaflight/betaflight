@@ -104,8 +104,8 @@ extern "C" {
     const pidCoefficient_t *getAltitudePidCoeffs(void) {
         return &testAltitudePidCoeffs;
     }
-    float getAltitudeCm(void) {return 0.0f;}
-    float getAltitudeDerivative(void) {return 0.0f;}
+    float getAltitudeCm(void) { return 0.0f;}
+    float getAltitudeDerivative(void) { return 0.0f;}
 
     void pt2FilterInit(pt2Filter_t *altHoldDeltaLpf, float) {
         UNUSED(altHoldDeltaLpf);

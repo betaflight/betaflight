@@ -803,7 +803,7 @@ void gpsRescueUpdate(void)
                 }
                 // otherwise behave as for a normal rescue
                 initialiseRescueValues ();
-                returnAltitudeLow = (getAltitudeCm() < rescueState.intent.returnAltitudeCm);
+                returnAltitudeLow = getAltitudeCm() < rescueState.intent.returnAltitudeCm;
                 rescueState.phase = RESCUE_ATTAIN_ALT;
             }
         }
@@ -939,13 +939,15 @@ float gpsRescueGetImuYawCogGain(void)
 
 float gpsRescueGetThrottle(void)
 {
-    // Calculate the commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
+    // Calculate the commanded throttle for use in the mixer. Output must be within range 0.0 - 1.0.
     // minCheck can be less than, or greater than, PWM_RANGE_MIN, but is usually at default of 1050
     // it is the value at which the user expects the motors to start spinning (leaving a deadband from 1000 to 1050)
     // rescue throttle min can't be less than gps_rescue_throttle_min (1100) or greater than max (1750)
     // we scale throttle from mincheck to PWM_RANGE_MAX when mincheck is greater than PWM_RANGE_MIN, otherwise from PWM_RANGE_MIN to PWM_RANGE_MAX
     float commandedThrottle = scaleRangef(rescueThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
     // if mincheck is set below PWRM_RANGE_MIN, the gps rescue throttle may seem greater than expected
+    // with high values for mincheck, we could sclae to negative throttle values.
+    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
     return commandedThrottle;
 }
 

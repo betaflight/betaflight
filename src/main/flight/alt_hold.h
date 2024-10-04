@@ -29,7 +29,7 @@ typedef struct {
     float targetAltitudeCm;
     float targetAltitudeAdjustRate;
     float throttleOut;
-    float hover;
+    float hoverThrottle;
 } altHoldState_t;
 
 void altHoldInit(void);

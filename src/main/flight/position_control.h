@@ -21,5 +21,7 @@
 #include "flight/pid.h"
 
 void positionControlInit(const positionControlConfig_t *config);
-const pidCoefficient_t *getAltitudePidCoeffs(void);
+
 bool isBelowLandingAltitude(void);
+
+const pidCoefficient_t *getAltitudePidCoeffs(void);
