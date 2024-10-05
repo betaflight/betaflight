@@ -36,7 +36,7 @@
 #include "alt_hold.h"
 
 static float pidIntegral = 0.0f;
-static const float taskIntervalSeconds = 1.0f / ALTHOLD_TASK_RATE_HZ; // i.e. 0.01 s
+static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
 
 altHoldState_t altHoldState;
 

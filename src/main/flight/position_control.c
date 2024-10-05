@@ -39,12 +39,12 @@ void positionControlInit(const positionControlConfig_t *config)
     altitudePidCoeffs.Kf = config->altitude_F * ALTITUDE_F_SCALE;
 }
 
-const pidCoefficient_t *getAltitudePidCoeffs(void)
-{
-    return &altitudePidCoeffs;
-}
-
 bool isBelowLandingAltitude(void)
 {
     return getAltitudeCm() < 100.0f * positionControlConfig()->landing_altitude_m;
+}
+
+const pidCoefficient_t *getAltitudePidCoeffs(void)
+{
+    return &altitudePidCoeffs;
 }
