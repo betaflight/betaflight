@@ -486,7 +486,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 
 #ifdef USE_SERVOS
     case CONDITION(SERVOS):
-        return isFieldEnabled(FIELD_SELECT(SERVO));
+        return hasServos() && (FIELD_SELECT(SERVO));
 #endif
 
     case CONDITION(PID):
@@ -709,10 +709,10 @@ static void writeIntraframe(void)
     }
 
 #ifdef USE_SERVOS
-    if (isFieldEnabled(FIELD_SELECT(SERVO))) {
+    if (testBlackboxCondition(CONDITION(SERVOS))) {
         int32_t out[ARRAYLEN(servo)];
         for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {
-            out[x] = blackboxCurrent->servo[x] - DEFAULT_SERVO_MIDDLE;
+            out[x] = blackboxCurrent->servo[x] - 1500;
         }
         
         blackboxWriteTag8_8SVB(out, ARRAYLEN(out));
@@ -871,7 +871,7 @@ static void writeInterframe(void)
     }
 
 #ifdef USE_SERVOS
-    if (isFieldEnabled(FIELD_SELECT(SERVO))) {
+    if (testBlackboxCondition(CONDITION(SERVOS))) {
         STATIC_ASSERT(ARRAYLEN(servo) <= 8, "TAG8_8SVB supports at most 8 values"); 
         int32_t out[ARRAYLEN(servo)];
         for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {

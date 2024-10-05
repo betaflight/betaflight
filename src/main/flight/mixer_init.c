@@ -274,6 +274,11 @@ const mixer_t mixers[] = {
 
 FAST_DATA_ZERO_INIT mixerRuntime_t mixerRuntime;
 
+bool hasServos(void)
+{
+    return mixers[currentMixerMode].useServo;
+}
+
 uint8_t getMotorCount(void)
 {
     return mixerRuntime.motorCount;

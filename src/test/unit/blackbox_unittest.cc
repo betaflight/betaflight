@@ -362,6 +362,7 @@ boxBitmask_t rcModeActivationMask;
 void mspSerialAllocatePorts(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 uint16_t getBatteryVoltageLatest(void) {return 0;}
+bool hasServos(void) { return false; }
 uint8_t getMotorCount(void) {return 4;}
 bool areMotorsRunning(void) { return false; }
 bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}

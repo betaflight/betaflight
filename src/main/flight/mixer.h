@@ -121,6 +121,7 @@ extern float motor[MAX_SUPPORTED_MOTORS];
 extern float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct rxConfig_s;
 
+bool hasServos(void);
 uint8_t getMotorCount(void);
 float getMotorMixRange(void);
 bool areMotorsRunning(void);
