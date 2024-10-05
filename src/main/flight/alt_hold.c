@@ -238,7 +238,10 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
 
 float altHoldGetThrottle(void) {
     // see notes in gpsRescueGetThrottle() about mincheck
-    return scaleRangef(altHoldState.throttleOut, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    float commandedThrottle = scaleRangef(altHoldState.throttleOut, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    // with high values for mincheck, we could sclae to negative throttle values.
+    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
+    return commandedThrottle;
 }
 
 #endif
