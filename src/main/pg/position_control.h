@@ -18,22 +18,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
+#pragma once
 
-#ifdef USE_ALT_HOLD_MODE
-
-#include "flight/alt_hold.h"
+#include <stdint.h>
 
 #include "pg/pg.h"
-#include "pg/pg_ids.h"
 
-#include "alt_hold.h"
+typedef struct positionControlConfig_s {
+    uint16_t hover_throttle;      // value used at the start of a rescue or position hold
+    uint8_t landing_altitude_m;   // altitude below which landing behaviours can change, metres
+    uint8_t altitude_P;
+    uint8_t altitude_I;
+    uint8_t altitude_D;
+    uint8_t altitude_F;
+} positionControlConfig_t;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 4);
+PG_DECLARE(positionControlConfig_t, positionControlConfig);
 
-PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
-    .alt_hold_target_adjust_rate = 100, // max rate of change of altitude target using sticks in cm/s
-    .alt_hold_throttle_min = 1100,
-    .alt_hold_throttle_max = 1700,
-);
-#endif

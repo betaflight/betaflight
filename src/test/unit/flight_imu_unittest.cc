@@ -46,8 +46,8 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/position.h"
+    #include "flight/position_control.h"
 
-    
     #include "io/gps.h"
 
     #include "rx/rx.h"
@@ -74,6 +74,7 @@ extern "C" {
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
@@ -438,7 +439,6 @@ extern "C" {
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }
-
     void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
         UNUSED(baroDerivativeLpf);
     }

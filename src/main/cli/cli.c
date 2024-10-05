@@ -109,6 +109,7 @@ bool cliMode = false;
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/position_control.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"

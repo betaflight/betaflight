@@ -25,9 +25,6 @@
 #include "pg/pg.h"
 
 typedef struct altholdConfig_s {
-    uint8_t alt_hold_pid_p;
-    uint8_t alt_hold_pid_i;
-    uint8_t alt_hold_pid_d;
     uint8_t alt_hold_target_adjust_rate;
     uint16_t alt_hold_throttle_min;
     uint16_t alt_hold_throttle_max;
