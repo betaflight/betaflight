@@ -100,7 +100,7 @@ float altitudePidCalculate(void)
         vel = vel * 3.0f - sign * kinkPointAdjustment;
     }
 
-    const float dOut = pidCoefs->Kd * -vel;
+    const float dOut = pidCoefs->Kd * vel;
 
     // F
     // if error is used, we get a 'free kick' in derivative from changes in the target value
@@ -115,7 +115,7 @@ float altitudePidCalculate(void)
     // this would offset motor lag and kick off some initial vertical acceleration.
     // this would be exactly what an experienced pilot would do.
 
-    const float output = pOut + iOut + dOut + fOut;
+    const float output = pOut + iOut - dOut + fOut;
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
     DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
     DEBUG_SET(DEBUG_ALTHOLD, 6, lrintf(dOut));

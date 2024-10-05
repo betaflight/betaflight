@@ -255,7 +255,7 @@ static void rescueAttainPosition(void)
     // up to 20% increase in throttle from I alone, need to check if this is needed, in practice.
 
     // D component
-    const float throttleD = -getAltitudeDerivative() * getAltitudePidCoeffs()->Kd * rescueState.intent.throttleDMultiplier;
+    const float throttleD = getAltitudeDerivative() * getAltitudePidCoeffs()->Kd * rescueState.intent.throttleDMultiplier;
 
     // F component
     // add a feedforward element that is proportional to the ascend or descend rate
@@ -267,7 +267,7 @@ static void rescueAttainPosition(void)
     // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
     // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
 
-    rescueThrottle = PWM_RANGE_MIN + (throttleP + throttleI + throttleD + throttleF + hoverOffset) * tiltMultiplier;
+    rescueThrottle = PWM_RANGE_MIN + (throttleP + throttleI - throttleD + throttleF + hoverOffset) * tiltMultiplier;
 
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueThrottle)); // normal range 1000-2000 but is before constraint
 
