@@ -238,7 +238,7 @@ static void rescueAttainPosition(void)
     /**
         Altitude (throttle) controller
     */
-    const float altitudeErrorCm = (rescueState.intent.targetAltitudeCm -getAltitudeCm());
+    const float altitudeErrorCm = (rescueState.intent.targetAltitudeCm - getAltitudeCm());
     // height above target in cm (negative means too low)
     // at the start, the target starts at current altitude plus one step.  Increases stepwise to intended value.
 
