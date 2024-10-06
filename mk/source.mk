@@ -48,7 +48,6 @@ COMMON_SRC = \
             build/debug.c \
             build/debug_pin.c \
             build/version.c \
-            $(TARGET_DIR_SRC) \
             main.c \
             $(PG_SRC) \
             common/bitarray.c \

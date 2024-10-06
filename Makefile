@@ -217,7 +217,6 @@ DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
 TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
-TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
 
 .DEFAULT_GOAL := hex
 
