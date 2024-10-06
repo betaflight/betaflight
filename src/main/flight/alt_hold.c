@@ -25,11 +25,11 @@
 #include "common/maths.h"
 #include "config/config.h"
 #include "fc/runtime_config.h"
-#include "fc/rc.h" // for throttle position
-#include "flight/failsafe.h" // to know if failsafe is active 
-#include "flight/position.h" // to set altitude
+#include "fc/rc.h"
+#include "flight/failsafe.h"
+#include "flight/position.h"
 #include "flight/position_control.h"
-#include "rx/rx.h" // for PWM min and max
+#include "rx/rx.h"
 
 #include "alt_hold.h"
 
@@ -42,19 +42,15 @@ void altitudePidCalculate(void)
     // boost D by 'increasing apparent velocity' when vertical velocity exceeds 5 m/s ( D of 75 on defaults)
     // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
     // this is important primarily to arrest pre-existing fast drops or climbs at the start;
-    float vel = getAltitudeDerivative(); // cm/s altitude derivative is always available
+    float verticalVelocity = getAltitudeDerivative(); // cm/s altitude derivative is always available
     const float kinkPoint = 500.0f; // velocity at which D should start to increase
     const float kinkPointAdjustment = kinkPoint * 2.0f; // Precompute constant
-    const float sign = (vel > 0) ? 1.0f : -1.0f;
-    if (fabsf(vel) > kinkPoint) {
-        vel = vel * 3.0f - sign * kinkPointAdjustment;
+    const float sign = (verticalVelocity > 0) ? 1.0f : -1.0f;
+    if (fabsf(verticalVelocity) > kinkPoint) {
+        verticalVelocity = verticalVelocity * 3.0f - sign * kinkPointAdjustment;
     }
-    const float verticalVelocity = vel;
 
-    const float targetAltitudeCm = altHoldState.targetAltitudeCm;
-    const float targetChangeRate = altHoldState.targetAltitudeAdjustRate;
-
-    altitudeControl(targetAltitudeCm, taskIntervalSeconds, verticalVelocity, targetChangeRate);
+    altitudeControl(altHoldState.targetAltitudeCm, taskIntervalSeconds, verticalVelocity, altHoldState.targetAltitudeAdjustRate);
 }
 
 void altHoldReset(void)

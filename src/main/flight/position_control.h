@@ -21,10 +21,10 @@
 #include "flight/pid.h"
 
 void positionControlInit(const positionControlConfig_t *config);
+void resetAltitudeControl(void);
+
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
 
 bool isBelowLandingAltitude(void);
-
 const pidCoefficient_t *getAltitudePidCoeffs(void);
-void resetAltitudeControl (void);
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
-float positionControlThrottle(void);
+float getAltitudeControlThrottle(void);

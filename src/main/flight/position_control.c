@@ -25,10 +25,10 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
-#include "flight/pid.h"   // for pidCoefficient_t
-#include "flight/imu.h"   // for getCosTiltAngle
-#include "rx/rx.h"        // for PWM Ranges
-#include "position.h"     // for altitude values
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "rx/rx.h"
+#include "position.h"
 
 #include "position_control.h"
 
@@ -68,12 +68,11 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
 
-    // reduce the iTerm gain for errors greater than 2m, otherwise it winds up too much
-    const float largeError = 200.0f; // 2m
-    const float itermRelax = (fabsf(altitudeErrorCm) < largeError) ? 1.0f : 0.1f;
+    // reduce the iTerm gain for errors greater than 200cm (2m), otherwise it winds up too much
+    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
     altitudeI += altitudeErrorCm * altitudePidCoeffs.Ki * itermRelax * taskIntervalS;
-    const float iTermLimit = 200.0f;
-    altitudeI = constrainf(altitudeI, -iTermLimit, iTermLimit); 
+    // limit iTerm to not more than 200 throttle units
+    altitudeI = constrainf(altitudeI, -200.0f, 200.0f); 
 
     const float altitudeD = verticalVelocity * altitudePidCoeffs.Kd;
 
@@ -101,7 +100,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 7, lrintf(altitudeF));
 }
 
-float positionControlThrottle(void)
+float getAltitudeControlThrottle(void)
 {
     return throttleOut;
 }

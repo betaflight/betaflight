@@ -41,14 +41,14 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
-#include "flight/imu.h" // for yaw attitude values
+#include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "flight/position_control.h"
 
 #include "rx/rx.h"
 
-#include "sensors/acceleration.h" // for disarming on impact
+#include "sensors/acceleration.h"
 
 #include "gps_rescue.h"
 
@@ -237,10 +237,8 @@ static void rescueAttainPosition(void)
         Altitude (throttle) controller
     */
 
-    const float verticalVelocity = -getAltitudeDerivative() * rescueState.intent.throttleDMultiplier;
-    const float targetAltitudeCm = rescueState.intent.targetAltitudeCm;
-    const float targetAltitudeStep = rescueState.intent.targetAltitudeStepCm;
-    altitudeControl(targetAltitudeCm, taskIntervalSeconds, verticalVelocity, targetAltitudeStep);
+    const float verticalVelocity = getAltitudeDerivative() * rescueState.intent.throttleDMultiplier;
+    altitudeControl(rescueState.intent.targetAltitudeCm, taskIntervalSeconds, verticalVelocity, rescueState.intent.targetAltitudeStepCm);
 
     /**
         Heading / yaw controller
