@@ -82,13 +82,13 @@ endif
 # some targets use parallel build by default
 # MAKEFLAGS is valid only inside target, do not use this at parse phase
 DEFAULT_PARALLEL_JOBS 	:=    # all jobs in parallel (for backward compatibility)
-MAKE_PARALLEL 		= $(if $(filter -j%, $(MAKEFLAGS)),$(EMPTY),-j$(DEFAULT_PARALLEL_JOBS))
+MAKE_PARALLEL 		     = $(if $(filter -j%, $(MAKEFLAGS)),$(EMPTY),-j$(DEFAULT_PARALLEL_JOBS))
 
 # pre-build sanity checks
 include $(MAKE_SCRIPT_DIR)/checks.mk
 
 # basic target list
-PLATFORMS		 := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
+PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
 BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
@@ -190,10 +190,10 @@ ifeq ($(TARGET_MCU_FAMILY),)
 $(error No TARGET_MCU_FAMILY specified. Is the target.mk valid for $(TARGET)?)
 endif
 
-TARGET_FLAGS  		:= -D$(TARGET) -D$(TARGET_PLATFORM) -D$(TARGET_MCU_FAMILY) $(TARGET_FLAGS)
+TARGET_FLAGS := -D$(TARGET) -D$(TARGET_PLATFORM) -D$(TARGET_MCU_FAMILY) $(TARGET_FLAGS)
 
 ifneq ($(CONFIG),)
-TARGET_FLAGS  		:= $(TARGET_FLAGS) -DUSE_CONFIG
+TARGET_FLAGS := $(TARGET_FLAGS) -DUSE_CONFIG
 endif
 
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
