@@ -78,22 +78,24 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
 
-    const float throttleAdjustment = altitudeP + altitudeI - altitudeD + altitudeF;
+    const float hoverOffset = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
+
+    float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
     // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
     // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
+    throttleOffset *= tiltMultiplier;
 
-    const float hoverThrottle = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
-
-    float newThrottle = (hoverThrottle + throttleAdjustment) * tiltMultiplier + PWM_RANGE_MIN;
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 2, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
-
+    float newThrottle = PWM_RANGE_MIN + throttleOffset;
     newThrottle = constrainf(newThrottle, positionControlConfig()->alt_control_throttle_min, positionControlConfig()->alt_control_throttle_max);
-    newThrottle = scaleRangef(throttleOut, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
+
+    newThrottle = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+
     throttleOut = constrainf(newThrottle, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 0, lrintf(targetAltitudeCm));
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 3, lrintf(tiltMultiplier * 100));
+    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 1, lrintf(tiltMultiplier * 100));
+    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 3, lrintf(targetAltitudeCm));
     DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 4, lrintf(altitudeP));
     DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 5, lrintf(altitudeI));
     DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 6, lrintf(-altitudeD));
