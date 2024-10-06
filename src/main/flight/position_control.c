@@ -88,18 +88,18 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
     newThrottle = constrainf(newThrottle, positionControlConfig()->alt_control_throttle_min, positionControlConfig()->alt_control_throttle_max);
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
+    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
 
     newThrottle = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 
     throttleOut = constrainf(newThrottle, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 1, lrintf(tiltMultiplier * 100));
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 3, lrintf(targetAltitudeCm));
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 4, lrintf(altitudeP));
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 5, lrintf(altitudeI));
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 6, lrintf(-altitudeD));
-    DEBUG_SET(DEBUG_ALTITUDE_CONTROL, 7, lrintf(altitudeF));
+    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 1, lrintf(tiltMultiplier * 100));
+    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 3, lrintf(targetAltitudeCm));
+    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 4, lrintf(altitudeP));
+    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 5, lrintf(altitudeI));
+    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 6, lrintf(-altitudeD));
+    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 7, lrintf(altitudeF));
 }
 
 float getAltitudeControlThrottle(void)
