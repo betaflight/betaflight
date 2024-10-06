@@ -80,7 +80,6 @@ INCLUDE_DIRS    := \
             $(INCLUDE_DIRS) \
             $(TARGET_PLATFORM_DIR) \
             $(TARGET_PLATFORM_DIR)/startup \
-            $(SRC_DIR)/startup/stm32 \
             $(STDPERIPH_DIR)/Inc \
             $(USBCORE_DIR)/Inc \
             $(USBCDC_DIR)/Inc \
@@ -147,7 +146,7 @@ MCU_COMMON_SRC = \
             timer_hal.c \
             timer_stm32g4xx.c \
             transponder_ir_io_hal.c \
-            camera_control.c \
+            camera_control_stm32.c \
             startup/system_stm32g4xx.c
 
 MCU_EXCLUDES = \

@@ -200,7 +200,7 @@ MCU_COMMON_SRC = \
             timer_stm32f4xx.c \
             transponder_ir_io_stdperiph.c \
             usbd_msc_desc.c \
-            camera_control.c \
+            camera_control_stm32.c \
             startup/system_stm32f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)

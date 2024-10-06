@@ -155,7 +155,7 @@ MCU_COMMON_SRC = \
             bus_spi_apm32.c \
             bus_i2c_apm32.c \
             bus_i2c_apm32_init.c \
-            camera_control.c \
+            camera_control_apm32.c \
             debug.c \
             dma_reqmap_mcu.c \
             dshot_bitbang.c \

@@ -86,7 +86,7 @@ MCU_COMMON_SRC = \
             bus_i2c_atbsp.c \
             bus_i2c_atbsp_init.c \
             bus_spi_at32bsp.c \
-            camera_control.c \
+            camera_control_at32.c \
             debug.c \
             dma_at32f43x.c \
             dma_reqmap_mcu.c \

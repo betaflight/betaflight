@@ -296,7 +296,7 @@ MCU_COMMON_SRC = \
             timer_hal.c \
             timer_stm32h7xx.c \
             transponder_ir_io_hal.c \
-            camera_control.c \
+            camera_control_stm32.c \
             startup/system_stm32h7xx.c
 
 MCU_EXCLUDES = \

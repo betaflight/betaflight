@@ -171,7 +171,7 @@ MCU_COMMON_SRC = \
             serial_uart_hal.c \
             timer_hal.c \
             transponder_ir_io_hal.c \
-            camera_control.c \
+            camera_control_stm32.c \
             system_stm32h5xx.c \
             startup/system_stm32h5xx.c
 

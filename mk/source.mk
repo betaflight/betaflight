@@ -98,6 +98,7 @@ COMMON_SRC = \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
             drivers/buttons.c \
+            drivers/camera_control.c \
             drivers/display.c \
             drivers/display_canvas.c \
             drivers/dma_common.c \
