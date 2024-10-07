@@ -21,12 +21,12 @@
 #ifdef USE_ALT_HOLD_MODE
 
 #include "build/debug.h"
-
 #include "common/maths.h"
 #include "config/config.h"
 
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
+
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"

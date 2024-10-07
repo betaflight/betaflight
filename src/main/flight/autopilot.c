@@ -27,7 +27,6 @@
 #include "fc/rc.h"
 
 #include "flight/imu.h"
-#include "flight/pid.h"
 #include "flight/position.h"
 #include "rx/rx.h"
 
@@ -194,10 +193,6 @@ bool isBelowLandingAltitude(void)
 {
     return getAltitudeCm() < 100.0f * autopilotConfig()->landing_altitude_m;
 }
-
-const pidCoefficient_t *getAltitudePidCoeffs(void)
-{
-    return &altitudePidCoeffs;
 
 float getAutopilotThrottle(void)
 {

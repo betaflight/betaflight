@@ -30,7 +30,6 @@ void resetPositionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
 void positionControl(gpsLocation_t targetLocation, float deadband);
 
-
 bool isBelowLandingAltitude(void);
 const pidCoefficient_t *getAltitudePidCoeffs(void);
 float getAutopilotThrottle(void);

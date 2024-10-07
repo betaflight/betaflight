@@ -48,7 +48,6 @@
 
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
-#include "flight/pos_hold.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
