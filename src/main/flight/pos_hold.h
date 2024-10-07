@@ -21,12 +21,13 @@
 
 #ifdef USE_ALT_HOLD_MODE
 #include "common/time.h"
+#include "gps.h"
 
 #define POSHOLD_TASK_RATE_HZ 100         // hz
 
 typedef struct {
     bool isPosHoldActive;
-    float targetLocation;
+    gpsLocation_t targetLocation;
     float targetAdjustRate;
 } posHoldState_t;
 

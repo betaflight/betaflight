@@ -41,7 +41,7 @@ posHoldState_t posHoldState;
 void posHoldReset(void)
 {
 //    resetPositionControl(); - need to add this in position_control.c
-//    altHoldState.targetLocation = getCurrentLocation();
+    posHoldState.targetLocation = gpsSol.llh;
     posHoldState.targetAdjustRate = 0.0f;
 }
 
@@ -65,43 +65,18 @@ void posHoldProcessTransitions(void) {
 
 void posHoldUpdateTargetLocation(void)
 {
-    // The user can adjust the target position using Roll and Pitch inputs
-    // There is a big deadband.
-    // Rate of change is proportional to stick deadband an a CLI value for the max rate
+    // The user can adjust the target position by flying around in level mode
+    // We need to provide a big deadband in rc.c
 
-    // code to get roll and pitch adjusters (might not be the best way to go)
-    const float rcRoll = rcCommand[ROLL];
-    const float rcPitch = rcCommand[PITCH];
-
-    const float lowThreshold = 0.5f * (rxConfig()->midrc + PWM_RANGE_MIN); // halfway between center and min
-    const float highThreshold = 0.5f * (rxConfig()->midrc + PWM_RANGE_MAX); // halfway between center and max
-
-    float rollAdjust = 0.0f;
-    float pitchAdjust = 0.0f;
-
-    // if failsafe is active, and we get here, we are in failsafe landing mode, don't use stick adjustments
     if (!failsafeIsActive()) {
-        if (rcRoll < lowThreshold) {
-            rollAdjust = scaleRangef(rcRoll, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
-        } else if (rcRoll > highThreshold) {
-            rollAdjust = scaleRangef(rcRoll, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
-        }
-
-        if (rcPitch < lowThreshold) {
-            pitchAdjust = scaleRangef(rcPitch, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
-        } else if (rcPitch > highThreshold) {
-            pitchAdjust = scaleRangef(rcPitch, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
-        }
 
     // most easily...
     // fly the quad, in angle mode, enabling a deadband via rc.c (?)
     // while sticks are inside the deadband,
     // set the target location to the current GPS location each iteration
     // posHoldState.targetLocation = currentLocation;
+        posHoldState.targetLocation = gpsSol.llh;
     }
-
-    rollAdjust *= 1.0f;
-    pitchAdjust *= 1.0f;
 
 }
 
