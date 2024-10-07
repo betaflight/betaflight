@@ -44,4 +44,4 @@ gazebo	->	betaflight	`udp://127.0.0.1:9003`
 UARTx will bind on `tcp://127.0.0.1:576x` when port been open.
 
 `eeprom.bin`, size 8192 Byte, is for config saving.
-size can be changed in `src/platform/link/SITL.ld` >> `__FLASH_CONFIG_Size`
+size can be changed in `src/platform/SITL/link/SITL.ld` >> `__FLASH_CONFIG_Size`
