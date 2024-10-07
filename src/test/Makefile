@@ -110,6 +110,7 @@ blackbox_encoding_unittest_SRC :=  \
 
 cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
+		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
@@ -118,7 +119,9 @@ cli_unittest_SRC := \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/io/gps.c \
 		$(USER_DIR)/pg/pg.c \
+		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/drivers/buf_writer.c \
 		$(USER_DIR)/drivers/serial.c \
 		$(USER_DIR)/common/typeconversion.c
 

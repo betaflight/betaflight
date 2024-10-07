@@ -184,8 +184,8 @@ static timeMs_t cliEntryTime = 0;
 #define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t cliWriterDesc;
-static bufWriter_t *cliWriter = NULL;
-static bufWriter_t *cliErrorWriter = NULL;
+STATIC_UNIT_TESTED bufWriter_t *cliWriter = NULL;
+STATIC_UNIT_TESTED bufWriter_t *cliErrorWriter = NULL;
 static uint8_t cliWriteBuffer[CLI_OUT_BUFFER_SIZE];
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
@@ -305,18 +305,6 @@ static const char *configurationStates[] = {
     [CONFIGURATION_STATE_UNCONFIGURED] = "UNCONFIGURED",
     [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
 };
-
-typedef enum dumpFlags_e {
-    DUMP_MASTER = (1 << 0),
-    DUMP_PROFILE = (1 << 1),
-    DUMP_RATES = (1 << 2),
-    DUMP_ALL = (1 << 3),
-    DO_DIFF = (1 << 4),
-    SHOW_DEFAULTS = (1 << 5),
-    HIDE_UNUSED = (1 << 6),
-    HARDWARE_ONLY = (1 << 7),
-    BARE = (1 << 8),
-} dumpFlags_t;
 
 static void cliExit(const bool reboot);
 typedef bool printFn(dumpFlags_t dumpMask, bool equalsDefault, const char *format, ...);
@@ -1160,7 +1148,7 @@ static void cliRxFailsafe(const char *cmdName, char *cmdline)
     }
 }
 
-static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions, const char *headingStr)
+STATIC_UNIT_TESTED void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions, const char *headingStr)
 {
     const char *format = "aux %u %u %u %u %u %u %u";
     // print out aux channel settings
@@ -1202,7 +1190,7 @@ static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *mode
     }
 }
 
-static void cliAux(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
 {
     int i, val = 0;
     const char *ptr;
