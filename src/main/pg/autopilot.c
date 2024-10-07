@@ -20,20 +20,20 @@
 
 #include "platform.h"
 
-#include "flight/position_control.h"
+#include "flight/autopilot.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "position_control.h"
+#include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 1);
 
-PG_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig,
-    .hover_throttle = 1275,
-    .alt_control_throttle_min = 1100,
-    .alt_control_throttle_max = 1700,
+PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landing_altitude_m = 4,
+    .hover_throttle = 1275,
+    .throttle_min = 1100,
+    .throttle_max = 1700,
     .altitude_P = 15,
     .altitude_I = 15,
     .altitude_D = 15,

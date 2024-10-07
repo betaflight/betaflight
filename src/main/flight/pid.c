@@ -50,7 +50,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/position_control.h"
+#include "flight/autopilot.h"
 #include "flight/rpm_filter.h"
 
 #include "io/gps.h"

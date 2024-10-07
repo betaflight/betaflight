@@ -44,7 +44,7 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/gps_rescue.c \
-		$(USER_DIR)/flight/position_control.c
+		$(USER_DIR)/flight/autopilot.c
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
@@ -468,7 +468,7 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 althold_unittest_SRC := \
 		$(USER_DIR)/flight/alt_hold.c \
 		$(USER_DIR)/common/maths.c \
-		$(USER_DIR)/flight/position_control.c \
+		$(USER_DIR)/flight/autopilot.c \
 		$(USER_DIR)/pg/rx.c
 
 althold_unittest_DEFINES := \

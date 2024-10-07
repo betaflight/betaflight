@@ -52,7 +52,7 @@
 #include "flight/mixer_init.h"
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
-#include "flight/position_control.h"
+#include "flight/autopilot.h"
 #include "flight/rpm_filter.h"
 
 #include "io/gps.h"
@@ -775,7 +775,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #ifdef USE_ALT_HOLD_MODE
     // Throttle value to be used during altitude hold mode (and failsafe landing mode)
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
-        throttle = getAltitudeControlThrottle();
+        throttle = getAutoPilotThrottle();
     }
 #endif
 
@@ -783,7 +783,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // If gps rescue is active then override the throttle. This prevents things
     // like throttle boost or throttle limit from negatively affecting the throttle.
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        throttle = getAltitudeControlThrottle();
+        throttle = getAutoPilotThrottle();
     }
 #endif
 

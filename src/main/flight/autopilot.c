@@ -30,7 +30,7 @@
 #include "rx/rx.h"
 #include "position.h"
 
-#include "position_control.h"
+#include "autopilot.h"
 
 #define ALTITUDE_P_SCALE  0.01f
 #define ALTITUDE_I_SCALE  0.003f
@@ -41,7 +41,7 @@ static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
-void positionControlInit(const positionControlConfig_t *config)
+void autopilotInit(const autopilotConfig_t *config)
 {
     altitudePidCoeffs.Kp = config->altitude_P * ALTITUDE_P_SCALE;
     altitudePidCoeffs.Ki = config->altitude_I * ALTITUDE_I_SCALE;
@@ -51,7 +51,7 @@ void positionControlInit(const positionControlConfig_t *config)
 
 bool isBelowLandingAltitude(void)
 {
-    return getAltitudeCm() < 100.0f * positionControlConfig()->landing_altitude_m;
+    return getAltitudeCm() < 100.0f * autopilotConfig()->landing_altitude_m;
 }
 
 const pidCoefficient_t *getAltitudePidCoeffs(void)
@@ -78,7 +78,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
 
-    const float hoverOffset = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
+    const float hoverOffset = autopilotConfig()->hover_throttle - PWM_RANGE_MIN;
 
     float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
@@ -87,22 +87,22 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     throttleOffset *= tiltMultiplier;
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
-    newThrottle = constrainf(newThrottle, positionControlConfig()->alt_control_throttle_min, positionControlConfig()->alt_control_throttle_max);
-    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
+    newThrottle = constrainf(newThrottle, autopilotConfig()->throttle_min, autopilotConfig()->throttle_max);
+    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
 
     newThrottle = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 
     throttleOut = constrainf(newThrottle, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 1, lrintf(tiltMultiplier * 100));
-    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 3, lrintf(targetAltitudeCm));
-    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 4, lrintf(altitudeP));
-    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 5, lrintf(altitudeI));
-    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 6, lrintf(-altitudeD));
-    DEBUG_SET(DEBUG_AUTO_CONTROL_ALTITUDE, 7, lrintf(altitudeF));
+    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 1, lrintf(tiltMultiplier * 100));
+    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 3, lrintf(targetAltitudeCm));
+    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 4, lrintf(altitudeP));
+    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 5, lrintf(altitudeI));
+    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 6, lrintf(-altitudeD));
+    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
-float getAltitudeControlThrottle(void)
+float getAutoPilotThrottle(void)
 {
     return throttleOut;
 }

@@ -62,7 +62,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/position_control.h"
+#include "flight/autopilot.h"
 #include "flight/alt_hold.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
@@ -1815,15 +1815,15 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ALTITUDE_LPF,          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_lpf) },
     { PARAM_NAME_ALTITUDE_D_LPF,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_d_lpf) },
 
-// PG_POSITION_CONTROL
-    { PARAM_NAME_HOVER_THROTTLE,           VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1100, 1700 }, PG_POSITION_CONTROL, offsetof(positionControlConfig_t, hover_throttle) },
-    { PARAM_NAME_ALT_CONTROL_THROTTLE_MIN, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1050, 1400 }, PG_POSITION_CONTROL, offsetof(positionControlConfig_t, alt_control_throttle_min) },
-    { PARAM_NAME_ALT_CONTROL_THROTTLE_MAX, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1400, 2000 }, PG_POSITION_CONTROL, offsetof(positionControlConfig_t, alt_control_throttle_max) },
-    { PARAM_NAME_LANDING_ALTITUDE,         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_POSITION_CONTROL, offsetof(positionControlConfig_t, landing_altitude_m) },
-    { PARAM_NAME_ALTITUDE_P,               VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_POSITION_CONTROL, offsetof(positionControlConfig_t, altitude_P) },
-    { PARAM_NAME_ALTITUDE_I,               VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_POSITION_CONTROL, offsetof(positionControlConfig_t, altitude_I) },
-    { PARAM_NAME_ALTITUDE_D,               VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_POSITION_CONTROL, offsetof(positionControlConfig_t, altitude_D) },
-    { PARAM_NAME_ALTITUDE_F,               VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_POSITION_CONTROL, offsetof(positionControlConfig_t, altitude_F) },
+// PG_AUTOPILOT
+    { PARAM_NAME_LANDING_ALTITUDE,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, landing_altitude_m) },
+    { PARAM_NAME_HOVER_THROTTLE,      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1100, 1700 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, hover_throttle) },
+    { PARAM_NAME_THROTTLE_MIN,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1050, 1400 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttle_min) },
+    { PARAM_NAME_THROTTLE_MAX,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1400, 2000 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttle_max) },
+    { PARAM_NAME_ALTITUDE_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_P) },
+    { PARAM_NAME_ALTITUDE_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_I) },
+    { PARAM_NAME_ALTITUDE_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_D) },
+    { PARAM_NAME_ALTITUDE_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_F) },
 
 // PG_MODE_ACTIVATION_CONFIG
 #if defined(USE_CUSTOM_BOX_NAMES)

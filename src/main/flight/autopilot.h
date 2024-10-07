@@ -17,14 +17,14 @@
 
 #pragma once
 
-#include "pg/position_control.h"
+#include "pg/autopilot.h"
 #include "flight/pid.h"
 
-void positionControlInit(const positionControlConfig_t *config);
+void autopilotInit(const autopilotConfig_t *config);
 void resetAltitudeControl(void);
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
 
 bool isBelowLandingAltitude(void);
 const pidCoefficient_t *getAltitudePidCoeffs(void);
-float getAltitudeControlThrottle(void);
+float getAutoPilotThrottle(void);

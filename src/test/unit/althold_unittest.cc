@@ -34,7 +34,7 @@ extern "C" {
     #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/position.h"
-    #include "flight/position_control.h"
+    #include "flight/autopilot.h"
     #include "flight/pid.h"
 
     #include "rx/rx.h"
@@ -43,7 +43,7 @@ extern "C" {
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
-    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
     PG_REGISTER(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 0);
 
     extern altHoldState_t altHoldState;
@@ -100,15 +100,8 @@ extern "C" {
 
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
-
-    bool isAltitudeAvailable(void) { return true; }
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
-
-    float getRcDeflection(int)
-    {
-        return 0;
-    }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     {

@@ -28,7 +28,7 @@
 #include "fc/rc.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
-#include "flight/position_control.h"
+#include "flight/autopilot.h"
 #include "rx/rx.h"
 
 #include "alt_hold.h"
@@ -105,8 +105,8 @@ void altHoldUpdateTargetAltitude(void)
 
     const float rcThrottle = rcCommand[THROTTLE];
 
-    const float lowThreshold = 0.5f * (positionControlConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
-    const float highThreshold = 0.5f * (positionControlConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
+    const float lowThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
+    const float highThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
     
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {

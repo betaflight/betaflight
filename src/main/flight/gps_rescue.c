@@ -44,7 +44,7 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/position_control.h"
+#include "flight/autopilot.h"
 
 #include "rx/rx.h"
 
@@ -227,7 +227,7 @@ static void rescueAttainPosition(void)
         // 20s of slow descent for switch induced sanity failures to allow time to recover
         gpsRescueAngle[AI_PITCH] = 0.0f;
         gpsRescueAngle[AI_ROLL] = 0.0f;
-        rescueThrottle = positionControlConfig()->hover_throttle - 100;
+        rescueThrottle = autopilotConfig()->hover_throttle - 100;
         return;
      default:
         break;
@@ -646,7 +646,7 @@ void descend(void)
 {
     if (newGPSData) {
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
-        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * positionControlConfig()->landing_altitude_m);
+        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * autopilotConfig()->landing_altitude_m);
         const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
      
         // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home
