@@ -27,4 +27,4 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 
 bool isBelowLandingAltitude(void);
 const pidCoefficient_t *getAltitudePidCoeffs(void);
-float getAutoPilotThrottle(void);
+float getAutopilotThrottle(void);

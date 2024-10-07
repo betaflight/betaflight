@@ -25,10 +25,10 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
-#include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/pid.h"
+#include "flight/position.h"
 #include "rx/rx.h"
-#include "position.h"
 
 #include "autopilot.h"
 
@@ -88,21 +88,21 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
     newThrottle = constrainf(newThrottle, autopilotConfig()->throttle_min, autopilotConfig()->throttle_max);
-    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
 
     newThrottle = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 
     throttleOut = constrainf(newThrottle, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 1, lrintf(tiltMultiplier * 100));
-    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 3, lrintf(targetAltitudeCm));
-    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 4, lrintf(altitudeP));
-    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 5, lrintf(altitudeI));
-    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 6, lrintf(-altitudeD));
-    DEBUG_SET(DEBUG_AUTO_PILOT_ALTITUDE, 7, lrintf(altitudeF));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(tiltMultiplier * 100));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(targetAltitudeCm));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeP));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeI));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(-altitudeD));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
-float getAutoPilotThrottle(void)
+float getAutopilotThrottle(void)
 {
     return throttleOut;
 }
