@@ -34,6 +34,8 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
+#define OSD_CUSTOM_MSG_COUNT 4
+
 #define OSD_PROFILE_NAME_LENGTH 16
 
 #ifdef USE_OSD_PROFILES
@@ -190,6 +192,10 @@ typedef enum {
     OSD_GPS_LAP_TIME_PREVIOUS,
     OSD_GPS_LAP_TIME_BEST3,
     OSD_DEBUG2,
+    OSD_CUSTOM_MSG0,
+    OSD_CUSTOM_MSG1,
+    OSD_CUSTOM_MSG2,
+    OSD_CUSTOM_MSG3,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
