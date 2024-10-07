@@ -177,6 +177,10 @@ static void ltm_sframe(void)
         lt_flightmode = 3;
     else if (FLIGHT_MODE(ALT_HOLD_MODE))
         lt_flightmode = 5;
+    else if (FLIGHT_MODE(POS_HOLD_MODE))
+        lt_flightmode = 9;
+    else if (FLIGHT_MODE(GPS_RESCUE_MODE))
+        lt_flightmode = 14;
     else
         lt_flightmode = 1;      // Rate mode
 

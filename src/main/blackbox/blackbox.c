@@ -63,6 +63,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/alt_hold.h"
+#include "flight/pos_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"

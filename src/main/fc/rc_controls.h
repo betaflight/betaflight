@@ -110,9 +110,8 @@ typedef struct rcSmoothingFilter_s {
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
     uint8_t yaw_deadband;                   // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
-    uint8_t alt_hold_deadband;              // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
-    uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_deadband; when enabled, altitude changes slowly proportional to stick movement
-    bool yaw_control_reversed;            // invert control direction of yaw
+    uint8_t pos_hold_deadband;              // pitch and roll deadband when position hold is active
+    bool yaw_control_reversed;              // invert control direction of yaw
 } rcControlsConfig_t;
 
 PG_DECLARE(rcControlsConfig_t, rcControlsConfig);

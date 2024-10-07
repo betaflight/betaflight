@@ -26,6 +26,7 @@ PG_SRC = \
             pg/autopilot.c \
             pg/pinio.c \
             pg/pin_pull_up_down.c \
+            pg/pos_hold.c \
             pg/rcdevice.c \
             pg/rpm_filter.c \
             pg/rx.c \
@@ -162,6 +163,7 @@ COMMON_SRC = \
             fc/rc_controls.c \
             fc/rc_modes.c \
             flight/alt_hold.c \
+            flight/pos_hold.c \
             flight/autopilot.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \

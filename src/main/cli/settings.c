@@ -66,6 +66,7 @@
 #include "flight/position.h"
 #include "flight/autopilot.h"
 #include "flight/alt_hold.h"
+#include "flight/pos_hold.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -1111,6 +1112,10 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_ALT_HOLD_MODE
     { PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_target_adjust_rate) },
+#endif
+
+#ifdef USE_POSs_HOLD_MODE
+    { PARAM_NAME_pos_hold_adjust_rate,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, pos_hold_adjust_rate) },
 #endif
 
 // PG_PID_CONFIG

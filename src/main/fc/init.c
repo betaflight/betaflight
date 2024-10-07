@@ -95,6 +95,7 @@
 #include "fc/tasks.h"
 
 #include "flight/alt_hold.h"
+#include "flight/pos_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -1010,6 +1011,10 @@ void init(void)
 // autopilot must be initialised before modes that require the autopilot pids
 #ifdef USE_ALT_HOLD_MODE
     altHoldInit();
+#endif
+
+#ifdef USE_POS_HOLD_MODE
+    posHoldInit();
 #endif
 
 #ifdef USE_GPS_RESCUE

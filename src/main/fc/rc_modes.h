@@ -34,6 +34,7 @@ typedef enum {
     BOXHORIZON,
     BOXMAG,
     BOXALTHOLD,
+    BOXPOSHOLD,
     BOXHEADFREE,
     BOXPASSTHRU,
     BOXFAILSAFE,

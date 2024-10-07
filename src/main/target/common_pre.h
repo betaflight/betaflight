@@ -246,6 +246,7 @@
 #define USE_EMFAT_ICON
 #define USE_ESCSERIAL_SIMONK
 #define USE_ALT_HOLD_MODE
+#define USE_POS_HOLD_MODE
 
 #if !defined(USE_GPS)
 #define USE_GPS

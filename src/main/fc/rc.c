@@ -812,7 +812,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
         rcCommandBuff.x = rcCommand[ROLL];
         rcCommandBuff.y = rcCommand[PITCH];
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommandBuff.z = rcCommand[YAW];
         } else {
             rcCommandBuff.z = 0;
@@ -820,7 +820,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.x;
         rcCommand[PITCH] = rcCommandBuff.y;
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommand[YAW] = rcCommandBuff.z;
         }
     }

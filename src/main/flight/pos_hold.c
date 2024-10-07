@@ -1,0 +1,129 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * Betaflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "platform.h"
+
+#ifdef USE_POS_HOLD_MODE
+
+#include "math.h"
+#include "build/debug.h"
+
+#include "common/maths.h"
+#include "config/config.h"
+#include "fc/runtime_config.h"
+#include "fc/rc.h"
+#include "flight/failsafe.h"
+#include "flight/position.h"
+#include "flight/autopilot.h"
+#include "rx/rx.h"
+
+#include "pos_hold.h"
+
+// unused at present
+// static const float taskIntervalSeconds = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ); // i.e. 0.01 s
+
+posHoldState_t posHoldState;
+
+void posHoldReset(void)
+{
+//    resetPositionControl(); - need to add this in position_control.c
+//    altHoldState.targetLocation = getCurrentLocation();
+    posHoldState.targetAdjustRate = 0.0f;
+}
+
+void posHoldInit(void)
+{
+    posHoldState.isPosHoldActive = false;
+    posHoldReset();
+}
+
+void posHoldProcessTransitions(void) {
+
+    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        if (!posHoldState.isPosHoldActive) {
+            posHoldReset();
+            posHoldState.isPosHoldActive = true;
+        }
+    } else {
+        posHoldState.isPosHoldActive = false;
+    }
+}
+
+void posHoldUpdateTargetLocation(void)
+{
+    // The user can adjust the target position using Roll and Pitch inputs
+    // There is a big deadband.
+    // Rate of change is proportional to stick deadband an a CLI value for the max rate
+
+    // code to get roll and pitch adjusters (might not be the best way to go)
+    const float rcRoll = rcCommand[ROLL];
+    const float rcPitch = rcCommand[PITCH];
+
+    const float lowThreshold = 0.5f * (rxConfig()->midrc + PWM_RANGE_MIN); // halfway between center and min
+    const float highThreshold = 0.5f * (rxConfig()->midrc + PWM_RANGE_MAX); // halfway between center and max
+
+    float rollAdjust = 0.0f;
+    float pitchAdjust = 0.0f;
+
+    // if failsafe is active, and we get here, we are in failsafe landing mode, don't use stick adjustments
+    if (!failsafeIsActive()) {
+        if (rcRoll < lowThreshold) {
+            rollAdjust = scaleRangef(rcRoll, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
+        } else if (rcRoll > highThreshold) {
+            rollAdjust = scaleRangef(rcRoll, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+        }
+
+        if (rcPitch < lowThreshold) {
+            pitchAdjust = scaleRangef(rcPitch, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
+        } else if (rcPitch > highThreshold) {
+            pitchAdjust = scaleRangef(rcPitch, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+        }
+
+    // most easily...
+    // fly the quad, in angle mode, enabling a deadband via rc.c (?)
+    // while sticks are inside the deadband,
+    // set the target location to the current GPS location each iteration
+    // posHoldState.targetLocation = currentLocation;
+    }
+
+    rollAdjust *= 1.0f;
+    pitchAdjust *= 1.0f;
+
+}
+
+void posHoldUpdate(void)
+{
+    // check if the user has changed the target altitude using sticks
+    if (posHoldConfig()->pos_hold_adjust_rate) {
+        posHoldUpdateTargetLocation();
+    }
+
+    // run a function in autopilot.c to adjust position
+    // positionControl(posHoldState.targetLocation, taskIntervalSeconds, posHoldState.adjustRateRoll, posHoldState.adjustRatePitch);
+}
+
+void updatePosHoldState(timeUs_t currentTimeUs) {
+    UNUSED(currentTimeUs); 
+
+    // check for enabling Alt Hold, otherwise do as little as possible while inactive
+    posHoldProcessTransitions();
+
+    if (posHoldState.isPosHoldActive) {
+        posHoldUpdate();
+    }
+}
+#endif

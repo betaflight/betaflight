@@ -1806,7 +1806,7 @@ case MSP_NAME:
     case MSP_RC_DEADBAND:
         sbufWriteU8(dst, rcControlsConfig()->deadband);
         sbufWriteU8(dst, rcControlsConfig()->yaw_deadband);
-        sbufWriteU8(dst, rcControlsConfig()->alt_hold_deadband);
+        sbufWriteU8(dst, rcControlsConfig()->pos_hold_deadband);
         sbufWriteU16(dst, flight3DConfig()->deadband3d_throttle);
         break;
 
@@ -2962,7 +2962,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_RC_DEADBAND:
         rcControlsConfigMutable()->deadband = sbufReadU8(src);
         rcControlsConfigMutable()->yaw_deadband = sbufReadU8(src);
-        rcControlsConfigMutable()->alt_hold_deadband = sbufReadU8(src);
+        rcControlsConfigMutable()->pos_hold_deadband = sbufReadU8(src);
         flight3DConfigMutable()->deadband3d_throttle = sbufReadU16(src);
         break;
 
