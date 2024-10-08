@@ -43,7 +43,7 @@
 #define PARAM_NAME_RC_SMOOTHING_DEBUG_AXIS "rc_smoothing_debug_axis"
 #define PARAM_NAME_RC_SMOOTHING_ACTIVE_CUTOFFS "rc_smoothing_active_cutoffs_ff_sp_thr"
 #define PARAM_NAME_SERIAL_RX_PROVIDER "serialrx_provider"
-#define PARAM_NAME_DSHOT_IDLE_VALUE "dshot_idle_value"
+#define PARAM_NAME_MOTOR_IDLE "motor_idle"
 #define PARAM_NAME_DSHOT_BIDIR "dshot_bidir"
 #define PARAM_NAME_USE_UNSYNCED_PWM "use_unsynced_pwm"
 #define PARAM_NAME_MOTOR_PWM_PROTOCOL "motor_pwm_protocol"
