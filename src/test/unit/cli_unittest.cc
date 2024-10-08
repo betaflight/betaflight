@@ -67,6 +67,7 @@ extern "C" {
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
 
+    void cliHelp(const char *, char *);
     void cliAux(const char *, char *);
     void printAux(
         dumpFlags_t, const modeActivationCondition_t *, const modeActivationCondition_t *, const char *
@@ -264,6 +265,21 @@ protected:
         }
     }
 };
+
+// Help tests
+TEST_F(CliWriteTest, Help)
+{
+    // FIXME: The example causes segmentation fault
+
+    const char cmd[] = "help";
+    char args[] = "I";
+    cliHelp(cmd, args);
+    vector<string> expected = {
+        "???", "\r\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+// End of help tests
 
 // Aux tests
 TEST_F(AuxCliWriteTest, PrintAux_Default)
