@@ -1068,7 +1068,7 @@ static void intParsePrintError(
  * @retval Parsed value on success or negative on failure
  */
 static long int processPositiveIntArg(
-    const char * *const cmdline,
+    const char **const cmdline,
     const char *cmdName,
     const char *argName
 )
@@ -1094,7 +1094,7 @@ static long int processPositiveIntArg(
  * @retval Parsed value on success or negative on failure.
  */
 static long int processPositiveIntArgInRange(
-    const char * *const cmdline,
+    const char **const cmdline,
     long int fromVal,
     long int toVal,
     const char *cmdName,
@@ -1143,7 +1143,7 @@ static channelRangeParseResult_t channelRangeParseResultErr(enum intParseError_e
  * @retval Parsed result
  */
 static channelRangeParseResult_t processChannelRangeArgsEx(
-    const char * *const cmdlinePtr, const char * cmdName
+    const char **const cmdlinePtr, const char * cmdName
 )
 {
     intParseResult_t startRes = parseIntArgInRange(
