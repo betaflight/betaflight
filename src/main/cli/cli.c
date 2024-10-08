@@ -6785,9 +6785,10 @@ STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
         if (isEmpty(cmdline)) {
             printEntry = true;
         } else {
+            const char *cmdDesc = cmdTable[i].description;
             if (strcasestr(cmdTable[i].name, cmdline)
 #ifndef MINIMAL_CLI
-                || strcasestr(cmdTable[i].description, cmdline)
+                || (cmdDesc && strcasestr(cmdDesc, cmdline))
 #endif
                ) {
                 printEntry = true;

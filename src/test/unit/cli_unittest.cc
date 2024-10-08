@@ -267,15 +267,35 @@ protected:
 };
 
 // Help tests
-TEST_F(CliWriteTest, Help)
+TEST_F(CliWriteTest, HelpAll)
 {
-    // FIXME: The example causes segmentation fault
-
     const char cmd[] = "help";
-    char args[] = "I";
+    char args[] = "";
+    cliHelp(cmd, args);
+    EXPECT_LT(100, outLines.size());
+}
+
+TEST_F(CliWriteTest, HelpFindByName)
+{
+    const char cmd[] = "help";
+    char args[] = "aux";
     cliHelp(cmd, args);
     vector<string> expected = {
-        "???", "\r\n",
+        "aux", " - configure modes", "\r\n\t<index> <mode> <aux> <start> <end> <logic>", "\r\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(CliWriteTest, HelpSearchByDescription)
+{
+    const char cmd[] = "help";
+    char args[] = "reb";
+    cliHelp(cmd, args);
+    vector<string> expected = {
+        "bl", " - reboot into bootloader", "\r\n\t[rom]", "\r\n",
+        "defaults", " - reset to defaults and reboot", "\r\n\t{nosave}", "\r\n",
+        "exit", " - exit command line interface and reboot (default)", "\r\n\t[noreboot]", "\r\n",
+        "save", " - save and reboot (default)", "\r\n\t[noreboot]", "\r\n",
     };
     EXPECT_EQ(expected, outLines);
 }
