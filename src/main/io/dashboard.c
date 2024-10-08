@@ -419,7 +419,7 @@ static void showGpsPage(void)
     i2c_OLED_set_xy(dev, HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(dev, lineBuffer);
 
-    tfp_sprintf(lineBuffer, "RX: %d", dashboardGpsPacketCount);
+    tfp_sprintf(lineBuffer, "RX: %d", gpsData.messages);
     padHalfLineBuffer();
     i2c_OLED_set_line(dev, rowIndex);
     i2c_OLED_send_string(dev, lineBuffer);
