@@ -231,10 +231,6 @@ protected:
     static void SetUpTestCase() {}
 
     virtual void SetUp() {
-        for (uint8_t i = 0; i <= MAX_AUX_CHANNEL_COUNT; i++) {
-            memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
-        }
-
         bufWriterInit(&cliWriterDesc, data, ARRAYLEN(data), &dummyBufWriter, NULL);
         cliWriter = cliErrorWriter = &cliWriterDesc;
     }
@@ -258,8 +254,19 @@ protected:
     }
 };
 
+class AuxCliWriteTest : public CliWriteTest {
+protected:
+    virtual void SetUp() {
+        CliWriteTest::SetUp();
+
+        for (uint8_t i = 0; i <= MAX_AUX_CHANNEL_COUNT; i++) {
+            memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
+        }
+    }
+};
+
 // Aux tests
-TEST_F(CliWriteTest, TestPrintAux_Default)
+TEST_F(AuxCliWriteTest, PrintAux_Default)
 {
     const char heading[] = "aux";
     printAux(DUMP_MASTER, modeActivationConditions(0), NULL, heading);
@@ -289,7 +296,7 @@ TEST_F(CliWriteTest, TestPrintAux_Default)
     EXPECT_EQ(expected, outLines);
 }
 
-TEST_F(CliWriteTest, TestPrintAux_DiffAll)
+TEST_F(AuxCliWriteTest, PrintAux_DiffAll)
 {
     modeActivationCondition_t modifiedConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT] = {
         [0] = {
@@ -309,7 +316,7 @@ TEST_F(CliWriteTest, TestPrintAux_DiffAll)
     EXPECT_EQ(expected, outLines);
 }
 
-TEST_F(CliWriteTest, TestCliAux_Show)
+TEST_F(AuxCliWriteTest, Show)
 {
     const char cmd[] = "aux";
     char args[] = "";
@@ -344,18 +351,15 @@ TEST_F(CliWriteTest, TestCliAux_Show)
     }
 }
 
-TEST_F(CliWriteTest, TestCliAux_NotEnoughArgs)
+TEST_F(AuxCliWriteTest, NotEnoughArgs)
 {
-    // FIXME: This test causes a segmentation fault
-    // nextArg is called with an empty string inside processChannelRangeArgs function
-
-    // const char cmd[] = "aux";
-    // char args[] = "0 1 ";
-    // cliAux(cmd, args);
-    // vector<string> expected = {
-    //     "###ERROR IN ", "aux", ": ", "INVALID ARGUMENT COUNT###", "\r\n"
-    // };
-    // EXPECT_EQ(expected, outLines);
+    const char cmd[] = "aux";
+    char args[] = "0 1 ";
+    cliAux(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN ", "aux", ": ", "INVALID ARGUMENT COUNT###", "\r\n"
+    };
+    EXPECT_EQ(expected, outLines);
 
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         auto condition = modeActivationConditions(i);
@@ -363,17 +367,15 @@ TEST_F(CliWriteTest, TestCliAux_NotEnoughArgs)
     }
 }
 
-TEST_F(CliWriteTest, TestCliAux_NotANumber)
+TEST_F(AuxCliWriteTest, IndexNotANumber)
 {
-    // FIXME: This test also causes a segmentation fault
-
-    // const char cmd[] = "aux";
-    // char args[] = "a";
-    // cliAux(cmd, args);
-    // vector<string> expected = {
-    //     "###ERROR IN ", "aux", ": ", "INVALID ARGUMENT COUNT###", "\r\n"
-    // };
-    // EXPECT_EQ(expected, outLines);
+    const char cmd[] = "aux";
+    char args[] = "a";
+    cliAux(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN ", "aux", ": ", "INDEX IS NOT A NUMBER###", "\r\n"
+    };
+    EXPECT_EQ(expected, outLines);
 
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         auto condition = modeActivationConditions(i);
@@ -381,28 +383,39 @@ TEST_F(CliWriteTest, TestCliAux_NotANumber)
     }
 }
 
-TEST_F(CliWriteTest, TestCliAux_OutOfRangeChannelIndex)
+TEST_F(AuxCliWriteTest, ChannelIndexOutOfRange)
 {
     const char cmd[] = "aux";
     char args[] = "0 0 14 1800 2100 0 0";
     cliAux(cmd, args);
-    // FIXME: I'd expect an error but it stores 0 aux index
-    // vector<string> expected = {
-    //     "###ERROR IN ", "aux", ": ", "CHANNEL_INDEX NOT BETWEEN 0 AND 13###", "\r\n"
-    // };
     vector<string> expected = {
-        "aux 0 0 0 1800 2100 0 0", "\r\n"
+        "###ERROR IN ", "aux", ": ", "CHANNEL_INDEX NOT BETWEEN 0 AND 13###", "\r\n"
     };
     EXPECT_EQ(expected, outLines);
 
     auto condition = modeActivationConditions(0);
     EXPECT_EQ(0, condition->auxChannelIndex);
-    // FIXME: A range shouldn't be stored
-    EXPECT_EQ(36, condition->range.startStep);
-    EXPECT_EQ(48, condition->range.endStep);
+    EXPECT_EQ(0, condition->range.startStep);
+    EXPECT_EQ(0, condition->range.endStep);
 }
 
-TEST_F(CliWriteTest, TestCliAux_SetCondition)
+TEST_F(AuxCliWriteTest, ChannelEndRangeOutOfRange)
+{
+    const char cmd[] = "aux";
+    char args[] = "0 0 13 1800 2101 0 0";
+    cliAux(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN ", "aux", ": ", "CHANNEL_RANGE NOT BETWEEN 900 AND 2100###", "\r\n"
+    };
+    EXPECT_EQ(expected, outLines);
+
+    auto condition = modeActivationConditions(0);
+    EXPECT_EQ(0, condition->auxChannelIndex);
+    EXPECT_EQ(0, condition->range.startStep);
+    EXPECT_EQ(0, condition->range.endStep);
+}
+
+TEST_F(AuxCliWriteTest, SetCondition)
 {
     const char cmd[] = "aux";
     char args[] = "0 1 2 900 1200 0 0";
@@ -425,19 +438,24 @@ TEST_F(CliWriteTest, TestCliAux_SetCondition)
     }
 }
 
-TEST_F(CliWriteTest, TestCliAux_BackwardCompat)
+TEST_F(AuxCliWriteTest, BackwardCompat)
 {
-    // FIXME: This test also causes a segmentation fault
+    const char cmd[] = "aux";
+    char args[] = "19 1 2 900 1200 ";
+    cliAux(cmd, args);
+    vector<string> expected = {
+        "aux 19 1 2 900 1200 0 0", "\r\n",
+    };
+    EXPECT_EQ(expected, outLines);
 
-    // const char cmd[] = "aux";
-    // char args[] = "0 1 2 900 1200";
-    // cliAux(cmd, args);
-    // vector<string> expected = {
-    //     "aux 0 1 2 900 1200 0 0", "\r\n",
-    // };
-    // EXPECT_EQ(expected, outLines);
-
-    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+    auto condition = modeActivationConditions(19);
+    EXPECT_EQ(BOXANGLE, condition->modeId);
+    EXPECT_EQ(2, condition->auxChannelIndex);
+    EXPECT_EQ(0, condition->range.startStep);
+    EXPECT_EQ(12, condition->range.endStep);
+    EXPECT_EQ(MODELOGIC_OR, condition->modeLogic);
+    EXPECT_EQ(BOXARM, condition->linkedTo);
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT - 1; i++) {
         auto condition = modeActivationConditions(i);
         EXPECT_EQ(0, condition->auxChannelIndex);
     }

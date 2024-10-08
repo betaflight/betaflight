@@ -112,6 +112,7 @@ cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/parse.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/maths.c \
