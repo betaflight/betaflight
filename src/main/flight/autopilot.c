@@ -36,8 +36,12 @@
 #define ALTITUDE_F_SCALE  0.01f
 
 static pidCoefficient_t altitudePidCoeffs;
+static pidCoefficient_t positionPidCoeffs;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
+static float previousDistanceCm = 0.0f;
+static float previousVelocity = 0.0f;
+static bool newGPSData = false;
 float posHoldAngle[ANGLE_INDEX_COUNT];
 
 void autopilotInit(const autopilotConfig_t *config)
@@ -46,6 +50,15 @@ void autopilotInit(const autopilotConfig_t *config)
     altitudePidCoeffs.Ki = config->altitude_I * ALTITUDE_I_SCALE;
     altitudePidCoeffs.Kd = config->altitude_D * ALTITUDE_D_SCALE;
     altitudePidCoeffs.Kf = config->altitude_F * ALTITUDE_F_SCALE;
+    positionPidCoeffs.Kp = config->position_P * ALTITUDE_P_SCALE;
+    positionPidCoeffs.Ki = config->position_I * ALTITUDE_I_SCALE;
+    positionPidCoeffs.Kd = config->position_D * ALTITUDE_D_SCALE;
+//    positionPidCoeffs.Kf = config->position_F * ALTITUDE_F_SCALE;
+}
+
+void posHoldNewGpsData(void)
+{
+    newGPSData = true;
 }
 
 const pidCoefficient_t *getAltitudePidCoeffs(void)
@@ -53,8 +66,18 @@ const pidCoefficient_t *getAltitudePidCoeffs(void)
     return &altitudePidCoeffs;
 }
 
+const pidCoefficient_t *getPositionPidCoeffs(void)
+{
+    return &positionPidCoeffs;
+}
+
 void resetAltitudeControl (void) {
     altitudeI = 0.0f;
+}
+
+void resetPositionControl (void) {
+    previousDistanceCm = 0.0f;
+    previousVelocity = 0.0f;
 }
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep) {
@@ -96,27 +119,56 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
-void positionControl(gpsLocation_t targetLocation, float taskIntervalS) {
+void positionControl(gpsLocation_t targetLocation) {
     // gpsSol.llh = current gps location
     // get distance and bearing from current location to target location
     // void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
-    uint32_t errorDistanceCm;
-    int32_t bearing;
-    GPS_distance_cm_bearing(&gpsSol.llh, &targetLocation, false, &errorDistanceCm, &bearing);
+    float rollSetpoint = 0.0f;
+    float pitchSetpoint = 0.0f;
+    if (newGPSData) {
+        uint32_t distanceCm;
+        int32_t bearing; // degrees * 100
+        GPS_distance_cm_bearing(&gpsSol.llh, &targetLocation, false, &distanceCm, &bearing);
+    
+        const float errorAngle = (attitude.values.yaw * 10.0f - bearing) / 100.0f;
+        float normalisedErrorAngle = fmodf(errorAngle + 360.0f, 360.0f);
+    
+        if (normalisedErrorAngle > 180.0f) {
+            normalisedErrorAngle -= 360.0f; // Range: -180 to 180
+        }
+    
+        // Convert to radians for sine and cosine functions
+        float errorAngleRadians = normalisedErrorAngle * (M_PI / 180.0f);
+    
+        // Calculate correction factors using sine and cosine
+        float rollCorrection = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
+        float pitchCorrection = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
-    // calculate difference between current heading (direction of nose) and bearing to target
-    const float errorBearing = (attitude.values.yaw - bearing);
+        const float gpsDataIntervalS = getGpsDataIntervalSeconds(); // 0.01s to 1.0s
+        float velocity = (distanceCm - previousDistanceCm) / gpsDataIntervalS; // positive away
+        previousDistanceCm = distanceCm;
 
-    // do fancy maths on errorBearing to calculate relative pitch and roll strengths -1 to 1
-    const float rollCorrection = errorBearing; // pretend that we did fancy maths on errorBearing
-    const float pitchCorrection = errorBearing; // pretend that we did fancy maths on errorBearing
+        float acceleration = (velocity - previousVelocity) / gpsDataIntervalS; // positive away
+        previousVelocity = velocity;
+        // ** THIS WILL NEED A FILTER LIKE FOR GPS RESCUE**
 
-    // use a PID function to return drive force from velocity and distance; 0-1 or similar
-    const float pidGain = 1.0f * errorDistanceCm * taskIntervalS; // pretend line temporary to use the incoming values
+        // use a PID function to control velocity to target
+        // P proportional to velocity, positive means moving away from target
+        // I or integral of velocity =  distance away from target
+        // D is acceleration of position error, or away from target
+        // F would be a value proportional to target change (tricky, so not done yet)
 
-    const float rollSetpoint = rollCorrection * pidGain; // with some gain adjustment to give reasonable number
-    const float pitchSetpoint = pitchCorrection * pidGain;
+        float velocityP = velocity * positionPidCoeffs.Kp; // position D
+        float velocityI = distanceCm * positionPidCoeffs.Ki; // position P
+        float velocityD = acceleration * positionPidCoeffs.Kd; // position D
 
+        float pidSum = velocityP + velocityI + velocityD; // greater when position error is bad and getting worse
+
+        rollSetpoint = rollCorrection * pidSum; // with some gain adjustment to give reasonable number
+        pitchSetpoint = pitchCorrection * pidSum;
+
+        newGPSData = false;
+    }
     // send setpoints to pid.c using the same method as for gpsRescueAngle
     posHoldAngle[AI_PITCH] = pitchSetpoint;
     posHoldAngle[AI_ROLL] = rollSetpoint;

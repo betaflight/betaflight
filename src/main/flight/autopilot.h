@@ -27,7 +27,7 @@ void autopilotInit(const autopilotConfig_t *config);
 void resetAltitudeControl(void);
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
-void positionControl(gpsLocation_t targetLocation, float taskIntervalS);
+void positionControl(gpsLocation_t targetLocation);
 
 
 bool isBelowLandingAltitude(void);

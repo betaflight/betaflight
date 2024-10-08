@@ -38,4 +38,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .altitude_I = 15,
     .altitude_D = 15,
     .altitude_F = 15,
+    .position_P = 8,
+    .position_I = 40,
+    .position_D = 15,
+//    .position_F = 0,
 );

@@ -33,8 +33,6 @@
 
 #include "pos_hold.h"
 
-static const float taskIntervalSeconds = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ); // i.e. 0.01 s
-
 posHoldState_t posHoldState;
 
 void posHoldReset(void)
@@ -87,7 +85,7 @@ void posHoldUpdate(void)
     }
 
     // run a function in autopilot.c to adjust position
-    positionControl(posHoldState.targetLocation, taskIntervalSeconds);
+    positionControl(posHoldState.targetLocation);
 }
 
 void updatePosHoldState(timeUs_t currentTimeUs) {
