@@ -22,6 +22,10 @@
 
 #include "io_types.h"
 #include "pg/pg.h"
+#include "drivers/pwm_output.h"
+
+#define CAMERA_CONTROL_PWM_RESOLUTION      128
+#define CAMERA_CONTROL_SOFT_PWM_RESOLUTION 448
 
 typedef enum {
     CAMERA_CONTROL_KEY_ENTER,
@@ -58,3 +62,11 @@ void cameraControlInit(void);
 
 void cameraControlProcess(uint32_t currentTimeUs);
 void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs);
+
+void cameraControlHi(void);
+void cameraControlLo(void);
+
+void cameraControlSoftwarePwmInit(void);
+void cameraControlSoftwarePwmEnable(uint32_t hiTime, uint32_t period);
+void cameraControlSoftwarePwmDisable(void);
+void cameraControlHardwarePwmInit(timerChannel_t *channel, const timerHardware_t *timerHardware, uint8_t inverted);
