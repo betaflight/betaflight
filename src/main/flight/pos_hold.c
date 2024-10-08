@@ -33,8 +33,7 @@
 
 #include "pos_hold.h"
 
-// unused at present
-// static const float taskIntervalSeconds = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ); // i.e. 0.01 s
+static const float taskIntervalSeconds = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ); // i.e. 0.01 s
 
 posHoldState_t posHoldState;
 
@@ -88,7 +87,7 @@ void posHoldUpdate(void)
     }
 
     // run a function in autopilot.c to adjust position
-    // positionControl(posHoldState.targetLocation, taskIntervalSeconds, posHoldState.adjustRateRoll, posHoldState.adjustRatePitch);
+    positionControl(posHoldState.targetLocation, taskIntervalSeconds);
 }
 
 void updatePosHoldState(timeUs_t currentTimeUs) {
@@ -101,4 +100,5 @@ void updatePosHoldState(timeUs_t currentTimeUs) {
         posHoldUpdate();
     }
 }
-#endif
+
+#endif // USE_POS_HOLD

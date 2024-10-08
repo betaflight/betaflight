@@ -21,7 +21,7 @@
 
 #ifdef USE_ALT_HOLD_MODE
 #include "common/time.h"
-#include "gps.h"
+#include "io/gps.h"
 
 #define POSHOLD_TASK_RATE_HZ 100         // hz
 

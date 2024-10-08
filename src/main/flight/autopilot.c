@@ -38,6 +38,7 @@
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
+float posHoldAngle[ANGLE_INDEX_COUNT];
 
 void autopilotInit(const autopilotConfig_t *config)
 {
@@ -95,6 +96,36 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
+void positionControl(gpsLocation_t targetLocation, float taskIntervalS) {
+    // gpsSol.llh = current gps location
+    // get distance and bearing from current location to target location
+    // void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
+    uint32_t errorDistanceCm;
+    int32_t bearing;
+    GPS_distance_cm_bearing(&gpsSol.llh, &targetLocation, false, &errorDistanceCm, &bearing);
+
+    // calculate difference between current heading (direction of nose) and bearing to target
+    const float errorBearing = (attitude.values.yaw - bearing);
+
+    // do fancy maths on errorBearing to calculate relative pitch and roll strengths -1 to 1
+    const float rollCorrection = errorBearing; // pretend that we did fancy maths on errorBearing
+    const float pitchCorrection = errorBearing; // pretend that we did fancy maths on errorBearing
+
+    // use a PID function to return drive force from velocity and distance; 0-1 or similar
+    const float pidGain = 1.0f * errorDistanceCm * taskIntervalS; // pretend line temporary to use the incoming values
+
+    const float rollSetpoint = rollCorrection * pidGain; // with some gain adjustment to give reasonable number
+    const float pitchSetpoint = pitchCorrection * pidGain;
+
+    // send setpoints to pid.c using the same method as for gpsRescueAngle
+    posHoldAngle[AI_PITCH] = pitchSetpoint;
+    posHoldAngle[AI_ROLL] = rollSetpoint;
+
+    // but for now let's not really do that until we get the PIDs sorted out :-)
+    posHoldAngle[AI_PITCH] = 0.0f;
+    posHoldAngle[AI_ROLL] = 0.0f;
+}
+
 bool isBelowLandingAltitude(void)
 {
     return getAltitudeCm() < 100.0f * autopilotConfig()->landing_altitude_m;
@@ -103,7 +134,6 @@ bool isBelowLandingAltitude(void)
 const pidCoefficient_t *getAltitudePidCoeffs(void)
 {
     return &altitudePidCoeffs;
-}
 
 float getAutopilotThrottle(void)
 {

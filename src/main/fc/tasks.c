@@ -58,6 +58,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/autopilot.h"
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
 
