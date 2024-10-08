@@ -1035,6 +1035,9 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
     return ptr;
 }
 
+/**
+ * @brief Converts parsing error into a message and prints it.
+ */
 static void intParsePrintError(
     enum intParseError_e err,
     long int fromVal,
@@ -1056,20 +1059,40 @@ static void intParsePrintError(
     }
 }
 
+/**
+ * @brief Parses positive integer argument from a command line
+ * @param cmdline is a double pointer to a string to parse. It will be updated
+ *        if successfully parsed.
+ * @param cmdName is a command name. Used in error messages
+ * @param argName is an argument name. Used in error messages
+ * @retval Parsed value on success or negative on failure
+ */
 static long int processPositiveIntArg(
     const char * *const cmdline,
     const char *cmdName,
     const char *argName
 )
 {
-    intParseResult_t res = parseIntArg(cmdline);
-    if (res.status == INT_PARSE_STATUS_OK) {
-        return res.result.value;
+    intParseResult_t res = parseIntArg(*cmdline);
+    if (res.status == INT_PARSE_STATUS_ERR) {
+        intParsePrintError(res.err, 0, INT_MAX, cmdName, argName);
+        return -1;
     }
-    intParsePrintError(res.result.err, 0, INT_MAX, cmdName, argName);
-    return -1;
+    *cmdline = res.next;
+    return res.value;
 }
 
+/**
+ * @brief Parses a positive integer argument from a command line and check that
+ *        it lies inside a range.
+ * @param cmdline is a double pointer to a string to parse. It will be updated
+ *        if successfully parsed.
+ * @param fromVal start of the range (including)
+ * @param toVal end of the range (excluding)
+ * @param cmdName is a command name. Used in error messages
+ * @param argName is an argument name. Used in error messages
+ * @retval Parsed value on success or negative on failure.
+ */
 static long int processPositiveIntArgInRange(
     const char * *const cmdline,
     long int fromVal,
@@ -1078,12 +1101,13 @@ static long int processPositiveIntArgInRange(
     const char *argName
 )
 {
-    intParseResult_t res = parseIntArgInRange(cmdline, fromVal, toVal);
-    if (res.status == INT_PARSE_STATUS_OK) {
-        return res.result.value;
+    intParseResult_t res = parseIntArgInRange(*cmdline, fromVal, toVal);
+    if (res.status == INT_PARSE_STATUS_ERR) {
+        intParsePrintError(res.err, fromVal, toVal, cmdName, argName);
+        return -1;
     }
-    intParsePrintError(res.result.err, fromVal, toVal, cmdName, argName);
-    return -1;
+    *cmdline = res.next;
+    return res.value;
 }
 
 typedef struct channelRangeParseResult_s {
@@ -1091,13 +1115,13 @@ typedef struct channelRangeParseResult_s {
     union {
         channelRange_t value;
         enum intParseError_e err;
-    } result;
+    };
 } channelRangeParseResult_t;
 
 static channelRangeParseResult_t channelRangeParseResultOk(channelRange_t val) {
     channelRangeParseResult_t res = {
         .status = INT_PARSE_STATUS_OK,
-        .result = { .value = val },
+        .value = val,
     };
     return res;
 }
@@ -1105,25 +1129,46 @@ static channelRangeParseResult_t channelRangeParseResultOk(channelRange_t val) {
 static channelRangeParseResult_t channelRangeParseResultErr(enum intParseError_e err) {
     channelRangeParseResult_t res = {
         .status = INT_PARSE_STATUS_ERR,
-        .result = { .err = err },
+        .err = err,
     };
     return res;
 }
 
-static channelRangeParseResult_t processChannelRangeArgsEx(const char * *const str)
+/**
+ * @brief Successively parses 2 integer arguments and checks they are valid
+ *        channel range values.
+ * @param cmdline is a double pointer to a string to parse. It will be updated
+ *        if successfully parsed.
+ * @param cmdName is a command name. Used in error messages
+ * @retval Parsed result
+ */
+static channelRangeParseResult_t processChannelRangeArgsEx(
+    const char * *const cmdlinePtr, const char * cmdName
+)
 {
-    intParseResult_t startRes = parseIntArgInRange(str, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX);
+    intParseResult_t startRes = parseIntArgInRange(
+        *cmdlinePtr, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+    );
     if (startRes.status == INT_PARSE_STATUS_ERR) {
-        return channelRangeParseResultErr(startRes.result.err);
+        cliShowArgumentRangeError(
+            cmdName, "CHANNEL_RANGE.START", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+        );
+        return channelRangeParseResultErr(startRes.err);
     }
-    uint8_t startStep = CHANNEL_VALUE_TO_STEP(startRes.result.value);
+    uint8_t startStep = CHANNEL_VALUE_TO_STEP(startRes.value);
 
-    intParseResult_t endRes = parseIntArgInRange(str, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX);
+    intParseResult_t endRes = parseIntArgInRange(
+        startRes.next, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+    );
     if (endRes.status == INT_PARSE_STATUS_ERR) {
-        return channelRangeParseResultErr(endRes.result.err);
+        cliShowArgumentRangeError(
+            cmdName, "CHANNEL_RANGE.END", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+        );
+        return channelRangeParseResultErr(endRes.err);
     }
-    uint8_t endStep = CHANNEL_VALUE_TO_STEP(endRes.result.value);
+    uint8_t endStep = CHANNEL_VALUE_TO_STEP(endRes.value);
 
+    *cmdlinePtr = endRes.next;
     channelRange_t channelRange = { .startStep = startStep, .endStep = endStep };
     return channelRangeParseResultOk(channelRange);
 }
@@ -1302,14 +1347,16 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
         return;
     }
 
-    const char * *const ptr = (const char * *const) &cmdline;
-    long int ix = processPositiveIntArgInRange(ptr, 0, MAX_MODE_ACTIVATION_CONDITION_COUNT, cmdName, "INDEX");
+    const char * ptr = (const char *) cmdline;
+    long int ix = processPositiveIntArgInRange(
+        &ptr, 0, MAX_MODE_ACTIVATION_CONDITION_COUNT, cmdName, "INDEX"
+    );
     if (ix < 0) {
         return;
     }
     modeActivationCondition_t *mac = modeActivationConditionsMutable(ix);
 
-    long int permanentBoxId = processPositiveIntArg(ptr, cmdName, "BOX");
+    long int permanentBoxId = processPositiveIntArg(&ptr, cmdName, "BOX");
     if (permanentBoxId < 0) {
         return;
     }
@@ -1319,14 +1366,13 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
         return;
     }
 
-    long int aux = processPositiveIntArgInRange(ptr, 0, MAX_AUX_CHANNEL_COUNT, cmdName, "CHANNEL_INDEX");
+    long int aux = processPositiveIntArgInRange(&ptr, 0, MAX_AUX_CHANNEL_COUNT, cmdName, "CHANNEL_INDEX");
     if (aux < 0) {
         return;
     }
 
-    channelRangeParseResult_t channelRangeRes = processChannelRangeArgsEx(ptr);
+    channelRangeParseResult_t channelRangeRes = processChannelRangeArgsEx(&ptr, cmdName);
     if (channelRangeRes.status == INT_PARSE_STATUS_ERR) {
-        cliShowArgumentRangeError(cmdName, "CHANNEL_RANGE", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX);
         return;
     }
 
@@ -1336,9 +1382,9 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
     long int modeLogic = MODELOGIC_OR;
     if (
         modeLogicRes.status == INT_PARSE_STATUS_ERR &&
-        modeLogicRes.result.err != INT_PARSE_ERROR_END_OF_LINE
+        modeLogicRes.err != INT_PARSE_ERROR_END_OF_LINE
     ) {
-        intParsePrintError(modeLogicRes.result.err, 0, 2, cmdName, "MODE_LOGIC");
+        intParsePrintError(modeLogicRes.err, 0, 2, cmdName, "MODE_LOGIC");
         return;
     }
 
@@ -1346,9 +1392,9 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
     long int linkedTo = 0;
     if (
         linkedToRes.status == INT_PARSE_STATUS_ERR &&
-        linkedToRes.result.err != INT_PARSE_ERROR_END_OF_LINE
+        linkedToRes.err != INT_PARSE_ERROR_END_OF_LINE
     ) {
-        intParsePrintError(linkedToRes.result.err, 0, 2, cmdName, "LINKED_TO");
+        intParsePrintError(linkedToRes.err, 0, 2, cmdName, "LINKED_TO");
         return;
     }
     const box_t *linkedToBox = findBoxByPermanentId(linkedTo);
@@ -1359,7 +1405,7 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
 
     mac->modeId = box->boxId;
     mac->auxChannelIndex = aux;
-    mac->range = channelRangeRes.result.value;
+    mac->range = channelRangeRes.value;
     mac->modeLogic = modeLogic;
     mac->linkedTo = linkedToBox->boxId;
 

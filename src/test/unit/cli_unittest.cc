@@ -405,7 +405,7 @@ TEST_F(AuxCliWriteTest, ChannelEndRangeOutOfRange)
     char args[] = "0 0 13 1800 2101 0 0";
     cliAux(cmd, args);
     vector<string> expected = {
-        "###ERROR IN ", "aux", ": ", "CHANNEL_RANGE NOT BETWEEN 900 AND 2100###", "\r\n"
+        "###ERROR IN ", "aux", ": ", "CHANNEL_RANGE.END NOT BETWEEN 900 AND 2100###", "\r\n"
     };
     EXPECT_EQ(expected, outLines);
 

@@ -26,29 +26,30 @@
 
 #include "platform.h"
 
-intParseResult_t intParseResultOk(long int val)
+static intParseResult_t intParseResultOk(long int val, const char * next)
 {
     intParseResult_t res = {
         .status = INT_PARSE_STATUS_OK,
-        .result = { .value = val },
+        .value = val,
+        .next = next,
     };
     return res;
 }
 
-intParseResult_t intParseResultErr(enum intParseError_e err)
+static intParseResult_t intParseResultErr(enum intParseError_e err)
 {
     intParseResult_t res = {
         .status = INT_PARSE_STATUS_ERR,
-        .result = { .err = err },
+        .err = err,
     };
     return res;
 }
 
-intParseResult_t parseIntArg(const char * *const cmdline)
+intParseResult_t parseIntArg(const char * cmdline)
 {
     // Find start of an argument to be able to check end of a string
     // before calling strtol
-    const char * argStart = *cmdline;
+    const char * argStart = cmdline;
     while (argStart && *argStart == ' ') {
         argStart++;
     }
@@ -56,22 +57,21 @@ intParseResult_t parseIntArg(const char * *const cmdline)
         return intParseResultErr(INT_PARSE_ERROR_END_OF_LINE);
     }
 
-    const char * *const argEnd = cmdline;
+    const char * argEnd = NULL;
     errno = 0;
-    long int n = strtol(argStart, (char **)argEnd, 10);
-    if (argStart == *argEnd) {
+    long int n = strtol(argStart, (char **)&argEnd, 10);
+    if (argStart == argEnd) {
         return intParseResultErr(INT_PARSE_ERROR_NOT_A_NUMBER);
     }
     if (errno != 0) {
         return intParseResultErr(INT_PARSE_ERROR_NOT_IN_RANGE);
     }
 
-    *cmdline = *argEnd;
-    return intParseResultOk(n);
+    return intParseResultOk(n, argEnd);
 }
 
 intParseResult_t parseIntArgInRange(
-    const char * *const cmdline,
+    const char * cmdline,
     long int fromVal,
     long int toVal
 )
@@ -81,11 +81,10 @@ intParseResult_t parseIntArgInRange(
         return res;
     }
 
-    long int n = res.result.value;
+    long int n = res.value;
     if (n < fromVal || n >= toVal) {
         return intParseResultErr(INT_PARSE_ERROR_NOT_IN_RANGE);
     }
 
-    // *cmdline = *argEnd;
     return res;
 }
