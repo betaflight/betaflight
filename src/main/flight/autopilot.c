@@ -152,26 +152,33 @@ void positionControl(gpsLocation_t targetLocation) {
         previousVelocity = velocity;
         // ** THIS WILL NEED A FILTER LIKE FOR GPS RESCUE**
 
-        // use a PID function to control velocity to target
-        // P proportional to velocity, positive means moving away from target
-        // I or integral of velocity =  distance away from target
-        // D is acceleration of position error, or away from target
-        // F would be a value proportional to target change (tricky, so not done yet)
-
-        float velocityP = velocity * positionPidCoeffs.Kp; // position D
-        float velocityI = distanceCm * positionPidCoeffs.Ki; // position P
-        float velocityD = acceleration * positionPidCoeffs.Kd; // position D
+        float velocityP = velocity * positionPidCoeffs.Kp; // proportional to velocity
+        float velocityI = distanceCm * positionPidCoeffs.Ki; // proportional to distance error
+        float velocityD = acceleration * positionPidCoeffs.Kd; // proportional to acceleration *needs filtering*
+        // F would be a value proportional to target change (not done yet)
 
         float pidSum = velocityP + velocityI + velocityD; // greater when position error is bad and getting worse
 
+        // value sent to 
         rollSetpoint = rollCorrection * pidSum; // with some gain adjustment to give reasonable number
         pitchSetpoint = pitchCorrection * pidSum;
+
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(rollCorrection));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pitchCorrection));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(distanceCm));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(velocityP));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(velocityI));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(velocityD));
 
         newGPSData = false;
     }
     // send setpoints to pid.c using the same method as for gpsRescueAngle
-    posHoldAngle[AI_PITCH] = pitchSetpoint;
+    // value sent should be in degrees * 100 (why??)
     posHoldAngle[AI_ROLL] = rollSetpoint;
+    posHoldAngle[AI_PITCH] = pitchSetpoint;
+
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollSetpoint));
 
     // but for now let's not really do that until we get the PIDs sorted out :-)
     posHoldAngle[AI_PITCH] = 0.0f;

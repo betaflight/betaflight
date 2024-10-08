@@ -37,7 +37,7 @@ posHoldState_t posHoldState;
 
 void posHoldReset(void)
 {
-//    resetPositionControl(); - need to add this in position_control.c
+    resetPositionControl();
     posHoldState.targetLocation = gpsSol.llh;
     posHoldState.targetAdjustRate = 0.0f;
 }
@@ -53,9 +53,11 @@ void posHoldProcessTransitions(void) {
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!posHoldState.isPosHoldActive) {
             posHoldReset();
+            DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, 22);
             posHoldState.isPosHoldActive = true;
         }
     } else {
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, -22);
         posHoldState.isPosHoldActive = false;
     }
 }
