@@ -149,5 +149,5 @@ float getMotorOutputLow(void);
 float getMotorOutputHigh(void);
 
 #ifdef USE_WING
-float getAverageMotorOutput(void);
+float getRootMeanSquareMotorOutput(void);
 #endif

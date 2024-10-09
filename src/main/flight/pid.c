@@ -303,60 +303,44 @@ static float calcWingThrottle(void)
         batteryThrottleFactor = constrainf(batteryThrottleFactor, 0.0f, 1.0f);
     }
 
-    return getAverageMotorOutput() * batteryThrottleFactor;
+    return getRootMeanSquareMotorOutput() * batteryThrottleFactor;
 }
 
 
-static float calcWingAccelerationAdvanced(float throttle, float pitchAngle)
+static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
 
-    const float thrust = (throttle * throttle - throttle * tpa->speed / tpa->propMaxSpeed) * tpa->twr * G_ACCELERATION;
+    const float thrust = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
     const float drag = tpa->speed * tpa->speed / tpa->massDragRatio;
-    const float gravity = G_ACCELERATION * sin_approx(pitchAngle);
+    const float gravity = G_ACCELERATION * sin_approx(pitchAngleRadians);
 
     return thrust - drag + gravity;
 }
-
-
-static float calcWingAccelerationBasic(float throttle, float pitchAngle)
-{
-    const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
-
-    const float thrust = throttle * throttle * tpa->twr * G_ACCELERATION;
-    const float drag = tpa->speed * tpa->speed / tpa->massDragRatio;
-    const float gravity = G_ACCELERATION * sin_approx(pitchAngle);
-
-    return thrust - drag + gravity;
-}
-
 
 static float calcWingTpaArgument(void)
 {
     const float t = calcWingThrottle();
-    float pitchAngleRad = asin_approx(getSinPitchAngle());
-    DEBUG_SET(DEBUG_TPA, 1, lrintf(pitchAngleRad * 1800.0 / M_PIf)); // decidegrees
-    DEBUG_SET(DEBUG_TPA, 2, lrintf(t * 1000.0f));
-    float a = 0.0f;
-    pitchAngleRad += pidRuntime.tpaSpeed.pitchOffset;
+    const float pitchRadians = attitude.values.pitch / 1800.0f * M_PIf;
+    const float rollRadians = attitude.values.roll / 1800.0f * M_PIf;
 
-    switch (currentPidProfile->tpa_speed_type) {
-    case TPA_SPEED_BASIC:
-        a = calcWingAccelerationBasic(t, pitchAngleRad);
-        break;
-    case TPA_SPEED_ADVANCED:
-        a = calcWingAccelerationAdvanced(t, pitchAngleRad);
-        break;
-    default:
-        break;
-    }
+    DEBUG_SET(DEBUG_TPA, 1, lrintf(attitude.values.roll)); // decidegrees
+    DEBUG_SET(DEBUG_TPA, 2, lrintf(attitude.values.pitch)); // decidegrees
+    DEBUG_SET(DEBUG_TPA, 3, lrintf(t * 1000.0f)); // calculated throttle in the range of 0 - 1000
+
+    // pitchRadians is always -90 to 90 degrees. The bigger the ABS(pitch) the less portion of pitchOffset is needed.
+    // If ABS(roll) > 90 degrees - flying inverted, then negative portion of pitchOffset is needed.
+    // If ABS(roll) ~ 90 degrees - flying sideways, no pitchOffset is applied.
+    const float correctedPitchAnge = pitchRadians + cos_approx(pitchRadians) * cos_approx(rollRadians) * pidRuntime.tpaSpeed.pitchOffset;
+
+    const float a = calcWingAcceleration(t, correctedPitchAnge);
 
     pidRuntime.tpaSpeed.speed += a * pidRuntime.dT;
     pidRuntime.tpaSpeed.speed = MAX(0.0f, pidRuntime.tpaSpeed.speed);
-    const float tpaArgument = constrainf(pidRuntime.tpaSpeed.speed/pidRuntime.tpaSpeed.maxSpeed, 0.0f, 1.0f);
+    const float tpaArgument = constrainf(pidRuntime.tpaSpeed.speed / pidRuntime.tpaSpeed.maxSpeed, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_TPA, 3, lrintf(pidRuntime.tpaSpeed.speed * 10.0f));
-    DEBUG_SET(DEBUG_TPA, 4, lrintf(tpaArgument * 1000.0f));
+    DEBUG_SET(DEBUG_TPA, 4, lrintf(pidRuntime.tpaSpeed.speed * 10.0f));
+    DEBUG_SET(DEBUG_TPA, 5, lrintf(tpaArgument * 1000.0f));
 
     return tpaArgument;
 }

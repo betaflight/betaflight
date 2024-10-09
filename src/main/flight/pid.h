@@ -345,7 +345,7 @@ typedef struct pidCoefficient_s {
 typedef struct tpaSpeedParams_s {
     float maxSpeed;
     float massDragRatio;
-    float propMaxSpeed;
+    float inversePropMaxSpeed;
     float twr;
     float speed;
     float maxVoltage;

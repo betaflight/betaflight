@@ -392,11 +392,11 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
 #endif // USE_RPM_LIMIT
 
 #ifdef USE_WING
-static float averageMotorOutput = 0.0f;
+static float rootMeanSquareMotorOutput = 0.0f;
 
-float getAverageMotorOutput(void)
+float getRootMeanSquareMotorOutput(void)
 {
-    return averageMotorOutput;
+    return rootMeanSquareMotorOutput;
 }
 #endif // USE_WING
 
@@ -437,16 +437,16 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
     }
 
 #ifdef USE_WING
-    float averageMotor = 0.0f;
+    float motorSumSquares = 0.0f;
     if (motorIsEnabled()) {
         for (int i = 0; i < mixerRuntime.motorCount; i++) {
             if (motorIsMotorEnabled(i)) {
-                averageMotor += (motorConvertToExternal(motor[i]) - PWM_RANGE_MIN) / (float)PWM_RANGE;
+                const float motorOutput = scaleRangef(motorConvertToExternal(motor[i]), PWM_RANGE_MIN, PWM_RANGE_MAX, 0.0f, 1.0f);
+                motorSumSquares += motorOutput * motorOutput;
             }
         }
-        averageMotor /= mixerRuntime.motorCount;
     }
-    averageMotorOutput = averageMotor;
+    rootMeanSquareMotorOutput = sqrt(motorSumSquares / mixerRuntime.motorCount);
 #endif // USE_WING
 
     DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);
@@ -475,7 +475,7 @@ static void applyMotorStop(void)
     }
 
 #ifdef USE_WING
-    averageMotorOutput = 0.0f;
+    rootMeanSquareMotorOutput = 0.0f;
 #endif // USE_WING
 }
 
