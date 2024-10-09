@@ -16,124 +16,52 @@
  */
 
 #include "platform.h"
+#include "math.h"
 
 #ifdef USE_ALT_HOLD_MODE
 
-#include "math.h"
 #include "build/debug.h"
-
+#include "common/maths.h"
 #include "config/config.h"
-#include "fc/runtime_config.h"
 #include "fc/rc.h"
+#include "fc/runtime_config.h"
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/position_control.h"
-#include "sensors/acceleration.h"
 #include "rx/rx.h"
 
 #include "alt_hold.h"
 
-static float pidIntegral = 0.0f;
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
 
 altHoldState_t altHoldState;
 
-float altitudePidCalculate(void)
+void controlAltitude(void)
 {
-    // * introductory notes *
-    // this is a classical PID controller with heuristic D boost and iTerm relax
-    // the basic parameters provide good control when initiated in stable situations
-    
-    // tuning:
-    // -reduce P I and D by 1/3 or until it doesn't oscillate but has sloppy / slow control
-    // increase P until there is definite oscillation, then back off until barely noticeable
-    // increase D until there is definite oscillation (will be faster than P), then back off until barely noticeable
-    // try to add a little more P, then try to add a little more D, but not to oscillation
-    // iTerm isn't very important if hover throttle is set carefully and sag compensation is used
-
-    // The altitude D lowpass filter is very important.
-    // The only way to get enough D is to filter the oscillations out.
-    // More D filtering is needed with Baro than with GPS, since GPS is smoother and slower.
-
-    // A major problem is the lag time for motors to arrest pre-existing drops or climbs,
-    // compounded by the lag time from filtering.
-    // If the quad is dropping fast, the motors have to be high for a long time to arrest the drop
-    // this is very difficult for a 'simple' PID controller;
-    // if the PIDs are high enough to arrest a fast drop, they will oscillate under normal conditions
-    // Hence we:
-    // - Enhance D when the absolute velocity is high, ie when we need to strongly oppose a fast drop,
-    //   even though it may cause throttle oscillations while dropping quickly - the average D is what we need
-    // - Prevent excessive iTerm growth when error is impossibly large for iTerm to resolve
-
-    const pidCoefficient_t *pidCoefs =  getAltitudePidCoeffs();
-
-    const float altitudeErrorCm = altHoldState.targetAltitudeCm - getAltitudeCm();
-
-    // P
-    const float pOut = pidCoefs->Kp * altitudeErrorCm;
-
-    // I
-    // input limit iTerm so that it doesn't grow fast with large errors
-    // very important at the start if there are massive initial errors to prevent iTerm windup
-
-    // much less iTerm change for errors greater than 2m, otherwise it winds up badly
-    const float itermNormalRange = 200.0f; // 2m
-    const float itermRelax = (fabsf(altitudeErrorCm) < itermNormalRange) ? 1.0f : 0.1f;
-    pidIntegral += altitudeErrorCm * pidCoefs->Ki * itermRelax * taskIntervalSeconds;
-    // arbitrary limit on iTerm, same as for gps_rescue, +/-20% of full throttle range
-    // ** might not be needed with input limiting **
-    pidIntegral = constrainf(pidIntegral, -200.0f, 200.0f); 
-    const float iOut = pidIntegral;
-
-    // D
     // boost D by 'increasing apparent velocity' when vertical velocity exceeds 5 m/s ( D of 75 on defaults)
     // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
     // this is important primarily to arrest pre-existing fast drops or climbs at the start;
-
-    float vel = getAltitudeDerivative(); // cm/s altitude derivative is always available
+    float verticalVelocity = getAltitudeDerivative(); // cm/s altitude derivative is always available
     const float kinkPoint = 500.0f; // velocity at which D should start to increase
     const float kinkPointAdjustment = kinkPoint * 2.0f; // Precompute constant
-    const float sign = (vel > 0) ? 1.0f : -1.0f;
-    if (fabsf(vel) > kinkPoint) {
-        vel = vel * 3.0f - sign * kinkPointAdjustment;
+    const float sign = (verticalVelocity > 0) ? 1.0f : -1.0f;
+    if (fabsf(verticalVelocity) > kinkPoint) {
+        verticalVelocity = verticalVelocity * 3.0f - sign * kinkPointAdjustment;
     }
 
-    const float dOut = pidCoefs->Kd * vel;
-
-    // F
-    // if error is used, we get a 'free kick' in derivative from changes in the target value
-    // but this is delayed by the smoothing, leading to lag and overshoot.
-    // calculating feedforward separately avoids the filter lag.
-    // Use user's D gain for the feedforward gain factor, works OK with a scaling factor of 0.01
-    // A commanded drop at 100cm/s will return feedforward of the user's D value. or 15 on defaults
-    const float fOut = pidCoefs->Kf * altHoldState.targetAltitudeAdjustRate;
-    
-    // to further improve performance...
-    // adding a high-pass filtered amount of FF would give a boost when altitude changes were requested
-    // this would offset motor lag and kick off some initial vertical acceleration.
-    // this would be exactly what an experienced pilot would do.
-
-    const float output = pOut + iOut - dOut + fOut;
-    DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 6, lrintf(dOut));
-    DEBUG_SET(DEBUG_ALTHOLD, 7, lrintf(fOut));
-
-    return output; // motor units, eg 100 means 10% of available throttle 
+    //run the function in autopilot.c that calculates the PIDs and drives the motors
+    altitudeControl(altHoldState.targetAltitudeCm, taskIntervalSeconds, verticalVelocity, altHoldState.targetAltitudeAdjustRate);
 }
 
 void altHoldReset(void)
 {
-    pidIntegral = 0.0f;
+    resetAltitudeControl();
     altHoldState.targetAltitudeCm = getAltitudeCm();
     altHoldState.targetAltitudeAdjustRate = 0.0f;
 }
 
 void altHoldInit(void)
 {
-    altHoldState.hoverThrottle = positionControlConfig()->hover_throttle - PWM_RANGE_MIN;
     altHoldState.isAltHoldActive = false;
     altHoldReset();
 }
@@ -177,8 +105,8 @@ void altHoldUpdateTargetAltitude(void)
 
     const float rcThrottle = rcCommand[THROTTLE];
 
-    const float lowThreshold = 0.5f * (positionControlConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
-    const float highThreshold = 0.5f * (positionControlConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
+    const float lowThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
+    const float highThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
     
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {
@@ -186,7 +114,6 @@ void altHoldUpdateTargetAltitude(void)
     } else if (rcThrottle > highThreshold) {
         throttleAdjustmentFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
     }
-
     // if failsafe is active, and we get here, we are in failsafe landing mode
     if (failsafeIsActive()) {
         // descend at up to 10 times faster when high
@@ -198,8 +125,8 @@ void altHoldUpdateTargetAltitude(void)
         // constant (set) deceleration target in the last 2m
         throttleAdjustmentFactor = -(0.9f + constrainf(getAltitudeCm() / 2000.0f, 0.1f, 9.0f));
     }
-
     altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate;
+
     // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
     altHoldState.targetAltitudeCm += altHoldState.targetAltitudeAdjustRate  * taskIntervalSeconds;
 }
@@ -211,18 +138,7 @@ void altHoldUpdate(void)
         altHoldUpdateTargetAltitude();
     }
 
-    // use PIDs to return the throttle adjustment value, add it to the hover value, and constrain
-    const float throttleAdjustment = altitudePidCalculate();
-
-    const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
-    // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
-    // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
-    const float newThrottle = PWM_RANGE_MIN + (altHoldState.hoverThrottle + throttleAdjustment) * tiltMultiplier;
-    altHoldState.throttleOut = constrainf(newThrottle, altholdConfig()->alt_hold_throttle_min, altholdConfig()->alt_hold_throttle_max);
-
-    DEBUG_SET(DEBUG_ALTHOLD, 0, lrintf(altHoldState.targetAltitudeCm));
-    DEBUG_SET(DEBUG_ALTHOLD, 2, lrintf(newThrottle)); // normal range 1000-2000, but is beforeconstraint 
-    DEBUG_SET(DEBUG_ALTHOLD, 3, lrintf(tiltMultiplier * 100));
+    controlAltitude();
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
@@ -235,13 +151,4 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
         altHoldUpdate();
     }
 }
-
-float altHoldGetThrottle(void) {
-    // see notes in gpsRescueGetThrottle() about mincheck
-    float commandedThrottle = scaleRangef(altHoldState.throttleOut, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
-    // with high values for mincheck, we could sclae to negative throttle values.
-    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
-    return commandedThrottle;
-}
-
 #endif

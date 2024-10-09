@@ -36,13 +36,13 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/autopilot.h"
     #include "flight/failsafe.h"
     #include "flight/gps_rescue.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/position.h"
-    #include "flight/position_control.h"
     #include "flight/servos.h"
 
     #include "io/beeper.h"
@@ -78,7 +78,7 @@ extern "C" {
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
-    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
 
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint16_t averageSystemLoadPercent = 0;
@@ -1137,10 +1137,6 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
 
-    pidCoefficient_t testAltitudePidCoeffs = {15.0f, 15.0f, 15.1f, 15.0f};
-    const pidCoefficient_t *getAltitudePidCoeffs(void) {
-        return &testAltitudePidCoeffs;
-    }
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
 
@@ -1164,5 +1160,4 @@ extern "C" {
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
     bool crashFlipSuccessful(void) { return false; }
-    bool isBelowLandingAltitude(void) { return false; };
 }

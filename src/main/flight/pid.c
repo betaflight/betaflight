@@ -47,10 +47,10 @@
 #include "fc/runtime_config.h"
 
 #include "flight/alt_hold.h"
+#include "flight/autopilot.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/position_control.h"
 #include "flight/rpm_filter.h"
 
 #include "io/gps.h"

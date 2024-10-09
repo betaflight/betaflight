@@ -28,12 +28,9 @@ typedef struct {
     bool isAltHoldActive;
     float targetAltitudeCm;
     float targetAltitudeAdjustRate;
-    float throttleOut;
-    float hoverThrottle;
 } altHoldState_t;
 
 void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
-float altHoldGetThrottle(void);
 
 #endif
