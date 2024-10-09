@@ -33,60 +33,55 @@
 
 #include "pos_hold.h"
 
-posHoldState_t posHoldState;
+posHoldState_t posHold;
 
 void posHoldReset(void)
 {
     resetPositionControl();
-    posHoldState.targetLocation = gpsSol.llh;
-    posHoldState.targetAdjustRate = 0.0f;
+    posHold.targetLocation = gpsSol.llh;
 }
 
 void posHoldInit(void)
 {
-    posHoldState.isPosHoldActive = false;
+    posHold.isPosHoldActive = false;
+    posHold.deadband = rcControlsConfig()->autopilot_deadband / 100.0f;
     posHoldReset();
 }
 
-void posHoldProcessTransitions(void) {
-
+void posHoldProcessTransitions(void)
+{
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        if (!posHoldState.isPosHoldActive) {
+        if (!posHold.isPosHoldActive) {
+            // initialise relevant values each time position hold starts
             posHoldReset();
-            posHoldState.isPosHoldActive = true;
+            posHold.isPosHoldActive = true;
         }
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, -22);
-        posHoldState.isPosHoldActive = false;
+        posHold.isPosHoldActive = false;
     }
 }
 
 void posHoldUpdateTargetLocation(void)
 {
-    // The user can adjust the target position by flying around in level mode
-    // We need to provide a big deadband in rc.c
-
+    // if failsafe is active, eg landing mode, don't update the original start point 
     if (!failsafeIsActive()) {
-        const float deadband = 0.2f;
-        if ((getRcDeflectionAbs(FD_ROLL) > deadband) || (getRcDeflectionAbs(FD_PITCH) > deadband))  {
+        // otherwise if sticks are not centered, allow start point to be updated
+        if ((getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband))  {
             // allow user to fly the quad, in angle mode, enabling a 20% deadband via rc.c (?)
             // while sticks are outside the deadband,
-            // set the target location to the current GPS location each iteration
-            posHoldState.targetLocation = gpsSol.llh;
+            // keep updating the home location to the current GPS location each iteration
+            posHold.targetLocation = gpsSol.llh;
         }
     }
 }
 
 void posHoldUpdate(void)
 {
-    // check if the user wants to change the target position using sticks
-    if (posHoldConfig()->pos_hold_adjust_rate) {
-        posHoldUpdateTargetLocation();
-    }
+    posHoldUpdateTargetLocation();
 
     if (getIsNewDataForPosHold()) {
-        positionControl(posHoldState.targetLocation);
-    } else {
+        positionControl(posHold.targetLocation, posHold.deadband);
     }
 }
 
@@ -96,8 +91,11 @@ void updatePosHoldState(timeUs_t currentTimeUs) {
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
     posHoldProcessTransitions();
 
-    if (posHoldState.isPosHoldActive) {
+    if (posHold.isPosHoldActive) {
         posHoldUpdate();
+    } else {
+        posHoldAngle[AI_PITCH] = 0.0f;
+        posHoldAngle[AI_ROLL] = 0.0f;
     }
 }
 

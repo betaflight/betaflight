@@ -715,9 +715,12 @@ FAST_CODE void processRcCommand(void)
                 if (axis == FD_YAW) {
                     rcCommandf = rcCommand[axis] / rcCommandYawDivider;
                 } else {
-                    rcCommandf = rcCommand[axis] / rcCommandDivider;
+                    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+                        rcCommandf = rcCommand[axis] / (500.0f - rcControlsConfig()->autopilot_deadband);
+                    } else {
+                        rcCommandf = rcCommand[axis] / rcCommandDivider;
+                    }
                 }
-
                 rcDeflection[axis] = rcCommandf;
                 const float rcCommandfAbs = fabsf(rcCommandf);
                 rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -754,9 +757,11 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     for (int axis = 0; axis < 3; axis++) {
 
         float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
+        // larger deadband on pitch and roll when in position hold
+        const float tmpDeadband = (FLIGHT_MODE(POS_HOLD_MODE)) ? rcControlsConfig()->autopilot_deadband * 5.0f : rcControlsConfig()->deadband;
         if (axis == ROLL || axis == PITCH) {
-            if (tmp > rcControlsConfig()->deadband) {
-                tmp -= rcControlsConfig()->deadband;
+            if (tmp > tmpDeadband) {
+                tmp -= tmpDeadband;
             } else {
                 tmp = 0;
             }

@@ -28,7 +28,7 @@
 typedef struct {
     bool isPosHoldActive;
     gpsLocation_t targetLocation;
-    float targetAdjustRate;
+    float deadband;
 } posHoldState_t;
 
 void posHoldInit(void);

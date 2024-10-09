@@ -28,7 +28,7 @@ void resetAltitudeControl(void);
 void resetPositionControl(void);
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
-void positionControl(gpsLocation_t targetLocation);
+void positionControl(gpsLocation_t targetLocation, float deadband);
 
 
 bool isBelowLandingAltitude(void);

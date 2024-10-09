@@ -32,6 +32,6 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 1);
 
 PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
-    .pos_hold_adjust_rate = 100, // max rate of change of altitude target using sticks in cm/s
+    .unused = 33,     // position hold within this percentage stick deflection
 );
 #endif

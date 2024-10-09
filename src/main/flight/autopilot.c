@@ -24,6 +24,7 @@
 #include "build/debug.h"
 #include "common/filter.h"
 #include "common/maths.h"
+#include "fc/rc.h"
 
 #include "flight/imu.h"
 #include "flight/pid.h"
@@ -124,7 +125,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
-void positionControl(gpsLocation_t targetLocation) {
+void positionControl(gpsLocation_t targetLocation, float deadband) {
     // gpsSol.llh = current gps location
     // get distance and bearing from current location to target location
     // void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
@@ -184,9 +185,9 @@ void positionControl(gpsLocation_t targetLocation) {
 
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollSetpoint));
 
-    // but for now let's not really do that until we get the PIDs sorted out :-)
-//    posHoldAngle[AI_PITCH] = 0.0f;
-//    posHoldAngle[AI_ROLL] = 0.0f;
+    // if sticks are centered, allow pilot control, otherwise use stick control
+    posHoldAngle[AI_ROLL] = (getRcDeflectionAbs(FD_ROLL) < deadband) ? rollSetpoint : 0.0f;
+    posHoldAngle[AI_PITCH] = (getRcDeflectionAbs(FD_PITCH) < deadband) ? pitchSetpoint : 0.0f;
 }
 
 bool isBelowLandingAltitude(void)
