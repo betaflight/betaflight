@@ -96,7 +96,7 @@ void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
         pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
     } else {
         pidRuntime.tpaSpeed.inversePropMaxSpeed = 1.0f / propMaxSpeed;
-    }    
+    }
 
     const float maxFallSpeed = sqrtf(mass * G_ACCELERATION / dragK);
 

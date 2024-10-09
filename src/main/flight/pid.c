@@ -321,8 +321,8 @@ static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 static float calcWingTpaArgument(void)
 {
     const float t = calcWingThrottle();
-    const float pitchRadians = attitude.values.pitch / 1800.0f * M_PIf;
-    const float rollRadians = attitude.values.roll / 1800.0f * M_PIf;
+    const float pitchRadians = DECIDEGREES_TO_RADIANS(attitude.values.pitch);
+    const float rollRadians = DECIDEGREES_TO_RADIANS(attitude.values.roll);
 
     DEBUG_SET(DEBUG_TPA, 1, lrintf(attitude.values.roll)); // decidegrees
     DEBUG_SET(DEBUG_TPA, 2, lrintf(attitude.values.pitch)); // decidegrees
