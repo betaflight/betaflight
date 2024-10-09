@@ -61,7 +61,8 @@ static int putchw(void *putp, putcf putf, int n, char z, char *bf)
     while (*p++ && n > 0)
         n--;
     while (n-- > 0) {
-        putf(putp, fc); written++;
+        putf(putp, fc);
+        written++;
     }
     while ((ch = *bf++)) {
         putf(putp, ch); written++;

@@ -367,7 +367,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         }
 
         FALLTHROUGH;
-        // here FS code could be
+    // here FS code could be
     case STATE_DATA:
         if (rxSpiGetExtiState() && (!frameReceived)) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
@@ -445,7 +445,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
         }
         if (telemetryReceived) {
-            if (cmpTimeUs(micros(), packetTimerUs) > receiveDelayUs) { // if received or not received in this time sent telemetry data
+            if (cmpTimeUs(micros(), packetTimerUs) >
+                receiveDelayUs) { // if received or not received in this time sent telemetry data
                 *protocolState = STATE_TELEMETRY;
                 buildTelemetryFrame(packet);
             }

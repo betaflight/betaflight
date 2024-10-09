@@ -564,15 +564,45 @@ bool isBeeperOn(void)
 // Stub out beeper functions if #BEEPER not defined
 void beeper(beeperMode_e mode) {UNUSED(mode);}
 void beeperSilence(void) {}
-void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperWarningBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
-uint32_t getArmingBeepTimeMicros(void) {return 0;}
-beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
-uint32_t beeperModeMaskForTableIndex(int idx) {UNUSED(idx); return 0;}
-const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
-int beeperTableEntryCount(void) {return 0;}
-bool isBeeperOn(void) {return false;}
+void beeperConfirmationBeeps(uint8_t beepCount)
+{
+    UNUSED(beepCount);
+}
+void beeperWarningBeeps(uint8_t beepCount)
+{
+    UNUSED(beepCount);
+}
+void beeperUpdate(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+}
+uint32_t getArmingBeepTimeMicros(void)
+{
+    return 0;
+}
+beeperMode_e beeperModeForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return BEEPER_SILENCE;
+}
+uint32_t beeperModeMaskForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return 0;
+}
+const char *beeperNameForTableIndex(int idx)
+{
+    UNUSED(idx);
+    return NULL;
+}
+int beeperTableEntryCount(void)
+{
+    return 0;
+}
+bool isBeeperOn(void)
+{
+    return false;
+}
 
 #endif
 

@@ -518,7 +518,8 @@ volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
     else if(timHw->channel == 4)
         return (volatile timCCR_t*)(&timHw->tim->c4dt);
     else
-        return (volatile timCCR_t*)((volatile char*)&timHw->tim->c1dt + (timHw->channel-1)*0x04); //for 32bit need to debug
+        return (volatile timCCR_t *)((volatile char *)&timHw->tim->c1dt + (timHw->channel - 1) *
+                                     0x04); //for 32bit need to debug
 
 }
 
