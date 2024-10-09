@@ -336,8 +336,22 @@ protected:
     virtual void SetUp() {
         CliWriteTest::SetUp();
 
-        for (unsigned i = 0; i <= MAX_AUX_CHANNEL_COUNT; i++) {
+        for (unsigned i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
+        }
+    }
+
+    void checkConditionsLeftUntouched(
+        unsigned startIx = 0, unsigned endIx = MAX_MODE_ACTIVATION_CONDITION_COUNT
+    ) {
+        for (auto i = startIx; i < endIx; i++) {
+            auto condition = modeActivationConditions(i);
+            EXPECT_EQ(BOXARM, condition->modeId);
+            EXPECT_EQ(0, condition->auxChannelIndex);
+            EXPECT_EQ(0, condition->range.startStep);
+            EXPECT_EQ(0, condition->range.endStep);
+            EXPECT_EQ(MODELOGIC_OR, condition->modeLogic);
+            EXPECT_EQ(BOXARM, condition->linkedTo);
         }
     }
 };
@@ -423,10 +437,6 @@ TEST_F(AuxCliWriteTest, Show)
     };
     EXPECT_EQ(expected, outLines);
 
-    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        auto condition = modeActivationConditions(i);
-        EXPECT_EQ(0, condition->auxChannelIndex);
-    }
 }
 
 TEST_F(AuxCliWriteTest, NotEnoughArgs)
@@ -439,10 +449,7 @@ TEST_F(AuxCliWriteTest, NotEnoughArgs)
     };
     EXPECT_EQ(expected, outLines);
 
-    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        auto condition = modeActivationConditions(i);
-        EXPECT_EQ(0, condition->auxChannelIndex);
-    }
+    checkConditionsLeftUntouched();
 }
 
 TEST_F(AuxCliWriteTest, IndexNotANumber)
@@ -455,10 +462,7 @@ TEST_F(AuxCliWriteTest, IndexNotANumber)
     };
     EXPECT_EQ(expected, outLines);
 
-    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        auto condition = modeActivationConditions(i);
-        EXPECT_EQ(0, condition->auxChannelIndex);
-    }
+    checkConditionsLeftUntouched();
 }
 
 TEST_F(AuxCliWriteTest, ChannelIndexOutOfRange)
@@ -471,10 +475,7 @@ TEST_F(AuxCliWriteTest, ChannelIndexOutOfRange)
     };
     EXPECT_EQ(expected, outLines);
 
-    auto condition = modeActivationConditions(0);
-    EXPECT_EQ(0, condition->auxChannelIndex);
-    EXPECT_EQ(0, condition->range.startStep);
-    EXPECT_EQ(0, condition->range.endStep);
+    checkConditionsLeftUntouched();
 }
 
 TEST_F(AuxCliWriteTest, ChannelEndRangeOutOfRange)
@@ -487,10 +488,7 @@ TEST_F(AuxCliWriteTest, ChannelEndRangeOutOfRange)
     };
     EXPECT_EQ(expected, outLines);
 
-    auto condition = modeActivationConditions(0);
-    EXPECT_EQ(0, condition->auxChannelIndex);
-    EXPECT_EQ(0, condition->range.startStep);
-    EXPECT_EQ(0, condition->range.endStep);
+    checkConditionsLeftUntouched();
 }
 
 TEST_F(AuxCliWriteTest, SetCondition)
@@ -510,10 +508,8 @@ TEST_F(AuxCliWriteTest, SetCondition)
     EXPECT_EQ(12, condition->range.endStep);
     EXPECT_EQ(MODELOGIC_OR, condition->modeLogic);
     EXPECT_EQ(BOXARM, condition->linkedTo);
-    for (int i = 1; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        auto condition = modeActivationConditions(i);
-        EXPECT_EQ(0, condition->auxChannelIndex);
-    }
+
+    checkConditionsLeftUntouched(1);
 }
 
 TEST_F(AuxCliWriteTest, BackwardCompat)
@@ -526,6 +522,8 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
     };
     EXPECT_EQ(expected, outLines);
 
+    checkConditionsLeftUntouched(0, 18);
+
     auto condition = modeActivationConditions(19);
     EXPECT_EQ(BOXANGLE, condition->modeId);
     EXPECT_EQ(2, condition->auxChannelIndex);
@@ -533,10 +531,6 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
     EXPECT_EQ(12, condition->range.endStep);
     EXPECT_EQ(MODELOGIC_OR, condition->modeLogic);
     EXPECT_EQ(BOXARM, condition->linkedTo);
-    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT - 1; i++) {
-        auto condition = modeActivationConditions(i);
-        EXPECT_EQ(0, condition->auxChannelIndex);
-    }
 }
 // End of aux tests
 
