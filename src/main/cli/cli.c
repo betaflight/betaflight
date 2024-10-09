@@ -1035,7 +1035,7 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
  * @brief Converts parsing error into a message and prints it.
  */
 static void intParsePrintError(
-    enum intParseError_e err,
+    enum intParseStatus_e err,
     long int fromVal,
     long int toVal,
     const char *cmdName,
@@ -1043,13 +1043,15 @@ static void intParsePrintError(
 )
 {
     switch (err) {
-    case INT_PARSE_ERROR_NOT_IN_RANGE:
+    case INT_PARSE_STATUS_OK:
+        break;
+    case INT_PARSE_STATUS_NOT_IN_RANGE:
         cliShowArgumentRangeError(cmdName, (char *)argName, fromVal, toVal - 1);
         break;
-    case INT_PARSE_ERROR_NOT_A_NUMBER:
+    case INT_PARSE_STATUS_NOT_A_NUMBER:
         cliShowArgumentNotANumberError(cmdName, argName);
         break;
-    case INT_PARSE_ERROR_END_OF_LINE:
+    case INT_PARSE_STATUS_END_OF_LINE:
         cliPrintErrorLinef(cmdName, "INVALID ARGUMENT COUNT");
         break;
     }
@@ -1070,8 +1072,8 @@ static long int processPositiveIntArg(
 )
 {
     intParseResult_t res = parseIntArg(*cmdline);
-    if (res.status == INT_PARSE_STATUS_ERR) {
-        intParsePrintError(res.err, 0, INT_MAX, cmdName, argName);
+    if (res.status != INT_PARSE_STATUS_OK) {
+        intParsePrintError(res.status, 0, INT_MAX, cmdName, argName);
         return -1;
     }
     *cmdline = res.next;
@@ -1098,8 +1100,8 @@ static long int processPositiveIntArgInRange(
 )
 {
     intParseResult_t res = parseIntArgInRange(*cmdline, fromVal, toVal);
-    if (res.status == INT_PARSE_STATUS_ERR) {
-        intParsePrintError(res.err, fromVal, toVal, cmdName, argName);
+    if (res.status != INT_PARSE_STATUS_OK) {
+        intParsePrintError(res.status, fromVal, toVal, cmdName, argName);
         return -1;
     }
     *cmdline = res.next;
@@ -1108,26 +1110,20 @@ static long int processPositiveIntArgInRange(
 
 typedef struct channelRangeParseResult_s {
     enum intParseStatus_e status;
-    union {
-        channelRange_t value;
-        enum intParseError_e err;
-    };
+    channelRange_t value;
 } channelRangeParseResult_t;
 
-static channelRangeParseResult_t channelRangeParseResultOk(channelRange_t val) {
-    channelRangeParseResult_t res = {
+static inline channelRangeParseResult_t channelRangeParseResultOk(channelRange_t val) {
+    return (channelRangeParseResult_t) {
         .status = INT_PARSE_STATUS_OK,
         .value = val,
     };
-    return res;
 }
 
-static channelRangeParseResult_t channelRangeParseResultErr(enum intParseError_e err) {
-    channelRangeParseResult_t res = {
-        .status = INT_PARSE_STATUS_ERR,
-        .err = err,
+static inline channelRangeParseResult_t channelRangeParseResultErr(enum intParseStatus_e err) {
+    return (channelRangeParseResult_t) {
+        .status = err,
     };
-    return res;
 }
 
 /**
@@ -1145,22 +1141,22 @@ static channelRangeParseResult_t processChannelRangeArgsEx(
     intParseResult_t startRes = parseIntArgInRange(
         *cmdlinePtr, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
     );
-    if (startRes.status == INT_PARSE_STATUS_ERR) {
+    if (startRes.status != INT_PARSE_STATUS_OK) {
         cliShowArgumentRangeError(
             cmdName, "CHANNEL_RANGE.START", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
         );
-        return channelRangeParseResultErr(startRes.err);
+        return channelRangeParseResultErr(startRes.status);
     }
     uint8_t startStep = CHANNEL_VALUE_TO_STEP(startRes.value);
 
     intParseResult_t endRes = parseIntArgInRange(
         startRes.next, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
     );
-    if (endRes.status == INT_PARSE_STATUS_ERR) {
+    if (endRes.status != INT_PARSE_STATUS_OK) {
         cliShowArgumentRangeError(
             cmdName, "CHANNEL_RANGE.END", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
         );
-        return channelRangeParseResultErr(endRes.err);
+        return channelRangeParseResultErr(endRes.status);
     }
     uint8_t endStep = CHANNEL_VALUE_TO_STEP(endRes.value);
 
@@ -1368,7 +1364,7 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
     }
 
     channelRangeParseResult_t channelRangeRes = processChannelRangeArgsEx(&ptr, cmdName);
-    if (channelRangeRes.status == INT_PARSE_STATUS_ERR) {
+    if (channelRangeRes.status != INT_PARSE_STATUS_OK) {
         return;
     }
 
@@ -1376,19 +1372,17 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
 
     intParseResult_t modeLogicRes = parseIntArgInRange(ptr, 0, 2);
     long int modeLogic = MODELOGIC_OR;
-    if (
-        modeLogicRes.status == INT_PARSE_STATUS_ERR &&
-        modeLogicRes.err != INT_PARSE_ERROR_END_OF_LINE
-    ) {
-        intParsePrintError(modeLogicRes.err, 0, 2, cmdName, "MODE_LOGIC");
+    if (modeLogicRes.status != INT_PARSE_STATUS_OK
+        && modeLogicRes.status != INT_PARSE_STATUS_END_OF_LINE) {
+        intParsePrintError(modeLogicRes.status, 0, 2, cmdName, "MODE_LOGIC");
         return;
     }
 
     intParseResult_t linkedToRes = parseIntArg(ptr);
     long int linkedTo = 0;
-    if (linkedToRes.status == INT_PARSE_STATUS_ERR
-        && linkedToRes.err != INT_PARSE_ERROR_END_OF_LINE) {
-        intParsePrintError(linkedToRes.err, 0, 2, cmdName, "LINKED_TO");
+    if (linkedToRes.status != INT_PARSE_STATUS_OK
+        && linkedToRes.status != INT_PARSE_STATUS_END_OF_LINE) {
+        intParsePrintError(linkedToRes.status, 0, 2, cmdName, "LINKED_TO");
         return;
     }
     const box_t *linkedToBox = findBoxByPermanentId(linkedTo);

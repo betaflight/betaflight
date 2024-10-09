@@ -26,23 +26,20 @@
 
 #include "platform.h"
 
-static intParseResult_t intParseResultOk(long int val, const char *next)
+static inline intParseResult_t intParseResultOk(long int val, const char *next)
 {
-    intParseResult_t res = {
+    return (intParseResult_t) {
         .status = INT_PARSE_STATUS_OK,
         .value = val,
         .next = next,
     };
-    return res;
 }
 
-static intParseResult_t intParseResultErr(enum intParseError_e err)
+static inline intParseResult_t intParseResultErr(enum intParseStatus_e err)
 {
-    intParseResult_t res = {
-        .status = INT_PARSE_STATUS_ERR,
-        .err = err,
+    return (intParseResult_t) {
+        .status = err,
     };
-    return res;
 }
 
 intParseResult_t parseIntArg(const char *cmdline)
@@ -54,17 +51,17 @@ intParseResult_t parseIntArg(const char *cmdline)
         argStart++;
     }
     if (!*argStart) {
-        return intParseResultErr(INT_PARSE_ERROR_END_OF_LINE);
+        return intParseResultErr(INT_PARSE_STATUS_END_OF_LINE);
     }
 
     const char *argEnd = NULL;
     errno = 0;
     long int n = strtol(argStart, (char **)&argEnd, 10);
     if (argStart == argEnd) {
-        return intParseResultErr(INT_PARSE_ERROR_NOT_A_NUMBER);
+        return intParseResultErr(INT_PARSE_STATUS_NOT_A_NUMBER);
     }
     if (errno != 0) {
-        return intParseResultErr(INT_PARSE_ERROR_NOT_IN_RANGE);
+        return intParseResultErr(INT_PARSE_STATUS_NOT_IN_RANGE);
     }
 
     return intParseResultOk(n, argEnd);
@@ -77,13 +74,13 @@ intParseResult_t parseIntArgInRange(
 )
 {
     intParseResult_t res = parseIntArg(cmdline);
-    if (res.status == INT_PARSE_STATUS_ERR) {
+    if (res.status != INT_PARSE_STATUS_OK) {
         return res;
     }
 
     long int n = res.value;
     if (n < fromVal || n >= toVal) {
-        return intParseResultErr(INT_PARSE_ERROR_NOT_IN_RANGE);
+        return intParseResultErr(INT_PARSE_STATUS_NOT_IN_RANGE);
     }
 
     return res;

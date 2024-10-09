@@ -23,13 +23,9 @@
 
 enum intParseStatus_e {
     INT_PARSE_STATUS_OK,
-    INT_PARSE_STATUS_ERR,
-};
-
-enum intParseError_e {
-    INT_PARSE_ERROR_NOT_IN_RANGE,
-    INT_PARSE_ERROR_NOT_A_NUMBER,
-    INT_PARSE_ERROR_END_OF_LINE,
+    INT_PARSE_STATUS_NOT_IN_RANGE,
+    INT_PARSE_STATUS_NOT_A_NUMBER,
+    INT_PARSE_STATUS_END_OF_LINE,
 };
 
 /**
@@ -40,13 +36,8 @@ enum intParseError_e {
  */
 typedef struct intParseResult_s {
     enum intParseStatus_e status;
-    union {
-        struct {
-            long int value;
-            const char *next;
-        };
-        enum intParseError_e err;
-    };
+    long int value;
+    const char *next;
 } intParseResult_t;
 
 /**
