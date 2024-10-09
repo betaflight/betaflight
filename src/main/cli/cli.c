@@ -2091,7 +2091,7 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     }
 }
 
-static void cliLed(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliLed(const char *cmdName, char *cmdline)
 {
     const char *format = "led %u %s";
     char ledConfigBuffer[20];

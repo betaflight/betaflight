@@ -74,6 +74,7 @@ extern "C" {
         dumpFlags_t, const modeActivationCondition_t *, const modeActivationCondition_t *, const char *
     );
     void cliColor(const char *, char *);
+    void cliLed(const char *, char *);
 
     const clivalue_t valueTable[] = {
         { .name = "array_unit_test",   .type = VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config = { .array = { .length = 3}},                     .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
@@ -524,14 +525,21 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
 }
 // End of aux tests
 
-// Color tests
+// Color and led tests
 TEST_F(CliWriteTest, Color)
 {
     const char cmd[] = "color";
     char args[] = "I";
     cliColor(cmd, args);
 }
-// End of color tests
+
+TEST_F(CliWriteTest, Led)
+{
+    const char cmd[] = "led";
+    char args[] = "+";
+    cliLed(cmd, args);
+}
+// End of color and led tests
 
 // STUBS
 extern "C" {
@@ -630,7 +638,11 @@ typedef enum {
 void dashboardShowFixedPage(pageId_e){}
 void dashboardUpdate(timeUs_t) {}
 
-bool parseLedStripConfig(int, const char *){return false; }
+bool parseLedStripConfig(int, const char *config){
+    char c = *config;
+    UNUSED(c);
+    return false;
+}
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 void parseRcChannels(const char *, rxConfig_t *){}
