@@ -29,10 +29,10 @@ enum intParseStatus_e {
 };
 
 /**
- * intParseResult_s struct represent a tagged union:
- * - when 'status' field is INT_PARSE_STATUS_ERR, 'err' field contains the error
+ * intParseResult_s struct represent either a parsed value or an error:
  * - when 'status' field is INT_PARSE_STATUS_OK, 'value' field stores parsed
  *   integer and 'next' field points to the next symbol
+ * - when 'status' is any other value it means an error happened
  */
 typedef struct intParseResult_s {
     enum intParseStatus_e status;
