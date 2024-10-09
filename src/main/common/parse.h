@@ -1,0 +1,63 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+enum intParseStatus_e {
+    INT_PARSE_STATUS_OK,
+    INT_PARSE_STATUS_NOT_IN_RANGE,
+    INT_PARSE_STATUS_NOT_A_NUMBER,
+    INT_PARSE_STATUS_END_OF_LINE,
+};
+
+/**
+ * intParseResult_s struct represent either a parsed value or an error:
+ * - when 'status' field is INT_PARSE_STATUS_OK, 'value' field stores parsed
+ *   integer and 'next' field points to the next symbol
+ * - when 'status' is any other value it means an error happened
+ */
+typedef struct intParseResult_s {
+    enum intParseStatus_e status;
+    long int value;
+    const char *next;
+} intParseResult_t;
+
+/**
+ * @brief Parses integer argument from a command line string. Skips whitespaces
+ *        until the first non-whitespace character.
+ * @param cmdline is a pointer to a command line string to parse
+ * @retval Parsing result
+ */
+intParseResult_t parseIntArg(const char *cmdline);
+/**
+ * @brief Parses integer argument from a command line string and validates
+ *        that it lies inside a range. Skips whitespaces until the first
+ *        non-whitespace character.
+ * @param cmdline is a pointer to a command line string to parse
+ * @param fromVal start of the range (including)
+ * @param toVal end of the range (excluding)
+ * @retval Parsing result
+ */
+intParseResult_t parseIntArgInRange(
+    const char *cmdline,
+    long int fromVal,
+    long int toVal
+);
