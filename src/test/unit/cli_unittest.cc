@@ -259,29 +259,17 @@ protected:
     }
 
     static void dummyBufWriter(void *, void *_data, int size) {
-        uint8_t *data = (uint8_t *)_data;
-        ostringstream stream;
-        for (int i = 0; i < size; i++) {
-            stream << (char)data[i];
-        }
-        auto str = stream.str();
+        string str(static_cast<const char*>(_data), size);
+        istringstream stream(str);
 
-        size_t pos = 0;
-        while (true) {
-            auto startPos = pos;
-            pos = str.find('\n', startPos);
-            if (pos == string::npos) {
-                putOutLine(str.substr(startPos));
-                break;
+        for (string line; std::getline(stream, line);) {
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back(); // Remove the '\r' character
             }
-
-            auto line = str.substr(startPos, pos - startPos);
-            if (!line.empty() and line.back() == '\r') {
-                line.pop_back();
+            if (!stream.eof()) { // line was terminated by '\n'
+                line.push_back('\n');
             }
-            line.push_back('\n');
             putOutLine(line);
-            pos++;
         }
     }
 
