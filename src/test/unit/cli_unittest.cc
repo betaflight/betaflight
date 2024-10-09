@@ -28,6 +28,7 @@ extern "C" {
     #include "build/version.h"
     #include "io/gps.h"
     #include "cli/cli.h"
+    #include "cli/cli_impl.h"
     #include "cli/settings.h"
     #include "common/printf.h"
     #include "common/maths.h"

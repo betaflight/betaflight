@@ -176,6 +176,7 @@ bool cliMode = false;
 #include "telemetry/telemetry.h"
 
 #include "cli.h"
+#include "cli_impl.h"
 
 static serialPort_t *cliPort = NULL;
 static bool cliInteractive = false;
@@ -309,7 +310,6 @@ static const char *configurationStates[] = {
 };
 
 static void cliExit(const bool reboot);
-typedef bool printFn(dumpFlags_t dumpMask, bool equalsDefault, const char *format, ...);
 
 typedef enum {
     REBOOT_TARGET_FIRMWARE,
