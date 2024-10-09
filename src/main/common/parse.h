@@ -55,7 +55,7 @@ typedef struct intParseResult_s {
  * @param cmdline is a pointer to a command line string to parse
  * @retval Parsing result
  */
-intParseResult_t parseIntArg(const char * cmdline);
+intParseResult_t parseIntArg(const char *cmdline);
 /**
  * @brief Parses integer argument from a command line string and validates
  *        that it lies inside a range. Skips whitespaces until the first
@@ -66,7 +66,7 @@ intParseResult_t parseIntArg(const char * cmdline);
  * @retval Parsing result
  */
 intParseResult_t parseIntArgInRange(
-    const char * cmdline,
+    const char *cmdline,
     long int fromVal,
     long int toVal
 );

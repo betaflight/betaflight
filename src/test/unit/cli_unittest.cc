@@ -232,12 +232,12 @@ protected:
     static void SetUpTestCase() {}
 
     virtual void SetUp() {
-        bufWriterInit(&cliWriterDesc, data, ARRAYLEN(data), &dummyBufWriter, NULL);
+        bufWriterInit(&cliWriterDesc, data, sizeof(data), &dummyBufWriter, NULL);
         cliWriter = cliErrorWriter = &cliWriterDesc;
     }
 
     virtual void TearDown() {
-        cliWriter = NULL;
+        cliWriter = cliErrorWriter = NULL;
         outLines.clear();
     }
 
@@ -260,7 +260,7 @@ protected:
     virtual void SetUp() {
         CliWriteTest::SetUp();
 
-        for (uint8_t i = 0; i <= MAX_AUX_CHANNEL_COUNT; i++) {
+        for (unsigned i = 0; i <= MAX_AUX_CHANNEL_COUNT; i++) {
             memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
         }
     }

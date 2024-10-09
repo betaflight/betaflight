@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-static intParseResult_t intParseResultOk(long int val, const char * next)
+static intParseResult_t intParseResultOk(long int val, const char *next)
 {
     intParseResult_t res = {
         .status = INT_PARSE_STATUS_OK,
@@ -45,19 +45,19 @@ static intParseResult_t intParseResultErr(enum intParseError_e err)
     return res;
 }
 
-intParseResult_t parseIntArg(const char * cmdline)
+intParseResult_t parseIntArg(const char *cmdline)
 {
     // Find start of an argument to be able to check end of a string
     // before calling strtol
-    const char * argStart = cmdline;
+    const char *argStart = cmdline;
     while (argStart && *argStart == ' ') {
         argStart++;
     }
-    if (*argStart == '\0') {
+    if (!*argStart) {
         return intParseResultErr(INT_PARSE_ERROR_END_OF_LINE);
     }
 
-    const char * argEnd = NULL;
+    const char *argEnd = NULL;
     errno = 0;
     long int n = strtol(argStart, (char **)&argEnd, 10);
     if (argStart == argEnd) {
@@ -71,7 +71,7 @@ intParseResult_t parseIntArg(const char * cmdline)
 }
 
 intParseResult_t parseIntArgInRange(
-    const char * cmdline,
+    const char *cmdline,
     long int fromVal,
     long int toVal
 )

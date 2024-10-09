@@ -997,11 +997,7 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
 
 static void cliShowArgumentNotANumberError(const char *cmdName, const char *name)
 {
-    if (name) {
-        cliPrintErrorLinef(cmdName, "%s IS NOT A NUMBER", name);
-    } else {
-        cliPrintErrorLinef(cmdName, "ARGUMENT IS NOT A NUMBER");
-    }
+    cliPrintErrorLinef(cmdName, "%s IS NOT A NUMBER", name ? name : "ARGUMENT");
 }
 
 static const char *nextArg(const char *currentArg)
@@ -1068,7 +1064,7 @@ static void intParsePrintError(
  * @retval Parsed value on success or negative on failure
  */
 static long int processPositiveIntArg(
-    const char **const cmdline,
+    const char **cmdline,
     const char *cmdName,
     const char *argName
 )
@@ -1094,7 +1090,7 @@ static long int processPositiveIntArg(
  * @retval Parsed value on success or negative on failure.
  */
 static long int processPositiveIntArgInRange(
-    const char **const cmdline,
+    const char **cmdline,
     long int fromVal,
     long int toVal,
     const char *cmdName,
@@ -1143,7 +1139,7 @@ static channelRangeParseResult_t channelRangeParseResultErr(enum intParseError_e
  * @retval Parsed result
  */
 static channelRangeParseResult_t processChannelRangeArgsEx(
-    const char **const cmdlinePtr, const char * cmdName
+    const char **cmdlinePtr, const char *cmdName
 )
 {
     intParseResult_t startRes = parseIntArgInRange(
@@ -1347,7 +1343,7 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
         return;
     }
 
-    const char * ptr = (const char *) cmdline;
+    const char *ptr = cmdline;
     long int ix = processPositiveIntArgInRange(
         &ptr, 0, MAX_MODE_ACTIVATION_CONDITION_COUNT, cmdName, "INDEX"
     );
@@ -1390,10 +1386,8 @@ STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
 
     intParseResult_t linkedToRes = parseIntArg(ptr);
     long int linkedTo = 0;
-    if (
-        linkedToRes.status == INT_PARSE_STATUS_ERR &&
-        linkedToRes.err != INT_PARSE_ERROR_END_OF_LINE
-    ) {
+    if (linkedToRes.status == INT_PARSE_STATUS_ERR
+        && linkedToRes.err != INT_PARSE_ERROR_END_OF_LINE) {
         intParsePrintError(linkedToRes.err, 0, 2, cmdName, "LINKED_TO");
         return;
     }
