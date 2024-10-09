@@ -54,7 +54,7 @@ void resetAltitudeControl (void) {
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep) {
 
-    float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
+    const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
 
     // reduce the iTerm gain for errors greater than 200cm (2m), otherwise it winds up too much

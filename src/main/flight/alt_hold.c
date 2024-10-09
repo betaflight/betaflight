@@ -36,7 +36,7 @@ static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); /
 
 altHoldState_t altHoldState;
 
-void altitudePidCalculate(void)
+void controlAltitude(void)
 {
     // boost D by 'increasing apparent velocity' when vertical velocity exceeds 5 m/s ( D of 75 on defaults)
     // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
@@ -49,6 +49,7 @@ void altitudePidCalculate(void)
         verticalVelocity = verticalVelocity * 3.0f - sign * kinkPointAdjustment;
     }
 
+    //run the function in autopilot.c that calculates the PIDs and drives the motors
     altitudeControl(altHoldState.targetAltitudeCm, taskIntervalSeconds, verticalVelocity, altHoldState.targetAltitudeAdjustRate);
 }
 
@@ -137,8 +138,7 @@ void altHoldUpdate(void)
         altHoldUpdateTargetAltitude();
     }
 
-    // use PIDs to return the throttle adjustment value, add it to the hover value, and constrain
-    altitudePidCalculate();
+    controlAltitude();
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
