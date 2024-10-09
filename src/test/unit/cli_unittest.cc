@@ -241,13 +241,48 @@ protected:
         outLines.clear();
     }
 
+    static void putOutLine(string line) {
+        if (line.empty()) {
+            return;
+        }
+        if (outLines.empty()) {
+            outLines.push_back(line);
+            return;
+        }
+
+        auto &lastLine = outLines.back();
+        if (!lastLine.empty() && lastLine.back() == '\n') {
+            outLines.push_back(line);
+        } else {
+            lastLine.append(line);
+        }
+    }
+
     static void dummyBufWriter(void *, void *_data, int size) {
         uint8_t *data = (uint8_t *)_data;
         ostringstream stream;
         for (int i = 0; i < size; i++) {
             stream << (char)data[i];
         }
-        outLines.push_back(stream.str());
+        auto str = stream.str();
+
+        size_t pos = 0;
+        while (true) {
+            auto startPos = pos;
+            pos = str.find('\n', startPos);
+            if (pos == string::npos) {
+                putOutLine(str.substr(startPos));
+                break;
+            }
+
+            auto line = str.substr(startPos, pos - startPos);
+            if (!line.empty() and line.back() == '\r') {
+                line.pop_back();
+            }
+            line.push_back('\n');
+            putOutLine(line);
+            pos++;
+        }
     }
 
     void clear() {
@@ -255,6 +290,47 @@ protected:
     }
 };
 
+// Help tests
+TEST_F(CliWriteTest, HelpAll)
+{
+    const char cmd[] = "help";
+    char args[] = "";
+    cliHelp(cmd, args);
+    EXPECT_LT(50, outLines.size());
+}
+
+TEST_F(CliWriteTest, HelpFindByName)
+{
+    const char cmd[] = "help";
+    char args[] = "aux";
+    cliHelp(cmd, args);
+    vector<string> expected = {
+        "aux - configure modes\n",
+        "\t<index> <mode> <aux> <start> <end> <logic>\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(CliWriteTest, HelpSearchByDescription)
+{
+    const char cmd[] = "help";
+    char args[] = "reb";
+    cliHelp(cmd, args);
+    vector<string> expected = {
+        "bl - reboot into bootloader\n",
+        "\t[rom]\n",
+        "defaults - reset to defaults and reboot\n",
+        "\t{nosave}\n",
+        "exit - exit command line interface and reboot (default)\n",
+        "\t[noreboot]\n",
+        "save - save and reboot (default)\n",
+        "\t[noreboot]\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+// // End of help tests
+
+// Aux tests
 class AuxCliWriteTest : public CliWriteTest {
 protected:
     virtual void SetUp() {
@@ -266,68 +342,33 @@ protected:
     }
 };
 
-// Help tests
-TEST_F(CliWriteTest, HelpAll)
-{
-    const char cmd[] = "help";
-    char args[] = "";
-    cliHelp(cmd, args);
-    EXPECT_LT(100, outLines.size());
-}
-
-TEST_F(CliWriteTest, HelpFindByName)
-{
-    const char cmd[] = "help";
-    char args[] = "aux";
-    cliHelp(cmd, args);
-    vector<string> expected = {
-        "aux", " - configure modes", "\r\n\t<index> <mode> <aux> <start> <end> <logic>", "\r\n",
-    };
-    EXPECT_EQ(expected, outLines);
-}
-
-TEST_F(CliWriteTest, HelpSearchByDescription)
-{
-    const char cmd[] = "help";
-    char args[] = "reb";
-    cliHelp(cmd, args);
-    vector<string> expected = {
-        "bl", " - reboot into bootloader", "\r\n\t[rom]", "\r\n",
-        "defaults", " - reset to defaults and reboot", "\r\n\t{nosave}", "\r\n",
-        "exit", " - exit command line interface and reboot (default)", "\r\n\t[noreboot]", "\r\n",
-        "save", " - save and reboot (default)", "\r\n\t[noreboot]", "\r\n",
-    };
-    EXPECT_EQ(expected, outLines);
-}
-// End of help tests
-
-// Aux tests
 TEST_F(AuxCliWriteTest, PrintAux_Default)
 {
     const char heading[] = "aux";
     printAux(DUMP_MASTER, modeActivationConditions(0), NULL, heading);
     vector<string> expected = {
-        "\r\n# ", "aux", "\r\n",
-        "aux 0 0 0 900 900 0 0", "\r\n",
-        "aux 1 0 0 900 900 0 0", "\r\n",
-        "aux 2 0 0 900 900 0 0", "\r\n",
-        "aux 3 0 0 900 900 0 0", "\r\n",
-        "aux 4 0 0 900 900 0 0", "\r\n",
-        "aux 5 0 0 900 900 0 0", "\r\n",
-        "aux 6 0 0 900 900 0 0", "\r\n",
-        "aux 7 0 0 900 900 0 0", "\r\n",
-        "aux 8 0 0 900 900 0 0", "\r\n",
-        "aux 9 0 0 900 900 0 0", "\r\n",
-        "aux 10 0 0 900 900 0 0", "\r\n",
-        "aux 11 0 0 900 900 0 0", "\r\n",
-        "aux 12 0 0 900 900 0 0", "\r\n",
-        "aux 13 0 0 900 900 0 0", "\r\n",
-        "aux 14 0 0 900 900 0 0", "\r\n",
-        "aux 15 0 0 900 900 0 0", "\r\n",
-        "aux 16 0 0 900 900 0 0", "\r\n",
-        "aux 17 0 0 900 900 0 0", "\r\n",
-        "aux 18 0 0 900 900 0 0", "\r\n",
-        "aux 19 0 0 900 900 0 0", "\r\n",
+        "\n",
+        "# aux\n",
+        "aux 0 0 0 900 900 0 0\n",
+        "aux 1 0 0 900 900 0 0\n",
+        "aux 2 0 0 900 900 0 0\n",
+        "aux 3 0 0 900 900 0 0\n",
+        "aux 4 0 0 900 900 0 0\n",
+        "aux 5 0 0 900 900 0 0\n",
+        "aux 6 0 0 900 900 0 0\n",
+        "aux 7 0 0 900 900 0 0\n",
+        "aux 8 0 0 900 900 0 0\n",
+        "aux 9 0 0 900 900 0 0\n",
+        "aux 10 0 0 900 900 0 0\n",
+        "aux 11 0 0 900 900 0 0\n",
+        "aux 12 0 0 900 900 0 0\n",
+        "aux 13 0 0 900 900 0 0\n",
+        "aux 14 0 0 900 900 0 0\n",
+        "aux 15 0 0 900 900 0 0\n",
+        "aux 16 0 0 900 900 0 0\n",
+        "aux 17 0 0 900 900 0 0\n",
+        "aux 18 0 0 900 900 0 0\n",
+        "aux 19 0 0 900 900 0 0\n",
     };
     EXPECT_EQ(expected, outLines);
 }
@@ -346,8 +387,9 @@ TEST_F(AuxCliWriteTest, PrintAux_DiffAll)
     const char heading[] = "aux";
     printAux(DO_DIFF, modifiedConditions, modeActivationConditions(0), heading);
     vector<string> expected = {
-        "\r\n# ", "aux", "\r\n",
-        "aux 0 1 7 900 1200 0 0", "\r\n",
+        "\n",
+        "# aux\n",
+        "aux 0 1 7 900 1200 0 0\n",
     };
     EXPECT_EQ(expected, outLines);
 }
@@ -358,26 +400,26 @@ TEST_F(AuxCliWriteTest, Show)
     char args[] = "";
     cliAux(cmd, args);
     vector<string> expected = {
-        "aux 0 0 0 900 900 0 0", "\r\n",
-        "aux 1 0 0 900 900 0 0", "\r\n",
-        "aux 2 0 0 900 900 0 0", "\r\n",
-        "aux 3 0 0 900 900 0 0", "\r\n",
-        "aux 4 0 0 900 900 0 0", "\r\n",
-        "aux 5 0 0 900 900 0 0", "\r\n",
-        "aux 6 0 0 900 900 0 0", "\r\n",
-        "aux 7 0 0 900 900 0 0", "\r\n",
-        "aux 8 0 0 900 900 0 0", "\r\n",
-        "aux 9 0 0 900 900 0 0", "\r\n",
-        "aux 10 0 0 900 900 0 0", "\r\n",
-        "aux 11 0 0 900 900 0 0", "\r\n",
-        "aux 12 0 0 900 900 0 0", "\r\n",
-        "aux 13 0 0 900 900 0 0", "\r\n",
-        "aux 14 0 0 900 900 0 0", "\r\n",
-        "aux 15 0 0 900 900 0 0", "\r\n",
-        "aux 16 0 0 900 900 0 0", "\r\n",
-        "aux 17 0 0 900 900 0 0", "\r\n",
-        "aux 18 0 0 900 900 0 0", "\r\n",
-        "aux 19 0 0 900 900 0 0", "\r\n",
+        "aux 0 0 0 900 900 0 0\n",
+        "aux 1 0 0 900 900 0 0\n",
+        "aux 2 0 0 900 900 0 0\n",
+        "aux 3 0 0 900 900 0 0\n",
+        "aux 4 0 0 900 900 0 0\n",
+        "aux 5 0 0 900 900 0 0\n",
+        "aux 6 0 0 900 900 0 0\n",
+        "aux 7 0 0 900 900 0 0\n",
+        "aux 8 0 0 900 900 0 0\n",
+        "aux 9 0 0 900 900 0 0\n",
+        "aux 10 0 0 900 900 0 0\n",
+        "aux 11 0 0 900 900 0 0\n",
+        "aux 12 0 0 900 900 0 0\n",
+        "aux 13 0 0 900 900 0 0\n",
+        "aux 14 0 0 900 900 0 0\n",
+        "aux 15 0 0 900 900 0 0\n",
+        "aux 16 0 0 900 900 0 0\n",
+        "aux 17 0 0 900 900 0 0\n",
+        "aux 18 0 0 900 900 0 0\n",
+        "aux 19 0 0 900 900 0 0\n",
     };
     EXPECT_EQ(expected, outLines);
 
@@ -393,7 +435,7 @@ TEST_F(AuxCliWriteTest, NotEnoughArgs)
     char args[] = "0 1 ";
     cliAux(cmd, args);
     vector<string> expected = {
-        "###ERROR IN ", "aux", ": ", "INVALID ARGUMENT COUNT###", "\r\n"
+        "###ERROR IN aux: INVALID ARGUMENT COUNT###\n"
     };
     EXPECT_EQ(expected, outLines);
 
@@ -409,7 +451,7 @@ TEST_F(AuxCliWriteTest, IndexNotANumber)
     char args[] = "a";
     cliAux(cmd, args);
     vector<string> expected = {
-        "###ERROR IN ", "aux", ": ", "INDEX IS NOT A NUMBER###", "\r\n"
+        "###ERROR IN aux: INDEX IS NOT A NUMBER###\n"
     };
     EXPECT_EQ(expected, outLines);
 
@@ -425,7 +467,7 @@ TEST_F(AuxCliWriteTest, ChannelIndexOutOfRange)
     char args[] = "0 0 14 1800 2100 0 0";
     cliAux(cmd, args);
     vector<string> expected = {
-        "###ERROR IN ", "aux", ": ", "CHANNEL_INDEX NOT BETWEEN 0 AND 13###", "\r\n"
+        "###ERROR IN aux: CHANNEL_INDEX NOT BETWEEN 0 AND 13###\n"
     };
     EXPECT_EQ(expected, outLines);
 
@@ -441,7 +483,7 @@ TEST_F(AuxCliWriteTest, ChannelEndRangeOutOfRange)
     char args[] = "0 0 13 1800 2101 0 0";
     cliAux(cmd, args);
     vector<string> expected = {
-        "###ERROR IN ", "aux", ": ", "CHANNEL_RANGE.END NOT BETWEEN 900 AND 2100###", "\r\n"
+        "###ERROR IN aux: CHANNEL_RANGE.END NOT BETWEEN 900 AND 2100###\n"
     };
     EXPECT_EQ(expected, outLines);
 
@@ -457,7 +499,7 @@ TEST_F(AuxCliWriteTest, SetCondition)
     char args[] = "0 1 2 900 1200 0 0";
     cliAux(cmd, args);
     vector<string> expected = {
-        "aux 0 1 2 900 1200 0 0", "\r\n",
+        "aux 0 1 2 900 1200 0 0\n",
     };
     EXPECT_EQ(expected, outLines);
 
@@ -480,7 +522,7 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
     char args[] = "19 1 2 900 1200 ";
     cliAux(cmd, args);
     vector<string> expected = {
-        "aux 19 1 2 900 1200 0 0", "\r\n",
+        "aux 19 1 2 900 1200 0 0\n",
     };
     EXPECT_EQ(expected, outLines);
 
@@ -496,7 +538,6 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
         EXPECT_EQ(0, condition->auxChannelIndex);
     }
 }
-
 // End of aux tests
 
 // STUBS
