@@ -36,13 +36,13 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/autopilot.h"
     #include "flight/failsafe.h"
     #include "flight/gps_rescue.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/position.h"
-    #include "flight/autopilot.h"
     #include "flight/servos.h"
 
     #include "io/beeper.h"

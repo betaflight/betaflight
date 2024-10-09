@@ -49,16 +49,6 @@ void autopilotInit(const autopilotConfig_t *config)
     altitudePidCoeffs.Kf = config->altitude_F * ALTITUDE_F_SCALE;
 }
 
-bool isBelowLandingAltitude(void)
-{
-    return getAltitudeCm() < 100.0f * autopilotConfig()->landing_altitude_m;
-}
-
-const pidCoefficient_t *getAltitudePidCoeffs(void)
-{
-    return &altitudePidCoeffs;
-}
-
 void resetAltitudeControl (void) {
     altitudeI = 0.0f;
 }
@@ -100,6 +90,16 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeI));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(-altitudeD));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
+}
+
+bool isBelowLandingAltitude(void)
+{
+    return getAltitudeCm() < 100.0f * autopilotConfig()->landing_altitude_m;
+}
+
+const pidCoefficient_t *getAltitudePidCoeffs(void)
+{
+    return &altitudePidCoeffs;
 }
 
 float getAutopilotThrottle(void)

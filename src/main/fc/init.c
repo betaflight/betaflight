@@ -95,6 +95,7 @@
 #include "fc/tasks.h"
 
 #include "flight/alt_hold.h"
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -102,7 +103,7 @@
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
-#include "flight/autopilot.h"
+
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"

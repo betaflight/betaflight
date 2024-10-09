@@ -41,12 +41,12 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
     #include "fc/rc.h"
-    
+
+    #include "flight/autopilot.h"
+    #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
-    #include "flight/imu.h"
     #include "flight/position.h"
-    #include "flight/autopilot.h"
 
     #include "io/gps.h"
 

@@ -45,14 +45,14 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/failsafe.h"
 #include "flight/alt_hold.h"
+#include "flight/autopilot.h"
+#include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
-#include "flight/autopilot.h"
 #include "flight/rpm_filter.h"
 
 #include "io/gps.h"

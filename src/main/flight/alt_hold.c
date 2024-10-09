@@ -16,19 +16,18 @@
  */
 
 #include "platform.h"
+#include "math.h"
 
 #ifdef USE_ALT_HOLD_MODE
 
-#include "math.h"
 #include "build/debug.h"
-
 #include "common/maths.h"
 #include "config/config.h"
-#include "fc/runtime_config.h"
 #include "fc/rc.h"
+#include "fc/runtime_config.h"
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
-#include "flight/autopilot.h"
 #include "rx/rx.h"
 
 #include "alt_hold.h"

@@ -30,24 +30,21 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "drivers/time.h"
 
-#include "io/gps.h"
-
-#include "config/config.h"
 #include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/autopilot.h"
-
+#include "io/gps.h"
 #include "rx/rx.h"
-
 #include "sensors/acceleration.h"
 
 #include "gps_rescue.h"

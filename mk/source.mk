@@ -1,6 +1,7 @@
 PG_SRC = \
             pg/adc.c \
             pg/alt_hold.c \
+            pg/autopilot.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \
@@ -21,7 +22,6 @@ PG_SRC = \
             pg/msp.c \
             pg/pg.c \
             pg/piniobox.c \
-            pg/autopilot.c \
             pg/pinio.c \
             pg/pin_pull_up_down.c \
             pg/rcdevice.c \

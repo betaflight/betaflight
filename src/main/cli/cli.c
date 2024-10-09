@@ -104,12 +104,12 @@ bool cliMode = false;
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/autopilot.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"

@@ -31,11 +31,11 @@ extern "C" {
     #include "fc/runtime_config.h"
 
     #include "flight/alt_hold.h"
+    #include "flight/autopilot.h"
     #include "flight/failsafe.h"
     #include "flight/imu.h"
-    #include "flight/position.h"
-    #include "flight/autopilot.h"
     #include "flight/pid.h"
+    #include "flight/position.h"
 
     #include "rx/rx.h"
 
