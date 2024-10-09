@@ -43,6 +43,7 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+
 #include "io/gps.h"
 #include "rx/rx.h"
 #include "sensors/acceleration.h"

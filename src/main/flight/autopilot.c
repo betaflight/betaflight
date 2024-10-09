@@ -21,10 +21,9 @@
 #include <math.h>
 
 #include "platform.h"
-
 #include "build/debug.h"
-
 #include "common/maths.h"
+
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/position.h"
