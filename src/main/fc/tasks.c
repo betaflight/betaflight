@@ -64,6 +64,7 @@
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/flashfs.h"
+#include "io/gimbal_control.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/piniobox.h"
@@ -452,6 +453,9 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_RC_STATS] = DEFINE_TASK("RC_STATS", NULL, NULL, rcStatsUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
 
+#ifdef USE_GIMBAL
+    [TASK_GIMBAL] = DEFINE_TASK("GIMBAL", NULL, NULL, gimbalUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),
+#endif
 };
 
 task_t *getTask(unsigned taskId)
@@ -630,5 +634,9 @@ void tasksInit(void)
 
 #ifdef USE_RC_STATS
     setTaskEnabled(TASK_RC_STATS, true);
+#endif
+
+#ifdef USE_GIMBAL
+    setTaskEnabled(TASK_GIMBAL, true);
 #endif
 }
