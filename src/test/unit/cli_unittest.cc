@@ -73,6 +73,7 @@ extern "C" {
     void printAux(
         dumpFlags_t, const modeActivationCondition_t *, const modeActivationCondition_t *, const char *
     );
+    void cliColor(const char *, char *);
 
     const clivalue_t valueTable[] = {
         { .name = "array_unit_test",   .type = VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config = { .array = { .length = 3}},                     .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
@@ -523,6 +524,15 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
 }
 // End of aux tests
 
+// Color tests
+TEST_F(CliWriteTest, Color)
+{
+    const char cmd[] = "color";
+    char args[] = "I";
+    cliColor(cmd, args);
+}
+// End of color tests
+
 // STUBS
 extern "C" {
 
@@ -605,7 +615,11 @@ void setPreferredBeeperOffMask(uint32_t) {}
 void beeperOffSet(uint32_t) {}
 void beeperOffClear(uint32_t) {}
 void beeperOffClearAll(void) {}
-bool parseColor(int, const char *) {return false; }
+bool parseColor(int, const char *colorConfig) {
+    char c = *colorConfig;
+    UNUSED(c);
+    return false;
+}
 bool resetEEPROM(void) { return true; }
 void mixerResetDisarmedMotors(void) {}
 
