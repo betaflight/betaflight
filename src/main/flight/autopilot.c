@@ -36,9 +36,9 @@
 #define ALTITUDE_I_SCALE  0.003f
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.01f
-#define POSITION_I_SCALE  0.01f
-#define POSITION_D_SCALE  0.01f
+#define POSITION_P_SCALE  0.5f
+#define POSITION_I_SCALE  0.1f
+#define POSITION_D_SCALE  0.1f
 
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
@@ -179,6 +179,7 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     // send setpoints to pid.c using a method similar to that in gpsRescueAngle[axis]
     // value sent needs shoiuld be in degrees * 100
     // values will have steps at GPS rate, if too jumpy we would need to upsample smooth them
+
     posHoldAngle[AI_ROLL] = rollSetpoint;
     posHoldAngle[AI_PITCH] = pitchSetpoint;
 
