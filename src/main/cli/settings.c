@@ -1111,11 +1111,11 @@ const clivalue_t valueTable[] = {
     { "yaw_control_reversed",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_reversed) },
 
 #ifdef USE_ALT_HOLD_MODE
-    { PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_target_adjust_rate) },
+    { PARAM_NAME_ALT_HOLD_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_adjust_rate) },
 #endif
 
-#ifdef USE_POSs_HOLD_MODE
-    { PARAM_NAME_pos_hold_adjust_rate,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, pos_hold_adjust_rate) },
+#ifdef USE_POS_HOLD_MODE
+    { PARAM_NAME_POS_HOLD_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, pos_hold_adjust_rate) },
 #endif
 
 // PG_PID_CONFIG

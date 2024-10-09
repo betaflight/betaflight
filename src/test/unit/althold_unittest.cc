@@ -44,7 +44,7 @@ extern "C" {
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
     PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
-    PG_REGISTER(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 0);
+    PG_REGISTER(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 0);
 
     extern altHoldState_t altHoldState;
     void altHoldInit(void);
@@ -102,6 +102,17 @@ extern "C" {
     float getAltitudeDerivative(void) {return 0.0f;}
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
+    
+    void GPS_distance_cm_bearing(&gpsSol.llh, &targetLocation, false, &distanceCm, &bearing)
+    {
+       UNUSED(gpsSol.llh);
+       UNUSED(targetLocation);
+       UNUSED(false);
+       UNUSED(distanceCm);
+       UNUSED(bearing);
+
+    }
+
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     {

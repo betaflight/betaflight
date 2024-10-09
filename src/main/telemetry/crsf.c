@@ -459,7 +459,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "ANGL";
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         flightMode = "ALTH";
-    } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
         flightMode = "POSH";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";

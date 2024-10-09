@@ -53,7 +53,6 @@ void posHoldProcessTransitions(void) {
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!posHoldState.isPosHoldActive) {
             posHoldReset();
-            DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, 22);
             posHoldState.isPosHoldActive = true;
         }
     } else {
@@ -68,26 +67,27 @@ void posHoldUpdateTargetLocation(void)
     // We need to provide a big deadband in rc.c
 
     if (!failsafeIsActive()) {
-
-    // most easily...
-    // fly the quad, in angle mode, enabling a deadband via rc.c (?)
-    // while sticks are inside the deadband,
-    // set the target location to the current GPS location each iteration
-    // posHoldState.targetLocation = currentLocation;
-        posHoldState.targetLocation = gpsSol.llh;
+        const float deadband = 0.2f;
+        if ((getRcDeflectionAbs(FD_ROLL) > deadband) || (getRcDeflectionAbs(FD_PITCH) > deadband))  {
+            // allow user to fly the quad, in angle mode, enabling a 20% deadband via rc.c (?)
+            // while sticks are outside the deadband,
+            // set the target location to the current GPS location each iteration
+            posHoldState.targetLocation = gpsSol.llh;
+        }
     }
-
 }
 
 void posHoldUpdate(void)
 {
-    // check if the user has changed the target altitude using sticks
+    // check if the user wants to change the target position using sticks
     if (posHoldConfig()->pos_hold_adjust_rate) {
         posHoldUpdateTargetLocation();
     }
 
-    // run a function in autopilot.c to adjust position
-    positionControl(posHoldState.targetLocation);
+    if (getIsNewDataForPosHold()) {
+        positionControl(posHoldState.targetLocation);
+    } else {
+    }
 }
 
 void updatePosHoldState(timeUs_t currentTimeUs) {

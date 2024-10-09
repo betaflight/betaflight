@@ -128,7 +128,7 @@ void altHoldUpdateTargetAltitude(void)
         // constant (set) deceleration target in the last 2m
         throttleAdjustmentFactor = -(0.9f + constrainf(getAltitudeCm() / 2000.0f, 0.1f, 9.0f));
     }
-    altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate;
+    altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altHoldConfig()->alt_hold_adjust_rate;
 
     // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
     altHoldState.targetAltitudeCm += altHoldState.targetAltitudeAdjustRate  * taskIntervalSeconds;
@@ -137,7 +137,7 @@ void altHoldUpdateTargetAltitude(void)
 void altHoldUpdate(void)
 {
     // check if the user has changed the target altitude using sticks
-    if (altholdConfig()->alt_hold_target_adjust_rate) {
+    if (altHoldConfig()->alt_hold_adjust_rate) {
         altHoldUpdateTargetAltitude();
     }
 

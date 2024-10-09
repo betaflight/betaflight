@@ -1813,7 +1813,11 @@ static bool blackboxWriteSysinfo(void)
 #endif // USE_GPS
 
 #ifdef USE_ALT_HOLD_MODE
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE, "%d", altholdConfig()->alt_hold_target_adjust_rate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_ADJUST_RATE, "%d", altHoldConfig()->alt_hold_adjust_rate);
+#endif
+
+#ifdef USE_POS_HOLD_MODE
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_ADJUST_RATE, "%d", posHoldConfig()->pos_hold_adjust_rate);
 #endif
 
 #ifdef USE_WING

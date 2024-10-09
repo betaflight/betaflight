@@ -24,9 +24,9 @@
 
 #include "pg/pg.h"
 
-typedef struct altholdConfig_s {
-    uint8_t alt_hold_target_adjust_rate;
-} altholdConfig_t;
+typedef struct altHoldConfig_s {
+    uint8_t alt_hold_adjust_rate;
+} altHoldConfig_t;
 
-PG_DECLARE(altholdConfig_t, altholdConfig);
+PG_DECLARE(altHoldConfig_t, altHoldConfig);
 
