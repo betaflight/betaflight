@@ -20,20 +20,20 @@
 
 #include "platform.h"
 
-#ifdef USE_ALT_HOLD_MODE
-
-#include "flight/alt_hold.h"
+#include "flight/position_control.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "alt_hold.h"
+#include "position_control.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
 
-PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
-    .alt_hold_target_adjust_rate = 100, // max rate of change of altitude target using sticks in cm/s
-    .alt_hold_throttle_min = 1100,
-    .alt_hold_throttle_max = 1700,
+PG_RESET_TEMPLATE(positionControlConfig_t, positionControlConfig,
+    .hover_throttle = 1275,
+    .landing_altitude_m = 4,
+    .altitude_P = 15,
+    .altitude_I = 15,
+    .altitude_D = 15,
+    .altitude_F = 15,
 );
-#endif

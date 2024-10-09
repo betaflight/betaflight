@@ -62,11 +62,15 @@
 
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "mixer.h"
 
-#define DYN_LPF_THROTTLE_STEPS           100
-#define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
+#define DYN_LPF_THROTTLE_STEPS             100
+#define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
+
+#define CRASHFLIP_MOTOR_DEADBAND         0.02f // 2%; send 'disarm' value to motors below this drive value
+#define CRASHFLIP_STICK_DEADBAND         0.15f // 15%
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -108,6 +112,7 @@ static FAST_DATA_ZERO_INIT float motorRangeMin;
 static FAST_DATA_ZERO_INIT float motorRangeMax;
 static FAST_DATA_ZERO_INIT float motorOutputRange;
 static FAST_DATA_ZERO_INIT int8_t motorOutputMixSign;
+static FAST_DATA_ZERO_INIT bool crashflipSuccess = false;
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
@@ -139,7 +144,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
         const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
 
-        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isFlipOverAfterCrashActive()) {
+        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isCrashFlipModeActive()) {
             // INVERTED
             motorRangeMin = mixerRuntime.motorOutputLow;
             motorRangeMax = mixerRuntime.deadbandMotor3dLow;
@@ -255,7 +260,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));
             DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));
         }
-        motorRangeMax = isFlipOverAfterCrashActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
+        motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
 #else
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
@@ -269,83 +274,125 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     rcThrottle = throttle;
 }
 
-#define CRASH_FLIP_DEADBAND 20
-#define CRASH_FLIP_STICK_MINF 0.15f
-
-static void applyFlipOverAfterCrashModeToMotors(void)
+static bool applyCrashFlipModeToMotors(void)
 {
-    if (ARMING_FLAG(ARMED)) {
-        const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
-        const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
-        const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
-        const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
+#ifdef USE_ACC
+    static bool isTiltAngleAtStartSet = false;
+    static float tiltAngleAtStart = 1.0f;
+#endif
 
-        const float stickDeflectionPitchExpo = flipPowerFactor * stickDeflectionPitchAbs + power3(stickDeflectionPitchAbs) * (1 - flipPowerFactor);
-        const float stickDeflectionRollExpo = flipPowerFactor * stickDeflectionRollAbs + power3(stickDeflectionRollAbs) * (1 - flipPowerFactor);
-        const float stickDeflectionYawExpo = flipPowerFactor * stickDeflectionYawAbs + power3(stickDeflectionYawAbs) * (1 - flipPowerFactor);
+    if (!isCrashFlipModeActive()) {
+#ifdef USE_ACC
+        // trigger the capture of initial tilt angle on next activation of crashflip mode
+        isTiltAngleAtStartSet = false;
+        // default the success flag to false, to block quick re-arming unless successful
+#endif
+        // signal that crashflip mode is off
+        return false;
+    }
 
-        float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
-        float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
-        float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
+    const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
+    const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
+    const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
 
-        float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
-        float stickDeflectionExpoLength = sqrtf(sq(stickDeflectionPitchExpo) + sq(stickDeflectionRollExpo));
+    float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
+    float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
+    float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
 
-        if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
-            // If yaw is the dominant, disable pitch and roll
-            stickDeflectionLength = stickDeflectionYawAbs;
-            stickDeflectionExpoLength = stickDeflectionYawExpo;
-            signRoll = 0;
+    float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
+
+    if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
+        // If yaw is the dominant, disable pitch and roll
+        stickDeflectionLength = stickDeflectionYawAbs;
+        signRoll = 0;
+        signPitch = 0;
+    } else {
+        // If pitch/roll dominant, disable yaw
+        signYaw = 0;
+    }
+
+    const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
+    const float cosThreshold = sqrtf(3.0f) / 2.0f; // cos(30 deg)
+
+    if (cosPhi < cosThreshold) {
+        // Enforce either roll or pitch exclusively, if not on diagonal
+        if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
             signPitch = 0;
         } else {
-            // If pitch/roll dominant, disable yaw
-            signYaw = 0;
-        }
-
-        const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
-        const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
-
-        if (cosPhi < cosThreshold) {
-            // Enforce either roll or pitch exclusively, if not on diagonal
-            if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
-                signPitch = 0;
-            } else {
-                signRoll = 0;
-            }
-        }
-
-        // Apply a reasonable amount of stick deadband
-        const float crashFlipStickMinExpo = flipPowerFactor * CRASH_FLIP_STICK_MINF + power3(CRASH_FLIP_STICK_MINF) * (1 - flipPowerFactor);
-        const float flipStickRange = 1.0f - crashFlipStickMinExpo;
-        const float flipPower = MAX(0.0f, stickDeflectionExpoLength - crashFlipStickMinExpo) / flipStickRange;
-
-        for (int i = 0; i < mixerRuntime.motorCount; ++i) {
-            float motorOutputNormalised =
-                signPitch * mixerRuntime.currentMixer[i].pitch +
-                signRoll * mixerRuntime.currentMixer[i].roll +
-                signYaw * mixerRuntime.currentMixer[i].yaw;
-
-            if (motorOutputNormalised < 0) {
-                if (mixerConfig()->crashflip_motor_percent > 0) {
-                    motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
-                } else {
-                    motorOutputNormalised = 0;
-                }
-            }
-            motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
-            float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
-
-            // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
-
-            motor[i] = motorOutput;
-        }
-    } else {
-        // Disarmed mode
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motor[i] = motor_disarmed[i];
+            signRoll = 0;
         }
     }
+
+    // Calculate crashflipPower from stick deflection with a reasonable amount of stick deadband
+    float crashflipPower = stickDeflectionLength > CRASHFLIP_STICK_DEADBAND ? stickDeflectionLength : 0.0f;
+
+    // calculate flipPower attenuators
+    float crashflipRateAttenuator = 1.0f;
+    float crashflipAttitudeAttenuator = 1.0f;
+    const float crashflipRateLimit = mixerConfig()->crashflip_rate * 10.0f; // eg 35 = no power by 350 deg/s
+    const float halfComplete = 0.5f; // attitude or rate changes less that this will be ignored
+
+    // disable both attenuators if the user's crashflip_rate is zero
+    if (crashflipRateLimit > 0) {
+#ifdef USE_ACC
+        // Calculate an attenuator based on change of attitude (requires Acc)
+        // with Acc, crashflipAttitudeAttenuator will be zero after approx 90 degree rotation, and
+        // motors will stop / not spin while attitude remains more than ~90 degrees from initial attitude
+        // without Acc, the user must manually center the stick, or exit crashflip mode, or disarm, to stop the motors
+        // re-initialisation of crashFlip mode by arm/disarm is required to reset the initial tilt angle
+        if (sensors(SENSOR_ACC)) {
+            const float tiltAngle = getCosTiltAngle();  // -1 if flat inverted, 0 when 90° (on edge), +1 when flat and upright
+            if (!isTiltAngleAtStartSet) {
+                tiltAngleAtStart = tiltAngle;
+                isTiltAngleAtStartSet = true;
+                crashflipSuccess = false;
+            }
+            // attitudeChangeNeeded is 1.0 at the start, decreasing to 0 when attitude change exceeds approx 90 degrees
+            const float attitudeChangeNeeded = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
+            // no attenuation unless a significant attitude change has occurred
+            crashflipAttitudeAttenuator = attitudeChangeNeeded > halfComplete ? 1.0f : attitudeChangeNeeded / halfComplete;
+
+            // signal success to enable quick restart, if attitude change implies success when reverting the switch
+            crashflipSuccess = attitudeChangeNeeded == 0.0f;
+        }
+#endif // USE_ACC
+        // Calculate an attenuation factor based on rate of rotation... note:
+        // if driving roll or pitch, quad usually turns on that axis, but if one motor sticks, could be a diagonal rotation
+        // if driving diagonally, the turn could be either roll or pitch
+        // if driving yaw, typically one motor sticks, and the quad yaws a little then flips diagonally
+        const float gyroRate = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]), fabsf(gyro.gyroADCf[FD_PITCH]));
+        const float gyroRateChange = fminf(gyroRate / crashflipRateLimit, 1.0f);
+        // no attenuation unless a significant gyro rate change has occurred
+        crashflipRateAttenuator = gyroRateChange < halfComplete ? 1.0f : (1.0f - gyroRateChange) / halfComplete;
+
+        crashflipPower *= crashflipAttitudeAttenuator * crashflipRateAttenuator;
+    }
+
+    for (int i = 0; i < mixerRuntime.motorCount; ++i) {
+        float motorOutputNormalised =
+            signPitch * mixerRuntime.currentMixer[i].pitch +
+            signRoll * mixerRuntime.currentMixer[i].roll +
+            signYaw * mixerRuntime.currentMixer[i].yaw;
+
+        if (motorOutputNormalised < 0) {
+            if (mixerConfig()->crashflip_motor_percent > 0) {
+                motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
+            } else {
+                motorOutputNormalised = 0;
+            }
+        }
+
+        motorOutputNormalised = MIN(1.0f, crashflipPower * motorOutputNormalised);
+        float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
+
+        // set motors to disarm value when intended increase is less than deadband value
+        motorOutput = (motorOutputNormalised < CRASHFLIP_MOTOR_DEADBAND) ? mixerRuntime.disarmMotorOutput : motorOutput;
+        
+        motor[i] = motorOutput;
+    }
+
+    // signal that crashflip mode has been applied to motors
+    return true;
 }
 
 #ifdef USE_RPM_LIMIT
@@ -634,9 +681,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
-    if (isFlipOverAfterCrashActive()) {
-        applyFlipOverAfterCrashModeToMotors();
-        return;
+    if (applyCrashFlipModeToMotors()) {
+        return; // if crash flip mode has been applied to the motors, mixing is done
     }
 
     const bool launchControlActive = isLaunchControlActive();
@@ -812,4 +858,9 @@ float mixerGetThrottle(void)
 float mixerGetRcThrottle(void)
 {
     return rcThrottle;
+}
+
+bool crashFlipSuccessful(void)
+{
+    return crashflipSuccess;
 }

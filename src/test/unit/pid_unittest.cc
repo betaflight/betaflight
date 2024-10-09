@@ -101,7 +101,7 @@ extern "C" {
     float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
 
 
-    bool isAltitudeLow(void) { return false; }
+    bool isBelowLandingAltitude(void) { return false; }
 
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }

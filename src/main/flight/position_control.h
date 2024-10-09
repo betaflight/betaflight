@@ -17,23 +17,11 @@
 
 #pragma once
 
-#include "pg/alt_hold.h"
+#include "pg/position_control.h"
+#include "flight/pid.h"
 
-#ifdef USE_ALT_HOLD_MODE
-#include "common/time.h"
+void positionControlInit(const positionControlConfig_t *config);
 
-#define ALTHOLD_TASK_RATE_HZ 100         // hz
+bool isBelowLandingAltitude(void);
 
-typedef struct {
-    bool isAltHoldActive;
-    float targetAltitudeCm;
-    float targetAltitudeAdjustRate;
-    float throttleOut;
-    float hoverThrottle;
-} altHoldState_t;
-
-void altHoldInit(void);
-void updateAltHoldState(timeUs_t currentTimeUs);
-float altHoldGetThrottle(void);
-
-#endif
+const pidCoefficient_t *getAltitudePidCoeffs(void);

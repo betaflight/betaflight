@@ -230,7 +230,7 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           17, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   18, NULL,                 "ON_USB") },
     { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        19, beep_2shortBeeps,     "BLACKBOX_ERASE") },
-    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       20, beep_2longerBeeps,    "CRASH_FLIP") },
+    { BEEPER_ENTRY(BEEPER_CRASHFLIP_MODE,        20, beep_2longerBeeps,    "CRASHFLIP") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   21, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  22, beep_camCloseBeep,    "CAM_CONNECTION_CLOSE") },
     { BEEPER_ENTRY(BEEPER_RC_SMOOTHING_INIT_FAIL,23, beep_rcSmoothingInitFail, "RC_SMOOTHING_INIT_FAIL") },

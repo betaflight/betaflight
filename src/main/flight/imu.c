@@ -98,7 +98,7 @@ static vector2_t north_ef;
 
 #if defined(USE_ACC)
 STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
-#endif
+#endif // USE_ACC
 
 // quaternion of sensor frame relative to earth frame
 STATIC_UNIT_TESTED quaternion q = QUATERNION_INITIALIZE;

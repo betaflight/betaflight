@@ -34,6 +34,8 @@ extern "C" {
     #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/position.h"
+    #include "flight/position_control.h"
+    #include "flight/pid.h"
 
     #include "rx/rx.h"
 
@@ -41,6 +43,7 @@ extern "C" {
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
     PG_REGISTER(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 0);
 
     extern altHoldState_t altHoldState;
@@ -97,6 +100,13 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 extern "C" {
     acc_t acc;
 
+    pidCoefficient_t testAltitudePidCoeffs = {15.0f, 15.0f, 15.1f, 15.0f};
+    const pidCoefficient_t *getAltitudePidCoeffs(void) {
+        return &testAltitudePidCoeffs;
+    }
+    float getAltitudeCm(void) { return 0.0f;}
+    float getAltitudeDerivative(void) { return 0.0f;}
+
     void pt2FilterInit(pt2Filter_t *altHoldDeltaLpf, float) {
         UNUSED(altHoldDeltaLpf);
     }
@@ -109,8 +119,6 @@ extern "C" {
     }
 
     bool isAltitudeAvailable(void) { return true; }
-    float getAltitude(void) { return 0.0f; }
-    bool isAltitudeLow(void) { return true; }
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
 

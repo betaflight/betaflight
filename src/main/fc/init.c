@@ -102,6 +102,7 @@
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
+#include "flight/position_control.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -762,9 +763,6 @@ void init(void)
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
         gpsInit();
-#ifdef USE_GPS_RESCUE
-        gpsRescueInit();
-#endif
 #ifdef USE_GPS_LAP_TIMER
         gpsLapTimerInit();
 #endif // USE_GPS_LAP_TIMER
@@ -828,7 +826,9 @@ void init(void)
 #ifdef USE_BARO
     baroStartCalibration();
 #endif
+
     positionInit();
+    positionControlInit(positionControlConfig());
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -1000,8 +1000,15 @@ void init(void)
     spiInitBusDMA();
 #endif
 
+// position_control must be initialised before modes that require the position_control pids
 #ifdef USE_ALT_HOLD_MODE
     altHoldInit();
+#endif
+
+#ifdef USE_GPS_RESCUE
+    if (featureIsEnabled(FEATURE_GPS)) {
+        gpsRescueInit();
+    }
 #endif
 
     debugInit();

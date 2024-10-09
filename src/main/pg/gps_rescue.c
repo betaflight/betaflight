@@ -29,7 +29,7 @@
 
 #include "gps_rescue.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 6);
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 7);
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
@@ -55,9 +55,6 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .sanityChecks = RESCUE_SANITY_FS_ONLY,
     .minSats = 8,
 
-    .throttleP = 15,
-    .throttleI = 15,
-    .throttleD = 20,
     .velP = 8,
     .velI = 40,
     .velD = 12,

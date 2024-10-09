@@ -89,6 +89,7 @@
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
+#include "flight/position_control.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -1444,7 +1445,7 @@ case MSP_NAME:
         break;
 
     case MSP_MOTOR_CONFIG:
-        sbufWriteU16(dst, motorConfig()->minthrottle);
+        sbufWriteU16(dst, 0); // was minthrottle until after 4.5
         sbufWriteU16(dst, motorConfig()->maxthrottle);
         sbufWriteU16(dst, motorConfig()->mincommand);
 
@@ -1545,7 +1546,7 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsRescueConfig()->groundSpeedCmS);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMin);
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
-        sbufWriteU16(dst, positionConfig()->hover_throttle);
+        sbufWriteU16(dst, positionControlConfig()->hover_throttle);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
         sbufWriteU8(dst,  gpsRescueConfig()->minSats);
 
@@ -1561,9 +1562,10 @@ case MSP_NAME:
         break;
 
     case MSP_GPS_RESCUE_PIDS:
-        sbufWriteU16(dst, gpsRescueConfig()->throttleP);
-        sbufWriteU16(dst, gpsRescueConfig()->throttleI);
-        sbufWriteU16(dst, gpsRescueConfig()->throttleD);
+        sbufWriteU16(dst, positionControlConfig()->altitude_P);
+        sbufWriteU16(dst, positionControlConfig()->altitude_I);
+        sbufWriteU16(dst, positionControlConfig()->altitude_D);
+        // altitude_F not implemented yet
         sbufWriteU16(dst, gpsRescueConfig()->velP);
         sbufWriteU16(dst, gpsRescueConfig()->velI);
         sbufWriteU16(dst, gpsRescueConfig()->velD);
@@ -1855,7 +1857,7 @@ case MSP_NAME:
         sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
-        sbufWriteU16(dst, motorConfig()->digitalIdleOffsetValue);
+        sbufWriteU16(dst, motorConfig()->motorIdle);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_use_32kHz
         sbufWriteU8(dst, motorConfig()->dev.motorPwmInversion);
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
@@ -2835,7 +2837,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
     case MSP_SET_MOTOR_CONFIG:
-        motorConfigMutable()->minthrottle = sbufReadU16(src);
+        sbufReadU16(src);   // minthrottle deprecated in 4.6
         motorConfigMutable()->maxthrottle = sbufReadU16(src);
         motorConfigMutable()->mincommand = sbufReadU16(src);
 
@@ -2879,7 +2881,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMin = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleMax = sbufReadU16(src);
-        positionConfigMutable()->hover_throttle = sbufReadU16(src);
+        positionControlConfigMutable()->hover_throttle = sbufReadU16(src);
         gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
         gpsRescueConfigMutable()->minSats = sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 6) {
@@ -2900,9 +2902,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
-        gpsRescueConfigMutable()->throttleP = sbufReadU16(src);
-        gpsRescueConfigMutable()->throttleI = sbufReadU16(src);
-        gpsRescueConfigMutable()->throttleD = sbufReadU16(src);
+        positionControlConfigMutable()->altitude_P = sbufReadU16(src);
+        positionControlConfigMutable()->altitude_I = sbufReadU16(src);
+        positionControlConfigMutable()->altitude_D = sbufReadU16(src);
+        // altitude_F not included in msp yet
         gpsRescueConfigMutable()->velP = sbufReadU16(src);
         gpsRescueConfigMutable()->velI = sbufReadU16(src);
         gpsRescueConfigMutable()->velD = sbufReadU16(src);
@@ -3020,7 +3023,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         motorConfigMutable()->dev.motorPwmProtocol = sbufReadU8(src);
         motorConfigMutable()->dev.motorPwmRate = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
-            motorConfigMutable()->digitalIdleOffsetValue = sbufReadU16(src);
+            motorConfigMutable()->motorIdle = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src)) {
             sbufReadU8(src); // DEPRECATED: gyro_use_32khz

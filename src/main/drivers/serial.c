@@ -125,6 +125,7 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
     serialWriteBufNoFlush(instance, data, count);
     serialEndWrite(instance);
 }
+
 void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);

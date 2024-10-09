@@ -50,7 +50,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/position.h"
+#include "flight/position_control.h"
 #include "flight/rpm_filter.h"
 
 #include "io/gps.h"
@@ -859,7 +859,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         // for more reliable disarm with gentle controlled landings
         float lowAltitudeSensitivity = 1.0f;
 #ifdef USE_ALT_HOLD_MODE
-        lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isAltitudeLow()) ? 1.5f : 1.0f;
+        lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isBelowLandingAltitude()) ? 1.5f : 1.0f;
 #endif
         // and disarm if accelerometer jerk exceeds threshold...
         if ((fabsf(acc.accDelta) * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {

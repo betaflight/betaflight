@@ -82,7 +82,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXCAMERA1, .boxName = "CAMERA CONTROL 1", .permanentId = 32},
     { .boxId = BOXCAMERA2, .boxName = "CAMERA CONTROL 2", .permanentId = 33},
     { .boxId = BOXCAMERA3, .boxName = "CAMERA CONTROL 3", .permanentId = 34 },
-    { .boxId = BOXFLIPOVERAFTERCRASH, .boxName = "FLIP OVER AFTER CRASH", .permanentId = 35 },
+    { .boxId = BOXCRASHFLIP, .boxName = "FLIP OVER AFTER CRASH", .permanentId = 35 },
     { .boxId = BOXPREARM, .boxName = "PREARM", .permanentId = 36 },
     { .boxId = BOXBEEPGPSCOUNT, .boxName = "GPS BEEP SATELLITE COUNT", .permanentId = 37 },
 //    { .boxId = BOX3DONASWITCH, .boxName = "3D ON A SWITCH", .permanentId = 38 }, (removed)
@@ -283,7 +283,7 @@ void initActiveBoxIds(void)
     bool configuredMotorProtocolDshot;
     checkMotorProtocolEnabled(&motorConfig()->dev, &configuredMotorProtocolDshot);
     if (configuredMotorProtocolDshot) {
-        BME(BOXFLIPOVERAFTERCRASH);
+        BME(BOXCRASHFLIP);
     }
 #endif
 

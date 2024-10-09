@@ -403,7 +403,7 @@ bool isArmingDisabled(void) { return false; }
 
 uint8_t getRssiPercent(void) { return 0; }
 
-bool isFlipOverAfterCrashActive(void) { return false; }
+bool isCrashFlipModeActive(void) { return false; }
 
 void ws2811LedStripEnable(void) { }
 

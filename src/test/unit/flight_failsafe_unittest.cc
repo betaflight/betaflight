@@ -51,7 +51,6 @@ extern "C" {
 #include "gtest/gtest.h"
 
 uint32_t testFeatureMask = 0;
-uint16_t testMinThrottle = 0;
 throttleStatus_e throttleStatus = THROTTLE_HIGH;
 
 enum {
@@ -753,11 +752,6 @@ void disarm(flightLogDisarmReason_e)
 void beeper(beeperMode_e mode)
 {
     UNUSED(mode);
-}
-
-uint16_t getCurrentMinthrottle(void)
-{
-    return testMinThrottle;
 }
 
 bool isUsingSticksForArming(void)
