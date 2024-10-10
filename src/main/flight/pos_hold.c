@@ -37,8 +37,8 @@ posHoldState_t posHold;
 
 void posHoldReset(void)
 {
-    resetPositionControl();
     posHold.targetLocation = gpsSol.llh;
+    resetPositionControl();
 }
 
 void posHoldInit(void)
@@ -57,7 +57,9 @@ void posHoldProcessTransitions(void)
             posHold.isPosHoldActive = true;
         }
     } else {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, -22);
+        uint8_t debugMarker = FLIGHT_MODE(ANGLE_MODE) ? 100 : 0;
+        debugMarker += FLIGHT_MODE(ALT_HOLD_MODE) ? 10 : 1;
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, debugMarker); // 100 = angle, 110 angle + althold
         posHold.isPosHoldActive = false;
     }
 }
@@ -71,7 +73,7 @@ void posHoldUpdateTargetLocation(void)
             // allow user to fly the quad, in angle mode, enabling a 20% deadband via rc.c (?)
             // while sticks are outside the deadband,
             // keep updating the home location to the current GPS location each iteration
-            posHold.targetLocation = gpsSol.llh;
+            posHoldReset();
         }
     }
 }

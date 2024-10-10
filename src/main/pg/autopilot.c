@@ -41,6 +41,6 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .position_P = 15,
     .position_I = 15,
     .position_D = 15,
-//    .position_F = 0,
+    .position_J = 15,
     .position_filter_hz = 75,
 );

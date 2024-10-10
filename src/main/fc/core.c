@@ -1053,9 +1053,7 @@ void processRxModes(timeUs_t currentTimeUs)
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
-        && isAltitudeAvailable()
-        // and we have already taken off (to prevent activation on the ground), then enable althold
-        && isAirmodeActivated()) {
+        && isAltitudeAvailable()){
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
         }

@@ -36,9 +36,10 @@
 #define ALTITUDE_I_SCALE  0.003f
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.5f
-#define POSITION_I_SCALE  0.1f
-#define POSITION_D_SCALE  0.1f
+#define POSITION_P_SCALE  0.001f
+#define POSITION_I_SCALE  0.0005f
+#define POSITION_D_SCALE  0.001f
+#define POSITION_J_SCALE  0.0005f
 
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
@@ -47,6 +48,7 @@ static float throttleOut = 0.0f;
 static pidCoefficient_t positionPidCoeffs;
 static float previousDistanceCm = 0.0f;
 static float previousVelocity = 0.0f;
+static float positionI = 0.0f;
 float posHoldAngle[ANGLE_INDEX_COUNT];
 static pt1Filter_t accelerationLpf;
 static float positionAccelerationCutoffHz;
@@ -60,6 +62,7 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Kp = config->position_P * POSITION_P_SCALE;
     positionPidCoeffs.Ki = config->position_I * POSITION_I_SCALE;
     positionPidCoeffs.Kd = config->position_D * POSITION_D_SCALE;
+    positionPidCoeffs.Kf = config->position_J * POSITION_J_SCALE; // used for acceleration
 
     positionAccelerationCutoffHz = config->position_filter_hz / 100.0f;
     const float gain = pt1FilterGain(positionAccelerationCutoffHz, 0.1f); // assume 10Hz GPS connection at start
@@ -78,11 +81,6 @@ const pidCoefficient_t *getPositionPidCoeffs(void)
 
 void resetAltitudeControl (void) {
     altitudeI = 0.0f;
-}
-
-void resetPositionControl (void) {
-    previousDistanceCm = 0.0f;
-    previousVelocity = 0.0f;
 }
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep) {
@@ -124,15 +122,20 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
+void resetPositionControl (void) {
+    // runs when position hold starts, and while either stick is within deadband
+    previousDistanceCm = 0.0f;
+    previousVelocity = 0.0f;
+    positionI = 0.0f;  
+}
 void positionControl(gpsLocation_t targetLocation, float deadband) {
     // gpsSol.llh = current gps location
     // get distance and bearing from current location to target location
     // void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
-    static float rollSetpoint = 0.0f;
-    static float pitchSetpoint = 0.0f;
     uint32_t distanceCm;
     int32_t bearing; // degrees * 100
     GPS_distance_cm_bearing(&gpsSol.llh, &targetLocation, false, &distanceCm, &bearing);
+    const float gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
 
     const float errorAngle = (attitude.values.yaw * 10.0f - bearing) / 100.0f;
     float normalisedErrorAngle = fmodf(errorAngle + 360.0f, 360.0f);
@@ -141,53 +144,56 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
         normalisedErrorAngle -= 360.0f; // Range: -180 to 180
     }
 
-    float errorAngleRadians = normalisedErrorAngle * (M_PI / 180.0f);
+    // Calculate correction proportions for pitch and roll
+    const float errorAngleRadians = normalisedErrorAngle * (M_PI / 180.0f);
+    const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
+    const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
-    // Calculate correction factors using sine and cosine
-    float rollCorrection = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
-    float pitchCorrection = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
-
-    const float gpsDataIntervalS = getGpsDataIntervalSeconds(); // 0.01s to 1.0s
-    float velocity = (distanceCm - previousDistanceCm) / gpsDataIntervalS; // positive away
+    // craft velocity relative to target position, positive when moving away
+    const float velocity = (distanceCm - previousDistanceCm) / gpsDataIntervalS;
     previousDistanceCm = distanceCm;
 
-    float acceleration = (velocity - previousVelocity) / gpsDataIntervalS; // positive away
+    // not sure if acceleration is all that helpful, but let's see
+    const float acceleration = (velocity - previousVelocity) / gpsDataIntervalS; // positive when moving away
     previousVelocity = velocity;
-    // ** THIS WILL NEED A FILTER LIKE FOR GPS RESCUE**
-
+    // filter the acceleration value, it's very noisy.  May need 
     const float gain = pt1FilterGain(positionAccelerationCutoffHz, gpsDataIntervalS);
     pt1FilterUpdateCutoff(&accelerationLpf, gain);
-    acceleration = pt1FilterApply(&accelerationLpf, acceleration);
+    const float accelerationSmoothed = pt1FilterApply(&accelerationLpf, acceleration);
 
-    float velocityP = velocity * positionPidCoeffs.Kp;     // velocity away from intended location
-    float velocityI = distanceCm * positionPidCoeffs.Ki;   // integral of velocity is distance from intended location
-    float velocityD = acceleration * positionPidCoeffs.Kd; // acceleration away from intended location
-    
-    float pidSum = velocityP + velocityI + velocityD; // greater when position error is bad and getting worse
-
-    rollSetpoint = rollCorrection * pidSum;
-    pitchSetpoint = pitchCorrection * pidSum;
+    // simple PIDJ controller for distance.  pidSum will become angle setpoint in degrees.
+    // iTerm will accumulate if a steady wind pushes the craft consistently away from target
+    // iTerm is reset each initiation and probably needs no 'relax'
+    const float positionP = distanceCm * positionPidCoeffs.Kp;
+    positionI += distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
+    const float positionD = velocity * positionPidCoeffs.Kd;
+    const float positionJ = accelerationSmoothed * positionPidCoeffs.Kf; // no need for FF
+    const float pidSum = positionP + positionI + positionD + positionJ;
 
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle)); //-180 to +180
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(rollCorrection * 100));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pitchCorrection * 100));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(distanceCm));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(velocityP));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(velocityI));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(velocityD));
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(distanceCm));
 
-    // send setpoints to pid.c using a method similar to that in gpsRescueAngle[axis]
-    // value sent needs shoiuld be in degrees * 100
-    // values will have steps at GPS rate, if too jumpy we would need to upsample smooth them
+    // todo: upsample filtering
+    // pidSum will have steps at GPS rate, and may require an upsampling filter for smoothness.
+    // either at 100Hz by returning these values to pos_hold.c and upsampling to 100hz there,
+    // or in pid.c, when angle rate is calculated
+    // if done in pid.c, the same upsampler could be used for GPS and PosHold.
 
-    posHoldAngle[AI_ROLL] = rollSetpoint;
-    posHoldAngle[AI_PITCH] = pitchSetpoint;
+    // if sticks are centered, allow autopilot control, otherwise pilot can fly like a mavic
+    posHoldAngle[AI_ROLL] = (getRcDeflectionAbs(FD_ROLL) < deadband) ? rollProportion * pidSum : 0.0f;
+    posHoldAngle[AI_PITCH] = (getRcDeflectionAbs(FD_PITCH) < deadband) ? pitchProportion * pidSum : 0.0f;
 
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollSetpoint));
+    // note:
+    // when FLIGHT_MODE(POS_HOLD_MODE) is true
+    // posHoldAngle[] is added to angle setpoint in pid.c
+    // angle setpoint should be zero due to the same deadband being activated in rc.c
 
-    // if sticks are centered, allow pilot control, otherwise use stick control
-    posHoldAngle[AI_ROLL] = (getRcDeflectionAbs(FD_ROLL) < deadband) ? rollSetpoint : 0.0f;
-    posHoldAngle[AI_PITCH] = (getRcDeflectionAbs(FD_PITCH) < deadband) ? pitchSetpoint : 0.0f;
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_ROLL] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(posHoldAngle[AI_PITCH] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(positionP * 10)); // degrees*10
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(positionI * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(positionD * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(positionJ * 10));
 }
 
 bool isBelowLandingAltitude(void)
