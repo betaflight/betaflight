@@ -153,6 +153,18 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     const float velocity = (distanceCm - previousDistanceCm) / gpsDataIntervalS;
     previousDistanceCm = distanceCm;
 
+    // todo: sanity check for failure to reduce distance over some time period
+    // if no mag, or bad mag, the controller may get incorrect heading data
+    // this may lead to responses at the wrong angle
+    // and positive feedback and persistently increasing distance, rather than reducing it
+    // in wind there could also be some period of time of increasing distance until PIDs build up
+    // however if the velocity is  increasing, rather than decreasing
+    // then probably the heading is wrong
+    // we could do a counter based method like GPS Rescue
+    // and terminate the position hold, leaving the craft 'floating' in altitude hold
+    // this would need some warning in OSD
+    // I can probably craft a sanity check but don't know how to do OSD warnings.
+
     // not sure if acceleration is all that helpful, but let's see
     const float acceleration = (velocity - previousVelocity) / gpsDataIntervalS; // positive when moving away
     previousVelocity = velocity;
