@@ -33,6 +33,7 @@ extern "C" {
     #include "common/printf.h"
     #include "common/maths.h"
     #include "common/gps_conversion.h"
+    #include "common/parse.h"
     #include "config/feature.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
@@ -69,6 +70,9 @@ extern "C" {
     void *cliGetValuePointer(const clivalue_t *value);
 
     void cliHelp(const char *, char *);
+    extern bool commandBatchActive;
+    extern bool commandBatchError;
+    void cliBatch(const char *, char *);
     void cliAux(const char *, char *);
     void printAux(
         dumpFlags_t, const modeActivationCondition_t *, const modeActivationCondition_t *, const char *
@@ -225,6 +229,45 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ(0,   data[6]);
 }
 
+struct test {
+    uint8_t a;
+    uint8_t b;
+};
+
+TEST(CLIUnittest, TestTypedParser)
+{
+    struct test t;
+    parseArg_t args[] = {
+        argInt_storeUint8(false, "A", &t.a),
+        argIntInRange_storeUint8(true, "B", 50, 100, &t.b),
+        // argString(true, "S"),
+    };
+    parsedArg_t parsedArgs[ARRAYLEN(args)];
+    parseArgsResult_t res = parseArgs(
+        "1 99 ",
+        args,
+        ARRAYLEN(args),
+        parsedArgs,
+        false
+    );
+    if (res.status != PARSE_STATUS_OK) {
+        EXPECT_EQ(res.status, 0);
+        return;
+    }
+
+    EXPECT_EQ(string(res.rest), "");
+    // EXPECT_EQ(string(res.rest), "  456");
+
+    // long int a = parsedArgs[0].intValue;
+    // printf("0 - %u\n", t.a);
+    // long int b = parsedArgs[1].intValue;
+    // printf("1 - %u\n", t.b);
+    // printf("2 - %u\n", parsedArgs[2].isParsed);
+    // const char *s = parsedArgs[2].strStart;
+    // unsigned sLen = parsedArgs[2].strLen;
+    // printf("0 - %s\n", s);
+}
+
 static uint8_t data[1000];
 static vector<string> outLines;
 
@@ -319,7 +362,58 @@ TEST_F(CliWriteTest, HelpSearchByDescription)
     };
     EXPECT_EQ(expected, outLines);
 }
-// // End of help tests
+// End of help tests
+
+// Batch tests
+TEST_F(CliWriteTest, BatchNoArgs)
+{
+    const char cmd[] = "batch";
+    char args[] = "";
+    cliBatch(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN batch: INVALID ARGUMENT COUNT###\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(CliWriteTest, BatchInvalidCommand)
+{
+    const char cmd[] = "batch";
+    char args[] = "start_pause";
+    cliBatch(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN batch: BATCH_COMMAND INVALID VARIANT###\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(CliWriteTest, BatchStart)
+{
+    const char cmd[] = "batch";
+    char args[] = "start";
+    cliBatch(cmd, args);
+    vector<string> expected = {
+        "Command batch started\n",
+    };
+    EXPECT_EQ(expected, outLines);
+    EXPECT_TRUE(commandBatchActive);
+    EXPECT_FALSE(commandBatchError);
+}
+
+TEST_F(CliWriteTest, BatchEnd)
+{
+    const char cmd[] = "batch";
+    char args[] = "end";
+    cliBatch(cmd, args);
+    vector<string> expected = {
+        "Command batch ended\n",
+    };
+    EXPECT_EQ(expected, outLines);
+    EXPECT_FALSE(commandBatchActive);
+    EXPECT_FALSE(commandBatchError);
+}
+// End of batch tests
+
 
 // Aux tests
 class AuxCliWriteTest : public CliWriteTest {
@@ -430,6 +524,19 @@ TEST_F(AuxCliWriteTest, Show)
 
 }
 
+TEST_F(AuxCliWriteTest, Get)
+{
+    const char cmd[] = "aux";
+    char args[] = "15";
+    cliAux(cmd, args);
+    vector<string> expected = {
+        "aux 15 0 0 900 900 0 0\n"
+    };
+    EXPECT_EQ(expected, outLines);
+
+    checkConditionsLeftUntouched();
+}
+
 TEST_F(AuxCliWriteTest, NotEnoughArgs)
 {
     const char cmd[] = "aux";
@@ -482,10 +589,23 @@ TEST_F(AuxCliWriteTest, ChannelEndRangeOutOfRange)
     checkConditionsLeftUntouched();
 }
 
+TEST_F(AuxCliWriteTest, TooManyArguments)
+{
+    const char cmd[] = "aux";
+    char args[] = "0 0 13 1800 2100 0 0 0";
+    cliAux(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN aux: TOO MANY ARGUMENTS###\n"
+    };
+    EXPECT_EQ(expected, outLines);
+
+    checkConditionsLeftUntouched();
+}
+
 TEST_F(AuxCliWriteTest, SetCondition)
 {
     const char cmd[] = "aux";
-    char args[] = "0 1 2 900 1200 0 0";
+    char args[] = "0 1 2 900 1200 0 0 ";
     cliAux(cmd, args);
     vector<string> expected = {
         "aux 0 1 2 900 1200 0 0\n",
@@ -505,6 +625,12 @@ TEST_F(AuxCliWriteTest, SetCondition)
 
 TEST_F(AuxCliWriteTest, BackwardCompat)
 {
+    {
+        auto condition = modeActivationConditionsMutable(19);
+        condition->modeLogic = MODELOGIC_AND;
+        condition->linkedTo = BOXHORIZON;
+    }
+
     const char cmd[] = "aux";
     char args[] = "19 1 2 900 1200 ";
     cliAux(cmd, args);
@@ -526,11 +652,96 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
 // End of aux tests
 
 // Color and led tests
-TEST_F(CliWriteTest, Color)
+class ColorCliWriteTest : public CliWriteTest {
+protected:
+    virtual void SetUp() {
+        CliWriteTest::SetUp();
+
+        for (unsigned i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+            memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
+        }
+    }
+};
+
+TEST_F(ColorCliWriteTest, ShowAll)
+{
+    const char cmd[] = "color";
+    char args[] = "";
+    cliColor(cmd, args);
+    vector<string> expected = {
+        "color 0 0,0,0\n",
+        "color 1 0,0,0\n",
+        "color 2 0,0,0\n",
+        "color 3 0,0,0\n",
+        "color 4 0,0,0\n",
+        "color 5 0,0,0\n",
+        "color 6 0,0,0\n",
+        "color 7 0,0,0\n",
+        "color 8 0,0,0\n",
+        "color 9 0,0,0\n",
+        "color 10 0,0,0\n",
+        "color 11 0,0,0\n",
+        "color 12 0,0,0\n",
+        "color 13 0,0,0\n",
+        "color 14 0,0,0\n",
+        "color 15 0,0,0\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(ColorCliWriteTest, InvalidIndex)
 {
     const char cmd[] = "color";
     char args[] = "I";
     cliColor(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN color: INDEX IS NOT A NUMBER###\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(CliWriteTest, InvalidColor)
+{
+    const char cmd[] = "color";
+    char args[] = "1 a,b,c";
+    cliColor(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN color: COLOR.HUE IS NOT A NUMBER###\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(ColorCliWriteTest, Color)
+{
+    const char cmd[] = "color";
+    char args[] = "1 9,84,13";
+    cliColor(cmd, args);
+    vector<string> expected = {
+        "color 1 9,84,13\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(ColorCliWriteTest, ColorWithSpaces)
+{
+    const char cmd[] = "color";
+    char args[] = "1 359 , 255 , 255";
+    cliColor(cmd, args);
+    vector<string> expected = {
+        "color 1 359,255,255\n",
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(ColorCliWriteTest, MissingColor)
+{
+    const char cmd[] = "color";
+    char args[] = "1 359,255";
+    cliColor(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN color: INVALID ARGUMENT COUNT###\n",
+    };
+    EXPECT_EQ(expected, outLines);
 }
 
 TEST_F(CliWriteTest, Led)
@@ -538,6 +749,10 @@ TEST_F(CliWriteTest, Led)
     const char cmd[] = "led";
     char args[] = "+";
     cliLed(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN led: INDEX IS NOT A NUMBER###\n",
+    };
+    EXPECT_EQ(expected, outLines);
 }
 // End of color and led tests
 
@@ -623,11 +838,6 @@ void setPreferredBeeperOffMask(uint32_t) {}
 void beeperOffSet(uint32_t) {}
 void beeperOffClear(uint32_t) {}
 void beeperOffClearAll(void) {}
-bool parseColor(int, const char *colorConfig) {
-    char c = *colorConfig;
-    UNUSED(c);
-    return false;
-}
 bool resetEEPROM(void) { return true; }
 void mixerResetDisarmedMotors(void) {}
 

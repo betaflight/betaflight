@@ -217,8 +217,6 @@ static inline uint8_t ledGetDirection(const ledConfig_t *lcfg)  { return ((*lcfg
 static inline bool ledGetOverlayBit(const ledConfig_t *lcfg, int id) { return ((ledGetOverlay(lcfg) >> id) & 1); }
 static inline bool ledGetDirectionBit(const ledConfig_t *lcfg, int id) { return ((ledGetDirection(lcfg) >> id) & 1); }
 
-bool parseColor(int index, const char *colorConfig);
-
 bool parseLedStripConfig(int ledIndex, const char *config);
 void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize);
 void reevaluateLedConfig(void);

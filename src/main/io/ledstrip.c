@@ -1272,52 +1272,6 @@ static ledProfileSequence_t applyStatusProfile(timeUs_t now)
     return LED_PROFILE_ADVANCE;
 }
 
-bool parseColor(int index, const char *colorConfig)
-{
-    const char *remainingCharacters = colorConfig;
-
-    hsvColor_t *color = &ledStripStatusModeConfigMutable()->colors[index];
-
-    bool result = true;
-    static const uint16_t hsv_limit[HSV_COLOR_COMPONENT_COUNT] = {
-        [HSV_HUE] = HSV_HUE_MAX,
-        [HSV_SATURATION] = HSV_SATURATION_MAX,
-        [HSV_VALUE] = HSV_VALUE_MAX,
-    };
-    for (int componentIndex = 0; result && componentIndex < HSV_COLOR_COMPONENT_COUNT; componentIndex++) {
-        int val = atoi(remainingCharacters);
-        if (val > hsv_limit[componentIndex]) {
-            result = false;
-            break;
-        }
-        switch (componentIndex) {
-            case HSV_HUE:
-                color->h = val;
-                break;
-            case HSV_SATURATION:
-                color->s = val;
-                break;
-            case HSV_VALUE:
-                color->v = val;
-                break;
-        }
-        remainingCharacters = strchr(remainingCharacters, ',');
-        if (remainingCharacters) {
-            remainingCharacters++;  // skip separator
-        } else {
-            if (componentIndex < HSV_COLOR_COMPONENT_COUNT - 1) {
-                result = false;
-            }
-        }
-    }
-
-    if (!result) {
-        memset(color, 0, sizeof(*color));
-    }
-
-    return result;
-}
-
 /*
  * Redefine a color in a mode.
  * */

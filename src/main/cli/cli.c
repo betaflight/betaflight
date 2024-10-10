@@ -201,8 +201,8 @@ static int8_t pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
 #ifdef USE_CLI_BATCH
-static bool commandBatchActive = false;
-static bool commandBatchError = false;
+STATIC_UNIT_TESTED bool commandBatchActive = false;
+STATIC_UNIT_TESTED bool commandBatchError = false;
 #endif
 
 #if defined(USE_BOARD_INFO)
@@ -1034,135 +1034,46 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
 /**
  * @brief Converts parsing error into a message and prints it.
  */
-static void intParsePrintError(
-    enum intParseStatus_e err,
-    long int fromVal,
-    long int toVal,
-    const char *cmdName,
-    const char *argName
-)
+static void parseResultPrintError(parseArgsResult_t *res, const char *cmdName)
 {
-    switch (err) {
-    case INT_PARSE_STATUS_OK:
+    switch (res->status) {
+    case PARSE_STATUS_OK:
         break;
-    case INT_PARSE_STATUS_NOT_IN_RANGE:
-        cliShowArgumentRangeError(cmdName, (char *)argName, fromVal, toVal - 1);
+    case PARSE_STATUS_INT_NOT_IN_RANGE:
+        cliShowArgumentRangeError(
+            cmdName, (char *)res->errArgName, res->rangeStart, res->rangeEnd - 1
+        );
         break;
-    case INT_PARSE_STATUS_NOT_A_NUMBER:
-        cliShowArgumentNotANumberError(cmdName, argName);
+    case PARSE_STATUS_INVALID_VARIANT:
+        cliPrintErrorLinef(cmdName, "%s INVALID VARIANT", (char *)res->errArgName);
         break;
-    case INT_PARSE_STATUS_END_OF_LINE:
+    case PARSE_STATUS_INT_CONVERT_ERR:
+        cliPrintErrorLinef(cmdName, "%s CANNOT BE CONVERTED", (char *)res->errArgName);
+        break;
+    case PARSE_STATUS_NOT_A_NUMBER:
+        cliShowArgumentNotANumberError(cmdName, (char *)res->errArgName);
+        break;
+    case PARSE_STATUS_CUSTOM_ERR:
+        cliPrintErrorLinef(cmdName, "%s %s", (char *)res->errArgName, res->errMsg);
+        break;
+    case PARSE_STATUS_END_OF_LINE:
+    case PARSE_STATUS_EMPTY_ARGS:
         cliPrintErrorLinef(cmdName, "INVALID ARGUMENT COUNT");
         break;
+    case PARSE_STATUS_TOO_MANY_ARGS:
+        cliPrintErrorLinef(cmdName, "TOO MANY ARGUMENTS");
+        break;
+    case PARSE_STATUS_MISSING_SEP:
+        if (res->errArgName) {
+            cliPrintErrorLinef(cmdName, "MISSING SEPARATOR AFTER %s", (char *)res->errArgName);
+        } else {
+            cliPrintErrorLinef(cmdName, "MISSING SEPARATOR");
+        }
+        break;
+    case PARSE_STATUS_INTERNAL_ERR:
+        cliPrintErrorLinef(cmdName, "INTERNAL ERROR");
+        break;
     }
-}
-
-/**
- * @brief Parses positive integer argument from a command line
- * @param cmdline is a double pointer to a string to parse. It will be updated
- *        if successfully parsed.
- * @param cmdName is a command name. Used in error messages
- * @param argName is an argument name. Used in error messages
- * @retval Parsed value on success or negative on failure
- */
-static long int processPositiveIntArg(
-    const char **cmdline,
-    const char *cmdName,
-    const char *argName
-)
-{
-    intParseResult_t res = parseIntArg(*cmdline);
-    if (res.status != INT_PARSE_STATUS_OK) {
-        intParsePrintError(res.status, 0, INT_MAX, cmdName, argName);
-        return -1;
-    }
-    *cmdline = res.next;
-    return res.value;
-}
-
-/**
- * @brief Parses a positive integer argument from a command line and check that
- *        it lies inside a range.
- * @param cmdline is a double pointer to a string to parse. It will be updated
- *        if successfully parsed.
- * @param fromVal start of the range (including)
- * @param toVal end of the range (excluding)
- * @param cmdName is a command name. Used in error messages
- * @param argName is an argument name. Used in error messages
- * @retval Parsed value on success or negative on failure.
- */
-static long int processPositiveIntArgInRange(
-    const char **cmdline,
-    long int fromVal,
-    long int toVal,
-    const char *cmdName,
-    const char *argName
-)
-{
-    intParseResult_t res = parseIntArgInRange(*cmdline, fromVal, toVal);
-    if (res.status != INT_PARSE_STATUS_OK) {
-        intParsePrintError(res.status, fromVal, toVal, cmdName, argName);
-        return -1;
-    }
-    *cmdline = res.next;
-    return res.value;
-}
-
-typedef struct channelRangeParseResult_s {
-    enum intParseStatus_e status;
-    channelRange_t value;
-} channelRangeParseResult_t;
-
-static inline channelRangeParseResult_t channelRangeParseResultOk(channelRange_t val) {
-    return (channelRangeParseResult_t) {
-        .status = INT_PARSE_STATUS_OK,
-        .value = val,
-    };
-}
-
-static inline channelRangeParseResult_t channelRangeParseResultErr(enum intParseStatus_e err) {
-    return (channelRangeParseResult_t) {
-        .status = err,
-    };
-}
-
-/**
- * @brief Successively parses 2 integer arguments and checks they are valid
- *        channel range values.
- * @param cmdline is a double pointer to a string to parse. It will be updated
- *        if successfully parsed.
- * @param cmdName is a command name. Used in error messages
- * @retval Parsed result
- */
-static channelRangeParseResult_t processChannelRangeArgsEx(
-    const char **cmdlinePtr, const char *cmdName
-)
-{
-    intParseResult_t startRes = parseIntArgInRange(
-        *cmdlinePtr, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
-    );
-    if (startRes.status != INT_PARSE_STATUS_OK) {
-        cliShowArgumentRangeError(
-            cmdName, "CHANNEL_RANGE.START", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
-        );
-        return channelRangeParseResultErr(startRes.status);
-    }
-    uint8_t startStep = CHANNEL_VALUE_TO_STEP(startRes.value);
-
-    intParseResult_t endRes = parseIntArgInRange(
-        startRes.next, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
-    );
-    if (endRes.status != INT_PARSE_STATUS_OK) {
-        cliShowArgumentRangeError(
-            cmdName, "CHANNEL_RANGE.END", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
-        );
-        return channelRangeParseResultErr(endRes.status);
-    }
-    uint8_t endStep = CHANNEL_VALUE_TO_STEP(endRes.value);
-
-    *cmdlinePtr = endRes.next;
-    channelRange_t channelRange = { .startStep = startStep, .endStep = endStep };
-    return channelRangeParseResultOk(channelRange);
 }
 
 // Check if a string's length is zero
@@ -1332,70 +1243,74 @@ STATIC_UNIT_TESTED void printAux(dumpFlags_t dumpMask, const modeActivationCondi
     }
 }
 
+static convertResult_t convertBoxPermanentIdToBoxId(long int permanentBoxId)
+{
+    const box_t *box = findBoxByPermanentId(permanentBoxId);
+    if (!box) {
+        // cliPrintErrorLinef(cmdName, "BOX NOT MATCHED TO ANY BOX ID");
+        return (convertResult_t) { .isOk = false };
+    }
+    return (convertResult_t) { .isOk = true, .value = box->boxId };
+}
+
+static convertResult_t convertChannelValueToStep(long int channelValue)
+{
+    if (channelValue < CHANNEL_RANGE_MIN || channelValue > CHANNEL_RANGE_MAX) {
+        return (convertResult_t) { .isOk = false, .errMsg = "NOT BETWEEN 900 AND 2100" };
+    }
+    return (convertResult_t) { .isOk = true, .value = CHANNEL_VALUE_TO_STEP(channelValue) };
+}
+
 STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
 {
-    if (isEmpty(cmdline)) {
+    parseArg_t ixArgs[] = {
+        argIntInRange(true, "INDEX", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT),
+    };
+    parsedArg_t ixParsedArgs[ARRAYLEN(ixArgs)];
+    parseArgsResult_t ixRes = parseArgs(cmdline, ixArgs, ARRAYLEN(ixArgs), ixParsedArgs, false);
+    if (ixRes.status == PARSE_STATUS_EMPTY_ARGS) {
         printAux(DUMP_MASTER, modeActivationConditions(0), NULL, NULL);
         return;
     }
-
-    const char *ptr = cmdline;
-    long int ix = processPositiveIntArgInRange(
-        &ptr, 0, MAX_MODE_ACTIVATION_CONDITION_COUNT, cmdName, "INDEX"
-    );
-    if (ix < 0) {
+    if (ixRes.status != PARSE_STATUS_OK) {
+        parseResultPrintError(&ixRes, cmdName);
         return;
     }
+    long int ix = ixParsedArgs[0].intValue;
     modeActivationCondition_t *mac = modeActivationConditionsMutable(ix);
 
-    long int permanentBoxId = processPositiveIntArg(&ptr, cmdName, "BOX");
-    if (permanentBoxId < 0) {
+    parseArg_t args[] = {
+        argIntConvert_storeUint8(
+            false, "BOX", &convertBoxPermanentIdToBoxId, (uint8_t *)&mac->modeId
+        ),
+        argIntInRange_storeUint8(
+            false, "CHANNEL_INDEX", 0, MAX_AUX_CHANNEL_COUNT, &mac->auxChannelIndex
+        ),
+        argIntConvert_storeUint8(
+            false, "CHANNEL_RANGE.START", &convertChannelValueToStep, &mac->range.startStep
+        ),
+        argIntConvert_storeUint8(
+            true, "CHANNEL_RANGE.END", &convertChannelValueToStep, &mac->range.endStep
+        ),
+        argIntInRange_storeUint8(
+            true, "MODE_LOGIC", 0, 2, (uint8_t *)&mac->modeLogic
+        ),
+        argIntConvert_storeUint8(
+            true, "LINKED_TO", &convertBoxPermanentIdToBoxId, (uint8_t *)&mac->linkedTo
+        ),
+    };
+    parsedArg_t parsedArgs[ARRAYLEN(args)];
+    parseArgsResult_t res = parseArgs(
+        ixRes.rest,
+        args,
+        ARRAYLEN(args),
+        parsedArgs,
+        true
+    );
+    if (res.status != PARSE_STATUS_OK && res.status != PARSE_STATUS_EMPTY_ARGS) {
+        parseResultPrintError(&res, cmdName);
         return;
     }
-    const box_t *box = findBoxByPermanentId(permanentBoxId);
-    if (!box) {
-        cliPrintErrorLinef(cmdName, "BOX NOT MATCHED TO ANY BOX ID");
-        return;
-    }
-
-    long int aux = processPositiveIntArgInRange(&ptr, 0, MAX_AUX_CHANNEL_COUNT, cmdName, "CHANNEL_INDEX");
-    if (aux < 0) {
-        return;
-    }
-
-    channelRangeParseResult_t channelRangeRes = processChannelRangeArgsEx(&ptr, cmdName);
-    if (channelRangeRes.status != INT_PARSE_STATUS_OK) {
-        return;
-    }
-
-    // Optional arguments
-
-    intParseResult_t modeLogicRes = parseIntArgInRange(ptr, 0, 2);
-    long int modeLogic = MODELOGIC_OR;
-    if (modeLogicRes.status != INT_PARSE_STATUS_OK
-        && modeLogicRes.status != INT_PARSE_STATUS_END_OF_LINE) {
-        intParsePrintError(modeLogicRes.status, 0, 2, cmdName, "MODE_LOGIC");
-        return;
-    }
-
-    intParseResult_t linkedToRes = parseIntArg(ptr);
-    long int linkedTo = 0;
-    if (linkedToRes.status != INT_PARSE_STATUS_OK
-        && linkedToRes.status != INT_PARSE_STATUS_END_OF_LINE) {
-        intParsePrintError(linkedToRes.status, 0, 2, cmdName, "LINKED_TO");
-        return;
-    }
-    const box_t *linkedToBox = findBoxByPermanentId(linkedTo);
-    if (!linkedToBox) {
-        cliPrintErrorLinef(cmdName, "LINKED_TO NOT MATCHED TO ANY BOX ID");
-        return;
-    }
-
-    mac->modeId = box->boxId;
-    mac->auxChannelIndex = aux;
-    mac->range = channelRangeRes.value;
-    mac->modeLogic = modeLogic;
-    mac->linkedTo = linkedToBox->boxId;
 
     cliPrintLinef(
         auxFormat,
@@ -2091,35 +2006,42 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     }
 }
 
+const char *ledFormat = "led %u %s";
+
 STATIC_UNIT_TESTED void cliLed(const char *cmdName, char *cmdline)
 {
-    const char *format = "led %u %s";
-    char ledConfigBuffer[20];
-    int i;
-    const char *ptr;
-
-    if (isEmpty(cmdline)) {
+    parseArg_t ixArgs[] = {
+        argIntInRange(true, "INDEX", 0, LED_STRIP_MAX_LENGTH),
+    };
+    parsedArg_t parsedIxArgs[ARRAYLEN(ixArgs)];
+    parseArgsResult_t ixRes = parseArgs(cmdline, ixArgs, ARRAYLEN(ixArgs), parsedIxArgs, false);
+    if (ixRes.status == PARSE_STATUS_EMPTY_ARGS) {
         printLed(DUMP_MASTER, ledStripStatusModeConfig()->ledConfigs, NULL, NULL);
+        return;
+    }
+    if (ixRes.status != PARSE_STATUS_OK) {
+        parseResultPrintError(&ixRes, cmdName);
+        return;
+    }
+    long int ix = parsedIxArgs[0].intValue;
+
+    if (parseLedStripConfig(ix, ixRes.rest)) {
+        char ledConfigBuffer[20];
+        generateLedConfig(
+            (ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[ix],
+            ledConfigBuffer,
+            sizeof(ledConfigBuffer)
+        );
+        cliDumpPrintLinef(0, false, ledFormat, ix, ledConfigBuffer);
     } else {
-        ptr = cmdline;
-        i = atoi(ptr);
-        if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
-            ptr = nextArg(cmdline);
-            if (parseLedStripConfig(i, ptr)) {
-                generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
-                cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
-            } else {
-                cliShowParseError(cmdName);
-            }
-        } else {
-            cliShowArgumentRangeError(cmdName, "INDEX", 0, LED_STRIP_MAX_LENGTH - 1);
-        }
+        cliShowArgumentRangeError(cmdName, "INDEX", 0, LED_STRIP_MAX_LENGTH - 1);
     }
 }
 
+static const char *colorFormat = "color %u %d,%u,%u";
+
 static void printColor(dumpFlags_t dumpMask, const hsvColor_t *colors, const hsvColor_t *defaultColors, const char *headingStr)
 {
-    const char *format = "color %u %d,%u,%u";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
         const hsvColor_t *color = &colors[i];
@@ -2128,32 +2050,46 @@ static void printColor(dumpFlags_t dumpMask, const hsvColor_t *colors, const hsv
             const hsvColor_t *colorDefault = &defaultColors[i];
             equalsDefault = !memcmp(color, colorDefault, sizeof(*color));
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
-            cliDefaultPrintLinef(dumpMask, equalsDefault, format, i,colorDefault->h, colorDefault->s, colorDefault->v);
+            cliDefaultPrintLinef(dumpMask, equalsDefault, colorFormat, i,colorDefault->h, colorDefault->s, colorDefault->v);
         }
-        cliDumpPrintLinef(dumpMask, equalsDefault, format, i, color->h, color->s, color->v);
+        cliDumpPrintLinef(dumpMask, equalsDefault, colorFormat, i, color->h, color->s, color->v);
     }
 }
 
 STATIC_UNIT_TESTED void cliColor(const char *cmdName, char *cmdline)
 {
-    const char *format = "color %u %d,%u,%u";
-    if (isEmpty(cmdline)) {
+    parseArg_t ixArgs[] = {
+        argIntInRange(true, "INDEX", 0, LED_CONFIGURABLE_COLOR_COUNT),
+    };
+    parsedArg_t parsedIxArgs[ARRAYLEN(ixArgs)];
+    parseArgsResult_t ixRes = parseArgs(cmdline, ixArgs, ARRAYLEN(ixArgs), parsedIxArgs, false);
+    if (ixRes.status == PARSE_STATUS_EMPTY_ARGS) {
         printColor(DUMP_MASTER, ledStripStatusModeConfig()->colors, NULL, NULL);
-    } else {
-        const char *ptr = cmdline;
-        const int i = atoi(ptr);
-        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
-            ptr = nextArg(cmdline);
-            if (parseColor(i, ptr)) {
-                const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
-                cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
-            } else {
-                cliShowParseError(cmdName);
-            }
-        } else {
-            cliShowArgumentRangeError(cmdName, "INDEX", 0, LED_CONFIGURABLE_COLOR_COUNT - 1);
-        }
+        return;
     }
+    if (ixRes.status != PARSE_STATUS_OK) {
+        parseResultPrintError(&ixRes, cmdName);
+        return;
+    }
+    long int ix = parsedIxArgs[0].intValue;
+
+    hsvColor_t *color = &ledStripStatusModeConfigMutable()->colors[ix];
+
+    parseArg_t args[] = {
+        argIntInRange_storeUint16(false, "COLOR.HUE", 0, HSV_HUE_MAX + 1, &color->h),
+        argSep(','),
+        argIntInRange_storeUint8(false, "COLOR.SATURATION", 0, HSV_SATURATION_MAX + 1, &color->s),
+        argSep(','),
+        argIntInRange_storeUint8(true, "COLOR.VALUE", 0, HSV_VALUE_MAX + 1 , &color->v),
+    };
+    parsedArg_t parsedArgs[ARRAYLEN(args)];
+    parseArgsResult_t res = parseArgs(ixRes.rest, args, ARRAYLEN(args), parsedArgs, false);
+    if (res.status != PARSE_STATUS_OK) {
+        parseResultPrintError(&res, cmdName);
+        return;
+    }
+
+    cliDumpPrintLinef(0, false, colorFormat, ix, color->h, color->s, color->v);
 }
 
 static void printModeColor(dumpFlags_t dumpMask, const ledStripStatusModeConfig_t *ledStripStatusModeConfig, const ledStripStatusModeConfig_t *defaultLedStripConfig, const char *headingStr)
@@ -4322,23 +4258,38 @@ static void resetCommandBatch(void)
     commandBatchError = false;
 }
 
-static void cliBatch(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliBatch(const char *cmdName, char *cmdline)
 {
-    if (strncasecmp(cmdline, "start", 5) == 0) {
+    enum batchCommand_e {
+        BATCH_COMMAND_START = 0,
+        BATCH_COMMAND_END,
+    } batchCmd = 0;
+    parseArg_t args[] = {
+        argStringVariant_storeUint8(true, "BATCH_COMMAND", "start|end", (uint8_t *)&batchCmd),
+    };
+    parsedArg_t parsedArgs[ARRAYLEN(args)];
+    parseArgsResult_t res = parseArgs(cmdline, args, ARRAYLEN(args), parsedArgs, false);
+    if (res.status != PARSE_STATUS_OK) {
+        parseResultPrintError(&res, cmdName);
+        return;
+    }
+
+    switch (batchCmd) {
+    case BATCH_COMMAND_START:
         if (!commandBatchActive) {
             commandBatchActive = true;
             commandBatchError = false;
         }
         cliPrintLine("Command batch started");
-    } else if (strncasecmp(cmdline, "end", 3) == 0) {
+        break;
+    case BATCH_COMMAND_END:
         if (commandBatchActive && commandBatchError) {
             cliPrintCommandBatchWarning(cmdName, NULL);
         } else {
             cliPrintLine("Command batch ended");
         }
         resetCommandBatch();
-    } else {
-        cliPrintErrorLinef(cmdName, "Invalid option");
+        break;
     }
 }
 #endif

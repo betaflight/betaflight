@@ -247,55 +247,6 @@ TEST(LedStripTest, smallestGrid)
     EXPECT_EQ(1, lowestYValueForSouth);
 }
 
-hsvColor_t testColors[LED_CONFIGURABLE_COLOR_COUNT];
-
-extern hsvColor_t *colors;
-
-#define TEST_COLOR_COUNT 4
-
-TEST(ColorTest, parseColor)
-{
-    // given
-    memset(ledStripStatusModeConfigMutable()->colors, 0, sizeof(hsvColor_t) * LED_CONFIGURABLE_COLOR_COUNT);
-
-    // and
-    const hsvColor_t expectedColors[TEST_COLOR_COUNT] = {
-            //  H    S    V
-            {   0,   0,   0 },
-            {   1,   1,   1 },
-            { 359, 255, 255 },
-            { 333,  22,   1 }
-    };
-
-    const char *testColors[TEST_COLOR_COUNT] = {
-            "0,0,0",
-            "1,1,1",
-            "359,255,255",
-            "333,22,1"
-    };
-
-    // when
-    for (uint8_t index = 0; index < TEST_COLOR_COUNT; index++) {
-#ifdef DEBUG_LEDSTRIP
-        printf("parse iteration: %d\n", index);
-#endif
-
-        parseColor(index, testColors[index]);
-    }
-
-    // then
-
-    for (uint8_t index = 0; index < TEST_COLOR_COUNT; index++) {
-#ifdef DEBUG_LEDSTRIP
-        printf("iteration: %d\n", index);
-#endif
-
-        EXPECT_EQ(expectedColors[index].h, ledStripStatusModeConfig()->colors[index].h);
-        EXPECT_EQ(expectedColors[index].s, ledStripStatusModeConfig()->colors[index].s);
-        EXPECT_EQ(expectedColors[index].v, ledStripStatusModeConfig()->colors[index].v);
-    }
-}
-
 extern "C" {
 
 uint8_t armingFlags = 0;
