@@ -1,0 +1,27 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+UseTab: Never
+SortIncludes: false
+AllowShortFunctionsOnASingleLine: Inline
+AlignAfterOpenBracket: BlockIndent
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterCaseLabel: true
+  AfterControlStatement: true
+  BeforeElse: true
+  # AfterStruct: true
+  # AfterEnum: true
+  # AfterClass: true
+  # AfterNamespace: true
+  # AfterObjCDeclaration: true
+  # AfterUnion: true
+  # BeforeCatch: true
+  # BeforeElse: true
+  # BeforeLambdaBody: true
+  # BeforeWhile: true
+  # IndentBraces: true
+  # SplitEmptyFunction: true
+  # SplitEmptyRecord: true
+  # SplitEmptyNamespace: true
