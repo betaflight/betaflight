@@ -1699,12 +1699,13 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_THROTTLE_MIN, "%d",         autopilotConfig()->throttle_min);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_THROTTLE_MAX, "%d",         autopilotConfig()->throttle_max);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_P, "%d",           autopilotConfig()->altitude_P);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_I, "%d",           autopilotConfig()->altitude_I);;
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D, "%d",           autopilotConfig()->altitude_D);;
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_I, "%d",           autopilotConfig()->altitude_I);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D, "%d",           autopilotConfig()->altitude_D);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_F, "%d",           autopilotConfig()->altitude_F);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_P, "%d",           autopilotConfig()->position_P);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_I, "%d",           autopilotConfig()->position_I);;
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_D, "%d",           autopilotConfig()->position_D);;
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_I, "%d",           autopilotConfig()->position_I);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_D, "%d",           autopilotConfig()->position_D);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_J, "%d",           autopilotConfig()->position_J);
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);

@@ -171,6 +171,7 @@
 #define PARAM_NAME_POSITION_P "autopilot_position_P"
 #define PARAM_NAME_POSITION_I "autopilot_position_I"
 #define PARAM_NAME_POSITION_D "autopilot_position_D"
+#define PARAM_NAME_POSITION_J "autopilot_position_J"
 #define PARAM_NAME_AP_DEADBAND "autopilot_deadband" // from rcControlsConfig
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"

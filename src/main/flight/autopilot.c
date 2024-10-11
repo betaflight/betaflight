@@ -38,22 +38,27 @@
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
 #define POSITION_P_SCALE  0.001f
-#define POSITION_I_SCALE  0.0005f
-#define POSITION_D_SCALE  0.001f
-#define POSITION_J_SCALE  0.0005f
+#define POSITION_I_SCALE  0.0003f
+#define POSITION_D_SCALE  0.005f
+#define POSITION_J_SCALE  0.005f
 
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
 static pidCoefficient_t positionPidCoeffs;
-static float previousDistanceCm = 0.0f;
-static float previousVelocity = 0.0f;
+static float previousDistancePitch = 0.0f;
+static float previousDistanceRoll = 0.0f;
+static float previousVelocityPitch = 0.0f;
+static float previousVelocityRoll = 0.0f;
 static float pitchI = 0.0f;
 static float rollI = 0.0f;
 float posHoldAngle[ANGLE_INDEX_COUNT];
-static pt1Filter_t accelerationLpf;
-static float positionAccelerationCutoffHz;
+static pt1Filter_t velocityPitchLpf;
+static pt1Filter_t accelerationPitchLpf;
+static pt1Filter_t velocityRollLpf;
+static pt1Filter_t accelerationRollLpf;
+static float positionLpfCutoffHz;
 
 void autopilotInit(const autopilotConfig_t *config)
 {
@@ -64,11 +69,14 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Kp = config->position_P * POSITION_P_SCALE;
     positionPidCoeffs.Ki = config->position_I * POSITION_I_SCALE;
     positionPidCoeffs.Kd = config->position_D * POSITION_D_SCALE;
-    positionPidCoeffs.Kf = config->position_J * POSITION_J_SCALE; // used for acceleration
+    positionPidCoeffs.Kf = config->position_J * POSITION_J_SCALE; // Kf used for acceleration
 
-    positionAccelerationCutoffHz = config->position_filter_hz / 100.0f;
-    const float gain = pt1FilterGain(positionAccelerationCutoffHz, 0.1f); // assume 10Hz GPS connection at start
-    pt1FilterInit(&accelerationLpf, gain);
+    positionLpfCutoffHz = config->position_filter_hz / 100.0f;
+    const float gain = pt1FilterGain(positionLpfCutoffHz, 0.1f); // assume 10Hz GPS connection at start
+    pt1FilterInit(&velocityPitchLpf, gain);
+    pt1FilterInit(&accelerationPitchLpf, gain);
+    pt1FilterInit(&velocityRollLpf, gain);
+    pt1FilterInit(&accelerationRollLpf, gain);
 }
 
 const pidCoefficient_t *getAltitudePidCoeffs(void)
@@ -126,8 +134,10 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 
 void resetPositionControl (void) {
     // runs when position hold starts, and while either stick is within deadband
-    previousDistanceCm = 0.0f;
-    previousVelocity = 0.0f;
+    previousDistancePitch = 0.0f;
+    previousVelocityPitch = 0.0f;
+    previousDistanceRoll = 0.0f;
+    previousVelocityRoll = 0.0f;
     pitchI = 0.0f;
     rollI = 0.0f;
 }
@@ -166,20 +176,51 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     // this would need some warning in OSD
     // I can probably craft a sanity check but don't know how to do OSD warnings.
 
-    // craft velocity relative to target position, positive when moving away
-    const float velocity = (distanceCm - previousDistanceCm) * gpsDataIntervalHz;
-    previousDistanceCm = distanceCm;
-    // not sure if acceleration is all that helpful, but let's see
-    const float acceleration = (velocity - previousVelocity) * gpsDataIntervalHz; // positive when moving away
-    previousVelocity = velocity;
-    // filter the acceleration value, it's very noisy.  May need 
-    const float gain = pt1FilterGain(positionAccelerationCutoffHz, gpsDataIntervalS);
-    pt1FilterUpdateCutoff(&accelerationLpf, gain);
-    const float accelerationSmoothed = pt1FilterApply(&accelerationLpf, acceleration);
+    const float gain = pt1FilterGain(positionLpfCutoffHz, gpsDataIntervalS);
 
-    // calculate and rotate iTerm separately for pitch and roll
-    rollI += distanceCm * rollProportion * positionPidCoeffs.Ki * gpsDataIntervalS;
-    pitchI += distanceCm * pitchProportion * positionPidCoeffs.Ki * gpsDataIntervalS;
+    // ** calculate P, D and J for pitch and roll
+    // each axis separately, so that when overshooting, the filter lag doesn't cause problems
+    const float distanceRoll = rollProportion * distanceCm;
+    // positive distances mean nose towards target, should roll forward (positive roll)
+    // we need separate velocity for roll so the filter lag isn't problematic
+    float velocityRoll = (distanceRoll - previousDistanceRoll) * gpsDataIntervalHz;
+    previousDistanceRoll = distanceRoll;
+    // lowpass filter the velocity
+    pt1FilterUpdateCutoff(&velocityRollLpf, gain);
+    velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
+
+    float accelerationRoll = (velocityRoll - previousVelocityRoll) * gpsDataIntervalHz; // positive when moving away
+    previousVelocityRoll = velocityRoll;
+    // lowapss filter the acceleration value again, effectively PT2, it's very noisy
+    pt1FilterUpdateCutoff(&accelerationRollLpf, gain);
+    accelerationRoll = pt1FilterApply(&accelerationRollLpf, accelerationRoll);
+
+    const float rollP = distanceRoll * positionPidCoeffs.Kp;
+    const float rollD = velocityRoll * positionPidCoeffs.Kd;
+    const float rollJ = accelerationRoll * positionPidCoeffs.Kf;
+
+    const float distancePitch = pitchProportion * distanceCm;
+    // positive distances mean nose towards target, should pitch forward (positive pitch)
+    float velocityPitch = (distancePitch - previousDistancePitch) * gpsDataIntervalHz;
+    previousDistancePitch = distancePitch;
+    // lowpass filter the velocity
+    pt1FilterUpdateCutoff(&velocityPitchLpf, gain);
+    velocityPitch = pt1FilterApply(&velocityPitchLpf, velocityPitch);
+
+    float accelerationPitch = (velocityPitch - previousVelocityPitch) * gpsDataIntervalHz; // positive when moving away
+    previousVelocityPitch = velocityPitch;
+    // lowapss filter the acceleration value again, effectively PT2, it's very noisy
+    pt1FilterUpdateCutoff(&accelerationPitchLpf, gain);
+    accelerationPitch = pt1FilterApply(&accelerationPitchLpf, accelerationPitch);
+
+    const float pitchP = distancePitch * positionPidCoeffs.Kp;
+    const float pitchD = velocityPitch * positionPidCoeffs.Kd;
+    const float pitchJ = accelerationPitch * positionPidCoeffs.Kf;
+
+    // ** calculate I and rotate if quad yawa
+
+    rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
+    pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
 
     // rotate iTerm if heading changes
     const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
@@ -203,18 +244,13 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     const float newPitchI = pitchI * cosDeltaHeading - rollI * sinDeltaHeading;
     const float newRollI = pitchI * sinDeltaHeading + rollI * cosDeltaHeading;
 
-    pitchI = newPitchI;
     rollI = newRollI;
+    pitchI = newPitchI;
 
     // add up pTerm, dTerm and jTerm
 
-    const float posPidP = distanceCm * positionPidCoeffs.Kp;
-    const float posPidD = velocity * positionPidCoeffs.Kd;
-    const float posPidJ = accelerationSmoothed * positionPidCoeffs.Kf;
-
-    const float pid = posPidP + posPidD + posPidJ;
-    const float pidSumPitch = pid * pitchProportion + pitchI;
-    const float pidSumRoll = pid * rollProportion + rollI;
+    const float pidSumRoll = rollP + rollI + rollD + rollJ;
+    const float pidSumPitch = pitchP + pitchI + pitchD + pitchJ;
 
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle)); //-180 to +180
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(distanceCm));
@@ -233,17 +269,20 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     // if FLIGHT_MODE(POS_HOLD_MODE):
     // posHoldAngle[] is added to angle setpoint in pid.c, in degrees
     // stick angle setpoint forced to zero within the same deadband via rc.c
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_ROLL] * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(posHoldAngle[AI_PITCH] * 10));
 
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_ROLL] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(posHoldAngle[AI_PITCH] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(posPidP * 10)); // degrees*10
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(rollI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollJ * 10));
     } else {
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(pitchI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchJ * 10));
     }
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(posPidD * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posPidJ * 10));
 }
 
 bool isBelowLandingAltitude(void)
