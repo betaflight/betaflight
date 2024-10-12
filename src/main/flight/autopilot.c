@@ -40,7 +40,7 @@
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
 #define POSITION_P_SCALE  0.003f
-#define POSITION_I_SCALE  0.0f
+#define POSITION_I_SCALE  0.001f
 #define POSITION_D_SCALE  0.003f
 #define POSITION_J_SCALE  0.002f
 
@@ -134,7 +134,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 }
 
 void resetPositionControl (void) {
-    // runs when position hold starts, and while either stick is within deadband
+    // runs when position hold starts, and while either stick is outside deadband
     previousDistancePitch = 0.0f;
     previousVelocityPitch = 0.0f;
     previousDistanceRoll = 0.0f;
@@ -246,41 +246,39 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
     // needs to be attenuated towards zero when close to target to avoid overshoot and circling
     // hence cannot completely eliminate position error due to wind, will tend to end up a little bit down-wind
 
-    if (positionPidCoeffs.Ki) {
-        rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
-        pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
+    rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
+    pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
 
-        // rotate iTerm if heading changes
-        const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
-        float deltaHeading = currentHeading - previousHeading;
-        previousHeading = currentHeading;
+    // rotate iTerm if heading changes
+    const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
+    float deltaHeading = currentHeading - previousHeading;
+    previousHeading = currentHeading;
 
-        // Normalize deltaHeading to range -180 to 180 (in case of small change around North)
-        if (deltaHeading > 180.0f) {
-            deltaHeading -= 360.0f; // Wrap around if greater than 180
-        } else if (deltaHeading < -180.0f) {
-            deltaHeading += 360.0f; // Wrap around if less than -180
-        }
-        float deltaHeadingRadians = deltaHeading * (M_PI / 180.0f); // Convert to radians
-
-        float cosDeltaHeading = cos_approx(deltaHeadingRadians);
-        float sinDeltaHeading = sin_approx(deltaHeadingRadians);
-
-        // rotate pitch and roll iTerm
-        const float newPitchI = pitchI * cosDeltaHeading - rollI * sinDeltaHeading;
-        const float newRollI = pitchI * sinDeltaHeading + rollI * cosDeltaHeading;
-
-        // attenuate accumulated I to zero if close to target
-        const float rollIAttenuator = (distanceRoll < 200.0f) ? distanceRoll / 200.0f : 1.0f;
-        const float pitchIAttenuator = (distancePitch < 200.0f) ? distancePitch / 200.0f : 1.0f;
-
-        rollI = newRollI * rollIAttenuator;
-        pitchI = newPitchI * pitchIAttenuator;
+    // Normalize deltaHeading to range -180 to 180 (in case of small change around North)
+    if (deltaHeading > 180.0f) {
+        deltaHeading -= 360.0f; // Wrap around if greater than 180
+    } else if (deltaHeading < -180.0f) {
+        deltaHeading += 360.0f; // Wrap around if less than -180
     }
+    float deltaHeadingRadians = deltaHeading * (M_PI / 180.0f); // Convert to radians
+
+    float cosDeltaHeading = cos_approx(deltaHeadingRadians);
+    float sinDeltaHeading = sin_approx(deltaHeadingRadians);
+
+    // rotate pitch and roll iTerm
+    const float rotatedRollI = pitchI * sinDeltaHeading + rollI * cosDeltaHeading;
+    const float rotatedPitchI = pitchI * cosDeltaHeading - rollI * sinDeltaHeading;
+
+    rollI = rotatedRollI;
+    pitchI = rotatedPitchI;
+
+    // calculate attenuator
+    const float rollIAttenuator = (distanceRoll < 200.0f) ? distanceRoll / 200.0f : 1.0f;
+    const float pitchIAttenuator = (distancePitch < 200.0f) ? distancePitch / 200.0f : 1.0f;
 
     // add up pid factors
-    const float pidSumRoll = rollP + rollI + rollD + rollJ;
-    const float pidSumPitch = pitchP + pitchI + pitchD + pitchJ;
+    const float pidSumRoll = rollP + rollI * rollIAttenuator + rollD + rollJ;
+    const float pidSumPitch = pitchP + pitchI * pitchIAttenuator + pitchD + pitchJ;
 
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle)); //-180 to +180
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(distanceCm));
@@ -304,12 +302,12 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(rollI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(rollI * rollIAttenuator * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollJ * 10));
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10)); // degrees*10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(pitchI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(pitchI * pitchIAttenuator * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchJ * 10));
     }
