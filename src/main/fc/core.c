@@ -770,7 +770,6 @@ uint8_t calculateThrottlePercentAbs(void)
 }
 
 static bool throttleRaised = false;
-
 bool wasThrottleRaised(void)
 {
     return throttleRaised;
@@ -1053,7 +1052,9 @@ void processRxModes(timeUs_t currentTimeUs)
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
-        && isAltitudeAvailable()){
+        && isAltitudeAvailable()
+        // prevent activation until after takeoff
+        && wasThrottleRaised()) {
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
         }

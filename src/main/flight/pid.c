@@ -930,10 +930,8 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
-            // we could test here for stage 2 failsafe (including both landing or GPS Rescue)
-            // this may permit removing the GPS Rescue disarm method altogether
 #ifdef USE_ALT_HOLD_MODE
-            // or in altitude hold mode, including failsafe landing mode, indirectly
+            // or, in altitude hold mode, where throttle can be non-zero
             || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
         )) {
