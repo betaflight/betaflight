@@ -800,7 +800,7 @@ float pidGetAirmodeThrottleOffset(void)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
-    // if, being armed, and adter takeoff...
+    // if, being armed, and after takeoff...
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
