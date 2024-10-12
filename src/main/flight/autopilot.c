@@ -37,10 +37,10 @@
 #define ALTITUDE_I_SCALE  0.003f
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.001f
-#define POSITION_I_SCALE  0.0003f
-#define POSITION_D_SCALE  0.005f
-#define POSITION_J_SCALE  0.005f
+#define POSITION_P_SCALE  0.003f
+#define POSITION_I_SCALE  0.0f
+#define POSITION_D_SCALE  0.003f
+#define POSITION_J_SCALE  0.002f
 
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
@@ -70,8 +70,7 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Ki = config->position_I * POSITION_I_SCALE;
     positionPidCoeffs.Kd = config->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = config->position_J * POSITION_J_SCALE; // Kf used for acceleration
-
-    positionLpfCutoffHz = config->position_filter_hz / 100.0f;
+    positionLpfCutoffHz = config->position_cutoff / 100.0f;
     const float gain = pt1FilterGain(positionLpfCutoffHz, 0.1f); // assume 10Hz GPS connection at start
     pt1FilterInit(&velocityPitchLpf, gain);
     pt1FilterInit(&accelerationPitchLpf, gain);

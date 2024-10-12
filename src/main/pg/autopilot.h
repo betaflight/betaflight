@@ -37,7 +37,7 @@ typedef struct autopilotConfig_s {
     uint8_t position_I;
     uint8_t position_D;
     uint8_t position_J;
-    uint8_t position_filter_hz;
+    uint8_t position_cutoff;
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);
