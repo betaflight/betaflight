@@ -158,7 +158,7 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
         normalisedErrorAngle -= 360.0f; // Range: -180 to 180
     }
 
-    // Calculate correction proportions for pitch and roll
+    // Calculate distance error proportions for pitch and roll
     const float errorAngleRadians = normalisedErrorAngle * (M_PI / 180.0f);
     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
@@ -216,38 +216,47 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     const float pitchD = velocityPitch * positionPidCoeffs.Kd;
     const float pitchJ = accelerationPitch * positionPidCoeffs.Kf;
 
-    // ** calculate I and rotate if quad yawa
+    // ** calculate I and rotate if quad yaws
 
-    rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
-    pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
+    // NOTE: iTerm readily causes circling issues hence default to zero
+    // intent: on windy days, accumulate whatever iTerm we need, then rotate it if the quad yaws.
+    // useful only on very windy days when P can't quite get there
+    // needs to be attenuated towards zero when close to target to avoid overshoot
+    // hence cannot completely eliminate position error due to wind.
 
-    // rotate iTerm if heading changes
-    const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
-    float deltaHeading = currentHeading - previousHeading;
-    previousHeading = currentHeading;
+    if (positionPidCoeffs.Ki) {
+        rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
+        pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
 
-    // Normalize deltaHeading to range -180 to 180 (in case of small change around North)
-    if (deltaHeading > 180.0f) {
-        deltaHeading -= 360.0f; // Wrap around if greater than 180
-    } else if (deltaHeading < -180.0f) {
-        deltaHeading += 360.0f; // Wrap around if less than -180
+        // rotate iTerm if heading changes
+        const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
+        float deltaHeading = currentHeading - previousHeading;
+        previousHeading = currentHeading;
+
+        // Normalize deltaHeading to range -180 to 180 (in case of small change around North)
+        if (deltaHeading > 180.0f) {
+            deltaHeading -= 360.0f; // Wrap around if greater than 180
+        } else if (deltaHeading < -180.0f) {
+            deltaHeading += 360.0f; // Wrap around if less than -180
+        }
+        float deltaHeadingRadians = deltaHeading * (M_PI / 180.0f); // Convert to radians
+
+        float cosDeltaHeading = cos_approx(deltaHeadingRadians);
+        float sinDeltaHeading = sin_approx(deltaHeadingRadians);
+
+        // rotate pitch and roll iTerm
+        const float newPitchI = pitchI * cosDeltaHeading - rollI * sinDeltaHeading;
+        const float newRollI = pitchI * sinDeltaHeading + rollI * cosDeltaHeading;
+
+        // attenuate accumulated I to zero if close to target
+        const float rollIAttenuator = (distanceRoll < 200.0f) ? distanceRoll / 200.0f : 1.0f;
+        const float pitchIAttenuator = (distancePitch < 200.0f) ? distancePitch / 200.0f : 1.0f;
+
+        rollI = newRollI * rollIAttenuator;
+        pitchI = newPitchI * pitchIAttenuator;
     }
 
-    float deltaHeadingRadians = deltaHeading * (M_PI / 180.0f); // Convert to radians
-
-    float cosDeltaHeading = cos_approx(deltaHeadingRadians);
-    float sinDeltaHeading = sin_approx(deltaHeadingRadians);
-
-    // Cross-rotate pitch and roll iTerm, because
-    // iTerm accumulation mostly corrects wind drag and needs to keep its earth direction if the quad yaws.
-    const float newPitchI = pitchI * cosDeltaHeading - rollI * sinDeltaHeading;
-    const float newRollI = pitchI * sinDeltaHeading + rollI * cosDeltaHeading;
-
-    rollI = newRollI;
-    pitchI = newPitchI;
-
-    // add up pTerm, dTerm and jTerm
-
+    // add up pid factors
     const float pidSumRoll = rollP + rollI + rollD + rollJ;
     const float pidSumPitch = pitchP + pitchI + pitchD + pitchJ;
 
