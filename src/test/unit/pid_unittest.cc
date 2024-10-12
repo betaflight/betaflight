@@ -94,6 +94,7 @@ extern "C" {
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
     bool isAirmodeActivated(void) { return simulatedAirmodeEnabled; }
+    bool wasThrottleRaised(void) { return simulatedAirmodeEnabled; }
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
 
     // used by auto-disarm code
