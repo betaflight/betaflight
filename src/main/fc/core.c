@@ -776,6 +776,12 @@ bool isAirmodeActivated(void)
     return airmodeIsActivated;
 }
 
+static bool throttleRaised = false;
+
+bool wasThrottleRaised(void)
+{
+    return throttleRaised;
+}
 
 /*
  * processRx called from taskUpdateRxMain
@@ -804,12 +810,17 @@ bool processRx(timeUs_t currentTimeUs)
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
     const bool launchControlActive = isLaunchControlActive();
 
-    if (airmodeIsEnabled() && ARMING_FLAG(ARMED) && !launchControlActive) {
-        // once throttle exceeds activate threshold, airmode latches active until disarm
+    if (ARMING_FLAG(ARMED)) {
         if (throttlePercent >= rxConfig()->airModeActivateThreshold) {
-            airmodeIsActivated = true;
+            throttleRaised = true; // Latch true until disarm
+        }
+        if (airmodeIsEnabled() && !launchControlActive) {
+            airmodeIsActivated = throttleRaised;
+        } else {
+            airmodeIsActivated = false;
         }
     } else {
+        throttleRaised = false;
         airmodeIsActivated = false;
     }
 
@@ -1025,8 +1036,8 @@ void processRxModes(timeUs_t currentTimeUs)
         && sensors(SENSOR_ACC)
         // and we have altitude data
         && isAltitudeAvailable()
-        // and we have already taken off (to prevent activation on the ground), then enable althold
-        && isAirmodeActivated()) {
+        // prevent activation until after takeoff
+        && wasThrottleRaised()) {
         if (!FLIGHT_MODE(ALT_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
         }

@@ -800,8 +800,8 @@ float pidGetAirmodeThrottleOffset(void)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
-    // if, after takeoff...
-    if (isAirmodeActivated()
+    // if, being armed, and adter takeoff...
+    if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
             // we could test here for stage 2 failsafe (including both landing or GPS Rescue)
