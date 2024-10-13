@@ -1680,6 +1680,7 @@ const clivalue_t valueTable[] = {
 // PG_RANGEFINDER_CONFIG
 #ifdef USE_RANGEFINDER
     { "rangefinder_hardware", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
+    { "rangefinder_trust"   , VAR_UINT8 | MASTER_VALUE,               .config.minmaxUnsigned = { 0, 100 }            , PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_trust) },
 #endif
 
 // PG_PINIO_CONFIG
