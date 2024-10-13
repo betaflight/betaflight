@@ -320,6 +320,18 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
         }
 
+        if (IS_RC_MODE_ACTIVE(BOXALTHOLD)) {
+            setArmingDisabled(ARMING_DISABLED_ALTHOLD);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_ALTHOLD);
+        }
+
+        if (IS_RC_MODE_ACTIVE(BOXPOSHOLD)) {
+            setArmingDisabled(ARMING_DISABLED_POSHOLD);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
+        }
+
         if (calculateThrottleStatus() != THROTTLE_LOW) {
             setArmingDisabled(ARMING_DISABLED_THROTTLE);
         } else {
