@@ -748,3 +748,13 @@ void unusedPinsInit(void)
 {
     printf("unusedPinsInit\n");
 }
+
+void IOHi(IO_t io)
+{
+  (void)io;
+};
+
+void IOLo(IO_t io)
+{
+  (void)io;
+};
