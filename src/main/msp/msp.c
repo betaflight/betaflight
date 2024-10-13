@@ -106,6 +106,7 @@
 #include "io/vtx_control.h"
 #include "io/vtx.h"
 #include "io/vtx_msp.h"
+#include "io/rangefinder.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_build_info.h"
@@ -3296,6 +3297,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         break;
 
+#ifdef USE_RANGEFINDER
+            rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
+#else
+            sbufReadU8(src);        // rangefinder hardware
+#endif
+        break;
 #ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
@@ -3646,6 +3653,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
+#if defined(USE_RANGEFINDER_MSP)
+    case MSP2_SENSOR_RANGEFINDER:
+        mspRangefinderReceiveNewData(sbufPtr(src));
+        break;
+#endif
 #ifdef USE_GPS
     case MSP2_SENSOR_GPS:
         (void)sbufReadU8(src);              // instance
