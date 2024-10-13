@@ -293,7 +293,6 @@ void pidResetIterm(void)
     }
 }
 
-
 #ifdef USE_WING
 static float calcWingThrottle(void)
 {
@@ -305,7 +304,6 @@ static float calcWingThrottle(void)
 
     return getMotorOutputRms() * batteryThrottleFactor;
 }
-
 
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
@@ -344,8 +342,7 @@ static float calcWingTpaArgument(void)
 
     return tpaArgument;
 }
-#endif // #ifndef USE_WING
-
+#endif // USE_WING
 
 float getTpaFactorClassic(float tpaArgument)
 {
@@ -363,7 +360,6 @@ float getTpaFactorClassic(float tpaArgument)
 
     return 1.0f - tpaRate;
 }
-
 
 void pidUpdateTpaFactor(float throttle)
 {

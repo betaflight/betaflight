@@ -68,7 +68,6 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 #endif
 }
 
-
 #ifdef USE_WING
 void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
 {
@@ -82,7 +81,6 @@ void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
     pidRuntime.tpaSpeed.maxSpeed = sqrtf(massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
     pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
 }
-
 
 void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
 {
@@ -111,7 +109,6 @@ void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     UNUSED(pidProfile);
 }
 
-
 void tpaSpeedInit(const pidProfile_t *pidProfile)
 {
     pidRuntime.tpaSpeed.speed = 0.0f;
@@ -130,7 +127,6 @@ void tpaSpeedInit(const pidProfile_t *pidProfile)
     }
 }
 #endif // USE_WING
-
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
