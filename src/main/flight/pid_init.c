@@ -77,8 +77,9 @@ void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
     const float delaySec = pidProfile->tpa_speed_basic_delay / 1000.0f;
 
     pidRuntime.tpaSpeed.twr = 1.0f / (gravityFactor * gravityFactor);
-    pidRuntime.tpaSpeed.massDragRatio = (2.0f / logf(3.0f)) * (2.0f / logf(3.0f)) * pidRuntime.tpaSpeed.twr * G_ACCELERATION * delaySec * delaySec;
-    pidRuntime.tpaSpeed.maxSpeed = sqrtf(pidRuntime.tpaSpeed.massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
+    const float massDragRatio = (2.0f / logf(3.0f)) * (2.0f / logf(3.0f)) * pidRuntime.tpaSpeed.twr * G_ACCELERATION * delaySec * delaySec;
+    pidRuntime.tpaSpeed.dragMassRatio = 1.0f / massDragRatio;
+    pidRuntime.tpaSpeed.maxSpeed = sqrtf(massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
     pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
 }
 
@@ -90,7 +91,7 @@ void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     const float mass = pidProfile->tpa_speed_adv_mass / 1000.0f;
     const float dragK = pidProfile->tpa_speed_adv_drag_k / 10000.0f;
     const float propPitch = pidProfile->tpa_speed_adv_prop_pitch / 100.0f;
-    pidRuntime.tpaSpeed.massDragRatio = mass / dragK;
+    pidRuntime.tpaSpeed.dragMassRatio = dragK / mass;
     const float propMaxSpeed = (2.54f / 100.0f / 60.0f) * propPitch * motorConfig()->kv * pidRuntime.tpaSpeed.maxVoltage;
     if (propMaxSpeed <= 0.0f) { // assuming propMaxSpeed is inf
         pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;

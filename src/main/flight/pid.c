@@ -303,7 +303,7 @@ static float calcWingThrottle(void)
         batteryThrottleFactor = constrainf(batteryThrottleFactor, 0.0f, 1.0f);
     }
 
-    return getRootMeanSquareMotorOutput() * batteryThrottleFactor;
+    return getMotorOutputRms() * batteryThrottleFactor;
 }
 
 
@@ -312,7 +312,7 @@ static float calcWingAcceleration(float throttle, float pitchAngleRadians)
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
 
     const float thrust = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
-    const float drag = tpa->speed * tpa->speed / tpa->massDragRatio;
+    const float drag = tpa->speed * tpa->speed * tpa->dragMassRatio;
     const float gravity = G_ACCELERATION * sin_approx(pitchAngleRadians);
 
     return thrust - drag + gravity;
