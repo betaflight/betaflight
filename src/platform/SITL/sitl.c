@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <errno.h>
 #include <time.h>
@@ -34,7 +35,7 @@
 #include "drivers/dma.h"
 #include "drivers/motor.h"
 #include "drivers/serial.h"
-#include "drivers/serial_tcp.h"
+#include "drivers/serial_ws.h"
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
@@ -55,7 +56,7 @@
 
 #include "rx/rx.h"
 
-#include "dyad.h"
+//#include "dyad.h"
 #include "udplink.h"
 
 uint32_t SystemCoreClock;
@@ -268,16 +269,19 @@ static void* tcpThread(void* data)
 {
     UNUSED(data);
 
-    dyad_init();
-    dyad_setTickInterval(0.2f);
-    dyad_setUpdateTimeout(0.01f);
+
+    //dyad_init();
+    //dyad_setTickInterval(0.2f);
+    //dyad_setUpdateTimeout(0.01f);
 
     while (workerRunning) {
-        dyad_update();
+        //dyad_update();
+        wsUpdate();
     }
 
-    dyad_shutdown();
-    printf("tcpThread end!!\n");
+    //dyad_shutdown();
+    printf("wsThread end!!\n");
+    
     return NULL;
 }
 

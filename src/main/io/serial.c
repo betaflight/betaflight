@@ -40,7 +40,8 @@
 #endif
 
 #if defined(SIMULATOR_BUILD)
-#include "drivers/serial_tcp.h"
+//#include "drivers/serial_tcp.h"
+#include "drivers/serial_ws.h"
 #endif
 
 #include "drivers/light_led.h"
@@ -487,7 +488,10 @@ serialPort_t *openSerialPort(
 #endif
 #if defined(SIMULATOR_BUILD)
             // emulate serial ports over TCP
-            serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
+            // serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
+
+            //emulate serial over websocket
+            serialPort = serialWsOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
 #else
             serialPort = uartOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
 #endif

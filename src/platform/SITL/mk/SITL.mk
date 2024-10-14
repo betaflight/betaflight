@@ -1,9 +1,12 @@
+# Include the CMake project Makefile
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
-                   $(ROOT)/lib/main/dyad
+                   $(ROOT)/lib/main/dyad \
+									 $(ROOT)/obj/main/libwebsockets/include
 
 MCU_COMMON_SRC  := $(ROOT)/lib/main/dyad/dyad.c \
+                   $(ROOT)/src/main/drivers/serial_ws.c \
                    sitl.c \
                    udplink.c
 
@@ -54,7 +57,7 @@ LD_FLAGS    := \
               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
-              -T$(LD_SCRIPT)
+              -T$(LD_SCRIPT) \
 
 ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
 LD_FLAGS     += \
@@ -69,3 +72,5 @@ OPTIMISE_SIZE       := -Os
 
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
+
+include $(TARGET_PLATFORM_DIR)/mk/libwebsockets.mk
