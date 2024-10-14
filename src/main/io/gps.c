@@ -77,10 +77,7 @@ gpsSolutionData_t gpsSol;
 uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                              // Details on numCh/svinfo in gps.h
-uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];
-uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];
-uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];
-uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
+GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
 // GPS LOST_COMMUNICATION timeout in ms (max time between received nav solutions)
 #define GPS_TIMEOUT_MS 2500
@@ -111,8 +108,6 @@ static const gpsInitData_t gpsInitData[] = {
     { GPS_BAUDRATE_19200,    BAUD_19200,  "$PUBX,41,1,0003,0001,19200,0*23\r\n" },
     { GPS_BAUDRATE_9600,     BAUD_9600,   "$PUBX,41,1,0003,0001,9600,0*16\r\n" }
 };
-
-#define GPS_INIT_DATA_ENTRY_COUNT ARRAYLEN(gpsInitData)
 
 #define DEFAULT_BAUD_RATE_INDEX 0
 
@@ -355,16 +350,11 @@ gpsData_t gpsData;
 
 char dashboardGpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];             // OLED display of a char for each packet type/event received.
 char *dashboardGpsPacketLogCurrentChar = dashboardGpsPacketLog;     // Current character of log being updated.
-uint32_t dashboardGpsPacketCount = 0;                               // Packet received count.
 uint32_t dashboardGpsNavSvInfoRcvCount = 0;                         // Count of times sat info updated.
 
 static void shiftPacketLog(void)
 {
-    uint32_t i;
-
-    for (i = ARRAYLEN(dashboardGpsPacketLog) - 1; i > 0 ; i--) {
-        dashboardGpsPacketLog[i] = dashboardGpsPacketLog[i-1];
-    }
+    memmove(dashboardGpsPacketLog + 1, dashboardGpsPacketLog, (ARRAYLEN(dashboardGpsPacketLog) - 1) * sizeof(dashboardGpsPacketLog[0]));
 }
 
 static void logErrorToPacketLog(void)
@@ -393,11 +383,39 @@ static void gpsSetState(gpsState_e state)
     gpsData.ackState = UBLOX_ACK_IDLE;
 }
 
+// get inital state when baud detection is desired
+static gpsState_e autobaudFirstState(void)
+{
+    if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_NOTX) {
+        if (gpsConfig()->autoBaud != GPS_AUTOBAUD_ON) {
+            // assume user set correct baudrate
+            return GPS_STATE_RECEIVING_DATA;
+        } else {
+            // test baudrates until valid packets are received
+            return GPS_STATE_DETECT_BAUD_PASSIVE;
+        }
+    } else {
+        // ping GPS (starting with user-supplied baudrate) until version is received
+        return GPS_STATE_DETECT_BAUD_ACTIVE;
+    }
+}
+
+// only RX channel from GPS is available, do not try to communicate with GPS module
+// in rxOnly mode, GPxS configuration phase is skipped, so only few places need to check this
+static bool isRxOnly(void)
+{
+    // only RX pin may be connected to GPS. Handle GPS initialization without sending anything
+    return gpsConfig()->autoConfig == GPS_AUTOCONFIG_NOTX;
+}
+
 void gpsInit(void)
 {
     gpsDataIntervalSeconds = 0.1f;
     gpsData.userBaudRateIndex = 0;
     gpsData.timeouts = 0;
+    gpsData.errors = 0;
+    gpsData.messages = 0;
+
     gpsData.state_ts = millis();
 #ifdef USE_GPS_UBLOX
     gpsData.ubloxUsingFlightModel = false;
@@ -406,7 +424,6 @@ void gpsInit(void)
     gpsData.platformVersion = UBX_VERSION_UNDEF;
 
 #ifdef USE_DASHBOARD
-    gpsData.errors = 0;
     memset(dashboardGpsPacketLog, 0x00, sizeof(dashboardGpsPacketLog));
 #endif
 
@@ -418,6 +435,9 @@ void gpsInit(void)
         return;
     }
 
+    // only RX pin may be connected to GPS. Handle GPS initialization without sending anything
+    const bool rxOnly = isRxOnly();
+
     const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
         return;
@@ -427,7 +447,7 @@ void gpsInit(void)
     initBaudRateIndex = BAUD_COUNT;
     initBaudRateCycleCount = 0;
     gpsData.userBaudRateIndex = DEFAULT_BAUD_RATE_INDEX;
-    for (unsigned i = 0; i < GPS_INIT_DATA_ENTRY_COUNT; i++) {
+    for (unsigned i = 0; i < ARRAYLEN(gpsInitData); i++) {
       if (gpsInitData[i].baudrateIndex == gpsPortConfig->gps_baudrateIndex) {
         gpsData.userBaudRateIndex = i;
         break;
@@ -436,7 +456,7 @@ void gpsInit(void)
     // the user's intended baud rate will be used as the initial baud rate when connecting
     gpsData.tempBaudRateIndex = gpsData.userBaudRateIndex;
 
-    portMode_e mode = MODE_RXTX;
+    portMode_e mode = rxOnly ? MODE_RX : MODE_RXTX;
     portOptions_e options = SERIAL_NOT_INVERTED;
 
 #if defined(GPS_NMEA_TX_ONLY)
@@ -456,8 +476,7 @@ void gpsInit(void)
     }
 
     // signal GPS "thread" to initialize when it gets to it
-    gpsSetState(GPS_STATE_DETECT_BAUD);
-    // NB gpsData.state_position is set to zero by gpsSetState(), requesting the fastest baud rate option first time around.
+    gpsSetState(autobaudFirstState());
 }
 
 #ifdef USE_GPS_UBLOX
@@ -829,6 +848,9 @@ static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint8_t timeRef
     uint16_t measRateMilliseconds = 1000 / measRate;
 
     ubxMessage_t tx_buffer;
+    if (isRxOnly()) {
+        return ;
+    }
     if (gpsData.ubloxM9orAbove) {
         uint8_t offset = 0;
         uint8_t payload[2];
@@ -943,7 +965,7 @@ static void ubloxSetSbas(void)
     }
 }
 
-void setSatInfoMessageRate(uint8_t divisor)
+static void setSatInfoMessageRate(uint8_t divisor)
 {
     // enable satInfoMessage at 1:5 of the nav rate if configurator is connected
     if (gpsData.ubloxM9orAbove) {
@@ -980,13 +1002,21 @@ void gpsConfigureNmea(void)
 
     switch (gpsData.state) {
 
-        case GPS_STATE_DETECT_BAUD:
+        case GPS_STATE_DETECT_BAUD_ACTIVE:
+        case GPS_STATE_DETECT_BAUD_PASSIVE:
             // no attempt to read the baud rate of the GPS module, or change it
             gpsSetState(GPS_STATE_CHANGE_BAUD);
             break;
-
         case GPS_STATE_CHANGE_BAUD:
-#if !defined(GPS_NMEA_TX_ONLY)
+            if (isRxOnly()
+#if defined(GPS_NMEA_TX_ONLY)
+                || true
+#endif
+                ) {
+                // TX is disabled, try receiving data
+                gpsSetState(GPS_STATE_RECEIVING_DATA);
+                break;
+            }
             if (gpsData.state_position < 1) {
                 // set the FC's baud rate to the user's configured baud rate
                 serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]);
@@ -1021,9 +1051,6 @@ void gpsConfigureNmea(void)
                 gpsData.state_position++;
                 gpsSetState(GPS_STATE_RECEIVING_DATA);
             }
-#else // !GPS_NMEA_TX_ONLY
-            gpsSetState(GPS_STATE_RECEIVING_DATA);
-#endif // !GPS_NMEA_TX_ONLY
             break;
     }
 }
@@ -1040,10 +1067,9 @@ void gpsConfigureUblox(void)
     }
 
     switch (gpsData.state) {
-        case GPS_STATE_DETECT_BAUD:
+        case GPS_STATE_DETECT_BAUD_ACTIVE:
 
             DEBUG_SET(DEBUG_GPS_CONNECTION, 3, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex] / 100);
-
             // check to see if there has been a response to the version command
             // initially the FC will be at the user-configured baud rate.
             if (gpsData.platformVersion > UBX_VERSION_UNDEF) {
@@ -1071,7 +1097,7 @@ void gpsConfigureUblox(void)
                 if (cmp32(gpsData.now, gpsData.state_ts) > GPS_CONFIG_BAUD_CHANGE_INTERVAL) {
                     gpsData.state_ts = gpsData.now;
                     messageSent = false;
-                    ++ messageCounter;
+                    messageCounter++;
                 }
                 return;
             }
@@ -1083,14 +1109,36 @@ void gpsConfigureUblox(void)
             if (gpsData.tempBaudRateIndex == 0) {
                 gpsData.tempBaudRateIndex = GPS_BAUDRATE_MAX; // slowest baud rate 9600
             } else {
-                gpsData.tempBaudRateIndex--; 
+                gpsData.tempBaudRateIndex--;
             }
             // set the FC baud rate to the new temp baud rate
             serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
             initBaudRateCycleCount++;
 
             break;
-
+        case GPS_STATE_DETECT_BAUD_PASSIVE: {
+            static uint32_t lastMessages = 0;
+            if (gpsData.messages != lastMessages) { // received message since last check
+                lastMessages = gpsData.messages;
+                if (++gpsData.state_position >= 3) { // at least 2 messages correctly received
+                    // GPS is responding and configure phase is disabled
+                    gpsSetState(GPS_STATE_RECEIVING_DATA);
+                } else {
+                    gpsData.state_ts = gpsData.now; // restart message timeout
+                }
+                break;
+            }
+            if (cmp32(gpsData.now, gpsData.state_ts) < GPS_TIMEOUT_MS) {
+                // still waiting for valid message
+                return;
+            }
+            // select next baudrate
+            gpsData.tempBaudRateIndex = (gpsData.tempBaudRateIndex == 0) ? GPS_BAUDRATE_MAX : gpsData.tempBaudRateIndex - 1;
+            serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.tempBaudRateIndex].baudrateIndex]);
+            gpsData.state_ts = gpsData.now; // restart timer
+            gpsData.state_position = 0;     // restart valid message counter
+            break;
+        }
         case GPS_STATE_CHANGE_BAUD:
             // give time for the GPS module's serial port to settle
             // very important for M8 to give the module a lot of time before sending commands
@@ -1116,7 +1164,7 @@ void gpsConfigureUblox(void)
             if (cmp32(gpsData.now, gpsData.state_ts) < 1000) {
                 return;
             }
-    
+
             if (gpsData.ackState == UBLOX_ACK_IDLE) {
 
                 // short delay before between commands, including the first command
@@ -1266,7 +1314,7 @@ void gpsConfigureUblox(void)
                     default:
                         break;
                 }
-            } 
+            }
 
             // check the ackState after changing CONFIG state, or every iteration while not UBLOX_ACK_IDLE
             switch (gpsData.ackState) {
@@ -1324,7 +1372,7 @@ void gpsConfigureHardware(void)
 static void updateGpsIndicator(timeUs_t currentTimeUs)
 {
     static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) {
+    if (cmp32(currentTimeUs, GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) {
         GPSLEDTime = currentTimeUs + 150000;
         LED1_TOGGLE;
     }
@@ -1401,7 +1449,8 @@ void gpsUpdate(timeUs_t currentTimeUs)
         case GPS_STATE_INITIALIZED:
             break;
 
-        case GPS_STATE_DETECT_BAUD:
+        case GPS_STATE_DETECT_BAUD_PASSIVE:
+        case GPS_STATE_DETECT_BAUD_ACTIVE:
         case GPS_STATE_CHANGE_BAUD:
         case GPS_STATE_CONFIGURE:
             gpsConfigureHardware();
@@ -1412,7 +1461,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             // previously we would attempt a different baud rate here if gps auto-baud was enabled.  that code has been removed.
             gpsSol.numSat = 0;
             DISABLE_STATE(GPS_FIX);
-            gpsSetState(GPS_STATE_DETECT_BAUD);
+            gpsSetState(autobaudFirstState());
             break;
 
         case GPS_STATE_RECEIVING_DATA:
@@ -1493,7 +1542,7 @@ static void gpsNewData(uint16_t c)
 }
 
 #ifdef USE_GPS_UBLOX
-ubloxVersion_e ubloxParseVersion(const uint32_t version) {
+static ubloxVersion_e ubloxParseVersion(const uint32_t version) {
     for (size_t i = 0; i < ARRAYLEN(ubloxVersionMap); ++i) {
         if (version == ubloxVersionMap[i].hw) {
             return (ubloxVersion_e) i;
@@ -1716,8 +1765,8 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
             switch (svSatParam) {
                 case 1:
                     // SV PRN number
-                    GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
-                    GPS_svinfo_svid[svSatNum - 1] = grab_fields(str, 0);
+                    GPS_svinfo[svSatNum - 1].chn  = svSatNum;
+                    GPS_svinfo[svSatNum - 1].svid = grab_fields(str, 0);
                     break;
                 /*case 2:
                     // Elevation, in degrees, 90 maximum
@@ -1727,8 +1776,8 @@ static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uin
                     break; */
                 case 4:
                     // SNR, 00 through 99 dB (null when not tracking)
-                    GPS_svinfo_cno[svSatNum - 1] = grab_fields(str, 0);
-                    GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
+                    GPS_svinfo[svSatNum - 1].cno = grab_fields(str, 0);
+                    GPS_svinfo[svSatNum - 1].quality = 0; // only used by ublox
                     break;
             }
 
@@ -1862,9 +1911,9 @@ static bool gpsNewFrameNMEA(char c)
 #endif
                 uint8_t checksum = 16 * ((string[0] >= 'A') ? string[0] - 'A' + 10 : string[0] - '0') + ((string[1] >= 'A') ? string[1] - 'A' + 10 : string[1] - '0');
                 if (checksum == parity) {
+                    gpsData.messages++;
 #ifdef USE_DASHBOARD
                     *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_IGNORED;
-                    dashboardGpsPacketCount++;
 #endif
                     receivedNavMessage = writeGpsSolutionNmea(&gpsSol, &gps_msg, gps_frame);  // // write gps_msg into gpsSol
                 }
@@ -2121,8 +2170,6 @@ static uint16_t ubxFrameParsePayloadCounter;
 
 static bool UBLOX_parse_gps(void)
 {
-    uint32_t i;
-
 //    lastUbxRcvMsgClass = ubxRcvMsgClass;
 //    lastUbxRcvMsgID = ubxRcvMsgID;
 
@@ -2226,7 +2273,7 @@ static bool UBLOX_parse_gps(void)
             dt.hours = ubxRcvMsgPayload.ubxNavPvt.hour;
             dt.minutes = ubxRcvMsgPayload.ubxNavPvt.min;
             dt.seconds = ubxRcvMsgPayload.ubxNavPvt.sec;
-            dt.millis = (ubxRcvMsgPayload.ubxNavPvt.nano > 0) ? ubxRcvMsgPayload.ubxNavPvt.nano / 1000 : 0; //up to 5ms of error
+            dt.millis = (ubxRcvMsgPayload.ubxNavPvt.nano > 0) ? ubxRcvMsgPayload.ubxNavPvt.nano / 1000000 : 0; // up to 5ms of error
             rtcSetDateTime(&dt);
         }
 #endif
@@ -2235,26 +2282,22 @@ static bool UBLOX_parse_gps(void)
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SVINFO;
 #endif
-        GPS_numCh = ubxRcvMsgPayload.ubxNavSvinfo.numCh;
+        GPS_numCh = MIN(ubxRcvMsgPayload.ubxNavSvinfo.numCh, GPS_SV_MAXSATS_LEGACY);
         // If we're receiving UBX-NAV-SVINFO messages, we detected a module version M7 or older.
         // We can receive far more sats than we can handle for Configurator, which is the primary consumer for sat info.
         // We're using the max for legacy (16) for our sizing, this smaller sizing triggers Configurator to know it's
         // an M7 or earlier module and to use the older sat list format.
         // We simply ignore any sats above that max, the down side is we may not see sats used for the solution, but
         // the intent in Configurator is to see if sats are being acquired and their strength, so this is not an issue.
-        if (GPS_numCh > GPS_SV_MAXSATS_LEGACY)
-            GPS_numCh = GPS_SV_MAXSATS_LEGACY;
-        for (i = 0; i < GPS_numCh; i++) {
-            GPS_svinfo_chn[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].chn;
-            GPS_svinfo_svid[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].svid;
-            GPS_svinfo_quality[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].quality;
-            GPS_svinfo_cno[i] = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].cno;
-        }
-        for (; i < GPS_SV_MAXSATS_LEGACY; i++) {
-            GPS_svinfo_chn[i] = 0;
-            GPS_svinfo_svid[i] = 0;
-            GPS_svinfo_quality[i] = 0;
-            GPS_svinfo_cno[i] = 0;
+        for (unsigned i = 0; i < ARRAYLEN(GPS_svinfo); i++) {
+            if (i < GPS_numCh) {
+                GPS_svinfo[i].chn = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].chn;
+                GPS_svinfo[i].svid = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].svid;
+                GPS_svinfo[i].quality = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].quality;
+                GPS_svinfo[i].cno = ubxRcvMsgPayload.ubxNavSvinfo.channel[i].cno;
+            } else {
+                GPS_svinfo[i] = (GPS_svinfo_t){0};
+            }
         }
 #ifdef USE_DASHBOARD
         dashboardGpsNavSvInfoRcvCount++;
@@ -2264,31 +2307,28 @@ static bool UBLOX_parse_gps(void)
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SVINFO; // The display log only shows SVINFO for both SVINFO and SAT.
 #endif
-        GPS_numCh = ubxRcvMsgPayload.ubxNavSat.numSvs;
+        GPS_numCh = MIN(ubxRcvMsgPayload.ubxNavSat.numSvs, GPS_SV_MAXSATS_M8N);
         // If we're receiving UBX-NAV-SAT messages, we detected a module M8 or newer.
         // We can receive far more sats than we can handle for Configurator, which is the primary consumer for sat info.
         // We're using the max for M8 (32) for our sizing, since Configurator only supports a max of 32 sats and we
         // want to limit the payload buffer space used.
         // We simply ignore any sats above that max, the down side is we may not see sats used for the solution, but
         // the intent in Configurator is to see if sats are being acquired and their strength, so this is not an issue.
-        if (GPS_numCh > GPS_SV_MAXSATS_M8N)
-            GPS_numCh = GPS_SV_MAXSATS_M8N;
-        for (i = 0; i < GPS_numCh; i++) {
-            GPS_svinfo_chn[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].gnssId;
-            GPS_svinfo_svid[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].svId;
-            GPS_svinfo_cno[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].cno;
-            GPS_svinfo_quality[i] = ubxRcvMsgPayload.ubxNavSat.svs[i].flags;
-        }
-        for (; i < GPS_SV_MAXSATS_M8N; i++) {
-            GPS_svinfo_chn[i] = 255;
-            GPS_svinfo_svid[i] = 0;
-            GPS_svinfo_quality[i] = 0;
-            GPS_svinfo_cno[i] = 0;
+        for (unsigned i = 0; i < ARRAYLEN(GPS_svinfo); i++) {
+            if (i < GPS_numCh) {
+                GPS_svinfo[i].chn = ubxRcvMsgPayload.ubxNavSat.svs[i].gnssId;
+                GPS_svinfo[i].svid = ubxRcvMsgPayload.ubxNavSat.svs[i].svId;
+                GPS_svinfo[i].cno = ubxRcvMsgPayload.ubxNavSat.svs[i].cno;
+                GPS_svinfo[i].quality = ubxRcvMsgPayload.ubxNavSat.svs[i].flags;
+            } else {
+                GPS_svinfo[i] = (GPS_svinfo_t){ .chn = 255 };
+            }
         }
 
         // Setting the number of channels higher than GPS_SV_MAXSATS_LEGACY is the only way to tell BF Configurator we're sending the
         // enhanced sat list info without changing the MSP protocol. Also, we're sending the complete list each time even if it's empty, so
         // BF Conf can erase old entries shown on screen when channels are removed from the list.
+        // TODO: GPS_numCh = MAX(GPS_numCh, GPS_SV_MAXSATS_LEGACY + 1);
         GPS_numCh = GPS_SV_MAXSATS_M8N;
 #ifdef USE_DASHBOARD
         dashboardGpsNavSvInfoRcvCount++;
@@ -2448,8 +2488,8 @@ static bool gpsNewFrameUBLOX(uint8_t data)
         case UBX_PARSE_CHECKSUM_B:
             if (ubxRcvMsgChecksumB == data) {
                 // Checksum B also matches, successfully received a new full packet!
+                gpsData.messages++;
 #ifdef USE_DASHBOARD
-                dashboardGpsPacketCount++;  // Packet counter used by dashboard device.
                 shiftPacketLog();           // Make space for message handling to add the message type char to the dashboard device packet log.
 #endif
                 // Handle the parsed message. Note this is a questionable inverted call dependency, but something for a later refactoring.
@@ -2564,7 +2604,7 @@ void GPS_reset_home_position(void)
 
 #ifdef USE_GPS_UBLOX
     // disable Sat Info requests on arming
-    if (gpsConfig()->provider == GPS_UBLOX) {
+    if (gpsConfig()->provider == GPS_UBLOX && !isRxOnly()) {
         setSatInfoMessageRate(0);
     }
 #endif
