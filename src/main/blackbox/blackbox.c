@@ -70,6 +70,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/pos_hold.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
@@ -1818,7 +1819,7 @@ static bool blackboxWriteSysinfo(void)
 #endif
 
 #ifdef USE_POS_HOLD_MODE
-    // nothing at present
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_WITHOUT_MAG, "%d", posHoldConfig()->pos_hold_without_mag);
 #endif
 
 #ifdef USE_WING

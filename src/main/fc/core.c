@@ -1064,7 +1064,8 @@ void processRxModes(timeUs_t currentTimeUs)
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
-        // TO DO: handle No Mag data depending on user choice to proceed with or without mag
+        && sensors(SENSOR_MAG || allowPosHoldWithoutMag())
+        // Need Mag unless a BRAVE user tries it without
         && isAltitudeAvailable()
         // prevent activation until after takeoff
         && wasThrottleRaised()) {

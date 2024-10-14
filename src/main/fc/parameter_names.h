@@ -251,6 +251,10 @@
 #define PARAM_NAME_ALT_HOLD_ADJUST_RATE "alt_hold_adjust_rate"
 #endif // USE_ALT_HOLD_MODE
 
+#ifdef USE_POS_HOLD_MODE
+#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "position_hold_without_mag"
+#endif // USE_POS_HOLD_MODE
+
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
 #define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"
 #define PARAM_NAME_IMU_SMALL_ANGLE "small_angle"

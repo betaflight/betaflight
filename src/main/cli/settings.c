@@ -64,6 +64,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/pos_hold.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -1113,7 +1114,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef USE_POS_HOLD_MODE
-    // nothing at present
+    { PARAM_NAME_POS_HOLD_WITHOUT_MAG,    VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, pos_hold_without_mag) },
 #endif
 
 // PG_PID_CONFIG

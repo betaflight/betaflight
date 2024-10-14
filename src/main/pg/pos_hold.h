@@ -25,7 +25,7 @@
 #include "pg/pg.h"
 
 typedef struct posHoldConfig_s {
-    uint8_t unused;
+    bool pos_hold_without_mag;
 } posHoldConfig_t;
 
 PG_DECLARE(posHoldConfig_t, posHoldConfig);

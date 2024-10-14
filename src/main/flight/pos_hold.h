@@ -36,5 +36,6 @@ void posHoldInit(void);
 void updatePosHoldState(timeUs_t currentTimeUs);
 
 bool showPosHoldWarning(void);
+bool allowPosHoldWithoutMag(void);
 
 #endif

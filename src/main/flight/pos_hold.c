@@ -104,4 +104,10 @@ bool showPosHoldWarning(void) {
     return (posHold.isPosHoldRequested && !posHold.posHoldIsOK);
 }
 
+bool allowPosHoldWithoutMag(void) {
+    return (posHoldConfig()->pos_hold_without_mag);
+}
+
+
+
 #endif // USE_POS_HOLD
