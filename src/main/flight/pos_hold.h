@@ -23,15 +23,18 @@
 #include "common/time.h"
 #include "io/gps.h"
 
-#define POSHOLD_TASK_RATE_HZ 100         // hz
+#define POSHOLD_TASK_RATE_HZ 100 // hz
 
 typedef struct {
-    bool isPosHoldActive;
+    bool isPosHoldRequested;
+    bool posHoldIsOK;
     gpsLocation_t targetLocation;
     float deadband;
 } posHoldState_t;
 
 void posHoldInit(void);
 void updatePosHoldState(timeUs_t currentTimeUs);
+
+bool showPosHoldWarning(void);
 
 #endif

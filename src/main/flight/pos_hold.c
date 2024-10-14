@@ -37,13 +37,14 @@ posHoldState_t posHold;
 
 void posHoldReset(void)
 {
+    posHold.posHoldIsOK = true;
     posHold.targetLocation = gpsSol.llh;
     resetPositionControl();
 }
 
 void posHoldInit(void)
 {
-    posHold.isPosHoldActive = false;
+    posHold.isPosHoldRequested = false;
     posHold.deadband = rcControlsConfig()->autopilot_deadband / 100.0f;
     posHoldReset();
 }
@@ -51,13 +52,13 @@ void posHoldInit(void)
 void posHoldProcessTransitions(void)
 {
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        if (!posHold.isPosHoldActive) {
+        if (!posHold.isPosHoldRequested) {
             // initialise relevant values each time position hold starts
             posHoldReset();
-            posHold.isPosHoldActive = true;
+            posHold.isPosHoldRequested = true;
         }
     } else {
-        posHold.isPosHoldActive = false;
+        posHold.isPosHoldRequested = false;
     }
 }
 
@@ -79,8 +80,9 @@ void posHoldUpdate(void)
 {
     posHoldUpdateTargetLocation();
 
-    if (getIsNewDataForPosHold()) {
-        positionControl(posHold.targetLocation, posHold.deadband);
+    if (getIsNewDataForPosHold() && posHold.posHoldIsOK) {
+        posHold.posHoldIsOK = positionControl(posHold.targetLocation, posHold.deadband);
+        // TO DO: needs an OSD warning
     }
 }
 
@@ -90,12 +92,16 @@ void updatePosHoldState(timeUs_t currentTimeUs) {
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
     posHoldProcessTransitions();
 
-    if (posHold.isPosHoldActive) {
+    if (posHold.isPosHoldRequested) {
         posHoldUpdate();
     } else {
         posHoldAngle[AI_PITCH] = 0.0f;
         posHoldAngle[AI_ROLL] = 0.0f;
     }
+}
+
+bool showPosHoldWarning(void) {
+    return (posHold.isPosHoldRequested && !posHold.posHoldIsOK);
 }
 
 #endif // USE_POS_HOLD

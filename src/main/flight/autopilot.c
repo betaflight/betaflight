@@ -25,6 +25,7 @@
 #include "common/filter.h"
 #include "common/maths.h"
 #include "fc/rc.h"
+#include "fc/runtime_config.h"
 
 #include "flight/imu.h"
 #include "flight/position.h"
@@ -140,10 +141,15 @@ void resetPositionControl (void) {
     pitchI = 0.0f;
     rollI = 0.0f;
 }
-void positionControl(gpsLocation_t targetLocation, float deadband) {
+bool positionControl(gpsLocation_t targetLocation, float deadband) {
     // gpsSol.llh = current gps location
     // get distance and bearing from current location to target location
     // void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
+
+    if (!STATE(GPS_FIX)) {
+        return false; // cannot proceed without a GPS location
+    }
+
     uint32_t distanceCm;
     int32_t bearing; // degrees * 100
     static float previousHeading = 0.0f;
@@ -181,6 +187,7 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     // each axis separately, so that when overshooting, the filter lag doesn't cause problems
     const float distanceRoll = rollProportion * distanceCm;
     // positive distances mean nose towards target, should roll forward (positive roll)
+
     // we need separate velocity for roll so the filter lag isn't problematic
     float velocityRoll = (distanceRoll - previousDistanceRoll) * gpsDataIntervalHz;
     previousDistanceRoll = distanceRoll;
@@ -200,6 +207,7 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
 
     const float distancePitch = pitchProportion * distanceCm;
     // positive distances mean nose towards target, should pitch forward (positive pitch)
+
     float velocityPitch = (distancePitch - previousDistancePitch) * gpsDataIntervalHz;
     previousDistancePitch = distancePitch;
     // lowpass filter the velocity
@@ -212,17 +220,24 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
     pt1FilterUpdateCutoff(&accelerationPitchLpf, gain);
     accelerationPitch = pt1FilterApply(&accelerationPitchLpf, accelerationPitch);
 
+    // simple (very simple) sanity check, mostly to detect flyaway from no Mag or badly oriented Mag
+    if (distanceCm > 1000) {
+        return false; // must stay within 10m or probably flying away
+        // value at this point is a 'best guess' to detect IMU failure in the event the user has no Mag
+        // if entering poshold from a stable hover, we would only exceed this if IMU was disoriented
+        // if entering poshold at speed, it may overshoot this value and falsely fail, if so need something more complex
+    }
+
     const float pitchP = distancePitch * positionPidCoeffs.Kp;
     const float pitchD = velocityPitch * positionPidCoeffs.Kd;
     const float pitchJ = accelerationPitch * positionPidCoeffs.Kf;
 
     // ** calculate I and rotate if quad yaws
 
-    // NOTE: iTerm readily causes circling issues hence default to zero
     // intent: on windy days, accumulate whatever iTerm we need, then rotate it if the quad yaws.
     // useful only on very windy days when P can't quite get there
-    // needs to be attenuated towards zero when close to target to avoid overshoot
-    // hence cannot completely eliminate position error due to wind.
+    // needs to be attenuated towards zero when close to target to avoid overshoot and circling
+    // hence cannot completely eliminate position error due to wind, will tend to end up a little bit down-wind
 
     if (positionPidCoeffs.Ki) {
         rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
@@ -291,6 +306,8 @@ void positionControl(gpsLocation_t targetLocation, float deadband) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchJ * 10));
     }
+
+    return true;
 }
 
 bool isBelowLandingAltitude(void)
