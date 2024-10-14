@@ -110,7 +110,8 @@ typedef struct rcSmoothingFilter_s {
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
     uint8_t yaw_deadband;                   // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
-    uint8_t autopilot_deadband;             // deadband while in altitude or position control modes
+    uint8_t alt_hold_deadband;              // throttle deadband while in altitude hold
+    uint8_t pos_hold_deadband;              // RPY deadband while in position hold
     bool yaw_control_reversed;              // invert control direction of yaw
 } rcControlsConfig_t;
 

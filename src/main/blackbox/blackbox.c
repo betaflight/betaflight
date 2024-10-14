@@ -1645,7 +1645,6 @@ static bool blackboxWriteSysinfo(void)
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DEADBAND, "%d",               rcControlsConfig()->deadband);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_DEADBAND, "%d",           rcControlsConfig()->yaw_deadband);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_DEADBAND, "%d",            rcControlsConfig()->autopilot_deadband);
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_HARDWARE_LPF, "%d",      gyroConfig()->gyro_hardware_lpf);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GYRO_LPF1_TYPE, "%d",         gyroConfig()->gyro_lpf1_type);
@@ -1816,10 +1815,12 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_ALT_HOLD_MODE
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_ADJUST_RATE, "%d", altHoldConfig()->alt_hold_adjust_rate);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND,    "%d", rcControlsConfig()->alt_hold_deadband);
 #endif
 
 #ifdef USE_POS_HOLD_MODE
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_WITHOUT_MAG, "%d", posHoldConfig()->pos_hold_without_mag);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", rcControlsConfig()->pos_hold_deadband);
 #endif
 
 #ifdef USE_WING

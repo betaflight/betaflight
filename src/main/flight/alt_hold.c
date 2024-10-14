@@ -66,6 +66,7 @@ void altHoldReset(void)
 void altHoldInit(void)
 {
     altHoldState.isAltHoldActive = false;
+    altHoldState.deadband = rcControlsConfig()->alt_hold_deadband / 100.0f;
     altHoldReset();
 }
 
@@ -108,8 +109,8 @@ void altHoldUpdateTargetAltitude(void)
 
     const float rcThrottle = rcCommand[THROTTLE];
 
-    const float lowThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
-    const float highThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
+    const float lowThreshold = autopilotConfig()->hover_throttle - altHoldState.deadband * (autopilotConfig()->hover_throttle - PWM_RANGE_MIN);
+    const float highThreshold = autopilotConfig()->hover_throttle + altHoldState.deadband * (PWM_RANGE_MAX - autopilotConfig()->hover_throttle);
 
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {

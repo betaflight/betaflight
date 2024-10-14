@@ -30,6 +30,7 @@ typedef struct {
     bool posHoldIsOK;
     gpsLocation_t targetLocation;
     float deadband;
+    bool useStickAdjustment;
 } posHoldState_t;
 
 void posHoldInit(void);

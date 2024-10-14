@@ -173,7 +173,6 @@
 #define PARAM_NAME_POSITION_D "autopilot_position_D"
 #define PARAM_NAME_POSITION_J "autopilot_position_J"
 #define PARAM_NAME_POSITION_CUTOFF "autopilot_position_cutoff"
-#define PARAM_NAME_AP_DEADBAND "autopilot_deadband" // from rcControlsConfig
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
@@ -248,12 +247,14 @@
 #endif // USE_GPS
 
 #ifdef USE_ALT_HOLD_MODE
+#define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband" // from rcControlsConfig
 #define PARAM_NAME_ALT_HOLD_ADJUST_RATE "alt_hold_adjust_rate"
-#endif // USE_ALT_HOLD_MODE
+#endif
 
 #ifdef USE_POS_HOLD_MODE
-#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "position_hold_without_mag"
-#endif // USE_POS_HOLD_MODE
+#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
+#define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband" // from rcControlsConfig
+#endif
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
 #define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"

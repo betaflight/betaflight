@@ -45,7 +45,8 @@ void posHoldReset(void)
 void posHoldInit(void)
 {
     posHold.isPosHoldRequested = false;
-    posHold.deadband = rcControlsConfig()->autopilot_deadband / 100.0f;
+    posHold.deadband = rcControlsConfig()->pos_hold_deadband / 100.0f;
+    posHold.useStickAdjustment = rcControlsConfig()->pos_hold_deadband;
     posHoldReset();
 }
 
@@ -67,11 +68,13 @@ void posHoldUpdateTargetLocation(void)
     // if failsafe is active, eg landing mode, don't update the original start point 
     if (!failsafeIsActive()) {
         // otherwise if sticks are not centered, allow start point to be updated
-        if ((getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband))  {
-            // allow user to fly the quad, in angle mode, enabling a 20% deadband via rc.c (?)
-            // while sticks are outside the deadband,
-            // keep updating the home location to the current GPS location each iteration
-            posHoldReset();
+        if (posHold.useStickAdjustment) {
+            if ((getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband))  {
+                // allow user to fly the quad, in angle mode, when sticks are outside the deadband
+                // while sticks are outside the deadband,
+                // keep updating the home location to the current GPS location each iteration
+                posHoldReset();
+            }
         }
     }
 }
@@ -107,7 +110,5 @@ bool showPosHoldWarning(void) {
 bool allowPosHoldWithoutMag(void) {
     return (posHoldConfig()->pos_hold_without_mag);
 }
-
-
 
 #endif // USE_POS_HOLD
