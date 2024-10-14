@@ -85,7 +85,6 @@ void posHoldUpdate(void)
 
     if (getIsNewDataForPosHold() && posHold.posHoldIsOK) {
         posHold.posHoldIsOK = positionControl(posHold.targetLocation, posHold.deadband);
-        // TO DO: needs an OSD warning
     }
 }
 

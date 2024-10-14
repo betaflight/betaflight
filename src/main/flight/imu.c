@@ -85,7 +85,8 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
 #define GPS_COG_MIN_GROUNDSPEED 100        // 1.0m/s - min groundspeed for GPS Heading reinitialisation etc
-bool canUseGPSHeading = true;
+
+bool canUseGPSHeading = false;
 
 static float throttleAngleScale;
 static int throttleAngleValue;
@@ -187,12 +188,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 void imuInit(void)
 {
-#ifdef USE_GPS
-    canUseGPSHeading = true;
-#else
     canUseGPSHeading = false;
-#endif
-
     imuComputeRotationMatrix();
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
@@ -441,7 +437,8 @@ static float imuCalcGroundspeedGain(float dt)
     }
 
     // NOTE : these suppressions make sense with normal pilot inputs and normal flight
-    // They are not used in GPS Rescue, and probably should be bypassed in position hold, etc,
+    // Flying straight ahead for 1s at > 3m/s at pitch of say 22.5 degrees returns a final multiplier of 5
+    // They are not used in GPS Rescue, and probably should be bypassed in position hold, and other situations when we know we are still
 
     return speedBasedGain * stickSuppression * rollSuppression * pitchSuppression;
 }
@@ -663,8 +660,24 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 groundspeedGain = imuCalcGroundspeedGain(dt);
             }
             DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(groundspeedGain * 100.0f));
-            float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+            const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+            const float imuCourseError = imuCalcCourseErr(courseOverGround);
             cogErr = imuCalcCourseErr(courseOverGround) * groundspeedGain;
+
+
+            static float gpsHeadingTruth = 0;
+            // groundspeedGain can be 5.0 in clean forward flight, up to 10.0 max
+            // fabsf(imuCourseError) is 0 when headings are aligned, 1 when 90 degrees error or worse
+            // accumulate 'points' based on alignment and likelihood of accumulation being good
+            gpsHeadingTruth += fmaxf(groundspeedGain - fabsf(imuCourseError), 0.0f) * dt;
+            // recenter at 2.5s time constant
+            // TODO: intent is to match IMU time constant, approximately, but I don't exactly know how to do that
+            gpsHeadingTruth -= 0.4 * dt * gpsHeadingTruth; 
+            // if we accumulate enough 'points' over time, the IMU probably is OK
+            // will need to reaccumulate after a disarm (will be retained partly for very brief disarms)
+            canUseGPSHeading = !canUseGPSHeading && (gpsHeadingTruth > 2.0f);
+            // latches true; reset on disarm; used to stop position hold without a suitable GPS heading, if needed
+
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
             // Reset the reference and reinitialize quaternion factors when GPS groundspeed > GPS_COG_MIN_GROUNDSPEED
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);

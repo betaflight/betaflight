@@ -624,7 +624,7 @@ void tryArm(void)
         //beep to indicate arming
         if (featureIsEnabled(FEATURE_GPS)) {
             GPS_reset_home_position();
-
+            canUseGPSHeading = false; // block use of GPS Heading in position hold after each arm, until quad can set IMU to GPS COG
             if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
                 beeper(BEEPER_ARMING_GPS_FIX);
             } else {
@@ -1064,7 +1064,7 @@ void processRxModes(timeUs_t currentTimeUs)
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
-        && sensors(SENSOR_MAG || allowPosHoldWithoutMag())
+        && (sensors(SENSOR_MAG) || allowPosHoldWithoutMag())
         // Need Mag unless a BRAVE user tries it without
         && isAltitudeAvailable()
         // prevent activation until after takeoff

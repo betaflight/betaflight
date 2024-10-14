@@ -31,6 +31,7 @@
 #include "flight/position.h"
 #include "rx/rx.h"
 #include "sensors/gyro.h"
+#include "sensors/compass.h"
 
 #include "autopilot.h"
 
@@ -148,6 +149,12 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
 
     if (!STATE(GPS_FIX)) {
         return false; // cannot proceed without a GPS location
+    }
+
+    if (!canUseGPSHeading && !compassIsHealthy()) {
+        return false;
+        // If compass is healthy, we must have a Mag, and therefore are OK, even with no GPS Heading
+        // If user allows posHold without a Mag, the IMU must be able to get heading from the GPS
     }
 
     uint32_t distanceCm;
