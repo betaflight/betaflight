@@ -816,8 +816,6 @@ bool processRx(timeUs_t currentTimeUs)
         }
         if (airmodeIsEnabled() && !launchControlActive) {
             airmodeIsActivated = throttleRaised;
-        } else {
-            airmodeIsActivated = false;
         }
     } else {
         throttleRaised = false;
