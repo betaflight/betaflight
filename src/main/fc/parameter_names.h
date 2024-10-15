@@ -237,6 +237,7 @@
 #define PARAM_NAME_ALT_HOLD_THROTTLE_MIN "alt_hold_throttle_min"
 #define PARAM_NAME_ALT_HOLD_THROTTLE_MAX "alt_hold_throttle_max"
 #define PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE "alt_hold_target_adjust_rate"
+#define PARAM_NAME_ALT_HOLD_ADJ_DOWN_RAT "alt_hold_adj_down_reduction_ratio"
 #endif // USE_ALT_HOLD_MODE
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"

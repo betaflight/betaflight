@@ -115,7 +115,8 @@ float altitudePidCalculate(void)
     // this would offset motor lag and kick off some initial vertical acceleration.
     // this would be exactly what an experienced pilot would do.
 
-    const float output = pOut + iOut - dOut + fOut;
+    float output = pOut + iOut - dOut + fOut;
+    if(output < 0) output *= (float)(altholdConfig()->altitude_Adj_Down_ratio)/100.0f;
     DEBUG_SET(DEBUG_ALTHOLD, 4, lrintf(pOut));
     DEBUG_SET(DEBUG_ALTHOLD, 5, lrintf(iOut));
     DEBUG_SET(DEBUG_ALTHOLD, 6, lrintf(dOut));

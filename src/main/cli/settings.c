@@ -1096,6 +1096,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ALT_HOLD_THROTTLE_MIN,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1050, 1400 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_throttle_min) },
     { PARAM_NAME_ALT_HOLD_THROTTLE_MAX,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1400, 2000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_throttle_max) },
     { PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_target_adjust_rate) },
+    { PARAM_NAME_ALT_HOLD_ADJ_DOWN_RAT,                VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altitude_Adj_Down_ratio) },
 #endif
 
 // PG_PID_CONFIG
