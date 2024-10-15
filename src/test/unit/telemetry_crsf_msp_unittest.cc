@@ -292,7 +292,7 @@ extern "C" {
 
     bool featureIsEnabled(uint32_t) {return false;}
 
-    bool airmodeIsEnabled(void) {return true;}
+    bool isAirmodeEnabled(void) {return true;}
 
     mspDescriptor_t mspDescriptorAlloc(void) {return 0;}
 

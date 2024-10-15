@@ -718,7 +718,7 @@ STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRat
             acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
         }
 
-        if (isAirmodeActivated()) {
+        if (wasThrottleRaised()) {
             axisError[axis] = constrainf(axisError[axis] + acErrorRate * pidRuntime.dT,
                 -pidRuntime.acErrorLimit, pidRuntime.acErrorLimit);
             const float acCorrection = constrainf(axisError[axis] * pidRuntime.acGain, -pidRuntime.acLimit, pidRuntime.acLimit);

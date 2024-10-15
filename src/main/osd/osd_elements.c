@@ -1066,7 +1066,7 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HOR ");
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
         strcpy(element->buff, "ATRN");
-    } else if (airmodeIsEnabled()) {
+    } else if (isAirmodeEnabled()) {
         strcpy(element->buff, "AIR ");
     } else {
         strcpy(element->buff, "ACRO");

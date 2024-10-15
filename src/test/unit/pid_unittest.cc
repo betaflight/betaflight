@@ -24,7 +24,7 @@
 #include "gtest/gtest.h"
 #include "build/debug.h"
 
-bool simulatedAirmodeEnabled = true;
+bool simulatedThrottleRaised = true;
 float simulatedSetpointRate[3] = { 0,0,0 };
 float simulatedPrevSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
@@ -93,8 +93,7 @@ extern "C" {
 
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
-    bool isAirmodeActivated(void) { return simulatedAirmodeEnabled; }
-    bool wasThrottleRaised(void) { return simulatedAirmodeEnabled; }
+    bool wasThrottleRaised(void) { return simulatedThrottleRaised; }
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
 
     // used by auto-disarm code

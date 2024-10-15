@@ -651,14 +651,15 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
 
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 {
+    const bool launchControlActive = isLaunchControlActive();
+    const bool airmodeEnabled = isAirmodeEnabled() || launchControlActive;
+
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     if (applyCrashFlipModeToMotors()) {
         return; // if crash flip mode has been applied to the motors, mixing is done
     }
-
-    const bool launchControlActive = isLaunchControlActive();
 
     motorMixer_t * activeMixer = &mixerRuntime.currentMixer[0];
 #ifdef USE_LAUNCH_CONTROL
@@ -753,8 +754,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 
     //  The following fixed throttle values will not be shown in the blackbox log
-    // ?? Should they be influenced by airmode?  If not, should go after the apply airmode code.
-    const bool airmodeEnabled = airmodeIsEnabled() || launchControlActive;
 #ifdef USE_YAW_SPIN_RECOVERY
     // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
     // When airmode is active the throttle setting doesn't impact recovery authority.
@@ -788,6 +787,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     motorMixRange = motorMixMax - motorMixMin;
 
+    // note that here airmodeEnabled is true also when Launch Control is active
     switch (mixerConfig()->mixer_type) {
     case MIXER_LEGACY:
         applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
@@ -807,10 +807,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
-        && !airmodeEnabled
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE)   // disable motor_stop while GPS Rescue / Altitude Hold is active
+        && !airmodeEnabled                               // not with airmode or launch control
+        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE) // mot in autopilot modes
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
-        // motor_stop handling
         applyMotorStop();
     } else {
         // Apply the mix to motor endpoints
