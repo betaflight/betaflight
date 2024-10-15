@@ -41,7 +41,7 @@
 #define ALTITUDE_F_SCALE  0.01f
 #define POSITION_P_SCALE  0.003f
 #define POSITION_I_SCALE  0.001f
-#define POSITION_D_SCALE  0.003f
+#define POSITION_D_SCALE  0.004f
 #define POSITION_J_SCALE  0.002f
 
 static pidCoefficient_t altitudePidCoeffs;
@@ -49,13 +49,33 @@ static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
 static pidCoefficient_t positionPidCoeffs;
-static float previousDistancePitch = 0.0f;
-static float previousDistanceRoll = 0.0f;
-static float previousVelocityPitch = 0.0f;
-static float previousVelocityRoll = 0.0f;
-static float pitchI = 0.0f;
-static float rollI = 0.0f;
+
+typedef struct {
+    float previousDistancePitch;
+    float previousDistanceRoll;
+    float previousVelocityPitch;
+    float previousVelocityRoll;
+    float previousHeading;
+    float pitchI;
+    float rollI;
+    bool justStarted;
+    float previousDistanceCm;
+} posHoldState;
+
+static posHoldState posHold = {
+    .previousDistancePitch = 0.0f,
+    .previousDistanceRoll = 0.0f,
+    .previousVelocityPitch = 0.0f,
+    .previousVelocityRoll = 0.0f,
+    .previousHeading = 0.0f,
+    .pitchI = 0.0f,
+    .rollI = 0.0f,
+    .justStarted = true,
+    .previousDistanceCm = 0.0f
+};
+
 float posHoldAngle[ANGLE_INDEX_COUNT];
+
 static pt1Filter_t velocityPitchLpf;
 static pt1Filter_t accelerationPitchLpf;
 static pt1Filter_t velocityRollLpf;
@@ -133,20 +153,21 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
-void resetPositionControl (void) {
-    // runs when position hold starts, and while either stick is outside deadband
-    previousDistancePitch = 0.0f;
-    previousVelocityPitch = 0.0f;
-    previousDistanceRoll = 0.0f;
-    previousVelocityRoll = 0.0f;
-    pitchI = 0.0f;
-    rollI = 0.0f;
+void resetPositionControl(void) {
+    // runs when position hold starts, while either stick is outside deadband, and once at the start
+    posHold.previousDistanceRoll = 0.0f;
+    posHold.previousVelocityRoll = 0.0f;
+    posHold.previousDistancePitch = 0.0f;
+    posHold.previousVelocityPitch = 0.0f;
+    posHold.previousHeading = attitude.values.yaw * 0.1f;
+    posHold.pitchI = 0.0f;
+    posHold.rollI = 0.0f;
+    posHold.justStarted = true;
 }
-bool positionControl(gpsLocation_t targetLocation, float deadband) {
-    // gpsSol.llh = current gps location
-    // get distance and bearing from current location to target location
-    // void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
 
+bool positionControl(gpsLocation_t targetLocation, float deadband) {
+
+    // exit if we don't have suitable data
     if (!STATE(GPS_FIX)) {
         return false; // cannot proceed without a GPS location
     }
@@ -157,16 +178,38 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
         // If user allows posHold without a Mag, the IMU must be able to get heading from the GPS
     }
 
+    // collect initial data values - gpsSol.llh = current gps location
     uint32_t distanceCm;
     int32_t bearing; // degrees * 100
-    static float previousHeading = 0.0f;
     const float gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
     const float gpsDataIntervalHz = 1.0f / gpsDataIntervalS;
+    // get distance and bearing from current location (gpsSol.llh) to target location
     GPS_distance_cm_bearing(&gpsSol.llh, &targetLocation, false, &distanceCm, &bearing);
 
+    // at the start, if the quad was moving, it will initially show decreasing distance from start point
+    // once it has 'stopped' the PIDs will push back towards home, and the distance error will decrease
+    // it looks a lot better if we reset the target point to the point that we 'pull up' at
+    // otherwise there is a big distance to pull back if we start pos hold while carrying some speed
+    if (posHold.justStarted && distanceCm > posHold.previousDistanceCm) {
+        targetLocation = gpsSol.llh;
+        resetPositionControl();
+        posHold.justStarted = false;
+    }
+    posHold.previousDistanceCm = distanceCm;
+    
+    // simple (very simple) sanity check, mostly to detect flyaway from no Mag or badly oriented Mag
+    // TODO - maybe figure how to make a better check by giving more leeway at the start?
+    if (distanceCm > 1000) {
+        return false; // must stay within 10m or probably flying away
+        // value at this point is a 'best guess' to detect IMU failure in the event the user has no Mag
+        // if entering poshold from a stable hover, we would only exceed this if IMU was disoriented
+        // if entering poshold at speed, it may overshoot this value and falsely fail, if so need something more complex
+    }
+
+
+    // calculate error angle and normalise range
     const float errorAngle = (attitude.values.yaw * 10.0f - bearing) / 100.0f;
     float normalisedErrorAngle = fmodf(errorAngle + 360.0f, 360.0f);
-
     if (normalisedErrorAngle > 180.0f) {
         normalisedErrorAngle -= 360.0f; // Range: -180 to 180
     }
@@ -176,34 +219,26 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
-    // todo: sanity check for failure to reduce distance over some time period
-    // if no mag, or bad mag, the controller may get incorrect heading data
-    // this may lead to responses at the wrong angle
-    // and positive feedback and persistently increasing distance, rather than reducing it
-    // in wind there could also be some period of time of increasing distance until PIDs build up
-    // however if the velocity is  increasing, rather than decreasing
-    // then probably the heading is wrong
-    // we could do a counter based method like GPS Rescue
-    // and terminate the position hold, leaving the craft 'floating' in altitude hold
-    // this would need some warning in OSD
-    // I can probably craft a sanity check but don't know how to do OSD warnings.
-
+    // set the filter gain used for D and J
+    // TO DO - maybe use fixed at GPS data rate?
     const float gain = pt1FilterGain(positionLpfCutoffHz, gpsDataIntervalS);
 
-    // ** calculate P, D and J for pitch and roll
-    // each axis separately, so that when overshooting, the filter lag doesn't cause problems
+    // ** calculate P, D and J for pitch and roll axes, independently.
+    // TODO for loop by axis
+
+    // roll
     const float distanceRoll = rollProportion * distanceCm;
     // positive distances mean nose towards target, should roll forward (positive roll)
 
     // we need separate velocity for roll so the filter lag isn't problematic
-    float velocityRoll = (distanceRoll - previousDistanceRoll) * gpsDataIntervalHz;
-    previousDistanceRoll = distanceRoll;
+    float velocityRoll = (distanceRoll - posHold.previousDistanceRoll) * gpsDataIntervalHz;
+    posHold.previousDistanceRoll = distanceRoll;
     // lowpass filter the velocity
     pt1FilterUpdateCutoff(&velocityRollLpf, gain);
     velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
 
-    float accelerationRoll = (velocityRoll - previousVelocityRoll) * gpsDataIntervalHz; // positive when moving away
-    previousVelocityRoll = velocityRoll;
+    float accelerationRoll = (velocityRoll - posHold.previousVelocityRoll) * gpsDataIntervalHz; // positive when moving away
+    posHold.previousVelocityRoll = velocityRoll;
     // lowapss filter the acceleration value again, effectively PT2, it's very noisy
     pt1FilterUpdateCutoff(&accelerationRollLpf, gain);
     accelerationRoll = pt1FilterApply(&accelerationRollLpf, accelerationRoll);
@@ -212,28 +247,21 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
     const float rollD = velocityRoll * positionPidCoeffs.Kd;
     const float rollJ = accelerationRoll * positionPidCoeffs.Kf;
 
+    // pitch
     const float distancePitch = pitchProportion * distanceCm;
     // positive distances mean nose towards target, should pitch forward (positive pitch)
 
-    float velocityPitch = (distancePitch - previousDistancePitch) * gpsDataIntervalHz;
-    previousDistancePitch = distancePitch;
+    float velocityPitch = (distancePitch - posHold.previousDistancePitch) * gpsDataIntervalHz;
+    posHold.previousDistancePitch = distancePitch;
     // lowpass filter the velocity
     pt1FilterUpdateCutoff(&velocityPitchLpf, gain);
     velocityPitch = pt1FilterApply(&velocityPitchLpf, velocityPitch);
 
-    float accelerationPitch = (velocityPitch - previousVelocityPitch) * gpsDataIntervalHz; // positive when moving away
-    previousVelocityPitch = velocityPitch;
+    float accelerationPitch = (velocityPitch - posHold.previousVelocityPitch) * gpsDataIntervalHz; // positive when moving away
+    posHold.previousVelocityPitch = velocityPitch;
     // lowapss filter the acceleration value again, effectively PT2, it's very noisy
     pt1FilterUpdateCutoff(&accelerationPitchLpf, gain);
     accelerationPitch = pt1FilterApply(&accelerationPitchLpf, accelerationPitch);
-
-    // simple (very simple) sanity check, mostly to detect flyaway from no Mag or badly oriented Mag
-    if (distanceCm > 1000) {
-        return false; // must stay within 10m or probably flying away
-        // value at this point is a 'best guess' to detect IMU failure in the event the user has no Mag
-        // if entering poshold from a stable hover, we would only exceed this if IMU was disoriented
-        // if entering poshold at speed, it may overshoot this value and falsely fail, if so need something more complex
-    }
 
     const float pitchP = distancePitch * positionPidCoeffs.Kp;
     const float pitchD = velocityPitch * positionPidCoeffs.Kd;
@@ -246,13 +274,13 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
     // needs to be attenuated towards zero when close to target to avoid overshoot and circling
     // hence cannot completely eliminate position error due to wind, will tend to end up a little bit down-wind
 
-    rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
-    pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
+    posHold.rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
+    posHold.pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
 
     // rotate iTerm if heading changes
     const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
-    float deltaHeading = currentHeading - previousHeading;
-    previousHeading = currentHeading;
+    float deltaHeading = currentHeading - posHold.previousHeading;
+    posHold.previousHeading = currentHeading;
 
     // Normalize deltaHeading to range -180 to 180 (in case of small change around North)
     if (deltaHeading > 180.0f) {
@@ -266,22 +294,21 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
     float sinDeltaHeading = sin_approx(deltaHeadingRadians);
 
     // rotate pitch and roll iTerm
-    const float rotatedRollI = pitchI * sinDeltaHeading + rollI * cosDeltaHeading;
-    const float rotatedPitchI = pitchI * cosDeltaHeading - rollI * sinDeltaHeading;
+    const float rotatedRollI = posHold.pitchI * sinDeltaHeading + posHold.rollI * cosDeltaHeading;
+    const float rotatedPitchI = posHold.pitchI * cosDeltaHeading - posHold.rollI * sinDeltaHeading;
 
-    rollI = rotatedRollI;
-    pitchI = rotatedPitchI;
+    // calculate distance based attenuator for iTerm out, but retain the rotated iTerm factors
+    const float absDistanceRoll = fabsf(distanceRoll);
+    const float absDistancePitch = fabsf(distancePitch);
+    const float rollIAttenuator = (absDistanceRoll < 200.0f) ? absDistanceRoll / 200.0f : 1.0f;
+    const float pitchIAttenuator = (absDistancePitch < 200.0f) ? absDistancePitch / 200.0f : 1.0f;
 
-    // calculate attenuator
-    const float rollIAttenuator = (distanceRoll < 200.0f) ? distanceRoll / 200.0f : 1.0f;
-    const float pitchIAttenuator = (distancePitch < 200.0f) ? distancePitch / 200.0f : 1.0f;
+    posHold.rollI = rotatedRollI  * rollIAttenuator;
+    posHold.pitchI = rotatedPitchI  * pitchIAttenuator;
 
     // add up pid factors
-    const float pidSumRoll = rollP + rollI * rollIAttenuator + rollD + rollJ;
-    const float pidSumPitch = pitchP + pitchI * pitchIAttenuator + pitchD + pitchJ;
-
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle)); //-180 to +180
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(distanceCm));
+    const float pidSumRoll = rollP + posHold.rollI + rollD + rollJ;
+    const float pidSumPitch = pitchP + posHold.pitchI + pitchD + pitchJ;
 
     // todo: upsample filtering
     // pidSum will have steps at GPS rate, and may require an upsampling filter for smoothness.
@@ -297,21 +324,22 @@ bool positionControl(gpsLocation_t targetLocation, float deadband) {
     // if FLIGHT_MODE(POS_HOLD_MODE):
     // posHoldAngle[] is added to angle setpoint in pid.c, in degrees
     // stick angle setpoint forced to zero within the same deadband via rc.c
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_ROLL] * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(posHoldAngle[AI_PITCH] * 10));
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(distanceRoll));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_ROLL] * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(rollI * rollIAttenuator * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollJ * 10));
     } else {
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(distancePitch));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_PITCH] * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10)); // degrees*10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(pitchI * pitchIAttenuator * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchJ * 10));
     }
-
     return true;
 }
 
