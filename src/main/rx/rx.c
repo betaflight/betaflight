@@ -72,7 +72,6 @@
 #include "rx/targetcustomserial.h"
 #include "rx/msp_override.h"
 
-
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
@@ -273,6 +272,14 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
         break;
     }
     return enabled;
+}
+#endif
+
+#ifdef USE_SERIALTX
+void txInit(void)
+{
+    // For now only support SBUS output
+    (void)sbusTxInit();
 }
 #endif
 

@@ -164,6 +164,13 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
+#ifdef SERIALTX_UART
+    serialPortConfig_t *serialTxUartConfig = serialFindPortConfigurationMutable(SERIALTX_UART);
+    if (serialTxUartConfig) {
+        serialTxUartConfig->functionMask = FUNCTION_TX_SERIAL;
+    }
+#endif
+
 #ifdef SBUS_TELEMETRY_UART
     serialPortConfig_t *serialTelemetryUartConfig = serialFindPortConfigurationMutable(SBUS_TELEMETRY_UART);
     if (serialTelemetryUartConfig) {
@@ -344,8 +351,8 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 #ifdef USE_SOFTSERIAL
         if ((portConfig->identifier == SERIAL_PORT_SOFTSERIAL1) ||
             (portConfig->identifier == SERIAL_PORT_SOFTSERIAL2)) {
-            // Ensure MSP or serial RX is not enabled on soft serial ports
-            serialConfigToCheck->portConfigs[index].functionMask &= ~(FUNCTION_MSP | FUNCTION_RX_SERIAL);
+            // Ensure MSP or serial RX/TX is not enabled on soft serial ports
+            serialConfigToCheck->portConfigs[index].functionMask &= ~(FUNCTION_MSP | FUNCTION_RX_SERIAL | FUNCTION_TX_SERIAL);
             // Ensure that the baud rate on soft serial ports is limited to 19200
 #ifndef USE_OVERRIDE_SOFTSERIAL_BAUDRATE
             serialConfigToCheck->portConfigs[index].gps_baudrateIndex = constrain(portConfig->gps_baudrateIndex, BAUD_AUTO, BAUD_19200);
