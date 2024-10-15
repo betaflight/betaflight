@@ -240,6 +240,9 @@
 #define PARAM_NAME_ALT_HOLD_ADJ_DOWN_RAT "alt_hold_adj_down_reduction_ratio"
 #define PARAM_NAME_ALT_HOLD_MAX_BATTERY_LEVEL "alt_hold_max_battery_level"
 #define PARAM_NAME_ALT_HOLD_BATTERY_DROP_SCALE "alt_hold_battery_drop_scale"
+#define PARAM_NAME_OSD_ALT_HOLD_THROTTLE_HOVER_VALUE_POS "osd_alt_hold_throttle_hover_value_pos"
+#define PARAM_NAME_OSD_TARGET_ALTITUDE_POS "osd_alt_hold_target_altitude_pos"
+#define PARAM_NAME_OSD_ALT_HOLD_OUT_THROTTLE_POS "osd_alt_hold_out_throttle_pos"
 #endif // USE_ALT_HOLD_MODE
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
