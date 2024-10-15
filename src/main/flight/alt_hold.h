@@ -35,5 +35,5 @@ typedef struct {
 void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
 float altHoldGetThrottle(void);
-
+void altholdUpdateHoverThrottleValue();
 #endif

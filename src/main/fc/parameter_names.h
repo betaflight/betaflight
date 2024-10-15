@@ -238,6 +238,8 @@
 #define PARAM_NAME_ALT_HOLD_THROTTLE_MAX "alt_hold_throttle_max"
 #define PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE "alt_hold_target_adjust_rate"
 #define PARAM_NAME_ALT_HOLD_ADJ_DOWN_RAT "alt_hold_adj_down_reduction_ratio"
+#define PARAM_NAME_ALT_HOLD_MAX_BATTERY_LEVEL "alt_hold_max_battery_level"
+#define PARAM_NAME_ALT_HOLD_BATTERY_DROP_SCALE "alt_hold_battery_drop_scale"
 #endif // USE_ALT_HOLD_MODE
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"

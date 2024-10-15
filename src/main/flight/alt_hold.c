@@ -31,6 +31,7 @@
 #include "flight/position.h"
 #include "flight/position_control.h"
 #include "sensors/acceleration.h"
+#include "sensors/battery.h"
 #include "rx/rx.h"
 
 #include "alt_hold.h"
@@ -124,6 +125,13 @@ float altitudePidCalculate(void)
 
     return output; // motor units, eg 100 means 10% of available throttle 
 }
+void altholdUpdateHoverThrottleValue(void){
+    const float batteryVoltage = (float)getBatteryVoltage();
+    
+    altHoldState.hoverThrottle  = (float)positionControlConfig()->hover_throttle 
+                                + ((altholdConfig()->battery_drop_scale * (float)(altholdConfig()->max_battery_level - batteryVoltage))/100.0f)
+                                - PWM_RANGE_MIN;
+}
 
 void altHoldReset(void)
 {
@@ -212,6 +220,9 @@ void altHoldUpdate(void)
         altHoldUpdateTargetAltitude();
     }
 
+    if(altholdConfig()->battery_drop_scale > 0){
+        altholdUpdateHoverThrottleValue(); 
+    }
     // use PIDs to return the throttle adjustment value, add it to the hover value, and constrain
     const float throttleAdjustment = altitudePidCalculate();
 

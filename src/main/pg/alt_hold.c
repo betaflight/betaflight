@@ -36,5 +36,7 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .alt_hold_throttle_min = 1100,
     .alt_hold_throttle_max = 1700,
     .altitude_Adj_Down_ratio = 100,
+    .max_battery_level = 1660,
+    .battery_drop_scale = 0,
 );
 #endif
