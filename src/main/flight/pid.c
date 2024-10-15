@@ -231,9 +231,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
         .ez_landing_speed = 50,
-        .tpa_delay_ms = 0,
-        .tpa_gravity_thr0 = 0,
-        .tpa_gravity_thr100 = 0,
         .spa_center = { 0, 0, 0 },
         .spa_width = { 0, 0, 0 },
         .spa_mode = { 0, 0, 0 },
@@ -245,6 +242,15 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_curve_pid_thr0 = 200,
         .tpa_curve_pid_thr100 = 70,
         .tpa_curve_expo = 20,
+        .tpa_speed_type = TPA_SPEED_BASIC,
+        .tpa_speed_basic_delay = 1000,
+        .tpa_speed_basic_gravity = 50,
+        .tpa_speed_adv_prop_pitch = 370,
+        .tpa_speed_adv_mass = 1000,
+        .tpa_speed_adv_drag_k = 1000,
+        .tpa_speed_adv_thrust = 2000,
+        .tpa_speed_max_voltage = 2520,
+        .tpa_speed_pitch_offset = 0,
     );
 }
 
@@ -288,21 +294,55 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
-static float getWingTpaArgument(float throttle)
+static float calcWingThrottle(void)
 {
-    const float pitchFactorAdjustment = scaleRangef(throttle, 0.0f, 1.0f, pidRuntime.tpaGravityThr0, pidRuntime.tpaGravityThr100);
-    const float pitchAngleFactor = getSinPitchAngle() * pitchFactorAdjustment;
-    DEBUG_SET(DEBUG_TPA, 1, lrintf(pitchAngleFactor * 1000.0f));
+    float batteryThrottleFactor = 1.0f;
+    if (pidRuntime.tpaSpeed.maxVoltage > 0.0f) {
+        batteryThrottleFactor = getBatteryVoltageLatest() / 100.0f / pidRuntime.tpaSpeed.maxVoltage;
+        batteryThrottleFactor = constrainf(batteryThrottleFactor, 0.0f, 1.0f);
+    }
 
-    float tpaArgument = throttle + pitchAngleFactor;
-    const float maxTpaArgument = MAX(1.0 + pidRuntime.tpaGravityThr100, pidRuntime.tpaGravityThr0);
-    tpaArgument = tpaArgument / maxTpaArgument;
-    tpaArgument = pt2FilterApply(&pidRuntime.tpaLpf, tpaArgument);
-    DEBUG_SET(DEBUG_TPA, 2, lrintf(tpaArgument * 1000.0f));
+    return getMotorOutputRms() * batteryThrottleFactor;
+}
+
+static float calcWingAcceleration(float throttle, float pitchAngleRadians)
+{
+    const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
+
+    const float thrust = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
+    const float drag = tpa->speed * tpa->speed * tpa->dragMassRatio;
+    const float gravity = G_ACCELERATION * sin_approx(pitchAngleRadians);
+
+    return thrust - drag + gravity;
+}
+
+static float calcWingTpaArgument(void)
+{
+    const float t = calcWingThrottle();
+    const float pitchRadians = DECIDEGREES_TO_RADIANS(attitude.values.pitch);
+    const float rollRadians = DECIDEGREES_TO_RADIANS(attitude.values.roll);
+
+    DEBUG_SET(DEBUG_TPA, 1, lrintf(attitude.values.roll)); // decidegrees
+    DEBUG_SET(DEBUG_TPA, 2, lrintf(attitude.values.pitch)); // decidegrees
+    DEBUG_SET(DEBUG_TPA, 3, lrintf(t * 1000.0f)); // calculated throttle in the range of 0 - 1000
+
+    // pitchRadians is always -90 to 90 degrees. The bigger the ABS(pitch) the less portion of pitchOffset is needed.
+    // If ABS(roll) > 90 degrees - flying inverted, then negative portion of pitchOffset is needed.
+    // If ABS(roll) ~ 90 degrees - flying sideways, no pitchOffset is applied.
+    const float correctedPitchAnge = pitchRadians + cos_approx(pitchRadians) * cos_approx(rollRadians) * pidRuntime.tpaSpeed.pitchOffset;
+
+    const float a = calcWingAcceleration(t, correctedPitchAnge);
+
+    pidRuntime.tpaSpeed.speed += a * pidRuntime.dT;
+    pidRuntime.tpaSpeed.speed = MAX(0.0f, pidRuntime.tpaSpeed.speed);
+    const float tpaArgument = constrainf(pidRuntime.tpaSpeed.speed / pidRuntime.tpaSpeed.maxSpeed, 0.0f, 1.0f);
+
+    DEBUG_SET(DEBUG_TPA, 4, lrintf(pidRuntime.tpaSpeed.speed * 10.0f));
+    DEBUG_SET(DEBUG_TPA, 5, lrintf(tpaArgument * 1000.0f));
 
     return tpaArgument;
 }
-#endif // #ifndef USE_WING
+#endif // USE_WING
 
 float getTpaFactorClassic(float tpaArgument)
 {
@@ -328,7 +368,7 @@ void pidUpdateTpaFactor(float throttle)
     float tpaFactor;
 
 #ifdef USE_WING
-    const float tpaArgument = isFixedWing() ?  getWingTpaArgument(throttle) : throttle;
+    const float tpaArgument = isFixedWing() ?  calcWingTpaArgument() : throttle;
 #else
     const float tpaArgument = throttle;
 #endif
@@ -896,7 +936,7 @@ NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
         pidRuntime.spa[axis] = 1.0f - smoothStepUpTransition(
             fabsf(currentRate), pidProfile->spa_center[axis], pidProfile->spa_width[axis]);
         DEBUG_SET(DEBUG_SPA, axis, lrintf(pidRuntime.spa[axis] * 1000));
-    }    
+    }
 #else
     UNUSED(pidProfile);
 #endif // USE_WING
@@ -960,7 +1000,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     const bool isExternalAngleModeRequest = FLIGHT_MODE(GPS_RESCUE_MODE)
 #ifdef USE_ALT_HOLD_MODE
-                || FLIGHT_MODE(ALT_HOLD_MODE) 
+                || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
                 ;
     levelMode_e levelMode;

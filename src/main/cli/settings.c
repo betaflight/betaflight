@@ -539,6 +539,12 @@ const char* const lookupTableTpaCurveType[] = {
 };
 #endif
 
+#ifdef USE_WING
+const char* const lookupTableTpaSpeedType[] = {
+    "BASIC", "ADVANCED",
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -664,6 +670,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_ADVANCED_TPA
     LOOKUP_TABLE_ENTRY(lookupTableTpaCurveType),
+#endif
+#ifdef USE_WING
+    LOOKUP_TABLE_ENTRY(lookupTableTpaSpeedType),
 #endif
 };
 
@@ -1278,9 +1287,15 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_TPA_LOW_ALWAYS, VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_low_always) },
 
 #ifdef USE_WING
-    { PARAM_NAME_TPA_DELAY_MS, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_delay_ms) },
-    { PARAM_NAME_TPA_GRAVITY_THR0, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, TPA_GRAVITY_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_gravity_thr0) },
-    { PARAM_NAME_TPA_GRAVITY_THR100, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, TPA_GRAVITY_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_gravity_thr100) },
+    { PARAM_NAME_TPA_SPEED_TYPE, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TPA_SPEED_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_type) },
+    { PARAM_NAME_TPA_SPEED_BASIC_DELAY, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_basic_delay) },
+    { PARAM_NAME_TPA_SPEED_BASIC_GRAVITY, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_basic_gravity) },
+    { PARAM_NAME_TPA_SPEED_ADV_PROP_PITCH, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_adv_prop_pitch) },
+    { PARAM_NAME_TPA_SPEED_ADV_MASS, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_adv_mass) },
+    { PARAM_NAME_TPA_SPEED_ADV_DRAG_K, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_adv_drag_k) },
+    { PARAM_NAME_TPA_SPEED_ADV_THRUST, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_adv_thrust) },
+    { PARAM_NAME_TPA_SPEED_MAX_VOLTAGE, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_max_voltage) },
+    { PARAM_NAME_TPA_SPEED_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { INT16_MIN, INT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_pitch_offset) },
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA

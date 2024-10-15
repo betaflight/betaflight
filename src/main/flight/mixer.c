@@ -438,6 +438,15 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
 }
 #endif // USE_RPM_LIMIT
 
+#ifdef USE_WING
+static float motorOutputRms = 0.0f;
+
+float getMotorOutputRms(void)
+{
+    return motorOutputRms;
+}
+#endif // USE_WING
+
 static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
@@ -473,6 +482,20 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
             motor[i] = motor_disarmed[i];
         }
     }
+
+#ifdef USE_WING
+    float motorSumSquares = 0.0f;
+    if (motorIsEnabled()) {
+        for (int i = 0; i < mixerRuntime.motorCount; i++) {
+            if (motorIsMotorEnabled(i)) {
+                const float motorOutput = scaleRangef(motorConvertToExternal(motor[i]), PWM_RANGE_MIN, PWM_RANGE_MAX, 0.0f, 1.0f);
+                motorSumSquares += motorOutput * motorOutput;
+            }
+        }
+    }
+    motorOutputRms = sqrtf(motorSumSquares / mixerRuntime.motorCount);
+#endif // USE_WING
+
     DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);
     // DEBUG_EZLANDING 0 is the ezLanding factor 2 is the throttle limit
 }
@@ -497,6 +520,10 @@ static void applyMotorStop(void)
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
         motor[i] = mixerRuntime.disarmMotorOutput;
     }
+
+#ifdef USE_WING
+    motorOutputRms = 0.0f;
+#endif // USE_WING
 }
 
 #ifdef USE_DYN_LPF
