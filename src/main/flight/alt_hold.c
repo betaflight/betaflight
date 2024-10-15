@@ -256,4 +256,19 @@ float altHoldGetThrottle(void) {
     return commandedThrottle;
 }
 
+int16_t getAltHoldThrottleHoverValue(void){
+    return lrintf(altHoldState.hoverThrottle + PWM_RANGE_MIN);
+}
+
+int16_t getAltHoldTargetAltitudeCm(void){
+    return lrintf(altHoldState.targetAltitudeCm);
+}
+
+bool isAltHoldActive(void){
+    return altHoldState.isAltHoldActive;
+}
+
+int16_t getAltHoldOutThrottle(void){
+    return lrintf(altHoldState.throttleOut) ;
+}
 #endif
