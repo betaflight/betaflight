@@ -45,6 +45,7 @@ typedef struct gyroDeviceConfig_s {
     ioTag_t extiTag;
     uint8_t alignment;        // sensor_align_e
     sensorAlignment_t customAlignment;
+    ioTag_t clkIn;
 } gyroDeviceConfig_t;
 
 PG_DECLARE_ARRAY(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDeviceConfig);
