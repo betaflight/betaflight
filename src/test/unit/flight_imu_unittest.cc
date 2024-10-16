@@ -41,12 +41,12 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
     #include "fc/rc.h"
-    
+
+    #include "flight/autopilot.h"
+    #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
-    #include "flight/imu.h"
     #include "flight/position.h"
-    #include "flight/position_control.h"
 
     #include "io/gps.h"
 
@@ -74,7 +74,7 @@ extern "C" {
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
-    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0

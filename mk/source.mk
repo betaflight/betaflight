@@ -1,6 +1,7 @@
 PG_SRC = \
             pg/adc.c \
             pg/alt_hold.c \
+            pg/autopilot.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \
@@ -21,7 +22,6 @@ PG_SRC = \
             pg/msp.c \
             pg/pg.c \
             pg/piniobox.c \
-            pg/position_control.c \
             pg/pinio.c \
             pg/pin_pull_up_down.c \
             pg/rcdevice.c \
@@ -152,23 +152,23 @@ COMMON_SRC = \
             drivers/rx/rx_pwm.c \
             drivers/serial_softserial.c \
             fc/core.c \
+            fc/gps_lap_timer.c \
             fc/rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            flight/position.c \
-            flight/position_control.c \
+            flight/alt_hold.c \
+            flight/autopilot.c \
+            flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
-            fc/gps_lap_timer.c \
-            flight/dyn_notch_filter.c \
-            flight/alt_hold.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
             flight/pid.c \
             flight/pid_init.c \
+            flight/position.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \

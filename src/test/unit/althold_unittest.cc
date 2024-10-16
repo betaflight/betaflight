@@ -31,11 +31,11 @@ extern "C" {
     #include "fc/runtime_config.h"
 
     #include "flight/alt_hold.h"
+    #include "flight/autopilot.h"
     #include "flight/failsafe.h"
     #include "flight/imu.h"
-    #include "flight/position.h"
-    #include "flight/position_control.h"
     #include "flight/pid.h"
+    #include "flight/position.h"
 
     #include "rx/rx.h"
 
@@ -43,12 +43,10 @@ extern "C" {
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
-    PG_REGISTER(positionControlConfig_t, positionControlConfig, PG_POSITION_CONTROL, 0);
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
     PG_REGISTER(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 0);
 
     extern altHoldState_t altHoldState;
-    void altHoldReset(void);
-    void altHoldProcessTransitions(void);
     void altHoldInit(void);
     void updateAltHoldState(timeUs_t);
     bool failsafeIsActive(void) { return false; }
@@ -100,32 +98,10 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 extern "C" {
     acc_t acc;
 
-    pidCoefficient_t testAltitudePidCoeffs = {15.0f, 15.0f, 15.1f, 15.0f};
-    const pidCoefficient_t *getAltitudePidCoeffs(void) {
-        return &testAltitudePidCoeffs;
-    }
-    float getAltitudeCm(void) { return 0.0f;}
-    float getAltitudeDerivative(void) { return 0.0f;}
-
-    void pt2FilterInit(pt2Filter_t *altHoldDeltaLpf, float) {
-        UNUSED(altHoldDeltaLpf);
-    }
-    float pt2FilterGain(float, float) {
-        return 0.0f;
-    }
-    float pt2FilterApply(pt2Filter_t *altHoldDeltaLpf, float) {
-        UNUSED(altHoldDeltaLpf);
-        return 0.0f;
-    }
-
-    bool isAltitudeAvailable(void) { return true; }
+    float getAltitudeCm(void) {return 0.0f;}
+    float getAltitudeDerivative(void) {return 0.0f;}
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
-
-    float getRcDeflection(int)
-    {
-        return 0;
-    }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     {

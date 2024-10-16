@@ -31,8 +31,6 @@ typedef struct gpsRescue_s {
     uint16_t descentDistanceM; // meters
     uint16_t groundSpeedCmS; // centimeters per second
     uint8_t  yawP;
-    uint16_t throttleMin;
-    uint16_t throttleMax;
     uint8_t  minSats;
     uint8_t  velP, velI, velD;
     uint16_t minStartDistM; // meters

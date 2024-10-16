@@ -45,8 +45,9 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/failsafe.h"
 #include "flight/alt_hold.h"
+#include "flight/autopilot.h"
+#include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"
@@ -801,7 +802,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #ifdef USE_ALT_HOLD_MODE
     // Throttle value to be used during altitude hold mode (and failsafe landing mode)
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
-        throttle = altHoldGetThrottle();
+        throttle = getAutopilotThrottle();
     }
 #endif
 
@@ -809,7 +810,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // If gps rescue is active then override the throttle. This prevents things
     // like throttle boost or throttle limit from negatively affecting the throttle.
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        throttle = gpsRescueGetThrottle();
+        throttle = getAutopilotThrottle();
     }
 #endif
 
