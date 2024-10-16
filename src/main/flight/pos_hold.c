@@ -39,7 +39,7 @@ void posHoldReset(void)
 {
     posHold.posHoldIsOK = true;
     posHold.targetLocation = gpsSol.llh;
-    resetPositionControl();
+    resetPositionControl(posHold.targetLocation);
 }
 
 void posHoldInit(void)
@@ -47,7 +47,6 @@ void posHoldInit(void)
     posHold.isPosHoldRequested = false;
     posHold.deadband = rcControlsConfig()->pos_hold_deadband / 100.0f;
     posHold.useStickAdjustment = rcControlsConfig()->pos_hold_deadband;
-    posHoldReset();
 }
 
 void posHoldProcessTransitions(void)
@@ -84,7 +83,7 @@ void posHoldUpdate(void)
     posHoldUpdateTargetLocation();
 
     if (getIsNewDataForPosHold() && posHold.posHoldIsOK) {
-        posHold.posHoldIsOK = positionControl(posHold.targetLocation, posHold.deadband);
+        posHold.posHoldIsOK = positionControl(posHold.deadband);
     }
 }
 

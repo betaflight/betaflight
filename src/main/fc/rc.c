@@ -717,6 +717,7 @@ FAST_CODE void processRcCommand(void)
                 } else {
                     if (FLIGHT_MODE(POS_HOLD_MODE)) {
                         rcCommandf = rcCommand[axis] / (500.0f - rcControlsConfig()->pos_hold_deadband * 5.0f);
+                        rcCommandf *= 0.5f;
                     } else {
                         rcCommandf = rcCommand[axis] / rcCommandDivider;
                     }
