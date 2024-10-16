@@ -37,14 +37,19 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/position.h"
 
+    #include "io/gps.h"
+
     #include "rx/rx.h"
 
     #include "sensors/acceleration.h"
+    #include "sensors/gyro.h"
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
-    PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
-    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
     PG_REGISTER(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 0);
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+    PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+    PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
     extern altHoldState_t altHoldState;
     void altHoldInit(void);
@@ -103,22 +108,54 @@ extern "C" {
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
     
-    void GPS_distance_cm_bearing(&gpsSol.llh, &targetLocation, false, &distanceCm, &bearing)
+void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
     {
-       UNUSED(gpsSol.llh);
-       UNUSED(targetLocation);
-       UNUSED(false);
-       UNUSED(distanceCm);
+       UNUSED(from);
+       UNUSED(to);
+       UNUSED(dist3d);
+       UNUSED(dist);
        UNUSED(bearing);
-
     }
 
+    gpsSolutionData_t gpsSol;
+    bool canUseGPSHeading;
+    bool compassIsHealthy;
+    float getGpsDataIntervalSeconds(void) { return 0.01f; }
+    float getRcDeflectionAbs(void) { return 0.0f; }
+        attitudeEulerAngles_t attitude;
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     {
         UNUSED(input);
         UNUSED(rxConfig);
     }
+
+    float pt1FilterGain(float f_cut, float dT)
+    {
+        UNUSED(f_cut);
+        UNUSED(dT);
+        return 0.0;
+    }
+    
+    void pt1FilterInit(pt1Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+    
+    void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+    
+    float pt1FilterApply(pt1Filter_t *filter, float input)
+    {
+        UNUSED(filter);
+        UNUSED(input);
+        return 0.0;
+    }
+
 
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;

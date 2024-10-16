@@ -212,5 +212,5 @@ extern "C" {
     void sbufWriteU32(sbuf_t *, uint32_t) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
     bool crashFlipSuccessful(void) {return false; }
-
+    bool canUseGPSHeading;
 }

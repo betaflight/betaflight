@@ -1157,7 +1157,26 @@ extern "C" {
         UNUSED(velocityUpsampleLpf);
         return 0.0f;
     }
+
+    float sin_approx(float) {
+        return 0.0f;
+    }
+    float cos_approx(float) {
+        return 1.0f;
+    }
+
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
     bool crashFlipSuccessful(void) { return false; }
+    
+    void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
+    {
+       UNUSED(from);
+       UNUSED(to);
+       UNUSED(dist3d);
+       UNUSED(dist);
+       UNUSED(bearing);
+    }
+    bool canUseGPSHeading;
+    bool compassIsHealthy;
 }
