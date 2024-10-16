@@ -175,7 +175,8 @@ typedef enum {
 typedef enum {
     GPS_NMEA = 0,
     GPS_UBLOX,
-    GPS_MSP
+    GPS_MSP,
+    GPS_POLARIS,
 } gpsProvider_e;
 
 typedef enum {
@@ -321,6 +322,12 @@ extern uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];      // When NumCh is 16 or l
                                                         // When NumCh is more than 16: GNSS Id
                                                         //   0 = GPS, 1 = SBAS, 2 = Galileo, 3 = BeiDou
                                                         //   4 = IMES, 5 = QZSS, 6 = Glonass
+                                                        // When provider is POLARIS: Signal Id
+                                                        //   0 = GPS_L1 1 = GPS_L5, 2 = GPS_L5C
+                                                        //   3 = BDS_B1I 4 = BDS_B2A 5 = BDS_B2B 6 = BDS_B3I
+                                                        //   7 = BDS_B1C 8 = BDS_B2I 9 = GLO_G1  10 = GLO_G2
+                                                        //   11 = GAL_E1 12 = GAL_E5A 13 = GAL_E5B
+                                                        //   14 = IRS_L5 15 = SBS_L1
 extern uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];     // Satellite ID
 extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or less: Bitfield Qualtity
                                                         // When NumCh is more than 16: flags
@@ -342,6 +349,7 @@ extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or l
                                                         //   bit 7:
                                                         //     1 = carrier smoothed pseudorange used
 extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Ratio (Signal Strength)
+                                                        // When provider is POLARIS, average CN0 of top 4 satellites per signal
 
 #define TASK_GPS_RATE       100     // default update rate of GPS task
 #define TASK_GPS_RATE_FAST  500    // update rate of GPS task while Rx buffer is not empty
