@@ -39,10 +39,10 @@
 #define ALTITUDE_I_SCALE  0.003f
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.003f
-#define POSITION_I_SCALE  0.001f
-#define POSITION_D_SCALE  0.004f
-#define POSITION_J_SCALE  0.002f
+#define POSITION_P_SCALE  0.001f
+#define POSITION_I_SCALE  0.0004f
+#define POSITION_D_SCALE  0.003f
+#define POSITION_J_SCALE  0.0008f
 
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
