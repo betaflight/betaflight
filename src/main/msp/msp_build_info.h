@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/4.5.0-zulu
- * Input hash   : 2b66ff01549c4d858593dbf96c6aae12
+ * Source       : https://build.betaflight.com/api/options/4.6.0
+ * Input hash   : 850eb668065e124eeae185deb3e3fda1
  */
 
 #pragma once
@@ -55,6 +55,7 @@
 // General Options
 #define BUILD_OPTION_ACRO_TRAINER               16404
 #define BUILD_OPTION_AKK_SMARTAUDIO             16405
+#define BUILD_OPTION_ALT_HOLD_MODE              16422
 #define BUILD_OPTION_BATTERY_CONTINUE           16406
 #define BUILD_OPTION_CAMERA_CONTROL             16407
 #define BUILD_OPTION_DASHBOARD                  16408
@@ -69,8 +70,10 @@
 #define BUILD_OPTION_OSD_HD                     16417
 #define BUILD_OPTION_PINIO                      16418
 #define BUILD_OPTION_RACE_PRO                   16419
+#define BUILD_OPTION_SOFTSERIAL                 16423
 #define BUILD_OPTION_SERVOS                     16420
 #define BUILD_OPTION_VTX                        16421
+#define BUILD_OPTION_WING                       16424
 // Motor Protocols
 #define BUILD_OPTION_BRUSHED                    8230
 #define BUILD_OPTION_DSHOT                      8231
