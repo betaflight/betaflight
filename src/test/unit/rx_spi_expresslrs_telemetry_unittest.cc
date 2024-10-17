@@ -420,7 +420,7 @@ extern "C" {
     bool telemetryIsSensorEnabled(sensor_e) {return true; }
     bool sensors(uint32_t ) { return true; }
 
-    bool airmodeIsEnabled(void) {return airMode; }
+    bool isAirmodeEnabled(void) {return airMode; }
 
     bool isBatteryVoltageConfigured(void) { return true; }
     bool isAmperageConfigured(void) { return true; }

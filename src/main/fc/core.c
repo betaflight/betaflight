@@ -202,7 +202,7 @@ bool canUseLaunchControl(void)
     if (!isFixedWing()
         && !isUsingSticksForArming()     // require switch arming for safety
         && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)
-        && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled())  // can't use when motors are stopped
+        && (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled()) // either not using motor_stop, or motor_stop is blocked by Airmode
         && !featureIsEnabled(FEATURE_3D) // pitch control is not 3D aware
         && (flightModeFlags == 0)) {     // don't want to use unless in acro mode
         return true;
@@ -769,13 +769,12 @@ uint8_t calculateThrottlePercentAbs(void)
     return abs(calculateThrottlePercent());
 }
 
-static bool airmodeIsActivated;
+static bool throttleRaised = false;
 
-bool isAirmodeActivated(void)
+bool wasThrottleRaised(void)
 {
-    return airmodeIsActivated;
+    return throttleRaised;
 }
-
 
 /*
  * processRx called from taskUpdateRxMain
@@ -803,17 +802,23 @@ bool processRx(timeUs_t currentTimeUs)
     const bool throttleActive = calculateThrottleStatus() != THROTTLE_LOW;
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
     const bool launchControlActive = isLaunchControlActive();
+    static bool isAirmodeActive;
 
-    if (airmodeIsEnabled() && ARMING_FLAG(ARMED) && !launchControlActive) {
-        // once throttle exceeds activate threshold, airmode latches active until disarm
+    if (ARMING_FLAG(ARMED)) {
         if (throttlePercent >= rxConfig()->airModeActivateThreshold) {
-            airmodeIsActivated = true;
+            throttleRaised = true; // Latch true until disarm
+        }
+        if (isAirmodeEnabled() && !launchControlActive) {
+            isAirmodeActive = throttleRaised;
         }
     } else {
-        airmodeIsActivated = false;
+        throttleRaised = false;
+        isAirmodeActive = false;
     }
 
-    if (ARMING_FLAG(ARMED) && (airmodeIsActivated || throttleActive || launchControlActive || isFixedWing())) {
+    // Note: If Airmode is enabled, on arming, iTerm and PIDs will be off until throttle exceeds the threshold (OFF while disarmed)
+    // If not, iTerm will be off at low throttle, with pidStabilisationState determining whether PIDs will be active
+    if (ARMING_FLAG(ARMED) && (isAirmodeActive || throttleActive || launchControlActive || isFixedWing())) {
         pidSetItermReset(false);
         pidStabilisationState(PID_STABILISATION_ON);
     } else {
@@ -841,7 +846,7 @@ bool processRx(timeUs_t currentTimeUs)
         //   - sticks are active and have deflection greater than runaway_takeoff_deactivate_stick_percent
         //   - pidSum on all axis is less then runaway_takeoff_deactivate_pidlimit
         bool inStableFlight = false;
-        if (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled() || throttleActive) { // are motors running?
+        if (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled() || throttleActive) { // are motors running?
             const uint8_t lowThrottleLimit = pidConfig()->runaway_takeoff_deactivate_throttle;
             const uint8_t midThrottleLimit = constrain(lowThrottleLimit * 2, lowThrottleLimit * 2, RUNAWAY_TAKEOFF_HIGH_THROTTLE_PERCENT);
             if ((((throttlePercent >= lowThrottleLimit) && areSticksActive(RUNAWAY_TAKEOFF_DEACTIVATE_STICK_PERCENT)) || (throttlePercent >= midThrottleLimit))
@@ -931,7 +936,7 @@ void processRxModes(timeUs_t currentTimeUs)
         && featureIsEnabled(FEATURE_MOTOR_STOP)
         && !isFixedWing()
         && !featureIsEnabled(FEATURE_3D)
-        && !airmodeIsEnabled()
+        && !isAirmodeEnabled()
         && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
     ) {
         if (isUsingSticksForArming()) {
@@ -1025,8 +1030,8 @@ void processRxModes(timeUs_t currentTimeUs)
         && sensors(SENSOR_ACC)
         // and we have altitude data
         && isAltitudeAvailable()
-        // and we have already taken off (to prevent activation on the ground), then enable althold
-        && isAirmodeActivated()) {
+        // prevent activation until after takeoff
+        && wasThrottleRaised()) {
         if (!FLIGHT_MODE(ALT_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
         }
@@ -1162,7 +1167,8 @@ static FAST_CODE_NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
         && !crashFlipModeActive
         && !runawayTakeoffTemporarilyDisabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable Runaway Takeoff triggering if GPS Rescue is active
-        && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
+        // check that motors are running
+        && (!featureIsEnabled(FEATURE_MOTOR_STOP) || isAirmodeEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
         if (((fabsf(pidData[FD_PITCH].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
             || (fabsf(pidData[FD_ROLL].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)

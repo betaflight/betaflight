@@ -758,7 +758,7 @@ STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRat
             acErrorRate = (gyroRate > gmaxac ? gmaxac : gminac ) - gyroRate;
         }
 
-        if (isAirmodeActivated()) {
+        if (wasThrottleRaised()) {
             axisError[axis] = constrainf(axisError[axis] + acErrorRate * pidRuntime.dT,
                 -pidRuntime.acErrorLimit, pidRuntime.acErrorLimit);
             const float acCorrection = constrainf(axisError[axis] * pidRuntime.acGain, -pidRuntime.acLimit, pidRuntime.acLimit);
@@ -840,8 +840,8 @@ float pidGetAirmodeThrottleOffset(void)
 
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
-    // if, after takeoff...
-    if (isAirmodeActivated()
+    // if, being armed, and after takeoff...
+    if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
             // we could test here for stage 2 failsafe (including both landing or GPS Rescue)

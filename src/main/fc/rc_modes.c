@@ -72,7 +72,7 @@ void rcModeUpdate(const boxBitmask_t *newState)
     rcModeActivationMask = *newState;
 }
 
-bool airmodeIsEnabled(void)
+bool isAirmodeEnabled(void)
 {
     return airmodeEnabled;
 }
