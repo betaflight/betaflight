@@ -715,10 +715,13 @@ FAST_CODE void processRcCommand(void)
                 if (axis == FD_YAW) {
                     rcCommandf = rcCommand[axis] / rcCommandYawDivider;
                 } else {
+#ifdef USE_POS_HOLD_MODE
                     if (FLIGHT_MODE(POS_HOLD_MODE)) {
                         rcCommandf = rcCommand[axis] / (500.0f - rcControlsConfig()->pos_hold_deadband * 5.0f);
-                        rcCommandf *= 0.5f;
-                    } else {
+                        rcCommandf *= 0.7f; // attenuate overall stick responsiveness
+                    } else 
+#endif
+                    {
                         rcCommandf = rcCommand[axis] / rcCommandDivider;
                     }
                 }

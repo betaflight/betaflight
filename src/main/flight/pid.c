@@ -1113,7 +1113,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_ALT_HOLD_MODE
                 || FLIGHT_MODE(ALT_HOLD_MODE) // todo - check if this is needed
 #endif
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_POS_HOLD_MODE
                 || FLIGHT_MODE(POS_HOLD_MODE) 
 #endif
                 ;

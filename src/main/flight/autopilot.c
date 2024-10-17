@@ -224,9 +224,8 @@ bool positionControl(float deadband) {
         // if entering poshold at speed, it may overshoot this value and falsely fail, if so need something more complex
     }
 
-
     // calculate error angle and normalise range
-    const float errorAngle = (attitude.values.yaw * 10.0f - bearing) / 100.0f;
+    float errorAngle = (attitude.values.yaw * 10.0f - bearing) / 100.0f;
     float normalisedErrorAngle = fmodf(errorAngle + 360.0f, 360.0f);
     if (normalisedErrorAngle > 180.0f) {
         normalisedErrorAngle -= 360.0f; // Range: -180 to 180
