@@ -808,7 +808,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
         && !airmodeEnabled                               // not with airmode or launch control
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE) // mot in autopilot modes
+        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE) // not in autopilot modes
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         applyMotorStop();
     } else {
