@@ -60,6 +60,7 @@ COMMON_SRC = \
             common/huffman.c \
             common/huffman_table.c \
             common/maths.c \
+            common/parse.c \
             common/printf.c \
             common/printf_serial.c \
             common/pwl.c \
