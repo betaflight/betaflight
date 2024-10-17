@@ -53,13 +53,12 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/alt_hold.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/autopilot.h"
-#include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"

@@ -45,10 +45,10 @@
 #define POSITION_J_SCALE  0.0008f
 
 static pidCoefficient_t altitudePidCoeffs;
+static pidCoefficient_t positionPidCoeffs;
+
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
-
-static pidCoefficient_t positionPidCoeffs;
 
 typedef struct {
     uint32_t distanceCm;
@@ -78,7 +78,6 @@ static posHoldState posHold = {
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
 float posHoldAngle[ANGLE_INDEX_COUNT];
-
 static pt1Filter_t velocityPitchLpf;
 static pt1Filter_t accelerationPitchLpf;
 static pt1Filter_t velocityRollLpf;
