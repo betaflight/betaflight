@@ -21,6 +21,11 @@
 #pragma once
 
 #define PARAM_NAME_GYRO_HARDWARE_LPF "gyro_hardware_lpf"
+#define PARAM_NAME_GYRO_DELT "gyro_delt"
+#define PARAM_NAME_GYRO_DELTSQR "gyro_deltsqr"
+#define PARAM_NAME_GYRO_BITSHIFT "gyro_bitshift"
+#define PARAM_NAME_GYRO_UI "gyro_ui"
+#define PARAM_NAME_GYRO_UI_ORD "gyro_ui_ord"
 #define PARAM_NAME_GYRO_LPF1_TYPE "gyro_lpf1_type"
 #define PARAM_NAME_GYRO_LPF1_STATIC_HZ "gyro_lpf1_static_hz"
 #define PARAM_NAME_GYRO_LPF2_TYPE "gyro_lpf2_type"
