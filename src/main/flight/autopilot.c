@@ -229,7 +229,7 @@ bool positionControl(float deadband) {
     }
 
     // Calculate distance error proportions for pitch and roll
-    const float errorAngleRadians = normalisedErrorAngle * (M_PI / 180.0f);
+    const float errorAngleRadians = normalisedErrorAngle * (M_PIf / 180.0f);
     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
@@ -302,7 +302,7 @@ bool positionControl(float deadband) {
     } else if (deltaHeading < -180.0f) {
         deltaHeading += 360.0f; // Wrap around if less than -180
     }
-    float deltaHeadingRadians = deltaHeading * (M_PI / 180.0f); // Convert to radians
+    float deltaHeadingRadians = deltaHeading * (M_PIf / 180.0f); // Convert to radians
 
     float cosDeltaHeading = cos_approx(deltaHeadingRadians);
     float sinDeltaHeading = sin_approx(deltaHeadingRadians);
