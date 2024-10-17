@@ -283,6 +283,7 @@ typedef enum {
     OSD_WARNING_OVER_CAP,
     OSD_WARNING_RSNR,
     OSD_WARNING_LOAD,
+    OSD_WARNING_VTX_OFFLINE,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
