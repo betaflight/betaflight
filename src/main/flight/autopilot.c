@@ -180,7 +180,11 @@ bool positionControl(float deadband) {
         return false; // cannot proceed without a GPS location
     }
 
-    if (!canUseGPSHeading && !compassIsHealthy()) {
+    if (!canUseGPSHeading
+#ifdef USE_MAG
+        && !compassIsHealthy()
+#endif
+        ) {
         return false;
         // If compass is healthy, we must have a Mag, and therefore are OK, even with no GPS Heading
         // If user allows posHold without a Mag, the IMU must be able to get heading from the GPS
