@@ -717,8 +717,9 @@ FAST_CODE void processRcCommand(void)
                 } else {
 #ifdef USE_POS_HOLD_MODE
                     if (FLIGHT_MODE(POS_HOLD_MODE)) {
+                        // attenuate rcCommand by the deadband percentage
                         rcCommandf = rcCommand[axis] / (500.0f - rcControlsConfig()->pos_hold_deadband * 5.0f);
-                        rcCommandf *= 0.7f; // attenuate overall stick responsiveness
+                        rcCommandf *= 0.7f; // attenuate overall stick responsiveness to 70% of normal
                     } else 
 #endif
                     {
@@ -762,6 +763,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
         float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
         // larger deadband on pitch and roll when in position hold
+        // mulitply pos_hold_deadband percent by 5.0 to get a range where 100% would be 500
         const float tmpDeadband = (FLIGHT_MODE(POS_HOLD_MODE) && rcControlsConfig()->pos_hold_deadband) ? rcControlsConfig()->pos_hold_deadband * 5.0f : rcControlsConfig()->deadband;
         if (axis == ROLL || axis == PITCH) {
             if (tmp > tmpDeadband) {

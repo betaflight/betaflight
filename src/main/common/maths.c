@@ -49,6 +49,8 @@
 #define sinPolyCoef7 -1.980661520e-4f                                          // Double: -1.980661520135080504411629636078917643846e-4
 #define sinPolyCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
 #endif
+
+// original sin_approx code for MCUs without FPU, expecting argument close to -2pi..2pi range
 // float sin_approx(float x)
 // {
 //     int32_t xint = x;
@@ -61,7 +63,6 @@
 //     return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
 // }
 
-// alternate method suggested by chatgpt
 float sin_approx(float x)
 {
     // Normalize input to the range -PI to PI
