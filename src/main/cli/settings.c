@@ -166,7 +166,7 @@ const char * const lookupTableMagHardware[] = {
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
 const char * const lookupTableRangefinderHardware[] = {
-    "NONE", "HCSR04", "TFMINI", "TF02"
+    "NONE", "HCSR04", "TFMINI", "TF02", "MSP"
 };
 #endif
 
@@ -1100,6 +1100,9 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_ALT_HOLD_MODE
     { PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, alt_hold_target_adjust_rate) },
+    { PARAM_NAME_ALT_HOLD_ADJ_DOWN_RAT,                VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altitude_Adj_Down_ratio) },
+    { PARAM_NAME_ALT_HOLD_MAX_BATTERY_LEVEL,           VAR_UINT16| MASTER_VALUE, .config.minmaxUnsigned = { 500, 4000 },     PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, max_battery_level) },
+    { PARAM_NAME_ALT_HOLD_BATTERY_DROP_SCALE,         VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0  , 200 },     PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, battery_drop_scale) },
 #endif
 
 // PG_PID_CONFIG
@@ -1586,6 +1589,11 @@ const clivalue_t valueTable[] = {
 #ifdef USE_CRAFTNAME_MSGS
     { "osd_craftname_msgs",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_craftname_msgs) },
 #endif //USE_CRAFTNAME_MSGS
+#ifdef USE_ALT_HOLD_MODE
+{ PARAM_NAME_OSD_ALT_HOLD_THROTTLE_HOVER_VALUE_POS,   VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_ALTHOLD_HOVER_THROTTLE]) },
+{ PARAM_NAME_OSD_TARGET_ALTITUDE_POS,                 VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_TARGET_ALTITUDE]) },
+{ PARAM_NAME_OSD_ALT_HOLD_OUT_THROTTLE_POS,           VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_ALTHOLD_OUT_THROTTLE]) },
+#endif
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
@@ -1690,6 +1698,7 @@ const clivalue_t valueTable[] = {
 // PG_RANGEFINDER_CONFIG
 #ifdef USE_RANGEFINDER
     { "rangefinder_hardware", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
+    { "rangefinder_trust"   , VAR_UINT8 | MASTER_VALUE,               .config.minmaxUnsigned = { 0, 100 }            , PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_trust) },
 #endif
 
 // PG_PINIO_CONFIG

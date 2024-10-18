@@ -28,6 +28,7 @@
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
+#include "sensors/battery.h"
 #include "rx/rx.h"
 
 #include "alt_hold.h"
@@ -51,6 +52,15 @@ void controlAltitude(void)
 
     //run the function in autopilot.c that calculates the PIDs and drives the motors
     altitudeControl(altHoldState.targetAltitudeCm, taskIntervalSeconds, verticalVelocity, altHoldState.targetAltitudeAdjustRate);
+        // if(output < 0) output *= (float)(altholdConfig()->altitude_Adj_Down_ratio)/100.0f;
+
+}
+void altholdUpdateHoverThrottleValue(void){
+    const float batteryVoltage = (float)getBatteryVoltage();
+    
+    altHoldState.hoverThrottle  = (float)positionControlConfig()->hover_throttle 
+                                + ((altholdConfig()->battery_drop_scale * (float)(altholdConfig()->max_battery_level - batteryVoltage))/100.0f)
+                                - PWM_RANGE_MIN;
 }
 
 void altHoldReset(void)
@@ -138,6 +148,9 @@ void altHoldUpdate(void)
         altHoldUpdateTargetAltitude();
     }
 
+    if(altholdConfig()->battery_drop_scale > 0){
+        altholdUpdateHoverThrottleValue(); 
+    }
     controlAltitude();
 }
 
@@ -151,4 +164,12 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
         altHoldUpdate();
     }
 }
+float altHoldGetThrottle(void) {
+    // see notes in gpsRescueGetThrottle() about mincheck
+    float commandedThrottle = scaleRangef(altHoldState.throttleOut, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    // with high values for mincheck, we could sclae to negative throttle values.
+    commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
+    return commandedThrottle;
+}
+
 #endif

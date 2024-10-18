@@ -152,6 +152,9 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#ifdef USE_ALT_HOLD_MODE
+#include "flight/alt_hold.h"
+#endif
 
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -705,6 +708,31 @@ static void osdElementAltitude(osdElementParms_t *element)
     }
 }
 
+#ifdef USE_ALT_HOLD_MODE
+static void osdElementAltHoldHoverThrottle(osdElementParms_t *element)
+{   
+    tfp_sprintf(element->buff, "H%c%5d", SYM_THR, getAltHoldThrottleHoverValue());
+}
+
+static void osdElementAltHoldOutThrottle(osdElementParms_t *element)
+{   
+    if(isAltHoldActive()){
+        tfp_sprintf(element->buff, "%c%5d", SYM_THR, getAltHoldOutThrottle());
+    } else {
+        tfp_sprintf(element->buff, "%c - ", SYM_THR);
+    }
+}
+
+static void osdElementTargetAltitude(osdElementParms_t *element){
+    const char unitSymbol = osdGetMetersToSelectedUnitSymbol();
+    int32_t alt = getAltHoldTargetAltitudeCm();
+    if(isAltHoldActive()){
+        osdPrintFloat(element->buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(alt) / 100.0f, "", 2, true, unitSymbol);
+    } else {
+        tfp_sprintf(element->buff, "%c - %c", SYM_ALTITUDE, unitSymbol);
+    }
+}
+#endif
 #ifdef USE_ACC
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
@@ -1879,6 +1907,11 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
 #endif
+#ifdef USE_ALT_HOLD_MODE
+    OSD_ALTHOLD_HOVER_THROTTLE,
+    OSD_TARGET_ALTITUDE,
+    OSD_ALTHOLD_OUT_THROTTLE,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -2018,6 +2051,11 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_WARNINGS]            = osdElementSys,
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
+#endif
+#ifdef USE_ALT_HOLD_MODE
+    [OSD_ALTHOLD_HOVER_THROTTLE]  = osdElementAltHoldHoverThrottle,
+    [OSD_TARGET_ALTITUDE]         = osdElementTargetAltitude,
+    [OSD_ALTHOLD_OUT_THROTTLE]    = osdElementAltHoldOutThrottle,
 #endif
 };
 
