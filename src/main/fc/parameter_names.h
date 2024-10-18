@@ -171,7 +171,7 @@
 #define PARAM_NAME_POSITION_P "autopilot_position_P"
 #define PARAM_NAME_POSITION_I "autopilot_position_I"
 #define PARAM_NAME_POSITION_D "autopilot_position_D"
-#define PARAM_NAME_POSITION_J "autopilot_position_J"
+#define PARAM_NAME_POSITION_A "autopilot_position_A"
 #define PARAM_NAME_POSITION_CUTOFF "autopilot_position_cutoff"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"

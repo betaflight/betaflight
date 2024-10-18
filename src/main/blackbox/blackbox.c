@@ -1704,7 +1704,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_P, "%d",           autopilotConfig()->position_P);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_I, "%d",           autopilotConfig()->position_I);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_D, "%d",           autopilotConfig()->position_D);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_J, "%d",           autopilotConfig()->position_J);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_A, "%d",           autopilotConfig()->position_A);
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);

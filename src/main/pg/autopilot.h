@@ -37,7 +37,7 @@ typedef struct autopilotConfig_s {
     uint8_t position_P;
     uint8_t position_I;
     uint8_t position_D;
-    uint8_t position_J;
+    uint8_t position_A;
     uint8_t position_cutoff;
 } autopilotConfig_t;
 
