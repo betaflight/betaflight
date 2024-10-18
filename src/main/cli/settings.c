@@ -166,7 +166,7 @@ const char * const lookupTableMagHardware[] = {
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
 const char * const lookupTableRangefinderHardware[] = {
-    "NONE", "HCSR04", "TFMINI", "TF02"
+    "NONE", "HCSR04", "TFMINI", "TF02", "MSP"
 };
 #endif
 
@@ -1690,6 +1690,7 @@ const clivalue_t valueTable[] = {
 // PG_RANGEFINDER_CONFIG
 #ifdef USE_RANGEFINDER
     { "rangefinder_hardware", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
+    { "rangefinder_trust"   , VAR_UINT8 | MASTER_VALUE,               .config.minmaxUnsigned = { 0, 100 }            , PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_trust) },
 #endif
 
 // PG_PINIO_CONFIG
