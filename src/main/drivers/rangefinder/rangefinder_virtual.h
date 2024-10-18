@@ -27,7 +27,7 @@
 #include "drivers/rangefinder/rangefinder.h"
 // the following values are from the MTF-01P Lidar
 // TODO: the parameters should be configrable to support other MSP Lidars
-#define RANGEFINDER_VIRTUAL_MAX_RANGE_CM                1200
+#define RANGEFINDER_VIRTUAL_MAX_RANGE_CM    1200
 #define RANGEFINDER_VIRTUAL_TASK_PERIOD_MS  100
 
 // this value is taken from INAV, I tried to use 15 (according the dataset of MTTF-01P) but no readings were received 
