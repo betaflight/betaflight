@@ -191,12 +191,12 @@ void calculateEstimatedAltitude(void)
             zeroedAltitudeCm = baroAltCm; // use Baro if no GPS data, or we want Baro only
         }
     }
-    #ifdef USE_RANGEFINDER
+#ifdef USE_RANGEFINDER
     if(rangefinderAltCm > 0) {
     // mix it with the range finder 
         zeroedAltitudeCm = (rangefinderTrust * rangefinderAltCm) + ((1.0 - rangefinderTrust)  * zeroedAltitudeCm);
     }   
-    #endif
+#endif
 
     zeroedAltitudeCm = pt2FilterApply(&altitudeLpf, zeroedAltitudeCm);
     // NOTE: this filter must receive 0 as its input, for the whole disarmed time, to ensure correct zeroed values on arming
