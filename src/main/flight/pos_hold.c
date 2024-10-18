@@ -78,23 +78,15 @@ void posHoldUpdateTargetLocation(void)
     }
 }
 
-void posHoldUpdate(void)
-{
-    posHoldUpdateTargetLocation();
-
-    if (getIsNewDataForPosHold() && posHold.posHoldIsOK) {
-        posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
-    }
-}
-
-void updatePosHoldState(timeUs_t currentTimeUs) {
+void posHoldUpdate(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs); 
-
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
     posHoldProcessTransitions();
-
     if (posHold.isPosHoldRequested) {
-        posHoldUpdate();
+        posHoldUpdateTargetLocation();
+        if (getIsNewDataForPosHold() && posHold.posHoldIsOK) {
+            posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
+        }
     } else {
         posHoldAngle[AI_PITCH] = 0.0f;
         posHoldAngle[AI_ROLL] = 0.0f;

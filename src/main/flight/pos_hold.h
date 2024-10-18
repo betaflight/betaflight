@@ -34,7 +34,7 @@ typedef struct {
 } posHoldState_t;
 
 void posHoldInit(void);
-void updatePosHoldState(timeUs_t currentTimeUs);
+void updatePosHold(timeUs_t currentTimeUs);
 
 bool showPosHoldWarning(void);
 bool allowPosHoldWithoutMag(void);

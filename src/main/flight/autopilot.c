@@ -305,7 +305,7 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     } else if (deltaHeading < -180.0f) {
         deltaHeading += 360.0f; // Wrap around if less than -180
     }
-    float deltaHeadingRadians = deltaHeading * (M_PIf / 180.0f); // Convert to radians
+    float deltaHeadingRadians = deltaHeading * RAD; // Convert to radians
 
     float cosDeltaHeading = cos_approx(deltaHeadingRadians);
     float sinDeltaHeading = sin_approx(deltaHeadingRadians);
