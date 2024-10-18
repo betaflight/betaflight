@@ -192,7 +192,7 @@ void calculateEstimatedAltitude(void)
         }
     }
 #ifdef USE_RANGEFINDER
-    if(rangefinderAltCm > 0) {
+    if (rangefinderAltCm > 0) {
     // mix it with the range finder 
         zeroedAltitudeCm = (rangefinderTrust * rangefinderAltCm) + ((1.0 - rangefinderTrust)  * zeroedAltitudeCm);
     }   
