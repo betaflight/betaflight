@@ -17,18 +17,26 @@
 
 #pragma once
 
-#include "pg/autopilot.h"
-#include "flight/pid.h"
+#include "pg/pos_hold.h"
+
+#ifdef USE_ALT_HOLD_MODE
+#include "common/time.h"
 #include "io/gps.h"
 
-extern float posHoldAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+#define POSHOLD_TASK_RATE_HZ 100 // hz
 
-void autopilotInit(const autopilotConfig_t *config);
-void resetAltitudeControl(void);
-void resetPositionControl(gpsLocation_t initialTargetLocation);
+typedef struct {
+    bool isPosHoldRequested;
+    bool posHoldIsOK;
+    gpsLocation_t targetLocation;
+    float deadband;
+    bool useStickAdjustment;
+} posHoldState_t;
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
-bool positionControl(float deadband);
+void posHoldInit(void);
+void updatePosHoldState(timeUs_t currentTimeUs);
 
-bool isBelowLandingAltitude(void);
-float getAutopilotThrottle(void);
+bool showPosHoldWarning(void);
+bool allowPosHoldWithoutMag(void);
+
+#endif

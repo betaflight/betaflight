@@ -28,6 +28,7 @@ typedef struct {
     bool isAltHoldActive;
     float targetAltitudeCm;
     float targetAltitudeAdjustRate;
+    float deadband;
 } altHoldState_t;
 
 void altHoldInit(void);

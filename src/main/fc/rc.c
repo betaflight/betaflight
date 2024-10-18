@@ -715,9 +715,17 @@ FAST_CODE void processRcCommand(void)
                 if (axis == FD_YAW) {
                     rcCommandf = rcCommand[axis] / rcCommandYawDivider;
                 } else {
-                    rcCommandf = rcCommand[axis] / rcCommandDivider;
+#ifdef USE_POS_HOLD_MODE
+                    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+                        // attenuate rcCommand by the deadband percentage
+                        rcCommandf = rcCommand[axis] / (500.0f - rcControlsConfig()->pos_hold_deadband * 5.0f);
+                        rcCommandf *= 0.7f; // attenuate overall stick responsiveness to 70% of normal
+                    } else 
+#endif
+                    {
+                        rcCommandf = rcCommand[axis] / rcCommandDivider;
+                    }
                 }
-
                 rcDeflection[axis] = rcCommandf;
                 const float rcCommandfAbs = fabsf(rcCommandf);
                 rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -754,9 +762,12 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     for (int axis = 0; axis < 3; axis++) {
 
         float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
+        // larger deadband on pitch and roll when in position hold
+        // mulitply pos_hold_deadband percent by 5.0 to get a range where 100% would be 500
+        const float tmpDeadband = (FLIGHT_MODE(POS_HOLD_MODE) && rcControlsConfig()->pos_hold_deadband) ? rcControlsConfig()->pos_hold_deadband * 5.0f : rcControlsConfig()->deadband;
         if (axis == ROLL || axis == PITCH) {
-            if (tmp > rcControlsConfig()->deadband) {
-                tmp -= rcControlsConfig()->deadband;
+            if (tmp > tmpDeadband) {
+                tmp -= tmpDeadband;
             } else {
                 tmp = 0;
             }
@@ -812,7 +823,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
         rcCommandBuff.x = rcCommand[ROLL];
         rcCommandBuff.y = rcCommand[PITCH];
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommandBuff.z = rcCommand[YAW];
         } else {
             rcCommandBuff.z = 0;
@@ -820,7 +831,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.x;
         rcCommand[PITCH] = rcCommandBuff.y;
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommand[YAW] = rcCommandBuff.z;
         }
     }
