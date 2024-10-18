@@ -251,7 +251,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_POS_HOLD_MODE
     if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && showPosHoldWarning()) {
-        tfp_sprintf(warningText, "POS_HOLD_FAIL");
+        tfp_sprintf(warningText, "POS HOLD FAIL");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;

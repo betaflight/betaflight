@@ -211,7 +211,7 @@ bool positionControl(float deadband) {
             posHold.previousDistanceCm = posHold.distanceCm;
         }
     }
-    const uint8_t startLogger = posHold.justStarted ? 2 : 1;;
+    const uint8_t startLogger = posHold.justStarted ? 2 : 1;
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, startLogger);
     
     // simple (very simple) sanity check

@@ -1036,10 +1036,10 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_ALT_HOLD_MODE
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED) 
-        // and either the alt_hold switch is activated, or are in failsafe
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
-        // but not in GPS_RESCUE_MODE, ie if failsafe is active, must be in Landing Mode
+        // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        // and either the alt_hold switch is activated, or are in failsafe landing mode
+        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
@@ -1057,15 +1057,15 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_POS_HOLD_MODE
     // only if armed; can coexist with altitude hold
     if (ARMING_FLAG(ARMED) 
-        // and the position hold switch is activate
-        && IS_RC_MODE_ACTIVE(BOXPOSHOLD)
-        // but not in GPS_RESCUE_MODE, ie if failsafe is active, must be in Landing Mode
+        // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        // and either the alt_hold switch is activated, or are in failsafe landing mode
+        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
-        // and we have altitude data
-        && (sensors(SENSOR_MAG) || allowPosHoldWithoutMag())
         // Need Mag unless a BRAVE user tries it without
+        && (sensors(SENSOR_MAG) || allowPosHoldWithoutMag())
+        // and we have altitude data
         && isAltitudeAvailable()
         // prevent activation until after takeoff
         && wasThrottleRaised()) {

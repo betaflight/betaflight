@@ -659,12 +659,15 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 // 0.0 - 10.0, heuristic based on GPS speed and stick state
                 groundspeedGain = imuCalcGroundspeedGain(dt);
             }
+
             DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(groundspeedGain * 100.0f));
+
             const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
             const float imuCourseError = imuCalcCourseErr(courseOverGround);
-            cogErr = imuCalcCourseErr(courseOverGround) * groundspeedGain;
+            cogErr = imuCourseError * groundspeedGain;
+            // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight
 
-
+            // ** ATTEMPT TO DETECT SUCCESSFUL IMU ORIENTATION TO GPS **
             static float gpsHeadingTruth = 0;
             // groundspeedGain can be 5.0 in clean forward flight, up to 10.0 max
             // fabsf(imuCourseError) is 0 when headings are aligned, 1 when 90 degrees error or worse

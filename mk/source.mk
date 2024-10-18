@@ -163,7 +163,6 @@ COMMON_SRC = \
             fc/rc_modes.c \
             flight/alt_hold.c \
             flight/autopilot.c \
-            flight/pos_hold.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
@@ -174,6 +173,7 @@ COMMON_SRC = \
             flight/pid.c \
             flight/pid_init.c \
             flight/position.c \
+            flight/pos_hold.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
