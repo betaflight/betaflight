@@ -33,7 +33,7 @@
 
 #include "pos_hold.h"
 
-posHoldState_t posHold;
+static posHoldState_t posHold;
 
 void posHoldReset(void)
 {
@@ -44,21 +44,19 @@ void posHoldReset(void)
 
 void posHoldInit(void)
 {
-    posHold.isPosHoldRequested = false;
     posHold.deadband = rcControlsConfig()->pos_hold_deadband / 100.0f;
     posHold.useStickAdjustment = rcControlsConfig()->pos_hold_deadband;
 }
 
-void posHoldProcessTransitions(void)
-{
+void posHoldStart(void) {
+    static bool wasInPosHoldMode = false;
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        if (!posHold.isPosHoldRequested) {
-            // initialise relevant values each time position hold starts
+        if (!wasInPosHoldMode) {
             posHoldReset();
-            posHold.isPosHoldRequested = true;
+            wasInPosHoldMode = true;
         }
     } else {
-        posHold.isPosHoldRequested = false;
+        wasInPosHoldMode = false;
     }
 }
 
@@ -79,7 +77,7 @@ void posHoldUpdateTargetLocation(void)
 }
 
 void posHoldNewGpsData(void) {
-    if (posHold.isPosHoldRequested) {
+    if (FLIGHT_MODE(POS_HOLD_MODE)) {
         posHoldUpdateTargetLocation();
         if (posHold.posHoldIsOK) {
             posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
@@ -93,11 +91,11 @@ void posHoldNewGpsData(void) {
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs); 
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
-    posHoldProcessTransitions();
+    posHoldStart();
 }
 
 bool posHoldFailure(void) {
-    return (posHold.isPosHoldRequested && !posHold.posHoldIsOK);
+    return (FLIGHT_MODE(POS_HOLD_MODE) && !posHold.posHoldIsOK);
 }
 
 bool allowPosHoldWithoutMag(void) {
