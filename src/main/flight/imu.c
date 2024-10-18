@@ -608,6 +608,25 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 }
 #else
 
+#if defined(USE_GPS)
+static void isGpsHeadingUsable(float groundspeedGain, float imuCourseError, float dt)
+{
+    // ** ATTEMPT TO DETECT SUCCESSFUL IMU ORIENTATION TO GPS **
+    static float gpsHeadingTruth = 0;
+    // groundspeedGain can be 5.0 in clean forward flight, up to 10.0 max
+    // fabsf(imuCourseError) is 0 when headings are aligned, 1 when 90 degrees error or worse
+    // accumulate 'points' based on alignment and likelihood of accumulation being good
+    gpsHeadingTruth += fmaxf(groundspeedGain - fabsf(imuCourseError), 0.0f) * dt;
+    // recenter at 2.5s time constant
+    // TODO: intent is to match IMU time constant, approximately, but I don't exactly know how to do that
+    gpsHeadingTruth -= 0.4 * dt * gpsHeadingTruth; 
+    // if we accumulate enough 'points' over time, the IMU probably is OK
+    // will need to reaccumulate after a disarm (will be retained partly for very brief disarms)
+    canUseGPSHeading = !canUseGPSHeading && (gpsHeadingTruth > 2.0f);
+    // latches true; reset on disarm; used to stop position hold without a suitable GPS heading, if needed
+}
+#endif
+
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
@@ -667,19 +686,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             cogErr = imuCourseError * groundspeedGain;
             // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight
 
-            // ** ATTEMPT TO DETECT SUCCESSFUL IMU ORIENTATION TO GPS **
-            static float gpsHeadingTruth = 0;
-            // groundspeedGain can be 5.0 in clean forward flight, up to 10.0 max
-            // fabsf(imuCourseError) is 0 when headings are aligned, 1 when 90 degrees error or worse
-            // accumulate 'points' based on alignment and likelihood of accumulation being good
-            gpsHeadingTruth += fmaxf(groundspeedGain - fabsf(imuCourseError), 0.0f) * dt;
-            // recenter at 2.5s time constant
-            // TODO: intent is to match IMU time constant, approximately, but I don't exactly know how to do that
-            gpsHeadingTruth -= 0.4 * dt * gpsHeadingTruth; 
-            // if we accumulate enough 'points' over time, the IMU probably is OK
-            // will need to reaccumulate after a disarm (will be retained partly for very brief disarms)
-            canUseGPSHeading = !canUseGPSHeading && (gpsHeadingTruth > 2.0f);
-            // latches true; reset on disarm; used to stop position hold without a suitable GPS heading, if needed
+            isGpsHeadingUsable(groundspeedGain, imuCourseError, dt);
 
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
             // Reset the reference and reinitialize quaternion factors when GPS groundspeed > GPS_COG_MIN_GROUNDSPEED

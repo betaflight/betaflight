@@ -90,7 +90,7 @@ void posHoldNewGpsData(void) {
     }
 }
 
-void posHoldUpdate(timeUs_t currentTimeUs) {
+void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs); 
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
     posHoldProcessTransitions();
