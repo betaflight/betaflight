@@ -103,6 +103,7 @@
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
+#include "flight/pos_hold.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -1003,6 +1004,10 @@ void init(void)
 // autopilot must be initialised before modes that require the autopilot pids
 #ifdef USE_ALT_HOLD_MODE
     altHoldInit();
+#endif
+
+#ifdef USE_POS_HOLD_MODE
+    posHoldInit();
 #endif
 
 #ifdef USE_GPS_RESCUE

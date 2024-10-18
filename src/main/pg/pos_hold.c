@@ -19,15 +19,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include <stdint.h>
+#ifdef USE_POS_HOLD_MODE
+
+#include "flight/pos_hold.h"
 
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-typedef struct altHoldConfig_s {
-    uint8_t alt_hold_adjust_rate;
-} altHoldConfig_t;
+#include "pos_hold.h"
 
-PG_DECLARE(altHoldConfig_t, altHoldConfig);
+PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
 
+PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
+    .pos_hold_without_mag = false,     // position hold within this percentage stick deflection
+);
+#endif

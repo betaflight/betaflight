@@ -53,9 +53,9 @@
 #include "fc/gps_lap_timer.h"
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
-#include "flight/gps_rescue.h"
 
 #include "scheduler/scheduler.h"
 
@@ -2626,9 +2626,14 @@ void onGpsNewData(void)
 #ifdef USE_GPS_RESCUE
     gpsRescueNewGpsData();
 #endif
+
 #ifdef USE_GPS_LAP_TIMER
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
+
+#ifdef USE_POS_HOLD
+    posHoldNewGpsData();
+#endif
 }
 
 void gpsSetFixState(bool state)

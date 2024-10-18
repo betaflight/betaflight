@@ -19,12 +19,16 @@
 
 #include "pg/autopilot.h"
 #include "flight/pid.h"
+#include "io/gps.h"
+
+extern float autopilotAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void autopilotInit(const autopilotConfig_t *config);
 void resetAltitudeControl(void);
+void resetPositionControl(gpsLocation_t initialTargetLocation);
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
+bool positionControl(bool useStickAdjustment, float deadband);
 
 bool isBelowLandingAltitude(void);
-const pidCoefficient_t *getAltitudePidCoeffs(void);
 float getAutopilotThrottle(void);
