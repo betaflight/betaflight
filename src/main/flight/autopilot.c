@@ -104,6 +104,13 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
+
+float getAutopilotHoverThrottleBatteryOffset(void) {
+    const float batteryVoltage = (float)getBatteryVoltage();    
+    float hoverThrottleBatteryOffset = ((float)autopilotConfig()->battery_drop_scale * ((float)autopilotConfig()->max_battery_level - batteryVoltage)) / 100.0f;
+    return hoverThrottleBatteryOffset;
+}
+
 bool isBelowLandingAltitude(void)
 {
     return getAltitudeCm() < 100.0f * autopilotConfig()->landing_altitude_m;
