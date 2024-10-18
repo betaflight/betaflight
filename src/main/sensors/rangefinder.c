@@ -41,6 +41,7 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
+#include "drivers/rangefinder/rangefinder_virtual.h"
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
@@ -53,6 +54,7 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
+#include "io/rangefinder.h"
 
 //#include "uav_interconnect/uav_interconnect.h"
 
@@ -125,7 +127,15 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             }
 #endif
             break;
-
+   
+         case RANGEFINDER_MSP:
+#if defined(USE_RANGEFINDER_MSP)
+            if (virtualRangefinderDetect(dev, &rangefinderMSPVtable)) {
+                rangefinderHardware = RANGEFINDER_MSP;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VIRTUAL_TASK_PERIOD_MS));
+            }
+#endif
+            break;
         case RANGEFINDER_NONE:
             rangefinderHardware = RANGEFINDER_NONE;
             break;
