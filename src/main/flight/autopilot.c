@@ -77,7 +77,7 @@ static posHoldState posHold = {
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
-float posHoldAngle[ANGLE_INDEX_COUNT];
+float autopilotAngle[ANGLE_INDEX_COUNT];
 static pt1Filter_t velocityPitchLpf;
 static pt1Filter_t accelerationPitchLpf;
 static pt1Filter_t velocityRollLpf;
@@ -328,25 +328,25 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     // if done in pid.c, the same upsampler could be used for GPS and PosHold.
 
     // if a deadband is set, and sticks are outside deadband, allow pilot control, otherwise hold position
-    posHoldAngle[AI_ROLL] = (useStickAdjustment && getRcDeflectionAbs(FD_ROLL) > deadband) ? 0.0f : pidSumRoll;
-    posHoldAngle[AI_PITCH] = (useStickAdjustment && getRcDeflectionAbs(FD_PITCH) > deadband) ? 0.0f : pidSumPitch;
+    autopilotAngle[AI_ROLL] = (useStickAdjustment && getRcDeflectionAbs(FD_ROLL) > deadband) ? 0.0f : pidSumRoll;
+    autopilotAngle[AI_PITCH] = (useStickAdjustment && getRcDeflectionAbs(FD_PITCH) > deadband) ? 0.0f : pidSumPitch;
 
     // note:
     // if FLIGHT_MODE(POS_HOLD_MODE):
-    // posHoldAngle[] is added to angle setpoint in pid.c, in degrees
+    // autopilotAngle[] is added to angle setpoint in pid.c, in degrees
     // stick angle setpoint forced to zero within the same deadband via rc.c
 
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-distanceRoll));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_ROLL] * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(autopilotAngle[AI_ROLL] * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollJ * 10));
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-distancePitch));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHoldAngle[AI_PITCH] * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(autopilotAngle[AI_PITCH] * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));

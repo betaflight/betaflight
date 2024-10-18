@@ -85,8 +85,8 @@ void posHoldNewGpsData(void) {
             posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
         }
     } else {
-        posHoldAngle[AI_PITCH] = 0.0f;
-        posHoldAngle[AI_ROLL] = 0.0f;
+        autopilotAngle[AI_PITCH] = 0.0f;
+        autopilotAngle[AI_ROLL] = 0.0f;
     }
 }
 

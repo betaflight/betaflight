@@ -21,7 +21,7 @@
 #include "flight/pid.h"
 #include "io/gps.h"
 
-extern float posHoldAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+extern float autopilotAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void autopilotInit(const autopilotConfig_t *config);
 void resetAltitudeControl(void);
