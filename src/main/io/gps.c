@@ -56,6 +56,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
+#include "flight/pos_hold.h"
 
 #include "scheduler/scheduler.h"
 
@@ -2592,12 +2593,16 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 
 void onGpsNewData(void)
 {
+    gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
+
+#ifdef USE_POS_HOLD_MODE
+    posHoldNewGpsData(); // pos hold code itself checks for GPS fix and shows OSD warning if not available
+#endif
+
     if (!STATE(GPS_FIX)) {
         // if we don't have a 3D fix don't give data to GPS rescue
         return;
     }
-
-    gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {
@@ -2611,10 +2616,6 @@ void onGpsNewData(void)
 #ifdef USE_GPS_LAP_TIMER
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
-
-#ifdef USE_POS_HOLD
-    posHoldNewGpsData();
-#endif
 }
 
 void gpsSetFixState(bool state)

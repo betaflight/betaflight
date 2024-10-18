@@ -33,6 +33,7 @@ typedef struct {
 } posHoldState_t;
 
 void posHoldInit(void);
+void posHoldNewGpsData(void);
 void updatePosHold(timeUs_t currentTimeUs);
 
 bool posHoldFailure(void);

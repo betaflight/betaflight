@@ -37,7 +37,7 @@ static posHoldState_t posHold;
 
 void posHoldReset(void)
 {
-    posHold.posHoldIsOK = true;
+    posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
     posHold.targetLocation = gpsSol.llh;
     resetPositionControl(posHold.targetLocation);
 }
@@ -46,6 +46,7 @@ void posHoldInit(void)
 {
     posHold.deadband = rcControlsConfig()->pos_hold_deadband / 100.0f;
     posHold.useStickAdjustment = rcControlsConfig()->pos_hold_deadband;
+    posHold.posHoldIsOK = false;
 }
 
 void posHoldStart(void) {
@@ -56,6 +57,7 @@ void posHoldStart(void) {
             wasInPosHoldMode = true;
         }
     } else {
+        posHold.posHoldIsOK = false;
         wasInPosHoldMode = false;
     }
 }
@@ -77,11 +79,9 @@ void posHoldUpdateTargetLocation(void)
 }
 
 void posHoldNewGpsData(void) {
-    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+    if (posHold.posHoldIsOK) {
         posHoldUpdateTargetLocation();
-        if (posHold.posHoldIsOK) {
-            posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
-        }
+        posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
     } else {
         autopilotAngle[AI_PITCH] = 0.0f;
         autopilotAngle[AI_ROLL] = 0.0f;

@@ -201,10 +201,11 @@ bool positionControl(bool useStickAdjustment, float deadband) {
             posHold.previousDistanceCm = posHold.distanceCm;
         }
     }
+
     const uint8_t startLogger = posHold.justStarted ? 2 : 1;
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, startLogger);
-    
-    // simple (very simple) sanity check
+
+    // ** simple (too simple) sanity check **
     // primarily to detect flyaway from no Mag or badly oriented Mag
     // TODO - maybe figure how to make a better check by giving more leeway at the start?
     if (posHold.distanceCm > 1000) {
