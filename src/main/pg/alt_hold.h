@@ -26,11 +26,6 @@
 
 typedef struct altholdConfig_s {
     uint8_t alt_hold_target_adjust_rate;
-    uint16_t alt_hold_throttle_min;
-    uint16_t alt_hold_throttle_max;
-    uint8_t altitude_Adj_Down_ratio;
-    uint16_t max_battery_level;
-    uint8_t battery_drop_scale;
 } altholdConfig_t;
 
 PG_DECLARE(altholdConfig_t, altholdConfig);

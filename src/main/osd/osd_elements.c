@@ -155,6 +155,7 @@
 #ifdef USE_ALT_HOLD_MODE
 #include "flight/alt_hold.h"
 #endif
+#include "flight/autopilot.h"
 
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -708,16 +709,15 @@ static void osdElementAltitude(osdElementParms_t *element)
     }
 }
 
-#ifdef USE_ALT_HOLD_MODE
 static void osdElementAltHoldHoverThrottle(osdElementParms_t *element)
 {   
-    tfp_sprintf(element->buff, "H%c%5d", SYM_THR, getAltHoldThrottleHoverValue());
+    tfp_sprintf(element->buff, "H%c%5d", SYM_THR, getAutopilotThrottleHoverValue());
 }
 
 static void osdElementAltHoldOutThrottle(osdElementParms_t *element)
 {   
     if(isAltHoldActive()){
-        tfp_sprintf(element->buff, "%c%5d", SYM_THR, getAltHoldOutThrottle());
+        tfp_sprintf(element->buff, "%c%5d", SYM_THR, (double)getAutopilotThrottle());
     } else {
         tfp_sprintf(element->buff, "%c - ", SYM_THR);
     }
@@ -732,7 +732,6 @@ static void osdElementTargetAltitude(osdElementParms_t *element){
         tfp_sprintf(element->buff, "%c - %c", SYM_ALTITUDE, unitSymbol);
     }
 }
-#endif
 #ifdef USE_ACC
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
@@ -1907,11 +1906,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
 #endif
-#ifdef USE_ALT_HOLD_MODE
-    OSD_ALTHOLD_HOVER_THROTTLE,
-    OSD_TARGET_ALTITUDE,
-    OSD_ALTHOLD_OUT_THROTTLE,
-#endif
+    OSD_AUTOPILOT_HOVER_THROTTLE,
+    OSD_AUTOPILOT_TARGET_ALTITUDE,
+    OSD_AUTOPILOT_OUT_THROTTLE,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -2053,10 +2050,10 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
 #endif
 #ifdef USE_ALT_HOLD_MODE
-    [OSD_ALTHOLD_HOVER_THROTTLE]  = osdElementAltHoldHoverThrottle,
-    [OSD_TARGET_ALTITUDE]         = osdElementTargetAltitude,
-    [OSD_ALTHOLD_OUT_THROTTLE]    = osdElementAltHoldOutThrottle,
+    [OSD_AUTOPILOT_TARGET_ALTITUDE]         = osdElementTargetAltitude,
 #endif
+[OSD_AUTOPILOT_HOVER_THROTTLE]  = osdElementAltHoldHoverThrottle,
+[OSD_AUTOPILOT_OUT_THROTTLE]    = osdElementAltHoldOutThrottle,
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)

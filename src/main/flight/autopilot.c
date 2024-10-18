@@ -28,6 +28,7 @@
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "rx/rx.h"
+#include "sensors/battery.h"
 
 #include "autopilot.h"
 
@@ -39,6 +40,7 @@
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
+static float hoverBatteryOffset = 0.0f;
 
 void autopilotInit(const autopilotConfig_t *config)
 {
@@ -66,10 +68,21 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     const float altitudeD = verticalVelocity * altitudePidCoeffs.Kd;
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
+    
+    float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF;
+    
+    if(throttleOffset < 0) {
+        throttleOffset *= (float)(autopilotConfig()->altitude_Adj_Down_ratio) / 100.0f;
+    }
 
-    const float hoverOffset = autopilotConfig()->hover_throttle - PWM_RANGE_MIN;
+    if(autopilotConfig()->battery_drop_scale > 0){
+        hoverBatteryOffset = getAutopilotHoverThrottleBatteryOffset(); 
+    }
 
-    float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
+    const float hoverOffset = autopilotConfig()->hover_throttle + hoverBatteryOffset - PWM_RANGE_MIN;
+    
+    throttleOffset += hoverOffset;
+
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
     // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
     // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
@@ -104,4 +117,14 @@ const pidCoefficient_t *getAltitudePidCoeffs(void)
 float getAutopilotThrottle(void)
 {
     return throttleOut;
+}
+
+float getAutopilotHoverThrottleBatteryOffset(void){
+    const float batteryVoltage = (float)getBatteryVoltage();    
+    float hoverThrottleBatteryOffset = ((float)autopilotConfig()->battery_drop_scale * ((float)autopilotConfig()->max_battery_level - batteryVoltage)) / 100.0f;
+    return hoverThrottleBatteryOffset;
+}
+
+int16_t getAutopilotThrottleHoverValue(void) {
+    return lrintf(autopilotConfig()->hover_throttle + hoverBatteryOffset);
 }

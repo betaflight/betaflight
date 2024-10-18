@@ -38,4 +38,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .altitude_I = 15,
     .altitude_D = 15,
     .altitude_F = 15,
+    .altitude_Adj_Down_ratio = 100,
+    .max_battery_level = 1660,
+    .battery_drop_scale = 0,
 );

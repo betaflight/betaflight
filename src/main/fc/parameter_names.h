@@ -167,6 +167,9 @@
 #define PARAM_NAME_ALTITUDE_I "autopilot_altitude_I"
 #define PARAM_NAME_ALTITUDE_D "autopilot_altitude_D"
 #define PARAM_NAME_ALTITUDE_F "autopilot_altitude_F"
+#define PARAM_NAME_AUTOPILOT_MAX_ADJ_DOWN_RAT "autopilot_max_adj_down_rate"
+#define PARAM_NAME_AUTOPILOT_MAX_BATTERY_LEVEL "autopilot_max_battery_level"
+#define PARAM_NAME_AUTOPILOT_BATTERY_DROP_SCALE "autopilot_battery_drop_scale"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
@@ -241,12 +244,6 @@
 
 #ifdef USE_ALT_HOLD_MODE
 #define PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE "alt_hold_target_adjust_rate"
-#define PARAM_NAME_ALT_HOLD_ADJ_DOWN_RAT "alt_hold_adj_down_reduction_ratio"
-#define PARAM_NAME_ALT_HOLD_MAX_BATTERY_LEVEL "alt_hold_max_battery_level"
-#define PARAM_NAME_ALT_HOLD_BATTERY_DROP_SCALE "alt_hold_battery_drop_scale"
-#define PARAM_NAME_OSD_ALT_HOLD_THROTTLE_HOVER_VALUE_POS "osd_alt_hold_throttle_hover_value_pos"
-#define PARAM_NAME_OSD_TARGET_ALTITUDE_POS "osd_alt_hold_target_altitude_pos"
-#define PARAM_NAME_OSD_ALT_HOLD_OUT_THROTTLE_POS "osd_alt_hold_out_throttle_pos"
 #endif // USE_ALT_HOLD_MODE
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"

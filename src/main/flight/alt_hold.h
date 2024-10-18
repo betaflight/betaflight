@@ -32,10 +32,6 @@ typedef struct {
 
 void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
-float altHoldGetThrottle(void);
-void altholdUpdateHoverThrottleValue();
-int16_t getAltHoldThrottleHoverValue(void);
 int16_t getAltHoldTargetAltitudeCm(void);
 bool isAltHoldActive(void);
-int16_t getAltHoldOutThrottle(void);
 #endif
