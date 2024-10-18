@@ -173,7 +173,7 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) {
     resetPositionControlParams();
 }
 
-bool positionControl(float deadband) {
+bool positionControl(bool useStickAdjustment, float deadband) {
 
     // exit if we don't have suitable data
     if (!STATE(GPS_FIX)) {
@@ -327,9 +327,9 @@ bool positionControl(float deadband) {
     // or in pid.c, when angle rate is calculated
     // if done in pid.c, the same upsampler could be used for GPS and PosHold.
 
-    // if sticks are centered, allow autopilot control, otherwise pilot can fly like a mavic
-    posHoldAngle[AI_ROLL] = (getRcDeflectionAbs(FD_ROLL) < deadband) ? pidSumRoll : 0.0f;
-    posHoldAngle[AI_PITCH] = (getRcDeflectionAbs(FD_PITCH) < deadband) ? pidSumPitch : 0.0f;
+    // if a deadband is set, and sticks are outside deadband, allow pilot control, otherwise hold position
+    posHoldAngle[AI_ROLL] = (useStickAdjustment && getRcDeflectionAbs(FD_ROLL) > deadband) ? 0.0f : pidSumRoll;
+    posHoldAngle[AI_PITCH] = (useStickAdjustment && getRcDeflectionAbs(FD_PITCH) > deadband) ? 0.0f : pidSumPitch;
 
     // note:
     // if FLIGHT_MODE(POS_HOLD_MODE):

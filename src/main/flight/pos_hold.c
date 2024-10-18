@@ -83,7 +83,7 @@ void posHoldUpdate(void)
     posHoldUpdateTargetLocation();
 
     if (getIsNewDataForPosHold() && posHold.posHoldIsOK) {
-        posHold.posHoldIsOK = positionControl(posHold.deadband);
+        posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
     }
 }
 

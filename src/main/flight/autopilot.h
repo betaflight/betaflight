@@ -28,7 +28,7 @@ void resetAltitudeControl(void);
 void resetPositionControl(gpsLocation_t initialTargetLocation);
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
-bool positionControl(float deadband);
+bool positionControl(bool useStickAdjustment, float deadband);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

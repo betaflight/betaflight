@@ -715,16 +715,7 @@ FAST_CODE void processRcCommand(void)
                 if (axis == FD_YAW) {
                     rcCommandf = rcCommand[axis] / rcCommandYawDivider;
                 } else {
-#ifdef USE_POS_HOLD_MODE
-                    if (FLIGHT_MODE(POS_HOLD_MODE)) {
-                        // attenuate rcCommand by the deadband percentage
-                        rcCommandf = rcCommand[axis] / (500.0f - rcControlsConfig()->pos_hold_deadband * 5.0f);
-                        rcCommandf *= 0.7f; // attenuate overall stick responsiveness to 70% of normal
-                    } else 
-#endif
-                    {
-                        rcCommandf = rcCommand[axis] / rcCommandDivider;
-                    }
+                    rcCommandf = rcCommand[axis] / rcCommandDivider;
                 }
                 rcDeflection[axis] = rcCommandf;
                 const float rcCommandfAbs = fabsf(rcCommandf);
@@ -760,12 +751,24 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     isRxDataNew = true;
 
     for (int axis = 0; axis < 3; axis++) {
+        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f); // -500 to 500
 
-        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
-        // larger deadband on pitch and roll when in position hold
-        // mulitply pos_hold_deadband percent by 5.0 to get a range where 100% would be 500
-        const float tmpDeadband = (FLIGHT_MODE(POS_HOLD_MODE) && rcControlsConfig()->pos_hold_deadband) ? rcControlsConfig()->pos_hold_deadband * 5.0f : rcControlsConfig()->deadband;
         if (axis == ROLL || axis == PITCH) {
+#ifdef USE_POS_HOLD_MODE
+            float tmpDeadband = rcControlsConfig()->deadband;
+            if (FLIGHT_MODE(POS_HOLD_MODE)) {
+                if (rcControlsConfig()->pos_hold_deadband) {
+                    // if pos_hold_deadband is defined, ignore pitch & roll within deadband zone
+                    tmpDeadband = rcControlsConfig()->pos_hold_deadband * 5.0f;
+                    // NB could attenuate RP responsiveness outside deadband here, with tmp * 0.8f or whatever
+                } else {
+                    // if pos_hold_deadband is zero, prevent user adjustment of pitch or roll
+                    tmp = 0;
+                }
+            }
+#else
+            const float tmpDeadband = rcControlsConfig()->deadband;
+#endif
             if (tmp > tmpDeadband) {
                 tmp -= tmpDeadband;
             } else {
@@ -850,7 +853,16 @@ bool isMotorsReversed(void)
 
 void initRcProcessing(void)
 {
+#ifdef USE_POS_HOLD_MODE
+        if (FLIGHT_MODE(POS_HOLD_MODE)) {
+            if (rcControlsConfig()->pos_hold_deadband) {
+                rcCommandDivider = 500.0f - rcControlsConfig()->pos_hold_deadband * 5.0f; // pos hold deadband in percent
+            }
+        }
+#else
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
+#endif
+
     rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
 
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
