@@ -33,6 +33,7 @@ typedef struct autopilotConfig_s {
     uint8_t altitude_I;
     uint8_t altitude_D;
     uint8_t altitude_F;
+    uint8_t altitude_Adj_Down_ratio;
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);
