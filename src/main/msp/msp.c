@@ -3295,7 +3295,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
         sbufReadU8(src);
 #endif
-        break;
 
 #ifdef USE_RANGEFINDER
         rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
