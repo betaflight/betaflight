@@ -102,16 +102,6 @@ void autopilotInit(const autopilotConfig_t *config)
     pt1FilterInit(&accelerationRollLpf, gain);
 }
 
-const pidCoefficient_t *getAltitudePidCoeffs(void)
-{
-    return &altitudePidCoeffs;
-}
-
-const pidCoefficient_t *getPositionPidCoeffs(void)
-{
-    return &positionPidCoeffs;
-}
-
 void resetAltitudeControl (void) {
     altitudeI = 0.0f;
 }
