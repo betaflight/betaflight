@@ -93,7 +93,7 @@ void posHoldUpdate(timeUs_t currentTimeUs) {
     }
 }
 
-bool showPosHoldWarning(void) {
+bool posHoldFailure(void) {
     return (posHold.isPosHoldRequested && !posHold.posHoldIsOK);
 }
 
