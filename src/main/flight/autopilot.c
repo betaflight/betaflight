@@ -28,6 +28,7 @@
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "rx/rx.h"
+#include "sensors/battery.h"
 
 #include "autopilot.h"
 
@@ -39,6 +40,7 @@
 static pidCoefficient_t altitudePidCoeffs;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
+static float hoverBatteryOffset = 0.0f;
 
 void autopilotInit(const autopilotConfig_t *config)
 {
@@ -73,7 +75,12 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
         throttleOffset *= (float)(autopilotConfig()->altitude_Adj_Down_ratio) / 100.0f;
     }
 
-    const float hoverOffset = autopilotConfig()->hover_throttle - PWM_RANGE_MIN;
+    if(autopilotConfig()->battery_drop_scale > 0){
+        hoverBatteryOffset = getAutopilotHoverThrottleBatteryOffset(); 
+    }
+
+    const float hoverOffset = autopilotConfig()->hover_throttle + hoverBatteryOffset - PWM_RANGE_MIN;
+    
     throttleOffset += hoverOffset;
 
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
