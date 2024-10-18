@@ -78,19 +78,22 @@ void posHoldUpdateTargetLocation(void)
     }
 }
 
-void posHoldUpdate(timeUs_t currentTimeUs) {
-    UNUSED(currentTimeUs); 
-    // check for enabling Alt Hold, otherwise do as little as possible while inactive
-    posHoldProcessTransitions();
+void posHoldNewGpsData(void) {
     if (posHold.isPosHoldRequested) {
         posHoldUpdateTargetLocation();
-        if (getIsNewDataForPosHold() && posHold.posHoldIsOK) {
+        if (posHold.posHoldIsOK) {
             posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
         }
     } else {
         posHoldAngle[AI_PITCH] = 0.0f;
         posHoldAngle[AI_ROLL] = 0.0f;
     }
+}
+
+void posHoldUpdate(timeUs_t currentTimeUs) {
+    UNUSED(currentTimeUs); 
+    // check for enabling Alt Hold, otherwise do as little as possible while inactive
+    posHoldProcessTransitions();
 }
 
 bool posHoldFailure(void) {

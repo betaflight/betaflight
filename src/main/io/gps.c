@@ -93,7 +93,6 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
-static bool newDataForPosHold = false;
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -2613,13 +2612,9 @@ void onGpsNewData(void)
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
 
-    newDataForPosHold = true;
-}
-
-bool getIsNewDataForPosHold(void) {
-    bool currentState = newDataForPosHold; // true only when new data arrives
-    newDataForPosHold = false; // clear flag once new data has been handled
-    return currentState;
+#ifdef USE_POS_HOLD
+    posHoldNewGpsData();
+#endif
 }
 
 void gpsSetFixState(bool state)
