@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_RANGEFINDER_MSP
 #include "build/build_config.h"
