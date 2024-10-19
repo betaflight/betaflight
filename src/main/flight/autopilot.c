@@ -105,9 +105,9 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 }
 
 
-float getAutopilotHoverThrottleBatteryOffset(void) {
-    const float batteryVoltage = (float)getBatteryVoltage();    
-    float hoverThrottleBatteryOffset = ((float)autopilotConfig()->battery_drop_scale * ((float)autopilotConfig()->max_battery_level - batteryVoltage)) / 100.0f;
+int32_t getAutopilotHoverThrottleBatteryOffset(void) {
+    uint16_t batteryVoltage = getBatteryVoltage();    
+    int32_t hoverThrottleBatteryOffset = ((int32_t)autopilotConfig()->battery_drop_scale * ((int32_t)autopilotConfig()->max_battery_level - (int32_t)batteryVoltage)) / 100;
     return hoverThrottleBatteryOffset;
 }
 
@@ -123,5 +123,5 @@ const pidCoefficient_t *getAltitudePidCoeffs(void)
 
 float getAutopilotThrottle(void)
 {
-    return throttleOut;
+    return lrintf(throttleOut);
 }

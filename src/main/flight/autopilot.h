@@ -28,6 +28,6 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
 bool isBelowLandingAltitude(void);
 const pidCoefficient_t *getAltitudePidCoeffs(void);
 float getAutopilotThrottle(void);
-float getAutopilotHoverThrottleBatteryOffset();
+int32_t getAutopilotHoverThrottleBatteryOffset();
 int16_t getAutopilotThrottleHoverValue(void);
 
