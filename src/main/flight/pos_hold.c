@@ -35,9 +35,8 @@
 
 static posHoldState_t posHold;
 
-void posHoldReset(void)
+void posHoldResetTargetLocation(void)
 {
-    posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
     posHold.targetLocation = gpsSol.llh;
     resetPositionControl(posHold.targetLocation);
 }
@@ -53,7 +52,8 @@ void posHoldStart(void) {
     static bool wasInPosHoldMode = false;
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!wasInPosHoldMode) {
-            posHoldReset();
+            posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
+            posHoldResetTargetLocation();
             wasInPosHoldMode = true;
         }
     } else {
@@ -72,7 +72,7 @@ void posHoldUpdateTargetLocation(void)
                 // allow user to fly the quad, in angle mode, when sticks are outside the deadband
                 // while sticks are outside the deadband,
                 // keep updating the home location to the current GPS location each iteration
-                posHoldReset();
+                posHoldResetTargetLocation();
             }
         }
     }

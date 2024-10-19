@@ -52,12 +52,12 @@
 
 float sin_approx(float x)
 {
-    // Normalize input to the range -PI to PI
+    // Wrap angle to 2π with range [-π π]
     x = fmodf(x, 2.0f * M_PIf);
     if (x < -M_PIf) x += 2.0f * M_PIf;
     if (x > M_PIf) x -= 2.0f * M_PIf;
 
-    // Use symmetry to handle inputs greater than ±90 degrees
+    // Use axis symmetry around x = ±π/2 for polynomial outside of range [-π/2 π/2]
     if (x > M_PIf / 2) {
         x = M_PIf - x; // Reflect
     } else if (x < -M_PIf / 2) {
