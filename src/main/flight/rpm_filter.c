@@ -53,6 +53,7 @@ typedef struct rpmFilter_s {
     float minHz;
     float maxHz;
     float fadeRangeHz;
+    float fadeRangeHzInv;
     float q;
 
     timeUs_t looptimeUs;
@@ -89,6 +90,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     rpmFilter.minHz = config->rpm_filter_min_hz;
     rpmFilter.maxHz = 0.48f * 1e6f / looptimeUs; // don't go quite to nyquist to avoid oscillations
     rpmFilter.fadeRangeHz = config->rpm_filter_fade_range_hz;
+    rpmFilter.fadeRangeHzInv = 1.0f / config->rpm_filter_fade_range_hz;
     rpmFilter.q = config->rpm_filter_q / 100.0f;
     rpmFilter.looptimeUs = looptimeUs;
 
@@ -127,22 +129,19 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
     for (int i = 0; i < notchUpdatesPerIteration; i++) {
 
         // Only bother updating notches which have an effect on filtered output
-        if (rpmFilter.weights[harmonicIndex] > 0.0f) {
+        float weight = rpmFilter.weights[harmonicIndex];
+        if (weight > 0.0f) {
 
             // select current notch on ROLL
             biquadFilter_t *template = &rpmFilter.notch[0][motorIndex][harmonicIndex];
 
             const float frequencyHz = constrainf((harmonicIndex + 1) * getMotorFrequencyHz(motorIndex), rpmFilter.minHz, rpmFilter.maxHz);
             const float marginHz = frequencyHz - rpmFilter.minHz;
-            float weight = 1.0f;
 
             // fade out notch when approaching minHz (turn it off)
             if (marginHz < rpmFilter.fadeRangeHz) {
-                weight *= marginHz / rpmFilter.fadeRangeHz;
+                weight *= marginHz * rpmFilter.fadeRangeHzInv;
             }
-
-            // attenuate notches per harmonics group
-            weight *= rpmFilter.weights[harmonicIndex];
 
             // update notch
             biquadFilterUpdate(template, frequencyHz, rpmFilter.looptimeUs, rpmFilter.q, FILTER_NOTCH, weight);
