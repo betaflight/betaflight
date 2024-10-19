@@ -172,7 +172,7 @@ bool positionControl(bool useStickAdjustment, float deadband) {
 
     if (!canUseGPSHeading
 #ifdef USE_MAG
-        && !compassIsHealthy()
+        && !compassIsHealthy() // if no heading info, ie none from Mag *or* GPS-derived, can't continue
 #endif
         ) {
         return false;
