@@ -1586,6 +1586,8 @@ const clivalue_t valueTable[] = {
 #ifdef USE_CRAFTNAME_MSGS
     { "osd_craftname_msgs",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_craftname_msgs) },
 #endif //USE_CRAFTNAME_MSGS
+{ "osd_autopilot_throttle_hover_value_pos",  VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AUTOPILOT_HOVER_THROTTLE]) },
+{ "osd_autopilot_target_altitude_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AUTOPILOT_TARGET_ALTITUDE]) },
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
@@ -1841,6 +1843,8 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ALTITUDE_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_D) },
     { PARAM_NAME_ALTITUDE_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_F) },
     { PARAM_NAME_AUTOPILOT_MAX_ADJ_DOWN_RAT,   VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0  , 100  }, PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_Adj_Down_ratio) },
+    { PARAM_NAME_AUTOPILOT_MAX_BATTERY_LEVEL,  VAR_UINT16| MASTER_VALUE, .config.minmaxUnsigned = { 500, 4000 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, max_battery_level) },
+    { PARAM_NAME_AUTOPILOT_BATTERY_DROP_SCALE, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0  , 200  }, PG_AUTOPILOT, offsetof(autopilotConfig_t, battery_drop_scale) },
 
 // PG_MODE_ACTIVATION_CONFIG
 #if defined(USE_CUSTOM_BOX_NAMES)

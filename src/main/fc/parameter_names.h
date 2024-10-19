@@ -168,6 +168,8 @@
 #define PARAM_NAME_ALTITUDE_D "autopilot_altitude_D"
 #define PARAM_NAME_ALTITUDE_F "autopilot_altitude_F"
 #define PARAM_NAME_AUTOPILOT_MAX_ADJ_DOWN_RAT   "autopilot_max_adj_down_rate"
+#define PARAM_NAME_AUTOPILOT_MAX_BATTERY_LEVEL  "autopilot_max_battery_level"
+#define PARAM_NAME_AUTOPILOT_BATTERY_DROP_SCALE "autopilot_battery_drop_scale"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"

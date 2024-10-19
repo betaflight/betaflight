@@ -32,5 +32,6 @@ typedef struct {
 
 void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
-
+int16_t getAltHoldTargetAltitudeCm(void);
+bool isAltHoldActive(void);
 #endif

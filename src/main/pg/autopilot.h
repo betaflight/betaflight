@@ -34,6 +34,8 @@ typedef struct autopilotConfig_s {
     uint8_t altitude_D;
     uint8_t altitude_F;
     uint8_t altitude_Adj_Down_ratio;
+    uint16_t max_battery_level;
+    uint8_t battery_drop_scale;
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);

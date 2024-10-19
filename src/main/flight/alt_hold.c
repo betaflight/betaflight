@@ -151,4 +151,11 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
         altHoldUpdate();
     }
 }
+
+int16_t getAltHoldTargetAltitudeCm(void) {
+    return lrintf(altHoldState.targetAltitudeCm);
+}
+bool isAltHoldActive(void) {
+    return altHoldState.isAltHoldActive;
+}
 #endif
