@@ -95,6 +95,10 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
 
+#ifdef USE_POS_HOLD_MODE
+static bool newDataForPosHold = false;
+#endif
+
 typedef struct gpsInitData_s {
     uint8_t index;
     uint8_t baudrateIndex; // see baudRate_e
@@ -2596,7 +2600,7 @@ void onGpsNewData(void)
     gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
 
 #ifdef USE_POS_HOLD_MODE
-    posHoldNewGpsData(); // pos hold code itself checks for GPS fix and shows OSD warning if not available
+    newDataForPosHold = true;
 #endif
 
     if (!STATE(GPS_FIX)) {
@@ -2617,6 +2621,14 @@ void onGpsNewData(void)
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
 }
+
+#ifdef USE_POS_HOLD_MODE
+bool isNewDataForPosHold(void) {
+    bool currentState = newDataForPosHold; // true only when new data arrives
+    newDataForPosHold = false; // clear flag once new data has been handled
+    return currentState;
+}
+#endif
 
 void gpsSetFixState(bool state)
 {
