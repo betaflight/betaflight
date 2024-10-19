@@ -27,7 +27,7 @@
 
 typedef struct altHoldConfig_s {
     uint8_t alt_hold_adjust_rate;
+    uint8_t alt_hold_deadband;
 } altHoldConfig_t;
 
 PG_DECLARE(altHoldConfig_t, altHoldConfig);
-

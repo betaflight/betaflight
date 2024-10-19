@@ -27,7 +27,7 @@
 
 typedef struct posHoldConfig_s {
     bool pos_hold_without_mag;
+    uint8_t pos_hold_deadband;
 } posHoldConfig_t;
 
 PG_DECLARE(posHoldConfig_t, posHoldConfig);
-

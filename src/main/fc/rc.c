@@ -48,6 +48,7 @@
 #include "flight/pid_init.h"
 
 #include "pg/rx.h"
+#include "pg/pos_hold.h"
 
 #include "rx/rx.h"
 
@@ -757,9 +758,9 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 #ifdef USE_POS_HOLD_MODE
             float tmpDeadband = rcControlsConfig()->deadband;
             if (FLIGHT_MODE(POS_HOLD_MODE)) {
-                if (rcControlsConfig()->pos_hold_deadband) {
+                if (posHoldConfig()->pos_hold_deadband) {
                     // if pos_hold_deadband is defined, ignore pitch & roll within deadband zone
-                    tmpDeadband = rcControlsConfig()->pos_hold_deadband * 5.0f;
+                    tmpDeadband = posHoldConfig()->pos_hold_deadband * 5.0f;
                     // NB could attenuate RP responsiveness outside deadband here, with tmp * 0.8f or whatever
                 } else {
                     // if pos_hold_deadband is zero, prevent user adjustment of pitch or roll
@@ -855,8 +856,8 @@ void initRcProcessing(void)
 {
 #ifdef USE_POS_HOLD_MODE
         if (FLIGHT_MODE(POS_HOLD_MODE)) {
-            if (rcControlsConfig()->pos_hold_deadband) {
-                rcCommandDivider = 500.0f - rcControlsConfig()->pos_hold_deadband * 5.0f; // pos hold deadband in percent
+            if (posHoldConfig()->pos_hold_deadband) {
+                rcCommandDivider = 500.0f - posHoldConfig()->pos_hold_deadband * 5.0f; // pos hold deadband in percent
             }
         }
 #else

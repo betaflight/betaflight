@@ -247,13 +247,13 @@
 #endif // USE_GPS
 
 #ifdef USE_ALT_HOLD_MODE
-#define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband" // from rcControlsConfig
+#define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband"
 #define PARAM_NAME_ALT_HOLD_ADJUST_RATE "alt_hold_adjust_rate"
 #endif
 
 #ifdef USE_POS_HOLD_MODE
 #define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
-#define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband" // from rcControlsConfig
+#define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband"
 #endif
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"

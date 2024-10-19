@@ -56,15 +56,12 @@
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 
-#include "flight/alt_hold.h"
-#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/pos_hold.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -81,6 +78,8 @@
 #include "osd/osd.h"
 
 #include "pg/adc.h"
+#include "pg/alt_hold.h"
+#include "pg/autopilot.h"
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
@@ -98,6 +97,7 @@
 #include "pg/pg_ids.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
+#include "pg/pos_hold.h"
 #include "pg/rx.h"
 #include "pg/rx_pwm.h"
 #include "pg/rx_spi.h"
@@ -1110,12 +1110,12 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_ALT_HOLD_MODE
     { PARAM_NAME_ALT_HOLD_ADJUST_RATE, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_adjust_rate) },
-    { PARAM_NAME_ALT_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, alt_hold_deadband) },
+    { PARAM_NAME_ALT_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_deadband) },
 #endif
 
 #ifdef USE_POS_HOLD_MODE
     { PARAM_NAME_POS_HOLD_WITHOUT_MAG, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, pos_hold_without_mag) },
-    { PARAM_NAME_POS_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, pos_hold_deadband) },
+    { PARAM_NAME_POS_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, pos_hold_deadband) },
 #endif
 
 // PG_PID_CONFIG

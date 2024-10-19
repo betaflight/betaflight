@@ -34,5 +34,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFI
 
 PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
     .alt_hold_adjust_rate = 100, // max rate of change of altitude target using sticks in cm/s
+    .alt_hold_deadband = 40, // throttle deadband in percent of stick travel
 );
 #endif

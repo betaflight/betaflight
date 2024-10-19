@@ -43,8 +43,8 @@ void posHoldResetTargetLocation(void)
 
 void posHoldInit(void)
 {
-    posHold.deadband = rcControlsConfig()->pos_hold_deadband / 100.0f;
-    posHold.useStickAdjustment = rcControlsConfig()->pos_hold_deadband;
+    posHold.deadband = posHoldConfig()->pos_hold_deadband / 100.0f;
+    posHold.useStickAdjustment = posHoldConfig()->pos_hold_deadband;
     posHold.posHoldIsOK = false;
 }
 

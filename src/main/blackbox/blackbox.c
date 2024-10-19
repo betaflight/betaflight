@@ -1814,12 +1814,12 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_ALT_HOLD_MODE
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_ADJUST_RATE, "%d", altHoldConfig()->alt_hold_adjust_rate);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND,    "%d", rcControlsConfig()->alt_hold_deadband);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND,    "%d", altHoldConfig()->alt_hold_deadband);
 #endif
 
 #ifdef USE_POS_HOLD_MODE
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_WITHOUT_MAG, "%d", posHoldConfig()->pos_hold_without_mag);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", rcControlsConfig()->pos_hold_deadband);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", posHoldConfig()->pos_hold_deadband);
 #endif
 
 #ifdef USE_WING

@@ -66,7 +66,7 @@ void altHoldReset(void)
 void altHoldInit(void)
 {
     altHoldState.isAltHoldActive = false;
-    altHoldState.deadband = rcControlsConfig()->alt_hold_deadband / 100.0f;
+    altHoldState.deadband = altHoldConfig()->alt_hold_deadband / 100.0f;
     altHoldReset();
 }
 
