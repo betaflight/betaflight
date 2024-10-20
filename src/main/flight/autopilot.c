@@ -62,6 +62,8 @@ typedef struct {
     float rollI;
     bool isDeceleratingAtStart;
     float sanityCheckDistance;
+    float peakInitialGroundspeed;
+    float lpfCutoff;
 } posHoldState;
 
 static posHoldState posHold = {
@@ -76,15 +78,16 @@ static posHoldState posHold = {
     .rollI = 0.0f,
     .isDeceleratingAtStart = true,
     .sanityCheckDistance = 1000.0f,
+    .peakInitialGroundspeed = 0.0f,
+    .lpfCutoff = 1.0f,
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
 float autopilotAngle[ANGLE_INDEX_COUNT];
 static pt1Filter_t velocityPitchLpf;
-static pt1Filter_t accelerationPitchLpf;
 static pt1Filter_t velocityRollLpf;
-static pt1Filter_t accelerationRollLpf;
-static float positionLpfCutoffHz;
+static pt2Filter_t accelerationRollLpf;
+static pt2Filter_t accelerationPitchLpf;
 
 void autopilotInit(const autopilotConfig_t *config)
 {
@@ -96,12 +99,12 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Ki = config->position_I * POSITION_I_SCALE;
     positionPidCoeffs.Kd = config->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = config->position_A * POSITION_A_SCALE; // Kf used for acceleration
-    positionLpfCutoffHz = config->position_cutoff * 0.01f;
-    const float gain = pt1FilterGain(positionLpfCutoffHz, 0.1f); // assume 10Hz GPS connection at start
-    pt1FilterInit(&velocityPitchLpf, gain);
-    pt1FilterInit(&accelerationPitchLpf, gain);
-    pt1FilterInit(&velocityRollLpf, gain);
-    pt1FilterInit(&accelerationRollLpf, gain);
+    posHold.lpfCutoff = config->position_cutoff * 0.01f;
+    const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f); // assume 10Hz GPS connection at start
+    pt1FilterInit(&velocityRollLpf, pt1Gain);
+    pt1FilterInit(&velocityPitchLpf, pt1Gain);
+    pt2FilterInit(&accelerationRollLpf, pt1Gain);
+    pt2FilterInit(&accelerationPitchLpf, pt1Gain);
 }
 
 void resetAltitudeControl (void) {
@@ -147,7 +150,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
-void resetPositionControlParams(void) {
+void resetPositionControlParams(void) { // at the start, and while sticks are moving
     posHold.distanceCm = 0.0f;
     posHold.previousDistanceCm = 0;
     posHold.previousDistanceRoll = 0.0f;
@@ -158,6 +161,14 @@ void resetPositionControlParams(void) {
     posHold.pitchI = 0.0f;
     posHold.rollI = 0.0f;
     posHold.sanityCheckDistance = 1000.0f;
+    // reset all lowpass filter accumulators to zero
+    posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
+    const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f);
+    pt1FilterInit(&velocityRollLpf, pt1Gain);
+    pt1FilterInit(&velocityPitchLpf, pt1Gain);
+    pt2FilterInit(&accelerationRollLpf, pt1Gain); // use pt1 gain on pt2 for extra suppression
+    pt2FilterInit(&accelerationPitchLpf, pt1Gain);
+
 }
 
 void resetPositionControl(gpsLocation_t initialTargetLocation) {
@@ -196,12 +207,18 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     // it looks a lot better if we reset the target point to the point that we 'pull up' at
     // otherwise there is a big distance to pull back if we start pos hold while carrying some speed
     if (posHold.isDeceleratingAtStart) {
-        positionLpfCutoffHz = autopilotConfig()->position_cutoff * 0.003f; // acquire D and A more gradually
+        // slow acquisition of D and A, but fast offset
+        posHold.peakInitialGroundspeed = fmaxf(posHold.peakInitialGroundspeed, gpsSol.groundSpeed);
+        if (gpsSol.groundSpeed > 0.5f * posHold.peakInitialGroundspeed) {
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.003f; // acquire D and A more gradually
+        } else {
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.03f; // lose D and A more rapidly
+        }
         posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
         if (posHold.distanceCm < posHold.previousDistanceCm) {
             // reset the values now the craft has 'stopped'; this happens only once
             currentTargetLocation = gpsSol.llh;
-            positionLpfCutoffHz = autopilotConfig()->position_cutoff * 0.01f; // normal D and A responsiveness
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f; // normal D and A responsiveness
             resetPositionControlParams();
             posHold.isDeceleratingAtStart = false;
         } else {
@@ -211,7 +228,7 @@ bool positionControl(bool useStickAdjustment, float deadband) {
 
     // set the filter gain used for D and J
     // TO DO - maybe use fixed at GPS data rate?
-    const float gain = pt1FilterGain(positionLpfCutoffHz, gpsDataIntervalS);
+    const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
 
     const uint8_t startLogger = posHold.isDeceleratingAtStart ? 2 : 1;
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, startLogger);
@@ -248,15 +265,16 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     // we need separate velocity for roll so the filter lag isn't problematic
     float velocityRoll = (distanceRoll - posHold.previousDistanceRoll) * gpsDataIntervalHz;
     posHold.previousDistanceRoll = distanceRoll;
-    // lowpass filter the velocity
-    pt1FilterUpdateCutoff(&velocityRollLpf, gain);
-    velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
 
     float accelerationRoll = (velocityRoll - posHold.previousVelocityRoll) * gpsDataIntervalHz; // positive when moving away
     posHold.previousVelocityRoll = velocityRoll;
+
+    // lowpass filter the velocity
+    pt1FilterUpdateCutoff(&velocityRollLpf, pt1Gain);
+    velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
     // lowapss filter the acceleration value again, effectively PT2, it's very noisy
-    pt1FilterUpdateCutoff(&accelerationRollLpf, gain);
-    accelerationRoll = pt1FilterApply(&accelerationRollLpf, accelerationRoll);
+    pt2FilterUpdateCutoff(&accelerationRollLpf, pt1Gain);
+    accelerationRoll = pt2FilterApply(&accelerationRollLpf, accelerationRoll);
 
     const float rollP = distanceRoll * positionPidCoeffs.Kp;
     const float rollD = velocityRoll * positionPidCoeffs.Kd;
@@ -268,15 +286,16 @@ bool positionControl(bool useStickAdjustment, float deadband) {
 
     float velocityPitch = (distancePitch - posHold.previousDistancePitch) * gpsDataIntervalHz;
     posHold.previousDistancePitch = distancePitch;
-    // lowpass filter the velocity
-    pt1FilterUpdateCutoff(&velocityPitchLpf, gain);
-    velocityPitch = pt1FilterApply(&velocityPitchLpf, velocityPitch);
 
     float accelerationPitch = (velocityPitch - posHold.previousVelocityPitch) * gpsDataIntervalHz; // positive when moving away
     posHold.previousVelocityPitch = velocityPitch;
+
+    // lowpass filter the velocity
+    pt1FilterUpdateCutoff(&velocityPitchLpf, pt1Gain);
+    velocityPitch = pt1FilterApply(&velocityPitchLpf, velocityPitch);
     // lowapss filter the acceleration value again, effectively PT2, it's very noisy
-    pt1FilterUpdateCutoff(&accelerationPitchLpf, gain);
-    accelerationPitch = pt1FilterApply(&accelerationPitchLpf, accelerationPitch);
+    pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain);
+    accelerationPitch = pt2FilterApply(&accelerationPitchLpf, accelerationPitch);
 
     const float pitchP = distancePitch * positionPidCoeffs.Kp;
     const float pitchD = velocityPitch * positionPidCoeffs.Kd;
