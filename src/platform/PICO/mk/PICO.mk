@@ -52,7 +52,7 @@ INCLUDE_DIRS    := \
             $(SDK_DIR)/common/hardware_claim/include \
             $(SDK_DIR)/common/pico_binary_info/include \
             $(SDK_DIR)/common/pico_sync/include \
-			$(SDK_DIR)/rp2_common/pico_stdio_uart/include \
+            $(SDK_DIR)/rp2_common/pico_stdio_uart/include \
             $(SDK_DIR)/rp2_common/pico_stdio_usb/include \
             $(SDK_DIR)/rp2_common/pico_stdio_rtt/include \
             $(SDK_DIR)/rp2_common/tinyusb/include \
@@ -131,7 +131,7 @@ INCLUDE_DIRS    := \
             $(SDK_DIR)/rp2_common/pico_malloc/include \
             $(SDK_DIR)/rp2_common/hardware_timer/include \
             $(CMSIS_DIR)/Core/Include \
-			$(CMSIS_DIR)/Device/$(TARGET_MCU)/Include
+            $(CMSIS_DIR)/Device/$(TARGET_MCU)/Include
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mfloat-abi=softfp -mcmse
