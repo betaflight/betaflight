@@ -90,6 +90,12 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 
+
+#ifdef USE_FLASH_TEST_PRBS
+void checkFlashStart(void);
+void checkFlashStop(void);
+#endif
+
 #if !defined(DEFAULT_BLACKBOX_DEVICE)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_NONE
 #endif
@@ -584,10 +590,21 @@ static void blackboxSetState(BlackboxState newState)
         break;
     case BLACKBOX_STATE_RUNNING:
         blackboxSlowFrameIterationTimer = blackboxSInterval; //Force a slow frame to be written on the first iteration
+#ifdef USE_FLASH_TEST_PRBS
+        // Start writing a known pattern as the running state is entered
+        checkFlashStart();
+#endif
         break;
     case BLACKBOX_STATE_SHUTTING_DOWN:
         xmitState.u.startTime = millis();
         break;
+
+#ifdef USE_FLASH_TEST_PRBS
+    case BLACKBOX_STATE_STOPPED:
+        // Now that the log is shut down, verify it
+        checkFlashStop();
+        break;
+#endif
     default:
         ;
     }

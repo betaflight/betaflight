@@ -537,6 +537,25 @@ static uint32_t programStartAddress;
 static uint32_t programLoadAddress;
 bool bufferDirty = false;
 
+// Called in ISR context
+// Check if the status was busy and if so repeat the poll
+busStatus_e w25n_callbackReady(uint32_t arg)
+{
+    flashDevice_t *fdevice = (flashDevice_t *)arg;
+    extDevice_t *dev = fdevice->io.handle.dev;
+
+    uint8_t readyPoll = dev->bus->curSegment->u.buffers.rxData[2];
+
+    if (readyPoll & W25N_STATUS_FLAG_BUSY) {
+        return BUS_BUSY;
+    }
+
+    // Bus is now known not to be busy
+    fdevice->couldBeBusy = false;
+
+    return BUS_READY;
+}
+
 #ifdef USE_QUADSPI
 bool isProgramming = false;
 
@@ -618,25 +637,6 @@ void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*call
 }
 
 static uint32_t currentPage = UINT32_MAX;
-
-// Called in ISR context
-// Check if the status was busy and if so repeat the poll
-busStatus_e w25n_callbackReady(uint32_t arg)
-{
-    flashDevice_t *fdevice = (flashDevice_t *)arg;
-    extDevice_t *dev = fdevice->io.handle.dev;
-
-    uint8_t readyPoll = dev->bus->curSegment->u.buffers.rxData[2];
-
-    if (readyPoll & W25N_STATUS_FLAG_BUSY) {
-        return BUS_BUSY;
-    }
-
-    // Bus is now known not to be busy
-    fdevice->couldBeBusy = false;
-
-    return BUS_READY;
-}
 
 // Called in ISR context
 // A write enable has just been issued
@@ -843,6 +843,9 @@ int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, ui
 {
     uint32_t targetPage = W25N_LINEAR_TO_PAGE(address);
 
+    // As data is buffered before being written a flush must be performed before attempting a read
+    w25n_flush(fdevice);
+
     if (currentPage != targetPage) {
         if (!w25n_waitForReady(fdevice)) {
             return 0;
@@ -872,6 +875,9 @@ int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, ui
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
 
+        uint8_t readStatus[] = { W25N_INSTRUCTION_READ_STATUS_REG, W25N_STAT_REG, 0 };
+        uint8_t readyStatus[3];
+
         uint8_t cmd[4];
         cmd[0] = W25N_INSTRUCTION_READ_DATA;
         cmd[1] = (column >> 8) & 0xff;
@@ -879,6 +885,7 @@ int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, ui
         cmd[3] = 0;
 
         busSegment_t segments[] = {
+                {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, w25n_callbackReady},
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
                 {.u.buffers = {NULL, buffer}, length, true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
