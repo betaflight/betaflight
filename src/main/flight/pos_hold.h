@@ -25,13 +25,6 @@
 
 #define POSHOLD_TASK_RATE_HZ 100 // hz
 
-typedef struct {
-    bool posHoldIsOK;
-    gpsLocation_t targetLocation;
-    float deadband;
-    bool useStickAdjustment;
-} posHoldState_t;
-
 void posHoldInit(void);
 void posHoldNewGpsData(void);
 void updatePosHold(timeUs_t currentTimeUs);

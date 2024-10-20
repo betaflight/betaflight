@@ -51,34 +51,28 @@ static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
 typedef struct {
-    uint32_t distanceCm;
-    uint32_t previousDistanceCm;
-    float previousDistancePitch;
-    float previousDistanceRoll;
-    float previousVelocityPitch;
-    float previousVelocityRoll;
+    float distanceCm;
+    float previousDistanceCm;
+    float sanityCheckDistance;
+    float previousVelocity;
     float previousHeading;
     float pitchI;
     float rollI;
-    bool isDeceleratingAtStart;
-    float sanityCheckDistance;
+    bool isStarting;
     float peakInitialGroundspeed;
     float lpfCutoff;
     bool sticksActive;
 } posHoldState;
 
 static posHoldState posHold = {
-    .distanceCm = 0,
-    .previousDistanceCm = 0,
-    .previousDistancePitch = 0.0f,
-    .previousDistanceRoll = 0.0f,
-    .previousVelocityPitch = 0.0f,
-    .previousVelocityRoll = 0.0f,
+    .distanceCm = 0.0f,
+    .previousDistanceCm = 0.0f,
+    .sanityCheckDistance = 1000.0f,
+    .previousVelocity = 0.0f,
     .previousHeading = 0.0f,
     .pitchI = 0.0f,
     .rollI = 0.0f,
-    .isDeceleratingAtStart = true,
-    .sanityCheckDistance = 1000.0f,
+    .isStarting = false,
     .peakInitialGroundspeed = 0.0f,
     .lpfCutoff = 1.0f,
     .sticksActive = false,
@@ -159,31 +153,31 @@ void setSticksActiveStatus(bool areSticksActive)
 
 void resetPositionControlParams(void) { // at the start, and while sticks are moving
     posHold.distanceCm = 0.0f;
-    posHold.previousDistanceCm = 0;
-    posHold.previousDistanceRoll = 0.0f;
-    posHold.previousVelocityRoll = 0.0f;
-    posHold.previousDistancePitch = 0.0f;
-    posHold.previousVelocityPitch = 0.0f;
-    posHold.previousHeading = attitude.values.yaw * 0.1f;
-    if (!posHold.isDeceleratingAtStart && !posHold.sticksActive) {
-        posHold.pitchI = 0.0f;
-        posHold.rollI = 0.0f;
-    }
+    posHold.previousDistanceCm = 0.0f;
     posHold.sanityCheckDistance = 1000.0f;
-    // reset all lowpass filter accumulators to zero
+    posHold.previousVelocity = 0.0f;
+    posHold.previousHeading = attitude.values.yaw * 0.1f;
     posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
     const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f);
+    // reset all lowpass filter accumulators to zero
     pt1FilterInit(&velocityRollLpf, pt1Gain);
     pt1FilterInit(&velocityPitchLpf, pt1Gain);
-    pt2FilterInit(&accelerationRollLpf, pt1Gain); // use pt1 gain on pt2 for extra suppression
+    pt2FilterInit(&accelerationRollLpf, pt1Gain);
     pt2FilterInit(&accelerationPitchLpf, pt1Gain);
-    posHold.sticksActive = false;
+    posHold.isStarting = true;
 }
 
 void resetPositionControl(gpsLocation_t initialTargetLocation) {
     currentTargetLocation = initialTargetLocation;
-    posHold.isDeceleratingAtStart = true;
     resetPositionControlParams();
+    posHold.pitchI = 0.0f;
+    posHold.rollI = 0.0f;
+    posHold.peakInitialGroundspeed = 0.0f;
+}
+
+void updateTargetLocation(gpsLocation_t newTargetLocation) {
+    currentTargetLocation = newTargetLocation;
+    resetPositionControlParams(); // don't reset accumulated iTerm
 }
 
 bool positionControl(void) {
@@ -204,43 +198,51 @@ bool positionControl(void) {
     }
 
     // collect initial data values - gpsSol.llh = current gps location
+    uint32_t distanceCm = 0;
     int32_t bearing = 0; // degrees * 100
     const float gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
     const float gpsDataIntervalHz = 1.0f / gpsDataIntervalS;
 
     // get distance and bearing from current location (gpsSol.llh) to target location
-    GPS_distance_cm_bearing(&gpsSol.llh, &currentTargetLocation, false, &posHold.distanceCm, &bearing);
+    GPS_distance_cm_bearing(&gpsSol.llh, &currentTargetLocation, false, &distanceCm, &bearing);
 
+    posHold.distanceCm = (float)distanceCm;
     // at the start, if the quad was moving, it will initially show increasing distance from start point
     // once it has 'stopped' the PIDs will push back towards home, and the distance away will decrease
     // it looks a lot better if we reset the target point to the point that we 'pull up' at
     // otherwise there is a big distance to pull back if we start pos hold while carrying some speed
-    if (posHold.isDeceleratingAtStart) {
-        // slow acquisition of D and A, but fast offset
+    uint8_t debugGroundSpeedStatus = 0;
+    if (posHold.isStarting) {
+        // first time, or after sticks were centered
         posHold.peakInitialGroundspeed = fmaxf(posHold.peakInitialGroundspeed, gpsSol.groundSpeed);
+        // watch for velocity to fall by half
         if (gpsSol.groundSpeed > 0.5f * posHold.peakInitialGroundspeed) {
-            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.003f; // acquire D and A more gradually
+            // to avoid sudden D and A changes, filter hard
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.003f;
+            debugGroundSpeedStatus = 10; // temp debug to know we are here
         } else {
-            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.03f; // lose D and A more rapidly
+            // almost slowed down, get D and A to follow raw signal more closely
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.03f;
         }
         posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
+        // watch for quad to slow down, and start moving away
         if (posHold.distanceCm < posHold.previousDistanceCm) {
-            // reset the values now the craft has 'stopped'; this happens only once
+            // now the craft has 'stopped' reset the location, filter normally
             currentTargetLocation = gpsSol.llh;
-            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f; // normal D and A responsiveness
-            resetPositionControlParams();
-            posHold.isDeceleratingAtStart = false;
-        } else {
-            posHold.previousDistanceCm = posHold.distanceCm;
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
+            // reset all values but not iTerm
+            posHold.peakInitialGroundspeed = 0.0f;
+            posHold.isStarting = false; // final target is set, no more messing around
         }
     }
 
-    // set the filter gain used for D and J
-    // TO DO - maybe use fixed at GPS data rate?
-    const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
+    float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
 
-    const uint8_t startLogger = posHold.isDeceleratingAtStart ? 2 : 1;
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, startLogger);
+    uint8_t debugStartup = posHold.isStarting ? 2 : 1;
+    const uint8_t debugStickActive = posHold.sticksActive ? 5 : 0;
+    debugStartup += debugStickActive;
+    debugStartup += debugGroundSpeedStatus;
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, debugStartup);
 
     // ** simple (too simple) sanity check **
     // primarily to detect flyaway from no Mag or badly oriented Mag
@@ -264,65 +266,47 @@ bool positionControl(void) {
     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
-    // ** calculate P, D and J for pitch and roll axes, independently.
-    // TODO for loop by axis
+    float velocity = (posHold.distanceCm - posHold.previousDistanceCm) * gpsDataIntervalHz;
+    posHold.previousDistanceCm = posHold.distanceCm;
+    float acceleration = (velocity - posHold.previousVelocity) * gpsDataIntervalHz; // positive when moving away
+    posHold.previousVelocity = velocity;
 
+    // P
+    const float rollP = rollProportion * posHold.distanceCm * positionPidCoeffs.Kp;
+    const float pitchP = pitchProportion * posHold.distanceCm * positionPidCoeffs.Kp;
+
+    // derivative and acceleration
     // roll
-    const float distanceRoll = rollProportion * posHold.distanceCm;
-    // positive distances mean nose towards target, should roll forward (positive roll)
-
-    // we need separate velocity for roll so the filter lag isn't problematic
-    float velocityRoll = (distanceRoll - posHold.previousDistanceRoll) * gpsDataIntervalHz;
-    posHold.previousDistanceRoll = distanceRoll;
-
-    float accelerationRoll = (velocityRoll - posHold.previousVelocityRoll) * gpsDataIntervalHz; // positive when moving away
-    posHold.previousVelocityRoll = velocityRoll;
-
-    // lowpass filter the velocity
+    float velocityRoll = rollProportion * velocity;
+    float accelerationRoll = rollProportion * acceleration;
+    // lowpass filters
     pt1FilterUpdateCutoff(&velocityRollLpf, pt1Gain);
     velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
-    // lowapss filter the acceleration value again, effectively PT2, it's very noisy
     pt2FilterUpdateCutoff(&accelerationRollLpf, pt1Gain);
     accelerationRoll = pt2FilterApply(&accelerationRollLpf, accelerationRoll);
-
-    const float rollP = distanceRoll * positionPidCoeffs.Kp;
-    const float rollD = velocityRoll * positionPidCoeffs.Kd;
-    const float rollA = accelerationRoll * positionPidCoeffs.Kf;
+    float rollD = velocityRoll * positionPidCoeffs.Kd;
+    float rollA = accelerationRoll * positionPidCoeffs.Kf;
 
     // pitch
-    const float distancePitch = pitchProportion * posHold.distanceCm;
-    // positive distances mean nose towards target, should pitch forward (positive pitch)
+    float velocityPitch = pitchProportion * velocity;
+    float accelerationPitch = pitchProportion * acceleration;
 
-    float velocityPitch = (distancePitch - posHold.previousDistancePitch) * gpsDataIntervalHz;
-    posHold.previousDistancePitch = distancePitch;
-
-    float accelerationPitch = (velocityPitch - posHold.previousVelocityPitch) * gpsDataIntervalHz; // positive when moving away
-    posHold.previousVelocityPitch = velocityPitch;
-
-    // lowpass filter the velocity
+    // lowpass filters
     pt1FilterUpdateCutoff(&velocityPitchLpf, pt1Gain);
     velocityPitch = pt1FilterApply(&velocityPitchLpf, velocityPitch);
-    // lowapss filter the acceleration value again, effectively PT2, it's very noisy
     pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain);
     accelerationPitch = pt2FilterApply(&accelerationPitchLpf, accelerationPitch);
+    float pitchD = velocityPitch * positionPidCoeffs.Kd;
+    float pitchA = accelerationPitch * positionPidCoeffs.Kf;
 
-    const float pitchP = distancePitch * positionPidCoeffs.Kp;
-    const float pitchD = velocityPitch * positionPidCoeffs.Kd;
-    const float pitchA = accelerationPitch * positionPidCoeffs.Kf;
-
-    // ** calculate I and rotate if quad yaws
-
-    // intent: on windy days, accumulate whatever iTerm we need, then rotate it if the quad yaws.
-    // useful only on very windy days when P can't quite get there
-    // needs to be attenuated towards zero when close to target to avoid overshoot and circling
-    // hence cannot completely eliminate position error due to wind, will tend to end up a little bit down-wind
-
-    if (!posHold.isDeceleratingAtStart) {
-        posHold.rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
-        posHold.pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
+    // iTerm
+    if (!posHold.isStarting){
+        // hold prior iTerm at start in case user is fine-tuning position
+        posHold.rollI += rollProportion * posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
+        posHold.pitchI += pitchProportion * posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
     }
 
-    // rotate iTerm if heading changes
+    // calculate rotation factors, to be used if heading changes
     const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
     float deltaHeading = currentHeading - posHold.previousHeading;
     posHold.previousHeading = currentHeading;
@@ -338,25 +322,35 @@ bool positionControl(void) {
     float cosDeltaHeading = cos_approx(deltaHeadingRadians);
     float sinDeltaHeading = sin_approx(deltaHeadingRadians);
 
-    // rotate pitch and roll iTerm
-    const float rotatedRollI = posHold.pitchI * sinDeltaHeading + posHold.rollI * cosDeltaHeading;
+    // rotate iTerm
+    const float rotatedRollI = posHold.rollI * cosDeltaHeading + posHold.pitchI * sinDeltaHeading;
     const float rotatedPitchI = posHold.pitchI * cosDeltaHeading - posHold.rollI * sinDeltaHeading;
 
     posHold.rollI = rotatedRollI;
     posHold.pitchI = rotatedPitchI;
 
+    // rotate smoothed DA factors
+    const float rotatedRollD = rollD * cosDeltaHeading + pitchD * sinDeltaHeading;
+    const float rotatedPitchD = pitchD * cosDeltaHeading - rollD * sinDeltaHeading;
+    rollD = rotatedRollD;
+    pitchD = rotatedPitchD;
+    const float rotatedRollA = rollA * cosDeltaHeading + pitchA * sinDeltaHeading;
+    const float rotatedPitchA = pitchA * cosDeltaHeading - rollA * sinDeltaHeading;
+    rollA = rotatedRollA;
+    pitchA = rotatedPitchA;
+
     // limit sum of D and A because otherwise too aggressive if entering at speed
+    float rollDA = rollD + rollA;
+    float pitchDA = pitchD + pitchA;
     const float maxDAAngle = 35.0f; // degrees; arbitrary limit.  20 is a bit too low, allows a lot of overshoot
-    // limit the angular contribution from D and A to not more than 45 degrees
-    // any angle more than 45 degrees will require error eg P and I
+    // to get an angle more than 35 degrees will require P and I
     // ** todo = should this be half of the user-configurable angle_limit?  Or fixed?
-    const float rollDA = constrainf(rollD + rollA, -maxDAAngle, maxDAAngle);
-    const float pitchDA = constrainf(pitchD + pitchA, -maxDAAngle, maxDAAngle);
+    rollDA = constrainf(rollDA, -maxDAAngle, maxDAAngle);
+    pitchDA = constrainf(pitchDA, -maxDAAngle, maxDAAngle);
 
     // add up pid factors
     const float pidSumRoll = rollP + posHold.rollI + rollDA;
     const float pidSumPitch = pitchP + posHold.pitchI + pitchDA;
-    // note that when starting, at speed, iTerm growth is limited, and max angle from D and A is 20 degrees
 
     // todo: upsample filtering
     // pidSum will have steps at GPS rate, and may require an upsampling filter for smoothness.
@@ -373,17 +367,18 @@ bool positionControl(void) {
     // autopilotAngle[] is added to angle setpoint in pid.c, in degrees
     // stick angle setpoint forced to zero within the same deadband via rc.c
 
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
+
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-distanceRoll));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(autopilotAngle[AI_ROLL] * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * rollProportion));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(velocity));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollA * 10));
     } else {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-distancePitch));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(autopilotAngle[AI_PITCH] * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * pitchProportion));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(velocity));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));

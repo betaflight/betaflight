@@ -33,13 +33,13 @@
 
 #include "pos_hold.h"
 
-static posHoldState_t posHold;
+typedef struct {
+    bool posHoldIsOK;
+    float deadband;
+    bool useStickAdjustment;
+} posHoldState_t;
 
-void posHoldResetTargetLocation(void)
-{
-    posHold.targetLocation = gpsSol.llh;
-    resetPositionControl(posHold.targetLocation);
-}
+static posHoldState_t posHold;
 
 void posHoldInit(void)
 {
@@ -48,22 +48,7 @@ void posHoldInit(void)
     posHold.posHoldIsOK = false;
 }
 
-void posHoldStart(void) {
-    static bool wasInPosHoldMode = false;
-    if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        if (!wasInPosHoldMode) {
-            posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
-            setSticksActiveStatus(false);
-            posHoldResetTargetLocation();
-            wasInPosHoldMode = true;
-        }
-    } else {
-        posHold.posHoldIsOK = false;
-        wasInPosHoldMode = false;
-    }
-}
-
-void posHoldUpdateTargetLocation(void)
+void posHoldCheckSticks(void)
 {
     // if failsafe is active, eg landing mode, don't update the original start point 
     if (!failsafeIsActive()) {
@@ -74,7 +59,7 @@ void posHoldUpdateTargetLocation(void)
                 // while sticks are outside the deadband,
                 // keep updating the home location to the current GPS location each iteration
                 setSticksActiveStatus(true);
-                posHoldResetTargetLocation();
+                updateTargetLocation(gpsSol.llh);
             } else {
                 setSticksActiveStatus(false);
             }
@@ -82,13 +67,28 @@ void posHoldUpdateTargetLocation(void)
     }
 }
 
+void posHoldStart(void) {
+    static bool wasInPosHoldMode = false;
+    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        if (!wasInPosHoldMode) {
+            posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
+            setSticksActiveStatus(false);
+            resetPositionControl(gpsSol.llh);
+            wasInPosHoldMode = true;
+        }
+    } else {
+        posHold.posHoldIsOK = false;
+        wasInPosHoldMode = false;
+    }
+}
+
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs); 
-    // check for enabling Alt Hold, otherwise do as little as possible while inactive
+    // check for enabling Pod Hold, otherwise do as little as possible while inactive
     posHoldStart();
     if (posHold.posHoldIsOK) {
-        posHoldUpdateTargetLocation();
-        if (isNewDataForPosHold() && posHold.posHoldIsOK) {
+        if (isNewDataForPosHold()) {
+            posHoldCheckSticks();
             posHold.posHoldIsOK = positionControl();
         }
     } else {
