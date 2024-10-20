@@ -323,7 +323,7 @@ static inline uint16_t calcAltitudePacked(int32_t altitude_dm)
     return MIN((altitude_dm + 5) / 10, 0x7fffe) | 0x8000; // positive 15bit value in meters, with OpenTX limit
 }
 
-static inline int8_t getVerticalSpeedPacked(int16_t verticalSpeed) // Vertical speed in m/s (meters per second)
+static inline int8_t calcVerticalSpeedPacked(int16_t verticalSpeed) // Vertical speed in m/s (meters per second)
 {
     // linearity coefficient.
     // Bigger values lead to more linear output i.e., less precise smaller values and more precise big values.
@@ -351,7 +351,7 @@ static void crsfFrameAltitude(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAME_BARO_ALTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BARO_ALTITUDE);
     sbufWriteU16BigEndian(dst, calcAltitudePacked((baro.altitude + 5) / 10));
-    sbufWriteU8(dst, getVerticalSpeedPacked(getEstimatedVario()));
+    sbufWriteU8(dst, calcVerticalSpeedPacked(getEstimatedVario()));
 }
 #endif
 
