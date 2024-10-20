@@ -25,10 +25,11 @@ extern float autopilotAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGR
 
 void autopilotInit(const autopilotConfig_t *config);
 void resetAltitudeControl(void);
+void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(gpsLocation_t initialTargetLocation);
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
-bool positionControl(bool useStickAdjustment, float deadband);
+bool positionControl();
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

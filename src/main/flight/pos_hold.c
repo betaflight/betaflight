@@ -53,6 +53,7 @@ void posHoldStart(void) {
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!wasInPosHoldMode) {
             posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
+            setSticksActiveStatus(false);
             posHoldResetTargetLocation();
             wasInPosHoldMode = true;
         }
@@ -72,7 +73,10 @@ void posHoldUpdateTargetLocation(void)
                 // allow user to fly the quad, in angle mode, when sticks are outside the deadband
                 // while sticks are outside the deadband,
                 // keep updating the home location to the current GPS location each iteration
+                setSticksActiveStatus(true);
                 posHoldResetTargetLocation();
+            } else {
+                setSticksActiveStatus(false);
             }
         }
     }
@@ -85,7 +89,7 @@ void updatePosHold(timeUs_t currentTimeUs) {
     if (posHold.posHoldIsOK) {
         posHoldUpdateTargetLocation();
         if (isNewDataForPosHold() && posHold.posHoldIsOK) {
-            posHold.posHoldIsOK = positionControl(posHold.useStickAdjustment, posHold.deadband);
+            posHold.posHoldIsOK = positionControl();
         }
     } else {
         autopilotAngle[AI_PITCH] = 0.0f;

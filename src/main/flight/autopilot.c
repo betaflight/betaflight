@@ -64,6 +64,7 @@ typedef struct {
     float sanityCheckDistance;
     float peakInitialGroundspeed;
     float lpfCutoff;
+    bool sticksActive;
 } posHoldState;
 
 static posHoldState posHold = {
@@ -80,6 +81,7 @@ static posHoldState posHold = {
     .sanityCheckDistance = 1000.0f,
     .peakInitialGroundspeed = 0.0f,
     .lpfCutoff = 1.0f,
+    .sticksActive = false,
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
@@ -150,6 +152,11 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
 }
 
+void setSticksActiveStatus(bool areSticksActive)
+{
+    posHold.sticksActive = areSticksActive;
+}
+
 void resetPositionControlParams(void) { // at the start, and while sticks are moving
     posHold.distanceCm = 0.0f;
     posHold.previousDistanceCm = 0;
@@ -158,8 +165,10 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
     posHold.previousDistancePitch = 0.0f;
     posHold.previousVelocityPitch = 0.0f;
     posHold.previousHeading = attitude.values.yaw * 0.1f;
-    posHold.pitchI = 0.0f;
-    posHold.rollI = 0.0f;
+    if (!posHold.sticksActive) {
+        posHold.pitchI = 0.0f;
+        posHold.rollI = 0.0f;
+    }
     posHold.sanityCheckDistance = 1000.0f;
     // reset all lowpass filter accumulators to zero
     posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
@@ -168,7 +177,7 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
     pt1FilterInit(&velocityPitchLpf, pt1Gain);
     pt2FilterInit(&accelerationRollLpf, pt1Gain); // use pt1 gain on pt2 for extra suppression
     pt2FilterInit(&accelerationPitchLpf, pt1Gain);
-
+    posHold.sticksActive = false;
 }
 
 void resetPositionControl(gpsLocation_t initialTargetLocation) {
@@ -177,7 +186,7 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) {
     resetPositionControlParams();
 }
 
-bool positionControl(bool useStickAdjustment, float deadband) {
+bool positionControl(void) {
 
     // exit if we don't have suitable data
     if (!STATE(GPS_FIX)) {
@@ -354,8 +363,8 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     // if done in pid.c, the same upsampler could be used for GPS and PosHold.
 
     // if a deadband is set, and sticks are outside deadband, allow pilot control, otherwise hold position
-    autopilotAngle[AI_ROLL] = (useStickAdjustment && getRcDeflectionAbs(FD_ROLL) > deadband) ? 0.0f : pidSumRoll;
-    autopilotAngle[AI_PITCH] = (useStickAdjustment && getRcDeflectionAbs(FD_PITCH) > deadband) ? 0.0f : pidSumPitch;
+    autopilotAngle[AI_ROLL] = posHold.sticksActive ? 0.0f : pidSumRoll;
+    autopilotAngle[AI_PITCH] = posHold.sticksActive ? 0.0f : pidSumPitch;
 
     // note:
     // if FLIGHT_MODE(POS_HOLD_MODE):
