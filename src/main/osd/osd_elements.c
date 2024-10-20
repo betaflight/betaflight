@@ -714,6 +714,7 @@ static void osdElementAltHoldHoverThrottle(osdElementParms_t *element)
     tfp_sprintf(element->buff, "H%c%5d", SYM_THR, getAutopilotThrottleHoverValue());
 }
 
+#ifdef USE_ALT_HOLD_MODE
 static void osdElementTargetAltitude(osdElementParms_t *element){
     const char unitSymbol = osdGetMetersToSelectedUnitSymbol();
     int32_t alt = getAltHoldTargetAltitudeCm();
@@ -723,6 +724,8 @@ static void osdElementTargetAltitude(osdElementParms_t *element){
         tfp_sprintf(element->buff, "%c - %c", SYM_ALTITUDE, unitSymbol);
     }
 }
+#endif
+
 #ifdef USE_ACC
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
