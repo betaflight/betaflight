@@ -523,6 +523,7 @@ extern "C" {
     bool schedulerGetIgnoreTaskExecTime() { return false; }
     void schedulerIgnoreTaskExecTime(void) { }
     void schedulerSetNextStateTime(timeDelta_t) {}
+    void getAutopilotThrottleHoverValue() {}
 
     void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {

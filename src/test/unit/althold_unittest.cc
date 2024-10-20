@@ -50,6 +50,7 @@ extern "C" {
     void altHoldInit(void);
     void updateAltHoldState(timeUs_t);
     bool failsafeIsActive(void) { return false; }
+    uint16_t getBatteryVoltage() { return 1680; }
     timeUs_t currentTimeUs = 0;
 }
 

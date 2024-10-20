@@ -103,6 +103,7 @@ extern "C" {
     void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k) { filter->k = k; }
     void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k) { filter->k = k; }
     void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k) { filter->k = k; }
+    uint16_t getBatteryVoltage(void) { return 1680; }
 }
 
 uint32_t simulationFeatureFlags = 0;
