@@ -165,7 +165,7 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
     posHold.previousDistancePitch = 0.0f;
     posHold.previousVelocityPitch = 0.0f;
     posHold.previousHeading = attitude.values.yaw * 0.1f;
-    if (!posHold.sticksActive) {
+    if (!posHold.isDeceleratingAtStart && !posHold.sticksActive) {
         posHold.pitchI = 0.0f;
         posHold.rollI = 0.0f;
     }
@@ -317,8 +317,10 @@ bool positionControl(void) {
     // needs to be attenuated towards zero when close to target to avoid overshoot and circling
     // hence cannot completely eliminate position error due to wind, will tend to end up a little bit down-wind
 
-    posHold.rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
-    posHold.pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
+    if (!posHold.isDeceleratingAtStart) {
+        posHold.rollI += distanceRoll * positionPidCoeffs.Ki * gpsDataIntervalS;
+        posHold.pitchI += distancePitch * positionPidCoeffs.Ki * gpsDataIntervalS;
+    }
 
     // rotate iTerm if heading changes
     const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
