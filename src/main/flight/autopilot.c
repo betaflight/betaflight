@@ -60,7 +60,8 @@ typedef struct {
     float previousHeading;
     float pitchI;
     float rollI;
-    bool justStarted;
+    bool isDeceleratingAtStart;
+    float sanityCheckDistance;
 } posHoldState;
 
 static posHoldState posHold = {
@@ -73,7 +74,8 @@ static posHoldState posHold = {
     .previousHeading = 0.0f,
     .pitchI = 0.0f,
     .rollI = 0.0f,
-    .justStarted = true,
+    .isDeceleratingAtStart = true,
+    .sanityCheckDistance = 1000.0f,
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
@@ -155,11 +157,12 @@ void resetPositionControlParams(void) {
     posHold.previousHeading = attitude.values.yaw * 0.1f;
     posHold.pitchI = 0.0f;
     posHold.rollI = 0.0f;
+    posHold.sanityCheckDistance = 1000.0f;
 }
 
 void resetPositionControl(gpsLocation_t initialTargetLocation) {
     currentTargetLocation = initialTargetLocation;
-    posHold.justStarted = true;
+    posHold.isDeceleratingAtStart = true;
     resetPositionControlParams();
 }
 
@@ -192,13 +195,15 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     // once it has 'stopped' the PIDs will push back towards home, and the distance away will decrease
     // it looks a lot better if we reset the target point to the point that we 'pull up' at
     // otherwise there is a big distance to pull back if we start pos hold while carrying some speed
-    if (posHold.justStarted) {
+    if (posHold.isDeceleratingAtStart) {
         positionLpfCutoffHz = autopilotConfig()->position_cutoff * 0.003f; // acquire D and A more gradually
+        posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
         if (posHold.distanceCm < posHold.previousDistanceCm) {
+            // reset the values now the craft has 'stopped'; this happens only once
             currentTargetLocation = gpsSol.llh;
             positionLpfCutoffHz = autopilotConfig()->position_cutoff * 0.01f; // normal D and A responsiveness
             resetPositionControlParams();
-            posHold.justStarted = false;
+            posHold.isDeceleratingAtStart = false;
         } else {
             posHold.previousDistanceCm = posHold.distanceCm;
         }
@@ -208,13 +213,13 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     // TO DO - maybe use fixed at GPS data rate?
     const float gain = pt1FilterGain(positionLpfCutoffHz, gpsDataIntervalS);
 
-    const uint8_t startLogger = posHold.justStarted ? 2 : 1;
+    const uint8_t startLogger = posHold.isDeceleratingAtStart ? 2 : 1;
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, startLogger);
 
     // ** simple (too simple) sanity check **
     // primarily to detect flyaway from no Mag or badly oriented Mag
-    // TODO - maybe figure how to make a better check by giving more leeway at the start?
-    if (posHold.distanceCm > 1000) {
+    // but must accept some overshoot at the start, especially if entering at high speed
+    if (posHold.distanceCm > posHold.sanityCheckDistance) {
         return false; // must stay within 10m or probably flying away
         // value at this point is a 'best guess' to detect IMU failure in the event the user has no Mag
         // if entering poshold from a stable hover, we would only exceed this if IMU was disoriented
