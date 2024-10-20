@@ -94,7 +94,7 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Ki = config->position_I * POSITION_I_SCALE;
     positionPidCoeffs.Kd = config->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = config->position_A * POSITION_A_SCALE; // Kf used for acceleration
-    positionLpfCutoffHz = config->position_cutoff / 100.0f;
+    positionLpfCutoffHz = config->position_cutoff * 0.01f;
     const float gain = pt1FilterGain(positionLpfCutoffHz, 0.1f); // assume 10Hz GPS connection at start
     pt1FilterInit(&velocityPitchLpf, gain);
     pt1FilterInit(&accelerationPitchLpf, gain);
@@ -193,14 +193,20 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     // it looks a lot better if we reset the target point to the point that we 'pull up' at
     // otherwise there is a big distance to pull back if we start pos hold while carrying some speed
     if (posHold.justStarted) {
+        positionLpfCutoffHz = autopilotConfig()->position_cutoff * 0.003f; // acquire D and A more gradually
         if (posHold.distanceCm < posHold.previousDistanceCm) {
             currentTargetLocation = gpsSol.llh;
+            positionLpfCutoffHz = autopilotConfig()->position_cutoff * 0.01f; // normal D and A responsiveness
             resetPositionControlParams();
             posHold.justStarted = false;
         } else {
             posHold.previousDistanceCm = posHold.distanceCm;
         }
     }
+
+    // set the filter gain used for D and J
+    // TO DO - maybe use fixed at GPS data rate?
+    const float gain = pt1FilterGain(positionLpfCutoffHz, gpsDataIntervalS);
 
     const uint8_t startLogger = posHold.justStarted ? 2 : 1;
     DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, startLogger);
@@ -227,10 +233,6 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
-    // set the filter gain used for D and J
-    // TO DO - maybe use fixed at GPS data rate?
-    const float gain = pt1FilterGain(positionLpfCutoffHz, gpsDataIntervalS);
-
     // ** calculate P, D and J for pitch and roll axes, independently.
     // TODO for loop by axis
 
@@ -253,7 +255,7 @@ bool positionControl(bool useStickAdjustment, float deadband) {
 
     const float rollP = distanceRoll * positionPidCoeffs.Kp;
     const float rollD = velocityRoll * positionPidCoeffs.Kd;
-    const float rollJ = accelerationRoll * positionPidCoeffs.Kf;
+    const float rollA = accelerationRoll * positionPidCoeffs.Kf;
 
     // pitch
     const float distancePitch = pitchProportion * posHold.distanceCm;
@@ -273,7 +275,7 @@ bool positionControl(bool useStickAdjustment, float deadband) {
 
     const float pitchP = distancePitch * positionPidCoeffs.Kp;
     const float pitchD = velocityPitch * positionPidCoeffs.Kd;
-    const float pitchJ = accelerationPitch * positionPidCoeffs.Kf;
+    const float pitchA = accelerationPitch * positionPidCoeffs.Kf;
 
     // ** calculate I and rotate if quad yaws
 
@@ -308,9 +310,18 @@ bool positionControl(bool useStickAdjustment, float deadband) {
     posHold.rollI = rotatedRollI;
     posHold.pitchI = rotatedPitchI;
 
+    // limit sum of D and A because otherwise too aggressive if entering at speed
+    const float maxDAAngle = 35.0f; // degrees; arbitrary limit.  20 is a bit too low, allows a lot of overshoot
+    // limit the angular contribution from D and A to not more than 45 degrees
+    // any angle more than 45 degrees will require error eg P and I
+    // ** todo = should this be half of the user-configurable angle_limit?  Or fixed?
+    const float rollDA = constrainf(rollD + rollA, -maxDAAngle, maxDAAngle);
+    const float pitchDA = constrainf(pitchD + pitchA, -maxDAAngle, maxDAAngle);
+
     // add up pid factors
-    const float pidSumRoll = rollP + posHold.rollI + rollD + rollJ;
-    const float pidSumPitch = pitchP + posHold.pitchI + pitchD + pitchJ;
+    const float pidSumRoll = rollP + posHold.rollI + rollDA;
+    const float pidSumPitch = pitchP + posHold.pitchI + pitchDA;
+    // note that when starting, at speed, iTerm growth is limited, and max angle from D and A is 20 degrees
 
     // todo: upsample filtering
     // pidSum will have steps at GPS rate, and may require an upsampling filter for smoothness.
@@ -334,14 +345,14 @@ bool positionControl(bool useStickAdjustment, float deadband) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollJ * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollA * 10));
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-distancePitch));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(autopilotAngle[AI_PITCH] * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchJ * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchA * 10));
     }
     return true;
 }
