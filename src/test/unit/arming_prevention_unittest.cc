@@ -1150,6 +1150,13 @@ extern "C" {
         UNUSED(velocityDLpf);
         return 0.0f;
     }
+    void pt2FilterInit(pt2Filter_t *velocityDLpf, float) {
+        UNUSED(velocityDLpf);
+    }
+    float pt2FilterApply(pt2Filter_t *velocityDLpf, float) {
+        UNUSED(velocityDLpf);
+        return 0.0f;
+    }
     void pt3FilterInit(pt3Filter_t *velocityUpsampleLpf, float) {
         UNUSED(velocityUpsampleLpf);
     }

@@ -156,6 +156,32 @@ void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to,
         return 0.0;
     }
 
+    float pt2FilterGain(float f_cut, float dT)
+    {
+        UNUSED(f_cut);
+        UNUSED(dT);
+        return 0.0;
+    }
+    
+    void pt2FilterInit(pt2Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+    
+    void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+    
+    float pt2FilterApply(pt2Filter_t *filter, float input)
+    {
+        UNUSED(filter);
+        UNUSED(input);
+        return 0.0;
+    }
+
 
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
