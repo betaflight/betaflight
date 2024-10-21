@@ -207,7 +207,7 @@ void w25m_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*call
     dieDevice[currentWriteDie].vTable->pageProgramBegin(&dieDevice[currentWriteDie], address, callback);
 }
 
-uint32_t w25m_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+uint32_t w25m_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     UNUSED(fdevice);
 
