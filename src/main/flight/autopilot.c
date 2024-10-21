@@ -55,7 +55,7 @@ typedef struct {
     float previousDistanceCm;
     float sanityCheckDistance;
     float previousVelocity;
-    float previousHeading;
+    float initialHeadingDeg;
     float pitchI;
     float rollI;
     bool isStarting;
@@ -69,7 +69,7 @@ static posHoldState posHold = {
     .previousDistanceCm = 0.0f,
     .sanityCheckDistance = 1000.0f,
     .previousVelocity = 0.0f,
-    .previousHeading = 0.0f,
+    .initialHeadingDeg = 0.0f,
     .pitchI = 0.0f,
     .rollI = 0.0f,
     .isStarting = false,
@@ -156,7 +156,6 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
     posHold.previousDistanceCm = 0.0f;
     posHold.sanityCheckDistance = 1000.0f;
     posHold.previousVelocity = 0.0f;
-    posHold.previousHeading = attitude.values.yaw * 0.1f;
     posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
     const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f);
     // reset all lowpass filter accumulators to zero
@@ -173,6 +172,7 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) {
     posHold.pitchI = 0.0f;
     posHold.rollI = 0.0f;
     posHold.peakInitialGroundspeed = 0.0f;
+    posHold.initialHeadingDeg = attitude.values.yaw * 0.1f; // set only at the start
 }
 
 void updateTargetLocation(gpsLocation_t newTargetLocation) {
@@ -227,10 +227,12 @@ bool positionControl(void) {
         posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
         // watch for quad to slow down, and start moving away
         if (posHold.distanceCm < posHold.previousDistanceCm) {
-            // now the craft has 'stopped' reset the location, filter normally
+            // now the craft has 'stopped', reset the location, filter normally
             currentTargetLocation = gpsSol.llh;
             posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
             // reset all values but not iTerm
+            resetPositionControlParams();
+            posHold.initialHeadingDeg = attitude.values.yaw * 0.1f; // reset to current heading
             posHold.peakInitialGroundspeed = 0.0f;
             posHold.isStarting = false; // final target is set, no more messing around
         }
@@ -301,28 +303,27 @@ bool positionControl(void) {
 
     // iTerm
     if (!posHold.isStarting){
-        // hold prior iTerm at start in case user is fine-tuning position
+        // hold previous iTerm while starting up
         posHold.rollI += rollProportion * posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
         posHold.pitchI += pitchProportion * posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
     }
 
-    // calculate rotation factors, to be used if heading changes
-    const float currentHeading = attitude.values.yaw * 0.1f; // from tenths of a degree to degrees
-    float deltaHeading = currentHeading - posHold.previousHeading;
-    posHold.previousHeading = currentHeading;
+    // calculate rotation change from the initial heading, and rotate the roll and pitch proportions accordingly
+    const float currentHeadingDeg = attitude.values.yaw * 0.1f;
+    float deltaHeading = currentHeadingDeg - posHold.initialHeadingDeg;
 
-    // Normalize deltaHeading to range -180 to 180 (in case of small change around North)
+    // Normalize deltaHeading 
     if (deltaHeading > 180.0f) {
         deltaHeading -= 360.0f; // Wrap around if greater than 180
     } else if (deltaHeading < -180.0f) {
         deltaHeading += 360.0f; // Wrap around if less than -180
     }
-    float deltaHeadingRadians = deltaHeading * RAD; // Convert to radians
+    const float deltaHeadingRadians = deltaHeading * RAD;
 
     float cosDeltaHeading = cos_approx(deltaHeadingRadians);
     float sinDeltaHeading = sin_approx(deltaHeadingRadians);
 
-    // rotate iTerm
+    // rotate iTerm if heading changes from original heading
     const float rotatedRollI = posHold.rollI * cosDeltaHeading + posHold.pitchI * sinDeltaHeading;
     const float rotatedPitchI = posHold.pitchI * cosDeltaHeading - posHold.rollI * sinDeltaHeading;
 
@@ -334,6 +335,7 @@ bool positionControl(void) {
     const float rotatedPitchD = pitchD * cosDeltaHeading - rollD * sinDeltaHeading;
     rollD = rotatedRollD;
     pitchD = rotatedPitchD;
+
     const float rotatedRollA = rollA * cosDeltaHeading + pitchA * sinDeltaHeading;
     const float rotatedPitchA = pitchA * cosDeltaHeading - rollA * sinDeltaHeading;
     rollA = rotatedRollA;
