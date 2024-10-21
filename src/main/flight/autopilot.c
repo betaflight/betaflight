@@ -278,6 +278,13 @@ bool positionControl(void) {
     const float pitchP = pitchProportion * posHold.distanceCm * positionPidCoeffs.Kp;
 
     // derivative and acceleration
+    // note: velocity sign reverses when moving away, vs moving towards, the target
+    // and the proportioning factor reverses on overshooting
+    // net effect is that the sign of the correction stays correct
+    // accumulated velocity on one axis can only go to zero if velocity on that axis goes to zero
+    // hence we don't rotate the filtered D and A, only the input
+    // the delayed component of the filtered output should be rotated if the quad yaws (not done yet)
+
     // roll
     float velocityRoll = rollProportion * velocity;
     float accelerationRoll = rollProportion * acceleration;
@@ -302,44 +309,59 @@ bool positionControl(void) {
     float pitchA = accelerationPitch * positionPidCoeffs.Kf;
 
     // iTerm
+    // Note: accumulated iTerm opposes wind.
+    // The accumulated amount of iTerm on each axis does not care about bearing error
+    // But accumulated iTerm should be rotated if the craft yaws (not done yet)
+    // For that I think we need to accumulate iTerm with an iTerm vector angle to North
+    // then we get separate pitch and roll values by comparing craft heading and iTerm vector
+    // current code assumes no yaw input and does not rotate the accumulated iTerm to preserve its direction
     if (!posHold.isStarting){
-        // hold previous iTerm while starting up
+        // don't change accumulated iTerm while adjusting position or during startup phase
         posHold.rollI += rollProportion * posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
         posHold.pitchI += pitchProportion * posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
     }
 
-    // calculate rotation change from the initial heading, and rotate the roll and pitch proportions accordingly
-    const float currentHeadingDeg = attitude.values.yaw * 0.1f;
-    float deltaHeading = currentHeadingDeg - posHold.initialHeadingDeg;
+    // ** test code to handle user yaw inputs ** //
 
-    // Normalize deltaHeading 
-    if (deltaHeading > 180.0f) {
-        deltaHeading -= 360.0f; // Wrap around if greater than 180
-    } else if (deltaHeading < -180.0f) {
-        deltaHeading += 360.0f; // Wrap around if less than -180
+    if (autopilotConfig()->position_allow_yaw) {
+        // code that we know is effective for fixing user yaw inputs (none at present lol)
+        if (autopilotConfig()->position_test_yaw_fix) {
+            // test code that might fix user yaw inputs
+
+            // calculate rotation change from the initial heading
+            const float currentHeadingDeg = attitude.values.yaw * 0.1f;
+            float deltaHeading = currentHeadingDeg - posHold.initialHeadingDeg;
+
+            // Normalize deltaHeading 
+            if (deltaHeading > 180.0f) {
+                deltaHeading -= 360.0f; // Wrap around if greater than 180
+            } else if (deltaHeading < -180.0f) {
+                deltaHeading += 360.0f; // Wrap around if less than -180
+            }
+            const float deltaHeadingRadians = deltaHeading * RAD;
+
+            float cosDeltaHeading = cos_approx(deltaHeadingRadians);
+            float sinDeltaHeading = sin_approx(deltaHeadingRadians);
+
+            // rotate iTerm if heading changes from original heading
+            const float rotatedRollI = posHold.rollI * cosDeltaHeading + posHold.pitchI * sinDeltaHeading;
+            const float rotatedPitchI = posHold.pitchI * cosDeltaHeading - posHold.rollI * sinDeltaHeading;
+
+            posHold.rollI = rotatedRollI;
+            posHold.pitchI = rotatedPitchI;
+
+// rotate smoothed DA factors (doesn't work since inverts D sign inappropriately)
+//         const float rotatedRollD = rollD * cosDeltaHeading + pitchD * sinDeltaHeading;
+//         const float rotatedPitchD = pitchD * cosDeltaHeading - rollD * sinDeltaHeading;
+//         rollD = rotatedRollD;
+//         pitchD = rotatedPitchD;
+//     
+//         const float rotatedRollA = rollA * cosDeltaHeading + pitchA * sinDeltaHeading;
+//         const float rotatedPitchA = pitchA * cosDeltaHeading - rollA * sinDeltaHeading;
+//         rollA = rotatedRollA;
+//         pitchA = rotatedPitchA;
+        }
     }
-    const float deltaHeadingRadians = deltaHeading * RAD;
-
-    float cosDeltaHeading = cos_approx(deltaHeadingRadians);
-    float sinDeltaHeading = sin_approx(deltaHeadingRadians);
-
-    // rotate iTerm if heading changes from original heading
-    const float rotatedRollI = posHold.rollI * cosDeltaHeading + posHold.pitchI * sinDeltaHeading;
-    const float rotatedPitchI = posHold.pitchI * cosDeltaHeading - posHold.rollI * sinDeltaHeading;
-
-    posHold.rollI = rotatedRollI;
-    posHold.pitchI = rotatedPitchI;
-
-    // rotate smoothed DA factors
-//     const float rotatedRollD = rollD * cosDeltaHeading + pitchD * sinDeltaHeading;
-//     const float rotatedPitchD = pitchD * cosDeltaHeading - rollD * sinDeltaHeading;
-//     rollD = rotatedRollD;
-//     pitchD = rotatedPitchD;
-// 
-//     const float rotatedRollA = rollA * cosDeltaHeading + pitchA * sinDeltaHeading;
-//     const float rotatedPitchA = pitchA * cosDeltaHeading - rollA * sinDeltaHeading;
-//     rollA = rotatedRollA;
-//     pitchA = rotatedPitchA;
 
     // limit sum of D and A because otherwise too aggressive if entering at speed
     float rollDA = rollD + rollA;
