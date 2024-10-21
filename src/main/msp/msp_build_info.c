@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/4.5.0-zulu
- * Input hash   : 2b66ff01549c4d858593dbf96c6aae12
+ * Source       : https://build.betaflight.com/api/options/4.6.0
+ * Input hash   : 850eb668065e124eeae185deb3e3fda1
  */
 
 #include <stdint.h>
@@ -101,6 +101,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_AKK_SMARTAUDIO
         BUILD_OPTION_AKK_SMARTAUDIO,
 #endif
+#ifdef USE_ALT_HOLD_MODE
+        BUILD_OPTION_ALT_HOLD_MODE,
+#endif
 #ifdef USE_BATTERY_CONTINUE
         BUILD_OPTION_BATTERY_CONTINUE,
 #endif
@@ -143,11 +146,17 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_RACE_PRO
         BUILD_OPTION_RACE_PRO,
 #endif
+#ifdef USE_SOFTSERIAL
+        BUILD_OPTION_SOFTSERIAL,
+#endif
 #ifdef USE_SERVOS
         BUILD_OPTION_SERVOS,
 #endif
 #ifdef USE_VTX
         BUILD_OPTION_VTX,
+#endif
+#ifdef USE_WING
+        BUILD_OPTION_WING,
 #endif
 #ifdef USE_BRUSHED
         BUILD_OPTION_BRUSHED,
