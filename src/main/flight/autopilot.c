@@ -331,15 +331,15 @@ bool positionControl(void) {
     posHold.pitchI = rotatedPitchI;
 
     // rotate smoothed DA factors
-    const float rotatedRollD = rollD * cosDeltaHeading + pitchD * sinDeltaHeading;
-    const float rotatedPitchD = pitchD * cosDeltaHeading - rollD * sinDeltaHeading;
-    rollD = rotatedRollD;
-    pitchD = rotatedPitchD;
-
-    const float rotatedRollA = rollA * cosDeltaHeading + pitchA * sinDeltaHeading;
-    const float rotatedPitchA = pitchA * cosDeltaHeading - rollA * sinDeltaHeading;
-    rollA = rotatedRollA;
-    pitchA = rotatedPitchA;
+//     const float rotatedRollD = rollD * cosDeltaHeading + pitchD * sinDeltaHeading;
+//     const float rotatedPitchD = pitchD * cosDeltaHeading - rollD * sinDeltaHeading;
+//     rollD = rotatedRollD;
+//     pitchD = rotatedPitchD;
+// 
+//     const float rotatedRollA = rollA * cosDeltaHeading + pitchA * sinDeltaHeading;
+//     const float rotatedPitchA = pitchA * cosDeltaHeading - rollA * sinDeltaHeading;
+//     rollA = rotatedRollA;
+//     pitchA = rotatedPitchA;
 
     // limit sum of D and A because otherwise too aggressive if entering at speed
     float rollDA = rollD + rollA;
