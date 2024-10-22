@@ -236,6 +236,8 @@ bool positionControl(void) {
         }
     }
 
+    posHold.previousDistanceCm = posHold.distanceCm;
+
     float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
 
     // ** simple (too simple) sanity check **
@@ -260,26 +262,32 @@ bool positionControl(void) {
     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
-    float velocity = (posHold.distanceCm - posHold.previousDistanceCm) * gpsDataIntervalHz;
-    posHold.previousDistanceCm = posHold.distanceCm;
-    float acceleration = (velocity - posHold.previousVelocity) * gpsDataIntervalHz; // positive when moving away
-    posHold.previousVelocity = velocity;
-
     // P
     const float rollP = rollProportion * posHold.distanceCm * positionPidCoeffs.Kp;
     const float pitchP = pitchProportion * posHold.distanceCm * positionPidCoeffs.Kp;
 
     // derivative and acceleration
-    // note: velocity sign reverses when moving away, vs moving towards, the target
-    // and the proportioning factor reverses on overshooting
-    // net effect is that the sign of the correction stays correct
-    // accumulated velocity on one axis can only go to zero if velocity on that axis goes to zero
-    // hence we don't rotate the filtered D and A, only the input
-    // the delayed component of the filtered output should be rotated if the quad yaws (not done yet)
+    // note: here we just want no velocity, so use gps groundspeed
+    // adjust response angle based on drift angle compared to nose of quad
+    // ie yaw attitude (angle of quad nose) vs groundcourse (drift direction) both in earth frame
+
+    // calculate difference in angle between nose of quad and drift direction
+    float errorGroundCourse = (attitude.values.yaw - gpsSol.groundCourse) / 10.0f;
+    float normGCE = fmodf(errorGroundCourse + 360.0f, 360.0f);
+    if (normGCE > 180.0f) {
+        normGCE -= 360.0f; // Range: -180 to 180
+    }
+    const float normCGERadians = normGCE * (M_PIf / 180.0f);
+    const float rollVelProp = sin_approx(normCGERadians); // +1 when drifting rightwards, -1 when drifting leftwards 
+    const float pitchVelProp = -cos_approx(normCGERadians); // +1 when drifting backwards, -1 when drifting forwards
+
+    float velocity = gpsSol.groundSpeed;
+    float acceleration = (velocity - posHold.previousVelocity) * gpsDataIntervalHz; // positive when moving away
+    posHold.previousVelocity = velocity;
 
     // roll
-    float velocityRoll = rollProportion * velocity;
-    float accelerationRoll = rollProportion * acceleration;
+    float velocityRoll = rollVelProp * velocity;
+    float accelerationRoll = rollVelProp * acceleration;
     // lowpass filters
     pt1FilterUpdateCutoff(&velocityRollLpf, pt1Gain);
     velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
@@ -289,8 +297,8 @@ bool positionControl(void) {
     float rollA = accelerationRoll * positionPidCoeffs.Kf;
 
     // pitch
-    float velocityPitch = pitchProportion * velocity;
-    float accelerationPitch = pitchProportion * acceleration;
+    float velocityPitch = pitchVelProp * velocity;
+    float accelerationPitch = pitchVelProp * acceleration;
 
     // lowpass filters
     pt1FilterUpdateCutoff(&velocityPitchLpf, pt1Gain);
@@ -397,10 +405,10 @@ bool positionControl(void) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pitchP * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(posHold.pitchI * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchD * 10)); // degrees*10
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchDA * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(rollP * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(posHold.rollI * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollD * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollDA * 10));
     }
     return true;
 }
