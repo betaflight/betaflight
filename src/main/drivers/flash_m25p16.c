@@ -409,7 +409,7 @@ static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, vo
 }
 
 
-static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     // The segment list cannot be in automatic storage as this routine is non-blocking
     STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
@@ -505,7 +505,7 @@ static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const u
 #ifdef USE_QUADSPI
 // Page programming QSPI mode
 
-static uint32_t m25p16_pageProgramContinueQspi(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t m25p16_pageProgramContinueQspi(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     if (bufferCount == 0) {
         return 0;
