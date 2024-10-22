@@ -752,9 +752,9 @@ void unusedPinsInit(void)
 void IOHi(IO_t io)
 {
     UNUSED(io);
-};
+}
 
 void IOLo(IO_t io)
 {
     UNUSED(io);
-};
+}
