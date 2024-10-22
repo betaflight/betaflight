@@ -236,7 +236,6 @@ bool positionControl(void) {
         }
     }
 
-    posHold.previousDistanceCm = posHold.distanceCm;
 
     float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
 
@@ -269,9 +268,8 @@ bool positionControl(void) {
     // derivative and acceleration
     // note: here we just want no velocity, so use gps groundspeed
     // adjust response angle based on drift angle compared to nose of quad
-    // ie yaw attitude (angle of quad nose) vs groundcourse (drift direction) both in earth frame
+    // ie yaw attitude (angle of quad nose) minus groundcourse (drift direction) both in earth frame
 
-    // calculate difference in angle between nose of quad and drift direction
     float errorGroundCourse = (attitude.values.yaw - gpsSol.groundCourse) / 10.0f;
     float normGCE = fmodf(errorGroundCourse + 360.0f, 360.0f);
     if (normGCE > 180.0f) {
@@ -285,8 +283,12 @@ bool positionControl(void) {
     float acceleration = (velocity - posHold.previousVelocity) * gpsDataIntervalHz; // positive when moving away
     posHold.previousVelocity = velocity;
 
+    // include a target based D element. This is smoother and complements groundcourse measurements.
+    float velocityToTarget = (posHold.distanceCm - posHold.previousDistanceCm) * gpsDataIntervalHz;
+    posHold.previousDistanceCm = posHold.distanceCm;
+
     // roll
-    float velocityRoll = rollVelProp * velocity;
+    float velocityRoll = rollVelProp * velocity + velocityToTarget * rollProportion;
     float accelerationRoll = rollVelProp * acceleration;
     // lowpass filters
     pt1FilterUpdateCutoff(&velocityRollLpf, pt1Gain);
@@ -297,7 +299,7 @@ bool positionControl(void) {
     float rollA = accelerationRoll * positionPidCoeffs.Kf;
 
     // pitch
-    float velocityPitch = pitchVelProp * velocity;
+    float velocityPitch = pitchVelProp * velocity + velocityToTarget * pitchProportion;
     float accelerationPitch = pitchVelProp * acceleration;
 
     // lowpass filters
