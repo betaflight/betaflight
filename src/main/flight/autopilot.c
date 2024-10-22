@@ -211,7 +211,6 @@ bool positionControl(void) {
     // once it has 'stopped' the PIDs will push back towards home, and the distance away will decrease
     // it looks a lot better if we reset the target point to the point that we 'pull up' at
     // otherwise there is a big distance to pull back if we start pos hold while carrying some speed
-    uint8_t debugGroundSpeedStatus = 0;
     if (posHold.isStarting) {
         // first time, or after sticks were centered
         posHold.peakInitialGroundspeed = fmaxf(posHold.peakInitialGroundspeed, gpsSol.groundSpeed);
@@ -219,7 +218,6 @@ bool positionControl(void) {
         if (gpsSol.groundSpeed > 0.5f * posHold.peakInitialGroundspeed) {
             // to avoid sudden D and A changes, filter hard
             posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.003f;
-            debugGroundSpeedStatus = 10; // temp debug to know we are here
         } else {
             // almost slowed down, get D and A to follow raw signal more closely
             posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.03f;
@@ -239,12 +237,6 @@ bool positionControl(void) {
     }
 
     float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
-
-    uint8_t debugStartup = posHold.isStarting ? 2 : 1;
-    const uint8_t debugStickActive = posHold.sticksActive ? 5 : 0;
-    debugStartup += debugStickActive;
-    debugStartup += debugGroundSpeedStatus;
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, debugStartup);
 
     // ** simple (too simple) sanity check **
     // primarily to detect flyaway from no Mag or badly oriented Mag
@@ -391,22 +383,24 @@ bool positionControl(void) {
     // autopilotAngle[] is added to angle setpoint in pid.c, in degrees
     // stick angle setpoint forced to zero within the same deadband via rc.c
 
-    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * rollProportion));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(velocity));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumRoll * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollA * 10));
     } else {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * pitchProportion));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(velocity));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10)); // degrees*10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchA * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pitchP * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(posHold.pitchI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchD * 10)); // degrees*10
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(rollP * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(posHold.rollI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollD * 10));
     }
     return true;
 }
