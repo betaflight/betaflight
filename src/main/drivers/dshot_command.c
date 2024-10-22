@@ -181,7 +181,6 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 
     uint8_t repeats = 1;
-    bool isBitbangActive = false;
     timeUs_t delayAfterCommandUs = DSHOT_COMMAND_DELAY_US;
     motorVTable_t *vTable = motorGetVTable();
 
@@ -209,10 +208,9 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 
     if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+        bool isBitbangActive = false;
 #ifdef USE_DSHOT_BITBANG
-        if (isDshotBitbangActive(&motorConfig()->dev)) {
-            isBitbangActive = true;
-        }
+        isBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
 #endif
         // Fake command in queue. Blocking commands are launched from cli, and no inline commands are running
         for (uint8_t i = 0; i < motorDeviceCount(); i++) {
