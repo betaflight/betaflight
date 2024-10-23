@@ -386,7 +386,7 @@ int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax)
 }
 
 bool failsafeIsActive() { return false; }
-bool rxIsReceivingSignal() { return true; }
+bool isRxReceivingSignal() { return true; }
 
 bool isBeeperOn() { return false; };
 
@@ -403,7 +403,7 @@ bool isArmingDisabled(void) { return false; }
 
 uint8_t getRssiPercent(void) { return 0; }
 
-bool isFlipOverAfterCrashActive(void) { return false; }
+bool isCrashFlipModeActive(void) { return false; }
 
 void ws2811LedStripEnable(void) { }
 

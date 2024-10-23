@@ -29,6 +29,7 @@ extern "C" {
     #include "blackbox/blackbox_io.h"
 
     #include "common/time.h"
+    #include "common/vector.h"
 
     #include "config/config.h"
     #include "config/feature.h"
@@ -70,7 +71,7 @@ extern "C" {
 
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
-    float rMat[3][3];
+    matrix33_t rMat;
 
     pidProfile_t *currentPidProfile;
     int16_t debug[DEBUG16_VALUE_COUNT];
@@ -510,7 +511,7 @@ TEST_F(OsdTest, TestStatsTiming)
     // statistics screen should display the following
     int row = 7;
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
-    displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:13.61");
+    displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:13.60");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:01");
 }
 
@@ -1313,7 +1314,7 @@ extern "C" {
         return false;
     }
 
-    bool airmodeIsEnabled() {
+    bool isAirmodeEnabled() {
         return false;
     }
 
@@ -1395,7 +1396,7 @@ extern "C" {
 
     uint16_t getCoreTemperatureCelsius(void) { return simulationCoreTemperature; }
 
-    bool isFlipOverAfterCrashActive(void) { return false; }
+    bool isCrashFlipModeActive(void) { return false; }
 
     float pidItermAccelerator(void) { return 1.0; }
     uint8_t getMotorCount(void){ return 4; }

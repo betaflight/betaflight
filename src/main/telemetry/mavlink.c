@@ -368,9 +368,9 @@ void mavlinkSendPosition(void)
 
     mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
         // latitude Latitude (WGS84), expressed as * 1E7
-        GPS_home[GPS_LATITUDE],
+        GPS_home_llh.lat,
         // longitude Longitude (WGS84), expressed as * 1E7
-        GPS_home[GPS_LONGITUDE],
+        GPS_home_llh.lon,
         // altitude Altitude(WGS84), expressed as * 1000
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
@@ -478,7 +478,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     // Custom mode for compatibility with APM OSDs
     uint8_t mavCustomMode = 1;  // Acro by default
 
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | ALT_HOLD_MODE)) {
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }

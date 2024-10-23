@@ -33,6 +33,7 @@ typedef enum {
     BOXANGLE,
     BOXHORIZON,
     BOXMAG,
+    BOXALTHOLD,
     BOXHEADFREE,
     BOXPASSTHRU,
     BOXFAILSAFE,
@@ -61,7 +62,7 @@ typedef enum {
     BOXCAMERA1,
     BOXCAMERA2,
     BOXCAMERA3,
-    BOXFLIPOVERAFTERCRASH,
+    BOXCRASHFLIP,
     BOXPREARM,
     BOXBEEPGPSCOUNT,
     BOXVTXPITMODE,
@@ -123,12 +124,10 @@ PG_DECLARE_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT,
 #if defined(USE_CUSTOM_BOX_NAMES)
 
 #define MAX_BOX_USER_NAME_LENGTH 16
-
+#define BOX_USER_NAME_COUNT      4
+STATIC_ASSERT(BOXUSER4 + 1 - BOXUSER1 == BOX_USER_NAME_COUNT, "Invalid BOX_USER_NAME_COUNT");
 typedef struct modeActivationConfig_s {
-    char box_user_1_name[MAX_BOX_USER_NAME_LENGTH];
-    char box_user_2_name[MAX_BOX_USER_NAME_LENGTH];
-    char box_user_3_name[MAX_BOX_USER_NAME_LENGTH];
-    char box_user_4_name[MAX_BOX_USER_NAME_LENGTH];
+    char box_user_names[BOX_USER_NAME_COUNT][MAX_BOX_USER_NAME_LENGTH];
 } modeActivationConfig_t;
 
 PG_DECLARE(modeActivationConfig_t, modeActivationConfig);
@@ -143,7 +142,7 @@ typedef struct modeActivationProfile_s {
 bool IS_RC_MODE_ACTIVE(boxId_e boxId);
 void rcModeUpdate(const boxBitmask_t *newState);
 
-bool airmodeIsEnabled(void);
+bool isAirmodeEnabled(void);
 
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 void updateActivatedModes(void);

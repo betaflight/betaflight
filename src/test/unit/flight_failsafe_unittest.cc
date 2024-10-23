@@ -51,7 +51,6 @@ extern "C" {
 #include "gtest/gtest.h"
 
 uint32_t testFeatureMask = 0;
-uint16_t testMinThrottle = 0;
 throttleStatus_e throttleStatus = THROTTLE_HIGH;
 
 enum {
@@ -81,7 +80,7 @@ void configureFailsafe(void)
     rxConfigMutable()->mincheck = TEST_MIN_CHECK;
 
     failsafeConfigMutable()->failsafe_delay = 10; // 1 second
-    failsafeConfigMutable()->failsafe_off_delay = 15; // 1.5 seconds
+    failsafeConfigMutable()->failsafe_landing_time = 1; // 1.0 seconds
     failsafeConfigMutable()->failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE1;
     failsafeConfigMutable()->failsafe_throttle = 1200;
     failsafeConfigMutable()->failsafe_throttle_low_delay = 100; // 10 seconds
@@ -233,7 +232,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
 // note this test follows on from the previous test
 {
     // exceed the stage 2 landing time
-    sysTickUptime += (failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND);
+    sysTickUptime += (failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND);
     failsafeOnValidDataFailed();                    // confirm that we still have no valid data
 
     // when
@@ -572,8 +571,8 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     
-    // should stay in landing for failsafe_off_delay (stage 2 period) of 1s
-    sysTickUptime += failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
+    // should stay in landing for failsafe_landing_time (stage 2 landing period) of 1s
+    sysTickUptime += failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
 
     // when
     failsafeUpdateState();
@@ -588,7 +587,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     // when
     failsafeUpdateState();
 
-    // now should be in monitoring mode, with switch holding signalReceived false
+    // now should be in monitoring mode, with switch holding rxDataReceived false
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_TRUE(isArmingDisabled());
@@ -753,11 +752,6 @@ void disarm(flightLogDisarmReason_e)
 void beeper(beeperMode_e mode)
 {
     UNUSED(mode);
-}
-
-uint16_t getCurrentMinthrottle(void)
-{
-    return testMinThrottle;
 }
 
 bool isUsingSticksForArming(void)

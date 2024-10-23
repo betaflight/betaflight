@@ -65,7 +65,7 @@
 // **********************
 // GPS
 // **********************
-int32_t GPS_home[2];
+gpsLocation_t GPS_home_llh;
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint32_t GPS_distanceToHomeCm;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees * 10
@@ -2486,13 +2486,22 @@ static void gpsHandlePassthrough(uint8_t data)
 #endif
 }
 
-void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
+// forward GPS data to specified port (used by CLI)
+// return false if forwarding failed
+// curently only way to stop forwarding is to reset the board
+bool gpsPassthrough(serialPort_t *gpsPassthroughPort)
 {
+    if (!gpsPort) {
+        // GPS port is not open for some reason - no GPS, MSP GPS, ..
+        return false;
+    }
     waitForSerialPortToFinishTransmitting(gpsPort);
     waitForSerialPortToFinishTransmitting(gpsPassthroughPort);
 
-    if (!(gpsPort->mode & MODE_TX))
+    if (!(gpsPort->mode & MODE_TX)) {
+        // try to switch TX mode on
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
+    }
 
 #ifdef USE_DASHBOARD
     if (featureIsEnabled(FEATURE_DASHBOARD)) {
@@ -2502,14 +2511,16 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 #endif
 
     serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
+    // allow exitting passthrough mode in future
+    return true;
 }
 
-float GPS_scaleLonDown = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
+float GPS_cosLat = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
+                          // longitude difference * scale is approximate distance in degrees
 
 void GPS_calc_longitude_scaling(int32_t lat)
 {
-    float rads = (fabsf((float)lat) / 10000000.0f) * 0.0174532925f;
-    GPS_scaleLonDown = cos_approx(rads);
+    GPS_cosLat = cos_approx(DEGREES_TO_RADIANS((float)lat / GPS_DEGREES_DIVIDER));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -2517,8 +2528,7 @@ void GPS_calc_longitude_scaling(int32_t lat)
 //
 static void GPS_calculateDistanceFlown(bool initialize)
 {
-    static int32_t lastCoord[2] = { 0, 0 };
-    static int32_t lastAlt;
+    static gpsLocation_t lastLLH = {0, 0, 0};
 
     if (initialize) {
         GPS_distanceFlownInCm = 0;
@@ -2528,18 +2538,12 @@ static void GPS_calculateDistanceFlown(bool initialize)
             // Only add up movement when speed is faster than minimum threshold
             if (speed > GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S) {
                 uint32_t dist;
-                int32_t dir;
-                GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[GPS_LATITUDE], &lastCoord[GPS_LONGITUDE], &dist, &dir);
-                if (gpsConfig()->gps_use_3d_speed) {
-                    dist = sqrtf(sq(gpsSol.llh.altCm - lastAlt) + sq(dist));
-                }
+                GPS_distance_cm_bearing(&gpsSol.llh, &lastLLH, gpsConfig()->gps_use_3d_speed, &dist, NULL);
                 GPS_distanceFlownInCm += dist;
             }
         }
     }
-    lastCoord[GPS_LONGITUDE] = gpsSol.llh.lon;
-    lastCoord[GPS_LATITUDE] = gpsSol.llh.lat;
-    lastAlt = gpsSol.llh.altCm;
+    lastLLH = gpsSol.llh;
 }
 
 void GPS_reset_home_position(void)
@@ -2548,8 +2552,7 @@ void GPS_reset_home_position(void)
     if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
         if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
             // those checks are always true for tryArm, but may not be true for gyro cal
-            GPS_home[GPS_LATITUDE] = gpsSol.llh.lat;
-            GPS_home[GPS_LONGITUDE] = gpsSol.llh.lon;
+            GPS_home_llh = gpsSol.llh;
             GPS_calc_longitude_scaling(gpsSol.llh.lat);
             ENABLE_STATE(GPS_FIX_HOME);
             // no point beeping success here since:
@@ -2569,19 +2572,24 @@ void GPS_reset_home_position(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-#define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS 1.113195f
-#define TAN_89_99_DEGREES 5729.57795f
+#define EARTH_ANGLE_TO_CM (111.3195f * 1000 * 100 / GPS_DEGREES_DIVIDER)  // latitude unit to cm at equator (111km/deg)
 // Get distance between two points in cm
 // Get bearing from pos1 to pos2, returns an 1deg = 100 precision
-void GPS_distance_cm_bearing(const int32_t *currentLat1, const int32_t *currentLon1, const int32_t *destinationLat2, const int32_t *destinationLon2, uint32_t *dist, int32_t *bearing)
+void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
 {
-    float dLat = *destinationLat2 - *currentLat1; // difference of latitude in 1/10 000 000 degrees
-    float dLon = (float)(*destinationLon2 - *currentLon1) * GPS_scaleLonDown;
-    *dist = sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS;
+    float dLat = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;
+    float dLon = (to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // convert to local angle
+    float dAlt = dist3d ? to->altCm - from->altCm : 0;
 
-    *bearing = 9000.0f + atan2_approx(-dLat, dLon) * TAN_89_99_DEGREES;      // Convert the output radians to 100xdeg
-    if (*bearing < 0)
-        *bearing += 36000;
+    if (pDist)
+        *pDist = sqrtf(sq(dLat) + sq(dLon) + sq(dAlt));
+
+    if (pBearing) {
+        int32_t bearing = 9000.0f - RADIANS_TO_DEGREES(atan2_approx(dLat, dLon)) * 100.0f;      // Convert the output to 100xdeg / adjust to clockwise from North
+        if (bearing < 0)
+            bearing += 36000;
+        *pBearing = bearing;
+    }
 }
 
 void GPS_calculateDistanceAndDirectionToHome(void)
@@ -2589,7 +2597,7 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     if (STATE(GPS_FIX_HOME)) {
         uint32_t dist;
         int32_t dir;
-        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[GPS_LATITUDE], &GPS_home[GPS_LONGITUDE], &dist, &dir);
+        GPS_distance_cm_bearing(&gpsSol.llh, &GPS_home_llh, false, &dist, &dir);
         GPS_distanceToHome = dist / 100; // m
         GPS_distanceToHomeCm = dist; // cm
         GPS_directionToHome = dir / 10; // degrees * 10 or decidegrees

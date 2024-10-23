@@ -33,7 +33,8 @@ VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 alignsensor_unittest_SRC := \
 		$(USER_DIR)/sensors/boardalignment.c \
 		$(USER_DIR)/common/sensor_alignment.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
 
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
@@ -42,7 +43,9 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/flight/autopilot.c \
 		$(USER_DIR)/flight/gps_rescue.c
+
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
@@ -96,7 +99,8 @@ blackbox_unittest_SRC :=  \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/accgyro/gyro_sync.c
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/pg/gps.c
 
 blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox_encoding.c \
@@ -154,6 +158,7 @@ flight_failsafe_unittest_DEFINES := \
 flight_imu_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/position.c \
@@ -186,7 +191,8 @@ ledstrip_unittest_DEFINES := \
 
 
 maths_unittest_SRC := \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
 
 
 motor_output_unittest_SRC := \
@@ -200,12 +206,13 @@ osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
 		$(USER_DIR)/osd/osd_warnings.c \
-		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/display.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/time.c \
-		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
@@ -218,22 +225,23 @@ link_quality_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
 		$(USER_DIR)/osd/osd_warnings.c \
-		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/display.c \
-		$(USER_DIR)/drivers/serial.c \
-		$(USER_DIR)/drivers/serial_impl.c \
+		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/time.c \
-		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/drivers/display.c \
+		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c \
 		$(USER_DIR)/fc/rc_modes.c \
-		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/pg/pg.c \
-		$(USER_DIR)/rx/crsf.c \
-		$(USER_DIR)/pg/rx.c
+		$(USER_DIR)/pg/rx.c \
+		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/rx/crsf.c
 
 link_quality_unittest_DEFINES := \
 		USE_OSD= \
@@ -309,11 +317,12 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/gyro_init.c \
 		$(USER_DIR)/sensors/boardalignment.c \
-		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/sensor_alignment.c \
+		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_virtual.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
@@ -391,6 +400,7 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/pwl.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/fc/controlrate_profile.c \
@@ -404,7 +414,8 @@ pid_unittest_DEFINES := \
 		USE_RC_SMOOTHING_FILTER= \
 		USE_ABSOLUTE_CONTROL= \
 		USE_LAUNCH_CONTROL= \
-		USE_FEEDFORWARD=
+		USE_FEEDFORWARD= \
+		USE_ADVANCED_TPA= \
 
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
@@ -462,6 +473,15 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 		USE_RX_EXPRESSLRS= \
 		USE_GPS= \
 		USE_MSP_OVER_TELEMETRY= \
+
+althold_unittest_SRC := \
+		$(USER_DIR)/flight/alt_hold.c \
+		$(USER_DIR)/flight/autopilot.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/pg/rx.c
+
+althold_unittest_DEFINES := \
+		USE_ALT_HOLD_MODE= \
 
 vtx_msp_unittest_SRC := \
         $(USER_DIR)/common/crc.c \

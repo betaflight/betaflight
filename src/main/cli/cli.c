@@ -104,6 +104,7 @@ bool cliMode = false;
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -175,9 +176,11 @@ bool cliMode = false;
 #include "cli.h"
 
 static serialPort_t *cliPort = NULL;
+static bool cliInteractive = false;
+static timeMs_t cliEntryTime = 0;
 
 // Space required to set array parameters
-#define CLI_IN_BUFFER_SIZE 256
+#define CLI_IN_BUFFER_SIZE  256
 #define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t cliWriterDesc;
@@ -293,7 +296,9 @@ static const char *mcuTypeNames[] = {
     "H723/H725",
     "G474",
     "H730",
-    "AT32F435"
+    "AT32F435",
+    "APM32F405",
+    "APM32F407",
 };
 
 static const char *configurationStates[] = {
@@ -313,6 +318,7 @@ typedef enum dumpFlags_e {
     BARE = (1 << 8),
 } dumpFlags_t;
 
+static void cliExit(const bool reboot);
 typedef bool printFn(dumpFlags_t dumpMask, bool equalsDefault, const char *format, ...);
 
 typedef enum {
@@ -328,6 +334,12 @@ typedef struct serialPassthroughPort_s {
     portOptions_e options;
     serialPort_t *port;
 } serialPassthroughPort_t;
+
+static void cliClearInputBuffer(void)
+{
+    memset(cliBuffer, 0, sizeof(cliBuffer));
+    bufferIndex = 0;
+}
 
 static void cliWriterFlushInternal(bufWriter_t *writer)
 {
@@ -3631,20 +3643,17 @@ static void cliBootloader(const char *cmdName, char *cmdline)
     cliRebootEx(rebootTarget);
 }
 
-static void cliExit(const char *cmdName, char *cmdline)
+static void cliExitCmd(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
-    UNUSED(cmdline);
 
-    cliPrintHashLine("leaving CLI mode, unsaved changes lost");
-    cliWriterFlush();
-
-    *cliBuffer = '\0';
-    bufferIndex = 0;
-    cliMode = false;
-    // incase a motor was left running during motortest, clear it here
-    mixerResetDisarmedMotors();
-    cliReboot();
+    const bool reboot = strcasecmp(cmdline, "noreboot") != 0;
+    if (reboot) {
+        cliPrintHashLine("leaving CLI mode, unsaved changes lost");
+    } else {
+        cliPrintHashLine("leaving CLI mode, no reboot");
+    }
+    cliExit(reboot);
 }
 
 #ifdef USE_GPS
@@ -3653,7 +3662,9 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-    gpsEnablePassthrough(cliPort);
+    if (!gpsPassthrough(cliPort)) {
+        cliPrintErrorLinef(cmdName, "GPS forwarding failed");
+    }
 }
 #endif
 
@@ -3985,7 +3996,7 @@ static void cliEscPassthrough(const char *cmdName, char *cmdline)
             } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
                 mode = PROTOCOL_KISS;
             } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
-                mode = PROTOCOL_KISSALL;
+                mode = PROTOCOL_CASTLE;
             } else {
                 cliShowParseError(cmdName);
 
@@ -4298,6 +4309,9 @@ static void cliSave(const char *cmdName, char *cmdline)
         writeEEPROM();
         cliPrintHashLine("saving");
 
+        if (strcasecmp(cmdline, "noreboot") == 0) {
+            return;
+        }
         cliReboot();
     }
 }
@@ -4682,7 +4696,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     cliPrintf("MCU %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
     int sysclkSource = SystemSYSCLKSource();
 
@@ -4812,10 +4826,9 @@ if (buildKey) {
     // Run status
 
     const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
-    int rxRate = getCurrentRxIntervalUs();
-    if (rxRate != 0) {
-        rxRate = (int)(1000000.0f / ((float)rxRate));
-    }
+
+    int rxRate = getRxRateValid() ? getCurrentRxRateHz() : 0;
+
     const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
@@ -5002,12 +5015,11 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     if (rxConfig()->rc_smoothing_mode) {
         cliPrintLine("FILTER");
         if (rcSmoothingAutoCalculate()) {
-            const uint16_t smoothedRxRateHz = lrintf(rcSmoothingData->smoothedRxRateHz);
             cliPrint("# Detected Rx frequency: ");
-            if (getCurrentRxIntervalUs() == 0) {
-                cliPrintLine("NO SIGNAL");
+            if (getRxRateValid()) {
+	            cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
             } else {
-                cliPrintLinef("%dHz", smoothedRxRateHz);
+            	cliPrintLine("NO SIGNAL");          
             }
         }
         cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
@@ -5407,7 +5419,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_CHANREQ_STRING "Channel"
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(APM32F4)
 #define DMA_STCH_STRING    "Stream"
 #else
 #define DMA_STCH_STRING    "Channel"
@@ -6580,7 +6592,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
-    CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
+    CLI_COMMAND_DEF("exit", "exit command line interface and reboot (default)", "[noreboot]", cliExitCmd),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
         "\t<->[name]", cliFeature),
@@ -6639,7 +6651,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
-    CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
+    CLI_COMMAND_DEF("save", "save and reboot (default)", "[noreboot]", cliSave),
 #ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
@@ -6726,8 +6738,10 @@ static void cliHelp(const char *cmdName, char *cmdline)
 static void processCharacter(const char c)
 {
     if (bufferIndex && (c == '\n' || c == '\r')) {
-        // enter pressed
-        cliPrintLinefeed();
+        if (cliInteractive) {
+            // echo new line back to terminal
+            cliPrintLinefeed();
+        }
 
         // Strip comment starting with # from line
         char *p = cliBuffer;
@@ -6754,25 +6768,37 @@ static void processCharacter(const char c)
             }
             if (cmd < cmdTable + ARRAYLEN(cmdTable)) {
                 cmd->cliCommand(cmd->name, options);
+                if (!cliMode) {
+                    // cli session ended
+                    return;
+                }
             } else {
-                cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
+                if (cliInteractive) {
+                    cliPrintError("input", "UNKNOWN COMMAND, TRY 'HELP'");
+                } else {
+                    cliPrint("ERR_CMD_NA: ");
+                    cliPrintLine(cliBuffer);
+                }
             }
-            bufferIndex = 0;
         }
 
-        memset(cliBuffer, 0, sizeof(cliBuffer));
+        cliClearInputBuffer();
 
-        // 'exit' will reset this flag, so we don't need to print prompt again
-        if (!cliMode) {
-            return;
+        // prompt if in interactive mode
+        if (cliInteractive) {
+            cliPrompt();
         }
 
-        cliPrompt();
     } else if (bufferIndex < sizeof(cliBuffer) && c >= 32 && c <= 126) {
-        if (!bufferIndex && c == ' ')
+        if (!bufferIndex && c == ' ') {
             return; // Ignore leading spaces
+        }
         cliBuffer[bufferIndex++] = c;
-        cliWrite(c);
+
+        // echo the character if interactive
+        if (cliInteractive) {
+            cliWrite(c);
+        }
     }
 }
 
@@ -6817,7 +6843,7 @@ static void processCharacterInteractive(const char c)
         for (; i < bufferIndex; i++)
             cliWrite(cliBuffer[i]);
     } else if (!bufferIndex && c == 4) {   // CTRL-D
-        cliExit("", cliBuffer);
+        cliExit(true);
         return;
     } else if (c == 12) {                  // NewPage / CTRL-L
         // clear screen
@@ -6834,42 +6860,76 @@ static void processCharacterInteractive(const char c)
     }
 }
 
-void cliProcess(void)
+bool cliProcess(void)
 {
-    if (!cliWriter) {
-        return;
+    if (!cliWriter || !cliMode) {
+        return false;
     }
-
-    // Flush the buffer to get rid of any MSP data polls sent by configurator after CLI was invoked
-    cliWriterFlush();
 
     while (serialRxBytesWaiting(cliPort)) {
         uint8_t c = serialRead(cliPort);
+        if (cliInteractive) {
+            processCharacterInteractive(c);
+        } else {
+            // handle terminating flow control character
+            if (c == 0x3 || (cmp32(millis(), cliEntryTime) > 2000)) { // CTRL-C (ETX) or 2 seconds timeout
+                cliWrite(0x3); // send end of text, terminating flow control
+                cliExit(false);
+                return cliMode;
+            }
+            processCharacter(c);
+        }
+    }
+    cliWriterFlush();
+    return cliMode;
+}
 
-        processCharacterInteractive(c);
+static void cliExit(const bool reboot)
+{
+    cliWriterFlush();
+    waitForSerialPortToFinishTransmitting(cliPort);
+    cliClearInputBuffer();
+    cliMode = false;
+    cliInteractive = false;
+    // incase a motor was left running during motortest, clear it here
+    mixerResetDisarmedMotors();
+
+    if (reboot) {
+        cliReboot();
     }
 }
 
-void cliEnter(serialPort_t *serialPort)
+void cliEnter(serialPort_t *serialPort, bool interactive)
 {
     cliMode = true;
+    cliInteractive = interactive;
     cliPort = serialPort;
-    setPrintfSerialPort(cliPort);
+    cliEntryTime = millis();
+    cliClearInputBuffer();
+
+    if (interactive) {
+        setPrintfSerialPort(cliPort);
+    }
+
     bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
     cliErrorWriter = cliWriter = &cliWriterDesc;
 
+    if (interactive) {
 #ifndef MINIMAL_CLI
-    cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
+        cliPrintLine("\r\nEntering CLI Mode, type 'exit' to reboot, or 'help'");
 #else
-    cliPrintLine("\r\nCLI");
+        cliPrintLine("\r\nCLI");
 #endif
-    setArmingDisabled(ARMING_DISABLED_CLI);
-
-    cliPrompt();
+        // arming flag not released if exiting cli with no reboot for safety
+        setArmingDisabled(ARMING_DISABLED_CLI);
+        cliPrompt();
 
 #ifdef USE_CLI_BATCH
-    resetCommandBatch();
+        resetCommandBatch();
 #endif
+    } else {
+        cliWrite(0x2); // send start of text, initiating flow control
+    }
 }
 
 #endif // USE_CLI

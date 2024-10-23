@@ -549,6 +549,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     pidProfile.pid[PID_YAW].P = 7;
     pidProfile.pid[PID_YAW].I = 17;
     pidProfile.pid[PID_YAW].D = 27;
+
     // and
     controlRateConfig_t controlRateConfig;
     memset(&controlRateConfig, 0, sizeof(controlRateConfig));
@@ -559,7 +560,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     const timedAdjustmentState_t *adjustmentState4 = configureStepwiseAdjustment(AUX1 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_P_INDEX);
     const timedAdjustmentState_t *adjustmentState5 = configureStepwiseAdjustment(AUX2 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_I_INDEX);
     const timedAdjustmentState_t *adjustmentState6 = configureStepwiseAdjustment(AUX3 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_D_INDEX);
-
+ 
     // and
     for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
         rcData[index] = PWM_RANGE_MIDDLE;
@@ -621,7 +622,7 @@ void dashboardDisablePageCycling() {}
 void dashboardEnablePageCycling() {}
 
 bool failsafeIsActive() { return false; }
-bool rxIsReceivingSignal() { return true; }
+bool isRxReceivingSignal() { return true; }
 bool failsafeIsReceivingRxData() { return true; }
 
 uint8_t getCurrentControlRateProfileIndex(void)

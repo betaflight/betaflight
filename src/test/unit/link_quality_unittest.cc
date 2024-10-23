@@ -32,6 +32,7 @@ extern "C" {
     #include "common/streambuf.h"
     #include "common/time.h"
     #include "common/utils.h"
+    #include "common/vector.h"
 
     #include "config/config.h"
 
@@ -67,7 +68,7 @@ extern "C" {
     #include "sensors/battery.h"
 
     attitudeEulerAngles_t attitude;
-    float rMat[3][3];
+    matrix33_t rMat;
 
     pidProfile_t *currentPidProfile;
     extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -426,7 +427,7 @@ TEST(LQTest, TestLQAlarm)
     // elements showing values in alarm range should flash
     simulationTime += 1000000;
     simulationTime -= simulationTime % 1000000;
-    startTime = simulationTime;
+    startTime = simulationTime + 0.25e6;
     for (int i = 0; i < 15; i++) {
         // Blinking should happen at 2Hz
         simulationTime = startTime + i*0.25e6;
@@ -438,6 +439,7 @@ TEST(LQTest, TestLQAlarm)
 #ifdef DEBUG_OSD
         displayPortTestPrint();
 #endif
+
         if (i % 2 == 0) {
             displayPortTestBufferSubstring(8,  1, "%c5", SYM_LINK_QUALITY);
         } else {
@@ -492,7 +494,7 @@ extern "C" {
     bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
     bool cmsDisplayPortRegister(displayPort_t *) { return false; }
     uint16_t getCoreTemperatureCelsius(void) { return 0; }
-    bool isFlipOverAfterCrashActive(void) { return false; }
+    bool isCrashFlipModeActive(void) { return false; }
     float pidItermAccelerator(void) { return 1.0; }
     uint8_t getMotorCount(void){ return 4; }
     bool areMotorsRunning(void){ return true; }

@@ -53,7 +53,7 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
         }
         const ioTag_t cfgRx = pSerialPinConfig->ioTagRx[resourceIndex];
         const ioTag_t cfgTx = pSerialPinConfig->ioTagTx[resourceIndex];
-#if !defined(STM32F4)
+#if !defined(STM32F4) || !defined(APM32F4)
         bool swap = false;
 #endif
         for (unsigned pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
@@ -64,7 +64,7 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
             if (cfgTx && cfgTx == hardware->txPins[pindex].pin) {
                 uartdev->tx = hardware->txPins[pindex];
             }
-#if !defined(STM32F4)
+#if !defined(STM32F4) || !defined(APM32F4)
             // Check for swapped pins
             if (cfgTx && cfgTx == hardware->rxPins[pindex].pin) {
                 uartdev->tx = hardware->rxPins[pindex];

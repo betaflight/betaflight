@@ -94,6 +94,8 @@
 #include "fc/stats.h"
 #include "fc/tasks.h"
 
+#include "flight/alt_hold.h"
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -478,7 +480,7 @@ void init(void)
     }
 #endif
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     // F4 has non-8MHz boards
     // G4 for Betaflight allow 24 or 27MHz oscillator
     systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
@@ -493,7 +495,7 @@ void init(void)
     // Note that mcoConfigure must be augmented with an additional argument to
     // indicate which device instance to configure when MCO and MCO2 are both supported
 
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
     // F4 and F7 support MCO on PA8 and MCO2 on PC9, but only MCO2 is supported for now
     mcoConfigure(MCODEV_2, mcoConfig(MCODEV_2));
 #elif defined(STM32G4)
@@ -765,9 +767,6 @@ void init(void)
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
         gpsInit();
-#ifdef USE_GPS_RESCUE
-        gpsRescueInit();
-#endif
 #ifdef USE_GPS_LAP_TIMER
         gpsLapTimerInit();
 #endif // USE_GPS_LAP_TIMER
@@ -831,7 +830,9 @@ void init(void)
 #ifdef USE_BARO
     baroStartCalibration();
 #endif
+
     positionInit();
+    autopilotInit(autopilotConfig());
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -1001,6 +1002,17 @@ void init(void)
 #if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_LATE) && !defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
+#endif
+
+// autopilot must be initialised before modes that require the autopilot pids
+#ifdef USE_ALT_HOLD_MODE
+    altHoldInit();
+#endif
+
+#ifdef USE_GPS_RESCUE
+    if (featureIsEnabled(FEATURE_GPS)) {
+        gpsRescueInit();
+    }
 #endif
 
     debugInit();

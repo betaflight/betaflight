@@ -54,7 +54,11 @@ void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
     mixerConfig->mixerMode = DEFAULT_MIXER;
     mixerConfig->yaw_motors_reversed = false;
     mixerConfig->crashflip_motor_percent = 0;
-    mixerConfig->crashflip_expo = 35;
+#ifdef USE_RACE_PRO
+    mixerConfig->crashflip_rate = 30;
+#else
+    mixerConfig->crashflip_rate = 0;
+#endif
     mixerConfig->mixer_type = MIXER_LEGACY;
 #ifdef USE_RPM_LIMIT
     mixerConfig->rpm_limit = false;
@@ -274,6 +278,11 @@ const mixer_t mixers[] = {
 
 FAST_DATA_ZERO_INIT mixerRuntime_t mixerRuntime;
 
+bool hasServos(void)
+{
+    return mixers[currentMixerMode].useServo;
+}
+
 uint8_t getMotorCount(void)
 {
     return mixerRuntime.motorCount;
@@ -337,7 +346,9 @@ void mixerInitProfile(void)
     mixerRuntime.dynIdleIGain = currentPidProfile->dyn_idle_i_gain * 0.01f * pidGetDT();
     mixerRuntime.dynIdleDGain = currentPidProfile->dyn_idle_d_gain * 0.0000003f * pidGetPidFrequency();
     mixerRuntime.dynIdleMaxIncrease = currentPidProfile->dyn_idle_max_increase * 0.001f;
-    mixerRuntime.dynIdleStartIncrease = currentPidProfile->dyn_idle_start_increase * 0.001f;
+    // before takeoff, use the static idle value as the dynamic idle limit.
+    // whoop users should first adjust static idle to ensure reliable motor start before enabling dynamic idle
+    mixerRuntime.dynIdleStartIncrease = motorConfig()->motorIdle * 0.0001f;
     mixerRuntime.minRpsDelayK = 800 * pidGetDT() / 20.0f; //approx 20ms D delay, arbitrarily suits many motors
     if (!mixerRuntime.feature3dEnabled && mixerRuntime.dynIdleMinRps) {
         mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE; // Override value set by initEscEndpoints to allow zero motor drive
@@ -475,7 +486,6 @@ void mixerInit(mixerMode_e mixerMode)
 #endif
 
 #ifdef USE_DYN_IDLE
-    mixerRuntime.idleThrottleOffset = getDigitalIdleOffset(motorConfig());
     mixerRuntime.dynIdleI = 0.0f;
     mixerRuntime.prevMinRps = 0.0f;
 #endif
