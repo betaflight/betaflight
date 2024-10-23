@@ -51,11 +51,25 @@ static bool motorProtocolDshot = false;
 
 void motorShutdown(void)
 {
+    uint32_t shutdownDelayUs = 1500;
     motorDevice->vTable.shutdown();
     motorDevice->enabled = false;
     motorDevice->motorEnableTimeMs = 0;
     motorDevice->initialized = false;
-    delayMicroseconds(1500);
+
+    switch (motorConfig()->dev.motorPwmProtocol) {
+    case PWM_TYPE_STANDARD:
+    case PWM_TYPE_ONESHOT125:
+    case PWM_TYPE_ONESHOT42:
+    case PWM_TYPE_MULTISHOT:
+        // Delay 500ms will disarm esc which can prevent motor spin while reboot
+        shutdownDelayUs += 500 * 1000;
+        break;
+    default:
+        break;
+    }
+
+    delayMicroseconds(shutdownDelayUs);
 }
 
 void motorWriteAll(float *values)
@@ -133,8 +147,9 @@ static void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLi
         *deadbandMotor3dLow = flight3DConfig()->deadband3d_low;
     } else {
         *disarm = motorConfig->mincommand;
-        *outputLow = motorConfig->minthrottle;
-        *outputHigh = motorConfig->maxthrottle - ((motorConfig->maxthrottle - motorConfig->minthrottle) * (1 - outputLimit));
+        const float minThrottle = motorConfig->mincommand + motorConfig->motorIdle * 0.1f;
+        *outputLow = minThrottle;
+        *outputHigh = motorConfig->maxthrottle - ((motorConfig->maxthrottle - minThrottle) * (1 - outputLimit));
     }
 }
 
@@ -389,9 +404,4 @@ bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 #endif
 }
 #endif
-
-float getDigitalIdleOffset(const motorConfig_t *motorConfig)
-{
-    return CONVERT_PARAMETER_TO_PERCENT(motorConfig->digitalIdleOffsetValue * 0.01f);
-}
 #endif // USE_MOTOR

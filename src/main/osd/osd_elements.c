@@ -458,7 +458,7 @@ static void osdFormatPID(char * buff, const char * label, uint8_t axis)
         currentPidProfile->pid[axis].P,
         currentPidProfile->pid[axis].I,
         currentPidProfile->pid[axis].D,
-        currentPidProfile->d_min[axis],
+        currentPidProfile->d_max[axis],
         currentPidProfile->pid[axis].F);
 }
 
@@ -761,7 +761,7 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
 static void osdElementUpDownReference(osdElementParms_t *element)
 {
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
-    const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
+    const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; //transforum the up vector to the body frame
 
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
@@ -887,7 +887,7 @@ static void osdElementCrashFlipArrow(osdElementParms_t *element)
         rollAngle = (rollAngle < 0 ? -180 : 180) - rollAngle;
     }
 
-    if ((isFlipOverAfterCrashActive() || (!ARMING_FLAG(ARMED) && !isUpright())) && !((imuConfig()->small_angle < 180 && isUpright()) || (rollAngle == 0 && pitchAngle == 0))) {
+    if ((isCrashFlipModeActive() || (!ARMING_FLAG(ARMED) && !isUpright())) && !((imuConfig()->small_angle < 180 && isUpright()) || (rollAngle == 0 && pitchAngle == 0))) {
         if (abs(pitchAngle) < 2 * abs(rollAngle) && abs(rollAngle) < 2 * abs(pitchAngle)) {
             if (pitchAngle > 0) {
                 if (rollAngle > 0) {
@@ -1048,7 +1048,7 @@ static void osdElementFlymode(osdElementParms_t *element)
     // Note that flight mode display has precedence in what to display.
     //  1. FS
     //  2. GPS RESCUE
-    //  3. ANGLE, HORIZON, ACRO TRAINER
+    //  3. ANGLE, HORIZON, ACRO TRAINER, ALTHOLD
     //  4. AIR
     //  5. ACRO
 
@@ -1060,11 +1060,13 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         strcpy(element->buff, "ANGL");
+    } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+        strcpy(element->buff, "ALTH");
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         strcpy(element->buff, "HOR ");
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
         strcpy(element->buff, "ATRN");
-    } else if (airmodeIsEnabled()) {
+    } else if (isAirmodeEnabled()) {
         strcpy(element->buff, "AIR ");
     } else {
         strcpy(element->buff, "ACRO");
@@ -2149,8 +2151,9 @@ static bool osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     activeElement.type = OSD_TYPE(osdElementConfig()->item_pos[item]);
     activeElement.buff = elementBuff;
     activeElement.osdDisplayPort = osdDisplayPort;
-    activeElement.rendered = true;
     activeElement.drawElement = true;
+    activeElement.rendered = true;
+    activeElement.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element background drawing function
     osdElementBackgroundFunction[item](&activeElement);

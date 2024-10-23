@@ -298,13 +298,11 @@ typedef struct gpsData_s {
 #endif
 } gpsData_t;
 
-extern int32_t GPS_home[2];
-extern uint16_t GPS_distanceToHome;             // distance to home point in meters
-extern uint32_t GPS_distanceToHomeCm;           // distance to home point in cm
-extern int16_t GPS_directionToHome;             // direction to home or hol point in degrees
-extern uint32_t GPS_distanceFlownInCm;          // distance flown since armed in centimeters
-extern int16_t GPS_angle[ANGLE_INDEX_COUNT];    // it's the angles that must be applied for GPS correction
-extern float GPS_scaleLonDown;                  // this is used to offset the shrinking longitude as we go towards the poles
+extern gpsLocation_t GPS_home_llh;
+extern uint16_t GPS_distanceToHome;        // distance to home point in meters
+extern uint32_t GPS_distanceToHomeCm;      // distance to home point in cm
+extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 
 typedef enum {
     GPS_DIRECT_TICK = 1 << 0,
@@ -316,7 +314,6 @@ extern gpsSolutionData_t gpsSol;
 
 #define GPS_SV_MAXSATS_LEGACY   16U
 #define GPS_SV_MAXSATS_M8N      32U                     // must be larger than MAXSATS_LEGACY
-#define GPS_SV_MAXSATS_M9N      42U
 
 extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
 
@@ -388,11 +385,11 @@ void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
 bool gpsIsHealthy(void); // Returns true when the gps state is RECEIVING_DATA
 struct serialPort_s;
-void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
+bool gpsPassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);
 void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
-void GPS_distance_cm_bearing(const int32_t *currentLat1, const int32_t *currentLon1, const int32_t *destinationLat2, const int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
+void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing);
 void gpsSetFixState(bool state);
 float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue
 baudRate_e getGpsPortActualBaudRateIndex(void);

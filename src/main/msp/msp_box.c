@@ -50,7 +50,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXARM, .boxName = "ARM", .permanentId = 0 },
     { .boxId = BOXANGLE, .boxName = "ANGLE", .permanentId = 1 },
     { .boxId = BOXHORIZON, .boxName = "HORIZON", .permanentId = 2 },
-//    { .boxId = BOXBARO, .boxName = "BARO", .permanentId = 3 },
+    { .boxId = BOXALTHOLD, .boxName = "ALTHOLD", .permanentId = 3 },
     { .boxId = BOXANTIGRAVITY, .boxName = "ANTI GRAVITY", .permanentId = 4 },
     { .boxId = BOXMAG, .boxName = "MAG", .permanentId = 5 },
     { .boxId = BOXHEADFREE, .boxName = "HEADFREE", .permanentId = 6 },
@@ -82,15 +82,15 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXCAMERA1, .boxName = "CAMERA CONTROL 1", .permanentId = 32},
     { .boxId = BOXCAMERA2, .boxName = "CAMERA CONTROL 2", .permanentId = 33},
     { .boxId = BOXCAMERA3, .boxName = "CAMERA CONTROL 3", .permanentId = 34 },
-    { .boxId = BOXFLIPOVERAFTERCRASH, .boxName = "FLIP OVER AFTER CRASH", .permanentId = 35 },
+    { .boxId = BOXCRASHFLIP, .boxName = "FLIP OVER AFTER CRASH", .permanentId = 35 },
     { .boxId = BOXPREARM, .boxName = "PREARM", .permanentId = 36 },
     { .boxId = BOXBEEPGPSCOUNT, .boxName = "GPS BEEP SATELLITE COUNT", .permanentId = 37 },
 //    { .boxId = BOX3DONASWITCH, .boxName = "3D ON A SWITCH", .permanentId = 38 }, (removed)
     { .boxId = BOXVTXPITMODE, .boxName = "VTX PIT MODE", .permanentId = 39 },
-    { .boxId = BOXUSER1, .boxName = "USER1", .permanentId = 40 },
-    { .boxId = BOXUSER2, .boxName = "USER2", .permanentId = 41 },
-    { .boxId = BOXUSER3, .boxName = "USER3", .permanentId = 42 },
-    { .boxId = BOXUSER4, .boxName = "USER4", .permanentId = 43 },
+    { .boxId = BOXUSER1, .boxName = BOX_USER1_NAME, .permanentId = 40 }, // may be overridden by modeActivationConfig
+    { .boxId = BOXUSER2, .boxName = BOX_USER2_NAME, .permanentId = 41 },
+    { .boxId = BOXUSER3, .boxName = BOX_USER3_NAME, .permanentId = 42 },
+    { .boxId = BOXUSER4, .boxName = BOX_USER4_NAME, .permanentId = 43 },
     { .boxId = BOXPIDAUDIO, .boxName = "PID AUDIO", .permanentId = 44 },
     { .boxId = BOXPARALYZE, .boxName = "PARALYZE", .permanentId = 45 },
     { .boxId = BOXGPSRESCUE, .boxName = "GPS RESCUE", .permanentId = 46 },
@@ -137,28 +137,42 @@ static bool activeBoxIdGet(boxId_e boxId)
     return bitArrayGet(&activeBoxIds, boxId);
 }
 
-void serializeBoxNameFn(sbuf_t *dst, const box_t *box)
+int serializeBoxNameFn(sbuf_t *dst, const box_t *box)
 {
+    const char* name = NULL;
+    int len;
 #if defined(USE_CUSTOM_BOX_NAMES)
-    if (box->boxId == BOXUSER1 && strlen(modeActivationConfig()->box_user_1_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_1_name);
-    } else if (box->boxId == BOXUSER2 && strlen(modeActivationConfig()->box_user_2_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_2_name);
-    } else if (box->boxId == BOXUSER3 && strlen(modeActivationConfig()->box_user_3_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_3_name);
-    } else if (box->boxId == BOXUSER4 && strlen(modeActivationConfig()->box_user_4_name) > 0) {
-        sbufWriteString(dst, modeActivationConfig()->box_user_4_name);
-    } else
-#endif
-    {
-        sbufWriteString(dst, box->boxName);
+    if (box->boxId >= BOXUSER1 && box->boxId <= BOXUSER4) {
+        const int n = box->boxId - BOXUSER1;
+        name = modeActivationConfig()->box_user_names[n];
+        // possibly there is no '\0' in boxname
+        if (*name) {
+            len = strnlen(name, sizeof(modeActivationConfig()->box_user_names[n]));
+        } else {
+            name = NULL;
+        }
     }
+#endif
+    if (name == NULL) {
+        name = box->boxName;
+        len = strlen(name);
+    }
+    if (sbufBytesRemaining(dst) < len + 1) {
+        // boxname or separator won't fit
+        return -1;
+    }
+    sbufWriteData(dst, name, len);
     sbufWriteU8(dst, ';');
+    return len + 1;
 }
 
-void serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
+int serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
 {
+    if (sbufBytesRemaining(dst) < 1) {
+        return -1;
+    }
     sbufWriteU8(dst, box->permanentId);
+    return 1;
 }
 
 // serialize 'page' of boxNames.
@@ -171,7 +185,10 @@ void serializeBoxReply(sbuf_t *dst, int page, serializeBoxFn *serializeBox)
     for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
         if (activeBoxIdGet(id)) {
             if (boxIdx >= pageStart && boxIdx < pageEnd) {
-                (*serializeBox)(dst, findBoxByBoxId(id));
+                if ((*serializeBox)(dst, findBoxByBoxId(id)) < 0) {
+                    // failed to serialize, abort
+                    return;
+                }
             }
             boxIdx++;                 // count active boxes
         }
@@ -205,6 +222,9 @@ void initActiveBoxIds(void)
     if (sensors(SENSOR_ACC)) {
         BME(BOXANGLE);
         BME(BOXHORIZON);
+#ifdef USE_ALT_HOLD_MODE
+        BME(BOXALTHOLD);
+#endif
         BME(BOXHEADFREE);
         BME(BOXHEADADJ);
         BME(BOXFPVANGLEMIX);
@@ -263,7 +283,7 @@ void initActiveBoxIds(void)
     bool configuredMotorProtocolDshot;
     checkMotorProtocolEnabled(&motorConfig()->dev, &configuredMotorProtocolDshot);
     if (configuredMotorProtocolDshot) {
-        BME(BOXFLIPOVERAFTERCRASH);
+        BME(BOXCRASHFLIP);
     }
 #endif
 

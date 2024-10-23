@@ -94,6 +94,8 @@
 #include "fc/stats.h"
 #include "fc/tasks.h"
 
+#include "flight/alt_hold.h"
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -761,9 +763,6 @@ void init(void)
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
         gpsInit();
-#ifdef USE_GPS_RESCUE
-        gpsRescueInit();
-#endif
 #ifdef USE_GPS_LAP_TIMER
         gpsLapTimerInit();
 #endif // USE_GPS_LAP_TIMER
@@ -827,7 +826,9 @@ void init(void)
 #ifdef USE_BARO
     baroStartCalibration();
 #endif
+
     positionInit();
+    autopilotInit(autopilotConfig());
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -997,6 +998,17 @@ void init(void)
 #if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_LATE) && !defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
+#endif
+
+// autopilot must be initialised before modes that require the autopilot pids
+#ifdef USE_ALT_HOLD_MODE
+    altHoldInit();
+#endif
+
+#ifdef USE_GPS_RESCUE
+    if (featureIsEnabled(FEATURE_GPS)) {
+        gpsRescueInit();
+    }
 #endif
 
     debugInit();

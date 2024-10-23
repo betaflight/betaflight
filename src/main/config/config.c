@@ -149,11 +149,6 @@ uint8_t getCurrentControlRateProfileIndex(void)
     return systemConfig()->activeRateProfile;
 }
 
-uint16_t getCurrentMinthrottle(void)
-{
-    return motorConfig()->minthrottle;
-}
-
 void resetConfig(void)
 {
     pgResetAll();
@@ -275,10 +270,10 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY;
         }
 
-        // If the d_min value for any axis is >= the D gain then reset d_min to 0 for consistent Configurator behavior
+        // If the d_max value for any axis is <= the D gain then reset d_max to 0 for consistent Configurator behavior
         for (unsigned axis = 0; axis <= FD_YAW; axis++) {
-            if (pidProfilesMutable(i)->d_min[axis] > pidProfilesMutable(i)->pid[axis].D) {
-                pidProfilesMutable(i)->d_min[axis] = 0;
+            if (pidProfilesMutable(i)->d_max[axis] < pidProfilesMutable(i)->pid[axis].D) {
+                pidProfilesMutable(i)->d_max[axis] = 0;
             }
         }
 

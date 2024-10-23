@@ -48,14 +48,14 @@
 #include "pg/pg_ids.h"
 
 static float displayAltitudeCm = 0.0f;
-static float zeroedAltitudeCm = 0.0f;
+static bool altitudeAvailable = false;
 
-#if defined(USE_BARO) || defined(USE_GPS)
+static float zeroedAltitudeCm = 0.0f;
 static float zeroedAltitudeDerivative = 0.0f;
-#endif
 
 static pt2Filter_t altitudeLpf;
 static pt2Filter_t altitudeDerivativeLpf;
+
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0; // in cm/s
 #endif
@@ -79,7 +79,7 @@ typedef enum {
     GPS_ONLY
 } altitudeSource_e;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 6);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = DEFAULT,
@@ -115,7 +115,7 @@ void calculateEstimatedAltitude(void)
         // GPS_FIX means a 3D fix, which requires min 4 sats.
         // On loss of 3D fix, gpsAltCm remains at the last value, haveGpsAlt becomes false, and gpsTrust goes to zero.
         gpsAltCm = gpsSol.llh.altCm; // static, so hold last altitude value if 3D fix is lost to prevent fly to moon
-        haveGpsAlt = true; // stays false if no 3D fix
+        haveGpsAlt = true; // goes false and stays false if no 3D fix
         if (gpsSol.dop.pdop != 0) {
             // pDOP of 1.0 is good.  100 is very bad.  Our gpsSol.dop.pdop values are *100
             // When pDOP is a value less than 3.3, GPS trust will be stronger than default.
@@ -210,17 +210,30 @@ void calculateEstimatedAltitude(void)
     DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(zeroedAltitudeCm));
+
+    altitudeAvailable = haveGpsAlt || haveBaroAlt;
 }
+
 #endif //defined(USE_BARO) || defined(USE_GPS)
+
+float getAltitudeCm(void)
+{
+    return zeroedAltitudeCm;
+}
+
+float getAltitudeDerivative(void)
+{
+    return zeroedAltitudeDerivative; // cm/s
+}
+
+bool isAltitudeAvailable(void) {
+    return altitudeAvailable;
+}
 
 int32_t getEstimatedAltitudeCm(void)
 {
     return lrintf(displayAltitudeCm);
-}
-
-float getAltitude(void)
-{
-    return zeroedAltitudeCm;
 }
 
 #ifdef USE_GPS

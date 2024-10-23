@@ -23,11 +23,11 @@
 #include "drivers/resource.h"
 
 #if defined(USE_ATBSP_DRIVER)
-#include "drivers/mcu/at32/dma_atbsp.h"
+#include "dma_atbsp.h"
 #endif
 
 #if defined(APM32F4)
-#include "drivers/mcu/apm32/dma_apm32.h"
+#include "dma_apm32.h"
 #endif
 
 #define CACHE_LINE_SIZE 32

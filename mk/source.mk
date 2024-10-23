@@ -1,5 +1,7 @@
 PG_SRC = \
             pg/adc.c \
+            pg/alt_hold.c \
+            pg/autopilot.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \
@@ -46,7 +48,6 @@ COMMON_SRC = \
             build/debug.c \
             build/debug_pin.c \
             build/version.c \
-            $(TARGET_DIR_SRC) \
             main.c \
             $(PG_SRC) \
             common/bitarray.c \
@@ -71,6 +72,7 @@ COMMON_SRC = \
             common/time.c \
             common/typeconversion.c \
             common/uvarint.c \
+            common/vector.c \
             config/config.c \
             config/config_eeprom.c \
             config/config_streamer.c \
@@ -95,6 +97,7 @@ COMMON_SRC = \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
             drivers/buttons.c \
+            drivers/camera_control.c \
             drivers/display.c \
             drivers/display_canvas.c \
             drivers/dma_common.c \
@@ -149,21 +152,23 @@ COMMON_SRC = \
             drivers/rx/rx_pwm.c \
             drivers/serial_softserial.c \
             fc/core.c \
+            fc/gps_lap_timer.c \
             fc/rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            flight/position.c \
+            flight/alt_hold.c \
+            flight/autopilot.c \
+            flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
-            fc/gps_lap_timer.c \
-            flight/dyn_notch_filter.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
             flight/pid.c \
             flight/pid_init.c \
+            flight/position.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
@@ -406,6 +411,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/sdft.c \
             common/stopwatch.c \
             common/typeconversion.c \
+            common/vector.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_spi_bmi160.c \
