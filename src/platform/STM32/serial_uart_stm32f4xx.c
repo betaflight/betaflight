@@ -337,13 +337,9 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     if (options & SERIAL_BIDIR) {
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO,
-#ifdef USE_SMARTAUDIO_NOPULLDOWN
-                        ((options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD))
-#else
-                        (options & SERIAL_BIDIR_PP_PD) ? IOCFG_AF_PP_PD : (options & SERIAL_BIDIR_PP)
-#endif
-                        ? IOCFG_AF_PP : IOCFG_AF_OD, hardware->af);
+        IOConfigGPIOAF(txIO, (options & SERIAL_BIDIR_PP_PD) ? IOCFG_AF_PP_PD 
+                             : (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP
+                             : IOCFG_AF_OD, hardware->af);
     } else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
