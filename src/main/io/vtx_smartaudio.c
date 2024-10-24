@@ -710,7 +710,13 @@ bool vtxSmartAudioInit(void)
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
         portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP_PD | SERIAL_BIDIR_NOPULL;
-
+#ifdef USE_SMARTAUDIO_NOPULLDOWN
+        // softserial hack (#13797)
+        if (smartAudioSerialPort->identifier == SERIAL_PORT_SOFTSERIAL1 || smartAudioSerialPort->identifier == SERIAL_PORT_SOFTSERIAL2) {
+            portOptions &= ~SERIAL_BIDIR_PP_PD;
+            portOptions |= SERIAL_BIDIR_PP;
+        }
+#endif
         smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
     }
 
