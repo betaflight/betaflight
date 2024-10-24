@@ -97,7 +97,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         const bool pushPull = serialOptions_pushPull(options);
         // pull direction
         const serialPullMode_t pull = serialOptions_pull(options);
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
         ioConfig_t ioCfg = IO_CONFIG(
             pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
             GPIO_SPEED_FREQ_HIGH,
@@ -139,7 +139,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
                 uartTxMonitor(s);
 #endif
             } else {
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(APM32F4)
                 // TODO: no need for pullup on TX only pin
                 IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, txAf);
 #else
@@ -150,7 +150,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
         if ((mode & MODE_RX) && rxIO) {
             IOInit(rxIO, ownerTxRx + 1, ownerIndex);
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(APM32F4)
             // no inversion possible on F4, always use pullup
             IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, rxAf);
 #else
@@ -176,6 +176,11 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         NVIC_Init(&NVIC_InitStructure);
 #elif defined(AT32F4)
         nvic_irq_enable(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+#elif defined(APM32F4)
+        DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+        DAL_NVIC_EnableIRQ(hardware->irqn);
+#else
+#error "Unhandled MCU type"
 #endif
     }
     return s;

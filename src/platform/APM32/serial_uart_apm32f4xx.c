@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build/debug.h"
 
 #ifdef USE_UART
 
@@ -45,7 +44,7 @@
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
-        .device = UARTDEV_1,
+        .identifier = SERIAL_PORT_USART1,
         .reg = USART1,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -77,7 +76,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART2
     {
-        .device = UARTDEV_2,
+        .identifier = SERIAL_PORT_USART2,
         .reg = USART2,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -109,7 +108,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART3
     {
-        .device = UARTDEV_3,
+        .identifier = SERIAL_PORT_USART3,
         .reg = USART3,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -143,7 +142,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART4
     {
-        .device = UARTDEV_4,
+        .identifier = SERIAL_PORT_UART4,
         .reg = UART4,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -175,7 +174,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART5
     {
-        .device = UARTDEV_5,
+        .identifier = SERIAL_PORT_UART5,
         .reg = UART5,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
@@ -205,7 +204,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART6
     {
-        .device = UARTDEV_6,
+        .identifier = SERIAL_PORT_USART6,
         .reg = USART6,
         .rxDMAChannel = DMA_CHANNEL_5,
         .txDMAChannel = DMA_CHANNEL_5,
@@ -236,83 +235,130 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
 };
 
-// XXX Should serialUART be consolidated?
-
-uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
+bool checkUsartTxOutput(uartPort_t *s)
 {
-    uartDevice_t *uartdev = uartDevmap[device];
-    if (!uartdev) {
-        return NULL;
-    }
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+    IO_t txIO = IOGetByTag(uart->tx.pin);
 
-    uartPort_t *s = &(uartdev->port);
+    if ((uart->txPinState == TX_PIN_MONITOR) && txIO) {
+        if (IORead(txIO)) {
+            // TX is high so we're good to transmit
 
-    s->port.vTable = uartVTable;
+            // Enable USART TX output
+            uart->txPinState = TX_PIN_ACTIVE;
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
 
-    s->port.baudRate = baudRate;
+            // Enable the UART transmitter
+            SET_BIT(s->Handle.Instance->CTRL1, USART_CTRL1_TXEN);
 
-    const uartHardware_t *hardware = uartdev->hardware;
-
-    s->USARTx = hardware->reg;
-
-    s->port.rxBuffer = hardware->rxBuffer;
-    s->port.txBuffer = hardware->txBuffer;
-    s->port.rxBufferSize = hardware->rxBufferSize;
-    s->port.txBufferSize = hardware->txBufferSize;
-
-    s->checkUsartTxOutput = checkUsartTxOutput;
-
-#ifdef USE_DMA
-    uartConfigureDma(uartdev);
-#endif
-
-    s->Handle.Instance = hardware->reg;
-
-    if (hardware->rcc) {
-        RCC_ClockCmd(hardware->rcc, ENABLE);
-    }
-
-    IO_t txIO = IOGetByTag(uartdev->tx.pin);
-    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
-
-    uartdev->txPinState = TX_PIN_IGNORE;
-
-    if ((options & SERIAL_BIDIR) && txIO) {
-        ioConfig_t ioCfg = IO_CONFIG(
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
-            GPIO_SPEED_FREQ_HIGH,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PULLDOWN : GPIO_PULLUP
-        );
-
-        IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO, ioCfg, uartdev->tx.af);
-    }
-    else {
-        if ((mode & MODE_TX) && txIO) {
-            IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-
-            if (options & SERIAL_CHECK_TX) {
-                uartdev->txPinState = TX_PIN_MONITOR;
-                // Switch TX to UART output whilst UART sends idle preamble
-                checkUsartTxOutput(s);
-            } else {
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
-            }
-        }
-
-        if ((mode & MODE_RX) && rxIO) {
-            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rx.af);
+            return true;
+        } else {
+            // TX line is pulled low so don't enable USART TX
+            return false;
         }
     }
 
-#ifdef USE_DMA
-    if (!s->rxDMAResource) {
-        DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
-        DAL_NVIC_EnableIRQ(hardware->irqn);
-    }
-#endif
-
-    return s;
+    return true;
 }
+
+void uartTxMonitor(uartPort_t *s)
+{
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+
+    if (uart->txPinState == TX_PIN_ACTIVE) {
+        IO_t txIO = IOGetByTag(uart->tx.pin);
+
+        // Disable the UART transmitter
+        CLEAR_BIT(s->Handle.Instance->CTRL1, USART_CTRL1_TXEN);
+
+        // Switch TX to an input with pullup so it's state can be monitored
+        uart->txPinState = TX_PIN_MONITOR;
+        IOConfigGPIO(txIO, IOCFG_IPU);
+    }
+}
+
+static void handleUsartTxDma(uartPort_t *s)
+{
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+
+    uartTryStartTxDMA(s);
+
+    if (s->txDMAEmpty && (uart->txPinState != TX_PIN_IGNORE)) {
+        // Switch TX to an input with pullup so it's state can be monitored
+        uartTxMonitor(s);
+    }
+}
+
+void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
+{
+    uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
+        if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
+        {
+            DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
+        }
+        handleUsartTxDma(s);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
+    }
+}
+
+FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
+{
+    UART_HandleTypeDef *huart = &s->Handle;
+    uint32_t isrflags = READ_REG(huart->Instance->STS);
+    uint32_t cr1its = READ_REG(huart->Instance->CTRL1);
+    uint32_t cr3its = READ_REG(huart->Instance->CTRL3);
+    /* UART in mode Receiver ---------------------------------------------------*/
+    if (!s->rxDMAResource && (((isrflags & USART_STS_RXBNEFLG) != RESET) && ((cr1its & USART_CTRL1_RXBNEIEN) != RESET))) {
+        if (s->port.rxCallback) {
+            s->port.rxCallback(huart->Instance->DATA, s->port.rxCallbackData);
+        } else {
+            s->port.rxBuffer[s->port.rxBufferHead] = huart->Instance->DATA;
+            s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
+        }
+    }
+
+    // Detect completion of transmission
+    if (((isrflags & USART_STS_TXCFLG) != RESET) && ((cr1its & USART_CTRL1_TXCIEN) != RESET)) {
+        // Switch TX to an input with pullup so it's state can be monitored
+        uartTxMonitor(s);
+
+        __DAL_UART_CLEAR_FLAG(huart, UART_IT_TC);
+    }
+
+    if (!s->txDMAResource && (((isrflags & USART_STS_TXBEFLG) != RESET) && ((cr1its & USART_CTRL1_TXBEIEN) != RESET))) {
+        if (s->port.txBufferTail != s->port.txBufferHead) {
+            huart->Instance->DATA = (((uint16_t) s->port.txBuffer[s->port.txBufferTail]) & (uint16_t) 0x01FFU);
+            s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
+        } else {
+            __DAL_UART_DISABLE_IT(huart, UART_IT_TXE);
+        }
+    }
+
+    if (((isrflags & USART_STS_OVREFLG) != RESET) && (((cr1its & USART_CTRL1_RXBNEIEN) != RESET)
+                                                 || ((cr3its & USART_CTRL3_ERRIEN) != RESET))) {
+        __DAL_UART_CLEAR_OREFLAG(huart);
+    }
+
+    if (((isrflags & USART_STS_IDLEFLG) != RESET) && ((cr1its & USART_STS_IDLEFLG) != RESET)) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        // clear
+        (void) huart->Instance->STS;
+        (void) huart->Instance->DATA;
+    }
+}
+
 #endif // USE_UART
