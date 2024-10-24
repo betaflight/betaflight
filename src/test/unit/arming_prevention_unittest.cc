@@ -1143,6 +1143,7 @@ extern "C" {
     float pt1FilterGain(float, float) { return 0.5f; }
     float pt2FilterGain(float, float)  { return 0.1f; }
     float pt3FilterGain(float, float)  { return 0.1f; }
+
     void pt1FilterInit(pt1Filter_t *velocityDLpf, float) {
         UNUSED(velocityDLpf);
     }
@@ -1165,12 +1166,9 @@ extern "C" {
         return 0.0f;
     }
 
-    float sin_approx(float) {
-        return 0.0f;
-    }
-    float cos_approx(float) {
-        return 1.0f;
-    }
+    float sin_approx(float) {return 0.0f;}
+    float cos_approx(float) {return 1.0f;}
+    float atan2_approx(float, float) {return 0.0f;}
 
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
