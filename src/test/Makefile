@@ -117,9 +117,11 @@ cli_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/io/gps.c \
+		$(USER_DIR)/io/serial_resource.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c \
 		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
@@ -175,6 +177,7 @@ gps_conversion_unittest_SRC := \
 
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
+		$(USER_DIR)/io/serial_resource.c \
 		$(USER_DIR)/drivers/serial_pinconfig.c
 
 
@@ -232,6 +235,7 @@ link_quality_unittest_SRC := \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/pg/pg.c \
@@ -267,7 +271,9 @@ rx_crsf_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/common/streambuf.c \
-		$(USER_DIR)/drivers/serial.c
+		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c
+
 
 
 rx_ibus_unittest_SRC := \
@@ -347,6 +353,7 @@ telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/telemetry/crsf.c \
 		$(USER_DIR)/common/gps_conversion.c \
@@ -359,6 +366,7 @@ telemetry_crsf_msp_unittest_DEFINES := \
 
 telemetry_hott_unittest_SRC := \
 		$(USER_DIR)/telemetry/hott.c \
+		$(USER_DIR)/io/serial_resource.c \
 		$(USER_DIR)/common/gps_conversion.c
 
 

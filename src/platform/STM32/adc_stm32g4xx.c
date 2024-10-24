@@ -372,7 +372,7 @@ void adcInit(const adcConfig_t *config)
 
         RCC_ClockCmd(adc->rccADC, ENABLE);
 
-        int configuredAdcChannels = BITCOUNT(adc->channelBits);
+        int configuredAdcChannels = popcount(adc->channelBits);
 
         adcInitDevice(adc, configuredAdcChannels);
 
@@ -472,11 +472,11 @@ void adcInit(const adcConfig_t *config)
 
         // Start conversion in DMA mode
 
-        if (HAL_ADC_Start_DMA(&adc->ADCHandle, (uint32_t *)&adcConversionBuffer[dmaBufferIndex], BITCOUNT(adc->channelBits)) != HAL_OK) {
+        if (HAL_ADC_Start_DMA(&adc->ADCHandle, (uint32_t *)&adcConversionBuffer[dmaBufferIndex], popcount(adc->channelBits)) != HAL_OK) {
             handleError();
         }
 
-        dmaBufferIndex += BITCOUNT(adc->channelBits);
+        dmaBufferIndex += popcount(adc->channelBits);
     }
 }
 

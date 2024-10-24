@@ -30,6 +30,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+#include "drivers/serial_uart_impl.h"
 
 #include "pg/timerio.h"
 
@@ -98,21 +99,29 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP(ADC, 5),
 #endif
 
-#ifdef USE_UART
+#ifdef USE_UART1
     REQMAP_DIR(UART, 1, TX),
     REQMAP_DIR(UART, 1, RX),
+#endif
+#ifdef USE_UART2
     REQMAP_DIR(UART, 2, TX),
     REQMAP_DIR(UART, 2, RX),
+#endif
+#ifdef USE_UART3
     REQMAP_DIR(UART, 3, TX),
     REQMAP_DIR(UART, 3, RX),
+#endif
+#ifdef USE_UART4
     REQMAP_DIR(UART, 4, TX),
     REQMAP_DIR(UART, 4, RX),
+#endif
+#ifdef USE_UART5
     REQMAP_DIR(UART, 5, TX),
     REQMAP_DIR(UART, 5, RX),
-#ifdef USE_LPUART1
-    { DMA_PERIPH_UART_TX, LPUARTDEV_1, DMA_REQUEST_LPUART1_TX },
-    { DMA_PERIPH_UART_RX, LPUARTDEV_1, DMA_REQUEST_LPUART1_RX },
 #endif
+#ifdef USE_LPUART1
+    { DMA_PERIPH_UART_TX, UARTDEV_LP1, DMA_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, UARTDEV_LP1, DMA_REQUEST_LPUART1_RX },
 #endif
 
 #ifdef USE_TIMER
@@ -256,33 +265,49 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #endif
 #endif
 
-#ifdef USE_UART
+#ifdef USE_UART1
     REQMAP_DIR(UART, 1, TX),
     REQMAP_DIR(UART, 1, RX),
+#endif
+#ifdef USE_UART2
     REQMAP_DIR(UART, 2, TX),
     REQMAP_DIR(UART, 2, RX),
+#endif
+#ifdef USE_UART3
     REQMAP_DIR(UART, 3, TX),
     REQMAP_DIR(UART, 3, RX),
+#endif
+#ifdef USE_UART4
     REQMAP_DIR(UART, 4, TX),
     REQMAP_DIR(UART, 4, RX),
+#endif
+#ifdef USE_UART5
     REQMAP_DIR(UART, 5, TX),
     REQMAP_DIR(UART, 5, RX),
+#endif
+#ifdef USE_UART6
     REQMAP_DIR(UART, 6, TX),
     REQMAP_DIR(UART, 6, RX),
+#endif
+#ifdef USE_UART7
     REQMAP_DIR(UART, 7, TX),
     REQMAP_DIR(UART, 7, RX),
+#endif
+#ifdef USE_UART8
     REQMAP_DIR(UART, 8, TX),
     REQMAP_DIR(UART, 8, RX),
-#if defined(STM32H7A3xxQ)
+#endif
+#ifdef USE_UART9
     REQMAP_DIR(UART, 9, TX),
     REQMAP_DIR(UART, 9, RX),
+#endif
+#ifdef USE_UART10
     REQMAP_DIR(UART, 10, TX),
     REQMAP_DIR(UART, 10, RX),
 #endif
 #ifdef USE_LPUART1
-    { DMA_PERIPH_UART_TX, LPUARTDEV_1, BDMA_REQUEST_LPUART1_TX },
-    { DMA_PERIPH_UART_RX, LPUARTDEV_1, BDMA_REQUEST_LPUART1_RX },
-#endif
+    { DMA_PERIPH_UART_TX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_RX },
 #endif
 
 #ifdef USE_TIMER
@@ -414,17 +439,27 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     { DMA_PERIPH_SDIO,    0,         { DMA(2, 3, 4), DMA(2, 6, 4) } },
 #endif
 
-#ifdef USE_UART
+#ifdef USE_UART1
     { DMA_PERIPH_UART_TX, UARTDEV_1, { DMA(2, 7, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_1, { DMA(2, 5, 4), DMA(2, 2, 4) } },
+#endif
+#ifdef USE_UART2
     { DMA_PERIPH_UART_TX, UARTDEV_2, { DMA(1, 6, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_2, { DMA(1, 5, 4) } },
+#endif
+#ifdef USE_UART3
     { DMA_PERIPH_UART_TX, UARTDEV_3, { DMA(1, 3, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_3, { DMA(1, 1, 4) } },
+#endif
+#ifdef USE_UART4
     { DMA_PERIPH_UART_TX, UARTDEV_4, { DMA(1, 4, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_4, { DMA(1, 2, 4) } },
+#endif
+#ifdef USE_UART5
     { DMA_PERIPH_UART_TX, UARTDEV_5, { DMA(1, 7, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_5, { DMA(1, 0, 4) } },
+#endif
+#ifdef USE_UART6
     { DMA_PERIPH_UART_TX, UARTDEV_6, { DMA(2, 6, 5), DMA(2, 7, 5) } },
     { DMA_PERIPH_UART_RX, UARTDEV_6, { DMA(2, 1, 5), DMA(2, 2, 5) } },
 #endif
@@ -485,8 +520,7 @@ const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, ui
         return NULL;
     }
 
-    for (unsigned i = 0 ; i < ARRAYLEN(dmaPeripheralMapping) ; i++) {
-        const dmaPeripheralMapping_t *periph = &dmaPeripheralMapping[i];
+    for (const dmaPeripheralMapping_t *periph =  dmaPeripheralMapping; periph < ARRAYEND(dmaPeripheralMapping) ; periph++) {
 #if defined(STM32H7) || defined(STM32G4)
         if (periph->device == device && periph->index == index) {
             dmaChannelSpec_t *dmaSpec = &dmaChannelSpec[opt];

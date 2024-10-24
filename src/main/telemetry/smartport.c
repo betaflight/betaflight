@@ -487,7 +487,9 @@ static void freeSmartPortTelemetryPort(void)
 static void configureSmartPortTelemetryPort(void)
 {
     if (portConfig) {
-        portOptions_e portOptions = (telemetryConfig()->halfDuplex ? SERIAL_BIDIR : SERIAL_UNIDIR) | (telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
+        // On SmartPort, SERIAL_INVERTED is default
+        const portOptions_e portOptions = (telemetryConfig()->halfDuplex ? SERIAL_BIDIR : 0)
+            | (telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
 
         smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_SMARTPORT, NULL, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, portOptions);
     }

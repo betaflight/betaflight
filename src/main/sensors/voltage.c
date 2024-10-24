@@ -386,5 +386,5 @@ void voltageStableUpdate(voltageMeter_t* vm)
 // voltage is stable when it was within VOLTAGE_STABLE_MAX_DELTA for 10 update periods
 bool voltageIsStable(voltageMeter_t* vm)
 {
-    return __builtin_popcount(vm->voltageStableBits & (BIT(VOLTAGE_STABLE_BITS_TOTAL + 1) - 1)) >= VOLTAGE_STABLE_BITS_THRESHOLD;
+    return popcount(vm->voltageStableBits & (BIT(VOLTAGE_STABLE_BITS_TOTAL + 1) - 1)) >= VOLTAGE_STABLE_BITS_THRESHOLD;
 }

@@ -35,17 +35,9 @@
 
 #define USE_VCP
 
-#ifdef USE_SOFTSERIAL
-#define UNIFIED_SERIAL_PORT_COUNT       3
-#else
-#define UNIFIED_SERIAL_PORT_COUNT       1
-#endif
-
 #define USE_UART1
 #define USE_UART2
 // #define USE_UART6
-
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 2)
 
 #define USE_INVERTER
 

@@ -128,6 +128,6 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
 void mspSerialReleaseSharedTelemetryPorts(void);
-mspDescriptor_t getMspSerialPortDescriptor(const uint8_t portIdentifier);
+mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e portIdentifier);
 int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction, mspVersion_e mspVersion);
 uint32_t mspSerialTxBytesFree(void);

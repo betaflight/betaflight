@@ -21,11 +21,19 @@
 
 #pragma once
 
-#if defined(STM32H7) || defined(STM32G4)
+#include <stdbool.h>
 
-#define MAX_PERIPHERAL_DMA_OPTIONS 16
-#define MAX_TIMER_DMA_OPTIONS 16
-#else
-#define MAX_PERIPHERAL_DMA_OPTIONS 2
-#define MAX_TIMER_DMA_OPTIONS 3
-#endif
+/*
+ * common functions related to serial port implementation
+ */
+
+// owner of Tx pin (+1 for Rx)
+resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier);
+// index for given owner
+int serialOwnerIndex(serialPortIdentifier_e identifier);
+
+typedef enum { serialPullNone = 0, serialPullDown = 1, serialPullUp = 2 } serialPullMode_t;
+serialPullMode_t serialOptions_pull(portOptions_e options);
+bool serialOptions_pushPull(portOptions_e options);
+
+

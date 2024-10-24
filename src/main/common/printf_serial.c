@@ -33,7 +33,7 @@
 
 #include "printf_serial.h"
 
-#ifdef SERIAL_PORT_COUNT
+#if SERIAL_PORT_COUNT > 0
 
 static serialPort_t *printfSerialPort;
 

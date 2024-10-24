@@ -23,6 +23,7 @@
 
 #include "platform.h"
 
+#include "io/serial.h"
 #include "serial.h"
 
 void serialPrint(serialPort_t *instance, const char *str)
@@ -130,3 +131,4 @@ void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);
 }
+

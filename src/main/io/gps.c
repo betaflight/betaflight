@@ -435,8 +435,8 @@ void gpsInit(void)
         mode &= ~MODE_TX;
     }
 #endif
-
-    if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
+    if (serialType(gpsPortConfig->identifier) == SERIALTYPE_UART
+        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART){
         options |= SERIAL_CHECK_TX;
     }
 

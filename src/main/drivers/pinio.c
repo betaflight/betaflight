@@ -60,8 +60,7 @@ void pinioInit(const pinioConfig_t *pinioConfig)
             break;
         }
 
-        if (pinioConfig->config[i] & PINIO_CONFIG_OUT_INVERTED)
-        {
+        if (pinioConfig->config[i] & PINIO_CONFIG_OUT_INVERTED) {
             pinioRuntime[i].inverted = true;
             IOHi(io);
             pinioRuntime[i].state = true;
@@ -76,7 +75,10 @@ void pinioInit(const pinioConfig_t *pinioConfig)
 
 void pinioSet(int index, bool on)
 {
-    bool newState = on ^ pinioRuntime[index].inverted;
+    if (index < 0 || index >= PINIO_COUNT) {
+        return;
+    }
+    const bool newState = on ^ pinioRuntime[index].inverted;
     if (newState != pinioRuntime[index].state) {
         IOWrite(pinioRuntime[index].io, newState);
         pinioRuntime[index].state = newState;
