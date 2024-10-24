@@ -159,7 +159,7 @@ typedef enum {
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x) || defined(APM32F4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x)
     uint8_t af;
 #endif
 } uartPinDef_t;
