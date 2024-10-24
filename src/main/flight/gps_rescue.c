@@ -59,8 +59,7 @@ typedef enum {
     RESCUE_DESCENT,
     RESCUE_LANDING,
     RESCUE_DO_NOTHING,
-    RESCUE_ABORT,
-    RESCUE_COMPLETE
+    RESCUE_ABORT
 } rescuePhase_e;
 
 typedef enum {
@@ -853,10 +852,6 @@ void gpsRescueUpdate(void)
         // increase velocity smoothing cutoff as we get closer to ground
         descend();
         disarmOnImpact();
-        break;
-
-    case RESCUE_COMPLETE:
-        rescueStop();
         break;
 
     case RESCUE_ABORT:
