@@ -25,6 +25,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -47,6 +48,7 @@ bool cliMode = false;
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
+#include "common/parse.h"
 #include "common/printf.h"
 #include "common/printf_serial.h"
 #include "common/strtol.h"
@@ -174,6 +176,7 @@ bool cliMode = false;
 #include "telemetry/telemetry.h"
 
 #include "cli.h"
+#include "cli_impl.h"
 
 static serialPort_t *cliPort = NULL;
 static bool cliInteractive = false;
@@ -184,8 +187,8 @@ static timeMs_t cliEntryTime = 0;
 #define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t cliWriterDesc;
-static bufWriter_t *cliWriter = NULL;
-static bufWriter_t *cliErrorWriter = NULL;
+STATIC_UNIT_TESTED bufWriter_t *cliWriter = NULL;
+STATIC_UNIT_TESTED bufWriter_t *cliErrorWriter = NULL;
 static uint8_t cliWriteBuffer[CLI_OUT_BUFFER_SIZE];
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
@@ -306,20 +309,7 @@ static const char *configurationStates[] = {
     [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
 };
 
-typedef enum dumpFlags_e {
-    DUMP_MASTER = (1 << 0),
-    DUMP_PROFILE = (1 << 1),
-    DUMP_RATES = (1 << 2),
-    DUMP_ALL = (1 << 3),
-    DO_DIFF = (1 << 4),
-    SHOW_DEFAULTS = (1 << 5),
-    HIDE_UNUSED = (1 << 6),
-    HARDWARE_ONLY = (1 << 7),
-    BARE = (1 << 8),
-} dumpFlags_t;
-
 static void cliExit(const bool reboot);
-typedef bool printFn(dumpFlags_t dumpMask, bool equalsDefault, const char *format, ...);
 
 typedef enum {
     REBOOT_TARGET_FIRMWARE,
@@ -1005,6 +995,11 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
     }
 }
 
+static void cliShowArgumentNotANumberError(const char *cmdName, const char *name)
+{
+    cliPrintErrorLinef(cmdName, "%s IS NOT A NUMBER", name ? name : "ARGUMENT");
+}
+
 static const char *nextArg(const char *currentArg)
 {
     const char *ptr = strchr(currentArg, ' ');
@@ -1034,6 +1029,140 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
     }
 
     return ptr;
+}
+
+/**
+ * @brief Converts parsing error into a message and prints it.
+ */
+static void intParsePrintError(
+    enum intParseStatus_e err,
+    long int fromVal,
+    long int toVal,
+    const char *cmdName,
+    const char *argName
+)
+{
+    switch (err) {
+    case INT_PARSE_STATUS_OK:
+        break;
+    case INT_PARSE_STATUS_NOT_IN_RANGE:
+        cliShowArgumentRangeError(cmdName, (char *)argName, fromVal, toVal - 1);
+        break;
+    case INT_PARSE_STATUS_NOT_A_NUMBER:
+        cliShowArgumentNotANumberError(cmdName, argName);
+        break;
+    case INT_PARSE_STATUS_END_OF_LINE:
+        cliPrintErrorLinef(cmdName, "INVALID ARGUMENT COUNT");
+        break;
+    }
+}
+
+/**
+ * @brief Parses positive integer argument from a command line
+ * @param cmdline is a double pointer to a string to parse. It will be updated
+ *        if successfully parsed.
+ * @param cmdName is a command name. Used in error messages
+ * @param argName is an argument name. Used in error messages
+ * @retval Parsed value on success or negative on failure
+ */
+static long int processPositiveIntArg(
+    const char **cmdline,
+    const char *cmdName,
+    const char *argName
+)
+{
+    intParseResult_t res = parseIntArg(*cmdline);
+    if (res.status != INT_PARSE_STATUS_OK) {
+        intParsePrintError(res.status, 0, INT_MAX, cmdName, argName);
+        return -1;
+    }
+    *cmdline = res.next;
+    return res.value;
+}
+
+/**
+ * @brief Parses a positive integer argument from a command line and check that
+ *        it lies inside a range.
+ * @param cmdline is a double pointer to a string to parse. It will be updated
+ *        if successfully parsed.
+ * @param fromVal start of the range (including)
+ * @param toVal end of the range (excluding)
+ * @param cmdName is a command name. Used in error messages
+ * @param argName is an argument name. Used in error messages
+ * @retval Parsed value on success or negative on failure.
+ */
+static long int processPositiveIntArgInRange(
+    const char **cmdline,
+    long int fromVal,
+    long int toVal,
+    const char *cmdName,
+    const char *argName
+)
+{
+    intParseResult_t res = parseIntArgInRange(*cmdline, fromVal, toVal);
+    if (res.status != INT_PARSE_STATUS_OK) {
+        intParsePrintError(res.status, fromVal, toVal, cmdName, argName);
+        return -1;
+    }
+    *cmdline = res.next;
+    return res.value;
+}
+
+typedef struct channelRangeParseResult_s {
+    enum intParseStatus_e status;
+    channelRange_t value;
+} channelRangeParseResult_t;
+
+static inline channelRangeParseResult_t channelRangeParseResultOk(channelRange_t val) {
+    return (channelRangeParseResult_t) {
+        .status = INT_PARSE_STATUS_OK,
+        .value = val,
+    };
+}
+
+static inline channelRangeParseResult_t channelRangeParseResultErr(enum intParseStatus_e err) {
+    return (channelRangeParseResult_t) {
+        .status = err,
+    };
+}
+
+/**
+ * @brief Successively parses 2 integer arguments and checks they are valid
+ *        channel range values.
+ * @param cmdline is a double pointer to a string to parse. It will be updated
+ *        if successfully parsed.
+ * @param cmdName is a command name. Used in error messages
+ * @retval Parsed result
+ */
+static channelRangeParseResult_t processChannelRangeArgsEx(
+    const char **cmdlinePtr, const char *cmdName
+)
+{
+    intParseResult_t startRes = parseIntArgInRange(
+        *cmdlinePtr, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+    );
+    if (startRes.status != INT_PARSE_STATUS_OK) {
+        cliShowArgumentRangeError(
+            cmdName, "CHANNEL_RANGE.START", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+        );
+        return channelRangeParseResultErr(startRes.status);
+    }
+    uint8_t startStep = CHANNEL_VALUE_TO_STEP(startRes.value);
+
+    intParseResult_t endRes = parseIntArgInRange(
+        startRes.next, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+    );
+    if (endRes.status != INT_PARSE_STATUS_OK) {
+        cliShowArgumentRangeError(
+            cmdName, "CHANNEL_RANGE.END", CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX
+        );
+        return channelRangeParseResultErr(endRes.status);
+    }
+    uint8_t endStep = CHANNEL_VALUE_TO_STEP(endRes.value);
+
+    *cmdlinePtr = endRes.next;
+    channelRange_t channelRange = { .startStep = startStep, .endStep = endStep };
+    return channelRangeParseResultOk(channelRange);
 }
 
 // Check if a string's length is zero
@@ -1160,9 +1289,10 @@ static void cliRxFailsafe(const char *cmdName, char *cmdline)
     }
 }
 
-static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions, const char *headingStr)
+static const char *auxFormat = "aux %u %u %u %u %u %u %u";
+
+STATIC_UNIT_TESTED void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions, const char *headingStr)
 {
-    const char *format = "aux %u %u %u %u %u %u %u";
     // print out aux channel settings
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
@@ -1175,7 +1305,7 @@ static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *mode
             const box_t *box = findBoxByBoxId(macDefault->modeId);
             const box_t *linkedTo = findBoxByBoxId(macDefault->linkedTo);
             if (box) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, format,
+                cliDefaultPrintLinef(dumpMask, equalsDefault, auxFormat,
                     i,
                     box->permanentId,
                     macDefault->auxChannelIndex,
@@ -1189,7 +1319,7 @@ static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *mode
         const box_t *box = findBoxByBoxId(mac->modeId);
         const box_t *linkedTo = findBoxByBoxId(mac->linkedTo);
         if (box) {
-            cliDumpPrintLinef(dumpMask, equalsDefault, format,
+            cliDumpPrintLinef(dumpMask, equalsDefault, auxFormat,
                 i,
                 box->permanentId,
                 mac->auxChannelIndex,
@@ -1202,76 +1332,81 @@ static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *mode
     }
 }
 
-static void cliAux(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliAux(const char *cmdName, char *cmdline)
 {
-    int i, val = 0;
-    const char *ptr;
-
     if (isEmpty(cmdline)) {
         printAux(DUMP_MASTER, modeActivationConditions(0), NULL, NULL);
-    } else {
-        ptr = cmdline;
-        i = atoi(ptr++);
-        if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
-            uint8_t validArgumentCount = 0;
-            ptr = nextArg(ptr);
-            if (ptr) {
-                val = atoi(ptr);
-                const box_t *box = findBoxByPermanentId(val);
-                if (box) {
-                    mac->modeId = box->boxId;
-                    validArgumentCount++;
-                }
-            }
-            ptr = nextArg(ptr);
-            if (ptr) {
-                val = atoi(ptr);
-                if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
-                    mac->auxChannelIndex = val;
-                    validArgumentCount++;
-                }
-            }
-            ptr = processChannelRangeArgs(ptr, &mac->range, &validArgumentCount);
-            ptr = nextArg(ptr);
-            if (ptr) {
-                val = atoi(ptr);
-                if (val == MODELOGIC_OR || val == MODELOGIC_AND) {
-                    mac->modeLogic = val;
-                    validArgumentCount++;
-                }
-            }
-            ptr = nextArg(ptr);
-            if (ptr) {
-                val = atoi(ptr);
-                const box_t *box = findBoxByPermanentId(val);
-                if (box) {
-                    mac->linkedTo = box->boxId;
-                    validArgumentCount++;
-                }
-            }
-            if (validArgumentCount == 4) { // for backwards compatibility
-                mac->modeLogic = MODELOGIC_OR;
-                mac->linkedTo = 0;
-            } else if (validArgumentCount == 5) { // for backwards compatibility
-                mac->linkedTo = 0;
-            } else if (validArgumentCount != 6) {
-                memset(mac, 0, sizeof(modeActivationCondition_t));
-            }
-            analyzeModeActivationConditions();
-            cliPrintLinef( "aux %u %u %u %u %u %u %u",
-                i,
-                findBoxByBoxId(mac->modeId)->permanentId,
-                mac->auxChannelIndex,
-                MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
-                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
-                mac->modeLogic,
-                findBoxByBoxId(mac->linkedTo)->permanentId
-            );
-        } else {
-            cliShowArgumentRangeError(cmdName, "INDEX", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
-        }
+        return;
     }
+
+    const char *ptr = cmdline;
+    long int ix = processPositiveIntArgInRange(
+        &ptr, 0, MAX_MODE_ACTIVATION_CONDITION_COUNT, cmdName, "INDEX"
+    );
+    if (ix < 0) {
+        return;
+    }
+    modeActivationCondition_t *mac = modeActivationConditionsMutable(ix);
+
+    long int permanentBoxId = processPositiveIntArg(&ptr, cmdName, "BOX");
+    if (permanentBoxId < 0) {
+        return;
+    }
+    const box_t *box = findBoxByPermanentId(permanentBoxId);
+    if (!box) {
+        cliPrintErrorLinef(cmdName, "BOX NOT MATCHED TO ANY BOX ID");
+        return;
+    }
+
+    long int aux = processPositiveIntArgInRange(&ptr, 0, MAX_AUX_CHANNEL_COUNT, cmdName, "CHANNEL_INDEX");
+    if (aux < 0) {
+        return;
+    }
+
+    channelRangeParseResult_t channelRangeRes = processChannelRangeArgsEx(&ptr, cmdName);
+    if (channelRangeRes.status != INT_PARSE_STATUS_OK) {
+        return;
+    }
+
+    // Optional arguments
+
+    intParseResult_t modeLogicRes = parseIntArgInRange(ptr, 0, 2);
+    long int modeLogic = MODELOGIC_OR;
+    if (modeLogicRes.status != INT_PARSE_STATUS_OK
+        && modeLogicRes.status != INT_PARSE_STATUS_END_OF_LINE) {
+        intParsePrintError(modeLogicRes.status, 0, 2, cmdName, "MODE_LOGIC");
+        return;
+    }
+
+    intParseResult_t linkedToRes = parseIntArg(ptr);
+    long int linkedTo = 0;
+    if (linkedToRes.status != INT_PARSE_STATUS_OK
+        && linkedToRes.status != INT_PARSE_STATUS_END_OF_LINE) {
+        intParsePrintError(linkedToRes.status, 0, 2, cmdName, "LINKED_TO");
+        return;
+    }
+    const box_t *linkedToBox = findBoxByPermanentId(linkedTo);
+    if (!linkedToBox) {
+        cliPrintErrorLinef(cmdName, "LINKED_TO NOT MATCHED TO ANY BOX ID");
+        return;
+    }
+
+    mac->modeId = box->boxId;
+    mac->auxChannelIndex = aux;
+    mac->range = channelRangeRes.value;
+    mac->modeLogic = modeLogic;
+    mac->linkedTo = linkedToBox->boxId;
+
+    cliPrintLinef(
+        auxFormat,
+        ix,
+        findBoxByBoxId(mac->modeId)->permanentId,
+        mac->auxChannelIndex,
+        MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
+        MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
+        mac->modeLogic,
+        findBoxByBoxId(mac->linkedTo)->permanentId
+    );
 }
 
 static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig, const serialConfig_t *serialConfigDefault, const char *headingStr)
@@ -1956,7 +2091,7 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     }
 }
 
-static void cliLed(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliLed(const char *cmdName, char *cmdline)
 {
     const char *format = "led %u %s";
     char ledConfigBuffer[20];
@@ -1999,7 +2134,7 @@ static void printColor(dumpFlags_t dumpMask, const hsvColor_t *colors, const hsv
     }
 }
 
-static void cliColor(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliColor(const char *cmdName, char *cmdline)
 {
     const char *format = "color %u %d,%u,%u";
     if (isEmpty(cmdline)) {
@@ -6468,7 +6603,7 @@ typedef struct {
 }
 #endif
 
-static void cliHelp(const char *cmdName, char *cmdline);
+STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline);
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
@@ -6629,7 +6764,7 @@ const clicmd_t cmdTable[] = {
 #endif
 };
 
-static void cliHelp(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
 {
     bool anyMatches = false;
 
@@ -6638,9 +6773,10 @@ static void cliHelp(const char *cmdName, char *cmdline)
         if (isEmpty(cmdline)) {
             printEntry = true;
         } else {
+            const char *cmdDesc = cmdTable[i].description;
             if (strcasestr(cmdTable[i].name, cmdline)
 #ifndef MINIMAL_CLI
-                || strcasestr(cmdTable[i].description, cmdline)
+                || (cmdDesc && strcasestr(cmdDesc, cmdline))
 #endif
                ) {
                 printEntry = true;
