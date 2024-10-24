@@ -23,3 +23,4 @@
 
 // Sensors
 #define MSP2_SENSOR_GPS                 0x1F03
+#define MSP2_SENSOR_RANGEFINDER         0x1F01
