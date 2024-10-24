@@ -90,7 +90,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     rpmFilter.minHz = config->rpm_filter_min_hz;
     rpmFilter.maxHz = 0.48f * 1e6f / looptimeUs; // don't go quite to nyquist to avoid oscillations
     rpmFilter.fadeRangeHz = config->rpm_filter_fade_range_hz;
-    rpmFilter.fadeRangeHzInv = 1.0f / config->rpm_filter_fade_range_hz;
+    rpmFilter.fadeRangeHzInv = config->rpm_filter_fade_range_hz == 0 ? 0.0f : (1.0f / config->rpm_filter_fade_range_hz);
     rpmFilter.q = config->rpm_filter_q / 100.0f;
     rpmFilter.looptimeUs = looptimeUs;
 
