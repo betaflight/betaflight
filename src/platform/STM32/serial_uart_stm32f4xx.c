@@ -338,4 +338,4 @@ void uartIrqHandler(uartPort_t *s)
         (void) s->USARTx->DR;
     }
 }
-#endif
+#endif // USE_UART

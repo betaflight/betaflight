@@ -88,6 +88,7 @@ void uartReconfigure(uartPort_t *uartPort)
     // Receive DMA or IRQ
     DMA_InitTypeDef DMA_InitStructure;
     if (uartPort->port.mode & MODE_RX) {
+ #ifdef USE_DMA
         if (uartPort->rxDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
@@ -118,7 +119,9 @@ void uartReconfigure(uartPort_t *uartPort)
             xDMA_Cmd(uartPort->rxDMAResource, ENABLE);
             USART_DMACmd(uartPort->USARTx, USART_DMAReq_Rx, ENABLE);
             uartPort->rxDMAPos = xDMA_GetCurrDataCounter(uartPort->rxDMAResource);
-        } else {
+        } else
+#endif
+        {
             USART_ClearITPendingBit(uartPort->USARTx, USART_IT_RXNE);
             USART_ITConfig(uartPort->USARTx, USART_IT_RXNE, ENABLE);
             USART_ITConfig(uartPort->USARTx, USART_IT_IDLE, ENABLE);
@@ -127,6 +130,7 @@ void uartReconfigure(uartPort_t *uartPort)
 
     // Transmit DMA or IRQ
     if (uartPort->port.mode & MODE_TX) {
+#ifdef USE_DMA
         if (uartPort->txDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
@@ -162,7 +166,9 @@ void uartReconfigure(uartPort_t *uartPort)
 
             xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
             USART_DMACmd(uartPort->USARTx, USART_DMAReq_Tx, ENABLE);
-        } else {
+        } else
+#endif
+        {
             USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
         }
         // Enable the interrupt so completion of the transmission will be signalled
@@ -194,7 +200,7 @@ void uartTryStartTxDMA(uartPort_t *s)
         }
 
         if (s->port.txBufferHead == s->port.txBufferTail) {
-            // No more data to transmit.
+            // No more data to transmit
             s->txDMAEmpty = true;
             return;
         }
@@ -207,15 +213,16 @@ void uartTryStartTxDMA(uartPort_t *s)
         DMAx_SetMemoryAddress(s->txDMAResource, (uint32_t)&s->port.txBuffer[s->port.txBufferTail]);
 #endif
 
+        unsigned chunk;
         if (s->port.txBufferHead > s->port.txBufferTail) {
-            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferHead - s->port.txBufferTail);
+            chunk = s->port.txBufferHead - s->port.txBufferTail;
             s->port.txBufferTail = s->port.txBufferHead;
         } else {
-            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferSize - s->port.txBufferTail);
+            chunk = s->port.txBufferSize - s->port.txBufferTail;
             s->port.txBufferTail = 0;
         }
         s->txDMAEmpty = false;
-
+        xDMA_SetCurrDataCounter(s->txDMAResource, chunk);
     reenable:
         xDMA_Cmd(s->txDMAResource, ENABLE);
     }
