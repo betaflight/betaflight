@@ -82,6 +82,15 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
 
+    // prepare AF modes
+#if defined(STM32F4) || defined(APM32F4)
+    uint8_t rxAf = hardware->af;
+    uint8_t txAf = hardware->af;
+#else // all mcus except F4 use per-pin definitions
+    uint8_t rxAf = uartdev->rx.af;
+    uint8_t txAf = uartdev->tx.af;
+#endif
+
 // F4 - no txIO check
     if ((options & SERIAL_BIDIR) && txIO) {
         // pushPull / openDrain
@@ -112,13 +121,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         );
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
-
-#if defined(STM32F4)
-        uint8_t af = hardware->af;
-#else   // all mcus except F4 use per-pin definitions
-        uint8_t af = uartdev->tx.af;
-#endif
-        IOConfigGPIOAF(txIO, ioCfg, af);
+        IOConfigGPIOAF(txIO, ioCfg, txAf);
     } else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, ownerTxRx, ownerIndex);
@@ -138,9 +141,9 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             } else {
 #if defined(STM32F4)
                 // TODO: no need for pullup on TX only pin
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, hardware->af);
+                IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, txAf);
 #else
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
+                IOConfigGPIOAF(txIO, IOCFG_AF_PP, txAaf);
 #endif
             }
         }
@@ -149,10 +152,10 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             IOInit(rxIO, ownerTxRx + 1, ownerIndex);
 #if defined(STM32F4)
             // no inversion possible on F4, always use pullup
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, hardware->af);
+            IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, rxAf);
 #else
             // TODO: pullup/pulldown should be enabled for RX (based on inversion)
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rx.af);
+            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, rxAf);
 #endif
         }
     }
