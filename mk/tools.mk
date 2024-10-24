@@ -318,3 +318,10 @@ breakpad_clean:
 	$(V1) [ ! -d "$(BREAKPAD_DIR)" ] || $(RM) -rf $(BREAKPAD_DIR)
 	@echo " CLEAN        $(BREAKPAD_DL_FILE)"
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
+
+.PHONY: lint
+lint:
+	@command -v git >/dev/null 2>&1 || { echo >&2 "Error: git is required for linting, but it's not installed. Aborting."; exit 1; }
+	@command -v clang-format >/dev/null 2>&1 || { echo >&2 "Error: clang-format is required for linting, but it's not installed. Aborting."; exit 1; }
+	@command -v git-clang-format >/dev/null 2>&1 || { echo >&2 "Error: git-clang-format is required for linting, but it's not installed. Aborting."; exit 1; }
+	git clang-format --style=file --extensions=c,h --staged --verbose -- src
