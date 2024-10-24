@@ -41,14 +41,38 @@
 
 FAST_DATA_ZERO_INIT acc_t acc;                       // acc access functions
 
-static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
+static inline void alignAccelerometer(void)
+{
+    switch (acc.dev.accAlign) {
+        case ALIGN_CUSTOM:
+            alignSensorViaMatrix(&acc.accADC, &acc.dev.rotationMatrix);
+            break;
+        default:
+            alignSensorViaRotation(&acc.accADC, acc.dev.accAlign);
+            break;
+    }
+}
+
+static inline void calibrateAccelerometer(void)
+{
+    if (!accIsCalibrationComplete()) {
+        // acc.accADC is held at 0 until calibration is completed
+        performAcclerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
+    }
+
+    if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
+        performInflightAccelerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
+    }
+}
+
+static inline void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
 {
     acc.accADC.x -= accelerationTrims->raw[X];
     acc.accADC.y -= accelerationTrims->raw[Y];
     acc.accADC.z -= accelerationTrims->raw[Z];
 }
 
-static void postProcessAccelerometer(void)
+static inline void postProcessAccelerometer(void)
 {
     static vector3_t accAdcPrev;
 
@@ -77,26 +101,12 @@ void accUpdate(timeUs_t currentTimeUs)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        const int16_t val =  acc.dev.ADCRaw[axis];
-        acc.accADC.v[axis] = val;
+        acc.accADC.v[axis] = acc.dev.ADCRaw[axis];
     }
 
-    if (acc.dev.accAlign == ALIGN_CUSTOM) {
-        alignSensorViaMatrix(&acc.accADC, &acc.dev.rotationMatrix);
-    } else {
-        alignSensorViaRotation(&acc.accADC, acc.dev.accAlign);
-    }
-
-    if (!accIsCalibrationComplete()) {
-        performAcclerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
-    }
-
-    if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
-        performInflightAccelerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
-    }
-
+    alignAccelerometer();
+    calibrateAccelerometer();
     applyAccelerationTrims(accelerationRuntime.accelerationTrims);
-
     postProcessAccelerometer();
 
     acc.isAccelUpdatedAtLeastOnce = true;
