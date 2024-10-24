@@ -731,9 +731,10 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         mixerSetThrottleAngleCorrection(throttleAngleCorrection);
 
     } else {
-        acc.accADC.x = 0;
-        acc.accADC.y = 0;
-        acc.accADC.z = 0;
+        vector3Zero(&acc.accADC);
+        vector3Zero(&acc.jerk);
+        acc.accMagnitude = 0.0f;
+        acc.jerkMagnitude = 0.0f;
         schedulerIgnoreTaskStateTime();
     }
 

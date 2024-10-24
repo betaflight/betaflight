@@ -29,8 +29,6 @@
 
 #include "build/debug.h"
 
-#include "common/axis.h"
-#include "common/filter.h"
 #include "common/utils.h"
 
 #include "config/config_reset.h"
@@ -69,9 +67,10 @@
 #include "drivers/accgyro/legacy/accgyro_mma845x.h"
 #endif
 
+#include "config/config.h"
+
 #include "drivers/bus_spi.h"
 
-#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
@@ -83,7 +82,6 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
-#include "sensors/sensors.h"
 
 #include "acceleration_init.h"
 
@@ -378,7 +376,7 @@ void accInitFilters(void)
     // the filter initialization is not defined (sample rate = 0)
     accelerationRuntime.accLpfCutHz = (acc.sampleRateHz) ? accelerometerConfig()->acc_lpf_hz : 0;
     if (accelerationRuntime.accLpfCutHz) {
-        const float k = pt2FilterGain(accelerationRuntime.accLpfCutHz, 1.0f / acc.sampleRateHz);
+        const float k = pt2FilterGain(accelerationRuntime.accLpfCutHz, HZ_TO_INTERVAL(acc.sampleRateHz));
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             pt2FilterInit(&accelerationRuntime.accFilter[axis], k);
         }
@@ -402,7 +400,6 @@ bool accInit(uint16_t accSampleRateHz)
 #ifdef USE_MULTI_GYRO
     if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
         alignment = gyroDeviceConfig(1)->alignment;
-
         customAlignment = &gyroDeviceConfig(1)->customAlignment;
     }
 #endif
@@ -418,6 +415,7 @@ bool accInit(uint16_t accSampleRateHz)
 
     acc.sampleRateHz = accSampleRateHz;
     accInitFilters();
+
     return true;
 }
 

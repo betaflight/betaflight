@@ -1316,7 +1316,7 @@ void osdProcessStats3(void)
     if (sensors(SENSOR_ACC)
        && (VISIBLE(osdElementConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE))) {
             // only calculate the G force if the element is visible or the stat is enabled
-        osdGForce = vector3Norm(&acc.accADC) * acc.dev.acc_1G_rec;
+        osdGForce = acc.accMagnitude;
     }
 #endif
 }
