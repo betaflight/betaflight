@@ -115,7 +115,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         // External inverter in bidir mode would be quite problematic anyway
         ioConfig_t ioCfg = IO_CONFIG(
             GPIO_Mode_AF,
-            0,
+            GPIO_Low_Speed,  // TODO: should use stronger drive
             pushPull ? GPIO_OType_PP : GPIO_OType_OD,
             ((unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
         );
