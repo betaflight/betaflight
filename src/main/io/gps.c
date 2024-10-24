@@ -53,9 +53,9 @@
 #include "fc/gps_lap_timer.h"
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
-#include "flight/gps_rescue.h"
 
 #include "scheduler/scheduler.h"
 
@@ -93,6 +93,10 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
+
+#ifdef USE_POS_HOLD_MODE
+static bool newDataForPosHold = false;
+#endif
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -2608,10 +2612,24 @@ void onGpsNewData(void)
 #ifdef USE_GPS_RESCUE
     gpsRescueNewGpsData();
 #endif
+
 #ifdef USE_GPS_LAP_TIMER
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
+
+#ifdef USE_POS_HOLD_MODE
+    newDataForPosHold = true;
+#endif
+
 }
+
+#ifdef USE_POS_HOLD_MODE
+bool isNewDataForPosHold(void) {
+    const bool isNewData = newDataForPosHold; // true only when new data arrives
+    newDataForPosHold = false; // clear flag once new data has been handled
+    return isNewData;
+}
+#endif
 
 void gpsSetFixState(bool state)
 {

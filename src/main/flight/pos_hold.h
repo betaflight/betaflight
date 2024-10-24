@@ -17,21 +17,19 @@
 
 #pragma once
 
-#include "pg/alt_hold.h"
+#include "pg/pos_hold.h"
 
 #ifdef USE_ALT_HOLD_MODE
 #include "common/time.h"
+#include "io/gps.h"
 
-#define ALTHOLD_TASK_RATE_HZ 100         // hz
+#define POSHOLD_TASK_RATE_HZ 100 // hz
 
-typedef struct {
-    bool isAltHoldActive;
-    float targetAltitudeCm;
-    float targetAltitudeAdjustRate;
-    float deadband;
-} altHoldState_t;
+void posHoldInit(void);
+void posHoldNewGpsData(void);
+void updatePosHold(timeUs_t currentTimeUs);
 
-void altHoldInit(void);
-void updateAltHoldState(timeUs_t currentTimeUs);
+bool posHoldFailure(void);
+bool allowPosHoldWithoutMag(void);
 
 #endif

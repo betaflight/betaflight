@@ -1143,10 +1143,18 @@ extern "C" {
     float pt1FilterGain(float, float) { return 0.5f; }
     float pt2FilterGain(float, float)  { return 0.1f; }
     float pt3FilterGain(float, float)  { return 0.1f; }
+
     void pt1FilterInit(pt1Filter_t *velocityDLpf, float) {
         UNUSED(velocityDLpf);
     }
     float pt1FilterApply(pt1Filter_t *velocityDLpf, float) {
+        UNUSED(velocityDLpf);
+        return 0.0f;
+    }
+    void pt2FilterInit(pt2Filter_t *velocityDLpf, float) {
+        UNUSED(velocityDLpf);
+    }
+    float pt2FilterApply(pt2Filter_t *velocityDLpf, float) {
         UNUSED(velocityDLpf);
         return 0.0f;
     }
@@ -1157,7 +1165,23 @@ extern "C" {
         UNUSED(velocityUpsampleLpf);
         return 0.0f;
     }
+
+    float sin_approx(float) {return 0.0f;}
+    float cos_approx(float) {return 1.0f;}
+    float atan2_approx(float, float) {return 0.0f;}
+
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
     bool crashFlipSuccessful(void) { return false; }
+    
+    void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
+    {
+       UNUSED(from);
+       UNUSED(to);
+       UNUSED(dist3d);
+       UNUSED(dist);
+       UNUSED(bearing);
+    }
+    bool canUseGPSHeading;
+    bool compassIsHealthy;
 }

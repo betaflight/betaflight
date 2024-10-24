@@ -23,11 +23,14 @@
 #include "build/debug.h"
 #include "common/maths.h"
 #include "config/config.h"
+
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
+
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
+
 #include "rx/rx.h"
 
 #include "alt_hold.h"
@@ -63,6 +66,7 @@ void altHoldReset(void)
 void altHoldInit(void)
 {
     altHoldState.isAltHoldActive = false;
+    altHoldState.deadband = altHoldConfig()->alt_hold_deadband / 100.0f;
     altHoldReset();
 }
 
@@ -105,9 +109,9 @@ void altHoldUpdateTargetAltitude(void)
 
     const float rcThrottle = rcCommand[THROTTLE];
 
-    const float lowThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
-    const float highThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
-    
+    const float lowThreshold = autopilotConfig()->hover_throttle - altHoldState.deadband * (autopilotConfig()->hover_throttle - PWM_RANGE_MIN);
+    const float highThreshold = autopilotConfig()->hover_throttle + altHoldState.deadband * (PWM_RANGE_MAX - autopilotConfig()->hover_throttle);
+
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {
         throttleAdjustmentFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
@@ -125,7 +129,7 @@ void altHoldUpdateTargetAltitude(void)
         // constant (set) deceleration target in the last 2m
         throttleAdjustmentFactor = -(0.9f + constrainf(getAltitudeCm() / 2000.0f, 0.1f, 9.0f));
     }
-    altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altholdConfig()->alt_hold_target_adjust_rate;
+    altHoldState.targetAltitudeAdjustRate = throttleAdjustmentFactor * altHoldConfig()->alt_hold_adjust_rate;
 
     // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
     altHoldState.targetAltitudeCm += altHoldState.targetAltitudeAdjustRate  * taskIntervalSeconds;
@@ -134,7 +138,7 @@ void altHoldUpdateTargetAltitude(void)
 void altHoldUpdate(void)
 {
     // check if the user has changed the target altitude using sticks
-    if (altholdConfig()->alt_hold_target_adjust_rate) {
+    if (altHoldConfig()->alt_hold_adjust_rate) {
         altHoldUpdateTargetAltitude();
     }
 

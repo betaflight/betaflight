@@ -21,29 +21,19 @@
 
 #include "platform.h"
 
-#include "flight/autopilot.h"
+#ifdef USE_POS_HOLD_MODE
+
+#include "flight/pos_hold.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "autopilot.h"
+#include "pos_hold.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
 
-PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
-    .landing_altitude_m = 4,
-    .hover_throttle = 1275,
-    .throttle_min = 1100,
-    .throttle_max = 1700,
-    .altitude_P = 15,
-    .altitude_I = 15,
-    .altitude_D = 15,
-    .altitude_F = 15,
-    .position_P = 30,
-    .position_I = 30,
-    .position_D = 30,
-    .position_A = 30,
-    .position_cutoff = 80,
-    .position_allow_yaw = false,     // for testing
-    .position_test_yaw_fix = false,  // for testing
+PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
+    .pos_hold_without_mag = false,   // position hold within this percentage stick deflection
+    .pos_hold_deadband = 5,          // deadband in percent of stick travel for roll and pitch. Must be non-zero, and exceeded, for target location to be changed with sticks
 );
+#endif

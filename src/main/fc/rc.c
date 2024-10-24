@@ -48,6 +48,8 @@
 #include "flight/pid_init.h"
 
 #include "pg/rx.h"
+#include "pg/pos_hold.h"
+#include "pg/autopilot.h"
 
 #include "rx/rx.h"
 
@@ -698,7 +700,7 @@ FAST_CODE void processRcCommand(void)
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
             float angleRate;
-            
+
 #ifdef USE_GPS_RESCUE
             if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
                 // If GPS Rescue is active then override the setpointRate used in the
@@ -714,10 +716,14 @@ FAST_CODE void processRcCommand(void)
                 float rcCommandf;
                 if (axis == FD_YAW) {
                     rcCommandf = rcCommand[axis] / rcCommandYawDivider;
+#ifdef USE_POS_HOLD_MODE
+                    if (FLIGHT_MODE(POS_HOLD_MODE) && !autopilotConfig()->position_allow_yaw) {
+                        rcCommandf = 0.0f;
+                    }
+#endif
                 } else {
                     rcCommandf = rcCommand[axis] / rcCommandDivider;
                 }
-
                 rcDeflection[axis] = rcCommandf;
                 const float rcCommandfAbs = fabsf(rcCommandf);
                 rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -752,11 +758,26 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     isRxDataNew = true;
 
     for (int axis = 0; axis < 3; axis++) {
+        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f); // -500 to 500
 
-        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
         if (axis == ROLL || axis == PITCH) {
-            if (tmp > rcControlsConfig()->deadband) {
-                tmp -= rcControlsConfig()->deadband;
+#ifdef USE_POS_HOLD_MODE
+            float tmpDeadband = rcControlsConfig()->deadband;
+            if (FLIGHT_MODE(POS_HOLD_MODE)) {
+                if (posHoldConfig()->pos_hold_deadband) {
+                    // if pos_hold_deadband is defined, ignore pitch & roll within deadband zone
+                    tmpDeadband = posHoldConfig()->pos_hold_deadband * 5.0f;
+                    // NB could attenuate RP responsiveness outside deadband here, with tmp * 0.8f or whatever
+                } else {
+                    // if pos_hold_deadband is zero, prevent user adjustment of pitch or roll
+                    tmp = 0;
+                }
+            }
+#else
+            const float tmpDeadband = rcControlsConfig()->deadband;
+#endif
+            if (tmp > tmpDeadband) {
+                tmp -= tmpDeadband;
             } else {
                 tmp = 0;
             }
@@ -812,7 +833,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
         rcCommandBuff.x = rcCommand[ROLL];
         rcCommandBuff.y = rcCommand[PITCH];
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommandBuff.z = rcCommand[YAW];
         } else {
             rcCommandBuff.z = 0;
@@ -820,7 +841,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.x;
         rcCommand[PITCH] = rcCommandBuff.y;
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommand[YAW] = rcCommandBuff.z;
         }
     }
@@ -839,7 +860,16 @@ bool isMotorsReversed(void)
 
 void initRcProcessing(void)
 {
+#ifdef USE_POS_HOLD_MODE
+        if (FLIGHT_MODE(POS_HOLD_MODE)) {
+            if (posHoldConfig()->pos_hold_deadband) {
+                rcCommandDivider = 500.0f - posHoldConfig()->pos_hold_deadband * 5.0f; // pos hold deadband in percent
+            }
+        }
+#else
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
+#endif
+
     rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
 
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
