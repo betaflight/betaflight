@@ -113,6 +113,7 @@ typedef enum {
     OWNER_SOFTSERIAL_RX,
     OWNER_LPUART_TX,             // TX must be just before RX
     OWNER_LPUART_RX,
+    OWNER_GYRO_CLKIN,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

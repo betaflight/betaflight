@@ -115,4 +115,5 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     [OWNER_SOFTSERIAL_RX] = "SOFTSERIAL_RX",
     [OWNER_LPUART_TX] = "LPUART_TX",
     [OWNER_LPUART_RX] = "LPUART_RX",
+    "GYRO_CLKIN",
 };
