@@ -33,6 +33,9 @@
 // compile-time error is generated if requested pin is not available (not set in TARGET_IO_PORTx)
 // ioTag_t and IO_t is supported, but ioTag_t is preferred
 
+// expand first defined pinid to ioTag_t (for example PA1, NONE)
+// see src/test/unit/io_unittest.cc for examples
+#define IO_TAG_FIRST(...) DEFIO_TAG_FIRST(__VA_ARGS__)
 // expand pinid to to ioTag_t
 #define IO_TAG(pinid) DEFIO_TAG(pinid)
 

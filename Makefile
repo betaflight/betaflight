@@ -226,6 +226,9 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)
 
+# boost/preprocessor
+INCLUDE_DIRS	+= ./lib/main/boost_1_81_0
+
 VPATH           := $(VPATH):$(TARGET_DIR)
 
 include $(MAKE_SCRIPT_DIR)/source.mk
