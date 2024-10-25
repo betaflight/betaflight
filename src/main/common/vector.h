@@ -50,6 +50,7 @@ typedef struct matrix33_s {
 bool vector2Equal(const vector2_t *a, const vector2_t *b);
 vector2_t *vector2Zero(vector2_t *v);
 vector2_t *vector2Add(vector2_t *result, const vector2_t *a, const vector2_t *b);
+vector2_t *vector2Sub(vector2_t *result, const vector2_t *a, const vector2_t *b);
 vector2_t *vector2Scale(vector2_t *result, const vector2_t *v, const float k);
 float vector2Dot(const vector2_t *a, const vector2_t *b);
 float vector2Cross(const vector2_t *a, const vector2_t *b);
@@ -60,6 +61,7 @@ vector2_t *vector2Normalize(vector2_t *result, const vector2_t *v);
 bool vector3Equal(const vector3_t *a, const vector3_t *b);
 vector3_t *vector3Zero(vector3_t *v);
 vector3_t *vector3Add(vector3_t *result, const vector3_t *a, const vector3_t *b);
+vector3_t *vector3Sub(vector3_t *result, const vector3_t *a, const vector3_t *b);
 vector3_t *vector3Scale(vector3_t *result, const vector3_t *v, const float k);
 float vector3Dot(const vector3_t *a, const vector3_t *b);
 vector3_t *vector3Cross(vector3_t *result, const vector3_t *a, const vector3_t *b);

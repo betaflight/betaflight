@@ -49,6 +49,14 @@ vector2_t *vector2Add(vector2_t *result, const vector2_t *a, const vector2_t *b)
     return result;
 }
 
+vector2_t *vector2Sub(vector2_t *result, const vector2_t *a, const vector2_t *b)
+{
+    result->x = a->x - b->x;
+    result->y = a->y - b->y;
+
+    return result;
+}
+
 vector2_t *vector2Scale(vector2_t *result, const vector2_t *v, const float k)
 {
     result->x = v->x * k;
@@ -107,6 +115,15 @@ vector3_t *vector3Add(vector3_t *result, const vector3_t *a, const vector3_t *b)
     result->x = a->x + b->x;
     result->y = a->y + b->y;
     result->z = a->z + b->z;
+
+    return result;
+}
+
+vector3_t *vector3Sub(vector3_t *result, const vector3_t *a, const vector3_t *b)
+{
+    result->x = a->x - b->x;
+    result->y = a->y - b->y;
+    result->z = a->z - b->z;
 
     return result;
 }
