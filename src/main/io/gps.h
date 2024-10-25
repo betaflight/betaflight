@@ -389,6 +389,7 @@ void onGpsNewData(void);
 void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
 void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing);
+void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist);
 
 void gpsSetFixState(bool state);
 float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue

@@ -2594,6 +2594,15 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
+void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist) {
+    if (pNSDist) {
+        *pNSDist = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
+    }
+    if (pEWDist) {
+        *pEWDist = (to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
+    }
+}
+
 void onGpsNewData(void)
 {
     if (!STATE(GPS_FIX)) {

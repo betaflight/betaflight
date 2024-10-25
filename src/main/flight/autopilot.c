@@ -39,9 +39,9 @@
 #define ALTITUDE_I_SCALE  0.003f
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.0008f
-#define POSITION_I_SCALE  0.0002f
-#define POSITION_D_SCALE  0.0015f
+#define POSITION_P_SCALE  0.001f
+#define POSITION_I_SCALE  0.0003f
+#define POSITION_D_SCALE  0.003f
 #define POSITION_A_SCALE  0.0008f
 
 static pidCoefficient_t altitudePidCoeffs;
@@ -54,38 +54,41 @@ typedef struct {
     float distanceCm;
     float previousDistanceCm;
     float sanityCheckDistance;
-    float previousVelocity;
     float initialHeadingDeg;
-    float iTermRoll;
-    float iTermPitch;
     bool isStarting;
     float peakInitialGroundspeed;
     float lpfCutoff;
     bool sticksActive;
-    float NSIntegral;
+    float previousVelocityRoll;
+    float previousVelocityPitch;
     float EWIntegral;
+    float NSIntegral;
+    float rollI;
+    float pitchI;
 } posHoldState;
 
 static posHoldState posHold = {
     .distanceCm = 0.0f,
     .previousDistanceCm = 0.0f,
     .sanityCheckDistance = 1000.0f,
-    .previousVelocity = 0.0f,
     .initialHeadingDeg = 0.0f,
-    .iTermRoll = 0.0f,
-    .iTermPitch = 0.0f,
     .isStarting = false,
     .peakInitialGroundspeed = 0.0f,
     .lpfCutoff = 1.0f,
     .sticksActive = false,
-    .NSIntegral = 0.0f,
+    .previousVelocityRoll = 0.0f,
+    .previousVelocityPitch = 0.0f,
     .EWIntegral = 0.0f,
+    .NSIntegral = 0.0f,
+    .rollI = 0.0f,
+    .pitchI = 0.0f,
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
+static gpsLocation_t previousLocation = {0, 0, 0};
 float autopilotAngle[ANGLE_INDEX_COUNT];
-static pt1Filter_t velocityPitchLpf;
 static pt1Filter_t velocityRollLpf;
+static pt1Filter_t velocityPitchLpf;
 static pt2Filter_t accelerationRollLpf;
 static pt2Filter_t accelerationPitchLpf;
 
@@ -159,7 +162,8 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
     posHold.distanceCm = 0.0f;
     posHold.previousDistanceCm = 0.0f;
     posHold.sanityCheckDistance = 1000.0f;
-    posHold.previousVelocity = 0.0f;
+    posHold.previousVelocityRoll = 0.0f;
+    posHold.previousVelocityPitch = 0.0f;
     posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
     const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f);
     // reset all lowpass filter accumulators to zero
@@ -173,12 +177,13 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
 void resetPositionControl(gpsLocation_t initialTargetLocation) { // set only at the start
     currentTargetLocation = initialTargetLocation;
     resetPositionControlParams();
-    posHold.iTermRoll = 0.0f;
-    posHold.iTermPitch = 0.0f;
     posHold.peakInitialGroundspeed = 0.0f;
     posHold.initialHeadingDeg = attitude.values.yaw * 0.1f;
-    posHold.NSIntegral = 0.0f;
     posHold.EWIntegral = 0.0f;
+    posHold.NSIntegral = 0.0f;
+    posHold.rollI = 0.0f;
+    posHold.pitchI = 0.0f;
+    previousLocation = gpsSol.llh;
 }
 
 void updateTargetLocation(gpsLocation_t newTargetLocation) {
@@ -211,10 +216,9 @@ bool positionControl(void) {
 
     // get distance and bearing from current location (gpsSol.llh) to target location
     GPS_distance_cm_bearing(&gpsSol.llh, &currentTargetLocation, false, &distanceCm, &bearing);
-
     posHold.distanceCm = (float)distanceCm;
-    float bearingDeg = bearing * 0.01f;
     float headingDeg = attitude.values.yaw * 0.1f;
+    float bearingDeg = bearing * 0.01f;
 
     // at the start, if the quad was moving, it will initially show increasing distance from start point
     // once it has 'stopped' the PIDs will push back towards home, and the distance away will decrease
@@ -245,6 +249,8 @@ bool positionControl(void) {
         }
     }
 
+    posHold.previousDistanceCm = posHold.distanceCm;
+
     float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
 
     // ** simple (too simple) sanity check **
@@ -264,118 +270,61 @@ bool positionControl(void) {
         normalisedErrorAngle -= 360.0f; // Range: -180 to 180
     }
 
-    // Calculate distance error proportions for pitch and roll
+    // Calculate distance proportions for pitch and roll
     const float errorAngleRadians = normalisedErrorAngle * RAD;
     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
 
-    // P
+    // ** P **
     const float rollP = rollProportion * posHold.distanceCm * positionPidCoeffs.Kp;
     const float pitchP = pitchProportion * posHold.distanceCm * positionPidCoeffs.Kp;
 
-    // derivative and acceleration
-    // note: here we just want no velocity, so use gps groundspeed
-    // adjust response angle based on drift angle compared to nose of quad
-    // ie yaw attitude (angle of quad nose) minus groundcourse (drift direction) both in earth frame
+    // ** D ** //
 
-    float errorGroundCourse = (attitude.values.yaw - gpsSol.groundCourse) * 0.1f;
-    float normGCE = fmodf(errorGroundCourse + 360.0f, 360.0f);
-    if (normGCE > 180.0f) {
-        normGCE -= 360.0f; // Range: -180 to 180
+    // get change in distance in NS and EW directions from gps.c
+    float deltaDistanceNS;
+    float deltaDistanceEW;
+    GPS_distances(&gpsSol.llh, &previousLocation, &deltaDistanceNS, &deltaDistanceEW);
+    previousLocation = gpsSol.llh;
+
+    const float velocityNS = deltaDistanceNS * gpsDataFreqHz;
+    const float velocityEW = deltaDistanceEW * gpsDataFreqHz;
+
+    // get sin and cos of current heading
+    float headingRads = headingDeg * RAD;
+    if (headingRads > M_PIf) {
+        headingRads -= 2 * M_PIf;
+    } else if (headingRads < -M_PIf) {
+        headingRads += 2 * M_PIf;
     }
-    const float normCGERadians = normGCE * RAD;
-    const float rollVelProp = sin_approx(normCGERadians); // +1 when drifting rightwards, -1 when drifting leftwards 
-    const float pitchVelProp = -cos_approx(normCGERadians); // +1 when drifting backwards, -1 when drifting forwards
+    const float sinHeading = sin_approx(headingRads);
+    const float cosHeading = cos_approx(headingRads);
 
-    float velocity = gpsSol.groundSpeed;
-    float acceleration = (velocity - posHold.previousVelocity) * gpsDataFreqHz; // positive when moving away
-    posHold.previousVelocity = velocity;
+     //rotate earth to quad frame, correcting the sign (hopefully)
+    float velocityRoll = -sinHeading * velocityNS + cosHeading * velocityEW;
+    float velocityPitch = cosHeading * velocityNS + sinHeading * velocityEW;
 
-    // include a target based D element. This is smoother and complements groundcourse measurements.
-    float velocityToTarget = (posHold.distanceCm - posHold.previousDistanceCm) * gpsDataFreqHz;
-    posHold.previousDistanceCm = posHold.distanceCm;
-
-    // roll
-    float velocityRoll = rollVelProp * velocity + velocityToTarget * rollProportion;
-    float accelerationRoll = rollVelProp * acceleration;
+    float accelerationRoll = (velocityRoll - posHold.previousVelocityRoll) * gpsDataFreqHz;
+    posHold.previousVelocityRoll = velocityRoll;
+    float accelerationPitch = (velocityPitch - posHold.previousVelocityPitch) * gpsDataFreqHz;
+    posHold.previousVelocityPitch = velocityPitch;
 
     // lowpass filters
     pt1FilterUpdateCutoff(&velocityRollLpf, pt1Gain);
     velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
     pt2FilterUpdateCutoff(&accelerationRollLpf, pt1Gain);
     accelerationRoll = pt2FilterApply(&accelerationRollLpf, accelerationRoll);
+
     float rollD = velocityRoll * positionPidCoeffs.Kd;
     float rollA = accelerationRoll * positionPidCoeffs.Kf;
 
-    // pitch
-    float velocityPitch = pitchVelProp * velocity + velocityToTarget * pitchProportion;
-    float accelerationPitch = pitchVelProp * acceleration;
-
-    // lowpass filters
     pt1FilterUpdateCutoff(&velocityPitchLpf, pt1Gain);
     velocityPitch = pt1FilterApply(&velocityPitchLpf, velocityPitch);
     pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain);
     accelerationPitch = pt2FilterApply(&accelerationPitchLpf, accelerationPitch);
+
     float pitchD = velocityPitch * positionPidCoeffs.Kd;
     float pitchA = accelerationPitch * positionPidCoeffs.Kf;
-
-    // ** test code to handle user yaw inputs ** //
-    if (autopilotConfig()->position_allow_yaw) {
-        // code that we know is effective for fixing user yaw inputs (none at present lol)
-        if (autopilotConfig()->position_test_yaw_fix) {
-
-            // iTerm
-            // Note: accumulated iTerm opposes wind, which is a constant earth-referenced vector
-            // Hence we accumulate earth referenced iTerm
-            // The sign of the iTerm input is determined in relation to the average error bearing angle
-            // Finally the abs value of the accumulated iTerm is proportioned to pitch and roll
-            // Based on the difference in angle between the nose of the quad and the current error bearing
-
-            if (!posHold.isStarting){
-                // only add to iTerm while not actively stopping
-
-                float bearingRadians = bearingDeg * RAD; // 0-360, so constrain to +/- π
-                if (bearingRadians > M_PIf) {
-                    bearingRadians -= 2 * M_PIf;
-                } else if (bearingRadians < -M_PIf) {
-                    bearingRadians += 2 * M_PIf;
-                }
-
-                const float error = posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
-                // NS means NorthSouth in earth frame
-                const float NSError = -cos_approx(bearingRadians) * error;
-                posHold.NSIntegral += NSError; // simple non-leaky integrator
-
-                const float EWError = sin_approx(bearingRadians) * error;
-                posHold.EWIntegral += EWError;
-
-                // averaged correction angle, radians from North, Earth frame of reference
-                float EFIntegralAngleRads = atan2_approx(posHold.NSIntegral, posHold.EWIntegral);
-
-                // heading of the quad in radians
-                float headingRadians = headingDeg * RAD;
-
-                // get the error angle between quad heading and iTerm vector
-                float headingErrorRads = headingRadians - EFIntegralAngleRads;
-                // ensure in range +/- π
-                while (headingErrorRads > M_PIf) {
-                    headingErrorRads -= 2 * M_PIf; // Wrap to the left
-                }
-                while (headingErrorRads < -M_PIf) {
-                    headingErrorRads += 2 * M_PIf; // Wrap to the right
-                }
-                // get correction factors for roll and pitch based on error angle
-                posHold.iTermRoll = -sin_approx(headingErrorRads) * fabsf(posHold.NSIntegral) + cos_approx(headingErrorRads) * fabsf(posHold.EWIntegral); // +1 when iTerm points left, -1 when iTerm points right 
-                posHold.iTermPitch = cos_approx(headingErrorRads) * fabsf(posHold.NSIntegral) + sin_approx(headingErrorRads) * fabsf(posHold.EWIntegral); // +1 when iTerm points nose forward, -1 when iTerm should pitch back
-                
-            } else {
-                // while moving sticks, slowly leak iTerm away, approx 3s time constant
-                const float leak = 1.0f - 0.25f * gpsDataIntervalS; // assumes gpsDataIntervalS not more than 1.0s
-                posHold.NSIntegral *= leak;
-                posHold.EWIntegral *= leak;
-            }
-        }
-    }
 
     // limit sum of D and A because otherwise too aggressive if entering at speed
     float rollDA = rollD + rollA;
@@ -386,10 +335,63 @@ bool positionControl(void) {
     rollDA = constrainf(rollDA, -maxDAAngle, maxDAAngle);
     pitchDA = constrainf(pitchDA, -maxDAAngle, maxDAAngle);
 
-    // add up pid factors
-//    const float pidSumRoll = rollP + posHold.iTermRoll + rollDA;
-    const float pidSumRoll = rollP + posHold.iTermRoll + rollDA;
-    const float pidSumPitch = pitchP + posHold.iTermPitch + pitchDA;
+    // iTerm
+    // Note: accumulated iTerm opposes wind, which is a constant earth-referenced vector
+    // Hence we accumulate earth referenced iTerm
+    // The sign of the iTerm input is determined in relation to the average error bearing angle
+    // Finally the abs value of the accumulated iTerm is proportioned to pitch and roll
+    // Based on the difference in angle between the nose of the quad and the current error bearing
+
+    if (!posHold.isStarting){
+        // only add to iTerm while not actively stopping
+
+        float bearingRadians = bearingDeg * RAD; // 0-360, so constrain to +/- π
+        if (bearingRadians > M_PIf) {
+            bearingRadians -= 2 * M_PIf;
+        } else if (bearingRadians < -M_PIf) {
+            bearingRadians += 2 * M_PIf;
+        }
+
+        const float error = posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
+        // NS means NorthSouth in earth frame
+        const float NSError = -cos_approx(bearingRadians) * error;
+        posHold.NSIntegral += NSError; // simple non-leaky integrator
+
+        const float EWError = sin_approx(bearingRadians) * error;
+        posHold.EWIntegral += EWError;
+
+        // averaged iTerm correction vector, radians from North, Earth frame of reference
+        float EFIntegralAngleRads = atan2_approx(posHold.NSIntegral, posHold.EWIntegral);
+
+        // heading of the quad in radians
+        float headingRadians = headingDeg * RAD;
+
+        // get the error angle between quad heading and iTerm vector
+        float headingErrorRads = headingRadians - EFIntegralAngleRads;
+        // ensure in range +/- π
+        while (headingErrorRads > M_PIf) {
+            headingErrorRads -= 2 * M_PIf; // Wrap to the left
+        }
+        while (headingErrorRads < -M_PIf) {
+            headingErrorRads += 2 * M_PIf; // Wrap to the right
+        }
+        // get correction factors for roll and pitch, based on quad to average iTerm vector angle
+        const float sinHeadingError = sin_approx(headingErrorRads);
+        const float cosHeadingError = cos_approx(headingErrorRads);
+
+        // rotate NS and EW iTerm vectors to quad frame of reference
+        posHold.rollI = -sinHeadingError * fabsf(posHold.NSIntegral) + cosHeadingError * fabsf(posHold.EWIntegral); // +1 when iTerm points left, -1 when iTerm points right 
+        posHold.pitchI = cosHeadingError * fabsf(posHold.NSIntegral) + sinHeadingError * fabsf(posHold.EWIntegral); // +1 when iTerm points nose forward, -1 when iTerm should pitch back
+
+    } else {
+        // while moving sticks, slowly leak iTerm away, approx 3s time constant
+        const float leak = 1.0f - 0.25f * gpsDataIntervalS; // assumes gpsDataIntervalS not more than 1.0s
+        posHold.NSIntegral *= leak;
+        posHold.EWIntegral *= leak;
+    }
+
+    const float pidSumRoll = rollP + posHold.rollI + rollDA;
+    const float pidSumPitch = pitchP + posHold.pitchI + pitchDA;
 
     // todo: upsample filtering
     // pidSum will have steps at GPS rate, and may require an upsampling filter for smoothness.
@@ -410,21 +412,20 @@ bool positionControl(void) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * rollProportion));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumRoll * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityToTarget * rollProportion));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityEW * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.iTermRoll * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollDA * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.EWIntegral * 10));
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));;
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * pitchProportion));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumPitch * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityToTarget * pitchProportion));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityNS *10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.iTermPitch * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchVelProp * velocity));
-//        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.NSIntegral * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchDA * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.NSIntegral * 10));
     }
     return true;
 }
