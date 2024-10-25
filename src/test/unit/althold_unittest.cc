@@ -117,6 +117,14 @@ void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to,
        UNUSED(bearing);
     }
 
+void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist)
+    {
+       UNUSED(from);
+       UNUSED(to);
+       UNUSED(pNSDist);
+       UNUSED(pEWDist);
+    }
+
     gpsSolutionData_t gpsSol;
     bool canUseGPSHeading;
     bool compassIsHealthy;

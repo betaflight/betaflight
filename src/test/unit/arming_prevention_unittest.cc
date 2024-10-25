@@ -1182,6 +1182,14 @@ extern "C" {
        UNUSED(dist);
        UNUSED(bearing);
     }
+    void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist)
+    {
+       UNUSED(from);
+       UNUSED(to);
+       UNUSED(pNSDist);
+       UNUSED(pEWDist);
+    }
+
     bool canUseGPSHeading;
     bool compassIsHealthy;
 }
