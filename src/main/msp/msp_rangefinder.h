@@ -20,20 +20,10 @@
 
 #pragma once
 
-#include "drivers/rangefinder/rangefinder.h"
-// the following values are from the MTF-01P Lidar
-// TODO: the parameters should be configrable to support other MSP Lidars
-#define RANGEFINDER_VIRTUAL_MAX_RANGE_CM    1200
-#define RANGEFINDER_VIRTUAL_TASK_PERIOD_MS  100
+typedef struct __attribute__((packed)) {
+    uint8_t quality;    // [0;255]
+    int32_t distanceMm; // Negative value for out of range
+} mspSensorRangefinderDataMessage_t;
 
-// this value is taken from INAV, I tried to use 15 (according the dataset of MTTF-01P) but no readings were received 
-#define RANGEFINDER_VIRTUAL_DETECTION_CONE_DECIDEGREES  900 
-
-typedef struct virtualRangefinderVTable_s {
-    bool (*detect)(void);
-    void (*init)(void);
-    void (*update)(void);
-    int32_t (*read)(void);
-} virtualRangefinderVTable_t;
-
-bool virtualRangefinderDetect(rangefinderDev_t * dev, const virtualRangefinderVTable_t * vtable);
+void setRangefinderMSP(uint8_t rangefinder_id);
+void mspRangefinderReceiveNewData(uint8_t * bufferPtr);

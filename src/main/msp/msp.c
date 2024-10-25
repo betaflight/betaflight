@@ -106,7 +106,6 @@
 #include "io/vtx_control.h"
 #include "io/vtx.h"
 #include "io/vtx_msp.h"
-#include "io/rangefinder.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_build_info.h"
@@ -114,6 +113,7 @@
 #include "msp/msp_protocol_v2_betaflight.h"
 #include "msp/msp_protocol_v2_common.h"
 #include "msp/msp_serial.h"
+#include "msp/msp_rangefinder.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
