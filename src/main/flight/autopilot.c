@@ -282,12 +282,12 @@ bool positionControl(void) {
     // ** D ** //
 
     // get change in distance in NS and EW directions from gps.c
-    float deltaDistanceNS;
+    float deltaDistanceNS; // minimum distance is 1.11cm
     float deltaDistanceEW;
     GPS_distances(&gpsSol.llh, &previousLocation, &deltaDistanceNS, &deltaDistanceEW);
     previousLocation = gpsSol.llh;
 
-    const float velocityNS = deltaDistanceNS * gpsDataFreqHz;
+    const float velocityNS = deltaDistanceNS * gpsDataFreqHz; // cm/s, minimum step 11.1 cm/s
     const float velocityEW = deltaDistanceEW * gpsDataFreqHz;
 
     // get sin and cos of current heading
@@ -412,7 +412,7 @@ bool positionControl(void) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * rollProportion));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumRoll * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityEW * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityEW)); // cm/s
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollDA * 10));
@@ -421,11 +421,11 @@ bool positionControl(void) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));;
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * pitchProportion));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumPitch * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityNS *10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityNS * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchDA * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.NSIntegral * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.NSIntegral)); // cm/s
     }
     return true;
 }
