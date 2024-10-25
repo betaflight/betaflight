@@ -73,6 +73,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGE
 
 PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
     .rangefinder_hardware = RANGEFINDER_NONE,
+    .rangefinder_trust = 0,
 );
 
 #ifdef USE_RANGEFINDER_HCSR04
