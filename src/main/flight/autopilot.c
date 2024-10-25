@@ -39,9 +39,9 @@
 #define ALTITUDE_I_SCALE  0.003f
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.001f
-#define POSITION_I_SCALE  0.0004f
-#define POSITION_D_SCALE  0.003f
+#define POSITION_P_SCALE  0.0008f
+#define POSITION_I_SCALE  0.0002f
+#define POSITION_D_SCALE  0.0015f
 #define POSITION_A_SCALE  0.0008f
 
 static pidCoefficient_t altitudePidCoeffs;
@@ -298,6 +298,7 @@ bool positionControl(void) {
     // roll
     float velocityRoll = rollVelProp * velocity + velocityToTarget * rollProportion;
     float accelerationRoll = rollVelProp * acceleration;
+
     // lowpass filters
     pt1FilterUpdateCutoff(&velocityRollLpf, pt1Gain);
     velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
@@ -331,7 +332,7 @@ bool positionControl(void) {
             // Based on the difference in angle between the nose of the quad and the current error bearing
 
             if (!posHold.isStarting){
-                // only integrate while not actively stopping
+                // only add to iTerm while not actively stopping
 
                 float bearingRadians = bearingDeg * RAD; // 0-360, so constrain to +/- π
                 if (bearingRadians > M_PIf) {
@@ -367,11 +368,11 @@ bool positionControl(void) {
                 posHold.iTermRoll = -sin_approx(headingErrorRads) * fabsf(posHold.NSIntegral) + cos_approx(headingErrorRads) * fabsf(posHold.EWIntegral); // +1 when iTerm points left, -1 when iTerm points right 
                 posHold.iTermPitch = cos_approx(headingErrorRads) * fabsf(posHold.NSIntegral) + sin_approx(headingErrorRads) * fabsf(posHold.EWIntegral); // +1 when iTerm points nose forward, -1 when iTerm should pitch back
                 
-                DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(EWError * 1000));       // positive means North of target
-                DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(posHold.EWIntegral * 10));
-                DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(EFIntegralAngleRads * 100));    // smoothed integral bearing rads
-                DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(headingErrorRads * 100));  // after wrapping
-                DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(headingRadians * 100));
+            } else {
+                // while moving sticks, slowly leak iTerm away, approx 3s time constant
+                const float leak = 1.0f - 0.25f * gpsDataIntervalS; // assumes gpsDataIntervalS not more than 1.0s
+                posHold.NSIntegral *= leak;
+                posHold.EWIntegral *= leak;
             }
         }
     }
@@ -405,20 +406,25 @@ bool positionControl(void) {
     // autopilotAngle[] is added to angle setpoint in pid.c, in degrees
     // stick angle setpoint forced to zero within the same deadband via rc.c
 
-    
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(normalisedErrorAngle));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * rollProportion));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumRoll * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityToTarget * rollProportion));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.iTermRoll * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollD * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(rollA * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollDA * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.EWIntegral * 10));
     } else {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.iTermRoll * 10));
-
-
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));;
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * pitchProportion));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumPitch * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityToTarget * pitchProportion));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.iTermPitch * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchD * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pitchVelProp * velocity));
+//        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.NSIntegral * 10));
     }
     return true;
 }
