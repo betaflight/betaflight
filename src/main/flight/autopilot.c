@@ -51,10 +51,11 @@ static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
 typedef struct {
+    float gpsDataIntervalS;
+    float gpsDataFreqHz;
     float distanceCm;
     float previousDistanceCm;
     float sanityCheckDistance;
-    float initialHeadingDeg;
     bool isStarting;
     float peakInitialGroundspeed;
     float lpfCutoff;
@@ -66,10 +67,11 @@ typedef struct {
 } posHoldState;
 
 static posHoldState posHold = {
+    .gpsDataIntervalS = 0.1f,
+    .gpsDataFreqHz = 10.0f,
     .distanceCm = 0.0f,
     .previousDistanceCm = 0.0f,
     .sanityCheckDistance = 1000.0f,
-    .initialHeadingDeg = 0.0f,
     .isStarting = false,
     .peakInitialGroundspeed = 0.0f,
     .lpfCutoff = 1.0f,
@@ -160,7 +162,7 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
     posHold.sanityCheckDistance = 1000.0f;
     posHold.previousVelocityEW = 0.0f;
     posHold.previousVelocityNS = 0.0f;
-    posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
+    posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.003f; // slow rise at start
     const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f);
     // reset all lowpass filter accumulators to zero
     pt1FilterInit(&velocityNSLpf, pt1Gain);
@@ -174,7 +176,6 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) { // set only at 
     currentTargetLocation = initialTargetLocation;
     resetPositionControlParams();
     posHold.peakInitialGroundspeed = 0.0f;
-    posHold.initialHeadingDeg = attitude.values.yaw * 0.1f;
     posHold.integralEW = 0.0f;
     posHold.integralNS = 0.0f;
     previousLocation = gpsSol.llh;
@@ -187,67 +188,67 @@ void updateTargetLocation(gpsLocation_t newTargetLocation) {
 
 bool positionControl(void) {
 
-    // exit if we don't have suitable data
+    // exit if we don't have a GPS 3D fix
     if (!STATE(GPS_FIX)) {
         return false; // cannot proceed without a GPS location
     }
-
+    // and if no valid heading from GPS, or no mag
     if (!canUseGPSHeading
 #ifdef USE_MAG
-        && !compassIsHealthy() // if no heading info, ie none from Mag *or* GPS-derived, can't continue
+        && !compassIsHealthy()
 #endif
         ) {
         return false;
-        // If compass is healthy, we must have a Mag, and therefore are OK, even with no GPS Heading
-        // If user allows posHold without a Mag, the IMU must be able to get heading from the GPS
     }
 
-    // collect initial data values - gpsSol.llh = current gps location
-    uint32_t distanceCm = 0;
-    int32_t bearing = 0; // degrees * 100
-    const float gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
-    const float gpsDataFreqHz = 1.0f / gpsDataIntervalS;
+    posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
+    posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
+    const float twoPi = 2 * M_PIf;
 
     // get distance and bearing from current location (gpsSol.llh) to target location
+    uint32_t distanceCm = 0;
+    int32_t bearing = 0; // degrees * 100
     GPS_distance_cm_bearing(&gpsSol.llh, &currentTargetLocation, false, &distanceCm, &bearing);
     posHold.distanceCm = (float)distanceCm;
     float headingDeg = attitude.values.yaw * 0.1f;
     float bearingDeg = bearing * 0.01f;
 
-    // at the start, if the quad was moving, it will initially show increasing distance from start point
-    // once it has 'stopped' the PIDs will push back towards home, and the distance away will decrease
-    // it looks a lot better if we reset the target point to the point that we 'pull up' at
-    // otherwise there is a big distance to pull back if we start pos hold while carrying some speed
+    // ** handle startup **
+    
+    // at the start, if the quad was moving, or randomly, distance from the start point will increase
+    // check for the distance increase to 'stop', then reset the target point
+    // this looks a lot better than a huge rebound
+    // D and A are primarily responsible for the immediate 'stopping' behaviour
+    // so that the stop is not too harsh, these are smoothed more than normal right at the start
     if (posHold.isStarting) {
-        // first time, or after sticks were centered
+        // very first time, or after the sticks were centered and the pilot flew around a bit
         posHold.peakInitialGroundspeed = fmaxf(posHold.peakInitialGroundspeed, gpsSol.groundSpeed);
-        // watch for velocity to fall by half
+        // at first, give the filter a long time constant to soften the harshness of the stop
         if (gpsSol.groundSpeed > 0.5f * posHold.peakInitialGroundspeed) {
-            // to avoid sudden D and A changes, filter hard
-            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.003f;
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.003f; // 3x slower than normal
         } else {
-            // almost slowed down, get D and A to follow raw signal more closely
+            // when close to stopping, make the time constant shorter than normal
+            // so that D and A will quickly fade away as it comes to a stop
             posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.03f;
         }
+        // allow a larder sanity check distance if at higher speed when coming to a stop
+        // because the risk of overshoot is greater at higher speed
         posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
-        // watch for quad to slow down, and start moving away
+        // when the quad stops, the start period is over
         if (posHold.distanceCm < posHold.previousDistanceCm) {
-            // now the craft has 'stopped', reset the location, filter normally
+            // reset the target location to the stop point
             currentTargetLocation = gpsSol.llh;
-            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
-            // reset all values but not iTerm
+            posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f; // use normal filter values
             resetPositionControlParams();
-            posHold.initialHeadingDeg = headingDeg; // reset to current heading
             posHold.peakInitialGroundspeed = 0.0f;
-            posHold.isStarting = false; // final target is set, no more messing around
+            posHold.isStarting = false;
         }
     }
-
     posHold.previousDistanceCm = posHold.distanceCm;
+    float pt1Gain = pt1FilterGain(posHold.lpfCutoff, posHold.gpsDataIntervalS);
 
-    float pt1Gain = pt1FilterGain(posHold.lpfCutoff, gpsDataIntervalS);
+    // ** Sanity check **
 
-    // ** simple (too simple) sanity check **
     // primarily to detect flyaway from no Mag or badly oriented Mag
     // but must accept some overshoot at the start, especially if entering at high speed
     if (posHold.distanceCm > posHold.sanityCheckDistance) {
@@ -257,54 +258,62 @@ bool positionControl(void) {
         // if entering poshold at speed, it may overshoot this value and falsely fail, if so need something more complex
     }
 
-//     // calculate error angle and normalise range
-//     float errorAngle = (headingDeg - bearingDeg);
-//     float normalisedErrorAngle = fmodf(errorAngle + 360.0f, 360.0f);
-//     if (normalisedErrorAngle > 180.0f) {
-//         normalisedErrorAngle -= 360.0f; // Range: -180 to 180
-//     }
-// 
-//     // Calculate distance proportions for pitch and roll
-//     const float errorAngleRadians = normalisedErrorAngle * RAD;
-//     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
-//     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
+    // ** PIDs **
 
+    // separate PID controllers for latitude (NorthSouth or ns) and longitude (EastWest or ew)
+    // divide the distance vector into ns and ew parts depending on the bearing to the target point
     float bearingRadians = bearingDeg * RAD; // 0-360, so constrain to +/- π
     if (bearingRadians > M_PIf) {
-        bearingRadians -= 2 * M_PIf;
+        bearingRadians -= twoPi;
     } else if (bearingRadians < -M_PIf) {
-        bearingRadians += 2 * M_PIf;
+        bearingRadians += twoPi;
     }
 
     const float nsDistance = -cos_approx(bearingRadians) * posHold.distanceCm;
-    // when South of target, bearing is North, -cos is negative, so nsDistance is negative when South of target
+    // Positive when North of the target, negative when when South of target
     const float ewDistance = sin_approx(bearingRadians) * posHold.distanceCm;
-    // when East of target, bearing to home is West, so ewDistance is negative when East
+    // Negative when East, and positive when West of the target
 
     // ** P **
-    // assign to earth vectors using bearing to target
-    // negative P means to pitch back if Nose is North
+
     const float nsP = -nsDistance * positionPidCoeffs.Kp;
     const float ewP = ewDistance * positionPidCoeffs.Kp;
 
+    // ** I **
+
+    if (!posHold.isStarting){
+        // only accumulate iTerm after completing the start phase
+        // perhaps need a timeout on the start phase ?
+        posHold.integralNS -= nsDistance * posHold.gpsDataIntervalS;
+        posHold.integralEW += ewDistance * posHold.gpsDataIntervalS;
+    } else {
+        // while moving sticks, slowly leak iTerm away, approx 2s time constant
+        const float leak = 1.0f - 0.4f * posHold.gpsDataIntervalS; // gpsDataIntervalS is not more than 1.0s
+        posHold.integralNS *= leak;
+        posHold.integralEW *= leak;
+    }
+
+    const float nsI = posHold.integralNS * positionPidCoeffs.Ki;
+    const float ewI = posHold.integralEW * positionPidCoeffs.Ki;
+
     // ** D ** //
 
-    // get change in distance in NS and EW directions from gps.c
-    float deltaDistanceNS; // minimum distance is 1.11cm
+    // get change in distance in NS and EW directions from gps.c using the `GPS_distances` function
+    // this gives cleaner velocity data than the module supplied GPS Speed and Heading information
+    float deltaDistanceNS; // step size is 1.11cm
     float deltaDistanceEW;
     GPS_distances(&gpsSol.llh, &previousLocation, &deltaDistanceNS, &deltaDistanceEW);
     previousLocation = gpsSol.llh;
 
-    // raw velocity and acceleration
-    const float velocityNS = deltaDistanceNS * gpsDataFreqHz; // cm/s, minimum step 11.1 cm/s
-    const float velocityEW = deltaDistanceEW * gpsDataFreqHz;
+    const float velocityNS = deltaDistanceNS * posHold.gpsDataFreqHz; // cm/s, minimum step 11.1 cm/s
+    const float velocityEW = deltaDistanceEW * posHold.gpsDataFreqHz;
 
-    float accelerationNS = (velocityNS - posHold.previousVelocityNS) * gpsDataFreqHz;
+    float accelerationNS = (velocityNS - posHold.previousVelocityNS) * posHold.gpsDataFreqHz;
     posHold.previousVelocityNS = velocityNS;
-    float accelerationEW = (velocityEW - posHold.previousVelocityEW) * gpsDataFreqHz;
+    float accelerationEW = (velocityEW - posHold.previousVelocityEW) * posHold.gpsDataFreqHz;
     posHold.previousVelocityEW = velocityEW;
 
-    // scale and filter
+    // scale and filter - filter cutoffs vary during the startup phase
     float nsD = velocityNS * positionPidCoeffs.Kd;
     pt1FilterUpdateCutoff(&velocityNSLpf, pt1Gain);
     nsD = pt1FilterApply(&velocityNSLpf, nsD);
@@ -321,72 +330,49 @@ bool positionControl(void) {
     pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain);
     ewA = pt2FilterApply(&accelerationPitchLpf, ewA);
 
-    // limit sum of D and A because otherwise too aggressive if entering at speed
+    // limit sum of D and A because otherwise can be too aggressive when starting at speed
     float nsDA = nsD + nsA;
     float ewDA = ewD + ewA;
-    const float maxDAAngle = 35.0f; // degrees; arbitrary limit.  20 is a bit too low, allows a lot of overshoot
-    // to get an angle more than 35 degrees will require P and I
+    const float maxDAAngle = 35.0f; // limit in degrees; arbitrary.  20 is a bit too low, allows a lot of overshoot
+    // an angle of more than 35 degrees is achieved as P and I grow
     // ** todo = should this be half of the user-configurable angle_limit?  Or fixed?
     nsDA = constrainf(nsDA, -maxDAAngle, maxDAAngle);
     ewDA = constrainf(ewDA, -maxDAAngle, maxDAAngle);
 
-    // iTerm
-    // Note: iTerm mostly opposes wind, an earth-referenced vector
-
-    if (!posHold.isStarting){
-        // only add to iTerm while not actively stopping
-        // accumulate negatively if North to pitch back if quad points North
-        posHold.integralNS -= nsDistance * gpsDataIntervalS;
-        posHold.integralEW += ewDistance * gpsDataIntervalS;
-
-    } else {
-        // while moving sticks, slowly leak iTerm away, approx 3s time constant
-        const float leak = 1.0f - 0.25f * gpsDataIntervalS; // assumes gpsDataIntervalS not more than 1.0s
-        posHold.integralNS *= leak;
-        posHold.integralEW *= leak;
-    }
-
-    const float nsI = posHold.integralNS * positionPidCoeffs.Ki;
-    const float ewI = posHold.integralEW * positionPidCoeffs.Ki;
+    // ** PID Sum **
 
     float nsPidSum = nsP + nsI + nsDA;
     float ewPidSum = ewP + ewI + ewDA;
 
-    // get sin and cos of current heading
+    // ** Rotate pid Sum to quad frame of reference, into pitch and roll **
     float headingRads = headingDeg * RAD;
     if (headingRads > M_PIf) {
-        headingRads -= 2 * M_PIf;
+        headingRads -= twoPi;
     } else if (headingRads < -M_PIf) {
-        headingRads += 2 * M_PIf;
+        headingRads += twoPi;
     }
-     //rotate earth to quad frame, correcting the sign (hopefully)
     const float sinHeading = sin_approx(headingRads);
     const float cosHeading = cos_approx(headingRads);
-
     float pidSumRoll = -sinHeading * nsPidSum + cosHeading * ewPidSum;
     float pidSumPitch = cosHeading * nsPidSum + sinHeading * ewPidSum;
 
-    // todo: upsample filtering
-    // pidSum will have steps at GPS rate, and may require an upsampling filter for smoothness.
-    // either at 100Hz by returning these values to pos_hold.c and upsampling to 100hz there,
-    // or in pid.c, when angle rate is calculated
-    // if done in pid.c, the same upsampler could be used for GPS and PosHold.
+    // todo: fix the upsample filtering in pid.c
+    // pidSum steps at GPS rate, and needs to change the pid.c upsampling filter for smoothness.
 
-    // if a deadband is set, and sticks are outside deadband, allow pilot control, otherwise hold position
+    // ** Final output to pid.c Angle Mode **
+
+    // if a Position Hold deadband is set, and sticks are outside deadband, allow pilot control in angle mode
     autopilotAngle[AI_ROLL] = posHold.sticksActive ? 0.0f : pidSumRoll;
-    autopilotAngle[AI_PITCH] = posHold.sticksActive ? 0.0f : pidSumPitch; // positive pitches forward
+    autopilotAngle[AI_PITCH] = posHold.sticksActive ? 0.0f : pidSumPitch; 
 
-    // note:
-    // if FLIGHT_MODE(POS_HOLD_MODE):
-    // autopilotAngle[] is added to angle setpoint in pid.c, in degrees
-    // stick angle setpoint forced to zero within the same deadband via rc.c
+    // Debugs... distances in cm, angles in degrees * 10, velocities cm/2
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(ewDistance));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(ewPidSum * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(pidSumRoll * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(ewP * 10)); // degrees*10
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(ewP * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(ewI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(ewDA * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.integralEW * 10));
@@ -398,7 +384,7 @@ bool positionControl(void) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(nsP * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(nsI * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(nsDA * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.integralNS)); // cm/s
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.integralNS));
     }
     return true;
 }
