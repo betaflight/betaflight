@@ -39,10 +39,10 @@
 #define ALTITUDE_I_SCALE  0.003f
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.0015f
-#define POSITION_I_SCALE  0.0002f
-#define POSITION_D_SCALE  0.004f
-#define POSITION_A_SCALE  0.0008f
+#define POSITION_P_SCALE  0.001f
+#define POSITION_I_SCALE  0.0005f
+#define POSITION_D_SCALE  0.002f
+#define POSITION_A_SCALE  0.002f
 
 static pidCoefficient_t altitudePidCoeffs;
 static pidCoefficient_t positionPidCoeffs;
@@ -130,9 +130,9 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     const float hoverOffset = autopilotConfig()->hover_throttle - PWM_RANGE_MIN;
 
     float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
-    const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
-    // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
-    // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
+    const float tiltMultiplier = 1.0f / fmaxf(getCosTiltAngle(), 0.5f);
+    // 1 = flat, 1.3 at 40 degrees, 1.56 at 50 deg, max 2.0 at 60 degrees or higher
+    // note: the default limit of Angle Mode is 60 degrees
     throttleOffset *= tiltMultiplier;
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
