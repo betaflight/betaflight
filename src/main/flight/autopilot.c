@@ -41,7 +41,7 @@
 #define ALTITUDE_F_SCALE  0.01f
 #define POSITION_P_SCALE  0.0015f
 #define POSITION_I_SCALE  0.0002f
-#define POSITION_D_SCALE  0.005f
+#define POSITION_D_SCALE  0.004f
 #define POSITION_A_SCALE  0.0008f
 
 static pidCoefficient_t altitudePidCoeffs;
@@ -59,12 +59,10 @@ typedef struct {
     float peakInitialGroundspeed;
     float lpfCutoff;
     bool sticksActive;
-    float previousVelocityRoll;
-    float previousVelocityPitch;
-    float EWIntegral;
-    float NSIntegral;
-    float rollI;
-    float pitchI;
+    float previousVelocityEW;
+    float previousVelocityNS;
+    float integralEW;
+    float integralNS;
 } posHoldState;
 
 static posHoldState posHold = {
@@ -76,19 +74,17 @@ static posHoldState posHold = {
     .peakInitialGroundspeed = 0.0f,
     .lpfCutoff = 1.0f,
     .sticksActive = false,
-    .previousVelocityRoll = 0.0f,
-    .previousVelocityPitch = 0.0f,
-    .EWIntegral = 0.0f,
-    .NSIntegral = 0.0f,
-    .rollI = 0.0f,
-    .pitchI = 0.0f,
+    .previousVelocityEW = 0.0f,
+    .previousVelocityNS = 0.0f,
+    .integralEW = 0.0f,
+    .integralNS = 0.0f,
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
 static gpsLocation_t previousLocation = {0, 0, 0};
 float autopilotAngle[ANGLE_INDEX_COUNT];
-static pt1Filter_t velocityRollLpf;
-static pt1Filter_t velocityPitchLpf;
+static pt1Filter_t velocityNSLpf;
+static pt1Filter_t velocityEWLpf;
 static pt2Filter_t accelerationRollLpf;
 static pt2Filter_t accelerationPitchLpf;
 
@@ -104,8 +100,8 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Kf = config->position_A * POSITION_A_SCALE; // Kf used for acceleration
     posHold.lpfCutoff = config->position_cutoff * 0.01f;
     const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f); // assume 10Hz GPS connection at start
-    pt1FilterInit(&velocityRollLpf, pt1Gain);
-    pt1FilterInit(&velocityPitchLpf, pt1Gain);
+    pt1FilterInit(&velocityNSLpf, pt1Gain);
+    pt1FilterInit(&velocityEWLpf, pt1Gain);
     pt2FilterInit(&accelerationRollLpf, pt1Gain);
     pt2FilterInit(&accelerationPitchLpf, pt1Gain);
 }
@@ -162,13 +158,13 @@ void resetPositionControlParams(void) { // at the start, and while sticks are mo
     posHold.distanceCm = 0.0f;
     posHold.previousDistanceCm = 0.0f;
     posHold.sanityCheckDistance = 1000.0f;
-    posHold.previousVelocityRoll = 0.0f;
-    posHold.previousVelocityPitch = 0.0f;
+    posHold.previousVelocityEW = 0.0f;
+    posHold.previousVelocityNS = 0.0f;
     posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f;
     const float pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f);
     // reset all lowpass filter accumulators to zero
-    pt1FilterInit(&velocityRollLpf, pt1Gain);
-    pt1FilterInit(&velocityPitchLpf, pt1Gain);
+    pt1FilterInit(&velocityNSLpf, pt1Gain);
+    pt1FilterInit(&velocityEWLpf, pt1Gain);
     pt2FilterInit(&accelerationRollLpf, pt1Gain);
     pt2FilterInit(&accelerationPitchLpf, pt1Gain);
     posHold.isStarting = true;
@@ -179,10 +175,8 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) { // set only at 
     resetPositionControlParams();
     posHold.peakInitialGroundspeed = 0.0f;
     posHold.initialHeadingDeg = attitude.values.yaw * 0.1f;
-    posHold.EWIntegral = 0.0f;
-    posHold.NSIntegral = 0.0f;
-    posHold.rollI = 0.0f;
-    posHold.pitchI = 0.0f;
+    posHold.integralEW = 0.0f;
+    posHold.integralNS = 0.0f;
     previousLocation = gpsSol.llh;
 }
 
@@ -263,21 +257,35 @@ bool positionControl(void) {
         // if entering poshold at speed, it may overshoot this value and falsely fail, if so need something more complex
     }
 
-    // calculate error angle and normalise range
-    float errorAngle = (headingDeg - bearingDeg);
-    float normalisedErrorAngle = fmodf(errorAngle + 360.0f, 360.0f);
-    if (normalisedErrorAngle > 180.0f) {
-        normalisedErrorAngle -= 360.0f; // Range: -180 to 180
+//     // calculate error angle and normalise range
+//     float errorAngle = (headingDeg - bearingDeg);
+//     float normalisedErrorAngle = fmodf(errorAngle + 360.0f, 360.0f);
+//     if (normalisedErrorAngle > 180.0f) {
+//         normalisedErrorAngle -= 360.0f; // Range: -180 to 180
+//     }
+// 
+//     // Calculate distance proportions for pitch and roll
+//     const float errorAngleRadians = normalisedErrorAngle * RAD;
+//     const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
+//     const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
+
+    float bearingRadians = bearingDeg * RAD; // 0-360, so constrain to +/- π
+    if (bearingRadians > M_PIf) {
+        bearingRadians -= 2 * M_PIf;
+    } else if (bearingRadians < -M_PIf) {
+        bearingRadians += 2 * M_PIf;
     }
 
-    // Calculate distance proportions for pitch and roll
-    const float errorAngleRadians = normalisedErrorAngle * RAD;
-    const float rollProportion = -sin_approx(errorAngleRadians); // + 1 when target is left, -1 when to right, of the craft
-    const float pitchProportion = cos_approx(errorAngleRadians); // + 1 when target is ahead, -1 when behind, the craft
+    const float nsDistance = -cos_approx(bearingRadians) * posHold.distanceCm;
+    // when South of target, bearing is North, -cos is negative, so nsDistance is negative when South of target
+    const float ewDistance = sin_approx(bearingRadians) * posHold.distanceCm;
+    // when East of target, bearing to home is West, so ewDistance is negative when East
 
     // ** P **
-    const float rollP = rollProportion * posHold.distanceCm * positionPidCoeffs.Kp;
-    const float pitchP = pitchProportion * posHold.distanceCm * positionPidCoeffs.Kp;
+    // assign to earth vectors using bearing to target
+    // negative P means to pitch back if Nose is North
+    const float nsP = -nsDistance * positionPidCoeffs.Kp;
+    const float ewP = ewDistance * positionPidCoeffs.Kp;
 
     // ** D ** //
 
@@ -287,8 +295,62 @@ bool positionControl(void) {
     GPS_distances(&gpsSol.llh, &previousLocation, &deltaDistanceNS, &deltaDistanceEW);
     previousLocation = gpsSol.llh;
 
+    // raw velocity and acceleration
     const float velocityNS = deltaDistanceNS * gpsDataFreqHz; // cm/s, minimum step 11.1 cm/s
     const float velocityEW = deltaDistanceEW * gpsDataFreqHz;
+
+    float accelerationNS = (velocityNS - posHold.previousVelocityNS) * gpsDataFreqHz;
+    posHold.previousVelocityNS = velocityNS;
+    float accelerationEW = (velocityEW - posHold.previousVelocityEW) * gpsDataFreqHz;
+    posHold.previousVelocityEW = velocityEW;
+
+    // scale and filter
+    float nsD = velocityNS * positionPidCoeffs.Kd;
+    pt1FilterUpdateCutoff(&velocityNSLpf, pt1Gain);
+    nsD = pt1FilterApply(&velocityNSLpf, nsD);
+
+    float ewD = velocityEW * positionPidCoeffs.Kd;
+    pt1FilterUpdateCutoff(&velocityEWLpf, pt1Gain);
+    ewD = pt1FilterApply(&velocityEWLpf, ewD);
+
+    float nsA = accelerationNS * positionPidCoeffs.Kf;
+    pt2FilterUpdateCutoff(&accelerationRollLpf, pt1Gain);
+    nsA = pt2FilterApply(&accelerationRollLpf, nsA);
+
+    float ewA = accelerationEW * positionPidCoeffs.Kf;
+    pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain);
+    ewA = pt2FilterApply(&accelerationPitchLpf, ewA);
+
+    // limit sum of D and A because otherwise too aggressive if entering at speed
+    float nsDA = nsD + nsA;
+    float ewDA = ewD + ewA;
+    const float maxDAAngle = 35.0f; // degrees; arbitrary limit.  20 is a bit too low, allows a lot of overshoot
+    // to get an angle more than 35 degrees will require P and I
+    // ** todo = should this be half of the user-configurable angle_limit?  Or fixed?
+    nsDA = constrainf(nsDA, -maxDAAngle, maxDAAngle);
+    ewDA = constrainf(ewDA, -maxDAAngle, maxDAAngle);
+
+    // iTerm
+    // Note: iTerm mostly opposes wind, an earth-referenced vector
+
+    if (!posHold.isStarting){
+        // only add to iTerm while not actively stopping
+        // accumulate negatively if North to pitch back if quad points North
+        posHold.integralNS -= nsDistance * gpsDataIntervalS;
+        posHold.integralEW += ewDistance * gpsDataIntervalS;
+
+    } else {
+        // while moving sticks, slowly leak iTerm away, approx 3s time constant
+        const float leak = 1.0f - 0.25f * gpsDataIntervalS; // assumes gpsDataIntervalS not more than 1.0s
+        posHold.integralNS *= leak;
+        posHold.integralEW *= leak;
+    }
+
+    const float nsI = posHold.integralNS * positionPidCoeffs.Ki;
+    const float ewI = posHold.integralEW * positionPidCoeffs.Ki;
+
+    float nsPidSum = nsP + nsI + nsDA;
+    float ewPidSum = ewP + ewI + ewDA;
 
     // get sin and cos of current heading
     float headingRads = headingDeg * RAD;
@@ -297,101 +359,12 @@ bool positionControl(void) {
     } else if (headingRads < -M_PIf) {
         headingRads += 2 * M_PIf;
     }
+     //rotate earth to quad frame, correcting the sign (hopefully)
     const float sinHeading = sin_approx(headingRads);
     const float cosHeading = cos_approx(headingRads);
 
-     //rotate earth to quad frame, correcting the sign (hopefully)
-    float velocityRoll = -sinHeading * velocityNS + cosHeading * velocityEW;
-    float velocityPitch = cosHeading * velocityNS + sinHeading * velocityEW;
-
-    float accelerationRoll = (velocityRoll - posHold.previousVelocityRoll) * gpsDataFreqHz;
-    posHold.previousVelocityRoll = velocityRoll;
-    float accelerationPitch = (velocityPitch - posHold.previousVelocityPitch) * gpsDataFreqHz;
-    posHold.previousVelocityPitch = velocityPitch;
-
-    // lowpass filters
-    pt1FilterUpdateCutoff(&velocityRollLpf, pt1Gain);
-    velocityRoll = pt1FilterApply(&velocityRollLpf, velocityRoll);
-    pt2FilterUpdateCutoff(&accelerationRollLpf, pt1Gain);
-    accelerationRoll = pt2FilterApply(&accelerationRollLpf, accelerationRoll);
-
-    float rollD = velocityRoll * positionPidCoeffs.Kd;
-    float rollA = accelerationRoll * positionPidCoeffs.Kf;
-
-    pt1FilterUpdateCutoff(&velocityPitchLpf, pt1Gain);
-    velocityPitch = pt1FilterApply(&velocityPitchLpf, velocityPitch);
-    pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain);
-    accelerationPitch = pt2FilterApply(&accelerationPitchLpf, accelerationPitch);
-
-    float pitchD = velocityPitch * positionPidCoeffs.Kd;
-    float pitchA = accelerationPitch * positionPidCoeffs.Kf;
-
-    // limit sum of D and A because otherwise too aggressive if entering at speed
-    float rollDA = rollD + rollA;
-    float pitchDA = pitchD + pitchA;
-    const float maxDAAngle = 35.0f; // degrees; arbitrary limit.  20 is a bit too low, allows a lot of overshoot
-    // to get an angle more than 35 degrees will require P and I
-    // ** todo = should this be half of the user-configurable angle_limit?  Or fixed?
-    rollDA = constrainf(rollDA, -maxDAAngle, maxDAAngle);
-    pitchDA = constrainf(pitchDA, -maxDAAngle, maxDAAngle);
-
-    // iTerm
-    // Note: accumulated iTerm opposes wind, which is a constant earth-referenced vector
-    // Hence we accumulate earth referenced iTerm
-    // The sign of the iTerm input is determined in relation to the average error bearing angle
-    // Finally the abs value of the accumulated iTerm is proportioned to pitch and roll
-    // Based on the difference in angle between the nose of the quad and the current error bearing
-
-    if (!posHold.isStarting){
-        // only add to iTerm while not actively stopping
-
-        float bearingRadians = bearingDeg * RAD; // 0-360, so constrain to +/- π
-        if (bearingRadians > M_PIf) {
-            bearingRadians -= 2 * M_PIf;
-        } else if (bearingRadians < -M_PIf) {
-            bearingRadians += 2 * M_PIf;
-        }
-
-        const float error = posHold.distanceCm * positionPidCoeffs.Ki * gpsDataIntervalS;
-        // NS means NorthSouth in earth frame
-        const float NSError = -cos_approx(bearingRadians) * error;
-        posHold.NSIntegral += NSError; // simple non-leaky integrator
-
-        const float EWError = sin_approx(bearingRadians) * error;
-        posHold.EWIntegral += EWError;
-
-        // averaged iTerm correction vector, radians from North, Earth frame of reference
-        float EFIntegralAngleRads = atan2_approx(posHold.NSIntegral, posHold.EWIntegral);
-
-        // heading of the quad in radians
-        float headingRadians = headingDeg * RAD;
-
-        // get the error angle between quad heading and iTerm vector
-        float headingErrorRads = headingRadians - EFIntegralAngleRads;
-        // ensure in range +/- π
-        while (headingErrorRads > M_PIf) {
-            headingErrorRads -= 2 * M_PIf; // Wrap to the left
-        }
-        while (headingErrorRads < -M_PIf) {
-            headingErrorRads += 2 * M_PIf; // Wrap to the right
-        }
-        // get correction factors for roll and pitch, based on quad to average iTerm vector angle
-        const float sinHeadingError = sin_approx(headingErrorRads);
-        const float cosHeadingError = cos_approx(headingErrorRads);
-
-        // rotate NS and EW iTerm vectors to quad frame of reference
-        posHold.rollI = -sinHeadingError * fabsf(posHold.NSIntegral) + cosHeadingError * fabsf(posHold.EWIntegral); // +1 when iTerm points left, -1 when iTerm points right 
-        posHold.pitchI = cosHeadingError * fabsf(posHold.NSIntegral) + sinHeadingError * fabsf(posHold.EWIntegral); // +1 when iTerm points nose forward, -1 when iTerm should pitch back
-
-    } else {
-        // while moving sticks, slowly leak iTerm away, approx 3s time constant
-        const float leak = 1.0f - 0.25f * gpsDataIntervalS; // assumes gpsDataIntervalS not more than 1.0s
-        posHold.NSIntegral *= leak;
-        posHold.EWIntegral *= leak;
-    }
-
-    const float pidSumRoll = rollP + posHold.rollI + rollDA;
-    const float pidSumPitch = pitchP + posHold.pitchI + pitchDA;
+    float pidSumRoll = -sinHeading * nsPidSum + cosHeading * ewPidSum;
+    float pidSumPitch = cosHeading * nsPidSum + sinHeading * ewPidSum;
 
     // todo: upsample filtering
     // pidSum will have steps at GPS rate, and may require an upsampling filter for smoothness.
@@ -401,7 +374,7 @@ bool positionControl(void) {
 
     // if a deadband is set, and sticks are outside deadband, allow pilot control, otherwise hold position
     autopilotAngle[AI_ROLL] = posHold.sticksActive ? 0.0f : pidSumRoll;
-    autopilotAngle[AI_PITCH] = posHold.sticksActive ? 0.0f : pidSumPitch;
+    autopilotAngle[AI_PITCH] = posHold.sticksActive ? 0.0f : pidSumPitch; // positive pitches forward
 
     // note:
     // if FLIGHT_MODE(POS_HOLD_MODE):
@@ -410,22 +383,22 @@ bool positionControl(void) {
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * rollProportion));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumRoll * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityEW)); // cm/s
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(rollP * 10)); // degrees*10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.rollI * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(rollDA * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.EWIntegral * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(ewDistance));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(ewPidSum * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(pidSumRoll * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(ewP * 10)); // degrees*10
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(ewI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(ewDA * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.integralEW * 10));
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));;
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(-posHold.distanceCm * pitchProportion));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(pidSumPitch * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(velocityNS * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pitchP * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(posHold.pitchI * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pitchDA * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.NSIntegral)); // cm/s
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(nsDistance));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(nsPidSum * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(pidSumPitch * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(nsP * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(nsI * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(nsDA * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.integralNS)); // cm/s
     }
     return true;
 }
