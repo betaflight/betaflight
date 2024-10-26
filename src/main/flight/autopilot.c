@@ -203,7 +203,6 @@ bool positionControl(void) {
 
     posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
     posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
-    const float twoPi = 2 * M_PIf;
 
     // get distance and bearing from current location (gpsSol.llh) to target location
     uint32_t distanceCm = 0;
@@ -262,12 +261,7 @@ bool positionControl(void) {
 
     // separate PID controllers for latitude (NorthSouth or ns) and longitude (EastWest or ew)
     // divide the distance vector into ns and ew parts depending on the bearing to the target point
-    float bearingRadians = bearingDeg * RAD; // 0-360, so constrain to +/- π
-    if (bearingRadians > M_PIf) {
-        bearingRadians -= twoPi;
-    } else if (bearingRadians < -M_PIf) {
-        bearingRadians += twoPi;
-    }
+    float bearingRadians = bearingDeg * RAD; // 0-360 degrees, constrained within sin_approx
 
     const float nsDistance = -cos_approx(bearingRadians) * posHold.distanceCm;
     // Positive when North of the target, negative when when South of target
@@ -345,12 +339,7 @@ bool positionControl(void) {
     float ewPidSum = ewP + ewI + ewDA;
 
     // ** Rotate pid Sum to quad frame of reference, into pitch and roll **
-    float headingRads = headingDeg * RAD;
-    if (headingRads > M_PIf) {
-        headingRads -= twoPi;
-    } else if (headingRads < -M_PIf) {
-        headingRads += twoPi;
-    }
+    float headingRads = headingDeg * RAD; // headingDeg is 0-360 but will be constrained in sin_approx()
     const float sinHeading = sin_approx(headingRads);
     const float cosHeading = cos_approx(headingRads);
     float pidSumRoll = -sinHeading * nsPidSum + cosHeading * ewPidSum;
