@@ -39,8 +39,6 @@ typedef struct autopilotConfig_s {
     uint8_t position_D;
     uint8_t position_A;
     uint8_t position_cutoff;
-    bool position_allow_yaw;
-    bool position_test_yaw_fix;
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);

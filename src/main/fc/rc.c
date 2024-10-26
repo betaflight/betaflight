@@ -716,11 +716,6 @@ FAST_CODE void processRcCommand(void)
                 float rcCommandf;
                 if (axis == FD_YAW) {
                     rcCommandf = rcCommand[axis] / rcCommandYawDivider;
-#ifdef USE_POS_HOLD_MODE
-                    if (FLIGHT_MODE(POS_HOLD_MODE) && !autopilotConfig()->position_allow_yaw) {
-                        rcCommandf = 0.0f;
-                    }
-#endif
                 } else {
                     rcCommandf = rcCommand[axis] / rcCommandDivider;
                 }
