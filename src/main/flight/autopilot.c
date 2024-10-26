@@ -244,6 +244,7 @@ bool positionControl(void) {
         }
     }
     posHold.previousDistanceCm = posHold.distanceCm;
+    // intentionally using PT1 gain in PT2 filters to provide a lower effective cutoff
     float pt1Gain = pt1FilterGain(posHold.lpfCutoff, posHold.gpsDataIntervalS);
 
     // ** Sanity check **
@@ -317,11 +318,11 @@ bool positionControl(void) {
     ewD = pt1FilterApply(&velocityEWLpf, ewD);
 
     float nsA = accelerationNS * positionPidCoeffs.Kf;
-    pt2FilterUpdateCutoff(&accelerationRollLpf, pt1Gain);
+    pt2FilterUpdateCutoff(&accelerationRollLpf, pt1Gain); // using PT1 gain for stronger cutoff
     nsA = pt2FilterApply(&accelerationRollLpf, nsA);
 
     float ewA = accelerationEW * positionPidCoeffs.Kf;
-    pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain);
+    pt2FilterUpdateCutoff(&accelerationPitchLpf, pt1Gain); // using PT1 gain for stronger cutoff
     ewA = pt2FilterApply(&accelerationPitchLpf, ewA);
 
     // limit sum of D and A because otherwise can be too aggressive when starting at speed
