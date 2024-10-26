@@ -206,11 +206,9 @@ bool positionControl(void) {
 
     // get distance and bearing from current location (gpsSol.llh) to target location
     uint32_t distanceCm = 0;
-    int32_t bearing = 0; // degrees * 100
+    int32_t bearing = 0;        // degrees * 100
     GPS_distance_cm_bearing(&gpsSol.llh, &currentTargetLocation, false, &distanceCm, &bearing);
     posHold.distanceCm = (float)distanceCm;
-    float headingDeg = attitude.values.yaw * 0.1f;
-    float bearingDeg = bearing * 0.01f;
 
     // ** handle startup **
     
@@ -262,7 +260,7 @@ bool positionControl(void) {
 
     // separate PID controllers for latitude (NorthSouth or ns) and longitude (EastWest or ew)
     // divide the distance vector into ns and ew parts depending on the bearing to the target point
-    float bearingRadians = bearingDeg * RAD; // 0-360 degrees, constrained within sin_approx
+    float bearingRadians = (bearing / 100.0f) * RAD; // 0-360 degrees, constrained within sin_approx
 
     const float nsDistance = -cos_approx(bearingRadians) * posHold.distanceCm;
     // Positive when North of the target, negative when when South of target
@@ -340,7 +338,7 @@ bool positionControl(void) {
     float ewPidSum = ewP + ewI + ewDA;
 
     // ** Rotate pid Sum to quad frame of reference, into pitch and roll **
-    float headingRads = headingDeg * RAD; // headingDeg is 0-360 but will be constrained in sin_approx()
+    float headingRads = (attitude.values.yaw / 10.0f) * RAD; // will be constrained to +/-pi in sin_approx()
     const float sinHeading = sin_approx(headingRads);
     const float cosHeading = cos_approx(headingRads);
     float pidSumRoll = -sinHeading * nsPidSum + cosHeading * ewPidSum;
@@ -358,7 +356,7 @@ bool positionControl(void) {
     // Debugs... distances in cm, angles in degrees * 10, velocities cm/2
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, bearing / 10);
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(ewDistance));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(ewPidSum * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(pidSumRoll * 10));
@@ -367,7 +365,7 @@ bool positionControl(void) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(ewDA * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.integralEW * 10));
     } else {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(bearingDeg));;
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, bearing / 10);
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(nsDistance));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(nsPidSum * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(pidSumPitch * 10));
