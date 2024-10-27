@@ -12,9 +12,18 @@
 // convert options into pin pull mode (up/down/none)
 serialPullMode_t serialOptions_pull(portOptions_e options)
 {
+    // handle SmartAudio first - different SA versions need different values
+    // add more cases here if necessary
+    if (options & SERIAL_PULL_SMARTAUDIO) {
+#ifdef USE_SMARTAUDIO_NOPULLDOWN
+        return serialPullNone;
+#else
+        return serialPullDown;
+#endif
+    }
     if (options & SERIAL_PULL_NONE) {
         return serialPullNone;                            // explicit nopull
-    } else if (options & (SERIAL_INVERTED | SERIAL_PULL_SMARTAUDIO)) {
+    } else if (options & SERIAL_INVERTED) {
         return serialPullDown;
     } else {
         return serialPullUp;
