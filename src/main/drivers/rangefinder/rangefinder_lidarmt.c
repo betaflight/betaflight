@@ -60,37 +60,10 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, uint8_t mtRangefinderToUse) {   
     UNUSED(dev);
-    switch (mtRangefinderToUse)
-    {   
-        case RANGEFINDER_MT01P:
-            dev->delayMs = RANGEFINDER_MT01P_TASK_PERIOD_MS;
-            dev->maxRangeCm = RANGEFINDER_MT01P_MAX_RANGE_CM;
-            break;
-        
-        case RANGEFINDER_MTF01:
-            dev->delayMs = RANGEFINDER_MTF01_TASK_PERIOD_MS;
-            dev->maxRangeCm = RANGEFINDER_MTF01_MAX_RANGE_CM;
-            break;
-        
-        case RANGEFINDER_MTF02:
-            dev->delayMs = RANGEFINDER_MTF02_TASK_PERIOD_MS;
-            dev->maxRangeCm = RANGEFINDER_MTF02_MAX_RANGE_CM;
-            break;
-        
-        case RANGEFINDER_MTF01P:
-            dev->delayMs = RANGEFINDER_MTF01P_TASK_PERIOD_MS;
-            dev->maxRangeCm = RANGEFINDER_MTF01P_MAX_RANGE_CM;
-            break;
 
-        case RANGEFINDER_MTF02P:
-            dev->delayMs = RANGEFINDER_MTF02P_TASK_PERIOD_MS;
-            dev->maxRangeCm = RANGEFINDER_MTF02P_MAX_RANGE_CM;
-            break;
-
-        default:
-            return false;
-            break;
-        }
+    uint8_t deviceIdx = getDeviceTableIdx(mtRangefinderToUse);
+    dev->delayMs    = rangefinderConfigs[deviceIdx].delayMs;
+    dev->maxRangeCm = rangefinderConfigs[deviceIdx].maxRangeCm;
 
     dev->detectionConeDeciDegrees = RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES;
@@ -110,31 +83,12 @@ void mtRangefinderReceiveNewData(uint8_t * bufferPtr) {
     hasNewData = true;
 }
 
-uint16_t getMtRangefinderTaskPeriodMs(uint8_t mtRangefinderToUse) {
-    switch (mtRangefinderToUse)
-    {   
-        case RANGEFINDER_MT01P:
-            return RANGEFINDER_MT01P_TASK_PERIOD_MS;
-            break;
-        
-        case RANGEFINDER_MTF01:
-            return RANGEFINDER_MTF01_TASK_PERIOD_MS;
-            break;
-        
-        case RANGEFINDER_MTF02:
-            return RANGEFINDER_MTF02_TASK_PERIOD_MS;
-            break;
-
-        case RANGEFINDER_MTF01P:
-            return RANGEFINDER_MTF01P_TASK_PERIOD_MS;
-            break;
-        
-        case RANGEFINDER_MTF02P:
-            return RANGEFINDER_MTF02P_TASK_PERIOD_MS;
-            break;
-
-        default:
-            return 0;
-            break;
+uint8_t getDeviceTableIdx(uint8_t mtRangefinderToUse){
+    size_t tableLength = sizeof(rangefinderConfigs) / sizeof(rangefinderConfigs[0]);
+    for (size_t i = 0; i < tableLength; i++) {
+        if (rangefinderConfigs[i].deviceId == mtRangefinderToUse) {
+            return i;
         }
+    }
+    return 0; // to avoid compiler warning
 }

@@ -20,30 +20,26 @@
 
 #pragma once
 
-// MTF01
-#define RANGEFINDER_MTF01_MAX_RANGE_CM    800
-#define RANGEFINDER_MTF01_TASK_PERIOD_MS  10   // 100Hz
-
-// MTF02
-#define RANGEFINDER_MTF02_MAX_RANGE_CM    250
-#define RANGEFINDER_MTF02_TASK_PERIOD_MS  20   // 50Hz
-
-// MTF01P
-#define RANGEFINDER_MTF01P_MAX_RANGE_CM    1200
-#define RANGEFINDER_MTF01P_TASK_PERIOD_MS  10  // 100Hz
-
-// MTF02P
-#define RANGEFINDER_MTF02P_MAX_RANGE_CM    600
-#define RANGEFINDER_MTF02P_TASK_PERIOD_MS  20  // 50Hz
-
-// MT01P
-#define RANGEFINDER_MT01P_MAX_RANGE_CM    1000
-#define RANGEFINDER_MT01P_TASK_PERIOD_MS  20   // 50Hz   
+#include "drivers/rangefinder/rangefinder.h"
+#include "sensors/rangefinder.h"
 
 #define RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES  900 
 
-#include "drivers/rangefinder/rangefinder.h"
-
 bool mtRangefinderDetect(rangefinderDev_t * dev, uint8_t mtRangefinderToUse);
 void mtRangefinderReceiveNewData(uint8_t * bufferPtr);
-uint16_t getMtRangefinderTaskPeriodMs(uint8_t mtRangefinderToUse);
+uint8_t getDeviceTableIdx(uint8_t mtRangefinderToUse);
+
+typedef struct {
+    uint8_t  deviceId;
+    uint8_t  delayMs;
+    uint16_t maxRangeCm;
+} MTRangefinderConfig;
+
+// Initialize the table with values for each rangefinder type
+static const MTRangefinderConfig rangefinderConfigs[] = {
+    [0] = { .deviceId = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 1000 },
+    [1] = { .deviceId = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 800  },
+    [2] = { .deviceId = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 250  },
+    [3] = { .deviceId = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 1200 },
+    [4] = { .deviceId = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 600  },
+};
