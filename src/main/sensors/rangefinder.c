@@ -138,7 +138,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             if (mtRangefinderDetect(dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
                 setRangefinderMSP(rangefinderHardwareToUse);
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(getMtRangefinderTaskPeriodMs(rangefinderHardwareToUse)));
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
             }
             break;
 #endif
