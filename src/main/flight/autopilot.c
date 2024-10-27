@@ -40,9 +40,9 @@
 #define ALTITUDE_D_SCALE  0.01f
 #define ALTITUDE_F_SCALE  0.01f
 #define POSITION_P_SCALE  0.001f
-#define POSITION_I_SCALE  0.0005f
-#define POSITION_D_SCALE  0.002f
-#define POSITION_A_SCALE  0.002f
+#define POSITION_I_SCALE  0.0001f
+#define POSITION_D_SCALE  0.0015f
+#define POSITION_A_SCALE  0.0015f
 
 static pidCoefficient_t altitudePidCoeffs;
 static pidCoefficient_t positionPidCoeffs;
@@ -190,7 +190,7 @@ void setSticksActiveStatus(bool areSticksActive)
     posHold.sticksActive = areSticksActive;
 }
 
-void updateTargetLocation(gpsLocation_t newTargetLocation) {
+void setTargetLocation(gpsLocation_t newTargetLocation) {
     currentTargetLocation = newTargetLocation;
 }
 
@@ -237,6 +237,7 @@ bool positionControl(void) {
         // larger threshold if faster at start
         if (posHold.NS.isStarting || posHold.EW.isStarting) {
             posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
+            // 1s of flight at current speed or 10m, in cm
         }
         // primarily to detect flyaway from no Mag or badly oriented Mag
         // but must accept some overshoot at the start, especially if entering at high speed
@@ -322,7 +323,7 @@ bool positionControl(void) {
         }
 
         // ** Rotate pid Sum to quad frame of reference, into pitch and roll **
-        float headingRads = (attitude.values.yaw / 10.0f) * RAD; // will be constrained to +/-pi in sin_approx()
+        float headingRads = DECIDEGREES_TO_RADIANS(attitude.values.yaw); // will be constrained to +/-pi in sin_approx()
         const float sinHeading = sin_approx(headingRads);
         const float cosHeading = cos_approx(headingRads);
         float pidSumRoll = -sinHeading * posHold.NS.pidSum + cosHeading * posHold.EW.pidSum;

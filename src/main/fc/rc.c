@@ -753,41 +753,28 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     isRxDataNew = true;
 
     for (int axis = 0; axis < 3; axis++) {
-        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f); // -500 to 500
-
+        float rc = constrainf(rcData[axis] - rxConfig()->midrc, -500.0f, 500.0f); // -500 to 500
+        float rcDeadband = 0;
         if (axis == ROLL || axis == PITCH) {
+            rcDeadband = rcControlsConfig()->deadband;
 #ifdef USE_POS_HOLD_MODE
-            float tmpDeadband = rcControlsConfig()->deadband;
             if (FLIGHT_MODE(POS_HOLD_MODE)) {
+                // override deadband in POS_HOLD_MODE
                 if (posHoldConfig()->pos_hold_deadband) {
-                    // if pos_hold_deadband is defined, ignore pitch & roll within deadband zone
-                    tmpDeadband = posHoldConfig()->pos_hold_deadband * 5.0f;
+                    // if pos_hold_deadband is defined, ignore pitch & roll within deadband zone (in %)
+                    rcDeadband = posHoldConfig()->pos_hold_deadband * 5.0f;
                     // NB could attenuate RP responsiveness outside deadband here, with tmp * 0.8f or whatever
                 } else {
                     // if pos_hold_deadband is zero, prevent user adjustment of pitch or roll
-                    tmp = 0;
+                    rcDeadband  = 500;  // can't exceed this
                 }
             }
-#else
-            const float tmpDeadband = rcControlsConfig()->deadband;
 #endif
-            if (tmp > tmpDeadband) {
-                tmp -= tmpDeadband;
-            } else {
-                tmp = 0;
-            }
-            rcCommand[axis] = tmp;
         } else {
-            if (tmp > rcControlsConfig()->yaw_deadband) {
-                tmp -= rcControlsConfig()->yaw_deadband;
-            } else {
-                tmp = 0;
-            }
-            rcCommand[axis] = tmp * -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
+            rcDeadband  = rcControlsConfig()->yaw_deadband;
+            rc *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
-        if (rcData[axis] < rxConfig()->midrc) {
-            rcCommand[axis] = -rcCommand[axis];
-        }
+        rcCommand[axis] = fapplyDeadband(rc, rcDeadband);
     }
 
     int32_t tmp;

@@ -59,7 +59,7 @@ void posHoldCheckSticks(void)
                 // while sticks are outside the deadband,
                 // keep updating the home location to the current GPS location each iteration
                 setSticksActiveStatus(true);
-                updateTargetLocation(gpsSol.llh);
+                setTargetLocation(gpsSol.llh);
             } else {
                 setSticksActiveStatus(false);
             }
@@ -68,17 +68,19 @@ void posHoldCheckSticks(void)
 }
 
 void posHoldStart(void) {
-    static bool wasInPosHoldMode = false;
+    static bool isInPosHoldMode = false;
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        if (!wasInPosHoldMode) {
+        if (!isInPosHoldMode) {
+            // start position hold mode
             posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
             setSticksActiveStatus(false);
             resetPositionControl(gpsSol.llh);
-            wasInPosHoldMode = true;
+            isInPosHoldMode = true;
         }
     } else {
+        // stop position hold mode
         posHold.posHoldIsOK = false;
-        wasInPosHoldMode = false;
+        isInPosHoldMode = false;
     }
 }
 

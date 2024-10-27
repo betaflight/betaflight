@@ -545,11 +545,11 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_ALT_HOLD_MODE
-    setTaskEnabled(TASK_ALTHOLD, true);
+    setTaskEnabled(TASK_ALTHOLD, sensors(SENSOR_BARO) || featureIsEnabled(FEATURE_GPS));
 #endif
 
 #ifdef USE_POS_HOLD_MODE
-    setTaskEnabled(TASK_POSHOLD, true);
+    setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS));
 #endif
 
 #ifdef USE_MAG
