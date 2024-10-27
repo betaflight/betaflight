@@ -132,7 +132,7 @@ void calculateEstimatedAltitude(void)
 #endif
 
 #ifdef USE_RANGEFINDER
-    float rangefinderAltCm = (float)rangefinderGetLatestAltitude();;
+    float rangefinderAltCm = rangefinderGetLatestAltitude();;
     float rangefinderTrust = (float)(rangefinderConfig()->rangefinder_trust) / 100.0f;
 #endif
     //  ***  DISARMED  ***
