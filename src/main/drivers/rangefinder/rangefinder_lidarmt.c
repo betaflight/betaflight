@@ -53,8 +53,7 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
     if (hasNewData) {
         hasNewData = false;
         return (sensorData > 0) ? sensorData : RANGEFINDER_OUT_OF_RANGE;
-    }
-    else {
+    } else {
         return RANGEFINDER_NO_NEW_DATA;
     }
 }
