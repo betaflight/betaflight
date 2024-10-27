@@ -470,6 +470,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             $(shell find $(SRC_DIR) -name '*_init.c') \
             bus_bst_stm32f30x.c \
+            common/parse.c \
             cli/cli.c \
             cli/settings.c \
             drivers/accgyro/accgyro_fake.c \
