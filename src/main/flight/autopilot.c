@@ -66,10 +66,17 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     const float altitudeD = verticalVelocity * altitudePidCoeffs.Kd;
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
+    
+    float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF;
+
+    const float sign = (throttleOffset < 0.0f) ? -1.0f : 1.0f;
+
+    throttleOffset = sign * sqrtf(fabsf(throttleOffset)); // square root throttle to linearize the thrust
 
     const float hoverOffset = autopilotConfig()->hover_throttle - PWM_RANGE_MIN;
 
-    float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
+    throttleOffset += hoverOffset;
+
     const float tiltMultiplier = 2.0f - fmaxf(getCosTiltAngle(), 0.5f);
     // 1 = flat, 1.24 at 40 degrees, max 1.5 around 60 degrees, the default limit of Angle Mode
     // 2 - cos(x) is between 1/cos(x) and 1/sqrt(cos(x)) in this range
