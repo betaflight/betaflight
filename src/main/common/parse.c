@@ -30,67 +30,6 @@
 
 #include "parse.h"
 
-static inline intParseResult_t intParseResultOk(long int val, const char *next)
-{
-    return (intParseResult_t) {
-        .status = INT_PARSE_STATUS_OK,
-        .value = val,
-        .next = next,
-    };
-}
-
-static inline intParseResult_t intParseResultErr(enum intParseStatus_e err)
-{
-    return (intParseResult_t) {
-        .status = err,
-    };
-}
-
-intParseResult_t parseIntArg(const char *cmdline)
-{
-    // Find start of an argument to be able to check end of a string
-    // before calling strtol
-    const char *argStart = cmdline;
-    while (argStart && *argStart == ' ') {
-        argStart++;
-    }
-    if (!*argStart) {
-        return intParseResultErr(INT_PARSE_STATUS_END_OF_LINE);
-    }
-
-    const char *argEnd = NULL;
-    errno = 0;
-    long int n = strtol(argStart, (char **)&argEnd, 10);
-    if (argStart == argEnd) {
-        return intParseResultErr(INT_PARSE_STATUS_NOT_A_NUMBER);
-    }
-    if (errno != 0) {
-        return intParseResultErr(INT_PARSE_STATUS_NOT_IN_RANGE);
-    }
-
-    return intParseResultOk(n, argEnd);
-}
-
-intParseResult_t parseIntArgInRange(
-    const char *cmdline,
-    long int fromVal,
-    long int toVal
-)
-{
-    intParseResult_t res = parseIntArg(cmdline);
-    if (res.status != INT_PARSE_STATUS_OK) {
-        return res;
-    }
-
-    long int n = res.value;
-    if (n < fromVal || n >= toVal) {
-        return intParseResultErr(INT_PARSE_STATUS_NOT_IN_RANGE);
-    }
-
-    return res;
-}
-
-
 inline parseArg_t argSep(char sep)
 {
     return (parseArg_t) {
@@ -215,7 +154,7 @@ inline parseArgsResult_t parseArgsResultErr(enum parseStatus_e err, const char *
     };
 }
 
-parseArgsResult_t parseArgsResultErrNotInRange(const char *argName, long int rangeStart, long int rangeEnd)
+inline parseArgsResult_t parseArgsResultErrNotInRange(const char *argName, long int rangeStart, long int rangeEnd)
 {
     return (parseArgsResult_t) {
         .status = PARSE_STATUS_INT_NOT_IN_RANGE,
@@ -225,7 +164,7 @@ parseArgsResult_t parseArgsResultErrNotInRange(const char *argName, long int ran
     };
 }
 
-parseArgsResult_t parseArgsResultErrCustomMsg(const char *argName, const char *errMsg)
+inline parseArgsResult_t parseArgsResultErrCustomMsg(const char *argName, const char *errMsg)
 {
     return (parseArgsResult_t) {
         .status = PARSE_STATUS_CUSTOM_ERR,
