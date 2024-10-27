@@ -53,7 +53,6 @@ static float throttleOut = 0.0f;
 typedef struct {
     float gpsDataIntervalS;
     float gpsDataFreqHz;
-    float distanceCm;
     float previousDistanceCm;
     float sanityCheckDistance;
     bool isStarting;
@@ -69,7 +68,6 @@ typedef struct {
 static posHoldState posHold = {
     .gpsDataIntervalS = 0.1f,
     .gpsDataFreqHz = 10.0f,
-    .distanceCm = 0.0f,
     .previousDistanceCm = 0.0f,
     .sanityCheckDistance = 1000.0f,
     .isStarting = false,
@@ -157,7 +155,6 @@ void setSticksActiveStatus(bool areSticksActive)
 }
 
 void resetPositionControlParams(void) { // at the start, and while sticks are moving
-    posHold.distanceCm = 0.0f;
     posHold.previousDistanceCm = 0.0f;
     posHold.sanityCheckDistance = 1000.0f;
     posHold.previousVelocityEW = 0.0f;
@@ -204,14 +201,14 @@ bool positionControl(void) {
     posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
     posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
 
-    // get distance and bearing from current location (gpsSol.llh) to target location
-    uint32_t distanceCm = 0;
-    int32_t bearing = 0;        // degrees * 100
-    GPS_distance_cm_bearing(&gpsSol.llh, &currentTargetLocation, false, &distanceCm, &bearing);
-    posHold.distanceCm = (float)distanceCm;
+    // get xy distances from current location (gpsSol.llh) to target location
+    float nsDistance; // cm, steps of 11.1cm, North of target is positive
+    float ewDistance; // cm, steps of 11.1cm, East of target is positive
+    GPS_distances(&gpsSol.llh, &currentTargetLocation, &nsDistance, &ewDistance);
+    float distanceCm = sqrtf(sq(nsDistance) + sq(ewDistance));
 
     // ** handle startup **
-    
+
     // at the start, if the quad was moving, or randomly, distance from the start point will increase
     // check for the distance increase to 'stop', then reset the target point
     // this looks a lot better than a huge rebound
@@ -232,7 +229,7 @@ bool positionControl(void) {
         // because the risk of overshoot is greater at higher speed
         posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
         // when the quad stops, the start period is over
-        if (posHold.distanceCm < posHold.previousDistanceCm) {
+        if (distanceCm < posHold.previousDistanceCm) {
             // reset the target location to the stop point
             currentTargetLocation = gpsSol.llh;
             posHold.lpfCutoff = autopilotConfig()->position_cutoff * 0.01f; // use normal filter values
@@ -241,7 +238,8 @@ bool positionControl(void) {
             posHold.isStarting = false;
         }
     }
-    posHold.previousDistanceCm = posHold.distanceCm;
+    posHold.previousDistanceCm = distanceCm;
+
     // intentionally using PT1 gain in PT2 filters to provide a lower effective cutoff
     float pt1Gain = pt1FilterGain(posHold.lpfCutoff, posHold.gpsDataIntervalS);
 
@@ -249,7 +247,7 @@ bool positionControl(void) {
 
     // primarily to detect flyaway from no Mag or badly oriented Mag
     // but must accept some overshoot at the start, especially if entering at high speed
-    if (posHold.distanceCm > posHold.sanityCheckDistance) {
+    if (distanceCm > posHold.sanityCheckDistance) {
         return false; // must stay within 10m or probably flying away
         // value at this point is a 'best guess' to detect IMU failure in the event the user has no Mag
         // if entering poshold from a stable hover, we would only exceed this if IMU was disoriented
@@ -257,19 +255,11 @@ bool positionControl(void) {
     }
 
     // ** PIDs **
-
     // separate PID controllers for latitude (NorthSouth or ns) and longitude (EastWest or ew)
-    // divide the distance vector into ns and ew parts depending on the bearing to the target point
-    float bearingRadians = (bearing / 100.0f) * RAD; // 0-360 degrees, constrained within sin_approx
-
-    const float nsDistance = -cos_approx(bearingRadians) * posHold.distanceCm;
-    // Positive when North of the target, negative when when South of target
-    const float ewDistance = sin_approx(bearingRadians) * posHold.distanceCm;
-    // Negative when East, and positive when West of the target
 
     // ** P **
 
-    const float nsP = -nsDistance * positionPidCoeffs.Kp;
+    const float nsP = nsDistance * positionPidCoeffs.Kp;
     const float ewP = ewDistance * positionPidCoeffs.Kp;
 
     // ** I **
@@ -277,7 +267,7 @@ bool positionControl(void) {
     if (!posHold.isStarting){
         // only accumulate iTerm after completing the start phase
         // perhaps need a timeout on the start phase ?
-        posHold.integralNS -= nsDistance * posHold.gpsDataIntervalS;
+        posHold.integralNS += nsDistance * posHold.gpsDataIntervalS;
         posHold.integralEW += ewDistance * posHold.gpsDataIntervalS;
     } else {
         // while moving sticks, slowly leak iTerm away, approx 2s time constant
@@ -356,7 +346,7 @@ bool positionControl(void) {
     // Debugs... distances in cm, angles in degrees * 10, velocities cm/2
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, bearing / 10);
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(distanceCm));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(ewDistance));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(ewPidSum * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(pidSumRoll * 10));
@@ -365,7 +355,7 @@ bool positionControl(void) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(ewDA * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(posHold.integralEW * 10));
     } else {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, bearing / 10);
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(distanceCm));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(nsDistance));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(nsPidSum * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(pidSumPitch * 10));
