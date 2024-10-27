@@ -592,7 +592,6 @@ bool gyroInit(void)
     case DEBUG_FFT:
     case DEBUG_FFT_FREQ:
     case DEBUG_GYRO_RAW:
-    case DEBUG_GYRO_SCALED:
     case DEBUG_GYRO_FILTERED:
     case DEBUG_DYN_LPF:
     case DEBUG_GYRO_SAMPLE:
