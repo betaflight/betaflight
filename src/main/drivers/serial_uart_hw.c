@@ -143,7 +143,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
                 // TODO: no need for pullup on TX only pin
                 IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, txAf);
 #else
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, txAaf);
+                IOConfigGPIOAF(txIO, IOCFG_AF_PP, txAf);
 #endif
             }
         }
