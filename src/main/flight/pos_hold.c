@@ -26,9 +26,9 @@
 #include "config/config.h"
 #include "fc/runtime_config.h"
 #include "fc/rc.h"
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
-#include "flight/autopilot.h"
 #include "rx/rx.h"
 
 #include "pos_hold.h"
@@ -89,10 +89,8 @@ void updatePosHold(timeUs_t currentTimeUs) {
     // check for enabling Pod Hold, otherwise do as little as possible while inactive
     posHoldStart();
     if (posHold.posHoldIsOK) {
-        if (isNewDataForPosHold()) {
-            posHoldCheckSticks();
-            posHold.posHoldIsOK = positionControl();
-        }
+        posHoldCheckSticks();
+        posHold.posHoldIsOK = positionControl();
     } else {
         autopilotAngle[AI_PITCH] = 0.0f;
         autopilotAngle[AI_ROLL] = 0.0f;

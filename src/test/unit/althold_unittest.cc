@@ -130,7 +130,9 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
     bool compassIsHealthy;
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
     float getRcDeflectionAbs(void) { return 0.0f; }
-        attitudeEulerAngles_t attitude;
+    attitudeEulerAngles_t attitude;
+    bool isNewDataForPosHold(void){ return true; }
+
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     {
@@ -144,19 +146,19 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
         UNUSED(dT);
         return 0.0;
     }
-    
+
     void pt1FilterInit(pt1Filter_t *filter, float k)
     {
         UNUSED(filter);
         UNUSED(k);
     }
-    
+
     void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
     {
         UNUSED(filter);
         UNUSED(k);
     }
-    
+
     float pt1FilterApply(pt1Filter_t *filter, float input)
     {
         UNUSED(filter);
@@ -170,20 +172,42 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
         UNUSED(dT);
         return 0.0;
     }
-    
+
     void pt2FilterInit(pt2Filter_t *filter, float k)
     {
         UNUSED(filter);
         UNUSED(k);
     }
-    
     void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k)
     {
         UNUSED(filter);
         UNUSED(k);
     }
-    
+
     float pt2FilterApply(pt2Filter_t *filter, float input)
+    {
+        UNUSED(filter);
+        UNUSED(input);
+        return 0.0;
+    }
+
+    float pt3FilterGain(float f_cut, float dT)
+    {
+        UNUSED(f_cut);
+        UNUSED(dT);
+        return 0.0;
+    }
+    void pt3FilterInit(pt3Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+    void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+    float pt3FilterApply(pt3Filter_t *filter, float input)
     {
         UNUSED(filter);
         UNUSED(input);
