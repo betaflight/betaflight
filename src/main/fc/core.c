@@ -1064,11 +1064,8 @@ void processRxModes(timeUs_t currentTimeUs)
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // Need Mag unless a BRAVE user tries it without
-        && (sensors(SENSOR_MAG) || allowPosHoldWithoutMag())
-        // and we have altitude data
-        && isAltitudeAvailable()
-        // prevent activation until after takeoff
-        && wasThrottleRaised()) {
+        && (sensors(SENSOR_MAG) || allowPosHoldWithoutMag()))
+    {
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
             // this is just a 'request to initiate' the function

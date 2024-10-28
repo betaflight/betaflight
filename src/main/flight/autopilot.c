@@ -24,6 +24,7 @@
 #include "build/debug.h"
 #include "common/filter.h"
 #include "common/maths.h"
+#include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
@@ -216,6 +217,10 @@ bool positionControl(void) {
         && !compassIsHealthy()
 #endif
         ) {
+        return false;
+    }
+    
+    if (!wasThrottleRaised()) {
         return false;
     }
 
