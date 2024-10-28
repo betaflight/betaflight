@@ -61,9 +61,9 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {   
     UNUSED(dev);
 
-    uint8_t deviceIdx = getDeviceTableIdx(mtRangefinderToUse);
-    dev->delayMs    = rangefinderConfigs[deviceIdx].delayMs;
-    dev->maxRangeCm = rangefinderConfigs[deviceIdx].maxRangeCm;
+    const MTRangefinderConfig* deviceConf = getDeviceConf(mtRangefinderToUse);
+    dev->delayMs    = deviceConf->delayMs;
+    dev->maxRangeCm = deviceConf->maxRangeCm;
 
     dev->detectionConeDeciDegrees = RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES;
@@ -83,12 +83,12 @@ void mtRangefinderReceiveNewData(uint8_t * bufferPtr) {
     hasNewData = true;
 }
 
-uint8_t getDeviceTableIdx(rangefinderType_e mtRangefinderToUse){
+const MTRangefinderConfig* getDeviceConf(rangefinderType_e mtRangefinderToUse){
     size_t tableLength = sizeof(rangefinderConfigs) / sizeof(rangefinderConfigs[0]);
     for (size_t i = 0; i < tableLength; i++) {
         if (rangefinderConfigs[i].deviceType == mtRangefinderToUse) {
-            return i;
+            return &rangefinderConfigs[i];
         }
     }
-    return 0; // to avoid compiler warning
+    return &rangefinderConfigs[RANGEFINDER_MT01P]; // to avoid compiler warning. This should never happen.
 }

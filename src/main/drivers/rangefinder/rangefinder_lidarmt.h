@@ -25,15 +25,15 @@
 
 #define RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES  900 
 
-bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
-void mtRangefinderReceiveNewData(uint8_t * bufferPtr);
-uint8_t getDeviceTableIdx(rangefinderType_e mtRangefinderToUse);
-
 typedef struct {
     rangefinderType_e  deviceType;
     uint8_t  delayMs;
     uint16_t maxRangeCm;
 } MTRangefinderConfig;
+
+bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
+void mtRangefinderReceiveNewData(uint8_t * bufferPtr);
+const MTRangefinderConfig* getDeviceConf(rangefinderType_e mtRangefinderToUse);
 
 // Initialize the table with values for each rangefinder type
 static const MTRangefinderConfig rangefinderConfigs[] = {
