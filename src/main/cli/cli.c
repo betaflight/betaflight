@@ -1010,27 +1010,6 @@ static const char *nextArg(const char *currentArg)
     return ptr;
 }
 
-static const char *processChannelRangeArgs(const char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
-{
-    for (uint32_t argIndex = 0; argIndex < 2; argIndex++) {
-        ptr = nextArg(ptr);
-        if (ptr) {
-            int val = atoi(ptr);
-            val = CHANNEL_VALUE_TO_STEP(val);
-            if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
-                if (argIndex == 0) {
-                    range->startStep = val;
-                } else {
-                    range->endStep = val;
-                }
-                (*validArgumentCount)++;
-            }
-        }
-    }
-
-    return ptr;
-}
-
 /**
  * @brief Converts parsing error into a message and prints it.
  */
@@ -1675,9 +1654,10 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 }
 #endif
 
+static const char *adjRangeFormat = "adjrange %u 0 %u %u %u %u %u %u %u";
+
 static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *adjustmentRanges, const adjustmentRange_t *defaultAdjustmentRanges, const char *headingStr)
 {
-    const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
     // print out adjustment ranges channel settings
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
@@ -1687,7 +1667,7 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
             const adjustmentRange_t *arDefault = &defaultAdjustmentRanges[i];
             equalsDefault = !memcmp(ar, arDefault, sizeof(*ar));
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
-            cliDefaultPrintLinef(dumpMask, equalsDefault, format,
+            cliDefaultPrintLinef(dumpMask, equalsDefault, adjRangeFormat,
                 i,
                 arDefault->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.startStep),
@@ -1698,7 +1678,7 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
                 arDefault->adjustmentScale
             );
         }
-        cliDumpPrintLinef(dumpMask, equalsDefault, format,
+        cliDumpPrintLinef(dumpMask, equalsDefault, adjRangeFormat,
             i,
             ar->auxChannelIndex,
             MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
@@ -1711,94 +1691,69 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
     }
 }
 
-static void cliAdjustmentRange(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliAdjustmentRange(const char *cmdName, char *cmdline)
 {
-    const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
-    const char *ptr;
-
-    if (isEmpty(cmdline)) {
+    parseArg_t ixArgs[] = {
+        argIntInRange(true, "INDEX", 0, MAX_ADJUSTMENT_RANGE_COUNT),
+    };
+    parsedArg_t ixParsedArgs[ARRAYLEN(ixArgs)];
+    parseArgsResult_t ixRes = parseArgs(cmdline, ixArgs, ARRAYLEN(ixArgs), ixParsedArgs, false);
+    if (ixRes.status == PARSE_STATUS_EMPTY_ARGS) {
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL, NULL);
-    } else {
-        ptr = cmdline;
-        int i = atoi(ptr++);
-        if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *ar = adjustmentRangesMutable(i);
-            uint8_t validArgumentCount = 0;
-
-            ptr = nextArg(ptr);
-            if (ptr) {
-                // Was: slot
-                // Keeping the parameter to retain backwards compatibility for the command format.
-                validArgumentCount++;
-            }
-            ptr = nextArg(ptr);
-            if (ptr) {
-                int val = atoi(ptr);
-                if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
-                    ar->auxChannelIndex = val;
-                    validArgumentCount++;
-                }
-            }
-
-            ptr = processChannelRangeArgs(ptr, &ar->range, &validArgumentCount);
-
-            ptr = nextArg(ptr);
-            if (ptr) {
-                int val = atoi(ptr);
-                if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
-                    ar->adjustmentConfig = val;
-                    validArgumentCount++;
-                }
-            }
-            ptr = nextArg(ptr);
-            if (ptr) {
-                int val = atoi(ptr);
-                if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
-                    ar->auxSwitchChannelIndex = val;
-                    validArgumentCount++;
-                }
-            }
-
-            if (validArgumentCount != 6) {
-                memset(ar, 0, sizeof(adjustmentRange_t));
-                cliShowInvalidArgumentCountError(cmdName);
-                return;
-            }
-
-            // Optional arguments
-            ar->adjustmentCenter = 0;
-            ar->adjustmentScale = 0;
-
-            ptr = nextArg(ptr);
-            if (ptr) {
-                int val = atoi(ptr);
-                ar->adjustmentCenter = val;
-                validArgumentCount++;
-            }
-            ptr = nextArg(ptr);
-            if (ptr) {
-                int val = atoi(ptr);
-                ar->adjustmentScale = val;
-                validArgumentCount++;
-            }
-
-            activeAdjustmentRangeReset();
-
-            cliDumpPrintLinef(0, false, format,
-                i,
-                ar->auxChannelIndex,
-                MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
-                MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
-                ar->adjustmentConfig,
-                ar->auxSwitchChannelIndex,
-                ar->adjustmentCenter,
-                ar->adjustmentScale
-            );
-
-        } else {
-            cliShowArgumentRangeError(cmdName, "INDEX", 0, MAX_ADJUSTMENT_RANGE_COUNT - 1);
-        }
+        return;
     }
+    if (ixRes.status != PARSE_STATUS_OK) {
+        parseResultPrintError(&ixRes, cmdName);
+        return;
+    }
+    long int ix = ixParsedArgs[0].intValue;
+    adjustmentRange_t *ar = adjustmentRangesMutable(ix);
+
+    parseArg_t args[] = {
+        argIntInRange(false, "SLOT", 0, 1),
+        argIntInRange_storeUint8(
+            false, "CHANNEL_INDEX", 0, MAX_AUX_CHANNEL_COUNT, &ar->auxChannelIndex
+        ),
+        argIntConvert_storeUint8(
+            false, "CHANNEL_RANGE.START", &convertChannelValueToStep, &ar->range.startStep
+        ),
+        argIntConvert_storeUint8(
+            false, "CHANNEL_RANGE.END", &convertChannelValueToStep, &ar->range.endStep
+        ),
+        argIntInRange_storeUint8(
+            false, "ADJUSTMENT_FUNCTION_INDEX", 0, ADJUSTMENT_FUNCTION_COUNT, &ar->adjustmentConfig
+        ),
+        argIntInRange_storeUint8(
+            true, "SWITCH_CHANNEL_INDEX", 0, MAX_AUX_CHANNEL_COUNT, &ar->auxSwitchChannelIndex
+        ),
+        argInt_storeUint16(true, "ADJUSTMENT_CENTER", &ar->adjustmentCenter),
+        argInt_storeUint16(true, "ADJUSTMENT_SCALE", &ar->adjustmentScale),
+    };
+    parsedArg_t parsedArgs[ARRAYLEN(args)];
+    parseArgsResult_t res = parseArgs(
+        ixRes.rest,
+        args,
+        ARRAYLEN(args),
+        parsedArgs,
+        true
+    );
+    if (res.status != PARSE_STATUS_OK && res.status != PARSE_STATUS_EMPTY_ARGS) {
+        parseResultPrintError(&res, cmdName);
+        return;
+    }
+
+    activeAdjustmentRangeReset();
+
+    cliDumpPrintLinef(0, false, adjRangeFormat,
+        ix,
+        ar->auxChannelIndex,
+        MODE_STEP_TO_CHANNEL_VALUE(ar->range.startStep),
+        MODE_STEP_TO_CHANNEL_VALUE(ar->range.endStep),
+        ar->adjustmentConfig,
+        ar->auxSwitchChannelIndex,
+        ar->adjustmentCenter,
+        ar->adjustmentScale
+    );
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -2676,6 +2631,27 @@ static void cliFlashRead(const char *cmdName, char *cmdline)
 #endif // USE_FLASHFS
 
 #ifdef USE_VTX_CONTROL
+static const char *processChannelRangeArgs(const char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
+{
+    for (uint32_t argIndex = 0; argIndex < 2; argIndex++) {
+        ptr = nextArg(ptr);
+        if (ptr) {
+            int val = atoi(ptr);
+            val = CHANNEL_VALUE_TO_STEP(val);
+            if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
+                if (argIndex == 0) {
+                    range->startStep = val;
+                } else {
+                    range->endStep = val;
+                }
+                (*validArgumentCount)++;
+            }
+        }
+    }
+
+    return ptr;
+}
+
 static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const vtxConfig_t *vtxConfigDefault, const char *headingStr)
 {
     // print out vtx channel settings

@@ -77,6 +77,7 @@ extern "C" {
     void printAux(
         dumpFlags_t, const modeActivationCondition_t *, const modeActivationCondition_t *, const char *
     );
+    void cliAdjustmentRange(const char *, char *);
     void cliColor(const char *, char *);
     void cliLed(const char *, char *);
 
@@ -233,40 +234,6 @@ struct test {
     uint8_t a;
     uint8_t b;
 };
-
-TEST(CLIUnittest, TestTypedParser)
-{
-    struct test t;
-    parseArg_t args[] = {
-        argInt_storeUint8(false, "A", &t.a),
-        argIntInRange_storeUint8(true, "B", 50, 100, &t.b),
-        // argString(true, "S"),
-    };
-    parsedArg_t parsedArgs[ARRAYLEN(args)];
-    parseArgsResult_t res = parseArgs(
-        "1 99 ",
-        args,
-        ARRAYLEN(args),
-        parsedArgs,
-        false
-    );
-    if (res.status != PARSE_STATUS_OK) {
-        EXPECT_EQ(res.status, 0);
-        return;
-    }
-
-    EXPECT_EQ(string(res.rest), "");
-    // EXPECT_EQ(string(res.rest), "  456");
-
-    // long int a = parsedArgs[0].intValue;
-    // printf("0 - %u\n", t.a);
-    // long int b = parsedArgs[1].intValue;
-    // printf("1 - %u\n", t.b);
-    // printf("2 - %u\n", parsedArgs[2].isParsed);
-    // const char *s = parsedArgs[2].strStart;
-    // unsigned sLen = parsedArgs[2].strLen;
-    // printf("0 - %s\n", s);
-}
 
 static uint8_t data[1000];
 static vector<string> outLines;
@@ -650,6 +617,88 @@ TEST_F(AuxCliWriteTest, BackwardCompat)
     EXPECT_EQ(BOXARM, condition->linkedTo);
 }
 // End of aux tests
+
+// Adjrange tests
+class AdjRangeCliWriteTest : public CliWriteTest {
+protected:
+    virtual void SetUp() {
+        CliWriteTest::SetUp();
+
+        for (unsigned i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
+            memset(adjustmentRangesMutable(i), 0, sizeof(adjustmentRange_t));
+        }
+    }
+};
+
+TEST_F(AdjRangeCliWriteTest, PrintAll)
+{
+    const char cmd[] = "adjrange";
+    char args[] = "";
+    cliAdjustmentRange(cmd, args);
+    EXPECT_EQ("adjrange 0 0 0 900 900 0 0 0 0\n", outLines.at(0));
+    EXPECT_EQ("adjrange 29 0 0 900 900 0 0 0 0\n", outLines.at(outLines.size() - 1));
+}
+
+TEST_F(AdjRangeCliWriteTest, PrintIndex)
+{
+    const char cmd[] = "adjrange";
+    char args[] = "1";
+    cliAdjustmentRange(cmd, args);
+    vector<string> expected = {
+        "adjrange 1 0 0 900 900 0 0 0 0\n"
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(AdjRangeCliWriteTest, NotEnoughArgs)
+{
+    const char cmd[] = "adjrange";
+    char args[] = "1 0 0 900 1200 0";
+    cliAdjustmentRange(cmd, args);
+    vector<string> expected = {
+        "###ERROR IN adjrange: INVALID ARGUMENT COUNT###\n"
+    };
+    EXPECT_EQ(expected, outLines);
+}
+
+TEST_F(AdjRangeCliWriteTest, MinValidArgs)
+{
+    const char cmd[] = "adjrange";
+    char args[] = "1 0 1 900 1200 1 2";
+    cliAdjustmentRange(cmd, args);
+    vector<string> expected = {
+        "adjrange 1 0 1 900 1200 1 2 0 0\n"
+    };
+    EXPECT_EQ(expected, outLines);
+    auto adjRange = adjustmentRangesMutable(1);
+    EXPECT_EQ(adjRange->auxChannelIndex, 1);
+    EXPECT_EQ(adjRange->range.startStep, 0);
+    EXPECT_EQ(adjRange->range.endStep, 12);
+    EXPECT_EQ(adjRange->adjustmentConfig, 1);
+    EXPECT_EQ(adjRange->auxSwitchChannelIndex, 2);
+    EXPECT_EQ(adjRange->adjustmentCenter, 0);
+    EXPECT_EQ(adjRange->adjustmentScale, 0);
+}
+
+TEST_F(AdjRangeCliWriteTest, AllArgs)
+{
+    const char cmd[] = "adjrange";
+    char args[] = "1 0 4 1450 1550 15 1 58 20";
+    cliAdjustmentRange(cmd, args);
+    vector<string> expected = {
+        "adjrange 1 0 4 1450 1550 15 1 58 20\n"
+    };
+    EXPECT_EQ(expected, outLines);
+    auto adjRange = adjustmentRangesMutable(1);
+    EXPECT_EQ(adjRange->auxChannelIndex, 4);
+    EXPECT_EQ(adjRange->range.startStep, 22);
+    EXPECT_EQ(adjRange->range.endStep, 26);
+    EXPECT_EQ(adjRange->adjustmentConfig, 15);
+    EXPECT_EQ(adjRange->auxSwitchChannelIndex, 1);
+    EXPECT_EQ(adjRange->adjustmentCenter, 58);
+    EXPECT_EQ(adjRange->adjustmentScale, 20);
+}
+// End of adjrange tests
 
 // Color and led tests
 class ColorCliWriteTest : public CliWriteTest {

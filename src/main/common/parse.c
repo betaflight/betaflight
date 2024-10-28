@@ -81,6 +81,17 @@ inline parseArg_t argInt_storeUint8(bool isTerminator, const char *name, uint8_t
     };
 }
 
+inline parseArg_t argInt_storeUint16(bool isTerminator, const char *name, uint16_t *valuePtr)
+{
+    return (parseArg_t) {
+        .name = name,
+        .type = ARG_TYPE_INT,
+        .isTerminator = isTerminator,
+        .storeType = ARG_STORE_UINT16,
+        .uint16ValuePtr = valuePtr,
+    };
+}
+
 inline parseArg_t argIntInRange(bool isTerminator, const char *name, long int start, long int end)
 {
     return (parseArg_t) {

@@ -91,6 +91,7 @@ parseArg_t argIntInRange(bool isTerminator, const char *name, long int start, lo
 parseArg_t argIntConvert(bool isTerminator, const char *name, convertFn *convert);
 
 parseArg_t argInt_storeUint8(bool isTerminator, const char *name, uint8_t *valuePtr);
+parseArg_t argInt_storeUint16(bool isTerminator, const char *name, uint16_t *valuePtr);
 parseArg_t argIntInRange_storeUint8(bool isTerminator, const char *name, long int start, long int end, uint8_t *valuePtr);
 parseArg_t argIntInRange_storeUint16(bool isTerminator, const char *name, long int start, long int end, uint16_t *valuePtr);
 parseArg_t argIntConvert_storeUint8(bool isTerminator, const char *name, convertFn *convert, uint8_t *valuePtr);
