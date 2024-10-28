@@ -73,6 +73,7 @@ extern "C" {
     extern bool commandBatchActive;
     extern bool commandBatchError;
     void cliBatch(const char *, char *);
+    void cliDiff(const char *, char *);
     void cliAux(const char *, char *);
     void printAux(
         dumpFlags_t, const modeActivationCondition_t *, const modeActivationCondition_t *, const char *
@@ -381,6 +382,19 @@ TEST_F(CliWriteTest, BatchEnd)
 }
 // End of batch tests
 
+// // Diff tests
+// FIXME: It matches arguments by a prefix
+// TEST_F(CliWriteTest, InvalidArgument)
+// {
+//     const char cmd[] = "diff";
+//     char args[] = "master_a";
+//     cliDiff(cmd, args);
+//     vector<string> expected = {
+//         "###ERROR IN batch: INVALID ARGUMENT COUNT###\n",
+//     };
+//     EXPECT_EQ(expected, outLines);
+// }
+// // End of diff tests
 
 // Aux tests
 class AuxCliWriteTest : public CliWriteTest {

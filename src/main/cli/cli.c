@@ -6468,7 +6468,7 @@ static void cliDump(const char *cmdName, char *cmdline)
     printConfig(cmdName, cmdline, false);
 }
 
-static void cliDiff(const char *cmdName, char *cmdline)
+STATIC_UNIT_TESTED void cliDiff(const char *cmdName, char *cmdline)
 {
     printConfig(cmdName, cmdline, true);
 }
