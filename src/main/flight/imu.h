@@ -23,6 +23,8 @@
 #include "common/axis.h"
 #include "common/time.h"
 #include "common/maths.h"
+#include "common/vector.h"
+
 #include "pg/pg.h"
 
 // Exported symbols
@@ -50,7 +52,7 @@ typedef union {
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
 extern attitudeEulerAngles_t attitude;
-extern float rMat[3][3];
+extern matrix33_t rMat;
 
 typedef struct imuConfig_s {
     uint16_t imu_dcm_kp;          // DCM filter proportional gain ( x 10000)
@@ -69,6 +71,7 @@ typedef struct imuRuntimeConfig_s {
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value);
 
+float getSinPitchAngle(void);
 float getCosTiltAngle(void);
 void getQuaternion(quaternion * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
@@ -84,6 +87,6 @@ void imuSetHasNewData(uint32_t dt);
 #endif
 
 bool imuQuaternionHeadfreeOffsetSet(void);
-void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def * v);
+void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v);
 bool shouldInitializeGPSHeading(void);
 bool isUpright(void);

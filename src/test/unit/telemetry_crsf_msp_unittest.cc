@@ -44,7 +44,9 @@ extern "C" {
     #include "drivers/system.h"
 
     #include "fc/runtime_config.h"
+    #include "fc/rc_modes.h"
     #include "config/config.h"
+    #include "flight/gps_rescue.h"
     #include "flight/imu.h"
 
     #include "io/serial.h"
@@ -63,6 +65,7 @@ extern "C" {
     #include "telemetry/msp_shared.h"
     #include "telemetry/smartport.h"
     #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
 
     rssiSource_e rssiSource;
     bool handleMspFrame(uint8_t *frameStart, uint8_t frameLength, uint8_t *skipsBeforeResponse);
@@ -85,6 +88,7 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG,0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
@@ -93,7 +97,7 @@ extern "C" {
     extern struct mspPacket_s responsePacket;
 
     uint32_t dummyTimeUs;
-
+    baro_t baro;
 }
 
 #include "unittest_macros.h"
@@ -289,7 +293,7 @@ extern "C" {
 
     bool featureIsEnabled(uint32_t) {return false;}
 
-    bool airmodeIsEnabled(void) {return true;}
+    bool isAirmodeEnabled(void) {return true;}
 
     mspDescriptor_t mspDescriptorAlloc(void) {return 0;}
 
@@ -324,4 +328,8 @@ extern "C" {
     }
 
     timeUs_t rxFrameTimeUs(void) { return 0; }
+
+    bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+
+    bool gpsRescueIsConfigured(void) { return false; }
 }

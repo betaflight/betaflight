@@ -56,7 +56,7 @@
 #endif
 
 #ifdef USE_GYRO_L3G4200D
-#include "drivers/accgyro_legacy/accgyro_l3g4200d.h"
+#include "drivers/accgyro/legacy/accgyro_l3g4200d.h"
 #endif
 
 #include "drivers/accgyro/gyro_sync.h"
@@ -166,9 +166,6 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
     const uint32_t gyroFrequencyNyquist = 1000000 / 2 / looptime;
     const float gyroDt = looptime * 1e-6f;
 
-    // Gain could be calculated a little later as it is specific to the pt1/bqrcf2/fkf branches
-    const float gain = pt1FilterGain(lpfHz, gyroDt);
-
     // Dereference the pointer to null before checking valid cutoff and filter
     // type. It will be overridden for positive cases.
     *lowpassFilterApplyFn = nullFilterApply;
@@ -179,7 +176,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
         case FILTER_PT1:
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt1FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt1FilterInit(&lowpassFilter[axis].pt1FilterState, gain);
+                pt1FilterInit(&lowpassFilter[axis].pt1FilterState, pt1FilterGain(lpfHz, gyroDt));
             }
             ret = true;
             break;
@@ -199,14 +196,14 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
         case FILTER_PT2:
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt2FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt2FilterInit(&lowpassFilter[axis].pt2FilterState, gain);
+                pt2FilterInit(&lowpassFilter[axis].pt2FilterState, pt2FilterGain(lpfHz, gyroDt));
             }
             ret = true;
             break;
         case FILTER_PT3:
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt3FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt3FilterInit(&lowpassFilter[axis].pt3FilterState, gain);
+                pt3FilterInit(&lowpassFilter[axis].pt3FilterState, pt3FilterGain(lpfHz, gyroDt));
             }
             ret = true;
             break;
@@ -278,7 +275,7 @@ void gyroInitFilters(void)
     dynNotchInit(dynNotchConfig(), gyro.targetLooptime);
 #endif
 
-    const float k = pt1FilterGain(GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ, gyro.targetLooptime);
+    const float k = pt1FilterGain(GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ, gyro.targetLooptime * 1e-6f);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         pt1FilterInit(&gyro.imuGyroFilter[axis], k);
     }
@@ -307,7 +304,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
 {
     gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
     gyroSensor->gyroDev.gyroAlign = config->alignment;
-    buildRotationMatrixFromAlignment(&config->customAlignment, &gyroSensor->gyroDev.rotationMatrix);
+    buildRotationMatrixFromAngles(&gyroSensor->gyroDev.rotationMatrix, &config->customAlignment);
     gyroSensor->gyroDev.mpuIntExtiTag = config->extiTag;
     gyroSensor->gyroDev.hardware_lpf = gyroConfig()->gyro_hardware_lpf;
 
@@ -595,7 +592,6 @@ bool gyroInit(void)
     case DEBUG_FFT:
     case DEBUG_FFT_FREQ:
     case DEBUG_GYRO_RAW:
-    case DEBUG_GYRO_SCALED:
     case DEBUG_GYRO_FILTERED:
     case DEBUG_DYN_LPF:
     case DEBUG_GYRO_SAMPLE:

@@ -176,6 +176,8 @@ static void ltm_sframe(void)
         lt_flightmode = 2;
     else if (FLIGHT_MODE(HORIZON_MODE))
         lt_flightmode = 3;
+    else if (FLIGHT_MODE(ALT_HOLD_MODE))
+        lt_flightmode = 5;
     else
         lt_flightmode = 1;      // Rate mode
 
@@ -213,8 +215,8 @@ static void ltm_oframe(void)
 {
     ltm_initialise_packet('O');
 #if defined(USE_GPS)
-    ltm_serialise_32(GPS_home[GPS_LATITUDE]);
-    ltm_serialise_32(GPS_home[GPS_LONGITUDE]);
+    ltm_serialise_32(GPS_home_llh.lat);
+    ltm_serialise_32(GPS_home_llh.lon);
 #else
     ltm_serialise_32(0);
     ltm_serialise_32(0);

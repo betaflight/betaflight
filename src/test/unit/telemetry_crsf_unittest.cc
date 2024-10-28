@@ -43,8 +43,10 @@ extern "C" {
 
     #include "config/config.h"
     #include "fc/runtime_config.h"
+    #include "fc/rc_modes.h"
 
     #include "flight/pid.h"
+    #include "flight/gps_rescue.h"
     #include "flight/imu.h"
 
     #include "io/gps.h"
@@ -56,6 +58,7 @@ extern "C" {
     #include "sensors/battery.h"
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
 
     #include "msp/msp_serial.h"
 
@@ -65,6 +68,7 @@ extern "C" {
 
     rssiSource_e rssiSource;
     bool airMode;
+    baro_t baro;
 
     uint16_t testBatteryVoltage = 0;
     int32_t testAmperage = 0;
@@ -79,6 +83,7 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 }
 
 #include "unittest_macros.h"
@@ -264,10 +269,10 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     EXPECT_EQ(CRSF_SYNC_BYTE, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
     EXPECT_EQ(0x21, frame[2]); // type
-    EXPECT_EQ('S', frame[3]);
-    EXPECT_EQ('T', frame[4]);
-    EXPECT_EQ('A', frame[5]);
-    EXPECT_EQ('B', frame[6]);
+    EXPECT_EQ('A', frame[3]);
+    EXPECT_EQ('N', frame[4]);
+    EXPECT_EQ('G', frame[5]);
+    EXPECT_EQ('L', frame[6]);
     EXPECT_EQ(0, frame[7]);
     EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
 
@@ -340,7 +345,7 @@ bool telemetryIsSensorEnabled(sensor_e) {return true;}
 
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
-bool airmodeIsEnabled(void) {return airMode;}
+bool isAirmodeEnabled(void) {return airMode;}
 
 int32_t getAmperage(void)
 {
@@ -389,4 +394,6 @@ bool handleMspFrame(uint8_t *, uint8_t, uint8_t *)  { return false; }
 bool isBatteryVoltageConfigured(void) { return true; }
 bool isAmperageConfigured(void) { return true; }
 timeUs_t rxFrameTimeUs(void) { return 0; }
+bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+bool gpsRescueIsConfigured(void) { return false; }
 }

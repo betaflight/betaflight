@@ -35,6 +35,67 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
     .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE | FEATURE_ANTI_GRAVITY | FEATURE_AIRMODE,
 );
 
+// bitmask of features that are supported in current build configuration
+uint32_t featuresSupportedByBuild =
+    0
+#ifdef USE_PPM
+    | FEATURE_RX_PPM
+#endif
+    | FEATURE_INFLIGHT_ACC_CAL // always available
+#ifdef USE_SERIALRX
+    | FEATURE_RX_SERIAL
+#endif
+    | FEATURE_MOTOR_STOP // always available
+#ifdef USE_SERVOS
+    | FEATURE_SERVO_TILT
+#endif
+#ifdef USE_SOFTSERIAL
+    | FEATURE_SOFTSERIAL
+#endif
+#ifdef USE_GPS
+    | FEATURE_GPS
+#endif
+#ifdef USE_RANGEFINDER
+    | FEATURE_RANGEFINDER
+#endif
+#ifdef USE_TELEMETRY
+    | FEATURE_TELEMETRY
+#endif
+    | FEATURE_3D // always available
+#ifdef USE_PWM
+    | FEATURE_RX_PARALLEL_PWM
+#endif
+#ifdef USE_RX_MSP
+    | FEATURE_RX_MSP
+#endif
+#ifdef USE_ADC
+    | FEATURE_RSSI_ADC
+#endif
+#ifdef USE_LED_STRIP  // but cms will try to use it
+    | FEATURE_LED_STRIP
+#endif
+#ifdef USE_DASHBOARD
+    | FEATURE_DASHBOARD
+#endif
+#ifdef USE_OSD
+    | FEATURE_OSD
+#endif
+#ifdef USE_SERVOS
+    | FEATURE_CHANNEL_FORWARDING
+#endif
+#ifdef USE_TRANSPONDER
+    | FEATURE_TRANSPONDER
+#endif
+    | FEATURE_AIRMODE // always available
+#ifdef USE_RX_SPI
+    | FEATURE_RX_SPI
+#endif
+#ifdef USE_ESC_SENSOR
+    | FEATURE_ESC_SENSOR
+#endif
+    | FEATURE_ANTI_GRAVITY // always available
+    ;
+
 static uint32_t runtimeFeatureMask;
 
 void featureInit(void)

@@ -89,8 +89,8 @@ void gpsLapTimerEndSetGate(void)
 
 void gpsLapTimerNewGpsData(void)
 {
-    GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &gpsLapTimerData.gateLocation.lat, &gpsLapTimerData.gateLocation.lon, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
-    
+    GPS_distance_cm_bearing(&gpsSol.llh, &gpsLapTimerData.gateLocation, false, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
+
     if (settingGate) {
         gpsLapTimerProcessSettingGate();
         return;

@@ -512,7 +512,7 @@ void max7456Write(uint8_t x, uint8_t y, const char *text)
 
 bool max7456LayerSupported(displayPortLayer_e layer)
 {
-    if (layer == DISPLAYPORT_LAYER_FOREGROUND || layer == DISPLAYPORT_LAYER_BACKGROUND) {
+    if (layer == DISPLAYPORT_LAYER_FOREGROUND) {
         return true;
     } else {
         return false;

@@ -149,11 +149,6 @@ uint8_t getCurrentControlRateProfileIndex(void)
     return systemConfig()->activeRateProfile;
 }
 
-uint16_t getCurrentMinthrottle(void)
-{
-    return motorConfig()->minthrottle;
-}
-
 void resetConfig(void)
 {
     pgResetAll();
@@ -275,10 +270,10 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY;
         }
 
-        // If the d_min value for any axis is >= the D gain then reset d_min to 0 for consistent Configurator behavior
+        // If the d_max value for any axis is <= the D gain then reset d_max to 0 for consistent Configurator behavior
         for (unsigned axis = 0; axis <= FD_YAW; axis++) {
-            if (pidProfilesMutable(i)->d_min[axis] > pidProfilesMutable(i)->pid[axis].D) {
-                pidProfilesMutable(i)->d_min[axis] = 0;
+            if (pidProfilesMutable(i)->d_max[axis] < pidProfilesMutable(i)->pid[axis].D) {
+                pidProfilesMutable(i)->d_max[axis] = 0;
             }
         }
 
@@ -415,98 +410,19 @@ static void validateAndFixConfig(void)
         gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
     }
 
-// clear features that are not supported.
-// I have kept them all here in one place, some could be moved to sections of code above.
+    // clear features that are not supported.
+    featureDisableImmediate(~featuresSupportedByBuild);
 
-#ifndef USE_RX_PPM
-    featureDisableImmediate(FEATURE_RX_PPM);
-#endif
-
-#ifndef USE_SERIALRX
-    featureDisableImmediate(FEATURE_RX_SERIAL);
-#endif
-
-#if !defined(USE_SOFTSERIAL)
-    featureDisableImmediate(FEATURE_SOFTSERIAL);
-#endif
-
-#ifndef USE_RANGEFINDER
-    featureDisableImmediate(FEATURE_RANGEFINDER);
-#endif
-
-#ifndef USE_TELEMETRY
-    featureDisableImmediate(FEATURE_TELEMETRY);
-#endif
-
-#ifndef USE_RX_PWM
-    featureDisableImmediate(FEATURE_RX_PARALLEL_PWM);
-#endif
-
-#ifndef USE_RX_MSP
-    featureDisableImmediate(FEATURE_RX_MSP);
-#endif
-
-#ifndef USE_LED_STRIP
-    featureDisableImmediate(FEATURE_LED_STRIP);
-#endif
-
-#ifndef USE_DASHBOARD
-    featureDisableImmediate(FEATURE_DASHBOARD);
-#endif
-
-#ifndef USE_OSD
-    featureDisableImmediate(FEATURE_OSD);
-#endif
-
-#ifndef USE_SERVOS
-    featureDisableImmediate(FEATURE_SERVO_TILT | FEATURE_CHANNEL_FORWARDING);
-#endif
-
-#ifndef USE_TRANSPONDER
-    featureDisableImmediate(FEATURE_TRANSPONDER);
-#endif
-
-#ifndef USE_RX_SPI
-    featureDisableImmediate(FEATURE_RX_SPI);
-#endif
-
-#ifndef USE_ESC_SENSOR
-    featureDisableImmediate(FEATURE_ESC_SENSOR);
-#endif
-
-#if !defined(USE_ADC)
-    featureDisableImmediate(FEATURE_RSSI_ADC);
-#endif
-
-if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
-
-#ifdef USE_DASHBOARD
-    featureEnableImmediate(FEATURE_DASHBOARD);
-#endif
-#ifdef USE_LED_STRIP
-    featureEnableImmediate(FEATURE_LED_STRIP);
-#endif
-#ifdef USE_OSD
-    featureEnableImmediate(FEATURE_OSD);
-#endif
-#ifdef USE_RANGEFINDER
-    featureEnableImmediate(FEATURE_RANGEFINDER);
-#endif
-#ifdef USE_SERVOS
-    featureEnableImmediate(FEATURE_CHANNEL_FORWARDING);
-    featureEnableImmediate(FEATURE_SERVO_TILT);
-#endif
+    if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
+        // enable some compiled-in features by default
+        uint32_t autoFeatures =
+            FEATURE_OSD | FEATURE_LED_STRIP
 #if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
-    featureEnableImmediate(FEATURE_SOFTSERIAL);
+            | FEATURE_SOFTSERIAL
 #endif
-#ifdef USE_TELEMETRY
-    featureEnableImmediate(FEATURE_TELEMETRY);
-#endif
-#ifdef USE_TRANSPONDER
-    featureEnableImmediate(FEATURE_TRANSPONDER);
-#endif
-
-}
+            ;
+        featureEnableImmediate(autoFeatures & featuresSupportedByBuild);
+    }
 
 #if defined(USE_BEEPER)
 #ifdef USE_TIMER

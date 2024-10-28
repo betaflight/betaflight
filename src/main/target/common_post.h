@@ -232,8 +232,20 @@
 #endif
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED) && !defined(USE_TELEMETRY_IBUS)
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
 #define USE_TELEMETRY_IBUS
 #endif
+
+#ifdef USE_SERIALRX_JETIEXBUS
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
+#ifndef USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_JETIEXBUS
+#endif
+#endif // USE_SERIALRX_JETIEXBUS
 
 #if !defined(USE_SERIALRX_CRSF)
 #undef USE_TELEMETRY_CRSF
@@ -265,8 +277,8 @@
 #undef USE_TELEMETRY_IBUS_EXTENDED
 #endif
 
-// If USE_SERIALRX_SPEKTRUM was dropped by a target, drop all related options
-#ifndef USE_SERIALRX_SPEKTRUM
+// If USE_SERIALRX_SPEKTRUM or SERIALRX_SRXL2 was dropped by a target, drop all related options
+#if !defined(USE_SERIALRX_SPEKTRUM) && !defined(USE_SERIALRX_SRXL2)
 #undef USE_SPEKTRUM_BIND
 #undef USE_SPEKTRUM_BIND_PLUG
 #undef USE_SPEKTRUM_REAL_RSSI
@@ -275,7 +287,7 @@
 #undef USE_SPEKTRUM_VTX_CONTROL
 #undef USE_SPEKTRUM_VTX_TELEMETRY
 #undef USE_TELEMETRY_SRXL
-#endif
+#endif // !defined(USE_SERIALRX_SPEKTRUM) && !defined(USE_SERIALRX_SRXL2)
 
 #if !defined(USE_CMS) || !defined(USE_TELEMETRY_SRXL)
 #undef USE_SPEKTRUM_CMS_TELEMETRY
@@ -324,36 +336,34 @@
 #endif
 
 #if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_PY25Q128HA)) && !defined(USE_FLASH_M25P16)
-#if !defined(USE_FLASH_M25P16)
 #define USE_FLASH_M25P16
-#endif
 #endif
 
 #if defined(USE_FLASH_W25M02G) && !defined(USE_FLASH_W25N01G)
-#if !defined(USE_FLASH_W25N01G)
 #define USE_FLASH_W25N01G
 #endif
+
+#if defined(USE_FLASH_W25N02K) || defined(USE_FLASH_W25N01G)
+#define USE_FLASH_W25N
 #endif
 
-#if (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)) && !defined(USE_FLASH_W25M)
-#if !defined(USE_FLASH_W25M)
+#if (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N)) && !defined(USE_FLASH_W25M)
 #define USE_FLASH_W25M
 #endif
-#endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25Q128FV)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV)
 #if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
 #endif
 
-#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25M02G))
+#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25M02G))
 #if !defined(USE_FLASH_SPI)
 #define USE_FLASH_SPI
 #endif
 #endif
 
-#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N01G))
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N))
 #if !defined(USE_FLASH_QUADSPI)
 #define USE_FLASH_QUADSPI
 #endif

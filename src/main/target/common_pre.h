@@ -138,6 +138,7 @@
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
 #define USE_FLASH_W25N01G    // 1Gb NAND flash support
+#define USE_FLASH_W25N02K    // 2Gb NAND flash support
 #define USE_FLASH_W25M       // Stacked die support
 #define USE_FLASH_W25M512    // 512Kb (256Kb x 2 stacked) NOR flash support
 #define USE_FLASH_W25M02G    // 2Gb (1Gb x 2 stacked) NAND flash support
@@ -201,8 +202,10 @@
 
 #define USE_VTX
 #define USE_OSD
+#if !defined(USE_OSD_SD) && !defined(USE_OSD_HD)
 #define USE_OSD_SD
 #define USE_OSD_HD
+#endif
 #define USE_BLACKBOX
 
 #if TARGET_FLASH_SIZE >= 1024
@@ -242,6 +245,7 @@
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_ESCSERIAL_SIMONK
+#define USE_ALT_HOLD_MODE
 
 #if !defined(USE_GPS)
 #define USE_GPS
@@ -317,7 +321,7 @@
 
 #define USE_GYRO_LPF2
 #define USE_DYN_LPF
-#define USE_D_MIN
+#define USE_D_MAX
 
 #define USE_THROTTLE_BOOST
 #define USE_INTEGRATED_YAW_CONTROL
@@ -325,7 +329,6 @@
 #define USE_ITERM_RELAX
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
-#define USE_TPA_MODE
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
@@ -337,6 +340,15 @@
 #define USE_SPEKTRUM_VTX_TELEMETRY
 #define USE_SPEKTRUM_CMS_TELEMETRY
 #endif // USE_SERIALRX_SPEKTRUM
+
+#ifdef USE_TELEMETRY_SRXL
+#ifndef USE_SERIALRX_SPEKTRUM
+#define USE_SERIALRX_SPEKTRUM
+#define USE_SPEKTRUM_VTX_CONTROL
+#define USE_SPEKTRUM_VTX_TELEMETRY
+#define USE_SPEKTRUM_CMS_TELEMETRY
+#endif // USE_SERIALRX_SPEKTRUM
+#endif // USE_TELEMETRY_SRXL
 
 #define USE_BOARD_INFO
 #define USE_RTC_TIME
@@ -453,3 +465,21 @@
 #endif
 
 #endif // USE_RACE_PRO
+
+#ifdef USE_WING
+
+#ifndef USE_SERVOS
+#define USE_SERVOS
+#endif
+
+#ifndef USE_ADVANCED_TPA
+#define USE_ADVANCED_TPA
+#endif
+
+#undef USE_YAW_SPIN_RECOVERY
+#undef USE_LAUNCH_CONTROL
+#undef USE_ABSOLUTE_CONTROL
+#undef USE_INTEGRATED_YAW_CONTROL
+#undef USE_RUNAWAY_TAKEOFF
+
+#endif // USE_WING

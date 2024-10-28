@@ -54,19 +54,19 @@
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
 
 #ifdef USE_ACC_ADXL345
-#include "drivers/accgyro_legacy/accgyro_adxl345.h"
+#include "drivers/accgyro/legacy/accgyro_adxl345.h"
 #endif
 
 #ifdef USE_ACC_BMA280
-#include "drivers/accgyro_legacy/accgyro_bma280.h"
+#include "drivers/accgyro/legacy/accgyro_bma280.h"
 #endif
 
 #ifdef USE_ACC_LSM303DLHC
-#include "drivers/accgyro_legacy/accgyro_lsm303dlhc.h"
+#include "drivers/accgyro/legacy/accgyro_lsm303dlhc.h"
 #endif
 
 #ifdef USE_ACC_MMA8452
-#include "drivers/accgyro_legacy/accgyro_mma845x.h"
+#include "drivers/accgyro/legacy/accgyro_mma845x.h"
 #endif
 
 #include "drivers/bus_spi.h"
@@ -407,7 +407,7 @@ bool accInit(uint16_t accSampleRateHz)
     }
 #endif
     acc.dev.accAlign = alignment;
-    buildRotationMatrixFromAlignment(customAlignment, &acc.dev.rotationMatrix);
+    buildRotationMatrixFromAngles(&acc.dev.rotationMatrix, customAlignment);
 
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
@@ -453,10 +453,10 @@ void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
         }
 
         // Sum up CALIBRATING_ACC_CYCLES readings
-        a[axis] += acc.accADC[axis];
+        a[axis] += acc.accADC.v[axis];
 
         // Reset global variables to prevent other code from using un-calibrated data
-        acc.accADC[axis] = 0;
+        acc.accADC.v[axis] = 0;
         accelerationRuntime.accelerationTrims->raw[axis] = 0;
     }
 
@@ -495,9 +495,9 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
             if (InflightcalibratingA == 50)
                 b[axis] = 0;
             // Sum up 50 readings
-            b[axis] += acc.accADC[axis];
+            b[axis] += acc.accADC.v[axis];
             // Clear global variables for next reading
-            acc.accADC[axis] = 0;
+            acc.accADC.v[axis] = 0;
             accelerationRuntime.accelerationTrims->raw[axis] = 0;
         }
         // all values are measured

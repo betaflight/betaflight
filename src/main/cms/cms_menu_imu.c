@@ -251,8 +251,8 @@ static uint8_t cmsx_simplified_roll_pitch_ratio;
 static uint8_t cmsx_simplified_i_gain;
 static uint8_t cmsx_simplified_d_gain;
 static uint8_t cmsx_simplified_pi_gain;
-#ifdef USE_D_MIN
-static uint8_t cmsx_simplified_dmin_ratio;
+#ifdef USE_D_MAX
+static uint8_t cmsx_simplified_d_max_gain;
 #endif
 static uint8_t cmsx_simplified_feedforward_gain;
 static uint8_t cmsx_simplified_pitch_pi_gain;
@@ -263,9 +263,10 @@ static uint8_t cmsx_simplified_gyro_filter;
 static uint8_t cmsx_simplified_gyro_filter_multiplier;
 static uint8_t cmsx_tpa_rate;
 static uint16_t cmsx_tpa_breakpoint;
-static uint8_t cmsx_tpa_low_rate;
+static int8_t cmsx_tpa_low_rate;
 static uint16_t cmsx_tpa_low_breakpoint;
 static uint8_t cmsx_tpa_low_always;
+static uint8_t cmsx_landing_disarm_threshold;
 
 static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
 {
@@ -279,8 +280,8 @@ static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
     cmsx_simplified_i_gain = pidProfile->simplified_i_gain;
     cmsx_simplified_d_gain = pidProfile->simplified_d_gain;
     cmsx_simplified_pi_gain = pidProfile->simplified_pi_gain;
-#ifdef USE_D_MIN
-    cmsx_simplified_dmin_ratio = pidProfile->simplified_dmin_ratio;
+#ifdef USE_D_MAX
+    cmsx_simplified_d_max_gain = pidProfile->simplified_d_max_gain;
 #endif
     cmsx_simplified_feedforward_gain = pidProfile->simplified_feedforward_gain;
     cmsx_simplified_pitch_pi_gain = pidProfile->simplified_pitch_pi_gain;
@@ -306,8 +307,8 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
         || pidProfile->simplified_i_gain != cmsx_simplified_i_gain
         || pidProfile->simplified_d_gain != cmsx_simplified_d_gain
         || pidProfile->simplified_pi_gain != cmsx_simplified_pi_gain
-#ifdef USE_D_MIN
-        || pidProfile->simplified_dmin_ratio != cmsx_simplified_dmin_ratio
+#ifdef USE_D_MAX
+        || pidProfile->simplified_d_max_gain != cmsx_simplified_d_max_gain
 #endif
         || pidProfile->simplified_feedforward_gain != cmsx_simplified_feedforward_gain
         || pidProfile->simplified_pitch_pi_gain != cmsx_simplified_pitch_pi_gain
@@ -323,8 +324,8 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
         pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
         pidProfile->simplified_d_gain = cmsx_simplified_d_gain;
         pidProfile->simplified_pi_gain = cmsx_simplified_pi_gain;
-#ifdef USE_D_MIN
-        pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
+#ifdef USE_D_MAX
+        pidProfile->simplified_d_max_gain = cmsx_simplified_d_max_gain;
 #endif
         pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
         pidProfile->simplified_pitch_pi_gain = cmsx_simplified_pitch_pi_gain;
@@ -351,8 +352,8 @@ static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
     { "FF GAINS",          OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_feedforward_gain,  SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
     { "-- EXPERT --",      OME_Label, NULL, NULL},
-#ifdef USE_D_MIN
-    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+#ifdef USE_D_MAX
+    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_max_gain,       SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 #endif
     { "I GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
@@ -526,10 +527,10 @@ static uint8_t  cmsx_thrustLinearization;
 static uint8_t  cmsx_antiGravityGain;
 static uint8_t  cmsx_motorOutputLimit;
 static int8_t   cmsx_autoProfileCellCount;
-#ifdef USE_D_MIN
-static uint8_t  cmsx_d_min[XYZ_AXIS_COUNT];
-static uint8_t  cmsx_d_min_gain;
-static uint8_t  cmsx_d_min_advance;
+#ifdef USE_D_MAX
+static uint8_t  cmsx_d_max[XYZ_AXIS_COUNT];
+static uint8_t  cmsx_d_max_gain;
+static uint8_t  cmsx_d_max_advance;
 #endif
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
@@ -552,7 +553,7 @@ static uint8_t cmsx_feedforward_jitter_factor;
 
 static uint8_t cmsx_tpa_rate;
 static uint16_t cmsx_tpa_breakpoint;
-static uint8_t cmsx_tpa_low_rate;
+static int8_t cmsx_tpa_low_rate;
 static uint16_t cmsx_tpa_low_breakpoint;
 static uint8_t cmsx_tpa_low_always;
 
@@ -580,12 +581,12 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     cmsx_motorOutputLimit = pidProfile->motor_output_limit;
     cmsx_autoProfileCellCount = pidProfile->auto_profile_cell_count;
 
-#ifdef USE_D_MIN
+#ifdef USE_D_MAX
     for (unsigned i = 0; i < XYZ_AXIS_COUNT; i++) {
-        cmsx_d_min[i]  = pidProfile->d_min[i];
+        cmsx_d_max[i]  = pidProfile->d_max[i];
     }
-    cmsx_d_min_gain = pidProfile->d_min_gain;
-    cmsx_d_min_advance = pidProfile->d_min_advance;
+    cmsx_d_max_gain = pidProfile->d_max_gain;
+    cmsx_d_max_advance = pidProfile->d_max_advance;
 #endif
 
 #ifdef USE_ITERM_RELAX
@@ -610,7 +611,7 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     cmsx_tpa_low_rate = pidProfile->tpa_low_rate;
     cmsx_tpa_low_breakpoint = pidProfile->tpa_low_breakpoint;
     cmsx_tpa_low_always = pidProfile->tpa_low_always;
-
+    cmsx_landing_disarm_threshold = pidProfile->landing_disarm_threshold;
     return NULL;
 }
 
@@ -638,12 +639,12 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->motor_output_limit = cmsx_motorOutputLimit;
     pidProfile->auto_profile_cell_count = cmsx_autoProfileCellCount;
 
-#ifdef USE_D_MIN
+#ifdef USE_D_MAX
     for (unsigned i = 0; i < XYZ_AXIS_COUNT; i++) {
-        pidProfile->d_min[i] = cmsx_d_min[i];
+        pidProfile->d_max[i] = cmsx_d_max[i];
     }
-    pidProfile->d_min_gain = cmsx_d_min_gain;
-    pidProfile->d_min_advance = cmsx_d_min_advance;
+    pidProfile->d_max_gain = cmsx_d_max_gain;
+    pidProfile->d_max_advance = cmsx_d_max_advance;
 #endif
 
 #ifdef USE_ITERM_RELAX
@@ -668,6 +669,7 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->tpa_low_rate = cmsx_tpa_low_rate;
     pidProfile->tpa_low_breakpoint = cmsx_tpa_low_breakpoint;
     pidProfile->tpa_low_always = cmsx_tpa_low_always;
+    pidProfile->landing_disarm_threshold = cmsx_landing_disarm_threshold;
 
     initEscEndpoints();
     return NULL;
@@ -711,12 +713,12 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 
     { "AUTO CELL CNT", OME_INT8, NULL, &(OSD_INT8_t) { &cmsx_autoProfileCellCount, AUTO_PROFILE_CELL_COUNT_CHANGE, MAX_AUTO_DETECT_CELL_COUNT, 1} },
 
-#ifdef USE_D_MIN
-    { "D_MIN ROLL",  OME_UINT8 | SLIDER_RP,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_ROLL],      0, 100, 1 } },
-    { "D_MIN PITCH", OME_UINT8 | SLIDER_RP,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_PITCH],     0, 100, 1 } },
-    { "D_MIN YAW",   OME_UINT8 | SLIDER_RPY,  NULL, &(OSD_UINT8_t) { &cmsx_d_min[FD_YAW],       0, 100, 1 } },
-    { "D_MIN GAIN",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_gain,          0, 100, 1 } },
-    { "D_MIN ADV",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_min_advance,       0, 200, 1 } },
+#ifdef USE_D_MAX
+    { "D_MAX ROLL",  OME_UINT8 | SLIDER_RP,  NULL, &(OSD_UINT8_t) { &cmsx_d_max[FD_ROLL],      0, 100, 1 } },
+    { "D_MAX PITCH", OME_UINT8 | SLIDER_RP,  NULL, &(OSD_UINT8_t) { &cmsx_d_max[FD_PITCH],     0, 100, 1 } },
+    { "D_MAX YAW",   OME_UINT8 | SLIDER_RPY,  NULL, &(OSD_UINT8_t) { &cmsx_d_max[FD_YAW],       0, 100, 1 } },
+    { "D_MAX GAIN",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_max_gain,          0, 100, 1 } },
+    { "D_MAX ADV",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_d_max_advance,       0, 200, 1 } },
 #endif
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
@@ -725,9 +727,10 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 
     { "TPA RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate, 0, 100, 1, 10} },
     { "TPA BRKPT",     OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint, 1000, 2000, 10} },
-    { "TPA LOW RATE",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_tpa_low_rate, 0, 100, 1} },
+    { "TPA LOW RATE",  OME_INT8,   NULL, &(OSD_INT8_t) { &cmsx_tpa_low_rate, TPA_LOW_RATE_MIN, TPA_MAX , 1} },
     { "TPA LOW BRKPT", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_low_breakpoint, 1000, 2000, 10} },
     { "TPA LOW ALWYS", OME_Bool,   NULL, &cmsx_tpa_low_always },
+    { "EZDISARM THR",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_landing_disarm_threshold, 0, 150, 1} },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

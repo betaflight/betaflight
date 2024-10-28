@@ -262,7 +262,6 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = JETIEXBUS_CHANNEL_COUNT;
     rxRuntimeState->rcReadRawFn = jetiExBusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = jetiExBusFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 
     jetiExBusFrameReset();
 

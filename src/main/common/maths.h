@@ -75,18 +75,6 @@ typedef struct stdev_s
     int m_n;
 } stdev_t;
 
-// Floating point 3 vector.
-typedef struct fp_vector {
-    float X;
-    float Y;
-    float Z;
-} t_fp_vector_def;
-
-typedef union u_fp_vector {
-    float A[3];
-    t_fp_vector_def V;
-} t_fp_vector;
-
 // Floating point Euler angles.
 // Be carefull, could be either of degrees or radians.
 typedef struct fp_angles {
@@ -100,10 +88,6 @@ typedef union {
     fp_angles_def angles;
 } fp_angles_t;
 
-typedef struct fp_rotationMatrix_s {
-    float m[3][3];              // matrix
-} fp_rotationMatrix_t;
-
 int gcd(int num, int denom);
 int32_t applyDeadband(int32_t value, int32_t deadband);
 float fapplyDeadband(float value, float deadband);
@@ -116,9 +100,6 @@ float degreesToRadians(int16_t degrees);
 
 int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float destTo);
-
-void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation);
-void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix);
 
 int32_t quickMedianFilter3(const int32_t * v);
 int32_t quickMedianFilter5(const int32_t * v);
@@ -135,6 +116,7 @@ float sin_approx(float x);
 float cos_approx(float x);
 float atan2_approx(float y, float x);
 float acos_approx(float x);
+float asin_approx(float x);
 #define tan_approx(x)       (sin_approx(x) / cos_approx(x))
 float exp_approx(float val);
 float log_approx(float val);
@@ -155,6 +137,8 @@ void arraySubInt32(int32_t *dest, const int32_t *array1, const int32_t *array2, 
 int16_t qPercent(fix12_t q);
 int16_t qMultiply(fix12_t q, int16_t input);
 fix12_t qConstruct(int16_t num, int16_t den);
+
+float smoothStepUpTransition(const float x, const float center, const float width);
 
 static inline int constrain(int amt, int low, int high)
 {

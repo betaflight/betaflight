@@ -835,7 +835,7 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
 
 void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
-    const bool canUseRxData = rxIsReceivingSignal();
+    const bool canUseRxData = isRxReceivingSignal();
 
     // Recalculate the new active adjustments if required
     if (stepwiseAdjustmentCount == ADJUSTMENT_RANGE_COUNT_INVALID) {

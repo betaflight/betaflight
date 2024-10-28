@@ -49,13 +49,13 @@ void rcStatsUpdate(timeUs_t currentTimeUs)
     previousTimeUs = currentTimeUs;
     const int8_t throttlePercent = calculateThrottlePercent();
 
-    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) && !throttleEverRaisedAfterArming) {
+    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && !throttleEverRaisedAfterArming) {
         if (abs(throttlePercent) >= 15) { // start counting stats if throttle was raised >= 15% after arming
             throttleEverRaisedAfterArming = true;
         }
     }
 
-    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) && throttleEverRaisedAfterArming) {
+    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && throttleEverRaisedAfterArming) {
         counter++;
         totalTrottleNumber += throttlePercent;
 

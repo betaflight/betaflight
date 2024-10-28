@@ -386,7 +386,7 @@ bool compassInit(void)
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
 
-    buildRotationMatrixFromAlignment(&compassConfig()->mag_customAlignment, &magDev.rotationMatrix);
+    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &compassConfig()->mag_customAlignment);
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 
@@ -405,7 +405,7 @@ bool compassInit(void)
 
 bool compassIsHealthy(void)
 {
-    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
+    return (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
 }
 
 void compassStartCalibration(void)
@@ -449,15 +449,15 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
 
     // if we get here, we have new data to parse
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC[axis] = magADCRaw[axis];
+        mag.magADC.v[axis] = magADCRaw[axis];
     }
     // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
     mag.isNewMagADCFlag = true;
 
     if (magDev.magAlignment == ALIGN_CUSTOM) {
-        alignSensorViaMatrix(mag.magADC, &magDev.rotationMatrix);
+        alignSensorViaMatrix(&mag.magADC, &magDev.rotationMatrix);
     } else {
-        alignSensorViaRotation(mag.magADC, magDev.magAlignment);
+        alignSensorViaRotation(&mag.magADC, magDev.magAlignment);
     }
 
     // get stored cal/bias values
@@ -486,7 +486,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             if (didMovementStart) {
                 // LED will flash at task rate while calibrating, looks like 'ON' all the time.
                 LED0_ON;
-                compassBiasEstimatorApply(&compassBiasEstimator, mag.magADC);
+                compassBiasEstimatorApply(&compassBiasEstimator, &mag.magADC);
             }
         } else {
             // mag cal process is not complete until the new cal values are saved
@@ -511,18 +511,18 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
 
     // remove saved cal/bias; this is zero while calibrating
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC[axis] -= magZero->raw[axis];
+        mag.magADC.v[axis] -= magZero->raw[axis];
     }
 
     if (debugMode == DEBUG_MAG_CALIB) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            // DEBUG 0-2: magADC[X], magADC[Y], magADC[Z]
-            DEBUG_SET(DEBUG_MAG_CALIB, axis, lrintf(mag.magADC[axis]));
+            // DEBUG 0-2: magADC.x, magADC.y, magADC.z
+            DEBUG_SET(DEBUG_MAG_CALIB, axis, lrintf(mag.magADC.v[axis]));
             // DEBUG 4-6: estimated magnetometer bias, increases above zero when calibration starts
             DEBUG_SET(DEBUG_MAG_CALIB, axis + 4, lrintf(compassBiasEstimator.b[axis]));
         }
         // DEBUG 3: absolute vector length of magADC, should stay constant independent of the orientation of the quad
-        DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(sqrtf(sq(mag.magADC[X]) + sq(mag.magADC[Y]) + sq(mag.magADC[Z]))));
+        DEBUG_SET(DEBUG_MAG_CALIB, 3, lrintf(vector3Norm(&mag.magADC)));
         // DEBUG 7: adaptive forgetting factor lambda, only while analysing cal data
         // after the transient phase it should converge to 2000
         // set dsiplayed lambda to zero unless calibrating, to indicate start and finish in Sensors tab
@@ -578,13 +578,13 @@ void compassBiasEstimatorUpdate(compassBiasEstimator_t *cBE, const float lambda_
 }
 
 // apply one estimation step of the compass bias estimator
-void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, float *mag)
+void compassBiasEstimatorApply(compassBiasEstimator_t *cBE, vector3_t *mag)
 {
     // update phi
     float phi[4];
-    phi[0] = sq(mag[0]) + sq(mag[1]) + sq(mag[2]);
+    phi[0] = sq(mag->x) + sq(mag->y) + sq(mag->z);
     for (unsigned i = 0; i < 3; i++) {
-        phi[i + 1] = mag[i];
+        phi[i + 1] = mag->v[i];
     }
 
     // update e

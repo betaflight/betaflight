@@ -32,10 +32,10 @@ typedef enum {
 
 typedef enum {
     ELRS_DIO_UNKNOWN = 0,
-    ELRS_DIO_RX_DONE = 1,
-    ELRS_DIO_TX_DONE = 2,
-    ELRS_DIO_RX_AND_TX_DONE = 3,
-} dioReason_e;
+    ELRS_DIO_RX_DONE = (1 << 0),
+    ELRS_DIO_TX_DONE = (1 << 1),
+    ELRS_DIO_HWERROR = (1 << 2),
+} dioReasonFlags_e;
 
 typedef enum {
     ELRS_CONNECTED,
@@ -87,6 +87,7 @@ typedef struct elrsReceiver_s {
     uint32_t rfModeCycledAtMs;
     uint8_t rateIndex;
     uint8_t nextRateIndex;
+    uint8_t switchMode;
 
     uint32_t gotConnectionMs;
     uint32_t lastSyncPacketMs;
@@ -98,7 +99,6 @@ typedef struct elrsReceiver_s {
     bool inBindingMode;
     volatile bool initializeReceiverPending;
     volatile bool fhssRequired;
-    volatile bool didFhss;
 
     uint32_t statsUpdatedAtMs;
 

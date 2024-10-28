@@ -120,9 +120,8 @@ typedef enum {
 #ifdef USE_LAUNCH_CONTROL
     TABLE_LAUNCH_CONTROL_MODE,
 #endif
-#ifdef USE_TPA_MODE
     TABLE_TPA_MODE,
-#endif
+    TABLE_SPA_MODE,
 #ifdef USE_LED_STRIP
     TABLE_LED_PROFILE,
     TABLE_LEDSTRIP_COLOR,
@@ -143,7 +142,12 @@ typedef enum {
 #endif
 #ifdef USE_RX_EXPRESSLRS
     TABLE_FREQ_DOMAIN,
-    TABLE_SWITCH_MODE,
+#endif
+#ifdef USE_ADVANCED_TPA
+    TABLE_TPA_CURVE_TYPE,
+#endif
+#ifdef USE_WING
+    TABLE_TPA_SPEED_TYPE,
 #endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;

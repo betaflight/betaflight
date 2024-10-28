@@ -738,15 +738,15 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, lrintf(100 * acc.accADC[X] * acc.dev.acc_1G_rec)); // Multiply by 100 to show as x.xx g on Taranis
+                smartPortSendPackage(id, lrintf(100 * acc.accADC.x * acc.dev.acc_1G_rec)); // Multiply by 100 to show as x.xx g on Taranis
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, lrintf(100 * acc.accADC[Y] * acc.dev.acc_1G_rec));
+                smartPortSendPackage(id, lrintf(100 * acc.accADC.y * acc.dev.acc_1G_rec));
                 *clearToSend = false;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, lrintf(100 * acc.accADC[Z] * acc.dev.acc_1G_rec));
+                smartPortSendPackage(id, lrintf(100 * acc.accADC.z * acc.dev.acc_1G_rec));
                 *clearToSend = false;
                 break;
 #endif
@@ -771,7 +771,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     tmpi += 4;
                 }
 
-                if (FLIGHT_MODE(ANGLE_MODE)) {
+                if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE)) {
                     tmpi += 10;
                 }
                 if (FLIGHT_MODE(HORIZON_MODE)) {

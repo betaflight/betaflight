@@ -340,3 +340,19 @@
 #endif
 #define MAX_SUPPORTED_SERVOS 8
 #endif
+
+#ifndef BOX_USER1_NAME
+#define BOX_USER1_NAME "USER1"
+#endif
+
+#ifndef BOX_USER2_NAME
+#define BOX_USER2_NAME "USER2"
+#endif
+
+#ifndef BOX_USER3_NAME
+#define BOX_USER3_NAME "USER3"
+#endif
+
+#ifndef BOX_USER4_NAME
+#define BOX_USER4_NAME "USER4"
+#endif
