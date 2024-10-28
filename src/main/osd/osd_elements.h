@@ -64,3 +64,5 @@ void osdSyncBlink();
 void osdResetAlarms(void);
 void osdUpdateAlarms(void);
 bool osdElementsNeedAccelerometer(void);
+extern bool slctRx;
+extern bool threeOutput;

@@ -72,6 +72,8 @@
 #include "rx/targetcustomserial.h"
 #include "rx/msp_override.h"
 
+#include "drivers/pinio.h"
+
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
@@ -668,18 +670,34 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
+bool threeOutput=false;
+bool slctRx = 0;
+uint32_t startTimeMs = 0;
+uint32_t lastSwitchMs = 0;
+uint8_t bandOneLQ = 100;
+uint8_t bandTwoLQ = 100;
+bool bandOneBelowThresh = false;
+bool bandTwoBelowThresh = false;
 void detectAndApplySignalLossBehaviour(void)
 {
+    //GLEB ADDITION. Set a start time first time that this method is called
+    if(startTimeMs == 0){
+        startTimeMs = millis();
+    }
+    
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    //AUX 7 CHANNEL 11 USED FOR CHECKING IF WE CAN SWITCH
     rxFlightChannelsValid = rxSignalReceived && !boxFailsafeSwitchIsOn;
     // rxFlightChannelsValid is false after 100ms of no packets, or as soon as use the BOXFAILSAFE switch is actioned
     // rxFlightChannelsValid is true the instant we get a good packet or the BOXFAILSAFE switch is reverted
     // can also go false with good packets but where one flight channel is bad > 300ms (PPM type receiver error)
 
     for (int channel = 0; channel < rxChannelCount; channel++) {
+
         float sample = rcRaw[channel]; // sample has latest RC value, rcData has last 'accepted valid' value
         const bool thisChannelValid = rxFlightChannelsValid && isPulseValid(sample);
+        
         // if the whole packet is bad, or BOXFAILSAFE switch is actioned, consider all channels bad
         if (thisChannelValid) {
             //  reset the invalid pulse period timer for every good channel
@@ -706,6 +724,7 @@ void detectAndApplySignalLossBehaviour(void)
         } else {
             // we are normal, or in failsafe stage 1
             if (boxFailsafeSwitchIsOn) {
+                
                 // BOXFAILSAFE active, but not in stage 2 yet, use stage 1 values
                 sample = getRxfailValue(channel);
                 //  set channels to Stage 1 values immediately failsafe switch is activated
@@ -718,13 +737,16 @@ void detectAndApplySignalLossBehaviour(void)
                 } else {
                     // remaining Stage 1 failsafe period after 300ms
                     if (channel < NON_AUX_CHANNEL_COUNT) {
+                        
                         rxFlightChannelsValid = false;
                         //  declare signal lost after 300ms of any one bad flight channel
                     }
                     sample = getRxfailValue(channel);
+                    
+                    
                     // set channels that are invalid for more than 300ms to Stage 1 values
                 }
-            }
+            } 
             // everything is normal, ie rcData[channel] will be set to rcRaw(channel) via 'sample'
         }
 
@@ -736,11 +758,79 @@ void detectAndApplySignalLossBehaviour(void)
             rcData[channel] = calculateChannelMovingAverage(channel, sample);
         } else
 #endif
-
         {
             //  set rcData to either validated incoming values, or failsafe-modified values
             rcData[channel] = sample;
         }
+    }
+
+    const uint8_t switchPinio = 2;
+    const uint8_t threeVThreeChannel= 9;
+    const uint8_t switchChannel = 11;
+    const int16_t midValue = 1500;
+
+    const uint16_t switchSleepTimeMs = 1000;
+    const uint16_t switchStartTimeoutMs = 20000;
+
+    const uint8_t lqThreshold = 40;
+    const uint8_t lqDifference = 5;
+    uint16_t currLQ = rxGetLinkQuality();
+    uint16_t otherBandLQ = 0;
+    bool performSwitch = false;
+
+    if(slctRx == 0){
+        bandOneLQ = currLQ;
+        otherBandLQ = bandTwoLQ;
+    }
+    else{
+        bandTwoLQ = currLQ;
+        otherBandLQ = bandOneLQ;
+    }
+    
+
+    //Listen for user input to switch bands. Only switch bands every switchSleepTimeMs
+    if ((rcData[switchChannel] > midValue) && ((currentTimeMs - lastSwitchMs) > switchSleepTimeMs)){
+        performSwitch=true;
+        lastSwitchMs = currentTimeMs;
+    } 
+    //This is the main logic used for automatically switching bands. We automatically switch if the LQ is below a certain threshold, 
+    //or if we just switched and the LQ is worse than it was on the last band
+    
+    if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && (currentTimeMs - startTimeMs > switchStartTimeoutMs))
+    {
+        //switch bands if our current band LQ is below threshold but the other band LQ is above threshold
+        if((currLQ < lqThreshold) && (otherBandLQ > lqThreshold))
+        {
+            performSwitch=true;
+        }
+        //if both are below the threshold, switch if the other band is slightly better
+        if((currLQ < lqThreshold) && (otherBandLQ < lqThreshold))
+        {
+            if((otherBandLQ-currLQ) > lqDifference)
+            {
+                performSwitch=true;
+            }
+        }
+        //If the current band is at 0, just perform the switch, no need to check the other band
+        if(currLQ == 0)
+        {
+            performSwitch=true;
+        }
+    } 
+    if(performSwitch)
+    {
+        slctRx= !slctRx;
+        pinioSet(switchPinio, slctRx);
+    }
+
+    //set threeOutput according to if we want to output 3v3 or not
+    if(rxFlightChannelsValid && (rcData[threeVThreeChannel]>midValue))
+    {
+        threeOutput=true;
+    }
+    else 
+    {
+        threeOutput=false;
     }
 
     if (rxFlightChannelsValid) {
