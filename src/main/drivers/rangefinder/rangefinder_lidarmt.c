@@ -58,7 +58,7 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
     }
 }
 
-bool mtRangefinderDetect(rangefinderDev_t * dev, uint8_t mtRangefinderToUse) {   
+bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {   
     UNUSED(dev);
 
     uint8_t deviceIdx = getDeviceTableIdx(mtRangefinderToUse);
@@ -83,10 +83,10 @@ void mtRangefinderReceiveNewData(uint8_t * bufferPtr) {
     hasNewData = true;
 }
 
-uint8_t getDeviceTableIdx(uint8_t mtRangefinderToUse){
+uint8_t getDeviceTableIdx(rangefinderType_e mtRangefinderToUse){
     size_t tableLength = sizeof(rangefinderConfigs) / sizeof(rangefinderConfigs[0]);
     for (size_t i = 0; i < tableLength; i++) {
-        if (rangefinderConfigs[i].deviceId == mtRangefinderToUse) {
+        if (rangefinderConfigs[i].deviceType == mtRangefinderToUse) {
             return i;
         }
     }
