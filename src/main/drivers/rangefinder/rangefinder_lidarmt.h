@@ -26,8 +26,8 @@
 #define RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES  900 
 
 typedef struct {
-    rangefinderType_e  deviceType;
-    uint8_t  delayMs;
+    rangefinderType_e deviceType;
+    uint8_t delayMs;
     uint16_t maxRangeCm;
 } MTRangefinderConfig;
 
