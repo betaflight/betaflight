@@ -23,7 +23,7 @@
 typedef struct __attribute__((packed)) {
     uint8_t quality;    // [0;255]
     int32_t distanceMm; // Negative value for out of range
-} mspSensorRangefinderDataMessage_t;
+} mspSensorRangefinderLidarMtDataMessage_t;
 
 void setRangefinderMSP(uint8_t rangefinder_id);
 void mspRangefinderReceiveNewData(uint8_t * bufferPtr);
