@@ -31,6 +31,17 @@
 // Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
 // increase size further.
 
+// define some common UART features
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x)
+#define UART_TRAIT_AF_PIN 1        // pin AF mode is configuref for each pin individually
+#else
+#define UART_TRAIT_AF_PORT 1       // all pins on given uart use same AF
+#endif
+
+#if !defined(STM32F4) || !defined(APM32F4) // all others support pinswap
+#define UART_TRAIT_PINSWAP 1
+#endif
+
 #if defined(STM32F4)
 
 #define UARTHARDWARE_MAX_PINS 4
@@ -159,7 +170,7 @@ typedef enum {
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x)
+#if UART_TRAIT_AF_PIN
     uint8_t af;
 #endif
 } uartPinDef_t;
@@ -189,7 +200,7 @@ typedef struct uartHardware_s {
 
     rccPeriphTag_t rcc;
 
-#if !defined(STM32F7)
+#if UART_TRAIT_AF_PORT
     uint8_t af;
 #endif
 
@@ -223,7 +234,7 @@ typedef struct uartDevice_s {
     uartPinDef_t tx;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-#if !defined(STM32F4) || !defined(APM32F4) // Don't support pin swap.
+#if UART_TRAIT_PINSWAP
     bool pinSwap;
 #endif
     txPinState_t txPinState;

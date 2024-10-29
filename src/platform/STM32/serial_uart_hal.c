@@ -67,7 +67,7 @@ static void usartConfigurePinInversion(uartPort_t *uartPort)
     }
 }
 
-#if !(defined(STM32F4))
+#if UART_TRAIT_PINSWAP
 static void uartConfigurePinSwap(uartPort_t *uartPort)
 {
     uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);

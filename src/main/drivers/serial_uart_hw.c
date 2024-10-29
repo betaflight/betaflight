@@ -106,10 +106,10 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
 
     // prepare AF modes
-#if defined(STM32F4) || defined(APM32F4)
+#if UART_TRAIT_AF_PORT
     uint8_t rxAf = hardware->af;
     uint8_t txAf = hardware->af;
-#else // all mcus except F4 use per-pin definitions
+#elif UART_TRAIT_AF_PIN
     uint8_t rxAf = uartdev->rx.af;
     uint8_t txAf = uartdev->tx.af;
 #endif
