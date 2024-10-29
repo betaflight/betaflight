@@ -62,6 +62,9 @@ bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinder
     UNUSED(dev);
 
     const MTRangefinderConfig* deviceConf = getDeviceConf(mtRangefinderToUse);
+    if (!MTRangefinderConfig) {
+        return false;
+    }
     dev->delayMs    = deviceConf->delayMs;
     dev->maxRangeCm = deviceConf->maxRangeCm;
 
