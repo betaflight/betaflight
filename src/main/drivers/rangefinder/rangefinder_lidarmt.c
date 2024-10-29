@@ -28,17 +28,32 @@
 
 #include "platform.h"
 
+#ifdef USE_RANGEFINDER_MT
+
 #include "build/build_config.h"
 
 #include "common/utils.h"
 
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
-#include "msp/msp_rangefinder.h"
 #include "sensors/rangefinder.h"
 
 static bool hasNewData = false;
 static bool mtfConnected = false;
 static int32_t sensorData = RANGEFINDER_NO_NEW_DATA;
+
+// Initialize the table with values for each rangefinder type
+static const MTRangefinderConfig rangefinderConfigs[] = {
+    { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 1000 },
+    [1] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 800  },
+    [2] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 250  },
+    [3] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 1200 },
+    [4] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 600  },
+};
+
+typedef struct __attribute__((packed)) {
+    uint8_t quality;    // [0;255]
+    int32_t distanceMm; // Negative value for out of range
+} mspSensorRangefinderLidarMtDataMessage_t;
 
 static void mtRangefinderInit(rangefinderDev_t * dev) {
     UNUSED(dev);
@@ -61,8 +76,8 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {   
     UNUSED(dev);
 
-    const MTRangefinderConfig* deviceConf = getDeviceConf(mtRangefinderToUse);
-    if (!MTRangefinderConfig) {
+    const MTRangefinderConfig* deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
+    if (!deviceConf) {
         return false;
     }
     dev->delayMs    = deviceConf->delayMs;
@@ -80,17 +95,19 @@ bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinder
 
 void mtRangefinderReceiveNewData(uint8_t * bufferPtr) {   
     mtfConnected = true;
-    const mspSensorRangefinderDataMessage_t * pkt = (const mspSensorRangefinderDataMessage_t *)bufferPtr;
+    const mspSensorRangefinderLidarMtDataMessage_t * pkt = (const mspSensorRangefinderLidarMtDataMessage_t *)bufferPtr;
 
     sensorData = pkt->distanceMm / 10;
     hasNewData = true;
 }
 
-const MTRangefinderConfig* getDeviceConf(rangefinderType_e mtRangefinderToUse){
-    for (const MTRangefinderConfig* cfg =  rangefinderConfigs; cfg < ARRAYEND(rangefinderConfigs); cfg++)
+const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse){
+    for (const MTRangefinderConfig* cfg =  rangefinderConfigs; cfg < ARRAYEND(rangefinderConfigs); cfg++) {
         if (cfg->deviceType == mtRangefinderToUse) {
             return cfg;
         }
     }
     return NULL;
 }
+
+#endif // USE_RANGEFINDER_MT

@@ -44,8 +44,6 @@
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
 #include "drivers/time.h"
 
-#include "msp/msp_rangefinder.h"
-
 #include "fc/runtime_config.h"
 
 #include "pg/pg.h"
@@ -129,7 +127,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #endif
             break;
             
-#if defined(USE_RANGEFINDER_MSP)
+#if defined(USE_RANGEFINDER_MT)
         case RANGEFINDER_MTF01:
         case RANGEFINDER_MTF02:
         case RANGEFINDER_MTF01P:

@@ -71,6 +71,7 @@
 #include "drivers/usb_msc.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
+#include "drivers/rangefinder/rangefinder_lidarmt.h"
 
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
@@ -113,7 +114,6 @@
 #include "msp/msp_protocol_v2_betaflight.h"
 #include "msp/msp_protocol_v2_common.h"
 #include "msp/msp_serial.h"
-#include "msp/msp_rangefinder.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
@@ -3652,7 +3652,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
-#if defined(USE_RANGEFINDER_MSP)
+#if defined(USE_RANGEFINDER_MT)
     case MSP2_SENSOR_RANGEFINDER_LIDARMT:
         mtRangefinderReceiveNewData(sbufPtr(src));
         break;
