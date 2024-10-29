@@ -33,7 +33,7 @@ typedef struct {
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
 void mtRangefinderReceiveNewData(uint8_t * bufferPtr);
-const MTRangefinderConfig* getDeviceConf(rangefinderType_e mtRangefinderToUse);
+const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse);
 
 // Initialize the table with values for each rangefinder type
 static const MTRangefinderConfig rangefinderConfigs[] = {
