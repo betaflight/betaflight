@@ -132,6 +132,7 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
     float getRcDeflectionAbs(void) { return 0.0f; }
     attitudeEulerAngles_t attitude;
     bool isNewDataForPosHold(void){ return true; }
+    bool wasThrottleRaised(void) { return true; }
 
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
