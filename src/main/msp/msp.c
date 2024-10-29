@@ -3654,7 +3654,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
 #if defined(USE_RANGEFINDER_MSP)
     case MSP2_SENSOR_RANGEFINDER_LIDARMT:
-        mspRangefinderReceiveNewData(sbufPtr(src));
+        mtRangefinderReceiveNewData(sbufPtr(src));
         break;
 #endif
 #ifdef USE_GPS
