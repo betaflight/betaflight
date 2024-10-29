@@ -44,10 +44,10 @@ static int32_t sensorData = RANGEFINDER_NO_NEW_DATA;
 // Initialize the table with values for each rangefinder type
 static const MTRangefinderConfig rangefinderConfigs[] = {
     { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 1000 },
-    [1] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 800  },
-    [2] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 250  },
-    [3] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 1200 },
-    [4] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 600  },
+    { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 800  },
+    { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 250  },
+    { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 1200 },
+    { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 600  },
 };
 
 typedef struct __attribute__((packed)) {
