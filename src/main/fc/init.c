@@ -529,7 +529,7 @@ void init(void)
         serialPortIdentifier_e serialPortToAvoid = SERIAL_PORT_NONE;
 #if defined(SERIALPORT_TO_AVOID)
         if (featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
-            serialPortToDisable = SERIALPORT_TO_AVOID;
+            serialPortToAvoid = SERIALPORT_TO_AVOID;
         }
 #endif
         serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), serialPortToAvoid);
