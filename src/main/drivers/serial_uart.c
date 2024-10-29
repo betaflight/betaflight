@@ -177,7 +177,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
         int idx = identifier - SERIAL_PORT_USART1;
         if (idx >= 0 && idx < SERIAL_UART_MAX) {
             if (BIT(idx) & SERIAL_UART_MASK) {
-                // retrun number of enabled UART ports smaller than idx
+                // return number of enabled UART ports smaller than idx
                 return popcount((BIT(idx) - 1) & SERIAL_UART_MASK);
             } else {
                 return UARTDEV_INVALID;
@@ -185,7 +185,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
         }
     }
 #endif
-    // neither LPUART, nor UART
+    // neither LPUART nor UART
     return UARTDEV_INVALID;
 }
 

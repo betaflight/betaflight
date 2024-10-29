@@ -91,13 +91,14 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     uint8_t txAf = uartdev->tx.af;
 #endif
 
-// F4 - no txIO check
+// Note: F4 did not check txIO before refactoring
     if ((options & SERIAL_BIDIR) && txIO) {
         // pushPull / openDrain
         const bool pushPull = serialOptions_pushPull(options);
         // pull direction
         const serialPullMode_t pull = serialOptions_pull(options);
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+        // Note: APM32F4 it different from STM32F4 here
         ioConfig_t ioCfg = IO_CONFIG(
             pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
             GPIO_SPEED_FREQ_HIGH,
@@ -186,13 +187,13 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     return s;
 }
 
-
+// called from platform-specific uartReconfigure
 void uartConfigureExternalPinInversion(uartPort_t *uartPort)
 {
 #if !defined(USE_INVERTER)
     UNUSED(uartPort);
 #else
-    bool inverted = uartPort->port.options & SERIAL_INVERTED;
+    const bool inverted = uartPort->port.options & SERIAL_INVERTED;
     enableInverter(uartPort->port.identifier, inverted);
 #endif
 }

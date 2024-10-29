@@ -300,12 +300,12 @@ int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
 // find serial port by name.
 // NULL cmp defaults to case-insensitive compare
 // cmp is strcmp-like function
-serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *test))
+serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *candidate))
 {
     if (!cmp) { // use strcasecmp by default
         cmp = strcasecmp;
     }
-    for (unsigned i = 0; i < (int)ARRAYLEN(serialPortNames); i++) {
+    for (unsigned i = 0; i < ARRAYLEN(serialPortNames); i++) {
         if (cmp(portName, serialPortNames[i]) == 0) {
             return serialPortIdentifiers[i];  // 1:1 map between names and identifiers
         }
@@ -317,11 +317,7 @@ serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(con
 const char* serialName(serialPortIdentifier_e identifier, const char* notFound)
 {
     const int idx = findSerialPortIndexByIdentifier(identifier);
-    if (idx >= 0) {
-        return serialPortNames[idx];
-    } else {
-        return notFound;
-    }
+    return idx >= 0 ? serialPortNames[idx] : notFound;
 }
 
 
@@ -578,12 +574,11 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
 
-        if (serialPortToDisable != SERIAL_PORT_NONE) {
-            if (serialPortUsageList[index].identifier == serialPortToDisable) {
+        if (serialPortToDisable != SERIAL_PORT_NONE
+            && serialPortUsageList[index].identifier == serialPortToDisable) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
                 serialPortCount--;
                 continue;  // this index is deleted
-            }
         }
         {
 #if !defined(SIMULATOR_BUILD)  // no serialPinConfig on SITL

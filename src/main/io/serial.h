@@ -176,7 +176,7 @@ bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionM
 void pgResetFn_serialConfig(serialConfig_t *serialConfig); //!!TODO remove need for this
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);
-serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *test));
+serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *candidate));
 const char* serialName(serialPortIdentifier_e identifier, const char* notFound);
 
 //
