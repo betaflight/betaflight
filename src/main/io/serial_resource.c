@@ -71,16 +71,18 @@ serialType_e serialType(serialPortIdentifier_e identifier)
 // Tx member is returned, Rx is always Tx + 1
 resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier)
 {
-    switch (serialType(identifier)) {
-    case SERIALTYPE_UART:
-        return OWNER_SERIAL_TX;
-    case SERIALTYPE_LPUART:
-        return OWNER_LPUART_TX;
-    case SERIALTYPE_SOFTSERIAL:
-        return OWNER_SOFTSERIAL_TX;
-    default:
+    const resourceOwner_e map[] = {
+        [SERIALTYPE_USB_VCP] = 0,   // OWNER_FREE, invalid owner value
+        [SERIALTYPE_UART] = OWNER_SERIAL_TX,
+        [SERIALTYPE_LPUART] = OWNER_LPUART_TX,
+        [SERIALTYPE_SOFTSERIAL] =OWNER_SOFTSERIAL_TX
+    };
+    STATIC_ASSERT(ARRAYLEN(map) == SERIALTYPE_COUNT, "map table mismatch");
+    const serialType_e type = serialType(identifier);
+    if (type == SERIALTYPE_INVALID) {
         return 0;
     }
+    return map[type];   // may return 0 too
 }
 
 
@@ -88,7 +90,7 @@ resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier)
 // 0 is returned for given port is not defined and for singleton ports (USB)
 int serialOwnerIndex(serialPortIdentifier_e identifier)
 {
-    serialPortIdentifier_e firstId[SERIALTYPE_COUNT] = {
+    serialPortIdentifier_e firstId[] = {
         [SERIALTYPE_USB_VCP] = SERIAL_PORT_USB_VCP + RESOURCE_INDEX(0), // make it return 0 for VCP
         [SERIALTYPE_UART] = SERIAL_PORT_USART1,
         [SERIALTYPE_LPUART] = SERIAL_PORT_LPUART1,
@@ -112,14 +114,21 @@ int serialOwnerIndex(serialPortIdentifier_e identifier)
 // some code uses this ordering for optimizations, be carefull if reordering is necessary
 int serialResourceIndex(serialPortIdentifier_e identifier)
 {
-    switch (serialType(identifier)) {
-    case SERIALTYPE_UART:
-        return RESOURCE_UART_OFFSET + identifier - SERIAL_PORT_UART1;
-    case SERIALTYPE_LPUART:
-        return RESOURCE_LPUART_OFFSET + identifier - SERIAL_PORT_LPUART1;
-    case SERIALTYPE_SOFTSERIAL:
-        return RESOURCE_SOFTSERIAL_OFFSET + identifier - SERIAL_PORT_SOFTSERIAL1;
-    default:
+    int offsets[] = {
+        [SERIALTYPE_USB_VCP] = -1,
+        [SERIALTYPE_UART] =       -SERIAL_PORT_UART1       + RESOURCE_UART_OFFSET ,
+        [SERIALTYPE_LPUART] =     -SERIAL_PORT_LPUART1     + RESOURCE_LPUART_OFFSET,
+        [SERIALTYPE_SOFTSERIAL] = -SERIAL_PORT_SOFTSERIAL1 + RESOURCE_SOFTSERIAL_OFFSET,
+    };
+    STATIC_ASSERT(ARRAYLEN(offsets) == SERIALTYPE_COUNT, "offset table mismatch");
+
+    const serialType_e type = serialType(identifier);
+    if (type == SERIALTYPE_INVALID) {
         return -1;
     }
+    int offset = offsets[type];
+    if (offset < 0) {
+        return -1;
+    }
+    return identifier - offset;
 }
