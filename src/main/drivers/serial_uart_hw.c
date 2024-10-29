@@ -40,6 +40,29 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+// TODO: split this function into mcu-specific UART files
+static void enableRxIrq(const uartHardware_t *hardware)
+{
+  #if defined(USE_HAL_DRIVER)
+        HAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+        HAL_NVIC_EnableIRQ(hardware->irqn);
+#elif defined(STM32F4)
+        NVIC_InitTypeDef NVIC_InitStructure;
+        NVIC_InitStructure.NVIC_IRQChannel = hardware->irqn;
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(hardware->rxPriority);
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(hardware->rxPriority);
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStructure);
+#elif defined(AT32F4)
+        nvic_irq_enable(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+#elif defined(APM32F4)
+        DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
+        DAL_NVIC_EnableIRQ(hardware->irqn);
+#else
+#error "Unhandled MCU type"
+#endif
+}
+
 uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     uartPort_t *s = &(uartdev->port);
@@ -161,28 +184,12 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         }
     }
 
+    if (true
 #ifdef USE_DMA
-    if (!s->rxDMAResource)
+        && !s->rxDMAResource  // do not enable IRW if using rxDMA
 #endif
-    {
-#if defined(USE_HAL_DRIVER)
-        HAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
-        HAL_NVIC_EnableIRQ(hardware->irqn);
-#elif defined(STM32F4)
-        NVIC_InitTypeDef NVIC_InitStructure;
-        NVIC_InitStructure.NVIC_IRQChannel = hardware->irqn;
-        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(hardware->rxPriority);
-        NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(hardware->rxPriority);
-        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);
-#elif defined(AT32F4)
-        nvic_irq_enable(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
-#elif defined(APM32F4)
-        DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
-        DAL_NVIC_EnableIRQ(hardware->irqn);
-#else
-#error "Unhandled MCU type"
-#endif
+        ) {
+        enableRxIrq(hardware);
     }
     return s;
 }
