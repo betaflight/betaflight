@@ -497,16 +497,17 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-        bool prepend00 = true;
+        bool prepend00;
         switch (serialType(smartAudioSerialPort->identifier)) {
         case SERIALTYPE_SOFTSERIAL:
             prepend00 = vtxSettingsConfig()->softserialAlt;
             break;
         case SERIALTYPE_UART:
-        case SERIALTYPE_LPUART:
-            // decide by MCU type
+        case SERIALTYPE_LPUART: // decide HW uarts by MCU type
 #ifdef AT32F4
             prepend00 = false;
+#else
+            prepend00 = true;
 #endif
             break;
         default:
@@ -717,8 +718,9 @@ bool vtxSmartAudioInit(void)
         return false;
     }
     // Note, for SA, which uses bidirectional mode, would normally require pullups.
-    // the SA protocol instead requires pulldowns, and therefore uses SERIAL_PULL_SMARTAUDIO together with SERIAL_BIDIR_PP
-    const portOptions_e portOptions = (SERIAL_NOT_INVERTED | SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP | SERIAL_PULL_SMARTAUDIO);
+    // the SA protocol usually requires pulldowns, and therefore uses SERIAL_PULL_SMARTAUDIO together with SERIAL_BIDIR_PP
+    // serial driver handles different pullup/pulldown/nopull quirks when SERIAL_PULL_SMARTAUDIO is used
+    const portOptions_e portOptions = SERIAL_NOT_INVERTED | SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP | SERIAL_PULL_SMARTAUDIO;
     smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
 
     if (!smartAudioSerialPort) {
