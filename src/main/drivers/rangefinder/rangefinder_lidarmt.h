@@ -37,7 +37,7 @@ const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangef
 
 // Initialize the table with values for each rangefinder type
 static const MTRangefinderConfig rangefinderConfigs[] = {
-    [0] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 1000 },
+    { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 1000 },
     [1] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 800  },
     [2] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 20, .maxRangeCm = 250  },
     [3] = { .deviceType = RANGEFINDER_MT01P, .delayMs = 10, .maxRangeCm = 1200 },
