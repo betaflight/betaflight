@@ -74,8 +74,6 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
 }
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {   
-    UNUSED(dev);
-
     const MTRangefinderConfig* deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
     if (!deviceConf) {
         return false;
