@@ -670,7 +670,6 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
-bool threeOutput=false;
 bool slctRx = 0;
 uint32_t startTimeMs = 0;
 uint32_t lastSwitchMs = 0;
@@ -765,7 +764,6 @@ void detectAndApplySignalLossBehaviour(void)
     }
 
     const uint8_t switchPinio = 2;
-    const uint8_t threeVThreeChannel= 9;
     const uint8_t switchChannel = 11;
     const int16_t midValue = 1500;
 
@@ -821,16 +819,6 @@ void detectAndApplySignalLossBehaviour(void)
     {
         slctRx= !slctRx;
         pinioSet(switchPinio, slctRx);
-    }
-
-    //set threeOutput according to if we want to output 3v3 or not
-    if(rxFlightChannelsValid && (rcData[threeVThreeChannel]>midValue))
-    {
-        threeOutput=true;
-    }
-    else 
-    {
-        threeOutput=false;
     }
 
     if (rxFlightChannelsValid) {

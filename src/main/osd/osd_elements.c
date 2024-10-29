@@ -554,18 +554,18 @@ static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, unsigned directi
     return direction; // return segment number
 }
 
-static uint8_t osdGetDirectionSymbolFromHeading(int heading)
-{
-    heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
+// static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+// {
+//     heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
 
-    // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
-    // Our symbols are Down=0, Right=4, Up=8 and Left=12
-    // There're 16 arrow symbols. Transform it.
-    heading = 16 - heading;
-    heading = (heading + 8) % 16;
+//     // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
+//     // Our symbols are Down=0, Right=4, Up=8 and Left=12
+//     // There're 16 arrow symbols. Transform it.
+//     heading = 16 - heading;
+//     heading = (heading + 8) % 16;
 
-    return SYM_ARROW_SOUTH + heading;
-}
+//     return SYM_ARROW_SOUTH + heading;
+// }
 
 
 /**
@@ -1341,17 +1341,20 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
     element->buff[i] = '\0';
 }
 
-// static void osdElementNumericalHeading(osdElementParms_t *element)
-// {
-//     if(threeOutput){tfp_sprintf(element->buff, "3V3 HIGH");}
-//     else{tfp_sprintf(element->buff, "3V3 LOW");}
-// }
-
 static void osdElementNumericalHeading(osdElementParms_t *element)
 {
-    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-    tfp_sprintf(element->buff, "%c%03d", osdGetDirectionSymbolFromHeading(heading), heading);
+    if(payloadStateBufferIndex== 0) {
+        tfp_sprintf(element->buff, "NO PAYLOAD");
+    } else {
+        strcpy(element->buff, payloadStateBuffer);
+    }
 }
+
+// static void osdElementNumericalHeading(osdElementParms_t *element)
+// {
+//     const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+//     tfp_sprintf(element->buff, "%c%03d", osdGetDirectionSymbolFromHeading(heading), heading);
+// }
 
 #ifdef USE_VARIO
 static void osdElementNumericalVario(osdElementParms_t *element)

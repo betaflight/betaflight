@@ -1,7 +1,7 @@
 diff all
 
 # version
-# Betaflight / STM32H743 (SH74) 4.4.3 Aug 29 2024 / 11:25:19 (norevision) MSP API: 1.45
+# Betaflight / STM32H743 (SH74) 4.4.3 Oct 28 2024 / 17:03:54 (norevision) MSP API: 1.45
 
 # config: YES
 
@@ -13,7 +13,7 @@ defaults nosave
 
 board_name NEROSH743
 manufacturer_id NEROS
-mcu_id 0028004b3133511431393438
+mcu_id 0042003f3133511531393438
 signature 
 
 # name: Archer
@@ -25,10 +25,12 @@ resource MOTOR 3 A02
 resource MOTOR 4 A03
 resource SERVO 1 E05
 resource SERIAL_TX 1 A09
+resource SERIAL_TX 2 D05
 resource SERIAL_TX 4 B09
 resource SERIAL_TX 6 C07
 resource SERIAL_TX 7 E08
 resource SERIAL_RX 1 A10
+resource SERIAL_RX 2 D06
 resource SERIAL_RX 4 B08
 resource SERIAL_RX 7 E07
 resource I2C_SCL 1 B06
@@ -91,6 +93,7 @@ feature OSD
 
 # serial
 serial 0 2 115200 57600 0 115200
+serial 1 1 115200 57600 0 115200
 serial 3 1 115200 57600 0 115200
 serial 5 2048 115200 57600 0 115200
 serial 6 64 115200 57600 0 115200
@@ -105,7 +108,7 @@ beacon RX_SET
 # aux
 aux 0 0 0 1600 2100 0 0
 aux 1 1 4 1600 2100 0 0
-aux 2 40 1 900 1400 0 0
+aux 2 40 1 900 1550 0 0
 aux 3 41 2 1600 2100 0 0
 aux 4 43 5 1600 2100 0 0
 
@@ -208,14 +211,14 @@ set osd_pilot_name_pos = 14732
 set osd_gps_speed_pos = 14689
 set osd_gps_sats_pos = 14657
 set osd_home_dir_pos = 161
-set osd_compass_bar_pos = 14410
+set osd_compass_bar_pos = 14378
 set osd_altitude_pos = 14721
 set osd_debug_pos = 14369
 set osd_power_pos = 14616
 set osd_warnings_pos = 14729
 set osd_avg_cell_voltage_pos = 14593
 set osd_pit_ang_pos = 14551
-set osd_nheading_pos = 14379
+set osd_nheading_pos = 14433
 set osd_esc_tmp_pos = 375
 set osd_esc_rpm_pos = 14521
 set osd_esc_rpm_freq_pos = 161

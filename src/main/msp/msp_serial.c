@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h> 
 
 #include "platform.h"
 
@@ -510,8 +511,12 @@ static void mspSerialProcessReceivedReply(mspPort_t *msp, mspProcessReplyFnPtr m
  *
  * Called periodically by the scheduler.
  */
+
+char payloadStateBuffer[64];
+int payloadStateBufferIndex;
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
+    
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
         if (!mspPort->port) {
@@ -521,6 +526,9 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
         mspPostProcessFnPtr mspPostProcessFn = NULL;
 
         if (serialRxBytesWaiting(mspPort->port)) {
+            if(mspPort->port->identifier == SERIAL_PORT_USART2){
+                payloadStateBufferIndex = 0;
+            }
             // There are bytes incoming - abort pending request
             mspPort->lastActivityMs = millis();
             mspPort->pendingRequest = MSP_PENDING_NONE;
@@ -531,6 +539,12 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 
                 if (!consumed && evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA) {
                     mspEvaluateNonMspData(mspPort, c);
+                }
+                if(mspPort->port->identifier == SERIAL_PORT_USART2){
+                    if(payloadStateBufferIndex<64 && isalnum(c)){
+                        payloadStateBuffer[payloadStateBufferIndex] = c;
+                        payloadStateBufferIndex++;
+                    }
                 }
 
                 if (mspPort->c_state == MSP_COMMAND_RECEIVED) {
@@ -572,6 +586,7 @@ bool mspSerialWaiting(void)
 
 void mspSerialInit(void)
 {
+    payloadStateBufferIndex = 0;
     memset(mspPorts, 0, sizeof(mspPorts));
     mspSerialAllocatePorts();
 }
