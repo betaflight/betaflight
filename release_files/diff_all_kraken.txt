@@ -1,0 +1,328 @@
+diff all
+
+# version
+# Betaflight / STM32H743 (SH74) 4.4.3 Oct 28 2024 / 17:12:57 (norevision) MSP API: 1.45
+
+# config: YES
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults nosave
+
+board_name NEROSH743
+manufacturer_id NEROS
+mcu_id 0042003f3133511531393438
+signature 
+
+# name: Archer
+
+# resources
+resource MOTOR 1 A00
+resource MOTOR 2 A01
+resource MOTOR 3 A02
+resource MOTOR 4 A03
+resource SERVO 1 E05
+resource SERIAL_TX 1 A09
+resource SERIAL_TX 2 D05
+resource SERIAL_TX 4 B09
+resource SERIAL_TX 6 C07
+resource SERIAL_TX 7 E08
+resource SERIAL_RX 1 A10
+resource SERIAL_RX 2 D06
+resource SERIAL_RX 4 B08
+resource SERIAL_RX 7 E07
+resource I2C_SCL 1 B06
+resource I2C_SCL 2 B10
+resource I2C_SDA 1 B07
+resource I2C_SDA 2 B11
+resource LED 1 E03
+resource LED 2 E04
+resource SPI_SCK 1 A05
+resource SPI_SCK 2 B13
+resource SPI_SCK 3 B03
+resource SPI_MISO 1 A06
+resource SPI_MISO 2 B14
+resource SPI_MISO 3 B04
+resource SPI_MOSI 1 D07
+resource SPI_MOSI 2 B15
+resource SPI_MOSI 3 B05
+resource ADC_BATT 1 C00
+resource ADC_CURR 1 C01
+resource ADC_NTEMP 1 C04
+resource PINIO 1 C02
+resource PINIO 2 D10
+resource PINIO 3 A08
+resource PINIO 4 D11
+resource FLASH_CS 1 D04
+resource OSD_CS 1 B12
+resource GYRO_EXTI 1 B02
+resource GYRO_CS 1 C15
+
+# timer
+timer A00 AF1
+# pin A00: TIM2 CH1 (AF1)
+timer A01 AF1
+# pin A01: TIM2 CH2 (AF1)
+timer A02 AF1
+# pin A02: TIM2 CH3 (AF1)
+timer A03 AF1
+# pin A03: TIM2 CH4 (AF1)
+timer E05 AF4
+# pin E05: TIM15 CH1 (AF4)
+
+# dma
+dma ADC 1 8
+# ADC 1: DMA2 Stream 0 Request 9
+dma ADC 3 9
+# ADC 3: DMA2 Stream 1 Request 115
+dma pin A00 0
+# pin A00: DMA1 Stream 0 Request 18
+dma pin A01 0
+# pin A01: DMA1 Stream 0 Request 19
+dma pin A02 0
+# pin A02: DMA1 Stream 0 Request 20
+dma pin A03 0
+# pin A03: DMA1 Stream 0 Request 21
+
+# feature
+feature SERVO_TILT
+feature GPS
+feature OSD
+
+# serial
+serial 0 2 115200 57600 0 115200
+serial 1 1 115200 57600 0 115200
+serial 3 1 115200 57600 0 115200
+serial 5 2048 115200 57600 0 115200
+serial 6 64 115200 57600 0 115200
+
+# servo
+servo 0 1000 2000 1500 100 6
+
+# beacon
+beacon RX_LOST
+beacon RX_SET
+
+# aux
+aux 0 0 0 1600 2100 0 0
+aux 1 1 4 1600 2100 0 0
+aux 2 40 1 900 1550 0 0
+aux 3 41 2 1600 2100 0 0
+aux 4 43 5 1600 2100 0 0
+
+# adjrange
+adjrange 0 0 3 900 2100 29 3 0 0
+
+# vtxtable
+vtxtable bands 8
+vtxtable channels 8
+vtxtable band 1 X        X FACTORY 4990 5020 5050 5080 5110 5140 5170 5200
+vtxtable band 2 Y        Y FACTORY 4991 5045 5097 5128 5329 5435 5477 5590
+vtxtable band 3 BOSCAM_E E FACTORY 5705 5685 5665 5645 5885 5905 5925 5945
+vtxtable band 4 FATSHARK F FACTORY 5740 5760 5780 5800 5820 5840 5860 5880
+vtxtable band 5 RACEBAND R FACTORY 5658 5695 5732 5769 5806 5843 5880 5917
+vtxtable band 6 L        L FACTORY 5362 5399 5436 5473 5510 5547 5584 5621
+vtxtable band 7 M        M FACTORY 5658 5678 5717 5737 5835 5855 5894 5914
+vtxtable band 8 T        T FACTORY 5176 5261 5323 5360 5946 5974 5986 5999
+vtxtable powerlevels 5
+vtxtable powervalues 14 20 24 27 29
+vtxtable powerlabels 40 150 300 800 2.5
+
+# vtx
+vtx 0 6 0 0 1 900 1250
+vtx 1 6 0 0 2 1250 1450
+vtx 2 6 0 0 3 1450 1650
+vtx 3 6 0 0 4 1650 1850
+vtx 4 6 0 0 5 1850 2100
+
+# rxfail
+rxfail 3 h
+
+# master
+set gyro_lpf1_static_hz = 75
+set gyro_lpf2_static_hz = 150
+set dyn_notch_count = 1
+set dyn_notch_min_hz = 80
+set dyn_notch_max_hz = 650
+set gyro_lpf1_dyn_min_hz = 150
+set gyro_lpf1_dyn_max_hz = 300
+set acc_lpf_hz = 10
+set acc_calibration = -4,-68,-5,1
+set align_mag = CW90
+set mag_align_yaw = 900
+set mag_bustype = I2C
+set mag_i2c_device = 1
+set mag_calibration = -442,186,-110
+set baro_bustype = I2C
+set baro_i2c_device = 2
+set baro_i2c_address = 119
+set rssi_scale = 217
+set rc_smoothing_auto_factor = 200
+set rc_smoothing_auto_factor_throttle = 200
+set serialrx_provider = CRSF
+set blackbox_sample_rate = 1/16
+set blackbox_device = SPIFLASH
+set dshot_burst = AUTO
+set dshot_bidir = ON
+set motor_pwm_protocol = DSHOT300
+set failsafe_delay = 20
+set failsafe_throttle_low_delay = 20
+set bat_capacity = 20000
+set vbat_max_cell_voltage = 440
+set vbat_min_cell_voltage = 280
+set vbat_warning_cell_voltage = 310
+set current_meter = ADC
+set battery_meter = ADC
+set vbat_scale = 210
+set ibata_scale = 136
+set ibata_offset = -25350
+set beeper_inversion = ON
+set beeper_od = OFF
+set beeper_dshot_beacon_tone = 3
+set small_angle = 180
+set gps_ublox_use_galileo = ON
+set simplified_gyro_filter = OFF
+set simplified_gyro_filter_multiplier = 30
+set osd_warn_bitmask = 17131
+set osd_rssi_alarm = 0
+set osd_link_quality_alarm = 50
+set osd_cap_alarm = 17000
+set osd_alt_alarm = 10000
+set osd_logo_on_arming = ON
+set osd_tim1 = 0
+set osd_tim2 = 5121
+set osd_vbat_pos = 14561
+set osd_rssi_pos = 388
+set osd_link_quality_pos = 14401
+set osd_rssi_dbm_pos = 129
+set osd_tim_1_pos = 55
+set osd_tim_2_pos = 14743
+set osd_flymode_pos = 77
+set osd_throttle_pos = 14584
+set osd_vtx_channel_pos = 14389
+set osd_crosshairs_pos = 14605
+set osd_ah_pos = 14478
+set osd_current_pos = 14646
+set osd_mah_drawn_pos = 14626
+set osd_craft_name_pos = 257
+set osd_pilot_name_pos = 14732
+set osd_gps_speed_pos = 14689
+set osd_gps_sats_pos = 14657
+set osd_home_dir_pos = 161
+set osd_compass_bar_pos = 42
+set osd_altitude_pos = 14721
+set osd_debug_pos = 14369
+set osd_power_pos = 14615
+set osd_warnings_pos = 14729
+set osd_avg_cell_voltage_pos = 14593
+set osd_pit_ang_pos = 14550
+set osd_nheading_pos = 14433
+set osd_esc_tmp_pos = 375
+set osd_esc_rpm_pos = 14521
+set osd_esc_rpm_freq_pos = 161
+set osd_core_temp_pos = 225
+set osd_profile_name_pos = 65
+set osd_efficiency_pos = 327
+set osd_total_flights_pos = 97
+set osd_stat_bitmask = 17209060
+set osd_profile_1_name = day
+set osd_profile_2_name = day
+set osd_profile_3_name = night
+set osd_canvas_width = 30
+set osd_canvas_height = 13
+set vtx_band = 5
+set vtx_channel = 1
+set vtx_power = 3
+set vtx_freq = 5658
+set vcd_video_system = NTSC
+set max7456_spi_bus = 2
+set pinio_box = 40,41,255,43
+set flash_spi_bus = 3
+set gyro_1_spibus = 1
+set scheduler_relax_rx = 1
+set scheduler_relax_osd = 1
+set rpm_filter_harmonics = 2
+set stats_min_armed_time_s = 70
+set stats_total_flights = 77
+set stats_total_time_s = 14863
+set stats_total_dist_m = 6147
+set stats_mah_used = 2289
+set craft_name = Archer
+set pilot_name = Name
+
+profile 0
+
+# profile 0
+set dterm_lpf1_dyn_min_hz = 150
+set dterm_lpf1_dyn_max_hz = 300
+set dterm_lpf1_static_hz = 22
+set dterm_lpf2_static_hz = 45
+set anti_gravity_gain = 110
+set iterm_relax_cutoff = 5
+set iterm_windup = 100
+set yaw_lowpass_hz = 0
+set throttle_boost = 0
+set p_pitch = 49
+set i_pitch = 81
+set d_pitch = 49
+set f_pitch = 200
+set p_roll = 47
+set i_roll = 79
+set d_roll = 45
+set f_roll = 200
+set p_yaw = 60
+set i_yaw = 60
+set d_min_roll = 45
+set d_min_pitch = 49
+set feedforward_smooth_factor = 52
+set feedforward_jitter_factor = 12
+set feedforward_boost = 0
+set feedforward_max_rate_limit = 100
+set dyn_idle_min_rpm = 37
+set simplified_pids_mode = OFF
+set simplified_master_multiplier = 105
+set simplified_i_gain = 95
+set simplified_d_gain = 145
+set simplified_dmax_gain = 0
+set simplified_feedforward_gain = 115
+set simplified_pitch_d_gain = 120
+set simplified_dterm_filter = OFF
+set simplified_dterm_filter_multiplier = 30
+
+profile 1
+
+profile 2
+
+profile 3
+
+# restore original profile selection
+profile 0
+
+rateprofile 0
+
+# rateprofile 0
+set rates_type = BETAFLIGHT
+set roll_rc_rate = 90
+set pitch_rc_rate = 80
+set yaw_rc_rate = 80
+set roll_expo = 5
+set pitch_expo = 5
+set yaw_expo = 5
+set roll_srate = 60
+set pitch_srate = 60
+set yaw_srate = 60
+
+rateprofile 1
+
+rateprofile 2
+
+rateprofile 3
+
+# restore original rateprofile selection
+rateprofile 0
+
+# save configuration
+save
+# 
