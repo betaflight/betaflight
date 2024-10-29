@@ -1,7 +1,7 @@
 diff all
 
 # version
-# Betaflight / STM32H743 (SH74) 4.4.3 Oct 28 2024 / 17:12:57 (norevision) MSP API: 1.45
+# Betaflight / STM32H743 (SH74) 4.4.3 Oct 29 2024 / 13:27:03 (14b54095e) MSP API: 1.45
 
 # config: YES
 
@@ -13,7 +13,7 @@ defaults nosave
 
 board_name NEROSH743
 manufacturer_id NEROS
-mcu_id 0042003f3133511531393438
+mcu_id 0028004b3133511431393438
 signature 
 
 # name: Archer
@@ -193,30 +193,30 @@ set osd_alt_alarm = 10000
 set osd_logo_on_arming = ON
 set osd_tim1 = 0
 set osd_tim2 = 5121
-set osd_vbat_pos = 14561
+set osd_vbat_pos = 14721
 set osd_rssi_pos = 388
 set osd_link_quality_pos = 14401
 set osd_rssi_dbm_pos = 129
 set osd_tim_1_pos = 55
-set osd_tim_2_pos = 14743
+set osd_tim_2_pos = 14839
 set osd_flymode_pos = 77
 set osd_throttle_pos = 14584
 set osd_vtx_channel_pos = 14389
 set osd_crosshairs_pos = 14605
 set osd_ah_pos = 14478
 set osd_current_pos = 14646
-set osd_mah_drawn_pos = 14626
+set osd_mah_drawn_pos = 14786
 set osd_craft_name_pos = 257
-set osd_pilot_name_pos = 14732
-set osd_gps_speed_pos = 14689
-set osd_gps_sats_pos = 14657
+set osd_pilot_name_pos = 14828
+set osd_gps_speed_pos = 449
+set osd_gps_sats_pos = 417
 set osd_home_dir_pos = 161
 set osd_compass_bar_pos = 42
-set osd_altitude_pos = 14721
+set osd_altitude_pos = 14817
 set osd_debug_pos = 14369
 set osd_power_pos = 14615
-set osd_warnings_pos = 14729
-set osd_avg_cell_voltage_pos = 14593
+set osd_warnings_pos = 14825
+set osd_avg_cell_voltage_pos = 14753
 set osd_pit_ang_pos = 14550
 set osd_nheading_pos = 14433
 set osd_esc_tmp_pos = 375
@@ -231,12 +231,12 @@ set osd_profile_1_name = day
 set osd_profile_2_name = day
 set osd_profile_3_name = night
 set osd_canvas_width = 30
-set osd_canvas_height = 13
+set osd_canvas_height = 16
 set vtx_band = 5
-set vtx_channel = 1
+set vtx_channel = 4
 set vtx_power = 3
-set vtx_freq = 5658
-set vcd_video_system = NTSC
+set vtx_freq = 5769
+set vcd_video_system = PAL
 set max7456_spi_bus = 2
 set pinio_box = 40,41,255,43
 set flash_spi_bus = 3
