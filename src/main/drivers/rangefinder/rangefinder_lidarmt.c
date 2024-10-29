@@ -87,11 +87,10 @@ void mtRangefinderReceiveNewData(uint8_t * bufferPtr) {
 }
 
 const MTRangefinderConfig* getDeviceConf(rangefinderType_e mtRangefinderToUse){
-    size_t tableLength = sizeof(rangefinderConfigs) / sizeof(rangefinderConfigs[0]);
-    for (size_t i = 0; i < tableLength; i++) {
-        if (rangefinderConfigs[i].deviceType == mtRangefinderToUse) {
-            return &rangefinderConfigs[i];
+    for (const MTRangefinderConfig* cfg =  rangefinderConfigs; cfg < ARRAYEND(rangefinderConfigs); cfg++)
+        if (cfg->deviceType == mtRangefinderToUse) {
+            return cfg;
         }
     }
-    return &rangefinderConfigs[RANGEFINDER_MT01P]; // to avoid compiler warning. This should never happen.
+    return NULL;
 }
