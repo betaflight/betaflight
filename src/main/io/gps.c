@@ -93,10 +93,7 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
-
-#ifdef USE_POS_HOLD_MODE
-static bool newDataForPosHold = false;
-#endif
+static uint16_t gpsStamp = ~0; // Initialize to an invalid state
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -2596,10 +2593,10 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 
 void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist) {
     if (pNSDist) {
-        *pNSDist = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
+        *pNSDist = (float)(to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
     }
     if (pEWDist) {
-        *pEWDist = (to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
+        *pEWDist = (float)(to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
     }
 }
 
@@ -2609,6 +2606,8 @@ void onGpsNewData(void)
         // if we don't have a 3D fix don't give data to GPS rescue
         return;
     }
+
+    gpsStamp ++; // increment the stamp
 
     gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
 
@@ -2625,19 +2624,16 @@ void onGpsNewData(void)
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
 
-#ifdef USE_POS_HOLD_MODE
-    newDataForPosHold = true;
-#endif
-
 }
 
-#ifdef USE_POS_HOLD_MODE
-bool isNewDataForPosHold(void) {
-    const bool isNewData = newDataForPosHold; // true only when new data arrives
-    newDataForPosHold = false; // clear flag once new data has been handled
-    return isNewData;
+bool isNewGPSDataAvailable(void) {
+    static uint16_t lastGpsStamp = ~0; // Initialize to an invalid state
+    if (lastGpsStamp != gpsStamp) {
+        lastGpsStamp = gpsStamp; // Update the last known stamp
+        return true; // New GPS data is available
+    }
+    return false; // No new data
 }
-#endif
 
 void gpsSetFixState(bool state)
 {

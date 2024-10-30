@@ -1192,5 +1192,5 @@ extern "C" {
 
     bool canUseGPSHeading;
     bool compassIsHealthy;
-    bool isNewDataForPosHold(void){ return true; }
+    bool isNewGPSDataAvailable(void){ return true; }
 }

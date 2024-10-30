@@ -131,7 +131,7 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
     float getRcDeflectionAbs(void) { return 0.0f; }
     attitudeEulerAngles_t attitude;
-    bool isNewDataForPosHold(void){ return true; }
+    bool isNewGPSDataAvailable(void){ return true; }
     bool wasThrottleRaised(void) { return true; }
 
 
