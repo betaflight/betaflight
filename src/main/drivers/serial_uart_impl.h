@@ -33,7 +33,7 @@
 
 // define some common UART features
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x)
-#define UART_TRAIT_AF_PIN 1        // pin AF mode is configuref for each pin individually
+#define UART_TRAIT_AF_PIN 1        // pin AF mode is configured for each pin individually
 #else
 #define UART_TRAIT_AF_PORT 1       // all pins on given uart use same AF
 #endif

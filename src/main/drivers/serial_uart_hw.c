@@ -121,7 +121,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         // pull direction
         const serialPullMode_t pull = serialOptions_pull(options);
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
-        // Note: APM32F4 it different from STM32F4 here
+        // Note: APM32F4 is different from STM32F4 here
         ioConfig_t ioCfg = IO_CONFIG(
             pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
             GPIO_SPEED_FREQ_HIGH,
