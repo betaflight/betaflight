@@ -23,7 +23,8 @@
 
 /*
   #defines used for serial port resource access (pin/dma/inversion)
-  target/serial_post.h normalizes enabled port definitions, values are just remaned here
+  target/serial_post.h normalizes enabled port definitions (and port counts),
+  values are just renamed here
  */
 
 // use _MAX value here, resource command needs linear mapping
