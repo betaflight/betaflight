@@ -26,6 +26,8 @@ extern "C" {
     #include "build/debug.h"
     #include "pg/pg_ids.h"
 
+    #include "common/vector.h"
+
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
@@ -43,6 +45,7 @@ extern "C" {
 
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
+
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 0);
@@ -107,14 +110,10 @@ extern "C" {
     float getAltitudeDerivative(void) {return 0.0f;}
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
-    
-void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
-    {
-       UNUSED(from);
-       UNUSED(to);
-       UNUSED(dist3d);
-       UNUSED(dist);
-       UNUSED(bearing);
+
+    float vector2Norm(const vector2_t *v) {
+       UNUSED(*v);
+       return 0.0f;
     }
 
 void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist)
@@ -167,31 +166,6 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
         return 0.0;
     }
 
-    float pt2FilterGain(float f_cut, float dT)
-    {
-        UNUSED(f_cut);
-        UNUSED(dT);
-        return 0.0;
-    }
-
-    void pt2FilterInit(pt2Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-    void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-
-    float pt2FilterApply(pt2Filter_t *filter, float input)
-    {
-        UNUSED(filter);
-        UNUSED(input);
-        return 0.0;
-    }
-
     float pt3FilterGain(float f_cut, float dT)
     {
         UNUSED(f_cut);
@@ -214,7 +188,6 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
         UNUSED(input);
         return 0.0;
     }
-
 
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;

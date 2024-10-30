@@ -1190,6 +1190,11 @@ extern "C" {
        UNUSED(pEWDist);
     }
 
+    float vector2Norm(const vector2_t *v) {
+       UNUSED(*v);
+       return 0.0f;
+    }
+
     bool canUseGPSHeading;
     bool compassIsHealthy;
     bool isNewGPSDataAvailable(void){ return true; }
