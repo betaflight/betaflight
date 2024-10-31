@@ -1062,9 +1062,7 @@ void processRxModes(timeUs_t currentTimeUs)
         // and either the alt_hold switch is activated, or are in failsafe landing mode
         && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
         // and we have Acc for self-levelling
-        && sensors(SENSOR_ACC)
-        // Need Mag unless a BRAVE user tries it without
-        && (sensors(SENSOR_MAG) || allowPosHoldWithoutMag()))
+        && sensors(SENSOR_ACC))
     {
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(POS_HOLD_MODE);

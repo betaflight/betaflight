@@ -30,6 +30,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
+#include "flight/pos_hold.h"
 #include "flight/position.h"
 #include "rx/rx.h"
 #include "sensors/gyro.h"
@@ -120,6 +121,7 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) { // set only at 
     posHold.peakInitialGroundspeed = 0.0f;
     posHold.direction[NORTH_SOUTH].integral = 0.0f;
     posHold.direction[EAST_WEST].integral = 0.0f;
+    posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
 }
 
 void autopilotInit(const autopilotConfig_t *config)
@@ -201,22 +203,24 @@ void setTargetLocation(gpsLocation_t newTargetLocation) {
 
 bool positionControl(void) {
 
-    // exit if we don't have a GPS 3D fix
     if (!STATE(GPS_FIX)) {
-        return false; // cannot proceed without a GPS location
+        return false; // cannot proceed; this could happen mid-flight, e.g. early after takeoff without a fix
     }
-    // and if no valid heading from GPS, or no mag
-    if (!canUseGPSHeading
-#ifdef USE_MAG
-        && !compassIsHealthy()
-#endif
-        ) {
+
+    if (
+    #ifdef USE_MAG
+        !compassIsHealthy() && // if compass is OK, don't worry about GPS; this is not likely to change in-flight
+    #endif
+        (!allowPosHoldWithoutMag() || !canUseGPSHeading) // no compass, check if GPS heading is OK, which changes during the flight
+    ) {
         return false;
     }
-    
+
     if (!wasThrottleRaised()) {
         return false;
     }
+
+    // note: returning false dispays POS_HOLD_FAIL warning in OSD
 
     if (isNewGPSDataAvailable()) {
         posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
@@ -242,18 +246,14 @@ bool positionControl(void) {
             // ** Sanity check **
             // primarily to detect flyaway from no Mag or badly oriented Mag
             // must accept some overshoot at the start, especially if entering at high speed
-            if (posHold.direction[NORTH_SOUTH].isStarting || posHold.direction[EAST_WEST].isStarting) {
-                posHold.sanityCheckDistance = gpsSol.groundSpeed > 1000 ? gpsSol.groundSpeed : 1000.0f;
-                // larger threshold if faster at start
-                // 1s of flight at current speed or 10m, in cm
-            }
             if (distanceCm > posHold.sanityCheckDistance) {
                 return false;
             }
 
-            earthFrame_t *direction[] = { &posHold.direction[NORTH_SOUTH], &posHold.direction[EAST_WEST]};
+            // static float prevPidDASquared = 0.0f; // if we limit DA on true vector length
+
             for (int i = 0; i < 2; i++) {
-                earthFrame_t *latLong = direction[i];
+                earthFrame_t *latLong = &posHold.direction[i];
 
                 // separate PID controllers for latitude (NorthSouth or NS) and longitude (EastWest or EW)
 
@@ -290,6 +290,15 @@ bool positionControl(void) {
                 const float pidDA = constrainf(pidD + pidA, -maxDAAngle, maxDAAngle);
                 // note: an angle of more than 35 degrees can still be achieved as P and I grow
 
+                /* possible economical alternative method using true length:
+                float pidDASquared = pidDA * pidDA;
+                float mag = sqrtf(pidDASquared + prevPidDASquared)
+                if (mag > maxDAAngle) {
+                    pidDA *= (maxDAAngle / mag);
+                }
+                prevPidDASquared = pidDASquared
+                */
+
                 // ** PID Sum **
                 float pidSum = pidP + pidI + pidDA;
 
@@ -303,6 +312,7 @@ bool positionControl(void) {
                         currentTargetLocation.lon = gpsSol.llh.lon;
                     }
                     latLong->distance = 0.0f;
+                    posHold.sanityCheckDistance = 1000.0f; // 10m, once stable
                     latLong->isStarting = false;
                 }
                 latLong->pidSum = pidSum;
@@ -330,6 +340,7 @@ bool positionControl(void) {
     // ** Final output to pid.c Angle Mode at 100Hz with primitive upsampling**
     autopilotAngle[AI_ROLL] = pt3FilterApply(&posHold.upsample[AI_ROLL], posHold.pidSum[AI_ROLL]);
     autopilotAngle[AI_PITCH] = pt3FilterApply(&posHold.upsample[AI_PITCH], posHold.pidSum[AI_PITCH]);
+    // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(posHold.pidSum[AI_ROLL] * 10));
