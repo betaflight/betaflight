@@ -363,3 +363,8 @@ float getAutopilotThrottle(void)
 {
     return throttleOut;
 }
+
+bool isAutopilotActive(void)
+{
+    return !posHold.sticksActive;
+}

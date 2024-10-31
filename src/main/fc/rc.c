@@ -757,19 +757,6 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         float rcDeadband = 0;
         if (axis == ROLL || axis == PITCH) {
             rcDeadband = rcControlsConfig()->deadband;
-#ifdef USE_POS_HOLD_MODE
-            if (FLIGHT_MODE(POS_HOLD_MODE)) {
-                // override deadband in POS_HOLD_MODE
-                if (posHoldConfig()->pos_hold_deadband) {
-                    // if pos_hold_deadband is defined, ignore pitch & roll within deadband zone (in %)
-                    rcDeadband = posHoldConfig()->pos_hold_deadband * 5.0f;
-                    // NB could attenuate RP responsiveness outside deadband here, with tmp * 0.8f or whatever
-                } else {
-                    // if pos_hold_deadband is zero, prevent user adjustment of pitch or roll
-                    rcDeadband  = 500;  // can't exceed this
-                }
-            }
-#endif
         } else {
             rcDeadband  = rcControlsConfig()->yaw_deadband;
             rc *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
@@ -842,16 +829,7 @@ bool isMotorsReversed(void)
 
 void initRcProcessing(void)
 {
-#ifdef USE_POS_HOLD_MODE
-        if (FLIGHT_MODE(POS_HOLD_MODE)) {
-            if (posHoldConfig()->pos_hold_deadband) {
-                rcCommandDivider = 500.0f - posHoldConfig()->pos_hold_deadband * 5.0f; // pos hold deadband in percent
-            }
-        }
-#else
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
-#endif
-
     rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
 
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
