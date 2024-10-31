@@ -36,4 +36,3 @@ typedef struct autopilotConfig_s {
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);
-
