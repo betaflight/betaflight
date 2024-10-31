@@ -128,5 +128,5 @@ int serialResourceIndex(serialPortIdentifier_e identifier)
         return -1;
     }
     const int offset = offsets[type];
-    return (offset != INT_MIN) ? dentifier + offset : -1;
+    return (offset != INT_MIN) ? identifier + offset : -1;
 }
