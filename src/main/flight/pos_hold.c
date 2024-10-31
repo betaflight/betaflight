@@ -24,12 +24,15 @@
 #include "common/maths.h"
 
 #include "config/config.h"
+#include "fc/core.h"
 #include "fc/runtime_config.h"
 #include "fc/rc.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#include "flight/imu.h"
 #include "flight/position.h"
 #include "rx/rx.h"
+#include "sensors/compass.h"
 
 #include "pos_hold.h"
 
@@ -67,7 +70,8 @@ void posHoldCheckSticks(void)
     }
 }
 
-void posHoldStart(void) {
+void posHoldStart(void)
+{
     static bool isInPosHoldMode = false;
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!isInPosHoldMode) {
@@ -84,11 +88,28 @@ void posHoldStart(void) {
     }
 }
 
+bool posHoldStatusChecks(void)
+{
+    if (!STATE(GPS_FIX) || !wasThrottleRaised()) {
+        posHold.posHoldIsOK = false; // cannot continue, display POS_HOLD_FAIL warning in OSD
+        return false; 
+    }
+    if (
+#ifdef USE_MAG
+        !compassIsHealthy() &&
+#endif
+        (!posHoldConfig()->pos_hold_without_mag || !canUseGPSHeading)) {
+        posHold.posHoldIsOK = false;
+        return false; 
+    }
+    return true;
+}
+
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs); 
     // check for enabling Pod Hold, otherwise do as little as possible while inactive
     posHoldStart();
-    if (posHold.posHoldIsOK) {
+    if (posHold.posHoldIsOK && posHoldStatusChecks()) {
         posHoldCheckSticks();
         posHold.posHoldIsOK = positionControl();
     } else {
@@ -99,10 +120,6 @@ void updatePosHold(timeUs_t currentTimeUs) {
 
 bool posHoldFailure(void) {
     return (FLIGHT_MODE(POS_HOLD_MODE) && !posHold.posHoldIsOK);
-}
-
-bool allowPosHoldWithoutMag(void) {
-    return (posHoldConfig()->pos_hold_without_mag);
 }
 
 #endif // USE_POS_HOLD

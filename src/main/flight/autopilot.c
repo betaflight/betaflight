@@ -25,16 +25,13 @@
 #include "common/filter.h"
 #include "common/maths.h"
 #include "common/vector.h"
-#include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
-#include "flight/pos_hold.h"
 #include "flight/position.h"
 #include "rx/rx.h"
 #include "sensors/gyro.h"
-#include "sensors/compass.h"
 
 #include "autopilot.h"
 
@@ -202,25 +199,6 @@ void setTargetLocation(gpsLocation_t newTargetLocation) {
 }
 
 bool positionControl(void) {
-
-    if (!STATE(GPS_FIX)) {
-        return false; // cannot proceed; this could happen mid-flight, e.g. early after takeoff without a fix
-    }
-
-    if (
-    #ifdef USE_MAG
-        !compassIsHealthy() && // if compass is OK, don't worry about GPS; this is not likely to change in-flight
-    #endif
-        (!allowPosHoldWithoutMag() || !canUseGPSHeading) // no compass, check if GPS heading is OK, which changes during the flight
-    ) {
-        return false;
-    }
-
-    if (!wasThrottleRaised()) {
-        return false;
-    }
-
-    // note: returning false dispays POS_HOLD_FAIL warning in OSD
 
     if (isNewGPSDataAvailable()) {
         posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s

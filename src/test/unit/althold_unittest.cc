@@ -127,13 +127,12 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pN
     gpsSolutionData_t gpsSol;
     bool canUseGPSHeading;
     bool compassIsHealthy;
+    bool wasThrottleRaised(void) { return true; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
     float getRcDeflectionAbs(void) { return 0.0f; }
     attitudeEulerAngles_t attitude;
     bool isNewGPSDataAvailable(void){ return true; }
-    bool wasThrottleRaised(void) { return true; }
-
-
+    
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     {
         UNUSED(input);

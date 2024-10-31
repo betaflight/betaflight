@@ -19,7 +19,7 @@
 
 #include "pg/pos_hold.h"
 
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_POS_HOLD_MODE
 #include "common/time.h"
 #include "io/gps.h"
 
@@ -30,6 +30,5 @@ void posHoldNewGpsData(void);
 void updatePosHold(timeUs_t currentTimeUs);
 
 bool posHoldFailure(void);
-bool allowPosHoldWithoutMag(void);
 
 #endif
