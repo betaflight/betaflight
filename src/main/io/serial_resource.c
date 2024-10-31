@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -115,7 +116,7 @@ int serialOwnerIndex(serialPortIdentifier_e identifier)
 int serialResourceIndex(serialPortIdentifier_e identifier)
 {
     int offsets[] = {
-        [SERIALTYPE_USB_VCP] = -1,
+        [SERIALTYPE_USB_VCP] =    INT_MIN,
         [SERIALTYPE_UART] =       -SERIAL_PORT_UART1       + RESOURCE_UART_OFFSET ,
         [SERIALTYPE_LPUART] =     -SERIAL_PORT_LPUART1     + RESOURCE_LPUART_OFFSET,
         [SERIALTYPE_SOFTSERIAL] = -SERIAL_PORT_SOFTSERIAL1 + RESOURCE_SOFTSERIAL_OFFSET,
@@ -126,9 +127,6 @@ int serialResourceIndex(serialPortIdentifier_e identifier)
     if (type == SERIALTYPE_INVALID) {
         return -1;
     }
-    int offset = offsets[type];
-    if (offset < 0) {
-        return -1;
-    }
-    return identifier - offset;
+    const int offset = offsets[type];
+    return (offset != INT_MIN) ? dentifier + offset : -1;
 }
