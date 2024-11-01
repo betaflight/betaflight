@@ -115,9 +115,9 @@ int serialOwnerIndex(serialPortIdentifier_e identifier)
 // some code uses this ordering for optimizations, be carefull if reordering is necessary
 int serialResourceIndex(serialPortIdentifier_e identifier)
 {
-    int offsets[] = {
+    const int offsets[] = {
         [SERIALTYPE_USB_VCP] =    INT_MIN,
-        [SERIALTYPE_UART] =       -SERIAL_PORT_UART1       + RESOURCE_UART_OFFSET ,
+        [SERIALTYPE_UART] =       -SERIAL_PORT_UART1       + RESOURCE_UART_OFFSET,
         [SERIALTYPE_LPUART] =     -SERIAL_PORT_LPUART1     + RESOURCE_LPUART_OFFSET,
         [SERIALTYPE_SOFTSERIAL] = -SERIAL_PORT_SOFTSERIAL1 + RESOURCE_SOFTSERIAL_OFFSET,
     };
