@@ -1001,10 +1001,8 @@ static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
     switch (term) {
     case TERM_P:
         return (pidProfile->tpa_mode == TPA_MODE_PD) ? tpaFactor : 1.0f;
-        break;
     case TERM_D:
         return tpaFactor;
-        break;
     default:
         return 1.0f;
     }

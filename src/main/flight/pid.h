@@ -176,10 +176,10 @@ typedef enum tpaSpeedType_e {
     TPA_SPEED_ADVANCED,
 } tpaSpeedType_t;
 
-typedef enum yawType_e {
+typedef enum {
     YAW_TYPE_RUDDER,
     YAW_TYPE_DIFF_THRUST,
-} yawType_t;
+} yawType_e;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
 
