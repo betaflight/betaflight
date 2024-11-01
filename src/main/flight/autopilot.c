@@ -74,7 +74,6 @@ typedef struct {
     float gpsDataIntervalS;
     float gpsDataFreqHz;
     float sanityCheckDistance;
-    float peakInitialGroundspeed;
     float lpfCutoff;
     float pt1Gain;
     bool sticksActive;
@@ -87,7 +86,6 @@ static posHoldState posHold = {
     .gpsDataIntervalS = 0.1f,
     .gpsDataFreqHz = 10.0f,
     .sanityCheckDistance = 1000.0f,
-    .peakInitialGroundspeed = 0.0f,
     .lpfCutoff = 1.0f,
     .pt1Gain = 1.0f,
     .sticksActive = false,
@@ -99,30 +97,29 @@ static posHoldState posHold = {
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
 float autopilotAngle[ANGLE_INDEX_COUNT];
 
-void resetPositionControlParams(earthFrame_t *efAxis) {
-    // at the start, and while sticks are moving
-    // Clear accumulation in filters
-    pt1FilterInit(&efAxis->velocityLpf, posHold.pt1Gain);
+void resetPositionControlEFParams(earthFrame_t *efAxis) {
+    // at start only
+    pt1FilterInit(&efAxis->velocityLpf, posHold.pt1Gain); // Clear and initialise the filters
     pt1FilterInit(&efAxis->accelerationLpf, posHold.pt1Gain);
-    // Initiate starting behaviour
-    efAxis->isStarting = true;
+    efAxis->isStarting = true; // Enter starting 'phase'
+    efAxis->integral = 0.0f;
 }
 
-void resetPositionControl(gpsLocation_t initialTargetLocation) { // set only at the start frmo pos_hold.c
+void resetPositionControl(gpsLocation_t initialTargetLocation) {
+    // from pos_hold.c when initiating position hold at target location
     currentTargetLocation = initialTargetLocation;
-    resetPositionControlParams(&posHold.efAxis[EW]);
-    resetPositionControlParams(&posHold.efAxis[NS]);
-    posHold.peakInitialGroundspeed = 0.0f;
-    posHold.efAxis[EW].integral = 0.0f;
-    posHold.efAxis[NS].integral = 0.0f;
     posHold.sticksActive = false;
+    // set sanity check distance according to groundspeed at start
     posHold.sanityCheckDistance = gpsSol.groundSpeed > 500 ? gpsSol.groundSpeed * 2.0f : 1000.0f;
+    resetPositionControlEFParams(&posHold.efAxis[EW]);
+    resetPositionControlEFParams(&posHold.efAxis[NS]);
 }
 
 void autopilotInit(const autopilotConfig_t *config)
 {
     eastWest = posHold.efAxis[EW];
     northSouth = posHold.efAxis[NS];
+    posHold.sticksActive = false;
     altitudePidCoeffs.Kp = config->altitude_P * ALTITUDE_P_SCALE;
     altitudePidCoeffs.Ki = config->altitude_I * ALTITUDE_I_SCALE;
     altitudePidCoeffs.Kd = config->altitude_D * ALTITUDE_D_SCALE;
@@ -138,8 +135,8 @@ void autopilotInit(const autopilotConfig_t *config)
     pt3FilterInit(&posHold.upsample[AI_ROLL], upsampleCutoff);
     pt3FilterInit(&posHold.upsample[AI_PITCH], upsampleCutoff);
     // Reset parameters and initialise PT1 filters for both NS and EW
-    resetPositionControlParams(&posHold.efAxis[EW]);
-    resetPositionControlParams(&posHold.efAxis[NS]);
+    resetPositionControlEFParams(&posHold.efAxis[EW]);
+    resetPositionControlEFParams(&posHold.efAxis[NS]);
 }
 
 void resetAltitudeControl (void) {
@@ -200,14 +197,14 @@ void setTargetLocation(gpsLocation_t newTargetLocation)
     // if we had a 'target_ground_speed' value, like in gps_rescue, we can make a function that starts and stops smoothly and targets that velocity
 }
 
-void resetLocation(axisEF_t loopAxis)
+void resetLocation(earthFrame_t *efAxis, axisEF_t loopAxis)
 {
     if (loopAxis == EW) {
         currentTargetLocation.lon = gpsSol.llh.lon; // update East-West / / longitude position
     } else {
         currentTargetLocation.lat = gpsSol.llh.lat; // update North-South / latitude position
     }
-    posHold.efAxis[loopAxis].previousDistance = 0.0f; // and reset the previous distance
+    efAxis->previousDistance = 0.0f; // and reset the previous distance
 }
 
 bool positionControl(void) {
@@ -237,7 +234,7 @@ bool positionControl(void) {
 
         // static float prevPidDASquared = 0.0f; // if we limit DA on true vector length
 
-        for (int loopAxis = 0; loopAxis < 2; loopAxis++) {
+        for (axisEF_t loopAxis = EW; loopAxis <= NS; loopAxis++) {
             earthFrame_t *efAxis = &posHold.efAxis[loopAxis];
             // separate PID controllers for latitude (NorthSouth or NS) and longitude (EastWest or EW)
 
@@ -265,19 +262,20 @@ bool positionControl(void) {
             const float pidA = accelerationFiltered * positionPidCoeffs.Kf;
 
             if (posHold.sticksActive) {
+                // sticks active 'phase'
                 efAxis->isStarting = true;
+                resetLocation(efAxis, loopAxis);
                 // while sticks are moving, reset the location on each axis, to maintain a usable D value
-                resetLocation(loopAxis);
                 // slowly leak iTerm away, approx 2s time constant
                 efAxis->integral *= leak;
+                // increase sanity check distance depending on speed, typically maximal when sticks stop
             } else if (efAxis->isStarting) {
-                // period after sticks stop, but before craft has stopped
+                // 'phase' after sticks stop, but before craft has stopped
                 pidD *= 1.6f; // aribitrary D boost to stop more quickly when sticks are centered
                 if (velocity * velocityFiltered < 0.0f) {
                     // when craft has nearly stopped moving, reset home and end the start phase
-                    resetLocation(loopAxis);
+                    resetLocation(efAxis, loopAxis);
                     efAxis->isStarting = false;
-                    posHold.sanityCheckDistance = 1000.0f; // restore normal 10m limit, once stable
                 }
             }
 
@@ -310,6 +308,8 @@ bool positionControl(void) {
         }
 
         if (posHold.sticksActive) {
+            // keep update sanity check distance while sticks are out
+            posHold.sanityCheckDistance = gpsSol.groundSpeed > 500 ? gpsSol.groundSpeed * 2.0f : 1000.0f;
             // if a Position Hold deadband is set, and sticks are outside deadband, allow pilot control in angle mode
             posHold.pidSumCraft[AI_ROLL] = 0.0f;
             posHold.pidSumCraft[AI_PITCH] = 0.0f;
