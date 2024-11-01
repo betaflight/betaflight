@@ -54,19 +54,9 @@ void posHoldInit(void)
 void posHoldCheckSticks(void)
 {
     // if failsafe is active, eg landing mode, don't update the original start point 
-    if (!failsafeIsActive()) {
-        // otherwise if sticks are not centered, allow start point to be updated
-        if (posHold.useStickAdjustment) {
-            if ((getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband))  {
-                // allow user to fly the quad, in angle mode, when sticks are outside the deadband
-                // while sticks are outside the deadband,
-                // keep updating the home location to the current GPS location each iteration
-                setSticksActiveStatus(true);
-                setTargetLocation(gpsSol.llh);
-            } else {
-                setSticksActiveStatus(false);
-            }
-        }
+    if (!failsafeIsActive() && posHold.useStickAdjustment) {
+        const bool sticksDeflected = (getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband);
+        setSticksActiveStatus(sticksDeflected);
     }
 }
 
@@ -77,8 +67,7 @@ void posHoldStart(void)
         if (!isInPosHoldMode) {
             // start position hold mode
             posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
-            setSticksActiveStatus(false);
-            resetPositionControl(gpsSol.llh);
+            resetPositionControl(gpsSol.llh); // sets target location to current location
             isInPosHoldMode = true;
         }
     } else {
