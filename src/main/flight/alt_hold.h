@@ -24,14 +24,8 @@
 
 #define ALTHOLD_TASK_RATE_HZ 100         // hz
 
-typedef struct {
-    bool isAltHoldActive;
-    float targetAltitudeCm;
-    float targetAltitudeAdjustRate;
-    float deadband;
-} altHoldState_t;
-
 void altHoldInit(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
+bool isAltHoldActive(void);
 
 #endif

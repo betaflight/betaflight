@@ -54,11 +54,13 @@ extern "C" {
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
-    extern altHoldState_t altHoldState;
-    void altHoldInit(void);
-    void updateAltHoldState(timeUs_t);
+
+//    void altHoldInit(void);
+//    void updateAltHoldState(timeUs_t);
     bool failsafeIsActive(void) { return false; }
     timeUs_t currentTimeUs = 0;
+    bool isAltHoldActive();
+    gpsSolutionData_t gpsSol;
 }
 
 #include "unittest_macros.h"
@@ -69,36 +71,37 @@ uint32_t millis() {
     return millisRW;
 }
 
+
 TEST(AltholdUnittest, altHoldTransitionsTest)
 {
     updateAltHoldState(currentTimeUs);
-    EXPECT_EQ(altHoldState.isAltHoldActive, false);
+    EXPECT_EQ(isAltHoldActive(), false);
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
     updateAltHoldState(currentTimeUs);
-    EXPECT_EQ(altHoldState.isAltHoldActive, true);
+    EXPECT_EQ(isAltHoldActive(), true);
 
     flightModeFlags ^= ALT_HOLD_MODE;
     millisRW = 56;
     updateAltHoldState(currentTimeUs);
-    EXPECT_EQ(altHoldState.isAltHoldActive, false);
+    EXPECT_EQ(isAltHoldActive(), false);
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 64;
     updateAltHoldState(currentTimeUs);
-    EXPECT_EQ(altHoldState.isAltHoldActive, true);
+    EXPECT_EQ(isAltHoldActive(), true);
 }
 
 TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 {
     altHoldInit();
-    EXPECT_EQ(altHoldState.isAltHoldActive, false);
+    EXPECT_EQ(isAltHoldActive(), false);
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
     updateAltHoldState(currentTimeUs);
-    EXPECT_EQ(altHoldState.isAltHoldActive, true);
+    EXPECT_EQ(isAltHoldActive(), true);
 }
 
 // STUBS
@@ -110,6 +113,9 @@ extern "C" {
     float getAltitudeDerivative(void) {return 0.0f;}
     float getCosTiltAngle(void) { return 0.0f; }
     float rcCommand[4];
+    attitudeEulerAngles_t attitude;
+    float getGpsDataIntervalSeconds(void) { return 0.01f; }//    gpsSolutionData_t gpsSol;
+    bool isNewGPSDataAvailable(void){ return true; }
 
     float vector2Norm(const vector2_t *v) {
        UNUSED(*v);
@@ -124,15 +130,6 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pE
        UNUSED(pNSDist);
     }
 
-    gpsSolutionData_t gpsSol;
-    bool canUseGPSHeading;
-    bool compassIsHealthy;
-    bool wasThrottleRaised(void) { return true; }
-    float getGpsDataIntervalSeconds(void) { return 0.01f; }
-    float getRcDeflectionAbs(void) { return 0.0f; }
-    attitudeEulerAngles_t attitude;
-    bool isNewGPSDataAvailable(void){ return true; }
-    
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     {
         UNUSED(input);

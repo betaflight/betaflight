@@ -37,6 +37,13 @@
 
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
 
+typedef struct {
+    bool isAltHoldActive;
+    float targetAltitudeCm;
+    float targetAltitudeAdjustRate;
+    float deadband;
+} altHoldState_t;
+
 altHoldState_t altHoldState;
 
 void controlAltitude(void)
@@ -154,5 +161,9 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
     if (altHoldState.isAltHoldActive) {
         altHoldUpdate();
     }
+}
+
+bool isAltHoldActive(void) {
+    return altHoldState.isAltHoldActive;
 }
 #endif
