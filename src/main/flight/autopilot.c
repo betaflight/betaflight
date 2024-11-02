@@ -213,12 +213,12 @@ bool positionControl(void) {
         posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
         posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
 
-        // first get xy distances from current location (gpsSol.llh) to target location
+        // first get NS and EW distances from current location (gpsSol.llh) to target location
         vector2_t gpsDistance;
-        GPS_distances(&gpsSol.llh, &currentTargetLocation, &gpsDistance.y, &gpsDistance.x); // Y is north, X is south
-
+        GPS_distances(&gpsSol.llh, &currentTargetLocation, &gpsDistance.x, &gpsDistance.y); // X is EW, Y is NS
         posHold.efAxis[EW].distance = gpsDistance.x;
         posHold.efAxis[NS].distance = gpsDistance.y;
+
         const float distanceCm = vector2Norm(&gpsDistance);
 
         const float leak = 1.0f - 0.4f * posHold.gpsDataIntervalS;
@@ -232,7 +232,8 @@ bool positionControl(void) {
             return false;
         }
 
-        // static float prevPidDASquared = 0.0f; // if we limit DA on true vector length
+        static float prevPidDASquared = 0.0f; // if we limit DA on true vector length
+        const float maxDAAngle = 35.0f; // limit in degrees; arbitrary angle
 
         for (axisEF_t loopAxis = EW; loopAxis <= NS; loopAxis++) {
             earthFrame_t *efAxis = &posHold.efAxis[loopAxis];
@@ -280,19 +281,19 @@ bool positionControl(void) {
             }
 
             // limit sum of D and A per axis because otherwise can be too aggressive when starting at speed
-            const float maxDAAngle = 35.0f; // limit in degrees; arbitrary.  20 is a bit too low, allows a lot of overshoot
-            const float pidDA = constrainf(pidD + pidA, -maxDAAngle, maxDAAngle);
+     //       const float maxDAAngle = 35.0f; // limit in degrees; arbitrary.  20 is a bit too low, allows a lot of overshoot
+     //       const float pidDA = constrainf(pidD + pidA, -maxDAAngle, maxDAAngle);
             // note: an angle of more than 35 degrees can still be achieved as P and I grow, and on diagonal
             // note: angle mode limit is absolute max, as set in CLI default is 60
 
-            /* possible alternate method using total vector length for the limiting, if needed:
-            float pidDASquared = pidDA * pidDA;
-            float mag = sqrtf(pidDASquared + prevPidDASquared)
+            //total vector length for DA limiting, if needed:
+            float pidDA = pidD + pidA;
+            const float pidDASquared = pidDA * pidDA;
+            float mag = sqrtf(pidDASquared + prevPidDASquared);
             if (mag > maxDAAngle) {
                 pidDA *= (maxDAAngle / mag);
             }
-            prevPidDASquared = pidDASquared
-            */
+            prevPidDASquared = pidDASquared;
 
             // ** PID Sum **
             efAxis->pidSum = pidP + pidI + pidDA;

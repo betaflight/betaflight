@@ -1182,14 +1182,13 @@ extern "C" {
        UNUSED(dist);
        UNUSED(bearing);
     }
-    void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist)
+void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pEWDist, float *pNSDist)
     {
        UNUSED(from);
        UNUSED(to);
-       UNUSED(pNSDist);
        UNUSED(pEWDist);
+       UNUSED(pNSDist);
     }
-
     float vector2Norm(const vector2_t *v) {
        UNUSED(*v);
        return 0.0f;

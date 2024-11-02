@@ -116,12 +116,12 @@ extern "C" {
        return 0.0f;
     }
 
-void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist)
+void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pEWDist, float *pNSDist)
     {
        UNUSED(from);
        UNUSED(to);
-       UNUSED(pNSDist);
        UNUSED(pEWDist);
+       UNUSED(pNSDist);
     }
 
     gpsSolutionData_t gpsSol;

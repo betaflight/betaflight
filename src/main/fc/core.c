@@ -1044,7 +1044,7 @@ void processRxModes(timeUs_t currentTimeUs)
         && sensors(SENSOR_ACC)
         // and we have altitude data
         && isAltitudeAvailable()
-        // prevent activation until after takeoff
+        // but not until throttle is raised
         && wasThrottleRaised()) {
         if (!FLIGHT_MODE(ALT_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
@@ -1062,12 +1062,11 @@ void processRxModes(timeUs_t currentTimeUs)
         // and either the alt_hold switch is activated, or are in failsafe landing mode
         && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
         // and we have Acc for self-levelling
-        && sensors(SENSOR_ACC))
-    {
+        && sensors(SENSOR_ACC)
+        // but not until throttle is raised
+        && wasThrottleRaised()) {
         if (!FLIGHT_MODE(POS_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
-            // this is just a 'request to initiate' the function
-            // if pos hold cannot function or fails after making this request, it should throw a warning and stop
         }
     } else {
         DISABLE_FLIGHT_MODE(POS_HOLD_MODE);

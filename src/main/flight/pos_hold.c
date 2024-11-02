@@ -79,9 +79,8 @@ void posHoldStart(void)
 
 bool posHoldStatusChecks(void)
 {
-    if (!STATE(GPS_FIX) || !wasThrottleRaised()) {
+    if (!STATE(GPS_FIX)) {
         posHold.posHoldIsOK = false; // cannot continue, display POS_HOLD_FAIL warning in OSD
-        // maybe: consier a timer for the GPS fix faiure, it could be transient at high angle when stopping
         return false; 
     }
     if (
