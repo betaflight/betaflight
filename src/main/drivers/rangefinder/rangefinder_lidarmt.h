@@ -32,5 +32,5 @@ typedef struct {
 } MTRangefinderConfig;
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
-void mtRangefinderReceiveNewData(uint8_t * bufferPtr);
+void mtRangefinderReceiveNewData(const uint8_t * bufferPtr);
 const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse);
