@@ -1835,10 +1835,11 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_HOVER_THROTTLE,      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1100, 1700 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, hover_throttle) },
     { PARAM_NAME_THROTTLE_MIN,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1050, 1400 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttle_min) },
     { PARAM_NAME_THROTTLE_MAX,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1400, 2000 }, PG_AUTOPILOT, offsetof(autopilotConfig_t, throttle_max) },
-    { PARAM_NAME_ALTITUDE_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_P) },
-    { PARAM_NAME_ALTITUDE_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_I) },
-    { PARAM_NAME_ALTITUDE_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_D) },
-    { PARAM_NAME_ALTITUDE_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_F) },
+    { PARAM_NAME_ALTITUDE_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_P) },
+    { PARAM_NAME_ALTITUDE_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_I) },
+    { PARAM_NAME_ALTITUDE_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_D) },
+    { PARAM_NAME_ALTITUDE_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, altitude_F) },
+    { PARAM_NAME_LINEARIZE_THRUST,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1    },    PG_AUTOPILOT, offsetof(autopilotConfig_t, linearize_thrust) },
 
 // PG_MODE_ACTIVATION_CONFIG
 #if defined(USE_CUSTOM_BOX_NAMES)

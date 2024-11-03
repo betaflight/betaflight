@@ -167,6 +167,7 @@
 #define PARAM_NAME_ALTITUDE_I "autopilot_altitude_I"
 #define PARAM_NAME_ALTITUDE_D "autopilot_altitude_D"
 #define PARAM_NAME_ALTITUDE_F "autopilot_altitude_F"
+#define PARAM_NAME_LINEARIZE_THRUST "autopilot_linearize_thrust"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
