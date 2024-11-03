@@ -66,7 +66,7 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
     UNUSED(dev);
     if (hasNewData) {
         hasNewData = false;
-        return (sensorData > 2.0) ? sensorData : RANGEFINDER_OUT_OF_RANGE; // MTF lidars has 2cm deadzone
+        return (sensorData > 2.0f) ? sensorData : RANGEFINDER_OUT_OF_RANGE; // MTF lidars has 2cm deadzone
     } else {
         return RANGEFINDER_NO_NEW_DATA;
     }
