@@ -509,7 +509,7 @@ void writeConfigToEEPROM(void)
     bool success = false;
     // write it
     for (int attempt = 0; attempt < 3 && !success; attempt++) {
-        if (writeSettingsToEEPROM()) {
+        if (writeSettingsToEEPROM() && isEEPROMVersionValid() && isEEPROMStructureValid()) {
             success = true;
 
 #if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
@@ -523,8 +523,7 @@ void writeConfigToEEPROM(void)
         }
     }
 
-
-    if (success && isEEPROMVersionValid() && isEEPROMStructureValid()) {
+    if (success) {
         return;
     }
 
