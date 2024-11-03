@@ -91,7 +91,7 @@ bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinder
     return true;
 }
 
-void mtRangefinderReceiveNewData(uint8_t * bufferPtr) {   
+void mtRangefinderReceiveNewData(const uint8_t * bufferPtr) {   
     mtfConnected = true;
     const mspSensorRangefinderLidarMtDataMessage_t * pkt = (const mspSensorRangefinderLidarMtDataMessage_t *)bufferPtr;
 
