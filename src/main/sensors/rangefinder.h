@@ -31,11 +31,10 @@ typedef enum {
     RANGEFINDER_HCSR04      = 1,
     RANGEFINDER_TFMINI      = 2,
     RANGEFINDER_TF02        = 3,
-    RANGEFINDER_MT01P       = 4,
-    RANGEFINDER_MTF01       = 5,
-    RANGEFINDER_MTF02       = 6,
-    RANGEFINDER_MTF01P      = 7,
-    RANGEFINDER_MTF02P      = 8,
+    RANGEFINDER_MTF01       = 4,
+    RANGEFINDER_MTF02       = 5,
+    RANGEFINDER_MTF01P      = 6,
+    RANGEFINDER_MTF02P      = 7,
 } rangefinderType_e;
 
 typedef struct rangefinderConfig_s {
