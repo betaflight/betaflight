@@ -132,7 +132,6 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
         case RANGEFINDER_MTF02:
         case RANGEFINDER_MTF01P:
         case RANGEFINDER_MTF02P:
-        case RANGEFINDER_MT01P:
             if (mtRangefinderDetect(dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
                 rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
