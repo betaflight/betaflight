@@ -15,7 +15,6 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
@@ -46,7 +45,6 @@ extern "C" {
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
 
-
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 0);
     PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
@@ -54,13 +52,9 @@ extern "C" {
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
-
-//    void altHoldInit(void);
-//    void updateAltHoldState(timeUs_t);
     bool failsafeIsActive(void) { return false; }
     timeUs_t currentTimeUs = 0;
     bool isAltHoldActive();
-    gpsSolutionData_t gpsSol;
 }
 
 #include "unittest_macros.h"
@@ -70,7 +64,6 @@ uint32_t millisRW;
 uint32_t millis() {
     return millisRW;
 }
-
 
 TEST(AltholdUnittest, altHoldTransitionsTest)
 {
@@ -107,15 +100,22 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 // STUBS
 
 extern "C" {
+    uint8_t armingFlags = 0;
+    int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t debugMode;
+    uint16_t flightModeFlags = 0;
+    uint8_t stateFlags = 0;
+
     acc_t acc;
+    attitudeEulerAngles_t attitude;
+    gpsSolutionData_t gpsSol;
 
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
     float getCosTiltAngle(void) { return 0.0f; }
-    float rcCommand[4];
-    attitudeEulerAngles_t attitude;
     float getGpsDataIntervalSeconds(void) { return 0.01f; }//    gpsSolutionData_t gpsSol;
     bool isNewGPSDataAvailable(void){ return true; }
+    float rcCommand[4];
 
     float vector2Norm(const vector2_t *v) {
        UNUSED(*v);
@@ -184,11 +184,4 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pE
         UNUSED(input);
         return 0.0;
     }
-
-    int16_t debug[DEBUG16_VALUE_COUNT];
-    uint8_t debugMode;
-
-    uint8_t armingFlags = 0;
-    uint8_t stateFlags = 0;
-    uint16_t flightModeFlags = 0;
 }
