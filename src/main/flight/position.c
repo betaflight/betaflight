@@ -55,8 +55,6 @@
 static float displayAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
 
-static float zeroedGpsAltitudeCm = 0.0f;
-
 static float zeroedFusedAltitudeCm = 0.0f;
 static float zeroedFusedAltitudeCmDerivative = 0.0f;
 
@@ -91,6 +89,8 @@ void calculateEstimatedAltitude(void) {
     static float gpsAltOffsetCm = 0.0f;
     static float baroAltOffsetCm = 0.0f;
     static float newBaroAltOffsetCm = 0.0f;
+    static float zeroedGpsAltitudeCm = 0.0f;
+
     static KalmanFilter kf;
     static bool kfInitDone = false;
     float baroAltCm = 0.0f;
@@ -241,9 +241,6 @@ void calculateEstimatedAltitude(void) {
 #endif
 
 #ifdef USE_GPS
-    if (ARMING_FLAG(ARMED)) {
-        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedGpsAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
-    }
     DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(gpsAltMeasurement.variance));
 #endif
 
@@ -256,6 +253,7 @@ void calculateEstimatedAltitude(void) {
 #ifdef USE_VARIO
     DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
+    DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedGpsAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(zeroedFusedAltitudeCm));
 
