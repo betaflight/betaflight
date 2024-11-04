@@ -29,10 +29,10 @@ typedef struct autopilotConfig_s {
     uint16_t hover_throttle;      // value used at the start of a rescue or position hold
     uint16_t throttle_min;
     uint16_t throttle_max;
-    uint8_t altitude_P;
-    uint8_t altitude_I;
-    uint8_t altitude_D;
-    uint8_t altitude_F;
+    uint16_t altitude_P;
+    uint16_t altitude_I;
+    uint16_t altitude_D;
+    uint16_t altitude_F;
     uint8_t linearize_thrust;
 } autopilotConfig_t;
 
