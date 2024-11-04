@@ -105,8 +105,7 @@ typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[RESOURCE_SERIAL_COUNT];
     ioTag_t ioTagRx[RESOURCE_SERIAL_COUNT];
 #ifdef USE_INVERTER
-    // TODO - no need for LPUART inverter
-    ioTag_t ioTagInverter[RESOURCE_UART_COUNT + RESOURCE_LPUART_COUNT]; // this array is only for UARTs.
+    ioTag_t ioTagInverter[RESOURCE_UART_COUNT]; // this array is only for UARTs.
 #endif
 } serialPinConfig_t;
 

@@ -13,7 +13,7 @@ serials = {
              },
     "LPUART": {"ids": [1],
                "depends": {"UART"},
-               "inverter": True,   # TODO: old code compatibility only
+#               "inverter": True,   # TODO: old code compatibility only, disabled
                },
     "SOFTSERIAL": {"ids": [i + 1 for i in range(2)],
                    "use_enables_all": True,

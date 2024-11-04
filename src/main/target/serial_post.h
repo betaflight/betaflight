@@ -41,10 +41,10 @@ All <type><n>_(RX|TX)_PINS are normalized too:
  - if port is not enable, both will be undefined, possibly with warning
   - pass -DWARN_UNUSED_SERIAL_PORT to compiler to check pin defined without corresponding port being enabled.
 
-Generated on 2024-04-25
+Generated on 2024-11-04
 
 Configuration used:
-{   'LPUART': {'depends': {'UART'}, 'ids': [1], 'inverter': True},
+{   'LPUART': {'depends': {'UART'}, 'ids': [1]},
     'SOFTSERIAL': {   'force_continuous': True,
                       'ids': [1, 2],
                       'use_enables_all': True},
@@ -404,11 +404,7 @@ Configuration used:
 #define SERIAL_LPUART_MAX (SERIAL_LPUART_MASK ? LOG2(SERIAL_LPUART_MASK) + 1 : 0)
 
 
-// enable USE_INVERTED first, before normalization
-#if !defined(USE_INVERTER) && (INVERTER_PIN_LPUART1)
-# define USE_INVERTER
-#endif
-// Normalize LPUART TX/RX/INVERTER
+// Normalize LPUART TX/RX
 #if SERIAL_LPUART1_USED && !defined(LPUART1_RX_PIN)
 # define LPUART1_RX_PIN NONE
 #endif
@@ -426,15 +422,6 @@ Configuration used:
 #endif
 #if !SERIAL_LPUART1_USED &&  defined(LPUART1_TX_PIN)
 # undef LPUART1_TX_PIN
-#endif
-#if SERIAL_LPUART1_USED && !defined(INVERTER_PIN_LPUART1)
-# define INVERTER_PIN_LPUART1 NONE
-#endif
-#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_LPUART1_USED && defined(INVERTER_PIN_LPUART1)
-# warning "INVERTER_PIN_LPUART1 is defined but LPUART1 is not enabled"
-#endif
-#if !SERIAL_LPUART1_USED &&  defined(INVERTER_PIN_LPUART1)
-# undef INVERTER_PIN_LPUART1
 #endif
 
 /****                                SOFTSERIAL                                 *****/
