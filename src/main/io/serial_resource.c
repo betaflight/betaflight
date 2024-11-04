@@ -37,7 +37,7 @@ serialType_e serialType(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_UART
     if (identifier >= SERIAL_PORT_USART1 && identifier < SERIAL_PORT_USART1 + SERIAL_UART_MAX) {
-        unsigned idx = identifier - SERIAL_PORT_USART1;
+        const unsigned idx = identifier - SERIAL_PORT_USART1;
         if (BIT(idx) & SERIAL_UART_MASK) {
             return SERIALTYPE_UART;
         } else {
@@ -48,7 +48,7 @@ serialType_e serialType(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_LPUART
     if (identifier >= SERIAL_PORT_LPUART1 && identifier < SERIAL_PORT_LPUART1 + SERIAL_LPUART_MAX) {
-        unsigned idx = identifier - SERIAL_PORT_LPUART1;
+        const unsigned idx = identifier - SERIAL_PORT_LPUART1;
         if (BIT(idx) & SERIAL_LPUART_MASK) {
             return SERIALTYPE_LPUART;
         } else {
@@ -59,7 +59,7 @@ serialType_e serialType(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_SOFTSERIAL
     if (identifier >= SERIAL_PORT_SOFTSERIAL1 && identifier < SERIAL_PORT_SOFTSERIAL1 + SERIAL_SOFTSERIAL_MAX) {
-        // sotserials from 1, no holes
+        // sotserials always start from 1, without holes
         return SERIALTYPE_SOFTSERIAL;
     }
 #endif
@@ -101,7 +101,7 @@ resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier)
 
 
 // return index used to claim given resource. Returned value is 1 based, for IOInit and similar
-// 0 is returned for given port is not defined and for singleton ports (USB)
+// 0 is returned when given port is not defined or if it is singleton port (USB)
 int serialOwnerIndex(serialPortIdentifier_e identifier)
 {
     const struct SerialTypeInfo* inf = serialTypeInfo(identifier);

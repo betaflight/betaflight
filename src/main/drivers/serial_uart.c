@@ -174,7 +174,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     }
 #else
     {
-        int idx = identifier - SERIAL_PORT_USART1;
+        const int idx = identifier - SERIAL_PORT_USART1;
         if (idx >= 0 && idx < SERIAL_UART_MAX) {
             if (BIT(idx) & SERIAL_UART_MASK) {
                 // return number of enabled UART ports smaller than idx
@@ -480,9 +480,12 @@ void uartConfigureDma(uartDevice_t *uartdev)
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(uartPortIdentifier); // rx is always +1
 
     const dmaChannelSpec_t *dmaChannelSpec;
-
-    if (serialUartConfig(resourceIdx)->txDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, uartDeviceIdx, serialUartConfig(resourceIdx)->txDmaopt);
+    const serialUartConfig_t *cfg = serialUartConfig(resourceIdx);
+    if (!cfg) {
+        return;
+    }
+    if (cfg->txDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, uartDeviceIdx, cfg->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->txDMAResource = dmaChannelSpec->ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
@@ -493,8 +496,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
         }
     }
 
-    if (serialUartConfig(resourceIdx)->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, serialUartConfig(resourceIdx)->txDmaopt);
+    if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)

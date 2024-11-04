@@ -5074,7 +5074,7 @@ typedef struct {
 
 const cliResourceValue_t resourceTable[] = {
 #if defined(USE_BEEPER)
-    DEFS( OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, beeperDevConfig_t, ioTag) ,
+    DEFS( OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, beeperDevConfig_t, ioTag ),
 #endif
     DEFA( OWNER_MOTOR,         PG_MOTOR_CONFIG, motorConfig_t, dev.ioTags[0], MAX_SUPPORTED_MOTORS ),
 #if defined(USE_SERVOS)
@@ -5094,11 +5094,11 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, ledStripConfig_t, ioTag ),
 #endif
 #if defined(USE_UART)
-    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT),
-    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT),
+    DEFA( OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT ),
+    DEFA( OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT ),
 #endif
 #if defined(USE_INVERTER)
-    DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT),
+    DEFA( OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagInverter[RESOURCE_UART_OFFSET], RESOURCE_UART_COUNT ),
     // LPUART and SOFTSERIAL don't need external inversion
 #endif
 #if defined(USE_SOFTSERIAL)
@@ -5106,8 +5106,8 @@ const cliResourceValue_t resourceTable[] = {
     DEFA( OWNER_SOFTSERIAL_RX, PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_SOFTSERIAL_OFFSET], RESOURCE_SOFTSERIAL_COUNT ),
 #endif
 #if defined(USE_LPUART)
-    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT),
-    DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT),
+    DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT ),
+    DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT ),
 #endif
 #ifdef USE_I2C
     DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),

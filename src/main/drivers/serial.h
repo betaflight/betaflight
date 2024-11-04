@@ -98,7 +98,7 @@ typedef struct serialPort_s {
 
     serialIdleCallbackPtr idleCallback;
 
-    uint8_t identifier;  // actually serialPortIdentifier_e
+    uint8_t identifier;  // actually serialPortIdentifier_e; avoid circular header dependency
 } serialPort_t;
 
 typedef struct serialPinConfig_s {

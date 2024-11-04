@@ -55,7 +55,7 @@ static void initInverter(serialPortIdentifier_e identifier)
     IO_t pin = findInverterPin(identifier);
     if (pin) {
         const int ownerIndex = serialOwnerIndex(identifier);
-        // only UART supports inverter, so ownerIndex does work
+        // only UART supports inverter, so OWNER_INVERTER+ownerIndex does work
         IOInit(pin, OWNER_INVERTER, ownerIndex);
         IOConfigGPIO(pin, IOCFG_OUT_PP);
         inverterSet(pin, false);

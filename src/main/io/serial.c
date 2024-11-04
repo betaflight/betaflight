@@ -165,7 +165,7 @@ static serialPortConfig_t* findInPortConfigs_identifier(const serialPortConfig_t
 {
     for (unsigned i = 0; i < count; i++) {
         if (cfgs[i].identifier == identifier) {
-            // drop const on return - wrapper function will add it back is necessary
+            // drop const on return - wrapper function will add it back if necessary
             return (serialPortConfig_t*)&cfgs[i];
         }
     }
@@ -277,9 +277,7 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate)
 {
-    uint8_t index;
-
-    for (index = 0; index < ARRAYLEN(baudRates); index++) {
+    for (unsigned index = 0; index < ARRAYLEN(baudRates); index++) {
         if (baudRates[index] == baudRate) {
             return index;
         }
@@ -289,7 +287,7 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
 
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
 {
-    for (int index = 0; index < (int)ARRAYLEN(serialPortIdentifiers); index++) {
+    for (unsigned index = 0; index < ARRAYLEN(serialPortIdentifiers); index++) {
         if (serialPortIdentifiers[index] == identifier) {
             return index;
         }
@@ -298,7 +296,7 @@ int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
 }
 
 // find serial port by name.
-// NULL cmp defaults to case-insensitive compare
+// when cmp is NULL, case-insensitive compare is used
 // cmp is strcmp-like function
 serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *candidate))
 {

@@ -40,10 +40,10 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-// TODO: split this function into mcu-specific UART files
+// TODO: split this function into mcu-specific UART files ?
 static void enableRxIrq(const uartHardware_t *hardware)
 {
-  #if defined(USE_HAL_DRIVER)
+#if defined(USE_HAL_DRIVER)
         HAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
         HAL_NVIC_EnableIRQ(hardware->irqn);
 #elif defined(STM32F4)
@@ -59,13 +59,13 @@ static void enableRxIrq(const uartHardware_t *hardware)
         DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
         DAL_NVIC_EnableIRQ(hardware->irqn);
 #else
-#error "Unhandled MCU type"
+# error "Unhandled MCU type"
 #endif
 }
 
 uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
-    uartPort_t *s = &(uartdev->port);
+    uartPort_t *s = &uartdev->port;
 
     const uartHardware_t *hardware = uartdev->hardware;
 
@@ -100,7 +100,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
     uartdev->txPinState = TX_PIN_IGNORE;
 
-    const serialPortIdentifier_e identifier = uartdev->port.port.identifier;
+    const serialPortIdentifier_e identifier = s->port.identifier;
 
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
@@ -122,26 +122,26 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         const serialPullMode_t pull = serialOptions_pull(options);
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
         // Note: APM32F4 is different from STM32F4 here
-        ioConfig_t ioCfg = IO_CONFIG(
+        const ioConfig_t ioCfg = IO_CONFIG(
             pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
             GPIO_SPEED_FREQ_HIGH,
-            ((unsigned[]){GPIO_NOPULL, GPIO_PULLDOWN, GPIO_PULLUP})[pull]
+            ((const unsigned[]){GPIO_NOPULL, GPIO_PULLDOWN, GPIO_PULLUP})[pull]
         );
 #elif defined(AT32F4)
-        ioConfig_t ioCfg = IO_CONFIG(
+        const ioConfig_t ioCfg = IO_CONFIG(
             GPIO_MODE_MUX,
             GPIO_DRIVE_STRENGTH_STRONGER,
             pushPull ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
-            ((gpio_pull_type[]){GPIO_PULL_NONE, GPIO_PULL_DOWN, GPIO_PULL_UP})[pull]
+            ((const gpio_pull_type[]){GPIO_PULL_NONE, GPIO_PULL_DOWN, GPIO_PULL_UP})[pull]
         );
 #elif defined(STM32F4)
-        // no inverter on F4, but keep it in line with other CPUs
+        // UART inverter is not supproted on F4, but keep it in line with other CPUs
         // External inverter in bidir mode would be quite problematic anyway
-        ioConfig_t ioCfg = IO_CONFIG(
+        const ioConfig_t ioCfg = IO_CONFIG(
             GPIO_Mode_AF,
             GPIO_Low_Speed,  // TODO: should use stronger drive
             pushPull ? GPIO_OType_PP : GPIO_OType_OD,
-            ((unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
+            ((const unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
         );
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
@@ -165,22 +165,24 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             } else {
 #if defined(STM32F4) || defined(APM32F4)
                 // TODO: no need for pullup on TX only pin
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, txAf);
+                const ioConfig_t ioCfg = IOCFG_AF_PP_UP;
 #else
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, txAf);
+                const ioConfig_t ioCfg = IOCFG_AF_PP;
 #endif
+                IOConfigGPIOAF(txIO, ioCfg, txAf);
             }
         }
 
         if ((mode & MODE_RX) && rxIO) {
-            IOInit(rxIO, ownerTxRx + 1, ownerIndex);
 #if defined(STM32F4) || defined(APM32F4)
             // no inversion possible on F4, always use pullup
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, rxAf);
+            const ioConfig_t ioCfg = IOCFG_AF_PP_UP;
 #else
             // TODO: pullup/pulldown should be enabled for RX (based on inversion)
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, rxAf);
+            const ioConfig_t ioCfg = IOCFG_AF_PP;
 #endif
+            IOInit(rxIO, ownerTxRx + 1, ownerIndex);
+            IOConfigGPIOAF(rxIO, ioCfg, rxAf);
         }
     }
 

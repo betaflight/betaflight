@@ -92,8 +92,8 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
             serialPinConfig->ioTagRx[resourceIndex] = defpin->rxIO;
             serialPinConfig->ioTagTx[resourceIndex] = defpin->txIO;
 #if defined(USE_INVERTER)
+            // LPUART/SOFTSERIAL do not need/support inverter
             if (resourceIndex < (int)ARRAYLEN(serialPinConfig->ioTagInverter)) {
-                // LPUART/SOFTSERIAL do not need inverter
                 serialPinConfig->ioTagInverter[resourceIndex] = defpin->inverterIO;
             }
 #endif
