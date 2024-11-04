@@ -28,6 +28,8 @@
 #include "io/serial.h"
 #include "drivers/io.h"
 #include "drivers/serial.h"
+#include "drivers/serial_impl.h"
+
 
 #include "inverter.h"
 
