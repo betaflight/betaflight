@@ -93,12 +93,10 @@ void calculateEstimatedAltitude(void) {
     static float newBaroAltOffsetCm = 0.0f;
     static KalmanFilter kf;
     static bool kfInitDone = false;
-    static uint32_t prevGpsTime = 0; // time of last GPS data
     float baroAltCm = 0.0f;
     bool haveBaroAlt = false; // true if baro exists and has been calibrated on power up
     bool haveGpsAlt = false; // true if GPS is connected and while it has a 3D fix, set each run to false
     bool haveRangefinderAlt = false; // true if rangefinder is connected and has a valid reading
-    bool gpsHasNewData = false; // true if GPS has new data since last run
 
     // *** Get sensor data
 #ifdef USE_BARO
@@ -113,6 +111,9 @@ void calculateEstimatedAltitude(void) {
 
 #ifdef USE_GPS
     static SensorMeasurement gpsAltMeasurement = { .value = -1.0f, .variance = 10000.0f };
+    static uint32_t prevGpsTime = 0; // time of last GPS data
+    bool gpsHasNewData = false; // true if GPS has new data since last run
+
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
         // GPS_FIX means a 3D fix, which requires min 4 sats.
         // On loss of 3D fix, gpsAltCm remains at the last value, haveGpsAlt becomes false
