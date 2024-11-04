@@ -1745,7 +1745,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_ADV_THRUST, "%d", currentPidProfile->tpa_speed_adv_thrust);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_MAX_VOLTAGE, "%d", currentPidProfile->tpa_speed_max_voltage);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_SPEED_PITCH_OFFSET, "%d", currentPidProfile->tpa_speed_pitch_offset);
-#endif
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_TYPE, "%d", currentPidProfile->yaw_type);
+#endif // USE_WING
 
         default:
             return true;
