@@ -33,10 +33,6 @@ void kf_update_variance(KalmanFilter *kf) {
 }
 
 void kf_update(KalmanFilter *kf, SensorMeasurement sensorMeas) {
-    if (sensorMeas.value == -1) {
-        return; // Skip update if measurement is invalid
-    }
-
     float kalmanGain = kf->estimatedVariance / (kf->estimatedVariance + sensorMeas.variance);
 
     kf->estimatedValue += kalmanGain * (sensorMeas.value - kf->estimatedValue);

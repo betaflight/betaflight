@@ -131,9 +131,9 @@ void calculateEstimatedAltitude(void) {
 #endif
 
 #ifdef USE_RANGEFINDER
-    haveRangefinderAlt = rangefinderIsHealthy();
-    static SensorMeasurement rangefinderMeasurement = { .value = -1.0f, .variance = 1.0f };  // todo: rangefinder init variance
+    static SensorMeasurement rangefinderMeasurement = { .value = 0.0f, .variance = 1.0f };  // todo: rangefinder init variance
     rangefinderMeasurement.value = (float)rangefinderGetLatestAltitude();
+    haveRangefinderAlt = rangefinderIsHealthy() && rangefinderMeasurement.value > 0; // altitude 0 from the rangefinder is invalid
     static float rangefinderOffsetCm = 0.0f;
 #endif
 
