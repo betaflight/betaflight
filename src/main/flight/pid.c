@@ -397,6 +397,7 @@ void pidUpdateTpaFactor(float throttle)
     case YAW_TYPE_RUDDER:
     default:
         pidRuntime.tpaFactorYaw = pidRuntime.tpaFactor;
+        break;
     }
 #endif // USE_WING
 }
