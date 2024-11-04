@@ -44,7 +44,10 @@
 
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
+
+#ifdef USE_RANGEFINDER
 #include "sensors/rangefinder.h"
+#endif
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
