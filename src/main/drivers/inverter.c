@@ -25,33 +25,40 @@
 
 #ifdef USE_INVERTER
 
-#include "io/serial.h" // For SERIAL_PORT_IDENTIFIER_TO_INDEX
+#include "io/serial.h"
 #include "drivers/io.h"
 #include "drivers/serial.h"
+#include "drivers/serial_impl.h"
+
 
 #include "inverter.h"
 
 static const serialPinConfig_t *pSerialPinConfig;
 
-static void inverterSet(int identifier, bool on)
+static IO_t findInverterPin(serialPortIdentifier_e identifier)
 {
-    IO_t pin = IOGetByTag(pSerialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(identifier)]);
-
-    if (pin) {
-        IOWrite(pin, on);
+    const int resourceIndex = serialResourceIndex(identifier);
+    if (resourceIndex >= 0 && resourceIndex < (int)ARRAYLEN(pSerialPinConfig->ioTagInverter)) {
+        return IOGetByTag(pSerialPinConfig->ioTagInverter[resourceIndex]);
+    } else {
+        return NULL;
     }
 }
 
-static void initInverter(int identifier)
+static void inverterSet(IO_t pin,  bool on)
 {
-    int uartIndex = SERIAL_PORT_IDENTIFIER_TO_INDEX(identifier);
-    IO_t pin = IOGetByTag(pSerialPinConfig->ioTagInverter[uartIndex]);
+    IOWrite(pin, on);
+}
 
+static void initInverter(serialPortIdentifier_e identifier)
+{
+    IO_t pin = findInverterPin(identifier);
     if (pin) {
-        IOInit(pin, OWNER_INVERTER, RESOURCE_INDEX(uartIndex));
+        const int ownerIndex = serialOwnerIndex(identifier);
+        // only UART supports inverter, so OWNER_INVERTER+ownerIndex does work
+        IOInit(pin, OWNER_INVERTER, ownerIndex);
         IOConfigGPIO(pin, IOCFG_OUT_PP);
-
-        inverterSet(identifier, false);
+        inverterSet(pin, false);
     }
 }
 
@@ -59,73 +66,18 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 {
     pSerialPinConfig = serialPinConfigToUse;
 
-#ifdef USE_UART1
-    initInverter(SERIAL_PORT_USART1);
-#endif
-
-#ifdef USE_UART2
-    initInverter(SERIAL_PORT_USART2);
-#endif
-
-#ifdef USE_UART3
-    initInverter(SERIAL_PORT_USART3);
-#endif
-
-#ifdef USE_UART4
-    initInverter(SERIAL_PORT_UART4);
-#endif
-
-#ifdef USE_UART5
-    initInverter(SERIAL_PORT_UART5);
-#endif
-
-#ifdef USE_UART6
-    initInverter(SERIAL_PORT_USART6);
-#endif
+    for (unsigned i = 0; i < ARRAYLEN(serialPortIdentifiers); i++) {
+        // it is safe to pass port without inverter
+        initInverter(serialPortIdentifiers[i]);
+    }
 }
 
-void enableInverter(USART_TypeDef *USARTx, bool on)
+void enableInverter(serialPortIdentifier_e identifier, bool on)
 {
-    int identifier = SERIAL_PORT_NONE;
-
-#ifdef USE_UART1
-    if (USARTx == USART1) {
-        identifier = SERIAL_PORT_USART1;
-    }
-#endif
-
-#ifdef USE_UART2
-    if (USARTx == USART2) {
-        identifier = SERIAL_PORT_USART2;
-    }
-#endif
-
-#ifdef USE_UART3
-    if (USARTx == USART3) {
-        identifier = SERIAL_PORT_USART3;
-    }
-#endif
-
-#ifdef USE_UART4
-    if (USARTx == UART4) {
-        identifier = SERIAL_PORT_UART4;
-    }
-#endif
-
-#ifdef USE_UART5
-    if (USARTx == UART5) {
-        identifier = SERIAL_PORT_UART5;
-    }
-#endif
-
-#ifdef USE_UART6
-    if (USARTx == USART6) {
-        identifier = SERIAL_PORT_USART6;
-    }
-#endif
-
-    if (identifier != SERIAL_PORT_NONE) {
-        inverterSet(identifier, on);
+    const IO_t pin = findInverterPin(identifier);
+    if (pin) {
+        inverterSet(pin, on);
     }
 }
+
 #endif // USE_INVERTER

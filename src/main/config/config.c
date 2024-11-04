@@ -416,11 +416,16 @@ static void validateAndFixConfig(void)
     if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
         // enable some compiled-in features by default
         uint32_t autoFeatures =
-            FEATURE_OSD | FEATURE_LED_STRIP
-#if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
-            | FEATURE_SOFTSERIAL
+            FEATURE_OSD | FEATURE_LED_STRIP;
+#if defined(USE_SOFTSERIAL)
+        // enable softserial if at least one pin is configured
+        for (unsigned i = RESOURCE_SOFTSERIAL_OFFSET; i < RESOURCE_SOFTSERIAL_OFFSET + RESOURCE_SOFTSERIAL_COUNT; i++) {
+            if (serialPinConfig()->ioTagTx[i] || serialPinConfig()->ioTagRx[i]) {
+                autoFeatures |= FEATURE_SOFTSERIAL;
+                break;
+            }
+        }
 #endif
-            ;
         featureEnableImmediate(autoFeatures & featuresSupportedByBuild);
     }
 
@@ -530,12 +535,11 @@ static void validateAndFixConfig(void)
     // Find the first serial port on which MSP Displayport is enabled
     displayPortMspSetSerial(SERIAL_PORT_NONE);
 
-    for (uint8_t serialPort  = 0; serialPort < SERIAL_PORT_COUNT; serialPort++) {
-        const serialPortConfig_t *portConfig = &serialConfig()->portConfigs[serialPort];
-
-        if (portConfig &&
-            (portConfig->identifier != SERIAL_PORT_USB_VCP) &&
-            ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
+    for (const serialPortConfig_t *portConfig = serialConfig()->portConfigs;
+         portConfig < ARRAYEND(serialConfig()->portConfigs);
+         portConfig++) {
+        if ((portConfig->identifier != SERIAL_PORT_USB_VCP)
+            && ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
             displayPortMspSetSerial(portConfig->identifier);
             break;
         }

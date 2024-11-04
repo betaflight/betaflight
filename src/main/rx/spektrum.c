@@ -238,9 +238,9 @@ void spektrumBind(rxConfig_t *rxConfig)
             return;
         }
 
-        int index = SERIAL_PORT_IDENTIFIER_TO_INDEX(portConfig->identifier);
-        ioTag_t txPin = serialPinConfig()->ioTagTx[index];
-        ioTag_t rxPin = serialPinConfig()->ioTagRx[index];
+        const int resourceIndex = serialResourceIndex(portConfig->identifier);
+        const ioTag_t txPin = serialPinConfig()->ioTagTx[resourceIndex];
+        const ioTag_t rxPin = serialPinConfig()->ioTagRx[resourceIndex];
 
         // Take care half-duplex case
         switch (rxRuntimeState.serialrxProvider) {

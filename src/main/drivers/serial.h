@@ -23,8 +23,7 @@
 #include "drivers/io.h"
 #include "drivers/io_types.h"
 #include "drivers/resource.h"
-// TODO(hertz@): uncomment and use UARTDevice_e::MAX_UARTDEV
-// #include "drivers/serial_uart.h"
+#include "drivers/serial_resource.h"
 
 #include "pg/pg.h"
 
@@ -45,18 +44,27 @@ typedef enum {
     SERIAL_BIDIR         = 1 << 3,
 
     /*
-     * Note on SERIAL_BIDIR_PP
+     * Note on SERIAL_BIDIR_PP *on some MCU families*
      * With SERIAL_BIDIR_PP, the very first start bit of back-to-back bytes
      * is lost and the first data byte will be lost by a framing error.
      * To ensure the first start bit to be sent, prepend a zero byte (0x00)
      * to actual data bytes.
      */
-    SERIAL_BIDIR_OD        = 0 << 4,
-    SERIAL_BIDIR_PP        = 1 << 4,
-    SERIAL_BIDIR_NOPULL    = 1 << 5, // disable pulls in BIDIR RX mode
-    SERIAL_BIDIR_PP_PD     = 1 << 6, // PP mode, normall inverted, but with PullDowns, to fix SA after bidir issue fixed (#10220)
+    // output configuration in BIDIR non-inverted mode
+    // pushpull is used in UNIDIR or inverted mode by default
+    // SERIAL_BIDIR must be specified explicitly
+    SERIAL_BIDIR_OD        = 0 << 4, // default in BIDIR non-inverted mode
+    SERIAL_BIDIR_PP        = 1 << 4, // force pushpull
+
+    SERIAL_PULL_DEFAULT    = 0 << 5, // pulldown in inverted mode, pullup otherwise
+    SERIAL_PULL_NONE       = 1 << 5, // disable pulls in RX or opendrain TX mode
+    // option for Smartaudio serial port - line is in MARK state when idle - break condition.
+    // DO NOT USE unless absolutely necessary
+    // SERIAL_PULL_NONE has precedence
+    SERIAL_PULL_SMARTAUDIO = 1 << 6, // set PULLDOWN on RX, even when not inverted.
 
     // If this option is set then switch the TX line to input when not in use to detect it being pulled low
+    // (and prevent powering external device by TX pin)
     SERIAL_CHECK_TX        = 1 << 7,
 } portOptions_e;
 
@@ -90,31 +98,18 @@ typedef struct serialPort_s {
 
     serialIdleCallbackPtr idleCallback;
 
-    uint8_t identifier;
+    uint8_t identifier;  // actually serialPortIdentifier_e; avoid circular header dependency
 } serialPort_t;
 
-#define SERIAL_PORT_MAX_INDEX 11
-#define SERIAL_UART_COUNT 10
-#define SERIAL_LPUART_COUNT 1
-
 typedef struct serialPinConfig_s {
-    ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
-    ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
-    ioTag_t ioTagInverter[SERIAL_PORT_MAX_INDEX];
+    ioTag_t ioTagTx[RESOURCE_SERIAL_COUNT];
+    ioTag_t ioTagRx[RESOURCE_SERIAL_COUNT];
+#ifdef USE_INVERTER
+    ioTag_t ioTagInverter[RESOURCE_UART_COUNT]; // this array is only for UARTs.
+#endif
 } serialPinConfig_t;
 
 PG_DECLARE(serialPinConfig_t, serialPinConfig);
-
-#if defined(USE_SOFTSERIAL)
-#define SOFTSERIAL_COUNT 2
-
-typedef struct softSerialPinConfig_s {
-    ioTag_t ioTagTx[SOFTSERIAL_COUNT];
-    ioTag_t ioTagRx[SOFTSERIAL_COUNT];
-} softSerialPinConfig_t;
-
-PG_DECLARE(softSerialPinConfig_t, softSerialPinConfig);
-#endif
 
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);

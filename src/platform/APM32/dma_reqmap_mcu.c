@@ -30,6 +30,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+#include "drivers/serial_uart_impl.h"
 
 #include "pg/timerio.h"
 
@@ -69,20 +70,30 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     { DMA_PERIPH_SDIO,    0,         { DMA(2, 3, 4), DMA(2, 6, 4) } },
 #endif // USE_SDCARD_SDIO
 
-#ifdef USE_UART
+#ifdef USE_UART1
     { DMA_PERIPH_UART_TX, UARTDEV_1, { DMA(2, 7, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_1, { DMA(2, 5, 4), DMA(2, 2, 4) } },
+#endif
+#ifdef USE_UART2
     { DMA_PERIPH_UART_TX, UARTDEV_2, { DMA(1, 6, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_2, { DMA(1, 5, 4) } },
+#endif
+#ifdef USE_UART3
     { DMA_PERIPH_UART_TX, UARTDEV_3, { DMA(1, 3, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_3, { DMA(1, 1, 4) } },
+#endif
+#ifdef USE_UART4
     { DMA_PERIPH_UART_TX, UARTDEV_4, { DMA(1, 4, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_4, { DMA(1, 2, 4) } },
+#endif
+#ifdef USE_UART5
     { DMA_PERIPH_UART_TX, UARTDEV_5, { DMA(1, 7, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_5, { DMA(1, 0, 4) } },
+#endif
+#ifdef USE_UART6
     { DMA_PERIPH_UART_TX, UARTDEV_6, { DMA(2, 6, 5), DMA(2, 7, 5) } },
     { DMA_PERIPH_UART_RX, UARTDEV_6, { DMA(2, 1, 5), DMA(2, 2, 5) } },
-#endif // USE_UART
+#endif
 };
 
 #define TC(chan) DEF_TIM_CHANNEL(CH_ ## chan)

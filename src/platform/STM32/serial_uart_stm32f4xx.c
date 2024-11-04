@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build/debug.h"
 
 #ifdef USE_UART
 
@@ -45,7 +44,7 @@
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
-        .device = UARTDEV_1,
+        .identifier = SERIAL_PORT_USART1,
         .reg = USART1,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
@@ -79,7 +78,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART2
     {
-        .device = UARTDEV_2,
+        .identifier = SERIAL_PORT_USART2,
         .reg = USART2,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
@@ -105,7 +104,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART3
     {
-        .device = UARTDEV_3,
+        .identifier = SERIAL_PORT_USART3,
         .reg = USART3,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
@@ -131,7 +130,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART4
     {
-        .device = UARTDEV_4,
+        .identifier = SERIAL_PORT_UART4,
         .reg = UART4,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
@@ -157,7 +156,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART5
     {
-        .device = UARTDEV_5,
+        .identifier = SERIAL_PORT_UART5,
         .reg = UART5,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
@@ -183,7 +182,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART6
     {
-        .device = UARTDEV_6,
+        .identifier = SERIAL_PORT_USART6,
         .reg = USART6,
         .rxDMAChannel = DMA_Channel_5,
         .txDMAChannel = DMA_Channel_5,
@@ -297,83 +296,6 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-// XXX Should serialUART be consolidated?
-
-uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
-{
-    uartDevice_t *uart = uartDevmap[device];
-    if (!uart) return NULL;
-
-    const uartHardware_t *hardware = uart->hardware;
-
-    if (!hardware) return NULL; // XXX Can't happen !?
-
-    uartPort_t *s = &(uart->port);
-    s->port.vTable = uartVTable;
-
-    s->port.baudRate = baudRate;
-
-    s->port.rxBuffer = hardware->rxBuffer;
-    s->port.txBuffer = hardware->txBuffer;
-    s->port.rxBufferSize = hardware->rxBufferSize;
-    s->port.txBufferSize = hardware->txBufferSize;
-
-    s->USARTx = hardware->reg;
-
-    s->checkUsartTxOutput = checkUsartTxOutput;
-
-#ifdef USE_DMA
-    uartConfigureDma(uart);
-#endif
-
-    IO_t txIO = IOGetByTag(uart->tx.pin);
-    IO_t rxIO = IOGetByTag(uart->rx.pin);
-
-    if (hardware->rcc) {
-        RCC_ClockCmd(hardware->rcc, ENABLE);
-    }
-
-    uart->txPinState = TX_PIN_IGNORE;
-
-    if (options & SERIAL_BIDIR) {
-        IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO, (options & SERIAL_BIDIR_PP_PD) ? IOCFG_AF_PP_PD 
-                             : (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP
-                             : IOCFG_AF_OD, hardware->af);
-    } else {
-        if ((mode & MODE_TX) && txIO) {
-            IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-
-            if (options & SERIAL_CHECK_TX) {
-                uart->txPinState = TX_PIN_ACTIVE;
-                // Switch TX to an input with pullup so it's state can be monitored
-                uartTxMonitor(s);
-            } else {
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, hardware->af);
-            }
-        }
-
-        if ((mode & MODE_RX) && rxIO) {
-            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, hardware->af);
-        }
-    }
-
-#ifdef USE_DMA
-    if (!(s->rxDMAResource)) {
-        NVIC_InitTypeDef NVIC_InitStructure;
-
-        NVIC_InitStructure.NVIC_IRQChannel = hardware->irqn;
-        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(hardware->rxPriority);
-        NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(hardware->rxPriority);
-        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-        NVIC_Init(&NVIC_InitStructure);
-    }
-#endif
-
-    return s;
-}
-
 void uartIrqHandler(uartPort_t *s)
 {
     if (!s->rxDMAResource && (USART_GetITStatus(s->USARTx, USART_IT_RXNE) == SET)) {
@@ -416,4 +338,4 @@ void uartIrqHandler(uartPort_t *s)
         (void) s->USARTx->DR;
     }
 }
-#endif
+#endif // USE_UART
