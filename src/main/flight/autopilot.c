@@ -69,9 +69,10 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     
     float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF;
 
+    // square root the throttle offset to linearize the change in thrust
     if(autopilotConfig()->linearize_thrust) {
         const float sign = (throttleOffset < 0.0f) ? -1.0f : 1.0f;
-        throttleOffset = sign * sqrtf(fabsf(throttleOffset)); // square root throttle to linearize the thrust
+        throttleOffset = sign * sqrtf(fabsf(throttleOffset));
     }
     
     const float hoverOffset = autopilotConfig()->hover_throttle - PWM_RANGE_MIN;
