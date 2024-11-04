@@ -238,7 +238,7 @@ void spektrumBind(rxConfig_t *rxConfig)
             return;
         }
 
-        int resourceIndex = serialResourceIndex(portConfig->identifier);
+        const int resourceIndex = serialResourceIndex(portConfig->identifier);
         const ioTag_t txPin = serialPinConfig()->ioTagTx[resourceIndex];
         const ioTag_t rxPin = serialPinConfig()->ioTagRx[resourceIndex];
 

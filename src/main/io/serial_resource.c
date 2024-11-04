@@ -67,23 +67,36 @@ serialType_e serialType(serialPortIdentifier_e identifier)
 }
 
 
+static const struct SerialTypeInfo {
+    resourceOwner_e owner;
+    serialPortIdentifier_e firstId;
+    int8_t resourceOffset;
+} serialTypeMap[] = {
+    [SERIALTYPE_USB_VCP] = { OWNER_FREE /* no owner*/, SERIAL_PORT_USB_VCP, -1 },
+    [SERIALTYPE_UART] = { OWNER_SERIAL_TX, SERIAL_PORT_USART1, RESOURCE_UART_OFFSET },
+    [SERIALTYPE_LPUART] = { OWNER_LPUART_TX, SERIAL_PORT_LPUART1, RESOURCE_LPUART_OFFSET },
+    [SERIALTYPE_SOFTSERIAL] = { OWNER_SOFTSERIAL_TX, SERIAL_PORT_SOFTSERIAL1, RESOURCE_SOFTSERIAL_OFFSET },
+};
+
+STATIC_ASSERT(ARRAYLEN(serialTypeMap) == SERIALTYPE_COUNT, "type table mismatch");
+
+static const struct SerialTypeInfo* serialTypeInfo(serialPortIdentifier_e identifier)
+{
+    const serialType_e type = serialType(identifier);
+    if (type == SERIALTYPE_INVALID) {
+        return NULL;
+    }
+    return serialTypeMap + type;
+}
+
 // resourceOwner_e for this serial (UART/LPUART/SOFTSERIAL/..)
 // Used together with serialOwnerIndex to identify claimed resources
 // Tx member is returned, Rx is always Tx + 1
+// OWNER_FREE is returned for serials without owner (VCP)
 resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier)
 {
-    const resourceOwner_e map[] = {
-        [SERIALTYPE_USB_VCP] = 0,   // OWNER_FREE, invalid owner value
-        [SERIALTYPE_UART] = OWNER_SERIAL_TX,
-        [SERIALTYPE_LPUART] = OWNER_LPUART_TX,
-        [SERIALTYPE_SOFTSERIAL] =OWNER_SOFTSERIAL_TX
-    };
-    STATIC_ASSERT(ARRAYLEN(map) == SERIALTYPE_COUNT, "map table mismatch");
-    const serialType_e type = serialType(identifier);
-    if (type == SERIALTYPE_INVALID) {
-        return 0;
-    }
-    return map[type];   // may return 0 too
+    const struct SerialTypeInfo* inf = serialTypeInfo(identifier);
+    return inf ? inf->owner : OWNER_FREE;
 }
 
 
@@ -91,19 +104,11 @@ resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier)
 // 0 is returned for given port is not defined and for singleton ports (USB)
 int serialOwnerIndex(serialPortIdentifier_e identifier)
 {
-    serialPortIdentifier_e firstId[] = {
-        [SERIALTYPE_USB_VCP] = SERIAL_PORT_USB_VCP + RESOURCE_INDEX(0), // make it return 0 for VCP
-        [SERIALTYPE_UART] = SERIAL_PORT_USART1,
-        [SERIALTYPE_LPUART] = SERIAL_PORT_LPUART1,
-        [SERIALTYPE_SOFTSERIAL] = SERIAL_PORT_SOFTSERIAL1,
-    };
-    STATIC_ASSERT(ARRAYLEN(firstId) == SERIALTYPE_COUNT, "firstId table mismatch");
-
-    const serialType_e type = serialType(identifier);
-    if (type == SERIALTYPE_INVALID) {
-        return 0;  // TODO - maybe -1 ?
+    const struct SerialTypeInfo* inf = serialTypeInfo(identifier);
+    if (!inf || inf->owner == OWNER_FREE) {
+        return 0;
     }
-    return RESOURCE_INDEX(identifier - firstId[type]);
+    return RESOURCE_INDEX(identifier - inf->firstId);
 }
 
 // map identifier into index used to store port resources:
@@ -115,18 +120,9 @@ int serialOwnerIndex(serialPortIdentifier_e identifier)
 // some code uses this ordering for optimizations, be carefull if reordering is necessary
 int serialResourceIndex(serialPortIdentifier_e identifier)
 {
-    const int offsets[] = {
-        [SERIALTYPE_USB_VCP] =    INT_MIN,
-        [SERIALTYPE_UART] =       -SERIAL_PORT_UART1       + RESOURCE_UART_OFFSET,
-        [SERIALTYPE_LPUART] =     -SERIAL_PORT_LPUART1     + RESOURCE_LPUART_OFFSET,
-        [SERIALTYPE_SOFTSERIAL] = -SERIAL_PORT_SOFTSERIAL1 + RESOURCE_SOFTSERIAL_OFFSET,
-    };
-    STATIC_ASSERT(ARRAYLEN(offsets) == SERIALTYPE_COUNT, "offset table mismatch");
-
-    const serialType_e type = serialType(identifier);
-    if (type == SERIALTYPE_INVALID) {
+    const struct SerialTypeInfo* inf = serialTypeInfo(identifier);
+    if (!inf || inf->resourceOffset < 0) {
         return -1;
     }
-    const int offset = offsets[type];
-    return (offset != INT_MIN) ? identifier + offset : -1;
+    return identifier - inf->firstId + inf->resourceOffset;
 }

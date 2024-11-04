@@ -202,7 +202,6 @@ serialType_e serialType(serialPortIdentifier_e identifier);
 // resource index of given identifier, or -1 if not available
 int serialResourceIndex(serialPortIdentifier_e identifier);
 
-
 //
 // msp/cli/bootloader
 //
