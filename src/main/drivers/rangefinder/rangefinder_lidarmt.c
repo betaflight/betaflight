@@ -38,7 +38,6 @@
 #include "sensors/rangefinder.h"
 
 static bool hasNewData = false;
-static bool mtfConnected = false;
 static int32_t sensorData = RANGEFINDER_NO_NEW_DATA;
 
 // Initialize the table with values for each rangefinder type
@@ -91,7 +90,6 @@ bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinder
 }
 
 void mtRangefinderReceiveNewData(const uint8_t * bufferPtr) {   
-    mtfConnected = true;
     const mspSensorRangefinderLidarMtDataMessage_t * pkt = (const mspSensorRangefinderLidarMtDataMessage_t *)bufferPtr;
 
     sensorData = pkt->distanceMm / 10;
