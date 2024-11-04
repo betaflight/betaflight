@@ -9,7 +9,7 @@ Do not modify this file directly, your changes will be eventually lost.
 See template{# THIS #} file for aditional documentation.
 
 To generate this file again, run
-> python ./src/utils/gen-serial.py > ./src/main/target/serial_post.h
+> python ./src/utils/gen-serial-j2.py > ./src/main/target/serial_post.h
 in Betaflight topmost directory.
 
 This include will provide following defines:
