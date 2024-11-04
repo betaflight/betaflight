@@ -90,10 +90,12 @@ void calculateEstimatedAltitude(void) {
     static float newBaroAltOffsetCm = 0.0f;
     static KalmanFilter kf;
     static bool kfInitDone = false;
+    static uint32_t prevGpsTime = 0; // time of last GPS data
     float baroAltCm = 0.0f;
     bool haveBaroAlt = false; // true if baro exists and has been calibrated on power up
     bool haveGpsAlt = false; // true if GPS is connected and while it has a 3D fix, set each run to false
     bool haveRangefinderAlt = false; // true if rangefinder is connected and has a valid reading
+    bool gpsHasNewData = false; // true if GPS has new data since last run
 
     // *** Get sensor data
 #ifdef USE_BARO
@@ -118,7 +120,10 @@ void calculateEstimatedAltitude(void) {
             // *** TO DO - investigate if we should use vDOP or vACC with UBlox units;
             gpsAltMeasurement.variance = gpsSol.dop.pdop; // best variance is 100, worst 10000
         }
-        // always use at least 10% of other sources besides gps if available
+        if (gpsSol.time != prevGpsTime) {
+            gpsHasNewData = true;
+            prevGpsTime = gpsSol.time;
+        }
     }
 #endif
 
@@ -199,7 +204,7 @@ void calculateEstimatedAltitude(void) {
 #endif
 
 #ifdef USE_GPS
-        if (haveGpsAlt) {
+        if (haveGpsAlt && gpsHasNewData) {
             gpsAltMeasurement.value = zeroedGpsAltitudeCm;
             kf_update(&kf, gpsAltMeasurement);
         }
