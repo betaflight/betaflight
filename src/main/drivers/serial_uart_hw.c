@@ -86,14 +86,14 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
     s->checkUsartTxOutput = checkUsartTxOutput;
 
+    if (hardware->rcc) {
+        RCC_ClockCmd(hardware->rcc, ENABLE);
+    }
+
 #ifdef USE_DMA
     uartConfigureDma(uartdev);
     s->txDMAEmpty = true;
 #endif
-
-    if (hardware->rcc) {
-        RCC_ClockCmd(hardware->rcc, ENABLE);
-    }
 
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
