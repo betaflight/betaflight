@@ -2626,10 +2626,10 @@ void onGpsNewData(void)
 
 }
 
-bool isNewGPSDataAvailable(void) {
+bool isNewGPSDataAvailable(uint16_t* gpsStamp) {
     static uint16_t lastGpsStamp = ~0; // Initialize to an invalid state
-    if (lastGpsStamp != gpsStamp) {
-        lastGpsStamp = gpsStamp; // Update the last known stamp
+    if (lastGpsStamp != *gpsStamp) {
+        lastGpsStamp = *gpsStamp; // Update the last known stamp
         return true; // New GPS data is available
     }
     return false; // No new data

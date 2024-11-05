@@ -393,6 +393,6 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pE
 
 void gpsSetFixState(bool state);
 float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue
-bool isNewGPSDataAvailable(void);
+bool isNewGPSDataAvailable(uint16_t* gpsStamp);
 
 baudRate_e getGpsPortActualBaudRateIndex(void);

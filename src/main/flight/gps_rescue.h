@@ -45,7 +45,7 @@ typedef enum {
     GPS_RESCUE_ALT_MODE_COUNT
 } gpsRescueAltitudeMode_e;
 
-extern float gpsRescueAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+extern float gpsRescueAngle[2]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void gpsRescueInit(void);
 void gpsRescueUpdate(void);

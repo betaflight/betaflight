@@ -67,9 +67,6 @@ typedef enum {
     NS
 } axisEF_t;
 
-earthFrame_t eastWest;
-earthFrame_t northSouth;
-
 typedef struct {
     float gpsDataIntervalS;
     float gpsDataFreqHz;
@@ -95,7 +92,7 @@ static posHoldState posHold = {
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
-float autopilotAngle[ANGLE_INDEX_COUNT];
+float autopilotAngle[2];
 
 void resetPositionControlEFParams(earthFrame_t *efAxis) {
     // at start only
@@ -117,8 +114,6 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) {
 
 void autopilotInit(const autopilotConfig_t *config)
 {
-    eastWest = posHold.efAxis[EW];
-    northSouth = posHold.efAxis[NS];
     posHold.sticksActive = false;
     altitudePidCoeffs.Kp = config->altitude_P * ALTITUDE_P_SCALE;
     altitudePidCoeffs.Ki = config->altitude_I * ALTITUDE_I_SCALE;
@@ -191,7 +186,8 @@ void setSticksActiveStatus(bool areSticksActive)
 void setTargetLocation(gpsLocation_t newTargetLocation)
 {
     currentTargetLocation = newTargetLocation;
-    // note: will cause a large D and A spike if there is an abrupt change in distance
+    posHold.efAxis[EW].previousDistance = 0.0f; // reset to avoid D and A spikess
+    posHold.efAxis[NS].previousDistance = 0.0f;
     // function is intended for only small changes in position
     // for example, where the step distance change reflects an intended velocity, determined by a client function
     // if we had a 'target_ground_speed' value, like in gps_rescue, we can make a function that starts and stops smoothly and targets that velocity
@@ -208,8 +204,8 @@ void resetLocation(earthFrame_t *efAxis, axisEF_t loopAxis)
 }
 
 bool positionControl(void) {
-
-    if (isNewGPSDataAvailable()) {
+    static uint16_t gpsStamp = ~0;
+    if (isNewGPSDataAvailable(&gpsStamp)) {
         posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
         posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
 
@@ -280,13 +276,10 @@ bool positionControl(void) {
                 }
             }
 
-            // limit sum of D and A per axis because otherwise can be too aggressive when starting at speed
-     //       const float maxDAAngle = 35.0f; // limit in degrees; arbitrary.  20 is a bit too low, allows a lot of overshoot
-     //       const float pidDA = constrainf(pidD + pidA, -maxDAAngle, maxDAAngle);
-            // note: an angle of more than 35 degrees can still be achieved as P and I grow, and on diagonal
-            // note: angle mode limit is absolute max, as set in CLI default is 60
+            // limit sum of D and A per axis based on total DA vector length, otherwise can be too aggressive when starting at speed
+            // limit is 35 degrees from D and A alone, arbitrary value.  20 is a bit too low, allows a lot of overshoot
+            // note: an angle of more than 35 degrees can still be achieved as P and I grow
 
-            //total vector length for DA limiting, if needed:
             float pidDA = pidD + pidA;
             const float pidDASquared = pidDA * pidDA;
             float mag = sqrtf(pidDASquared + prevPidDASquared);

@@ -1196,5 +1196,9 @@ void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pE
 
     bool canUseGPSHeading;
     bool compassIsHealthy;
-    bool isNewGPSDataAvailable(void){ return true; }
+
+    bool isNewGPSDataAvailable(uint16_t* gpsStamp) {
+        UNUSED(*gpsStamp);
+        return true;
+    }
 }
