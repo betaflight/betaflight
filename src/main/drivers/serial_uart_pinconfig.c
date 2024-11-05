@@ -56,7 +56,7 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 #if UART_TRAIT_PINSWAP
         bool swap = false;
 #endif
-        for (unsigned pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
+        for (unsigned pindex = 0; pindex < UARTHARDWARE_MAX_PINS; pindex++) {
             if (cfgRx && cfgRx == hardware->rxPins[pindex].pin) {
                 uartdev->rx = hardware->rxPins[pindex];
             }

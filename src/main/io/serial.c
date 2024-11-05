@@ -177,7 +177,7 @@ serialPortConfig_t* serialFindPortConfigurationMutable(serialPortIdentifier_e id
 
 const serialPortConfig_t* serialFindPortConfiguration(serialPortIdentifier_e identifier)
 {
-    return findInPortConfigs_identifier(serialConfigMutable()->portConfigs, ARRAYLEN(serialConfig()->portConfigs), identifier);
+    return findInPortConfigs_identifier(serialConfig()->portConfigs, ARRAYLEN(serialConfig()->portConfigs), identifier);
 }
 
 PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 1);
@@ -377,9 +377,9 @@ bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionM
 
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
-    for (unsigned i = 0; i < ARRAYLEN(serialConfig()->portConfigs); i++) {
-        const serialPortConfig_t *candidate = &serialConfig()->portConfigs[i];
-
+    for (const serialPortConfig_t *candidate = serialConfig()->portConfigs;
+         candidate < ARRAYEND(serialConfig()->portConfigs);
+         candidate++) {
         if (isSerialPortShared(candidate, functionMask, sharedWithFunction)) {
             const serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);
             if (!serialPortUsage) {
@@ -435,7 +435,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
             return false;
         }
 
-        uint8_t bitCount = popcount(portConfig->functionMask);
+        uint8_t bitCount = popcount32(portConfig->functionMask);
 
 #ifdef USE_VTX_MSP
         if ((portConfig->functionMask & FUNCTION_VTX_MSP) && bitCount == 1) { // VTX MSP has to be shared with RX or MSP serial
@@ -545,6 +545,9 @@ serialPort_t *openSerialPort(
 
 void closeSerialPort(serialPort_t *serialPort)
 {
+    if (!serialPort) {
+        return;
+    }
     serialPortUsage_t *serialPortUsage = findSerialPortUsageByPort(serialPort);
     if (!serialPortUsage) {
         // already closed
