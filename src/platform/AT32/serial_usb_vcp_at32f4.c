@@ -50,7 +50,7 @@
 
 #define USB_TIMEOUT  50
 
-static vcpPort_t vcpPort;
+static vcpPort_t vcpPort = {0};
 
 otg_core_type otg_core_struct;
 
@@ -483,8 +483,6 @@ static const struct serialPortVTable usbVTable[] = {
 
 serialPort_t *usbVcpOpen(void)
 {
-    vcpPort_t *s;
-
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
     usb_gpio_config();
@@ -504,12 +502,12 @@ serialPort_t *usbVcpOpen(void)
         USB_ID,
         &cdc_class_handler,
         &cdc_desc_handler);
-    s = &vcpPort;
-    s->port.vTable = usbVTable;
 
     TxTimerConfig();
 
-    return (serialPort_t *)s;
+    vcpPort_t *s = &vcpPort;
+    s->port.vTable = usbVTable;
+    return &s->port;
 }
 
 uint32_t usbVcpGetBaudRate(serialPort_t *instance)
