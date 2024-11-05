@@ -162,9 +162,11 @@ void calculateEstimatedAltitude(void) {
         }
         zeroedGpsAltitudeCm = 0.0f; // always hold relativeAltitude at zero while disarmed
         
-        updateBaroVariance(&baroAltMeasurement, baroAltCm); // update the baro variance while disarmed
-
         DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm / 100.0f); // Absolute altitude ASL in metres, max 32,767m
+
+#ifdef USE_BARO
+        updateBaroVariance(&baroAltMeasurement, baroAltCm); // update the baro variance while disarmed
+#endif
     //  ***  ARMED  ***
     } else {
         if (!wasArmed) { // things to run once, on arming, after being disarmed
