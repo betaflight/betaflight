@@ -112,6 +112,11 @@ void resetPositionControl(gpsLocation_t initialTargetLocation) {
     resetPositionControlEFParams(&posHold.efAxis[NS]);
 }
 
+void initializeEfAxisFilters(earthFrame_t *efAxis, float filterGain) {
+    pt1FilterInit(&efAxis->velocityLpf, filterGain);
+    pt1FilterInit(&efAxis->accelerationLpf, filterGain);
+}
+
 void autopilotInit(const autopilotConfig_t *config)
 {
     posHold.sticksActive = false;
@@ -124,14 +129,14 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Kd = config->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = config->position_A * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gain
-    posHold.lpfCutoff = config->position_cutoff * 0.01f;
-    posHold.pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f); // assume 10Hz GPS connection at start
     float upsampleCutoff = pt3FilterGain(UPSAMPLING_CUTOFF, 0.01f); // 5Hz, assuming 100Hz task rate
     pt3FilterInit(&posHold.upsample[AI_ROLL], upsampleCutoff);
     pt3FilterInit(&posHold.upsample[AI_PITCH], upsampleCutoff);
-    // Reset parameters and initialise PT1 filters for both NS and EW
-    resetPositionControlEFParams(&posHold.efAxis[EW]);
-    resetPositionControlEFParams(&posHold.efAxis[NS]);
+    // Initialise PT1 filters for earth frame axes NS and EW
+    posHold.lpfCutoff = config->position_cutoff * 0.01f;
+    posHold.pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f); // assume 10Hz GPS connection at start
+    initializeEfAxisFilters(&posHold.efAxis[EW], posHold.pt1Gain);
+    initializeEfAxisFilters(&posHold.efAxis[NS], posHold.pt1Gain);
 }
 
 void resetAltitudeControl (void) {
@@ -204,8 +209,9 @@ void resetLocation(earthFrame_t *efAxis, axisEF_t loopAxis)
 }
 
 bool positionControl(void) {
-    static uint16_t gpsStamp = ~0;
-    if (isNewGPSDataAvailable(&gpsStamp)) {
+    static uint16_t previousGpsStamp = ~0;
+    if (currentGpsStamp() != previousGpsStamp) {
+        previousGpsStamp = currentGpsStamp();
         posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
         posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
 
