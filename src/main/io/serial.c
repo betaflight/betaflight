@@ -156,8 +156,6 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #endif
 };
 
-static uint8_t serialPortCount;
-
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
@@ -566,7 +564,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
     UNUSED(softserialEnabled);
 #endif
 
-    serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
@@ -575,7 +572,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
         if (serialPortToDisable != SERIAL_PORT_NONE
             && serialPortUsageList[index].identifier == serialPortToDisable) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
                 continue;  // this index is deleted
         }
         {
@@ -584,7 +580,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             if (resourceIndex >= 0   // resource exists
                 && !(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
                 continue;
             }
 #endif
@@ -596,7 +591,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
 #endif
                 ) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
                 continue;
             }
         }
@@ -608,13 +602,7 @@ void serialRemovePort(serialPortIdentifier_e identifier)
     serialPortUsage_t* usage;
     while ((usage = findSerialPortUsageByIdentifier(identifier)) != NULL) {
         usage->identifier = SERIAL_PORT_NONE;
-        serialPortCount--;
     }
-}
-
-uint8_t serialGetAvailablePortCount(void)
-{
-    return serialPortCount;
 }
 
 bool serialIsPortAvailable(serialPortIdentifier_e identifier)

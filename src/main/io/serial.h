@@ -161,7 +161,6 @@ typedef void serialConsumer(uint8_t);
 //
 void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
 void serialRemovePort(serialPortIdentifier_e identifier);
-uint8_t serialGetAvailablePortCount(void);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
 bool isSerialConfigValid(serialConfig_t *serialConfig);
 const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
