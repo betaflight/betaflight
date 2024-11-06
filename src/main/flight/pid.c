@@ -544,7 +544,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 {
     // Applies only to axes that are in Angle mode
     // We now use Acro Rates, transformed into the range +/- 1, to provide setpoints
-    const float angleLimit = pidProfile->angle_limit;
+    float angleLimit = pidProfile->angle_limit;
     float angleFeedforward = 0.0f;
     // if user changes rates profile, update the max setpoint for angle mode
     const float maxSetpointRateInv = 1.0f / getMaxRcRate(axis);
@@ -576,6 +576,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
             angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
         }
+        // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
+        angleLimit = 0.5f * autopilotConfig()->max_angle;
     }
 #endif
 
