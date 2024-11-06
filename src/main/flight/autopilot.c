@@ -95,7 +95,8 @@ static posHoldState posHold = {
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
 float autopilotAngle[2];
 
-void resetPositionControlEFParams(earthFrame_t *efAxis) {
+void resetPositionControlEFParams(earthFrame_t *efAxis)
+{
     // at start only
     pt1FilterInit(&efAxis->velocityLpf, posHold.pt1Gain); // Clear and initialise the filters
     pt1FilterInit(&efAxis->accelerationLpf, posHold.pt1Gain);
@@ -103,7 +104,8 @@ void resetPositionControlEFParams(earthFrame_t *efAxis) {
     efAxis->integral = 0.0f;
 }
 
-void resetPositionControl(gpsLocation_t initialTargetLocation) {
+void resetPositionControl(gpsLocation_t initialTargetLocation)
+{
     // from pos_hold.c when initiating position hold at target location
     currentTargetLocation = initialTargetLocation;
     posHold.sticksActive = false;
@@ -145,8 +147,8 @@ void resetAltitudeControl (void) {
     altitudeI = 0.0f;
 }
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep) {
-
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep)
+{
     const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
 
@@ -279,7 +281,7 @@ bool positionControl(void)
                 // 'phase' after sticks stop, but before craft has stopped
                 pidD *= 1.6f; // aribitrary D boost to stop more quickly when sticks are centered
                 if (velocity * velocityFiltered < 0.0f) {
-                    // when craft has nearly stopped moving, reset home and end the start phase
+                    // when an axis has nearly stopped moving, reset it and end it's start phase
                     resetLocation(efAxis, loopAxis);
                     efAxis->isStarting = false;
                 }
@@ -308,7 +310,7 @@ bool positionControl(void)
                 DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pidD * 10));
                 DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 7, lrintf(pidA * 10));
             }
-        }
+        } // end for loop
 
         if (posHold.sticksActive) {
             // keep update sanity check distance while sticks are out
@@ -340,8 +342,8 @@ bool positionControl(void)
     // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(posHold.efAxis[NS].distance));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHold.efAxis[NS].pidSum * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(posHold.efAxis[EW].distance));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHold.efAxis[EW].pidSum * 10));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(autopilotAngle[AI_ROLL] * 10));
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(posHold.efAxis[NS].distance));
