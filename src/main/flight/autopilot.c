@@ -74,6 +74,7 @@ typedef struct {
     float lpfCutoff;
     float pt1Gain;
     bool sticksActive;
+    float maxAngle;
     float pidSumCraft[2];
     pt3Filter_t upsample[2];
     earthFrame_t efAxis[2];
@@ -120,6 +121,7 @@ void initializeEfAxisFilters(earthFrame_t *efAxis, float filterGain) {
 void autopilotInit(const autopilotConfig_t *config)
 {
     posHold.sticksActive = false;
+    posHold.maxAngle = autopilotConfig()->max_angle;
     altitudePidCoeffs.Kp = config->altitude_P * ALTITUDE_P_SCALE;
     altitudePidCoeffs.Ki = config->altitude_I * ALTITUDE_I_SCALE;
     altitudePidCoeffs.Kd = config->altitude_D * ALTITUDE_D_SCALE;
@@ -321,6 +323,14 @@ bool positionControl(void)
             const float cosHeading = cos_approx(headingRads);
             posHold.pidSumCraft[AI_ROLL] = -sinHeading * posHold.efAxis[NS].pidSum + cosHeading * posHold.efAxis[EW].pidSum;
             posHold.pidSumCraft[AI_PITCH] = cosHeading * posHold.efAxis[NS].pidSum + sinHeading * posHold.efAxis[EW].pidSum;
+
+            // limit angle vector to maxAngle
+            const float angleMagnitude = sqrtf(posHold.pidSumCraft[AI_ROLL] * posHold.pidSumCraft[AI_ROLL] + posHold.pidSumCraft[AI_PITCH] * posHold.pidSumCraft[AI_PITCH]);
+            if (angleMagnitude > posHold.maxAngle && angleMagnitude > 0.0f) {
+                const float limiter = posHold.maxAngle / angleMagnitude;
+                posHold.pidSumCraft[AI_ROLL] *= limiter;  // Scale the roll value
+                posHold.pidSumCraft[AI_PITCH] *= limiter; // Scale the pitch value
+            }
         }
     }
 

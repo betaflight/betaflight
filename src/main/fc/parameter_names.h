@@ -173,6 +173,7 @@
 #define PARAM_NAME_POSITION_D "autopilot_position_D"
 #define PARAM_NAME_POSITION_A "autopilot_position_A"
 #define PARAM_NAME_POSITION_CUTOFF "autopilot_position_cutoff"
+#define PARAM_NAME_AP_MAX_ANGLE "autopilot_max_angle"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
