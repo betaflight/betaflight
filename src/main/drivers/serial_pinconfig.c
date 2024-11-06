@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_UART
+#if defined(USE_UART) || defined(USE_LPUART) || defined(USE_SOFTSERIAL)
 
 #include "build/build_config.h"
 
@@ -34,7 +34,6 @@
 
 #include "pg/pg_ids.h"
 
-#if defined(USE_UART) || defined(USE_LPUART) || defined(USE_SOFTSERIAL)
 typedef struct serialDefaultPin_s {
     serialPortIdentifier_e ident;
     ioTag_t rxIO, txIO, inverterIO;
@@ -102,5 +101,4 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
 }
 
 
-#endif
 #endif

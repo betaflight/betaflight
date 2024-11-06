@@ -156,8 +156,6 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #endif
 };
 
-static uint8_t serialPortCount;
-
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
@@ -179,7 +177,7 @@ serialPortConfig_t* serialFindPortConfigurationMutable(serialPortIdentifier_e id
 
 const serialPortConfig_t* serialFindPortConfiguration(serialPortIdentifier_e identifier)
 {
-    return findInPortConfigs_identifier(serialConfigMutable()->portConfigs, ARRAYLEN(serialConfig()->portConfigs), identifier);
+    return findInPortConfigs_identifier(serialConfig()->portConfigs, ARRAYLEN(serialConfig()->portConfigs), identifier);
 }
 
 PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 1);
@@ -379,9 +377,9 @@ bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionM
 
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
-    for (unsigned i = 0; i < ARRAYLEN(serialConfig()->portConfigs); i++) {
-        const serialPortConfig_t *candidate = &serialConfig()->portConfigs[i];
-
+    for (const serialPortConfig_t *candidate = serialConfig()->portConfigs;
+         candidate < ARRAYEND(serialConfig()->portConfigs);
+         candidate++) {
         if (isSerialPortShared(candidate, functionMask, sharedWithFunction)) {
             const serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);
             if (!serialPortUsage) {
@@ -437,7 +435,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
             return false;
         }
 
-        uint8_t bitCount = popcount(portConfig->functionMask);
+        uint8_t bitCount = popcount32(portConfig->functionMask);
 
 #ifdef USE_VTX_MSP
         if ((portConfig->functionMask & FUNCTION_VTX_MSP) && bitCount == 1) { // VTX MSP has to be shared with RX or MSP serial
@@ -547,6 +545,9 @@ serialPort_t *openSerialPort(
 
 void closeSerialPort(serialPort_t *serialPort)
 {
+    if (!serialPort) {
+        return;
+    }
     serialPortUsage_t *serialPortUsage = findSerialPortUsageByPort(serialPort);
     if (!serialPortUsage) {
         // already closed
@@ -566,7 +567,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
     UNUSED(softserialEnabled);
 #endif
 
-    serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
@@ -575,7 +575,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
         if (serialPortToDisable != SERIAL_PORT_NONE
             && serialPortUsageList[index].identifier == serialPortToDisable) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
                 continue;  // this index is deleted
         }
         {
@@ -584,7 +583,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             if (resourceIndex >= 0   // resource exists
                 && !(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
                 continue;
             }
 #endif
@@ -596,7 +594,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
 #endif
                 ) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
                 continue;
             }
         }
@@ -608,13 +605,7 @@ void serialRemovePort(serialPortIdentifier_e identifier)
     serialPortUsage_t* usage;
     while ((usage = findSerialPortUsageByIdentifier(identifier)) != NULL) {
         usage->identifier = SERIAL_PORT_NONE;
-        serialPortCount--;
     }
-}
-
-uint8_t serialGetAvailablePortCount(void)
-{
-    return serialPortCount;
 }
 
 bool serialIsPortAvailable(serialPortIdentifier_e identifier)
