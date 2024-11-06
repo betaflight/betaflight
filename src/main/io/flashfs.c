@@ -123,7 +123,7 @@ void checkFlashStop(void)
 
     // Verify the data written since flashfsSeekAbs() last called
     while (checkFlashLen) {
-        uint32_t checkLen = MIN(checkFlashLen, (uint32_t)FLASHFS_WRITE_BUFFER_SIZE);
+        uint32_t checkLen = MIN(checkFlashLen, sizeof(checkFlashBuffer));
 
         // Don't read over a page boundary
         checkLen = MIN(checkLen, flashGeometry->pageSize - (checkFlashPtr & (flashGeometry->pageSize - 1)));
