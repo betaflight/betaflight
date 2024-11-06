@@ -208,7 +208,8 @@ void resetLocation(earthFrame_t *efAxis, axisEF_t loopAxis)
     efAxis->previousDistance = 0.0f; // and reset the previous distance
 }
 
-bool positionControl(void) {
+bool positionControl(void) 
+{
     static uint16_t previousGpsStamp = ~0;
     if (currentGpsStamp() != previousGpsStamp) {
         previousGpsStamp = currentGpsStamp();
