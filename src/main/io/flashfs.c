@@ -41,6 +41,7 @@
 #if defined(USE_FLASHFS)
 
 #include "build/debug.h"
+#include "common/maths.h"
 #include "common/printf.h"
 #include "drivers/flash/flash.h"
 #include "drivers/light_led.h"
@@ -82,20 +83,69 @@ static volatile uint8_t bufferTail = 0;
   */
 static volatile bool dataWritten = true;
 
-//#define CHECK_FLASH
-
-#ifdef CHECK_FLASH
-// Write an incrementing sequence of bytes instead of the requested data and verify
-DMA_DATA uint8_t checkFlashBuffer[FLASHFS_WRITE_BUFFER_SIZE];
-uint32_t checkFlashPtr = 0;
-uint32_t checkFlashLen = 0;
-uint8_t checkFlashWrite = 0x00;
-uint8_t checkFlashExpected = 0x00;
-uint32_t checkFlashErrors = 0;
-#endif
-
 // The position of the buffer's tail in the overall flash address space:
 static uint32_t tailAddress = 0;
+
+
+#ifdef USE_FLASH_TEST_PRBS
+// Write an incrementing sequence of bytes instead of the requested data and verify
+static DMA_DATA uint8_t checkFlashBuffer[FLASHFS_WRITE_BUFFER_SIZE];
+static uint32_t checkFlashPtr = 0;
+static uint32_t checkFlashLen = 0;
+static uint32_t checkFlashErrors = 0;
+static bool checkFlashActive = false;
+static uint32_t checkFlashSeedPRBS;
+
+static uint8_t checkFlashNextByte(void)
+{
+    uint32_t newLSB = ((checkFlashSeedPRBS >> 31) ^ (checkFlashSeedPRBS >> 28)) & 1;
+
+    checkFlashSeedPRBS = (checkFlashSeedPRBS << 1) | newLSB;
+
+    return checkFlashSeedPRBS & 0xff;
+}
+
+// Called from blackboxSetState() to start/stop writing of pseudo-random data to FLASH
+void checkFlashStart(void)
+{
+    checkFlashSeedPRBS = 0xdeadbeef;
+    checkFlashPtr = tailAddress;
+    checkFlashLen = 0;
+    checkFlashActive = true;
+}
+
+void checkFlashStop(void)
+{
+    checkFlashSeedPRBS = 0xdeadbeef;
+    checkFlashErrors = 0;
+
+    debug[6] = checkFlashLen / flashGeometry->pageSize;
+
+    // Verify the data written since flashfsSeekAbs() last called
+    while (checkFlashLen) {
+        uint32_t checkLen = MIN(checkFlashLen, sizeof(checkFlashBuffer));
+
+        // Don't read over a page boundary
+        checkLen = MIN(checkLen, flashGeometry->pageSize - (checkFlashPtr & (flashGeometry->pageSize - 1)));
+
+        flashReadBytes(checkFlashPtr, checkFlashBuffer, checkLen);
+
+        for (uint32_t i = 0; i < checkLen; i++) {
+            uint8_t expected = checkFlashNextByte();
+            if (checkFlashBuffer[i] != expected) {
+                checkFlashErrors++; // <-- insert breakpoint here to catch errors
+            }
+        }
+
+        checkFlashPtr += checkLen;
+        checkFlashLen -= checkLen;
+    }
+
+    debug[7] = checkFlashErrors;
+
+    checkFlashActive = false;
+}
+#endif
 
 static void flashfsClearBuffer(void)
 {
@@ -265,10 +315,6 @@ static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSiz
         return 0;
     }
 
-#ifdef CHECK_FLASH
-    checkFlashPtr = tailAddress;
-#endif
-
     flashPageProgramBegin(tailAddress, flashfsWriteCallback);
 
     /* Mark that data has yet to be written. There is no race condition as the DMA engine is known
@@ -277,10 +323,6 @@ static uint32_t flashfsWriteBuffers(uint8_t const **buffers, uint32_t *bufferSiz
     dataWritten = false;
 
     bytesWritten = flashPageProgramContinue(buffers, bufferSizes, bufferCount);
-
-#ifdef CHECK_FLASH
-    checkFlashLen = bytesWritten;
-#endif
 
     flashPageProgramFinish();
 
@@ -361,20 +403,6 @@ bool flashfsFlushAsync(bool force)
         return false;
     }
 
-#ifdef CHECK_FLASH
-    // Verify the data written last time
-    if (checkFlashLen) {
-        while (!flashIsReady());
-        flashReadBytes(checkFlashPtr, checkFlashBuffer, checkFlashLen);
-
-        for (uint32_t i = 0; i < checkFlashLen; i++) {
-            if (checkFlashBuffer[i] != checkFlashExpected++) {
-                checkFlashErrors++; // <-- insert breakpoint here to catch errors
-            }
-        }
-    }
-#endif
-
     bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
     uint32_t bufferedBytes = bufferSizes[0] + bufferSizes[1];
 
@@ -443,8 +471,11 @@ void flashfsSeekAbs(uint32_t offset)
  */
 void flashfsWriteByte(uint8_t byte)
 {
-#ifdef CHECK_FLASH
-    byte = checkFlashWrite++;
+#ifdef USE_FLASH_TEST_PRBS
+    if (checkFlashActive) {
+        byte = checkFlashNextByte();
+        checkFlashLen++;
+    }
 #endif
 
     flashWriteBuffer[bufferHead++] = byte;
@@ -503,6 +534,9 @@ int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int len)
         // Truncate their request
         len = flashfsSize - address;
     }
+
+    // Don't read across a page boundary
+    len = MIN(len, flashGeometry->pageSize - (address & (flashGeometry->pageSize - 1)));
 
     // Since the read could overlap data in our dirty buffers, force a sync to clear those first
     flashfsFlushSync();
