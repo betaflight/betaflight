@@ -1109,8 +1109,8 @@ const clivalue_t valueTable[] = {
     { "yaw_control_reversed",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_reversed) },
 
 #ifdef USE_ALT_HOLD_MODE
-    { PARAM_NAME_ALT_HOLD_ADJUST_RATE, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_adjust_rate) },
-    { PARAM_NAME_ALT_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_deadband) },
+    { PARAM_NAME_ALT_HOLD_THROTTLE_RESPONSE, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_adjust_rate) },
+    { PARAM_NAME_ALT_HOLD_DEADBAND,          VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_deadband) },
 #endif
 
 #ifdef USE_POS_HOLD_MODE

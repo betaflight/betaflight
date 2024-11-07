@@ -249,7 +249,7 @@
 
 #ifdef USE_ALT_HOLD_MODE
 #define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband"
-#define PARAM_NAME_ALT_HOLD_ADJUST_RATE "alt_hold_adjust_rate"
+#define PARAM_NAME_ALT_HOLD_THROTTLE_RESPONSE "alt_hold_throttle_response"
 #endif
 
 #ifdef USE_POS_HOLD_MODE

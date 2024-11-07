@@ -33,7 +33,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 4);
 
 PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
-    .alt_hold_adjust_rate = 100, // max rate of change of altitude target using sticks in cm/s
+    .alt_hold_adjust_rate = 50, // max vertical velocity change at full/zero throttle. 50 means 5 m/s
     .alt_hold_deadband = 20, // throttle deadband in percent of stick travel
 );
 #endif
