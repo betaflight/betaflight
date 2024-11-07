@@ -499,8 +499,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
 #ifdef USE_WING
     if (axis == FD_PITCH) {
-        angleTarget -= (float)pidProfile->angle_pitch_offset / 10.0f;
-        // positive angle_pitch_offset will tilt the craft up - against the BF pitch convention, but more user-friendly
+        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;        
     }
 #endif // USE_WING
 
