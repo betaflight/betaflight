@@ -44,7 +44,7 @@
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
-#define IST8310_MAG_I2C_ADDRESS 0x0C
+#define IST8310_MAG_I2C_ADDRESS 0x0E
 
 /* ist8310 Slave Address Select : default address 0x0C
  *        CAD1  |  CAD0   |  Address
