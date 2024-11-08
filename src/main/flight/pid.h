@@ -73,6 +73,7 @@
 
 #ifdef USE_WING
 #define ANGLE_PITCH_OFFSET_MAX 450
+#define S_TERM_SCALE 0.01f
 #define TPA_LOW_RATE_MIN INT8_MIN
 #define TPA_GRAVITY_MAX 5000
 #define TPA_CURVE_STALL_THROTTLE_MAX 100
@@ -91,7 +92,10 @@
 
 typedef enum {
     TPA_MODE_PD,
-    TPA_MODE_D
+    TPA_MODE_D,
+#ifdef USE_WING
+    TPA_MODE_PDS,
+#endif
 } tpaMode_e;
 
 typedef enum {
@@ -517,6 +521,7 @@ typedef struct pidRuntime_s {
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
     tpaSpeedParams_t tpaSpeed;
     float tpaFactorYaw;
+    float tpaFactorSterm[XYZ_AXIS_COUNT];
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
