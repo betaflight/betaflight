@@ -205,6 +205,11 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"axisF",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisF",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisF",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+#ifdef USE_WING
+    {"axisS",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+    {"axisS",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+    {"axisS",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+#endif
     /* rcCommands are encoded together as a group in P-frames: */
     {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
     {"rcCommand",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
@@ -343,6 +348,7 @@ typedef struct blackboxMainState_s {
     int32_t axisPID_I[XYZ_AXIS_COUNT];
     int32_t axisPID_D[XYZ_AXIS_COUNT];
     int32_t axisPID_F[XYZ_AXIS_COUNT];
+    int32_t axisPID_S[XYZ_AXIS_COUNT];
 
     int16_t rcCommand[4];
     int16_t setpoint[4];
@@ -642,6 +648,9 @@ static void writeIntraframe(void)
         }
 
         blackboxWriteSignedVBArray(blackboxCurrent->axisPID_F, XYZ_AXIS_COUNT);
+#ifdef USE_WING
+        blackboxWriteSignedVBArray(blackboxCurrent->axisPID_S, XYZ_AXIS_COUNT);
+#endif
     }
 
     if (testBlackboxCondition(CONDITION(RC_COMMANDS))) {
@@ -813,6 +822,10 @@ static void writeInterframe(void)
 
         arraySubInt32(deltas, blackboxCurrent->axisPID_F, blackboxLast->axisPID_F, XYZ_AXIS_COUNT);
         blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
+#ifdef USE_WING
+        arraySubInt32(deltas, blackboxCurrent->axisPID_S, blackboxLast->axisPID_S, XYZ_AXIS_COUNT);
+        blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
+#endif
     }
 
     /*
@@ -1187,6 +1200,9 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->axisPID_F[i] = lrintf(pidData[i].F);
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i] * blackboxHighResolutionScale);
         blackboxCurrent->gyroUnfilt[i] = lrintf(gyro.gyroADC[i] * blackboxHighResolutionScale);
+#ifdef USE_WING
+        blackboxCurrent->axisPID_S[i] = lrintf(pidData[i].S);
+#endif
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC.v[i]);
 #endif
