@@ -265,12 +265,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
 static bool isTpaActive(tpaMode_e tpaMode, term_e term) {
     switch (tpaMode) {
     case TPA_MODE_PD:
-        return (term == TERM_P || term == TERM_D);
+        return term == TERM_P || term == TERM_D;
     case TPA_MODE_D:
-        return (term == TERM_D);
+        return term == TERM_D;
 #ifdef USE_WING
     case TPA_MODE_PDS:
-        return (term == TERM_P || term == TERM_D || term == TERM_S);
+        return term == TERM_P || term == TERM_D || term == TERM_S;
 #endif
     default:
         return false;
