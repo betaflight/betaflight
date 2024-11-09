@@ -22,6 +22,7 @@
 
 #include "platform.h"
 #include "build/debug.h"
+#include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
 #include "common/vector.h"
@@ -43,7 +44,7 @@
 #define POSITION_I_SCALE  0.0001f
 #define POSITION_D_SCALE  0.0015f
 #define POSITION_A_SCALE  0.0008f
-#define UPSAMPLING_CUTOFF 5.0f
+#define UPSAMPLING_CUTOFF_HZ 5.0f
 
 static pidCoefficient_t altitudePidCoeffs;
 static pidCoefficient_t positionPidCoeffs;
@@ -75,9 +76,9 @@ typedef struct {
     float pt1Gain;
     bool sticksActive;
     float maxAngle;
-    float pidSumCraft[2];
-    pt3Filter_t upsample[2];
-    earthFrame_t efAxis[2];
+    float pidSumCraft[EF_AXIS_COUNT];
+    pt3Filter_t upsample[EF_AXIS_COUNT];
+    earthFrame_t efAxis[EF_AXIS_COUNT];
 } posHoldState;
 
 static posHoldState posHold = {
@@ -93,7 +94,7 @@ static posHoldState posHold = {
 };
 
 static gpsLocation_t currentTargetLocation = {0, 0, 0};
-float autopilotAngle[2];
+float autopilotAngle[RP_AXIS_COUNT];
 
 void resetPositionControlEFParams(earthFrame_t *efAxis)
 {
@@ -133,7 +134,7 @@ void autopilotInit(const autopilotConfig_t *config)
     positionPidCoeffs.Kd = config->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = config->position_A * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gain
-    float upsampleCutoff = pt3FilterGain(UPSAMPLING_CUTOFF, 0.01f); // 5Hz, assuming 100Hz task rate
+    float upsampleCutoff = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate
     pt3FilterInit(&posHold.upsample[AI_ROLL], upsampleCutoff);
     pt3FilterInit(&posHold.upsample[AI_PITCH], upsampleCutoff);
     // Initialise PT1 filters for earth frame axes NS and EW
@@ -215,8 +216,8 @@ void resetLocation(earthFrame_t *efAxis, axisEF_t loopAxis)
 bool positionControl(void) 
 {
     static uint16_t previousGpsStamp = ~0;
-    if (currentGpsStamp() != previousGpsStamp) {
-        previousGpsStamp = currentGpsStamp();
+    if (getGpsStamp() != previousGpsStamp) {
+        previousGpsStamp = getGpsStamp();
         posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
         posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
 
@@ -302,7 +303,6 @@ bool positionControl(void)
             // ** PID Sum **
             efAxis->pidSum = pidP + pidI + pidDA;
 
-            // Debugs... distances in cm, angles in degrees * 10, velocities cm/2
             if (gyroConfig()->gyro_filter_debug_axis == loopAxis) {
                 DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(distanceCm));
                 DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pidP * 10));
@@ -342,9 +342,9 @@ bool positionControl(void)
     // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
 
     if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(posHold.efAxis[EW].distance));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHold.efAxis[EW].pidSum * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(autopilotAngle[AI_ROLL] * 10));
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(posHold.efAxis[EW].distance));    // cm
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHold.efAxis[EW].pidSum * 10)); // deg * 10
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(autopilotAngle[AI_ROLL] * 10));   // deg * 10
     } else {
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(posHold.efAxis[NS].distance));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(posHold.efAxis[NS].pidSum * 10));

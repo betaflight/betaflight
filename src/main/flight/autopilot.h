@@ -21,7 +21,7 @@
 #include "flight/pid.h"
 #include "io/gps.h"
 
-extern float autopilotAngle[2]; // NOTE: ANGLES ARE IN CENTIDEGREES
+extern float autopilotAngle[RP_AXIS_COUNT]; // Roll and pitch angles in degrees
 
 void autopilotInit(const autopilotConfig_t *config);
 void resetAltitudeControl(void);

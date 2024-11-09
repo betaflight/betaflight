@@ -123,7 +123,7 @@ typedef struct {
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ); // i.e. 0.01 s
 static float rescueThrottle;
 static float rescueYaw;
-float gpsRescueAngle[2] = { 0, 0 };
+float gpsRescueAngle[RP_AXIS_COUNT] = { 0, 0 };
 bool magForceDisable = false;
 static bool newGPSData = false;
 static pt1Filter_t velocityDLpf;
