@@ -125,7 +125,7 @@ typedef struct {
 }  __attribute__ ((__packed__)) gimbalCal_t;
 
 // Status reponse packet
-#define GIMBAL_STAT  0x913A
+#define GIMBAL_OPCODE_STAT  0x913A
 typedef struct {
     uint16_t opcode;
     uint8_t cmd;        // Command response status
