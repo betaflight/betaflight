@@ -165,7 +165,7 @@ COMMON_SRC = \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue_common.c \
-            flight/gps_rescue.c \
+            flight/gps_rescue_quad.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_init.c \
