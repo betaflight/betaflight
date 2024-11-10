@@ -111,8 +111,7 @@ typedef struct {
     unsigned iom:3;      // GPIO mode [0~7]
     unsigned mode:3;     // Mode [0~7] Only 0 1 2 modes are supported
     signed   sens:5;     // Sensitivity [-16~15]
-    struct
-    {
+    struct {
         unsigned chan:3;  // Channel [0~7] [CH56,CH57,CH58,CH67,CH68,CH78,CH78,CH78]
         unsigned revs:2;  // Reverse [0~3] [Normal, Horizontal Reverse, Vertical Reverse, All Reverse]
         unsigned rngx:2;  // Range [0~3] [90 degrees, 120 degrees, 180 degrees, 360 degrees]
