@@ -287,9 +287,13 @@ void gimbalUpdate(timeUs_t currentTimeUs)
             case GIMBAL_CMD:
                 gimbalCmdIn.u.bytes[gimbalInCount++] = inData;
                 if (gimbalInCount == sizeof(gimbalCmdIn.u.gimbalCmd)) {
-                    gimbalCmdOut = gimbalCmdIn.u.gimbalCmd;
-                    gimbalSet(gimbalCmdIn.u.gimbalCmd.roll, gimbalCmdIn.u.gimbalCmd.pitch, gimbalCmdIn.u.gimbalCmd.yaw);
-                    serialWriteBuf(gimbalSerialPort, (uint8_t *)&gimbalCmdOut, sizeof(gimbalCmdOut));
+                    uint16_t crc = gimbalCrc((uint8_t *)&gimbalCmdIn, sizeof(gimbalCmdIn) - 2);
+                    // Only use the data if the CRC is correct
+                    if (gimbalCmdIn.u.crc == crc) {
+                        gimbalCmdOut = gimbalCmdIn.u.gimbalCmd;
+                        gimbalSet(gimbalCmdIn.u.gimbalCmd.roll, gimbalCmdIn.u.gimbalCmd.pitch, gimbalCmdIn.u.gimbalCmd.yaw);
+                        serialWriteBuf(gimbalSerialPort, (uint8_t *)&gimbalCmdOut, sizeof(gimbalCmdOut));
+                    }
                     gimbalParseState = GIMBAL_OP1;
                 }
                 break;
