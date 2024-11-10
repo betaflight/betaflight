@@ -103,7 +103,7 @@ typedef struct {
 /* This packet is sent by the user to the head chase to realize the head
  * chase calibration and reset function
  */
-#define GIMBAL_CMD_L  0x6EC5
+#define GIMBAL_OPCODE_L  0x6EC5
 typedef struct {
     uint16_t opcode;
     uint8_t  cmd;        // Command
