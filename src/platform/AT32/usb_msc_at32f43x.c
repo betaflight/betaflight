@@ -179,6 +179,35 @@ uint8_t mscStart(void)
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
 
+    switch (blackboxConfig()->device) {
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        switch (sdcardConfig()->mode) {
+#ifdef USE_SDCARD_SDIO
+        case SDCARD_MODE_SDIO:
+            USBD_STORAGE_fops = &USBD_MSC_MICRO_SDIO_fops;
+            break;
+#endif
+#ifdef USE_SDCARD_SPI
+        case SDCARD_MODE_SPI:
+            USBD_STORAGE_fops = &USBD_MSC_MICRO_SD_SPI_fops;
+            break;
+#endif
+        default:
+            return 1;
+        }
+        break;
+#endif
+
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        USBD_STORAGE_fops = &USBD_MSC_EMFAT_fops;
+        break;
+#endif
+    default:
+        return 1;
+    }
+
     msc_usb_gpio_config();
     crm_periph_clock_enable(OTG_CLOCK, TRUE);
     msc_usb_clock48m_select(USB_CLK_HEXT);
@@ -199,7 +228,7 @@ uint8_t mscStart(void)
 
 int8_t msc_disk_capacity(uint8_t lun, uint32_t *block_num, uint32_t *block_size)
 {
-    return USBD_MSC_EMFAT_fops.GetCapacity(lun, block_num, block_size);
+    return USBD_STORAGE_fops->GetCapacity(lun, block_num, block_size);
 }
 
 int8_t msc_disk_read(
@@ -208,7 +237,7 @@ int8_t msc_disk_read(
     uint8_t *buf,       // Pointer to the buffer to save data
     uint16_t blk_len)   // number of blocks to be read
 {
-    return USBD_MSC_EMFAT_fops.Read(lun, buf, blk_addr, blk_len);
+    return USBD_STORAGE_fops->Read(lun, buf, blk_addr, blk_len);
 }
 
 int8_t msc_disk_write(uint8_t lun,
@@ -228,7 +257,7 @@ uint8_t *get_inquiry(uint8_t lun)
 {
     UNUSED(lun);
 
-    return (uint8_t *)USBD_MSC_EMFAT_fops.pInquiry;
+    return (uint8_t *)USBD_STORAGE_fops->pInquiry;
 }
 
 uint8_t msc_get_readonly(uint8_t lun)

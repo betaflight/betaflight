@@ -124,7 +124,8 @@ MCU_COMMON_SRC = \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
+            msc/emfat_file.c \
+            msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
             common/stm32/system.c
