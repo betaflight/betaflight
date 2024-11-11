@@ -528,6 +528,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
         if (serialRxBytesWaiting(mspPort->port)) {
             if(mspPort->port->identifier == SERIAL_PORT_USART2){
                 payloadStateBufferIndex = 0;
+                memset(payloadStateBuffer, 0, sizeof payloadStateBuffer);
             }
             // There are bytes incoming - abort pending request
             mspPort->lastActivityMs = millis();
@@ -535,17 +536,22 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 
             while (serialRxBytesWaiting(mspPort->port)) {
                 const uint8_t c = serialRead(mspPort->port);
+
+                if(mspPort->port->identifier == SERIAL_PORT_USART2){
+                    if(payloadStateBufferIndex<64 && ((c >= 'A' && c <= 'Z') || c =='_')){
+                        payloadStateBuffer[payloadStateBufferIndex] = c;
+                        payloadStateBufferIndex+=1;
+                    }
+                    if(payloadStateBufferIndex>64){
+                        break;
+                    }
+                } else{
                 const bool consumed = mspSerialProcessReceivedData(mspPort, c);
 
                 if (!consumed && evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA) {
                     mspEvaluateNonMspData(mspPort, c);
                 }
-                if(mspPort->port->identifier == SERIAL_PORT_USART2){
-                    if(payloadStateBufferIndex<64 && isalnum(c)){
-                        payloadStateBuffer[payloadStateBufferIndex] = c;
-                        payloadStateBufferIndex++;
-                    }
-                }
+                
 
                 if (mspPort->c_state == MSP_COMMAND_RECEIVED) {
                     if (mspPort->packetType == MSP_PACKET_COMMAND) {
@@ -556,6 +562,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 
                     mspPort->c_state = MSP_IDLE;
                     break; // process one command at a time so as not to block.
+                }
                 }
             }
 

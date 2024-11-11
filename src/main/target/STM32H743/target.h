@@ -59,8 +59,6 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
-#define USES_EXTERNAL_DEVICE true
-
 #define USE_BEEPER
 
 #ifdef USE_SDCARD

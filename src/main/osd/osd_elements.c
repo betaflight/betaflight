@@ -1346,7 +1346,9 @@ static void osdElementNumericalHeading(osdElementParms_t *element)
     if(payloadStateBufferIndex== 0) {
         tfp_sprintf(element->buff, "NO PAYLOAD");
     } else {
-        strcpy(element->buff, payloadStateBuffer);
+        if(payloadStateBufferIndex < 64){
+        strncpy(element->buff, payloadStateBuffer,payloadStateBufferIndex);
+        }
     }
 }
 
