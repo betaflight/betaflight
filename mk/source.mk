@@ -12,6 +12,7 @@ PG_SRC = \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
+            pg/gimbal.c \
             pg/gps.c \
             pg/gps_lap_timer.c \
             pg/gps_rescue.c \
@@ -248,6 +249,7 @@ COMMON_SRC = \
             io/displayport_crsf.c \
             io/displayport_hott.c \
             io/frsky_osd.c \
+            io/gimbal_control.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
             io/gps.c \
