@@ -535,9 +535,6 @@ int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int len)
         len = flashfsSize - address;
     }
 
-    // Don't read across a page boundary
-    len = MIN(len, flashGeometry->pageSize - (address & (flashGeometry->pageSize - 1)));
-
     // Since the read could overlap data in our dirty buffers, force a sync to clear those first
     flashfsFlushSync();
 

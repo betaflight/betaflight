@@ -71,6 +71,7 @@
 #include "drivers/usb_msc.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
+#include "drivers/rangefinder/rangefinder_lidarmt.h"
 
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
@@ -3294,8 +3295,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
         sbufReadU8(src);
 #endif
-        break;
 
+#ifdef USE_RANGEFINDER
+        rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);        // rangefinder hardware
+#endif
+        break;
 #ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
@@ -3646,6 +3652,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
+#if defined(USE_RANGEFINDER_MT)
+    case MSP2_SENSOR_RANGEFINDER_LIDARMT:
+        mtRangefinderReceiveNewData(sbufPtr(src));
+        break;
+#endif
 #ifdef USE_GPS
     case MSP2_SENSOR_GPS:
         (void)sbufReadU8(src);              // instance
