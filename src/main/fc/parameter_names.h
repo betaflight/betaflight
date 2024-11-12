@@ -251,4 +251,5 @@
 #define PARAM_NAME_IMU_PROCESS_DENOM "imu_process_denom"
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
+#define PARAM_NAME_IMU_MAG_INCLINATION "mag_inclination"
 #endif
