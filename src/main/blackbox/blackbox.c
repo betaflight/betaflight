@@ -101,10 +101,18 @@ void checkFlashStop(void);
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_NONE
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 4);
+#define FIELDS_ENABLED_DEFAULT (0 \
+    | (1 << FLIGHT_LOG_FIELD_SELECT_SETPOINT) \
+    | (1 << FLIGHT_LOG_FIELD_SELECT_GYRO) \
+    | (1 << FLIGHT_LOG_FIELD_SELECT_ACC) \
+    | (1 << FLIGHT_LOG_FIELD_SELECT_MOTOR) \
+    | (1 << FLIGHT_LOG_FIELD_SELECT_GYROUNFILT) \
+)
+
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 5);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
-    .fields_disabled_mask = 0, // default log all fields
+    .fields_disabled_mask = ~FIELDS_ENABLED_DEFAULT,  // invert bits to convert enabled to disabled mask (historic reason)
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .mode = BLACKBOX_MODE_NORMAL,
