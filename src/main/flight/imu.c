@@ -101,15 +101,15 @@ STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
 #endif // USE_ACC
 
 // quaternion of sensor frame relative to earth frame
-STATIC_UNIT_TESTED quaternion q = QUATERNION_INITIALIZE;
+STATIC_UNIT_TESTED quaternion_t q = QUATERNION_INITIALIZE;
 STATIC_UNIT_TESTED quaternionProducts qP = QUATERNION_PRODUCTS_INITIALIZE;
 // headfree quaternions
-quaternion headfree = QUATERNION_INITIALIZE;
-quaternion offset = QUATERNION_INITIALIZE;
+quaternion_t headfree = QUATERNION_INITIALIZE;
+quaternion_t offset = QUATERNION_INITIALIZE;
 
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
-quaternion imuAttitudeQuaternion = QUATERNION_INITIALIZE;  
+quaternion_t imuAttitudeQuaternion = QUATERNION_INITIALIZE;  
 
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 
@@ -127,7 +127,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .mag_declination = 0
 );
 
-static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
+static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
 {
     quatProd->ww = quat->w * quat->w;
     quatProd->wx = quat->w * quat->x;
@@ -276,7 +276,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     gy *= (0.5f * dt);
     gz *= (0.5f * dt);
 
-    quaternion buffer;
+    quaternion_t buffer;
     buffer.w = q.w;
     buffer.x = q.x;
     buffer.y = q.y;
@@ -757,7 +757,7 @@ float getCosTiltAngle(void)
     return rMat.m[2][2];
 }
 
-void getQuaternion(quaternion *quat)
+void getQuaternion(quaternion_t *quat)
 {
    quat->w = q.w;
    quat->x = q.x;
@@ -823,7 +823,7 @@ bool imuQuaternionHeadfreeOffsetSet(void)
     }
 }
 
-void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *result)
+void imuQuaternionMultiplication(quaternion_t *q1, quaternion_t *q2, quaternion_t *result)
 {
     const float A = (q1->w + q1->x) * (q2->w + q2->x);
     const float B = (q1->z - q1->y) * (q2->y - q2->z);

@@ -30,9 +30,12 @@
 // Exported symbols
 extern bool canUseGPSHeading;
 
-typedef struct {
-    float w,x,y,z;
-} quaternion;
+typedef union {
+    float v[4];
+    struct {
+        float w,x,y,z;
+    };
+} quaternion_t;
 #define QUATERNION_INITIALIZE  {.w=1, .x=0, .y=0,.z=0}
 
 typedef struct {
@@ -53,7 +56,7 @@ typedef union {
 
 extern attitudeEulerAngles_t attitude;
 extern matrix33_t rMat;
-extern quaternion imuAttitudeQuaternion; //attitude quaternion to use in blackbox
+extern quaternion_t imuAttitudeQuaternion; //attitude quaternion to use in blackbox
 
 typedef struct imuConfig_s {
     uint16_t imu_dcm_kp;          // DCM filter proportional gain ( x 10000)
@@ -74,7 +77,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 float getSinPitchAngle(void);
 float getCosTiltAngle(void);
-void getQuaternion(quaternion * q);
+void getQuaternion(quaternion_t * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 
 void imuInit(void);
