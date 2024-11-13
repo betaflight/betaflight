@@ -21,7 +21,7 @@
 #pragma once
 
 #include "drivers/serial.h"
+#include "io/serial.h"
 
 void initInverters(const serialPinConfig_t *serialPinConfigToUse);
-
-void enableInverter(USART_TypeDef *USARTx, bool on);
+void enableInverter(serialPortIdentifier_e portId, bool on);

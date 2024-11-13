@@ -72,6 +72,7 @@
 #define PARAM_NAME_TPA_SPEED_ADV_THRUST "tpa_speed_adv_thrust"
 #define PARAM_NAME_TPA_SPEED_MAX_VOLTAGE "tpa_speed_max_voltage"
 #define PARAM_NAME_TPA_SPEED_PITCH_OFFSET "tpa_speed_pitch_offset"
+#define PARAM_NAME_YAW_TYPE "yaw_type"
 #define PARAM_NAME_MIXER_TYPE "mixer_type"
 #define PARAM_NAME_EZ_LANDING_THRESHOLD "ez_landing_threshold"
 #define PARAM_NAME_EZ_LANDING_LIMIT "ez_landing_limit"
@@ -176,6 +177,7 @@
 #define PARAM_NAME_S_YAW "s_yaw"
 #define PARAM_NAME_ANGLE_P_GAIN "angle_p_gain"
 #define PARAM_NAME_ANGLE_EARTH_REF "angle_earth_ref"
+#define PARAM_NAME_ANGLE_PITCH_OFFSET "angle_pitch_offset"
 
 #define PARAM_NAME_HORIZON_LEVEL_STRENGTH "horizon_level_strength"
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"

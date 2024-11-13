@@ -52,7 +52,7 @@ USBD_INFO_T gUsbDevice;
 
 #define USB_TIMEOUT  50
 
-static vcpPort_t vcpPort;
+static vcpPort_t vcpPort = {0};
 
 static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
@@ -203,8 +203,6 @@ static const struct serialPortVTable usbVTable[] = {
 
 serialPort_t *usbVcpOpen(void)
 {
-    vcpPort_t *s;
-
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
 
@@ -216,10 +214,9 @@ serialPort_t *usbVcpOpen(void)
     /* USB device and class init */
     USBD_Init(&gUsbDevice, USBD_SPEED_FS, &USBD_DESC_VCP, &USBD_CDC_CLASS, USB_DevUserHandler);
 
-    s = &vcpPort;
+    vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
-
-    return (serialPort_t *)s;
+    return &s->port;
 }
 
 uint32_t usbVcpGetBaudRate(serialPort_t *instance)

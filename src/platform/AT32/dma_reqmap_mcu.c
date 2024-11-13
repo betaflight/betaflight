@@ -31,7 +31,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-
+#include "drivers/serial_uart_impl.h"
 #include "pg/timerio.h"
 
 typedef struct dmaPeripheralMapping_s {
@@ -97,17 +97,28 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP(ADC, 3),
 #endif
 
-#ifdef USE_UART
+    // UARTDEV_x enum value exists only when coresponding UART is enabled
+#ifdef USE_UART1
     REQMAP_DIR(UART, 1, TX),
     REQMAP_DIR(UART, 1, RX),
+#endif
+#ifdef USE_UART2
     REQMAP_DIR(UART, 2, TX),
     REQMAP_DIR(UART, 2, RX),
+#endif
+#ifdef USE_UART3
     REQMAP_DIR(UART, 3, TX),
     REQMAP_DIR(UART, 3, RX),
+#endif
+#ifdef USE_UART4
     REQMAP_DIR(UART, 4, TX),
     REQMAP_DIR(UART, 4, RX),
+#endif
+#ifdef USE_UART5
     REQMAP_DIR(UART, 5, TX),
     REQMAP_DIR(UART, 5, RX),
+#endif
+#ifdef USE_UART6
     REQMAP_DIR(UART, 6, TX),
     REQMAP_DIR(UART, 6, RX),
 #endif

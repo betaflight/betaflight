@@ -497,26 +497,34 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-#ifndef AT32F4
-        switch (smartAudioSerialPort->identifier) {
-        case SERIAL_PORT_SOFTSERIAL1:
-        case SERIAL_PORT_SOFTSERIAL2:
-            if (vtxSettingsConfig()->softserialAlt) {
-                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
-            }
+        bool prepend00;
+        switch (serialType(smartAudioSerialPort->identifier)) {
+        case SERIALTYPE_SOFTSERIAL:
+            prepend00 = vtxSettingsConfig()->softserialAlt;
+            break;
+        case SERIALTYPE_UART:
+        case SERIALTYPE_LPUART: // decide HW uarts by MCU type
+#ifdef AT32F4
+            prepend00 = false;
+#else
+            prepend00 = true;
+#endif
             break;
         default:
-            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
-            break;
+            prepend00 = false;
         }
-#endif //AT32F4
+        if (prepend00) {
+            // line is in MARK/BREAK, so only 2 stopbits will be visible (startbit and zeroes are not visible)
+            // startbit of next byte (0xaa) can be recognized
+            serialWrite(smartAudioSerialPort, 0x00);
+        }
 
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
         }
-        #ifdef USE_AKK_SMARTAUDIO
+#ifdef USE_AKK_SMARTAUDIO
         serialWrite(smartAudioSerialPort, 0x00); // AKK/RDQ SmartAudio devices can expect an extra byte due to manufacturing errors.
-        #endif // USE_AKK_SMARTAUDIO
+#endif
 
         saStat.pktsent++;
     } else {
@@ -705,20 +713,15 @@ bool vtxSmartAudioInit(void)
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
-    // Note, for SA, which uses bidirectional mode, would normally require pullups. 
-    // the SA protocol instead requires pulldowns, and therefore uses SERIAL_BIDIR_PP_PD instead of SERIAL_BIDIR_PP
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
-    if (portConfig) {
-        portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP_PD | SERIAL_BIDIR_NOPULL;
-#ifdef USE_SMARTAUDIO_NOPULLDOWN
-        // softserial hack (#13797)
-        if (smartAudioSerialPort->identifier == SERIAL_PORT_SOFTSERIAL1 || smartAudioSerialPort->identifier == SERIAL_PORT_SOFTSERIAL2) {
-            portOptions &= ~SERIAL_BIDIR_PP_PD;
-            portOptions |= SERIAL_BIDIR_PP;
-        }
-#endif
-        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
+    if (!portConfig) {
+        return false;
     }
+    // Note, for SA, which uses bidirectional mode, would normally require pullups.
+    // the SA protocol usually requires pulldowns, and therefore uses SERIAL_PULL_SMARTAUDIO together with SERIAL_BIDIR_PP
+    // serial driver handles different pullup/pulldown/nopull quirks when SERIAL_PULL_SMARTAUDIO is used
+    const portOptions_e portOptions = SERIAL_NOT_INVERTED | SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP | SERIAL_PULL_SMARTAUDIO;
+    smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
 
     if (!smartAudioSerialPort) {
         return false;
