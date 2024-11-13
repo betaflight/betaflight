@@ -93,7 +93,7 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
-static uint16_t gpsStamp = ~0; // Initialize to an invalid state
+static uint16_t currentGpsStamp = 1; // logical timer for received position update
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -2554,7 +2554,6 @@ void GPS_reset_home_position(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-#define EARTH_ANGLE_TO_CM (111.3195f * 1000 * 100 / GPS_DEGREES_DIVIDER)  // latitude unit to cm at equator (111km/deg)
 // Get distance between two points in cm using spherical to Cartesian transform
 // One one latitude unit, or one longitude unit at the equator, equals 1.113195 cm.
 // Get bearing from pos1 to pos2, returns values with 0.01 degree precision
@@ -2608,7 +2607,7 @@ void onGpsNewData(void)
         return;
     }
 
-    gpsStamp++; // increment the stamp
+    currentGpsStamp++; // new GPS data available
 
     gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
 
@@ -2617,18 +2616,21 @@ void onGpsNewData(void)
         GPS_calculateDistanceFlown(false);
     }
 
-#ifdef USE_GPS_RESCUE
-    gpsRescueNewGpsData();
-#endif
-
 #ifdef USE_GPS_LAP_TIMER
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
 
 }
 
-uint16_t getGpsStamp(void) {
-    return gpsStamp;
+// check if new data has been received since last check
+// client stamp should be initialized to 0, then gpsHasNewData will return true on first call
+bool gpsHasNewData(uint16_t* stamp) {
+    if (*stamp != currentGpsStamp) {
+        *stamp = currentGpsStamp;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void gpsSetFixState(bool state)

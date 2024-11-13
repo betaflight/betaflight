@@ -114,11 +114,9 @@ extern "C" {
     float getAltitudeDerivative(void) {return 0.0f;}
     float getCosTiltAngle(void) { return 0.0f; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }//    gpsSolutionData_t gpsSol;
-    uint16_t getGpsStamp(void){ return 0; }
-
     float rcCommand[4];
 
-    bool isNewGPSDataAvailable(uint16_t* gpsStamp) {
+    bool gpsHasNewData(uint16_t* gpsStamp) {
         UNUSED(*gpsStamp);
         return true;
     }

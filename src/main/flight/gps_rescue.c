@@ -125,9 +125,10 @@ static float rescueThrottle;
 static float rescueYaw;
 float gpsRescueAngle[RP_AXIS_COUNT] = { 0, 0 };
 bool magForceDisable = false;
-static bool newGPSData = false;
+static bool newGpsData = false;
 static pt1Filter_t velocityDLpf;
 static pt3Filter_t velocityUpsampleLpf;
+
 
 rescueState_s rescueState;
 
@@ -143,14 +144,6 @@ void gpsRescueInit(void)
     cutoffHz *= 4.0f;
     gain = pt3FilterGain(cutoffHz, taskIntervalSeconds);
     pt3FilterInit(&velocityUpsampleLpf, gain);
-}
-
-/*
- If we have new GPS data, update home heading if possible and applicable.
-*/
-void gpsRescueNewGpsData(void)
-{
-    newGPSData = true;
 }
 
 static void rescueStart(void)
@@ -175,7 +168,7 @@ static void setReturnAltitude(void)
     // While armed, but not during the rescue, update the max altitude value
     rescueState.intent.maxAltitudeCm = fmaxf(getAltitudeCm(), rescueState.intent.maxAltitudeCm);
 
-    if (newGPSData) {
+    if (newGpsData) {
         // set the target altitude to the current altitude.
         rescueState.intent.targetAltitudeCm = getAltitudeCm();
 
@@ -277,7 +270,7 @@ static void rescueAttainPosition(void)
         Pitch / velocity controller
     */
     static float pitchAdjustment = 0.0f;
-    if (newGPSData) {
+    if (newGpsData) {
 
         const float sampleIntervalNormaliseFactor = rescueState.sensor.gpsDataIntervalSeconds * 10.0f;
 
@@ -513,7 +506,7 @@ static void sensorUpdate(void)
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(attitude.values.yaw));                 // estimated heading of the quad (direction nose is pointing in)
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.directionToHome));  // angle to home derived from GPS location and home position
 
-    if (!newGPSData) {
+    if (!newGpsData) {
         return;
         // GPS ground speed, velocity and distance to home will be held at last good values if no new packets
     }
@@ -641,7 +634,7 @@ void disarmOnImpact(void)
 
 void descend(void)
 {
-    if (newGPSData) {
+    if (newGpsData) {
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
         const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * autopilotConfig()->landing_altitude_m);
         const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
@@ -720,8 +713,10 @@ void gpsRescueUpdate(void)
         rescueAttainPosition(); // Initialise basic parameters when a Rescue starts (can't initialise sensor data reliably)
         performSanityChecks(); // Initialises sanity check values when a Rescue starts
     }
-
     // Will now be in RESCUE_INITIALIZE mode, if just entered Rescue while IDLE, otherwise stays IDLE
+
+    static uint16_t gpsStamp = 0;
+    newGpsData = gpsHasNewData(&gpsStamp);
 
     sensorUpdate(); // always get latest GPS and Altitude data, update ascend and descend rates
 
@@ -824,7 +819,7 @@ void gpsRescueUpdate(void)
         rescueState.intent.velocityPidCutoffModifier = 2.0f - rescueState.intent.velocityItermRelax;
         // higher velocity filter cutoff for initial few seconds to improve accuracy; can be smoother later
 
-        if (newGPSData) {
+        if (newGpsData) {
             // cut back on allowed angle if there is a high groundspeed error
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
             // introduce roll slowly and limit to half the max pitch angle; earth referenced yaw may add more roll via angle code
@@ -874,18 +869,16 @@ void gpsRescueUpdate(void)
 
     performSanityChecks();
     rescueAttainPosition();
-
-    newGPSData = false;
 }
 
 float gpsRescueGetYawRate(void)
 {
-    return rescueYaw;
+    return rescueYaw; // the control yaw value for rc.c to be used while flightMode gps_rescue is active.
 }
 
 float gpsRescueGetImuYawCogGain(void)
 {
-    return rescueState.sensor.imuYawCogGain;
+    return rescueState.sensor.imuYawCogGain; // to speed up the IMU orientation to COG when needed
 }
 
 bool gpsRescueIsConfigured(void)
@@ -895,11 +888,11 @@ bool gpsRescueIsConfigured(void)
 
 bool gpsRescueIsAvailable(void)
 {
-    return rescueState.isAvailable;
+    return rescueState.isAvailable; // flashes the warning when not available (low sats, etc)
 }
 
 bool gpsRescueIsDisabled(void)
-// used for OSD warning
+// used for OSD warning, needs review
 {
     return (!STATE(GPS_FIX_HOME));
 }

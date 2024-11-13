@@ -222,9 +222,8 @@ void resetLocation(earthFrame_t *efAxis, axisEF_t loopAxis)
 
 bool positionControl(void) 
 {
-    static uint16_t previousGpsStamp = 0;
-    if (getGpsStamp() != previousGpsStamp) {
-        previousGpsStamp = getGpsStamp();
+    static uint16_t gpsStamp = 0;
+    if (gpsHasNewData(&gpsStamp)) {
         posHold.gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.01s to 1.0s
         posHold.gpsDataFreqHz = 1.0f / posHold.gpsDataIntervalS;
 
