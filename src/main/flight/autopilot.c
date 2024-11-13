@@ -53,7 +53,7 @@ static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
 typedef struct {
-    bool isStarting;
+    bool isStopping;
     float distance;
     float previousDistance;
     float previousVelocity;
@@ -72,7 +72,7 @@ typedef struct {
     float gpsDataIntervalS;
     float gpsDataFreqHz;
     float sanityCheckDistance;
-    float lpfCutoff;
+    float pt1Cutoff;
     float pt1Gain;
     bool sticksActive;
     float maxAngle;
@@ -85,7 +85,7 @@ static posHoldState posHold = {
     .gpsDataIntervalS = 0.1f,
     .gpsDataFreqHz = 10.0f,
     .sanityCheckDistance = 1000.0f,
-    .lpfCutoff = 1.0f,
+    .pt1Cutoff = 1.0f,
     .pt1Gain = 1.0f,
     .sticksActive = false,
     .pidSumCraft = { 0.0f, 0.0f },
@@ -101,7 +101,7 @@ void resetPositionControlEFParams(earthFrame_t *efAxis)
     // at start only
     pt1FilterInit(&efAxis->velocityLpf, posHold.pt1Gain); // Clear and initialise the filters
     pt1FilterInit(&efAxis->accelerationLpf, posHold.pt1Gain);
-    efAxis->isStarting = true; // Enter starting 'phase'
+    efAxis->isStopping = true; // Enter starting 'phase'
     efAxis->integral = 0.0f;
 }
 
@@ -138,8 +138,8 @@ void autopilotInit(const autopilotConfig_t *config)
     pt3FilterInit(&posHold.upsample[AI_ROLL], upsampleCutoff);
     pt3FilterInit(&posHold.upsample[AI_PITCH], upsampleCutoff);
     // Initialise PT1 filters for earth frame axes NS and EW
-    posHold.lpfCutoff = config->position_cutoff * 0.01f;
-    posHold.pt1Gain = pt1FilterGain(posHold.lpfCutoff, 0.1f); // assume 10Hz GPS connection at start
+    posHold.pt1Cutoff = config->position_cutoff * 0.01f;
+    posHold.pt1Gain = pt1FilterGain(posHold.pt1Cutoff, 0.1f); // assume 10Hz GPS connection at start
     initializeEfAxisFilters(&posHold.efAxis[EW], posHold.pt1Gain);
     initializeEfAxisFilters(&posHold.efAxis[NS], posHold.pt1Gain);
 }
@@ -231,7 +231,7 @@ bool positionControl(void)
 
         const float leak = 1.0f - 0.4f * posHold.gpsDataIntervalS;
         // leak iTerm while sticks are centered, 2s time constant approximately
-        const float lpfGain = pt1FilterGain(posHold.lpfCutoff, posHold.gpsDataIntervalS);
+        const float lpfGain = pt1FilterGain(posHold.pt1Cutoff, posHold.gpsDataIntervalS);
 
         // ** Sanity check **
         // primarily to detect flyaway from no Mag or badly oriented Mag
@@ -251,7 +251,7 @@ bool positionControl(void)
             const float pidP = efAxis->distance * positionPidCoeffs.Kp;
 
             // ** I **
-            efAxis->integral += efAxis->isStarting ? 0.0f : efAxis->distance * posHold.gpsDataIntervalS;
+            efAxis->integral += efAxis->isStopping ? 0.0f : efAxis->distance * posHold.gpsDataIntervalS;
             // only add to iTerm while in hold phase
             const float pidI = efAxis->integral * positionPidCoeffs.Ki;
 
@@ -272,19 +272,19 @@ bool positionControl(void)
 
             if (posHold.sticksActive) {
                 // sticks active 'phase'
-                efAxis->isStarting = true;
+                efAxis->isStopping = true;
                 resetLocation(efAxis, loopAxis);
                 // while sticks are moving, reset the location on each axis, to maintain a usable D value
                 // slowly leak iTerm away, approx 2s time constant
                 efAxis->integral *= leak;
                 // increase sanity check distance depending on speed, typically maximal when sticks stop
-            } else if (efAxis->isStarting) {
+            } else if (efAxis->isStopping) {
                 // 'phase' after sticks stop, but before craft has stopped
                 pidD *= 1.6f; // aribitrary D boost to stop more quickly when sticks are centered
                 if (velocity * velocityFiltered < 0.0f) {
                     // when an axis has nearly stopped moving, reset it and end it's start phase
                     resetLocation(efAxis, loopAxis);
-                    efAxis->isStarting = false;
+                    efAxis->isStopping = false;
                 }
             }
 
