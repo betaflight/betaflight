@@ -29,6 +29,9 @@
 
 #include "compass.h"
 #include "drivers/time.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
+#include "drivers/bus_spi.h"
 #include "common/axis.h"
 
 // 10 MHz max SPI frequency
