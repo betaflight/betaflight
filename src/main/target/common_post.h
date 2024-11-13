@@ -105,6 +105,9 @@
 #ifndef USE_MAG_LIS3MDL
 #define USE_MAG_LIS3MDL
 #endif
+#ifndef USE_MAG_SPI_LIS3MDL
+#define USE_MAG_SPI_LIS3MDL
+#endif
 #ifndef USE_MAG_AK8963
 #define USE_MAG_AK8963
 #endif
