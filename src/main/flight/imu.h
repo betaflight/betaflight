@@ -53,7 +53,7 @@ typedef union {
 
 extern attitudeEulerAngles_t attitude;
 extern matrix33_t rMat;
-extern float imuAttitudeQuaternion[3]; //attitude quaternion to use in blackbox
+extern quaternion imuAttitudeQuaternion; //attitude quaternion to use in blackbox
 
 typedef struct imuConfig_s {
     uint16_t imu_dcm_kp;          // DCM filter proportional gain ( x 10000)

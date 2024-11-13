@@ -109,7 +109,7 @@ quaternion offset = QUATERNION_INITIALIZE;
 
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
-float imuAttitudeQuaternion[3]; // quaternion for blackbox 0 - x, 1 - y, 2 - z. For normalized quaternion w = 1
+quaternion imuAttitudeQuaternion = QUATERNION_INITIALIZE;  
 
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 
@@ -310,16 +310,12 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
        attitude.values.roll = lrintf(atan2_approx((+2.0f * (buffer.wx + buffer.yz)), (+1.0f - 2.0f * (buffer.xx + buffer.yy))) * (1800.0f / M_PIf));
        attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(+2.0f * (buffer.wy - buffer.xz))) * (1800.0f / M_PIf));
        attitude.values.yaw = lrintf((-atan2_approx((+2.0f * (buffer.wz + buffer.xy)), (+1.0f - 2.0f * (buffer.yy + buffer.zz))) * (1800.0f / M_PIf)));
-       imuAttitudeQuaternion[0] = headfree.x; //using headfree quaternion for blackbox log
-       imuAttitudeQuaternion[1] = headfree.y;
-       imuAttitudeQuaternion[2] = headfree.z;
+       imuAttitudeQuaternion = headfree; 
     } else {
        attitude.values.roll = lrintf(atan2_approx(rMat.m[2][1], rMat.m[2][2]) * (1800.0f / M_PIf));
        attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat.m[2][0])) * (1800.0f / M_PIf));
        attitude.values.yaw = lrintf((-atan2_approx(rMat.m[1][0], rMat.m[0][0]) * (1800.0f / M_PIf)));
-       imuAttitudeQuaternion[0] = q.x; //using current q quaternion  for blackbox log
-       imuAttitudeQuaternion[1] = q.y;
-       imuAttitudeQuaternion[2] = q.z;
+       imuAttitudeQuaternion = q; //using current q quaternion  for blackbox log
     }
 
     if (attitude.values.yaw < 0) {

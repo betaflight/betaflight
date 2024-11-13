@@ -1194,7 +1194,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
 
     blackboxCurrent->time = currentTimeUs;
-
+    float imuAttitude[] = {imuAttitudeQuaternion.x, imuAttitudeQuaternion.y, imuAttitudeQuaternion.z};
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_P[i] = lrintf(pidData[i].P);
         blackboxCurrent->axisPID_I[i] = lrintf(pidData[i].I);
@@ -1204,7 +1204,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->gyroUnfilt[i] = lrintf(gyro.gyroADC[i] * blackboxHighResolutionScale);
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC.v[i]);
-        blackboxCurrent->imuAttitudeQuaternion[i] = lrintf(imuAttitudeQuaternion[i] * 0x7FFF);  //Scale to int16 by value 0x7FFF = 2^15 - 1
+        blackboxCurrent->imuAttitudeQuaternion[i] = lrintf(imuAttitude[i] * 0x7FFF);  //Scale to int16 by value 0x7FFF = 2^15 - 1
 #endif
 #ifdef USE_MAG
         blackboxCurrent->magADC[i] = lrintf(mag.magADC.v[i]);
