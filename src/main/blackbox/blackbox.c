@@ -716,10 +716,12 @@ static void writeIntraframe(void)
         blackboxWriteSigned16VBArray(blackboxCurrent->gyroUnfilt, XYZ_AXIS_COUNT);
     }
 
+#ifdef USE_ACC
     if (testBlackboxCondition(CONDITION(ACC))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->accADC, XYZ_AXIS_COUNT);
         blackboxWriteSigned16VBArray(blackboxCurrent->imuAttitudeQuaternion, XYZ_AXIS_COUNT);
     }
+#endif
 
     if (testBlackboxCondition(CONDITION(DEBUG_LOG))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->debug, DEBUG16_VALUE_COUNT);
@@ -742,7 +744,7 @@ static void writeIntraframe(void)
         for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {
             out[x] = blackboxCurrent->servo[x] - 1500;
         }
-        
+
         blackboxWriteTag8_8SVB(out, ARRAYLEN(out));
     }
 #endif
@@ -889,10 +891,14 @@ static void writeInterframe(void)
     if (testBlackboxCondition(CONDITION(GYROUNFILT))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroUnfilt),   XYZ_AXIS_COUNT);
     }
+
+#ifdef USE_ACC
     if (testBlackboxCondition(CONDITION(ACC))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accADC), XYZ_AXIS_COUNT);
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, imuAttitudeQuaternion), XYZ_AXIS_COUNT);
     }
+#endif
+
     if (testBlackboxCondition(CONDITION(DEBUG_LOG))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), DEBUG16_VALUE_COUNT);
     }
@@ -903,12 +909,12 @@ static void writeInterframe(void)
 
 #ifdef USE_SERVOS
     if (testBlackboxCondition(CONDITION(SERVOS))) {
-        STATIC_ASSERT(ARRAYLEN(servo) <= 8, "TAG8_8SVB supports at most 8 values"); 
+        STATIC_ASSERT(ARRAYLEN(servo) <= 8, "TAG8_8SVB supports at most 8 values");
         int32_t out[ARRAYLEN(servo)];
         for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {
             out[x] = blackboxCurrent->servo[x] - blackboxLast->servo[x];
         }
-        
+
         blackboxWriteTag8_8SVB(out, ARRAYLEN(out));
     }
 #endif
