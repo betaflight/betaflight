@@ -25,11 +25,17 @@
 
 #include "platform.h"
 
-#if defined(USE_MAG_LIS3MDL)
+#if defined(USE_MAG_LIS3MDL) || defined(USE_MAG_SPI_LIS3MDL)
 
 #include "compass.h"
 #include "drivers/time.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
+#include "drivers/bus_spi.h"
 #include "common/axis.h"
+
+// 10 MHz max SPI frequency
+#define LIS3MDL_MAX_SPI_CLK_HZ 10000000
 
 #define LIS3MDL_MAG_I2C_ADDRESS     0x1E
 #define LIS3MDL_DEVICE_ID           0x3D
@@ -101,6 +107,53 @@
 #define LIS3MDL_FAST_READ           0x80  // Default 0
 #define LIS3MDL_BDU                 0x40  // Default 0
 
+#ifdef USE_MAG_DATA_READY_SIGNAL
+
+static void lis3mdl_extiHandler(extiCallbackRec_t* cb)
+{
+    UNUSED(cb);
+}
+#endif
+
+static void lis3mdlConfigureDataReadyInterruptHandling(magDev_t* mag)
+{
+#ifdef USE_MAG_DATA_READY_SIGNAL
+    if (mag->magIntExtiTag == IO_TAG_NONE) {
+        return;
+    }
+
+    const IO_t magIntIO = IOGetByTag(mag->magIntExtiTag);
+
+#ifdef ENSURE_MAG_DATA_READY_IS_HIGH
+    uint8_t status = IORead(magIntIO);
+    if (!status) {
+        return;
+    }
+#endif
+
+    IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
+    EXTIHandlerInit(&mag->exti, lis3mdl_extiHandler);
+    EXTIConfig(magIntIO, &mag->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
+    EXTIEnable(magIntIO);
+    EXTIEnable(magIntIO);
+#else
+    UNUSED(mag);
+#endif
+}
+
+#ifdef USE_MAG_SPI_LIS3MDL
+static void lis3mdlSpiInit(const extDevice_t *dev)
+{
+    busDeviceRegister(dev);
+
+    IOHi(dev->busType_u.spi.csnPin); // Disable
+
+    IOInit(dev->busType_u.spi.csnPin, OWNER_COMPASS_CS, 0);
+    IOConfigGPIO(dev->busType_u.spi.csnPin, IOCFG_OUT_PP);
+    spiSetClkDivisor(dev, spiCalculateDivider(LIS3MDL_MAX_SPI_CLK_HZ));
+}
+#endif
+
 static bool lis3mdlRead(magDev_t * mag, int16_t *magData)
 {
     static uint8_t buf[6];
@@ -137,6 +190,7 @@ static bool lis3mdlInit(magDev_t *mag)
     busWriteRegister(dev, LIS3MDL_REG_CTRL_REG3, 0x00);
 
     delay(100);
+    lis3mdlConfigureDataReadyInterruptHandling(mag);
     mag->magOdrHz = 80; // LIS3MDL_DO_80
     return true;
 }
@@ -147,9 +201,17 @@ bool lis3mdlDetect(magDev_t * mag)
 
     uint8_t sig = 0;
 
+#ifdef USE_MAG_SPI_LIS3MDL
+    if (dev->bus->busType == BUS_TYPE_SPI) {
+        lis3mdlSpiInit(dev);
+    }
+#endif
+
+#ifdef USE_MAG_LIS3MDL
     if (dev->bus->busType == BUS_TYPE_I2C && dev->busType_u.i2c.address == 0) {
         dev->busType_u.i2c.address = LIS3MDL_MAG_I2C_ADDRESS;
     }
+#endif
 
     bool ack = busReadRegisterBuffer(&mag->dev, LIS3MDL_REG_WHO_AM_I, &sig, 1);
 
