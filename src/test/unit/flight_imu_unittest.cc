@@ -67,7 +67,7 @@ extern "C" {
                              const float dcmKpGain);
     float imuCalcMagErr(void);
     float imuCalcCourseErr(float courseOverGround);
-    extern quaternion q;
+    extern quaternion_t q;
     extern matrix33_t rMat;
     extern bool attitudeIsEstablished;
 
@@ -86,7 +86,7 @@ extern "C" {
 
 const float sqrt2over2 = sqrtf(2) / 2.0f;
 
-void quaternion_from_axis_angle(quaternion* q, float angle, float x, float y, float z) {
+void quaternion_from_axis_angle(quaternion_t* q, float angle, float x, float y, float z) {
     vector3_t a = {{x, y, z}};
     vector3Normalize(&a, &a);
     q->w = cos(angle / 2);
