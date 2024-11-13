@@ -160,6 +160,7 @@ COMMON_SRC = \
             flight/alt_hold.c \
             flight/autopilot.c \
             flight/kalman_filter_1d.c \
+            flight/altitude.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue.c \

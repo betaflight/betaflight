@@ -34,4 +34,4 @@ typedef struct {
 void kf_init(KalmanFilter *kf, float initialValue, float initialVariance, float processVariance);
 void kf_update_variance(KalmanFilter *kf);
 void kf_update(KalmanFilter *kf, SensorMeasurement sensorMeas);
-void updateBaroVariance(SensorMeasurement * sensorMeas);
+void updateBaroVariance2(SensorMeasurement * sensorMeas);

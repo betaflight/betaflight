@@ -17,14 +17,15 @@
 
 #include "platform.h"
 #include "math.h"
-
+#include <stdbool.h>
 
 #include "kalman_filter_1d.h"
 
+
 void kf_init(KalmanFilter *kf, float initialValue, float initialVariance, float processVariance) {
-    kf->estimatedValue = initialValue;
+    kf->estimatedValue    = initialValue;
     kf->estimatedVariance = initialVariance;
-    kf->processVariance = processVariance;
+    kf->processVariance   = processVariance;
 }
 
 void kf_update_variance(KalmanFilter *kf) {
@@ -45,7 +46,7 @@ void kf_update(KalmanFilter *kf, SensorMeasurement sensorMeas) {
 }
 
 #ifdef USE_BARO
-void updateBaroVariance(SensorMeasurement * sensorMeas) {
+void updateBaroVariance2(SensorMeasurement * sensorMeas) {
     static uint16_t n = 0;
     if (n == 0) {
         sensorMeas->variance = 0.0f;

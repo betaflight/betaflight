@@ -37,6 +37,7 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/kalman_filter_1d.h"
+#include "flight/altitude.h"
 
 #include "io/gps.h"
 
@@ -62,7 +63,7 @@ static int16_t estimatedVario = 0; // in cm/s
 #endif
 
 void positionInit(void) {
-
+altSensorFusionInit();
 }
 
 typedef enum {
@@ -103,7 +104,7 @@ void calculateEstimatedAltitude(void) {
         baroAltCm = getBaroAltitude();
         haveBaroAlt = true; // false only if there is no sensor on the board, or it has failed
         baroAltMeasurement.value = baroAltCm;
-        updateBaroVariance(&baroAltMeasurement); 
+        updateBaroVariance2(&baroAltMeasurement); 
     }
 
 #endif
@@ -217,6 +218,7 @@ void calculateEstimatedAltitude(void) {
 
 }
 
+    altSensorFusionUpdate();
     if (wasArmed) {
         displayAltitudeCm = zeroedFusedAltitudeCm; // while armed, show filtered relative altitude in OSD / sensors tab
     }
