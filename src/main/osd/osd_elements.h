@@ -65,5 +65,7 @@ void osdResetAlarms(void);
 void osdUpdateAlarms(void);
 bool osdElementsNeedAccelerometer(void);
 extern bool slctRx;
-extern char payloadStateBuffer[64];
+extern const char *statusStrings[];
 extern int payloadStateBufferIndex;
+extern int currentStatusMessageIdx;
+extern int bufferSet;

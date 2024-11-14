@@ -512,8 +512,23 @@ static void mspSerialProcessReceivedReply(mspPort_t *msp, mspProcessReplyFnPtr m
  * Called periodically by the scheduler.
  */
 
+char payloadTempBuffer[64];
 char payloadStateBuffer[64];
+int currentStatusMessageIdx = 0;
+int payloadTempBufferIndex;
 int payloadStateBufferIndex;
+const char *statusStrings[] = {
+    "NO PAYLOAD",
+    "STARTUP",
+    "IDLE",
+    "SST",
+    "INPUT_WARNING",
+    "ARMED",
+    "ENABLED",
+    "TRIGGERED",
+    "ERROR"
+};
+
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
     
@@ -527,8 +542,8 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 
         if (serialRxBytesWaiting(mspPort->port)) {
             if(mspPort->port->identifier == SERIAL_PORT_USART2){
-                payloadStateBufferIndex = 0;
-                memset(payloadStateBuffer, 0, sizeof payloadStateBuffer);
+                payloadTempBufferIndex = 0;
+                memset(payloadTempBuffer, 0, sizeof payloadTempBuffer);
             }
             // There are bytes incoming - abort pending request
             mspPort->lastActivityMs = millis();
@@ -538,11 +553,11 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 const uint8_t c = serialRead(mspPort->port);
 
                 if(mspPort->port->identifier == SERIAL_PORT_USART2){
-                    if(payloadStateBufferIndex<64 && ((c >= 'A' && c <= 'Z') || c =='_')){
-                        payloadStateBuffer[payloadStateBufferIndex] = c;
-                        payloadStateBufferIndex+=1;
+                    if(payloadTempBufferIndex<64 && ((c >= 'A' && c <= 'Z') || c =='_')){
+                        payloadTempBuffer[payloadTempBufferIndex] = c;
+                        payloadTempBufferIndex+=1;
                     }
-                    if(payloadStateBufferIndex>64){
+                    if(payloadTempBufferIndex>64){
                         break;
                     }
                 } else{
@@ -563,6 +578,15 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                     mspPort->c_state = MSP_IDLE;
                     break; // process one command at a time so as not to block.
                 }
+                }
+            }
+
+            if((mspPort->port->identifier == SERIAL_PORT_USART2) && payloadTempBufferIndex>0){
+                for (int i = 0; i < 9; i++) {
+                    if (strcmp(statusStrings[i],payloadTempBuffer) == 0) {
+                        currentStatusMessageIdx = i;
+                        break;
+                    }
                 }
             }
 

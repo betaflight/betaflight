@@ -1343,13 +1343,7 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
 
 static void osdElementNumericalHeading(osdElementParms_t *element)
 {
-    if(payloadStateBufferIndex== 0) {
-        tfp_sprintf(element->buff, "NO PAYLOAD");
-    } else {
-        if(payloadStateBufferIndex < 64){
-        strncpy(element->buff, payloadStateBuffer,payloadStateBufferIndex);
-        }
-    }
+    tfp_sprintf(element->buff, statusStrings[currentStatusMessageIdx]);
 }
 
 // static void osdElementNumericalHeading(osdElementParms_t *element)
