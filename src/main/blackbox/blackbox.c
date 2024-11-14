@@ -1207,7 +1207,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->gyroUnfilt[i] = lrintf(gyro.gyroADC[i] * blackboxHighResolutionScale);
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC.v[i]);
-        STATIC_ASSERT(offsetof(quaternion, w), "Code expects quaternion in w, x, y, z order"
+        STATIC_ASSERT(offsetof(quaternion, w), "Code expects quaternion in w, x, y, z order");
         blackboxCurrent->imuAttitudeQuaternion[i] = lrintf(imuAttitudeQuaternion.v[i + 1] * 0x7FFF);  //Scale to int16 by value 0x7FFF = 2^15 - 1; Use i+1 index for x,y,z components access, [0] - w 
 #endif
 #ifdef USE_MAG
