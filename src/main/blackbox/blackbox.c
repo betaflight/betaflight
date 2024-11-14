@@ -864,8 +864,6 @@ static void writeInterframe(void)
     }
 #endif
 
-
-
 #ifdef USE_BARO
     if (testBlackboxCondition(CONDITION(BARO))) {
         deltas[optionalFieldCount++] = blackboxCurrent->baroAlt - blackboxLast->baroAlt;
