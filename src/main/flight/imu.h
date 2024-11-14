@@ -33,7 +33,7 @@ extern bool canUseGPSHeading;
 typedef union {
     float v[4];
     struct {
-        float w,x,y,z;
+        float w, x, y, z;
     };
 } quaternion_t;
 #define QUATERNION_INITIALIZE  {.w=1, .x=0, .y=0,.z=0}
