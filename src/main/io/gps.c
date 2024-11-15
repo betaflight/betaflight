@@ -2591,7 +2591,7 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
-void GPS_distances(const gpsLocation_t *from, const gpsLocation_t *to, float *pEWDist, float *pNSDist) {
+void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *pEWDist, float *pNSDist) {
     if (pEWDist) {
         *pEWDist = (float)(to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
     }

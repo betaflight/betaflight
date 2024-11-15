@@ -239,7 +239,7 @@ bool positionControl(void)
 
         // first get NS and EW distances from current location (gpsSol.llh) to target location
         vector2_t gpsDistance;
-        GPS_distances(&gpsSol.llh, &currentTargetLocation, &gpsDistance.x, &gpsDistance.y); // X is EW, Y is NS
+        GPS_latLongVectors(&gpsSol.llh, &currentTargetLocation, &gpsDistance.x, &gpsDistance.y); // X is EW, Y is NS
         posHold.efAxis[EW].distance = gpsDistance.x;
         posHold.efAxis[NS].distance = gpsDistance.y;
 
