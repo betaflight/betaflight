@@ -82,11 +82,11 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
 
 /**
  * Prepare to send dshot data for one motor
- * 
+ *
  * Formats the value into the appropriate dma buffer and enables the dma channel.
  * The packet won't start transmitting until later since the dma requests from the timer
  * are disabled when this function is called.
- * 
+ *
  * @param index index of the motor that the data is to be sent to
  * @param value the dshot value to be sent
 */
@@ -197,7 +197,7 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
 #ifdef USE_DSHOT_TELEMETRY
 /**
  * Process dshot telemetry packets before switching the channels back to outputs
- * 
+ *
 */
 FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 {

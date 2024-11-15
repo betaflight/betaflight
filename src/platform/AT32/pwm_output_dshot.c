@@ -45,15 +45,15 @@
 
 /**
  *  Convert from BF channel to AT32 constants for timer output channels
- * 
+ *
  * The AT and ST apis take a different approach to naming channels, so just passing the bf
  * channel number to the AT calls doesn't work. This function maps between them.
- * 
+ *
  * @param bfChannel a channel number as used in timerHardware->channel (1 based)
  * @param useNChannel indicates that the desired channel should be the complementary output (only available for 1 through 3)
  * @return an AT32 tmr_channel_select_type constant
  * XXX what to return for invalid inputs? The tmr_channel_select_type enum doesn't have a suitable value
- * 
+ *
  * @see TIM_CH_TO_SELCHANNEL macro
 */
 tmr_channel_select_type toCHSelectType(const uint8_t bfChannel, const bool useNChannel)
@@ -110,7 +110,7 @@ tmr_channel_select_type toCHSelectType(const uint8_t bfChannel, const bool useNC
 
 /**
  * Enable the timer channels for all motors
- * 
+ *
  *   Called once for every dshot update if telemetry is being used (not just enabled by #def)
  *   Called from pwm_output_dshot_shared.c pwmTelemetryDecode
 */
@@ -128,7 +128,7 @@ void dshotEnableChannels(uint8_t motorCount)
 
 /**
  * Set the timer and dma of the specified motor for use as an output
- * 
+ *
  * Called from pwmDshotMotorHardwareConfig in this file and also from
  * pwmTelemetryDecode in src/main/drivers/pwm_output_dshot_shared.c
 */
@@ -199,9 +199,9 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     tmr_channel_enable(timer, toCHSelectType(channel, useCompOut), TRUE);
     timerOCPreloadConfig(timer, channel, TRUE);
 
-    pDmaInit->direction = DMA_DIR_MEMORY_TO_PERIPHERAL; 
+    pDmaInit->direction = DMA_DIR_MEMORY_TO_PERIPHERAL;
     xDMA_Init(dmaRef, pDmaInit);
-    
+
     // Generate an interrupt when the transfer is complete
     xDMA_ITConfig(dmaRef, DMA_FDT_INT, TRUE);
 
@@ -241,7 +241,7 @@ static void pwmDshotSetDirectionInput(motorDmaOutput_t * const motor)
 
 /**
  * Start the timers and dma requests to send dshot data to all motors
- * 
+ *
  * Called after pwm_output_dshot_shared.c has finished setting up the buffers that represent the dshot packets.
  * Iterates over all the timers needed (note that there may be less timers than motors since a single timer can run
  * multiple motors) and enables each one.
@@ -298,8 +298,8 @@ void pwmCompleteDshotMotorUpdate(void)
 
 /**
  * Interrupt handler called at the end of each packet
- * 
- * Responsible for switching the dshot direction after sending a dshot command so that we 
+ *
+ * Responsible for switching the dshot direction after sending a dshot command so that we
  * can receive dshot telemetry. If telemetry is not enabled, disables the dma and request generation.
 */
 FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
@@ -360,7 +360,7 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     } // if DMA_IT_TCIF
 }
 
-bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, 
+bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex,
                                  motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     #ifdef USE_DSHOT_TELEMETRY
@@ -422,7 +422,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     // Boolean configureTimer is always true when different channels of the same timer are processed in sequence,
     // causing the timer and the associated DMA initialized more than once.
     // To fix this, getTimerIndex must be expanded to return if a new timer has been requested.
-    // However, since the initialization is idempotent (can be applied multiple times without changing the outcome), 
+    // However, since the initialization is idempotent (can be applied multiple times without changing the outcome),
     // it is left as is in a favor of flash space (for now).
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
@@ -571,7 +571,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     { // local scope
         const tmr_channel_select_type chSel = toCHSelectType(timerHardware->channel, output & TIMER_OUTPUT_N_CHANNEL);
-        tmr_channel_enable(timer, chSel, TRUE); 
+        tmr_channel_enable(timer, chSel, TRUE);
     }
 
     if (configureTimer) {
@@ -587,7 +587,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         *timerChCCR(timerHardware) = 0xffff;
     }
     #endif
-    
+
     motor->configured = true;
 
     return true;

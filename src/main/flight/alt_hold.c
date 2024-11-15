@@ -107,7 +107,7 @@ void altHoldUpdateTargetAltitude(void)
 
     const float lowThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MIN); // halfway between hover and MIN, e.g. 1150 if hover is 1300
     const float highThreshold = 0.5f * (autopilotConfig()->hover_throttle + PWM_RANGE_MAX); // halfway between hover and MAX, e.g. 1650 if hover is 1300
-    
+
     float throttleAdjustmentFactor = 0.0f;
     if (rcThrottle < lowThreshold) {
         throttleAdjustmentFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
@@ -142,7 +142,7 @@ void altHoldUpdate(void)
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
-    UNUSED(currentTimeUs); 
+    UNUSED(currentTimeUs);
 
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
     altHoldProcessTransitions();

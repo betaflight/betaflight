@@ -223,7 +223,7 @@ static bool deviceConfigure(const extDevice_t *dev)
         baroState.calib.c40 = getTwosComplement((((uint32_t)coef[19] & 0x0F) << 8) | (uint32_t)coef[20], 12);
     } else {
         baroState.calib.c31 = 0;
-        baroState.calib.c40 = 0; 
+        baroState.calib.c40 = 0;
     }
 
     // PRS_CFG: pressure measurement rate (32 Hz) and oversampling (16 time standard)
@@ -306,7 +306,7 @@ static bool dps310GetUP(baroDev_t *baro)
 static void deviceCalculate(int32_t *pressure, int32_t *temperature)
 {
     if (pressure) {
-        *pressure = baroState.pressure; 
+        *pressure = baroState.pressure;
     }
 
     if (temperature) {

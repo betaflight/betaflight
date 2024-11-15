@@ -26,7 +26,7 @@
 #include "common/maths.h"
 #include "common/sdft.h"
 
-#define SDFT_R 0.9999f  // damping factor for guaranteed SDFT stability (r < 1.0f) 
+#define SDFT_R 0.9999f  // damping factor for guaranteed SDFT stability (r < 1.0f)
 
 static FAST_DATA_ZERO_INIT float     rPowerN;  // SDFT_R to the power of SDFT_SAMPLE_SIZE
 static FAST_DATA_ZERO_INIT bool      isInitialized;

@@ -732,7 +732,7 @@ static void writeIntraframe(void)
         for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {
             out[x] = blackboxCurrent->servo[x] - 1500;
         }
-        
+
         blackboxWriteTag8_8SVB(out, ARRAYLEN(out));
     }
 #endif
@@ -890,12 +890,12 @@ static void writeInterframe(void)
 
 #ifdef USE_SERVOS
     if (testBlackboxCondition(CONDITION(SERVOS))) {
-        STATIC_ASSERT(ARRAYLEN(servo) <= 8, "TAG8_8SVB supports at most 8 values"); 
+        STATIC_ASSERT(ARRAYLEN(servo) <= 8, "TAG8_8SVB supports at most 8 values");
         int32_t out[ARRAYLEN(servo)];
         for (unsigned x = 0; x < ARRAYLEN(servo); ++x) {
             out[x] = blackboxCurrent->servo[x] - blackboxLast->servo[x];
         }
-        
+
         blackboxWriteTag8_8SVB(out, ARRAYLEN(out));
     }
 #endif

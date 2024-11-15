@@ -124,7 +124,7 @@ static bool ist8310Init(magDev_t *magDev)
     bool ack = busWriteRegister(dev, IST8310_REG_AVERAGE, IST8310_AVG_16);
     delay(6);
     ack = ack && busWriteRegister(dev, IST8310_REG_PDCNTL, IST8310_PULSE_DURATION_NORMAL);
-    delay(6); 
+    delay(6);
     ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
 
     magDev->magOdrHz = 100;

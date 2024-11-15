@@ -389,7 +389,7 @@ void pidUpdateTpaFactor(float throttle)
 
     DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
     pidRuntime.tpaFactor = tpaFactor;
-    
+
 #ifdef USE_WING
     switch (currentPidProfile->yaw_type) {
     case YAW_TYPE_DIFF_THRUST:
@@ -499,7 +499,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
 #ifdef USE_WING
     if (axis == FD_PITCH) {
-        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;        
+        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;
     }
 #endif // USE_WING
 
@@ -997,7 +997,7 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
 {
     float tpaFactor = pidRuntime.tpaFactor;
-    
+
 #ifdef USE_WING
     if (axis == FD_YAW) {
         tpaFactor = pidRuntime.tpaFactorYaw;

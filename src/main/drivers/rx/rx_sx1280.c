@@ -186,7 +186,7 @@ bool sx1280HandleFromTick(void)
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -822,7 +822,7 @@ static void sx1280GetPacketStats(extiCallbackRec_t *cb)
     spiSequence(dev, segments);
 }
 
-// Process and decode the RF packet 
+// Process and decode the RF packet
 static busStatus_e sx1280GetStatsCmdComplete(uint32_t arg)
 {
     extDevice_t *dev = (extDevice_t *)arg;
@@ -856,7 +856,7 @@ static busStatus_e sx1280IsFhssReq(uint32_t arg)
     UNUSED(arg);
 
     if (expressLrsIsFhssReq()) {
-        sx1280SetBusyFn(sx1280SetFrequency);   
+        sx1280SetBusyFn(sx1280SetFrequency);
     } else {
         sx1280SetFreqComplete(arg);
     }
@@ -941,7 +941,7 @@ static busStatus_e sx1280EnableIRQs(uint32_t arg)
 }
 
 
-// Send telemetry response 
+// Send telemetry response
 static void sx1280SendTelemetryBuffer(extiCallbackRec_t *cb)
 {
     UNUSED(cb);

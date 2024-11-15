@@ -165,14 +165,14 @@ void calculateEstimatedAltitude(void)
             }
         } else {
             gpsTrust = 0.0f;
-            // TO DO - smoothly reduce GPS trust, rather than immediately dropping to zero for what could be only a very brief loss of 3D fix 
+            // TO DO - smoothly reduce GPS trust, rather than immediately dropping to zero for what could be only a very brief loss of 3D fix
         }
         DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
-        
+
         // Empirical mixing of GPS and Baro altitudes
         if (useZeroedGpsAltitude && (positionConfig()->altitude_source == DEFAULT || positionConfig()->altitude_source == GPS_ONLY)) {
             if (haveBaroAlt && positionConfig()->altitude_source == DEFAULT) {
-                // mix zeroed GPS with Baro altitude data, if Baro data exists if are in default altitude control mode 
+                // mix zeroed GPS with Baro altitude data, if Baro data exists if are in default altitude control mode
                 const float absDifferenceM = fabsf(zeroedAltitudeCm - baroAltCm) / 100.0f * positionConfig()->altitude_prefer_baro / 100.0f;
                 if (absDifferenceM > 1.0f) { // when there is a large difference, favour Baro
                     gpsTrust /=  absDifferenceM;
@@ -202,7 +202,7 @@ void calculateEstimatedAltitude(void)
     estimatedVario = lrintf(zeroedAltitudeDerivative);
     estimatedVario = applyDeadband(estimatedVario, 10); // ignore climb rates less than 0.1 m/s
 #endif
- 
+
     // *** set debugs
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
     DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroAltCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
