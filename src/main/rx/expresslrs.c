@@ -201,7 +201,7 @@ static uint8_t mspBuffer[ELRS_MSP_BUFFER_SIZE];
 static void setRssiChannelData(uint16_t *rcData)
 {
     rcData[ELRS_LQ_CHANNEL] = scaleRange(receiver.uplinkLQ, 0, 100, 988, 2011);
-    rcData[ELRS_RSSI_CHANNEL] = scaleRange(constrain(receiver.rssiFiltered, receiver.rfPerfParams->sensitivity, -50), receiver.rfPerfParams->sensitivity, -50, 988, 2011); 
+    rcData[ELRS_RSSI_CHANNEL] = scaleRange(constrain(receiver.rssiFiltered, receiver.rfPerfParams->sensitivity, -50), receiver.rfPerfParams->sensitivity, -50, 988, 2011);
 }
 
 static void unpackAnalogChannelData(uint16_t *rcData, volatile elrsOtaPacket_t const * const otaPktPtr)
@@ -233,7 +233,7 @@ static void unpackAnalogChannelData(uint16_t *rcData, volatile elrsOtaPacket_t c
  * 2 bits for the low latency switch[0]
  * 3 bits for the round-robin switch index and 2 bits for the value
  * 4 analog channels, 1 low latency switch and round robin switch data = 47 bits (1 free)
- * 
+ *
  * sets telemetry status bit
  */
 static void unpackChannelDataHybridSwitch8(uint16_t *rcData, volatile elrsOtaPacket_t const * const otaPktPtr)
@@ -242,7 +242,7 @@ static void unpackChannelDataHybridSwitch8(uint16_t *rcData, volatile elrsOtaPac
 
     const uint8_t switchByte = otaPktPtr->rc.switches;
 
-    // The round-robin switch, switchIndex is actually index-1 
+    // The round-robin switch, switchIndex is actually index-1
     // to leave the low bit open for switch 7 (sent as 0b11x)
     // where x is the high bit of switch 7
     uint8_t switchIndex = (switchByte & 0x38) >> 3;
@@ -316,7 +316,7 @@ static bool domainIsTeam24(void)
 #ifdef USE_RX_SX1280
     const elrsFreqDomain_e domain = rxExpressLrsSpiConfig()->domain;
     return (domain == ISM2400) || (domain == CE2400);
-#else 
+#else
     return false;
 #endif
 }
@@ -420,7 +420,7 @@ static void expressLrsSendTelemResp(void)
 
     if (nextTelemetryType == ELRS_TELEMETRY_TYPE_LINK || !isTelemetrySenderActive()) {
         otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_LINK;
-        otaPkt.tlm_dl.ul_link_stats.uplink_RSSI_1 = receiver.rssiFiltered > 0 ? 0 : -receiver.rssiFiltered; 
+        otaPkt.tlm_dl.ul_link_stats.uplink_RSSI_1 = receiver.rssiFiltered > 0 ? 0 : -receiver.rssiFiltered;
         otaPkt.tlm_dl.ul_link_stats.uplink_RSSI_2 = 0; //diversity not supported
         otaPkt.tlm_dl.ul_link_stats.antenna = 0;
         otaPkt.tlm_dl.ul_link_stats.modelMatch = connectionHasModelMatch;
@@ -1097,7 +1097,7 @@ static void enterBindingMode(void)
     receiver.UID = BindingUID;
     crcInitializer = 0;
     receiver.inBindingMode = true;
-    
+
     setRfLinkRate(bindingRateIndex);
     receiver.startReceiving();
 }
@@ -1106,7 +1106,7 @@ void expressLrsDoTelem(void)
 {
     expressLrsHandleTelemetryUpdate();
     expressLrsSendTelemResp();
-    
+
     if (!expressLrsTelemRespReq() && lqPeriodIsSet()) {
         // TODO No need to handle this on SX1280, but will on SX127x
         // TODO this needs to be DMA aswell, SX127x unlikely to work right now

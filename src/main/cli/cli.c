@@ -5019,7 +5019,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
             if (getRxRateValid()) {
 	            cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
             } else {
-            	cliPrintLine("NO SIGNAL");          
+            	cliPrintLine("NO SIGNAL");
             }
         }
         cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);

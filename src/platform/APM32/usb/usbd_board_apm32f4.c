@@ -67,39 +67,39 @@ void OTG_HS1_IRQHandler(void)
 
 #ifdef USE_USB_FS
 void OTG_FS_WKUP_IRQHandler(void)
-#else  
+#else
 void OTG_HS1_WKUP_IRQHandler(void)
 #endif /* USE_USB_FS */
 {
   if((&husbDevice)->Init.low_power_enable)
   {
     /* Reset SLEEPDEEP bit of Cortex System Control Register */
-    SCB->SCR &= (uint32_t)~((uint32_t)(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk));  
-    
-    /* Configures system clock after wake-up from STOP: enable HSE, PLL and select 
+    SCB->SCR &= (uint32_t)~((uint32_t)(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk));
+
+    /* Configures system clock after wake-up from STOP: enable HSE, PLL and select
     PLL as system clock source (HSE and PLL are disabled in STOP mode) */
-    
+
     __DAL_RCM_HSE_CONFIG(RCM_HSE_ON);
-    
-    /* Wait till HSE is ready */  
+
+    /* Wait till HSE is ready */
     while(__DAL_RCM_GET_FLAG(RCM_FLAG_HSERDY) == RESET)
     {}
-    
+
     /* Enable the main PLL. */
     __DAL_RCM_PLL_ENABLE();
-    
-    /* Wait till PLL is ready */  
+
+    /* Wait till PLL is ready */
     while(__DAL_RCM_GET_FLAG(RCM_FLAG_PLLRDY) == RESET)
     {}
-    
+
     /* Select PLL as SYSCLK */
     MODIFY_REG(RCM->CFG, RCM_CFG_SCLKSEL, RCM_SYSCLKSOURCE_PLLCLK);
-    
+
     while (__DAL_RCM_GET_SYSCLK_SOURCE() != RCM_CFG_SCLKSEL_PLL)
     {}
-    
+
     /* ungate PHY clock */
-    __DAL_PCD_UNGATE_PHYCLOCK((&husbDevice)); 
+    __DAL_PCD_UNGATE_PHYCLOCK((&husbDevice));
   }
 #ifdef USE_USB_FS
   /* Clear EINT pending Bit*/
@@ -108,7 +108,7 @@ void OTG_HS1_WKUP_IRQHandler(void)
   /* Clear EINT pending Bit*/
   __DAL_USB_OTG_HS_WAKEUP_EINT_CLEAR_FLAG();
 #endif
-  
+
 }
 
 
@@ -450,7 +450,7 @@ void USBD_HardwareInit(USBD_INFO_T* usbInfo)
         {
             DAL_ErrorHandler();
         }
-        
+
 #if (USE_DAL_PCD_REGISTER_CALLBACKS == 1U)
         /* Register USB PCD CallBacks */
         DAL_PCD_RegisterCallback(&husbDevice, DAL_PCD_SOF_CB_ID, PCD_SOFCallback);

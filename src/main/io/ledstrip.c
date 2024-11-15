@@ -356,7 +356,7 @@ static const char directionCodes[LED_DIRECTION_COUNT] = {
     [LED_DIRECTION_DOWN] = 'D'
 };
 static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT] = {
-    [LED_FUNCTION_COLOR] = 'C', 
+    [LED_FUNCTION_COLOR] = 'C',
     [LED_FUNCTION_FLIGHT_MODE] = 'F',
     [LED_FUNCTION_ARM_STATE] = 'A',
     [LED_FUNCTION_BATTERY] = 'L',
@@ -622,7 +622,7 @@ static void applyLedFixedLayers(void)
                     } else {
                         color = HSV(RED);
                         hOffset += MAX(scaleRange(gpsSol.numSat, 0, minSats, -30, 120), 0);
-                    } 
+                    }
                 }
                 break;
             }

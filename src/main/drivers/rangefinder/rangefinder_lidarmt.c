@@ -71,7 +71,7 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
     }
 }
 
-bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {   
+bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {
     const MTRangefinderConfig* deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
     if (!deviceConf) {
         return false;
@@ -89,7 +89,7 @@ bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinder
     return true;
 }
 
-void mtRangefinderReceiveNewData(const uint8_t * bufferPtr) {   
+void mtRangefinderReceiveNewData(const uint8_t * bufferPtr) {
     const mspSensorRangefinderLidarMtDataMessage_t * pkt = (const mspSensorRangefinderLidarMtDataMessage_t *)bufferPtr;
 
     sensorData = pkt->distanceMm / 10;

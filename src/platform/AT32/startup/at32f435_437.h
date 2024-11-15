@@ -7,11 +7,11 @@
   **************************************************************************
   *                       Copyright notice & Disclaimer
   *
-  * The software Board Support Package (BSP) that is made available to 
-  * download from Artery official website is the copyrighted work of Artery. 
-  * Artery authorizes customers to use, copy, and distribute the BSP 
-  * software and its related documentation for the purpose of design and 
-  * development in conjunction with Artery microcontrollers. Use of the 
+  * The software Board Support Package (BSP) that is made available to
+  * download from Artery official website is the copyrighted work of Artery.
+  * Artery authorizes customers to use, copy, and distribute the BSP
+  * software and its related documentation for the purpose of design and
+  * development in conjunction with Artery microcontrollers. Use of the
   * software is governed by this copyright notice and the following disclaimer.
   *
   * THIS SOFTWARE IS PROVIDED ON "AS IS" BASIS WITHOUT WARRANTIES,
@@ -43,7 +43,7 @@ extern "C" {
 /** @addtogroup AT32F435_437
   * @{
   */
-  
+
 /** @addtogroup Library_configuration_section
   * @{
   */
@@ -376,7 +376,7 @@ typedef __I uint16_t vuc16;   /*!< read only */
 typedef __I uint8_t  vuc8;    /*!< read only */
 
 typedef enum {RESET = 0, SET = !RESET} flag_status;
-typedef enum {FALSE = 0, TRUE = !FALSE} confirm_state; 
+typedef enum {FALSE = 0, TRUE = !FALSE} confirm_state;
 typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 
 /**
@@ -480,7 +480,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 #define USART1_BASE                      (APB2PERIPH_BASE + 0x1000)
 #define TMR8_BASE                        (APB2PERIPH_BASE + 0x0400)
 #define TMR1_BASE                        (APB2PERIPH_BASE + 0x0000)
-/* ahb bus base address */   
+/* ahb bus base address */
 #define OTGFS2_BASE                      (AHBPERIPH1_BASE + 0x20000)
 #define SDIO1_BASE                       (AHBPERIPH1_BASE + 0xC400)
 #define GPIOH_BASE                       (AHBPERIPH1_BASE + 0x1C00)
@@ -640,7 +640,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 #define USART1_BASE                      (APB2PERIPH_BASE + 0x1000)
 #define TMR8_BASE                        (APB2PERIPH_BASE + 0x0400)
 #define TMR1_BASE                        (APB2PERIPH_BASE + 0x0000)
-/* ahb bus base address */   
+/* ahb bus base address */
 #define OTGFS2_BASE                      (AHBPERIPH1_BASE + 0x20000)
 #define SDIO1_BASE                       (AHBPERIPH1_BASE + 0xC400)
 #define EMAC_BASE                        (AHBPERIPH1_BASE + 0x8000)
@@ -718,7 +718,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 #define EDMA_STREAM6_2D_BASE             (EDMA_2D_BASE + 0x002C)
 #define EDMA_STREAM7_2D_BASE             (EDMA_2D_BASE + 0x0034)
 #define EDMA_STREAM8_2D_BASE             (EDMA_2D_BASE + 0x003C)
-                                         
+
 #define EDMA_LL_BASE                     (EDMA_BASE + 0x00D0)
 #define EDMA_STREAM1_LL_BASE             (EDMA_LL_BASE + 0x0004)
 #define EDMA_STREAM2_LL_BASE             (EDMA_LL_BASE + 0x0008)
@@ -760,7 +760,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 /**
   * @}
   */
-  
+
 /**
   * @}
   */

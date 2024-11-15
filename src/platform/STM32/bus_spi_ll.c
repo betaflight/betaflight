@@ -310,7 +310,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     }
     initTx->NbData = len;
 
-#if !defined(STM32G4) && !defined(STM32H7) 
+#if !defined(STM32G4) && !defined(STM32H7)
     if (dev->bus->dmaRx) {
 #endif
         uint8_t *rxData = segment->u.buffers.rxData;
@@ -341,7 +341,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
         initRx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_NOINCREMENT;
     }
     initRx->NbData = len;
-#if !defined(STM32G4) && !defined(STM32H7) 
+#if !defined(STM32G4) && !defined(STM32H7)
     }
 #endif
 }
@@ -353,7 +353,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
 
-#if !defined(STM32G4) && !defined(STM32H7) 
+#if !defined(STM32G4) && !defined(STM32H7)
     if (dmaRx) {
 #endif
         // Use the correct callback argument
@@ -421,7 +421,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         SET_BIT(dev->bus->busType_u.spi.instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
 #endif
-#if !defined(STM32G4) && !defined(STM32H7) 
+#if !defined(STM32G4) && !defined(STM32H7)
     } else {
         DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
 
@@ -485,7 +485,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
         LL_SPI_ClearFlag_TXTF(dev->bus->busType_u.spi.instance);
         LL_SPI_Disable(dev->bus->busType_u.spi.instance);
 #endif
-#if !defined(STM32G4) && !defined(STM32H7) 
+#if !defined(STM32G4) && !defined(STM32H7)
     } else {
         SPI_TypeDef *instance = bus->busType_u.spi.instance;
 

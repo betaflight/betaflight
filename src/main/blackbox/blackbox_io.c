@@ -752,10 +752,10 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
 }
 
 int8_t blackboxGetLogFileNo(void)
-{   
+{
 #ifdef USE_BLACKBOX
 #ifdef USE_SDCARD
-    // return current file number or -1 
+    // return current file number or -1
     if (blackboxSDCard.state == BLACKBOX_SDCARD_READY_TO_LOG) {
         return blackboxSDCard.largestLogFileNumber;
     } else {
@@ -765,6 +765,6 @@ int8_t blackboxGetLogFileNo(void)
     // will be implemented later for flash based storage
     return -1;
 #endif
-#endif    
+#endif
 }
 #endif // BLACKBOX

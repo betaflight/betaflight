@@ -361,7 +361,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RC_STATS
     osdStatSetState(OSD_STAT_FULL_THROTTLE_TIME, true);
     osdStatSetState(OSD_STAT_FULL_THROTTLE_COUNTER, true);
-    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);    
+    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);
 #endif
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];

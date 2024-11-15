@@ -61,7 +61,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
     altitudeI += altitudeErrorCm * altitudePidCoeffs.Ki * itermRelax * taskIntervalS;
     // limit iTerm to not more than 200 throttle units
-    altitudeI = constrainf(altitudeI, -200.0f, 200.0f); 
+    altitudeI = constrainf(altitudeI, -200.0f, 200.0f);
 
     const float altitudeD = verticalVelocity * altitudePidCoeffs.Kd;
 

@@ -91,7 +91,7 @@
 #define ICM426XX_RA_ACCEL_CONFIG_STATIC4            0x05  // User Bank 2
 // --- Register & setting for gyro and acc UI Filter --------
 #define ICM426XX_RA_GYRO_ACCEL_CONFIG0              0x52  // User Bank 0
-#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4) 
+#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4)
 #define ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY        (15 << 0)
 // ----------------------------------------------------------
 

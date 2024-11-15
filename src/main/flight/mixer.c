@@ -388,7 +388,7 @@ static bool applyCrashFlipModeToMotors(void)
 
         // set motors to disarm value when intended increase is less than deadband value
         motorOutput = (motorOutputNormalised < CRASHFLIP_MOTOR_DEADBAND) ? mixerRuntime.disarmMotorOutput : motorOutput;
-        
+
         motor[i] = motorOutput;
     }
 

@@ -1,5 +1,5 @@
 // This module contains initialization code specific to STM32H7 MCUs.
-// It configures the RCC peripheral (system clocks) including scalars, and 
+// It configures the RCC peripheral (system clocks) including scalars, and
 // enables RCC clocks for peripherals.
 
 /**
@@ -270,7 +270,7 @@ pllConfig_t pll1ConfigRevV = {
 
 // Nominal max 280MHz with 8MHz HSE
 // (340 is okay, 360 doesn't work.)
-// 
+//
 
 pllConfig_t pll1Config7A3 = {
     .clockMhz = 280,
@@ -322,7 +322,7 @@ pllConfig_t pll1Config72x73x = {
 
 #define MCU_HCLK_DIVIDER RCC_HCLK_DIV2
 
-// RM0468 (Rev.2) Table 16. 
+// RM0468 (Rev.2) Table 16.
 // 520MHz (AXI Interface clock) at VOS0 is 3WS
 #define MCU_FLASH_LATENCY FLASH_LATENCY_3
 

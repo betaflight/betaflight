@@ -593,7 +593,7 @@ void validateAndFixGyroConfig(void)
          */
         if (true
 #ifdef USE_PID_DENOM_OVERCLOCK_LEVEL
-        && (systemConfig()->cpu_overclock < USE_PID_DENOM_OVERCLOCK_LEVEL) 
+        && (systemConfig()->cpu_overclock < USE_PID_DENOM_OVERCLOCK_LEVEL)
 #endif
         && motorConfig()->dev.useDshotTelemetry
         ) {
