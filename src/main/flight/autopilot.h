@@ -21,16 +21,17 @@
 #include "flight/pid.h"
 #include "io/gps.h"
 
-extern float autopilotAngle[RP_AXIS_COUNT]; // Roll and pitch angles in degrees
+extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void autopilotInit(const autopilotConfig_t *config);
 void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(gpsLocation_t initialTargetLocation);
-void setTargetLocation(gpsLocation_t newTargetLocation);
-
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
-bool positionControl();
+void moveTargetLocation(int32_t latStep, int32_t lonStep);
+void (posControlOnNewGpsData) (void);
+void (posControlOutput) (void);
+bool positionControl(void);
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

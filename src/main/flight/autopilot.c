@@ -155,7 +155,7 @@ void resetAltitudeControl (void) {
     altitudeI = 0.0f;
 }
 
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep)
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep)
 {
     const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
@@ -166,7 +166,17 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float vertical
     // limit iTerm to not more than 200 throttle units
     altitudeI = constrainf(altitudeI, -200.0f, 200.0f);
 
-    const float altitudeD = verticalVelocity * altitudePidCoeffs.Kd;
+    // increase D when velocity is high, typically when initiating hold at high vertical speeds
+    // 1.0 when less than 5 m/s, 2x at 10m/s, 2.5 at 20 m/s, 2.8 at 50 m/s, asymptotes towards max 3.0.
+    float dBoost = 1.0f;
+    const float startValue = 500.0f; // velocity at which D should start to increase
+    const float altDeriv = fabsf(getAltitudeDerivative());
+    if (altDeriv > startValue) {
+        const float ratio = altDeriv / startValue;
+        dBoost = (3.0f * ratio - 2.0f) / ratio;
+    }
+
+    const float altitudeD = getAltitudeDerivative() * dBoost * altitudePidCoeffs.Kd;
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
 

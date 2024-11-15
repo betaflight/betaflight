@@ -47,23 +47,6 @@ typedef struct {
 
 altHoldState_t altHoldState;
 
-void controlAltitude(void)
-{
-    // boost D by 'increasing apparent velocity' when vertical velocity exceeds 5 m/s ( D of 75 on defaults)
-    // usually we don't see fast ascend/descend rates if the altitude hold starts under stable conditions
-    // this is important primarily to arrest pre-existing fast drops or climbs at the start;
-    float verticalVelocity = getAltitudeDerivative(); // cm/s altitude derivative is always available
-    const float kinkPoint = 500.0f; // velocity at which D should start to increase
-    const float kinkPointAdjustment = kinkPoint * 2.0f; // Precompute constant
-    const float sign = (verticalVelocity > 0) ? 1.0f : -1.0f;
-    if (fabsf(verticalVelocity) > kinkPoint) {
-        verticalVelocity = verticalVelocity * 3.0f - sign * kinkPointAdjustment;
-    }
-
-    //run the function in autopilot.c that calculates the PIDs and drives the motors
-    altitudeControl(altHoldState.targetAltitudeCm, taskIntervalSeconds, verticalVelocity, altHoldState.targetAltitudeAdjustRate);
-}
-
 void altHoldReset(void)
 {
     resetAltitudeControl();
@@ -150,8 +133,7 @@ void altHoldUpdate(void)
     if (altHoldConfig()->alt_hold_adjust_rate) {
         altHoldUpdateTargetAltitude();
     }
-
-    controlAltitude();
+    altitudeControl(altHoldState.targetAltitudeCm, taskIntervalSeconds, altHoldState.targetAltitudeAdjustRate);
 }
 
 void updateAltHoldState(timeUs_t currentTimeUs) {
