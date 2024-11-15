@@ -35,7 +35,6 @@
 #define TRANSPONDER_TRANSMIT_JITTER_ARCITIMER 10000
 /*** ******** ***/
 
-
 /*** ILAP ***/
 #define TRANSPONDER_BITS_PER_BYTE_ILAP 10 // start + 8 data + stop
 #define TRANSPONDER_DATA_LENGTH_ILAP 6
@@ -49,7 +48,6 @@
 #define TRANSPONDER_TRANSMIT_JITTER_ILAP  10000
 /*** ******** ***/
 
-
 /*** ERLT ***/
 #define TRANSPONDER_DATA_LENGTH_ERLT        1
 
@@ -62,7 +60,6 @@
 #define TRANSPONDER_TRANSMIT_DELAY_ERLT     22500
 #define TRANSPONDER_TRANSMIT_JITTER_ERLT    5000
 /*** ******** ***/
-
 
 /*
  * Implementation note:

@@ -33,7 +33,6 @@
 
 #include "stm32f7xx_ll_cortex.h"
 
-
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 
 #define DEFAULT_STACK_POINTER ((uint32_t *) 0x1FF00000)

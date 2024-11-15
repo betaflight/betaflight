@@ -76,7 +76,6 @@ static void spiSetDivisorBRreg(SPI_TypeDef *instance, uint16_t divisor)
 #undef BR_BITS
 }
 
-
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
@@ -286,7 +285,6 @@ void spiInternalStartDMA(const extDevice_t *dev)
         SPI_I2S_DMACmd(dev->bus->busType_u.spi.instance, SPI_I2S_DMAReq_Tx, ENABLE);
     }
 }
-
 
 void spiInternalStopDMA (const extDevice_t *dev)
 {

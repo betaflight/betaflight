@@ -76,9 +76,7 @@
 #include "drivers/memprot.h"
 #include "drivers/system.h"
 
-
 #define HSI_FREQ ((uint32_t)64000000) // Frequency of HSI is 64Mhz on all H7 variants.
-
 
 // If `HSE_VALUE` isn't specified, use HSI. This allows HSI to be selected as the PLL source
 // later in this file, and adjusts PLL scalers to use the HSI's frequency as the timing source.
@@ -424,7 +422,6 @@ static void SystemClockHSE_Config(void)
     // Configure PLL2 and PLL3
     // Use of PLL2 and PLL3 are not determined yet.
     // A review of total system wide clock requirements is necessary.
-
 
     // Configure SCGU (System Clock Generation Unit)
     // Select PLL as system clock source and configure bus clock dividers.
@@ -1052,7 +1049,6 @@ void SystemInit_ExtMemCtl(void)
     /*FMC controller Enable*/
     FMC_Bank1->BTCR[0]  |= 0x80000000;
 
-
 #endif /* DATA_IN_ExtSDRAM */
 
 #if defined(DATA_IN_ExtSRAM)
@@ -1123,7 +1119,6 @@ void SystemInit_ExtMemCtl(void)
 #endif /* DATA_IN_ExtSRAM */
 }
 #endif /* DATA_IN_ExtSRAM || DATA_IN_ExtSDRAM */
-
 
 /**
   * @}

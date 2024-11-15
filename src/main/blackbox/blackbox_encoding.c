@@ -34,7 +34,6 @@
 #include "common/encoding.h"
 #include "common/printf.h"
 
-
 static void _putc(void *p, char c)
 {
     (void)p;
@@ -45,7 +44,6 @@ static int blackboxPrintfv(const char *fmt, va_list va)
 {
     return tfp_format(NULL, _putc, fmt, va);
 }
-
 
 //printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
 int blackboxPrintf(const char *fmt, ...)
@@ -270,7 +268,6 @@ int blackboxWriteTag2_3SVariable(int32_t *values)
         BYTES_3  = 2,
         BYTES_4  = 3
     };
-
 
     /*
      * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes

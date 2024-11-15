@@ -73,7 +73,6 @@
 
 #include "crsf.h"
 
-
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
 #define CRSF_DEVICEINFO_PARAMETER_COUNT     0
@@ -514,7 +513,6 @@ void crsfFrameDeviceInfo(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_DEVICEINFO_VERSION);
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
-
 
 #if defined(USE_CRSF_V3)
 void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)

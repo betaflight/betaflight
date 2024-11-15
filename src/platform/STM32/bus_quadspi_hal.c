@@ -203,13 +203,10 @@ void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
     }
 }
 
-
-
 bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
-
 
     QSPI_CommandTypeDef cmd;
     cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
@@ -364,7 +361,6 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
     return true;
 }
 
-
 bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
@@ -514,7 +510,6 @@ bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instr
         quadSpiTimeoutUserCallback(instance);
         return false;
     }
-
 
     return true;
 }

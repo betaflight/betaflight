@@ -35,7 +35,6 @@ extern "C" {
  #pragma anon_unions
 #endif
 
-
 /** @addtogroup CMSIS
   * @{
   */

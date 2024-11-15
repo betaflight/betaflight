@@ -534,7 +534,6 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
         sensorsSet(SENSOR_GYRO);
     }
 
-
     return gyroHardware;
 }
 
@@ -720,7 +719,6 @@ void gyroSetTargetLooptime(uint8_t pidDenom)
         gyro.targetLooptime = 0;
     }
 }
-
 
 gyroDev_t *gyroActiveDev(void)
 {

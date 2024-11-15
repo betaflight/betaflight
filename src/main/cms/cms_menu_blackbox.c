@@ -220,7 +220,6 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
 }
 #endif //USE_USB_MSC
 
-
 static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);

@@ -226,7 +226,6 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
         quadSpiSetDivisor(hqspi, QUADSPI_CLOCK_ULTRAFAST);
 
-
         for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
 
             uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);

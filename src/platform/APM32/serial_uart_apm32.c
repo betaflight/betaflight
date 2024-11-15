@@ -99,7 +99,6 @@ void uartReconfigure(uartPort_t *uartPort)
 #endif
             uartPort->rxDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
 
-
             DAL_DMA_DeInit(&uartPort->rxDMAHandle);
             DAL_DMA_Init(&uartPort->rxDMAHandle);
             /* Associate the initialized DMA handle to the UART handle */
@@ -142,7 +141,6 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->txDMAHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
             uartPort->txDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
             uartPort->txDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
-
 
             DAL_DMA_DeInit(&uartPort->txDMAHandle);
             DAL_StatusTypeDef status = DAL_DMA_Init(&uartPort->txDMAHandle);

@@ -274,7 +274,6 @@ void m25p16_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
     }
 }
 
-
 static void m25p16_setCommandAddress(uint8_t *buf, uint32_t address, bool useLongAddress)
 {
     if (useLongAddress) {
@@ -331,7 +330,6 @@ busStatus_e m25p16_callbackReady(uint32_t arg)
 
     return BUS_READY;
 }
-
 
 /**
  * Erase a sector full of bytes to all 1's at the given byte offset in the flash chip.
@@ -410,7 +408,6 @@ static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, vo
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
 }
-
 
 static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
@@ -565,7 +562,6 @@ static void m25p16_pageProgramQspi(flashDevice_t *fdevice, uint32_t address, con
     m25p16_pageProgramFinish(fdevice);
 }
 #endif /* USE_QUADSPI */
-
 
 /**
  * Read `length` bytes into the provided `buffer` from the flash starting from the given `address` (which need not lie

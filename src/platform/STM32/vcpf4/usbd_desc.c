@@ -35,7 +35,6 @@
   * @{
   */
 
-
 /** @defgroup USBD_DESC
   * @brief USBD descriptors module
   * @{
@@ -47,7 +46,6 @@
 /**
   * @}
   */
-
 
 /** @defgroup USBD_DESC_Private_Defines
   * @{
@@ -92,14 +90,12 @@
   * @}
   */
 
-
 /** @defgroup USBD_DESC_Private_Macros
   * @{
   */
 /**
   * @}
   */
-
 
 /** @defgroup USBD_DESC_Private_Variables
   * @{
@@ -199,14 +195,12 @@ __ALIGN_BEGIN uint8_t USBD_LangIDDesc[USB_SIZ_STRING_LANGID] __ALIGN_END =
   * @}
   */
 
-
 /** @defgroup USBD_DESC_Private_FunctionPrototypes
   * @{
   */
 /**
   * @}
   */
-
 
 /** @defgroup USBD_DESC_Private_Functions
   * @{
@@ -246,7 +240,6 @@ uint8_t *  USBD_USR_LangIDStrDescriptor( uint8_t speed , uint16_t *length)
   return USBD_LangIDDesc;
 }
 
-
 /**
 * @brief  USBD_USR_ProductStrDescriptor
 *         return the product string descriptor
@@ -256,7 +249,6 @@ uint8_t *  USBD_USR_LangIDStrDescriptor( uint8_t speed , uint16_t *length)
 */
 uint8_t *  USBD_USR_ProductStrDescriptor( uint8_t speed , uint16_t *length)
 {
-
 
   if (speed == 0)
     USBD_GetString ((uint8_t*)USBD_PRODUCT_HS_STRING, USBD_StrDesc, length);
@@ -314,7 +306,6 @@ uint8_t *  USBD_USR_ConfigStrDescriptor( uint8_t speed , uint16_t *length)
   return USBD_StrDesc;
 }
 
-
 /**
 * @brief  USBD_USR_InterfaceStrDescriptor
 *         return the interface string descriptor
@@ -336,11 +327,9 @@ uint8_t *  USBD_USR_InterfaceStrDescriptor( uint8_t speed , uint16_t *length)
   * @}
   */
 
-
 /**
   * @}
   */
-
 
 /**
   * @}

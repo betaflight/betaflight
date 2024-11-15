@@ -195,7 +195,6 @@ static bool gimbalSet(int16_t headtracker_roll, int16_t headtracker_pitch, int16
                                                   GIMBAL_YAW_MIN * gimbalTrackConfig()->gimbal_yaw_gain / 100,
                                                   GIMBAL_YAW_MAX * gimbalTrackConfig()->gimbal_yaw_gain / 100);
 
-
     // Scale the RC stick inputs and add
     roll  += scaleRange(rcData[ROLL] - rxConfig()->midrc, GIMBAL_RC_SET_MIN, GIMBAL_RC_SET_MAX,
                         GIMBAL_ROLL_MIN * gimbalTrackConfig()->gimbal_roll_rc_gain / 100,

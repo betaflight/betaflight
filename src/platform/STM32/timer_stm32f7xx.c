@@ -166,7 +166,6 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 };
 #endif
 
-
 /*
     need a mapping from dma and timers to pins, and the values should all be set here to the dmaMotors array.
     this mapping could be used for both these motors and for led strip.

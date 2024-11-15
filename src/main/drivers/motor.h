@@ -41,7 +41,6 @@ typedef enum {
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
-
 typedef struct motorVTable_s {
     // Common
     void (*postInit)(void);

@@ -31,7 +31,6 @@
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 
-
 #define DP_5G_MASK                  0x7000
 #define PA5G_BS_MASK                0x0E00
 #define PA5G_PW_MASK                0x0180
@@ -53,7 +52,6 @@
 static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705CsnPin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
-
 
 bool rtc6705SoftSpiIOInit(const vtxIOConfig_t *vtxIOConfig, const IO_t csnPin)
 {

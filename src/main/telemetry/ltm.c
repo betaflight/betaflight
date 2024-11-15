@@ -79,7 +79,6 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"
 
-
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
 #define LTM_CYCLETIME   100
 

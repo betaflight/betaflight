@@ -309,13 +309,11 @@ serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(con
     return SERIAL_PORT_NONE;
 }
 
-
 const char* serialName(serialPortIdentifier_e identifier, const char* notFound)
 {
     const int idx = findSerialPortIndexByIdentifier(identifier);
     return idx >= 0 ? serialPortNames[idx] : notFound;
 }
-
 
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
 {

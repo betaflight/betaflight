@@ -431,5 +431,4 @@ typedef struct {
 #define LSM303DLHC_TEMPSENSOR_ENABLE         ((uint8_t) 0x80)   /*!< Temp sensor Enable */
 #define LSM303DLHC_TEMPSENSOR_DISABLE        ((uint8_t) 0x00)   /*!< Temp sensor Disable */
 
-
 bool lsm303dlhcAccDetect(accDev_t *acc);

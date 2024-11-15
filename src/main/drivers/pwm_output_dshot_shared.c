@@ -18,7 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -140,11 +139,9 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
 }
 
-
 #ifdef USE_DSHOT_TELEMETRY
 
 void dshotEnableChannels(uint8_t motorCount);
-
 
 static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
 {

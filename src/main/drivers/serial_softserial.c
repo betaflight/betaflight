@@ -326,7 +326,6 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
     return &softSerial->port;
 }
 
-
 /*
  * Serial Engine
  */
@@ -533,7 +532,6 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     serialEnableCC(self);
 #endif
 }
-
 
 /*
  * Standard serial driver API

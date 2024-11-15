@@ -30,7 +30,6 @@
 extern "C" {
 #endif
 
-
 #ifndef NULL
 #ifdef __cplusplus
 #define NULL         0

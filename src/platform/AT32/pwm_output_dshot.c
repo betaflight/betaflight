@@ -207,7 +207,6 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 
 }
 
-
 #ifdef USE_DSHOT_TELEMETRY
 /**
  * Set the timer and dma of the specified motor for use as an input
@@ -547,7 +546,6 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 
     motor->dmaRef = dmaRef;
-
 
     #ifdef USE_DSHOT_TELEMETRY
     motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *

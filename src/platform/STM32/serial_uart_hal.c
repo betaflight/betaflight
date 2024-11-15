@@ -103,7 +103,6 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_TX)
         uartPort->Handle.Init.Mode |= UART_MODE_TX;
 
-
     usartConfigurePinInversion(uartPort);
 #if !(defined(STM32F1) || defined(STM32F4))
     uartConfigurePinSwap(uartPort);
@@ -145,7 +144,6 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->rxDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
 #endif
             uartPort->rxDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
-
 
             HAL_DMA_DeInit(&uartPort->rxDMAHandle);
             HAL_DMA_Init(&uartPort->rxDMAHandle);
@@ -196,7 +194,6 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->txDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
 #endif
             uartPort->txDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
-
 
             HAL_DMA_DeInit(&uartPort->txDMAHandle);
             HAL_StatusTypeDef status = HAL_DMA_Init(&uartPort->txDMAHandle);

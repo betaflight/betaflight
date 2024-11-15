@@ -66,7 +66,6 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
         );
 
-
     tmr_output_enable(timerHardware->tim, TRUE);
     tmr_counter_enable(timerHardware->tim, TRUE);
 

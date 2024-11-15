@@ -152,7 +152,6 @@
   #define LSE_VALUE    (32768UL) /*!< Value of the External oscillator in Hz*/
 #endif /* LSE_VALUE */
 
-
 #if !defined  (LSE_STARTUP_TIMEOUT)
   #define LSE_STARTUP_TIMEOUT    (5000UL)   /*!< Time out for LSE start up, in ms */
 #endif /* LSE_STARTUP_TIMEOUT */
@@ -251,8 +250,6 @@
   *        HAL drivers code
   */
 /* #define USE_FULL_ASSERT    1 */
-
-
 
 /* Includes ------------------------------------------------------------------*/
 /**
@@ -525,6 +522,5 @@
 #endif
 
 #endif /* __STM32H7xx_HAL_CONF_H */
-
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

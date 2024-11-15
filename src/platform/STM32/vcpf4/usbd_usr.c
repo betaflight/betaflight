@@ -36,7 +36,6 @@ USBD_Usr_cb_TypeDef USR_cb =
   USBD_USR_DeviceDisconnected,
 };
 
-
 /**
 * @brief  USBD_USR_Init
 *         Displays the message on LCD for host lib initialization
@@ -69,7 +68,6 @@ void USBD_USR_DeviceReset(uint8_t speed )
  }
 }
 
-
 /**
 * @brief  USBD_USR_DeviceConfigured
 *         Displays the message on LCD on device configuration Event
@@ -80,7 +78,6 @@ void USBD_USR_DeviceConfigured (void)
 {
 }
 
-
 /**
 * @brief  USBD_USR_DeviceConnected
 *         Displays the message on LCD on device connection Event
@@ -90,7 +87,6 @@ void USBD_USR_DeviceConfigured (void)
 void USBD_USR_DeviceConnected (void)
 {
 }
-
 
 /**
 * @brief  USBD_USR_DeviceDisonnected
@@ -112,7 +108,6 @@ void USBD_USR_DeviceSuspended(void)
 {
   /* Users can do their application actions here for the USB-Reset */
 }
-
 
 /**
 * @brief  USBD_USR_DeviceResumed

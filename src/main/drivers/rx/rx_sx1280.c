@@ -71,7 +71,6 @@ static sx1280PacketTypes_e sx1280PacketMode;
 
 #define SX1280_BUSY_TIMEOUT_US 1000
 
-
 bool sx1280IsBusy(void)
 {
     return IORead(busy);
@@ -939,7 +938,6 @@ static busStatus_e sx1280EnableIRQs(uint32_t arg)
 
     return BUS_READY;
 }
-
 
 // Send telemetry response
 static void sx1280SendTelemetryBuffer(extiCallbackRec_t *cb)

@@ -26,7 +26,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"
 
-
 /** @addtogroup USB_OTG_DRIVER
   * @{
   */
@@ -64,7 +63,6 @@
 #ifndef USE_I2C_PHY
  //#define USE_I2C_PHY
 #endif /* USE_I2C_PHY */
-
 
 #ifdef USE_USB_OTG_FS
  #define USB_OTG_FS_CORE
@@ -175,13 +173,11 @@
 #define USE_DEVICE_MODE
 // #define USE_OTG_MODE
 
-
 #ifndef USB_OTG_FS_CORE
  #ifndef USB_OTG_HS_CORE
     #error  "USB_OTG_HS_CORE or USB_OTG_FS_CORE should be defined"
  #endif
 #endif
-
 
 #ifndef USE_DEVICE_MODE
  #ifndef USE_HOST_MODE
@@ -242,14 +238,12 @@
   * @}
   */
 
-
 /** @defgroup USB_CONF_Exported_Types
   * @{
   */
 /**
   * @}
   */
-
 
 /** @defgroup USB_CONF_Exported_Macros
   * @{
@@ -272,9 +266,7 @@
   * @}
   */
 
-
 #endif //__USB_CONF__H__
-
 
 /**
   * @}

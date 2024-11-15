@@ -211,7 +211,6 @@ typedef struct frskyOsdDrawStrMaskCommandHeaderCmd_s {
     // uvarint with size and blob follow
 } __attribute__((packed)) frskyOsdDrawStrMaskCommandHeaderCmd_t;
 
-
 typedef struct frskyOsdState_s {
     struct {
         uint8_t data[FRSKY_OSD_SEND_BUFFER_SIZE];
@@ -922,6 +921,5 @@ void frskyOsdContextPop(void)
 {
     frskyOsdSendAsyncCommand(OSD_CMD_CONTEXT_POP, NULL, 0);
 }
-
 
 #endif

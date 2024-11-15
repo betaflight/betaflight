@@ -72,7 +72,6 @@
 #include "rx/targetcustomserial.h"
 #include "rx/msp_override.h"
 
-
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]

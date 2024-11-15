@@ -38,7 +38,6 @@
   * @}
   */
 
-
 /** @addtogroup STM32G4xx_System_Exported_Variables
   * @{
   */

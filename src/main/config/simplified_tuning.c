@@ -115,7 +115,6 @@ void applySimplifiedTuningGyroFilters(gyroConfig_t *gyroConfig)
     }
 }
 
-
 void applySimplifiedTuning(pidProfile_t *pidProfile, gyroConfig_t *gyroConfig)
 {
     applySimplifiedTuningPids(pidProfile);

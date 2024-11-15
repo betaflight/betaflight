@@ -314,8 +314,6 @@ static void deviceCalculate(int32_t *pressure, int32_t *temperature)
     }
 }
 
-
-
 #define DETECTION_MAX_RETRY_COUNT   5
 static bool deviceDetect(const extDevice_t *dev)
 {

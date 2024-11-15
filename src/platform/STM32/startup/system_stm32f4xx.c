@@ -321,7 +321,6 @@
 #include "platform.h"
 #include "drivers/persistent.h"
 
-
 /**
   * @}
   */
@@ -1227,7 +1226,6 @@ void SystemInit_ExtMemCtl(void)
 
 }
 #endif /* DATA_IN_ExtSDRAM */
-
 
 /**
   * @}

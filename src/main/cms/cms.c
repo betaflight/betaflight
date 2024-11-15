@@ -786,7 +786,6 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
             }
         }
 
-
         // Highlight values overridden by sliders
         if (rowSliderOverride(p->flags)) {
             displayWriteChar(pDisplay, leftMenuColumn - 1, top + i * linesPerMenuItem, DISPLAYPORT_SEVERITY_NORMAL, 'S');

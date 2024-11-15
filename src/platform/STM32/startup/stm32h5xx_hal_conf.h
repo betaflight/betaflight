@@ -157,7 +157,6 @@ in voltage and temperature.*/
 #define LSE_STARTUP_TIMEOUT    5000UL     /*!< Time out for LSE start up, in ms */
 #endif /* LSE_STARTUP_TIMEOUT */
 
-
 /**
   * @brief External clock source for SPI/SAI peripheral
   *        This value is used by the SPI/SAI HAL module to compute the SPI/SAI clock source
@@ -245,7 +244,6 @@ in voltage and temperature.*/
  * Deactivated: CRC code cleaned from driver
   */
 #define USE_SPI_CRC                   1U
-
 
 /* Includes ----------------------------------------------------------------------------------------------------------*/
 /**

@@ -129,7 +129,6 @@ static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
     return 0;
 }
 
-
 static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)
 {
     for (int i = 0; i < length; i++)
@@ -145,7 +144,6 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
     // heading Current heading in degrees, in compass units (0..360, 0=north)
     return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
-
 
 void freeMAVLinkTelemetryPort(void)
 {
@@ -432,7 +430,6 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavClimbRate);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
-
 
     uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
     if (ARMING_FLAG(ARMED))

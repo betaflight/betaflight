@@ -1070,7 +1070,6 @@ static void osdRenderStatsBegin(void)
     osdStatsRenderingState.index = 0;
 }
 
-
 // call repeatedly until it returns true which indicates that all stats have been rendered.
 static bool osdRenderStatsContinue(void)
 {
@@ -1096,7 +1095,6 @@ static bool osdRenderStatsContinue(void)
             return false;
         }
     }
-
 
     bool renderedStat = false;
 

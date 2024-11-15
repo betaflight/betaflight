@@ -66,7 +66,6 @@ serialType_e serialType(serialPortIdentifier_e identifier)
     return SERIALTYPE_INVALID;
 }
 
-
 static const struct SerialTypeInfo {
     resourceOwner_e owner;
     serialPortIdentifier_e firstId;
@@ -98,7 +97,6 @@ resourceOwner_e serialOwnerTxRx(serialPortIdentifier_e identifier)
     const struct SerialTypeInfo* inf = serialTypeInfo(identifier);
     return inf ? inf->owner : OWNER_FREE;
 }
-
 
 // return index used to claim given resource. Returned value is 1 based, for IOInit and similar
 // 0 is returned when given port is not defined or if it is singleton port (USB)

@@ -214,7 +214,6 @@ bool mpuGyroRead(gyroDev_t *gyro)
     return true;
 }
 
-
 #ifdef USE_SPI_GYRO
 bool mpuAccReadSPI(accDev_t *acc)
 {

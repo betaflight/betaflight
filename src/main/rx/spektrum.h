@@ -35,7 +35,6 @@
 
 #define SPEKTRUM_BAUDRATE                115200
 
-
 // Spektrum system type values
 #define SPEKTRUM_DSM2_22                   0x01
 #define SPEKTRUM_DSM2_11                   0x12

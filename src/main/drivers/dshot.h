@@ -100,7 +100,6 @@ typedef struct dshotTelemetryMotorState_s {
     uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
 
-
 typedef struct dshotTelemetryState_s {
     bool useDshotTelemetry;
     uint32_t invalidPacketCount;

@@ -41,7 +41,6 @@ void USB_OTG_BSP_DriveVBUS(USB_OTG_CORE_HANDLE *pdev,uint8_t state)
     (void)state;
 }
 
-
 /**
 * @brief  USB_OTG_BSP_Init
 *         Initilizes BSP configurations

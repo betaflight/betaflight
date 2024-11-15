@@ -276,7 +276,6 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 #endif
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
-
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];

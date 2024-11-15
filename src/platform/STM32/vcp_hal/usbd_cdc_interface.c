@@ -126,7 +126,6 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
 #endif
 };
 
-
 void TIMx_IRQHandler(void)
 {
     HAL_TIM_IRQHandler(&TimHandle);
@@ -447,7 +446,6 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
     }
     return sendLength;
 }
-
 
 /*******************************************************************************
  * Function Name  : usbIsConfigured.

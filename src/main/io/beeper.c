@@ -239,7 +239,6 @@ static const beeperTableEntry_t beeperTable[] = {
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
 
-
 // find entry by mode
 static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
 {
@@ -294,7 +293,6 @@ void beeperSilence(void)
     beeperPos = 0;
     beeperNextToggleTime = 0;
 }
-
 
 // helper function, add count beeps starting at pos to beep_multiBeeps
 // `off` is used as interval between beeps
@@ -408,7 +406,6 @@ static enum beeperState_e beeperSequenceAdvance(timeUs_t currentTimeUs)
         }
     }
 }
-
 
 /*
  * Beeper handler function to be called periodically in loop. Updates beeper

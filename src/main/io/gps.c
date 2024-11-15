@@ -1541,7 +1541,6 @@ bool gpsIsHealthy(void)
 #define FRAME_GSV  3
 #define FRAME_GSA  4
 
-
 // This code is used for parsing NMEA data
 
 /* Alex optimization

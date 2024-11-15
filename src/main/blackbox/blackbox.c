@@ -91,7 +91,6 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 
-
 #ifdef USE_FLASH_TEST_PRBS
 void checkFlashStart(void);
 void checkFlashStop(void);
@@ -336,7 +335,6 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_ERASING,
     BLACKBOX_STATE_ERASED
 } BlackboxState;
-
 
 typedef struct blackboxMainState_s {
     uint32_t time;

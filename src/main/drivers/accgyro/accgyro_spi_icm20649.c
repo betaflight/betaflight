@@ -38,7 +38,6 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-
 // 8 MHz max SPI frequency
 #define ICM20649_MAX_SPI_CLK_HZ 8000000
 
@@ -97,7 +96,6 @@ bool icm20649SpiAccDetect(accDev_t *acc)
 
     return true;
 }
-
 
 void icm20649GyroInit(gyroDev_t *gyro)
 {

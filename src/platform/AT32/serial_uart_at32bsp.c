@@ -239,7 +239,6 @@ void uartTryStartTxDMA(uartPort_t *s)
 }
 #endif
 
-
 static void handleUsartTxDma(uartPort_t *s)
 {
     uartTryStartTxDMA(s);
