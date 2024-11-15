@@ -22,7 +22,6 @@
 
 #include "rx/crsf_protocol.h"
 
-
 #define CRSF_PORT_OPTIONS       (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
 #define CRSF_PORT_MODE          MODE_RXTX
 

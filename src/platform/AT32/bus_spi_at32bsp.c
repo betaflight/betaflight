@@ -144,7 +144,6 @@ static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txD
         while (spi_i2s_flag_get(instance, SPI_I2S_TDBE_FLAG) == RESET);
         spi_i2s_data_transmit(instance, b);
 
-
         while (spi_i2s_flag_get(instance, SPI_I2S_RDBF_FLAG) == RESET);
         b = (uint8_t)spi_i2s_data_receive(instance);
 

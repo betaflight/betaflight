@@ -100,5 +100,4 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
     }
 }
 
-
 #endif

@@ -150,11 +150,9 @@ static void phaseLockEprReset(void)
     memset(&eprState, 0, sizeof(eprState_t));
 }
 
-
 //
 // Phase Lock
 //
-
 
 #define EPR_INTERNAL EPR_FIRST
 #define EPR_EXTERNAL EPR_SECOND

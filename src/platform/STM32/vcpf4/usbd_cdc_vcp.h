@@ -71,5 +71,4 @@ typedef struct __attribute__ ((packed))
   uint8_t  datatype;
 } LINE_CODING;
 
-
 #endif /* __USBD_CDC_VCP_H */

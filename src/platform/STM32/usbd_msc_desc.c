@@ -48,7 +48,6 @@
   * @{
   */
 
-
 /** @defgroup USBD_DESC
   * @brief USBD descriptors module
   * @{
@@ -60,7 +59,6 @@
 /**
   * @}
   */
-
 
 /** @defgroup USBD_DESC_Private_Defines
   * @{
@@ -81,14 +79,12 @@
   * @}
   */
 
-
 /** @defgroup USBD_DESC_Private_Macros
   * @{
   */
 /**
   * @}
   */
-
 
 /** @defgroup USBD_DESC_Private_Variables
   * @{
@@ -184,7 +180,6 @@ __ALIGN_BEGIN uint8_t USBD_StrDesc_MSC[USB_MAX_STR_DESC_SIZ] __ALIGN_END ;
   * @}
   */
 
-
 /** @defgroup USBD_DESC_Private_FunctionPrototypes
   * @{
   */
@@ -193,7 +188,6 @@ static void Get_SerialNum(void);
 /**
   * @}
   */
-
 
 /** @defgroup USBD_DESC_Private_Functions
   * @{
@@ -226,7 +220,6 @@ uint8_t *  USBD_MSC_LangIDStrDescriptor( uint8_t speed , uint16_t *length)
   *length =  sizeof(USBD_LangIDDesc_MSC);
   return (uint8_t*)USBD_LangIDDesc_MSC;
 }
-
 
 /**
 * @brief  USBD_USR_ProductStrDescriptor
@@ -300,7 +293,6 @@ uint8_t *  USBD_MSC_ConfigStrDescriptor( uint8_t speed , uint16_t *length)
   return USBD_StrDesc_MSC;
 }
 
-
 /**
 * @brief  USBD_USR_InterfaceStrDescriptor
 *         return the interface string descriptor
@@ -371,16 +363,13 @@ static void IntToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len)
   }
 }
 
-
 /**
   * @}
   */
 
-
 /**
   * @}
   */
-
 
 /**
   * @}

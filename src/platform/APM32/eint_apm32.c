@@ -146,7 +146,6 @@ void EXTIEnable(IO_t io)
 #endif
 }
 
-
 void EXTIDisable(IO_t io)
 {
 #if defined(APM32F4)
@@ -185,7 +184,6 @@ void EXTI_IRQHandler(uint32_t mask)
     }                                            \
     struct dummy                                 \
     /**/
-
 
 _EXTI_IRQ_HANDLER(EINT0_IRQHandler, 0x0001);
 _EXTI_IRQ_HANDLER(EINT1_IRQHandler, 0x0002);

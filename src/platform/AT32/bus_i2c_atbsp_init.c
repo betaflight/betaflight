@@ -131,7 +131,6 @@ void i2cInit(I2CDevice device)
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 
-
     // Init I2C peripheral
     i2c_handle_type  *pHandle = &pDev->handle;
     memset(pHandle, 0, sizeof(*pHandle));

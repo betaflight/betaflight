@@ -40,7 +40,6 @@
 #include "telemetry/msp_shared.h"
 #include "telemetry/smartport.h"
 
-
 /*
 ---------------------------------------------------------------
 How MSP frames are sent over CRSF:

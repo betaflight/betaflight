@@ -103,7 +103,6 @@ static void spektrumDataReceive(uint16_t c, void *data)
     }
 }
 
-
 uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 
 static uint8_t spektrumFrameStatus(rxRuntimeState_t *rxRuntimeState)
@@ -289,7 +288,6 @@ void spektrumBind(rxConfig_t *rxConfig)
         delayMicroseconds(120);
 
     }
-
 
     // Release the bind pin to avoid interference with an actual rx pin,
     // when rxConfig->spektrum_bind_pin_override_ioTag is used.

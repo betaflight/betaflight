@@ -59,7 +59,6 @@ extern const uint8_t  APBPrescTable[8];     /*!< APB prescalers table values */
   * @}
   */
 
-
 /** @addtogroup STM32H5xx_System_Exported_Functions
   * @{
   */
@@ -71,14 +70,12 @@ extern const uint8_t  APBPrescTable[8];     /*!< APB prescalers table values */
   */
 extern void SystemInit (void);
 
-
 /**
   * @brief  Update SystemCoreClock variable.
   *
   * Updates the SystemCoreClock with current core Clock retrieved from cpu registers.
   */
 extern void SystemCoreClockUpdate (void);
-
 
 /**
   * @brief Update SystemCoreClock variable from secure application and return its value

@@ -110,7 +110,6 @@ static void sdcard_reset(void)
     }
 }
 
-
 // Called in ISR context
 // Wait until idle indicated by a read value of 0xff
 busStatus_e sdcard_callbackIdle(uint32_t arg)
@@ -132,7 +131,6 @@ busStatus_e sdcard_callbackIdle(uint32_t arg)
     return BUS_BUSY;
 }
 
-
 // Called in ISR context
 // Wait until idle is no longer indicated by a read value of 0xff
 busStatus_e sdcard_callbackNotIdle(uint32_t arg)
@@ -152,7 +150,6 @@ busStatus_e sdcard_callbackNotIdle(uint32_t arg)
 
     return BUS_BUSY;
 }
-
 
 /**
  * The SD card spec requires 8 clock cycles to be sent by us on the bus after most commands so it can finish its

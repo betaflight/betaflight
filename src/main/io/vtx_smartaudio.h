@@ -34,7 +34,6 @@
 #define VTX_SMARTAUDIO_MIN_BAND 1
 #define VTX_SMARTAUDIO_MIN_CHANNEL 1
 
-
 #define VTX_SMARTAUDIO_MIN_FREQUENCY_MHZ 5000        //min freq in MHz
 #define VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ 5999        //max freq in MHz
 

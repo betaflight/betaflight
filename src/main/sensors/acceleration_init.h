@@ -24,7 +24,6 @@
 
 #include "sensors/acceleration.h"
 
-
 typedef struct accelerationRuntime_s {
     uint16_t accLpfCutHz;
     pt2Filter_t accFilter[XYZ_AXIS_COUNT];

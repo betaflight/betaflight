@@ -555,7 +555,6 @@ bool bmi270SpiAccDetect(accDev_t *acc)
     return true;
 }
 
-
 bool bmi270SpiGyroDetect(gyroDev_t *gyro)
 {
     if (gyro->mpuDetectionResult.sensor != BMI_270_SPI) {

@@ -46,7 +46,6 @@
 
 #include "vtx.h"
 
-
 PG_REGISTER_WITH_RESET_FN(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 1);
 
 void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)

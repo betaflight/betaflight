@@ -77,7 +77,6 @@ static int crsfScreenSize(const displayPort_t *displayPort)
     return displayPort->rows * displayPort->cols;
 }
 
-
 static int crsfWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, const char *s)
 {
     UNUSED(displayPort);

@@ -90,7 +90,6 @@ typedef struct
     uint16_t powerValue;
 } spektrumVtx_t;
 
-
 extern const uint16_t SpektrumVtxfrequencyTable[SPEKTRUM_VTX_BAND_COUNT][SPEKTRUM_VTX_CHAN_COUNT];
 extern const uint8_t spek2commonBand[SPEKTRUM_VTX_BAND_COUNT];
 extern const uint8_t vtxTrampPi[SPEKTRUM_VTX_POWER_COUNT];
@@ -100,6 +99,4 @@ extern uint8_t SpektrumRegion;
 
 void spektrumHandleVtxControl(uint32_t vtxControl);
 void spektrumVtxControl(void);
-
-
 

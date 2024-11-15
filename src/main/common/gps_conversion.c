@@ -27,7 +27,6 @@
 
 #ifdef USE_GPS
 
-
 #define DIGIT_TO_VAL(_x)    (_x - '0')
 uint32_t GPS_coord_to_degrees(const char* coordinateString)
 {

@@ -108,7 +108,6 @@
 
 #include "core.h"
 
-
 enum {
     ALIGN_GYRO = 0,
     ALIGN_ACCEL = 1,
@@ -735,7 +734,6 @@ void runawayTakeoffTemporaryDisable(uint8_t disableFlag)
 }
 #endif
 
-
 // calculate the throttle stick percent - integer math is good enough here.
 // returns negative values for reversed thrust in 3D mode
 int8_t calculateThrottlePercent(void)
@@ -1194,7 +1192,6 @@ static FAST_CODE_NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);
     }
 #endif
-
 
 #ifdef USE_PID_AUDIO
     if (isModeActivationConditionPresent(BOXPIDAUDIO)) {

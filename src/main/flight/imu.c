@@ -399,7 +399,6 @@ static float imuCalcGroundspeedGain(float dt)
     // groundspeedGain is the primary multiplier of ez_ef
     // Otherwise, groundspeedGain is determined by GPS COG groundspeed / GPS_COG_MIN_GROUNDSPEED
 
-
     // in normal flight, IMU should:
     // - heavily average GPS heading values at low speed, since they are random, almost
     // - respond more quickly at higher speeds.
@@ -672,7 +671,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #else
     UNUSED(useMag);
 #endif
-
 
     float gyroAverage[XYZ_AXIS_COUNT];
     for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {

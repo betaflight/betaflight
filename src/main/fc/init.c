@@ -385,7 +385,6 @@ void init(void)
 
 #endif // CONFIG_IN_EXTERNAL_FLASH || CONFIG_IN_MEMORY_MAPPED_FLASH
 
-
     initEEPROM();
 
     ensureEEPROMStructureIsValid();
@@ -574,7 +573,6 @@ void init(void)
 #if defined(USE_INVERTER) && !defined(SIMULATOR_BUILD)
     initInverters(serialPinConfig());
 #endif
-
 
 #ifdef TARGET_BUS_INIT
     targetBusInit();

@@ -39,7 +39,6 @@ void buildRotationMatrixFromAngles(matrix33_t *rm, const sensorAlignment_t *rpy)
     buildRotationMatrix(rm, &rotationAngles);
 }
 
-
 void buildAlignmentFromStandardAlignment(sensorAlignment_t* rpy, sensor_align_e stdAlignment)
 {
     if (stdAlignment == ALIGN_CUSTOM || stdAlignment == ALIGN_DEFAULT) {

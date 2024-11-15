@@ -60,7 +60,6 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_PROFILE_FLAG(x)  (1 << ((x) - 1 + OSD_PROFILE_BITS_POS))
 #define OSD_PROFILE_1_FLAG  OSD_PROFILE_FLAG(1)
 
-
 #ifdef USE_OSD_PROFILES
 #define VISIBLE(x) osdElementVisible(x)
 #define VISIBLE_IN_OSD_PROFILE(item, profile)    ((item) & ((OSD_PROFILE_1_FLAG) << ((profile)-1)))
@@ -68,7 +67,6 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define VISIBLE(x) ((x) & OSD_PROFILE_MASK)
 #define VISIBLE_IN_OSD_PROFILE(item, profile) VISIBLE(item)
 #endif
-
 
 // Character coordinate
 #define OSD_POSITION_BITS       5       // 5 bits gives a range 0-31

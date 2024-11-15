@@ -66,7 +66,6 @@
 #define USE_UART5
 #define USE_SOFTSERIAL
 
-
 #define DEFAULT_AUX_CHANNEL_COUNT       MAX_AUX_CHANNEL_COUNT
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6  // needed for unittest
 

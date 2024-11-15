@@ -438,12 +438,10 @@
   #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */
 
-
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __STM32F4xx_HAL_CONF_H */
-
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

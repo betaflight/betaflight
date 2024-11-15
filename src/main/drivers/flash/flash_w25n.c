@@ -268,7 +268,6 @@ static void w25n_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data)
 #endif
 }
 
-
 static void w25n_deviceReset(flashDevice_t *fdevice)
 {
     flashDeviceIO_t *io = &fdevice->io;
@@ -372,7 +371,6 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
 }
 
 static void w25n_deviceInit(flashDevice_t *flashdev);
-
 
 void w25n_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 {
@@ -1018,7 +1016,6 @@ busStatus_e w25n_readBBLUTCallback(uint32_t arg)
     flashDevice_t *fdevice = cb_context->fdevice;
     uint8_t *rxData = fdevice->io.handle.dev->bus->curSegment->u.buffers.rxData;
 
-
     cb_context->bblut->pba = (rxData[0] << 16)|rxData[1];
     cb_context->bblut->lba = (rxData[2] << 16)|rxData[3];
 
@@ -1029,7 +1026,6 @@ busStatus_e w25n_readBBLUTCallback(uint32_t arg)
 
     return BUS_READY; // All done
 }
-
 
 void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 {

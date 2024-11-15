@@ -747,7 +747,6 @@ static CMS_Menu cmsx_menuProfileOther = {
     .entries = cmsx_menuProfileOtherEntries,
 };
 
-
 static uint16_t gyroConfig_gyro_lpf1_static_hz;
 static uint16_t gyroConfig_gyro_lpf2_static_hz;
 static uint16_t gyroConfig_gyro_soft_notch_hz_1;

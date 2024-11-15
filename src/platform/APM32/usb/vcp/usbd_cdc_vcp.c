@@ -61,7 +61,6 @@ static USBD_STA_T USBD_CDC_ItfSendEnd(uint8_t epNum, uint8_t *buffer, uint32_t *
 static USBD_STA_T USBD_CDC_ItfReceive(uint8_t *buffer, uint32_t *length);
 static USBD_STA_T USBD_CDC_ItfSOF(void);
 
-
 /* USB CDC interface handler */
 USBD_CDC_INTERFACE_T USBD_CDC_INTERFACE =
 {

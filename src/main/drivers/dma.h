@@ -135,7 +135,6 @@ typedef enum {
 #define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
 #define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? d->dma->HISR & (flag << (d->flagsShift - 32)): d->dma->LISR & (flag << d->flagsShift))
 
-
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)

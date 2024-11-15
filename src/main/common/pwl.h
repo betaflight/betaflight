@@ -23,7 +23,6 @@
 
 #include "utils.h"
 
-
 #define PWL_DECLARE(name, size, xMinV, xMaxV)                           \
     STATIC_ASSERT((xMinV) < (xMaxV), "xMinV must be less than xMaxV");  \
     STATIC_ASSERT((size) > 1, "size must be more than 1");              \

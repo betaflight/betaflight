@@ -59,7 +59,6 @@
   * @}
   */
 
-
 /** @addtogroup STM32H7xx_System_Exported_types
   * @{
   */

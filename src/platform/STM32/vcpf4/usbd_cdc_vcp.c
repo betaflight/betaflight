@@ -72,7 +72,6 @@ static void *ctrlLineStateCbContext;
 static void (*baudRateCb)(void *context, uint32_t baud);
 static void *baudRateCbContext;
 
-
 CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_DataRx };
 
 /* Private functions ---------------------------------------------------------*/
@@ -136,7 +135,6 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
       case CLEAR_COMM_FEATURE:
          break;
 
-
       //Note - hw flow control on UART 1-3 and 6 only
       case SET_LINE_CODING:
          // If a callback is provided, tell the upper driver of changes in baud rate
@@ -148,13 +146,11 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
          }
          break;
 
-
       case GET_LINE_CODING:
          if (plc && (Len == sizeof(*plc))) {
              ust_cpy(plc, &g_lc);
          }
          break;
-
 
       case SET_CONTROL_LINE_STATE:
          // If a callback is provided, tell the upper driver of changes in DTR/RTS state

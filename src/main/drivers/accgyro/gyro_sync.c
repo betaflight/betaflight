@@ -34,7 +34,6 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/gyro_sync.h"
 
-
 bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
     bool ret;

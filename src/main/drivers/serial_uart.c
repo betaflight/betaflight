@@ -606,5 +606,4 @@ UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
 #endif
 
-
 #endif // USE_UART

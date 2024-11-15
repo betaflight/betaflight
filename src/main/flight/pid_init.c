@@ -325,7 +325,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 }
 
-
 #ifdef USE_ADVANCED_TPA
 float tpaCurveHyperbolicFunction(float x, void *args)
 {

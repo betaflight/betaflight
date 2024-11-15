@@ -43,7 +43,6 @@
 #define DEGREES_TO_RADIANS(angle) ((angle) * RAD)
 #define RADIANS_TO_DEGREES(angle) ((angle) / RAD)
 
-
 #define CM_S_TO_KM_H(centimetersPerSecond) ((centimetersPerSecond) * 36 / 1000)
 #define CM_S_TO_MPH(centimetersPerSecond) ((centimetersPerSecond) * 10000 / 5080 / 88)
 

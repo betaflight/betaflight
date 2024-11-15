@@ -64,7 +64,6 @@
 
 #include "pg/adc.h"
 
-
 const adcDevice_t adcHardware[ADCDEV_COUNT] = {
     {
         .ADCx = ADC1,
@@ -191,7 +190,6 @@ void setScalingFactors(void)
     // to get an answer in C
     adcTSSlopeK = lrintf(-3300.0f*1000.0f/4095.0f/TEMPSENSOR_SLOPE);
 }
-
 
 /**
  * Setup the ADC so that it's running in the background and ready to
@@ -332,7 +330,6 @@ void adcInit(const adcConfig_t *config)
 
     adc_common_config(&adc_common_struct);
 
-
     // Only adc1 will have any channels assigned to it after the code above, so this can be simplified
 
     int  dmaBufferIndex = 0;
@@ -348,7 +345,6 @@ void adcInit(const adcConfig_t *config)
 
         // Set the oversampling ratio and matching shift
         adc_oversample_ratio_shift_set(adc->ADCx, ADC_OVERSAMPLE_RATIO_64, ADC_OVERSAMPLE_SHIFT_6);
-
 
         #ifdef USE_DMA_SPEC
 

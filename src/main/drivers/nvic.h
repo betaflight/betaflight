@@ -20,7 +20,6 @@
 
 #pragma once
 
-
 // can't use 0
 #define NVIC_PRIO_MAX                      NVIC_BUILD_PRIORITY(0, 1)
 #define NVIC_PRIO_TIMER                    NVIC_BUILD_PRIORITY(1, 1)

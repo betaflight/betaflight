@@ -327,7 +327,6 @@ bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState
 
     rxSpiCommonIOInit(rxConfig);
 
-
     rxRuntimeState->channelCount = DSM_MAX_CHANNEL_COUNT;
 
     extiConfig->ioConfig = IOCFG_IPD;

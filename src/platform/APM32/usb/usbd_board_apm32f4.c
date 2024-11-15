@@ -108,9 +108,7 @@ void OTG_HS1_WKUP_IRQHandler(void)
   /* Clear EINT pending Bit*/
   __DAL_USB_OTG_HS_WAKEUP_EINT_CLEAR_FLAG();
 #endif
-
 }
-
 
 /**
  * @brief  Initializes the PCD MSP

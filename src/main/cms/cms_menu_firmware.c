@@ -53,7 +53,6 @@
 
 #include "cms_menu_firmware.h"
 
-
 // Calibration
 
 #define CALIBRATION_STATUS_MAX_LENGTH 6

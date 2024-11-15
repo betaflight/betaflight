@@ -158,7 +158,6 @@
 
 #include "msp.h"
 
-
 static const char * const flightControllerIdentifier = FC_FIRMWARE_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 
 enum {
@@ -1228,13 +1227,11 @@ case MSP_NAME:
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
 
-
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 if (isDshotMotorTelemetryActive(i)) {
                     invalidPct = getDshotTelemetryMotorInvalidPercent(i);
                 }
 #endif
-
 
                 // Provide extended dshot telemetry
                 if ((dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0) {
@@ -1813,7 +1810,6 @@ case MSP_NAME:
         sbufWriteU16(dst, flight3DConfig()->deadband3d_throttle);
         break;
 
-
     case MSP_SENSOR_ALIGNMENT: {
         uint8_t gyroAlignment;
 #ifdef USE_MULTI_GYRO
@@ -2188,7 +2184,6 @@ case MSP_NAME:
     }
     return !unsupportedCommand;
 }
-
 
 #ifdef USE_SIMPLIFIED_TUNING
 // Reads simplified PID tuning values from MSP buffer

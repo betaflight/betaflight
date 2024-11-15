@@ -35,7 +35,6 @@
 
 #include "pg/motor.h"
 
-
 FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 
 static void pwmOCConfig(TMR_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)

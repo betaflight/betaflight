@@ -447,7 +447,6 @@ void cliPrintf(const char *format, ...)
     va_end(va);
 }
 
-
 void cliPrintLinef(const char *format, ...)
 {
     va_list va;
@@ -645,7 +644,6 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
     }
 }
 
-
 static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const void *ptrDefault)
 {
     bool result = true;
@@ -762,7 +760,6 @@ static uint8_t getRateProfileIndexToUse(void)
 {
     return rateProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentControlRateProfileIndex() : rateProfileIndexToUse;
 }
-
 
 static uint16_t getValueOffset(const clivalue_t *value)
 {
@@ -1317,7 +1314,6 @@ static void cliSerial(const char *cmdName, char *cmdline)
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
 
-
     uint8_t validArgumentCount = 0;
 
     const char *ptr = cmdline;
@@ -1533,7 +1529,6 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         }
         index++;
     }
-
 
     for (unsigned i = 0; i < ARRAYLEN(ports); i++) {
         if (findSerialPortIndexByIdentifier(ports[i].id) < 0) {
@@ -3530,7 +3525,6 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
     cliDumpPrintLinef(dumpMask, equalsDefault, formatMap, buf);
 }
 
-
 static void cliMap(const char *cmdName, char *cmdline)
 {
     uint32_t i;
@@ -3695,7 +3689,6 @@ static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
 #endif
 }
 #endif
-
 
 static int parseOutputIndex(const char *cmdName, char *pch, bool allowAllEscs)
 {
@@ -6188,7 +6181,6 @@ static void cliResource(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
-
 
 static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 {

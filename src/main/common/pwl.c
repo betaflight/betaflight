@@ -23,7 +23,6 @@
 
 #include "pwl.h"
 
-
 void pwlInitialize(pwl_t *pwl, float *yValues, int numPoints, float xMin, float xMax) {
     pwl->yValues = yValues;
     pwl->numPoints = numPoints;

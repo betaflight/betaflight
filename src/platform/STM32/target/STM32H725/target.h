@@ -78,7 +78,6 @@
 #define USE_SDCARD_SDIO
 #endif
 
-
 #define USE_VCP
 
 #define USE_USB_DETECT

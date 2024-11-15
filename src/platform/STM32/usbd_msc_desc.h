@@ -69,15 +69,12 @@
   * @}
   */
 
-
 /** @defgroup USBD_DESC_Exported_TypesDefinitions
   * @{
   */
 /**
   * @}
   */
-
-
 
 /** @defgroup USBD_DESC_Exported_Macros
   * @{
@@ -102,7 +99,6 @@ extern  USBD_DEVICE USR_desc;
 /** @defgroup USBD_DESC_Exported_FunctionsPrototype
   * @{
   */
-
 
 uint8_t *     USBD_USR_DeviceDescriptor( uint8_t speed , uint16_t *length);
 uint8_t *     USBD_USR_LangIDStrDescriptor( uint8_t speed , uint16_t *length);

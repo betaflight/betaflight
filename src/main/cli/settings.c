@@ -137,7 +137,6 @@
 
 #include "settings.h"
 
-
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
 // sync with accelerationSensor_e
 const char * const lookupTableAccHardware[] = {

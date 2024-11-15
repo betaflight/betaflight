@@ -46,7 +46,6 @@
 
 #include "pg/motor.h"
 
-
 typedef enum {
     BAUDRATE_NORMAL = 19200,
     BAUDRATE_SIMONK = 28800, // = 9600 * 3
@@ -237,7 +236,6 @@ static void processTxStateBL(escSerial_t *escSerial)
         escSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
         escSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
         escSerial->isTransmittingData = true;
-
 
         //set output
         if (escSerial->mode==PROTOCOL_BLHELI || escSerial->mode==PROTOCOL_CASTLE) {
@@ -468,7 +466,6 @@ reload:
             }
         }
 
-
         // build internal buffer, data bits (MSB to LSB)
         escSerial->internalTxBuffer = byteToSend;
         escSerial->bitsLeftToTransmit = 8;
@@ -661,7 +658,6 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
 {
     escSerial_t *escSerial = &(escSerialPorts[portIndex]);
 
-
     if (mode != PROTOCOL_KISSALL) {
 
     	if (escSerialConfig()->ioTag == IO_TAG_NONE) {
@@ -780,14 +776,12 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
     return &escSerial->port;
 }
 
-
 static void escSerialInputPortDeConfig(const timerHardware_t *timerHardwarePtr)
 {
     timerChClearCCFlag(timerHardwarePtr);
     timerChITConfig(timerHardwarePtr,DISABLE);
     escSerialGPIOConfig(timerHardwarePtr, IOCFG_IPU);
 }
-
 
 static void closeEscSerial(escSerialPortIndex_e portIndex, uint8_t mode)
 {
@@ -950,7 +944,6 @@ static bool processExitCommand(uint8_t c)
     }
     return false;
 }
-
 
 bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig_t *motorConfig, uint16_t escIndex, uint8_t mode)
 {

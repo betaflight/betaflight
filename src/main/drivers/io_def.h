@@ -29,7 +29,6 @@
 #define DEFIO_TAG_E(pinid) CONCAT(DEFIO_TAG_E__, pinid)
 #define DEFIO_TAG_E__NONE 0
 
-
 // return ioRec_t or NULL for given pinid
 // tags should be preferred, possibly removing it in future
 // io_impl.h must be included when this macro is used

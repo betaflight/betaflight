@@ -587,7 +587,6 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
     return SYM_ARROW_SOUTH + heading;
 }
 
-
 /**
  * Converts altitude based on the current unit system.
  * @param meters Value in meters to convert

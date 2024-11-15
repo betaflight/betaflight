@@ -38,7 +38,6 @@
 #include "msc/usbd_storage.h"
 #include "msc/usbd_storage_emfat.h"
 
-
 #define STORAGE_LUN_NBR 1
 
 static const uint8_t STORAGE_Inquirydata[] =

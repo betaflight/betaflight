@@ -342,8 +342,6 @@ static float qmp6988CompensateTemperature(int32_t adc_T)
     return T;
 }
 
-
-
 STATIC_UNIT_TESTED void qmp6988Calculate(int32_t *pressure, int32_t *temperature)
 {
     float tr,pr;

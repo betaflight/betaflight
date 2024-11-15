@@ -37,7 +37,6 @@
   * @}
   */
 
-
 /** @defgroup USBD_MEM_Exported_TypesDefinitions
   * @{
   */

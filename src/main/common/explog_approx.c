@@ -82,7 +82,6 @@ float log_approx(float val)
   valu.i = (valu.i & 0x7FFFFF) | 0x3F800000;
   x = valu.f;
 
-
   /* Generated in Sollya using:
     > f = remez(log(x)-(x-1)*log(2),
             [|1,(x-1)*(x-2), (x-1)*(x-2)*x, (x-1)*(x-2)*x*x,

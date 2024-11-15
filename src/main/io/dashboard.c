@@ -189,7 +189,6 @@ static void fillScreenWithCharacters(void)
 }
 #endif
 
-
 static void updateTicker(void)
 {
     static uint8_t tickerIndex = 0;
@@ -396,7 +395,6 @@ static void showGpsPage(void)
         bargraphOffset = MIN(bargraphOffset, VERTICAL_BARGRAPH_CHARACTER_COUNT - 1);
         i2c_OLED_send_char(dev, VERTICAL_BARGRAPH_ZERO_CHARACTER + bargraphOffset);
     }
-
 
     char fixChar = STATE(GPS_FIX) ? 'Y' : 'N';
     tfp_sprintf(lineBuffer, "Sats: %d Fix: %c", gpsSol.numSat, fixChar);
@@ -610,7 +608,6 @@ static void showDebugPage(void)
 }
 #endif
 
-
 static const pageEntry_t pages[PAGE_COUNT] = {
     { PAGE_WELCOME, FC_FIRMWARE_NAME,  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
     { PAGE_ARMED,   "ARMED",           showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
@@ -630,7 +627,6 @@ static const pageEntry_t pages[PAGE_COUNT] = {
     { PAGE_DEBUG,   "DEBUG",           showDebugPage,      PAGE_FLAGS_NONE },
 #endif
 };
-
 
 void dashboardSetPage(pageId_e pageId)
 {

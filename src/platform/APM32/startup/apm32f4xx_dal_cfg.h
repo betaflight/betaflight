@@ -23,7 +23,6 @@
  *  and limitations under the License.
  */
 
-
 /* Define to prevent recursive inclusion */
 #ifndef APM32F4xx_DAL_CFG_H
 #define APM32F4xx_DAL_CFG_H

@@ -97,7 +97,6 @@ BB_INPUT_BUFFER_ATTRIBUTE uint16_t bbInputBuffer[DSHOT_BB_PORT_IP_BUF_CACHE_ALIG
 uint8_t bbPuPdMode;
 FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
-
 const timerHardware_t bbTimerHardware[] = {
 #if defined(STM32F4) || defined(STM32F7)
 #if !defined(STM32F411xE)
@@ -718,7 +717,6 @@ static void bbPostInit(void)
         if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorPwmProtocol, bbMotors[motorIndex].output)) {
             return;
         }
-
 
         bbMotors[motorIndex].enabled = true;
 
