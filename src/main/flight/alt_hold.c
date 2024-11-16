@@ -43,6 +43,7 @@ typedef struct {
     float maxRequestedVerticalVelocity;
     float targetAltitudeAdjustRate;
     float deadband;
+    bool allowStickAdjustment;
 } altHoldState_t;
 
 altHoldState_t altHoldState;
@@ -58,6 +59,7 @@ void altHoldInit(void)
 {
     altHoldState.isAltHoldActive = false;
     altHoldState.deadband = altHoldConfig()->alt_hold_deadband / 100.0f;
+    altHoldState.allowStickAdjustment = altHoldConfig()->alt_hold_deadband;
     altHoldState.maxRequestedVerticalVelocity = altHoldConfig()->alt_hold_adjust_rate * 10.0f; // 50 in CLI means 500cm/s
     altHoldReset();
 }
@@ -86,9 +88,8 @@ void altHoldProcessTransitions(void) {
 
 void altHoldUpdateTargetAltitude(void)
 {
-    // The user can raise or lower the target altitude with throttle up;  there is a big deadband.
-    // Max rate for climb/descend is 1m/s by default (up to 2.5 is allowed but overshoots a fair bit)
-    // If set to zero, the throttle has no effect.
+    // The user can raise or lower the target altitude with throttle outside deadband.
+    // Adjustment is blocked by throttle low (zero), or inside deadband, or deadband configured to zero
 
     // Some people may not like throttle being able to change the target altitude, because:
     // - with throttle adjustment, hitting the switch won't always hold altitude if throttle is bumped
@@ -97,20 +98,21 @@ void altHoldUpdateTargetAltitude(void)
     // - the pilot has control nice control over altitude, and the deadband is wide
     // - Slow controlled descents are possible, eg for landing
     // - fine-tuning height is possible, eg if there is slow sensor drift
-    // - to keep the craft stable, throttle must be in the deadband, making exits smoother
-
-    const float rcThrottle = rcCommand[THROTTLE];
-
-    const float lowThreshold = autopilotConfig()->hover_throttle - altHoldState.deadband * (autopilotConfig()->hover_throttle - PWM_RANGE_MIN);
-    const float highThreshold = autopilotConfig()->hover_throttle + altHoldState.deadband * (PWM_RANGE_MAX - autopilotConfig()->hover_throttle);
 
     float throttleAdjustmentFactor = 0.0f;
-    if (rcThrottle < lowThreshold) {
-        throttleAdjustmentFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
-    } else if (rcThrottle > highThreshold) {
-        throttleAdjustmentFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+    if (altHoldState.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
+        const float rcThrottle = rcCommand[THROTTLE];
+        const float lowThreshold = autopilotConfig()->hover_throttle - altHoldState.deadband * (autopilotConfig()->hover_throttle - PWM_RANGE_MIN);
+        const float highThreshold = autopilotConfig()->hover_throttle + altHoldState.deadband * (PWM_RANGE_MAX - autopilotConfig()->hover_throttle);
+
+        if (rcThrottle < lowThreshold) {
+            throttleAdjustmentFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
+        } else if (rcThrottle > highThreshold) {
+            throttleAdjustmentFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
+        }
     }
-    // if failsafe is active, and we get here, we are in failsafe landing mode
+
+    // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle
     if (failsafeIsActive()) {
         // descend at up to 10 times faster when high
         // default landing time is now 60s; need to get the quad down in this time from reasonable height
@@ -125,6 +127,7 @@ void altHoldUpdateTargetAltitude(void)
 
     // if taskRate is 100Hz, default adjustRate of 100 adds/subtracts 1m every second, or 1cm per task run, at full stick position
     altHoldState.targetAltitudeCm += altHoldState.targetAltitudeAdjustRate * taskIntervalSeconds;
+    altHoldState.targetAltitudeCm = fmaxf(-200.0f, altHoldState.targetAltitudeCm); // not less than 2m below takeoff point
 }
 
 void altHoldUpdate(void)

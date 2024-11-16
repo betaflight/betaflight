@@ -1110,7 +1110,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_ALT_HOLD_MODE
     { PARAM_NAME_ALT_HOLD_THROTTLE_RESPONSE, VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_adjust_rate) },
-    { PARAM_NAME_ALT_HOLD_DEADBAND,          VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_deadband) },
+    { PARAM_NAME_ALT_HOLD_DEADBAND,          VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 70 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, alt_hold_deadband) },
 #endif
 
 #ifdef USE_POS_HOLD_MODE
