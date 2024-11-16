@@ -79,8 +79,6 @@ static inline int popcount(unsigned x) { return __builtin_popcount(x); }
 static inline int popcount32(uint32_t x) { return __builtin_popcount(x); }
 static inline int popcount64(uint64_t x) { return __builtin_popcountll(x); }
 
-
-
 /*
  * https://groups.google.com/forum/?hl=en#!msg/comp.lang.c/attFnqwhvGk/sGBKXvIkY3AJ
  * Return (v ? floor(log2(v)) : 0) when 0 <= v < 1<<[8, 16, 32, 64].
@@ -120,7 +118,6 @@ static inline void  memcpy_fn ( void * destination, const void * source, size_t 
 #else
 void * memcpy_fn ( void * destination, const void * source, size_t num ) asm("memcpy");
 #endif
-
 
 #endif
 

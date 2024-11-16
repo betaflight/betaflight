@@ -30,8 +30,8 @@
 
 /** @addtogroup apm32f4xx_system
   * @{
-  */  
-  
+  */
+
 /** @addtogroup APM32F4xx_System_Private_Includes
   * @{
   */
@@ -45,7 +45,7 @@
 #include <string.h>
 
 /* Value of the external oscillator in Hz */
-#if !defined  (HSE_VALUE) 
+#if !defined  (HSE_VALUE)
   #define HSE_VALUE    ((uint32_t)8000000U)
 #endif /* HSE_VALUE */
 
@@ -185,7 +185,7 @@ void SystemInit(void)
 /**
    * @brief Update SystemCoreClock variable according to clock register values
  *          The SystemCoreClock variable contains the core clock (HCLK)
-  *     
+  *
   * @param  None
   * @retval None
   */
@@ -211,7 +211,7 @@ void SystemCoreClockUpdate(void)
         case 0x08:  /* PLL used as system clock source */
             pllClock = (RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS) >> 22;
             pllb = RCM->PLL1CFG & RCM_PLL1CFG_PLLB;
-            
+
             if (pllClock != 0)
             {
                 /* HSE used as PLL clock source */
@@ -265,7 +265,7 @@ void DAL_SysClkConfig(void)
     else {
         // HSE frequency is given
         pll_src = RCM_PLLSOURCE_HSE;
-        
+
         pll_m = hse_mhz /  2;
         if (pll_m * 2 != hse_mhz) {
             pll_m = hse_mhz;
@@ -302,8 +302,8 @@ void DAL_SysClkConfig(void)
     RCM_ClkInitStruct.ClockType         = (RCM_CLOCKTYPE_SYSCLK | RCM_CLOCKTYPE_HCLK | RCM_CLOCKTYPE_PCLK1 | RCM_CLOCKTYPE_PCLK2);
     RCM_ClkInitStruct.SYSCLKSource      = RCM_SYSCLKSOURCE_PLLCLK;
     RCM_ClkInitStruct.AHBCLKDivider     = RCM_SYSCLK_DIV1;
-    RCM_ClkInitStruct.APB1CLKDivider    = RCM_HCLK_DIV4;  
-    RCM_ClkInitStruct.APB2CLKDivider    = RCM_HCLK_DIV2;  
+    RCM_ClkInitStruct.APB1CLKDivider    = RCM_HCLK_DIV4;
+    RCM_ClkInitStruct.APB2CLKDivider    = RCM_HCLK_DIV2;
     if(DAL_RCM_ClockConfig(&RCM_ClkInitStruct, FLASH_LATENCY_5) != DAL_OK)
     {
         DAL_ErrorHandler();
@@ -335,7 +335,7 @@ void DAL_SysClkConfig(void)
  */
 void DAL_ErrorHandler(void)
 {
-    /* When the function is needed, this function 
+    /* When the function is needed, this function
        could be implemented in the user file
     */
     while(1)
@@ -344,8 +344,8 @@ void DAL_ErrorHandler(void)
 }
 
 void AssertFailedHandler(uint8_t *file, uint32_t line)
-{ 
-    /* When the function is needed, this function 
+{
+    /* When the function is needed, this function
        could be implemented in the user file
     */
     UNUSED(file);
@@ -386,9 +386,9 @@ int SystemPLLSource(void)
 
 /**
  * @brief Reboot the system if necessary after changing the overclock level
- * 
- * @param overclockLevel 
- * 
+ *
+ * @param overclockLevel
+ *
  * @retval None
  */
 void OverclockRebootIfNecessary(uint32_t overclockLevel)
@@ -409,9 +409,9 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
 
 /**
  * @brief Set the HSE value
- * 
- * @param frequency 
- * 
+ *
+ * @param frequency
+ *
  * @retval None
  */
 void systemClockSetHSEValue(uint32_t frequency)
@@ -427,11 +427,11 @@ void systemClockSetHSEValue(uint32_t frequency)
 
 /**
  * @brief    Initialize the PLL parameters
- * 
+ *
  * @param    None
- * 
+ *
  * @retval   None
- * 
+ *
  */
 static void SystemInitPLLParameters(void)
 {
@@ -457,7 +457,7 @@ static void SystemInitPLLParameters(void)
 /**
   * @}
   */
-  
+
 /**
   * @}
-  */    
+  */

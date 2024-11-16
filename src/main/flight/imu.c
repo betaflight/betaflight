@@ -399,7 +399,6 @@ static float imuCalcGroundspeedGain(float dt)
     // groundspeedGain is the primary multiplier of ez_ef
     // Otherwise, groundspeedGain is determined by GPS COG groundspeed / GPS_COG_MIN_GROUNDSPEED
 
-
     // in normal flight, IMU should:
     // - heavily average GPS heading values at low speed, since they are random, almost
     // - respond more quickly at higher speeds.
@@ -439,7 +438,7 @@ static float imuCalcGroundspeedGain(float dt)
     }
 
     // NOTE : these suppressions make sense with normal pilot inputs and normal flight
-    // They are not used in GPS Rescue, and probably should be bypassed in position hold, etc, 
+    // They are not used in GPS Rescue, and probably should be bypassed in position hold, etc,
 
     return speedBasedGain * stickSuppression * rollSuppression * pitchSuppression;
 }
@@ -488,7 +487,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
     // Encapsulate additional operations in a block so that it is only executed when the according debug mode is used
     // Only re-calculate magYaw when there is a new Mag data reading, to avoid spikes
     if (debugMode == DEBUG_GPS_RESCUE_HEADING && mag.isNewMagADCFlag) {
-        
+
         vector3_t mag_bf = mag.magADC;
         vector3_t mag_ef;
         matrixVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north
@@ -498,7 +497,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
 
         vector3_t mag_ef_yawed;
         matrixVectorMul(&mag_ef_yawed, &rMatZTrans, &mag_ef); // EF->EF yawed
-        
+
         // Magnetic yaw is the angle between true north and the X axis of the body frame
         int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
         if (magYaw < 0) {
@@ -673,7 +672,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(useMag);
 #endif
 
-
     float gyroAverage[XYZ_AXIS_COUNT];
     for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
         gyroAverage[axis] = gyroGetFilteredDownsampled(axis);
@@ -724,7 +722,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         // Update the throttle correction for angle and supply it to the mixer
         int throttleAngleCorrection = 0;
         if (throttleAngleValue
-            && (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE)) 
+            && (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE))
             && ARMING_FLAG(ARMED)) {
             throttleAngleCorrection = calculateThrottleAngleCorrection();
         }

@@ -20,7 +20,6 @@
 
 #pragma once
 
-
 typedef enum {
     RGB_RED = 0,
     RGB_GREEN,

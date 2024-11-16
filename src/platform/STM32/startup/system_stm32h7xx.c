@@ -1,5 +1,5 @@
 // This module contains initialization code specific to STM32H7 MCUs.
-// It configures the RCC peripheral (system clocks) including scalars, and 
+// It configures the RCC peripheral (system clocks) including scalars, and
 // enables RCC clocks for peripherals.
 
 /**
@@ -76,9 +76,7 @@
 #include "drivers/memprot.h"
 #include "drivers/system.h"
 
-
 #define HSI_FREQ ((uint32_t)64000000) // Frequency of HSI is 64Mhz on all H7 variants.
-
 
 // If `HSE_VALUE` isn't specified, use HSI. This allows HSI to be selected as the PLL source
 // later in this file, and adjusts PLL scalers to use the HSI's frequency as the timing source.
@@ -270,7 +268,7 @@ pllConfig_t pll1ConfigRevV = {
 
 // Nominal max 280MHz with 8MHz HSE
 // (340 is okay, 360 doesn't work.)
-// 
+//
 
 pllConfig_t pll1Config7A3 = {
     .clockMhz = 280,
@@ -322,7 +320,7 @@ pllConfig_t pll1Config72x73x = {
 
 #define MCU_HCLK_DIVIDER RCC_HCLK_DIV2
 
-// RM0468 (Rev.2) Table 16. 
+// RM0468 (Rev.2) Table 16.
 // 520MHz (AXI Interface clock) at VOS0 is 3WS
 #define MCU_FLASH_LATENCY FLASH_LATENCY_3
 
@@ -424,7 +422,6 @@ static void SystemClockHSE_Config(void)
     // Configure PLL2 and PLL3
     // Use of PLL2 and PLL3 are not determined yet.
     // A review of total system wide clock requirements is necessary.
-
 
     // Configure SCGU (System Clock Generation Unit)
     // Select PLL as system clock source and configure bus clock dividers.
@@ -1052,7 +1049,6 @@ void SystemInit_ExtMemCtl(void)
     /*FMC controller Enable*/
     FMC_Bank1->BTCR[0]  |= 0x80000000;
 
-
 #endif /* DATA_IN_ExtSDRAM */
 
 #if defined(DATA_IN_ExtSRAM)
@@ -1123,7 +1119,6 @@ void SystemInit_ExtMemCtl(void)
 #endif /* DATA_IN_ExtSRAM */
 }
 #endif /* DATA_IN_ExtSRAM || DATA_IN_ExtSDRAM */
-
 
 /**
   * @}

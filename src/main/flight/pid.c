@@ -288,7 +288,6 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 #define D_LPF_RAW_SCALE 25
 #define D_LPF_PRE_TPA_SCALE 10
 
-
 void pidSetItermAccelerator(float newItermAccelerator)
 {
     pidRuntime.itermAccelerator = newItermAccelerator;

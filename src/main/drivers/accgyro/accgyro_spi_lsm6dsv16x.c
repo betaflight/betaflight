@@ -289,7 +289,6 @@
 #define LSM6DSV_CTRL2_ODR_G_3200HZ                      11
 #define LSM6DSV_CTRL2_ODR_G_6400HZ                      12
 
-
 // Control register 3 (R/W)
 #define LSM6DSV_CTRL3                       0x12
 #define LSM6DSV_CTRL3_BOOT                              0x80
@@ -845,7 +844,6 @@
 // FIFO data output Z (R)
 #define LSM6DSV_FIFO_DATA_OUT_Z_L           0x7D
 #define LSM6DSV_FIFO_DATA_OUT_Z_H           0x7E
-
 
 uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
 {

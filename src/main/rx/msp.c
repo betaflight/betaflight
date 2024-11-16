@@ -32,7 +32,6 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
-
 static uint16_t mspFrame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static bool rxMspFrameDone = false;
 static bool rxMspOverrideFrameDone = false;

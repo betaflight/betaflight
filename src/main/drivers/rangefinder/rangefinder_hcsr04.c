@@ -41,7 +41,6 @@
 #define HCSR04_DETECTION_CONE_DECIDEGREES 300 // recommended cone angle30 degrees, from HC-SR04 spec sheet
 #define HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES 450 // in practice 45 degrees seems to work well
 
-
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
  * When triggered it sends out a series of 40KHz ultrasonic pulses and receives
  * echo from an object. The distance between the unit and the object is calculated

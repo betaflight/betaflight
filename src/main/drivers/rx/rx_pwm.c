@@ -209,7 +209,6 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
 
     ppmDev.overflowed = false;
 
-
     /* Store the current measurement */
     ppmDev.currentTime = currentTime;
     ppmDev.currentCapture = capture;

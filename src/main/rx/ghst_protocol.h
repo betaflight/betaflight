@@ -121,7 +121,6 @@ typedef union ghstFrame_u {
     ghstFrameDef_t frame;
 } ghstFrame_t;
 
-
 /* Pulses payload (channel data), for 4x 12-bit channels */
 typedef struct ghstPayloadServo4_s {
     // 48 bits, or 6 bytes

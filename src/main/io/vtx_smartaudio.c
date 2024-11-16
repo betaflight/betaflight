@@ -48,7 +48,6 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 
-
 // Timing parameters
 // Note that vtxSAProcess() is normally called at 200ms interval
 #define SMARTAUDIO_CMD_TIMEOUT       120    // Time until the command is considered lost
@@ -85,17 +84,14 @@ enum {
 // This is not a good design; can't distinguish command from response this way.
 #define SACMD(cmd) (((cmd) << 1) | 1)
 
-
 #define SA_IS_PITMODE(n) ((n) & SA_MODE_GET_PITMODE)
 #define SA_IS_PIRMODE(n) (((n) & SA_MODE_GET_PITMODE) && ((n) & SA_MODE_GET_IN_RANGE_PITMODE))
 #define SA_IS_PORMODE(n) (((n) & SA_MODE_GET_PITMODE) && ((n) & SA_MODE_GET_OUT_RANGE_PITMODE))
-
 
 // convert between 'saDevice.channel' and band/channel values
 #define SA_DEVICE_CHVAL_TO_BAND(val) ((val) / (uint8_t)vtxTableChannelCount) + 1
 #define SA_DEVICE_CHVAL_TO_CHANNEL(val) ((val) % (uint8_t)vtxTableChannelCount) + 1
 #define SA_BANDCHAN_TO_DEVICE_CHVAL(band, channel) ((band - 1) * (uint8_t)vtxTableChannelCount + (channel - 1))
-
 
 // Statistical counters, for user side trouble shooting.
 
@@ -171,7 +167,6 @@ static uint8_t CRC8(const uint8_t *data, const int8_t len)
     }
     return crc;
 }
-
 
 #ifdef USE_SMARTAUDIO_DPRINTF
 static void saPrintSettings(void)
@@ -695,7 +690,6 @@ void saSetMode(int mode)
     saQueueCmd(buf, 6);
 }
 
-
 bool vtxSmartAudioInit(void)
 {
 #if !defined(USE_VTX_TABLE)
@@ -732,8 +726,6 @@ bool vtxSmartAudioInit(void)
     }
 
     dprintf(("vtxSmartAudioInit %d power levels recorded\r\n", vtxTablePowerLevels));
-
-
 
     vtxCommonSetDevice(&vtxSmartAudio);
 #ifndef USE_VTX_TABLE
@@ -971,7 +963,6 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
             (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE) ? "on" : "off",
             (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) ? "on" : "off" , newMode));
 
-
     saSetMode(newMode);
 
     return;
@@ -1091,6 +1082,5 @@ static const vtxVTable_t saVTable = {
     .serializeCustomDeviceStatus = vtxSASerializeCustomDeviceStatus,
 };
 #endif // VTX_COMMON
-
 
 #endif // VTX_SMARTAUDIO

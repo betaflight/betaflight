@@ -310,7 +310,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     },
 #endif
 
-
 #ifdef USE_UART8
     {
         .identifier = SERIAL_PORT_UART8,

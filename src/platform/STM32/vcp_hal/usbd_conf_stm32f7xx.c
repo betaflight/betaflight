@@ -379,7 +379,6 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
   USBD_LL_DevDisconnected(hpcd->pData);
 }
 
-
 /*******************************************************************************
                        LL Driver Interface (USB Device Library --> PCD)
 *******************************************************************************/
@@ -411,7 +410,6 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 
   /* Initialize LL Driver */
   HAL_PCD_Init(&hpcd);
-
 
 #ifdef USE_USB_CDC_HID
 #ifdef USE_USB_MSC

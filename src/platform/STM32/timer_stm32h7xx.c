@@ -160,7 +160,6 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 };
 #endif
 
-
 uint32_t timerClock(const TIM_TypeDef *tim)
 {
     int timpre;

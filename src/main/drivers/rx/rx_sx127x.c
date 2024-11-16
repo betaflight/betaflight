@@ -106,7 +106,7 @@ bool sx127xInit(IO_t resetPin, IO_t busyPin)
     IOLo(resetPin);
     delay(50);
     IOConfigGPIO(resetPin, IOCFG_IN_FLOATING); // leave floating
-    
+
     return sx127xDetectChip();
 }
 

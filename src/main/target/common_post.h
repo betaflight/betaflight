@@ -85,7 +85,6 @@
     In the future we can move to specific drivers being added only - to save flash space.
 */
 
-
 // normalize serial ports definitions
 #include "serial_post.h"
 
@@ -565,7 +564,6 @@
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
-
 
 #if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
 #ifndef EEPROM_SIZE

@@ -193,7 +193,6 @@ void EXTIEnable(IO_t io)
 #endif
 }
 
-
 void EXTIDisable(IO_t io)
 {
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -232,7 +231,6 @@ void EXTI_IRQHandler(uint32_t mask)
     }                                            \
     struct dummy                                 \
     /**/
-
 
 _EXTI_IRQ_HANDLER(EXTI0_IRQHandler, 0x0001);
 _EXTI_IRQ_HANDLER(EXTI1_IRQHandler, 0x0002);

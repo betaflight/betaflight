@@ -184,7 +184,6 @@
 #define DEF_TIM_DMA_HANDLER__D(dma_n, stream_n, chan_n) DMA ## dma_n ## _ST ## stream_n ## _HANDLER
 #define DEF_TIM_DMA_HANDLER__NONE                       0
 
-
 /* F4 Stream Mappings */
 // D(DMAx, Stream, Channel)
 #define DEF_TIM_DMA__BTCH_TIM1_CH1    D(2, 6, 0),D(2, 1, 6),D(2, 3, 6)

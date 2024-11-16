@@ -153,7 +153,6 @@ MMFLASH_CODE_NOINLINE void saveEEPROMToMemoryMappedFlash(void)
 }
 #endif
 
-
 #elif defined(CONFIG_IN_SDCARD)
 
 enum {
@@ -476,7 +475,6 @@ static bool writeSettingsToEEPROM(void)
                 .version = pgVersion(reg),
                 .flags = 0,
             };
-
 
             record.flags |= CR_CLASSICATION_SYSTEM;
             config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));

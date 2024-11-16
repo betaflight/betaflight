@@ -154,7 +154,6 @@ bool srxlFrameQos(sbuf_t *dst, timeUs_t currentTimeUs)
     return true;
 }
 
-
 /*
 typedef struct
 {
@@ -676,7 +675,6 @@ static bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
 }
 #endif // USE_SPEKTRUM_VTX_TELEMETRY && USE_SPEKTRUM_VTX_CONTROL && USE_VTX_COMMON
 
-
 // Schedule array to decide how often each type of frame is sent
 // The frames are scheduled in sets of 3 frames, 2 mandatory and 1 user frame.
 // The user frame type is cycled for each set.
@@ -728,7 +726,6 @@ const srxlScheduleFnPtr srxlScheduleFuncs[SRXL_TOTAL_COUNT] = {
     srxlFrameText,
 #endif
 };
-
 
 static void processSrxl(timeUs_t currentTimeUs)
 {

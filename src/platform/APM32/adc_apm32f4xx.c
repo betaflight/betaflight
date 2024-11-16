@@ -99,7 +99,7 @@ const adcTagMap_t adcTagMap[] = {
 void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
     ADC_HandleTypeDef *hadc = &adcdev->ADCHandle;
-    
+
     hadc->Instance = adcdev->ADCx;
 
     hadc->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;

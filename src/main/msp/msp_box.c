@@ -44,7 +44,6 @@
 
 #include "msp_box.h"
 
-
 // permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
 static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXARM, .boxName = "ARM", .permanentId = 0 },

@@ -123,7 +123,6 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     tmr_clock_source_div_set(timer,TMR_CLOCK_DIV1);
     tmr_cnt_dir_set(timer,TMR_COUNT_UP);
 
-
     tmr_output_config_type  tmr_OCInitStruct;
     tmr_output_default_para_init(&tmr_OCInitStruct);
     tmr_OCInitStruct.oc_mode= TMR_OUTPUT_CONTROL_PWM_MODE_A;
@@ -140,7 +139,6 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     tmr_channel_value_set(timer, (timerHardware->channel-1)*2, 0);
     tmr_output_channel_config(timer,(timerHardware->channel-1)*2, &tmr_OCInitStruct);
-
 
     tmr_period_buffer_enable(timer, TRUE);
     tmr_output_channel_buffer_enable(timer, ((timerHardware->channel-1) * 2), TRUE);

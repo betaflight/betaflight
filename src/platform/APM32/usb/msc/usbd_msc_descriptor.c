@@ -563,7 +563,6 @@ static USBD_DESC_INFO_T USBD_MSC_ProductStrDescHandler(uint8_t usbSpeed)
         descInfo = USBD_DESC_Ascii2Unicode((uint8_t*)USBD_PRODUCT_FS_STR);
     }
 
-
     return descInfo;
 }
 

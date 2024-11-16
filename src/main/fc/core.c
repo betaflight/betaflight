@@ -108,7 +108,6 @@
 
 #include "core.h"
 
-
 enum {
     ALIGN_GYRO = 0,
     ALIGN_ACCEL = 1,
@@ -333,7 +332,7 @@ void updateArmingStatus(void)
 
         // if, while the arm switch is enabled:
         // - the user switches off crashflip,
-        // - and it was active, 
+        // - and it was active,
         // - and the quad did not flip successfully, or we don't have that information
         // require an arm-disarm cycle by blocking tryArm()
         if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && !crashFlipSuccessful()) {
@@ -552,7 +551,7 @@ void tryArm(void)
             if (crashFlipModeActive) {
                 // flip was successful, continue into normal flight without need to disarm/rearm
                 // note: preceding disarm will have set motors to normal rotation direction
-                crashFlipModeActive = false; 
+                crashFlipModeActive = false;
             } else {
                 // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
                 // otherwise consider only the switch position
@@ -734,7 +733,6 @@ void runawayTakeoffTemporaryDisable(uint8_t disableFlag)
     runawayTakeoffTemporarilyDisabled = disableFlag;
 }
 #endif
-
 
 // calculate the throttle stick percent - integer math is good enough here.
 // returns negative values for reversed thrust in 3D mode
@@ -993,7 +991,7 @@ void processRxModes(timeUs_t currentTimeUs)
         beeper(BEEPER_CRASHFLIP_MODE);
         if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
             // permit the option of staying disarmed if the crashflip switch is set to off while armed
-            disarm(DISARM_REASON_SWITCH); 
+            disarm(DISARM_REASON_SWITCH);
         }
     }
 #endif
@@ -1004,7 +1002,7 @@ void processRxModes(timeUs_t currentTimeUs)
 
     bool canUseHorizonMode = true;
     if ((IS_RC_MODE_ACTIVE(BOXANGLE)
-        || failsafeIsActive() 
+        || failsafeIsActive()
 #ifdef USE_ALT_HOLD_MODE
         || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
@@ -1021,7 +1019,7 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #ifdef USE_ALT_HOLD_MODE
     // only if armed
-    if (ARMING_FLAG(ARMED) 
+    if (ARMING_FLAG(ARMED)
         // and either the alt_hold switch is activated, or are in failsafe
         && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
         // but not in GPS_RESCUE_MODE, ie if failsafe is active, must be in Landing Mode
@@ -1194,7 +1192,6 @@ static FAST_CODE_NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
         DEBUG_SET(DEBUG_RUNAWAY_TAKEOFF, DEBUG_RUNAWAY_TAKEOFF_ACTIVATING_DELAY, DEBUG_RUNAWAY_TAKEOFF_FALSE);
     }
 #endif
-
 
 #ifdef USE_PID_AUDIO
     if (isModeActivationConditionPresent(BOXPIDAUDIO)) {

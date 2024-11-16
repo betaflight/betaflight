@@ -673,7 +673,6 @@ static void bbPostInit(void)
             return;
         }
 
-
         bbMotors[motorIndex].enabled = true;
 
         // Fill in motors structure for 4way access (XXX Should be refactored)

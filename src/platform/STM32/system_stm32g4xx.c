@@ -138,7 +138,6 @@ void systemJumpToBootloader(void)
     while (1);
 }
 
-
 void systemProcessResetReason(void)
 {
     uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);

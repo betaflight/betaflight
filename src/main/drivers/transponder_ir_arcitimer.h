@@ -34,7 +34,5 @@
 // ID8 0xFF, 0x3, 0xF0, 0x1, 0xF8, 0xE0, 0xC1, 0xFF, 0x1           // 00FC0FFE071F3E00FE
 // ID9 0x1F, 0x7C, 0x40, 0xF, 0xF0, 0x61, 0xC7, 0x3F, 0x0          // E083BFF00F9E38C0FF
 
-
-
 void transponderIrInitArcitimer(transponder_t *transponder);
 void updateTransponderDMABufferArcitimer(transponder_t *transponder, const uint8_t* transponderData);

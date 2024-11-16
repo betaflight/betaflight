@@ -148,7 +148,6 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         return;
     }
 
-
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     /* PWM1 Mode configuration: Channel1 */
@@ -259,7 +258,6 @@ void transponderIrDisable(void)
     } else {
         DAL_TMR_PWM_Stop(&TmrHandle, timerChannel);
     }
-
 
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
 

@@ -32,7 +32,6 @@
 #include "drivers/rcc.h"
 #include "drivers/timer.h"
 
-
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  .inputIrq = TIM1_CC_IRQn},
     { .TIMx = TIM2,  .rcc = RCC_APB11(TIM2), .inputIrq = TIM2_IRQn},
@@ -75,7 +74,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH1N, PA7, 0, 0, 0),
 
     DEF_TIM(TIM8, CH2, PA14, 0, 0, 0),
-    
+
     DEF_TIM(TIM1, CH1N, PA7, 0, 0, 0),
     DEF_TIM(TIM1, CH1, PA8, 0, 0, 0),
     DEF_TIM(TIM1, CH2, PA9, 0, 0, 0),
@@ -126,7 +125,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH1N, PB3, 0, 0, 0),
     DEF_TIM(TIM8, CH2N, PB4, 0, 0, 0),
     DEF_TIM(TIM1, CH3N, PB15, 0, 0, 0),
-    
+
     DEF_TIM(TIM8, CH1, PB6, 0, 0, 0),
 
     DEF_TIM(TIM1, CH2N, PB0, 0, 0, 0),

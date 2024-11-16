@@ -351,7 +351,6 @@ extern GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define TASK_GPS_RATE       100     // default update rate of GPS task
 #define TASK_GPS_RATE_FAST  500    // update rate of GPS task while Rx buffer is not empty
 
-
 #ifdef USE_DASHBOARD
 // Data used *only* by the dashboard device (OLED display).
 // Note this data should probably be in the dashboard module, not here. On the refactor list...

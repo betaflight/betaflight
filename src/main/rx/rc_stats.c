@@ -42,7 +42,6 @@ timeUs_t fullThrottleTimeUs = 0;
 uint32_t fullThrottleCounter = 0;
 int8_t previousThrottlePercent = 0;
 
-
 void rcStatsUpdate(timeUs_t currentTimeUs)
 {
     uint32_t deltaT = currentTimeUs - previousTimeUs;

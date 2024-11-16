@@ -84,7 +84,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
     TIM_OCInitTypeDef TIM_OCStruct;
 
     TIM_OCStructInit(&TIM_OCStruct);
-    
+
     TIM_OCStruct.oc_mode = TMR_OUTPUT_CONTROL_PWM_MODE_A;
     TIM_OCStruct.oc_idle_state = TRUE;
     TIM_OCStruct.oc_output_state = TRUE;
@@ -106,7 +106,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
     if (timhw->tag) {
         IO_t io = IOGetByTag(timhw->tag);
         IOConfigGPIOAF(io, IOCFG_AF_PP, timhw->alternateFunction);
-        IOInit(io, OWNER_DSHOT_BITBANG, 0); 
+        IOInit(io, OWNER_DSHOT_BITBANG, 0);
         TIM_CtrlPWMOutputs(timhw->tim, TRUE);
     }
 #endif

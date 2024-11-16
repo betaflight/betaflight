@@ -95,7 +95,6 @@ typedef struct vtxDevice_s {
     const struct vtxVTable_s *const vTable;
 } vtxDevice_t;
 
-
 // {set,get}BandAndChannel: band and channel are 1 origin
 // {set,get}PowerByIndex: 0 = Power OFF, 1 = device dependent
 // {set,get}PitMode: 0 = OFF, 1 = ON

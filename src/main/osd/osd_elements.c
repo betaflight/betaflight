@@ -323,7 +323,7 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
     static const struct {
-        uint8_t decimals; 
+        uint8_t decimals;
         bool asl;
     } variantMap[] = {
         [OSD_ELEMENT_TYPE_1] = { 1, false },
@@ -586,7 +586,6 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
 
     return SYM_ARROW_SOUTH + heading;
 }
-
 
 /**
  * Converts altitude based on the current unit system.

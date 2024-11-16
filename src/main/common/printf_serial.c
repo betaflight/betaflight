@@ -18,7 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -59,7 +58,6 @@ static void _putc(void *p, char c)
     UNUSED(p);
     serialWrite(printfSerialPort, c);
 }
-
 
 void printfSerialInit(void)
 {

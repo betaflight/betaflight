@@ -145,7 +145,6 @@
 
 #define TARGET_FLASH_SIZE 2048
 
-
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 
 #define FLASH_PAGE_SIZE (0x400)

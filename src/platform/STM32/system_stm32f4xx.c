@@ -29,7 +29,6 @@
 #include "drivers/system.h"
 #include "drivers/persistent.h"
 
-
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 void SetSysClock(void);
 

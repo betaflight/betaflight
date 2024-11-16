@@ -183,7 +183,6 @@ void updateState(const fdm_packet* pkt)
     imuUpdateAttitude(micros());
 #endif
 
-
     if (deltaSim < 0.02 && deltaSim > 0) { // simulator should run faster than 50Hz
 //        simRate = simRate * 0.5 + (1e6 * deltaSim / (realtime_now - last_realtime)) * 0.5;
         struct timespec out_ts;
@@ -500,7 +499,6 @@ int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y)
     // Return 1 if result is negative.
     return x->tv_sec < y->tv_sec;
 }
-
 
 // PWM part
 pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];

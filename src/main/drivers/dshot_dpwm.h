@@ -42,7 +42,6 @@
 
 #define DSHOT_TELEMETRY_DEADTIME_US   (30 + 5) // 30 to switch lines and 5 to switch lines back
 
-
 typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
 extern FAST_DATA_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet);
@@ -74,7 +73,7 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #define DSHOT_DMA_BUFFER_ATTRIBUTE // None
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(APM32F4) 
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(APM32F4)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t

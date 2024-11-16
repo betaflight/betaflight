@@ -144,7 +144,7 @@ uint8_t l3gd20Detect(const extDevice_t *dev)
 
     return L3GD20_SPI; // blindly assume it's present, for now.
 }
-    
+
 bool l3gd20GyroDetect(gyroDev_t *gyro)
 {
     gyro->initFn = l3gd20GyroInit;

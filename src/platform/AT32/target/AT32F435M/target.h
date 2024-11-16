@@ -64,7 +64,6 @@
 #define USE_EXTI
 #define USE_GYRO_EXTI
 
-
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2

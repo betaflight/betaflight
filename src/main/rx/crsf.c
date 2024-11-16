@@ -147,7 +147,6 @@ typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 *  - last channel packed with specified resolution
 */
 
-
 #if defined(USE_CRSF_LINK_STATISTICS)
 /*
  * 0x14 Link statistics

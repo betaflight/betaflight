@@ -28,7 +28,6 @@
 #include "drivers/persistent.h"
 #include "drivers/system.h"
 
-
 void SystemClock_Config(void);
 
 void configureMasterClockOutputs(void)
@@ -171,7 +170,6 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
     NVIC_SystemReset();
 }
 
-
 #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 #define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1ff09800)
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
@@ -196,7 +194,6 @@ void systemJumpToBootloader(void)
 
     while (1);
 }
-
 
 void systemProcessResetReason(void)
 {

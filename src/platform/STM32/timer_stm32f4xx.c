@@ -32,7 +32,6 @@
 #include "drivers/rcc.h"
 #include "drivers/timer.h"
 
-
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  .inputIrq = TIM1_CC_IRQn},
     { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2),  .inputIrq = TIM2_IRQn},
@@ -186,7 +185,6 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 //#endif
 };
 #endif
-
 
 /*
     need a mapping from dma and timers to pins, and the values should all be set here to the dmaMotors array.

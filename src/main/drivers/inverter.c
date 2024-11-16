@@ -30,7 +30,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_impl.h"
 
-
 #include "inverter.h"
 
 static const serialPinConfig_t *pSerialPinConfig;

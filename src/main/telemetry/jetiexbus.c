@@ -39,7 +39,6 @@
 #include "drivers/serial_uart.h"
 #include "drivers/time.h"
 
-
 #include "flight/position.h"
 #include "flight/imu.h"
 
@@ -171,7 +170,6 @@ union{
     char    vBytes[4];
 } exGps;
 
-
 #define JETI_EX_SENSOR_COUNT (ARRAYLEN(jetiExSensors))
 
 static uint8_t jetiExBusTelemetryFrame[40];
@@ -301,7 +299,6 @@ uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
 
     return exGps.vInt;
 }
-
 
 int32_t getSensorValue(uint8_t sensor)
 {

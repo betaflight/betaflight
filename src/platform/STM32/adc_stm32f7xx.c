@@ -316,7 +316,6 @@ void adcInit(const adcConfig_t *config)
     adc.DmaHandle.Init.MemBurst = DMA_MBURST_SINGLE;
     adc.DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
-
     if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK)
     {
         /* Initialization Error */
