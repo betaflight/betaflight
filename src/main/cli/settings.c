@@ -1394,6 +1394,9 @@ const clivalue_t valueTable[] = {
     { "ledstrip_brightness",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_brightness) },
     { "ledstrip_rainbow_delta",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_delta) },
     { "ledstrip_rainbow_freq",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_freq) },
+    { "w_max_count_aurora",         VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 32 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, w_max_count_aurora) },
+    { "w_width_factor_aurora",      VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 32 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, w_width_factor_aurora) },
+    { "w_max_speed_aurora",         VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, w_max_speed_aurora) },
 #endif
 
 // PG_SDCARD_CONFIG

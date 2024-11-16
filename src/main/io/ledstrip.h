@@ -34,18 +34,18 @@
 #define LED_MODE_COUNT                  6
 #define LED_DIRECTION_COUNT             6
 #define LED_BASEFUNCTION_COUNT          10
-#define LED_OVERLAY_COUNT               7
+#define LED_OVERLAY_COUNT               8
 #define LED_SPECIAL_COLOR_COUNT        11
 
 #define LED_POS_OFFSET                  0
 #define LED_FUNCTION_OFFSET             8
-#define LED_OVERLAY_OFFSET             12
-#define LED_COLOR_OFFSET               22
-#define LED_DIRECTION_OFFSET           26
+#define LED_OVERLAY_OFFSET             13
+#define LED_COLOR_OFFSET               23
+#define LED_DIRECTION_OFFSET           27
 
 #define LED_POS_BITCNT                  8
 #define LED_FUNCTION_BITCNT             4
-#define LED_OVERLAY_BITCNT              10
+#define LED_OVERLAY_BITCNT              11
 #define LED_COLOR_BITCNT                4
 #define LED_DIRECTION_BITCNT            6
 
@@ -139,6 +139,7 @@ typedef enum {
     LED_OVERLAY_THROTTLE,
     LED_OVERLAY_RAINBOW,
     LED_OVERLAY_LARSON_SCANNER,
+    LED_OVERLAY_AURORA,
     LED_OVERLAY_BLINK,
     LED_OVERLAY_VTX,
     LED_OVERLAY_INDICATOR,
@@ -168,6 +169,7 @@ typedef struct ledCounts_s {
     uint8_t count;
     uint8_t ring;
     uint8_t larson;
+    uint8_t aurora;
     uint8_t ringSeqLen;
 } ledCounts_t;
 
@@ -185,6 +187,9 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_brightness;
     uint16_t ledstrip_rainbow_delta;
     uint16_t ledstrip_rainbow_freq;
+    uint8_t w_max_count_aurora;
+    uint8_t w_width_factor_aurora;
+    uint8_t w_max_speed_aurora;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);

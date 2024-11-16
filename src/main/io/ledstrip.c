@@ -96,6 +96,7 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 
 #define LED_OVERLAY_RAINBOW_RATE_HZ 60
 #define LED_OVERLAY_LARSON_RATE_HZ 60
+#define LED_OVERLAY_AURORA_RATE_HZ 60
 #define LED_OVERLAY_BLINK_RATE_HZ 10
 #define LED_OVERLAY_VTX_RATE_HZ 5
 #define LED_OVERLAY_INDICATOR_RATE_HZ 5
@@ -132,7 +133,7 @@ const hsvColor_t hsv[] = {
 // macro to save typing on default colors
 #define HSV(color) (hsv[COLOR_ ## color])
 
-PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 4);
 
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
@@ -151,6 +152,9 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_brightness = 100;
     ledStripConfig->ledstrip_rainbow_delta = 0;
     ledStripConfig->ledstrip_rainbow_freq = 120;
+    ledStripConfig->w_max_count_aurora = 6;
+    ledStripConfig->w_width_factor_aurora = 10;
+    ledStripConfig->w_max_speed_aurora = 50;
 #ifndef UNIT_TEST
 #ifdef LED_STRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
@@ -309,7 +313,7 @@ void updateLedBars(void)
 
 STATIC_UNIT_TESTED void updateLedCount(void)
 {
-    int count = 0, countRing = 0, countScanner= 0;
+    int count = 0, countRing = 0, countScanner= 0, countAurora= 0;
 
     for (int ledIndex = 0; ledIndex < LED_STRIP_MAX_LENGTH; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
@@ -324,11 +328,16 @@ STATIC_UNIT_TESTED void updateLedCount(void)
 
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_LARSON_SCANNER))
             countScanner++;
+
+        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_AURORA))
+            countAurora++;
+
     }
 
     ledCounts.count = count;
     ledCounts.ring = countRing;
     ledCounts.larson = countScanner;
+    ledCounts.aurora = countAurora;
     setUsedLedCount(ledCounts.count);
 }
 
@@ -371,6 +380,7 @@ static const char overlayCodes[LED_OVERLAY_COUNT] = {
     [LED_OVERLAY_THROTTLE] = 'T',
     [LED_OVERLAY_RAINBOW] = 'Y',
     [LED_OVERLAY_LARSON_SCANNER] = 'O',
+    [LED_OVERLAY_AURORA] = 'X',
     [LED_OVERLAY_BLINK] = 'B',
     [LED_OVERLAY_VTX] = 'V',
     [LED_OVERLAY_INDICATOR] = 'I',
@@ -1057,6 +1067,100 @@ static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
     }
 }
 
+typedef struct auroraWave_s {
+    uint16_t ttl;
+    uint16_t age;
+    float center;
+    float speedFactor;
+    uint16_t width;
+    bool goingLeft;
+    bool alive;
+} auroraWave_t;
+
+static void initAuroraWave(auroraWave_t *wave, int segmentLength) {
+    wave->ttl = rand() % 1001 + 500;  // Zufallszahl zwischen 500 und 1500
+    wave->age = 0;
+    wave->width = rand() % (segmentLength / ledStripConfig()->w_width_factor_aurora) + (segmentLength / 20);  // Zufallszahl für Breite
+    wave->center = (rand() % 101) / 100.0 * segmentLength;  // Zufallszahl zwischen 0 und segmentLength
+    wave->speedFactor = (rand() % 21 + 10) / 100.0 * ledStripConfig()->w_max_speed_aurora / 255.0;  // Zufallszahl für Geschwindigkeit
+    wave->goingLeft = rand() % 2 == 0;  // Zufallswert 0 oder 1
+    wave->alive = true;
+}
+
+static void updateAuroraWave(auroraWave_t *wave, int segmentLength) {
+    if (wave->goingLeft) {
+        wave->center -= wave->speedFactor;
+    } else {
+        wave->center += wave->speedFactor;
+    }
+
+    wave->age++;
+    if (wave->age > wave->ttl || wave->center + wave->width < 0 || wave->center - wave->width > segmentLength) {
+        wave->alive = false;
+    }
+}
+
+static int brightnessForAuroraIndex(auroraWave_t *wave, uint8_t ledIndex) {
+    if (!wave->alive) return 0;
+
+    float offset = fabs(ledIndex - wave->center);
+    if (offset > wave->width) {
+        return 0;
+    }
+
+    float offsetFactor = offset / wave->width;
+    float ageFactor = (float)(wave->ttl - wave->age) / wave->ttl;
+
+    return (int)((1 - offsetFactor) * ageFactor * 255);
+}
+
+static void applyAuroraLayer(bool updateNow, timeUs_t *timer) {
+    static auroraWave_t *auroraWaves = NULL;
+    static uint8_t waveCount = 0;
+
+    // Initialisierung nur einmal durchführen
+    if (auroraWaves == NULL) {
+        waveCount = ledStripConfig()->w_max_count_aurora;
+        auroraWaves = (auroraWave_t *)malloc(waveCount * sizeof(auroraWave_t));
+        if (auroraWaves == NULL) {
+            // Fehler: Speicher konnte nicht allokiert werden
+            return;
+        }
+
+        // Array initialisieren (optional, falls nötig)
+        for (int i = 0; i < waveCount; i++) {
+            auroraWaves[i].alive = false; // Beispielwert
+        }
+    }
+
+    if (updateNow) {
+        for (int i = 0; i < waveCount; i++) {
+            if (!auroraWaves[i].alive) {
+                initAuroraWave(&auroraWaves[i], ledCounts.count);
+            } else {
+                updateAuroraWave(&auroraWaves[i], ledCounts.count);
+            }
+        }
+        *timer += HZ_TO_US(LED_OVERLAY_AURORA_RATE_HZ);
+    }
+
+    for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
+        int totalBrightness = 0;
+        const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
+
+        for (int j = 0; j < waveCount; j++) {
+            totalBrightness += brightnessForAuroraIndex(&auroraWaves[j], ledIndex);
+        }
+
+        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_AURORA)) {
+            hsvColor_t ledColor;
+            getLedHsv(ledIndex, &ledColor);
+            ledColor.v = totalBrightness > 255 ? 255 : totalBrightness;
+            setLedHsv(ledIndex, &ledColor);
+        }
+    }
+}
+
 typedef struct larsonParameters_s {
     uint8_t currentBrightness;
     int8_t currentIndex;
@@ -1150,6 +1254,7 @@ typedef enum {
     timRainbow,
     timBlink,
     timLarson,
+    timAurora,
     timRing,
     timIndicator,
 #ifdef USE_VTX_COMMON
@@ -1180,6 +1285,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timRainbow] = &applyRainbowLayer,
     [timBlink] = &applyLedBlinkLayer,
     [timLarson] = &applyLarsonScannerLayer,
+    [timAurora] = &applyAuroraLayer,
     [timBattery] = &applyLedBatteryLayer,
     [timRssi] = &applyLedRssiLayer,
 #ifdef USE_GPS
@@ -1210,6 +1316,7 @@ void updateRequiredOverlay(void)
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_RAINBOW) << timRainbow;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_BLINK) << timBlink;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_LARSON_SCANNER) << timLarson;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_AURORA) << timAurora;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_WARNING) << timWarning;
 #ifdef USE_VTX_COMMON
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_VTX) << timVtx;
