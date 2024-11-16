@@ -440,7 +440,10 @@ static const char * const lookupTableLaunchControlMode[] = {
 #endif
 
 static const char * const lookupTableTpaMode[] = {
-    "PD", "D"
+    "PD", "D",
+#ifdef USE_WING    
+    "PDS",
+#endif
 };
 
 static const char * const lookupTableSpaMode[] = {

@@ -123,6 +123,7 @@ typedef enum {
     DEBUG_SPA,
     DEBUG_TASK,
     DEBUG_GIMBAL,
+    DEBUG_WING_SETPOINT,
     DEBUG_COUNT
 } debugType_e;
 
