@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #ifdef USE_ACC
 #define IS_AXIS_IN_ANGLE_MODE(i) (pidRuntime.axisInAngleMode[(i)])
 #else
-#define IS_AXIS_IN_ANGLE_MODE(i) (false)
+#define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
@@ -372,8 +372,7 @@ static void updateStermTpaFactor(int axis, float tpaFactor)
     if (pidRuntime.tpaCurveType == TPA_CURVE_HYPERBOLIC) {
         const float maxSterm = tpaFactorSterm * (float)currentPidProfile->pid[axis].S * S_TERM_SCALE;
         if (maxSterm > 1.0f) {
-            const float tpaFactorMultiplier = 1 / (tpaFactorSterm * (float)currentPidProfile->pid[axis].S * S_TERM_SCALE);
-            tpaFactorSterm *=  tpaFactorMultiplier;
+            tpaFactorSterm *=  1.0f / maxSterm;
         }
     }
     pidRuntime.tpaFactorSterm[axis] = tpaFactorSterm;
@@ -453,7 +452,7 @@ void pidUpdateTpaFactor(float throttle)
 
     DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
     pidRuntime.tpaFactor = tpaFactor;
-    
+
 #ifdef USE_WING
     switch (currentPidProfile->yaw_type) {
     case YAW_TYPE_DIFF_THRUST:
@@ -564,7 +563,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
 #ifdef USE_WING
     if (axis == FD_PITCH) {
-        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;        
+        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;
     }
 #endif // USE_WING
 
@@ -999,7 +998,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
 {
     float tpaFactor = pidRuntime.tpaFactor;
-    
+
 #ifdef USE_WING
     if (axis == FD_YAW) {
         tpaFactor = pidRuntime.tpaFactorYaw;
