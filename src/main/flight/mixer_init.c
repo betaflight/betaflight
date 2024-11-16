@@ -53,19 +53,19 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .crashflip_expo = 0,
     .govenor = true,
     .govenor_p = 20.0f,
-    .govenor_i = 15.0f,
-    .govenor_d = 10.0f,
+    .govenor_i = 17.0f,
+    .govenor_d = 3.0f,
     .govenor_rpm_linearization = true,
-    .govenor_idle_rpm = 17,
+    .govenor_idle_rpm = 60,
     .govenor_acceleration_limit = 60,
     .govenor_deceleration_limit = 60,
-    .govenor_k_factor = 1000,
-    .govenor_rpm_limit = 130.0f,
-    .govenor_rpm_afterburner = 16,
+    .govenor_k_factor = 3000,
+    .govenor_rpm_limit = 305.0f,
+    .govenor_rpm_afterburner = 45,
     .govenor_rpm_afterburner_duration = 5,
     .govenor_rpm_afterburner_reset = false,
     .govenor_rpm_afterburner_hold_to_use = false,
-    .govenor_rpm_afterburner_tank_count = 3,
+    .govenor_rpm_afterburner_tank_count = 1,
     .mixer_type = MIXER_LEGACY,
 );
 
@@ -330,18 +330,18 @@ mixerRuntime.govenorExpectedThrottleLimit = 1.0f;
 //Street League spec settings
 
 //Locked rpm settings
-// mixerRuntime.govenorEnabled = true;
-// mixerRuntime.rpmLinearization = true;
-// mixerRuntime.motorPoleCount = 14;
-// mixerRuntime.afterburnerReset = false;
-// mixerRuntime.afterburnerHoldToBoost = false;
+mixerRuntime.govenorEnabled = true;
+mixerRuntime.rpmLinearization = true;
+mixerRuntime.motorPoleCount = 12;
+mixerRuntime.afterburnerReset = false;
+mixerRuntime.afterburnerHoldToBoost = false;
 
 //Unlocked rpm settings
-mixerRuntime.govenorEnabled = mixerConfig()->govenor;
-mixerRuntime.rpmLinearization = mixerConfig()->govenor_rpm_linearization;
-mixerRuntime.motorPoleCount = motorConfig()->motorPoleCount;
-mixerRuntime.afterburnerReset = mixerConfig()->govenor_rpm_afterburner_reset;
-mixerRuntime.afterburnerHoldToBoost = mixerConfig()->govenor_rpm_afterburner_hold_to_use;
+// mixerRuntime.govenorEnabled = mixerConfig()->govenor;
+// mixerRuntime.rpmLinearization = mixerConfig()->govenor_rpm_linearization;
+// mixerRuntime.motorPoleCount = motorConfig()->motorPoleCount;
+// mixerRuntime.afterburnerReset = mixerConfig()->govenor_rpm_afterburner_reset;
+// mixerRuntime.afterburnerHoldToBoost = mixerConfig()->govenor_rpm_afterburner_hold_to_use;
 
 
 mixerRuntime.govenorPGain = mixerConfig()->govenor_p * 0.0000015f;
