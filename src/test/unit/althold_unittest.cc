@@ -67,22 +67,22 @@ uint32_t millis() {
 
 TEST(AltholdUnittest, altHoldTransitionsTest)
 {
-    updateAltHoldState(currentTimeUs);
+    updateAltHold(currentTimeUs);
     EXPECT_EQ(isAltHoldActive(), false);
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
-    updateAltHoldState(currentTimeUs);
+    updateAltHold(currentTimeUs);
     EXPECT_EQ(isAltHoldActive(), true);
 
     flightModeFlags ^= ALT_HOLD_MODE;
     millisRW = 56;
-    updateAltHoldState(currentTimeUs);
+    updateAltHold(currentTimeUs);
     EXPECT_EQ(isAltHoldActive(), false);
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 64;
-    updateAltHoldState(currentTimeUs);
+    updateAltHold(currentTimeUs);
     EXPECT_EQ(isAltHoldActive(), true);
 }
 
@@ -93,7 +93,7 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
 
     flightModeFlags |= ALT_HOLD_MODE;
     millisRW = 42;
-    updateAltHoldState(currentTimeUs);
+    updateAltHold(currentTimeUs);
     EXPECT_EQ(isAltHoldActive(), true);
 }
 

@@ -203,7 +203,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         break;
 
     case RX_STATE_UPDATE:
-        // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+        // updateRcCommands sets rcCommand, which is needed by updateAltHold and updateSonarAltHoldState
         updateRcCommands();
         updateArmingStatus();
 
@@ -379,7 +379,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_ALT_HOLD_MODE
-    [TASK_ALTHOLD] = DEFINE_TASK("ALTHOLD", NULL, NULL, updateAltHoldState, TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
+    [TASK_ALTHOLD] = DEFINE_TASK("ALTHOLD", NULL, NULL, updateAltHold, TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_POS_HOLD_MODE

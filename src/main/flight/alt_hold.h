@@ -25,7 +25,7 @@
 #define ALTHOLD_TASK_RATE_HZ 100         // hz
 
 void altHoldInit(void);
-void updateAltHoldState(timeUs_t currentTimeUs);
+void updateAltHold(timeUs_t currentTimeUs);
 bool isAltHoldActive(void);
 
 #endif
