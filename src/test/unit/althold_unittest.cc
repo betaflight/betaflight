@@ -188,4 +188,9 @@ void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, floa
         UNUSED(input);
         return 0.0;
     }
+    
+    throttleStatus_e calculateThrottleStatus()
+{
+    return THROTTLE_LOW;
+}
 }
