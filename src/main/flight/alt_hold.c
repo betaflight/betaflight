@@ -122,7 +122,7 @@ void altHoldUpdateTargetAltitude(void)
     // prevent stick input from moving target altitude too far away from current altitude
     // otherwise it can be difficult to bring target to the other side of current in reasonable time
     // this constrains the P and I response to user target changes, but not D of F responses
-    if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < 500.0f) {
+    if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < altHold.maxVelocity) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
 }
