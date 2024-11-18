@@ -169,10 +169,21 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq)
     return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
+float filterGetBandQ(float lowerFreq, float higherFreq)
+{
+    float centerFreq = sqrtf(lowerFreq * higherFreq);
+    return centerFreq / (higherFreq - lowerFreq);
+}
+
 /* sets up a biquad filter as a 2nd order butterworth LPF */
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
 {
     biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF, 1.0f);
+}
+
+void biquadFilterInitHPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+{
+    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_HPF, 1.0f);
 }
 
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight)
@@ -198,6 +209,13 @@ FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint
         // described in http://www.ti.com/lit/an/slaa447/slaa447.pdf
         filter->b1 = 1 - cs;
         filter->b0 = filter->b1 * 0.5f;
+        filter->b2 = filter->b0;
+        filter->a1 = -2 * cs;
+        filter->a2 = 1 - alpha;
+        break;
+    case FILTER_HPF:
+        filter->b0 = 0.5f * (1 + cs);
+        filter->b1 = -1 * (1 + cs); // the negative sign here is not in the TI document
         filter->b2 = filter->b0;
         filter->a1 = -2 * cs;
         filter->a2 = 1 - alpha;

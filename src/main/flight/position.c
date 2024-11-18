@@ -138,7 +138,7 @@ void calculateEstimatedAltitude(void) {
 #endif
 
     if(!kfInitDone) { //first kf init
-        kf_init(&kf, 0.0f, 0.5, 0.5); //to do: init variance
+        kf_init(&kf, 1.0f, 0.5, 0.5); //to do: init variance
         kfInitDone = true;
     }
     
@@ -161,7 +161,7 @@ void calculateEstimatedAltitude(void) {
         }
         zeroedGpsAltitudeCm = 0.0f; // always hold relativeAltitude at zero while disarmed
 
-        DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm / 100.0f); // Absolute altitude ASL in metres, max 32,767m
+        // DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm / 100.0f); // Absolute altitude ASL in metres, max 32,767m
     //  ***  ARMED  ***
     } else {
         if (!wasArmed) { // things to run once, on arming, after being disarmed
@@ -183,7 +183,7 @@ void calculateEstimatedAltitude(void) {
             gpsTrust = 0.0f;
             // TO DO - smoothly reduce GPS trust, rather than immediately dropping to zero for what could be only a very brief loss of 3D fix 
         }
-        DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedGpsAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
+        // DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedGpsAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
     
         // apply Kalman filter on available sensors
         kf_update_variance(&kf);
@@ -236,12 +236,12 @@ void calculateEstimatedAltitude(void) {
 #endif
  
     // *** set debugs
-    DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroAltCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
+    // DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
+    // DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(baroAltCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
 #ifdef USE_VARIO
-    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
+    // DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
 #endif
-    DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
+    // DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(zeroedFusedAltitudeCm));
 
     altitudeAvailable = haveGpsAlt || haveBaroAlt || haveRangefinderAlt;

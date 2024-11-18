@@ -18,9 +18,9 @@
 #pragma once
 
 typedef struct altitudeState_s {
-    float value;
+    float distCm;
     float variance;
-    float velocity;
+    float velocityCm;
 } altitudeState_t;
 
 #ifdef USE_ACC
