@@ -95,7 +95,7 @@ static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds = 0.1f;
 static float gpsDataFrequencyHz = 10.0f;
 
-static uint16_t currentGpsStamp = 1; // logical timer for received position update
+static uint16_t currentGpsStamp = 0; // logical timer for received position update
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -2593,12 +2593,12 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
-void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *pEWDist, float *pNSDist) {
-    if (pEWDist) {
-        *pEWDist = (float)(to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
-    }
+void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist) {
     if (pNSDist) {
         *pNSDist = (float)(to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
+    }
+    if (pEWDist) {
+        *pEWDist = (float)(to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
     }
 }
 

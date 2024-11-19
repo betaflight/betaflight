@@ -125,12 +125,12 @@ extern "C" {
         return true;
     }
 
-void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *pEWDist, float *pNSDist)
+void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist)
     {
        UNUSED(from);
        UNUSED(to);
-       UNUSED(pEWDist);
        UNUSED(pNSDist);
+       UNUSED(pEWDist);
     }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig)
