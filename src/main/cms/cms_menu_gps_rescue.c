@@ -37,9 +37,10 @@
 
 #include "config/config.h"
 
-#include "flight/autopilot.h"
-#include "flight/gps_rescue.h"
 #include "flight/position.h"
+
+#include "pg/autopilot.h"
+#include "pg/gps_rescue.h"
 
 static uint16_t gpsRescueConfig_minStartDistM; //meters
 static uint8_t gpsRescueConfig_altitudeMode;

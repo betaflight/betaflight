@@ -46,6 +46,7 @@
 
 #include "io/gps.h"
 #include "rx/rx.h"
+#include "pg/autopilot.h"
 #include "sensors/acceleration.h"
 
 #include "gps_rescue.h"
@@ -512,9 +513,9 @@ static void sensorUpdate(void)
     rescueState.sensor.groundSpeedCmS = gpsSol.groundSpeed; // cm/s
 
     rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
-    // Range from 10ms (100hz) to 1000ms (1Hz). Intended to cover common GPS data rates and exclude unusual values.
+    // Range from 50ms (20hz) to 2500ms (0.4Hz). Intended to cover common GPS data rates and exclude unusual values.
 
-    rescueState.sensor.velocityToHomeCmS = ((prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) / rescueState.sensor.gpsDataIntervalSeconds);
+    rescueState.sensor.velocityToHomeCmS = ((prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) * getGpsDataFrequencyHz());
     // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.
     prevDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
 

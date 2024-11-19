@@ -36,7 +36,6 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
-    #include "flight/autopilot.h"
     #include "flight/failsafe.h"
     #include "flight/gps_rescue.h"
     #include "flight/imu.h"
@@ -48,11 +47,13 @@ extern "C" {
     #include "io/beeper.h"
     #include "io/gps.h"
 
+    #include "pg/autopilot.h"
     #include "pg/gps_rescue.h"
     #include "pg/motor.h"
+    #include "pg/rx.h"
+
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
-    #include "pg/rx.h"
 
     #include "rx/rx.h"
 
@@ -100,6 +101,7 @@ extern "C" {
     uint8_t activePidLoopDenom = 1;
 
     float getGpsDataIntervalSeconds(void) { return 0.1f; }
+    float getGpsDataFrequencyHz(void) { return 10.0f; }
     void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k) { filter->k = k; }
     void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k) { filter->k = k; }
     void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k) { filter->k = k; }

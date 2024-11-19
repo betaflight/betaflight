@@ -832,7 +832,7 @@ void init(void)
 #endif
 
     positionInit();
-    autopilotInit(autopilotConfig());
+    autopilotInit();
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();

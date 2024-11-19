@@ -42,7 +42,6 @@ extern "C" {
     #include "fc/runtime_config.h"
     #include "fc/rc.h"
 
-    #include "flight/autopilot.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -51,6 +50,8 @@ extern "C" {
     #include "io/gps.h"
 
     #include "rx/rx.h"
+
+    #include "pg/autopilot.h"
 
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"

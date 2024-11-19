@@ -83,9 +83,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -119,9 +117,11 @@
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
 
+#include "pg/autopilot.h"
 #include "pg/beeper.h"
 #include "pg/board.h"
 #include "pg/dyn_notch.h"
+#include "pg/gps_rescue.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
 #include "pg/pos_hold.h"

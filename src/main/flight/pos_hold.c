@@ -34,9 +34,10 @@
 #include "rx/rx.h"
 #include "sensors/compass.h"
 
+#include "pg/pos_hold.h"
 #include "pos_hold.h"
 
-typedef struct {
+typedef struct posHoldState_s {
     bool posHoldIsOK;
     float deadband;
     bool useStickAdjustment;
@@ -67,7 +68,7 @@ void posHoldStart(void)
         if (!isInPosHoldMode) {
             // start position hold mode
             posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
-            resetPositionControl(gpsSol.llh); // sets target location to current location
+            resetPositionControl(&gpsSol.llh); // sets target location to current location
             isInPosHoldMode = true;
         }
     } else {

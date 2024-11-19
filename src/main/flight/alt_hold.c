@@ -32,6 +32,7 @@
 #include "flight/position.h"
 
 #include "rx/rx.h"
+#include "pg/autopilot.h"
 
 #include "alt_hold.h"
 

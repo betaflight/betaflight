@@ -32,7 +32,6 @@ extern "C" {
     #include "fc/runtime_config.h"
 
     #include "flight/alt_hold.h"
-    #include "flight/autopilot.h"
     #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/pid.h"
@@ -42,6 +41,9 @@ extern "C" {
 
     #include "rx/rx.h"
 
+    #include "pg/alt_hold.h"
+    #include "pg/autopilot.h"
+    
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
 
@@ -110,10 +112,11 @@ extern "C" {
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
 
-    float getAltitudeCm(void) {return 0.0f;}
-    float getAltitudeDerivative(void) {return 0.0f;}
+    float getAltitudeCm(void) { return 0.0f; }
+    float getAltitudeDerivative(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 0.0f; }
-    float getGpsDataIntervalSeconds(void) { return 0.01f; }//    gpsSolutionData_t gpsSol;
+    float getGpsDataIntervalSeconds(void) { return 0.01f; }
+    float getGpsDataFrequencyHz(void) { return 10.0f; }
     float rcCommand[4];
 
     bool gpsHasNewData(uint16_t* gpsStamp) {

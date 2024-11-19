@@ -92,7 +92,9 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
 
 static serialPort_t *gpsPort;
-static float gpsDataIntervalSeconds;
+static float gpsDataIntervalSeconds = 0.1f;
+static float gpsDataFrequencyHz = 10.0f;
+
 static uint16_t currentGpsStamp = 1; // logical timer for received position update
 
 typedef struct gpsInitData_s {
@@ -1762,7 +1764,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
             }
              navDeltaTimeMs = (msInTenSeconds + data->time - gpsData.lastNavSolTs) % msInTenSeconds;
              gpsData.lastNavSolTs = data->time;
-             sol->navIntervalMs = constrain(navDeltaTimeMs, 100, 2500);
+             sol->navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
             // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
             return true;
 
@@ -2609,7 +2611,8 @@ void onGpsNewData(void)
 
     currentGpsStamp++; // new GPS data available
 
-    gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
+    gpsDataIntervalSeconds = gpsSol.navIntervalMs * 0.001f; // range for navIntervalMs is constrained to 50 - 2500
+    gpsDataFrequencyHz = 1.0f / gpsDataIntervalSeconds;
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {
@@ -2646,6 +2649,11 @@ void gpsSetFixState(bool state)
 float getGpsDataIntervalSeconds(void)
 {
     return gpsDataIntervalSeconds;
+}
+
+float getGpsDataFrequencyHz(void)
+{
+    return gpsDataFrequencyHz;
 }
 
 baudRate_e getGpsPortActualBaudRateIndex(void)

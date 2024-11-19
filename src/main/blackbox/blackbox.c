@@ -62,14 +62,11 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/alt_hold.h"
-#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
-#include "flight/pos_hold.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
@@ -80,8 +77,12 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+
+#include "pg/alt_hold.h"
+#include "pg/autopilot.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
+#include "pg/pos_hold.h"
 
 #include "rx/rx.h"
 

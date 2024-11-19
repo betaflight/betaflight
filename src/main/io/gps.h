@@ -394,6 +394,7 @@ void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, floa
 void gpsSetFixState(bool state);
 
 bool gpsHasNewData(uint16_t *stamp);
-float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue
+float getGpsDataIntervalSeconds(void);  // range 0.05 - 2.5s
+float getGpsDataFrequencyHz(void);      // range 20Hz - 0.4Hz
 
 baudRate_e getGpsPortActualBaudRateIndex(void);
