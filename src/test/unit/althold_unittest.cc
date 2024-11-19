@@ -25,6 +25,7 @@ extern "C" {
     #include "build/debug.h"
     #include "pg/pg_ids.h"
 
+    #include "common/filter.h"
     #include "common/vector.h"
 
     #include "fc/core.h"
@@ -124,11 +125,6 @@ extern "C" {
         return true;
     }
 
-    float vector2Norm(const vector2_t *v) {
-       UNUSED(*v);
-       return 0.0f;
-    }
-
 void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *pEWDist, float *pNSDist)
     {
        UNUSED(from);
@@ -143,55 +139,6 @@ void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, floa
         UNUSED(rxConfig);
     }
 
-    float pt1FilterGain(float f_cut, float dT)
-    {
-        UNUSED(f_cut);
-        UNUSED(dT);
-        return 0.0;
-    }
-
-    void pt1FilterInit(pt1Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-
-    void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-
-    float pt1FilterApply(pt1Filter_t *filter, float input)
-    {
-        UNUSED(filter);
-        UNUSED(input);
-        return 0.0;
-    }
-
-    float pt3FilterGain(float f_cut, float dT)
-    {
-        UNUSED(f_cut);
-        UNUSED(dT);
-        return 0.0;
-    }
-    void pt3FilterInit(pt3Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-    void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-    float pt3FilterApply(pt3Filter_t *filter, float input)
-    {
-        UNUSED(filter);
-        UNUSED(input);
-        return 0.0;
-    }
-    
     throttleStatus_e calculateThrottleStatus()
 {
     return THROTTLE_LOW;

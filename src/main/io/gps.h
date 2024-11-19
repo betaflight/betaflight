@@ -247,8 +247,8 @@ typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
     gpsAccuracy_t acc;
-    uint16_t speed3d;               // speed in 0.1m/s
-    uint16_t groundSpeed;           // speed in 0.1m/s
+    uint16_t speed3d;               // speed in cm/s
+    uint16_t groundSpeed;           // speed in cm/s
     uint16_t groundCourse;          // degrees * 10
     uint8_t numSat;
     uint32_t time;                  // GPS msToW

@@ -102,9 +102,6 @@ extern "C" {
 
     float getGpsDataIntervalSeconds(void) { return 0.1f; }
     float getGpsDataFrequencyHz(void) { return 10.0f; }
-    void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k) { filter->k = k; }
-    void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k) { filter->k = k; }
-    void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k) { filter->k = k; }
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -1141,32 +1138,6 @@ extern "C" {
 
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
-
-    float pt1FilterGain(float, float) { return 0.5f; }
-    float pt2FilterGain(float, float)  { return 0.1f; }
-    float pt3FilterGain(float, float)  { return 0.1f; }
-
-    void pt1FilterInit(pt1Filter_t *velocityDLpf, float) {
-        UNUSED(velocityDLpf);
-    }
-    float pt1FilterApply(pt1Filter_t *velocityDLpf, float) {
-        UNUSED(velocityDLpf);
-        return 0.0f;
-    }
-    void pt2FilterInit(pt2Filter_t *velocityDLpf, float) {
-        UNUSED(velocityDLpf);
-    }
-    float pt2FilterApply(pt2Filter_t *velocityDLpf, float) {
-        UNUSED(velocityDLpf);
-        return 0.0f;
-    }
-    void pt3FilterInit(pt3Filter_t *velocityUpsampleLpf, float) {
-        UNUSED(velocityUpsampleLpf);
-    }
-    float pt3FilterApply(pt3Filter_t *velocityUpsampleLpf, float) {
-        UNUSED(velocityUpsampleLpf);
-        return 0.0f;
-    }
 
     float sin_approx(float) {return 0.0f;}
     float cos_approx(float) {return 1.0f;}
