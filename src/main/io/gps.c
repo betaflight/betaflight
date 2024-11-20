@@ -2593,12 +2593,12 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
-void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *pNSDist, float *pEWDist) {
-    if (pNSDist) {
-        *pNSDist = (float)(to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
+void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *latDist, float *lonDist) {
+    if (latDist) {
+        *latDist = (float)(to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
     }
-    if (pEWDist) {
-        *pEWDist = (float)(to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
+    if (lonDist) {
+        *lonDist = (float)(to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
     }
 }
 
