@@ -26,7 +26,6 @@ void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(const gpsLocation_t *initialTargetLocation);
 void moveTargetLocation(int32_t latStep, int32_t lonStep);
-void posControlOnNewGpsData(void);
 void posControlOutput(void);
 bool positionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);

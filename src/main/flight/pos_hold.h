@@ -26,7 +26,6 @@
 #define POSHOLD_TASK_RATE_HZ 100 // hz
 
 void posHoldInit(void);
-void posHoldNewGpsData(void);
 void updatePosHold(timeUs_t currentTimeUs);
 
 bool posHoldFailure(void);
