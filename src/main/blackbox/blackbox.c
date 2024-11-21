@@ -206,9 +206,9 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"axisF",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
     {"axisF",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
 #ifdef USE_WING
-    {"axisS",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    {"axisS",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
-    {"axisS",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(PID)},
+    {"axisS",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_WING_S_0)},
+    {"axisS",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_WING_S_1)},
+    {"axisS",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_WING_S_2)},
 #endif
     /* rcCommands are encoded together as a group in P-frames: */
     {"rcCommand",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(RC_COMMANDS)},
@@ -508,6 +508,13 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case CONDITION(NONZERO_PID_D_2):
         return (currentPidProfile->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0) && isFieldEnabled(FIELD_SELECT(PID));
 
+#ifdef USE_WING
+    case CONDITION(NONZERO_WING_S_0):
+    case CONDITION(NONZERO_WING_S_1):
+    case CONDITION(NONZERO_WING_S_2):
+        return (currentPidProfile->pid[condition - CONDITION(NONZERO_WING_S_0)].S != 0) && isFieldEnabled(FIELD_SELECT(PID));
+#endif
+
     case CONDITION(RC_COMMANDS):
         return isFieldEnabled(FIELD_SELECT(RC_COMMANDS));
 
@@ -648,8 +655,13 @@ static void writeIntraframe(void)
         }
 
         blackboxWriteSignedVBArray(blackboxCurrent->axisPID_F, XYZ_AXIS_COUNT);
+
 #ifdef USE_WING
-        blackboxWriteSignedVBArray(blackboxCurrent->axisPID_S, XYZ_AXIS_COUNT);
+        for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
+            if (testBlackboxCondition(CONDITION(NONZERO_WING_S_0) + x)) {
+                blackboxWriteSignedVB(blackboxCurrent->axisPID_S[x]);
+            }
+        }
 #endif
     }
 
@@ -822,9 +834,13 @@ static void writeInterframe(void)
 
         arraySubInt32(deltas, blackboxCurrent->axisPID_F, blackboxLast->axisPID_F, XYZ_AXIS_COUNT);
         blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
+
 #ifdef USE_WING
-        arraySubInt32(deltas, blackboxCurrent->axisPID_S, blackboxLast->axisPID_S, XYZ_AXIS_COUNT);
-        blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
+        for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
+            if (testBlackboxCondition(CONDITION(NONZERO_WING_S_0) + x)) {
+                blackboxWriteSignedVB(blackboxCurrent->axisPID_S[x] - blackboxLast->axisPID_S[x]);
+            }
+        }
 #endif
     }
 
@@ -1198,11 +1214,12 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->axisPID_I[i] = lrintf(pidData[i].I);
         blackboxCurrent->axisPID_D[i] = lrintf(pidData[i].D);
         blackboxCurrent->axisPID_F[i] = lrintf(pidData[i].F);
-        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i] * blackboxHighResolutionScale);
-        blackboxCurrent->gyroUnfilt[i] = lrintf(gyro.gyroADC[i] * blackboxHighResolutionScale);
 #ifdef USE_WING
         blackboxCurrent->axisPID_S[i] = lrintf(pidData[i].S);
-#endif
+#endif        
+        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i] * blackboxHighResolutionScale);
+        blackboxCurrent->gyroUnfilt[i] = lrintf(gyro.gyroADC[i] * blackboxHighResolutionScale);
+
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC.v[i]);
 #endif
