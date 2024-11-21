@@ -125,22 +125,14 @@ extern "C" {
         return true;
     }
 
-void GPS_latLongVectors(const gpsLocation_t *from, const gpsLocation_t *to, float *latDist, float *lonDist)
-    {
-       UNUSED(from);
-       UNUSED(to);
-       UNUSED(latDist);
-       UNUSED(lonDist);
-    }
+    void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
 
-    void parseRcChannels(const char *input, rxConfig_t *rxConfig)
-    {
+    void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);
         UNUSED(rxConfig);
     }
 
-    throttleStatus_e calculateThrottleStatus()
-{
-    return THROTTLE_LOW;
-}
+    throttleStatus_e calculateThrottleStatus() {
+        return THROTTLE_LOW;
+    }
 }

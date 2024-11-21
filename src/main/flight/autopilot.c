@@ -53,103 +53,106 @@ static pidCoefficient_t positionPidCoeffs;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
-typedef struct earthFrame_s {
+typedef struct efPidAxis_s {
     bool isStopping;
-    float distance;
     float previousDistance;
     float previousVelocity;
     float integral;
-    float pidSum;
     pt1Filter_t velocityLpf;
     pt1Filter_t accelerationLpf;
-} earthFrame_t;
+} efPidAxis_t;
 
 typedef enum {
-    lat = 0,
-    lon
-} axisEF_t;
+    // axes are for ENU system; it is different from current BF code
+    LON = 0,   // X, east
+    LAT        // Y, north
+} axisEF_e;
 
 typedef struct autopilotState_s {
+    gpsLocation_t targetLocation;           // current target
     float sanityCheckDistance;
-    float upsampleCutoffBF;
-    float pt1Cutoff;
-    float pt1Gain;
+    float upsampleGain;                     // for upsampleBF; GPS to POSHOLD rate upsample
+    float vaCutoff;                         // velocity + acceleration filter cutoff
     bool sticksActive;
     float maxAngle;
-    float pidSumBF[RP_AXIS_COUNT];
-    float iTermLeakGain;
-    pt3Filter_t upsampleBF[RP_AXIS_COUNT];
-    earthFrame_t efAxis[EF_AXIS_COUNT];
+    vector2_t pidSumBF;                     // pid output, updated on each GPS update, rotated to body frame
+    pt3Filter_t upsampleBF[RP_AXIS_COUNT];  // upsampling filter
+    efPidAxis_t efAxis[EF_AXIS_COUNT];
 } autopilotState_t;
 
 static autopilotState_t ap = {
     .sanityCheckDistance = 1000.0f,
-    .pt1Cutoff = 1.0f,
-    .pt1Gain = 1.0f,
+    .upsampleGain = 1.0f,
+    .vaCutoff = 1.0f,
     .sticksActive = false,
-    .iTermLeakGain = 0.0f,
-    .pidSumBF = { 0.0f, 0.0f },
-    .upsampleBF = { {0}, {0} },
-    .efAxis = { {0} }
 };
 
-static gpsLocation_t currentTargetLocation = {0, 0, 0};
 float autopilotAngle[RP_AXIS_COUNT];
 
-void resetPositionControlEFParams(earthFrame_t *efAxis)
+static void resetEFAxisFilters(efPidAxis_t* efAxis, float vaGain)
 {
-    // at start only
-    pt1FilterInit(&efAxis->velocityLpf, ap.pt1Gain); // Clear and initialise the filters
-    pt1FilterInit(&efAxis->accelerationLpf, ap.pt1Gain);
-    efAxis->isStopping = true; // Enter starting 'phase'
-    efAxis->integral = 0.0f;
-    
+    pt1FilterInit(&efAxis->velocityLpf, vaGain);
+    pt1FilterInit(&efAxis->accelerationLpf, vaGain);
 }
 
-void resetPt3UpsampleFilters(void)
+void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
 {
-    pt3FilterInit(&ap.upsampleBF[AI_ROLL], ap.upsampleCutoffBF);
-    pt3FilterInit(&ap.upsampleBF[AI_PITCH], ap.upsampleCutoffBF);
+    // at start only
+    resetEFAxisFilters(efAxis, vaGain);
+    efAxis->isStopping = true; // Enter starting (deceleration) 'phase'
+    efAxis->integral = 0.0f;
+}
+
+static void resetUpsampleFilters(void)
+{
+     for (unsigned i = 0; i < ARRAYLEN(ap.upsampleBF); i++) {
+         pt3FilterInit(&ap.upsampleBF[i], ap.upsampleGain);
+    }
+}
+
+// get sanity distance based on speed
+static inline float sanityCheckDistance(const float gpsGroundSpeedCmS)
+{
+    return fmaxf(1000.0f, gpsGroundSpeedCmS * 2.0f);
 }
 
 void resetPositionControl(const gpsLocation_t *initialTargetLocation)
 {
     // from pos_hold.c when initiating position hold at target location
-    currentTargetLocation = *initialTargetLocation;
+    ap.targetLocation = *initialTargetLocation;
     ap.sticksActive = false;
     // set sanity check distance according to groundspeed at start, minimum of 10m
-    ap.sanityCheckDistance = fmaxf(1000.0f, gpsSol.groundSpeed * 2.0f);
-    resetPositionControlEFParams(&ap.efAxis[lat]);
-    resetPositionControlEFParams(&ap.efAxis[lon]);
-    resetPt3UpsampleFilters(); // clear anything from previous iteration
-    ap.iTermLeakGain = 0.0f;   // force an update of the leak gain value
-}
-
-void initializeEfAxisFilters(earthFrame_t *efAxis, float filterGain) {
-    pt1FilterInit(&efAxis->velocityLpf, filterGain);
-    pt1FilterInit(&efAxis->accelerationLpf, filterGain);
+    ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
+    for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
+        // disable filter until first call
+        resetEFAxisParams(&ap.efAxis[i], 1.0f);
+    }
+    resetUpsampleFilters(); // clear anything from previous iteration
 }
 
 void autopilotInit(void)
 {
+    const autopilotConfig_t *cfg = autopilotConfig();
+
     ap.sticksActive = false;
-    ap.maxAngle = autopilotConfig()->max_angle;
-    altitudePidCoeffs.Kp = autopilotConfig()->altitude_P * ALTITUDE_P_SCALE;
-    altitudePidCoeffs.Ki = autopilotConfig()->altitude_I * ALTITUDE_I_SCALE;
-    altitudePidCoeffs.Kd = autopilotConfig()->altitude_D * ALTITUDE_D_SCALE;
-    altitudePidCoeffs.Kf = autopilotConfig()->altitude_F * ALTITUDE_F_SCALE;
-    positionPidCoeffs.Kp = autopilotConfig()->position_P * POSITION_P_SCALE;
-    positionPidCoeffs.Ki = autopilotConfig()->position_I * POSITION_I_SCALE;
-    positionPidCoeffs.Kd = autopilotConfig()->position_D * POSITION_D_SCALE;
-    positionPidCoeffs.Kf = autopilotConfig()->position_A * POSITION_A_SCALE; // Kf used for acceleration
+    ap.maxAngle = cfg->max_angle;
+    altitudePidCoeffs.Kp = cfg->altitude_P * ALTITUDE_P_SCALE;
+    altitudePidCoeffs.Ki = cfg->altitude_I * ALTITUDE_I_SCALE;
+    altitudePidCoeffs.Kd = cfg->altitude_D * ALTITUDE_D_SCALE;
+    altitudePidCoeffs.Kf = cfg->altitude_F * ALTITUDE_F_SCALE;
+    positionPidCoeffs.Kp = cfg->position_P * POSITION_P_SCALE;
+    positionPidCoeffs.Ki = cfg->position_I * POSITION_I_SCALE;
+    positionPidCoeffs.Kd = cfg->position_D * POSITION_D_SCALE;
+    positionPidCoeffs.Kf = cfg->position_A * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gain
-    ap.upsampleCutoffBF = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate
-    resetPt3UpsampleFilters();
+    ap.upsampleGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate
+    resetUpsampleFilters();
     // Initialise PT1 filters for earth frame axes latitude and longitude
-    ap.pt1Cutoff = autopilotConfig()->position_cutoff * 0.01f;
-    ap.pt1Gain = pt1FilterGain(ap.pt1Cutoff, 0.1f); // assume 10Hz GPS connection at start
-    initializeEfAxisFilters(&ap.efAxis[lat], ap.pt1Gain);
-    initializeEfAxisFilters(&ap.efAxis[lon], ap.pt1Gain);
+    ap.vaCutoff = cfg->position_cutoff * 0.01f;
+    const float vaGain = pt1FilterGain(ap.vaCutoff,  0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
+    for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
+        resetEFAxisFilters(&ap.efAxis[i], vaGain);
+    }
 }
 
 void resetAltitudeControl (void) {
@@ -158,6 +161,7 @@ void resetAltitudeControl (void) {
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep)
 {
+    const float verticalVelocityCmS = getAltitudeDerivative();
     const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
 
@@ -170,14 +174,16 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     // increase D when velocity is high, typically when initiating hold at high vertical speeds
     // 1.0 when less than 5 m/s, 2x at 10m/s, 2.5 at 20 m/s, 2.8 at 50 m/s, asymptotes towards max 3.0.
     float dBoost = 1.0f;
-    const float startValue = 500.0f; // velocity at which D should start to increase
-    const float altDeriv = fabsf(getAltitudeDerivative());
-    if (altDeriv > startValue) {
-        const float ratio = altDeriv / startValue;
-        dBoost = (3.0f * ratio - 2.0f) / ratio;
+    {
+        const float startValue = 500.0f; // velocity at which D should start to increase
+        const float altDeriv = fabsf(verticalVelocityCmS);
+        if (altDeriv > startValue) {
+            const float ratio = altDeriv / startValue;
+            dBoost = (3.0f * ratio - 2.0f) / ratio;
+        }
     }
 
-    const float altitudeD = getAltitudeDerivative() * dBoost * altitudePidCoeffs.Kd;
+    const float altitudeD = verticalVelocityCmS * dBoost * altitudePidCoeffs.Kd;
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
 
@@ -211,121 +217,103 @@ void setSticksActiveStatus(bool areSticksActive)
     ap.sticksActive = areSticksActive;
 }
 
-void setTargetLocation(const gpsLocation_t newTargetLocation)
+void setTargetLocation(const gpsLocation_t* newTargetLocation, axisEF_e efAxisIdx)
 {
-    currentTargetLocation = newTargetLocation;
-    ap.efAxis[lat].previousDistance = 0.0f;
-    ap.efAxis[lon].previousDistance = 0.0f; // reset to avoid D and A spikess
-    // function is intended for only small changes in position
-    // for example, where the step distance change reflects an intended velocity, determined by a client function
-    // if we had a 'target_ground_speed' value, like in gps_rescue, we can make a function that starts and stops smoothly and targets that velocity
-}
-
-void updateLocation(earthFrame_t *efAxis, axisEF_t loopAxis)
-{
-    if (loopAxis == lat) {
-        currentTargetLocation.lat = gpsSol.llh.lat; // update latitude position
+    if (efAxisIdx == LON) {
+        ap.targetLocation.lon = newTargetLocation->lon; // update East-West / / longitude position
     } else {
-        currentTargetLocation.lon = gpsSol.llh.lon; // update longitude position
+        ap.targetLocation.lat = newTargetLocation->lat; // update North-South / latitude position
     }
-    efAxis->previousDistance = 0.0f; // and reset the previous distance
+    ap.efAxis[efAxisIdx].previousDistance = 0.0f;      // and reset the previous distance to avoid D and A spikes
 }
 
-bool positionControl(void) 
+static void updateLocation(const gpsLocation_t* newTargetLocation)
 {
+    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
+        setTargetLocation(newTargetLocation, i);
+    }
+}
+
+bool positionControl(void)
+{
+    unsigned debugAxis = gyroConfig()->gyro_filter_debug_axis;
+    static vector2_t debugGpsDistance = { 0 };     // keep last calculated distance for DEBUG
+    static vector2_t debugPidSumEF = { 0 };        // and last pidsum in EF
     static uint16_t gpsStamp = 0;
     if (gpsHasNewData(&gpsStamp)) {
-        const float gpsDataIntervalS = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.05 - 2.5s
-        const float gpsDataFreqHz = getGpsDataFrequencyHz();
+        const float gpsDataInterval = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.05 - 2.5s
+        const float gpsDataFreq = 1.0f / gpsDataInterval;
 
         // get lat and long distances from current location (gpsSol.llh) to target location
         vector2_t gpsDistance;
-        GPS_latLongVectors(&gpsSol.llh, &currentTargetLocation, &gpsDistance.v[lat], &gpsDistance.v[lon]); // X is lon, Y is lat
-        ap.efAxis[lat].distance = gpsDistance.v[lat];
-        ap.efAxis[lon].distance = gpsDistance.v[lon];
-
-        const float distanceCm = vector2Norm(&gpsDistance);
+        GPS_distance2d(&gpsSol.llh, &ap.targetLocation, &gpsDistance); // X is EW/lon, Y is NS/lat
+        debugGpsDistance = gpsDistance;
+        const float distanceNormCm = vector2Norm(&gpsDistance);
 
         // ** Sanity check **
         // primarily to detect flyaway from no Mag or badly oriented Mag
         // must accept some overshoot at the start, especially if entering at high speed
-        if (distanceCm > ap.sanityCheckDistance) {
+        if (distanceNormCm > ap.sanityCheckDistance) {
             return false;
         }
 
-        const float lpfGain = pt1FilterGain(ap.pt1Cutoff, gpsDataIntervalS);
+        // update filters according to current GPS update rate
+        const float vaGain = pt1FilterGain(ap.vaCutoff, gpsDataInterval);
+        const float iTermLeakGain = 1.0f - pt1FilterGainFromDelay(2.5f, gpsDataInterval);   // 2.5s time constant
+        vector2_t pidSum = { 0 };       // P+I in loop, D+A added after the axis loop (after limiting it)
+        vector2_t pidDA;                // D+A
 
-        if (ap.iTermLeakGain == 0.0f) {
-            const float leakTimeConstant = 2.5f;   // 2.5s time constant, set this only once, it's not critical
-            ap.iTermLeakGain = pt1FilterGainFromDelay(leakTimeConstant, gpsDataIntervalS);
-        }
-
-        static float prevPidDASquared = 0.0f; // we limit DA on vector length
-        const float maxDAAngle = 35.0f;       // limit in degrees; arbitrary angle
-        const float sqMaxDAAngle = sq(maxDAAngle);
-
-        for (axisEF_t loopAxis = lat; loopAxis <= lon; loopAxis++) {
-            earthFrame_t *efAxis = &ap.efAxis[loopAxis];
-            // separate PID controllers for latitude and longitude
+        for (axisEF_e efAxisIdx = 0; ARRAYLEN(ap.efAxis); efAxisIdx++) {
+            efPidAxis_t *efAxis = &ap.efAxis[efAxisIdx];
+            // separate PID controllers for longitude (EastWest or EW, X) and latitude (NorthSouth or NS, Y)
+            const float axisDistance = gpsDistance.v[efAxisIdx];
 
             // ** P **
-            const float pidP = efAxis->distance * positionPidCoeffs.Kp;
+            const float pidP = axisDistance * positionPidCoeffs.Kp;
+            pidSum.v[efAxisIdx] += pidP;
 
             // ** I **
-            efAxis->integral += efAxis->isStopping ? 0.0f : efAxis->distance * gpsDataIntervalS;
             // only add to iTerm while in hold phase
+            efAxis->integral += efAxis->isStopping ? 0.0f : axisDistance * gpsDataInterval;
             const float pidI = efAxis->integral * positionPidCoeffs.Ki;
+            pidSum.v[efAxisIdx] += pidI;
 
             // ** D ** //
             // Velocity derived from GPS position works better than module supplied GPS Speed and Heading information
 
-            float velocity = (efAxis->distance - efAxis->previousDistance) * gpsDataFreqHz; // cm/s, minimum step 11.1 cm/s, at equator, at 10Hz, approximately
-            efAxis->previousDistance = efAxis->distance;
-            pt1FilterUpdateCutoff(&efAxis->velocityLpf, lpfGain);
+            const float velocity = (axisDistance - efAxis->previousDistance) * gpsDataFreq; // cm/s
+            efAxis->previousDistance = axisDistance;
+            pt1FilterUpdateCutoff(&efAxis->velocityLpf, vaGain);
             const float velocityFiltered = pt1FilterApply(&efAxis->velocityLpf, velocity);
             float pidD = velocityFiltered * positionPidCoeffs.Kd;
 
-            float acceleration = (velocity - efAxis->previousVelocity) * gpsDataFreqHz;
-            efAxis->previousVelocity = velocity;
-            pt1FilterUpdateCutoff(&efAxis->accelerationLpf, lpfGain);
+            // differentiate velocity another time to get acceleration
+            float acceleration = (velocityFiltered - efAxis->previousVelocity) * gpsDataFreq;
+            efAxis->previousVelocity = velocityFiltered;
+            // apply second filter to acceleration (acc is filtered twice)
+            pt1FilterUpdateCutoff(&efAxis->accelerationLpf, vaGain);
             const float accelerationFiltered = pt1FilterApply(&efAxis->accelerationLpf, acceleration);
             const float pidA = accelerationFiltered * positionPidCoeffs.Kf;
 
             if (ap.sticksActive) {
-                // sticks active 'phase'
+                // sticks active 'phase', prepare to enter stopping
                 efAxis->isStopping = true;
-                updateLocation(efAxis, loopAxis);
-                // while sticks are moving, reset the location on each axis, to maintain a usable D value
                 // slowly leak iTerm away
-                efAxis->integral *= ap.iTermLeakGain;
-                // increase sanity check distance depending on speed, typically maximal when sticks stop
+                efAxis->integral *= iTermLeakGain;
+                // rest is handled after axis loop
             } else if (efAxis->isStopping) {
-                // 'phase' after sticks stop, but before craft has stopped
+                // 'phase' after sticks are centered, but before craft has stopped in given PID axis
                 pidD *= 1.6f; // aribitrary D boost to stop more quickly when sticks are centered
+                // detect velocity zero crossing (velocityFiltered is delayed by filter)
                 if (velocity * velocityFiltered < 0.0f) {
                     // when an axis has nearly stopped moving, reset it and end it's start phase
-                    updateLocation(efAxis, loopAxis);
+                    setTargetLocation(&gpsSol.llh, efAxisIdx);
                     efAxis->isStopping = false;
                 }
             }
-
-            float pidDA = pidD + pidA;
-
-            // limit sum of D and A per axis based on total DA vector length, otherwise can be too aggressive when starting at speed
-            // limit is 35 degrees from D and A alone, arbitrary value.  20 is a bit too low, allows a lot of overshoot
-            // note: an angle of more than 35 degrees can still be achieved as P and I grow
-            const float pidDASquared = sq(pidD + pidA);
-            float magSq = pidDASquared + prevPidDASquared;
-            if (magSq > sqMaxDAAngle && magSq > 0.0f) {
-                pidDA *= maxDAAngle / sqrtf(magSq);
-            }
-            prevPidDASquared = pidDASquared;
-
-            // ** PID Sum **
-            efAxis->pidSum = pidP + pidI + pidDA;
-
-            if (gyroConfig()->gyro_filter_debug_axis == loopAxis) {
-                DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(distanceCm));
+            pidDA.v[efAxisIdx] = pidD + pidA;    // save DA here, processed after axis loop
+            if (debugAxis == efAxisIdx) {
+                DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(distanceNormCm));   // same for both axes
                 DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 4, lrintf(pidP * 10));
                 DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 5, lrintf(pidI * 10));
                 DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 6, lrintf(pidD * 10));
@@ -333,43 +321,61 @@ bool positionControl(void)
             }
         } // end for loop
 
-        if (ap.sticksActive) {
-            // keep update sanity check distance while sticks are out
-            ap.sanityCheckDistance = gpsSol.groundSpeed > 500 ? gpsSol.groundSpeed * 2.0f : 1000.0f;
-            // if a Position Hold deadband is set, and sticks are outside deadband, allow pilot control in angle mode
-            ap.pidSumBF[AI_ROLL] = 0.0f;
-            ap.pidSumBF[AI_PITCH] = 0.0f;
-        } else {
-            // ** Rotate pid Sum to quad frame of reference, into pitch and roll **
-            const float headingRads = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
-            const float sinHeading = sin_approx(headingRads);
-            const float cosHeading = cos_approx(headingRads);
-            ap.pidSumBF[AI_ROLL] = -sinHeading * ap.efAxis[lat].pidSum + cosHeading * ap.efAxis[lon].pidSum;
-            ap.pidSumBF[AI_PITCH] = cosHeading * ap.efAxis[lat].pidSum + sinHeading * ap.efAxis[lon].pidSum;
-
-            // limit angle vector to maxAngle
-            const float angleMagSq = sq(ap.pidSumBF[AI_ROLL]) + sq(ap.pidSumBF[AI_PITCH]);
-            if (angleMagSq > sq(ap.maxAngle) && angleMagSq > 0.0f) {
-                const float limiter = ap.maxAngle / sqrtf(angleMagSq);
-                ap.pidSumBF[AI_ROLL] *= limiter;  // Scale the roll value
-                ap.pidSumBF[AI_PITCH] *= limiter; // Scale the pitch value
+        {
+            // limit sum of D and A per axis based on total DA vector length, otherwise can be too aggressive when starting at speed
+            // limit is 35 degrees from D and A alone, arbitrary value.  20 is a bit too low, allows a lot of overshoot
+            // note: an angle of more than 35 degrees can still be achieved as P and I grow
+            const float maxDAAngle = 35.0f; // D+A limit in degrees; arbitrary angle
+            const float mag = vector2Norm(&pidDA);
+            if (mag > maxDAAngle) {
+                vector2Scale(&pidDA, &pidDA, maxDAAngle / mag);
             }
         }
+
+        // add constrained DA to sum
+        vector2Add(&pidSum, &pidSum, &pidDA);
+        debugPidSumEF = pidSum;
+        vector2_t anglesBF;
+
+        if (ap.sticksActive) {
+            // while sticks are moving, reset target on each cycle, to maintain a usable D value
+            updateLocation(&gpsSol.llh);
+            // keep updating sanity check distance while sticks are out
+            ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
+            // if a Position Hold deadband is set, and sticks are outside deadband, allow pilot control in angle mode
+            anglesBF = (vector2_t){{0, 0}};             // set output from of PIDS to 0; upsampling filter will smooth this
+        } else {
+            // ** Rotate pid Sum to body frame, and convert it into pitch and roll **
+            // attitude.values.yaw is clockwise from north
+            // PID is running in ENU, adapt angle (to 0deg = EAST);
+            //  rotation is from EF to BF, no change of sign from heading
+            const float angle = DECIDEGREES_TO_RADIANS(attitude.values.yaw - 900);
+            vector2_t pidBF;   // pid output in body frame; X is forward, Y is left
+            vector2Rotate(&pidBF, &pidSum, angle);  // rotate by angle counterclockwise
+            anglesBF.v[AI_ROLL] = -pidBF.y;         // need negative roll to fly left
+            anglesBF.v[AI_PITCH] = pidBF.x;         // positive pitch for forward
+             // limit angle vector to maxAngle
+            const float mag = vector2Norm(&anglesBF);
+            if (mag > ap.maxAngle && mag > 0.0f) {
+                vector2Scale(&anglesBF, &anglesBF, ap.maxAngle / mag);
+            }
+        }
+        ap.pidSumBF = anglesBF;    // this value will be upsampled
     }
 
-    // ** Final output to pid.c Angle Mode at 100Hz with primitive upsampling**
-    autopilotAngle[AI_ROLL] = pt3FilterApply(&ap.upsampleBF[AI_ROLL], ap.pidSumBF[AI_ROLL]);
-    autopilotAngle[AI_PITCH] = pt3FilterApply(&ap.upsampleBF[AI_PITCH], ap.pidSumBF[AI_PITCH]);
-    // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
+    // Final output to pid.c Angle Mode at 100Hz with PT3 upsampling
+    for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
+        // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
+        autopilotAngle[i] = pt3FilterApply(&ap.upsampleBF[i], ap.pidSumBF.v[i]);
+    }
 
-    if (gyroConfig()->gyro_filter_debug_axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(ap.efAxis[lon].distance));    // cm
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(ap.efAxis[lon].pidSum * 10)); // deg * 10
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(autopilotAngle[AI_ROLL] * 10));   // deg * 10
-    } else {
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(ap.efAxis[lat].distance));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(ap.efAxis[lat].pidSum * 10));
-        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(autopilotAngle[AI_PITCH] * 10));
+    if (debugAxis < 2) {
+        // this is different from @ctzsnooze version
+        // debugAxis = 0: store longitude + roll
+        // debugAxis = 1: store latitude + pitch
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(debugGpsDistance.v[debugAxis]));    // cm
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(debugPidSumEF.v[debugAxis] * 10));  // deg * 10
+        DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(autopilotAngle[debugAxis] * 10));   // deg * 10
     }
     return true;
 }
