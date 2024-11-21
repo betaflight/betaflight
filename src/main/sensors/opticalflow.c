@@ -162,6 +162,9 @@ static void applySensorRotation(opticalflowRates_t * dist, opticalflowRates_t * 
 
         dist->X = (int32_t)(src->X * cosf(angle) - src->Y * sinf(angle));
         dist->Y = (int32_t)(src->X * sinf(angle) + src->Y * cosf(angle));
+    } else {
+        dist->X = src->X;
+        dist->Y = src->Y;
     }
 
     if (opticalflowConfig()->flipX) {
