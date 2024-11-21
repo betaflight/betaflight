@@ -45,10 +45,11 @@
 #include "sensors/initialisation.h"
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
+#include "sensors/opticalflow.h"
 
 // requestedSensors is not actually used
-uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
+uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, OPTICALFLOW_NONE};
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, OPTICALFLOW_NONE};
 
 void sensorsPreInit(void)
 {
@@ -86,6 +87,11 @@ bool sensorsAutodetect(void)
 
 #ifdef USE_RANGEFINDER
     rangefinderInit();
+#endif
+
+// commonly opticalflow is a rangefinder, so should be initialised after rangefinder
+#ifdef USE_OPTICALFLOW
+    opticalflowInit();
 #endif
 
 #ifdef USE_ADC_INTERNAL

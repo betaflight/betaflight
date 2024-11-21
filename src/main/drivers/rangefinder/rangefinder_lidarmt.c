@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
@@ -34,11 +33,15 @@
 
 #include "common/utils.h"
 
+#include "drivers/time.h"
+
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
 #include "sensors/rangefinder.h"
 
 static bool hasNewData = false;
-static int32_t sensorData = RANGEFINDER_NO_NEW_DATA;
+static bool mtRangefinderDetected = false;
+static mtRangefinderData_t sensorData = {RANGEFINDER_NO_NEW_DATA, 0};
+static const MTRangefinderConfig * deviceConf = NULL;
 
 // Initialize the table with values for each rangefinder type
 static const MTRangefinderConfig rangefinderConfigs[] = {
@@ -65,14 +68,14 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
     UNUSED(dev);
     if (hasNewData) {
         hasNewData = false;
-        return (sensorData >= 0.0f) ? sensorData : RANGEFINDER_OUT_OF_RANGE;
+        return (sensorData.distanceMm >= 0) ? (sensorData.distanceMm / 10) : RANGEFINDER_OUT_OF_RANGE;
     } else {
         return RANGEFINDER_NO_NEW_DATA;
     }
 }
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {
-    const MTRangefinderConfig* deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
+    deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
     if (!deviceConf) {
         return false;
     }
@@ -85,24 +88,37 @@ bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinder
     dev->init = &mtRangefinderInit;
     dev->update = &mtRangefinderUpdate;
     dev->read = &mtRangefinderGetDistance;
-
+    mtRangefinderDetected = true;
     return true;
 }
 
 void mtRangefinderReceiveNewData(const uint8_t * bufferPtr) {
     const mspSensorRangefinderLidarMtDataMessage_t * pkt = (const mspSensorRangefinderLidarMtDataMessage_t *)bufferPtr;
 
-    sensorData = pkt->distanceMm / 10;
+    sensorData.distanceMm = pkt->distanceMm;
+    sensorData.timestamp = millis();
     hasNewData = true;
 }
 
-const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse){
+const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse) {
     for (const MTRangefinderConfig* cfg =  rangefinderConfigs; cfg < ARRAYEND(rangefinderConfigs); cfg++) {
         if (cfg->deviceType == mtRangefinderToUse) {
             return cfg;
         }
     }
     return NULL;
+}
+
+bool isMTRangefinderDetected(void) {
+    return mtRangefinderDetected;
+}
+
+mtRangefinderData_t * getMTRangefinderData(void) {
+    return &sensorData;
+}
+
+const MTRangefinderConfig * getMTDeviceConf(void) {
+    return deviceConf;
 }
 
 #endif // USE_RANGEFINDER_MT

@@ -240,6 +240,7 @@ static const char * const featureNames[] = {
     _R(FEATURE_SOFTSERIAL, "SOFTSERIAL"),
     _R(FEATURE_GPS, "GPS"),
     _R(FEATURE_RANGEFINDER, "RANGEFINDER"),
+    _R(FEATURE_OPTICALFLOW, "OPTICALFLOW"),
     _R(FEATURE_TELEMETRY, "TELEMETRY"),
     _R(FEATURE_3D, "3D"),
     _R(FEATURE_RX_PARALLEL_PWM, "RX_PARALLEL_PWM"),
@@ -273,7 +274,7 @@ static const char *const sensorTypeNames[] = {
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_RANGEFINDER)
 
 static const char * const *sensorHardwareNames[] = {
-    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware
+    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
 };
 #endif // USE_SENSOR_NAMES
 

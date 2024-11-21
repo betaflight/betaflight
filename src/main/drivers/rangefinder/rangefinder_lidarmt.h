@@ -31,6 +31,14 @@ typedef struct {
     uint16_t maxRangeCm;
 } MTRangefinderConfig;
 
+typedef struct {
+    int32_t distanceMm;
+    uint32_t timestamp;
+} mtRangefinderData_t;
+
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
 void mtRangefinderReceiveNewData(const uint8_t * bufferPtr);
 const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse);
+bool isMTRangefinderDetected(void);
+mtRangefinderData_t * getMTRangefinderData(void);
+const MTRangefinderConfig * getMTDeviceConf(void);

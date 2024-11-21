@@ -50,6 +50,7 @@ typedef enum {
     FEATURE_SERVO_TILT = 1 << 5,
     FEATURE_SOFTSERIAL = 1 << 6,
     FEATURE_GPS = 1 << 7,
+    FEATURE_OPTICALFLOW = 1 << 8,
     FEATURE_RANGEFINDER = 1 << 9,
     FEATURE_TELEMETRY = 1 << 10,
     FEATURE_3D = 1 << 12,
