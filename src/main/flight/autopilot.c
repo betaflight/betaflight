@@ -217,20 +217,12 @@ void setSticksActiveStatus(bool areSticksActive)
     ap.sticksActive = areSticksActive;
 }
 
-void setTargetLocation(const gpsLocation_t* newTargetLocation, axisEF_e efAxisIdx)
+void setTargetLocationByAxis(const gpsLocation_t* newTargetLocation, axisEF_e efAxisIdx)
 {
     if (efAxisIdx == LON) {
         ap.targetLocation.lon = newTargetLocation->lon; // update East-West / / longitude position
     } else {
         ap.targetLocation.lat = newTargetLocation->lat; // update North-South / latitude position
-    }
-    ap.efAxis[efAxisIdx].previousDistance = 0.0f;      // and reset the previous distance to avoid D and A spikes
-}
-
-static void updateLocation(const gpsLocation_t* newTargetLocation)
-{
-    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
-        setTargetLocation(newTargetLocation, i);
     }
 }
 
@@ -263,7 +255,7 @@ bool positionControl(void)
         vector2_t pidSum = { 0 };       // P+I in loop, D+A added after the axis loop (after limiting it)
         vector2_t pidDA;                // D+A
 
-        for (axisEF_e efAxisIdx = 0; ARRAYLEN(ap.efAxis); efAxisIdx++) {
+        for (axisEF_e efAxisIdx = LON; efAxisIdx <= LAT; efAxisIdx++) {
             efPidAxis_t *efAxis = &ap.efAxis[efAxisIdx];
             // separate PID controllers for longitude (EastWest or EW, X) and latitude (NorthSouth or NS, Y)
             const float axisDistance = gpsDistance.v[efAxisIdx];
@@ -300,6 +292,7 @@ bool positionControl(void)
                 efAxis->isStopping = true;
                 // slowly leak iTerm away
                 efAxis->integral *= iTermLeakGain;
+                efAxis->previousDistance = 0.0f; // avoid D and A spikes
                 // rest is handled after axis loop
             } else if (efAxis->isStopping) {
                 // 'phase' after sticks are centered, but before craft has stopped in given PID axis
@@ -307,7 +300,7 @@ bool positionControl(void)
                 // detect velocity zero crossing (velocityFiltered is delayed by filter)
                 if (velocity * velocityFiltered < 0.0f) {
                     // when an axis has nearly stopped moving, reset it and end it's start phase
-                    setTargetLocation(&gpsSol.llh, efAxisIdx);
+                    ap.targetLocation.coords[efAxisIdx] = gpsSol.llh.coords[efAxisIdx];
                     efAxis->isStopping = false;
                 }
             }
@@ -338,8 +331,8 @@ bool positionControl(void)
         vector2_t anglesBF;
 
         if (ap.sticksActive) {
-            // while sticks are moving, reset target on each cycle, to maintain a usable D value
-            updateLocation(&gpsSol.llh);
+            // while sticks are moving, reset target on each cycle (and set previousDistance to zero in for loop), to maintain a usable D value
+            ap.targetLocation = gpsSol.llh;
             // keep updating sanity check distance while sticks are out
             ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
             // if a Position Hold deadband is set, and sticks are outside deadband, allow pilot control in angle mode

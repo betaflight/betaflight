@@ -224,10 +224,13 @@ typedef struct gpsCoordinateDDDMMmmmm_s {
 } gpsCoordinateDDDMMmmmm_t;
 
 /* LLH Location in NEU axis system */
-typedef struct gpsLocation_s {
-    int32_t lat;                    // latitude * 1e+7
-    int32_t lon;                    // longitude * 1e+7
-    int32_t altCm;                  // altitude in 0.01m
+typedef union gpsLocation_u {
+    struct {
+        int32_t lat;                // latitude * 1e+7
+        int32_t lon;                // longitude * 1e+7
+        int32_t altCm;              // altitude in 0.01m
+    };
+    int32_t coords[3];              // added to provide direct access within loops
 } gpsLocation_t;
 
 /* A value below 100 means great accuracy is possible with GPS satellite constellation */

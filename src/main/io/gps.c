@@ -2512,7 +2512,7 @@ void GPS_calc_longitude_scaling(int32_t lat)
 //
 static void GPS_calculateDistanceFlown(bool initialize)
 {
-    static gpsLocation_t lastLLH = {0, 0, 0};
+    static gpsLocation_t lastLLH = {0};
 
     if (initialize) {
         GPS_distanceFlownInCm = 0;
