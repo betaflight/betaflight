@@ -1067,96 +1067,63 @@ static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
     }
 }
 
-typedef struct auroraWave_s {
-    uint16_t ttl;
-    uint16_t age;
-    float center;
-    float speedFactor;
-    uint16_t width;
-    bool goingLeft;
-    bool alive;
+typedef struct {
+    uint16_t ttl, age, width;
+    float center, speedFactor;
+    bool goingLeft, alive;
 } auroraWave_t;
 
 static void initAuroraWave(auroraWave_t *wave, int segmentLength) {
-    wave->ttl = rand() % 1001 + 500;  // Zufallszahl zwischen 500 und 1500
+    wave->ttl = rand() % 1001 + 500;
     wave->age = 0;
-    wave->width = rand() % (segmentLength / ledStripConfig()->w_width_factor_aurora) + (segmentLength / 20);  // Zufallszahl für Breite
-    wave->center = (rand() % 101) / 100.0 * segmentLength;  // Zufallszahl zwischen 0 und segmentLength
-    wave->speedFactor = (rand() % 21 + 10) / 100.0 * ledStripConfig()->w_max_speed_aurora / 255.0;  // Zufallszahl für Geschwindigkeit
-    wave->goingLeft = rand() % 2 == 0;  // Zufallswert 0 oder 1
+    wave->width = rand() % (segmentLength / ledStripConfig()->w_width_factor_aurora) + (segmentLength / 20);
+    wave->center = rand() / (float)RAND_MAX * segmentLength;
+    wave->speedFactor = (rand() % 21 + 10) / 2550.0 * ledStripConfig()->w_max_speed_aurora;
+    wave->goingLeft = rand() % 2;
     wave->alive = true;
 }
 
 static void updateAuroraWave(auroraWave_t *wave, int segmentLength) {
-    if (wave->goingLeft) {
-        wave->center -= wave->speedFactor;
-    } else {
-        wave->center += wave->speedFactor;
-    }
-
-    wave->age++;
-    if (wave->age > wave->ttl || wave->center + wave->width < 0 || wave->center - wave->width > segmentLength) {
-        wave->alive = false;
-    }
+    wave->center += wave->goingLeft ? -wave->speedFactor : wave->speedFactor;
+    wave->alive = ++wave->age <= wave->ttl && wave->center + wave->width >= 0 && wave->center - wave->width <= segmentLength;
 }
 
-static int brightnessForAuroraIndex(auroraWave_t *wave, uint8_t ledIndex) {
-    if (!wave->alive) return 0;
-
-    float offset = fabs(ledIndex - wave->center);
-    if (offset > wave->width) {
-        return 0;
-    }
-
-    float offsetFactor = offset / wave->width;
-    float ageFactor = (float)(wave->ttl - wave->age) / wave->ttl;
-
-    return (int)((1 - offsetFactor) * ageFactor * 255);
+static int brightnessForAuroraIndex(const auroraWave_t *wave, uint8_t ledIndex) {
+    float offset = fabsf(ledIndex - wave->center);
+    return (wave->alive && offset <= wave->width) 
+        ? (int)((1 - offset / wave->width) * (wave->ttl - wave->age) / wave->ttl * 255) 
+        : 0;
 }
 
 static void applyAuroraLayer(bool updateNow, timeUs_t *timer) {
-    static auroraWave_t *auroraWaves = NULL;
+    static auroraWave_t *waves = NULL;
     static uint8_t waveCount = 0;
 
-    // Initialisierung nur einmal durchführen
-    if (auroraWaves == NULL) {
+    if (!waves) {
         waveCount = ledStripConfig()->w_max_count_aurora;
-        auroraWaves = (auroraWave_t *)malloc(waveCount * sizeof(auroraWave_t));
-        if (auroraWaves == NULL) {
-            // Fehler: Speicher konnte nicht allokiert werden
-            return;
-        }
-
-        // Array initialisieren (optional, falls nötig)
-        for (int i = 0; i < waveCount; i++) {
-            auroraWaves[i].alive = false; // Beispielwert
-        }
+        if (!(waves = malloc(waveCount * sizeof(auroraWave_t)))) return;
+        memset(waves, 0, waveCount * sizeof(auroraWave_t)); // Initialisiert alle Wellen
     }
 
     if (updateNow) {
-        for (int i = 0; i < waveCount; i++) {
-            if (!auroraWaves[i].alive) {
-                initAuroraWave(&auroraWaves[i], ledCounts.count);
-            } else {
-                updateAuroraWave(&auroraWaves[i], ledCounts.count);
-            }
-        }
+        for (uint8_t i = 0; i < waveCount; i++) 
+            waves[i].alive ? updateAuroraWave(&waves[i], ledCounts.count) 
+                           : initAuroraWave(&waves[i], ledCounts.count);
         *timer += HZ_TO_US(LED_OVERLAY_AURORA_RATE_HZ);
     }
 
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
-        int totalBrightness = 0;
-        const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
+        int brightness = 0;
+        const ledConfig_t *config = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
+        
+        for (uint8_t i = 0; i < waveCount; i++) 
+            brightness += brightnessForAuroraIndex(&waves[i], ledIndex);
 
-        for (int j = 0; j < waveCount; j++) {
-            totalBrightness += brightnessForAuroraIndex(&auroraWaves[j], ledIndex);
-        }
-
-        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_AURORA)) {
-            hsvColor_t ledColor;
-            getLedHsv(ledIndex, &ledColor);
-            ledColor.v = totalBrightness > 255 ? 255 : totalBrightness;
-            setLedHsv(ledIndex, &ledColor);
+        if (ledGetOverlayBit(config, LED_OVERLAY_AURORA)) {
+            hsvColor_t color;
+            getLedHsv(ledIndex, &color);
+            color.v = brightness > 255 ? 255 : brightness;
+            setLedHsv(ledIndex, &color);
         }
     }
 }
