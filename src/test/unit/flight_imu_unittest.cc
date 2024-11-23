@@ -75,7 +75,7 @@ extern "C" {
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
-    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+    PG_REGISTER(apConfig_t, apConfig, PG_AUTOPILOT, 0);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0

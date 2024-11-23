@@ -25,7 +25,7 @@
 
 #include "pg/pg.h"
 
-typedef struct autopilotConfig_s {
+typedef struct apConfig_s {
     uint8_t landing_altitude_m;   // altitude below which landing behaviours can change, metres
     uint16_t hover_throttle;      // value used at the start of a rescue or position hold
     uint16_t throttle_min;
@@ -40,7 +40,7 @@ typedef struct autopilotConfig_s {
     uint8_t position_A;
     uint8_t position_cutoff;
     uint8_t max_angle;
-} autopilotConfig_t;
+} apConfig_t;
 
-PG_DECLARE(autopilotConfig_t, autopilotConfig);
+PG_DECLARE(apConfig_t, apConfig);
 
