@@ -28,3 +28,4 @@ void updateAccItegralCallback(timeUs_t currentTimeUs);
 #endif
 void altSensorFusionInit(void);
 void altSensorFusionUpdate(void);
+void updateBaroStateCallback(void);

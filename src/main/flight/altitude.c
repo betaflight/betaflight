@@ -61,7 +61,6 @@
 #define BARO_VAR_TEMP_COEFF      (0.01f)
 #define BARO_VAR_VEL_ERROR_COEFF (1.00f)
 
-
 #define RANGEFINDER_ACC_ERROR_THRESH    (50.0f) 
 #define RANGEFINDER_RAPID_ERR_THRESH    (100.0f)
 #define RANGEFINDER_VAR_VEL_ERROR_COEFF (2.0f)
@@ -92,8 +91,9 @@ typedef enum {
 typedef struct sensorState_s {
     float currentAltReadingCm;
     float zeroAltOffsetCm;
-    float velocityCmS;
+    float velocityAltCmS;
     float variance;
+    uint32_t deltaTimeMs;
     float offsetError;
     uint32_t velError;
     altSensor_e type;
@@ -145,11 +145,12 @@ void applyRangefinderFilter(float *value);
 void updateSensorOffset(sensorState_t *sensor);
 void updateVelError(sensorState_t *sensor);
 void updateSensorFusability(sensorState_t *sensor);
+void sensorUpdateIteration(sensorState_t *sensor);
 void doNothing(sensorState_t *sensor);
 
 sensorState_t altSenFusSources[SENSOR_COUNT];
 altitudeState_t altitudeState;
-velocity3D_t velocityCm3D;
+velocity3D_t velocity3DCmS;
 static KalmanFilter kf;
 
 void altSensorFusionInit(void) {
@@ -160,7 +161,7 @@ void altSensorFusionInit(void) {
     altSenFusSources[SF_ACC].type = SF_ACC;
     altSenFusSources[SF_ACC].isValid = false;
     altSenFusSources[SF_ACC].toFuse = false;
-    velocityCm3D.isValid = true;
+    velocity3DCmS.isValid = true;
 #endif
     
 #ifdef USE_BARO
@@ -192,40 +193,51 @@ void altSensorFusionInit(void) {
 
     kf_init(&kf, 0.0f, 1.0f, 1.0f);
 
-    velocityCm3D.value = 0;
-    velocityCm3D.isValid = false;
+    velocity3DCmS.value = 0;
+    velocity3DCmS.isValid = false;
+}
+
+void sensorUpdateIteration(sensorState_t *sensor) {
+    SensorMeasurement tempSensorMeas;
+
+    sensor->updateReading(sensor);
+    updateVelError(sensor);
+    updateSensorFusability(sensor); // this should handle the case of sudden jumps in the sensor readings compared to the accelerometer velocity estimation
+    sensor->updateVariance(sensor);
+    sensor->updateOffset(sensor);
+    
+    if (sensor->isValid && sensor->toFuse) {
+        tempSensorMeas.value    = sensor->currentAltReadingCm - sensor->zeroAltOffsetCm;
+        tempSensorMeas.variance = sensor->variance;
+        kf_update(&kf, tempSensorMeas);
+    }
 }
 
 void altSensorFusionUpdate(void) {
+    static timeMs_t prevTimeMs = 0;
+    timeMs_t deltaTimeMs = millis() - prevTimeMs;
+    prevTimeMs = millis();
+
     kf_update_variance(&kf);
-    SensorMeasurement tempSensorMeas;
     float previousAltitude = altitudeState.distCm;
     for (sensorState_t * sensor = altSenFusSources; sensor < altSenFusSources + SENSOR_COUNT; sensor++) {
-        sensor->updateReading(sensor);
-        updateVelError(sensor);
-        updateSensorFusability(sensor); // this should handle the case of sudden jumps in the sensor readings compared to the accelerometer velocity estimation
-        sensor->updateVariance(sensor);
-        sensor->updateOffset(sensor);
-        
-        if (sensor->isValid && sensor->toFuse) {
-            tempSensorMeas.value    = sensor->currentAltReadingCm - sensor->zeroAltOffsetCm;
-            tempSensorMeas.variance = sensor->variance;
-            kf_update(&kf, tempSensorMeas);
+        if (sensor->type == SF_BARO) { // the barometer is updated with a callback since it is typically runs with higher frequency
+            continue;
         }
+        sensorUpdateIteration(sensor);
     }
     altitudeState.distCm     = kf.estimatedValue; 
     altitudeState.variance   = kf.estimatedVariance;
-    altitudeState.velocityCm = (altitudeState.distCm - previousAltitude) * TASK_ALTITUDE_RATE_HZ;
+    altitudeState.velocityCm = (altitudeState.distCm - previousAltitude) * 1000 / deltaTimeMs;
     previousAltitude         = altitudeState.distCm;
-
    
-    DEBUG_SET(DEBUG_ALTITUDE, 0, altSenFusSources[SF_BARO].isValid        ? lrintf(altSenFusSources[SF_BARO].currentAltReadingCm)        : -1);
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(altSenFusSources[SF_GPS].currentAltReadingCm));
-    DEBUG_SET(DEBUG_ALTITUDE, 2, altSenFusSources[SF_RANGEFINDER].isValid ? lrintf(altSenFusSources[SF_RANGEFINDER].currentAltReadingCm) : -1);
+    DEBUG_SET(DEBUG_ALTITUDE, 0, altSenFusSources[SF_BARO].isValid ? lrintf(altSenFusSources[SF_BARO].currentAltReadingCm - altSenFusSources[SF_BARO].zeroAltOffsetCm)        : -1);
+    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(altSenFusSources[SF_GPS].currentAltReadingCm - altSenFusSources[SF_GPS].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(altSenFusSources[SF_RANGEFINDER].currentAltReadingCm - altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
     DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(altitudeState.distCm));
-    DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(altSenFusSources[SF_BARO].variance));
-    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(altSenFusSources[SF_GPS].variance));
-    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(altSenFusSources[SF_RANGEFINDER].variance));
+    DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(altSenFusSources[SF_BARO].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(altSenFusSources[SF_GPS].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
     DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(altitudeState.variance));
 }
 
@@ -261,7 +273,7 @@ void updateVelError(sensorState_t *sensor) {
     if (!sensor->isValid || sensor->type == SF_ACC) {
         return;
     }
-    sensor->velError = 0.1 * (sq(altSenFusSources[SF_ACC].velocityCmS - sensor->velocityCmS) / (100.f))
+    sensor->velError = 0.1 * (sq(altSenFusSources[SF_ACC].velocityAltCmS - sensor->velocityAltCmS) / (100.f))
                      + 0.9 * sensor->velError;
 
     sensor->velError = constrain(sensor->velError, 0, SENSOR_VEL_MAX_ERROR);
@@ -288,7 +300,7 @@ void doNothing(sensorState_t *sensor) {
 // ======================================================================================================
 // ==================================== Sensor specific functions =======================================
 // ======================================================================================================
-void updateAccItegralCallback(timeUs_t currentTimeUs) {
+void updateAccItegralCallback(timeUs_t currentTimeUs) { // this is called in the acc update task
     static bool firstRun = true;
     static timeUs_t prevTimeUs = 0;
     if (firstRun) {
@@ -321,8 +333,6 @@ void updateAccReading(sensorState_t *sensor) {
                     +   accIntegral.vel[1] * cosPitch * sinf(roll)
                     +   accIntegral.vel[2] * cosPitch * cosf(roll);
 
-    // sensor->deltaTimeMs  = (float)accIntegral.deltaTimeUs / 1e3f;
-
     float gravityVel = (float)accIntegral.deltaTimeUs / 1e6f; // g/Us to g/S
     
     float velCmSecZ = ((velWorldZ * acc.dev.acc_1G_rec) - gravityVel) * 981.0f; // g to cm/s
@@ -333,17 +343,11 @@ void updateAccReading(sensorState_t *sensor) {
 
     velDriftZ  = 0.005 * accVelZ  + (1.0f - 0.005) * velDriftZ;
 
-    sensor->velocityCmS = accVelZ  - velDriftZ;
+    sensor->velocityAltCmS = accVelZ  - velDriftZ;
 
-    velocityCm3D.value  = fabsf(accIntegral.vel[XYZ_AXIS_COUNT] * 981.0f);
-    // applyAccVelFilter(&sensor->velocityCmS);
-    // sensor->currentAltReadingCm += sensor->velocityCmS * ((float)accIntegral.deltaTimeUs/1e6f);
-    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(accIntegral.vel[2] * 981.0f));
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(accVelZ));
-    DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(velDriftZ));
-    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(sensor->velocityCmS));
-    DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(accIntegral.vel[XYZ_AXIS_COUNT] * 981.0f));
-    DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(velocityCm3D.value));
+    velocity3DCmS.value  = (0.1 * fabsf(accIntegral.vel[XYZ_AXIS_COUNT] * 981.0f)) + (0.9 * velocity3DCmS.value);
+    // applyAccVelFilter(&sensor->velocityAltCmS);
+    // sensor->currentAltReadingCm += sensor->velocityAltCmS * ((float)accIntegral.deltaTimeUs/1e6f);
 
     for (int i = 0; i <= XYZ_AXIS_COUNT; i++) {
         accIntegral.vel[i] = 0;
@@ -366,6 +370,9 @@ void applyAccVelFilter(float *velocity) {
 
 
 #ifdef USE_BARO
+void updateBaroStateCallback(void) {
+    sensorUpdateIteration(&altSenFusSources[SF_BARO]);
+}
 
 void updateBaroReading(sensorState_t *sensor) {
     if (!sensor->isValid) {
@@ -374,17 +381,23 @@ void updateBaroReading(sensorState_t *sensor) {
 
     static bool firstRun = true;
     static float previousAltitude = 0.0f;
-    
+    static uint32_t prevTimeMs = 0;
+
     if (firstRun) { // init
         previousAltitude = getBaroAltitude();
         sensor->zeroAltOffsetCm = previousAltitude; // init the offset with the first reading
         firstRun = false;
+        prevTimeMs = millis();
     }
+
+    sensor->deltaTimeMs = millis() - prevTimeMs;
 
     sensor->currentAltReadingCm = getBaroAltitude();
     applyBaroFilter(&sensor->currentAltReadingCm);
-    sensor->velocityCmS = (sensor->currentAltReadingCm - previousAltitude) * TASK_ALTITUDE_RATE_HZ;
+    sensor->velocityAltCmS = (sensor->currentAltReadingCm - previousAltitude) * 1000 / sensor->deltaTimeMs;
     previousAltitude = sensor->currentAltReadingCm;
+
+    prevTimeMs = millis();
 }
 
 void updateBaroVariance(sensorState_t *sensor) {
@@ -404,7 +417,7 @@ void updateBaroVariance(sensorState_t *sensor) {
         n++;        
         velocity = 0;
     } else {
-        velocity = velocityCm3D.isValid ? (float)velocityCm3D.value : (altitudeState.velocityCm);
+        velocity = velocity3DCmS.isValid ? (float)velocity3DCmS.value : (altitudeState.velocityCm);
     }
 
     float newVariance = stationaryVariance
@@ -438,10 +451,14 @@ void updateGpsReading(sensorState_t *sensor) {
     static float previousAltitude = 0.0f;
     bool hasNewData = gpsSol.time != prevTimeStamp;
     
-    sensor->isValid = gpsIsHealthy() && sensors(SENSOR_GPS) && STATE(GPS_FIX) && hasNewData;
+    sensor->isValid = gpsIsHealthy()
+                   && sensors(SENSOR_GPS)
+                   && STATE(GPS_FIX) 
+                   && hasNewData;
+
     if (!sensor->isValid) {
 #ifndef USE_ACC
-        velocityCm3D.isValid = false;
+        velocity3DCmS.isValid = false;
 #endif
         return;
     }
@@ -457,11 +474,11 @@ void updateGpsReading(sensorState_t *sensor) {
     applyGpsFilter(&sensor->currentAltReadingCm);
 
 #ifndef USE_ACC
-    velocityCm3D.value = gpsSol.speed3d * 10;
-    velocityCm3D.isValid = true;
+    velocity3DCmS.value = gpsSol.speed3d * 10;
+    velocity3DCmS.isValid = true;
 #endif
-    timeDelta_t deltaTime = cmpTimeUs(gpsSol.time, prevTimeStamp);
-    sensor->velocityCmS = ((sensor->currentAltReadingCm - previousAltitude) * deltaTime) / 1000.0f;
+    sensor->deltaTimeMs = gpsSol.time - prevTimeStamp;
+    sensor->velocityAltCmS = ((sensor->currentAltReadingCm - previousAltitude) * 1000.0f) / sensor->deltaTimeMs;
     previousAltitude = sensor->currentAltReadingCm;
     prevTimeStamp = gpsSol.time;
 }
@@ -528,9 +545,14 @@ void applyGpsFilter(float *value) {
 void updateRangefinderReading(sensorState_t *sensor) {
     static bool firstRun = true;
     static float previousAltitude = 0.0f;
-    int32_t rfAlt = rangefinderGetLatestAltitude();
-    
-    sensor->isValid = rangefinderIsHealthy() && sensors(SENSOR_RANGEFINDER) && rfAlt >= 0;
+    static float prevReadingTime = 0;
+    int32_t rfAlt = getRangefinder()->calculatedAltitude;
+    bool hasNewData = getRangefinder()->lastValidResponseTimeMs != prevReadingTime;
+
+    sensor->isValid = rangefinderIsHealthy() 
+                   && sensors(SENSOR_RANGEFINDER) 
+                   && rfAlt >= 0 
+                   && hasNewData;
 
     if (!sensor->isValid) {
         return;
@@ -540,12 +562,15 @@ void updateRangefinderReading(sensorState_t *sensor) {
         previousAltitude = rfAlt;
         sensor->zeroAltOffsetCm = rfAlt;
         firstRun = false;
+        prevReadingTime = getRangefinder()->lastValidResponseTimeMs;
     }
 
+    sensor->deltaTimeMs = getRangefinder()->lastValidResponseTimeMs - prevReadingTime;
     sensor->currentAltReadingCm = rfAlt;
     // applyRangefinderFilter(&sensor->currentAltReadingCm);
-    sensor->velocityCmS = (sensor->currentAltReadingCm - previousAltitude) * TASK_ALTITUDE_RATE_HZ;
+    sensor->velocityAltCmS = (sensor->currentAltReadingCm - previousAltitude) * 1000.0f / sensor->deltaTimeMs;
     previousAltitude = sensor->currentAltReadingCm;
+    prevReadingTime = getRangefinder()->lastValidResponseTimeMs;
 }
 
 void updateRangefinderVariance(sensorState_t *sensor) {
@@ -553,7 +578,7 @@ void updateRangefinderVariance(sensorState_t *sensor) {
         return;
     }
 
-    float newVariance = RANGEFINDER_VAR_VEL_ERROR_COEFF * sensor->velError + RANGEFINDER_CONST_VAR; // is there a better way to get the variance of the rangefinder?
+    float newVariance = RANGEFINDER_VAR_VEL_ERROR_COEFF * sensor->velError + RANGEFINDER_CONST_VAR;
     sensor->variance = 0.9f * sensor->variance + 0.1f * newVariance;
 }
 

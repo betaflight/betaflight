@@ -360,5 +360,10 @@ bool rangefinderIsHealthy(void)
 {
     return (millis() - rangefinder.lastValidResponseTimeMs) < RANGEFINDER_HARDWARE_TIMEOUT_MS;
 }
+
+rangefinder_t * getRangefinder(void)
+{
+    return &rangefinder;
+}
 #endif
 
