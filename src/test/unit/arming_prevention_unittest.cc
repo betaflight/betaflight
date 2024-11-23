@@ -1158,11 +1158,6 @@ extern "C" {
 
 void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
 
-    float vector2Norm(const vector2_t *v) {
-       UNUSED(*v);
-       return 0.0f;
-    }
-
     bool canUseGPSHeading;
     bool compassIsHealthy;
 
