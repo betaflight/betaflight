@@ -119,7 +119,7 @@ MCU_COMMON_SRC = \
             msc/emfat.c \
             msc/emfat_file.c
 
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+SPEED_OPTIMISED_SRC += \
             stm32/system.c
 
 MCU_EXCLUDES =

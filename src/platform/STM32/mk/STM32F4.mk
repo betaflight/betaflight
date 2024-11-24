@@ -204,7 +204,7 @@ MCU_COMMON_SRC = \
             camera_control_stm32.c \
             startup/system_stm32f4xx.c
 
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+SPEED_OPTIMISED_SRC += \
             stm32/system.c
 
 ifeq ($(PERIPH_DRIVER), HAL)

@@ -313,7 +313,7 @@ MSC_SRC = \
             msc/usbd_storage_sd_spi.c \
             msc/usbd_storage_sdio.c
 
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+SPEED_OPTIMISED_SRC += \
             stm32/system.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
