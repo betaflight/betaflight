@@ -68,7 +68,7 @@ void posHoldStart(void)
         if (!isInPosHoldMode) {
             // start position hold mode
             posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
-            resetPositionControl(&gpsSol.llh); // sets target location to current location
+            resetPositionControl(&gpsSol.llh, POSHOLD_TASK_RATE_HZ); // sets target location to current location
             isInPosHoldMode = true;
         }
     } else {

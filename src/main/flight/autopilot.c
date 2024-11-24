@@ -69,14 +69,15 @@ typedef enum {
 } axisEF_e;
 
 typedef struct autopilotState_s {
-    gpsLocation_t targetLocation;                      // active / current target
+    gpsLocation_t targetLocation;       // active / current target
     float sanityCheckDistance;
-    float upsampleLpfGain;                                // for the Body Frame upsample filter for pitch and roll
-    float vaLpfCutoff;                                    // velocity + acceleration lowpass filter cutoff
+    float upsampleLpfGain;              // for the Body Frame upsample filter for pitch and roll
+    float vaLpfCutoff;                  // velocity + acceleration lowpass filter cutoff
     bool sticksActive;
     float maxAngle;
-    vector2_t pidSumBodyFrame;                        // pid output, updated on each GPS update, rotated to body frame
-    pt3Filter_t upsampleLpfBodyFrame[RP_AXIS_COUNT];  // upsampling filter
+    int8_t axesMoving;
+    vector2_t pidSumBodyFrame;                          // pid output, updated on each GPS update, rotated to body frame
+    pt3Filter_t upsampleLpfBodyFrame[RP_AXIS_COUNT];    // upsampling filter
     efPidAxis_t efAxis[EF_AXIS_COUNT];
 } autopilotState_t;
 
@@ -116,18 +117,20 @@ static inline float sanityCheckDistance(const float gpsGroundSpeedCmS)
     return fmaxf(1000.0f, gpsGroundSpeedCmS * 2.0f);
 }
 
-void resetPositionControl(const gpsLocation_t *initialTargetLocation)
+void resetPositionControl(const gpsLocation_t *initialTargetLocation, uint16_t taskRateHz)
 {
-    // from pos_hold.c when initiating position hold at target location
+    // from pos_hold.c (or other client) when initiating position hold at target location
     ap.targetLocation = *initialTargetLocation;
     ap.sticksActive = false;
     // set sanity check distance according to groundspeed at start, minimum of 10m
     ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
-        // disable filter until first call
+        // clear anything stored in the filter at first call
         resetEFAxisParams(&ap.efAxis[i], 1.0f);
     }
-    resetUpsampleFilters(); // clear anything from previous iteration
+    const float taskInterval = 1.0f / taskRateHz;
+    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval);       // 5Hz, assuming 100Hz task rate
+    resetUpsampleFilters();                  // clear anything from previous iteration
 }
 
 void autopilotInit(void)
@@ -145,8 +148,7 @@ void autopilotInit(void)
     positionPidCoeffs.Kd = cfg->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = cfg->position_A * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gain
-    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate
-    // TO DO send the required task rate here from the client code
+    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
     resetUpsampleFilters();
     // Initialise PT1 filters for earth frame axes latitude and longitude
     ap.vaLpfCutoff = cfg->position_cutoff * 0.01f;
@@ -305,6 +307,10 @@ bool positionControl(void)
                     const int8_t llhAxisInv = 1 - efAxisIdx; // because we have Lat first in gpsLocation_t, but efAxisIdx handles lon first.
                     ap.targetLocation.coords[llhAxisInv] = gpsSol.llh.coords[llhAxisInv]; // forcing P to zero
                     efAxis->previousDistance = 0.0f;                                      // ensuring no D jump from the updated location
+                    ap.axesMoving -= 1; // count each axis when it 'stops'
+                    if (ap.axesMoving <= 0) {
+                        ap.sanityCheckDistance = sanityCheckDistance(1000); // when last axis has stopped moving, reset the sanity distance to 10m default
+                    }
                     efAxis->isStopping = false;
                 }
             }
@@ -341,7 +347,7 @@ bool positionControl(void)
             ap.targetLocation = gpsSol.llh;
             // keep updating sanity check distance while sticks are out because speed may get high
             ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
-            // ** TO DO : once stopped, sanityCheckDistance should be set back to lower (default) value
+            ap.axesMoving = 2; // keep the counter at 2 while sticks are moving
         } else {
             // ** Rotate pid Sum to body frame, and convert it into pitch and roll **
             // attitude.values.yaw increases clockwise from north
