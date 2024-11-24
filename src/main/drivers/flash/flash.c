@@ -147,8 +147,9 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 #endif
 
         for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
-
+#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25M02G)
             uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
+#endif
 
             if (offset == 0) {
 #if defined(USE_FLASH_W25Q128FV)
@@ -363,6 +364,10 @@ void flashPreInit(const flashConfig_t *flashConfig)
 bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
     bool haveFlash = false;
+
+#if !defined(USE_FLASH_SPI) && !defined(USE_FLASH_QUADSPI) && !defined(USE_FLASH_OCTOSPI)
+    UNUSED(flashConfig);
+#endif
 
 #ifdef USE_FLASH_SPI
     bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);

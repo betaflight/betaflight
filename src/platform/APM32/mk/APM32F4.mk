@@ -148,6 +148,7 @@ $(error TARGET_MCU [$(TARGET_MCU)] is not supported)
 endif
 
 MCU_COMMON_SRC = \
+            stm32/system.c \
             startup/system_apm32f4xx.c \
             drivers/inverter.c \
             drivers/dshot_bitbang_decode.c \
@@ -194,6 +195,9 @@ MSC_SRC = \
             msc/emfat_file.c \
             msc/usbd_storage_sd_spi.c \
             msc/usbd_storage_sdio.c
+
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+            stm32/system.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4 -DUSE_FULL_DDL_DRIVER

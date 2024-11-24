@@ -28,7 +28,9 @@
 #include "drivers/rcc_types.h"
 #include "drivers/resource.h"
 
+#ifdef USE_TIMER
 #include "timer_def.h"
+#endif
 
 #include "pg/timerio.h"
 
