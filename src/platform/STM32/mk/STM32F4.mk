@@ -173,6 +173,7 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 MCU_COMMON_SRC = \
+            stm32/system.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
@@ -202,6 +203,9 @@ MCU_COMMON_SRC = \
             usbd_msc_desc.c \
             camera_control_stm32.c \
             startup/system_stm32f4xx.c
+
+SPEED_OPTIMISED_SRC += \
+            stm32/system.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \

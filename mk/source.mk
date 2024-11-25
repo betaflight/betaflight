@@ -117,7 +117,6 @@ COMMON_SRC = \
             drivers/serial_uart_hw.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
-            drivers/system.c \
             drivers/timer_common.c \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
@@ -440,7 +439,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/rcc.c \
             drivers/serial.c \
             drivers/serial_uart.c \
-            drivers/system.c \
             drivers/timer.c \
             fc/core.c \
             fc/tasks.c \

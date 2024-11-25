@@ -80,6 +80,7 @@ ARCH_FLAGS      = -std=c99  -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=
 DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 -DUSE_OTG_HOST_MODE
 
 MCU_COMMON_SRC = \
+            stm32/system.c \
             startup/at32f435_437_clock.c \
             startup/system_at32f435_437.c \
             adc_at32f43x.c \
@@ -117,5 +118,8 @@ MCU_COMMON_SRC = \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
             msc/emfat_file.c
+
+SPEED_OPTIMISED_SRC += \
+            stm32/system.c
 
 MCU_EXCLUDES =

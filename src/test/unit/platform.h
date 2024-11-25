@@ -22,6 +22,14 @@
 
 #define USE_PARAMETER_GROUPS
 
+#define IOCFG_OUT_PP         0
+#define IOCFG_OUT_OD         0
+#define IOCFG_AF_PP          0
+#define IOCFG_AF_OD          0
+#define IOCFG_IPD            0
+#define IOCFG_IPU            0
+#define IOCFG_IN_FLOATING    0
+
 #define U_ID_0 0
 #define U_ID_1 1
 #define U_ID_2 2

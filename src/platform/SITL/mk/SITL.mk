@@ -26,8 +26,6 @@ MCU_EXCLUDES = \
             drivers/bus_spi_pinconfig.c \
             drivers/dma.c \
             drivers/pwm_output.c \
-            drivers/timer.c \
-            drivers/system.c \
             drivers/rcc.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
