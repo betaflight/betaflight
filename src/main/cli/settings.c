@@ -857,6 +857,7 @@ const clivalue_t valueTable[] = {
     { "blackbox_disable_gyrounfilt",VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_GYROUNFILT, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
 #if defined(USE_ACC)
     { "blackbox_disable_acc",       VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_ACC,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
+    { "blackbox_disable_attitude",  VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_ATTITUDE,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
 #endif
     { "blackbox_disable_debug",     VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_DEBUG_LOG,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },
     { "blackbox_disable_motors",    VAR_UINT32 | MASTER_VALUE | MODE_BITSET, .config.bitpos = FLIGHT_LOG_FIELD_SELECT_MOTOR,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields_disabled_mask) },

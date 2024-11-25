@@ -71,6 +71,7 @@
 #include "flight/position.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
+#include "flight/imu.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -245,9 +246,14 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"gyroUnfilt",  0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYROUNFILT)},
     {"gyroUnfilt",  1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYROUNFILT)},
     {"gyroUnfilt",  2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(GYROUNFILT)},
+#ifdef USE_ACC
     {"accSmooth",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
     {"accSmooth",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
     {"accSmooth",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ACC)},
+    {"imuQuaternion",    0, SIGNED,   .Ipredict = PREDICT(0),  .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
+    {"imuQuaternion",    1, SIGNED,   .Ipredict = PREDICT(0),  .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
+    {"imuQuaternion",    2, SIGNED,   .Ipredict = PREDICT(0),  .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ATTITUDE)},
+#endif
     {"debug",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG_LOG)},
     {"debug",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG_LOG)},
     {"debug",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(DEBUG_LOG)},
@@ -354,7 +360,10 @@ typedef struct blackboxMainState_s {
     int16_t setpoint[4];
     int16_t gyroADC[XYZ_AXIS_COUNT];
     int16_t gyroUnfilt[XYZ_AXIS_COUNT];
+#ifdef USE_ACC
     int16_t accADC[XYZ_AXIS_COUNT];
+    int16_t imuAttitudeQuaternion[XYZ_AXIS_COUNT];
+#endif
     int16_t debug[DEBUG16_VALUE_COUNT];
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];
@@ -563,6 +572,9 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case CONDITION(ACC):
         return sensors(SENSOR_ACC) && isFieldEnabled(FIELD_SELECT(ACC));
 
+    case CONDITION(ATTITUDE):
+        return sensors(SENSOR_ACC) && isFieldEnabled(FIELD_SELECT(ATTITUDE));
+
     case CONDITION(DEBUG_LOG):
         return (debugMode != DEBUG_NONE) && isFieldEnabled(FIELD_SELECT(DEBUG_LOG));
 
@@ -726,9 +738,15 @@ static void writeIntraframe(void)
         blackboxWriteSigned16VBArray(blackboxCurrent->gyroUnfilt, XYZ_AXIS_COUNT);
     }
 
+#ifdef USE_ACC
     if (testBlackboxCondition(CONDITION(ACC))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->accADC, XYZ_AXIS_COUNT);
     }
+    
+    if (testBlackboxCondition(CONDITION(ATTITUDE))) {
+        blackboxWriteSigned16VBArray(blackboxCurrent->imuAttitudeQuaternion, XYZ_AXIS_COUNT);
+    }
+#endif
 
     if (testBlackboxCondition(CONDITION(DEBUG_LOG))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->debug, DEBUG16_VALUE_COUNT);
@@ -904,9 +922,17 @@ static void writeInterframe(void)
     if (testBlackboxCondition(CONDITION(GYROUNFILT))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroUnfilt),   XYZ_AXIS_COUNT);
     }
+
+#ifdef USE_ACC
     if (testBlackboxCondition(CONDITION(ACC))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accADC), XYZ_AXIS_COUNT);
     }
+    
+    if (testBlackboxCondition(CONDITION(ATTITUDE))) {
+        blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, imuAttitudeQuaternion), XYZ_AXIS_COUNT);
+    }
+#endif
+
     if (testBlackboxCondition(CONDITION(DEBUG_LOG))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), DEBUG16_VALUE_COUNT);
     }
@@ -1208,7 +1234,6 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
 
     blackboxCurrent->time = currentTimeUs;
-
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_P[i] = lrintf(pidData[i].P);
         blackboxCurrent->axisPID_I[i] = lrintf(pidData[i].I);
@@ -1222,6 +1247,8 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC.v[i]);
+        STATIC_ASSERT(offsetof(quaternion_t, w) == 0, "Code expects quaternion in w, x, y, z order");
+        blackboxCurrent->imuAttitudeQuaternion[i] = lrintf(imuAttitudeQuaternion.v[i + 1] * 0x7FFF);  //Scale to int16 by value 0x7FFF = 2^15 - 1; Use i+1 index for x,y,z components access, [0] - w 
 #endif
 #ifdef USE_MAG
         blackboxCurrent->magADC[i] = lrintf(mag.magADC.v[i]);
