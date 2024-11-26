@@ -316,7 +316,7 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
-static float calcWingThrottle(void)
+static FAST_CODE_PREF float calcWingThrottle(void)
 {
     float batteryThrottleFactor = 1.0f;
     if (pidRuntime.tpaSpeed.maxVoltage > 0.0f) {
@@ -327,7 +327,7 @@ static float calcWingThrottle(void)
     return getMotorOutputRms() * batteryThrottleFactor;
 }
 
-static float calcWingAcceleration(float throttle, float pitchAngleRadians)
+static FAST_CODE_PREF float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
 
@@ -338,7 +338,7 @@ static float calcWingAcceleration(float throttle, float pitchAngleRadians)
     return thrust - drag + gravity;
 }
 
-static float calcWingTpaArgument(void)
+static FAST_CODE_PREF float calcWingTpaArgument(void)
 {
     const float t = calcWingThrottle();
     const float pitchRadians = DECIDEGREES_TO_RADIANS(attitude.values.pitch);
@@ -365,7 +365,7 @@ static float calcWingTpaArgument(void)
     return tpaArgument;
 }
 
-static void updateStermTpaFactor(int axis, float tpaFactor)
+static FAST_CODE_PREF void updateStermTpaFactor(int axis, float tpaFactor)
 {
     float tpaFactorSterm = tpaFactor;
     if (pidRuntime.tpaCurveType == TPA_CURVE_HYPERBOLIC) {
@@ -377,7 +377,7 @@ static void updateStermTpaFactor(int axis, float tpaFactor)
     pidRuntime.tpaFactorSterm[axis] = tpaFactorSterm;
 }
 
-static void updateStermTpaFactors(void) {
+static FAST_CODE_PREF void updateStermTpaFactors(void) {
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         float tpaFactor = pidRuntime.tpaFactor;
         if (i == FD_YAW && currentPidProfile->yaw_type == YAW_TYPE_DIFF_THRUST) {
@@ -388,7 +388,7 @@ static void updateStermTpaFactors(void) {
 }
 #endif // USE_WING
 
-static float wingAdjustSetpoint(float currentPidSetpoint, int axis)
+static FAST_CODE_PREF float wingAdjustSetpoint(float currentPidSetpoint, int axis)
 {
 #ifdef USE_WING
     float adjustedSetpoint = currentPidSetpoint;
