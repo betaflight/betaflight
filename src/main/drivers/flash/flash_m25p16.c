@@ -112,6 +112,9 @@ struct {
     // Winbond W25Q128
     // Datasheet: https://www.winbond.com/resource-files/w25q128fv%20rev.l%2008242015.pdf
     { 0xEF4018, 104, 50, 256, 256 },
+    // Winbond W25Q512
+    // Datasheet: https://www.winbond.com/resource-files/W25Q512JV%20SPI%20RevB%2006252019%20KMS.pdf
+    { 0xEF4020, 133, 50, 1024, 256 },
     // PUYA PY25Q128
     // Datasheet: https://www.puyasemi.com/download_path/%E6%95%B0%E6%8D%AE%E6%89%8B%E5%86%8C/Flash%20%E8%8A%AF%E7%89%87/PY25F128HA_datasheet_V1.1.pdf
     { 0x852018, 133, 80, 256, 256 },
