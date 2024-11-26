@@ -378,7 +378,7 @@ static FAST_CODE_PREF void updateStermTpaFactor(int axis, float tpaFactor)
     pidRuntime.tpaFactorSterm[axis] = tpaFactorSterm;
 }
 
-static void FAST_CODE_PREF updateStermTpaFactors(void) {
+static FAST_CODE_PREF void updateStermTpaFactors(void) {
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         float tpaFactor = pidRuntime.tpaFactor;
         if (i == FD_YAW && currentPidProfile->yaw_type == YAW_TYPE_DIFF_THRUST) {

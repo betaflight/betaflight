@@ -51,9 +51,12 @@
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
-// Handle case where we'd prefer code to be in ITCM, but it won't fit on the device
 #ifndef FAST_CODE_PREF
 #define FAST_CODE_PREF              FAST_CODE
+// If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
+// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM
+// but if FAST_CODE_PREF is not defined for the target, FAST_CODE_PREF is an alias to FAST_CODE, and
+// functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
 #endif
 
 #define FAST_CODE_NOINLINE          NOINLINE
