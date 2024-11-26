@@ -389,7 +389,7 @@ static void FAST_CODE_PREF updateStermTpaFactors(void) {
 }
 #endif // USE_WING
 
-static float FAST_CODE_PREF wingAdjustSetpoint(float currentPidSetpoint, int axis)
+static float wingAdjustSetpoint(float currentPidSetpoint, int axis)
 {
 #ifdef USE_WING
     float adjustedSetpoint = currentPidSetpoint;
@@ -775,7 +775,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 }
 #endif // USE_ACRO_TRAINER
 
-static float FAST_CODE_PREF accelerationLimit(int axis, float currentPidSetpoint)
+static float accelerationLimit(int axis, float currentPidSetpoint)
 {
     static float previousSetpoint[XYZ_AXIS_COUNT];
     const float currentVelocity = currentPidSetpoint - previousSetpoint[axis];
@@ -801,7 +801,7 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], const float rotation[XYZ_AXIS_
     }
 }
 
-STATIC_UNIT_TESTED FAST_CODE_PREF void rotateItermAndAxisError(void)
+STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 {
     if (pidRuntime.itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -833,7 +833,7 @@ STATIC_UNIT_TESTED FAST_CODE_PREF void rotateItermAndAxisError(void)
 
 #if defined(USE_ITERM_RELAX)
 #if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED FAST_CODE_PREF void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
+STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
 {
     if (pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR) {
         const float setpointLpf = pt1FilterApply(&pidRuntime.acLpf[axis], *currentPidSetpoint);
@@ -1035,7 +1035,7 @@ static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
     }
 }
 
-static float FAST_CODE_PREF getSterm(int axis, const pidProfile_t *pidProfile, float setpoint)
+static float getSterm(int axis, const pidProfile_t *pidProfile, float setpoint)
 {
 #ifdef USE_WING
     float sTerm = setpoint / getMaxRcRate(axis) * 1000.0f *
@@ -1054,7 +1054,7 @@ static float FAST_CODE_PREF getSterm(int axis, const pidProfile_t *pidProfile, f
 #endif
 }
 
-NOINLINE static void FAST_CODE_PREF calculateSpaValues(const pidProfile_t *pidProfile)
+NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -1068,7 +1068,7 @@ NOINLINE static void FAST_CODE_PREF calculateSpaValues(const pidProfile_t *pidPr
 #endif // USE_WING
 }
 
-NOINLINE static void FAST_CODE_PREF applySpa(int axis, const pidProfile_t *pidProfile)
+NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     spaMode_e mode = pidProfile->spa_mode[axis];
