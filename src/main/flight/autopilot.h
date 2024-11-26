@@ -32,4 +32,4 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
-bool isAutopilotActive(void);
+bool isAutopilotInControl(void);

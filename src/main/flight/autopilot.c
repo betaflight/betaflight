@@ -394,7 +394,7 @@ float getAutopilotThrottle(void)
     return throttleOut;
 }
 
-bool isAutopilotActive(void)
+bool isAutopilotInControl(void)
 {
     return !ap.sticksActive;
 }

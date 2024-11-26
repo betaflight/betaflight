@@ -2595,7 +2595,7 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 
 // return distance vector in local, cartesian ENU coordinates
 // note that parameter order is from, to
-void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t* distance)
+void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     distance->x = (float)(to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
     distance->y = (float)(to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
