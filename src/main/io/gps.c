@@ -2625,7 +2625,8 @@ void onGpsNewData(void)
 }
 
 // check if new data has been received since last check
-// client stamp should be initialized to 0, then gpsHasNewData will return true on first call
+// if client stamp is initialized to 0, gpsHasNewData will return false until first GPS position update
+// if client stamp is initialized to ~0, gpsHasNewData will return true on first call
 bool gpsHasNewData(uint16_t* stamp) {
     if (*stamp != currentGpsStamp) {
         *stamp = currentGpsStamp;
