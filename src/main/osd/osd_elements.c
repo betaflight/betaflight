@@ -769,7 +769,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
         int direction;
 
         if(attitude.values.pitch>0.0){ //nose down
-            thetaB = -earthUpinBodyFrame[RP_AXIS_COUNT]; // get pitch w/re to nadir (use small angle approx for sine)
+            thetaB = -earthUpinBodyFrame[2]; // get pitch w/re to nadir (use small angle approx for sine)
             psiB = -earthUpinBodyFrame[1]; // calculate the yaw w/re to nadir (use small angle approx for sine)
             direction = DOWN;
         } else { // nose up

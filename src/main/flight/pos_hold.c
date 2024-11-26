@@ -61,7 +61,7 @@ void posHoldCheckSticks(void)
     }
 }
 
-void posHoldStart(void)
+void posHoldStartStop(void)
 {
     static bool isInPosHoldMode = false;
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -97,8 +97,8 @@ bool posHoldStatusChecks(void)
 
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs); 
-    // check for enabling Pod Hold, otherwise do as little as possible while inactive
-    posHoldStart();
+    // check for enabling Pos Hold, otherwise do as little as possible while inactive
+    posHoldStartStop();
     if (posHold.posHoldIsOK && posHoldStatusChecks()) {
         posHoldCheckSticks();
         posHold.posHoldIsOK = positionControl();
