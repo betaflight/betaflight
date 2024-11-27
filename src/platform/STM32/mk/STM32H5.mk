@@ -174,6 +174,15 @@ MCU_COMMON_SRC = \
             transponder_ir_io_hal.c \
             camera_control_stm32.c \
             system_stm32h5xx.c \
+            stm32/adc.c \
+            stm32/bus_i2c_config.c \
+            stm32/bus_spi.c \
+            stm32/bus_spi_config.c \
+            stm32/bus_spi_pinconfig.c \
+            stm32/serial_escserial.c \
+            stm32/serial_pinconfig.c \
+            stm32/serial_uart.c \
+            stm32/serial_uart_pinconfig.c \
             startup/system_stm32h5xx.c
 
 #            memprot_hal.c \
@@ -183,9 +192,6 @@ MCU_COMMON_SRC = \
 #            timer_stm32h5xx.c \
 #            adc_stm32h5xx.c \
 #            dma_stm32h5xx.c \
-
-MCU_EXCLUDES = \
-            drivers/bus_i2c.c
 
 MSC_SRC =
 #MSC_SRC = \

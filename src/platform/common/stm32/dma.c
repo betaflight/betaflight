@@ -27,7 +27,7 @@
 #ifdef USE_DMA
 
 #include "drivers/nvic.h"
-#include "dma.h"
+#include "drivers/dma.h"
 
 /*
  * DMA descriptors.

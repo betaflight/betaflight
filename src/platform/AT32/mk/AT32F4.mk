@@ -114,6 +114,15 @@ MCU_COMMON_SRC = \
             $(MIDDLEWARES_DIR)/i2c_application_library/i2c_application.c \
             drivers/bus_i2c_timing.c \
             drivers/usb_msc_common.c \
+            stm32/adc.c \
+            stm32/bus_i2c_config.c \
+            stm32/bus_spi.c \
+            stm32/bus_spi_config.c \
+            stm32/bus_spi_pinconfig.c \
+            stm32/serial_escserial.c \
+            stm32/serial_pinconfig.c \
+            stm32/serial_uart.c \
+            stm32/serial_uart_pinconfig.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
@@ -121,5 +130,3 @@ MCU_COMMON_SRC = \
 
 SPEED_OPTIMISED_SRC += \
             stm32/system.c
-
-MCU_EXCLUDES =

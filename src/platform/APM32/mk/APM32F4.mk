@@ -175,6 +175,15 @@ MCU_COMMON_SRC = \
             adc_apm32f4xx.c \
             dma_apm32f4xx.c \
             serial_uart_apm32f4xx.c \
+            stm32/adc.c \
+            stm32/bus_i2c_config.c \
+            stm32/bus_spi.c \
+            stm32/bus_spi_config.c \
+            stm32/bus_spi_pinconfig.c \
+            stm32/serial_escserial.c \
+            stm32/serial_pinconfig.c \
+            stm32/serial_uart.c \
+            stm32/serial_uart_pinconfig.c \
             system_apm32f4xx.c
 
 VCP_SRC = \

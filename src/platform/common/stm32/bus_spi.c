@@ -36,7 +36,7 @@
 #include "drivers/io.h"
 #include "drivers/motor.h"
 #include "drivers/rcc.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "pg/bus_spi.h"
 
 #define NUM_QUEUE_SEGS 5

@@ -82,21 +82,16 @@ COMMON_SRC = \
             cli/cli.c \
             cli/settings.c \
             config/config.c \
-            drivers/adc.c \
             drivers/dshot.c \
             drivers/dshot_dpwm.c \
             drivers/dshot_command.c \
             drivers/buf_writer.c \
             drivers/bus.c \
-            drivers/bus_i2c_config.c \
             drivers/bus_i2c_busdev.c \
             drivers/bus_i2c_utils.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_octospi.c \
             drivers/bus_quadspi.c \
-            drivers/bus_spi.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/buttons.c \
             drivers/camera_control.c \
             drivers/display.c \
@@ -111,9 +106,6 @@ COMMON_SRC = \
             drivers/resource.c \
             drivers/serial.c \
             drivers/serial_impl.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart.c \
-            drivers/serial_uart_pinconfig.c \
             drivers/serial_uart_hw.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
@@ -236,7 +228,6 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_hcsr04.c \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/rangefinder/rangefinder_lidarmt.c \
-            drivers/serial_escserial.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
             io/dashboard.c \
@@ -428,7 +419,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/accgyro_legacy/accgyro_l3gd20.c \
             drivers/accgyro_legacy/accgyro_lsm303dlhc.c \
             drivers/accgyro_legacy/accgyro_mma845x.c \
-            drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
             drivers/bus_quadspi.c \
