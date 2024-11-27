@@ -160,7 +160,7 @@ static void applySensorRotation(opticalflowRates_t * dist, opticalflowRates_t * 
     if (opticalflowConfig()->rotation != 0) {
         float angle = DEGREES_TO_RADIANS(opticalflowConfig()->rotation);
 
-        dist->X = (int32_t)(src->X * cosf(angle) - src->Y * sinf(angle));
+        dist->X = (int32_t)(src->X * cos_approx(angle) - src->Y * sin_approx(angle));
         dist->Y = (int32_t)(src->X * sinf(angle) + src->Y * cosf(angle));
     } else {
         dist->X = src->X;
