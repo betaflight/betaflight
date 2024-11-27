@@ -396,10 +396,7 @@ ifeq ($(SIMULATOR_BUILD),yes)
 TARGET_FLAGS := -DSIMULATOR_BUILD $(TARGET_FLAGS)
 endif
 
-SPEED_OPTIMISED_SRC := ""
-SIZE_OPTIMISED_SRC  := ""
-
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+SPEED_OPTIMISED_SRC += \
             common/encoding.c \
             common/filter.c \
             common/maths.c \

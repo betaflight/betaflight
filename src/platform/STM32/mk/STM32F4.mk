@@ -214,7 +214,7 @@ MCU_COMMON_SRC = \
             startup/system_stm32f4xx.c
 
 SPEED_OPTIMISED_SRC += \
-            stm32/system.c
+            common/stm32/system.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \

@@ -129,4 +129,4 @@ MCU_COMMON_SRC = \
             msc/emfat_file.c
 
 SPEED_OPTIMISED_SRC += \
-            stm32/system.c
+            common/stm32/system.c
