@@ -29,11 +29,12 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "drivers/adc.h"
 #include "drivers/adc_impl.h"
 #include "drivers/io.h"
 
 #include "pg/adc.h"
+
+#include "adc.h"
 
 //#define DEBUG_ADC_CHANNELS
 

@@ -298,15 +298,15 @@ MCU_COMMON_SRC = \
             timer_stm32h7xx.c \
             transponder_ir_io_hal.c \
             camera_control_stm32.c \
-            stm32/adc.c \
-            stm32/bus_i2c_config.c \
-            stm32/bus_spi.c \
-            stm32/bus_spi_config.c \
-            stm32/bus_spi_pinconfig.c \
-            stm32/serial_escserial.c \
-            stm32/serial_pinconfig.c \
-            stm32/serial_uart.c \
-            stm32/serial_uart_pinconfig.c \
+            drivers/adc.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart.c \
+            drivers/serial_uart_pinconfig.c \
             startup/system_stm32h7xx.c
 
 MSC_SRC = \
