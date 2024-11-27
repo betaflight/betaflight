@@ -201,6 +201,6 @@ opticalflow_t * getLatestFlowOpticalflowData(void) {
 }
 
 bool opticalflowIsHealthy(void) {
-    return (millis() - opticalflow.lastValidResponseTimeMs) < OPTICALFLOW_HARDWARE_TIMEOUT_MS;
+    return cmp32(millis(), opticalflow.lastValidResponseTimeMs) < OPTICALFLOW_HARDWARE_TIMEOUT_MS;
 }
 #endif // USE_OPTICALFLOW
