@@ -317,7 +317,7 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
-static FAST_CODE_PREF float calcWingThrottle(void)
+static float calcWingThrottle(void)
 {
     float batteryThrottleFactor = 1.0f;
     if (pidRuntime.tpaSpeed.maxVoltage > 0.0f) {
@@ -328,7 +328,7 @@ static FAST_CODE_PREF float calcWingThrottle(void)
     return getMotorOutputRms() * batteryThrottleFactor;
 }
 
-static FAST_CODE_PREF float calcWingAcceleration(float throttle, float pitchAngleRadians)
+static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
 
@@ -339,7 +339,7 @@ static FAST_CODE_PREF float calcWingAcceleration(float throttle, float pitchAngl
     return thrust - drag + gravity;
 }
 
-static FAST_CODE_PREF float calcWingTpaArgument(void)
+static float calcWingTpaArgument(void)
 {
     const float t = calcWingThrottle();
     const float pitchRadians = DECIDEGREES_TO_RADIANS(attitude.values.pitch);
@@ -366,7 +366,7 @@ static FAST_CODE_PREF float calcWingTpaArgument(void)
     return tpaArgument;
 }
 
-static FAST_CODE_PREF void updateStermTpaFactor(int axis, float tpaFactor)
+static void updateStermTpaFactor(int axis, float tpaFactor)
 {
     float tpaFactorSterm = tpaFactor;
     if (pidRuntime.tpaCurveType == TPA_CURVE_HYPERBOLIC) {
@@ -378,7 +378,7 @@ static FAST_CODE_PREF void updateStermTpaFactor(int axis, float tpaFactor)
     pidRuntime.tpaFactorSterm[axis] = tpaFactorSterm;
 }
 
-static FAST_CODE_PREF void updateStermTpaFactors(void) {
+static void updateStermTpaFactors(void) {
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         float tpaFactor = pidRuntime.tpaFactor;
         if (i == FD_YAW && currentPidProfile->yaw_type == YAW_TYPE_DIFF_THRUST) {
@@ -389,7 +389,7 @@ static FAST_CODE_PREF void updateStermTpaFactors(void) {
 }
 #endif // USE_WING
 
-static FAST_CODE_PREF float wingAdjustSetpoint(float currentPidSetpoint, int axis)
+static float wingAdjustSetpoint(float currentPidSetpoint, int axis)
 {
 #ifdef USE_WING
     float adjustedSetpoint = currentPidSetpoint;
@@ -1035,7 +1035,7 @@ static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
     }
 }
 
-static FAST_CODE_PREF float getSterm(int axis, const pidProfile_t *pidProfile, float setpoint)
+static float getSterm(int axis, const pidProfile_t *pidProfile, float setpoint)
 {
 #ifdef USE_WING
     float sTerm = setpoint / getMaxRcRate(axis) * 1000.0f *
@@ -1054,7 +1054,7 @@ static FAST_CODE_PREF float getSterm(int axis, const pidProfile_t *pidProfile, f
 #endif
 }
 
-NOINLINE static FAST_CODE_PREF void calculateSpaValues(const pidProfile_t *pidProfile)
+NOINLINE static void calculateSpaValues(const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -1068,7 +1068,7 @@ NOINLINE static FAST_CODE_PREF void calculateSpaValues(const pidProfile_t *pidPr
 #endif // USE_WING
 }
 
-NOINLINE static FAST_CODE_PREF void applySpa(int axis, const pidProfile_t *pidProfile)
+NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 {
 #ifdef USE_WING
     spaMode_e mode = pidProfile->spa_mode[axis];
