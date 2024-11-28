@@ -664,7 +664,7 @@ void descend(bool newGpsData)
     // set the altitude step, considering the interval between altitude readings and the descent rate
     float altitudeStepCm = taskIntervalSeconds * gpsRescueConfig()->descendRate;
 
-    // descend faster while the quad is at higher altitudes, slower below 10m
+    // descend faster while the quad is above 10m, to max 2.6x set value at 50m, slower below 10m to min 0.6x set value
     const float descentRateMultiplier = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
     altitudeStepCm *= 0.6f + (2.0f * descentRateMultiplier); 
     // maximum descent rate increase is 2.6x default above 50m, 1.6x above 25m, 1.0x at 10m, 0.6x at ground level

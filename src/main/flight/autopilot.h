@@ -24,8 +24,7 @@ extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 void autopilotInit(void);
 void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
-void resetPositionControl(const gpsLocation_t *initialTargetLocation, uint16_t taskRateHz);
-void moveTargetLocation(int32_t latStep, int32_t lonStep);
+void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz);
 void posControlOutput(void);
 bool positionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);

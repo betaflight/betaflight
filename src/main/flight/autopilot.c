@@ -75,9 +75,8 @@ typedef struct autopilotState_s {
     float vaLpfCutoff;                  // velocity + acceleration lowpass filter cutoff
     bool sticksActive;
     float maxAngle;
-    int8_t axesMoving;
-    vector2_t pidSumBodyFrame;                          // pid output, updated on each GPS update, rotated to body frame
-    pt3Filter_t upsampleLpfBodyFrame[RP_AXIS_COUNT];    // upsampling filter
+    vector2_t pidSumBF;                 // pid output, updated on each GPS update, rotated to body frame
+    pt3Filter_t upsampleLpfBF[RP_AXIS_COUNT];    // upsampling filter
     efPidAxis_t efAxis[EF_AXIS_COUNT];
 } autopilotState_t;
 
@@ -90,7 +89,7 @@ static autopilotState_t ap = {
 
 float autopilotAngle[RP_AXIS_COUNT];
 
-static void resetEFAxisFilters(efPidAxis_t* efAxis, float vaGain)
+static void resetEFAxisFilters(efPidAxis_t* efAxis, const float vaGain)
 {
     pt1FilterInit(&efAxis->velocityLpf, vaGain);
     pt1FilterInit(&efAxis->accelerationLpf, vaGain);
@@ -106,8 +105,8 @@ void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
 
 static void resetUpsampleFilters(void)
 {
-     for (unsigned i = 0; i < ARRAYLEN(ap.upsampleLpfBodyFrame); i++) {
-         pt3FilterInit(&ap.upsampleLpfBodyFrame[i], ap.upsampleLpfGain);
+     for (unsigned i = 0; i < ARRAYLEN(ap.upsampleLpfBF); i++) {
+         pt3FilterInit(&ap.upsampleLpfBF[i], ap.upsampleLpfGain);
     }
 }
 
@@ -115,9 +114,10 @@ static void resetUpsampleFilters(void)
 static inline float sanityCheckDistance(const float gpsGroundSpeedCmS)
 {
     return fmaxf(1000.0f, gpsGroundSpeedCmS * 2.0f);
+    // distance flown in 2s at current speed. with minimum of 10m
 }
 
-void resetPositionControl(const gpsLocation_t *initialTargetLocation, uint16_t taskRateHz)
+void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz)
 {
     // from pos_hold.c (or other client) when initiating position hold at target location
     ap.targetLocation = *initialTargetLocation;
@@ -129,8 +129,8 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, uint16_t t
         resetEFAxisParams(&ap.efAxis[i], 1.0f);
     }
     const float taskInterval = 1.0f / taskRateHz;
-    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval);       // 5Hz, assuming 100Hz task rate
-    resetUpsampleFilters();                  // clear anything from previous iteration
+    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval); // 5Hz; normally at 100Hz task rate
+    resetUpsampleFilters(); // clear accumlator from previous iterations
 }
 
 void autopilotInit(void)
@@ -150,7 +150,7 @@ void autopilotInit(void)
     // initialise filters with approximate filter gain
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
     resetUpsampleFilters();
-    // Initialise PT1 filters for earth frame axes latitude and longitude
+    // Initialise PT1 filters for deivative and acceleration in earth frame axes
     ap.vaLpfCutoff = cfg->position_cutoff * 0.01f;
     const float vaGain = pt1FilterGain(ap.vaLpfCutoff,  0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
@@ -307,11 +307,11 @@ bool positionControl(void)
                     const int8_t llhAxisInv = 1 - efAxisIdx; // because we have Lat first in gpsLocation_t, but efAxisIdx handles lon first.
                     ap.targetLocation.coords[llhAxisInv] = gpsSol.llh.coords[llhAxisInv]; // forcing P to zero
                     efAxis->previousDistance = 0.0f;                                      // ensuring no D jump from the updated location
-                    ap.axesMoving -= 1; // count each axis when it 'stops'
-                    if (ap.axesMoving <= 0) {
-                        ap.sanityCheckDistance = sanityCheckDistance(1000); // when last axis has stopped moving, reset the sanity distance to 10m default
-                    }
                     efAxis->isStopping = false;
+                    if (ap.efAxis[LAT].isStopping == ap.efAxis[LON].isStopping) {
+                        ap.sanityCheckDistance = sanityCheckDistance(1000);
+                        // when both axes have stopped moving, reset the sanity distance to 10m default
+                    }
                 }
             }
             pidDA.v[efAxisIdx] = pidD + pidA;    // save DA here, processed after axis loop
@@ -338,16 +338,15 @@ bool positionControl(void)
         // add constrained DA to sum
         vector2Add(&pidSum, &pidSum, &pidDA);
         debugPidSumEF = pidSum;
-        vector2_t anglesBodyFrame;
+        vector2_t anglesBF;
 
         if (ap.sticksActive) {
             // if a Position Hold deadband is set, and sticks are outside deadband, allow pilot control in angle mode
-            anglesBodyFrame = (vector2_t){{0, 0}};             // set output PIDS to 0; upsampling filter will smooth this
+            anglesBF = (vector2_t){{0, 0}};             // set output PIDS to 0; upsampling filter will smooth this
             // reset target location each cycle (and set previousDistance to zero in for loop), to keep D current, and avoid a spike when stopping
             ap.targetLocation = gpsSol.llh;
             // keep updating sanity check distance while sticks are out because speed may get high
             ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
-            ap.axesMoving = 2; // keep the counter at 2 while sticks are moving
         } else {
             // ** Rotate pid Sum to body frame, and convert it into pitch and roll **
             // attitude.values.yaw increases clockwise from north
@@ -356,21 +355,21 @@ bool positionControl(void)
             const float angle = DECIDEGREES_TO_RADIANS(attitude.values.yaw - 900);
             vector2_t pidBodyFrame;   // pid output in body frame; X is forward, Y is left
             vector2Rotate(&pidBodyFrame, &pidSum, angle);         // rotate by angle counterclockwise
-            anglesBodyFrame.v[AI_ROLL] = -pidBodyFrame.y;         // negative roll to fly left
-            anglesBodyFrame.v[AI_PITCH] = pidBodyFrame.x;         // positive pitch for forward
+            anglesBF.v[AI_ROLL] = -pidBodyFrame.y;         // negative roll to fly left
+            anglesBF.v[AI_PITCH] = pidBodyFrame.x;         // positive pitch for forward
              // limit angle vector to maxAngle
-            const float mag = vector2Norm(&anglesBodyFrame);
+            const float mag = vector2Norm(&anglesBF);
             if (mag > ap.maxAngle && mag > 0.0f) {
-                vector2Scale(&anglesBodyFrame, &anglesBodyFrame, ap.maxAngle / mag);
+                vector2Scale(&anglesBF, &anglesBF, ap.maxAngle / mag);
             }
         }
-        ap.pidSumBodyFrame = anglesBodyFrame;    // this value will be upsampled
+        ap.pidSumBF = anglesBF;    // this value will be upsampled
     }
 
     // Final output to pid.c Angle Mode at 100Hz with PT3 upsampling
     for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
         // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
-        autopilotAngle[i] = pt3FilterApply(&ap.upsampleLpfBodyFrame[i], ap.pidSumBodyFrame.v[i]);
+        autopilotAngle[i] = pt3FilterApply(&ap.upsampleLpfBF[i], ap.pidSumBF.v[i]);
     }
 
     if (debugAxis < 2) {
