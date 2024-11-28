@@ -203,6 +203,8 @@
 
 #endif // !defined(USE_TELEMETRY)
 
+#define USE_SERVOS
+
 #define USE_VTX
 #define USE_OSD
 #if !defined(USE_OSD_SD) && !defined(USE_OSD_HD)
