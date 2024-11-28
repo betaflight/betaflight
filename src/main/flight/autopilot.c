@@ -105,8 +105,8 @@ void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
 
 static void resetUpsampleFilters(void)
 {
-     for (unsigned i = 0; i < ARRAYLEN(ap.upsampleLpfBF); i++) {
-         pt3FilterInit(&ap.upsampleLpfBF[i], ap.upsampleLpfGain);
+    for (unsigned i = 0; i < ARRAYLEN(ap.upsampleLpfBF); i++) {
+        pt3FilterInit(&ap.upsampleLpfBF[i], ap.upsampleLpfGain);
     }
 }
 
@@ -309,8 +309,8 @@ bool positionControl(void)
                     efAxis->previousDistance = 0.0f;                                      // ensuring no D jump from the updated location
                     efAxis->isStopping = false;
                     if (ap.efAxis[LAT].isStopping == ap.efAxis[LON].isStopping) {
-                        ap.sanityCheckDistance = sanityCheckDistance(1000);
                         // when both axes have stopped moving, reset the sanity distance to 10m default
+                        ap.sanityCheckDistance = sanityCheckDistance(1000);
                     }
                 }
             }
