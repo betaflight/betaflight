@@ -54,8 +54,8 @@ float sin_approx(float x)
 {
     // Wrap angle to 2π with range [-π π]
     x = fmodf(x, 2.0f * M_PIf);
-    if (x <= -M_PIf) x += 2.0f * M_PIf;
-    if (x > M_PIf) x -= 2.0f * M_PIf;
+    while (x >  M_PIf) x -= (2.0f * M_PIf);   // always wrap input angle to -PI..PI
+    while (x < -M_PIf) x += (2.0f * M_PIf);
 
     // Use axis symmetry around x = ±π/2 for polynomial outside of range [-π/2 π/2]
     if (x > M_PIf / 2) {
