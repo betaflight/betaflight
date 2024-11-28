@@ -175,6 +175,15 @@ MCU_COMMON_SRC = \
             adc_apm32f4xx.c \
             dma_apm32f4xx.c \
             serial_uart_apm32f4xx.c \
+            drivers/adc.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart.c \
+            drivers/serial_uart_pinconfig.c \
             system_apm32f4xx.c
 
 VCP_SRC = \
@@ -197,7 +206,7 @@ MSC_SRC = \
             msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-            stm32/system.c
+            common/stm32/system.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4 -DUSE_FULL_DDL_DRIVER

@@ -18,20 +18,6 @@ MCU_FLASH_SIZE  := 2048
 ARM_SDK_PREFIX  =
 
 MCU_EXCLUDES = \
-            drivers/adc.c \
-            drivers/bus_i2c.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
-            drivers/dma.c \
-            drivers/pwm_output.c \
-            drivers/rcc.c \
-            drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart.c \
-            drivers/serial_uart_init.c \
-            drivers/serial_uart_pinconfig.c \
             drivers/rx/rx_xn297.c \
             drivers/display_ug2864hsweg01.c \
             telemetry/crsf.c \

@@ -148,10 +148,16 @@ MCU_COMMON_SRC = \
             timer_stm32g4xx.c \
             transponder_ir_io_hal.c \
             camera_control_stm32.c \
+            drivers/adc.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart.c \
+            drivers/serial_uart_pinconfig.c \
             startup/system_stm32g4xx.c
-
-MCU_EXCLUDES = \
-            drivers/bus_i2c.c
 
 # G4's MSC use the same driver layer file with F7
 MSC_SRC = \
@@ -165,7 +171,7 @@ MSC_SRC = \
             msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
-            stm32/system.c
+            common/stm32/system.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

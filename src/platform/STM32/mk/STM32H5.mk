@@ -174,6 +174,15 @@ MCU_COMMON_SRC = \
             transponder_ir_io_hal.c \
             camera_control_stm32.c \
             system_stm32h5xx.c \
+            drivers/adc.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart.c \
+            drivers/serial_uart_pinconfig.c \
             startup/system_stm32h5xx.c
 
 #            memprot_hal.c \
@@ -183,9 +192,6 @@ MCU_COMMON_SRC = \
 #            timer_stm32h5xx.c \
 #            adc_stm32h5xx.c \
 #            dma_stm32h5xx.c \
-
-MCU_EXCLUDES = \
-            drivers/bus_i2c.c
 
 MSC_SRC =
 #MSC_SRC = \
@@ -199,7 +205,7 @@ MSC_SRC =
             msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-            stm32/system.c
+            common/stm32/system.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
