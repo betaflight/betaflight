@@ -147,15 +147,8 @@ void autopilotInit(void)
     positionPidCoeffs.Ki = cfg->position_I * POSITION_I_SCALE;
     positionPidCoeffs.Kd = cfg->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = cfg->position_A * POSITION_A_SCALE; // Kf used for acceleration
-    // initialise filters with approximate filter gain
-    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
-    resetUpsampleFilters();
-    // Initialise PT1 filters for deivative and acceleration in earth frame axes
-    ap.vaLpfCutoff = cfg->position_cutoff * 0.01f;
-    const float vaGain = pt1FilterGain(ap.vaLpfCutoff,  0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
-    for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
-        resetEFAxisFilters(&ap.efAxis[i], vaGain);
-    }
+    // initialise filters with approximate filter gains; location isn't used at this point.
+    resetPositionControl(&gpsSol.llh, 100);
 }
 
 void resetAltitudeControl (void) {

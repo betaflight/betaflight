@@ -664,10 +664,8 @@ void descend(bool newGpsData)
     // set the altitude step, considering the interval between altitude readings and the descent rate
     float altitudeStepCm = taskIntervalSeconds * gpsRescueConfig()->descendRate;
 
-    // descend faster while the quad is above 10m, to max 2.6x set value at 50m, slower below 10m to min 0.6x set value
-    const float descentRateMultiplier = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
-    altitudeStepCm *= 0.6f + (2.0f * descentRateMultiplier); 
-    // maximum descent rate increase is 2.6x default above 50m, 1.6x above 25m, 1.0x at 10m, 0.6x at ground level
+    // at or below 10m: descend at 0.6x set value; above 10m, descend faster, to max 3.0x at 50m
+    altitudeStepCm *= scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
 
     rescueState.intent.targetAltitudeStepCm = -altitudeStepCm;
     rescueState.intent.targetAltitudeCm -= altitudeStepCm;
@@ -696,7 +694,7 @@ void gpsRescueUpdate(void)
         rescueStop(); // sets phase to RESCUE_IDLE; does nothing else.  RESCUE_IDLE tasks still run.
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
         rescueStart(); // sets phase to rescue_initialise if we enter GPS Rescue mode while idle
-        rescueAttainPosition(newGpsData); // Initialise basic parameters when a Rescue starts (can't initialise sensor data reliably)
+        rescueAttainPosition(false); // Initialise basic parameters when a Rescue starts (can't initialise sensor data reliably)
         performSanityChecks(); // Initialises sanity check values when a Rescue starts
     }
     // Will now be in RESCUE_INITIALIZE mode, if just entered Rescue while IDLE, otherwise stays IDLE
