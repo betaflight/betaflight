@@ -148,7 +148,8 @@ void autopilotInit(void)
     positionPidCoeffs.Kd = cfg->position_D * POSITION_D_SCALE;
     positionPidCoeffs.Kf = cfg->position_A * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gains; location isn't used at this point.
-    resetPositionControl(&gpsSol.llh, 100);
+    const gpsLocation_t initLocation = gpsSol.llh;
+    resetPositionControl(&initLocation, 100);
 }
 
 void resetAltitudeControl (void) {
