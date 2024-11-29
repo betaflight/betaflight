@@ -50,6 +50,8 @@
 #include "config/config.h"
 #include "scheduler/scheduler.h"
 
+#include "io/gps.h"
+
 #include "pg/rx.h"
 #include "pg/motor.h"
 
