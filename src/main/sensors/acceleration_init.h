@@ -22,7 +22,11 @@
 
 #include "platform.h"
 
+#include "common/axis.h"
+#include "common/filter.h"
+
 #include "sensors/acceleration.h"
+#include "sensors/sensors.h"
 
 typedef struct accelerationRuntime_s {
     uint16_t accLpfCutHz;

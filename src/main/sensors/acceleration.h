@@ -20,9 +20,14 @@
 
 #pragma once
 
+#include "common/axis.h"
 #include "common/time.h"
-#include "pg/pg.h"
+#include "common/vector.h"
+
 #include "drivers/accgyro/accgyro.h"
+
+#include "pg/pg.h"
+
 #include "sensors/sensors.h"
 
 // Type of accelerometer used/detected
@@ -54,10 +59,11 @@ typedef enum {
 typedef struct acc_s {
     accDev_t dev;
     uint16_t sampleRateHz;
-    vector3_t accADC;
+    vector3_t accADC;                       // rotated but unscaled ADC value
+    vector3_t jerk;
+    float accMagnitude;                     // in multiples of 1G
+    float jerkMagnitude;                    // in multiples of 1G/s (measure of collision strength)
     bool isAccelUpdatedAtLeastOnce;
-    float accMagnitude;
-    float accDelta;
 } acc_t;
 
 extern acc_t acc;
@@ -74,7 +80,7 @@ typedef union rollAndPitchTrims_u {
 
 #if defined(USE_ACC)
 typedef struct accelerometerConfig_s {
-    uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    uint16_t acc_lpf_hz;                    // cutoff frequency for attitude anti-aliasing filter
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     bool acc_high_fsr;
     flightDynamicsTrims_t accZero;
