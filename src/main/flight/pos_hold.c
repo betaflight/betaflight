@@ -38,7 +38,9 @@
 #include "pos_hold.h"
 
 typedef struct posHoldState_s {
-    bool posHoldIsOK;
+    bool isEnabled;
+    bool isControlOk;
+    bool areSensorsOk;
     float deadband;
     bool useStickAdjustment;
 } posHoldState_t;
@@ -49,7 +51,6 @@ void posHoldInit(void)
 {
     posHold.deadband = posHoldConfig()->pos_hold_deadband / 100.0f;
     posHold.useStickAdjustment = posHoldConfig()->pos_hold_deadband;
-    posHold.posHoldIsOK = false;
 }
 
 void posHoldCheckSticks(void)
@@ -61,27 +62,9 @@ void posHoldCheckSticks(void)
     }
 }
 
-void posHoldStartStop(void)
-{
-    static bool isInPosHoldMode = false;
-    if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        if (!isInPosHoldMode) {
-            // start position hold mode
-            posHold.posHoldIsOK = true; // true when started, false when autopilot code reports failure
-            resetPositionControl(&gpsSol.llh, POSHOLD_TASK_RATE_HZ); // sets target location to current location
-            isInPosHoldMode = true;
-        }
-    } else {
-        // stop position hold mode
-        posHold.posHoldIsOK = false;
-        isInPosHoldMode = false;
-    }
-}
-
-bool posHoldStatusChecks(void)
+bool sensorsOk(void)
 {
     if (!STATE(GPS_FIX)) {
-        posHold.posHoldIsOK = false; // cannot continue, display POS_HOLD_FAIL warning in OSD
         return false; 
     }
     if (
@@ -89,7 +72,6 @@ bool posHoldStatusChecks(void)
         !compassIsHealthy() &&
 #endif
         (!posHoldConfig()->pos_hold_without_mag || !canUseGPSHeading)) {
-        posHold.posHoldIsOK = false;
         return false; 
     }
     return true;
@@ -97,19 +79,28 @@ bool posHoldStatusChecks(void)
 
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs); 
-    // check for enabling Pos Hold, otherwise do as little as possible while inactive
-    posHoldStartStop();
-    if (posHold.posHoldIsOK && posHoldStatusChecks()) {
-        posHoldCheckSticks();
-        posHold.posHoldIsOK = positionControl();
+    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        if (!posHold.isEnabled) {
+            resetPositionControl(&gpsSol.llh, POSHOLD_TASK_RATE_HZ); // sets target location to current location
+            posHold.isControlOk = true;
+            posHold.isEnabled = true;
+        }
     } else {
-        autopilotAngle[AI_PITCH] = 0.0f;
-        autopilotAngle[AI_ROLL] = 0.0f;
+        posHold.isEnabled = false;
+    }
+
+    if (posHold.isEnabled && posHold.isControlOk) {
+        posHold.areSensorsOk = sensorsOk();
+        if (posHold.areSensorsOk) {
+            posHoldCheckSticks();
+            posHold.isControlOk = positionControl(); // false only on sanity check failure
+        }
     }
 }
 
 bool posHoldFailure(void) {
-    return (FLIGHT_MODE(POS_HOLD_MODE) && !posHold.posHoldIsOK);
+    // used only to display warning in OSD if requested but failing
+    return FLIGHT_MODE(POS_HOLD_MODE) && (!posHold.isControlOk || !posHold.areSensorsOk);
 }
 
 #endif // USE_POS_HOLD
