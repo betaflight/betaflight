@@ -69,8 +69,12 @@ void mspSerialAllocatePorts(void)
 
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
-        } else if ((portConfig->identifier >= SERIAL_PORT_USART1) && (portConfig->identifier <= SERIAL_PORT_USART_MAX)){
+        } else if (serialType(portConfig->identifier) == SERIALTYPE_UART
+                   || serialType(portConfig->identifier) == SERIALTYPE_LPUART) {
+            // TODO: SERIAL_CHECK_TX is broken on F7, disable it until it is fixed
+#if !defined(STM32F7) || defined(USE_F7_CHECK_TX)
             options |= SERIAL_CHECK_TX;
+#endif
         }
 
         serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, options);

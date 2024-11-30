@@ -444,9 +444,12 @@ void gpsInit(void)
         mode &= ~MODE_TX;
     }
 #endif
-
-    if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
+    if (serialType(gpsPortConfig->identifier) == SERIALTYPE_UART
+        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART) {
+        // TODO: SERIAL_CHECK_TX is broken on F7, disable it until it is fixed
+#if !defined(STM32F7) || defined(USE_F7_CHECK_TX)
         options |= SERIAL_CHECK_TX;
+#endif
     }
 
     // no callback - buffer will be consumed in gpsUpdate()
