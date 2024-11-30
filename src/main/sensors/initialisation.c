@@ -89,7 +89,6 @@ bool sensorsAutodetect(void)
     rangefinderInit();
 #endif
 
-// commonly opticalflow is a rangefinder, so should be initialised after rangefinder
 #ifdef USE_OPTICALFLOW
     opticalflowInit();
 #endif
