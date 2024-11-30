@@ -116,12 +116,10 @@ MCU_COMMON_SRC = \
             drivers/usb_msc_common.c \
             drivers/adc.c \
             drivers/bus_i2c_config.c \
-            drivers/bus_spi.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
-            drivers/serial_uart.c \
             drivers/serial_uart_pinconfig.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \

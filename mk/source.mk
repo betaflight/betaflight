@@ -275,6 +275,8 @@ COMMON_SRC = \
 ifneq ($(SIMULATOR_BUILD),yes)
 
 COMMON_SRC += \
+            drivers/bus_spi.c \
+            drivers/serial_uart.c \
             drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/accgyro/accgyro_mpu6500.c \
