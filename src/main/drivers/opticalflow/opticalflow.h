@@ -22,7 +22,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "common/time.h"
 
 #define OPTICALFLOW_OUT_OF_RANGE        (-1)
 #define OPTICALFLOW_HARDWARE_FAILURE    (-2)
@@ -43,15 +42,15 @@ typedef struct opticalflowData_s {
 } opticalflowData_t;
 
 struct opticalflowDev_s;
-typedef void (*opflowOpInitFuncPtr)(struct opticalflowDev_s * dev);
-typedef void (*opflowOpUpdateFuncPtr)(struct opticalflowDev_s * dev);
-typedef opticalflowData_t * (*opflowOpReadFuncPtr)(struct opticalflowDev_s * dev);
+typedef void opflowOpInitFunc(struct opticalflowDev_s * dev);
+typedef void opflowOpUpdateFunc(struct opticalflowDev_s * dev);
+typedef bool opflowOpReadFunc(struct opticalflowDev_s * dev, opticalflowData_t * result);
 
 typedef struct opticalflowDev_s {
     timeMs_t delayMs;
     int16_t minRangeCm;
     
-    opflowOpInitFuncPtr  init;
-    opflowOpUpdateFuncPtr update;
-    opflowOpReadFuncPtr  read;
+    opflowOpInitFunc  *init;
+    opflowOpUpdateFunc *update;
+    opflowOpReadFunc  *read;
 } opticalflowDev_t;

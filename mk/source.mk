@@ -237,7 +237,6 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_hcsr04.c \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/rangefinder/rangefinder_lidarmt.c \
-            drivers/opticalflow/opticalflow_mt.c \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \

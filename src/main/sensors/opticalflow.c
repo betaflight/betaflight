@@ -46,8 +46,8 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/time.h"
-#include "drivers/opticalflow/opticalflow.h"
-#include "drivers/opticalflow/opticalflow_mt.h"
+#include "drivers/rangefinder/rangefinder.h"
+#include "drivers/rangefinder/rangefinder_lidarmt.h"
 
 #include "io/beeper.h"
 
@@ -69,11 +69,13 @@ PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
     .opticalflow_hardware = OPTICALFLOW_NONE,
     .rotation = 0,
     .flow_lpf = 0,
-    .flipX = 0,
     .flipY = 0
 );
 
 static opticalflow_t opticalflow;
+float cosRotAngle = 1.0f;
+float sinRotAngle = 0.0f;
+static pt2Filter_t xFlowLpf, yFlowLpf;
 
 // ======================================================================
 // =================== Opticalflow Main Functions =======================
@@ -87,7 +89,7 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
     switch (opticalflowHardwareToUse) {
         case OPTICALFLOW_MT:
 #ifdef USE_OPTICALFLOW_MT
-            if (mtOpticalflowDetect(dev)) {
+            if (mtOpticalflowDetect(dev, rangefinderConfig()->rangefinder_hardware)) {
                 opticalflowHardware = OPTICALFLOW_MT;
                 rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
             }
@@ -122,6 +124,18 @@ bool opticalflowInit(void) {
     opticalflow.processedFlowRates.Y = 0;
     opticalflow.lastValidResponseTimeMs = millis();
 
+    if (opticalflowConfig()->rotation != 0) {
+        cosRotAngle = cosf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
+        sinRotAngle = sinf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
+    }
+    //low pass filter
+    if (opticalflowConfig()->flow_lpf != 0) {
+        const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
+        const float flowGain     = pt2FilterGain(flowCutoffHz, opticalflow.dev.delayMs / 1000.0f);
+
+        pt2FilterInit(&xFlowLpf, flowGain);
+        pt2FilterInit(&yFlowLpf, flowGain);
+    }
     return true;
 }
 
@@ -132,15 +146,16 @@ void opticalflowUpdate(void) {
 }
 
 void opticalflowProcess(void) {
-    opticalflowData_t * data = opticalflow.dev.read(&opticalflow.dev);
+    opticalflowData_t data = {0};
+    bool hasNewData = opticalflow.dev.read(&opticalflow.dev, &data);
     
-    opticalflow.quality   = data->quality;
+    opticalflow.quality   = data.quality;
 
-    if (opticalflow.quality > QUALITY_MINIMUM_THRESHOLD) {
+    if (opticalflow.quality > QUALITY_MINIMUM_THRESHOLD && hasNewData) {
         opticalflow.lastValidResponseTimeMs = millis();
 
-        opticalflow.rawFlowRates = data->flowRate;
-        opticalflow.deltaTimeUs  = data->deltaTimeUs;
+        opticalflow.rawFlowRates = data.flowRate;
+        opticalflow.deltaTimeUs  = data.deltaTimeUs;
         
         applySensorRotation(&opticalflow.processedFlowRates, &opticalflow.rawFlowRates);
 
@@ -157,19 +172,8 @@ void opticalflowProcess(void) {
 }
 
 static void applySensorRotation(opticalflowRates_t * dist, opticalflowRates_t * src) {
-    if (opticalflowConfig()->rotation != 0) {
-        float angle = DEGREES_TO_RADIANS(opticalflowConfig()->rotation);
-
-        dist->X = (int32_t)(src->X * cos_approx(angle) - src->Y * sin_approx(angle));
-        dist->Y = (int32_t)(src->X * sinf(angle) + src->Y * cosf(angle));
-    } else {
-        dist->X = src->X;
-        dist->Y = src->Y;
-    }
-
-    if (opticalflowConfig()->flipX) {
-        dist->X = -dist->X;
-    }
+    dist->X = (int32_t)(src->X * cosRotAngle - src->Y * sinRotAngle);
+    dist->Y = (int32_t)(src->X * sinRotAngle + src->Y * cosRotAngle);
     
     if (opticalflowConfig()->flipY) {
         dist->Y = -dist->Y;
@@ -179,18 +183,7 @@ static void applySensorRotation(opticalflowRates_t * dist, opticalflowRates_t * 
 static void applyLPF(opticalflowRates_t * flowRates) {
     if (opticalflowConfig()->flow_lpf == 0) {
         return;
-    }
-    static bool firstRun = true;
-    static pt2Filter_t xFlowLpf, yFlowLpf;
-
-    if (firstRun) {   
-        const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
-        const float flowGain     = pt2FilterGain(flowCutoffHz, opticalflow.dev.delayMs / 1000.0f);
-
-        pt2FilterInit(&xFlowLpf, flowGain);
-        pt2FilterInit(&yFlowLpf, flowGain);
-        firstRun = false;
-    }
+    }    
 
     flowRates->X = pt2FilterApply(&xFlowLpf, flowRates->X);
     flowRates->Y = pt2FilterApply(&yFlowLpf, flowRates->Y);
