@@ -2,9 +2,9 @@
 # AT32F4 Make file include
 #
 
-CMSIS_DIR      := $(ROOT)/lib/main/AT32F43x/cmsis
-STDPERIPH_DIR   = $(ROOT)/lib/main/AT32F43x/drivers
-MIDDLEWARES_DIR = $(ROOT)/lib/main/AT32F43x/middlewares
+CMSIS_DIR      := $(LIB_MAIN_DIR)/AT32F43x/cmsis
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/AT32F43x/drivers
+MIDDLEWARES_DIR = $(LIB_MAIN_DIR)/AT32F43x/middlewares
 STDPERIPH_SRC   = \
         at32f435_437_acc.c \
         at32f435_437_adc.c \
@@ -47,7 +47,7 @@ STDPERIPH_SRC   = \
 
 STARTUP_SRC     = startup/startup_at32f435_437.s
 
-VPATH           := $(VPATH):$(ROOT)/lib/main/AT32F43x/cmsis/cm4/core_support:$(STDPERIPH_DIR)/src:$(MIDDLEWARES_DIR):$(SRC_DIR)/startup/at32
+VPATH           := $(VPATH):$(LIB_MAIN_DIR)/AT32F43x/cmsis/cm4/core_support:$(STDPERIPH_DIR)/src:$(MIDDLEWARES_DIR):$(SRC_DIR)/startup/at32
 
 VCP_SRC =  \
             usbd_class/cdc/cdc_class.c \
@@ -129,4 +129,4 @@ MCU_COMMON_SRC = \
             msc/emfat_file.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c
+            stm32/system.c

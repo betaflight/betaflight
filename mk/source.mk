@@ -322,13 +322,15 @@ ifneq ($(GYRO_DEFINE),)
 LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
 ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
 
-COMMON_SRC += \
+LEGACY_SRC := \
             drivers/accgyro/legacy/accgyro_adxl345.c \
             drivers/accgyro/legacy/accgyro_bma280.c \
             drivers/accgyro/legacy/accgyro_l3g4200d.c \
             drivers/accgyro/legacy/accgyro_lsm303dlhc.c \
             drivers/accgyro/legacy/accgyro_mma845x.c
 
+COMMON_SRC += $(LEGACY_SRC)
+SPEED_OPTIMISED_SRC += $(LEGACY_SRC)
 
 endif
 endif
@@ -376,6 +378,26 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
 
+# Gyro driver files that only contain initialization and configuration code - not runtime code
+SIZE_OPTIMISED_SRC += \
+            drivers/accgyro/accgyro_mpu6050.c \
+            drivers/accgyro/accgyro_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu6000.c \
+            drivers/accgyro/accgyro_spi_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu9250.c \
+            drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm426xx.c \
+            drivers/accgyro/accgyro_spi_lsm6dso_init.c
+
+SPEED_OPTIMISED_SRC += \
+            drivers/bus_spi.c \
+            drivers/serial_uart.c \
+            drivers/accgyro/accgyro_mpu.c \
+            drivers/accgyro/accgyro_mpu3050.c \
+            drivers/accgyro/accgyro_spi_bmi160.c \
+            drivers/accgyro/accgyro_spi_bmi270.c \
+            drivers/accgyro/accgyro_spi_lsm6dso.c
+
 endif
 
 COMMON_DEVICE_SRC = \
@@ -405,28 +427,11 @@ SPEED_OPTIMISED_SRC += \
             common/stopwatch.c \
             common/typeconversion.c \
             common/vector.c \
-            drivers/accgyro/accgyro_mpu.c \
-            drivers/accgyro/accgyro_mpu3050.c \
-            drivers/accgyro/accgyro_spi_bmi160.c \
-            drivers/accgyro/accgyro_spi_bmi270.c \
-            drivers/accgyro/accgyro_spi_lsm6dso.c \
-            drivers/accgyro_legacy/accgyro_adxl345.c \
-            drivers/accgyro_legacy/accgyro_bma280.c \
-            drivers/accgyro_legacy/accgyro_l3g4200d.c \
-            drivers/accgyro_legacy/accgyro_l3gd20.c \
-            drivers/accgyro_legacy/accgyro_lsm303dlhc.c \
-            drivers/accgyro_legacy/accgyro_mma845x.c \
             drivers/buf_writer.c \
             drivers/bus.c \
             drivers/bus_quadspi.c \
-            drivers/bus_spi.c \
-            drivers/exti.c \
             drivers/io.c \
-            drivers/pwm_output.c \
-            drivers/rcc.c \
             drivers/serial.c \
-            drivers/serial_uart.c \
-            drivers/timer.c \
             fc/core.c \
             fc/tasks.c \
             fc/rc.c \
@@ -450,6 +455,7 @@ SPEED_OPTIMISED_SRC += \
             rx/sumd.c \
             rx/xbus.c \
             rx/fport.c \
+            rx/frsky_crc.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
@@ -541,28 +547,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
 
-# Gyro driver files that only contain initialization and configuration code - not runtime code
-SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
-            drivers/accgyro/accgyro_mpu6050.c \
-            drivers/accgyro/accgyro_mpu6500.c \
-            drivers/accgyro/accgyro_spi_mpu6000.c \
-            drivers/accgyro/accgyro_spi_mpu6500.c \
-            drivers/accgyro/accgyro_spi_mpu9250.c \
-            drivers/accgyro/accgyro_spi_icm20689.c \
-            drivers/accgyro/accgyro_spi_icm426xx.c \
-            drivers/accgyro/accgyro_spi_lsm6dso_init.c
-
-
-# F4 and F7 optimizations
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
-            drivers/bus_i2c_hal.c \
-            drivers/bus_spi_ll.c \
-            rx/frsky_crc.c \
-            drivers/max7456.c \
-            drivers/pwm_output_dshot.c \
-            drivers/pwm_output_dshot_shared.c \
-            drivers/pwm_output_dshot_hal.c
-
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_hal_init.c
 
@@ -590,10 +574,10 @@ SRC += $(VCP_SRC)
 # end target specific make file checks
 
 # Search path and source files for the Open Location Code library
-OLC_DIR = $(ROOT)/lib/main/google/olc
+OLC_DIR := google/olc
 
 ifneq ($(OLC_DIR),)
-INCLUDE_DIRS += $(OLC_DIR)
+INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(OLC_DIR)
 SRC += $(OLC_DIR)/olc.c
 SIZE_OPTIMISED_SRC += $(OLC_DIR)/olc.c
 endif

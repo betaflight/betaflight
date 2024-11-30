@@ -3,8 +3,8 @@
 #
 
 #CMSIS
-CMSIS_DIR      := $(ROOT)/lib/main/APM32F4/Libraries/Device
-STDPERIPH_DIR   = $(ROOT)/lib/main/APM32F4/Libraries/APM32F4xx_DAL_Driver
+CMSIS_DIR      := $(LIB_MAIN_DIR)/APM32F4/Libraries/Device
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/APM32F4/Libraries/APM32F4xx_DAL_Driver
 STDPERIPH_SRC   = \
             apm32f4xx_dal_adc.c \
             apm32f4xx_dal_adc_ex.c \
@@ -86,16 +86,16 @@ STDPERIPH_SRC   = \
 VPATH       := $(VPATH):$(STDPERIPH_DIR)/Source
 
 #USB
-USBCORE_DIR = $(ROOT)/lib/main/APM32F4/Middlewares/APM32_USB_Library/Device/Core
+USBCORE_DIR = $(LIB_MAIN_DIR)/APM32F4/Middlewares/APM32_USB_Library/Device/Core
 USBCORE_SRC = \
         usbd_core.c \
         usbd_dataXfer.c \
         usbd_stdReq.c
 
-USBCDC_DIR = $(ROOT)/lib/main/APM32F4/Middlewares/APM32_USB_Library/Device/Class/CDC
+USBCDC_DIR = $(LIB_MAIN_DIR)/APM32F4/Middlewares/APM32_USB_Library/Device/Class/CDC
 USBCDC_SRC = usbd_cdc.c
 
-USBMSC_DIR = $(ROOT)/lib/main/APM32F4/Middlewares/APM32_USB_Library/Device/Class/MSC
+USBMSC_DIR = $(LIB_MAIN_DIR)/APM32F4/Middlewares/APM32_USB_Library/Device/Class/MSC
 USBMSC_SRC = \
         usbd_msc.c \
         usbd_msc_bot.c \
@@ -108,7 +108,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC) \
                         $(USBMSC_SRC)
 #CMSIS
-VPATH           := $(VPATH):$(ROOT)/lib/main/APM32F4/Libraries/Device/Geehy/APM32F4xx
+VPATH           := $(VPATH):$(LIB_MAIN_DIR)/APM32F4/Libraries/Device/Geehy/APM32F4xx
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR)/startup \
@@ -124,7 +124,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR)/usb/vcp \
                    $(TARGET_PLATFORM_DIR)/usb/msc \
                    $(TARGET_PLATFORM_DIR)/usb \
-                   $(ROOT)/lib/main/CMSIS/Core/Include \
+                   $(LIB_MAIN_DIR)/CMSIS/Core/Include \
                    $(SRC_DIR)/msc
 
 #Flags
@@ -206,7 +206,7 @@ MSC_SRC = \
             msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c
+            stm32/system.c
 
-DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4 -DUSE_FULL_DDL_DRIVER

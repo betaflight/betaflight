@@ -7,10 +7,10 @@ CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
+CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32G4/Drivers/STM32G4xx_HAL_Driver
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32G4/Drivers/STM32G4xx_HAL_Driver
 STDPERIPH_SRC   = \
             stm32g4xx_hal_adc.c \
             stm32g4xx_hal_adc_ex.c \
@@ -44,19 +44,19 @@ STDPERIPH_SRC   = \
             stm32g4xx_ll_usb.c
 
 #USB
-USBCORE_DIR = $(ROOT)/lib/main/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Core
+USBCORE_DIR = $(LIB_MAIN_DIR)/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Core
 USBCORE_SRC = \
             usbd_core.c \
             usbd_ctlreq.c \
             usbd_ioreq.c
 
-USBCDC_DIR = $(ROOT)/lib/main/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = $(LIB_MAIN_DIR)/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
 USBCDC_SRC = usbd_cdc.c
 
-USBHID_DIR = $(ROOT)/lib/main/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Class/HID
+USBHID_DIR = $(LIB_MAIN_DIR)/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Class/HID
 USBHID_SRC = usbd_hid.c
 
-USBMSC_DIR = $(ROOT)/lib/main/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Class/MSC
+USBMSC_DIR = $(LIB_MAIN_DIR)/STM32G4/Middlewares/ST/STM32_USB_Device_Library/Class/MSC
 USBMSC_SRC = \
             usbd_msc_bot.c \
             usbd_msc.c \
@@ -86,7 +86,7 @@ INCLUDE_DIRS    := \
             $(USBHID_DIR)/Inc \
             $(USBMSC_DIR)/Inc \
             $(CMSIS_DIR)/Core/Include \
-            $(ROOT)/lib/main/STM32G4/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
+            $(LIB_MAIN_DIR)/STM32G4/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
             $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -171,7 +171,8 @@ MSC_SRC = \
             msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c
+            stm32/system.c \
+            exti.c
 
-DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

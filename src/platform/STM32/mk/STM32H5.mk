@@ -7,10 +7,10 @@ CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
+CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32H5/Drivers/STM32H5xx_HAL_Driver
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32H5/Drivers/STM32H5xx_HAL_Driver
 STDPERIPH_SRC   = \
             stm32h5xx_hal_adc.c \
             stm32h5xx_hal_adc_ex.c \
@@ -69,7 +69,7 @@ STDPERIPH_SRC   = \
             stm32h5xx_util_i3c.c
 
 #USB  ##TODO - need to work through the USB drivers, new directory: USBX
-#USBCORE_DIR = $(ROOT)/lib/main/STM32H5/Middlewares/ST/usbx/Common
+#USBCORE_DIR = $(LIB_MAIN_DIR)/STM32H5/Middlewares/ST/usbx/Common
 #USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
 #EXCLUDES    =
 #USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
@@ -95,7 +95,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBHID_DIR)/Inc \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
-                   $(ROOT)/lib/main/STM32H5/Drivers/CMSIS/Device/ST/STM32H5xx/Include \
+                   $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/Device/ST/STM32H5xx/Include \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -205,7 +205,8 @@ MSC_SRC =
             msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c
+            stm32/system.c \
+            exti.c
 
-DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7

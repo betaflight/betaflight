@@ -1,9 +1,9 @@
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
-                   $(ROOT)/lib/main/dyad
+                   $(LIB_MAIN_DIR)/dyad
 
-MCU_COMMON_SRC  := $(ROOT)/lib/main/dyad/dyad.c \
+MCU_COMMON_SRC  := $(LIB_MAIN_DIR)/dyad/dyad.c \
                    sitl.c \
                    udplink.c
 

@@ -4,16 +4,16 @@
 
 #CMSIS
 ifeq ($(PERIPH_DRIVER), HAL)
-CMSIS_DIR      := $(ROOT)/lib/main/STM32F4/Drivers/CMSIS
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_HAL_Driver
+CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32F4/Drivers/CMSIS
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32F4/Drivers/STM32F4xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
 EXCLUDES        =
 
 VPATH       := $(VPATH):$(STDPERIPH_DIR)/Src
 
 else
-CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
+CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
 STDPERIPH_SRC   = \
             misc.c \
             stm32f4xx_adc.c \
@@ -48,12 +48,12 @@ endif
 
 ifeq ($(PERIPH_DRIVER), HAL)
 #USB
-USBCORE_DIR = $(ROOT)/lib/main/STM32F4/Middlewares/ST/STM32_USB_Device_Library/Core
+USBCORE_DIR = $(LIB_MAIN_DIR)/STM32F4/Middlewares/ST/STM32_USB_Device_Library/Core
 USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
 EXCLUDES    = usbd_conf_template.c
 USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
 
-USBCDC_DIR = $(ROOT)/lib/main/STM32F4/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = $(LIB_MAIN_DIR)/STM32F4/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
 USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
 EXCLUDES   = usbd_cdc_if_template.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
@@ -65,32 +65,32 @@ DEVICE_STDPERIPH_SRC := \
             $(USBCORE_SRC) \
             $(USBCDC_SRC)
 else
-USBCORE_DIR = $(ROOT)/lib/main/STM32_USB_Device_Library/Core
+USBCORE_DIR = $(LIB_MAIN_DIR)/STM32_USB_Device_Library/Core
 USBCORE_SRC = \
             usbd_core.c \
             usbd_ioreq.c \
             usbd_req.c
 
-USBOTG_DIR  = $(ROOT)/lib/main/STM32_USB_OTG_Driver
+USBOTG_DIR  = $(LIB_MAIN_DIR)/STM32_USB_OTG_Driver
 USBOTG_SRC  = \
             usb_core.c \
             usb_dcd.c \
             usb_dcd_int.c
 
-USBCDC_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/cdc
+USBCDC_DIR  = $(LIB_MAIN_DIR)/STM32_USB_Device_Library/Class/cdc
 USBCDC_SRC  = usbd_cdc_core.c
 
-USBMSC_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/msc
+USBMSC_DIR  = $(LIB_MAIN_DIR)/STM32_USB_Device_Library/Class/msc
 USBMSC_SRC  = \
             usbd_msc_bot.c \
             usbd_msc_core.c \
             usbd_msc_data.c \
             usbd_msc_scsi.c
 
-USBHID_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/hid
+USBHID_DIR  = $(LIB_MAIN_DIR)/STM32_USB_Device_Library/Class/hid
 USBHID_SRC  = usbd_hid_core.c
 
-USBWRAPPER_DIR  = $(ROOT)/lib/main/STM32_USB_Device_Library/Class/hid_cdc_wrapper
+USBWRAPPER_DIR  = $(LIB_MAIN_DIR)/STM32_USB_Device_Library/Class/hid_cdc_wrapper
 USBWRAPPER_SRC  = usbd_hid_cdc_wrapper.c
 
 VPATH       := $(VPATH):$(USBOTG_DIR)/src:$(USBCORE_DIR)/src:$(USBCDC_DIR)/src:$(USBMSC_DIR)/src:$(USBHID_DIR)/src:$(USBWRAPPER_DIR)/src
@@ -106,7 +106,7 @@ DEVICE_STDPERIPH_SRC := \
 endif
 
 #CMSIS
-VPATH        := $(VPATH):$(CMSIS_DIR)/Core/Include:$(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx
+VPATH        := $(VPATH):$(CMSIS_DIR)/Core/Include:$(LIB_MAIN_DIR)/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx
 
 INCLUDE_DIRS := \
             $(INCLUDE_DIRS) \
@@ -142,7 +142,7 @@ INCLUDE_DIRS    := \
             $(USBWRAPPER_DIR)/inc \
             $(USBMSC_DIR)/inc \
             $(CMSIS_DIR)/Core/Include \
-            $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
+            $(LIB_MAIN_DIR)/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
             $(TARGET_PLATFORM_DIR)/vcpf4
 endif
 
@@ -214,7 +214,8 @@ MCU_COMMON_SRC = \
             startup/system_stm32f4xx.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c
+            stm32/system.c \
+            exti.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
@@ -245,5 +246,5 @@ MSC_SRC = \
             msc/usbd_storage_sd_spi.c \
             msc/usbd_storage_sdio.c
 
-DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4
