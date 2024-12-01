@@ -564,10 +564,6 @@
 #endif
 #endif // USE_OPTICALFLOW_XXX
 
-#ifndef USE_OPTICALFLOW
-#undef USE_OPTICALFLOW_MT
-#endif // USE_OPTICALFLOW
-
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
