@@ -53,5 +53,5 @@ typedef struct opticalflow_s {
 bool opticalflowInit(void);
 
 void opticalflowUpdate(void);
-bool opticalflowIsHealthy(void);
+bool isOpticalflowHealthy(void);
 void opticalflowProcess(void);

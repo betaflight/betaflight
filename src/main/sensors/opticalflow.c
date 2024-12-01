@@ -149,9 +149,10 @@ void opticalflowProcess(void) {
     opticalflowData_t data = {0};
     bool hasNewData = opticalflow.dev.read(&opticalflow.dev, &data);
     
-    opticalflow.quality   = data.quality;
+    opticalflow.quality = data.quality;
+    data.devMinQualityThreshold = opticalflow.dev.minQualityThreshold;
 
-    if (opticalflow.quality > QUALITY_MINIMUM_THRESHOLD && hasNewData) {
+    if (hasNewData) {
         opticalflow.lastValidResponseTimeMs = millis();
 
         opticalflow.rawFlowRates = data.flowRate;
@@ -193,7 +194,7 @@ opticalflow_t * getLatestFlowOpticalflowData(void) {
     return &opticalflow;
 }
 
-bool opticalflowIsHealthy(void) {
+bool isOpticalflowHealthy(void) {
     return cmp32(millis(), opticalflow.lastValidResponseTimeMs) < OPTICALFLOW_HARDWARE_TIMEOUT_MS;
 }
 #endif // USE_OPTICALFLOW

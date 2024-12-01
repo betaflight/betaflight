@@ -23,12 +23,11 @@
 
 #include <stdint.h>
 
-#define OPTICALFLOW_OUT_OF_RANGE        (-1)
-#define OPTICALFLOW_HARDWARE_FAILURE    (-2)
-#define OPTICALFLOW_NO_NEW_DATA         (-3)
+#define OPTICALFLOW_OUT_OF_RANGE        -1
+#define OPTICALFLOW_HARDWARE_FAILURE    -2
+#define OPTICALFLOW_NO_NEW_DATA         -3
 
-#define QUALITY_MINIMUM_THRESHOLD        (0)
-#define OPTICALFLOW_HARDWARE_TIMEOUT_MS  (100)
+#define OPTICALFLOW_HARDWARE_TIMEOUT_MS  100
 
 typedef struct opticalflowRates_s {
     int32_t X;
@@ -39,6 +38,7 @@ typedef struct opticalflowData_s {
     uint32_t deltaTimeUs;
     int16_t quality;
     opticalflowRates_t flowRate;
+    uint8_t devMinQualityThreshold;
 } opticalflowData_t;
 
 struct opticalflowDev_s;
@@ -49,6 +49,7 @@ typedef bool opflowOpReadFunc(struct opticalflowDev_s * dev, opticalflowData_t *
 typedef struct opticalflowDev_s {
     timeMs_t delayMs;
     int16_t minRangeCm;
+    uint8_t minQualityThreshold;
     
     opflowOpInitFunc  *init;
     opflowOpUpdateFunc *update;

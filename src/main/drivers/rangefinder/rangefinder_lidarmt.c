@@ -39,8 +39,11 @@
 #include "sensors/rangefinder.h"
 
 #ifdef USE_OPTICALFLOW_MT
-#define DT_OPTICALFLOW_MIN_RANGE 80  // mm
 #include "drivers/opticalflow/opticalflow.h"
+
+#define MT_OPTICALFLOW_MIN_RANGE 80  // mm
+#define MT_OPFLOW_MIN_QUALITY_THRESHOLD 30
+
 static opticalflowData_t opticalflowSensorData = {0};
 static bool hasOpflowNewData = false;
 #endif
@@ -152,7 +155,8 @@ bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinder
     }
 
     dev->delayMs = deviceConf->delayMs;
-    dev->minRangeCm = DT_OPTICALFLOW_MIN_RANGE;
+    dev->minRangeCm = MT_OPTICALFLOW_MIN_RANGE;
+    dev->minQualityThreshold = MT_OPFLOW_MIN_QUALITY_THRESHOLD;
 
     dev->init   = &doNothingOF;
     dev->update = &doNothingOF;
@@ -172,9 +176,9 @@ void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr) {
     opticalflowSensorData.flowRate.Y  = pkt->motionY;
     opticalflowSensorData.quality     = (int16_t)pkt->quality * 100 / 255;
     
-    if (latestRangefinderData->distanceMm < DT_OPTICALFLOW_MIN_RANGE) {
+    if (latestRangefinderData->distanceMm < MT_OPTICALFLOW_MIN_RANGE) {
         opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
-    } else if (cmp32(millis(), latestRangefinderData->timestampUs) > 5000 * deviceConf->delayMs) {
+    } else if (cmp32(millis(), latestRangefinderData->timestampUs) > (5000 * deviceConf->delayMs)) {
         opticalflowSensorData.quality = OPTICALFLOW_HARDWARE_FAILURE;
     }
 
