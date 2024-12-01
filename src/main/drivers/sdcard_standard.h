@@ -196,6 +196,7 @@ typedef struct sdcardCSD_t {
 #define SDCARD_CSD_V2_TRAILER_OFFSET                     127
 #define SDCARD_CSD_V2_TRAILER_LEN                        1
 
+#define SDCARD_IDLE_TOKEN                       0xFF
 #define SDCARD_SINGLE_BLOCK_READ_START_TOKEN    0xFE
 #define SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN   0xFE
 #define SDCARD_MULTIPLE_BLOCK_WRITE_START_TOKEN 0xFC

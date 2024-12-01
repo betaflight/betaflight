@@ -134,6 +134,8 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 }
 
+#pragma GCC optimize "O0"
+
 static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
     uint8_t b;
@@ -143,7 +145,6 @@ static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txD
 
         while (spi_i2s_flag_get(instance, SPI_I2S_TDBE_FLAG) == RESET);
         spi_i2s_data_transmit(instance, b);
-
 
         while (spi_i2s_flag_get(instance, SPI_I2S_RDBF_FLAG) == RESET);
         b = (uint8_t)spi_i2s_data_receive(instance);
@@ -155,6 +156,8 @@ static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txD
 
     return true;
 }
+
+#pragma GCC optimize "O2"
 
 void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 {
