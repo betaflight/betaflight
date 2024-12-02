@@ -559,9 +559,12 @@
 #endif // USE_RANGEFINDER_XXX
 
 #if defined(USE_OPTICALFLOW_MT)
-#ifndef USE_OPTICALFLOW
-#define USE_OPTICALFLOW
-#endif
+# ifndef USE_RANGEFINDER_MT
+#  define USE_RANGEFINDER_MT
+# endif
+# ifndef USE_OPTICALFLOW
+#  define USE_OPTICALFLOW
+# endif
 #endif // USE_OPTICALFLOW_XXX
 
 #ifndef USE_GPS_RESCUE
