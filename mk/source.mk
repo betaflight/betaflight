@@ -58,6 +58,7 @@ COMMON_SRC = \
             main.c \
             $(PG_SRC) \
             common/bitarray.c \
+            common/chirp.c \
             common/colorconversion.c \
             common/crc.c \
             common/encoding.c \
