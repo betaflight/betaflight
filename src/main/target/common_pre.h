@@ -271,7 +271,7 @@
 #define USE_RANGEFINDER_TF
 #define USE_OPTICALFLOW_MT
 
-#endif // TARGET_FLASH_SIZE > 512
+#endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(CLOUD_BUILD)
 
