@@ -327,6 +327,8 @@ extern uint8_t _dmaram_end__;
 
 #define USE_RX_CC2500
 #define USE_RX_EXPRESSLRS
+//addition to enable dual RX features
+#define USE_NEROS_RX
 #define USE_RX_SX1280
 #define USE_RX_SX127X
 #endif // !USE_RX_SPI

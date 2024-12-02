@@ -654,7 +654,9 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         linkQualitySource = LQ_SOURCE_RX_PROTOCOL_CRSF;
     }
 #endif
-
+    if(serialPort != NULL){
+        crsfSendRXBindPhrases();
+    }
     return serialPort != NULL;
 }
 

@@ -155,6 +155,7 @@
 #define PG_SCHEDULER_CONFIG         556
 #define PG_MSP_CONFIG               557
 #define PG_BETAFLIGHT_END           557
+#define PG_NELRS_CONFIG             558
 
 
 // OSD configuration (subject to change)

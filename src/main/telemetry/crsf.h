@@ -51,3 +51,8 @@ void speedNegotiationProcess(uint32_t currentTime);
 bool crsfBaudNegotiationInProgress(void);
 uint32_t getCrsfCachedBaudrate(void);
 #endif
+
+
+#if defined(USE_NEROS_RX)
+void crsfSendRXBindPhrases(void);
+#endif

@@ -815,7 +815,7 @@ void detectAndApplySignalLossBehaviour(void)
             performSwitch=true;
         }
     } 
-    if(performSwitch)
+    if(performSwitch && bindPhrasesSent)
     {
         slctRx= !slctRx;
         pinioSet(switchPinio, slctRx);

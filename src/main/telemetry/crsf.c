@@ -57,6 +57,9 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#ifdef USE_NEROS_RX
+#include "pg/rx_neros.h"
+#endif
 
 #include "rx/crsf.h"
 #include "rx/crsf_protocol.h"
@@ -68,6 +71,7 @@
 #include "telemetry/msp_shared.h"
 
 #include "crsf.h"
+#include "drivers/pinio.h"
 
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
@@ -282,6 +286,21 @@ void crsfFrameHeartbeat(sbuf_t *dst)
     sbufWriteU16BigEndian(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
 }
 
+
+void crsfFrameBindPhrase(sbuf_t *dst,bool rxSelect)
+{   
+    char * bindPhrase = nelrsConfigMutable()->bindPhraseHigh;
+    if(rxSelect){
+        bindPhrase = nelrsConfigMutable()->bindPhraseLow;
+    }
+
+    sbufWriteU8(dst, CRSF_FRAME_BIND_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_BIND);
+    char buff[16];
+    tfp_sprintf(buff, "%s", bindPhrase);
+    sbufWriteStringWithZeroTerminator(dst, buff);
+}
+
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
     CRSF_ACTIVE_ANTENNA2 = 1
@@ -486,6 +505,32 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
 }
 #endif
 
+#if defined(USE_NEROS_RX)
+//TODO: Pulling extern for switchPinio was giving undefined reference, re-factor where this is defined
+const uint8_t switchPin = 2;
+bool bindPhrasesSent = false;
+void crsfSendRXBindPhrases(void){
+    sbuf_t crsfPayloadBuf;
+    sbuf_t *dst = &crsfPayloadBuf;
+
+    pinioSet(switchPin,false);
+    crsfInitializeFrame(dst);
+    crsfFrameBindPhrase(dst,false);
+    crsfRxSendTelemetryData();
+    crsfFinalize(dst);
+    crsfRxSendTelemetryData();
+
+    pinioSet(switchPin,true);
+    crsfInitializeFrame(dst);
+    crsfFrameBindPhrase(dst,true);
+    crsfRxSendTelemetryData();
+    crsfFinalize(dst);
+    crsfRxSendTelemetryData();
+
+    bindPhrasesSent = true;
+}
+#endif
+
 #if defined(USE_CRSF_CMS_TELEMETRY)
 #define CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH   50
 #define CRSF_DISPLAYPORT_BATCH_MAX          0x3F
@@ -678,6 +723,7 @@ void initCrsfTelemetry(void)
     if (!crsfTelemetryEnabled) {
         return;
     }
+
 
     deviceInfoReplyPending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)
