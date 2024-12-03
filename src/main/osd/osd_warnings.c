@@ -104,7 +104,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 } while (!(flags & (1 << armingDisabledDisplayIndex)));
             }
 
-            tfp_sprintf(warningText, "%s", armingDisableFlagNames[armingDisabledDisplayIndex]);
+            tfp_sprintf(warningText, "%s", getArmingDisableFlagName(armingDisabledDisplayIndex));
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             return;
         } else {

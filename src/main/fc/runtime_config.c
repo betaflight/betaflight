@@ -85,6 +85,11 @@ armingDisableFlags_e getArmingDisableFlags(void)
     return armingDisableFlags;
 }
 
+char *getArmingDisableFlagName(int index)
+{
+    return (char *)armingDisableFlagNames[index];
+}
+
 /**
  * Enables the given flight mode.  A beep is sounded if the flight mode
  * has changed.  Returns the new 'flightModeFlags' value.

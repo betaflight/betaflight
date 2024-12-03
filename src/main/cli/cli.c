@@ -4895,7 +4895,7 @@ if (buildKey) {
     while (flags) {
         const int bitpos = ffs(flags) - 1;
         flags &= ~(1 << bitpos);
-        cliPrintf(" %s", armingDisableFlagNames[bitpos]);
+        cliPrintf(" %s", getArmingDisableFlagName(bitpos));
     }
     cliPrintLinefeed();
 }
