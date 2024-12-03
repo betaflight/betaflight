@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -87,9 +88,11 @@ armingDisableFlags_e getArmingDisableFlags(void)
     return armingDisableFlags;
 }
 
-char *getArmingDisableFlagName(int index)
-{
-    return (char *)armingDisableFlagNames[index];
+// return name for given flag
+// will return first name (LSB) if multiple bits are passed
+const char *getArmingDisableFlagName(armingDisableFlags_e flag) {
+    int idx = ffs(flag & -flag) - 1;   // use LSB if there are multiple bits set
+    return idx >= 0 && idx < (int)ARRAYLEN(armingDisableFlagNames) ? armingDisableFlagNames[idx] : "UNKNOWN";
 }
 
 /**

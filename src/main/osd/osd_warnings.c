@@ -72,7 +72,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     const timeUs_t currentTimeUs = micros();
 
     static timeUs_t armingDisabledUpdateTimeUs;
-    static unsigned armingDisabledDisplayIndex;
+    static armingDisableFlags_e armingDisabledDisplayFlag = 0;
 
     warningText[0] = '\0';
     *displayAttr = DISPLAYPORT_SEVERITY_NORMAL;
@@ -81,34 +81,34 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // Cycle through the arming disabled reasons
     if (osdWarnGetState(OSD_WARNING_ARMING_DISABLE)) {
         if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
-            const armingDisableFlags_e armSwitchOnlyFlag = 1 << (ARMING_DISABLE_FLAGS_COUNT - 1);
             armingDisableFlags_e flags = getArmingDisableFlags();
 
             // Remove the ARMSWITCH flag unless it's the only one
-            if ((flags & armSwitchOnlyFlag) && (flags != armSwitchOnlyFlag)) {
-                flags -= armSwitchOnlyFlag;
+            if (flags != ARMING_DISABLED_ARM_SWITCH) {
+                flags &= ~ARMING_DISABLED_ARM_SWITCH;
             }
 
             // Rotate to the next arming disabled reason after a 0.5 second time delay
-            // or if the current flag is no longer set
-            if ((currentTimeUs - armingDisabledUpdateTimeUs > 5e5) || !(flags & (1 << armingDisabledDisplayIndex))) {
-                if (armingDisabledUpdateTimeUs == 0) {
-                    armingDisabledDisplayIndex = ARMING_DISABLE_FLAGS_COUNT - 1;
-                }
+            // or if the current flag is no longer set or if just starting
+            if (cmp32(currentTimeUs, armingDisabledUpdateTimeUs) > 500000
+                || (flags & armingDisabledDisplayFlag) == 0) {
                 armingDisabledUpdateTimeUs = currentTimeUs;
 
-                do {
-                    if (++armingDisabledDisplayIndex >= ARMING_DISABLE_FLAGS_COUNT) {
-                        armingDisabledDisplayIndex = 0;
-                    }
-                } while (!(flags & (1 << armingDisabledDisplayIndex)));
+                armingDisableFlags_e flag = armingDisabledDisplayFlag << 1;         // next bit to try or 0
+                armingDisableFlags_e flagsRemaining = flags & ~(flag - 1);          // clear all bits <= flag; clear all bits when flag == 0
+                flag = flagsRemaining & -flagsRemaining;                            // LSB in remaining bits
+                if (!flag) {
+                    // no bit is set above flag (or flag was 0), try again with all bits
+                    flag = flags & -flags;
+                }
+                armingDisabledDisplayFlag = flag;                                   // store for next iteration
             }
 
-            tfp_sprintf(warningText, "%s", getArmingDisableFlagName(armingDisabledDisplayIndex));
+            tfp_sprintf(warningText, "%s", getArmingDisableFlagName(armingDisabledDisplayFlag));
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             return;
         } else {
-            armingDisabledUpdateTimeUs = 0;
+            armingDisabledDisplayFlag = 0;                                          // start from LSB next time
         }
     }
 

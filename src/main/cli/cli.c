@@ -4893,9 +4893,9 @@ if (buildKey) {
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
-        const int bitpos = ffs(flags) - 1;
-        flags &= ~(1 << bitpos);
-        cliPrintf(" %s", getArmingDisableFlagName(bitpos));
+        const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
+        flags &= ~flag;
+        cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
 }
