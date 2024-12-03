@@ -110,7 +110,7 @@ include $(MAKE_SCRIPT_DIR)/$(OSFAMILY).mk
 include $(MAKE_SCRIPT_DIR)/tools.mk
 
 # Search path for sources
-VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR)
+VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(PLATFORM_DIR)
 FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
@@ -140,7 +140,6 @@ CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(f
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
 TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
 LINKER_DIR          := $(TARGET_PLATFORM_DIR)/link
-VPATH               := $(VPATH):$(TARGET_PLATFORM_DIR):$(TARGET_PLATFORM_DIR)/startup:$(PLATFORM_DIR)/common
 
 include $(TARGET_PLATFORM_DIR)/target/$(TARGET)/target.mk
 
@@ -461,7 +460,8 @@ define compile_file
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(2) $<
 endef
 
-paths := $(SRC_DIR)/ $(LIB_MAIN_DIR)/ $(TARGET_PLATFORM_DIR)/ $(PLATFORM_DIR)/common/
+## `paths` is a list of paths that will be replaced for checking of speed, and size optimised sources
+paths := $(SRC_DIR)/ $(LIB_MAIN_DIR)/ $(PLATFORM_DIR)/
 subst_paths_for = $(foreach path,$(paths),$(filter-out $(1),$(subst $(path),,$(1))))
 subst_paths = $(strip $(if $(call subst_paths_for,$(1)), $(call subst_paths_for,$(1)), $(1)))
 
