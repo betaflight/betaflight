@@ -71,9 +71,6 @@ typedef enum {
 
 #define ARMING_DISABLE_FLAGS_COUNT (LOG2(ARMING_DISABLED_ARM_SWITCH) + 1)
 
-extern const char *armingDisableFlagNames[ARMING_DISABLE_FLAGS_COUNT];
-STATIC_ASSERT(ARRAYLEN(armingDisableFlagNames) == ARMING_DISABLE_FLAGS_COUNT, "armingDisableFlagNames size mismatch");
-
 void setArmingDisabled(armingDisableFlags_e flag);
 void unsetArmingDisabled(armingDisableFlags_e flag);
 bool isArmingDisabled(void);
