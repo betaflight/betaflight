@@ -20,9 +20,6 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-
 #define OSD_WARNINGS_MAX_SIZE 31
 #define OSD_FORMAT_MESSAGE_BUFFER_SIZE (OSD_WARNINGS_MAX_SIZE + 1)
 
