@@ -284,6 +284,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         for (unsigned i = 0; i < getMotorCount() && pos < OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
             const char motorNumber = '1' + i;
+            // if everything is OK just display motor number else R, T or C
             char warnFlag = motorNumber;
 
             if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
