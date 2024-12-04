@@ -190,8 +190,7 @@ gps_conversion_unittest_SRC := \
 
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
-		$(USER_DIR)/io/serial_resource.c \
-		$(USER_DIR)/drivers/serial_pinconfig.c
+		$(USER_DIR)/io/serial_resource.c
 
 
 ledstrip_unittest_SRC := \

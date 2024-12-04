@@ -7,10 +7,10 @@ CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
+CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32H5/Drivers/STM32H5xx_HAL_Driver
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32H5/Drivers/STM32H5xx_HAL_Driver
 STDPERIPH_SRC   = \
             stm32h5xx_hal_adc.c \
             stm32h5xx_hal_adc_ex.c \
@@ -69,7 +69,7 @@ STDPERIPH_SRC   = \
             stm32h5xx_util_i3c.c
 
 #USB  ##TODO - need to work through the USB drivers, new directory: USBX
-#USBCORE_DIR = $(ROOT)/lib/main/STM32H5/Middlewares/ST/usbx/Common
+#USBCORE_DIR = $(LIB_MAIN_DIR)/STM32H5/Middlewares/ST/usbx/Common
 #USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
 #EXCLUDES    =
 #USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
@@ -83,19 +83,18 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBMSC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32H5xx
-VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
+VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32H5xx:$(STDPERIPH_DIR)/Src
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
                    $(TARGET_PLATFORM_DIR)/startup \
                    $(STDPERIPH_DIR)/Inc \
-                   $(USBCORE_DIR)/Inc \
-                   $(USBCDC_DIR)/Inc \
-                   $(USBHID_DIR)/Inc \
-                   $(USBMSC_DIR)/Inc \
+                   $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
+                   $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
+                   $(LIB_MAIN_DIR)/$(USBHID_DIR)/Inc \
+                   $(LIB_MAIN_DIR)/$(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
-                   $(ROOT)/lib/main/STM32H5/Drivers/CMSIS/Device/ST/STM32H5xx/Include \
+                   $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/Device/ST/STM32H5xx/Include \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -110,7 +109,7 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 ifeq ($(TARGET_MCU),STM32H563xx)
 DEVICE_FLAGS       += -DSTM32H563xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h563_2m.ld
-STARTUP_SRC         = startup/startup_stm32h563xx.s
+STARTUP_SRC         = STM32/startup/startup_stm32h563xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
@@ -149,32 +148,39 @@ VCP_SRC =
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            stm32/system.c \
+            common/stm32/system.c \
             drivers/bus_i2c_timing.c \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
             drivers/pwm_output_dshot_shared.c \
-            bus_i2c_hal_init.c \
-            bus_i2c_hal.c \
-            bus_spi_ll.c \
-            bus_quadspi_hal.c \
-            debug.c \
-            dma_reqmap_mcu.c \
-            dshot_bitbang_ll.c \
-            dshot_bitbang.c \
-            exti.c \
-            io_stm32.c \
-            light_ws2811strip_hal.c \
-            persistent.c \
-            pwm_output.c \
-            pwm_output_dshot_hal.c \
-            rcc_stm32.c \
-            serial_uart_hal.c \
-            timer_hal.c \
-            transponder_ir_io_hal.c \
-            camera_control_stm32.c \
-            system_stm32h5xx.c \
-            startup/system_stm32h5xx.c
+            STM32/bus_i2c_hal_init.c \
+            STM32/bus_i2c_hal.c \
+            STM32/bus_spi_ll.c \
+            STM32/bus_quadspi_hal.c \
+            STM32/debug.c \
+            STM32/dma_reqmap_mcu.c \
+            STM32/dshot_bitbang_ll.c \
+            STM32/dshot_bitbang.c \
+            STM32/exti.c \
+            STM32/io_stm32.c \
+            STM32/light_ws2811strip_hal.c \
+            STM32/persistent.c \
+            STM32/pwm_output.c \
+            STM32/pwm_output_dshot_hal.c \
+            STM32/rcc_stm32.c \
+            STM32/serial_uart_hal.c \
+            STM32/timer_hal.c \
+            STM32/transponder_ir_io_hal.c \
+            STM32/camera_control_stm32.c \
+            STM32/system_stm32h5xx.c \
+            drivers/adc.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart_pinconfig.c \
+            STM32/startup/system_stm32h5xx.c
 
 #            memprot_hal.c \
 #            memprot_stm32h5xx.c \
@@ -183,9 +189,6 @@ MCU_COMMON_SRC = \
 #            timer_stm32h5xx.c \
 #            adc_stm32h5xx.c \
 #            dma_stm32h5xx.c \
-
-MCU_EXCLUDES = \
-            drivers/bus_i2c.c
 
 MSC_SRC =
 #MSC_SRC = \
@@ -199,7 +202,8 @@ MSC_SRC =
             msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-            stm32/system.c
+            common/stm32/system.c \
+            STM32/exti.c
 
-DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
