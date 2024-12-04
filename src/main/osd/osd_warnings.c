@@ -278,7 +278,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
         strncpy(escWarningMsg + pos, title, OSD_FORMAT_MESSAGE_BUFFER_SIZE - pos - 1);
         pos += strlen(title);
-        escWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
 
         unsigned escWarningCount = 0;
         for (unsigned i = 0; i < getMotorCount() && pos < OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1; i++) {
@@ -287,14 +286,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             // if everything is OK just display motor number else R, T or C
             char warnFlag = motorNumber;
 
-            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
-                warnFlag = 'R';
-            }
-            if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
-                warnFlag = 'T';
-            }
-            if (ARMING_FLAG(ARMED) && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && escData->current >= osdConfig()->esc_current_alarm) {
-                warnFlag = 'C';
+            if (ARMING_FLAG(ARMED)) {
+                if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
+                    warnFlag = 'R';
+                }
+                if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
+                    warnFlag = 'T';
+                }
+                if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && escData->current >= osdConfig()->esc_current_alarm) {
+                    warnFlag = 'C';
+                }
             }
 
             escWarningMsg[pos++] = warnFlag;
