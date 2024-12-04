@@ -7,3 +7,6 @@ TARGET_SRC = \
             drivers/barometer/barometer_virtual.c \
             drivers/compass/compass_virtual.c \
             drivers/serial_tcp.c
+
+SIZE_OPTIMISED_SRC += \
+            drivers/serial_tcp.c
