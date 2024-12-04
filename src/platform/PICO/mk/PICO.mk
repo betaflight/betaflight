@@ -6,7 +6,7 @@ ifeq ($(DEBUG_HARDFAULTS),PICO)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
-SDK_DIR         = $(ROOT)/lib/main/pico-sdk
+SDK_DIR         = $(LIB_MAIN_DIR)/pico-sdk
 
 #CMSIS
 CMSIS_DIR      := $(SDK_DIR)/rp2_common/cmsis/stub/CMSIS
