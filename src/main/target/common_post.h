@@ -553,18 +553,18 @@
 #endif
 
 #if defined(USE_OPTICALFLOW_MT)
-# ifndef USE_RANGEFINDER_MT
-#  define USE_RANGEFINDER_MT
-# endif
-# ifndef USE_OPTICALFLOW
-#  define USE_OPTICALFLOW
-# endif
+#ifndef USE_RANGEFINDER_MT
+#define USE_RANGEFINDER_MT
+#endif
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
 #endif // USE_OPTICALFLOW_MT
 
 #if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_SRF10) || defined(USE_RANGEFINDER_HCSR04_I2C) || defined(USE_RANGEFINDER_VL53L0X) || defined(USE_RANGEFINDER_UIB) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT)
-# ifndef USE_RANGEFINDER
-#  define USE_RANGEFINDER
-# endif
+#ifndef USE_RANGEFINDER
+#define USE_RANGEFINDER
+#endif
 #endif // USE_RANGEFINDER_XXX
 
 #ifndef USE_GPS_RESCUE
