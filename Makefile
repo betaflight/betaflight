@@ -197,8 +197,8 @@ ifneq ($(CONFIG),)
 TARGET_FLAGS := $(TARGET_FLAGS) -DUSE_CONFIG
 endif
 
-SPEED_OPTIMISED_SRC := ""
-SIZE_OPTIMISED_SRC  := ""
+SPEED_OPTIMISED_SRC :=
+SIZE_OPTIMISED_SRC  :=
 
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
 
@@ -235,7 +235,7 @@ VPATH           := $(VPATH):$(TARGET_DIR)
 include $(MAKE_SCRIPT_DIR)/source.mk
 
 ifneq ($(SKIPCHECKS),yes)
-ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),"")
+ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
 $(error Speed optimised sources not valid: $(strip $(filter-out $(SRC),$(SPEED_OPTIMISED_SRC))))
 endif
 endif
