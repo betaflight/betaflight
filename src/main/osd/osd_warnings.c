@@ -277,6 +277,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         memset(escWarningMsg, ' ', pos);
 
         strncpy(escWarningMsg + pos, title, OSD_FORMAT_MESSAGE_BUFFER_SIZE - pos - 1);
+        pos += strlen(title);
         escWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1] = '\0'; // Ensure null-termination
 
         unsigned escWarningCount = 0;
