@@ -25,6 +25,6 @@
 
 extern const char CRASHFLIP_WARNING[];
 
-STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= OSD_ELEMENT_BUFFER_LENGTH, "osd_warnings_size_exceeds_buffer_size");
+STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= OSD_ELEMENT_BUFFER_LENGTH, osd_warnings_size_exceeds_buffer_size);
 
 void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr);
