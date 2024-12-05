@@ -2564,6 +2564,7 @@ void GPS_reset_home_position(void)
 // Get bearing from pos1 to pos2, returns values with 0.01 degree precision
 void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
 {
+    // TO DO : handle crossing the 180 degree meridian, as in `GPS_distance2d()`
     float dLat = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;
     float dLon = (to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // convert to local angle
     float dAlt = dist3d ? to->altCm - from->altCm : 0;
@@ -2600,7 +2601,8 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 // note that parameter order is from, to
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
-    int32_t deltaLon = to->lon - from->lon; // In case we crossed the 180° meridian
+    int32_t deltaLon = to->lon - from->lon;
+    // In case we crossed the 180° meridian:
     const int32_t deg180 = 180 * GPS_DEGREES_DIVIDER; // number of integer longitude steps in 180 degrees
     if (deltaLon > deg180) {
         deltaLon -= deg180;  // 360 * GPS_DEGREES_DIVIDER overflows int32_t, so use 180 twice

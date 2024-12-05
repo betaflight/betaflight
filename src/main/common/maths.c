@@ -54,6 +54,12 @@ float sin_approx(float x)
 {
     // Wrap angle to 2π with range [-π π]
     x = fmodf(x, 2.0f * M_PIf);
+    // TO DO: these 'while' functions are not put into ITCM ram with current compiler flags
+    // A simpler 'if' function works, but gets put into ITCM ram, the extra 4% overflows F7xx ITCM
+    // The while function is retained only to avoid ITCM overflow for now
+    // ideally we should use the most efficient method, since sin_approx is used a LOT
+    // if (x <= -M_PIf) x += 2.0f * M_PIf;
+    // if (x > M_PIf) x -= 2.0f * M_PIf;
     while (x >  M_PIf) x -= (2.0f * M_PIf);   // always wrap input angle to -PI..PI
     while (x < -M_PIf) x += (2.0f * M_PIf);
 
