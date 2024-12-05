@@ -90,7 +90,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
             // Rotate to the next arming disabled reason after a 0.5 second time delay
             // or if the current flag is no longer set or if just starting
-            if (cmp32(currentTimeUs, armingDisabledUpdateTimeUs) > 500000
+            if (cmpTimeUs(currentTimeUs, armingDisabledUpdateTimeUs) > 500000
                 || (flags & armingDisabledDisplayFlag) == 0) {
                 armingDisabledUpdateTimeUs = currentTimeUs;
 
