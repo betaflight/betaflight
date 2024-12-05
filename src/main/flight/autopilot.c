@@ -150,7 +150,7 @@ void autopilotInit(void)
     // initialise filters with approximate filter gains; location isn't used at this point.
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
     resetUpsampleFilters();
-    // Initialise PT1 filters for deivative and acceleration in earth frame axes
+    // Initialise PT1 filters for velocity and acceleration in earth frame axes
     ap.vaLpfCutoff = cfg->position_cutoff * 0.01f;
     const float vaGain = pt1FilterGain(ap.vaLpfCutoff,  0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
