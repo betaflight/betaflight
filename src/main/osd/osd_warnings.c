@@ -267,20 +267,21 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_ADC_INTERNAL
 
 #ifdef USE_ESC_SENSOR
+#define OSD_WARNINGS_ESC_SENSOR_SIZE 12
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        char escWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+        char escWarningMsg[OSD_WARNINGS_ESC_SENSOR_SIZE];
         const char *title = "ESC";
 
         // center justify message
-        unsigned pos = (OSD_WARNINGS_MAX_SIZE - (strlen(title) + getMotorCount())) / 2;
+        unsigned pos = (OSD_WARNINGS_ESC_SENSOR_SIZE - (strlen(title) + getMotorCount())) / 2;
         memset(escWarningMsg, ' ', pos);
 
-        strncpy(escWarningMsg + pos, title, OSD_FORMAT_MESSAGE_BUFFER_SIZE - pos - 1);
+        strncpy(escWarningMsg + pos, title, OSD_WARNINGS_ESC_SENSOR_SIZE - pos - 1);
         pos += strlen(title);
 
         unsigned escWarningCount = 0;
-        for (unsigned i = 0; i < getMotorCount() && pos < OSD_FORMAT_MESSAGE_BUFFER_SIZE - 1; i++) {
+        for (unsigned i = 0; i < getMotorCount() && pos < OSD_WARNINGS_ESC_SENSOR_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
             const char motorNumber = '1' + i;
             // if everything is OK just display motor number else R, T or C
@@ -312,6 +313,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             return;
         }
     }
+#undef OSD_WARNINGS_ESC_SENSOR_SIZE
 #endif // USE_ESC_SENSOR
 
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
