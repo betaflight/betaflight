@@ -49,7 +49,7 @@ static posHoldState_t posHold;
 
 void posHoldInit(void)
 {
-    posHold.deadband = posHoldConfig()->pos_hold_deadband / 100.0f;
+    posHold.deadband = posHoldConfig()->pos_hold_deadband * 0.01f;
     posHold.useStickAdjustment = posHoldConfig()->pos_hold_deadband;
 }
 
