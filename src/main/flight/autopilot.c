@@ -299,15 +299,13 @@ bool positionControl(void)
                 efAxis->previousDistance = 0.0f; // avoid D and A spikes
                 // rest is handled after axis loop
             } else if (efAxis->isStopping) {
-                // 'phase' after sticks are centered, but before craft has stopped in given PID axis
-                pidD *= 1.6f; // aribitrary D boost to stop more quickly when sticks are centered
-                // detect velocity zero crossing (velocityFiltered is delayed by filter)
+                // 'phase' after sticks are centered, but before craft has stopped; in given Earth axis
+                pidD *= 1.6f; // aribitrary D boost to stop more quickly than usual
+                // detect when axis has nearly stopped by sign reversal of velocity (comparing sign of velocityFiltered, which is delayed, to velocity)
                 if (velocity * velocityFiltered < 0.0f) {
-                    // when an axis has nearly stopped moving, reset it and end it's start phase
-                    const int8_t llhAxisInv = 1 - efAxisIdx; // because we have Lat first in gpsLocation_t, but efAxisIdx handles lon first.
-                    ap.targetLocation.coords[llhAxisInv] = gpsSol.llh.coords[llhAxisInv]; // forcing P to zero
-                    efAxis->previousDistance = 0.0f;                                      // ensuring no D jump from the updated location
-                    efAxis->isStopping = false;
+                    setTargetLocationByAxis(&gpsSol.llh, efAxisIdx);  // reset target location for this axis, forcing P to zero
+                    efAxis->previousDistance = 0.0f;                  // ensure minimal D jump from the updated location
+                    efAxis->isStopping = false;                       // end the 'stopping' phase
                     if (ap.efAxis[LAT].isStopping == ap.efAxis[LON].isStopping) {
                         // when both axes have stopped moving, reset the sanity distance to 10m default
                         ap.sanityCheckDistance = sanityCheckDistance(1000);
