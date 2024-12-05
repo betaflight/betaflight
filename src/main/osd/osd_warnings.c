@@ -268,7 +268,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_ESC_SENSOR
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
-    if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL)) {
+    if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
         char escWarningMsg[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
         const char *title = "ESC";
 
@@ -286,16 +286,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             // if everything is OK just display motor number else R, T or C
             char warnFlag = motorNumber;
 
-            if (ARMING_FLAG(ARMED)) {
-                if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
-                    warnFlag = 'R';
-                }
-                if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
-                    warnFlag = 'T';
-                }
-                if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && escData->current >= osdConfig()->esc_current_alarm) {
-                    warnFlag = 'C';
-                }
+            if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
+                warnFlag = 'R';
+            }
+            if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
+                warnFlag = 'T';
+            }
+            if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && escData->current >= osdConfig()->esc_current_alarm) {
+                warnFlag = 'C';
             }
 
             escWarningMsg[pos++] = warnFlag;
