@@ -267,53 +267,51 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_ADC_INTERNAL
 
 #ifdef USE_ESC_SENSOR
-#define OSD_WARNINGS_ESC_SENSOR_SIZE 12
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        char escWarningMsg[OSD_WARNINGS_ESC_SENSOR_SIZE];
-        const char *title = "ESC";
+        char* p = warningText;
+        strcpy(p, "ESC");
+        p += strlen("ESC");
 
-        // center justify message
-        unsigned pos = (OSD_WARNINGS_ESC_SENSOR_SIZE - (strlen(title) + getMotorCount())) / 2;
-        memset(escWarningMsg, ' ', pos);
-
-        strncpy(escWarningMsg + pos, title, OSD_WARNINGS_ESC_SENSOR_SIZE - pos - 1);
-        pos += strlen(title);
-
-        unsigned escWarningCount = 0;
-        for (unsigned i = 0; i < getMotorCount() && pos < OSD_WARNINGS_ESC_SENSOR_SIZE - 1; i++) {
+        bool escWarning = false;
+        for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
-            const char motorNumber = '1' + i;
             // if everything is OK just display motor number else R, T or C
-            char warnFlag = motorNumber;
-
-            if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && (uint32_t)erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
-                warnFlag = 'R';
-            }
-            if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
-                warnFlag = 'T';
-            }
-            if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && escData->current >= osdConfig()->esc_current_alarm) {
-                warnFlag = 'C';
-            }
-
-            escWarningMsg[pos++] = warnFlag;
-
-            if (warnFlag != motorNumber) {
-                escWarningCount++;
+            if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
+                && escData->current >= osdConfig()->esc_current_alarm) {
+                *p++ = 'C';
+                escWarning = true;
+            } else if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
+                       && escData->temperature >= osdConfig()->esc_temp_alarm) {
+                *p++ = 'T';
+                escWarning = true;
+            } else if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
+                       && erpmToRpm(escData->rpm) <= osdConfig()->esc_rpm_alarm) {
+                *p++ = 'R';
+                escWarning = true;;
+            } else {   // no error, display motor number
+                *p++ = '0' + (i + 1) % 10; // 123..9012..
             }
         }
 
-        escWarningMsg[pos] = '\0';
-
-        if (escWarningCount > 0) {
-            tfp_sprintf(warningText, "%s", escWarningMsg);
+        *p++ = 0;  // terminate string
+        if (escWarning) {
+            const int msgLen = strlen(warningText);
+            const int minMsgLen = 11;   // intended minimum width
+            if (msgLen < minMsgLen) {
+                // enough space to center justify message
+                const int offset = (minMsgLen - msgLen) / 2;
+                memmove(warningText + offset, warningText, msgLen + 1);  // copy including '\0'
+                memset(warningText, ' ', offset);                        // left padding with spaces
+            }
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
             return;
+        } else {
+            // no warning, erase generated message and continue
+            warningText[0] = '\0';
         }
     }
-#undef OSD_WARNINGS_ESC_SENSOR_SIZE
 #endif // USE_ESC_SENSOR
 
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)

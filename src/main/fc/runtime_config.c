@@ -63,8 +63,7 @@ const char *armingDisableFlagNames[]= {
     "CRASHFLIP",
     "ARMSWITCH",
 };
-
-STATIC_ASSERT(ARRAYLEN(armingDisableFlagNames) == ARMING_DISABLE_FLAGS_COUNT, "armingDisableFlagNames size mismatch");
+STATIC_ASSERT(ARRAYLEN(armingDisableFlagNames) == ARMING_DISABLE_FLAGS_COUNT, armingDisableFlagNames size mismatch);
 
 static armingDisableFlags_e armingDisableFlags = 0;
 
@@ -90,7 +89,8 @@ armingDisableFlags_e getArmingDisableFlags(void)
 
 // return name for given flag
 // will return first name (LSB) if multiple bits are passed
-const char *getArmingDisableFlagName(armingDisableFlags_e flag) {
+const char *getArmingDisableFlagName(armingDisableFlags_e flag)
+{
     int idx = ffs(flag & -flag) - 1;   // use LSB if there are multiple bits set
     return idx >= 0 && idx < (int)ARRAYLEN(armingDisableFlagNames) ? armingDisableFlagNames[idx] : "UNKNOWN";
 }
