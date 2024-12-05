@@ -297,7 +297,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *p++ = 0;  // terminate string
         if (escWarning) {
             const int msgLen = strlen(warningText);
-            const int minMsgLen = 11;   // intended minimum width
+            const int minMsgLen = p - warningText - 1;   // intended minimum width
             if (msgLen < minMsgLen) {
                 // enough space to center justify message
                 const int offset = (minMsgLen - msgLen) / 2;
