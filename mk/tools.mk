@@ -31,8 +31,15 @@ ifeq ($(OSFAMILY), linux)
 endif
 
 ifeq ($(OSFAMILY), macosx)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz
-  ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-darwin-x86_64-arm-none-eabi
+  # Check for Apple Silicon
+  UNAME_PROCESSOR := $(shell uname -p)
+  ifeq ($(UNAME_PROCESSOR), arm)
+    ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-arm64-arm-none-eabi.tar.xz
+    ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-darwin-arm64-arm-none-eabi
+  else
+    ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz
+    ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-darwin-x86_64-arm-none-eabi
+  endif
 endif
 
 ifeq ($(OSFAMILY), windows)
