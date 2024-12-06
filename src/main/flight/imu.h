@@ -46,7 +46,7 @@ typedef struct {
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
     struct {
-        // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+        // absolute angle inclination in multiple of 0.1 degree  eg attitude.values.yaw 180 deg = 1800
         int16_t roll;
         int16_t pitch;
         int16_t yaw;

@@ -74,7 +74,7 @@ typedef struct rollAndPitchTrims_s {
 } rollAndPitchTrims_t_def;
 
 typedef union rollAndPitchTrims_u {
-    int16_t raw[2];
+    int16_t raw[RP_AXIS_COUNT];
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 

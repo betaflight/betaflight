@@ -1048,7 +1048,7 @@ static void osdElementFlymode(osdElementParms_t *element)
     //  1. FS
     //  2. GPS RESCUE
     //  3. PASSTHRU
-    //  4. ANGLE, HORIZON, ACRO TRAINER, ALTHOLD
+    //  4. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
     //  5. AIR
     //  6. ACRO
 
@@ -1060,10 +1060,12 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         strcpy(element->buff, "PASS");
-    } else if (FLIGHT_MODE(ANGLE_MODE)) {
-        strcpy(element->buff, "ANGL");
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         strcpy(element->buff, "ALTH");
+    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        strcpy(element->buff, "POSH");
+    } else if (FLIGHT_MODE(ANGLE_MODE)) {
+        strcpy(element->buff, "ANGL");
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         strcpy(element->buff, "HOR ");
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {

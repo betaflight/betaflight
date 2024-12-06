@@ -462,7 +462,7 @@ typedef struct pidRuntime_s {
     uint8_t acroTrainerDebugAxis;
     float acroTrainerGain;
     bool acroTrainerActive;
-    int acroTrainerAxisState[2];  // only need roll and pitch
+    int acroTrainerAxisState[RP_AXIS_COUNT];  // only need roll and pitch
 #endif
 
 #ifdef USE_DYN_LPF
@@ -508,12 +508,12 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_ACC
-    pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
+    pt3Filter_t attitudeFilter[RP_AXIS_COUNT];  // Only for ROLL and PITCH
     pt1Filter_t horizonSmoothingPt1;
     uint16_t horizonDelayMs;
     float angleYawSetpoint;
     float angleEarthRef;
-    float angleTarget[2];
+    float angleTarget[RP_AXIS_COUNT];
     bool axisInAngleMode[3];
 #endif
 

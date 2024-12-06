@@ -36,8 +36,21 @@ alignsensor_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c
 
+althold_unittest_SRC := \
+		$(USER_DIR)/flight/alt_hold.c \
+		$(USER_DIR)/flight/autopilot.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/pg/rx.c
+
+althold_unittest_DEFINES := \
+		USE_ALT_HOLD_MODE= \
+
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/fc/core.c \
 		$(USER_DIR)/fc/dispatch.c \
 		$(USER_DIR)/fc/rc_controls.c \
@@ -45,7 +58,6 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/autopilot.c \
 		$(USER_DIR)/flight/gps_rescue.c
-
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
@@ -159,6 +171,7 @@ flight_imu_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/position.c \
@@ -272,7 +285,6 @@ rx_crsf_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/serial.c \
 		$(USER_DIR)/drivers/serial_impl.c
-
 
 
 rx_ibus_unittest_SRC := \
@@ -472,15 +484,6 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 		USE_RX_EXPRESSLRS= \
 		USE_GPS= \
 		USE_MSP_OVER_TELEMETRY= \
-
-althold_unittest_SRC := \
-		$(USER_DIR)/flight/alt_hold.c \
-		$(USER_DIR)/flight/autopilot.c \
-		$(USER_DIR)/common/maths.c \
-		$(USER_DIR)/pg/rx.c
-
-althold_unittest_DEFINES := \
-		USE_ALT_HOLD_MODE= \
 
 vtx_msp_unittest_SRC := \
         $(USER_DIR)/common/crc.c \

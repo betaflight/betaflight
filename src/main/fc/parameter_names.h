@@ -168,6 +168,12 @@
 #define PARAM_NAME_ALTITUDE_I "autopilot_altitude_I"
 #define PARAM_NAME_ALTITUDE_D "autopilot_altitude_D"
 #define PARAM_NAME_ALTITUDE_F "autopilot_altitude_F"
+#define PARAM_NAME_POSITION_P "autopilot_position_P"
+#define PARAM_NAME_POSITION_I "autopilot_position_I"
+#define PARAM_NAME_POSITION_D "autopilot_position_D"
+#define PARAM_NAME_POSITION_A "autopilot_position_A"
+#define PARAM_NAME_POSITION_CUTOFF "autopilot_position_cutoff"
+#define PARAM_NAME_AP_MAX_ANGLE "autopilot_max_angle"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
@@ -242,8 +248,14 @@
 #endif // USE_GPS
 
 #ifdef USE_ALT_HOLD_MODE
-#define PARAM_NAME_ALT_HOLD_TARGET_ADJUST_RATE "alt_hold_target_adjust_rate"
-#endif // USE_ALT_HOLD_MODE
+#define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband"
+#define PARAM_NAME_ALT_HOLD_THROTTLE_RESPONSE "alt_hold_throttle_response"
+#endif
+
+#ifdef USE_POS_HOLD_MODE
+#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
+#define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband"
+#endif
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
 #define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"

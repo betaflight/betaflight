@@ -57,7 +57,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXCAMSTAB, .boxName = "CAMSTAB", .permanentId = 8 },
 //    { .boxId = BOXCAMTRIG, .boxName = "CAMTRIG", .permanentId = 9 },
 //    { .boxId = BOXGPSHOME, .boxName = "GPS HOME", .permanentId = 10 },
-//    { .boxId = BOXGPSHOLD, .boxName = "GPS HOLD", .permanentId = 11 },
+    { .boxId = BOXPOSHOLD, .boxName = "POS HOLD", .permanentId = 11 },
     { .boxId = BOXPASSTHRU, .boxName = "PASSTHRU", .permanentId = 12 },
     { .boxId = BOXBEEPERON, .boxName = "BEEPER", .permanentId = 13 },
 //    { .boxId = BOXLEDMAX, .boxName = "LEDMAX", .permanentId = 14 }, (removed)
@@ -223,6 +223,9 @@ void initActiveBoxIds(void)
         BME(BOXHORIZON);
 #ifdef USE_ALT_HOLD_MODE
         BME(BOXALTHOLD);
+#endif
+#ifdef USE_POS_HOLD_MODE
+        BME(BOXPOSHOLD);
 #endif
         BME(BOXHEADFREE);
         BME(BOXHEADADJ);

@@ -25,6 +25,7 @@ PG_SRC = \
             pg/piniobox.c \
             pg/pinio.c \
             pg/pin_pull_up_down.c \
+            pg/pos_hold.c \
             pg/rcdevice.c \
             pg/rpm_filter.c \
             pg/rx.c \
@@ -164,6 +165,7 @@ COMMON_SRC = \
             flight/pid.c \
             flight/pid_init.c \
             flight/position.c \
+            flight/pos_hold.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
