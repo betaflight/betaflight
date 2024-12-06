@@ -42,7 +42,6 @@ ifeq ($(OSFAMILY), macosx)
   endif
 endif
 
-
 ifeq ($(OSFAMILY), windows)
   ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-arm-none-eabi.zip
   ARM_SDK_DIR := $(ARM_SDK_BASE_DIR)-mingw-w64-i686-arm-none-eabi
