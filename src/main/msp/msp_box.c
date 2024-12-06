@@ -221,10 +221,10 @@ void initActiveBoxIds(void)
     if (sensors(SENSOR_ACC)) {
         BME(BOXANGLE);
         BME(BOXHORIZON);
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
         BME(BOXALTHOLD);
 #endif
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
         BME(BOXPOSHOLD);
 #endif
         BME(BOXHEADFREE);

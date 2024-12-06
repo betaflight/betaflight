@@ -1016,10 +1016,10 @@ void processRxModes(timeUs_t currentTimeUs)
     bool canUseHorizonMode = true;
     if ((IS_RC_MODE_ACTIVE(BOXANGLE)
         || failsafeIsActive()
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
         || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
         || FLIGHT_MODE(POS_HOLD_MODE)
 #endif
         ) && (sensors(SENSOR_ACC))) {
@@ -1033,7 +1033,7 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
 
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED) 
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
@@ -1054,7 +1054,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
     // only if armed; can coexist with altitude hold
     if (ARMING_FLAG(ARMED) 
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold

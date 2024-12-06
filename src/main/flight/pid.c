@@ -570,7 +570,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
 #endif
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         angleFeedforward = 0.0f; // otherwise the lag of the PT3 carries recent stick inputs into the hold
         if (isAutopilotInControl()) {
@@ -942,7 +942,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
             // or, in altitude hold mode, where throttle can be non-zero
             || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
@@ -950,7 +950,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         // increase sensitivity by 50% when low and in altitude hold or failsafe landing
         // for more reliable disarm with gentle controlled landings
         float lowAltitudeSensitivity = 1.0f;
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
         lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isBelowLandingAltitude()) ? 1.5f : 1.0f;
 #endif
         // and disarm if jerk exceeds threshold...
@@ -1123,10 +1123,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     float horizonLevelStrength = 0.0f;
 
     const bool isExternalAngleModeRequest = FLIGHT_MODE(GPS_RESCUE_MODE)
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
                 || FLIGHT_MODE(ALT_HOLD_MODE) // todo - check if this is needed
 #endif
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
                 || FLIGHT_MODE(POS_HOLD_MODE) 
 #endif
                 ;
