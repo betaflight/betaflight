@@ -1300,7 +1300,7 @@ case MSP_NAME:
         {
             bool isBlinking;
             uint8_t displayAttr;
-            char warningsBuffer[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+            char warningsBuffer[OSD_WARNINGS_MAX_SIZE + 1];
 
             renderOsdWarning(warningsBuffer, &isBlinking, &displayAttr);
             const uint8_t warningsLen = strlen(warningsBuffer);
@@ -1310,9 +1310,7 @@ case MSP_NAME:
             }
             sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
             sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
-            for (unsigned i = 0; i < warningsLen; i++) {
-                sbufWriteU8(dst, warningsBuffer[i]);
-            }
+            sbufWriteData(dst, warningsBuffer, warningsLen);
             break;
         }
 #endif

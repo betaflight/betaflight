@@ -33,7 +33,8 @@ uint16_t flightModeFlags = 0;
 
 static uint32_t enabledSensors = 0;
 
-// Must be no longer than OSD_WARNINGS_MAX_SIZE (11) to be displayed fully in OSD
+// Name must be no longer than OSD_WARNINGS_MAX_SIZE
+// try to keep names within OSD_WARNINGS_PREFFERED_SIZE
 const char *armingDisableFlagNames[]= {
     "NOGYRO",
     "FAILSAFE",
@@ -65,7 +66,7 @@ const char *armingDisableFlagNames[]= {
     "POS_HOLD_SW",
     "ARMSWITCH",
 };
-STATIC_ASSERT(ARRAYLEN(armingDisableFlagNames) == ARMING_DISABLE_FLAGS_COUNT, armingDisableFlagNames size mismatch);
+STATIC_ASSERT(ARRAYLEN(armingDisableFlagNames) == ARMING_DISABLE_FLAGS_COUNT, armingDisableFlagNames_size_mismatch);
 
 static armingDisableFlags_e armingDisableFlags = 0;
 

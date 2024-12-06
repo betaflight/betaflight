@@ -297,9 +297,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *p++ = 0;  // terminate string
         if (escWarning) {
             const int msgLen = strlen(warningText);
-            const int minMsgLen = 11;   // intended minimum width
-            if (msgLen < minMsgLen) {
-                // enough space to center justify message
+            const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;           // intended minimum width
+            if (msgLen < minMsgLen - 1) {
+                // message is short, center it within minMsgLen
                 const int offset = (minMsgLen - msgLen) / 2;
                 memmove(warningText + offset, warningText, msgLen + 1);  // copy including '\0'
                 memset(warningText, ' ', offset);                        // left padding with spaces
