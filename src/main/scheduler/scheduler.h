@@ -122,6 +122,9 @@ typedef enum {
 #ifdef USE_ALT_HOLD_MODE
     TASK_ALTHOLD,
 #endif
+#ifdef USE_POS_HOLD_MODE
+    TASK_POSHOLD,
+#endif
 #ifdef USE_MAG
     TASK_COMPASS,
 #endif

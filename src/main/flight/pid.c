@@ -46,7 +46,6 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
@@ -57,6 +56,8 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+
+#include "pg/autopilot.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
@@ -545,7 +546,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 {
     // Applies only to axes that are in Angle mode
     // We now use Acro Rates, transformed into the range +/- 1, to provide setpoints
-    const float angleLimit = pidProfile->angle_limit;
+    float angleLimit = pidProfile->angle_limit;
     float angleFeedforward = 0.0f;
     // if user changes rates profile, update the max setpoint for angle mode
     const float maxSetpointRateInv = 1.0f / getMaxRcRate(axis);
@@ -569,6 +570,21 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
 #endif
+#ifdef USE_POS_HOLD_MODE
+    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        angleFeedforward = 0.0f; // otherwise the lag of the PT3 carries recent stick inputs into the hold
+        if (isAutopilotInControl()) {
+            // sticks are not deflected
+            angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
+            angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
+        }
+        // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
+        angleLimit = fminf(0.5f * apConfig()->max_angle, angleLimit);
+    }
+#endif
+
+    angleTarget = constrainf(angleTarget, -angleLimit, angleLimit);
+
     const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
     const float errorAngle = angleTarget - currentAngle;
     float angleRate = errorAngle * pidRuntime.angleGain + angleFeedforward;
@@ -586,7 +602,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
     angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
 
-    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | POS_HOLD_MODE)) {
         currentPidSetpoint = angleRate;
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
@@ -707,7 +723,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 {
     float ret = setPoint;
 
-    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE)) {
+    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
         bool resetIterm = false;
         float projectedAngle = 0;
         const int setpointSign = acroTrainerSign(setPoint);
@@ -926,10 +942,8 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
-            // we could test here for stage 2 failsafe (including both landing or GPS Rescue)
-            // this may permit removing the GPS Rescue disarm method altogether
 #ifdef USE_ALT_HOLD_MODE
-            // or in altitude hold mode, including failsafe landing mode, indirectly
+            // or, in altitude hold mode, where throttle can be non-zero
             || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
         )) {
@@ -1110,7 +1124,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     const bool isExternalAngleModeRequest = FLIGHT_MODE(GPS_RESCUE_MODE)
 #ifdef USE_ALT_HOLD_MODE
-                || FLIGHT_MODE(ALT_HOLD_MODE)
+                || FLIGHT_MODE(ALT_HOLD_MODE) // todo - check if this is needed
+#endif
+#ifdef USE_POS_HOLD_MODE
+                || FLIGHT_MODE(POS_HOLD_MODE) 
 #endif
                 ;
     levelMode_e levelMode;

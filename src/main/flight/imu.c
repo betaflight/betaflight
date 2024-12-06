@@ -85,7 +85,8 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
 #define GPS_COG_MIN_GROUNDSPEED 100        // 1.0m/s - min groundspeed for GPS Heading reinitialisation etc
-bool canUseGPSHeading = true;
+
+bool canUseGPSHeading = false;
 
 static float throttleAngleScale;
 static int throttleAngleValue;
@@ -187,12 +188,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 void imuInit(void)
 {
-#ifdef USE_GPS
-    canUseGPSHeading = true;
-#else
     canUseGPSHeading = false;
-#endif
-
     imuComputeRotationMatrix();
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
@@ -441,7 +437,8 @@ static float imuCalcGroundspeedGain(float dt)
     }
 
     // NOTE : these suppressions make sense with normal pilot inputs and normal flight
-    // They are not used in GPS Rescue, and probably should be bypassed in position hold, etc,
+    // Flying straight ahead for 1s at > 3m/s at pitch of say 22.5 degrees returns a final multiplier of 5
+    // They are not used in GPS Rescue, and probably should be bypassed in position hold, and other situations when we know we are still
 
     return speedBasedGain * stickSuppression * rollSuppression * pitchSuppression;
 }
@@ -611,6 +608,28 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 }
 #else
 
+#if defined(USE_GPS)
+static void updateGpsHeadingUsable(float groundspeedGain, float imuCourseError, float dt)
+{
+    if (!canUseGPSHeading) {
+        static float gpsHeadingConfidence = 0;
+        // groundspeedGain can be 5.0 in clean forward flight, up to 10.0 max
+        // fabsf(imuCourseError) is 0 when headings are aligned, 1 when 90 degrees error or worse
+        // accumulate 'points' based on alignment and likelihood of accumulation being good
+        gpsHeadingConfidence += fmaxf(groundspeedGain - fabsf(imuCourseError), 0.0f) * dt;
+        // recenter at 2.5s time constant
+        // TODO: intent is to match IMU time constant, approximately, but I don't exactly know how to do that
+        gpsHeadingConfidence -= 0.4 * dt * gpsHeadingConfidence; 
+        // if we accumulate enough 'points' over time, the IMU probably is OK
+        // will need to reaccumulate after a disarm (will be retained partly for very brief disarms)
+        canUseGPSHeading = gpsHeadingConfidence > 2.0f;
+        // canUseGPSHeading blocks position hold until suitable GPS heading, when GPS is the only heading source
+        // NOTE: I think that this check only runs once after power up
+        // If the GPS heading is lost on disarming, then it will need to be reset each disarm
+    }
+}
+#endif
+
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
@@ -662,9 +681,16 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 // 0.0 - 10.0, heuristic based on GPS speed and stick state
                 groundspeedGain = imuCalcGroundspeedGain(dt);
             }
+
             DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(groundspeedGain * 100.0f));
-            float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-            cogErr = imuCalcCourseErr(courseOverGround) * groundspeedGain;
+
+            const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+            const float imuCourseError = imuCalcCourseErr(courseOverGround);
+            cogErr = imuCourseError * groundspeedGain;
+            // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight
+
+            updateGpsHeadingUsable(groundspeedGain, imuCourseError, dt);
+
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
             // Reset the reference and reinitialize quaternion factors when GPS groundspeed > GPS_COG_MIN_GROUNDSPEED
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);

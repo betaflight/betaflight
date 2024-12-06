@@ -65,10 +65,10 @@ typedef enum {
     ARMING_DISABLED_DSHOT_BITBANG   = (1 << 22),
     ARMING_DISABLED_ACC_CALIBRATION = (1 << 23),
     ARMING_DISABLED_MOTOR_PROTOCOL  = (1 << 24),
-    ARMING_DISABLED_FLIP_SWITCH     = (1 << 25),
-    ARMING_DISABLED_ALT_HOLD_SWITCH = (1 << 26),
-    ARMING_DISABLED_POS_HOLD_SWITCH = (1 << 27),    
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 28), // Needs to be the last element, since it's always activated if one of the others is active when arming
+    ARMING_DISABLED_CRASHFLIP       = (1 << 25),
+    ARMING_DISABLED_ALTHOLD         = (1 << 26),
+    ARMING_DISABLED_POSHOLD         = (1 << 27),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 28) // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
 #define ARMING_DISABLE_FLAGS_COUNT (LOG2(ARMING_DISABLED_ARM_SWITCH) + 1)
@@ -85,7 +85,7 @@ typedef enum {
     MAG_MODE        = (1 << 2),
     ALT_HOLD_MODE    = (1 << 3),
 //    GPS_HOME_MODE   = (1 << 4),
-//    GPS_HOLD_MODE   = (1 << 5),
+    POS_HOLD_MODE   = (1 << 5),
     HEADFREE_MODE   = (1 << 6),
 //    UNUSED_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
@@ -106,7 +106,8 @@ extern uint16_t flightModeFlags;
    [BOXANGLE]       = LOG2(ANGLE_MODE),                  \
    [BOXHORIZON]     = LOG2(HORIZON_MODE),                \
    [BOXMAG]         = LOG2(MAG_MODE),                    \
-   [BOXALTHOLD]     = LOG2(ALT_HOLD_MODE),                \
+   [BOXALTHOLD]     = LOG2(ALT_HOLD_MODE),               \
+   [BOXPOSHOLD]     = LOG2(POS_HOLD_MODE),               \
    [BOXHEADFREE]    = LOG2(HEADFREE_MODE),               \
    [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
    [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \

@@ -53,9 +53,9 @@
 #include "fc/gps_lap_timer.h"
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
-#include "flight/gps_rescue.h"
 
 #include "scheduler/scheduler.h"
 
@@ -92,7 +92,10 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
 
 static serialPort_t *gpsPort;
-static float gpsDataIntervalSeconds;
+static float gpsDataIntervalSeconds = 0.1f;
+static float gpsDataFrequencyHz = 10.0f;
+
+static uint16_t currentGpsStamp = 0; // logical timer for received position update
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -1764,7 +1767,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
             }
              navDeltaTimeMs = (msInTenSeconds + data->time - gpsData.lastNavSolTs) % msInTenSeconds;
              gpsData.lastNavSolTs = data->time;
-             sol->navIntervalMs = constrain(navDeltaTimeMs, 100, 2500);
+             sol->navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
             // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
             return true;
 
@@ -2182,7 +2185,7 @@ static bool UBLOX_parse_gps(void)
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_VELNED;
 #endif
         gpsSol.speed3d = ubxRcvMsgPayload.ubxNavVelned.speed_3d;       // cm/s
-        gpsSol.groundSpeed = ubxRcvMsgPayload.ubxNavVelned.speed_2d;    // cm/s
+        gpsSol.groundSpeed = ubxRcvMsgPayload.ubxNavVelned.speed_2d;   // cm/s
         gpsSol.groundCourse = (uint16_t) (ubxRcvMsgPayload.ubxNavVelned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         ubxHaveNewSpeed = true;
         break;
@@ -2512,7 +2515,7 @@ void GPS_calc_longitude_scaling(int32_t lat)
 //
 static void GPS_calculateDistanceFlown(bool initialize)
 {
-    static gpsLocation_t lastLLH = {0, 0, 0};
+    static gpsLocation_t lastLLH = {0};
 
     if (initialize) {
         GPS_distanceFlownInCm = 0;
@@ -2556,11 +2559,12 @@ void GPS_reset_home_position(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-#define EARTH_ANGLE_TO_CM (111.3195f * 1000 * 100 / GPS_DEGREES_DIVIDER)  // latitude unit to cm at equator (111km/deg)
-// Get distance between two points in cm
-// Get bearing from pos1 to pos2, returns an 1deg = 100 precision
+// Get distance between two points in cm using spherical to Cartesian transform
+// One one latitude unit, or one longitude unit at the equator, equals 1.113195 cm.
+// Get bearing from pos1 to pos2, returns values with 0.01 degree precision
 void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to, bool dist3d, uint32_t *pDist, int32_t *pBearing)
 {
+    // TO DO : handle crossing the 180 degree meridian, as in `GPS_distance2d()`
     float dLat = (to->lat - from->lat) * EARTH_ANGLE_TO_CM;
     float dLon = (to->lon - from->lon) * GPS_cosLat * EARTH_ANGLE_TO_CM; // convert to local angle
     float dAlt = dist3d ? to->altCm - from->altCm : 0;
@@ -2593,6 +2597,24 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     }
 }
 
+// return distance vector in local, cartesian ENU coordinates
+// note that parameter order is from, to
+void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
+{
+    int32_t deltaLon = to->lon - from->lon;
+    // In case we crossed the 180° meridian:
+    const int32_t deg180 = 180 * GPS_DEGREES_DIVIDER; // number of integer longitude steps in 180 degrees
+    if (deltaLon > deg180) {
+        deltaLon -= deg180;  // 360 * GPS_DEGREES_DIVIDER overflows int32_t, so use 180 twice
+        deltaLon -= deg180;
+    } else if (deltaLon <= -deg180) {
+        deltaLon += deg180;
+        deltaLon += deg180;
+    }
+    distance->x = deltaLon * GPS_cosLat * EARTH_ANGLE_TO_CM; // East-West distance, positive East
+    distance->y = (float)(to->lat - from->lat) * EARTH_ANGLE_TO_CM;  // North-South distance, positive North
+}
+
 void onGpsNewData(void)
 {
     if (!STATE(GPS_FIX)) {
@@ -2600,19 +2622,32 @@ void onGpsNewData(void)
         return;
     }
 
-    gpsDataIntervalSeconds = gpsSol.navIntervalMs / 1000.0f;
+    currentGpsStamp++; // new GPS data available
+
+    gpsDataIntervalSeconds = gpsSol.navIntervalMs * 0.001f; // range for navIntervalMs is constrained to 50 - 2500
+    gpsDataFrequencyHz = 1.0f / gpsDataIntervalSeconds;
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {
         GPS_calculateDistanceFlown(false);
     }
 
-#ifdef USE_GPS_RESCUE
-    gpsRescueNewGpsData();
-#endif
 #ifdef USE_GPS_LAP_TIMER
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
+
+}
+
+// check if new data has been received since last check
+// if client stamp is initialized to 0, gpsHasNewData will return false until first GPS position update
+// if client stamp is initialized to ~0, gpsHasNewData will return true on first call
+bool gpsHasNewData(uint16_t* stamp) {
+    if (*stamp != currentGpsStamp) {
+        *stamp = currentGpsStamp;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void gpsSetFixState(bool state)
@@ -2628,6 +2663,11 @@ void gpsSetFixState(bool state)
 float getGpsDataIntervalSeconds(void)
 {
     return gpsDataIntervalSeconds;
+}
+
+float getGpsDataFrequencyHz(void)
+{
+    return gpsDataFrequencyHz;
 }
 
 baudRate_e getGpsPortActualBaudRateIndex(void)

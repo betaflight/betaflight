@@ -17,15 +17,17 @@
 
 #pragma once
 
-#include "pg/alt_hold.h"
+// #include "pg/pos_hold.h"
 
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_POS_HOLD_MODE
 #include "common/time.h"
+#include "io/gps.h"
 
-#define ALTHOLD_TASK_RATE_HZ 100         // hz
+#define POSHOLD_TASK_RATE_HZ 100 // hz
 
-void altHoldInit(void);
-void updateAltHold(timeUs_t currentTimeUs);
-bool isAltHoldActive(void);
+void posHoldInit(void);
+void updatePosHold(timeUs_t currentTimeUs);
+
+bool posHoldFailure(void);
 
 #endif

@@ -62,6 +62,7 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/alt_hold.h"
+#include "flight/pos_hold.h"
 
 #if defined(USE_DYN_NOTCH_FILTER)
 #include "flight/dyn_notch_filter.h"
@@ -242,6 +243,7 @@ static bool accNeedsCalibration(void)
         if (isModeActivationConditionPresent(BOXANGLE) ||
             isModeActivationConditionPresent(BOXHORIZON) ||
             isModeActivationConditionPresent(BOXALTHOLD) ||
+            isModeActivationConditionPresent(BOXPOSHOLD) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
@@ -316,6 +318,18 @@ void updateArmingStatus(void)
             setArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
+        }
+
+        if (IS_RC_MODE_ACTIVE(BOXALTHOLD)) {
+            setArmingDisabled(ARMING_DISABLED_ALTHOLD);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_ALTHOLD);
+        }
+
+        if (IS_RC_MODE_ACTIVE(BOXPOSHOLD)) {
+            setArmingDisabled(ARMING_DISABLED_POSHOLD);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
         }
 
         if (calculateThrottleStatus() != THROTTLE_LOW) {
@@ -610,7 +624,7 @@ void tryArm(void)
         //beep to indicate arming
         if (featureIsEnabled(FEATURE_GPS)) {
             GPS_reset_home_position();
-
+            canUseGPSHeading = false; // block use of GPS Heading in position hold after each arm, until quad can set IMU to GPS COG
             if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
                 beeper(BEEPER_ARMING_GPS_FIX);
             } else {
@@ -768,7 +782,6 @@ uint8_t calculateThrottlePercentAbs(void)
 }
 
 static bool throttleRaised = false;
-
 bool wasThrottleRaised(void)
 {
     return throttleRaised;
@@ -1006,6 +1019,9 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_ALT_HOLD_MODE
         || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
+#ifdef USE_POS_HOLD_MODE
+        || FLIGHT_MODE(POS_HOLD_MODE)
+#endif
         ) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
@@ -1018,23 +1034,42 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_ALT_HOLD_MODE
-    // only if armed
-    if (ARMING_FLAG(ARMED)
-        // and either the alt_hold switch is activated, or are in failsafe
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
-        // but not in GPS_RESCUE_MODE, ie if failsafe is active, must be in Landing Mode
+    // only if armed; can coexist with position hold
+    if (ARMING_FLAG(ARMED) 
+        // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        // and either the alt_hold switch is activated, or are in failsafe landing mode
+        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
         && isAltitudeAvailable()
-        // prevent activation until after takeoff
+        // but not until throttle is raised
         && wasThrottleRaised()) {
         if (!FLIGHT_MODE(ALT_HOLD_MODE)) {
             ENABLE_FLIGHT_MODE(ALT_HOLD_MODE);
         }
     } else {
         DISABLE_FLIGHT_MODE(ALT_HOLD_MODE);
+    }
+#endif
+
+#ifdef USE_POS_HOLD_MODE
+    // only if armed; can coexist with altitude hold
+    if (ARMING_FLAG(ARMED) 
+        // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        // and either the alt_hold switch is activated, or are in failsafe landing mode
+        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
+        // and we have Acc for self-levelling
+        && sensors(SENSOR_ACC)
+        // but not until throttle is raised
+        && wasThrottleRaised()) {
+        if (!FLIGHT_MODE(POS_HOLD_MODE)) {
+            ENABLE_FLIGHT_MODE(POS_HOLD_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(POS_HOLD_MODE);
     }
 #endif
 
@@ -1057,7 +1092,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
         rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / (float)imuConfig()->imu_process_denom));

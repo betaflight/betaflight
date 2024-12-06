@@ -17,14 +17,18 @@
 
 #pragma once
 
-#include "pg/autopilot.h"
-#include "flight/pid.h"
+#include "io/gps.h"
 
-void autopilotInit(const autopilotConfig_t *config);
+extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+
+void autopilotInit(void);
 void resetAltitudeControl(void);
-
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float verticalVelocity, float targetAltitudeStep);
+void setSticksActiveStatus(bool areSticksActive);
+void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz);
+void posControlOutput(void);
+bool positionControl(void);
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
 
 bool isBelowLandingAltitude(void);
-const pidCoefficient_t *getAltitudePidCoeffs(void);
 float getAutopilotThrottle(void);
+bool isAutopilotInControl(void);

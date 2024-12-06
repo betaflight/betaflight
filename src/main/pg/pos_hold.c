@@ -19,28 +19,21 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include <stdint.h>
+#ifdef USE_POS_HOLD_MODE
+
+#include "flight/pos_hold.h"
 
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-typedef struct apConfig_s {
-    uint8_t landing_altitude_m;   // altitude below which landing behaviours can change, metres
-    uint16_t hover_throttle;      // value used at the start of a rescue or position hold
-    uint16_t throttle_min;
-    uint16_t throttle_max;
-    uint8_t altitude_P;
-    uint8_t altitude_I;
-    uint8_t altitude_D;
-    uint8_t altitude_F;
-    uint8_t position_P;
-    uint8_t position_I;
-    uint8_t position_D;
-    uint8_t position_A;
-    uint8_t position_cutoff;
-    uint8_t max_angle;
-} apConfig_t;
+#include "pos_hold.h"
 
-PG_DECLARE(apConfig_t, apConfig);
+PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
 
+PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
+    .pos_hold_without_mag = false,   // position hold within this percentage stick deflection
+    .pos_hold_deadband = 5,          // deadband in percent of stick travel for roll and pitch. Must be non-zero, and exceeded, for target location to be changed with sticks
+);
+#endif
