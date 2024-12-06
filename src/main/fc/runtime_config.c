@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -32,7 +33,8 @@ uint16_t flightModeFlags = 0;
 
 static uint32_t enabledSensors = 0;
 
-// Must be no longer than OSD_WARNINGS_MAX_SIZE (11) to be displayed fully in OSD
+// Name must be no longer than OSD_WARNINGS_MAX_SIZE
+// try to keep names within OSD_WARNINGS_PREFFERED_SIZE
 const char *armingDisableFlagNames[]= {
     "NOGYRO",
     "FAILSAFE",
@@ -64,6 +66,7 @@ const char *armingDisableFlagNames[]= {
     "POS_HOLD_SW",
     "ARM_SWITCH",
 };
+STATIC_ASSERT(ARRAYLEN(armingDisableFlagNames) == ARMING_DISABLE_FLAGS_COUNT, armingDisableFlagNames_size_mismatch);
 
 static armingDisableFlags_e armingDisableFlags = 0;
 
@@ -85,6 +88,17 @@ bool isArmingDisabled(void)
 armingDisableFlags_e getArmingDisableFlags(void)
 {
     return armingDisableFlags;
+}
+
+// return name for given flag
+// will return first name (LSB) if multiple bits are passed
+const char *getArmingDisableFlagName(armingDisableFlags_e flag)
+{
+    if (!flag) {
+        return "NONE";
+    }
+    unsigned idx = ffs(flag & -flag) - 1;   // use LSB if there are multiple bits set
+    return idx < ARRAYLEN(armingDisableFlagNames) ? armingDisableFlagNames[idx] : "UNKNOWN";
 }
 
 /**

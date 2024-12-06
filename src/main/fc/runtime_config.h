@@ -73,12 +73,11 @@ typedef enum {
 
 #define ARMING_DISABLE_FLAGS_COUNT (LOG2(ARMING_DISABLED_ARM_SWITCH) + 1)
 
-extern const char *armingDisableFlagNames[ARMING_DISABLE_FLAGS_COUNT];
-
 void setArmingDisabled(armingDisableFlags_e flag);
 void unsetArmingDisabled(armingDisableFlags_e flag);
 bool isArmingDisabled(void);
 armingDisableFlags_e getArmingDisableFlags(void);
+const char *getArmingDisableFlagName(armingDisableFlags_e flag);
 
 typedef enum {
     ANGLE_MODE      = (1 << 0),
