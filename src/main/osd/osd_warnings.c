@@ -142,7 +142,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;
         } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crashflip mode is activated (not allowed / can't happen)
-            tfp_sprintf(warningText, "CRASH FLIP SWITCH");
+            tfp_sprintf(warningText, "CRASH FLIP SW");
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;
         }
@@ -251,7 +251,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_POS_HOLD_MODE
     if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure()) {
-        tfp_sprintf(warningText, "POS HOLD FAIL");
+        tfp_sprintf(warningText, "POSHOLD FAIL");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
@@ -415,7 +415,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_BATTERY_CONTINUE
     // Show warning if battery is not fresh and battery continue is active
     if (hasUsedMAh()) {
-        tfp_sprintf(warningText, "BATTERY CONTINUE");
+        tfp_sprintf(warningText, "BATT CONTINUE");
         *displayAttr = DISPLAYPORT_SEVERITY_INFO;
         return;
     }
