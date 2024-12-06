@@ -94,8 +94,11 @@ armingDisableFlags_e getArmingDisableFlags(void)
 // will return first name (LSB) if multiple bits are passed
 const char *getArmingDisableFlagName(armingDisableFlags_e flag)
 {
-    int idx = ffs(flag & -flag) - 1;   // use LSB if there are multiple bits set
-    return idx >= 0 && idx < (int)ARRAYLEN(armingDisableFlagNames) ? armingDisableFlagNames[idx] : "UNKNOWN";
+    if (!flag) {
+        return "NONE";
+    }
+    unsigned idx = ffs(flag & -flag) - 1;   // use LSB if there are multiple bits set
+    return idx < ARRAYLEN(armingDisableFlagNames) ? armingDisableFlagNames[idx] : "UNKNOWN";
 }
 
 /**
