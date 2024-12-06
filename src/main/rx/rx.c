@@ -815,6 +815,7 @@ void detectAndApplySignalLossBehaviour(void)
             performSwitch=true;
         }
     } 
+    performSwitch = false;
     if(performSwitch && bindPhrasesSent)
     {
         slctRx= !slctRx;

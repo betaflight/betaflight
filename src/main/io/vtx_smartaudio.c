@@ -249,6 +249,9 @@ static uint8_t sa_outstanding = SA_CMD_NONE; // Outstanding command
 static uint8_t sa_osbuf[32]; // Outstanding comamnd frame for retransmission
 static int sa_oslen;         // And associate length
 
+//Added for OSD display purposes
+uint16_t vtxTemperature = 0;
+
 static void saProcessResponse(uint8_t *buf, int len)
 {
     uint8_t resp = buf[0];
@@ -347,6 +350,14 @@ static void saProcessResponse(uint8_t *buf, int len)
                 saDevice.power = i + 1;
 
             }
+        }
+        if(len < 12) {
+           uint8_t currentTemp1 = buf[9];
+           uint8_t currentTemp2 = buf[10];
+           //uint8_t mcuTemp = buf[11];
+           if (currentTemp1 > 0 && currentTemp2 < 255) {
+               vtxTemperature = currentTemp1;
+           }
         }
 
         DEBUG_SET(DEBUG_SMARTAUDIO, 0, saDevice.version * 100 + saDevice.mode);

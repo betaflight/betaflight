@@ -1240,6 +1240,7 @@ void osdProcessStats2(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_N1_TEMP_SENSOR
+        osdTempValue = vtxTemperature;
         osdTempValue = getExternalTemperature();
         if(osdTempValue > maxOsdTempValue) {
             maxOsdTempValue = osdTempValue;

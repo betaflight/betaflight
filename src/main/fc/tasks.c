@@ -456,6 +456,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 
 #ifdef USE_CRSF_V3
     [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, speedNegotiationProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
+    [TASK_BIND_PHRASE] = DEFINE_TASK("BIND_PHRASE", NULL, NULL, bindPhraseProcess, TASK_PERIOD_HZ(0.2), TASK_PRIORITY_LOWEST),
 #endif
 };
 
@@ -623,6 +624,7 @@ void tasksInit(void)
 #ifdef USE_CRSF_V3
     const bool useCRSF = rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
     setTaskEnabled(TASK_SPEED_NEGOTIATION, useCRSF);
+    setTaskEnabled(TASK_BIND_PHRASE,useCRSF);
 #endif
 }
 

@@ -33,6 +33,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig, PG_NELRS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig,
     .bindPhraseLow = "lowlowlow",
-    .bindPhraseHigh = "highhighhigh"
+    .bindPhraseHigh = "testtesttest"
 );
 #endif

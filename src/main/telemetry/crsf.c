@@ -73,6 +73,8 @@
 #include "crsf.h"
 #include "drivers/pinio.h"
 
+#include "telemetry/md5.h"
+
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
@@ -289,16 +291,22 @@ void crsfFrameHeartbeat(sbuf_t *dst)
 
 void crsfFrameBindPhrase(sbuf_t *dst,bool rxSelect)
 {   
-    char * bindPhrase = nelrsConfigMutable()->bindPhraseHigh;
+    char * bindPhrase = nelrsConfigMutable()->bindPhraseLow;
     if(rxSelect){
-        bindPhrase = nelrsConfigMutable()->bindPhraseLow;
+       bindPhrase = nelrsConfigMutable()->bindPhraseHigh;
     }
+    
+    uint8_t buff[6] = {0};
+    md5String(bindPhrase, buff);
 
     sbufWriteU8(dst, CRSF_FRAME_BIND_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BIND);
-    char buff[16];
-    tfp_sprintf(buff, "%s", bindPhrase);
-    sbufWriteStringWithZeroTerminator(dst, buff);
+    sbufWriteU8(dst,buff[0]);
+    sbufWriteU8(dst,buff[1]);
+    sbufWriteU8(dst,buff[2]);
+    sbufWriteU8(dst,buff[3]);
+    sbufWriteU8(dst,buff[4]);
+    sbufWriteU8(dst,buff[5]);
 }
 
 typedef enum {
@@ -471,6 +479,13 @@ void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
+void bindPhraseProcess(uint32_t currentTime) {
+    UNUSED(currentTime);
+    if(!rxIsReceivingSignal()){
+        crsfSendRXBindPhrases();
+    }
+}
+
 void speedNegotiationProcess(timeUs_t currentTimeUs)
 {
     if (crsfSpeed.hasPendingReply) {
@@ -501,6 +516,8 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
         crsfRxSendTelemetryData(); // prevent overwriting previous data
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
+    } else {
+        
     }
 }
 #endif
@@ -526,6 +543,8 @@ void crsfSendRXBindPhrases(void){
     crsfRxSendTelemetryData();
     crsfFinalize(dst);
     crsfRxSendTelemetryData();
+
+    pinioSet(switchPin,false);
 
     bindPhrasesSent = true;
 }
@@ -723,7 +742,6 @@ void initCrsfTelemetry(void)
     if (!crsfTelemetryEnabled) {
         return;
     }
-
 
     deviceInfoReplyPending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)

@@ -970,7 +970,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
 
 #if defined(USE_N1_TEMP_SENSOR)
 {   
-    tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdTempValue), osdGetTemperatureSymbolForSelectedUnit());
+    tfp_sprintf(element->buff, "VTX:%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdTempValue), osdGetTemperatureSymbolForSelectedUnit());
 
 }
 #else
