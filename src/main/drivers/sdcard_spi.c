@@ -391,15 +391,14 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
     // Block pending completion of SPI access
     spiWait(&sdcard.dev);
 
-    if (dataToken == SDCARD_IDLE_TOKEN) {
+    switch (dataToken) {
+    case SDCARD_IDLE_TOKEN:
         return SDCARD_RECEIVE_BLOCK_IN_PROGRESS;
+    case SDCARD_SINGLE_BLOCK_READ_START_TOKEN:
+       return SDCARD_RECEIVE_SUCCESS;
+    default: 
+       return SDCARD_RECEIVE_ERROR;
     }
-
-    if (dataToken != SDCARD_SINGLE_BLOCK_READ_START_TOKEN) {
-        return SDCARD_RECEIVE_ERROR;
-    }
-
-    return SDCARD_RECEIVE_SUCCESS;
 }
 
 static bool sdcard_sendDataBlockFinish(void)
