@@ -599,7 +599,6 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
 
     // Enable the CS line
     if (chipSelectIO != IO_NONE) {
-        IOInit(chipSelectIO, OWNER_SDCARD_CS, 0);
         IOConfigGPIO(chipSelectIO, SPI_IO_CS_CFG);
     }
 
