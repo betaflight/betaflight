@@ -195,8 +195,13 @@ static bool nullProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 
 STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 {
+#ifndef SIMULATOR_BUILD
     return  pulseDuration >= rxConfig()->rx_min_usec &&
             pulseDuration <= rxConfig()->rx_max_usec;
+#else
+    UNUSED(pulseDuration);
+    return true;
+#endif
 }
 
 #ifdef USE_SERIALRX
