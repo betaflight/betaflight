@@ -134,8 +134,6 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 }
 
-#pragma GCC optimize "O0"
-
 static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
     uint8_t b;
@@ -156,8 +154,6 @@ static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txD
 
     return true;
 }
-
-#pragma GCC optimize "O2"
 
 void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 {
