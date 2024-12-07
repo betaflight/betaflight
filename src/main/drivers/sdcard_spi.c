@@ -126,7 +126,7 @@ busStatus_e sdcard_callbackIdle(uint32_t arg)
         return BUS_READY;
     }
 
-    if (--sdcard->idleCount == 0) {
+    if (--sdcard->idleCount <= 0) {
         dev->bus->curSegment->u.buffers.rxData[0] = 0x00;
         return BUS_ABORT;
     }
@@ -148,7 +148,7 @@ busStatus_e sdcard_callbackNotIdle(uint32_t arg)
         return BUS_READY;
     }
 
-    if (sdcard->idleCount-- == 0) {
+    if (sdcard->idleCount-- <= 0) {
         return BUS_ABORT;
     }
 
@@ -213,9 +213,9 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
  * with the given argument, waits up to SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY bytes for a reply, and returns the
  * first non-0xFF byte of the reply.
  *
- * Upon failure, 0xFF is returned.
+ * Upon failure, -1 is returned.
  */
-static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
+static int sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
 {
     uint8_t command[6] = {
         0x40 | commandCode,
@@ -227,14 +227,14 @@ static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
         commands that require a CRC */
     };
 
-    uint8_t idleByte1;
-    uint8_t idleByte2;
+    uint8_t idleByte;
+    uint8_t cmdResponse;
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-            {.u.buffers = {NULL, &idleByte1}, sizeof(idleByte1), false, sdcard_callbackIdle},
+            {.u.buffers = {NULL, &idleByte}, sizeof(idleByte), false, sdcard_callbackIdle},
             {.u.buffers = {command, NULL}, sizeof(command), false, NULL},
-            {.u.buffers = {NULL, &idleByte2}, sizeof(idleByte2), false, sdcard_callbackNotIdle},
+            {.u.buffers = {NULL, &cmdResponse}, sizeof(cmdResponse), false, sdcard_callbackNotIdle},
             {.u.link = {NULL, NULL}, 0, true, NULL},
 
     };
@@ -246,11 +246,11 @@ static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
     // Block pending completion of SPI access
     spiWait(&sdcard.dev);
 
-    if ((idleByte1 != SDCARD_IDLE_TOKEN) && commandCode != SDCARD_COMMAND_GO_IDLE_STATE) {
-        return 0xFF;
+    if ((idleByte != SDCARD_IDLE_TOKEN) && commandCode != SDCARD_COMMAND_GO_IDLE_STATE) {
+        return -1;
     }
 
-    return idleByte2;
+    return cmdResponse;
 }
 
 static uint8_t sdcard_sendAppCommand(uint8_t commandCode, uint32_t commandArgument)
@@ -358,7 +358,7 @@ busStatus_e sdcard_callbackNotIdleDataBlock(uint32_t arg)
         return BUS_ABORT;
     }
 
-    if (sdcard->idleCount-- == 0) {
+    if (sdcard->idleCount-- <= 0) {
         return BUS_ABORT;
     }
 
@@ -586,7 +586,7 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
     // Transmit at least 74 dummy clock cycles with CS high so the SD card can start up
     IOHi(sdcard.dev.busType_u.spi.csnPin);
 
-    // Note that this does not release the CS at the end of the transaction
+    // Note that CS is not asserted for this transaction
     busSegment_t segments[] = {
             // Write a single 0xff
             {.u.buffers = {NULL, NULL}, SDCARD_INIT_NUM_DUMMY_BYTES, true, NULL},
