@@ -122,7 +122,8 @@ busStatus_e sdcard_callbackIdle(uint32_t arg)
 
     if (idleByte == SDCARD_IDLE_TOKEN) {
         // Default for next call to sdcard_callbackNotIdle()
-        sdcard->idleCount = SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY;        return BUS_READY;
+        sdcard->idleCount = SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY;
+        return BUS_READY;
     }
 
     if (--sdcard->idleCount <= 0) {
