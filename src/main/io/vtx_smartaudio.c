@@ -250,7 +250,10 @@ static uint8_t sa_osbuf[32]; // Outstanding comamnd frame for retransmission
 static int sa_oslen;         // And associate length
 
 //Added for OSD display purposes
-uint16_t vtxTemperature = 0;
+uint8_t vtxTemp1Temperature = 0;
+uint8_t vtxTemp2Temperature = 0;
+uint8_t vtxMcuTemp = 0;
+uint8_t vtxCombinedTemp = 0;
 
 static void saProcessResponse(uint8_t *buf, int len)
 {
@@ -303,38 +306,43 @@ static void saProcessResponse(uint8_t *buf, int len)
             saDevice.willBootIntoPitMode = newBootMode;
         }
 
-        if (saDevice.version == 3) {
-            //read dbm based power levels
-            //aaaaaand promptly forget them. todo: write them into vtxtable pg and load it
-            if (len < 10) { //current power level in dbm field missing or power level length field missing or zero power levels reported
-                dprintf(("processResponse: V2.1 vtx didn't report any power levels\r\n"));
-                break;
-            }
-            saSupportedNumPowerLevels = constrain((int8_t)buf[8], 0, VTX_TABLE_MAX_POWER_LEVELS);
-            //SmartAudio seems to report buf[8] + 1 power levels, but one of them is zero.
-            //zero is indeed a valid power level to set the vtx to, but it activates pit mode.
-            //crucially, after sending 0 dbm, the vtx does NOT report its power level to be 0 dbm.
-            //instead, it reports whatever value was set previously and it reports to be in pit mode.
-            //for this reason, zero shouldn't be used as a normal power level in betaflight.
-#ifdef USE_SMARTAUDIO_DPRINTF
-            if ( len < ( 9 + saSupportedNumPowerLevels )) {
-                dprintf(("processResponse: V2.1 vtx expected %d power levels but packet too short\r\n", saSupportedNumPowerLevels));
-                break;
-            }
-            if (len > (10 + saSupportedNumPowerLevels )) {
-                dprintf(("processResponse: V2.1 %d extra bytes found!\r\n", len - (10 + saSupportedNumPowerLevels)));
-            }
-#endif
-            for ( int8_t i = 0; i < saSupportedNumPowerLevels; i++ ) {
-                saSupportedPowerValues[i] = buf[9 + i + 1];//+ 1 to skip the first power level, as mentioned above
-            }
+        vtxTemp1Temperature = buf[9];
+        vtxTemp2Temperature= buf[10];
+        vtxMcuTemp = buf[11];
+        vtxCombinedTemp = buf[12];
 
-            dprintf(("processResponse: %d power values: %d, %d, %d, %d\r\n",
-                     vtxTablePowerLevels, vtxTablePowerValues[0], vtxTablePowerValues[1],
-                     vtxTablePowerValues[2], vtxTablePowerValues[3]));
-            //dprintf(("processResponse: V2.1 received vtx power value %d\r\n",buf[7]));
-            rawPowerValue = buf[7];
-        }
+//         if (saDevice.version == 3) {
+//             //read dbm based power levels
+//             //aaaaaand promptly forget them. todo: write them into vtxtable pg and load it
+//             if (len < 10) { //current power level in dbm field missing or power level length field missing or zero power levels reported
+//                 dprintf(("processResponse: V2.1 vtx didn't report any power levels\r\n"));
+//                 break;
+//             }
+//             saSupportedNumPowerLevels = constrain((int8_t)buf[8], 0, VTX_TABLE_MAX_POWER_LEVELS);
+//             //SmartAudio seems to report buf[8] + 1 power levels, but one of them is zero.
+//             //zero is indeed a valid power level to set the vtx to, but it activates pit mode.
+//             //crucially, after sending 0 dbm, the vtx does NOT report its power level to be 0 dbm.
+//             //instead, it reports whatever value was set previously and it reports to be in pit mode.
+//             //for this reason, zero shouldn't be used as a normal power level in betaflight.
+// #ifdef USE_SMARTAUDIO_DPRINTF
+//             if ( len < ( 9 + saSupportedNumPowerLevels )) {
+//                 dprintf(("processResponse: V2.1 vtx expected %d power levels but packet too short\r\n", saSupportedNumPowerLevels));
+//                 break;
+//             }
+//             if (len > (10 + saSupportedNumPowerLevels )) {
+//                 dprintf(("processResponse: V2.1 %d extra bytes found!\r\n", len - (10 + saSupportedNumPowerLevels)));
+//             }
+// #endif
+//             for ( int8_t i = 0; i < saSupportedNumPowerLevels; i++ ) {
+//                 saSupportedPowerValues[i] = buf[9 + i + 1];//+ 1 to skip the first power level, as mentioned above
+//             }
+
+//             dprintf(("processResponse: %d power values: %d, %d, %d, %d\r\n",
+//                      vtxTablePowerLevels, vtxTablePowerValues[0], vtxTablePowerValues[1],
+//                      vtxTablePowerValues[2], vtxTablePowerValues[3]));
+//             //dprintf(("processResponse: V2.1 received vtx power value %d\r\n",buf[7]));
+//             rawPowerValue = buf[7];
+//         }
 #ifdef USE_SMARTAUDIO_DPRINTF
         int8_t prevPower = saDevice.power;
 #endif
@@ -351,15 +359,8 @@ static void saProcessResponse(uint8_t *buf, int len)
 
             }
         }
-        if(len < 12) {
-           uint8_t currentTemp1 = buf[9];
-           uint8_t currentTemp2 = buf[10];
-           //uint8_t mcuTemp = buf[11];
-           if (currentTemp1 > 0 && currentTemp2 < 255) {
-               vtxTemperature = currentTemp1;
-           }
-        }
-
+        
+        
         DEBUG_SET(DEBUG_SMARTAUDIO, 0, saDevice.version * 100 + saDevice.mode);
         DEBUG_SET(DEBUG_SMARTAUDIO, 1, saDevice.channel);
         DEBUG_SET(DEBUG_SMARTAUDIO, 2, saDevice.freq);

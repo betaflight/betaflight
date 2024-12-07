@@ -228,4 +228,4 @@ timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
 
 timeUs_t rxFrameTimeUs(void);
 
-extern bool bindPhrasesSent;
+extern int bindPhrasesSent;

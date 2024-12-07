@@ -380,7 +380,6 @@ extern uint16_t osdAuxValue;
 #ifdef USE_N1_TEMP_SENSOR
 extern uint16_t osdTempValue;
 extern uint16_t maxOsdTempValue;
-extern uint16_t vtxTemperature;
 #endif
 
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);

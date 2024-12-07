@@ -69,3 +69,8 @@ extern const char *statusStrings[];
 extern int payloadStateBufferIndex;
 extern int currentStatusMessageIdx;
 extern int bufferSet;
+
+extern uint8_t vtxTemp1Temperature;
+extern uint8_t vtxTemp2Temperature;
+extern uint8_t vtxMcuTemp;
+extern uint8_t vtxCombinedTemp;

@@ -479,9 +479,10 @@ void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
+extern int bindPhrasesSent;
 void bindPhraseProcess(uint32_t currentTime) {
     UNUSED(currentTime);
-    if(!rxIsReceivingSignal()){
+    if(bindPhrasesSent < 3 && !rxIsReceivingSignal()){
         crsfSendRXBindPhrases();
     }
 }
@@ -525,7 +526,7 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
 #if defined(USE_NEROS_RX)
 //TODO: Pulling extern for switchPinio was giving undefined reference, re-factor where this is defined
 const uint8_t switchPin = 2;
-bool bindPhrasesSent = false;
+int bindPhrasesSent = 0;
 void crsfSendRXBindPhrases(void){
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
@@ -546,7 +547,7 @@ void crsfSendRXBindPhrases(void){
 
     pinioSet(switchPin,false);
 
-    bindPhrasesSent = true;
+    bindPhrasesSent+=1;
 }
 #endif
 
