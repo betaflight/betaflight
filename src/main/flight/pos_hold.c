@@ -17,7 +17,7 @@
 
 #include "platform.h"
 
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
 
 #include "math.h"
 #include "build/debug.h"

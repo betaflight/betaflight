@@ -1009,11 +1009,11 @@ void init(void)
 #endif
 
 // autopilot must be initialised before modes that require the autopilot pids
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
     altHoldInit();
 #endif
 
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
     posHoldInit();
 #endif
 

@@ -247,12 +247,12 @@
 
 #endif // USE_GPS
 
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
 #define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband"
 #define PARAM_NAME_ALT_HOLD_THROTTLE_RESPONSE "alt_hold_throttle_response"
 #endif
 
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
 #define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
 #define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband"
 #endif

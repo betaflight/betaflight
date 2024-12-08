@@ -18,7 +18,7 @@
 #include "platform.h"
 #include "math.h"
 
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
 
 #include "build/debug.h"
 #include "common/maths.h"

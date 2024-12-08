@@ -101,7 +101,7 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_AKK_SMARTAUDIO
         BUILD_OPTION_AKK_SMARTAUDIO,
 #endif
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
         BUILD_OPTION_ALT_HOLD_MODE,
 #endif
 #ifdef USE_BATTERY_CONTINUE

@@ -1805,7 +1805,7 @@ case MSP_NAME:
     case MSP_RC_DEADBAND:
         sbufWriteU8(dst, rcControlsConfig()->deadband);
         sbufWriteU8(dst, rcControlsConfig()->yaw_deadband);
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
         sbufWriteU8(dst, posHoldConfig()->pos_hold_deadband);
 #else
         sbufWriteU8(dst, 0);
@@ -2965,7 +2965,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_RC_DEADBAND:
         rcControlsConfigMutable()->deadband = sbufReadU8(src);
         rcControlsConfigMutable()->yaw_deadband = sbufReadU8(src);
-#ifdef USE_POS_HOLD_MODE
+#ifdef USE_POSITION_HOLD
         posHoldConfigMutable()->pos_hold_deadband = sbufReadU8(src);
 #else
         sbufReadU8(src);
