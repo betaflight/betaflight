@@ -42,8 +42,10 @@ else
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
-# remove both suffixes for tar.xz
-ARM_SDK_DIR := $(TOOLS_DIR)/$(basename $(basename $(notdir $(ARM_SDK_URL))))
+# remove compression suffixes
+ARM_SDK_DIR := $(TOOLS_DIR)/$(patsubst %.zip, %, 	\
+			    $(patsubst %.tar.xz, %, 	\
+			    $(notdir $(ARM_SDK_URL))))
 
 SDK_INSTALL_MARKER := $(ARM_SDK_DIR)/.installed
 
