@@ -24,7 +24,7 @@
  *
  * Generator    : `src/utils/make-build-info.py`
  * Source       : https://build.betaflight.com/api/options/4.6.0
- * Input hash   : 850eb668065e124eeae185deb3e3fda1
+ * Input hash   : 5da6ff60951a04dc9a29ea0758aae1df
  */
 
 #pragma once
@@ -55,20 +55,21 @@
 // General Options
 #define BUILD_OPTION_ACRO_TRAINER               16404
 #define BUILD_OPTION_AKK_SMARTAUDIO             16405
-#define BUILD_OPTION_ALT_HOLD_MODE              16422
+#define BUILD_OPTION_ALTITUDE_HOLD              16422
 #define BUILD_OPTION_BATTERY_CONTINUE           16406
 #define BUILD_OPTION_CAMERA_CONTROL             16407
 #define BUILD_OPTION_DASHBOARD                  16408
 #define BUILD_OPTION_EMFAT_TOOLS                16409
 #define BUILD_OPTION_ESCSERIAL_SIMONK           16410
-#define BUILD_OPTION_FRSKYOSD                   16411
 #define BUILD_OPTION_GPS                        16412
 #define BUILD_OPTION_LED_STRIP                  16413
 #define BUILD_OPTION_LED_STRIP_64               16414
 #define BUILD_OPTION_MAG                        16415
 #define BUILD_OPTION_OSD_SD                     16416
 #define BUILD_OPTION_OSD_HD                     16417
+#define BUILD_OPTION_FRSKYOSD                   16411
 #define BUILD_OPTION_PINIO                      16418
+#define BUILD_OPTION_POSITION_HOLD              16425
 #define BUILD_OPTION_RACE_PRO                   16419
 #define BUILD_OPTION_SOFTSERIAL                 16423
 #define BUILD_OPTION_SERVOS                     16420
