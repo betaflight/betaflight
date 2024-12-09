@@ -238,6 +238,10 @@ ifneq ($(SKIPCHECKS),yes)
 ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
 $(error Speed optimised sources not valid: $(strip $(filter-out $(SRC),$(SPEED_OPTIMISED_SRC))))
 endif
+
+ifneq ($(filter-out $(SRC),$(SIZE_OPTIMISED_SRC)),)
+$(error Size optimised sources not valid: $(strip $(filter-out $(SRC),$(SIZE_OPTIMISED_SRC))))
+endif
 endif
 
 ###############################################################################

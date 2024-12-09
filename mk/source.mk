@@ -391,7 +391,24 @@ SIZE_OPTIMISED_SRC += \
             drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
-            drivers/accgyro/accgyro_spi_lsm6dso_init.c
+            drivers/accgyro/accgyro_spi_lsm6dso_init.c \
+            drivers/barometer/barometer_bmp085.c \
+            drivers/barometer/barometer_bmp280.c \
+            drivers/barometer/barometer_ms5611.c \
+            drivers/barometer/barometer_lps.c \
+            drivers/barometer/barometer_qmp6988.c \
+            drivers/barometer/barometer_2smpb_02b.c \
+            drivers/compass/compass_ak8963.c \
+            drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_qmc5883l.c \
+            drivers/compass/compass_lis2mdl.c \
+            drivers/compass/compass_lis3mdl.c \
+            drivers/compass/compass_ist8310.c \
+            drivers/display_ug2864hsweg01.c \
+            drivers/vtx_rtc6705_soft_spi.c \
+            drivers/vtx_rtc6705.c
+
 
 SPEED_OPTIMISED_SRC += \
             drivers/bus_spi.c \
@@ -467,41 +484,14 @@ SPEED_OPTIMISED_SRC += \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
 
-SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
-            $(shell find $(SRC_DIR) -name '*_init.c') \
-            bus_bst_stm32f30x.c \
+SIZE_OPTIMISED_SRC += \
+            sensors/gyro_init.c \
+            sensors/acceleration_init.c \
+            flight/pid_init.c \
+            flight/mixer_init.c \
             cli/cli.c \
             cli/settings.c \
-            drivers/accgyro/accgyro_fake.c \
-            drivers/barometer/barometer_bmp085.c \
-            drivers/barometer/barometer_bmp280.c \
-            drivers/barometer/barometer_fake.c \
-            drivers/barometer/barometer_ms5611.c \
-            drivers/barometer/barometer_lps.c \
-            drivers/barometer/barometer_qmp6988.c \
-            drivers/barometer/barometer_2smpb_02b.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_i2c_timing.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
-            drivers/compass/compass_ak8963.c \
-            drivers/compass/compass_ak8975.c \
-            drivers/compass/compass_fake.c \
-            drivers/compass/compass_hmc5883l.c \
-            drivers/compass/compass_qmc5883l.c \
-            drivers/compass/compass_lis2mdl.c \
-            drivers/compass/compass_lis3mdl.c \
-            drivers/compass/compass_ist8310.c \
-            drivers/display_ug2864hsweg01.c \
-            drivers/inverter.c \
             drivers/light_ws2811strip.c \
-            drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_tcp.c \
-            drivers/serial_uart_pinconfig.c \
-            drivers/serial_usb_vcp.c \
-            drivers/vtx_rtc6705_soft_spi.c \
-            drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/init.c \
             fc/board_info.c \
@@ -509,7 +499,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/feature.c \
             config/config_streamer.c \
             config/simplified_tuning.c \
-            i2c_bst.c \
             io/dashboard.c \
             io/serial.c \
             io/serial_4way.c \
@@ -550,9 +539,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             rx/rx_bind.c \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
-
-SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
-            drivers/bus_i2c_hal_init.c
 
 # check if target.mk supplied
 SRC := $(STARTUP_SRC) $(MCU_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)

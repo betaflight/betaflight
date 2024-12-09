@@ -212,6 +212,15 @@ SPEED_OPTIMISED_SRC += \
             common/stm32/system.c \
             STM32/exti.c
 
+SIZE_OPTIMISED_SRC += \
+            STM32/serial_usb_vcp.c \
+            drivers/inverter.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c
+
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
             STM32/vcp_hal/usbd_desc.c \
