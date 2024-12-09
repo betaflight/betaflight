@@ -37,7 +37,7 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 // bitmask of features that are supported in current build configuration
 uint32_t featuresSupportedByBuild =
     0
-#ifdef USE_PPM
+#ifdef USE_RX_PPM
     | FEATURE_RX_PPM
 #endif
     | FEATURE_INFLIGHT_ACC_CAL // always available
