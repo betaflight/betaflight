@@ -27,5 +27,5 @@ typedef struct altitudeState_s {
 void updateAccItegralCallback(timeUs_t currentTimeUs);
 #endif
 void altSensorFusionInit(void);
-void altSensorFusionUpdate(void);
+bool altSensorFusionUpdate(void);
 void updateBaroStateCallback(void);

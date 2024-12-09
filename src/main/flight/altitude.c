@@ -51,27 +51,32 @@
 #include "flight/altitude.h"
 
 
-#define SENSOR_VEL_ERROR_THRESH   (1000.0f) // the error above this value excludes the sensor from the fusion and changes the offset
-#define SENSOR_VEL_MAX_ERROR      (10000.0f)
-#define SENSOR_MAX_PENALITY_ITERS (100)
-#define SENSOR_MAX_OFFSET_ERROR   (1000.0f)
+#define SENSOR_VEL_ERROR_THRESH   1000.0f // the error above this value excludes the sensor from the fusion and changes the offset
+#define SENSOR_VEL_MAX_ERROR      10000.0f
+#define SENSOR_MAX_PENALITY_ITERS 10
+#define SENSOR_MAX_OFFSET_ERROR   1000.0f
 
-#define BARO_VAR_ALT_COEFF       (0.01f)
-#define BARO_VAR_VEL_COEFF       (0.01f)
-#define BARO_VAR_TEMP_COEFF      (0.01f)
-#define BARO_VAR_VEL_ERROR_COEFF (1.00f)
+#define BARO_VAR_ALT_COEFF       0.01f
+#define BARO_VAR_VEL_COEFF       0.01f
+#define BARO_VAR_TEMP_COEFF      0.01f
+#define BARO_VAR_VEL_ERROR_COEFF 1.00f
+#define BARO_TASK_INTERVAL_CALC_ITER 10 
 
-#define RANGEFINDER_ACC_ERROR_THRESH    (50.0f) 
-#define RANGEFINDER_RAPID_ERR_THRESH    (100.0f)
-#define RANGEFINDER_VAR_VEL_ERROR_COEFF (2.0f)
-#define RANGEFINDER_CONST_VAR           (10.0f)
+#define RANGEFINDER_ACC_ERROR_THRESH    50.0f
+#define RANGEFINDER_RAPID_ERR_THRESH    100.0f
+#define RANGEFINDER_VAR_VEL_ERROR_COEFF 2.0f
+#define RANGEFINDER_CONST_VAR           10.0f
 
-#define GPS_VAR_DOP_COEFF       (1.0f)
-#define GPS_VAR_VEL_ERROR_COEFF (2.0f)
-#define GPS_RAPID_ERR_THRESH    (100.0f)
-#define GPS_ACC_ERROR_THRESH    (200.0f)
+#define GPS_VAR_DOP_COEFF       1.0f
+#define GPS_VAR_VEL_ERROR_COEFF 2.0f
+#define GPS_RAPID_ERR_THRESH    100.0f
+#define GPS_ACC_ERROR_THRESH    200.0f
+#define GPS_PDOP_MIN_THRESHOLD  400.0f
 
 typedef enum {
+#ifdef USE_ACC
+    SF_ACC,
+#endif
 #ifdef USE_BARO
     SF_BARO,
 #endif
@@ -79,9 +84,6 @@ typedef enum {
     SF_GPS,
 #endif
 // the only must for the order of the sensors is that the local sensors like the rangefinder should be last after the global sensors like the GPS and Baro
-#ifdef USE_ACC
-    SF_ACC,
-#endif
 #ifdef USE_RANGEFINDER
     SF_RANGEFINDER,
 #endif
@@ -125,35 +127,35 @@ accIntegral_t accIntegral;
 #ifdef USE_BARO
 void updateBaroReading(sensorState_t *sensor);
 void updateBaroVariance(sensorState_t *sensor);
-void applyBaroFilter(float *value);
+void updateBaroOffset(sensorState_t *sensor);
+void applyBaroFilter(float *dst, float newValue);
 #endif
 
 #ifdef USE_GPS
 void updateGpsReading(sensorState_t *sensor);
 void updateGpsVariance(sensorState_t *sensor);
-void updateGpsOffset(sensorState_t *sensor);
-void applyGpsFilter(float *value);
 #endif
 
 #ifdef USE_RANGEFINDER
 void updateRangefinderReading(sensorState_t *sensor);
 void updateRangefinderVariance(sensorState_t *sensor);
-void updateRangefinderOffset(sensorState_t *sensor);
-void applyRangefinderFilter(float *value);
 #endif
 
 void updateSensorOffset(sensorState_t *sensor);
 void updateVelError(sensorState_t *sensor);
 void updateSensorFusability(sensorState_t *sensor);
-void sensorUpdateIteration(sensorState_t *sensor);
+bool sensorUpdateIteration(sensorState_t *sensor);
 void doNothing(sensorState_t *sensor);
 
-sensorState_t altSenFusSources[SENSOR_COUNT];
-altitudeState_t altitudeState;
-velocity3D_t velocity3DCmS;
+static sensorState_t altSenFusSources[SENSOR_COUNT];
 static KalmanFilter kf;
+static velocity3D_t velocity3DCmS;
+altitudeState_t altitudeState;
 
 void altSensorFusionInit(void) {
+velocity3DCmS.value = 0;
+velocity3DCmS.isValid = false;
+
 #ifdef USE_ACC
     altSenFusSources[SF_ACC].updateReading  = updateAccReading;
     altSenFusSources[SF_ACC].updateVariance = doNothing;
@@ -167,7 +169,7 @@ void altSensorFusionInit(void) {
 #ifdef USE_BARO
     altSenFusSources[SF_BARO].updateReading  = updateBaroReading;
     altSenFusSources[SF_BARO].updateVariance = updateBaroVariance;
-    altSenFusSources[SF_BARO].updateOffset   = updateSensorOffset;
+    altSenFusSources[SF_BARO].updateOffset   = updateBaroOffset;
     altSenFusSources[SF_BARO].type = SF_BARO;
     altSenFusSources[SF_BARO].isValid = isBaroReady();
     altSenFusSources[SF_BARO].toFuse = true;
@@ -180,6 +182,7 @@ void altSensorFusionInit(void) {
     altSenFusSources[SF_GPS].type = SF_GPS;
     altSenFusSources[SF_GPS].isValid = false;
     altSenFusSources[SF_GPS].toFuse = true;
+    velocity3DCmS.isValid = true;
 #endif
 
 #ifdef USE_RANGEFINDER
@@ -191,14 +194,10 @@ void altSensorFusionInit(void) {
     altSenFusSources[SF_RANGEFINDER].toFuse = true;
 #endif
 
-    kf_init(&kf, 0.0f, 1.0f, 1.0f);
-
-    velocity3DCmS.value = 0;
-    velocity3DCmS.isValid = false;
+    kf_init(&kf, 0.0f, 1.0f, 10.0f);
 }
 
-void sensorUpdateIteration(sensorState_t *sensor) {
-    SensorMeasurement tempSensorMeas;
+bool sensorUpdateIteration(sensorState_t *sensor) {
 
     sensor->updateReading(sensor);
     updateVelError(sensor);
@@ -207,40 +206,46 @@ void sensorUpdateIteration(sensorState_t *sensor) {
     sensor->updateOffset(sensor);
     
     if (sensor->isValid && sensor->toFuse) {
+        SensorMeasurement tempSensorMeas;
         tempSensorMeas.value    = sensor->currentAltReadingCm - sensor->zeroAltOffsetCm;
         tempSensorMeas.variance = sensor->variance;
         kf_update(&kf, tempSensorMeas);
+        return true;
     }
+    return false;
 }
 
-void altSensorFusionUpdate(void) {
+bool altSensorFusionUpdate(void) {
     static timeMs_t prevTimeMs = 0;
     timeMs_t deltaTimeMs = millis() - prevTimeMs;
     prevTimeMs = millis();
 
     kf_update_variance(&kf);
     float previousAltitude = altitudeState.distCm;
+    bool haveAltitude = false;
     for (sensorState_t * sensor = altSenFusSources; sensor < altSenFusSources + SENSOR_COUNT; sensor++) {
-        if (sensor->type == SF_BARO) { // the barometer is updated with a callback since it is typically runs with higher frequency
+        if (sensor->type == SF_GPS) {  // ignore gps for now 
             continue;
         }
-        sensorUpdateIteration(sensor);
+        haveAltitude |= sensorUpdateIteration(sensor);
     }
+
     altitudeState.distCm     = kf.estimatedValue; 
     altitudeState.variance   = kf.estimatedVariance;
     altitudeState.velocityCm = (altitudeState.distCm - previousAltitude) * 1000 / deltaTimeMs;
     previousAltitude         = altitudeState.distCm;
-   
-    DEBUG_SET(DEBUG_ALTITUDE, 0, altSenFusSources[SF_BARO].isValid ? lrintf(altSenFusSources[SF_BARO].currentAltReadingCm - altSenFusSources[SF_BARO].zeroAltOffsetCm)        : -1);
-    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(altSenFusSources[SF_GPS].currentAltReadingCm - altSenFusSources[SF_GPS].zeroAltOffsetCm));
+    
+    DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(altitudeState.distCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(altSenFusSources[SF_BARO].currentAltReadingCm - altSenFusSources[SF_BARO].zeroAltOffsetCm));
     DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(altSenFusSources[SF_RANGEFINDER].currentAltReadingCm - altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
-    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(altitudeState.distCm));
-    DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(altSenFusSources[SF_BARO].zeroAltOffsetCm));
-    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(altSenFusSources[SF_GPS].zeroAltOffsetCm));
-    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(altSenFusSources[SF_BARO].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(altSenFusSources[SF_BARO].variance));
+    DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(altSenFusSources[SF_RANGEFINDER].variance));
     DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(altitudeState.variance));
-}
 
+    return haveAltitude;
+}
 
 void updateSensorOffset(sensorState_t *sensor) {
     if (!sensor->isValid) {
@@ -250,20 +255,15 @@ void updateSensorOffset(sensorState_t *sensor) {
     if (!ARMING_FLAG(ARMED)) {// default offset update when not armed
         sensor->zeroAltOffsetCm = 0.2f * sensor->currentAltReadingCm + 0.8f * sensor->zeroAltOffsetCm;
     } else { // when armed the offset should be updated according to the velocity error value
-        // float estAlt = sensor->currentAltReadingCm - sensor->zeroAltOffsetCm;
         float newOffset = sensor->currentAltReadingCm - kf.estimatedValue;
-        if (sensor->velError > SENSOR_VEL_ERROR_THRESH) {
-            sensor->zeroAltOffsetCm = newOffset;
-            sensor->velError = 0;
-        } else { // update the offset smoothly using the error value, if the error is 0 then no update is done
-            // float correctnessRatio = (float)(SENSOR_VEL_MAX_ERROR - sensor->velError) / SENSOR_VEL_MAX_ERROR;
-            // sensor->zeroAltOffsetCm = (correctnessRatio * sensor->zeroAltOffsetCm) 
-            //                         + ((1.0f - correctnessRatio) * newOffset);
+        if (sensor->penalityIters > 0) {
+            sensor->zeroAltOffsetCm = 0.5f * (newOffset + sensor->zeroAltOffsetCm);
+        }
+        else { // detect a ramp in the sensor readings by accumulating the error
             sensor->offsetError += newOffset - sensor->zeroAltOffsetCm;
             if (fabsf(sensor->offsetError) > SENSOR_MAX_OFFSET_ERROR) {
                 sensor->zeroAltOffsetCm = 0.01f * newOffset + 0.99f * sensor->zeroAltOffsetCm;
-                // decaying the error
-                sensor->offsetError = 0.99f * sensor->offsetError;
+                sensor->offsetError = 0.99f * sensor->offsetError; // decaying the error
             }
         }
     }
@@ -371,7 +371,7 @@ void applyAccVelFilter(float *velocity) {
 
 #ifdef USE_BARO
 void updateBaroStateCallback(void) {
-    sensorUpdateIteration(&altSenFusSources[SF_BARO]);
+    applyBaroFilter(&altSenFusSources[SF_BARO].currentAltReadingCm, getBaroAltitude());
 }
 
 void updateBaroReading(sensorState_t *sensor) {
@@ -384,16 +384,14 @@ void updateBaroReading(sensorState_t *sensor) {
     static uint32_t prevTimeMs = 0;
 
     if (firstRun) { // init
-        previousAltitude = getBaroAltitude();
-        sensor->zeroAltOffsetCm = previousAltitude; // init the offset with the first reading
+        previousAltitude        = sensor->currentAltReadingCm;
+        sensor->zeroAltOffsetCm = sensor->currentAltReadingCm; // init the offset with the first reading
         firstRun = false;
         prevTimeMs = millis();
     }
 
     sensor->deltaTimeMs = millis() - prevTimeMs;
 
-    sensor->currentAltReadingCm = getBaroAltitude();
-    applyBaroFilter(&sensor->currentAltReadingCm);
     sensor->velocityAltCmS = (sensor->currentAltReadingCm - previousAltitude) * 1000 / sensor->deltaTimeMs;
     previousAltitude = sensor->currentAltReadingCm;
 
@@ -429,18 +427,46 @@ void updateBaroVariance(sensorState_t *sensor) {
     sensor->variance = 0.9f * sensor->variance + 0.1f * newVariance;
 }
 
-void applyBaroFilter(float *value) {
+void updateBaroOffset(sensorState_t *sensor) {
+    if (!sensor->isValid) {
+        return;
+    }
+
+    if (!ARMING_FLAG(ARMED)) { // default offset update when not armed
+        sensor->zeroAltOffsetCm = 0.2f * sensor->currentAltReadingCm + 0.8f * sensor->zeroAltOffsetCm;
+    }
+}
+
+void applyBaroFilter(float *dst, float newValue) {
     static pt2Filter_t baroLpfFilter;
     static bool firstRun = true;
-
+    // calculate the task interval for the first few iterations in ms (can this be done better ? from the baro dev ?)
+    static int8_t taskIntervalIter = BARO_TASK_INTERVAL_CALC_ITER;
+    static uint16_t taskInterval = 0;
+    if (taskIntervalIter > 0) {
+        static bool firstIter = true;
+        static uint16_t prevTimeMs = 0;
+        if (firstIter) {
+            prevTimeMs = millis();
+            firstIter = false;
+            return;
+        }
+        taskInterval += millis() - prevTimeMs;
+        taskIntervalIter--;
+        prevTimeMs = millis();
+        if (taskIntervalIter == 0) {
+            taskInterval /= BARO_TASK_INTERVAL_CALC_ITER;
+        }
+        return;
+    }
     if (firstRun) {
         const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
-        const float altitudeGain     = pt2FilterGain(altitudeCutoffHz, HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ));
+        const float altitudeGain     = pt2FilterGain(altitudeCutoffHz,  taskInterval);
         pt2FilterInit(&baroLpfFilter, altitudeGain);
         firstRun = false;
     }
 
-    *value = pt2FilterApply(&baroLpfFilter, *value);
+    *dst = pt2FilterApply(&baroLpfFilter, newValue);
 }
 #endif // USE_BARO
 
@@ -450,11 +476,14 @@ void updateGpsReading(sensorState_t *sensor) {
     static bool firstRun = true;
     static float previousAltitude = 0.0f;
     bool hasNewData = gpsSol.time != prevTimeStamp;
+    bool hdopIsGood = (gpsSol.dop.pdop > 0 && gpsSol.dop.pdop < GPS_PDOP_MIN_THRESHOLD)
+                   || (gpsSol.dop.hdop > 0 && gpsSol.dop.hdop < GPS_PDOP_MIN_THRESHOLD);
     
     sensor->isValid = gpsIsHealthy()
                    && sensors(SENSOR_GPS)
                    && STATE(GPS_FIX) 
-                   && hasNewData;
+                   && hasNewData
+                   && hdopIsGood;
 
     if (!sensor->isValid) {
 #ifndef USE_ACC
@@ -471,7 +500,6 @@ void updateGpsReading(sensorState_t *sensor) {
     }
 
     sensor->currentAltReadingCm = gpsSol.llh.altCm;
-    applyGpsFilter(&sensor->currentAltReadingCm);
 
 #ifndef USE_ACC
     velocity3DCmS.value = gpsSol.speed3d * 10;
@@ -498,44 +526,7 @@ void updateGpsVariance(sensorState_t *sensor) {
         newVariance += 10000.0f; 
     }
 
-    sensor->variance = 0.9f * sensor->variance + 0.1f * newVariance;
-}
-
-void updateGpsOffset(sensorState_t *sensor) {
-    if (!sensor->isValid) {
-        return;
-    }
-
-    if (!ARMING_FLAG(ARMED)) { // default offset update when not armed
-        updateSensorOffset(sensor);
-    } else { 
-        // the offset calculated when not armed is not accurate anymore, in case of getting more satalites, the offset should be updated.
-        static float accError = 0;
-        float estAlt = sensor->currentAltReadingCm - sensor->zeroAltOffsetCm;
-        float error = (estAlt - kf.estimatedValue);
-
-        if (fabsf(error) > GPS_RAPID_ERR_THRESH) { // if the error is too high, update the offset directly
-            sensor->zeroAltOffsetCm = sensor->zeroAltOffsetCm + error;
-            return;
-        } else { // otherwise, add the error to the accumlated error and smoothly update the offset if the error is high enough
-            accError += error;
-            if (accError > GPS_ACC_ERROR_THRESH) {
-                sensor->zeroAltOffsetCm = 0.99f * sensor->zeroAltOffsetCm + 0.01f * (estAlt - kf.estimatedValue);
-            }
-        }
-    }
-}
-
-void applyGpsFilter(float *value) {
-    static pt2Filter_t filter;
-    static bool firstRun = true;
-
-    if (firstRun) {
-        pt2FilterInit(&filter, 0.5);
-        firstRun = false;
-    }
-
-    *value = pt2FilterApply(&filter, *value);
+    sensor->variance = newVariance;
 }
 
 #endif // USE_GPS
@@ -546,7 +537,7 @@ void updateRangefinderReading(sensorState_t *sensor) {
     static bool firstRun = true;
     static float previousAltitude = 0.0f;
     static float prevReadingTime = 0;
-    int32_t rfAlt = getRangefinder()->calculatedAltitude;
+    int32_t rfAlt   = getRangefinder()->calculatedAltitude;
     bool hasNewData = getRangefinder()->lastValidResponseTimeMs != prevReadingTime;
 
     sensor->isValid = rangefinderIsHealthy() 
@@ -560,14 +551,12 @@ void updateRangefinderReading(sensorState_t *sensor) {
 
     if (firstRun) {
         previousAltitude = rfAlt;
-        sensor->zeroAltOffsetCm = rfAlt;
         firstRun = false;
         prevReadingTime = getRangefinder()->lastValidResponseTimeMs;
     }
 
     sensor->deltaTimeMs = getRangefinder()->lastValidResponseTimeMs - prevReadingTime;
     sensor->currentAltReadingCm = rfAlt;
-    // applyRangefinderFilter(&sensor->currentAltReadingCm);
     sensor->velocityAltCmS = (sensor->currentAltReadingCm - previousAltitude) * 1000.0f / sensor->deltaTimeMs;
     previousAltitude = sensor->currentAltReadingCm;
     prevReadingTime = getRangefinder()->lastValidResponseTimeMs;
@@ -582,39 +571,5 @@ void updateRangefinderVariance(sensorState_t *sensor) {
     sensor->variance = 0.9f * sensor->variance + 0.1f * newVariance;
 }
 
-void updateRangefinderOffset(sensorState_t *sensor) {
-    if (!sensor->isValid) {
-        return;
-    }
-
-    if (!ARMING_FLAG(ARMED)) { // default offset update when not armed
-        sensor->zeroAltOffsetCm = 0.2f * sensor->currentAltReadingCm + 0.8f * sensor->zeroAltOffsetCm;
-    } else { // when armed the offset should be updated according to the velocity error value
-        float estAlt = sensor->currentAltReadingCm - sensor->zeroAltOffsetCm;
-        float error = (estAlt - kf.estimatedValue);
-        if (sensor->velError > SENSOR_VEL_ERROR_THRESH) {
-            sensor->zeroAltOffsetCm += error;
-        } else { // update the offset smoothly using the error value, if the error is 0 then no update is done
-            // this is not effective, we should find a way to fix the position drift of the rangefinder or gps
-
-            float correctnessRatio = (float)(SENSOR_VEL_MAX_ERROR - sensor->velError) / SENSOR_VEL_MAX_ERROR;
-            sensor->zeroAltOffsetCm = (correctnessRatio * sensor->zeroAltOffsetCm) 
-                                    + ((1.0f - correctnessRatio) * (estAlt - kf.estimatedValue));
-        }
-    }
-}
-
-void applyRangefinderFilter(float *value) {
-    static pt2Filter_t filter;
-    static bool firstRun = true;
-
-    if (firstRun) {
-        pt2FilterInit(&filter, 0.5);
-        firstRun = false;
-    }
-
-    *value = pt2FilterApply(&filter, *value);
-}
 #endif // USE_RANGEFINDER
-
 #endif // USE_BARO || USE_GPS || USE_RANGEFINDER
