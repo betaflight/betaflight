@@ -59,6 +59,7 @@
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "flight/alt_hold.h"
+#include "flight/altitude.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -156,6 +157,7 @@ static void taskBatteryAlerts(timeUs_t currentTimeUs)
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     accUpdate(currentTimeUs);
+    updateAccItegralCallback(currentTimeUs);
 }
 #endif
 
@@ -259,6 +261,7 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
         if (newDeadline != 0) {
             rescheduleTask(TASK_SELF, newDeadline);
         }
+        updateBaroStateCallback();
     }
 }
 #endif

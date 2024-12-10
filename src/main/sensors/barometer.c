@@ -528,4 +528,9 @@ static void performBaroCalibrationCycle(const float altitude)
     }
 }
 
+int32_t getBaroTemperature(void)
+{
+    return baro.temperature;
+} 
+
 #endif /* BARO */

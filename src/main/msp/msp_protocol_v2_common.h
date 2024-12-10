@@ -23,3 +23,5 @@
 
 // Sensors
 #define MSP2_SENSOR_GPS                 0x1F03
+// TODO: implement new, extensible rangefinder protocol
+#define MSP2_SENSOR_RANGEFINDER_LIDARMT 0x1F01

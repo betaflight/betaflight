@@ -89,7 +89,7 @@
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
-        .device = UARTDEV_1,
+        .identifier = SERIAL_PORT_USART1,
         .reg = USART1,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART1_RX,
@@ -120,7 +120,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART2
     {
-        .device = UARTDEV_2,
+        .identifier = SERIAL_PORT_USART2,
         .reg = USART2,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART2_RX,
@@ -151,7 +151,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART3
     {
-        .device = UARTDEV_3,
+        .identifier = SERIAL_PORT_USART3,
         .reg = USART3,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART3_RX,
@@ -182,7 +182,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART4
     {
-        .device = UARTDEV_4,
+        .identifier = SERIAL_PORT_UART4,
         .reg = UART4,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART4_RX,
@@ -213,7 +213,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART5
     {
-        .device = UARTDEV_5,
+        .identifier = SERIAL_PORT_UART5,
         .reg = UART5,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART5_RX,
@@ -246,7 +246,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART6
     {
-        .device = UARTDEV_6,
+        .identifier = SERIAL_PORT_USART6,
         .reg = USART6,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART6_RX,
@@ -279,7 +279,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART7
     {
-        .device = UARTDEV_7,
+        .identifier = SERIAL_PORT_UART7,
         .reg = UART7,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART7_RX,
@@ -313,7 +313,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART8
     {
-        .device = UARTDEV_8,
+        .identifier = SERIAL_PORT_UART8,
         .reg = UART8, //USE UART8 FOR PIN CONFIG
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_UART8_RX,
@@ -348,79 +348,4 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 };
 
-uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
-{
-    uartDevice_t *uartdev = uartDevmap[device];
-    if (!uartdev) {
-        return NULL;
-    }
-
-    uartPort_t *s = &(uartdev->port);
-
-    s->port.vTable = uartVTable;
-
-    s->port.baudRate = baudRate;
-
-    const uartHardware_t *hardware = uartdev->hardware;
-
-    s->USARTx = hardware->reg;
-
-    s->port.rxBuffer = hardware->rxBuffer;
-    s->port.txBuffer = hardware->txBuffer;
-    s->port.rxBufferSize = hardware->rxBufferSize;
-    s->port.txBufferSize = hardware->txBufferSize;
-
-    s->checkUsartTxOutput = checkUsartTxOutput;
-
-#ifdef USE_DMA
-    uartConfigureDma(uartdev);
-#endif
-
-    if (hardware->rcc) {
-        RCC_ClockCmd(hardware->rcc, ENABLE);
-    }
-
-    IO_t txIO = IOGetByTag(uartdev->tx.pin);
-    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
-
-    uartdev->txPinState = TX_PIN_IGNORE;
-
-    if ((options & SERIAL_BIDIR) && txIO) {
-        //mode,speed,otype,pupd
-        ioConfig_t ioCfg = IO_CONFIG(
-            GPIO_MODE_MUX,
-            GPIO_DRIVE_STRENGTH_STRONGER,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PULL_DOWN : GPIO_PULL_UP
-        );
-        IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO, ioCfg, uartdev->tx.af);
-    } else {
-        if ((mode & MODE_TX) && txIO) {
-            IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-
-            if (((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) && !(options & SERIAL_BIDIR_PP_PD)) {
-                uartdev->txPinState = TX_PIN_ACTIVE;
-                // Switch TX to an input with pullup so it's state can be monitored
-                uartTxMonitor(s);
-            } else {
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
-            }
-        }
-
-        if ((mode & MODE_RX) && rxIO) {
-            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rx.af);
-        }
-    }
-
-#ifdef USE_DMA
-    if (!s->rxDMAResource)
-#endif
-    {
-        nvic_irq_enable(hardware->irqn,NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
-    }
-
-    return s;
-}
 #endif // USE_UART

@@ -237,10 +237,10 @@ void spektrumBind(rxConfig_t *rxConfig)
         if (!portConfig) {
             return;
         }
-
-        int index = SERIAL_PORT_IDENTIFIER_TO_INDEX(portConfig->identifier);
-        ioTag_t txPin = serialPinConfig()->ioTagTx[index];
-        ioTag_t rxPin = serialPinConfig()->ioTagRx[index];
+#if defined(USE_UART) || defined(USE_LPUART) || defined(USE_SOFTSERIAL)
+        const int resourceIndex = serialResourceIndex(portConfig->identifier);
+        const ioTag_t txPin = serialPinConfig()->ioTagTx[resourceIndex];
+        const ioTag_t rxPin = serialPinConfig()->ioTagRx[resourceIndex];
 
         // Take care half-duplex case
         switch (rxRuntimeState.serialrxProvider) {
@@ -255,7 +255,7 @@ void spektrumBind(rxConfig_t *rxConfig)
         default:
             bindPin = rxConfig->halfDuplex ? txPin : rxPin;
         }
-
+#endif
         if (!bindPin) {
             return;
         }

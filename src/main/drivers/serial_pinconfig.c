@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_UART
+#if defined(USE_UART) || defined(USE_LPUART) || defined(USE_SOFTSERIAL)
 
 #include "build/build_config.h"
 
@@ -34,159 +34,6 @@
 
 #include "pg/pg_ids.h"
 
-// Backward compatibility for existing targets
-
-// Default pin (NONE).
-
-#ifdef USE_UART1
-# if !defined(UART1_RX_PIN)
-#  define UART1_RX_PIN NONE
-# endif
-# if !defined(UART1_TX_PIN)
-#  define UART1_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART1)
-#  define INVERTER_PIN_UART1 NONE
-# endif
-#endif
-
-#ifdef USE_UART2
-# if !defined(UART2_RX_PIN)
-#  define UART2_RX_PIN NONE
-# endif
-# if !defined(UART2_TX_PIN)
-#  define UART2_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART2)
-#  define INVERTER_PIN_UART2 NONE
-# endif
-#endif
-
-#ifdef USE_UART3
-# if !defined(UART3_RX_PIN)
-#  define UART3_RX_PIN NONE
-# endif
-# if !defined(UART3_TX_PIN)
-#  define UART3_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART3)
-#  define INVERTER_PIN_UART3 NONE
-# endif
-#endif
-
-#ifdef USE_UART4
-# if !defined(UART4_RX_PIN)
-#  define UART4_RX_PIN NONE
-# endif
-# if !defined(UART4_TX_PIN)
-#  define UART4_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART4)
-#  define INVERTER_PIN_UART4 NONE
-# endif
-#endif
-
-#ifdef USE_UART5
-# if !defined(UART5_RX_PIN)
-#  define UART5_RX_PIN NONE
-# endif
-# if !defined(UART5_TX_PIN)
-#  define UART5_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART5)
-#  define INVERTER_PIN_UART5 NONE
-# endif
-#endif
-
-#ifdef USE_UART6
-# if !defined(UART6_RX_PIN)
-#  define UART6_RX_PIN NONE
-# endif
-# if !defined(UART6_TX_PIN)
-#  define UART6_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART6)
-#  define INVERTER_PIN_UART6 NONE
-# endif
-#endif
-
-#ifdef USE_UART7
-# if !defined(UART7_RX_PIN)
-#  define UART7_RX_PIN NONE
-# endif
-# if !defined(UART7_TX_PIN)
-#  define UART7_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART7)
-#  define INVERTER_PIN_UART7 NONE
-# endif
-#endif
-
-#ifdef USE_UART8
-# if !defined(UART8_RX_PIN)
-#  define UART8_RX_PIN NONE
-# endif
-# if !defined(UART8_TX_PIN)
-#  define UART8_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART8)
-#  define INVERTER_PIN_UART8 NONE
-# endif
-#endif
-
-#ifdef USE_UART9
-# if !defined(UART9_RX_PIN)
-#  define UART9_RX_PIN NONE
-# endif
-# if !defined(UART9_TX_PIN)
-#  define UART9_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART9)
-#  define INVERTER_PIN_UART9 NONE
-# endif
-#endif
-
-#ifdef USE_UART10
-# if !defined(UART10_RX_PIN)
-#  define UART10_RX_PIN NONE
-# endif
-# if !defined(UART10_TX_PIN)
-#  define UART10_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_UART10)
-#  define INVERTER_PIN_UART10 NONE
-# endif
-#endif
-
-#ifdef USE_LPUART1
-# if !defined(LPUART1_RX_PIN)
-#  define LPUART1_RX_PIN NONE
-# endif
-# if !defined(LPUART1_TX_PIN)
-#  define LPUART1_TX_PIN NONE
-# endif
-# if !defined(INVERTER_PIN_LPUART1)
-#  define INVERTER_PIN_LPUART1 NONE
-# endif
-#endif
-
-#ifdef USE_SOFTSERIAL
-# if !defined(SOFTSERIAL1_RX_PIN)
-#  define SOFTSERIAL1_RX_PIN NONE
-# endif
-# if !defined(SOFTSERIAL1_TX_PIN)
-#  define SOFTSERIAL1_TX_PIN NONE
-# endif
-
-# if !defined(SOFTSERIAL2_RX_PIN)
-#  define SOFTSERIAL2_RX_PIN NONE
-# endif
-# if !defined(SOFTSERIAL2_TX_PIN)
-#  define SOFTSERIAL2_TX_PIN NONE
-# endif
-#endif
-
-#if defined(USE_UART) || defined(USE_SOFTSERIAL)
 typedef struct serialDefaultPin_s {
     serialPortIdentifier_e ident;
     ioTag_t rxIO, txIO, inverterIO;
@@ -224,7 +71,13 @@ static const serialDefaultPin_t serialDefaultPin[] = {
     { SERIAL_PORT_USART10, IO_TAG(UART10_RX_PIN), IO_TAG(UART10_TX_PIN), IO_TAG(INVERTER_PIN_UART10) },
 #endif
 #ifdef USE_LPUART1
-    { SERIAL_PORT_LPUART1, IO_TAG(LPUART1_RX_PIN), IO_TAG(LPUART1_TX_PIN), IO_TAG(INVERTER_PIN_LPUART1) },
+    { SERIAL_PORT_LPUART1, IO_TAG(LPUART1_RX_PIN), IO_TAG(LPUART1_TX_PIN), IO_TAG(NONE) },
+#endif
+#ifdef USE_SOFTSERIAL1
+    { SERIAL_PORT_SOFTSERIAL1, IO_TAG(SOFTSERIAL1_RX_PIN), IO_TAG(SOFTSERIAL1_TX_PIN), IO_TAG(NONE) },
+#endif
+#ifdef USE_SOFTSERIAL2
+    { SERIAL_PORT_SOFTSERIAL2, IO_TAG(SOFTSERIAL2_RX_PIN), IO_TAG(SOFTSERIAL2_TX_PIN), IO_TAG(NONE) },
 #endif
 };
 
@@ -232,38 +85,20 @@ PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONF
 
 void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
 {
-    for (size_t index = 0 ; index < ARRAYLEN(serialDefaultPin) ; index++) {
-        const serialDefaultPin_t *defpin = &serialDefaultPin[index];
-        serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->rxIO;
-        serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->txIO;
-        serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->inverterIO;
+    for (const serialDefaultPin_t *defpin = serialDefaultPin; defpin < ARRAYEND(serialDefaultPin); defpin++) {
+        const int resourceIndex = serialResourceIndex(defpin->ident);
+        if (resourceIndex >= 0) {
+            serialPinConfig->ioTagRx[resourceIndex] = defpin->rxIO;
+            serialPinConfig->ioTagTx[resourceIndex] = defpin->txIO;
+#if defined(USE_INVERTER)
+            // LPUART/SOFTSERIAL do not need/support inverter
+            if (resourceIndex < (int)ARRAYLEN(serialPinConfig->ioTagInverter)) {
+                serialPinConfig->ioTagInverter[resourceIndex] = defpin->inverterIO;
+            }
+#endif
+        }
     }
 }
 
-#if defined(USE_SOFTSERIAL)
-typedef struct softSerialDefaultPin_s {
-    serialPortIdentifier_e ident;
-    ioTag_t rxIO, txIO;
-} softSerialDefaultPin_t;
 
-static const softSerialDefaultPin_t softSerialDefaultPin[SOFTSERIAL_COUNT] = {
-#ifdef USE_SOFTSERIAL
-    { SERIAL_PORT_SOFTSERIAL1, IO_TAG(SOFTSERIAL1_RX_PIN), IO_TAG(SOFTSERIAL1_TX_PIN) },
-    { SERIAL_PORT_SOFTSERIAL2, IO_TAG(SOFTSERIAL2_RX_PIN), IO_TAG(SOFTSERIAL2_TX_PIN) },
-#endif
-};
-
-PG_REGISTER_WITH_RESET_FN(softSerialPinConfig_t, softSerialPinConfig, PG_SOFTSERIAL_PIN_CONFIG, 0);
-
-void pgResetFn_softSerialPinConfig(softSerialPinConfig_t *softSerialPinConfig)
-{
-    for (size_t index = 0 ; index < ARRAYLEN(softSerialDefaultPin) ; index++) {
-        const softSerialDefaultPin_t *defpin = &softSerialDefaultPin[index];
-        softSerialPinConfig->ioTagRx[SOFTSERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->rxIO;
-        softSerialPinConfig->ioTagTx[SOFTSERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->txIO;
-    }
-}
-#endif
-
-#endif
 #endif

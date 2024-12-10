@@ -48,6 +48,7 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/position.h"
     #include "flight/kalman_filter_1d.h"
+    #include "flight/altitude.h"
 
     #include "io/gps.h"
 
@@ -85,6 +86,19 @@ extern "C" {
         UNUSED(sensorMeas);
         UNUSED(baroNonZeroedAlt);
     }
+    void altSensorFusionInit(void) {
+
+    }
+    bool altSensorFusionUpdate(void) {
+        return true;
+    }
+    void updateBaroStateCallback(void) {
+
+    }
+    altitudeState_t * getAltitudeState(void) {
+        return nullptr;
+    }
+
     extern quaternion q;
     extern matrix33_t rMat;
     extern bool attitudeIsEstablished;

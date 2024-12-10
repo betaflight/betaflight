@@ -77,7 +77,7 @@
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
-        .device = UARTDEV_1,
+        .identifier = SERIAL_PORT_USART1,
         .reg = USART1,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_USART1_RX,
@@ -96,7 +96,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC4),  GPIO_AF7_USART1 },
         },
         .rcc = RCC_APB2(USART1),
-        .rxIrq = USART1_IRQn,
+        .irqn = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART1,
         .txBuffer = uart1TxBuffer,
@@ -108,7 +108,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART2
     {
-        .device = UARTDEV_2,
+        .identifier = SERIAL_PORT_USART2,
         .reg = USART2,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_USART2_RX,
@@ -127,7 +127,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB3),  GPIO_AF7_USART2 },
         },
         .rcc = RCC_APB11(USART2),
-        .rxIrq = USART2_IRQn,
+        .irqn = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART2,
         .txBuffer = uart2TxBuffer,
@@ -139,7 +139,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART3
     {
-        .device = UARTDEV_3,
+        .identifier = SERIAL_PORT_USART3,
         .reg = USART3,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_USART3_RX,
@@ -158,7 +158,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC10), GPIO_AF7_USART3 },
         },
         .rcc = RCC_APB11(USART3),
-        .rxIrq = USART3_IRQn,
+        .irqn = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART3,
         .txBuffer = uart3TxBuffer,
@@ -170,7 +170,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART4
     {
-        .device = UARTDEV_4,
+        .identifier = SERIAL_PORT_UART4,
         .reg = UART4,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_UART4_RX,
@@ -185,7 +185,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC10), GPIO_AF5_UART4 },
         },
         .rcc = RCC_APB11(UART4),
-        .rxIrq = UART4_IRQn,
+        .irqn = UART4_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART4,
         .txBuffer = uart4TxBuffer,
@@ -197,7 +197,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_UART5
     {
-        .device = UARTDEV_5,
+        .identifier = SERIAL_PORT_UART5,
         .reg = UART5,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_UART5_RX,
@@ -212,7 +212,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC12), GPIO_AF5_UART5 },
         },
         .rcc = RCC_APB11(UART5),
-        .rxIrq = UART5_IRQn,
+        .irqn = UART5_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART5,
         .txBuffer = uart5TxBuffer,
@@ -224,7 +224,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 #ifdef USE_LPUART1
     {
-        .device = LPUARTDEV_1,
+        .identifier = SERIAL_PORT_LPUART1,
         .reg = LPUART1,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_LPUART1_RX,
@@ -243,95 +243,15 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC1),  GPIO_AF8_LPUART1 },
         },
         .rcc = RCC_APB12(LPUART1),
-        .rxIrq = LPUART1_IRQn,
+        .irqn = LPUART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6,
-        .txBuffer = lpuart1TxBuffer,
-        .rxBuffer = lpuart1RxBuffer,
-        .txBufferSize = sizeof(lpuart1TxBuffer),
-        .rxBufferSize = sizeof(lpuart1RxBuffer),
+        .txBuffer = uartLp1TxBuffer,
+        .rxBuffer = uartLp1RxBuffer,
+        .txBufferSize = sizeof(uartLp1TxBuffer),
+        .rxBufferSize = sizeof(uartLp1RxBuffer),
     },
 #endif
 };
 
-
-// XXX Should serialUART be consolidated?
-
-uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
-{
-    uartDevice_t *uartdev = uartDevmap[device];
-    if (!uartdev) {
-        return NULL;
-    }
-
-    uartPort_t *s = &(uartdev->port);
-
-    s->port.vTable = uartVTable;
-
-    s->port.baudRate = baudRate;
-
-    const uartHardware_t *hardware = uartdev->hardware;
-
-    s->USARTx = hardware->reg;
-
-    s->port.rxBuffer = hardware->rxBuffer;
-    s->port.txBuffer = hardware->txBuffer;
-    s->port.rxBufferSize = hardware->rxBufferSize;
-    s->port.txBufferSize = hardware->txBufferSize;
-
-    s->checkUsartTxOutput = checkUsartTxOutput;
-
-#ifdef USE_DMA
-    uartConfigureDma(uartdev);
-#endif
-
-    s->Handle.Instance = hardware->reg;
-
-    if (hardware->rcc) {
-        RCC_ClockCmd(hardware->rcc, ENABLE);
-    }
-
-    IO_t txIO = IOGetByTag(uartdev->tx.pin);
-    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
-
-    uartdev->txPinState = TX_PIN_IGNORE;
-
-    if ((options & SERIAL_BIDIR) && txIO) {
-        ioConfig_t ioCfg = IO_CONFIG(
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
-            GPIO_SPEED_FREQ_HIGH,
-            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PULLDOWN : GPIO_PULLUP
-        );
-
-        IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO, ioCfg, uartdev->tx.af);
-    } else {
-        if ((mode & MODE_TX) && txIO) {
-            IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-
-            if (options & SERIAL_CHECK_TX) {
-                uartdev->txPinState = TX_PIN_ACTIVE;
-                // Switch TX to an input with pullup so it's state can be monitored
-                uartTxMonitor(s);
-            } else {
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, uartdev->tx.af);
-            }
-        }
-
-        if ((mode & MODE_RX) && rxIO) {
-            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(rxIO, IOCFG_AF_PP, uartdev->rx.af);
-        }
-    }
-
-#ifdef USE_DMA
-    if (!s->rxDMAResource)
-#endif
-    {
-        HAL_NVIC_SetPriority(hardware->rxIrq, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
-        HAL_NVIC_EnableIRQ(hardware->rxIrq);
-    }
-
-    return s;
-}
 #endif // USE_UART

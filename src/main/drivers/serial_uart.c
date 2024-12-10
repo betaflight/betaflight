@@ -38,10 +38,13 @@
 #include <common/maths.h>
 #include "common/utils.h"
 
+#include "io/serial.h"
+
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/rcc.h"
 #include "drivers/serial.h"
+#include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
@@ -63,13 +66,10 @@
 #error Undefined UART_{TX,RX}_BUFFER_ATTRIBUTE for this MCU
 #endif
 
-#define UART_BUFFERS(n) \
-    UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
-    UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
-
-#define LPUART_BUFFERS(n) \
-    LPUART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
-    LPUART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
+#define UART_BUFFERS(n)                                         \
+    UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T);                \
+    UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s \
+/**/
 
 #ifdef USE_UART1
 UART_BUFFERS(1);
@@ -112,21 +112,102 @@ UART_BUFFERS(10);
 #endif
 
 #ifdef USE_LPUART1
-LPUART_BUFFERS(1);
+UART_BUFFERS(Lp1);  // TODO - maybe some other naming scheme ?
 #endif
 
 #undef UART_BUFFERS
 
-serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+// store only devices configured for target (USE_UARTx)
+// some entries may be unused, for example because of pin configuration
+// uartDeviceIdx_e is direct index into this table
+FAST_DATA_ZERO_INIT uartDevice_t uartDevice[UARTDEV_COUNT];
+
+// map serialPortIdentifier_e to uartDeviceIdx_e
+uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
 {
-    uartPort_t *uartPort = serialUART(device, baudRate, mode, options);
-
-    if (!uartPort)
-        return (serialPort_t *)uartPort;
-
-#ifdef USE_DMA
-    uartPort->txDMAEmpty = true;
+#ifdef USE_LPUART1
+    if (identifier == SERIAL_PORT_LPUART1) {
+        return UARTDEV_LP1;
+    }
 #endif
+
+#if 1 // TODO ...
+    // store +1 in table - unset values default to 0
+    // table is for UART only to save space (LPUART is handled separately)
+#define _R(id, dev) [id] = (dev) + 1
+    static const uartDeviceIdx_e uartMap[] = {
+#ifdef USE_UART1
+        _R(SERIAL_PORT_USART1, UARTDEV_1),
+#endif
+#ifdef USE_UART2
+        _R(SERIAL_PORT_USART2, UARTDEV_2),
+#endif
+#ifdef USE_UART3
+        _R(SERIAL_PORT_USART3, UARTDEV_3),
+#endif
+#ifdef USE_UART4
+        _R(SERIAL_PORT_UART4, UARTDEV_4),
+#endif
+#ifdef USE_UART5
+        _R(SERIAL_PORT_UART5, UARTDEV_5),
+#endif
+#ifdef USE_UART6
+        _R(SERIAL_PORT_USART6, UARTDEV_6),
+#endif
+#ifdef USE_UART7
+        _R(SERIAL_PORT_USART7, UARTDEV_7),
+#endif
+#ifdef USE_UART8
+        _R(SERIAL_PORT_USART8, UARTDEV_8),
+#endif
+#ifdef USE_UART9
+        _R(SERIAL_PORT_UART9, UARTDEV_9),
+#endif
+#ifdef USE_UART10
+        _R(SERIAL_PORT_USART10, UARTDEV_10),
+#endif
+    };
+#undef _R
+    if (identifier >= 0 && identifier < (int)ARRAYLEN(uartMap)) {
+        // UART case, but given USE_UARTx may not be defined
+        return uartMap[identifier] ? uartMap[identifier] - 1 : UARTDEV_INVALID;
+    }
+#else
+    {
+        const int idx = identifier - SERIAL_PORT_USART1;
+        if (idx >= 0 && idx < SERIAL_UART_MAX) {
+            if (BIT(idx) & SERIAL_UART_MASK) {
+                // return number of enabled UART ports smaller than idx
+                return popcount((BIT(idx) - 1) & SERIAL_UART_MASK);
+            } else {
+                return UARTDEV_INVALID;
+            }
+        }
+    }
+#endif
+    // neither LPUART nor UART
+    return UARTDEV_INVALID;
+}
+
+uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e identifier)
+{
+    const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(identifier);
+    return deviceIdx != UARTDEV_INVALID ? &uartDevice[deviceIdx] : NULL;
+}
+
+serialPort_t *uartOpen(serialPortIdentifier_e identifier, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+{
+    uartDevice_t *uartDevice = uartDeviceFromIdentifier(identifier);
+    if (!uartDevice) {
+        return NULL;
+    }
+    // fill identifier early, so initialization code can use it
+    uartDevice->port.port.identifier = identifier;
+
+    uartPort_t *uartPort = serialUART(uartDevice, baudRate, mode, options);
+    if (!uartPort) {
+        return NULL;
+    }
 
     // common serial initialisation code should move to serialPort::init()
     uartPort->port.rxBufferHead = uartPort->port.rxBufferTail = 0;
@@ -381,6 +462,7 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
+// TODO - move to serial_uart_hw.c
 #ifdef USE_DMA
 void uartConfigureDma(uartDevice_t *uartdev)
 {
@@ -388,11 +470,22 @@ void uartConfigureDma(uartDevice_t *uartdev)
     const uartHardware_t *hardware = uartdev->hardware;
 
 #ifdef USE_DMA_SPEC
-    UARTDevice_e device = hardware->device;
-    const dmaChannelSpec_t *dmaChannelSpec;
+    const serialPortIdentifier_e uartPortIdentifier = hardware->identifier;
+    const uartDeviceIdx_e uartDeviceIdx = uartDeviceIdxFromIdentifier(uartPortIdentifier);
+    if (uartDeviceIdx == UARTDEV_INVALID) {
+        return;
+    }
+    const int resourceIdx = serialResourceIndex(uartPortIdentifier);
+    const int ownerIndex = serialOwnerIndex(uartPortIdentifier);
+    const resourceOwner_e ownerTxRx = serialOwnerTxRx(uartPortIdentifier); // rx is always +1
 
-    if (serialUartConfig(device)->txDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, device, serialUartConfig(device)->txDmaopt);
+    const dmaChannelSpec_t *dmaChannelSpec;
+    const serialUartConfig_t *cfg = serialUartConfig(resourceIdx);
+    if (!cfg) {
+        return;
+    }
+    if (cfg->txDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, uartDeviceIdx, cfg->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->txDMAResource = dmaChannelSpec->ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
@@ -403,8 +496,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
         }
     }
 
-    if (serialUartConfig(device)->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, device, serialUartConfig(device)->txDmaopt);
+    if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
@@ -414,7 +507,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 #endif
         }
     }
-#else
+#else /* USE_DMA_SPEC */
     // Non USE_DMA_SPEC does not support configurable ON/OFF of UART DMA
 
     if (hardware->rxDMAResource) {
@@ -434,11 +527,11 @@ void uartConfigureDma(uartDevice_t *uartdev)
         uartPort->txDMAMuxId = hardware->txDMAMuxId;
 #endif
     }
-#endif
+#endif /* USE_DMA_SPEC */
 
     if (uartPort->txDMAResource) {
-        dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
-        if (dmaAllocate(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(hardware->device))) {
+        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
+        if (dmaAllocate(identifier, ownerTxRx, ownerIndex)) {
             dmaEnable(identifier);
 #if defined(AT32F4)
             dmaMuxEnable(identifier, uartPort->txDMAMuxId);
@@ -449,8 +542,8 @@ void uartConfigureDma(uartDevice_t *uartdev)
     }
 
     if (uartPort->rxDMAResource) {
-        dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
-        if (dmaAllocate(identifier, OWNER_SERIAL_RX, RESOURCE_INDEX(hardware->device))) {
+        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
+        if (dmaAllocate(identifier, ownerTxRx + 1, ownerIndex)) {
             dmaEnable(identifier);
 #if defined(AT32F4)
             dmaMuxEnable(identifier, uartPort->rxDMAMuxId);
@@ -461,12 +554,13 @@ void uartConfigureDma(uartDevice_t *uartdev)
 }
 #endif
 
-#define UART_IRQHandler(type, number, dev) \
-    FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void) \
-    { \
-        uartPort_t *uartPort = &(uartDevmap[dev]->port); \
-        uartIrqHandler(uartPort); \
-    }
+#define UART_IRQHandler(type, number, dev)                      \
+    FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
+    {                                                           \
+        uartPort_t *uartPort = &(uartDevice[(dev)].port);       \
+        uartIrqHandler(uartPort);                               \
+    }                                                           \
+/**/
 
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
@@ -509,7 +603,7 @@ UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_LPUART1
-UART_IRQHandler(LPUART, 1, LPUARTDEV_1) // LPUART1 Rx/Tx IRQ Handler
+UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
 #endif
 
 

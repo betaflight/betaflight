@@ -113,6 +113,7 @@
 #include "io/displayport_msp.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
+#include "io/gimbal_control.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/pidaudio.h"
@@ -260,7 +261,7 @@ static void sdCardAndFSInit(void)
 
 void init(void)
 {
-#ifdef SERIAL_PORT_COUNT
+#if SERIAL_PORT_COUNT > 0
     printfSerialInit();
 #endif
 
@@ -519,17 +520,21 @@ void init(void)
 #endif
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
-    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
+# define SERIALPORT_TO_AVOID SERIAL_PORT_USART1
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
-    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+# define SERIALPORT_TO_AVOID SERIAL_PORT_USART2
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
-    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL),
-            featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
-#else
-    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+# define SERIALPORT_TO_AVOID SERIAL_PORT_USART3
 #endif
+    {
+        serialPortIdentifier_e serialPortToAvoid = SERIAL_PORT_NONE;
+#if defined(SERIALPORT_TO_AVOID)
+        if (featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+            serialPortToAvoid = SERIALPORT_TO_AVOID;
+        }
+#endif
+        serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), serialPortToAvoid);
+    }
 
     mixerInit(mixerConfig()->mixerMode);
 
@@ -860,6 +865,10 @@ void init(void)
 #endif
 
 #endif // VTX_CONTROL
+
+#ifdef USE_GIMBAL
+    gimbalInit();
+#endif
 
     batteryInit(); // always needs doing, regardless of features.
 

@@ -12,6 +12,7 @@ PG_SRC = \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
+            pg/gimbal.c \
             pg/gps.c \
             pg/gps_lap_timer.c \
             pg/gps_rescue.c \
@@ -109,9 +110,11 @@ COMMON_SRC = \
             drivers/pin_pull_up_down.c \
             drivers/resource.c \
             drivers/serial.c \
+            drivers/serial_impl.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
             drivers/serial_uart_pinconfig.c \
+            drivers/serial_uart_hw.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
@@ -128,6 +131,7 @@ COMMON_SRC = \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/serial_resource.c \
             io/smartaudio_protocol.c \
             io/statusindicator.c \
             io/tramp_protocol.c \
@@ -160,6 +164,7 @@ COMMON_SRC = \
             flight/alt_hold.c \
             flight/autopilot.c \
             flight/kalman_filter_1d.c \
+            flight/altitude.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
@@ -233,6 +238,7 @@ COMMON_SRC = \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
             drivers/rangefinder/rangefinder_lidartf.c \
+            drivers/rangefinder/rangefinder_lidarmt.c \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
@@ -245,6 +251,7 @@ COMMON_SRC = \
             io/displayport_crsf.c \
             io/displayport_hott.c \
             io/frsky_osd.c \
+            io/gimbal_control.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
             io/gps.c \
