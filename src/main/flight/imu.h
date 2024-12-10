@@ -60,7 +60,6 @@ typedef struct imuConfig_s {
     uint8_t small_angle;
     uint8_t imu_process_denom;
     int16_t mag_declination;      // Magnetic declination in degrees * 10
-    int16_t mag_inclination;      // Magnetic inclination in degrees * 10
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);

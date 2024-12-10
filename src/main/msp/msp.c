@@ -1469,7 +1469,6 @@ case MSP_NAME:
 #ifdef USE_MAG
     case MSP_COMPASS_CONFIG:
         sbufWriteU16(dst, imuConfig()->mag_declination);
-        sbufWriteU16(dst, imuConfig()->mag_inclination);
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.pitch);
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.yaw);
@@ -2874,7 +2873,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
         imuConfigMutable()->mag_declination = sbufReadU16(src);
-        imuConfigMutable()->mag_inclination = sbufReadU16(src);
         compassConfigMutable()->mag_customAlignment.roll = sbufReadU16(src);
         compassConfigMutable()->mag_customAlignment.pitch = sbufReadU16(src);
         compassConfigMutable()->mag_customAlignment.yaw = sbufReadU16(src);

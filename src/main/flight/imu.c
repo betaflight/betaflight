@@ -110,7 +110,7 @@ quaternion offset = QUATERNION_INITIALIZE;
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 
 #ifdef USE_RACE_PRO
 #define DEFAULT_SMALL_ANGLE 180
@@ -124,7 +124,6 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
     .mag_declination = 0,
-    .mag_inclination = 0
 );
 
 static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
