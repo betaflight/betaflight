@@ -60,7 +60,6 @@ USBD_HandleTypeDef USBD_Device;
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
 
-
 #define USB_TIMEOUT  50
 
 static vcpPort_t vcpPort = {0};
@@ -264,7 +263,6 @@ serialPort_t *usbVcpOpen(void)
     HAL_PWREx_EnableUSBVoltageDetector();
     delay(100); // Cold boot failures observed without this, even when USB cable is not connected
 #endif
-
 
 #else
     Set_System();

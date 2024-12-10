@@ -144,7 +144,6 @@ static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txD
         while (spi_i2s_flag_get(instance, SPI_I2S_TDBE_FLAG) == RESET);
         spi_i2s_data_transmit(instance, b);
 
-
         while (spi_i2s_flag_get(instance, SPI_I2S_RDBF_FLAG) == RESET);
         b = (uint8_t)spi_i2s_data_receive(instance);
 
@@ -209,6 +208,10 @@ void spiInternalStartDMA(const extDevice_t *dev)
     dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
     DMA_ARCH_TYPE *streamRegsTx = (DMA_ARCH_TYPE *)dmaTx->ref;
+
+    // Wait for any ongoing transmission to complete
+    while (spi_i2s_flag_get(dev->bus->busType_u.spi.instance, SPI_I2S_BF_FLAG) == SET);
+
     if (dmaRx) {
         DMA_ARCH_TYPE *streamRegsRx = (DMA_ARCH_TYPE *)dmaRx->ref;
 
@@ -230,10 +233,10 @@ void spiInternalStartDMA(const extDevice_t *dev)
         xDMA_Init(streamRegsRx, dev->bus->initRx);
 
         // Enable streams
-        xDMA_Cmd(streamRegsTx, TRUE);
         xDMA_Cmd(streamRegsRx, TRUE);
+        xDMA_Cmd(streamRegsTx, TRUE);
 
-        /* Enable the receiver before the transmitter to ensure that not bits are missed on reception. An interrupt between
+        /* Enable the receiver before the transmitter to ensure that no bits are missed on reception. An interrupt between
          * the transmitter and receiver being enabled can otherwise cause a hang.
          */
         spi_i2s_dma_receiver_enable(dev->bus->busType_u.spi.instance, TRUE);

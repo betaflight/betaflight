@@ -91,7 +91,7 @@ typedef struct sdcard_t {
 
 #ifdef USE_SDCARD_SPI
     extDevice_t dev;
-    uint8_t idleCount;
+    int8_t idleCount;
 #endif
 
 #ifdef USE_SDCARD_SDIO

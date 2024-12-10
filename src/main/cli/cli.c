@@ -104,7 +104,6 @@ bool cliMode = false;
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -447,7 +446,6 @@ void cliPrintf(const char *format, ...)
     va_end(va);
 }
 
-
 void cliPrintLinef(const char *format, ...)
 {
     va_list va;
@@ -645,7 +643,6 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
     }
 }
 
-
 static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const void *ptrDefault)
 {
     bool result = true;
@@ -762,7 +759,6 @@ static uint8_t getRateProfileIndexToUse(void)
 {
     return rateProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentControlRateProfileIndex() : rateProfileIndexToUse;
 }
-
 
 static uint16_t getValueOffset(const clivalue_t *value)
 {
@@ -1317,7 +1313,6 @@ static void cliSerial(const char *cmdName, char *cmdline)
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
 
-
     uint8_t validArgumentCount = 0;
 
     const char *ptr = cmdline;
@@ -1533,7 +1528,6 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         }
         index++;
     }
-
 
     for (unsigned i = 0; i < ARRAYLEN(ports); i++) {
         if (findSerialPortIndexByIdentifier(ports[i].id) < 0) {
@@ -3530,7 +3524,6 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
     cliDumpPrintLinef(dumpMask, equalsDefault, formatMap, buf);
 }
 
-
 static void cliMap(const char *cmdName, char *cmdline)
 {
     uint32_t i;
@@ -3695,7 +3688,6 @@ static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
 #endif
 }
 #endif
-
 
 static int parseOutputIndex(const char *cmdName, char *pch, bool allowAllEscs)
 {
@@ -4900,9 +4892,9 @@ if (buildKey) {
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
-        const int bitpos = ffs(flags) - 1;
-        flags &= ~(1 << bitpos);
-        cliPrintf(" %s", armingDisableFlagNames[bitpos]);
+        const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
+        flags &= ~flag;
+        cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
 }
@@ -5019,7 +5011,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
             if (getRxRateValid()) {
 	            cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
             } else {
-            	cliPrintLine("NO SIGNAL");          
+            	cliPrintLine("NO SIGNAL");
             }
         }
         cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
@@ -6188,7 +6180,6 @@ static void cliResource(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
-
 
 static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 {

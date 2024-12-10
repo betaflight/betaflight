@@ -73,7 +73,6 @@
 
 #include "crsf.h"
 
-
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
 #define CRSF_DEVICEINFO_PARAMETER_COUNT     0
@@ -304,7 +303,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 #if defined(USE_BARO) && defined(USE_VARIO)
 // pack altitude in decimeters into a 16-bit value.
 // Due to strange OpenTX behavior of count any 0xFFFF value as incorrect, the maximum sending value is limited to 0xFFFE (32766 meters)
-// in order to have both precision and range in 16-bit 
+// in order to have both precision and range in 16-bit
 // value of altitude is packed with different precision depending on highest-bit value.
 // on receiving side:
 // if MSB==0, altitude is sent in decimeters as uint16 with -1000m base. So, range is -1000..2276m.
@@ -312,7 +311,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 // altitude lower  than -1000m is sent as zero   (should be displayed as "<-1000m" or something).
 // altitude higher than 32767m is sent as 0xfffe (should be displayed as ">32766m" or something).
 // range from 0 to 2276m might be sent with dm- or m-precision. But this function always use dm-precision.
-static inline uint16_t calcAltitudePacked(int32_t altitude_dm) 
+static inline uint16_t calcAltitudePacked(int32_t altitude_dm)
 {
     static const int ALT_DM_OFFSET = 10000;
     int valDm = altitude_dm + ALT_DM_OFFSET;
@@ -455,11 +454,13 @@ void crsfFrameFlightMode(sbuf_t *dst)
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
         flightMode = "RTH";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
-        flightMode = "MANU";
+        flightMode = "PASS";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "ANGL";
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         flightMode = "ALTH";
+    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        flightMode = "POSH";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
     } else if (isAirmodeEnabled()) {
@@ -514,7 +515,6 @@ void crsfFrameDeviceInfo(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_DEVICEINFO_VERSION);
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
-
 
 #if defined(USE_CRSF_V3)
 void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)

@@ -476,7 +476,6 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef * hpcd)
     USBD_LL_DevDisconnected(hpcd->pData);
 }
 
-
 /*******************************************************************************
                        LL Driver Interface (USB Device Library --> PCD)
  *******************************************************************************/

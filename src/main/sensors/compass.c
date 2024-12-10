@@ -96,7 +96,7 @@ PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 4);
 #define COMPASS_BUS_BUSY_INTERVAL_US 500
 // If we check for new mag data, and there is none, try again in 1000us
 #define COMPASS_RECHECK_INTERVAL_US 1000
-// default compass read interval, for those with no specified ODR, will be TASK_COMPASS_RATE_HZ 
+// default compass read interval, for those with no specified ODR, will be TASK_COMPASS_RATE_HZ
 static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
@@ -502,7 +502,7 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
                     // there was no movement, and no new calibration values were saved
                     beeper(BEEPER_ACC_CALIBRATION_FAIL); // calibration fail beep
                 }
-                // didMovementStart remains true until next run 
+                // didMovementStart remains true until next run
                 // signal that the calibration process is finalised, whether successful or not, by setting end time to zero
                 magCalProcessActive = false;
             }
@@ -561,7 +561,7 @@ void compassBiasEstimatorInit(compassBiasEstimator_t *cBE, const float lambda_mi
         cBE->U[i][i] = 1.0f;
     }
 
-    compassBiasEstimatorUpdate(cBE, lambda_min, p0); 
+    compassBiasEstimatorUpdate(cBE, lambda_min, p0);
 
     cBE->lambda = lambda_min;
 }
@@ -574,7 +574,7 @@ void compassBiasEstimatorUpdate(compassBiasEstimator_t *cBE, const float lambda_
     // update diagonal entries for faster convergence
     for (unsigned i = 0; i < 4; i++) {
         cBE->D[i] = p0;
-    } 
+    }
 }
 
 // apply one estimation step of the compass bias estimator

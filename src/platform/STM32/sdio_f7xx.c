@@ -106,8 +106,6 @@
 
 #define SD_SDMMC_SEND_IF_COND           ((uint32_t)SD_CMD_HS_SEND_EXT_CSD)
 
-
-
 #define SD_BUS_WIDE_1B                  ((uint32_t)0x00000000)
 #define SD_BUS_WIDE_4B                  SDMMC_CLKCR_WIDBUS_0
 #define SD_BUS_WIDE_8B                  SDMMC_CLKCR_WIDBUS_1
@@ -132,7 +130,6 @@
 
 #define SDMMC_INIT_CLK_DIV              ((uint8_t)0x76)
 #define SDMMC_CLK_DIV                   ((uint8_t)0x00)
-
 
 #define SD_CMD_GO_IDLE_STATE            ((uint8_t)0)   // Resets the SD memory card.
 #define SD_CMD_SEND_OP_COND             ((uint8_t)1)   // Sends host capacity support information and activates the card's initialization process.
@@ -178,7 +175,6 @@
 
 #define SDMMC_DMA_ST3 1
 
-
 /* Typedef(s) -------------------------------------------------------------------------------------------------------*/
 
 typedef enum
@@ -186,7 +182,6 @@ typedef enum
     SD_SINGLE_BLOCK    = 0,             // Single block operation
     SD_MULTIPLE_BLOCK  = 1,             // Multiple blocks operation
 } SD_Operation_t;
-
 
 typedef struct
 {
@@ -221,7 +216,6 @@ static uint32_t                    SD_CardRCA;
 SD_CardType_t                      SD_CardType;
 static volatile uint32_t           TimeOut;
 DMA_Stream_TypeDef                 *dmaStream;
-
 
 /* Private function(s) ----------------------------------------------------------------------------------------------*/
 
@@ -260,7 +254,6 @@ static void SD_DataTransferInit(uint32_t Size, uint32_t DataBlockSize, bool IsIt
     return;
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**     SD_TransmitCommand
   *
@@ -283,7 +276,6 @@ static SD_Error_t SD_TransmitCommand(uint32_t Command, uint32_t Argument, int8_t
 
     return ErrorState;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -371,7 +363,6 @@ static SD_Error_t SD_CmdResponse(uint8_t SD_CMD, int8_t ResponseType)
     return SD_OK;
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  Analyze the OCR response and return the appropriate error code
@@ -404,7 +395,6 @@ static SD_Error_t CheckOCR_Response(uint32_t Response_R1)
     return SD_OK;
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**     GetResponse
   *
@@ -418,7 +408,6 @@ static void SD_GetResponse(uint32_t* pResponse)
     pResponse[2] = SDMMC1->RESP3;
     pResponse[3] = SDMMC1->RESP4;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -450,7 +439,6 @@ static void SD_DMA_Complete(DMA_Stream_TypeDef* pDMA_Stream)
             SDMMC1->MASK |= SDMMC_MASK_DATAENDIE;
     }
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -504,7 +492,6 @@ static SD_Error_t SD_InitializeCard(void)
 
     return ErrorState;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -560,7 +547,6 @@ static void SD_StartBlockTransfert(uint32_t* pBuffer, uint32_t BlockSize, uint32
     }
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  Reads block(s) from a specified address in a card. The Data transfer
@@ -615,7 +601,6 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
 
     return ErrorState;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -816,7 +801,6 @@ SD_Error_t SD_Erase(uint64_t StartAddress, uint64_t EndAddress)
     return ErrorState;
 }
 */
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -1027,7 +1011,6 @@ SD_Error_t SD_GetCardInfo(void)
     return ErrorState;
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  Enables wide bus operation for the requested card if supported by
@@ -1104,10 +1087,8 @@ static SD_Error_t SD_WideBusOperationConfig(uint32_t WideMode)
             ErrorState = SD_UNSUPPORTED_FEATURE;
     }
 
-
     return ErrorState;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -1192,7 +1173,6 @@ SD_Error_t HAL_SD_HighSpeed(void)
 
 */
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  Gets the current card's data status.
@@ -1203,7 +1183,6 @@ SD_Error_t SD_GetStatus(void)
     SD_Error_t     ErrorState;
     uint32_t       Response1;
     SD_CardState_t CardState;
-
 
     // Send Status command
     if((ErrorState = SD_TransmitCommand((SD_CMD_SEND_STATUS | SD_CMD_RESPONSE_SHORT), SD_CardRCA, 1)) == SD_OK)
@@ -1223,7 +1202,6 @@ SD_Error_t SD_GetStatus(void)
 
     return ErrorState;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -1357,7 +1335,6 @@ SD_Error_t SD_GetCardStatus(SD_CardStatus_t* pCardStatus)
     return SD_OK;
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  Enquires cards about their operating voltage and configures clock
@@ -1448,7 +1425,6 @@ static SD_Error_t SD_PowerON(void)
     return ErrorState;
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  Turns the SDMMC1 output signals off.
@@ -1461,7 +1437,6 @@ static void SD_PowerOFF(void)
    SDMMC1->POWER = (uint32_t)0;
 }
 #endif
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -1515,7 +1490,6 @@ static SD_Error_t SD_FindSCR(uint32_t *pSCR)
 
     return ErrorState;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -1629,7 +1603,6 @@ bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
     return true;
 }
 
-
 /** -----------------------------------------------------------------------------------------------------------------*/
 bool SD_GetState(void)
 {
@@ -1637,7 +1610,6 @@ bool SD_GetState(void)
     if(SD_GetStatus() == SD_OK) return true;
     return false;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 static SD_Error_t SD_DoInit(void)
@@ -1701,7 +1673,6 @@ SD_Error_t SD_Init(void)
 
     return result;
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
@@ -1829,7 +1800,6 @@ void SDMMC_DMA_ST3_IRQHandler(dmaChannelDescriptor_t *dma)
         }
     }
 }
-
 
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**

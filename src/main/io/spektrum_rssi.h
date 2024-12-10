@@ -34,5 +34,4 @@ typedef struct dbm_table_s
     uint8_t reportAs;
 } dbm_table_t;
 
-
 void spektrumHandleRSSI(volatile uint8_t spekFrame[]);

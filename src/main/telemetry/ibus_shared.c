@@ -27,7 +27,6 @@
  * clarify the protocol.
  */
 
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -56,7 +55,6 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 #include "flight/imu.h"
 #include "flight/position.h"
 #include "io/gps.h"
-
 
 #define IBUS_TEMPERATURE_OFFSET     400
 #define INVALID_IBUS_ADDRESS        0
@@ -128,7 +126,6 @@ const uint8_t FULL_ACC_IDS[] = {
 static serialPort_t *ibusSerialPort = NULL;
 static ibusAddress_t ibusBaseAddress = INVALID_IBUS_ADDRESS;
 static uint8_t sendBuffer[IBUS_BUFFSIZE];
-
 
 static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length);
 
@@ -226,7 +223,6 @@ static uint16_t getTemperature(void)
     return temperature + IBUS_TEMPERATURE_OFFSET;
 }
 
-
 static uint16_t getFuel(void)
 {
     uint16_t fuel = 0;
@@ -254,7 +250,7 @@ static uint16_t getRPM(void)
 static uint16_t getMode(void)
 {
     uint16_t flightMode = 1; //Acro
-    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
          flightMode = 0; //Stab
     }
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
@@ -290,8 +286,6 @@ static void setCombinedFrame(uint8_t* bufferPtr, const uint8_t* structure, uint8
     }
 }
 #endif
-
-
 
 #if defined(USE_GPS)
 static bool setGPS(uint8_t sensorType, ibusTelemetry_s* value)
@@ -488,13 +482,11 @@ uint8_t respondToIbusRequest(uint8_t const * const ibusPacket)
     return transmitIbusPacket();
 }
 
-
 void initSharedIbusTelemetry(serialPort_t *port)
 {
     ibusSerialPort = port;
     ibusBaseAddress = INVALID_IBUS_ADDRESS;
 }
-
 
 #endif //defined(USE_TELEMETRY) && defined(USE_TELEMETRY_IBUS)
 

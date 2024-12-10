@@ -42,7 +42,6 @@ extern "C" {
     #include "fc/runtime_config.h"
     #include "fc/rc.h"
 
-    #include "flight/autopilot.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -53,6 +52,8 @@ extern "C" {
     #include "io/gps.h"
 
     #include "rx/rx.h"
+
+    #include "pg/autopilot.h"
 
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -99,14 +100,14 @@ extern "C" {
         return nullptr;
     }
 
-    extern quaternion q;
+    extern quaternion_t q;
     extern matrix33_t rMat;
     extern bool attitudeIsEstablished;
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
-    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+    PG_REGISTER(apConfig_t, apConfig, PG_AUTOPILOT, 0);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
@@ -118,7 +119,7 @@ extern "C" {
 
 const float sqrt2over2 = sqrtf(2) / 2.0f;
 
-void quaternion_from_axis_angle(quaternion* q, float angle, float x, float y, float z) {
+void quaternion_from_axis_angle(quaternion_t* q, float angle, float x, float y, float z) {
     vector3_t a = {{x, y, z}};
     vector3Normalize(&a, &a);
     q->w = cos(angle / 2);
@@ -467,15 +468,7 @@ extern "C" {
     bool schedulerGetIgnoreTaskExecTime() { return false; }
     float gyroGetFilteredDownsampled(int) { return 0.0f; }
     float baroUpsampleAltitude()  { return 0.0f; }
-    float pt2FilterGain(float, float)  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }
-    void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
-        UNUSED(baroDerivativeLpf);
-    }
-    float pt2FilterApply(pt2Filter_t *baroDerivativeLpf, float) {
-        UNUSED(baroDerivativeLpf);
-        return 0.0f;
-    }
 }

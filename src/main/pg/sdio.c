@@ -57,7 +57,6 @@
 #define SDIO_D3_PIN NONE
 #endif
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(sdioConfig_t, sdioConfig, PG_SDIO_CONFIG, 0);
 
 PG_RESET_TEMPLATE(sdioConfig_t, sdioConfig,

@@ -37,9 +37,10 @@
 
 #include "config/config.h"
 
-#include "flight/autopilot.h"
-#include "flight/gps_rescue.h"
 #include "flight/position.h"
+
+#include "pg/autopilot.h"
+#include "pg/gps_rescue.h"
 
 static uint16_t gpsRescueConfig_minStartDistM; //meters
 static uint8_t gpsRescueConfig_altitudeMode;
@@ -52,16 +53,16 @@ static uint8_t gpsRescueConfig_angle; //degrees
 
 static uint16_t gpsRescueConfig_descentDistanceM; //meters
 static uint16_t gpsRescueConfig_descendRate;
-static uint8_t autopilotConfig_landingAltitudeM;
+static uint8_t apConfig_landingAltitudeM;
 
-static uint16_t autopilotConfig_throttleMin;
-static uint16_t autopilotConfig_throttleMax;
-static uint16_t autopilotConfig_hoverThrottle;
+static uint16_t apConfig_throttleMin;
+static uint16_t apConfig_throttleMax;
+static uint16_t apConfig_hoverThrottle;
 
 static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
-static uint8_t autopilotConfig_altitude_P, autopilotConfig_altitude_I, autopilotConfig_altitude_D, autopilotConfig_altitude_F;
+static uint8_t apConfig_altitude_P, apConfig_altitude_I, apConfig_altitude_D, apConfig_altitude_F;
 static uint8_t gpsRescueConfig_yawP;
 static uint8_t gpsRescueConfig_velP, gpsRescueConfig_velI, gpsRescueConfig_velD;
 
@@ -72,10 +73,10 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    autopilotConfig_altitude_P = autopilotConfig()->altitude_P;
-    autopilotConfig_altitude_I = autopilotConfig()->altitude_I;
-    autopilotConfig_altitude_D = autopilotConfig()->altitude_D;
-    autopilotConfig_altitude_F = autopilotConfig()->altitude_F;
+    apConfig_altitude_P = apConfig()->altitude_P;
+    apConfig_altitude_I = apConfig()->altitude_I;
+    apConfig_altitude_D = apConfig()->altitude_D;
+    apConfig_altitude_F = apConfig()->altitude_F;
 
     gpsRescueConfig_yawP = gpsRescueConfig()->yawP;
 
@@ -94,10 +95,10 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     UNUSED(pDisp);
     UNUSED(self);
 
-    autopilotConfigMutable()->altitude_P = autopilotConfig_altitude_P;
-    autopilotConfigMutable()->altitude_I = autopilotConfig_altitude_I;
-    autopilotConfigMutable()->altitude_D = autopilotConfig_altitude_D;
-    autopilotConfigMutable()->altitude_F = autopilotConfig_altitude_F;
+    apConfigMutable()->altitude_P = apConfig_altitude_P;
+    apConfigMutable()->altitude_I = apConfig_altitude_I;
+    apConfigMutable()->altitude_D = apConfig_altitude_D;
+    apConfigMutable()->altitude_F = apConfig_altitude_F;
 
     gpsRescueConfigMutable()->yawP = gpsRescueConfig_yawP;
 
@@ -115,10 +116,10 @@ const OSD_Entry cms_menuGpsRescuePidEntries[] =
 {
     {"--- GPS RESCUE PID---", OME_Label, NULL, NULL},
 
-    { "ALTITUDE P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_P, 0, 200, 1 } },
-    { "ALTITUDE I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_I, 0, 200, 1 } },
-    { "ALTITUDE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_D, 0, 200, 1 } },
-    { "ALTITUDE F",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_F, 0, 200, 1 } },
+    { "ALTITUDE P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_altitude_P, 0, 200, 1 } },
+    { "ALTITUDE I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_altitude_I, 0, 200, 1 } },
+    { "ALTITUDE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_altitude_D, 0, 200, 1 } },
+    { "ALTITUDE F",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_altitude_F, 0, 200, 1 } },
 
     { "YAW P",             OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_yawP, 0, 200, 1 } },
 
@@ -159,11 +160,11 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
     gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
-    autopilotConfig_landingAltitudeM = autopilotConfig()->landing_altitude_m;
+    apConfig_landingAltitudeM = apConfig()->landing_altitude_m;
 
-    autopilotConfig_throttleMin = autopilotConfig()->throttle_min;
-    autopilotConfig_throttleMax = autopilotConfig()->throttle_max;
-    autopilotConfig_hoverThrottle = autopilotConfig()->hover_throttle;
+    apConfig_throttleMin = apConfig()->throttle_min;
+    apConfig_throttleMax = apConfig()->throttle_max;
+    apConfig_hoverThrottle = apConfig()->hover_throttle;
 
     gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
     gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
@@ -187,11 +188,11 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
 
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
     gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
-    autopilotConfigMutable()->landing_altitude_m = autopilotConfig_landingAltitudeM;
+    apConfigMutable()->landing_altitude_m = apConfig_landingAltitudeM;
 
-    autopilotConfigMutable()->throttle_min = autopilotConfig_throttleMin;
-    autopilotConfigMutable()->throttle_max = autopilotConfig_throttleMax;
-    autopilotConfigMutable()->hover_throttle = autopilotConfig_hoverThrottle;
+    apConfigMutable()->throttle_min = apConfig_throttleMin;
+    apConfigMutable()->throttle_max = apConfig_throttleMax;
+    apConfigMutable()->hover_throttle = apConfig_hoverThrottle;
 
     gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
     gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;
@@ -210,15 +211,15 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
 
     { "RETURN ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_returnAltitudeM, 2, 255, 1 } },
     { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_groundSpeedCmS, 0, 3000, 1 } },
-    { "PITCH ANGLE MAX",   OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_angle, 0, 60, 1 } },
+    { "PITCH ANGLE MAX",   OME_UINT8  | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &gpsRescueConfig_angle, 0, 60, 1 } },
 
     { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 5, 500, 1 } },
     { "DESCENT RATE CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 25, 500, 1 } },
-    { "LANDING ALT     M", OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_landingAltitudeM, 1, 15, 1 } },
+    { "LANDING ALT     M", OME_UINT8  | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &apConfig_landingAltitudeM, 1, 15, 1 } },
 
-    { "THROTTLE MIN",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &autopilotConfig_throttleMin, 1050, 1400, 1 } },
-    { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &autopilotConfig_throttleMax, 1400, 2000, 1 } },
-    { "THROTTLE HOV",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &autopilotConfig_hoverThrottle, 1100, 1700, 1 } },
+    { "THROTTLE MIN",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &apConfig_throttleMin, 1050, 1400, 1 } },
+    { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &apConfig_throttleMax, 1400, 2000, 1 } },
+    { "THROTTLE HOV",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &apConfig_hoverThrottle, 1100, 1700, 1 } },
 
     { "SATS REQUIRED",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_minSats, 5, 50, 1 } },
     { "ARM WITHOUT FIX",   OME_Bool | REBOOT_REQUIRED,  NULL, &gpsRescueConfig_allowArmingWithoutFix },

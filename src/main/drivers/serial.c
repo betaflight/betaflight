@@ -44,7 +44,6 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     instance->vTable->serialWrite(instance, ch);
 }
 
-
 void serialWriteBufNoFlush(serialPort_t *instance, const uint8_t *data, int count)
 {
     if (instance->vTable->writeBuf) {

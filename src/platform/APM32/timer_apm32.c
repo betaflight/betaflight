@@ -366,7 +366,7 @@ void configTimeBase(TMR_TypeDef *tim, uint16_t period, uint32_t hz)
     handle->Init.RepetitionCounter = 0x0000;
 
     DAL_TMR_Base_Init(handle);
-    if (tim == TMR1 || tim == TMR2 || tim == TMR3 || tim == TMR4 || tim == TMR5 || tim == TMR8 || tim == TMR9) 
+    if (tim == TMR1 || tim == TMR2 || tim == TMR3 || tim == TMR4 || tim == TMR5 || tim == TMR8 || tim == TMR9)
     {
         TMR_ClockConfigTypeDef sClockSourceConfig;
         memset(&sClockSourceConfig, 0, sizeof(sClockSourceConfig));

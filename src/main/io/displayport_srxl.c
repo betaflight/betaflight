@@ -57,7 +57,6 @@ static int srxlWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, u
     return (spektrumTmTextGenPutChar(col, row, c));
 }
 
-
 static int srxlWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, const char *s)
 {
     while (*s) {

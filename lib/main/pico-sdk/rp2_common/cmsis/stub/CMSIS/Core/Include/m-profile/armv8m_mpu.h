@@ -188,7 +188,7 @@ typedef struct {
   \brief  Read MPU Type Register
   \return Number of MPU regions
 */
-__STATIC_INLINE uint32_t ARM_MPU_TYPE()
+__STATIC_INLINE uint32_t ARM_MPU_TYPE(void)
 {
   return ((MPU->TYPE) >> 8);
 }

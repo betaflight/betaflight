@@ -61,7 +61,6 @@ static USBD_STA_T USBD_CDC_ItfSendEnd(uint8_t epNum, uint8_t *buffer, uint32_t *
 static USBD_STA_T USBD_CDC_ItfReceive(uint8_t *buffer, uint32_t *length);
 static USBD_STA_T USBD_CDC_ItfSOF(void);
 
-
 /* USB CDC interface handler */
 USBD_CDC_INTERFACE_T USBD_CDC_INTERFACE =
 {
@@ -162,7 +161,7 @@ static USBD_STA_T USBD_CDC_ItfCtrl(uint8_t command, uint8_t *buffer, uint16_t le
         case USBD_CDC_CLEAR_COMM_FEATURE:
             break;
 
-        /* Line Coding Data Structure 
+        /* Line Coding Data Structure
         *  | Offset(Byte) | Field       | Length | Desc                 |
         *  | 0            | dwDTERate   | 4      | Data Terminal rate   |
         *  | 4            | bCharFormat | 1      | Stop bits            |
@@ -238,16 +237,16 @@ static USBD_STA_T USBD_CDC_ItfSend(uint8_t *buffer, uint16_t length)
     USBD_STA_T usbStatus = USBD_OK;
 
     USBD_CDC_INFO_T *usbDevCDC = (USBD_CDC_INFO_T*)gUsbDevice.devClass[gUsbDevice.classID]->classData;
-    
+
     if(usbDevCDC->cdcTx.state != USBD_CDC_XFER_IDLE)
     {
         return USBD_BUSY;
     }
-    
+
     USBD_CDC_ConfigTxBuffer(&gUsbDevice, buffer, length);
-    
+
     usbStatus = USBD_CDC_TxPacket(&gUsbDevice);
-    
+
     return usbStatus;
 }
 
@@ -285,7 +284,7 @@ static USBD_STA_T USBD_CDC_ItfSendEnd(uint8_t epNum, uint8_t *buffer, uint32_t *
 static USBD_STA_T USBD_CDC_ItfReceive(uint8_t *buffer, uint32_t *length)
 {
     USBD_STA_T usbStatus = USBD_OK;
-    
+
     // USBD_CDC_ConfigRxBuffer(&gUsbDevice, &buffer[0]);
     rxAvailable = *length;
     rxBuffPtr = buffer;
@@ -295,7 +294,7 @@ static USBD_STA_T USBD_CDC_ItfReceive(uint8_t *buffer, uint32_t *length)
         // The USB protocol requires that an empty (0 byte) packet immediately follow.
         USBD_CDC_RxPacket(&gUsbDevice);
     }
-    
+
     return usbStatus;
 }
 

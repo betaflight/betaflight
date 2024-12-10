@@ -35,7 +35,6 @@
 #include "drivers/rx/rx_nrf24l01.h"
 #include "drivers/rx/rx_spi.h"
 
-
 static const uint8_t xn297_data_scramble[30] = {
     0xbc, 0xe5, 0x66, 0x0d, 0xae, 0x8c, 0x88, 0x12,
     0x69, 0xee, 0x1f, 0xc7, 0x62, 0x97, 0xd5, 0x0b,
@@ -59,7 +58,6 @@ static uint8_t bitReverse(uint8_t bIn)
     }
     return bOut;
 }
-
 
 #define RX_TX_ADDR_LEN 5
 

@@ -42,7 +42,6 @@ float nullFilterApply(filter_t *filter, float input)
     return input;
 }
 
-
 // PT1 Low Pass filter
 
 FAST_CODE_NOINLINE float pt1FilterGain(float f_cut, float dT)
@@ -78,7 +77,6 @@ FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
     filter->state = filter->state + filter->k * (input - filter->state);
     return filter->state;
 }
-
 
 // PT2 Low Pass filter
 
@@ -117,7 +115,6 @@ FAST_CODE float pt2FilterApply(pt2Filter_t *filter, float input)
     filter->state = filter->state + filter->k * (filter->state1 - filter->state);
     return filter->state;
 }
-
 
 // PT3 Low Pass filter
 
@@ -158,7 +155,6 @@ FAST_CODE float pt3FilterApply(pt3Filter_t *filter, float input)
     filter->state = filter->state + filter->k * (filter->state2 - filter->state);
     return filter->state;
 }
-
 
 // Biquad filter
 
@@ -292,7 +288,6 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-
 // Phase Compensator (Lead-Lag-Compensator)
 
 void phaseCompInit(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
@@ -333,7 +328,6 @@ FAST_CODE float phaseCompApply(phaseComp_t *filter, const float input)
     return result;
 }
 
-
 // Slew filter with limit
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
@@ -358,7 +352,6 @@ FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
     }
     return filter->state;
 }
-
 
 // Moving average
 
@@ -387,7 +380,6 @@ FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float i
     return filter->movingSum / denom;
 }
 
-
 // Simple fixed-point lowpass filter based on integer math
 
 void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift)
@@ -405,7 +397,6 @@ int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal)
     int32_t result = filter->fp >> filter->fpShift;
     return result;
 }
-
 
 // Mean accumulator
 

@@ -161,7 +161,7 @@ static void expressLrsOnTimerUpdate(timerOvrHandlerRec_t *cbRec, captureCompare_
 #endif
 
         timerState.phaseShiftUs = 0;
-        
+
         expressLrsOnTimerTockISR();
 
         timerState.tickTock = TICK;

@@ -57,7 +57,6 @@
 #define W25Q128FV_STATUS_REGISTER_BITS        8
 #define W25Q128FV_ADDRESS_BITS                24
 
-
 // Instructions
 #define W25Q128FV_INSTRUCTION_RDID             0x9F
 
@@ -90,7 +89,6 @@
 
 #define W25Q128FV_SR2_BIT_QUAD_ENABLE           (1 << 1)
 
-
 //#define W25Q128FV_INSTRUCTION_WRITE_DISABLE    0x04
 //#define W25Q128FV_INSTRUCTION_PAGE_PROGRAM     0x02
 
@@ -102,7 +100,6 @@
 
 #define W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS       3           // tPPmax = 3ms, tPPtyp = 0.7ms
 #define W25Q128FV_TIMEOUT_WRITE_ENABLE_MS       1
-
 
 typedef enum {
     INITIAL_MODE_SPI = 0,
@@ -168,7 +165,6 @@ MMFLASH_CODE static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t 
     octoSpiReceive1LINE(octoSpi, command, 0, in, W25Q128FV_STATUS_REGISTER_BITS / 8);
 #endif
 
-
     return in[0];
 }
 
@@ -203,7 +199,6 @@ static void w25q128fv_deviceReset(flashDevice_t *fdevice)
     w25q128fv_performOneByteCommand(io, W25Q128FV_INSTRUCTION_WRITE_ENABLE);
     w25q128fv_writeRegister(io, W25Q128FV_INSTRUCTION_WRITE_STATUS2_REG, 0x00);
 #endif
-
 
 #if defined(USE_FLASH_WRITES_USING_4LINES) || defined(USE_FLASH_READS_USING_4LINES)
     uint8_t registerValue = w25q128fv_readRegister(io, W25Q128FV_INSTRUCTION_READ_STATUS2_REG);
@@ -358,7 +353,7 @@ MMFLASH_CODE static void w25q128fv_eraseSector(flashDevice_t *fdevice, uint32_t 
     w25q128fv_writeEnable(fdevice);
 
     w25q128fv_performCommandWithAddress(&fdevice->io, W25Q128FV_INSTRUCTION_BLOCK_ERASE_64KB, address);
-    
+
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_BLOCK_ERASE_64KB_MS);
 }
 

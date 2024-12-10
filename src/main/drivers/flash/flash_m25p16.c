@@ -112,6 +112,9 @@ struct {
     // Winbond W25Q128
     // Datasheet: https://www.winbond.com/resource-files/w25q128fv%20rev.l%2008242015.pdf
     { 0xEF4018, 104, 50, 256, 256 },
+    // Winbond W25Q512
+    // Datasheet: https://www.winbond.com/resource-files/W25Q512JV%20SPI%20RevB%2006252019%20KMS.pdf
+    { 0xEF4020, 133, 50, 1024, 256 },
     // PUYA PY25Q128
     // Datasheet: https://www.puyasemi.com/download_path/%E6%95%B0%E6%8D%AE%E6%89%8B%E5%86%8C/Flash%20%E8%8A%AF%E7%89%87/PY25F128HA_datasheet_V1.1.pdf
     { 0x852018, 133, 80, 256, 256 },
@@ -274,7 +277,6 @@ void m25p16_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
     }
 }
 
-
 static void m25p16_setCommandAddress(uint8_t *buf, uint32_t address, bool useLongAddress)
 {
     if (useLongAddress) {
@@ -331,7 +333,6 @@ busStatus_e m25p16_callbackReady(uint32_t arg)
 
     return BUS_READY;
 }
-
 
 /**
  * Erase a sector full of bytes to all 1's at the given byte offset in the flash chip.
@@ -410,7 +411,6 @@ static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, vo
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
 }
-
 
 static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
@@ -565,7 +565,6 @@ static void m25p16_pageProgramQspi(flashDevice_t *fdevice, uint32_t address, con
     m25p16_pageProgramFinish(fdevice);
 }
 #endif /* USE_QUADSPI */
-
 
 /**
  * Read `length` bytes into the provided `buffer` from the flash starting from the given `address` (which need not lie

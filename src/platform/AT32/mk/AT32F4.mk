@@ -2,9 +2,9 @@
 # AT32F4 Make file include
 #
 
-CMSIS_DIR      := $(ROOT)/lib/main/AT32F43x/cmsis
-STDPERIPH_DIR   = $(ROOT)/lib/main/AT32F43x/drivers
-MIDDLEWARES_DIR = $(ROOT)/lib/main/AT32F43x/middlewares
+CMSIS_DIR      := $(LIB_MAIN_DIR)/AT32F43x/cmsis
+STDPERIPH_DIR   = $(LIB_MAIN_DIR)/AT32F43x/drivers
+MIDDLEWARES_DIR = $(LIB_MAIN_DIR)/AT32F43x/middlewares
 STDPERIPH_SRC   = \
         at32f435_437_acc.c \
         at32f435_437_adc.c \
@@ -45,9 +45,9 @@ STDPERIPH_SRC   = \
         usbd_class/msc/msc_class.c \
         usbd_class/msc/msc_desc.c
 
-STARTUP_SRC     = startup/startup_at32f435_437.s
+STARTUP_SRC     = AT32/startup/startup_at32f435_437.s
 
-VPATH           := $(VPATH):$(ROOT)/lib/main/AT32F43x/cmsis/cm4/core_support:$(STDPERIPH_DIR)/src:$(MIDDLEWARES_DIR):$(SRC_DIR)/startup/at32
+VPATH           := $(VPATH):$(LIB_MAIN_DIR)/AT32F43x/cmsis/cm4/core_support:$(STDPERIPH_DIR)/src:$(MIDDLEWARES_DIR)
 
 VCP_SRC =  \
             usbd_class/cdc/cdc_class.c \
@@ -80,32 +80,33 @@ ARCH_FLAGS      = -std=c99  -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=
 DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 -DUSE_OTG_HOST_MODE
 
 MCU_COMMON_SRC = \
-            startup/at32f435_437_clock.c \
-            startup/system_at32f435_437.c \
-            adc_at32f43x.c \
-            bus_i2c_atbsp.c \
-            bus_i2c_atbsp_init.c \
-            bus_spi_at32bsp.c \
-            camera_control_at32.c \
-            debug.c \
-            dma_at32f43x.c \
-            dma_reqmap_mcu.c \
-            dshot_bitbang.c \
-            dshot_bitbang_stdperiph.c \
-            exti_at32.c \
-            io_at32.c \
-            light_ws2811strip_at32f43x.c \
-            persistent_at32bsp.c \
-            pwm_output_at32bsp.c \
-            pwm_output_dshot.c \
-            rcc_at32.c \
-            serial_uart_at32bsp.c \
-            serial_uart_at32f43x.c \
-            serial_usb_vcp_at32f4.c \
-            system_at32f43x.c \
-            timer_at32bsp.c \
-            timer_at32f43x.c \
-            usb_msc_at32f43x.c \
+            common/stm32/system.c \
+            AT32/startup/at32f435_437_clock.c \
+            AT32/startup/system_at32f435_437.c \
+            AT32/adc_at32f43x.c \
+            AT32/bus_i2c_atbsp.c \
+            AT32/bus_i2c_atbsp_init.c \
+            AT32/bus_spi_at32bsp.c \
+            AT32/camera_control_at32.c \
+            AT32/debug.c \
+            AT32/dma_at32f43x.c \
+            AT32/dma_reqmap_mcu.c \
+            AT32/dshot_bitbang.c \
+            AT32/dshot_bitbang_stdperiph.c \
+            AT32/exti_at32.c \
+            AT32/io_at32.c \
+            AT32/light_ws2811strip_at32f43x.c \
+            AT32/persistent_at32bsp.c \
+            AT32/pwm_output_at32bsp.c \
+            AT32/pwm_output_dshot.c \
+            AT32/rcc_at32.c \
+            AT32/serial_uart_at32bsp.c \
+            AT32/serial_uart_at32f43x.c \
+            AT32/serial_usb_vcp_at32f4.c \
+            AT32/system_at32f43x.c \
+            AT32/timer_at32bsp.c \
+            AT32/timer_at32f43x.c \
+            AT32/usb_msc_at32f43x.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
@@ -113,9 +114,27 @@ MCU_COMMON_SRC = \
             $(MIDDLEWARES_DIR)/i2c_application_library/i2c_application.c \
             drivers/bus_i2c_timing.c \
             drivers/usb_msc_common.c \
+            drivers/adc.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart_pinconfig.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
             msc/emfat_file.c
 
-MCU_EXCLUDES =
+SPEED_OPTIMISED_SRC += \
+            common/stm32/system.c
+
+SIZE_OPTIMISED_SRC += \
+            drivers/bus_i2c_timing.c \
+            drivers/inverter.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
+            drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart_pinconfig.c

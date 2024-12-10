@@ -57,8 +57,6 @@ void NMI_Handler(void)
 {
 }
 
-
-
 /*******************************************************************************
  * Function Name  : MemManage_Handler
  * Description    : This function handles Memory Manage exception.
@@ -133,7 +131,6 @@ void DebugMon_Handler(void)
 void PendSV_Handler(void)
 {
 }
-
 
 /*******************************************************************************
  * Function Name  : USB_IRQHandler

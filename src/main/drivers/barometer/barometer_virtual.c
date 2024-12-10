@@ -30,10 +30,8 @@
 #include "barometer.h"
 #include "barometer_virtual.h"
 
-
 static int32_t virtualPressure;
 static int32_t virtualTemperature;
-
 
 static bool virtualBaroStart(baroDev_t *baro)
 {

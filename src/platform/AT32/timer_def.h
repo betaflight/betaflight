@@ -162,7 +162,6 @@
 #define DEF_TIM_CHANNEL(ch)                   CONCAT(DEF_TIM_CHANNEL__, DEF_TIM_CH_GET(ch))
 #define DEF_TIM_CHANNEL__D(chan_n, n_channel) chan_n
 
-
 #define DEF_TIM_DMA_CHANNEL(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_CHANNEL__, DEF_TIM_DMA_GET(variant, timch))
 #define DEF_TIM_DMA_CHANNEL__D(dma_n, channel_n)  (dmaResource_t *)DMA ## dma_n ## _CHANNEL ## channel_n
@@ -175,7 +174,6 @@
     CONCAT(DEF_TIM_DMA_HANDLER__, DEF_TIM_DMA_GET(variant, timch))
 #define DEF_TIM_DMA_HANDLER__D(dma_n, channel_n) DMA ## dma_n ## _CH ## channel_n ## _HANDLER
 #define DEF_TIM_DMA_HANDLER__NONE                       0
-
 
 /* DMA Channel Mappings */
 // D(DMAx, Stream)

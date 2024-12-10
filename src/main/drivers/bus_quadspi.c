@@ -262,7 +262,6 @@ void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)
             haveResources = haveResources && pDev->bk2CS;
         }
 
-
         if (haveResources) {
             pDev->dev = hw->reg;
             pDev->rcc = hw->rcc;

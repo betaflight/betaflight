@@ -59,7 +59,6 @@
 
 #include "platform.h"
 
-
 #ifdef USE_TELEMETRY_HOTT
 
 #include "build/build_config.h"

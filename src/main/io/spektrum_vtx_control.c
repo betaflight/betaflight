@@ -147,7 +147,6 @@ void spektrumHandleVtxControl(uint32_t vtxCntrl)
 }
 // ###########################################
 
-
 // ############ VTX_CONTROL task #############
 void spektrumVtxControl(void)
 {

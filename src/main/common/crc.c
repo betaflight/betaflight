@@ -26,7 +26,6 @@
 
 #include "streambuf.h"
 
-
 uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
 {
     crc ^= (uint16_t)a << 8;

@@ -294,7 +294,7 @@ typedef enum {
 
 #define SX127x_FREQ_STEP 61.03515625
 
-#define SX127x_FREQ_CORRECTION_MAX ((int32_t)(100000 / SX127x_FREQ_STEP)) 
+#define SX127x_FREQ_CORRECTION_MAX ((int32_t)(100000 / SX127x_FREQ_STEP))
 #define SX127x_FREQ_CORRECTION_MIN ((int32_t)(-100000 / SX127x_FREQ_STEP))
 
 bool sx127xInit(IO_t resetPin, IO_t busyPin);

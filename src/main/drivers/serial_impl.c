@@ -3,7 +3,6 @@
 
 #include "platform.h"
 
-
 #include "io/serial.h"
 
 #include "serial.h"
@@ -35,5 +34,4 @@ bool serialOptions_pushPull(portOptions_e options)
 {
     return options & (SERIAL_INVERTED | SERIAL_BIDIR_PP);
 }
-
 

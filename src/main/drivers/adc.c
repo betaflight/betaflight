@@ -132,16 +132,16 @@ int32_t adcTSSlopeK;
 
 /**
  * Use a measurement of the fixed internal vref to calculate the external Vref+
- * 
+ *
  * The ADC full range reading equates to Vref+ on the channel. Vref+ is typically
  * fed from Vcc at 3.3V, but since Vcc isn't a critical value it may be off
- * by a little due to variation in the regulator. Some chips are provided with a 
+ * by a little due to variation in the regulator. Some chips are provided with a
  * known internal voltage reference, typically around 1.2V. By measuring this
- * reference with an internally connected ADC channel we can then calculate a more 
+ * reference with an internally connected ADC channel we can then calculate a more
  * accurate value for Vref+ instead of assuming that it is 3.3V
- * 
+ *
  * @param intVRefAdcValue reading from the internal calibration voltage
- * 
+ *
  * @return the calculated value of Vref+
 */
 uint16_t adcInternalCompensateVref(uint16_t intVRefAdcValue)

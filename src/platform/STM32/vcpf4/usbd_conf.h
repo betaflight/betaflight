@@ -75,7 +75,6 @@
 #define MSC_MAX_PACKET                64
 #endif
 
-
 #define MSC_MEDIA_PACKET             4096
 /* END MSC */
 
@@ -90,7 +89,6 @@
 /**
   * @}
   */
-
 
 /** @defgroup USB_CONF_Exported_Macros
   * @{
@@ -112,7 +110,6 @@
 /**
   * @}
   */
-
 
 #endif //__USBD_CONF__H__
 

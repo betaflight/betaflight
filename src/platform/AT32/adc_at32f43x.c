@@ -20,21 +20,21 @@
 
 /**
  * Read internal and external analog channels
- * 
+ *
  * Internal channels provide temperature and the internal voltage reference
  * External channels are for vbat, rssi, current and a generic 'external' inputs
- * 
- * The ADC is free running and so doesn't require a timer. Samples are moved from 
+ *
+ * The ADC is free running and so doesn't require a timer. Samples are moved from
  * the ADC output register to a buffer by DMA
- * 
+ *
  * The sample rate is kept low to reduce impact on the DMA controller, and the lowest
  * priority is set for the DMA transfer. It's also recommended to use the highest numbered
  * DMA channel on the dma controller for ADC, since that is the lowest priority channel
  * for transfers at the same DMA priority.
- * 
+ *
  * Sample rate is set between 1 and 2kHz by using a long input sampling time and reasonably
  * high hardware oversampling.
- * 
+ *
  * Note that only ADC1 is used, although the code contains remnants of support for all
  * three ADC.
 */
@@ -63,7 +63,6 @@
 #include "drivers/adc_impl.h"
 
 #include "pg/adc.h"
-
 
 const adcDevice_t adcHardware[ADCDEV_COUNT] = {
     {
@@ -123,12 +122,12 @@ static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_CHANNEL_COUNT];
 
 /**
  * Initialise the specified ADC to read multiple channels in repeat mode
- * 
+ *
  * Sets 12 bit resolution, right aligned
- * 
+ *
  * @param dev Specifies the ADC device to use
  * @param channelCount how many channels to repeat over
- * 
+ *
 */
 void adcInitDevice(const adc_type *dev, const int channelCount)
 {
@@ -146,7 +145,7 @@ void adcInitDevice(const adc_type *dev, const int channelCount)
 
 /**
  * Find a given pin (defined by ioTag) in the map
- * 
+ *
  * @param tag the ioTag to search for
  * @return the index in adcTagMap corresponding to the given ioTag or -1 if not found
 */
@@ -164,12 +163,12 @@ int adcFindTagMapEntry(const ioTag_t tag)
  * Setup the scaling offsets and factors used in adc.c
  * @see src/main/drivers/adc.c
  * @see src/main/drivers/adc_impl.h
- * 
+ *
  * There are a number of global calibration/scaling factors used in src/main/drivers/adc.c that need to
  * be set to appropriate values if we want to re-use existing code, e.g. adcInternalComputeTemperature
  * (the alternative would be to duplicate the code into ST and AT specific versions).
  * This is made a little confusing since the implementation based on ST datasheets approaches the calculation with
- * different formula and express the scaling factors in different units compared to the AT datasheets. 
+ * different formula and express the scaling factors in different units compared to the AT datasheets.
  * The constants are defined in src/main/drivers/adc_impl.h. It seems clearest to use the units from
  * the datasheet when defining those values, so here we have to convert to what's expected in
  * adcInternalComputeTemperature.
@@ -192,40 +191,39 @@ void setScalingFactors(void)
     adcTSSlopeK = lrintf(-3300.0f*1000.0f/4095.0f/TEMPSENSOR_SLOPE);
 }
 
-
 /**
  * Setup the ADC so that it's running in the background and ready to
  * provide channel data
- * 
+ *
  * Notes:
  *  This code only uses ADC1 despite appearances to the contrary, and has not been tested with the other ADCs
- * 
+ *
  * From the RM:
  *   ADCCLK must be less than 80 MHz, while the ADCCLK frequency must be lower than PCLK2
- * 
+ *
  * PCLK2 looks like it's running at 144Mhz, but should be confirmed
- * 
+ *
  * With HCLK of 288, a divider of 4 gives an ADCCLK of 72MHz
- * 
- * sample time is 
+ *
+ * sample time is
  *   ADC_SAMPLE + nbits + 0.5 ADCCLK periods
- * 
+ *
  * So with 12bit samples and ADC_SAMPLE_92_5 that's 105 clks.
- * 
- * We're using HCLK/4, so 288/4 = 72MHz, each tick is 14ns. Add 5 clks for the interval between conversions, 
+ *
+ * We're using HCLK/4, so 288/4 = 72MHz, each tick is 14ns. Add 5 clks for the interval between conversions,
  * 110 clks total is 1.54us per channel.
- * 
+ *
  * Max 6 channels is a total of 9.24us, or a basic sample rate of 108kHz per channel
- * 
+ *
  * If we use 64x oversampling we'll get an effective rate of 1.7kHz per channel which should still be plenty.
- * 
+ *
  * (RM and DS mention fast and slow channels, but don't give details on how this affects the above.
  *  It's not relevant to our use case, so ignore the difference for now)
- * 
+ *
  * Called from fc/init.c
- * 
+ *
  * @param config - defines the channels to use for each external input (vbat, rssi, current, external) and also has calibration values for the temperature sensor
- * 
+ *
 */
 void adcInit(const adcConfig_t *config)
 {
@@ -276,7 +274,7 @@ void adcInit(const adcConfig_t *config)
 
             // Since ADC1 can do all channels this will only ever return adc1 and is unnecessary
 
-            // Find an ADC instance that can be used for the given TagMap index. 
+            // Find an ADC instance that can be used for the given TagMap index.
             // for (dev = 0; dev < ADCDEV_COUNT; dev++) {
             //     #ifndef USE_DMA_SPEC
             //     if (!adcDevice[dev].ADCx || !adcDevice[dev].dmaResource) {
@@ -332,7 +330,6 @@ void adcInit(const adcConfig_t *config)
 
     adc_common_config(&adc_common_struct);
 
-
     // Only adc1 will have any channels assigned to it after the code above, so this can be simplified
 
     int  dmaBufferIndex = 0;
@@ -348,7 +345,6 @@ void adcInit(const adcConfig_t *config)
 
         // Set the oversampling ratio and matching shift
         adc_oversample_ratio_shift_set(adc->ADCx, ADC_OVERSAMPLE_RATIO_64, ADC_OVERSAMPLE_SHIFT_6);
-
 
         #ifdef USE_DMA_SPEC
 
@@ -459,13 +455,13 @@ uint16_t adcInternalRead(int channel)
 
 /**
  * Read the internal Vref and return raw value
- * 
+ *
  * The internal Vref is 1.2V and can be used to calculate the external Vref+
  * External Vref+ determines the scale for the raw ADC readings but since it
  * is often directly connected to Vdd (approx 3.3V) it isn't accurately controlled.
  * Calculating the actual value of Vref+ by using measurements of the known 1.2V
  * internal reference can improve overall accuracy.
- * 
+ *
  * @return the raw ADC reading for the internal voltage reference
  * @see adcInternalCompensateVref in src/main/drivers/adc.c
 */
@@ -478,7 +474,7 @@ uint16_t adcInternalReadVrefint(void)
 
 /**
  * Read the internal temperature sensor
- * 
+ *
  * @return the raw ADC reading
 */
 uint16_t adcInternalReadTempsensor(void)

@@ -245,7 +245,8 @@
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_ESCSERIAL_SIMONK
-#define USE_ALT_HOLD_MODE
+#define USE_ALTITUDE_HOLD
+#define USE_POSITION_HOLD
 
 #if !defined(USE_GPS)
 #define USE_GPS
@@ -396,12 +397,10 @@
 #define USE_GPS_RESCUE
 #endif // USE_GPS
 
-
 #if (defined(USE_OSD_HD) || defined(USE_OSD_SD)) && !defined(USE_OSD)
 // If either USE_OSD_SD for USE_OSD_HD are defined, ensure that USE_OSD is also defined
 #define USE_OSD
 #endif
-
 
 #if defined(USE_OSD)
 

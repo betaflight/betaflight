@@ -46,7 +46,6 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
@@ -57,6 +56,8 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+
+#include "pg/autopilot.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
@@ -117,6 +118,12 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define CRASH_RECOVERY_DETECTION_DELAY_US 1000000  // 1 second delay before crash recovery detection is active after entering a self-level mode
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
+
+#ifdef USE_ACC
+#define IS_AXIS_IN_ANGLE_MODE(i) (pidRuntime.axisInAngleMode[(i)])
+#else
+#define IS_AXIS_IN_ANGLE_MODE(i) false
+#endif // USE_ACC
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
 
@@ -256,6 +263,21 @@ void resetPidProfile(pidProfile_t *pidProfile)
     );
 }
 
+static bool isTpaActive(tpaMode_e tpaMode, term_e term) {
+    switch (tpaMode) {
+    case TPA_MODE_PD:
+        return term == TERM_P || term == TERM_D;
+    case TPA_MODE_D:
+        return term == TERM_D;
+#ifdef USE_WING
+    case TPA_MODE_PDS:
+        return term == TERM_P || term == TERM_D || term == TERM_S;
+#endif
+    default:
+        return false;
+    }
+}
+
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 {
     for (int i = 0; i < PID_PROFILE_COUNT; i++) {
@@ -266,7 +288,6 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 // Scale factors to make best use of range with D_LPF debugging, aiming for max +/-16K as debug values are 16 bit
 #define D_LPF_RAW_SCALE 25
 #define D_LPF_PRE_TPA_SCALE 10
-
 
 void pidSetItermAccelerator(float newItermAccelerator)
 {
@@ -344,7 +365,49 @@ static float calcWingTpaArgument(void)
 
     return tpaArgument;
 }
+
+static void updateStermTpaFactor(int axis, float tpaFactor)
+{
+    float tpaFactorSterm = tpaFactor;
+    if (pidRuntime.tpaCurveType == TPA_CURVE_HYPERBOLIC) {
+        const float maxSterm = tpaFactorSterm * (float)currentPidProfile->pid[axis].S * S_TERM_SCALE;
+        if (maxSterm > 1.0f) {
+            tpaFactorSterm *=  1.0f / maxSterm;
+        }
+    }
+    pidRuntime.tpaFactorSterm[axis] = tpaFactorSterm;
+}
+
+static void updateStermTpaFactors(void) {
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        float tpaFactor = pidRuntime.tpaFactor;
+        if (i == FD_YAW && currentPidProfile->yaw_type == YAW_TYPE_DIFF_THRUST) {
+            tpaFactor = pidRuntime.tpaFactorYaw;
+        }
+        updateStermTpaFactor(i, tpaFactor);
+    }
+}
 #endif // USE_WING
+
+static float wingAdjustSetpoint(float currentPidSetpoint, int axis)
+{
+#ifdef USE_WING
+    float adjustedSetpoint = currentPidSetpoint;
+    if (!IS_AXIS_IN_ANGLE_MODE(axis)) {
+        const bool skipYaw = axis == FD_YAW && currentPidProfile->yaw_type == YAW_TYPE_DIFF_THRUST;
+        if (pidRuntime.tpaFactorSterm[axis] > 0.0f && pidRuntime.tpaFactor > 0.0f && !skipYaw) {
+            adjustedSetpoint = currentPidSetpoint * pidRuntime.tpaFactorSterm[axis] / pidRuntime.tpaFactor;
+        }
+    }
+
+    DEBUG_SET(DEBUG_WING_SETPOINT, 2 * axis, lrintf(currentPidSetpoint));
+    DEBUG_SET(DEBUG_WING_SETPOINT, 2 * axis + 1, lrintf(adjustedSetpoint));
+    return adjustedSetpoint;
+#else
+    UNUSED(axis);
+    return currentPidSetpoint;
+#endif // USE_WING
+}
 
 float getTpaFactorClassic(float tpaArgument)
 {
@@ -389,7 +452,7 @@ void pidUpdateTpaFactor(float throttle)
 
     DEBUG_SET(DEBUG_TPA, 0, lrintf(tpaFactor * 1000));
     pidRuntime.tpaFactor = tpaFactor;
-    
+
 #ifdef USE_WING
     switch (currentPidProfile->yaw_type) {
     case YAW_TYPE_DIFF_THRUST:
@@ -400,6 +463,7 @@ void pidUpdateTpaFactor(float throttle)
         pidRuntime.tpaFactorYaw = pidRuntime.tpaFactor;
         break;
     }
+    updateStermTpaFactors();
 #endif // USE_WING
 }
 
@@ -482,7 +546,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 {
     // Applies only to axes that are in Angle mode
     // We now use Acro Rates, transformed into the range +/- 1, to provide setpoints
-    const float angleLimit = pidProfile->angle_limit;
+    float angleLimit = pidProfile->angle_limit;
     float angleFeedforward = 0.0f;
     // if user changes rates profile, update the max setpoint for angle mode
     const float maxSetpointRateInv = 1.0f / getMaxRcRate(axis);
@@ -499,13 +563,28 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
 #ifdef USE_WING
     if (axis == FD_PITCH) {
-        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;        
+        angleTarget += (float)pidProfile->angle_pitch_offset / 10.0f;
     }
 #endif // USE_WING
 
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
 #endif
+#ifdef USE_POSITION_HOLD
+    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        angleFeedforward = 0.0f; // otherwise the lag of the PT3 carries recent stick inputs into the hold
+        if (isAutopilotInControl()) {
+            // sticks are not deflected
+            angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
+            angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
+        }
+        // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
+        angleLimit = fminf(0.5f * apConfig()->max_angle, angleLimit);
+    }
+#endif
+
+    angleTarget = constrainf(angleTarget, -angleLimit, angleLimit);
+
     const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
     const float errorAngle = angleTarget - currentAngle;
     float angleRate = errorAngle * pidRuntime.angleGain + angleFeedforward;
@@ -523,7 +602,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
     angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
 
-    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | POS_HOLD_MODE)) {
         currentPidSetpoint = angleRate;
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
@@ -644,7 +723,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 {
     float ret = setPoint;
 
-    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE)) {
+    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
         bool resetIterm = false;
         float projectedAngle = 0;
         const int setpointSign = acroTrainerSign(setPoint);
@@ -863,21 +942,19 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
     if (wasThrottleRaised()
         // and, either sticks are centred and throttle zeroed,
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
-            // we could test here for stage 2 failsafe (including both landing or GPS Rescue)
-            // this may permit removing the GPS Rescue disarm method altogether
-#ifdef USE_ALT_HOLD_MODE
-            // or in altitude hold mode, including failsafe landing mode, indirectly
+#ifdef USE_ALTITUDE_HOLD
+            // or, in altitude hold mode, where throttle can be non-zero
             || FLIGHT_MODE(ALT_HOLD_MODE)
 #endif
         )) {
         // increase sensitivity by 50% when low and in altitude hold or failsafe landing
         // for more reliable disarm with gentle controlled landings
         float lowAltitudeSensitivity = 1.0f;
-#ifdef USE_ALT_HOLD_MODE
+#ifdef USE_ALTITUDE_HOLD
         lowAltitudeSensitivity = (FLIGHT_MODE(ALT_HOLD_MODE) && isBelowLandingAltitude()) ? 1.5f : 1.0f;
 #endif
-        // and disarm if accelerometer jerk exceeds threshold...
-        if ((fabsf(acc.accDelta) * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
+        // and disarm if jerk exceeds threshold...
+        if ((acc.jerkMagnitude * lowAltitudeSensitivity) > pidRuntime.landingDisarmThreshold) {
             // then disarm
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH); // NB: need a better message
             disarm(DISARM_REASON_LANDING);
@@ -885,7 +962,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         }
     }
     DEBUG_SET(DEBUG_EZLANDING, 6, lrintf(getMaxRcDeflectionAbs() * 100.0f));
-    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.accDelta));
+    DEBUG_SET(DEBUG_EZLANDING, 7, lrintf(acc.jerkMagnitude * 1e3f));
 }
 
 #ifdef USE_LAUNCH_CONTROL
@@ -931,18 +1008,48 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-static float getSterm(int axis, const pidProfile_t *pidProfile)
+static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
+{
+    float tpaFactor = pidRuntime.tpaFactor;
+
+#ifdef USE_WING
+    if (axis == FD_YAW) {
+        tpaFactor = pidRuntime.tpaFactorYaw;
+    }
+#else
+    UNUSED(axis);
+#endif
+
+    const bool tpaActive = isTpaActive(pidProfile->tpa_mode, term);
+    switch (term) {
+    case TERM_P:
+        return tpaActive ? tpaFactor : 1.0f;
+    case TERM_D:
+        return tpaFactor;
+#ifdef USE_WING
+    case TERM_S:
+        return tpaActive ? pidRuntime.tpaFactorSterm[axis] : 1.0f;
+#endif
+    default:
+        return 1.0f;
+    }
+}
+
+static float getSterm(int axis, const pidProfile_t *pidProfile, float setpoint)
 {
 #ifdef USE_WING
-    const float sTerm = getSetpointRate(axis) / getMaxRcRate(axis) * 1000.0f *
-        (float)pidProfile->pid[axis].S / 100.0f;
+    float sTerm = setpoint / getMaxRcRate(axis) * 1000.0f *
+        (float)pidProfile->pid[axis].S * S_TERM_SCALE;
 
-    DEBUG_SET(DEBUG_S_TERM, axis, lrintf(sTerm));
+    DEBUG_SET(DEBUG_S_TERM, 2 * axis, lrintf(sTerm));
+    sTerm *= getTpaFactor(pidProfile, axis, TERM_S);
+    DEBUG_SET(DEBUG_S_TERM, 2 * axis + 1, lrintf(sTerm));
 
     return sTerm;
 #else
     UNUSED(axis);
     UNUSED(pidProfile);
+    UNUSED(setpoint);
     return 0.0f;
 #endif
 }
@@ -994,28 +1101,6 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 #endif // USE_WING
 }
 
-static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
-{
-    float tpaFactor = pidRuntime.tpaFactor;
-    
-#ifdef USE_WING
-    if (axis == FD_YAW) {
-        tpaFactor = pidRuntime.tpaFactorYaw;
-    }
-#else
-    UNUSED(axis);
-#endif
-
-    switch (term) {
-    case TERM_P:
-        return (pidProfile->tpa_mode == TPA_MODE_PD) ? tpaFactor : 1.0f;
-    case TERM_D:
-        return tpaFactor;
-    default:
-        return 1.0f;
-    }
-}
-
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
@@ -1038,8 +1123,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     float horizonLevelStrength = 0.0f;
 
     const bool isExternalAngleModeRequest = FLIGHT_MODE(GPS_RESCUE_MODE)
-#ifdef USE_ALT_HOLD_MODE
-                || FLIGHT_MODE(ALT_HOLD_MODE)
+#ifdef USE_ALTITUDE_HOLD
+                || FLIGHT_MODE(ALT_HOLD_MODE) // todo - check if this is needed
+#endif
+#ifdef USE_POSITION_HOLD
+                || FLIGHT_MODE(POS_HOLD_MODE) 
 #endif
                 ;
     levelMode_e levelMode;
@@ -1145,6 +1233,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 #endif
+
+        const float currentPidSetpointBeforeWingAdjust = currentPidSetpoint;
+        currentPidSetpoint = wingAdjustSetpoint(currentPidSetpoint, axis);
 
 #ifdef USE_ACRO_TRAINER
         if ((axis != FD_YAW) && pidRuntime.acroTrainerActive && !pidRuntime.inCrashRecoveryMode && !launchControlActive) {
@@ -1368,7 +1459,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 
-        pidData[axis].S = getSterm(axis, pidProfile);
+        pidData[axis].S = getSterm(axis, pidProfile, currentPidSetpointBeforeWingAdjust);
         applySpa(axis, pidProfile);
 
         // calculating the PID sum

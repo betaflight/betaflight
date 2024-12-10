@@ -2,7 +2,7 @@
  *
  * @file        system_apm32f4xx.h
  *
- * @brief       CMSIS Cortex-M4 Device System Source File for APM32F4xx devices.       
+ * @brief       CMSIS Cortex-M4 Device System Source File for APM32F4xx devices.
  *
  * @version     V1.0.0
  *
@@ -23,7 +23,7 @@
  *  See the GEEHY SOFTWARE PACKAGE LICENSE for the governing permissions
  *  and limitations under the License.
  *
- */ 
+ */
 
 /** @addtogroup CMSIS
   * @{
@@ -31,8 +31,8 @@
 
 /** @addtogroup apm32f4xx_system
   * @{
-  */  
-  
+  */
+
 /**
   * @brief Define to prevent recursive inclusion
   */
@@ -41,7 +41,7 @@
 
 #ifdef __cplusplus
  extern "C" {
-#endif 
+#endif
 
 /** @addtogroup APM32F4xx_System_Includes
   * @{
@@ -50,7 +50,6 @@
 /**
   * @}
   */
-
 
 /** @addtogroup APM32F4xx_System_Exported_types
   * @{
@@ -83,7 +82,7 @@ extern const uint8_t  APBPrescTable[8];     /*!< APB prescalers table values */
 /** @addtogroup APM32F4xx_System_Exported_Functions
   * @{
   */
-  
+
 extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 extern void OverclockRebootIfNecessary(uint32_t overclockLevel);
@@ -106,7 +105,7 @@ extern void DAL_SysClkConfig(void);
 /**
   * @}
   */
-  
+
 /**
   * @}
-  */  
+  */

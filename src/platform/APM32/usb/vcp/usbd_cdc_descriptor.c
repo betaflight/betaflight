@@ -190,7 +190,7 @@ static uint8_t USBD_ConfigDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x00,
     /* bcdCDC: spec release number */
     0x10, 0x01,
-    
+
     /* CDC Call Management Function Descriptor */
     /* bFunctionLength */
     0x05,
@@ -212,7 +212,7 @@ static uint8_t USBD_ConfigDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x02,
     /* bmCapabilities */
     0x02,
-    
+
     /* CDC Union Function Descriptor */
     /* bFunctionLength */
     0x05,
@@ -224,7 +224,7 @@ static uint8_t USBD_ConfigDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x00,
     /* bSlaveInterface0: Data Class Interface */
     0x01,
-    
+
     /* Endpoint 2 */
     /* bLength */
     0x07,
@@ -239,7 +239,7 @@ static uint8_t USBD_ConfigDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     USBD_CDC_CMD_MP_SIZE >> 8,
     /* bInterval: */
     USBD_CDC_FS_INTERVAL,
-    
+
     /* CDC Data Interface */
     /* bLength */
     0x09,
@@ -259,7 +259,7 @@ static uint8_t USBD_ConfigDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x00,
     /* iInterface */
     0x00,
-    
+
     /* Endpoint OUT */
     /* bLength */
     0x07,
@@ -274,7 +274,7 @@ static uint8_t USBD_ConfigDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     USBD_CDC_FS_MP_SIZE >> 8,
     /* bInterval: */
     0x00,
-    
+
     /* Endpoint IN */
     /* bLength */
     0x07,
@@ -348,7 +348,7 @@ static uint8_t USBD_OtherSpeedCfgDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x00,
     /* bcdCDC: spec release number */
     0x10, 0x01,
-    
+
     /* CDC Call Management Function Descriptor */
     /* bFunctionLength */
     0x05,
@@ -370,7 +370,7 @@ static uint8_t USBD_OtherSpeedCfgDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x02,
     /* bmCapabilities */
     0x02,
-    
+
     /* CDC Union Function Descriptor */
     /* bFunctionLength */
     0x05,
@@ -382,7 +382,7 @@ static uint8_t USBD_OtherSpeedCfgDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x00,
     /* bSlaveInterface0: Data Class Interface */
     0x01,
-    
+
     /* Endpoint 2 */
     /* bLength */
     0x07,
@@ -397,7 +397,7 @@ static uint8_t USBD_OtherSpeedCfgDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     USBD_CDC_CMD_MP_SIZE >> 8,
     /* bInterval: */
     USBD_CDC_FS_INTERVAL,
-    
+
     /* CDC Data Interface */
     /* bLength */
     0x09,
@@ -417,7 +417,7 @@ static uint8_t USBD_OtherSpeedCfgDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     0x00,
     /* iInterface */
     0x00,
-    
+
     /* Endpoint OUT */
     /* bLength */
     0x07,
@@ -432,7 +432,7 @@ static uint8_t USBD_OtherSpeedCfgDesc[USBD_CONFIG_DESCRIPTOR_SIZE] =
     USBD_CDC_FS_MP_SIZE >> 8,
     /* bInterval: */
     0x00,
-    
+
     /* Endpoint IN */
     /* bLength */
     0x07,

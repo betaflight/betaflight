@@ -91,7 +91,7 @@
 #define ICM426XX_RA_ACCEL_CONFIG_STATIC4            0x05  // User Bank 2
 // --- Register & setting for gyro and acc UI Filter --------
 #define ICM426XX_RA_GYRO_ACCEL_CONFIG0              0x52  // User Bank 0
-#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4) 
+#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4)
 #define ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY        (15 << 0)
 // ----------------------------------------------------------
 
@@ -372,7 +372,6 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     intfConfig1Value &= ~ICM426XX_INTF_CONFIG1_AFSR_MASK;
     intfConfig1Value |= ICM426XX_INTF_CONFIG1_AFSR_DISABLE;
     spiWriteReg(dev, ICM426XX_INTF_CONFIG1, intfConfig1Value);
-
 
     // Turn on gyro and acc on again so ODR and FSR can be configured
     turnGyroAccOn(dev);

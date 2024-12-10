@@ -83,9 +83,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -119,11 +117,14 @@
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
 
+#include "pg/autopilot.h"
 #include "pg/beeper.h"
 #include "pg/board.h"
 #include "pg/dyn_notch.h"
+#include "pg/gps_rescue.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
+#include "pg/pos_hold.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
 #ifdef USE_RX_EXPRESSLRS
@@ -157,7 +158,6 @@
 #endif
 
 #include "msp.h"
-
 
 static const char * const flightControllerIdentifier = FC_FIRMWARE_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 
@@ -1228,13 +1228,11 @@ case MSP_NAME:
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
 
-
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 if (isDshotMotorTelemetryActive(i)) {
                     invalidPct = getDshotTelemetryMotorInvalidPercent(i);
                 }
 #endif
-
 
                 // Provide extended dshot telemetry
                 if ((dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0) {
@@ -1303,7 +1301,7 @@ case MSP_NAME:
         {
             bool isBlinking;
             uint8_t displayAttr;
-            char warningsBuffer[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+            char warningsBuffer[OSD_WARNINGS_MAX_SIZE + 1];
 
             renderOsdWarning(warningsBuffer, &isBlinking, &displayAttr);
             const uint8_t warningsLen = strlen(warningsBuffer);
@@ -1313,9 +1311,7 @@ case MSP_NAME:
             }
             sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
             sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
-            for (unsigned i = 0; i < warningsLen; i++) {
-                sbufWriteU8(dst, warningsBuffer[i]);
-            }
+            sbufWriteData(dst, warningsBuffer, warningsLen);
             break;
         }
 #endif
@@ -1545,9 +1541,9 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsRescueConfig()->returnAltitudeM);
         sbufWriteU16(dst, gpsRescueConfig()->descentDistanceM);
         sbufWriteU16(dst, gpsRescueConfig()->groundSpeedCmS);
-        sbufWriteU16(dst, autopilotConfig()->throttle_min);
-        sbufWriteU16(dst, autopilotConfig()->throttle_max);
-        sbufWriteU16(dst, autopilotConfig()->hover_throttle);
+        sbufWriteU16(dst, apConfig()->throttle_min);
+        sbufWriteU16(dst, apConfig()->throttle_max);
+        sbufWriteU16(dst, apConfig()->hover_throttle);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
         sbufWriteU8(dst,  gpsRescueConfig()->minSats);
 
@@ -1563,9 +1559,9 @@ case MSP_NAME:
         break;
 
     case MSP_GPS_RESCUE_PIDS:
-        sbufWriteU16(dst, autopilotConfig()->altitude_P);
-        sbufWriteU16(dst, autopilotConfig()->altitude_I);
-        sbufWriteU16(dst, autopilotConfig()->altitude_D);
+        sbufWriteU16(dst, apConfig()->altitude_P);
+        sbufWriteU16(dst, apConfig()->altitude_I);
+        sbufWriteU16(dst, apConfig()->altitude_D);
         // altitude_F not implemented yet
         sbufWriteU16(dst, gpsRescueConfig()->velP);
         sbufWriteU16(dst, gpsRescueConfig()->velI);
@@ -1809,10 +1805,13 @@ case MSP_NAME:
     case MSP_RC_DEADBAND:
         sbufWriteU8(dst, rcControlsConfig()->deadband);
         sbufWriteU8(dst, rcControlsConfig()->yaw_deadband);
-        sbufWriteU8(dst, rcControlsConfig()->alt_hold_deadband);
+#ifdef USE_POSITION_HOLD
+        sbufWriteU8(dst, posHoldConfig()->pos_hold_deadband);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU16(dst, flight3DConfig()->deadband3d_throttle);
         break;
-
 
     case MSP_SENSOR_ALIGNMENT: {
         uint8_t gyroAlignment;
@@ -2188,7 +2187,6 @@ case MSP_NAME:
     }
     return !unsupportedCommand;
 }
-
 
 #ifdef USE_SIMPLIFIED_TUNING
 // Reads simplified PID tuning values from MSP buffer
@@ -2880,9 +2878,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16(src);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
         gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
-        autopilotConfigMutable()->throttle_min = sbufReadU16(src);
-        autopilotConfigMutable()->throttle_max = sbufReadU16(src);
-        autopilotConfigMutable()->hover_throttle = sbufReadU16(src);
+        apConfigMutable()->throttle_min = sbufReadU16(src);
+        apConfigMutable()->throttle_max = sbufReadU16(src);
+        apConfigMutable()->hover_throttle = sbufReadU16(src);
         gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
         gpsRescueConfigMutable()->minSats = sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 6) {
@@ -2903,9 +2901,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
-        autopilotConfigMutable()->altitude_P = sbufReadU16(src);
-        autopilotConfigMutable()->altitude_I = sbufReadU16(src);
-        autopilotConfigMutable()->altitude_D = sbufReadU16(src);
+        apConfigMutable()->altitude_P = sbufReadU16(src);
+        apConfigMutable()->altitude_I = sbufReadU16(src);
+        apConfigMutable()->altitude_D = sbufReadU16(src);
         // altitude_F not included in msp yet
         gpsRescueConfigMutable()->velP = sbufReadU16(src);
         gpsRescueConfigMutable()->velI = sbufReadU16(src);
@@ -2967,7 +2965,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_RC_DEADBAND:
         rcControlsConfigMutable()->deadband = sbufReadU8(src);
         rcControlsConfigMutable()->yaw_deadband = sbufReadU8(src);
-        rcControlsConfigMutable()->alt_hold_deadband = sbufReadU8(src);
+#ifdef USE_POSITION_HOLD
+        posHoldConfigMutable()->pos_hold_deadband = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         flight3DConfigMutable()->deadband3d_throttle = sbufReadU16(src);
         break;
 

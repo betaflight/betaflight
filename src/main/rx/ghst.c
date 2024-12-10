@@ -112,7 +112,6 @@ static uint8_t telemetryBufLen = 0;
  *
  */
 
-
 // called from telemetry/ghst.c
 void ghstRxWriteTelemetryData(const void *const data, const int len)
 {

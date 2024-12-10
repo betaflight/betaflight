@@ -25,7 +25,9 @@
 #include "drivers/dma.h"
 #include "drivers/timer.h"
 
+#ifdef USE_DMA
 #include "dma_reqmap_mcu.h"
+#endif
 
 typedef uint16_t dmaCode_t;
 

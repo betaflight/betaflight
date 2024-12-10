@@ -23,7 +23,6 @@
  *  and limitations under the License.
  */
 
-
 /* Define to prevent recursive inclusion */
 #ifndef APM32F4xx_DAL_CFG_H
 #define APM32F4xx_DAL_CFG_H
@@ -81,7 +80,7 @@
 // #define DAL_MMC_MODULE_ENABLED
 
 /* Value of the external high speed oscillator in Hz */
-#if !defined  (HSE_VALUE) 
+#if !defined  (HSE_VALUE)
   #define HSE_VALUE              8000000U
 #endif /* HSE_VALUE */
 
@@ -96,7 +95,7 @@
 #endif /* HSI_VALUE */
 
 /* Value of the internal low speed oscillator in Hz */
-#if !defined  (LSI_VALUE) 
+#if !defined  (LSI_VALUE)
  #define LSI_VALUE               32000U
 #endif /* LSI_VALUE */
 
@@ -178,7 +177,7 @@
 #define EXT_PHY_CONFIG_MAX_DELAY        0x00000FFFU
 
 #define EXT_PHY_READ_TIMEOUT            0x0000FFFFU
-#define EXT_PHY_WRITE_TIMEOUT           0x0000FFFFU 
+#define EXT_PHY_WRITE_TIMEOUT           0x0000FFFFU
 
 /* SPI peripheral configuration */
 

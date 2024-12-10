@@ -27,7 +27,6 @@
 
 #include "build/debug.h"
 
-#include "common/axis.h"
 #include "common/utils.h"
 #include "common/vector.h"
 
@@ -48,7 +47,6 @@
 #include "flight/pid_init.h"
 
 #include "pg/rx.h"
-
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
@@ -89,7 +87,7 @@ enum {
 #ifdef USE_FEEDFORWARD
 static float feedforwardSmoothed[3];
 static float feedforwardRaw[3];
-static uint16_t feedforwardAveraging; 
+static uint16_t feedforwardAveraging;
 typedef struct laggedMovingAverageCombined_s {
     laggedMovingAverage_t filter;
     float buf[4];
@@ -526,7 +524,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dyn
     float rxRate = currentRxRateHz;                 // 1e6f / currentRxIntervalUs;
     static float prevRcCommand[3];                  // for rcCommandDelta test
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
-    static float prevSetpoint[3];                   // equals raw unless extrapolated forward 
+    static float prevSetpoint[3];                   // equals raw unless extrapolated forward
     static float prevSetpointSpeed[3];              // for setpointDelta calculation
     static float prevSetpointSpeedDelta[3];         // for duplicate extrapolation
     static bool isPrevPacketDuplicate[3];             // to identify multiple identical packets
@@ -698,7 +696,7 @@ FAST_CODE void processRcCommand(void)
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
             float angleRate;
-            
+
 #ifdef USE_GPS_RESCUE
             if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
                 // If GPS Rescue is active then override the setpointRate used in the
@@ -717,7 +715,6 @@ FAST_CODE void processRcCommand(void)
                 } else {
                     rcCommandf = rcCommand[axis] / rcCommandDivider;
                 }
-
                 rcDeflection[axis] = rcCommandf;
                 const float rcCommandfAbs = fabsf(rcCommandf);
                 rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -752,26 +749,15 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     isRxDataNew = true;
 
     for (int axis = 0; axis < 3; axis++) {
-
-        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
+        float rc = constrainf(rcData[axis] - rxConfig()->midrc, -500.0f, 500.0f); // -500 to 500
+        float rcDeadband = 0;
         if (axis == ROLL || axis == PITCH) {
-            if (tmp > rcControlsConfig()->deadband) {
-                tmp -= rcControlsConfig()->deadband;
-            } else {
-                tmp = 0;
-            }
-            rcCommand[axis] = tmp;
+            rcDeadband = rcControlsConfig()->deadband;
         } else {
-            if (tmp > rcControlsConfig()->yaw_deadband) {
-                tmp -= rcControlsConfig()->yaw_deadband;
-            } else {
-                tmp = 0;
-            }
-            rcCommand[axis] = tmp * -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
+            rcDeadband  = rcControlsConfig()->yaw_deadband;
+            rc *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
-        if (rcData[axis] < rxConfig()->midrc) {
-            rcCommand[axis] = -rcCommand[axis];
-        }
+        rcCommand[axis] = fapplyDeadband(rc, rcDeadband);
     }
 
     int32_t tmp;
@@ -812,7 +798,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
         rcCommandBuff.x = rcCommand[ROLL];
         rcCommandBuff.y = rcCommand[PITCH];
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommandBuff.z = rcCommand[YAW];
         } else {
             rcCommandBuff.z = 0;
@@ -820,7 +806,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.x;
         rcCommand[PITCH] = rcCommandBuff.y;
-        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
             rcCommand[YAW] = rcCommandBuff.z;
         }
     }

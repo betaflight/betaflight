@@ -18,7 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <math.h>
 
 #include "platform.h"
@@ -44,7 +43,6 @@
 #include "rpm_filter.h"
 
 #define RPM_FILTER_DURATION_S    0.001f  // Maximum duration allowed to update all RPM notches once
-
 
 typedef struct rpmFilter_s {
 

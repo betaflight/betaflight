@@ -391,7 +391,6 @@ void SystemCoreClockUpdate(void)
   SystemCoreClock >>= tmp;
 }
 
-
 /**
   * @}
   */

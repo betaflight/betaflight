@@ -173,7 +173,6 @@ void esc4wayRelease(void)
     motorEnable();
 }
 
-
 #define SET_DISCONNECTED DeviceInfo.words[0] = 0
 
 #define INTF_MODE_IDX 3  // index for DeviceInfostate
@@ -204,7 +203,6 @@ void esc4wayRelease(void)
 //get Version Number 01..255
 #define cmd_InterfaceGetVersion 0x33  // '3' version
 // RETURN: uint8_t AVersionNumber + ACK
-
 
 // Exit / Restart Interface - can be used to switch to Box Mode
 #define cmd_InterfaceExit 0x34       // '4' exit
@@ -274,7 +272,6 @@ void esc4wayRelease(void)
 //PARAM: uint8_t ADRESS_Hi + ADRESS_Lo + BUffLen + Buffer[0..255]
 //RETURN: ACK
 
-
 // responses
 #define ACK_OK                  0x00
 // #define ACK_I_UNKNOWN_ERROR       0x01
@@ -336,12 +333,10 @@ uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data)
 }
 // * End copyright
 
-
 #define ATMEL_DEVICE_MATCH ((pDeviceInfo->words[0] == 0x9307) || (pDeviceInfo->words[0] == 0x930A) || \
         (pDeviceInfo->words[0] == 0x930F) || (pDeviceInfo->words[0] == 0x940B))
 
 #define SILABS_DEVICE_MATCH ((pDeviceInfo->words[0] > 0xE800) && (pDeviceInfo->words[0] < 0xF900))
-
 
 // BLHeli_32 MCU ID hi > 0x00 and < 0x90 / lo always = 0x06
 #define ARM_DEVICE_MATCH ((pDeviceInfo->bytes[1] > 0x00) && (pDeviceInfo->bytes[1] < 0x90) && (pDeviceInfo->bytes[0] == 0x06))
@@ -510,7 +505,6 @@ void esc4wayProcess(serialPort_t *mspPort)
             // wtf.D_FLASH_ADDR_H=Adress_H;
             // wtf.D_FLASH_ADDR_L=Adress_L;
             ioMem.D_PTR_I = ParamBuf;
-
 
             switch (CMD) {
                 // ******* Interface related stuff *******
@@ -941,7 +935,5 @@ void esc4wayProcess(serialPort_t *mspPort)
     };
 
 }
-
-
 
 #endif

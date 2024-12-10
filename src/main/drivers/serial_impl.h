@@ -36,4 +36,3 @@ typedef enum { serialPullNone = 0, serialPullDown = 1, serialPullUp = 2 } serial
 serialPullMode_t serialOptions_pull(portOptions_e options);
 bool serialOptions_pushPull(portOptions_e options);
 
-

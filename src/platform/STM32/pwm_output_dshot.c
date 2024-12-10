@@ -108,7 +108,6 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     xDMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
 }
 
-
 #ifdef USE_DSHOT_TELEMETRY
 FAST_CODE
 static void pwmDshotSetDirectionInput(
@@ -140,7 +139,6 @@ static void pwmDshotSetDirectionInput(
     xDMA_Init(dmaRef, pDmaInit);
 }
 #endif
-
 
 void pwmCompleteDshotMotorUpdate(void)
 {
@@ -329,7 +327,6 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->icInitStruct.TIM_Channel = timerHardware->channel;
     motor->icInitStruct.TIM_ICFilter = 2;
 #endif
-
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {

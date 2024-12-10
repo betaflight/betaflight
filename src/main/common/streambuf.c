@@ -65,7 +65,6 @@ void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val)
     sbufWriteU8(dst, (uint8_t)val);
 }
 
-
 void sbufFill(sbuf_t *dst, uint8_t data, int len)
 {
     memset(dst->ptr, data, len);
