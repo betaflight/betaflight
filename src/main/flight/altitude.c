@@ -241,9 +241,11 @@ bool altSensorFusionUpdate(void) {
     DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(altSenFusSources[SF_BARO].currentAltReadingCm - altSenFusSources[SF_BARO].zeroAltOffsetCm));
     DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(altSenFusSources[SF_GPS].currentAltReadingCm  - altSenFusSources[SF_GPS].zeroAltOffsetCm));
     DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(altSenFusSources[SF_ACC].velocityAltCmS));
-    DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(altSenFusSources[SF_RANGEFINDER].currentAltReadingCm - altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
     DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(altSenFusSources[SF_BARO].zeroAltOffsetCm));
+#ifdef USE_RANGEFINDER
     DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(altSenFusSources[SF_RANGEFINDER].currentAltReadingCm - altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
+#endif
     DEBUG_SET(DEBUG_ALTITUDE, 7, lrintf(altitudeState.distCm));
 
 
