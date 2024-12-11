@@ -352,7 +352,7 @@ void updateAccReading(sensorState_t *sensor) {
 
     accVelZ += velCmSecZ;
 
-    velDriftZ  = 0.005f * accVelZ  + (1.0f - 0.005) * velDriftZ;
+    velDriftZ  = 0.005f * accVelZ  + (1.0f - 0.005f) * velDriftZ;
 
     sensor->velocityAltCmS = accVelZ  - velDriftZ;
 
