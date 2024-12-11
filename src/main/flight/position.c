@@ -97,12 +97,12 @@ void calculateEstimatedAltitude(void) {
 
 float getAltitudeCm(void)
 {
-    return getAltitudeState()->distCm;
+    return zeroedAltitudeCm;
 }
 
 float getAltitudeDerivative(void)
 {
-    return zeroedAltitudeCm;
+    return zeroedAltitudeDerivative;
 }
 
 bool isAltitudeAvailable(void) {
