@@ -492,14 +492,14 @@ void updateGpsReading(sensorState_t *sensor) {
     static bool firstRun = true;
     static float previousAltitude = 0.0f;
     bool hasNewData = gpsSol.time != prevTimeStamp;
-    bool hdopIsGood = (gpsSol.dop.pdop > 0 && gpsSol.dop.pdop < GPS_PDOP_MIN_THRESHOLD)
+    bool dopIsGood = (gpsSol.dop.pdop > 0 && gpsSol.dop.pdop < GPS_PDOP_MIN_THRESHOLD)
                    || (gpsSol.dop.hdop > 0 && gpsSol.dop.hdop < GPS_PDOP_MIN_THRESHOLD);
     
     sensor->isValid = gpsIsHealthy()
                    && sensors(SENSOR_GPS)
                    && STATE(GPS_FIX) 
                    && hasNewData
-                   && hdopIsGood;
+                   && dopIsGood;
 
     if (!sensor->isValid) {
 #ifndef USE_ACC
