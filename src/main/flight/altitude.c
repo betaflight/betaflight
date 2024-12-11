@@ -280,8 +280,8 @@ void updateVelError(sensorState_t *sensor) {
     if (!sensor->isValid || sensor->type == SF_ACC) {
         return;
     }
-    sensor->velError = 0.1 * (sq(altSenFusSources[SF_ACC].velocityAltCmS - sensor->velocityAltCmS) / (100.f))
-                     + 0.9 * sensor->velError;
+    sensor->velError = 0.1f * (sq(altSenFusSources[SF_ACC].velocityAltCmS - sensor->velocityAltCmS) / (100.f))
+                     + 0.9f * sensor->velError;
 
     sensor->velError = constrain(sensor->velError, 0, SENSOR_VEL_MAX_ERROR);
 }
@@ -330,9 +330,9 @@ void updateAccItegralCallback(timeUs_t currentTimeUs) { // this is called in the
 }
 
 void updateAccReading(sensorState_t *sensor) {
-    static float velDriftZ = 0;
+    static float velDriftZ = 0.0f;
 
-    static float accVelZ = 0;
+    static float accVelZ = 0.0f;
     // given the attiude roll and pitch angles of the drone, and the integrated acceleration in x,y and z
     // calculate the integrated acceleration in the z direction in the world frame
     float roll  = DEGREES_TO_RADIANS((float)attitude.values.roll / 10.0f); // integer devision to reduce noise
@@ -352,11 +352,11 @@ void updateAccReading(sensorState_t *sensor) {
 
     accVelZ += velCmSecZ;
 
-    velDriftZ  = 0.005 * accVelZ  + (1.0f - 0.005) * velDriftZ;
+    velDriftZ  = 0.005f * accVelZ  + (1.0f - 0.005) * velDriftZ;
 
     sensor->velocityAltCmS = accVelZ  - velDriftZ;
 
-    velocity3DCmS.value  = (0.1 * fabsf(accIntegral.vel[XYZ_AXIS_COUNT] * 981.0f)) + (0.9 * velocity3DCmS.value);
+    velocity3DCmS.value  = (0.1f * fabsf(accIntegral.vel[XYZ_AXIS_COUNT] * 981.0f)) + (0.9f * velocity3DCmS.value);
     // applyAccVelFilter(&sensor->velocityAltCmS);
     // sensor->currentAltReadingCm += sensor->velocityAltCmS * ((float)accIntegral.deltaTimeUs/1e6f);
 
