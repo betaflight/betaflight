@@ -111,7 +111,7 @@ bool isAltitudeAvailable(void) {
 
 int32_t getEstimatedAltitudeCm(void)
 {
-    return zeroedAltitudeDerivative; // cm/s
+    return displayAltitudeCm; // cm
 }
 
 #ifdef USE_GPS
