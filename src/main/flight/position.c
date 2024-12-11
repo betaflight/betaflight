@@ -87,7 +87,9 @@ void calculateEstimatedAltitude(void) {
         zeroedAltitudeCm = getAltitudeState()->distCm;
         zeroedAltitudeDerivative = getAltitudeState()->velocityCm;
         displayAltitudeCm = zeroedAltitudeCm;
+#ifdef USE_VARIO
         estimatedVario = applyDeadband(lrintf(zeroedAltitudeDerivative), 10);
+#endif
     }
 }
 
