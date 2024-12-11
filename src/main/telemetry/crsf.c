@@ -479,13 +479,6 @@ void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
-extern int bindPhrasesSent;
-void bindPhraseProcess(uint32_t currentTime) {
-    UNUSED(currentTime);
-    if(bindPhrasesSent < 3 && !rxIsReceivingSignal()){
-        crsfSendRXBindPhrases();
-    }
-}
 
 void speedNegotiationProcess(timeUs_t currentTimeUs)
 {
@@ -548,6 +541,13 @@ void crsfSendRXBindPhrases(void){
     pinioSet(switchPin,false);
 
     bindPhrasesSent+=1;
+}
+
+void bindPhraseProcess(uint32_t currentTime) {
+    UNUSED(currentTime);
+    if(bindPhrasesSent < 2){
+        crsfSendRXBindPhrases();
+    }
 }
 #endif
 

@@ -903,7 +903,13 @@ static void osdElementCurrentDraw(osdElementParms_t *element)
 
 static void osdElementDebug(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "BAND %d", slctRx+1);
+    if(slctRx == 0){
+        tfp_sprintf(element->buff, "HI BAND");
+    }
+    else {
+        tfp_sprintf(element->buff, "LO BAND");
+    }
+    
 }
 
 static void osdElementDisarmed(osdElementParms_t *element)
@@ -964,14 +970,12 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
 #endif
 
 
-
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
 
 #if defined(USE_N1_TEMP_SENSOR)
 {   
-
-    tfp_sprintf(element->buff, "VTX:%u:%u:%u,%u", vtxTemp1Temperature, vtxTemp2Temperature,vtxMcuTemp,vtxCombinedTemp);
+    tfp_sprintf(element->buff, "VTX:%u:%u:%u,%u", settingCounter, messageCounter,vtxTemp1Temperature,vtxTemp2Temperature);
 
 }
 #else
