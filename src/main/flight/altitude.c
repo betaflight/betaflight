@@ -236,14 +236,21 @@ bool altSensorFusionUpdate(void) {
     altitudeState.variance   = kf.estimatedVariance;
     altitudeState.velocityCm = (altitudeState.distCm - previousAltitude) * 1000 / deltaTimeMs;
     previousAltitude         = altitudeState.distCm;
-    
+
+#ifdef USE_ACC
+    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(altSenFusSources[SF_ACC].velocityAltCmS));
+#endif
+
+#ifdef USE_BARO    
     DEBUG_SET(DEBUG_ALTITUDE, 1, lrintf(altSenFusSources[SF_BARO].currentAltReadingCm - altSenFusSources[SF_BARO].zeroAltOffsetCm));
+    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(altSenFusSources[SF_BARO].zeroAltOffsetCm));
+#endif
+
 #ifdef USE_GPS
     DEBUG_SET(DEBUG_ALTITUDE, 0, lrintf(10000 - gpsSol.dop.pdop));
     DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(altSenFusSources[SF_GPS].currentAltReadingCm  - altSenFusSources[SF_GPS].zeroAltOffsetCm));
 #endif
-    DEBUG_SET(DEBUG_ALTITUDE, 3, lrintf(altSenFusSources[SF_ACC].velocityAltCmS));
-    DEBUG_SET(DEBUG_ALTITUDE, 5, lrintf(altSenFusSources[SF_BARO].zeroAltOffsetCm));
+
 #ifdef USE_RANGEFINDER
     DEBUG_SET(DEBUG_ALTITUDE, 6, lrintf(altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
     DEBUG_SET(DEBUG_ALTITUDE, 4, lrintf(altSenFusSources[SF_RANGEFINDER].currentAltReadingCm - altSenFusSources[SF_RANGEFINDER].zeroAltOffsetCm));
