@@ -51,7 +51,15 @@
 #include "pg/pg_ids.h"
 
 
+static float displayAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
+
+static float zeroedAltitudeCm = 0.0f;
+static float zeroedAltitudeDerivative = 0.0f;
+
+#ifdef USE_VARIO
+static int16_t estimatedVario = 0; // in cm/s
+#endif
 
 void positionInit(void) {
 altSensorFusionInit();
@@ -75,6 +83,12 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 void calculateEstimatedAltitude(void) {
     altitudeAvailable = altSensorFusionUpdate();
+    if (altitudeAvailable) {
+        zeroedAltitudeCm = getAltitudeState()->distCm;
+        zeroedAltitudeDerivative = getAltitudeState()->velocityCm;
+        displayAltitudeCm = zeroedAltitudeCm;
+        estimatedVario = applyDeadband(lrintf(zeroedAltitudeDerivative), 10);
+    }
 }
 
 #endif //defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
@@ -86,7 +100,7 @@ float getAltitudeCm(void)
 
 float getAltitudeDerivative(void)
 {
-    return getAltitudeState()->velocityCm; // cm/s
+    return zeroedAltitudeCm;
 }
 
 bool isAltitudeAvailable(void) {
@@ -95,7 +109,7 @@ bool isAltitudeAvailable(void) {
 
 int32_t getEstimatedAltitudeCm(void)
 {
-    return lrintf(getAltitudeState()->distCm); // TODO - this is the same as the fused value for now
+    return zeroedAltitudeDerivative; // cm/s
 }
 
 #ifdef USE_GPS
@@ -108,6 +122,6 @@ float getAltitudeAsl(void)
 #ifdef USE_VARIO
 int16_t getEstimatedVario(void)
 {
-    return getAltitudeState()->velocityCm; // TODO - this is the same as the derivative for now
+    return estimatedVario;
 }
 #endif
