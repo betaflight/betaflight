@@ -24,8 +24,6 @@
 
 #include "platform.h"
 
-#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
-
 #include "build/debug.h"
 
 #include "drivers/system.h"
@@ -590,4 +588,3 @@ void updateRangefinderVariance(sensorState_t *sensor) {
 }
 
 #endif // USE_RANGEFINDER
-#endif // USE_BARO || USE_GPS || USE_RANGEFINDER
