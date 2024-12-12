@@ -152,12 +152,15 @@ void opticalflowProcess(void) {
     deltaTimeUs = cmp32(data.timeStampUs, opticalflow.timeStampUs);
     
     if (deltaTimeUs != 0) { // New data
-        opticalflow.rawFlowRates = data.flowRate;
-        opticalflow.timeStampUs  = data.timeStampUs;
+        vector2_t raw = data.flowRate;
+        vector2_t processed;
         
-        applySensorRotation(&opticalflow.processedFlowRates, &opticalflow.rawFlowRates);
-
-        applyLPF(&opticalflow.processedFlowRates);
+        applySensorRotation(&processed, &raw);
+        applyLPF(&processed);
+        
+        opticalflow.rawFlowRates = raw;
+        opticalflow.processedFlowRates = processed;
+        opticalflow.timeStampUs  = data.timeStampUs;
 
         // DEBUG SECTION
         DEBUG_SET(DEBUG_OPTICALFLOW, 0, opticalflow.quality);
