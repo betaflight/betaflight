@@ -190,7 +190,7 @@ static void applyLPF(opticalflowRates_t * flowRates) {
     flowRates->Y = pt2FilterApply(&yFlowLpf, flowRates->Y);
 }
 
-opticalflow_t * getLatestFlowOpticalflowData(void) {
+const opticalflow_t * getLatestFlowOpticalflowData(void) {
     return &opticalflow;
 }
 
