@@ -124,8 +124,8 @@ bool opticalflowInit(void) {
     opticalflow.processedFlowRates.y = 0;
     opticalflow.timeStampUs = micros();
 
-        cosRotAngle = cosf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
-        sinRotAngle = sinf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
+    cosRotAngle = cosf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
+    sinRotAngle = sinf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
     //low pass filter
     if (opticalflowConfig()->flow_lpf != 0) {
         const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
