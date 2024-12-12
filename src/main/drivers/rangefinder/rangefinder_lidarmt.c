@@ -163,7 +163,7 @@ void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr) {
     opticalflowSensorData.timeStampUs = micros();
     opticalflowSensorData.flowRate.x  = (float)pkt->motionX / 1000.0f; 
     opticalflowSensorData.flowRate.y  = (float)pkt->motionY / 1000.0f;
-    opticalflowSensorData.quality     = (int16_t)pkt->quality * 100 / 255;
+    opticalflowSensorData.quality     = pkt->quality * 100 / 255;
     
     if (latestRangefinderData->distanceMm < MT_OPTICALFLOW_MIN_RANGE) {
         opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
