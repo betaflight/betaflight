@@ -69,7 +69,7 @@ PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
     .opticalflow_hardware = OPTICALFLOW_NONE,
     .rotation = 0,
     .flow_lpf = 0,
-    .flip_y = 0
+    .flip_x = 0
 );
 
 static opticalflow_t opticalflow;
@@ -173,8 +173,8 @@ void opticalflowProcess(void) {
 }
 
 static void applySensorRotation(vector2_t * dst, vector2_t * src) {
-    dst->x = src->x * cosRotAngle - src->y * sinRotAngle;
-    dst->y = (opticalflowConfig()->flip_y ? -1.0f : 1.0f) * (src->x * sinRotAngle + src->y * cosRotAngle);
+    dst->x = (opticalflowConfig()->flip_x ? -1.0f : 1.0f) * (src->x * cosRotAngle - src->y * sinRotAngle);
+    dst->y = src->x * sinRotAngle + src->y * cosRotAngle;
 }
 
 static void applyLPF(vector2_t * flowRates) {

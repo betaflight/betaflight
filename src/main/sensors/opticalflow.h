@@ -35,7 +35,7 @@ typedef enum {
 typedef struct opticalflowConfig_s {
     uint8_t  opticalflow_hardware;
     uint16_t rotation;
-    uint8_t  flip_y;
+    uint8_t  flip_x;
     uint16_t flow_lpf;
 } opticalflowConfig_t;
 
