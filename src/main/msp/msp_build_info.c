@@ -24,7 +24,7 @@
  *
  * Generator    : `src/utils/make-build-info.py`
  * Source       : https://build.betaflight.com/api/options/4.6.0
- * Input hash   : 850eb668065e124eeae185deb3e3fda1
+ * Input hash   : 5da6ff60951a04dc9a29ea0758aae1df
  */
 
 #include <stdint.h>
@@ -35,7 +35,7 @@
 
 #include "msp/msp_build_info.h"
 
-void sbufWriteBuildInfoFlags(sbuf_t *dst)
+void sbufWriteBuildInfoFlags(sbuf_t *dst) 
 {
     static const uint16_t options[] = {
 #ifdef USE_SERIALRX_CRSF
@@ -101,8 +101,8 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_AKK_SMARTAUDIO
         BUILD_OPTION_AKK_SMARTAUDIO,
 #endif
-#ifdef USE_ALT_HOLD_MODE
-        BUILD_OPTION_ALT_HOLD_MODE,
+#ifdef USE_ALTITUDE_HOLD
+        BUILD_OPTION_ALTITUDE_HOLD,
 #endif
 #ifdef USE_BATTERY_CONTINUE
         BUILD_OPTION_BATTERY_CONTINUE,
@@ -118,9 +118,6 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #endif
 #ifdef USE_ESCSERIAL_SIMONK
         BUILD_OPTION_ESCSERIAL_SIMONK,
-#endif
-#ifdef USE_FRSKYOSD
-        BUILD_OPTION_FRSKYOSD,
 #endif
 #ifdef USE_GPS
         BUILD_OPTION_GPS,
@@ -140,8 +137,14 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_OSD_HD
         BUILD_OPTION_OSD_HD,
 #endif
+#ifdef USE_FRSKYOSD
+        BUILD_OPTION_FRSKYOSD,
+#endif
 #ifdef USE_PINIO
         BUILD_OPTION_PINIO,
+#endif
+#ifdef USE_POSITION_HOLD
+        BUILD_OPTION_POSITION_HOLD,
 #endif
 #ifdef USE_RACE_PRO
         BUILD_OPTION_RACE_PRO,

@@ -104,7 +104,6 @@ bool cliMode = false;
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -4894,9 +4893,9 @@ if (buildKey) {
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
-        const int bitpos = ffs(flags) - 1;
-        flags &= ~(1 << bitpos);
-        cliPrintf(" %s", armingDisableFlagNames[bitpos]);
+        const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
+        flags &= ~flag;
+        cliPrintf(" %s", getArmingDisableFlagName(flag));
     }
     cliPrintLinefeed();
 }

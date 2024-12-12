@@ -58,6 +58,7 @@ FORKNAME      = betaflight
 ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 PLATFORM_DIR	:= $(ROOT)/src/platform
 SRC_DIR         := $(ROOT)/src/main
+LIB_MAIN_DIR    := $(ROOT)/lib/main
 OBJECT_DIR      := $(ROOT)/obj/main
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
@@ -109,7 +110,7 @@ include $(MAKE_SCRIPT_DIR)/$(OSFAMILY).mk
 include $(MAKE_SCRIPT_DIR)/tools.mk
 
 # Search path for sources
-VPATH           := $(SRC_DIR)
+VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(PLATFORM_DIR)
 FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
@@ -126,6 +127,7 @@ include $(MAKE_SCRIPT_DIR)/config.mk
 ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)
+SKIPCHECKS := yes
 endif
 endif
 
@@ -138,7 +140,6 @@ CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(f
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
 TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
 LINKER_DIR          := $(TARGET_PLATFORM_DIR)/link
-VPATH               := $(VPATH):$(TARGET_PLATFORM_DIR):$(TARGET_PLATFORM_DIR)/startup
 
 include $(TARGET_PLATFORM_DIR)/target/$(TARGET)/target.mk
 
@@ -196,6 +197,9 @@ ifneq ($(CONFIG),)
 TARGET_FLAGS := $(TARGET_FLAGS) -DUSE_CONFIG
 endif
 
+SPEED_OPTIMISED_SRC :=
+SIZE_OPTIMISED_SRC  :=
+
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
 
 # openocd specific includes
@@ -229,6 +233,16 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 VPATH           := $(VPATH):$(TARGET_DIR)
 
 include $(MAKE_SCRIPT_DIR)/source.mk
+
+ifneq ($(SKIPCHECKS),yes)
+ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
+$(error Speed optimised sources not valid: $(strip $(filter-out $(SRC),$(SPEED_OPTIMISED_SRC))))
+endif
+
+ifneq ($(filter-out $(SRC),$(SIZE_OPTIMISED_SRC)),)
+$(error Size optimised sources not valid: $(strip $(filter-out $(SRC),$(SIZE_OPTIMISED_SRC))))
+endif
+endif
 
 ###############################################################################
 # Things that might need changing to use different tools
@@ -450,6 +464,11 @@ define compile_file
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(2) $<
 endef
 
+## `paths` is a list of paths that will be replaced for checking of speed, and size optimised sources
+paths := $(SRC_DIR)/ $(LIB_MAIN_DIR)/ $(PLATFORM_DIR)/
+subst_paths_for = $(foreach path,$(paths),$(filter-out $(1),$(subst $(path),,$(1))))
+subst_paths = $(strip $(if $(call subst_paths_for,$(1)), $(call subst_paths_for,$(1)), $(1)))
+
 ifeq ($(DEBUG),GDB)
 $(TARGET_OBJ_DIR)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
@@ -464,10 +483,10 @@ $(TARGET_OBJ_DIR)/%.o: %.c
 	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
 		$(call compile_file,not optimised,$(CC_NO_OPTIMISATION)) \
 	, \
-		$(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
+		$(if $(findstring $(call subst_paths,$<),$(SPEED_OPTIMISED_SRC)), \
 			$(call compile_file,speed optimised,$(CC_SPEED_OPTIMISATION)) \
 		, \
-			$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
+			$(if $(findstring $(call subst_paths,$<),$(SIZE_OPTIMISED_SRC)), \
 				$(call compile_file,size optimised,$(CC_SIZE_OPTIMISATION)) \
 			, \
 				$(call compile_file,optimised,$(CC_DEFAULT_OPTIMISATION)) \

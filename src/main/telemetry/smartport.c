@@ -773,7 +773,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     tmpi += 4;
                 }
 
-                if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE)) {
+                if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
                     tmpi += 10;
                 }
                 if (FLIGHT_MODE(HORIZON_MODE)) {

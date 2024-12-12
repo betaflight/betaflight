@@ -454,11 +454,13 @@ void crsfFrameFlightMode(sbuf_t *dst)
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
         flightMode = "RTH";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
-        flightMode = "MANU";
+        flightMode = "PASS";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "ANGL";
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         flightMode = "ALTH";
+    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        flightMode = "POSH";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
     } else if (isAirmodeEnabled()) {

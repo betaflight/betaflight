@@ -32,7 +32,7 @@
 #include "drivers/resource.h"
 #include "drivers/sound_beeper.h"
 
-#include "system.h"
+#include "drivers/system.h"
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4)
 // See "RM CoreSight Architecture Specification"
@@ -310,20 +310,6 @@ void initialiseMemorySections(void)
 #endif
 
 }
-
-#ifdef STM32H7
-void initialiseD2MemorySections(void)
-{
-    /* Load DMA_DATA variable intializers into D2 RAM */
-    extern uint8_t _sdmaram_bss;
-    extern uint8_t _edmaram_bss;
-    extern uint8_t _sdmaram_data;
-    extern uint8_t _edmaram_data;
-    extern uint8_t _sdmaram_idata;
-    bzero(&_sdmaram_bss, (size_t) (&_edmaram_bss - &_sdmaram_bss));
-    memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
-}
-#endif
 
 static void unusedPinInit(IO_t io)
 {

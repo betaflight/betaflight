@@ -42,6 +42,7 @@ typedef enum {
     AI_PITCH
 } angle_index_t;
 
-#define ANGLE_INDEX_COUNT 2
+#define RP_AXIS_COUNT 2
+#define EF_AXIS_COUNT 2
 
 #define GET_DIRECTION(isReversed) ((isReversed) ? -1 : 1)

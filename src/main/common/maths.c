@@ -49,14 +49,27 @@
 #define sinPolyCoef7 -1.980661520e-4f                                          // Double: -1.980661520135080504411629636078917643846e-4
 #define sinPolyCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
 #endif
+
 float sin_approx(float x)
 {
-    int32_t xint = x;
-    if (xint < -32 || xint > 32) return 0.0f;                               // Stop here on error input (5 * 360 Deg)
-    while (x >  M_PIf) x -= (2.0f * M_PIf);                                 // always wrap input angle to -PI..PI
+    // Wrap angle to 2π with range [-π π]
+    x = fmodf(x, 2.0f * M_PIf);
+    // TO DO: these 'while' functions are not put into ITCM ram with current compiler flags
+    // A simpler 'if' function works, but gets put into ITCM ram, the extra 4% overflows F7xx ITCM
+    // The while function is retained only to avoid ITCM overflow for now
+    // ideally we should use the most efficient method, since sin_approx is used a LOT
+    // if (x <= -M_PIf) x += 2.0f * M_PIf;
+    // if (x > M_PIf) x -= 2.0f * M_PIf;
+    while (x >  M_PIf) x -= (2.0f * M_PIf);   // always wrap input angle to -PI..PI
     while (x < -M_PIf) x += (2.0f * M_PIf);
-    if (x >  (0.5f * M_PIf)) x =  (0.5f * M_PIf) - (x - (0.5f * M_PIf));   // We just pick -90..+90 Degree
-    else if (x < -(0.5f * M_PIf)) x = -(0.5f * M_PIf) - ((0.5f * M_PIf) + x);
+
+    // Use axis symmetry around x = ±π/2 for polynomial outside of range [-π/2 π/2]
+    if (x > M_PIf / 2) {
+        x = M_PIf - x; // Reflect
+    } else if (x < -M_PIf / 2) {
+        x = -M_PIf - x; // Reflect
+    }
+
     float x2 = x * x;
     return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
 }
