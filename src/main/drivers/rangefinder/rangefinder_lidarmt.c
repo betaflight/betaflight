@@ -121,7 +121,7 @@ const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangef
     return NULL;
 }
 
-mtRangefinderData_t * getMTRangefinderData(void) {
+const mtRangefinderData_t * getMTRangefinderData(void) {
     return &rfSensorData;
 }
 
