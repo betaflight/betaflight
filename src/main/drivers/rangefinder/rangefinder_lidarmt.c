@@ -167,7 +167,7 @@ void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr) {
     
     if (latestRangefinderData->distanceMm < MT_OPTICALFLOW_MIN_RANGE) {
         opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
-    } else if (cmp32(micros(), latestRangefinderData->timestampUs) > (5000 * deviceConf->delayMs)) {
+    } else if (cmp32(micros(), latestRangefinderData->timestampUs) > (5000 * deviceConf->delayMs)) {   // 5 updates missing
         opticalflowSensorData.quality = OPTICALFLOW_HARDWARE_FAILURE;
     }
 }
