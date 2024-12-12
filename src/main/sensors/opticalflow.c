@@ -174,7 +174,7 @@ void opticalflowProcess(void) {
 
 static void applySensorRotation(opticalflowRates_t * dist, opticalflowRates_t * src) {
     dist->X = (int32_t)(src->X * cosRotAngle - src->Y * sinRotAngle);
-    dist->Y = (int32_t)(src->X * sinRotAngle + src->Y * cosRotAngle);
+    dist->Y = (opticalflowConfig()->flipY ? -1.0f : 1.0f) * (int32_t)(src->X * sinRotAngle + src->Y * cosRotAngle);
     
     if (opticalflowConfig()->flipY) {
         dist->Y = -dist->Y;
