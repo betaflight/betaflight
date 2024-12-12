@@ -28,7 +28,7 @@
 #define OPTICALFLOW_HARDWARE_FAILURE    -2
 #define OPTICALFLOW_NO_NEW_DATA         -3
 
-#define OPTICALFLOW_HARDWARE_TIMEOUT_US  100000 // 100ms
+#define OPTICALFLOW_HARDWARE_TIMEOUT_US  100000 /* 100ms */
 
 typedef struct opticalflowData_s {
     uint32_t timeStampUs;
