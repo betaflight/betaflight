@@ -270,8 +270,7 @@ void updateSensorOffset(sensorState_t *sensor) {
         float newOffset = sensor->currentAltReadingCm - kf.estimatedValue;
         if (sensor->penalityIters > 0) {
             sensor->zeroAltOffsetCm = 0.5f * (newOffset + sensor->zeroAltOffsetCm);
-        }
-        else { // detect a ramp in the sensor readings by accumulating the error
+        } else { // detect a ramp in the sensor readings by accumulating the error
             sensor->offsetError += newOffset - sensor->zeroAltOffsetCm;
             if (fabsf(sensor->offsetError) > SENSOR_MAX_OFFSET_ERROR) {
                 sensor->zeroAltOffsetCm = 0.01f * newOffset + 0.99f * sensor->zeroAltOffsetCm;
