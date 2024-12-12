@@ -3669,9 +3669,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP2_SENSOR_RANGEFINDER_LIDARMT:
         mtRangefinderReceiveNewData(sbufPtr(src));
         break;
-#endif
 
-#ifdef USE_OPTICALFLOW_MT
     case MSP2_SENSOR_OPTICALFLOW_MT:
         mtOpticalflowReceiveNewData(sbufPtr(src));
         break;

@@ -60,8 +60,8 @@
 #define RATE_SCALE_RESOLUTION (1000.0f)
 
 // static prototypes
-static void applySensorRotation(opticalflowRates_t * dist, opticalflowRates_t * src);
-static void applyLPF(opticalflowRates_t * flowRates);
+static void applySensorRotation(vector2_t * dst, vector2_t * src);
+static void applyLPF(vector2_t * flowRates);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 0);
 
@@ -88,7 +88,7 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
 
     switch (opticalflowHardwareToUse) {
         case OPTICALFLOW_MT:
-#ifdef USE_OPTICALFLOW_MT
+#ifdef USE_RANGEFINDER_MT
             if (mtOpticalflowDetect(dev, rangefinderConfig()->rangefinder_hardware)) {
                 opticalflowHardware = OPTICALFLOW_MT;
                 rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
@@ -118,11 +118,11 @@ bool opticalflowInit(void) {
 
     opticalflow.dev.init(&opticalflow.dev);
     opticalflow.quality = OPTICALFLOW_NO_NEW_DATA;
-    opticalflow.rawFlowRates.X = 0;
-    opticalflow.rawFlowRates.Y = 0;
-    opticalflow.processedFlowRates.X = 0;
-    opticalflow.processedFlowRates.Y = 0;
-    opticalflow.lastValidResponseTimeMs = millis();
+    opticalflow.rawFlowRates.x = 0;
+    opticalflow.rawFlowRates.y = 0;
+    opticalflow.processedFlowRates.x = 0;
+    opticalflow.processedFlowRates.y = 0;
+    opticalflow.timeStampUs = micros();
 
     if (opticalflowConfig()->rotation != 0) {
         cosRotAngle = cosf(DEGREES_TO_RADIANS(opticalflowConfig()->rotation));
@@ -147,16 +147,15 @@ void opticalflowUpdate(void) {
 
 void opticalflowProcess(void) {
     opticalflowData_t data = {0};
-    bool hasNewData = opticalflow.dev.read(&opticalflow.dev, &data);
+    uint32_t deltaTimeUs = 0;
+    opticalflow.dev.read(&opticalflow.dev, &data);
     
     opticalflow.quality = data.quality;
-    data.devMinQualityThreshold = opticalflow.dev.minQualityThreshold;
-
-    if (hasNewData) {
-        opticalflow.lastValidResponseTimeMs = millis();
-
+    deltaTimeUs = cmp32(data.timeStampUs, opticalflow.timeStampUs);
+    
+    if (deltaTimeUs != 0) { // New data
         opticalflow.rawFlowRates = data.flowRate;
-        opticalflow.deltaTimeUs  = data.deltaTimeUs;
+        opticalflow.timeStampUs  = data.timeStampUs;
         
         applySensorRotation(&opticalflow.processedFlowRates, &opticalflow.rawFlowRates);
 
@@ -164,30 +163,26 @@ void opticalflowProcess(void) {
 
         // DEBUG SECTION
         DEBUG_SET(DEBUG_OPTICALFLOW, 0, opticalflow.quality);
-        DEBUG_SET(DEBUG_OPTICALFLOW, 1, opticalflow.rawFlowRates.X);
-        DEBUG_SET(DEBUG_OPTICALFLOW, 2, opticalflow.rawFlowRates.Y);
-        DEBUG_SET(DEBUG_OPTICALFLOW, 3, opticalflow.processedFlowRates.X);
-        DEBUG_SET(DEBUG_OPTICALFLOW, 4, opticalflow.processedFlowRates.Y);
-        DEBUG_SET(DEBUG_OPTICALFLOW, 5, (int32_t)opticalflow.deltaTimeUs);
+        DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(opticalflow.rawFlowRates.x * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(opticalflow.rawFlowRates.y * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(opticalflow.processedFlowRates.x * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(opticalflow.processedFlowRates.y * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 5, deltaTimeUs);
     }
 }
 
-static void applySensorRotation(opticalflowRates_t * dist, opticalflowRates_t * src) {
-    dist->X = (int32_t)(src->X * cosRotAngle - src->Y * sinRotAngle);
-    dist->Y = (int32_t)(src->X * sinRotAngle + src->Y * cosRotAngle);
-    
-    if (opticalflowConfig()->flipY) {
-        dist->Y = -dist->Y;
-    }
+static void applySensorRotation(vector2_t * dst, vector2_t * src) {
+    dst->x = src->x * cosRotAngle - src->y * sinRotAngle;
+    dst->y = (opticalflowConfig()->flipY ? -1.0f : 1.0f) * (src->x * sinRotAngle + src->y * cosRotAngle);
 }
 
-static void applyLPF(opticalflowRates_t * flowRates) {
+static void applyLPF(vector2_t * flowRates) {
     if (opticalflowConfig()->flow_lpf == 0) {
         return;
     }    
 
-    flowRates->X = pt2FilterApply(&xFlowLpf, flowRates->X);
-    flowRates->Y = pt2FilterApply(&yFlowLpf, flowRates->Y);
+    flowRates->x = pt2FilterApply(&xFlowLpf, flowRates->x);
+    flowRates->y = pt2FilterApply(&yFlowLpf, flowRates->y);
 }
 
 opticalflow_t * getLatestFlowOpticalflowData(void) {
@@ -195,6 +190,6 @@ opticalflow_t * getLatestFlowOpticalflowData(void) {
 }
 
 bool isOpticalflowHealthy(void) {
-    return cmp32(millis(), opticalflow.lastValidResponseTimeMs) < OPTICALFLOW_HARDWARE_TIMEOUT_MS;
+    return cmp32(micros(), opticalflow.timeStampUs) < OPTICALFLOW_HARDWARE_TIMEOUT_US;
 }
 #endif // USE_OPTICALFLOW

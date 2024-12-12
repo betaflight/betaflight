@@ -22,29 +22,24 @@
 #pragma once
 
 #include <stdint.h>
+#include "common/vector.h"
 
 #define OPTICALFLOW_OUT_OF_RANGE        -1
 #define OPTICALFLOW_HARDWARE_FAILURE    -2
 #define OPTICALFLOW_NO_NEW_DATA         -3
 
-#define OPTICALFLOW_HARDWARE_TIMEOUT_MS  100
-
-typedef struct opticalflowRates_s {
-    int32_t X;
-    int32_t Y;
-} opticalflowRates_t;
+#define OPTICALFLOW_HARDWARE_TIMEOUT_US  100000 // 100ms
 
 typedef struct opticalflowData_s {
-    uint32_t deltaTimeUs;
+    uint32_t timeStampUs;
     int16_t quality;
-    opticalflowRates_t flowRate;
-    uint8_t devMinQualityThreshold;
+    vector2_t flowRate;
 } opticalflowData_t;
 
 struct opticalflowDev_s;
 typedef void opflowOpInitFunc(struct opticalflowDev_s * dev);
 typedef void opflowOpUpdateFunc(struct opticalflowDev_s * dev);
-typedef bool opflowOpReadFunc(struct opticalflowDev_s * dev, opticalflowData_t * result);
+typedef void opflowOpReadFunc(struct opticalflowDev_s * dev, opticalflowData_t * result);
 
 typedef struct opticalflowDev_s {
     timeMs_t delayMs;

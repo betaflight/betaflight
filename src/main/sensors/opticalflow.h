@@ -44,10 +44,9 @@ PG_DECLARE(opticalflowConfig_t, opticalflowConfig);
 typedef struct opticalflow_s {
     opticalflowDev_t dev;
     int16_t quality;
-    opticalflowRates_t rawFlowRates;
-    opticalflowRates_t processedFlowRates;
-    uint32_t deltaTimeUs;
-    uint32_t lastValidResponseTimeMs;
+    vector2_t rawFlowRates;
+    vector2_t processedFlowRates;
+    uint32_t timeStampUs;
 } opticalflow_t;
 
 bool opticalflowInit(void);
