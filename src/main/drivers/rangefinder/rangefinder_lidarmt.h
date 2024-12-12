@@ -33,8 +33,8 @@ typedef struct {
 } MTRangefinderConfig;
 
 typedef struct {
-    int32_t distanceMm;
     uint32_t timestampUs;
+    int32_t distanceMm;
 } mtRangefinderData_t;
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
