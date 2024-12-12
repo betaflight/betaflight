@@ -70,12 +70,6 @@ static void mtRangefinderUpdate(rangefinderDev_t * dev) {
     UNUSED(dev);
 }
 
-static void setDeviceConf(rangefinderType_e mtRangefinderToUse) {
-    if (!deviceConf) {
-        deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
-    }
-}
-
 static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
     UNUSED(dev);
     if (hasRFNewData) {
@@ -87,7 +81,7 @@ static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
 }
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {
-    setDeviceConf(mtRangefinderToUse);
+    deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
     if (!deviceConf) {
         return false;
     }
@@ -145,7 +139,7 @@ static void mtOpticalflowGetData(opticalflowDev_t * dev, opticalflowData_t * res
 }
 
 bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinderToUse) {
-    setDeviceConf(mtRangefinderToUse);
+    deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
     if (!deviceConf) {
         return false;
     }
