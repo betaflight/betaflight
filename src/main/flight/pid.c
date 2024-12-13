@@ -1464,7 +1464,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     // Disable PID control if at zero throttle or if gyro overflow detected
     // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
-    if (!pidRuntime.pidStabilisationEnabled || gyroOverflowDetected() || isFixedWingAndPassthru) {
+    if (!pidRuntime.pidStabilisationEnabled
+        || gyroOverflowDetected()
+#ifdef USE_WING
+        || isFixedWingAndPassthru
+#endif
+        ) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             pidData[axis].P = 0;
             pidData[axis].I = 0;
