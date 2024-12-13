@@ -55,6 +55,7 @@ static pidCoefficient_t positionPidCoeffs;
 
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
+pt1Filter_t altitudePHpf;
 
 typedef struct efPidAxis_s {
     bool isStopping;
@@ -159,6 +160,8 @@ void autopilotInit(void)
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
         resetEFAxisFilters(&ap.efAxis[i], vaGain);
     }
+    const float altPHpfGain = pt1FilterGain(0.2f, 0.01f); // Approx 1s time constant, assume 100Hz for upsampling
+    pt1FilterInit(&altitudePHpf, altPHpfGain);
 }
 
 void resetAltitudeControl (void) {
@@ -169,7 +172,11 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 {
     const float verticalVelocityCmS = getAltitudeDerivative();
     const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
-    const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
+    float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
+
+    // add highpass of P to compensate for motor to altitude lag; D isn't quite the same and is needed as well
+    const float highpassAltitudeP = altitudeP - pt1FilterApply(&altitudePHpf, altitudeP);
+    altitudeP += highpassAltitudeP;
 
     // reduce the iTerm gain for errors greater than 200cm (2m), otherwise it winds up too much
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
