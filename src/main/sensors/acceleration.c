@@ -57,7 +57,7 @@ static inline void calibrateAccelerometer(void)
 {
     if (!accIsCalibrationComplete()) {
         // acc.accADC is held at 0 until calibration is completed
-        performAcclerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
+        performAccelerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
     }
 
     if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {

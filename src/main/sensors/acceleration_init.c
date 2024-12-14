@@ -438,7 +438,7 @@ static bool isOnFirstAccelerationCalibrationCycle(void)
     return accelerationRuntime.calibratingA == CALIBRATING_ACC_CYCLES;
 }
 
-void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+void performAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
 
