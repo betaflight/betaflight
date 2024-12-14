@@ -35,21 +35,64 @@
 #include "config/feature.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
-#include "drivers/accgyro/accgyro_mpu6050.h"
-#include "drivers/accgyro/accgyro_mpu6500.h"
+
+#ifdef USE_ACCGYRO_BMI160
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
+#endif
+
+#ifdef USE_ACCGYRO_BMI270
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
-#include "drivers/accgyro/accgyro_spi_icm20649.h"
-#include "drivers/accgyro/accgyro_spi_icm20689.h"
+#endif
+
+#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P)
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSO
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
-#include "drivers/accgyro/accgyro_spi_mpu6000.h"
-#include "drivers/accgyro/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSV16X
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+#endif
+
+#ifdef USE_ACC_SPI_MPU6000
+#include "drivers/accgyro/accgyro_spi_mpu6000.h"
+#endif
+
+#ifdef USE_VIRTUAL_ACC
+#include "drivers/accgyro/accgyro_virtual.h"
+#endif
+
+// legacy drivers
+#ifdef USE_GYRO_SPI_ICM20649
+#include "drivers/accgyro/accgyro_spi_icm20649.h"
+#endif
+
+#ifdef USE_ACC_SPI_ICM20689
+#include "drivers/accgyro/accgyro_spi_icm20689.h"
+#endif
+
+#ifdef USE_GYRO_MPU3050
+#include "drivers/accgyro/accgyro_mpu3050.h"
+#endif
+
+#ifdef USE_ACC_MPU6050
+#include "drivers/accgyro/accgyro_mpu6050.h"
+#endif
+
+#ifdef USE_ACC_MPU6500
+#include "drivers/accgyro/accgyro_mpu6500.h"
+#endif
+
+#ifdef USE_ACC_SPI_MPU6500
+#include "drivers/accgyro/accgyro_spi_mpu6500.h"
+#endif
+
+#ifdef USE_ACC_SPI_MPU9250
+#include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#endif
 
 #ifdef USE_ACC_ADXL345
 #include "drivers/accgyro/legacy/accgyro_adxl345.h"
@@ -85,14 +128,26 @@
 
 #include "acceleration_init.h"
 
-#if !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) \
-    && !defined(USE_ACC_MMA8452) && !defined(USE_ACC_LSM303DLHC) \
-    && !defined(USE_ACC_MPU6000) && !defined(USE_ACC_MPU6050) && !defined(USE_ACC_MPU6500) \
-    && !defined(USE_ACC_SPI_MPU6000) && !defined(USE_ACC_SPI_MPU6500) && !defined(USE_ACC_SPI_MPU9250) \
-    && !defined(USE_ACC_SPI_ICM20602) && !defined(USE_ACC_SPI_ICM20649) && !defined(USE_ACC_SPI_ICM20689) \
-    && !defined(USE_ACCGYRO_BMI160) && !defined(USE_ACCGYRO_BMI270) \
-    && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) \
-    && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_LSM6DSV16X) \
+#if !defined(USE_ACC_ADXL345) \
+    && !defined(USE_ACC_BMA280) \
+    && !defined(USE_ACC_LSM303DLHC) \
+    && !defined(USE_ACC_MMA8452) \
+    && !defined(USE_ACC_LSM303DLHC) \
+    && !defined(USE_ACC_MPU6000) \
+    && !defined(USE_ACC_MPU6050) \
+    && !defined(USE_ACC_MPU6500) \
+    && !defined(USE_ACC_SPI_MPU6000) \
+    && !defined(USE_ACC_SPI_MPU6500) \
+    && !defined(USE_ACC_SPI_MPU9250) \
+    && !defined(USE_ACC_SPI_ICM20602) \
+    && !defined(USE_ACC_SPI_ICM20649) \
+    && !defined(USE_ACC_SPI_ICM20689) \
+    && !defined(USE_ACCGYRO_BMI160) \
+    && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACC_SPI_ICM42605) \
+    && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_LSM6DSO) \
+    && !defined(USE_ACCGYRO_LSM6DSV16X) \
     && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif

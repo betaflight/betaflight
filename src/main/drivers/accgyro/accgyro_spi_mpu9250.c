@@ -30,6 +30,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ACC_SPI_MPU9250
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -173,3 +175,5 @@ bool mpu9250SpiGyroDetect(gyroDev_t *gyro)
 
     return true;
 }
+
+#endif // USE_ACC_SPI_MPU9250
