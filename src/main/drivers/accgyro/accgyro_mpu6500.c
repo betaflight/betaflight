@@ -114,4 +114,4 @@ bool mpu6500GyroDetect(gyroDev_t *gyro)
     return true;
 }
 
-#endif // USE_ACC_MPU6500 || USE_GYRO_MPU6500
+#endif
