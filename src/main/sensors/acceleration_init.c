@@ -514,9 +514,9 @@ void performAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 
     if (isOnFinalAccelerationCalibrationCycle()) {
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-        accelerationRuntime.accelerationTrims->raw[X] = lrintf(a[X] + (CALIBRATING_ACC_CYCLES / 2) / CALIBRATING_ACC_CYCLES);
-        accelerationRuntime.accelerationTrims->raw[Y] = lrintf(a[Y] + (CALIBRATING_ACC_CYCLES / 2) / CALIBRATING_ACC_CYCLES);
-        accelerationRuntime.accelerationTrims->raw[Z] = lrintf(a[Z] + (CALIBRATING_ACC_CYCLES / 2) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G);
+        accelerationRuntime.accelerationTrims->raw[X] = (a[X] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+        accelerationRuntime.accelerationTrims->raw[Y] = (a[Y] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+        accelerationRuntime.accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
         setConfigCalibrationCompleted();
