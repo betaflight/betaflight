@@ -495,7 +495,7 @@ static bool isOnFirstAccelerationCalibrationCycle(void)
 
 void performAccelerometerCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    static float a[3];
+    static int32_t a[3];
 
     for (int axis = 0; axis < 3; axis++) {
 
