@@ -40,10 +40,10 @@
 #include "pg/autopilot.h"
 #include "autopilot.h"
 
-#define ALTITUDE_P_SCALE  0.01f
-#define ALTITUDE_I_SCALE  0.003f
-#define ALTITUDE_D_SCALE  0.01f
-#define ALTITUDE_F_SCALE  0.01f
+#define ALTITUDE_P_SCALE  0.005f
+#define ALTITUDE_I_SCALE  0.00015f
+#define ALTITUDE_D_SCALE  0.005f
+#define ALTITUDE_F_SCALE  0.004f
 #define POSITION_P_SCALE  0.0012f
 #define POSITION_I_SCALE  0.0001f
 #define POSITION_D_SCALE  0.0015f
