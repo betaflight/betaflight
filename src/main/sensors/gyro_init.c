@@ -102,27 +102,6 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#if !defined(USE_GYRO_L3G4200D) \
-    && !defined(USE_GYRO_L3GD20) \
-    && !defined(USE_GYRO_MPU3050) \
-    && !defined(USE_GYRO_MPU6050) \
-    && !defined(USE_GYRO_MPU6500) \
-    && !defined(USE_GYRO_SPI_MPU6000) \
-    && !defined(USE_GYRO_SPI_MPU6500) \
-    && !defined(USE_GYRO_SPI_MPU9250) \
-    && !defined(USE_GYRO_SPI_ICM20602) \
-    && !defined(USE_GYRO_SPI_ICM20649) \
-    && !defined(USE_GYRO_SPI_ICM20689) \
-    && !defined(USE_ACCGYRO_BMI160) \
-    && !defined(USE_ACCGYRO_BMI270) \
-    && !defined(USE_GYRO_SPI_ICM42605) \
-    && !defined(USE_GYRO_SPI_ICM42688P) \
-    && !defined(USE_ACCGYRO_LSM6DSO) \
-    && !defined(USE_ACCGYRO_LSM6DSV16X) \
-    && !defined(USE_VIRTUAL_GYRO)
-#error At least one USE_GYRO device definition required
-#endif
-
 #ifdef USE_MULTI_GYRO
 #define ACTIVE_GYRO ((gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_2) ? &gyro.gyroSensor2 : &gyro.gyroSensor1)
 #else

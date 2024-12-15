@@ -128,30 +128,6 @@
 
 #include "acceleration_init.h"
 
-#if !defined(USE_ACC_ADXL345) \
-    && !defined(USE_ACC_BMA280) \
-    && !defined(USE_ACC_LSM303DLHC) \
-    && !defined(USE_ACC_MMA8452) \
-    && !defined(USE_ACC_LSM303DLHC) \
-    && !defined(USE_ACC_MPU6000) \
-    && !defined(USE_ACC_MPU6050) \
-    && !defined(USE_ACC_MPU6500) \
-    && !defined(USE_ACC_SPI_MPU6000) \
-    && !defined(USE_ACC_SPI_MPU6500) \
-    && !defined(USE_ACC_SPI_MPU9250) \
-    && !defined(USE_ACC_SPI_ICM20602) \
-    && !defined(USE_ACC_SPI_ICM20649) \
-    && !defined(USE_ACC_SPI_ICM20689) \
-    && !defined(USE_ACCGYRO_BMI160) \
-    && !defined(USE_ACCGYRO_BMI270) \
-    && !defined(USE_ACC_SPI_ICM42605) \
-    && !defined(USE_ACC_SPI_ICM42688P) \
-    && !defined(USE_ACCGYRO_LSM6DSO) \
-    && !defined(USE_ACCGYRO_LSM6DSV16X) \
-    && !defined(USE_VIRTUAL_ACC)
-#error At least one USE_ACC device definition required
-#endif
-
 #define CALIBRATING_ACC_CYCLES              400
 
 FAST_DATA_ZERO_INIT accelerationRuntime_t accelerationRuntime;

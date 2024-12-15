@@ -91,6 +91,51 @@
 // normalize serial ports definitions
 #include "serial_post.h"
 
+#if !defined(USE_ACC_ADXL345) \
+    && !defined(USE_ACC_BMA280) \
+    && !defined(USE_ACC_LSM303DLHC) \
+    && !defined(USE_ACC_MMA8452) \
+    && !defined(USE_ACC_LSM303DLHC) \
+    && !defined(USE_ACC_MPU6000) \
+    && !defined(USE_ACC_MPU6050) \
+    && !defined(USE_ACC_MPU6500) \
+    && !defined(USE_ACC_SPI_MPU6000) \
+    && !defined(USE_ACC_SPI_MPU6500) \
+    && !defined(USE_ACC_SPI_MPU9250) \
+    && !defined(USE_ACC_SPI_ICM20602) \
+    && !defined(USE_ACC_SPI_ICM20649) \
+    && !defined(USE_ACC_SPI_ICM20689) \
+    && !defined(USE_ACCGYRO_BMI160) \
+    && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACC_SPI_ICM42605) \
+    && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_LSM6DSO) \
+    && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_VIRTUAL_ACC)
+#error At least one USE_ACC device definition required
+#endif
+
+#if !defined(USE_GYRO_L3G4200D) \
+    && !defined(USE_GYRO_L3GD20) \
+    && !defined(USE_GYRO_MPU3050) \
+    && !defined(USE_GYRO_MPU6050) \
+    && !defined(USE_GYRO_MPU6500) \
+    && !defined(USE_GYRO_SPI_MPU6000) \
+    && !defined(USE_GYRO_SPI_MPU6500) \
+    && !defined(USE_GYRO_SPI_MPU9250) \
+    && !defined(USE_GYRO_SPI_ICM20602) \
+    && !defined(USE_GYRO_SPI_ICM20649) \
+    && !defined(USE_GYRO_SPI_ICM20689) \
+    && !defined(USE_ACCGYRO_BMI160) \
+    && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_GYRO_SPI_ICM42605) \
+    && !defined(USE_GYRO_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_LSM6DSO) \
+    && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_VIRTUAL_GYRO)
+#error At least one USE_GYRO device definition required
+#endif
+
 #if defined(USE_MAG) && !defined(USE_VIRTUAL_MAG)
 
 #ifndef USE_MAG_DATA_READY_SIGNAL
