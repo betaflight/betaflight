@@ -37,78 +37,25 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 
-#ifdef USE_ACCGYRO_BMI160
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
-#endif
-
-#ifdef USE_ACCGYRO_BMI270
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
-#endif
-
-#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P)
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
-#endif
-
-#ifdef USE_ACCGYRO_LSM6DSO
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
-#endif
-
-#ifdef USE_ACCGYRO_LSM6DSV16X
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
-#endif
-
-#ifdef USE_ACC_SPI_MPU6000
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
-#endif
-
-#ifdef USE_VIRTUAL_ACC
 #include "drivers/accgyro/accgyro_virtual.h"
-#endif
-
-// legacy drivers
-#ifdef USE_GYRO_SPI_ICM20649
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
-#endif
-
-#ifdef USE_ACC_SPI_ICM20689
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
-#endif
-
-#ifdef USE_GYRO_MPU3050
 #include "drivers/accgyro/accgyro_mpu3050.h"
-#endif
-
-#ifdef USE_ACC_MPU6050
 #include "drivers/accgyro/accgyro_mpu6050.h"
-#endif
-
-#ifdef USE_ACC_MPU6500
 #include "drivers/accgyro/accgyro_mpu6500.h"
-#endif
-
-#ifdef USE_ACC_SPI_MPU6500
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
-#endif
-
-#ifdef USE_ACC_SPI_MPU9250
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
-#endif
 
-#ifdef USE_ACC_ADXL345
 #include "drivers/accgyro/legacy/accgyro_adxl345.h"
-#endif
-
-#ifdef USE_ACC_BMA280
 #include "drivers/accgyro/legacy/accgyro_bma280.h"
-#endif
-
-#ifdef USE_ACC_LSM303DLHC
 #include "drivers/accgyro/legacy/accgyro_lsm303dlhc.h"
-#endif
-
-#ifdef USE_ACC_MMA8452
 #include "drivers/accgyro/legacy/accgyro_mma845x.h"
-#endif
 
 #include "config/config.h"
 
