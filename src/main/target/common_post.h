@@ -91,7 +91,7 @@
 // normalize serial ports definitions
 #include "serial_post.h"
 
-#ifdef USE_ACC \
+#if defined(USE_ACC) \
     && !defined(USE_ACC_ADXL345) \
     && !defined(USE_ACC_BMA280) \
     && !defined(USE_ACC_LSM303DLHC) \
@@ -116,7 +116,7 @@
 #error At least one USE_ACC device definition required
 #endif
 
-#ifdef USE_GYRO \
+#if defined(USE_GYRO) \
     && !defined(USE_GYRO_L3G4200D) \
     && !defined(USE_GYRO_L3GD20) \
     && !defined(USE_GYRO_MPU3050) \
