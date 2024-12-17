@@ -31,6 +31,7 @@
 #include "sensors/sensors.h"
 
 // Type of accelerometer used/detected
+// Acc hardware types were updated in PR #14087 (removed ACC_ADXL345, ACC_MMA8452, ACC_BMA280, ACC_LSM303DLHC)
 typedef enum {
     ACC_DEFAULT,
     ACC_NONE,
