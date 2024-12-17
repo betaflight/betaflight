@@ -31,10 +31,18 @@
 #include "config/feature.h"
 
 #include "config/config.h"
+ 
+#include "drivers/time.h"
+
+#include "fc/core.h"
 #include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
+
+#include "io/displayport_msp.h"
+
+#include "osd/osd.h"
 
 #include "sensors/sensors.h"
 
@@ -384,7 +392,14 @@ bool getBoxIdState(boxId_e boxid)
     STATIC_ASSERT(ARRAYLEN(boxIdToFlightModeMap) == BOXID_FLIGHTMODE_LAST + 1, FLIGHT_MODE_BOXID_MAP_INITIALIZER_does_not_match_boxId_e);
 
     if (boxid == BOXARM) {
-        return ARMING_FLAG(ARMED);
+        osdDisplayPortDevice_e deviceType;
+        displayPort_t *osdDisplayPort = osdGetDisplayPort(&deviceType);
+        uint8_t disarmDelay = 0;
+        if (osdDisplayPort != NULL && deviceType == OSD_DISPLAYPORT_DEVICE_MSP) {
+            disarmDelay = displayPortProfileMsp()->disarmDelay;
+        }
+        return ARMING_FLAG(ARMED) ||
+            (disarmDelay && (cmpTimeUs(micros(), getLastDisarmTimeUs()) < 1000000 * disarmDelay));
     } else if (boxid <= BOXID_FLIGHTMODE_LAST) {
         return FLIGHT_MODE(1 << boxIdToFlightModeMap[boxid]);
     } else {
