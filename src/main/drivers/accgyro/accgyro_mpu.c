@@ -43,7 +43,6 @@
 #include "drivers/time.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
 #include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
@@ -452,7 +451,6 @@ bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 
         if (ack) {
             busDeviceRegister(&gyro->dev);
-            // If an MPU3050 is connected sig will contain 0.
             uint8_t inquiryResult;
             ack = busReadRegisterBuffer(&gyro->dev, MPU_RA_WHO_AM_I_LEGACY, &inquiryResult, 1);
             inquiryResult &= MPU_INQUIRY_MASK;

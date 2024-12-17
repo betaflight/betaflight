@@ -279,7 +279,6 @@ ifneq ($(SIMULATOR_BUILD),yes)
 COMMON_SRC += \
             drivers/bus_spi.c \
             drivers/serial_uart.c \
-            drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_mpu.c \
@@ -320,24 +319,6 @@ COMMON_SRC += \
             drivers/max7456.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_rtc6705_soft_spi.c
-
-ifneq ($(GYRO_DEFINE),)
-
-LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
-ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
-
-LEGACY_SRC := \
-            drivers/accgyro/legacy/accgyro_adxl345.c \
-            drivers/accgyro/legacy/accgyro_bma280.c \
-            drivers/accgyro/legacy/accgyro_l3g4200d.c \
-            drivers/accgyro/legacy/accgyro_lsm303dlhc.c \
-            drivers/accgyro/legacy/accgyro_mma845x.c
-
-COMMON_SRC += $(LEGACY_SRC)
-SPEED_OPTIMISED_SRC += $(LEGACY_SRC)
-
-endif
-endif
 
 RX_SRC = \
             drivers/rx/expresslrs_driver.c \
@@ -414,7 +395,6 @@ SPEED_OPTIMISED_SRC += \
             drivers/bus_spi.c \
             drivers/serial_uart.c \
             drivers/accgyro/accgyro_mpu.c \
-            drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_spi_bmi160.c \
             drivers/accgyro/accgyro_spi_bmi270.c \
             drivers/accgyro/accgyro_spi_lsm6dso.c
