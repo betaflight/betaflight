@@ -83,7 +83,7 @@ timeUs_t RcStatsGetFullThrottleTimeUs(void)
 
 int8_t RcStatsGetAverageThrottle(void)
 {
-    return (float)totalTrottleNumber/(float)counter + 0.5; // rounding
+    return (float)totalTrottleNumber/(float)counter + 0.5f; // rounding
 }
 
 void NotifyRcStatsArming(void)
