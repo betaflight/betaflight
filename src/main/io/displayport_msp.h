@@ -46,4 +46,5 @@ typedef enum {
 
 struct displayPort_s *displayPortMspInit(void);
 void displayPortMspSetSerial(serialPortIdentifier_e serialPort);
+serialPortIdentifier_e displayPortMspGetSerial(void);
 
