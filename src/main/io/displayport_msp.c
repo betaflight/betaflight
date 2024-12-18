@@ -229,4 +229,8 @@ displayPort_t *displayPortMspInit(void)
 void displayPortMspSetSerial(serialPortIdentifier_e serialPort) {
     displayPortSerial = serialPort;
 }
+
+serialPortIdentifier_e displayPortMspGetSerial(void) {
+    return displayPortSerial;
+}
 #endif // USE_MSP_DISPLAYPORT
