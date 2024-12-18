@@ -51,12 +51,6 @@ static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len
 {
     UNUSED(displayPort);
 
-#ifdef USE_CLI
-    // FIXME There should be no dependency on the CLI but mspSerialPush doesn't check for cli mode, and can't because it also shouldn't have a dependency on the CLI.
-    if (cliMode) {
-        return 0;
-    }
-#endif
     return mspSerialPush(displayPortSerial, cmd, buf, len, MSP_DIRECTION_REPLY, MSP_V1);
 }
 
