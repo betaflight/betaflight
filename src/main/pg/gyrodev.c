@@ -113,10 +113,7 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDevic
 void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 {
     devconf[0].index = 0;
-    sensorAlignment_t customAlignment1 = CUSTOM_ALIGN_CW0_DEG;
-#ifdef GYRO_1_CUSTOM_ALIGN
-    customAlignment1 = GYRO_1_CUSTOM_ALIGN;
-#else
+#ifndef GYRO_1_CUSTOM_ALIGN
     buildAlignmentFromStandardAlignment(&customAlignment1, GYRO_1_ALIGN);
 #endif // GYRO_1_CUSTOM_ALIGN
 
@@ -129,10 +126,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 #endif
 #ifdef USE_MULTI_GYRO
     devconf[1].index = 1;
-    sensorAlignment_t customAlignment2 = CUSTOM_ALIGN_CW0_DEG;
-#ifdef GYRO_2_CUSTOM_ALIGN
-    customAlignment2 = GYRO_2_CUSTOM_ALIGN;
-#else
+#ifndef GYRO_2_CUSTOM_ALIGN
     buildAlignmentFromStandardAlignment(&customAlignment2, GYRO_2_ALIGN);
 #endif // GYRO_2_CUSTOM_ALIGN
 
