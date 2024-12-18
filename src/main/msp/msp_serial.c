@@ -538,9 +538,12 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             if (c == '$') {
                 mspPort->portState = PORT_MSP_PACKET;
                 mspPort->packetState = MSP_HEADER_START;
-            } else if ((evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA) &&
+            } else if ((evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA)
+#ifdef USE_MSP_DISPLAYPORT
                        // Don't evaluate non-MSP commands on VTX MSP port
-                       (mspPort->port->identifier != displayPortMspGetSerial())) {
+                       && (mspPort->port->identifier != displayPortMspGetSerial())
+#endif
+                       ) {
                 // evaluate the non-MSP data
                 if (c == serialConfig()->reboot_character) {
                     mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
