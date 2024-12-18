@@ -24,6 +24,7 @@
 #include "platform.h"
 
 #include "common/sensor_alignment.h"
+#include "common/sensor_alignment_impl.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -68,20 +69,32 @@
 // gyro alignments
 
 #ifndef GYRO_1_ALIGN
+#ifdef GYRO_1_CUSTOM_ALIGN
+#define GYRO_1_ALIGN            ALIGN_CUSTOM
+#else
 #define GYRO_1_ALIGN            CW0_DEG
 #endif
-
-#ifndef GYRO_2_ALIGN
-#define GYRO_2_ALIGN            CW0_DEG
-#endif
+#endif // GYRO_1_ALIGN
 
 #ifndef GYRO_1_CUSTOM_ALIGN
-#define GYRO_1_CUSTOM_ALIGN     CUSTOM_ALIGN_CW0_DEG
+#define GYRO_1_CUSTOM_ALIGN     SENSOR_ALIGNMENT_FROM_STD(GYRO_1_ALIGN)
+#else
+STATIC_ASSERT(GYRO_1_ALIGN == ALIGN_CUSTOM, "GYRO_1_ALIGN and GYRO_1_CUSTOM_ALIGN mixed");
+#endif // GYRO_1_CUSTOM_ALIGN
+
+#ifndef GYRO_2_ALIGN
+#ifdef GYRO_2_CUSTOM_ALIGN
+#define GYRO_2_ALIGN            ALIGN_CUSTOM
+#else
+#define GYRO_2_ALIGN            CW0_DEG
 #endif
+#endif // GYRO_2_ALIGN
 
 #ifndef GYRO_2_CUSTOM_ALIGN
-#define GYRO_2_CUSTOM_ALIGN     CUSTOM_ALIGN_CW0_DEG
-#endif
+#define GYRO_2_CUSTOM_ALIGN     SENSOR_ALIGNMENT_FROM_STD(GYRO_2_ALIGN)
+#else
+STATIC_ASSERT(GYRO_2_ALIGN == ALIGN_CUSTOM, "GYRO_2_ALIGN and GYRO_2_CUSTOM_ALIGN mixed");
+#endif // GYRO_2_CUSTOM_ALIGN
 
 #if defined(USE_SPI_GYRO) && (defined(GYRO_1_SPI_INSTANCE) || defined(GYRO_2_SPI_INSTANCE))
 static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *instance, ioTag_t csnTag, ioTag_t extiTag, ioTag_t clkInTag, uint8_t alignment, sensorAlignment_t customAlignment)
@@ -113,10 +126,6 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(gyroDeviceConfig_t, MAX_GYRODEV_COUNT, gyroDevic
 void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 {
     devconf[0].index = 0;
-#ifndef GYRO_1_CUSTOM_ALIGN
-    buildAlignmentFromStandardAlignment(&customAlignment1, GYRO_1_ALIGN);
-#endif // GYRO_1_CUSTOM_ALIGN
-
     // All multi-gyro boards use SPI based gyros.
 #ifdef USE_SPI_GYRO
 #ifdef GYRO_1_SPI_INSTANCE
@@ -126,10 +135,6 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 #endif
 #ifdef USE_MULTI_GYRO
     devconf[1].index = 1;
-#ifndef GYRO_2_CUSTOM_ALIGN
-    buildAlignmentFromStandardAlignment(&customAlignment2, GYRO_2_ALIGN);
-#endif // GYRO_2_CUSTOM_ALIGN
-
 #ifdef GYRO_2_SPI_INSTANCE
     // TODO: CLKIN gyro 2 on separate pin is not supported yet. need to implement it
     gyroResetSpiDeviceConfig(&devconf[1], GYRO_2_SPI_INSTANCE, IO_TAG(GYRO_2_CS_PIN), IO_TAG(GYRO_2_EXTI_PIN), IO_TAG(GYRO_2_CLKIN_PIN), GYRO_2_ALIGN, GYRO_2_CUSTOM_ALIGN);
