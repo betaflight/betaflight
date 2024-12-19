@@ -8,14 +8,15 @@ import pprint
 
 # configuration for template generation
 serials = {
-    "UART": {"ids": [i + 1 for i in range(10)],
+    "UART": {"ids": list(range(1, 10 + 1)),
              "inverter": True,
+             "first_index": 1,
              },
     "LPUART": {"ids": [1],
                "depends": {"UART"},
 #               "inverter": True,   # TODO: old code compatibility only, disabled
                },
-    "SOFTSERIAL": {"ids": [i + 1 for i in range(2)],
+    "SOFTSERIAL": {"ids": list(range(1, 2 + 1)),
                    "use_enables_all": True,
                    "force_continuous": True,
                    },
@@ -69,6 +70,7 @@ def main():
         singleton = cfg.setdefault('singleton', False)
         no_pins = cfg.setdefault('no_pins', False)
         inverter = cfg.setdefault('inverter', False)
+        cfg.setdefault('first_index', 1)
         cfg.setdefault("use_enables_all", False)
         cfg.setdefault("force_continuous", False)
         cfg.setdefault("depends", {})

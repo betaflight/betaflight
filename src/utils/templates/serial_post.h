@@ -14,7 +14,7 @@ in Betaflight topmost directory.
 
 This include will provide following defines:
 SERIAL_<type><n>_USED 0/1 - always defined, value depends on target configuration
-SERIAL_<type>_MASK        - bitmask of used ports or given type. <port>1 is BIT(0)
+SERIAL_<type>_MASK        - bitmask of used ports or given type. <port>0 or <port>1 is BIT(0), based on port first_index
 SERIAL_<type>_COUNT       - number of enabled ports of given type
 SERIAL_<type>_MAX         - <index of highest used port> + 1, 0 when no port is enabled
 
@@ -61,7 +61,7 @@ Configuration used:
 {#   SERIAL_<port>_* summary macros #}
 {%   if not cfg.singleton %}
 {%     set pipe = joiner(' | ') %}
-#define SERIAL_{{ cfg.typ }}_MASK ({% for port, i in cfg.ports|zip(cfg.ids) %}{{ pipe() }}(SERIAL_{{ port }}_USED * BIT({{ i }} - 1)){% endfor %})
+#define SERIAL_{{ cfg.typ }}_MASK ({% for port, i in cfg.ports|zip(cfg.ids) %}{{ pipe() }}(SERIAL_{{ port }}_USED * BIT({{ i }} - {{ cfg.first_index }})){% endfor %})
 {%   else %}
 {#     one port without number is defined #}
 // set one bit if port is enabled for consistency
