@@ -61,7 +61,7 @@ Configuration used:
 {#   SERIAL_<port>_* summary macros #}
 {%   if not cfg.singleton %}
 {%     set pipe = joiner(' | ') %}
-#define SERIAL_{{ cfg.typ }}_MASK ({% for port, i in cfg.ports|zip(cfg.ids) %}{{ pipe() }}(SERIAL_{{ port }}_USED * BIT({{ i }} - 1)){% endfor %})
+#define SERIAL_{{ cfg.typ }}_MASK ({% for port, i in cfg.ports|zip(cfg.ids) %}{{ pipe() }}(SERIAL_{{ port }}_USED * BIT({{ i }})){% endfor %})
 {%   else %}
 {#     one port without number is defined #}
 // set one bit if port is enabled for consistency

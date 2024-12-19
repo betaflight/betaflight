@@ -8,7 +8,7 @@ import pprint
 
 # configuration for template generation
 serials = {
-    "UART": {"ids": [i + 1 for i in range(10)],
+    "UART": {"ids": [i for i in range(10)],
              "inverter": True,
              },
     "LPUART": {"ids": [1],
