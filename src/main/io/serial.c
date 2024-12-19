@@ -70,6 +70,9 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     SERIAL_PORT_USB_VCP,
 #endif
+#ifdef USE_UART0
+    SERIAL_PORT_UART0,
+#endif
 #ifdef USE_UART1
     SERIAL_PORT_USART1,
 #endif
@@ -109,14 +112,14 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_LPUART1
     SERIAL_PORT_LPUART1,
 #endif
-#ifdef USE_UART0
-    SERIAL_PORT_UART0,
-#endif
 };
 
 const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     "VCP",
+#endif
+#ifdef USE_UART0
+    "UART0",
 #endif
 #ifdef USE_UART1
     "UART1",
@@ -156,9 +159,6 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #endif
 #ifdef USE_LPUART1
     "LPUART1",
-#endif
-#ifdef USE_UART0
-    "UART0",
 #endif
 };
 
