@@ -818,7 +818,8 @@ static void osdElementCustomMsg(osdElementParms_t *element)
     if (msgIndex < 0 || msgIndex >= OSD_CUSTOM_MSG_COUNT || pilotConfig()->message[msgIndex][0] == '\0'){
         tfp_sprintf(element->buff, "CUSTOM_MSG%d", msgIndex + 1);
     } else {
-        strncpy(element->buff, pilotConfig()->message[msgIndex], MAX_NAME_LENGTH - 1);
+        strncpy(element->buff, pilotConfig()->message[msgIndex], MAX_NAME_LENGTH);
+        element->buff[MAX_NAME_LENGTH] = 0;   // terminate maximum-length string
     }
 }
 

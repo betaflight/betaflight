@@ -1158,12 +1158,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         break;
 
 case MSP_NAME:
-        {
-            const int nameLen = strlen(pilotConfig()->craftName);
-            for (int i = 0; i < nameLen; i++) {
-                sbufWriteU8(dst, pilotConfig()->craftName[i]);
-            }
-        }
+        sbufWriteString(dst, pilotConfig()->craftName);
         break;
 
 #ifdef USE_SERVOS
@@ -2599,9 +2594,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             //  type byte, then length byte followed by the actual characters
             sbufWriteU8(dst, textType);
             sbufWriteU8(dst, textLength);
-            for (unsigned int i = 0; i < textLength; i++) {
-                sbufWriteU8(dst, textVar[i]);
-            }
+            sbufWriteData(dst, textVar, textLength);
         }
         break;
 #ifdef USE_LED_STRIP
@@ -3963,10 +3956,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
     case MSP_SET_NAME:
-        memset(pilotConfigMutable()->craftName, 0, ARRAYLEN(pilotConfig()->craftName));
-        for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
-            pilotConfigMutable()->craftName[i] = sbufReadU8(src);
-        }
+        memset(pilotConfigMutable()->craftName, 0, sizeof(pilotConfigMutable()->craftName));
+        sbufReadData(src, pilotConfigMutable()->craftName, MIN(ARRAYLEN(pilotConfigMutable()->craftName) - 1, dataSize));
 #ifdef USE_OSD
         osdAnalyzeActiveElements();
 #endif
