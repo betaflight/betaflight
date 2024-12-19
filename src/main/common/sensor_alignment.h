@@ -61,6 +61,7 @@ typedef union sensorAlignment_u {
     .yaw = DEGREES_TO_DECIDEGREES(YAW),                                 \
 })
 
+/*
 #define CUSTOM_ALIGN_CW0_DEG         SENSOR_ALIGNMENT( 0,   0,   0 )
 #define CUSTOM_ALIGN_CW45_DEG        SENSOR_ALIGNMENT( 0,   0,  45 )
 #define CUSTOM_ALIGN_CW90_DEG        SENSOR_ALIGNMENT( 0,   0,  90 )
@@ -71,7 +72,7 @@ typedef union sensorAlignment_u {
 #define CUSTOM_ALIGN_CW90_DEG_FLIP   SENSOR_ALIGNMENT( 0, 180,  90 )
 #define CUSTOM_ALIGN_CW180_DEG_FLIP  SENSOR_ALIGNMENT( 0, 180, 180 )
 #define CUSTOM_ALIGN_CW270_DEG_FLIP  SENSOR_ALIGNMENT( 0, 180, 270 )
-
+*/
 #define CUSTOM_ALIGN_CW(deg)         SENSOR_ALIGNMENT( 0, 0, (deg) )
 #define CUSTOM_ALIGN_CW_FLIP(deg)    SENSOR_ALIGNMENT( 0, 180, (deg) )
 
