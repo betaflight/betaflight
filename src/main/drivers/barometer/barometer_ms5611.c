@@ -217,7 +217,6 @@ STATIC_UNIT_TESTED void ms5611Calculate(int32_t *pressure, int32_t *temperature)
     }
     press = ((((int64_t)ms5611_up * sens) >> 21) - off) >> 15;
 
-
     if (pressure)
         *pressure = press;
     if (temperature)

@@ -22,8 +22,28 @@
 
 // Configuration constants
 
+// TODO: this comment is obsolete
+
+// Since serial ports can be used for any function these buffer sizes should be equal
+// The two largest things that need to be sent are: 1, MSP responses, 2, UBLOX SVINFO packet.
+
+// Size must be a power of two due to various optimizations which use 'and' instead of 'mod'
+// Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
+// increase size further.
+
+// define some common UART features
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x)
+#define UART_TRAIT_AF_PIN 1        // pin AF mode is configured for each pin individually
+#else
+#define UART_TRAIT_AF_PORT 1       // all pins on given uart use same AF
+#endif
+
+#if !defined(STM32F4) || !defined(APM32F4) // all others support pinswap
+#define UART_TRAIT_PINSWAP 1
+#endif
+
 #if defined(STM32F4)
-#define UARTDEV_COUNT_MAX 6
+
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -35,8 +55,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(STM32F7)
-#define UARTDEV_COUNT_MAX 8
+
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -48,8 +69,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(STM32H7)
-#define UARTDEV_COUNT_MAX 11 // UARTs 1 to 10 + LPUART1
+
 #define UARTHARDWARE_MAX_PINS 5
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -61,8 +83,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(STM32G4)
-#define UARTDEV_COUNT_MAX 11  // UARTs 1 to 5 + LPUART1 (index 10)
+
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -74,8 +97,9 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #elif defined(AT32F4)
-#define UARTDEV_COUNT_MAX 8  // UARTs 1 to 5 + LPUART1 (index 9)
+
 #define UARTHARDWARE_MAX_PINS 5
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -88,7 +112,7 @@
 #endif
 #endif
 #elif defined(APM32F4)
-#define UARTDEV_COUNT_MAX 6
+
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
@@ -100,89 +124,59 @@
 #define UART_TX_BUFFER_SIZE     256
 #endif
 #endif
+
 #else
 #error unknown MCU family
 #endif
 
-// Count number of configured UARTs
-
+// compressed index of UART/LPUART. Direct index into uartDevice[]
+typedef enum {
+    UARTDEV_INVALID = -1,
 #ifdef USE_UART1
-#define UARTDEV_COUNT_1 1
-#else
-#define UARTDEV_COUNT_1 0
+    UARTDEV_1,
 #endif
-
 #ifdef USE_UART2
-#define UARTDEV_COUNT_2 1
-#else
-#define UARTDEV_COUNT_2 0
+    UARTDEV_2,
 #endif
-
 #ifdef USE_UART3
-#define UARTDEV_COUNT_3 1
-#else
-#define UARTDEV_COUNT_3 0
+    UARTDEV_3,
 #endif
-
 #ifdef USE_UART4
-#define UARTDEV_COUNT_4 1
-#else
-#define UARTDEV_COUNT_4 0
+    UARTDEV_4,
 #endif
-
 #ifdef USE_UART5
-#define UARTDEV_COUNT_5 1
-#else
-#define UARTDEV_COUNT_5 0
+    UARTDEV_5,
 #endif
-
 #ifdef USE_UART6
-#define UARTDEV_COUNT_6 1
-#else
-#define UARTDEV_COUNT_6 0
+    UARTDEV_6,
 #endif
-
 #ifdef USE_UART7
-#define UARTDEV_COUNT_7 1
-#else
-#define UARTDEV_COUNT_7 0
+    UARTDEV_7,
 #endif
-
 #ifdef USE_UART8
-#define UARTDEV_COUNT_8 1
-#else
-#define UARTDEV_COUNT_8 0
+    UARTDEV_8,
 #endif
-
 #ifdef USE_UART9
-#define UARTDEV_COUNT_9 1
-#else
-#define UARTDEV_COUNT_9 0
+    UARTDEV_9,
 #endif
-
 #ifdef USE_UART10
-#define UARTDEV_COUNT_10 1
-#else
-#define UARTDEV_COUNT_10 0
+    UARTDEV_10,
 #endif
-
 #ifdef USE_LPUART1
-#define LPUARTDEV_COUNT_1 1
-#else
-#define LPUARTDEV_COUNT_1 0
+    UARTDEV_LP1,
 #endif
-
-#define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8 + UARTDEV_COUNT_9 + UARTDEV_COUNT_10 + LPUARTDEV_COUNT_1)
+    UARTDEV_COUNT
+} uartDeviceIdx_e;
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x) || defined(APM32F4)
+#if UART_TRAIT_AF_PIN
     uint8_t af;
 #endif
 } uartPinDef_t;
 
 typedef struct uartHardware_s {
-    UARTDevice_e device;    // XXX Not required for full allocation
+    serialPortIdentifier_e identifier;
     USART_TypeDef* reg;
 
 #ifdef USE_DMA
@@ -190,14 +184,14 @@ typedef struct uartHardware_s {
     dmaResource_t *rxDMAResource;
     // For H7 and G4  , {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); H7:RM0433 Table 110, G4:RM0440 Table 80.
     // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x)
-    // For at32f435/7 DmaChannel is the dmamux ,need to call dmamuxenable using dmamuxid
+    // For at32f435/7 DmaChannel is the dmamux, need to call dmamuxenable using dmamuxid
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
     uint32_t txDMAChannel;
     uint32_t rxDMAChannel;
 #elif defined(AT32F4)
     uint32_t txDMAMuxId;//for dmaspec->dmamux  and using dmaMuxEnable(dmax,muxid)
     uint32_t rxDMAMuxId;
-#endif 
+#endif
 
 #endif // USE_DMA
 
@@ -206,16 +200,12 @@ typedef struct uartHardware_s {
 
     rccPeriphTag_t rcc;
 
-#if !defined(STM32F7)
+#if UART_TRAIT_AF_PORT
     uint8_t af;
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-    uint8_t txIrq;
-    uint8_t rxIrq;
-#else
-    uint8_t irqn;
-#endif
+    uint8_t irqn;                  // uart IRQ. One shared IRQ per uart
+
     uint8_t txPriority;
     uint8_t rxPriority;
 
@@ -225,7 +215,7 @@ typedef struct uartHardware_s {
     uint16_t rxBufferSize;
 } uartHardware_t;
 
-extern const uartHardware_t uartHardware[];
+extern const uartHardware_t uartHardware[UARTDEV_COUNT];
 
 // uartDevice_t is an actual device instance.
 // XXX Instances are allocated for uarts defined by USE_UARTx atm.
@@ -236,6 +226,7 @@ typedef enum {
     TX_PIN_IGNORE
 } txPinState_t;
 
+// TODO: merge uartPort_t and uartDevice_t
 typedef struct uartDevice_s {
     uartPort_t port;
     const uartHardware_t *hardware;
@@ -243,19 +234,24 @@ typedef struct uartDevice_s {
     uartPinDef_t tx;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-#if !defined(STM32F4) || !defined(APM32F4) // Don't support pin swap.
+#if UART_TRAIT_PINSWAP
     bool pinSwap;
 #endif
     txPinState_t txPinState;
 } uartDevice_t;
 
-extern uartDevice_t *uartDevmap[];
+extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;
+
+uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier);
+uartDevice_t* uartDeviceFromIdentifier(serialPortIdentifier_e identifier);
 
 extern const struct serialPortVTable uartVTable[];
 
 void uartTryStartTxDMA(uartPort_t *s);
 
-uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options);
+uartPort_t *serialUART(uartDevice_t *uart, uint32_t baudRate, portMode_e mode, portOptions_e options);
+
+void uartConfigureExternalPinInversion(uartPort_t *uartPort);
 
 void uartIrqHandler(uartPort_t *s);
 
@@ -284,15 +280,10 @@ void uartTxMonitor(uartPort_t *s);
 
 #define UART_BUFFER(type, n, rxtx) type volatile uint8_t uart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
 
-#define UART_BUFFERS_EXTERN(n) \
-    UART_BUFFER(extern, n, R); \
-    UART_BUFFER(extern, n, T); struct dummy_s
-
-#define LPUART_BUFFER(type, n, rxtx) type volatile uint8_t lpuart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
-
-#define LPUART_BUFFERS_EXTERN(n) \
-    LPUART_BUFFER(extern, n, R); \
-    LPUART_BUFFER(extern, n, T); struct dummy_s
+#define UART_BUFFERS_EXTERN(n)                \
+    UART_BUFFER(extern, n, R);                \
+    UART_BUFFER(extern, n, T); struct dummy_s \
+/**/
 
 #ifdef USE_UART1
 UART_BUFFERS_EXTERN(1);
@@ -335,7 +326,7 @@ UART_BUFFERS_EXTERN(10);
 #endif
 
 #ifdef USE_LPUART1
-LPUART_BUFFERS_EXTERN(1);
+UART_BUFFERS_EXTERN(Lp1);
 #endif
 
 #undef UART_BUFFERS_EXTERN

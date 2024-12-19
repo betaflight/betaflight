@@ -24,7 +24,6 @@
 
 #include "huffman.h"
 
-
 int huffmanEncodeBuf(uint8_t *outBuf, int outBufLen, const uint8_t *inBuf, int inLen, const huffmanTable_t *huffmanTable)
 {
     int ret = 0;

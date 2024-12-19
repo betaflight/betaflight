@@ -47,11 +47,13 @@ extern "C" {
     #include "io/beeper.h"
     #include "io/gps.h"
 
+    #include "pg/autopilot.h"
     #include "pg/gps_rescue.h"
     #include "pg/motor.h"
+    #include "pg/rx.h"
+
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
-    #include "pg/rx.h"
 
     #include "rx/rx.h"
 
@@ -77,6 +79,7 @@ extern "C" {
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(apConfig_t, apConfig, PG_AUTOPILOT, 0);
 
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint16_t averageSystemLoadPercent = 0;
@@ -98,9 +101,7 @@ extern "C" {
     uint8_t activePidLoopDenom = 1;
 
     float getGpsDataIntervalSeconds(void) { return 0.1f; }
-    void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k) { filter->k = k; }
-    void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k) { filter->k = k; }
-    void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k) { filter->k = k; }
+    float getGpsDataFrequencyHz(void) { return 10.0f; }
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -1051,7 +1052,7 @@ TEST(ArmingPreventionTest, Paralyze)
 extern "C" {
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
-    bool rxIsReceivingSignal(void) { return simulationHaveRx; }
+    bool isRxReceivingSignal(void) { return simulationHaveRx; }
 
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
     void warningLedFlash(void) {}
@@ -1128,37 +1129,40 @@ extern "C" {
     bool isUpright(void) { return mockIsUpright; }
     void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
     void gyroFiltering(timeUs_t) {};
-    timeDelta_t rxGetFrameDelta(timeDelta_t *) { return 0; }
+    timeDelta_t rxGetFrameDelta() { return 0; }
     void updateRcRefreshRate(timeUs_t) {};
     uint16_t getAverageSystemLoadPercent(void) { return 0; }
     bool isMotorProtocolEnabled(void) { return true; }
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
-    float getAltitude(void) { return 3000.0f; }
-    float pt1FilterGain(float, float) { return 0.5f; }
-    float pt2FilterGain(float, float)  { return 0.1f; }
-    float pt3FilterGain(float, float)  { return 0.1f; }
-    void pt2FilterInit(pt2Filter_t *throttleDLpf, float) {
-        UNUSED(throttleDLpf);
-    }
-    float pt2FilterApply(pt2Filter_t *throttleDLpf, float) {
-        UNUSED(throttleDLpf);
-        return 0.0f;
-    }
-    void pt1FilterInit(pt1Filter_t *velocityDLpf, float) {
-        UNUSED(velocityDLpf);
-    }
-    float pt1FilterApply(pt1Filter_t *velocityDLpf, float) {
-        UNUSED(velocityDLpf);
-        return 0.0f;
-    }
-    void pt3FilterInit(pt3Filter_t *velocityUpsampleLpf, float) {
-        UNUSED(velocityUpsampleLpf);
-    }
-    float pt3FilterApply(pt3Filter_t *velocityUpsampleLpf, float) {
-        UNUSED(velocityUpsampleLpf);
-        return 0.0f;
-    }
+
+    float getAltitudeCm(void) {return 0.0f;}
+    float getAltitudeDerivative(void) {return 0.0f;}
+
+    float sin_approx(float) {return 0.0f;}
+    float cos_approx(float) {return 1.0f;}
+    float atan2_approx(float, float) {return 0.0f;}
+
     void getRcDeflectionAbs(void) {}
-    uint32_t getCpuPercentageLate(void) { return 0; };
+    uint32_t getCpuPercentageLate(void) { return 0; }
+    bool crashFlipSuccessful(void) { return false; }
+
+    void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
+    {
+       UNUSED(from);
+       UNUSED(to);
+       UNUSED(dist3d);
+       UNUSED(dist);
+       UNUSED(bearing);
+    }
+
+void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
+
+    bool canUseGPSHeading;
+    bool compassIsHealthy;
+
+    bool gpsHasNewData(uint16_t* gpsStamp) {
+         UNUSED(*gpsStamp);
+         return true;
+     }
 }

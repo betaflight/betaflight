@@ -23,14 +23,19 @@
 #include "common/axis.h"
 #include "common/time.h"
 #include "common/maths.h"
+#include "common/vector.h"
+
 #include "pg/pg.h"
 
 // Exported symbols
 extern bool canUseGPSHeading;
 
-typedef struct {
-    float w,x,y,z;
-} quaternion;
+typedef union {
+    float v[4];
+    struct {
+        float w, x, y, z;
+    };
+} quaternion_t;
 #define QUATERNION_INITIALIZE  {.w=1, .x=0, .y=0,.z=0}
 
 typedef struct {
@@ -41,7 +46,7 @@ typedef struct {
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
     struct {
-        // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+        // absolute angle inclination in multiple of 0.1 degree  eg attitude.values.yaw 180 deg = 1800
         int16_t roll;
         int16_t pitch;
         int16_t yaw;
@@ -50,7 +55,8 @@ typedef union {
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
 extern attitudeEulerAngles_t attitude;
-extern float rMat[3][3];
+extern matrix33_t rMat;
+extern quaternion_t imuAttitudeQuaternion; //attitude quaternion to use in blackbox
 
 typedef struct imuConfig_s {
     uint16_t imu_dcm_kp;          // DCM filter proportional gain ( x 10000)
@@ -71,7 +77,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 float getSinPitchAngle(void);
 float getCosTiltAngle(void);
-void getQuaternion(quaternion * q);
+void getQuaternion(quaternion_t * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 
 void imuInit(void);
@@ -85,6 +91,6 @@ void imuSetHasNewData(uint32_t dt);
 #endif
 
 bool imuQuaternionHeadfreeOffsetSet(void);
-void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def * v);
+void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v);
 bool shouldInitializeGPSHeading(void);
 bool isUpright(void);

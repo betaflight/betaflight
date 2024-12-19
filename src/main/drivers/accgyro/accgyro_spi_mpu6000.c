@@ -44,7 +44,6 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 
-
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
 // 20 MHz max SPI frequency

@@ -40,6 +40,8 @@
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
+#include "pg/motor.h"
+
 #include "rx/rx.h"
 
 #include "sensors/gyro.h"
@@ -47,11 +49,11 @@
 
 #include "pid_init.h"
 
-#if defined(USE_D_MIN)
-#define D_MIN_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
-#define D_MIN_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
-#define D_MIN_GAIN_FACTOR 0.00008f
-#define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
+#ifdef USE_D_MAX
+#define D_MAX_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
+#define D_MAX_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
+#define D_MAX_GAIN_FACTOR 0.00008f
+#define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
 #define ATTITUDE_CUTOFF_HZ 50
@@ -65,6 +67,66 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
     dshotSetPidLoopTime(targetPidLooptime);
 #endif
 }
+
+#ifdef USE_WING
+void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
+{
+    // basic model assumes prop pitch speed is inf
+    const float gravityFactor = pidProfile->tpa_speed_basic_gravity / 100.0f;
+    const float delaySec = pidProfile->tpa_speed_basic_delay / 1000.0f;
+
+    pidRuntime.tpaSpeed.twr = 1.0f / (gravityFactor * gravityFactor);
+    const float massDragRatio = (2.0f / logf(3.0f)) * (2.0f / logf(3.0f)) * pidRuntime.tpaSpeed.twr * G_ACCELERATION * delaySec * delaySec;
+    pidRuntime.tpaSpeed.dragMassRatio = 1.0f / massDragRatio;
+    pidRuntime.tpaSpeed.maxSpeed = sqrtf(massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
+    pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
+}
+
+void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
+{
+    // Advanced model uses prop pitch speed, and is quite limited when craft speed is far above prop pitch speed.
+    pidRuntime.tpaSpeed.twr = (float)pidProfile->tpa_speed_adv_thrust / (float)pidProfile->tpa_speed_adv_mass;
+    const float mass = pidProfile->tpa_speed_adv_mass / 1000.0f;
+    const float dragK = pidProfile->tpa_speed_adv_drag_k / 10000.0f;
+    const float propPitch = pidProfile->tpa_speed_adv_prop_pitch / 100.0f;
+    pidRuntime.tpaSpeed.dragMassRatio = dragK / mass;
+    const float propMaxSpeed = (2.54f / 100.0f / 60.0f) * propPitch * motorConfig()->kv * pidRuntime.tpaSpeed.maxVoltage;
+    if (propMaxSpeed <= 0.0f) { // assuming propMaxSpeed is inf
+        pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
+    } else {
+        pidRuntime.tpaSpeed.inversePropMaxSpeed = 1.0f / propMaxSpeed;
+    }
+
+    const float maxFallSpeed = sqrtf(mass * G_ACCELERATION / dragK);
+
+    const float a = dragK;
+    const float b = mass * pidRuntime.tpaSpeed.twr * G_ACCELERATION * pidRuntime.tpaSpeed.inversePropMaxSpeed;
+    const float c = -mass * (pidRuntime.tpaSpeed.twr + 1) * G_ACCELERATION;
+
+    const float maxDiveSpeed = (-b + sqrtf(b*b - 4.0f * a * c)) / (2.0f * a);
+
+    pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
+    UNUSED(pidProfile);
+}
+
+void tpaSpeedInit(const pidProfile_t *pidProfile)
+{
+    pidRuntime.tpaSpeed.speed = 0.0f;
+    pidRuntime.tpaSpeed.maxVoltage = pidProfile->tpa_speed_max_voltage / 100.0f;
+    pidRuntime.tpaSpeed.pitchOffset = pidProfile->tpa_speed_pitch_offset * M_PIf / 10.0f / 180.0f;
+
+    switch (pidProfile->tpa_speed_type) {
+    case TPA_SPEED_BASIC:
+        tpaSpeedBasicInit(pidProfile);
+        break;
+    case TPA_SPEED_ADVANCED:
+        tpaSpeedAdvancedInit(pidProfile);
+        break;
+    default:
+        break;
+    }
+}
+#endif // USE_WING
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -219,14 +281,14 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 
-#if defined(USE_D_MIN)
-    // Initialize the filters for all axis even if the d_min[axis] value is 0
-    // Otherwise if the pidProfile->d_min_xxx parameters are ever added to
+#ifdef USE_D_MAX
+    // Initialize the filters for all axis even if the d_max[axis] value is 0
+    // Otherwise if the pidProfile->d_max_xxx parameters are ever added to
     // in-flight adjustments and transition from 0 to > 0 in flight the feature
     // won't work because the filter wasn't initialized.
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        pt2FilterInit(&pidRuntime.dMinRange[axis], pt2FilterGain(D_MIN_RANGE_HZ, pidRuntime.dT));
-        pt2FilterInit(&pidRuntime.dMinLowpass[axis], pt2FilterGain(D_MIN_LOWPASS_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMaxRange[axis], pt2FilterGain(D_MAX_RANGE_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMaxLowpass[axis], pt2FilterGain(D_MAX_LOWPASS_HZ, pidRuntime.dT));
      }
 #endif
 
@@ -251,22 +313,17 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
         pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
-        pidRuntime.maxRcRateInv[axis] = 1.0f / getMaxRcRate(axis);
     }
     pidRuntime.angleYawSetpoint = 0.0f;
 #endif
 
     pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
 #ifdef USE_WING
-    pt2FilterInit(&pidRuntime.tpaLpf, pt2FilterGainFromDelay(pidProfile->tpa_delay_ms / 1000.0f, pidRuntime.dT));
-    pidRuntime.tpaGravityThr0 = pidProfile->tpa_gravity_thr0 / 100.0f;
-    pidRuntime.tpaGravityThr100 = pidProfile->tpa_gravity_thr100 / 100.0f;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         pidRuntime.spa[axis] = 1.0f; // 1.0 = no PID attenuation in runtime. 0 - full attenuation (no PIDs)
     }
 #endif
 }
-
 
 #ifdef USE_ADVANCED_TPA
 float tpaCurveHyperbolicFunction(float x, void *args)
@@ -299,7 +356,8 @@ void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
 
 void tpaCurveInit(const pidProfile_t *pidProfile)
 {
-        switch (pidProfile->tpa_curve_type) {
+        pidRuntime.tpaCurveType = pidProfile->tpa_curve_type;
+        switch (pidRuntime.tpaCurveType) {
         case TPA_CURVE_HYPERBOLIC:
             tpaCurveHyperbolicInit(pidProfile);
             return;
@@ -352,11 +410,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * pidRuntime.dT;
-    pidRuntime.itermWindupPointInv = 1.0f;
-    if (pidProfile->itermWindupPointPercent < 100) {
-        const float itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
-        pidRuntime.itermWindupPointInv = 1.0f / (1.0f - itermWindupPoint);
-    }
     pidRuntime.antiGravityGain = pidProfile->anti_gravity_gain;
     pidRuntime.crashTimeLimitUs = pidProfile->crash_time * 1000;
     pidRuntime.crashTimeDelayUs = pidProfile->crash_delay * 1000;
@@ -366,7 +419,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.crashDtermThreshold = pidProfile->crash_dthreshold * 1000.0f; // gyro delta in deg/s/s * 1000 to match original 2017 intent
     pidRuntime.crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     pidRuntime.crashLimitYaw = pidProfile->crash_limit_yaw;
-    pidRuntime.itermLimit = pidProfile->itermLimit;
+
+    pidRuntime.itermLimit = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimit;
+    pidRuntime.itermLimitYaw = 0.01f * pidProfile->itermWindup * pidProfile->pidSumLimitYaw;
+
 #if defined(USE_THROTTLE_BOOST)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
@@ -448,17 +504,18 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * sq(pidRuntime.thrustLinearization);
 #endif
 
-#if defined(USE_D_MIN)
+#ifdef USE_D_MAX
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-        const uint8_t dMin = pidProfile->d_min[axis];
-        if ((dMin > 0) && (dMin < pidProfile->pid[axis].D)) {
-            pidRuntime.dMinPercent[axis] = dMin / (float)(pidProfile->pid[axis].D);
+        const uint8_t dMax = pidProfile->d_max[axis];
+        if ((pidProfile->pid[axis].D > 0) && dMax > pidProfile->pid[axis].D) {
+            pidRuntime.dMaxPercent[axis] = (float) dMax / pidProfile->pid[axis].D;
+            // fraction that Dmax is higher than D, eg if D is 8 and Dmax is 10, Dmax is 1.25 times bigger
         } else {
-            pidRuntime.dMinPercent[axis] = 0;
+            pidRuntime.dMaxPercent[axis] = 1.0f;
         }
     }
-    pidRuntime.dMinGyroGain = D_MIN_GAIN_FACTOR * pidProfile->d_min_gain / D_MIN_LOWPASS_HZ;
-    pidRuntime.dMinSetpointGain = D_MIN_SETPOINT_GAIN_FACTOR * pidProfile->d_min_gain * pidProfile->d_min_advance / 100.0f / D_MIN_LOWPASS_HZ;
+    pidRuntime.dMaxGyroGain = D_MAX_GAIN_FACTOR * pidProfile->d_max_gain / D_MAX_LOWPASS_HZ;
+    pidRuntime.dMaxSetpointGain = D_MAX_SETPOINT_GAIN_FACTOR * pidProfile->d_max_gain * pidProfile->d_max_advance / 100.0f / D_MAX_LOWPASS_HZ;
     // lowpass included inversely in gain since stronger lowpass decreases peak effect
 #endif
 
@@ -497,6 +554,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.useEzDisarm = pidProfile->landing_disarm_threshold > 0;
     pidRuntime.landingDisarmThreshold = pidProfile->landing_disarm_threshold * 10.0f;
 
+#ifdef USE_WING
+    tpaSpeedInit(pidProfile);
+#endif
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)

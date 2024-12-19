@@ -48,7 +48,6 @@
  * Other transmitters may vary but should have similar characteristics.
  */
 
-
 /*
  * SymaX Protocol
  * No auto acknowledgment

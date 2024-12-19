@@ -41,7 +41,6 @@ typedef enum {
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
-
 typedef struct motorVTable_s {
     // Common
     void (*postInit)(void);
@@ -105,5 +104,3 @@ struct motorDevConfig_s;
 typedef struct motorDevConfig_s motorDevConfig_t;
 bool isDshotBitbangActive(const motorDevConfig_t *motorConfig);
 #endif
-
-float getDigitalIdleOffset(const motorConfig_t *motorConfig);

@@ -44,7 +44,7 @@
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
-#define IST8310_MAG_I2C_ADDRESS 0x0C
+#define IST8310_MAG_I2C_ADDRESS 0x0E
 
 /* ist8310 Slave Address Select : default address 0x0C
  *        CAD1  |  CAD0   |  Address
@@ -124,7 +124,7 @@ static bool ist8310Init(magDev_t *magDev)
     bool ack = busWriteRegister(dev, IST8310_REG_AVERAGE, IST8310_AVG_16);
     delay(6);
     ack = ack && busWriteRegister(dev, IST8310_REG_PDCNTL, IST8310_PULSE_DURATION_NORMAL);
-    delay(6); 
+    delay(6);
     ack = ack && busWriteRegister(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE);
 
     magDev->magOdrHz = 100;

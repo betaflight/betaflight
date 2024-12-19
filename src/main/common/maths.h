@@ -43,7 +43,6 @@
 #define DEGREES_TO_RADIANS(angle) ((angle) * RAD)
 #define RADIANS_TO_DEGREES(angle) ((angle) / RAD)
 
-
 #define CM_S_TO_KM_H(centimetersPerSecond) ((centimetersPerSecond) * 36 / 1000)
 #define CM_S_TO_MPH(centimetersPerSecond) ((centimetersPerSecond) * 10000 / 5080 / 88)
 
@@ -75,18 +74,6 @@ typedef struct stdev_s
     int m_n;
 } stdev_t;
 
-// Floating point 3 vector.
-typedef struct fp_vector {
-    float X;
-    float Y;
-    float Z;
-} t_fp_vector_def;
-
-typedef union u_fp_vector {
-    float A[3];
-    t_fp_vector_def V;
-} t_fp_vector;
-
 // Floating point Euler angles.
 // Be carefull, could be either of degrees or radians.
 typedef struct fp_angles {
@@ -100,10 +87,6 @@ typedef union {
     fp_angles_def angles;
 } fp_angles_t;
 
-typedef struct fp_rotationMatrix_s {
-    float m[3][3];              // matrix
-} fp_rotationMatrix_t;
-
 int gcd(int num, int denom);
 int32_t applyDeadband(int32_t value, int32_t deadband);
 float fapplyDeadband(float value, float deadband);
@@ -116,9 +99,6 @@ float degreesToRadians(int16_t degrees);
 
 int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float destTo);
-
-void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation);
-void applyMatrixRotation(float *v, fp_rotationMatrix_t *rotationMatrix);
 
 int32_t quickMedianFilter3(const int32_t * v);
 int32_t quickMedianFilter5(const int32_t * v);

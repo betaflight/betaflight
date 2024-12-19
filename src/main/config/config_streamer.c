@@ -36,7 +36,6 @@ uint8_t eepromData[EEPROM_SIZE];
 #endif
 #endif
 
-
 #if !defined(FLASH_PAGE_SIZE)
 #error "Flash page size not defined for target."
 #endif

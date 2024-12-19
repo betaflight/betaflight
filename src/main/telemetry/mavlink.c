@@ -129,7 +129,6 @@ static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
     return 0;
 }
 
-
 static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)
 {
     for (int i = 0; i < length; i++)
@@ -145,7 +144,6 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
     // heading Current heading in degrees, in compass units (0..360, 0=north)
     return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
-
 
 void freeMAVLinkTelemetryPort(void)
 {
@@ -433,7 +431,6 @@ void mavlinkSendHUDAndHeartbeat(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-
     uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
     if (ARMING_FLAG(ARMED))
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
@@ -478,7 +475,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     // Custom mode for compatibility with APM OSDs
     uint8_t mavCustomMode = 1;  // Acro by default
 
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }

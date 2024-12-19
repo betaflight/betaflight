@@ -66,8 +66,6 @@
 #define USE_UART5
 #define USE_SOFTSERIAL
 
-#define SERIAL_PORT_COUNT 8
-
 #define DEFAULT_AUX_CHANNEL_COUNT       MAX_AUX_CHANNEL_COUNT
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6  // needed for unittest
 
@@ -79,3 +77,4 @@
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 
+#include "target/serial_post.h"

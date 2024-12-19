@@ -27,29 +27,29 @@
 
 #include "common/sensor_alignment.h"
 #include "common/sensor_alignment_impl.h"
+#include "common/vector.h"
 
-void buildRotationMatrixFromAlignment(const sensorAlignment_t* sensorAlignment, fp_rotationMatrix_t* rm)
+void buildRotationMatrixFromAngles(matrix33_t *rm, const sensorAlignment_t *rpy)
 {
     fp_angles_t rotationAngles;
-    rotationAngles.angles.roll  = DECIDEGREES_TO_RADIANS(sensorAlignment->roll);
-    rotationAngles.angles.pitch = DECIDEGREES_TO_RADIANS(sensorAlignment->pitch);
-    rotationAngles.angles.yaw   = DECIDEGREES_TO_RADIANS(sensorAlignment->yaw);
+    rotationAngles.angles.roll  = DECIDEGREES_TO_RADIANS(rpy->roll);
+    rotationAngles.angles.pitch = DECIDEGREES_TO_RADIANS(rpy->pitch);
+    rotationAngles.angles.yaw   = DECIDEGREES_TO_RADIANS(rpy->yaw);
 
-    buildRotationMatrix(&rotationAngles, rm);
+    buildRotationMatrix(rm, &rotationAngles);
 }
 
-
-void buildAlignmentFromStandardAlignment(sensorAlignment_t* sensorAlignment, sensor_align_e alignment)
+void buildAlignmentFromStandardAlignment(sensorAlignment_t* rpy, sensor_align_e stdAlignment)
 {
-    if (alignment == ALIGN_CUSTOM || alignment == ALIGN_DEFAULT) {
+    if (stdAlignment == ALIGN_CUSTOM || stdAlignment == ALIGN_DEFAULT) {
         return;
     }
 
-    uint8_t alignmentBits = ALIGNMENT_TO_BITMASK(alignment);
+    uint8_t alignmentBits = ALIGNMENT_TO_BITMASK(stdAlignment);
 
-    memset(sensorAlignment, 0x00, sizeof(sensorAlignment_t));
+    memset(rpy, 0x00, sizeof(sensorAlignment_t));
 
     for (int axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        sensorAlignment->raw[axis] = DEGREES_TO_DECIDEGREES(90) * ALIGNMENT_AXIS_ROTATIONS(alignmentBits, axis);
+        rpy->raw[axis] = DEGREES_TO_DECIDEGREES(90) * ALIGNMENT_AXIS_ROTATIONS(alignmentBits, axis);
     }
 }

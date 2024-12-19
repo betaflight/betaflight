@@ -48,7 +48,6 @@ typedef enum {
     RCDEVICE_STATE_WAITING_CRC,
 } RCDEVICE_PARSER_STATE;
 
-
 typedef struct {
     uint8_t state;
     uint8_t expectedDataLength;

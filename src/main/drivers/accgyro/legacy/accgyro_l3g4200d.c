@@ -38,7 +38,6 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 
-
 // L3G4200D, Standard address 0x68
 #define L3G4200D_ADDRESS         0x68
 #define L3G4200D_ID              0xD3

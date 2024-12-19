@@ -112,7 +112,6 @@ static uint8_t telemetryBufLen = 0;
  *
  */
 
-
 // called from telemetry/ghst.c
 void ghstRxWriteTelemetryData(const void *const data, const int len)
 {
@@ -417,7 +416,6 @@ bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = GHST_MAX_NUM_CHANNELS;
     rxRuntimeState->rcReadRawFn = ghstReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ghstFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
     rxRuntimeState->rcProcessFrameFn = ghstProcessFrame;
 
     for (int iChan = 0; iChan < rxRuntimeState->channelCount; ++iChan) {

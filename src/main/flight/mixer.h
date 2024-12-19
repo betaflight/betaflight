@@ -95,7 +95,7 @@ typedef struct mixerConfig_s {
     uint8_t mixerMode;
     bool yaw_motors_reversed;
     uint8_t crashflip_motor_percent;
-    uint8_t crashflip_expo;
+    uint8_t crashflip_rate;
     uint8_t mixer_type;
 #ifdef USE_RPM_LIMIT
     bool rpm_limit;
@@ -121,6 +121,7 @@ extern float motor[MAX_SUPPORTED_MOTORS];
 extern float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct rxConfig_s;
 
+bool hasServos(void);
 uint8_t getMotorCount(void);
 float getMotorMixRange(void);
 bool areMotorsRunning(void);
@@ -147,3 +148,9 @@ bool isFixedWing(void);
 
 float getMotorOutputLow(void);
 float getMotorOutputHigh(void);
+
+bool crashFlipSuccessful(void);
+
+#ifdef USE_WING
+float getMotorOutputRms(void);
+#endif

@@ -18,7 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -48,17 +47,15 @@
 #define DEFAULT_DSHOT_TELEMETRY DSHOT_TELEMETRY_OFF
 #endif
 
-PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
-    motorConfig->minthrottle = 1000;
     motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
     motorConfig->dev.useUnsyncedPwm = true;
 #else
-    motorConfig->minthrottle = 1070;
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #ifndef USE_DSHOT
     if (motorConfig->dev.motorPwmProtocol == PWM_TYPE_STANDARD) {
@@ -74,7 +71,11 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
-    motorConfig->digitalIdleOffsetValue = 550;
+#ifdef BRUSHED_MOTORS
+    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
+#else
+    motorConfig->motorIdle = 550;
+#endif // BRUSHED_MOTORS
     motorConfig->kv = 1960;
 
 #ifdef USE_TIMER

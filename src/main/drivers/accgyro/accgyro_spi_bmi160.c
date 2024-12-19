@@ -364,7 +364,6 @@ static bool bmi160AccRead(accDev_t *acc)
     return true;
 }
 
-
 static bool bmi160GyroRead(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
@@ -438,7 +437,6 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
     return true;
 }
 
-
 void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
@@ -454,7 +452,6 @@ void bmi160SpiAccInit(accDev_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-
 bool bmi160SpiAccDetect(accDev_t *acc)
 {
     if (acc->mpuDetectionResult.sensor != BMI_160_SPI) {
@@ -466,7 +463,6 @@ bool bmi160SpiAccDetect(accDev_t *acc)
 
     return true;
 }
-
 
 bool bmi160SpiGyroDetect(gyroDev_t *gyro)
 {

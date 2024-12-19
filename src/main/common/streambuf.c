@@ -65,7 +65,6 @@ void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val)
     sbufWriteU8(dst, (uint8_t)val);
 }
 
-
 void sbufFill(sbuf_t *dst, uint8_t data, int len)
 {
     memset(dst->ptr, data, len);
@@ -114,6 +113,7 @@ uint32_t sbufReadU32(sbuf_t *src)
 void sbufReadData(sbuf_t *src, void *data, int len)
 {
     memcpy(data, src->ptr, len);
+    src->ptr += len;
 }
 
 // reader - return bytes remaining in buffer

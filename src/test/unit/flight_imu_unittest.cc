@@ -41,16 +41,17 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
     #include "fc/rc.h"
-    
+
+    #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
-    #include "flight/imu.h"
     #include "flight/position.h"
 
-    
     #include "io/gps.h"
 
     #include "rx/rx.h"
+
+    #include "pg/autopilot.h"
 
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -67,13 +68,14 @@ extern "C" {
                              const float dcmKpGain);
     float imuCalcMagErr(void);
     float imuCalcCourseErr(float courseOverGround);
-    extern quaternion q;
-    extern float rMat[3][3];
+    extern quaternion_t q;
+    extern matrix33_t rMat;
     extern bool attitudeIsEstablished;
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(apConfig_t, apConfig, PG_AUTOPILOT, 0);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
@@ -85,9 +87,9 @@ extern "C" {
 
 const float sqrt2over2 = sqrtf(2) / 2.0f;
 
-void quaternion_from_axis_angle(quaternion* q, float angle, float x, float y, float z) {
-    fpVector3_t a = {{x, y, z}};
-    vectorNormalize(&a, &a);
+void quaternion_from_axis_angle(quaternion_t* q, float angle, float x, float y, float z) {
+    vector3_t a = {{x, y, z}};
+    vector3Normalize(&a, &a);
     q->w = cos(angle / 2);
     q->x = a.x * sin(angle / 2);
     q->y = a.y * sin(angle / 2);
@@ -106,15 +108,15 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_FLOAT_EQ(1.0f, rMat[0][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[0][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[0][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[1][0]);
-    EXPECT_FLOAT_EQ(1.0f, rMat[1][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[1][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[2][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat[2][1]);
-    EXPECT_FLOAT_EQ(1.0f, rMat[2][2]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[0][0]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[0][1]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[0][2]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[1][0]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[1][1]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[1][2]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[2][0]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[2][1]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[2][2]);
 
     // 90 degrees around Z axis
     q.w = sqrt2over2;
@@ -124,15 +126,15 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_NEAR(0.0f, rMat[0][0], TOL);
-    EXPECT_NEAR(-1.0f, rMat[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][2], TOL);
-    EXPECT_NEAR(1.0f, rMat[1][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][1], TOL);
-    EXPECT_NEAR(1.0f, rMat[2][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][0], TOL);
+    EXPECT_NEAR(-1.0f, rMat.m[0][1], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][2], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[1][0], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[1][1], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[1][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[2][0], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[2][1], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[2][2], TOL);
 
     // 60 degrees around X axis
     q.w = 0.866f;
@@ -142,21 +144,21 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_NEAR(1.0f, rMat[0][0], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat[0][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[1][0], TOL);
-    EXPECT_NEAR(0.5f, rMat[1][1], TOL);
-    EXPECT_NEAR(-0.866f, rMat[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat[2][0], TOL);
-    EXPECT_NEAR(0.866f, rMat[2][1], TOL);
-    EXPECT_NEAR(0.5f, rMat[2][2], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[0][0], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][1], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[0][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[1][0], TOL);
+    EXPECT_NEAR(0.5f, rMat.m[1][1], TOL);
+    EXPECT_NEAR(-0.866f, rMat.m[1][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[2][0], TOL);
+    EXPECT_NEAR(0.866f, rMat.m[2][1], TOL);
+    EXPECT_NEAR(0.5f, rMat.m[2][2], TOL);
 }
 
 TEST(FlightImuTest, TestUpdateEulerAngles)
 {
     // No rotation
-    memset(rMat, 0.0, sizeof(float) * 9);
+    memset(&rMat, 0.0, sizeof(float) * 9);
 
     imuUpdateEulerAngles();
 
@@ -165,11 +167,11 @@ TEST(FlightImuTest, TestUpdateEulerAngles)
     EXPECT_EQ(0, attitude.values.yaw);
 
     // 45 degree yaw
-    memset(rMat, 0.0, sizeof(float) * 9);
-    rMat[0][0] = sqrt2over2;
-    rMat[0][1] = sqrt2over2;
-    rMat[1][0] = -sqrt2over2;
-    rMat[1][1] = sqrt2over2;
+    memset(&rMat, 0.0, sizeof(float) * 9);
+    rMat.m[0][0] = sqrt2over2;
+    rMat.m[0][1] = sqrt2over2;
+    rMat.m[1][0] = -sqrt2over2;
+    rMat.m[1][1] = sqrt2over2;
 
     imuUpdateEulerAngles();
 
@@ -189,7 +191,7 @@ TEST(FlightImuTest, TestSmallAngle)
     attitudeIsEstablished = true;
 
     // and
-    memset(rMat, 0.0, sizeof(float) * 9);
+    memset(&rMat, 0.0, sizeof(float) * 9);
 
     // when
     imuComputeRotationMatrix();
@@ -198,10 +200,10 @@ TEST(FlightImuTest, TestSmallAngle)
     EXPECT_FALSE(isUpright());
 
     // given
-    rMat[0][0] = r1;
-    rMat[0][2] = r2;
-    rMat[2][0] = -r2;
-    rMat[2][2] = r1;
+    rMat.m[0][0] = r1;
+    rMat.m[0][2] = r2;
+    rMat.m[2][0] = -r2;
+    rMat.m[2][2] = r1;
 
     // when
     imuComputeRotationMatrix();
@@ -210,7 +212,7 @@ TEST(FlightImuTest, TestSmallAngle)
     EXPECT_FALSE(isUpright());
 
     // given
-    memset(rMat, 0.0, sizeof(float) * 9);
+    memset(&rMat, 0.0, sizeof(float) * 9);
 
     // when
     imuComputeRotationMatrix();
@@ -246,19 +248,19 @@ testing::AssertionResult DoubleNearWrapPredFormat(const char* expr1, const char*
 
 class MahonyFixture : public ::testing::Test {
 protected:
-    fpVector3_t gyro;
+    vector3_t gyro;
     bool useAcc;
-    fpVector3_t acc;
+    vector3_t acc;
     bool useMag;
-    fpVector3_t magEF;
+    vector3_t magEF;
     float cogGain;
     float cogDeg;
     float dcmKp;
     float dt;
     void SetUp() override {
-        vectorZero(&gyro);
+        vector3Zero(&gyro);
         useAcc = false;
-        vectorZero(&acc);
+        vector3Zero(&acc);
         cogGain = 0.0;   // no cog
         cogDeg  = 0.0;
         dcmKp = .25;     // default dcm_kp
@@ -268,7 +270,7 @@ protected:
         // level, poiting north
         setOrientationAA(0, {{1,0,0}});        // identity
     }
-    virtual void setOrientationAA(float angleDeg, fpVector3_t axis) {
+    virtual void setOrientationAA(float angleDeg, vector3_t axis) {
         quaternion_from_axis_angle(&q, DEGREES_TO_RADIANS(angleDeg), axis.x, axis.y, axis.z);
         imuComputeRotationMatrix();
     }
@@ -278,19 +280,19 @@ protected:
         if (angle < 0) angle += 360;
         return angle;
     }
-    float angleDiffNorm(fpVector3_t *a, fpVector3_t* b, fpVector3_t weight = {{1,1,1}}) {
-        fpVector3_t tmp;
-        vectorScale(&tmp, b, -1);
-        vectorAdd(&tmp, &tmp, a);
+    float angleDiffNorm(vector3_t *a, vector3_t* b, vector3_t weight = {{1,1,1}}) {
+        vector3_t tmp;
+        vector3Scale(&tmp, b, -1);
+        vector3Add(&tmp, &tmp, a);
         for (int i = 0; i < 3; i++)
             tmp.v[i] *= weight.v[i];
         for (int i = 0; i < 3; i++)
             tmp.v[i] = std::remainder(tmp.v[i], 360.0);
-        return vectorNorm(&tmp);
+        return vector3Norm(&tmp);
     }
     // run Mahony for some time
     // return time it took to get within 1deg from target
-    float imuIntegrate(float runTime, fpVector3_t * target) {
+    float imuIntegrate(float runTime, vector3_t * target) {
         float alignTime = -1;
         for (float t = 0; t < runTime; t += dt) {
             //     if (fmod(t, 1) < dt) printf("MagBF=%.2f %.2f %.2f\n", magBF.x, magBF.y, magBF.z);
@@ -312,7 +314,7 @@ protected:
             // if (fmod(t, 1) < dt) printf("%3.1fs - %3.1f %3.1f %3.1f\n", t, attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f);
             // remember how long it took
             if (alignTime < 0) {
-                fpVector3_t rpy = {{attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f}};
+                vector3_t rpy = {{attitude.values.roll / 10.0f, attitude.values.pitch / 10.0f, attitude.values.yaw / 10.0f}};
                 float error = angleDiffNorm(&rpy, target);
                 if (error < 1)
                     alignTime = t;
@@ -331,7 +333,7 @@ TEST_P(YawTest, TestCogAlign)
     cogDeg = GetParam();
     const float rollDeg = 30;    // 30deg pitch forward
     setOrientationAA(rollDeg, {{0, 1, 0}});
-    fpVector3_t expect = {{0, rollDeg, wrap(cogDeg)}};
+    vector3_t expect = {{0, rollDeg, wrap(cogDeg)}};
     // integrate IMU. about 25s is enough in worst case
     float alignTime = imuIntegrate(80, &expect);
 
@@ -354,12 +356,11 @@ TEST_P(YawTest, TestMagAlign)
     quaternion_from_axis_angle(&q, -DEGREES_TO_RADIANS(initialAngle), 0, 0, 1);
     imuComputeRotationMatrix();
 
-    fpVector3_t expect = {{0, 0, 0}};    // expect zero yaw
+    vector3_t expect = {{0, 0, 0}};    // expect zero yaw
 
-    fpVector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
+    vector3_t magBF = {{1, 0, .5}};    // use arbitrary Z component, point north
 
-    for (int i = 0; i < 3; i++)
-        mag.magADC[i] = magBF.v[i];
+    mag.magADC = magBF;
 
     useMag = true;
     // integrate IMU. about 25s is enough in worst case
@@ -435,16 +436,7 @@ extern "C" {
     bool schedulerGetIgnoreTaskExecTime() { return false; }
     float gyroGetFilteredDownsampled(int) { return 0.0f; }
     float baroUpsampleAltitude()  { return 0.0f; }
-    float pt2FilterGain(float, float)  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }
-
-    void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
-        UNUSED(baroDerivativeLpf);
-    }
-    float pt2FilterApply(pt2Filter_t *baroDerivativeLpf, float) {
-        UNUSED(baroDerivativeLpf);
-        return 0.0f;
-    }
 }

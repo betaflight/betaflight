@@ -52,7 +52,6 @@
 #define XBUS_FRAME_SIZE_A1 27
 #define XBUS_FRAME_SIZE_A2 35
 
-
 #define XBUS_RJ01_FRAME_SIZE 33
 #define XBUS_RJ01_MESSAGE_LENGTH 30
 #define XBUS_RJ01_OFFSET_BYTES 3
@@ -87,7 +86,6 @@ static uint8_t xBusFrameLength;
 static uint8_t xBusChannelCount;
 static uint8_t xBusProvider;
 
-
 // Use max values for ram areas
 static volatile uint8_t xBusFrame[XBUS_FRAME_SIZE_A2];  //size 35 for 16 channels in xbus_Mode_B
 static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
@@ -111,7 +109,6 @@ static uint8_t xBusRj01CRC8(uint8_t inData, uint8_t seed)
 
     return seed;
 }
-
 
 static void xBusUnpackModeBFrame(uint8_t offsetBytes)
 {

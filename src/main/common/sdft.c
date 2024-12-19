@@ -26,7 +26,7 @@
 #include "common/maths.h"
 #include "common/sdft.h"
 
-#define SDFT_R 0.9999f  // damping factor for guaranteed SDFT stability (r < 1.0f) 
+#define SDFT_R 0.9999f  // damping factor for guaranteed SDFT stability (r < 1.0f)
 
 static FAST_DATA_ZERO_INIT float     rPowerN;  // SDFT_R to the power of SDFT_SAMPLE_SIZE
 static FAST_DATA_ZERO_INIT bool      isInitialized;
@@ -34,7 +34,6 @@ static FAST_DATA_ZERO_INIT complex_t twiddle[SDFT_BIN_COUNT];
 
 static void applySqrt(const sdft_t *sdft, float *data);
 static void updateEdges(sdft_t *sdft, const float value, const int batchIdx);
-
 
 void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numBatches)
 {
@@ -65,7 +64,6 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
     }
 }
 
-
 // Add new sample to frequency spectrum
 FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
 {
@@ -80,7 +78,6 @@ FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
 
     updateEdges(sdft, delta, 0);
 }
-
 
 // Add new sample to frequency spectrum in parts
 FAST_CODE void sdftPushBatch(sdft_t *sdft, const float sample, const int batchIdx)
@@ -105,7 +102,6 @@ FAST_CODE void sdftPushBatch(sdft_t *sdft, const float sample, const int batchId
     updateEdges(sdft, delta, batchIdx);
 }
 
-
 // Get squared magnitude of frequency spectrum
 FAST_CODE void sdftMagSq(const sdft_t *sdft, float *output)
 {
@@ -119,14 +115,12 @@ FAST_CODE void sdftMagSq(const sdft_t *sdft, float *output)
     }
 }
 
-
 // Get magnitude of frequency spectrum (slower)
 FAST_CODE void sdftMagnitude(const sdft_t *sdft, float *output)
 {
     sdftMagSq(sdft, output);
     applySqrt(sdft, output);
 }
-
 
 // Get squared magnitude of frequency spectrum with Hann window applied
 // Hann window in frequency domain: X[k] = -0.25 * X[k-1] +0.5 * X[k] -0.25 * X[k+1]
@@ -164,14 +158,12 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
     output[sdft->endBin] = re * re + im * im;
 }
 
-
 // Get magnitude of frequency spectrum with Hann window applied (slower)
 FAST_CODE void sdftWindow(const sdft_t *sdft, float *output)
 {
     sdftWinSq(sdft, output);
     applySqrt(sdft, output);
 }
-
 
 // Apply square root to the whole sdft range
 static FAST_CODE void applySqrt(const sdft_t *sdft, float *data)
@@ -180,7 +172,6 @@ static FAST_CODE void applySqrt(const sdft_t *sdft, float *data)
         data[i] = sqrtf(data[i]);
     }
 }
-
 
 // Needed for proper windowing at the edges of active range
 static FAST_CODE void updateEdges(sdft_t *sdft, const float value, const int batchIdx)

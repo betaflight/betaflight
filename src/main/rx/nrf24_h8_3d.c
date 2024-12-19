@@ -44,14 +44,12 @@
 #include "rx/rx_spi.h"
 #include "rx/nrf24_h8_3d.h"
 
-
 /*
  * Deviation transmitter sends 345 bind packets, then starts sending data packets.
  * Packets are send at rate of at least one every 4 milliseconds, ie at least 250Hz.
  * This means binding phase lasts 1.4 seconds, the transmitter then enters the data phase.
  * Other transmitters may vary but should have similar characteristics.
  */
-
 
 /*
  * H8_3D Protocol

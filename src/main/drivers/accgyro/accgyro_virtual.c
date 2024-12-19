@@ -102,7 +102,6 @@ bool virtualGyroDetect(gyroDev_t *gyro)
 }
 #endif // USE_VIRTUAL_GYRO
 
-
 #ifdef USE_VIRTUAL_ACC
 
 static int16_t virtualAccData[XYZ_AXIS_COUNT];

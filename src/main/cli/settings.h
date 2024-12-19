@@ -24,7 +24,6 @@
 #include <stdbool.h>
 #include "pg/pg.h"
 
-
 typedef enum {
     TABLE_OFF_ON = 0,
     TABLE_UNIT,
@@ -120,9 +119,7 @@ typedef enum {
 #ifdef USE_LAUNCH_CONTROL
     TABLE_LAUNCH_CONTROL_MODE,
 #endif
-#ifdef USE_TPA_MODE
     TABLE_TPA_MODE,
-#endif
     TABLE_SPA_MODE,
 #ifdef USE_LED_STRIP
     TABLE_LED_PROFILE,
@@ -148,6 +145,10 @@ typedef enum {
 #ifdef USE_ADVANCED_TPA
     TABLE_TPA_CURVE_TYPE,
 #endif
+#ifdef USE_WING
+    TABLE_TPA_SPEED_TYPE,
+    TABLE_YAW_TYPE,
+#endif // USE_WING
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -155,7 +156,6 @@ typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
 } lookupTableEntry_t;
-
 
 #define VALUE_TYPE_OFFSET 0
 #define VALUE_SECTION_OFFSET 3
@@ -183,7 +183,6 @@ typedef enum {
     MODE_BITSET = (3 << VALUE_MODE_OFFSET),
     MODE_STRING = (4 << VALUE_MODE_OFFSET),
 } cliValueFlag_e;
-
 
 #define VALUE_TYPE_MASK (0x07)
 #define VALUE_SECTION_MASK (0x18)
@@ -241,7 +240,6 @@ typedef struct clivalue_s {
     pgn_t pgn;
     uint16_t offset;
 } PTR_PACKING clivalue_t;
-
 
 extern const lookupTableEntry_t lookupTables[];
 extern const uint16_t valueTableEntryCount;

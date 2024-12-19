@@ -177,7 +177,6 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->rcFrameStatusFn = sbusFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
@@ -190,13 +189,17 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     bool portShared = false;
 #endif
 
+    // On SBUS, SERIAL_INVERTED is default
+    const portOptions_e portOptions = SBUS_PORT_OPTIONS
+        | (rxConfig->serialrx_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED)
+        | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0);
     serialPort_t *sBusPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         sbusDataReceive,
         &sbusFrameData,
         sbusBaudRate,
         portShared ? MODE_RXTX : MODE_RX,
-        SBUS_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0 : SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        portOptions
         );
 
     if (rxConfig->rssi_src_frame_errors) {

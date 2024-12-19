@@ -29,6 +29,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/utils.h"
+    #include "common/vector.h"
     #include "drivers/accgyro/accgyro_virtual.h"
     #include "drivers/accgyro/accgyro_mpu.h"
     #include "drivers/sensor.h"

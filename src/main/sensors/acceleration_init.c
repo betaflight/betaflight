@@ -29,8 +29,6 @@
 
 #include "build/debug.h"
 
-#include "common/axis.h"
-#include "common/filter.h"
 #include "common/utils.h"
 
 #include "config/config_reset.h"
@@ -69,9 +67,10 @@
 #include "drivers/accgyro/legacy/accgyro_mma845x.h"
 #endif
 
+#include "config/config.h"
+
 #include "drivers/bus_spi.h"
 
-#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
@@ -83,7 +82,6 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
-#include "sensors/sensors.h"
 
 #include "acceleration_init.h"
 
@@ -155,7 +153,6 @@ extern uint16_t InflightcalibratingA;
 extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
-
 
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
@@ -378,7 +375,7 @@ void accInitFilters(void)
     // the filter initialization is not defined (sample rate = 0)
     accelerationRuntime.accLpfCutHz = (acc.sampleRateHz) ? accelerometerConfig()->acc_lpf_hz : 0;
     if (accelerationRuntime.accLpfCutHz) {
-        const float k = pt2FilterGain(accelerationRuntime.accLpfCutHz, 1.0f / acc.sampleRateHz);
+        const float k = pt2FilterGain(accelerationRuntime.accLpfCutHz, HZ_TO_INTERVAL(acc.sampleRateHz));
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             pt2FilterInit(&accelerationRuntime.accFilter[axis], k);
         }
@@ -402,12 +399,11 @@ bool accInit(uint16_t accSampleRateHz)
 #ifdef USE_MULTI_GYRO
     if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
         alignment = gyroDeviceConfig(1)->alignment;
-
         customAlignment = &gyroDeviceConfig(1)->customAlignment;
     }
 #endif
     acc.dev.accAlign = alignment;
-    buildRotationMatrixFromAlignment(customAlignment, &acc.dev.rotationMatrix);
+    buildRotationMatrixFromAngles(&acc.dev.rotationMatrix, customAlignment);
 
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
@@ -418,6 +414,7 @@ bool accInit(uint16_t accSampleRateHz)
 
     acc.sampleRateHz = accSampleRateHz;
     accInitFilters();
+
     return true;
 }
 
@@ -453,10 +450,10 @@ void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
         }
 
         // Sum up CALIBRATING_ACC_CYCLES readings
-        a[axis] += acc.accADC[axis];
+        a[axis] += acc.accADC.v[axis];
 
         // Reset global variables to prevent other code from using un-calibrated data
-        acc.accADC[axis] = 0;
+        acc.accADC.v[axis] = 0;
         accelerationRuntime.accelerationTrims->raw[axis] = 0;
     }
 
@@ -495,9 +492,9 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
             if (InflightcalibratingA == 50)
                 b[axis] = 0;
             // Sum up 50 readings
-            b[axis] += acc.accADC[axis];
+            b[axis] += acc.accADC.v[axis];
             // Clear global variables for next reading
-            acc.accADC[axis] = 0;
+            acc.accADC.v[axis] = 0;
             accelerationRuntime.accelerationTrims->raw[axis] = 0;
         }
         // all values are measured

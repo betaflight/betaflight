@@ -99,7 +99,6 @@ typedef struct {
 static baroState_t  baroState;
 static uint8_t baroDataBuf[6];
 
-
 static int32_t readSignedRegister(const extDevice_t *dev, uint8_t reg, uint8_t nBytes)
 {
     uint8_t buf[3];

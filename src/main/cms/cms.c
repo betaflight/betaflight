@@ -692,7 +692,7 @@ static bool rowIsSkippable(const OSD_Entry *row)
     if (type == OME_String) {
         return true;
     }
-    
+
     if ((type == OME_UINT8 || type == OME_INT8 ||
          type == OME_UINT16 || type == OME_INT16) &&
         ((row->flags == DYNAMIC) || rowSliderOverride(row->flags))) {
@@ -785,7 +785,6 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
                 return;
             }
         }
-
 
         // Highlight values overridden by sliders
         if (rowSliderOverride(p->flags)) {

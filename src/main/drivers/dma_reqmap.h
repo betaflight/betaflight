@@ -25,7 +25,9 @@
 #include "drivers/dma.h"
 #include "drivers/timer.h"
 
+#ifdef USE_DMA
 #include "dma_reqmap_mcu.h"
+#endif
 
 typedef uint16_t dmaCode_t;
 
@@ -50,7 +52,7 @@ typedef enum {
     DMA_PERIPH_SPI_SDI,
     DMA_PERIPH_ADC,
     DMA_PERIPH_SDIO,
-    DMA_PERIPH_UART_TX,
+    DMA_PERIPH_UART_TX,   // LPUART is handled as UART
     DMA_PERIPH_UART_RX,
     DMA_PERIPH_TIMUP,
 } dmaPeripheral_e;
