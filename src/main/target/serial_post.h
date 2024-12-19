@@ -30,7 +30,7 @@ in Betaflight topmost directory.
 
 This include will provide following defines:
 SERIAL_<type><n>_USED 0/1 - always defined, value depends on target configuration
-SERIAL_<type>_MASK        - bitmask of used ports or given type. <port>1 is BIT(0)
+SERIAL_<type>_MASK        - bitmask of used ports or given type. <port>0 or <port>1 is BIT(0), based on port first_index
 SERIAL_<type>_COUNT       - number of enabled ports of given type
 SERIAL_<type>_MAX         - <index of highest used port> + 1, 0 when no port is enabled
 
@@ -39,16 +39,17 @@ All <type><n>_(RX|TX)_PINS are normalized too:
  - if port is not enable, both will be undefined, possibly with warning
   - pass -DWARN_UNUSED_SERIAL_PORT to compiler to check pin defined without corresponding port being enabled.
 
-Generated on 2024-11-04
+Generated on 2024-12-19
 
 Configuration used:
 {   'LPUART': {'depends': {'UART'}, 'ids': [1]},
     'SOFTSERIAL': {   'force_continuous': True,
                       'ids': [1, 2],
                       'use_enables_all': True},
-    'UART': {'ids': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'inverter': True},
+    'UART': {   'first_index': 1,
+                'ids': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                'inverter': True},
     'VCP': {'no_pins': True, 'singleton': True}}
-
 */
 
 #include "common/utils.h" // BIT, LOG2
@@ -110,11 +111,11 @@ Configuration used:
 #define SERIAL_UART_COUNT (SERIAL_UART1_USED + SERIAL_UART2_USED + SERIAL_UART3_USED + SERIAL_UART4_USED + SERIAL_UART5_USED + SERIAL_UART6_USED + SERIAL_UART7_USED + SERIAL_UART8_USED + SERIAL_UART9_USED + SERIAL_UART10_USED)
 // 0 if no port is defined
 #define SERIAL_UART_MAX (SERIAL_UART_MASK ? LOG2(SERIAL_UART_MASK) + 1 : 0)
-
 // enable USE_INVERTED first, before normalization
 #if !defined(USE_INVERTER) && (INVERTER_PIN_UART1 || INVERTER_PIN_UART2 || INVERTER_PIN_UART3 || INVERTER_PIN_UART4 || INVERTER_PIN_UART5 || INVERTER_PIN_UART6 || INVERTER_PIN_UART7 || INVERTER_PIN_UART8 || INVERTER_PIN_UART9 || INVERTER_PIN_UART10)
 # define USE_INVERTER
 #endif
+
 // Normalize UART TX/RX/INVERTER
 #if SERIAL_UART1_USED && !defined(UART1_RX_PIN)
 # define UART1_RX_PIN NONE
@@ -421,7 +422,9 @@ Configuration used:
 #endif
 
 /****                                SOFTSERIAL                                 *****/
+
 #if defined(USE_SOFTSERIAL)
+// USE_SOFTSERIAL enables all SOFTSERIAL ports
 # if !defined(USE_SOFTSERIAL1)
 #  define USE_SOFTSERIAL1
 # endif
@@ -429,7 +432,6 @@ Configuration used:
 #  define USE_SOFTSERIAL2
 # endif
 #endif
-
 #if defined(USE_SOFTSERIAL1)
 # define SERIAL_SOFTSERIAL1_USED 1
 #else
@@ -496,7 +498,7 @@ Configuration used:
 # define SERIAL_VCP_USED 0
 #endif
 
-// set one bit if port is enabled for consistency
+// for consistency, set one bit if port is enabled
 #define SERIAL_VCP_MASK (SERIAL_VCP_USED * BIT(0))
 #define SERIAL_VCP_COUNT (SERIAL_VCP_USED)
 // 0 if no port is defined
