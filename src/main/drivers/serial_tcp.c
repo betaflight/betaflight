@@ -122,7 +122,7 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCa
 {
     tcpPort_t *s = NULL;
 
-#if defined(USE_UART0) || defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
+#if defined(USE_UART0) || defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8) || defined(USE_UART9) || defined(USE_UART10)
     if (id >= 0 && id < SERIAL_PORT_COUNT) {
         s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
