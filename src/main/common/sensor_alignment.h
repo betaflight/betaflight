@@ -71,5 +71,10 @@ typedef union sensorAlignment_u {
 #define CUSTOM_ALIGN_CW180_DEG_FLIP  SENSOR_ALIGNMENT( 0, 180, 180 )
 #define CUSTOM_ALIGN_CW270_DEG_FLIP  SENSOR_ALIGNMENT( 0, 180, 270 )
 
+#define CUSTOM_ALIGN_CW(deg)         SENSOR_ALIGNMENT( 0, 0, (deg) )
+#define CUSTOM_ALIGN_CW_FLIP(deg)    SENSOR_ALIGNMENT( 0, 180, (deg) )
+// #define CUSTOM_ALIGN_CW0_DEG         CUSTOM_ALIGN_CW( 0 )
+// #define CUSTOM_ALIGN_CW90_DEG_FLIP   CUSTOM_ALIGN_CW_FLIP( 90 )
+
 void buildRotationMatrixFromAngles(matrix33_t *rm, const sensorAlignment_t *rpy);
 void buildAlignmentFromStandardAlignment(sensorAlignment_t *rpy, sensor_align_e stdAlignment);
