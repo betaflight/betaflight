@@ -51,8 +51,6 @@
 #define DEBUG_PRINTF(...)
 #endif
 
-
-
 #define SRXL2_MAX_CHANNELS             32
 #define SRXL2_FRAME_PERIOD_US   11000 // 5500 for DSMR
 #define SRXL2_CHANNEL_SHIFT            2
@@ -142,7 +140,6 @@ bool srxl2ProcessHandshake(const Srxl2Header* header)
 
         return true;
     }
-
 
     if (handshake->destinationDeviceId != ((FlightController << 4) | unitId)) {
         return true;
@@ -283,7 +280,6 @@ void srxl2Process(rxRuntimeState_t *rxRuntimeState)
     DEBUG_PRINTF("could not parse packet: %x\r\n", processBufferPtr->packet.header.packetType);
     globalResult = RX_FRAME_DROPPED;
 }
-
 
 static void srxl2DataReceive(uint16_t character, void *data)
 {
@@ -491,7 +487,6 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = SRXL2_MAX_CHANNELS;
     rxRuntimeState->rcReadRawFn = srxl2ReadRawRC;
     rxRuntimeState->rcFrameStatusFn = srxl2FrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
     rxRuntimeState->rcProcessFrameFn = srxl2ProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);

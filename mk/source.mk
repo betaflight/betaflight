@@ -1,5 +1,7 @@
 PG_SRC = \
             pg/adc.c \
+            pg/alt_hold.c \
+            pg/autopilot.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \
@@ -10,6 +12,7 @@ PG_SRC = \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
+            pg/gimbal.c \
             pg/gps.c \
             pg/gps_lap_timer.c \
             pg/gps_rescue.c \
@@ -22,6 +25,7 @@ PG_SRC = \
             pg/piniobox.c \
             pg/pinio.c \
             pg/pin_pull_up_down.c \
+            pg/pos_hold.c \
             pg/rcdevice.c \
             pg/rpm_filter.c \
             pg/rx.c \
@@ -46,7 +50,6 @@ COMMON_SRC = \
             build/debug.c \
             build/debug_pin.c \
             build/version.c \
-            $(TARGET_DIR_SRC) \
             main.c \
             $(PG_SRC) \
             common/bitarray.c \
@@ -71,6 +74,7 @@ COMMON_SRC = \
             common/time.c \
             common/typeconversion.c \
             common/uvarint.c \
+            common/vector.c \
             config/config.c \
             config/config_eeprom.c \
             config/config_streamer.c \
@@ -79,22 +83,18 @@ COMMON_SRC = \
             cli/cli.c \
             cli/settings.c \
             config/config.c \
-            drivers/adc.c \
             drivers/dshot.c \
             drivers/dshot_dpwm.c \
             drivers/dshot_command.c \
             drivers/buf_writer.c \
             drivers/bus.c \
-            drivers/bus_i2c_config.c \
             drivers/bus_i2c_busdev.c \
             drivers/bus_i2c_utils.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_octospi.c \
             drivers/bus_quadspi.c \
-            drivers/bus_spi.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/buttons.c \
+            drivers/camera_control.c \
             drivers/display.c \
             drivers/display_canvas.c \
             drivers/dma_common.c \
@@ -106,12 +106,10 @@ COMMON_SRC = \
             drivers/pin_pull_up_down.c \
             drivers/resource.c \
             drivers/serial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart.c \
-            drivers/serial_uart_pinconfig.c \
+            drivers/serial_impl.c \
+            drivers/serial_uart_hw.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
-            drivers/system.c \
             drivers/timer_common.c \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
@@ -125,6 +123,7 @@ COMMON_SRC = \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/serial_resource.c \
             io/smartaudio_protocol.c \
             io/statusindicator.c \
             io/tramp_protocol.c \
@@ -149,21 +148,24 @@ COMMON_SRC = \
             drivers/rx/rx_pwm.c \
             drivers/serial_softserial.c \
             fc/core.c \
+            fc/gps_lap_timer.c \
             fc/rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            flight/position.c \
+            flight/alt_hold.c \
+            flight/autopilot.c \
+            flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
-            fc/gps_lap_timer.c \
-            flight/dyn_notch_filter.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
             flight/pid.c \
             flight/pid_init.c \
+            flight/position.c \
+            flight/pos_hold.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
@@ -227,7 +229,7 @@ COMMON_SRC = \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
             drivers/rangefinder/rangefinder_lidartf.c \
-            drivers/serial_escserial.c \
+            drivers/rangefinder/rangefinder_lidarmt.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
             io/dashboard.c \
@@ -239,6 +241,7 @@ COMMON_SRC = \
             io/displayport_crsf.c \
             io/displayport_hott.c \
             io/frsky_osd.c \
+            io/gimbal_control.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
             io/gps.c \
@@ -274,6 +277,8 @@ COMMON_SRC = \
 ifneq ($(SIMULATOR_BUILD),yes)
 
 COMMON_SRC += \
+            drivers/bus_spi.c \
+            drivers/serial_uart.c \
             drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/accgyro/accgyro_mpu6500.c \
@@ -292,7 +297,7 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/accgyro/accgyro_virtual.c \
             drivers/accgyro/gyro_sync.c \
-            $(ROOT)/lib/main/BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
+            BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
             drivers/barometer/barometer_2smpb_02b.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
@@ -321,13 +326,15 @@ ifneq ($(GYRO_DEFINE),)
 LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
 ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
 
-COMMON_SRC += \
+LEGACY_SRC := \
             drivers/accgyro/legacy/accgyro_adxl345.c \
             drivers/accgyro/legacy/accgyro_bma280.c \
             drivers/accgyro/legacy/accgyro_l3g4200d.c \
             drivers/accgyro/legacy/accgyro_lsm303dlhc.c \
             drivers/accgyro/legacy/accgyro_mma845x.c
 
+COMMON_SRC += $(LEGACY_SRC)
+SPEED_OPTIMISED_SRC += $(LEGACY_SRC)
 
 endif
 endif
@@ -375,6 +382,43 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
 
+# Gyro driver files that only contain initialization and configuration code - not runtime code
+SIZE_OPTIMISED_SRC += \
+            drivers/accgyro/accgyro_mpu6050.c \
+            drivers/accgyro/accgyro_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu6000.c \
+            drivers/accgyro/accgyro_spi_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu9250.c \
+            drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm426xx.c \
+            drivers/accgyro/accgyro_spi_lsm6dso_init.c \
+            drivers/barometer/barometer_bmp085.c \
+            drivers/barometer/barometer_bmp280.c \
+            drivers/barometer/barometer_ms5611.c \
+            drivers/barometer/barometer_lps.c \
+            drivers/barometer/barometer_qmp6988.c \
+            drivers/barometer/barometer_2smpb_02b.c \
+            drivers/compass/compass_ak8963.c \
+            drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_qmc5883l.c \
+            drivers/compass/compass_lis2mdl.c \
+            drivers/compass/compass_lis3mdl.c \
+            drivers/compass/compass_ist8310.c \
+            drivers/display_ug2864hsweg01.c \
+            drivers/vtx_rtc6705_soft_spi.c \
+            drivers/vtx_rtc6705.c
+
+
+SPEED_OPTIMISED_SRC += \
+            drivers/bus_spi.c \
+            drivers/serial_uart.c \
+            drivers/accgyro/accgyro_mpu.c \
+            drivers/accgyro/accgyro_mpu3050.c \
+            drivers/accgyro/accgyro_spi_bmi160.c \
+            drivers/accgyro/accgyro_spi_bmi270.c \
+            drivers/accgyro/accgyro_spi_lsm6dso.c
+
 endif
 
 COMMON_DEVICE_SRC = \
@@ -395,10 +439,7 @@ ifeq ($(SIMULATOR_BUILD),yes)
 TARGET_FLAGS := -DSIMULATOR_BUILD $(TARGET_FLAGS)
 endif
 
-SPEED_OPTIMISED_SRC := ""
-SIZE_OPTIMISED_SRC  := ""
-
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+SPEED_OPTIMISED_SRC += \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -406,30 +447,12 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/sdft.c \
             common/stopwatch.c \
             common/typeconversion.c \
-            drivers/accgyro/accgyro_mpu.c \
-            drivers/accgyro/accgyro_mpu3050.c \
-            drivers/accgyro/accgyro_spi_bmi160.c \
-            drivers/accgyro/accgyro_spi_bmi270.c \
-            drivers/accgyro/accgyro_spi_lsm6dso.c \
-            drivers/accgyro_legacy/accgyro_adxl345.c \
-            drivers/accgyro_legacy/accgyro_bma280.c \
-            drivers/accgyro_legacy/accgyro_l3g4200d.c \
-            drivers/accgyro_legacy/accgyro_l3gd20.c \
-            drivers/accgyro_legacy/accgyro_lsm303dlhc.c \
-            drivers/accgyro_legacy/accgyro_mma845x.c \
-            drivers/adc.c \
+            common/vector.c \
             drivers/buf_writer.c \
             drivers/bus.c \
             drivers/bus_quadspi.c \
-            drivers/bus_spi.c \
-            drivers/exti.c \
             drivers/io.c \
-            drivers/pwm_output.c \
-            drivers/rcc.c \
             drivers/serial.c \
-            drivers/serial_uart.c \
-            drivers/system.c \
-            drivers/timer.c \
             fc/core.c \
             fc/tasks.c \
             fc/rc.c \
@@ -453,6 +476,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             rx/sumd.c \
             rx/xbus.c \
             rx/fport.c \
+            rx/frsky_crc.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
@@ -460,41 +484,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
 
-SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
-            $(shell find $(SRC_DIR) -name '*_init.c') \
-            bus_bst_stm32f30x.c \
+SIZE_OPTIMISED_SRC += \
+            sensors/gyro_init.c \
+            sensors/acceleration_init.c \
+            flight/pid_init.c \
+            flight/mixer_init.c \
             cli/cli.c \
             cli/settings.c \
-            drivers/accgyro/accgyro_fake.c \
-            drivers/barometer/barometer_bmp085.c \
-            drivers/barometer/barometer_bmp280.c \
-            drivers/barometer/barometer_fake.c \
-            drivers/barometer/barometer_ms5611.c \
-            drivers/barometer/barometer_lps.c \
-            drivers/barometer/barometer_qmp6988.c \
-            drivers/barometer/barometer_2smpb_02b.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_i2c_timing.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
-            drivers/compass/compass_ak8963.c \
-            drivers/compass/compass_ak8975.c \
-            drivers/compass/compass_fake.c \
-            drivers/compass/compass_hmc5883l.c \
-            drivers/compass/compass_qmc5883l.c \
-            drivers/compass/compass_lis2mdl.c \
-            drivers/compass/compass_lis3mdl.c \
-            drivers/compass/compass_ist8310.c \
-            drivers/display_ug2864hsweg01.c \
-            drivers/inverter.c \
             drivers/light_ws2811strip.c \
-            drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_tcp.c \
-            drivers/serial_uart_pinconfig.c \
-            drivers/serial_usb_vcp.c \
-            drivers/vtx_rtc6705_soft_spi.c \
-            drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/init.c \
             fc/board_info.c \
@@ -502,7 +499,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/feature.c \
             config/config_streamer.c \
             config/simplified_tuning.c \
-            i2c_bst.c \
             io/dashboard.c \
             io/serial.c \
             io/serial_4way.c \
@@ -544,31 +540,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
 
-# Gyro driver files that only contain initialization and configuration code - not runtime code
-SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
-            drivers/accgyro/accgyro_mpu6050.c \
-            drivers/accgyro/accgyro_mpu6500.c \
-            drivers/accgyro/accgyro_spi_mpu6000.c \
-            drivers/accgyro/accgyro_spi_mpu6500.c \
-            drivers/accgyro/accgyro_spi_mpu9250.c \
-            drivers/accgyro/accgyro_spi_icm20689.c \
-            drivers/accgyro/accgyro_spi_icm426xx.c \
-            drivers/accgyro/accgyro_spi_lsm6dso_init.c
-
-
-# F4 and F7 optimizations
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
-            drivers/bus_i2c_hal.c \
-            drivers/bus_spi_ll.c \
-            rx/frsky_crc.c \
-            drivers/max7456.c \
-            drivers/pwm_output_dshot.c \
-            drivers/pwm_output_dshot_shared.c \
-            drivers/pwm_output_dshot_hal.c
-
-SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
-            drivers/bus_i2c_hal_init.c
-
 # check if target.mk supplied
 SRC := $(STARTUP_SRC) $(MCU_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 
@@ -593,10 +564,10 @@ SRC += $(VCP_SRC)
 # end target specific make file checks
 
 # Search path and source files for the Open Location Code library
-OLC_DIR = $(ROOT)/lib/main/google/olc
+OLC_DIR := google/olc
 
 ifneq ($(OLC_DIR),)
-INCLUDE_DIRS += $(OLC_DIR)
+INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(OLC_DIR)
 SRC += $(OLC_DIR)/olc.c
 SIZE_OPTIMISED_SRC += $(OLC_DIR)/olc.c
 endif

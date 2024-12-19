@@ -153,7 +153,6 @@ MMFLASH_CODE_NOINLINE void saveEEPROMToMemoryMappedFlash(void)
 }
 #endif
 
-
 #elif defined(CONFIG_IN_SDCARD)
 
 enum {
@@ -477,7 +476,6 @@ static bool writeSettingsToEEPROM(void)
                 .flags = 0,
             };
 
-
             record.flags |= CR_CLASSICATION_SYSTEM;
             config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
             crc = crc16_ccitt_update(crc, (uint8_t *)&record, sizeof(record));
@@ -509,7 +507,7 @@ void writeConfigToEEPROM(void)
     bool success = false;
     // write it
     for (int attempt = 0; attempt < 3 && !success; attempt++) {
-        if (writeSettingsToEEPROM()) {
+        if (writeSettingsToEEPROM() && isEEPROMVersionValid() && isEEPROMStructureValid()) {
             success = true;
 
 #if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
@@ -523,8 +521,7 @@ void writeConfigToEEPROM(void)
         }
     }
 
-
-    if (success && isEEPROMVersionValid() && isEEPROMStructureValid()) {
+    if (success) {
         return;
     }
 

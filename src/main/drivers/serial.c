@@ -23,6 +23,7 @@
 
 #include "platform.h"
 
+#include "io/serial.h"
 #include "serial.h"
 
 void serialPrint(serialPort_t *instance, const char *str)
@@ -42,7 +43,6 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
 {
     instance->vTable->serialWrite(instance, ch);
 }
-
 
 void serialWriteBufNoFlush(serialPort_t *instance, const uint8_t *data, int count)
 {
@@ -125,7 +125,9 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
     serialWriteBufNoFlush(instance, data, count);
     serialEndWrite(instance);
 }
+
 void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);
 }
+

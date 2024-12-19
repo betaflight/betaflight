@@ -48,14 +48,12 @@
 #include "rx/sbus_channels.h"
 #include "rx/fport.h"
 
-
 #define FPORT_TIME_NEEDED_PER_FRAME_US 3000
 #define FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US 2000
 #define FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
 #define FPORT_MAX_TELEMETRY_AGE_MS 500
 
 #define FPORT_TELEMETRY_MAX_CONSECUTIVE_TELEMETRY_FRAMES 2
-
 
 #define FPORT_FRAME_MARKER 0x7E
 
@@ -255,7 +253,6 @@ static uint8_t fportFrameStatus(rxRuntimeState_t *rxRuntimeState)
 
     uint8_t result = RX_FRAME_PENDING;
 
-
     if (rxBufferReadIndex != rxBufferWriteIndex) {
         uint8_t bufferLength = rxBuffer[rxBufferReadIndex].length;
         uint8_t frameLength = rxBuffer[rxBufferReadIndex].data[0];
@@ -394,7 +391,6 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = SBUS_MAX_CHANNEL;
     rxRuntimeState->rcFrameStatusFn = fportFrameStatus;
     rxRuntimeState->rcProcessFrameFn = fportProcessFrame;
-    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

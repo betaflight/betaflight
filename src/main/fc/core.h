@@ -86,12 +86,12 @@ bool pidLoopReady(void);
 void taskFiltering(timeUs_t currentTimeUs);
 void taskMainPidLoop(timeUs_t currentTimeUs);
 
-bool isFlipOverAfterCrashActive(void);
+bool isCrashFlipModeActive(void);
 int8_t calculateThrottlePercent(void);
 uint8_t calculateThrottlePercentAbs(void);
 bool areSticksActive(uint8_t stickPercentLimit);
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
-bool isAirmodeActivated();
+bool wasThrottleRaised();
 timeUs_t getLastDisarmTimeUs(void);
 bool isTryingToArm();
 void resetTryingToArm();

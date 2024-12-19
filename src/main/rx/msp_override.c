@@ -27,7 +27,6 @@
 #include "fc/rc_modes.h"
 #include "common/maths.h"
 
-
 uint16_t rxMspOverrideReadRawRc(const rxRuntimeState_t *rxRuntimeState, const rxConfig_t *rxConfig, uint8_t chan)
 {
     uint16_t rxSample = (rxRuntimeState->rcReadRawFn)(rxRuntimeState, chan);

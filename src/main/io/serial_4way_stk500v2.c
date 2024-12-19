@@ -40,7 +40,6 @@
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_stk500v2.h"
 
-
 #define BIT_LO_US (32) //32uS
 #define BIT_HI_US (2*BIT_LO_US)
 
@@ -133,8 +132,6 @@ static void StkSendPacketFooter(void)
     ESC_INPUT;
     IRQ_ON;
 }
-
-
 
 static int8_t ReadBit(void)
 {
@@ -396,7 +393,6 @@ uint8_t Stk_ReadFlash(ioMem_t *pMem)
     }
     return 0;
 }
-
 
 uint8_t Stk_ReadEEprom(ioMem_t *pMem)
 {

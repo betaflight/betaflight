@@ -36,7 +36,6 @@
 #include "drivers/vtx_common.h"
 #endif
 
-
 #if defined(USE_VTX_TABLE)
 int            vtxTableBandCount;
 int            vtxTableChannelCount;

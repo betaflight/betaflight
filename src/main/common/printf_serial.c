@@ -18,7 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -33,7 +32,7 @@
 
 #include "printf_serial.h"
 
-#ifdef SERIAL_PORT_COUNT
+#if SERIAL_PORT_COUNT > 0
 
 static serialPort_t *printfSerialPort;
 
@@ -59,7 +58,6 @@ static void _putc(void *p, char c)
     UNUSED(p);
     serialWrite(printfSerialPort, c);
 }
-
 
 void printfSerialInit(void)
 {

@@ -129,7 +129,6 @@ static const void *cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
     return NULL;
 }
 
-
 #ifdef USE_BATTERY_CONTINUE
 #define SETUP_POPUP_MAX_ENTRIES 2   // Increase as new entries are added
 #else

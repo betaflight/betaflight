@@ -101,7 +101,6 @@ typedef enum {
 // Hardware does NOT support using BK1_NCS for single flash chip on BK2.
 // It's possible to use BK1_NCS for single chip on BK2 using software CS via QUADSPI_BK2_CS_SOFTWARE
 
-
 void quadSpiPreInit(void);
 
 bool quadSpiInit(QUADSPIDevice device);
@@ -117,7 +116,6 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
 bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
 bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
 bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
-
 
 bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
 

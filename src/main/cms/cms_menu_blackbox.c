@@ -43,18 +43,21 @@
 
 #include "common/printf.h"
 #include "common/utils.h"
+#include "common/time.h"
 
 #include "config/feature.h"
 
 #include "drivers/flash/flash.h"
 #include "drivers/time.h"
 #include "drivers/sdcard.h"
+#include "drivers/usb_msc.h"
 
 #include "config/config.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
+#include "io/usb_msc.h"
 
 #include "pg/pg.h"
 
@@ -190,6 +193,33 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 }
 #endif // USE_FLASHFS
 
+#ifdef USE_USB_MSC
+static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(ptr);
+
+    if (mscCheckFilesystemReady()) {
+      displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
+      displayWrite(pDisplay, 2, 4, DISPLAYPORT_SEVERITY_INFO, "USB MASS STORAGE MODE IS ON");
+      displayWrite(pDisplay, 4, 5, DISPLAYPORT_SEVERITY_INFO, "CONNECT YOUR GADGET");
+      displayRedraw(pDisplay);
+#ifdef USE_RTC_TIME
+      int timezoneOffsetMinutes = timeConfig()->tz_offsetMinutes;
+#else
+      int timezoneOffsetMinutes = 0;
+#endif
+      beeper(BEEPER_USB);
+      systemResetToMsc(timezoneOffsetMinutes);
+      return NULL;
+    } else {
+      displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "STORAGE NOT PRESENT OR FAILED TO INITIALIZE!");
+      displayRedraw(pDisplay);
+      beeper(BEEPER_USB);
+      return MENU_CHAIN_BACK;
+    }
+}
+#endif //USE_USB_MSC
+
 static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
@@ -198,7 +228,7 @@ static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
     cmsx_BlackboxDevice = blackboxConfig()->device;
     cmsx_BlackboxRate = blackboxConfig()->sample_rate;
     systemConfig_debug_mode = systemConfig()->debug_mode;
-    
+
     const uint16_t pidFreq = (uint16_t)pidGetPidFrequency();
     if (pidFreq > 1000) {
         tfp_sprintf(cmsx_pidFreq, "%1d.%02dKHZ", (pidFreq / 10) / 100, (pidFreq / 10) % 100);
@@ -227,9 +257,9 @@ static const void *cmsx_Blackbox_onExit(displayPort_t *pDisp, const OSD_Entry *s
 #ifdef USE_FLASHFS
 static const OSD_Entry menuEraseFlashCheckEntries[] = {
     { "CONFIRM ERASE", OME_Label, NULL, NULL},
-    { "YES",           OME_Funcall, cmsx_EraseFlash, NULL },
-
     { "NO",            OME_Back, NULL, NULL },
+
+    { "YES",           OME_Funcall, cmsx_EraseFlash, NULL },
     { NULL,            OME_END, NULL, NULL }
 };
 
@@ -243,7 +273,28 @@ static CMS_Menu cmsx_menuEraseFlashCheck = {
     .onDisplayUpdate = NULL,
     .entries = menuEraseFlashCheckEntries
 };
+#endif //USE_FLASHFS
+
+#ifdef USE_USB_MSC
+static const OSD_Entry menuStorageDeviceCheckEntries[] = {
+    { "CONFIRM USB MASS STORAGE", OME_Label, NULL, NULL},
+    { "NO",            OME_Back, NULL, NULL },
+
+    { "YES",           OME_Funcall, cmsx_StorageDevice, NULL },
+    { NULL,            OME_END, NULL, NULL }
+};
+
+static CMS_Menu cmsx_menuStorageDeviceCheck = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "STORAGEDEVICE",
+    .GUARD_type = OME_MENU,
 #endif
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onDisplayUpdate = NULL,
+    .entries = menuStorageDeviceCheckEntries
+};
+#endif //USE_USB_MSC
 
 static const OSD_Entry cmsx_menuBlackboxEntries[] =
 {
@@ -256,6 +307,9 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree },
     { "DEBUG MODE",  OME_TAB | REBOOT_REQUIRED,     NULL,            &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames } },
 
+#ifdef USE_USB_MSC
+    { "USB MASS STORAGE", OME_Submenu, cmsMenuChange, &cmsx_menuStorageDeviceCheck },
+#endif // USE_USB_MSC
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
 #endif // USE_FLASHFS

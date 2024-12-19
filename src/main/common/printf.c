@@ -44,7 +44,6 @@
 #include "typeconversion.h"
 #endif
 
-
 #ifdef REQUIRE_CC_ARM_PRINTF_SUPPORT
 
 putcf stdout_putf;

@@ -51,9 +51,12 @@
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
-// Handle case where we'd prefer code to be in ITCM, but it won't fit on the device
 #ifndef FAST_CODE_PREF
 #define FAST_CODE_PREF              FAST_CODE
+// If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
+// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM
+// but if FAST_CODE_PREF is not defined for the target, FAST_CODE_PREF is an alias to FAST_CODE, and
+// functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
 #endif
 
 #define FAST_CODE_NOINLINE          NOINLINE
@@ -84,6 +87,9 @@
     Simplified options for the moment, i.e. adding USE_MAG or USE_BARO and the entire driver suite is added.
     In the future we can move to specific drivers being added only - to save flash space.
 */
+
+// normalize serial ports definitions
+#include "serial_post.h"
 
 #if defined(USE_MAG) && !defined(USE_VIRTUAL_MAG)
 
@@ -232,8 +238,20 @@
 #endif
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED) && !defined(USE_TELEMETRY_IBUS)
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
 #define USE_TELEMETRY_IBUS
 #endif
+
+#ifdef USE_SERIALRX_JETIEXBUS
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
+#ifndef USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_JETIEXBUS
+#endif
+#endif // USE_SERIALRX_JETIEXBUS
 
 #if !defined(USE_SERIALRX_CRSF)
 #undef USE_TELEMETRY_CRSF
@@ -549,7 +567,6 @@
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
-
 
 #if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
 #ifndef EEPROM_SIZE

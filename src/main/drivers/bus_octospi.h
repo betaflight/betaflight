@@ -42,7 +42,6 @@ typedef enum OCTOSPIDevice {
 OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance);
 OCTOSPI_TypeDef *octoSpiInstanceByDevice(OCTOSPIDevice device);
 
-
 bool octoSpiInit(OCTOSPIDevice device);
 bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
 bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
@@ -54,7 +53,6 @@ bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruct
 bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
 
 bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
-
 
 void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance);
 void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance);

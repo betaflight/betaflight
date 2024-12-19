@@ -314,8 +314,8 @@ void initGhstTelemetry(void)
 #endif
 
 #if defined(USE_BARO) || defined(USE_MAG) || defined(USE_VARIO)
-    if ((sensors(SENSOR_BARO) && telemetryIsSensorEnabled(SENSOR_ALTITUDE)) 
-        || (sensors(SENSOR_MAG) && telemetryIsSensorEnabled(SENSOR_HEADING)) 
+    if ((sensors(SENSOR_BARO) && telemetryIsSensorEnabled(SENSOR_ALTITUDE))
+        || (sensors(SENSOR_MAG) && telemetryIsSensorEnabled(SENSOR_HEADING))
         || (sensors(SENSOR_VARIO) && telemetryIsSensorEnabled(SENSOR_VARIO))) {
         ghstSchedule[index++] = BIT(GHST_FRAME_MAGBARO_INDEX);
     }

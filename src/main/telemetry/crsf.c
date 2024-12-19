@@ -21,6 +21,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -48,6 +50,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/position.h"
 
@@ -63,12 +66,12 @@
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/barometer.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/msp_shared.h"
 
 #include "crsf.h"
-
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
@@ -297,6 +300,60 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, batteryRemainingPercentage);
 }
 
+#if defined(USE_BARO) && defined(USE_VARIO)
+// pack altitude in decimeters into a 16-bit value.
+// Due to strange OpenTX behavior of count any 0xFFFF value as incorrect, the maximum sending value is limited to 0xFFFE (32766 meters)
+// in order to have both precision and range in 16-bit
+// value of altitude is packed with different precision depending on highest-bit value.
+// on receiving side:
+// if MSB==0, altitude is sent in decimeters as uint16 with -1000m base. So, range is -1000..2276m.
+// if MSB==1, altitude is sent in meters with 0 base. So, range is 0..32766m (MSB must be zeroed).
+// altitude lower  than -1000m is sent as zero   (should be displayed as "<-1000m" or something).
+// altitude higher than 32767m is sent as 0xfffe (should be displayed as ">32766m" or something).
+// range from 0 to 2276m might be sent with dm- or m-precision. But this function always use dm-precision.
+static inline uint16_t calcAltitudePacked(int32_t altitude_dm)
+{
+    static const int ALT_DM_OFFSET = 10000;
+    int valDm = altitude_dm + ALT_DM_OFFSET;
+
+    if (valDm < 0) return 0;   // too low, return minimum
+    if (valDm < 0x8000) return valDm;  // 15 bits to return dm value with offset
+
+    return MIN((altitude_dm + 5) / 10, 0x7fffe) | 0x8000; // positive 15bit value in meters, with OpenTX limit
+}
+
+static inline int8_t calcVerticalSpeedPacked(int16_t verticalSpeed) // Vertical speed in m/s (meters per second)
+{
+    // linearity coefficient.
+    // Bigger values lead to more linear output i.e., less precise smaller values and more precise big values.
+    // Decreasing the coefficient increases nonlinearity, i.e., more precise small values and less precise big values.
+    static const float Kl = 100.0f;
+
+    // Range coefficient is calculated as result_max / log(verticalSpeedMax * LinearityCoefficient + 1);
+    // but it must be set manually (not calculated) for equality of packing and unpacking
+    static const float Kr = .026f;
+
+    int8_t sign = verticalSpeed < 0 ? -1 : 1;
+    const int result32 = lrintf(log_approx(verticalSpeed * sign / Kl + 1) / Kr) * sign;
+    int8_t result8 = constrain(result32, SCHAR_MIN, SCHAR_MAX);
+    return result8;
+
+    // for unpacking the following function might be used:
+    // int unpacked = lrintf((expf(result8 * sign * Kr) - 1) * Kl) * sign;
+    // lrint might not be used depending on integer or floating output.
+}
+
+// pack barometric altitude
+static void crsfFrameAltitude(sbuf_t *dst)
+{
+    // use sbufWrite since CRC does not include frame length
+    sbufWriteU8(dst, CRSF_FRAME_BARO_ALTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_BARO_ALTITUDE);
+    sbufWriteU16BigEndian(dst, calcAltitudePacked((baro.altitude + 5) / 10));
+    sbufWriteU8(dst, calcVerticalSpeedPacked(getEstimatedVario()));
+}
+#endif
+
 /*
 0x0B Heartbeat
 Payload:
@@ -369,11 +426,11 @@ static int16_t decidegrees2Radians10000(int16_t angle_decidegree)
 // fill dst buffer with crsf-attitude telemetry frame
 void crsfFrameAttitude(sbuf_t *dst)
 {
-     sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-     sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.pitch));
-     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.roll));
-     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.yaw));
+    sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
+    sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.pitch));
+    sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.roll));
+    sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.yaw));
 }
 
 /*
@@ -391,31 +448,38 @@ void crsfFrameFlightMode(sbuf_t *dst)
     // Acro is the default mode
     const char *flightMode = "ACRO";
 
-#if defined(USE_GPS)
-    if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
-        flightMode = "WAIT"; // Waiting for GPS lock
-    } else
-#endif
-
     // Flight modes in decreasing order of importance
-    if (FLIGHT_MODE(FAILSAFE_MODE)) {
+    if (FLIGHT_MODE(FAILSAFE_MODE) || IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
         flightMode = "!FS!";
-    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)) {
         flightMode = "RTH";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
-        flightMode = "MANU";
+        flightMode = "PASS";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
-        flightMode = "STAB";
+        flightMode = "ANGL";
+    } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+        flightMode = "ALTH";
+    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        flightMode = "POSH";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
-    } else if (airmodeIsEnabled()) {
+    } else if (isAirmodeEnabled()) {
         flightMode = "AIR";
     }
 
     sbufWriteString(dst, flightMode);
-    if (!ARMING_FLAG(ARMED)) {
-        sbufWriteU8(dst, '*');
+
+    if (!ARMING_FLAG(ARMED) && !FLIGHT_MODE(FAILSAFE_MODE)) {
+        // * = ready to arm
+        // ! = arming disabled
+        // ? = GPS rescue disabled
+        bool isGpsRescueDisabled = false;
+#ifdef USE_GPS
+        isGpsRescueDisabled = featureIsEnabled(FEATURE_GPS) && gpsRescueIsConfigured() && gpsSol.numSat < gpsRescueConfig()->minSats && !STATE(GPS_FIX);
+#endif
+        sbufWriteU8(dst, isArmingDisabled() ? '!' : isGpsRescueDisabled ? '?' : '*');
     }
+
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;
@@ -451,7 +515,6 @@ void crsfFrameDeviceInfo(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_DEVICEINFO_VERSION);
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
-
 
 #if defined(USE_CRSF_V3)
 void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
@@ -632,6 +695,7 @@ static void crsfFrameDisplayPortClear(sbuf_t *dst)
 typedef enum {
     CRSF_FRAME_START_INDEX = 0,
     CRSF_FRAME_ATTITUDE_INDEX = CRSF_FRAME_START_INDEX,
+    CRSF_FRAME_BARO_ALTITUDE_INDEX,
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
     CRSF_FRAME_GPS_INDEX,
@@ -688,6 +752,14 @@ static void processCrsf(void)
         crsfFrameAttitude(dst);
         crsfFinalize(dst);
     }
+#if defined(USE_BARO) && defined(USE_VARIO)
+    // send barometric altitude
+    if (currentSchedule & BIT(CRSF_FRAME_BARO_ALTITUDE_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameAltitude(dst);
+        crsfFinalize(dst);
+    }
+#endif
     if (currentSchedule & BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameBatterySensor(dst);
@@ -767,6 +839,11 @@ void initCrsfTelemetry(void)
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
         crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
     }
+#if defined(USE_BARO) && defined(USE_VARIO)
+    if (telemetryIsSensorEnabled(SENSOR_ALTITUDE)) {
+        crsfSchedule[index++] = BIT(CRSF_FRAME_BARO_ALTITUDE_INDEX);
+    }
+#endif
     if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
         || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
         crsfSchedule[index++] = BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX);

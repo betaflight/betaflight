@@ -18,7 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 struct serialPort_s;
 
 void printfSerialInit(void);

@@ -40,7 +40,6 @@
 
 #define PID_GAIN_MAX 250
 #define F_GAIN_MAX 1000
-#define D_MIN_GAIN_MAX 250
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -61,10 +60,10 @@
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 250
 
-#define PID_ROLL_DEFAULT  { 45, 80, 40, 120, 0 }
-#define PID_PITCH_DEFAULT { 47, 84, 46, 125, 0 }
+#define PID_ROLL_DEFAULT  { 45, 80, 30, 120, 0 }
+#define PID_PITCH_DEFAULT { 47, 84, 34, 125, 0 }
 #define PID_YAW_DEFAULT   { 45, 80,  0, 120, 0 }
-#define D_MIN_DEFAULT     { 30, 34, 0 }
+#define D_MAX_DEFAULT     { 40, 46, 0 }
 
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
 #define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
@@ -73,6 +72,8 @@
 #define TPA_MAX 100
 
 #ifdef USE_WING
+#define ANGLE_PITCH_OFFSET_MAX 450
+#define S_TERM_SCALE 0.01f
 #define TPA_LOW_RATE_MIN INT8_MIN
 #define TPA_GRAVITY_MAX 5000
 #define TPA_CURVE_STALL_THROTTLE_MAX 100
@@ -87,10 +88,23 @@
 #define TPA_CURVE_PWL_SIZE 17
 #endif // USE_ADVANCED_TPA
 
+#define G_ACCELERATION 9.80665f // gravitational acceleration in m/s^2
+
 typedef enum {
     TPA_MODE_PD,
-    TPA_MODE_D
+    TPA_MODE_D,
+#ifdef USE_WING
+    TPA_MODE_PDS,
+#endif
 } tpaMode_e;
+
+typedef enum {
+    TERM_P,
+    TERM_I,
+    TERM_D,
+    TERM_F,
+    TERM_S,
+} term_e;
 
 typedef enum {
     SPA_MODE_OFF,
@@ -162,6 +176,16 @@ typedef enum tpaCurveType_e {
     TPA_CURVE_HYPERBOLIC,
 } tpaCurveType_t;
 
+typedef enum tpaSpeedType_e {
+    TPA_SPEED_BASIC,
+    TPA_SPEED_ADVANCED,
+} tpaSpeedType_t;
+
+typedef enum {
+    YAW_TYPE_RUDDER,
+    YAW_TYPE_DIFF_THRUST,
+} yawType_e;
+
 #define MAX_PROFILE_NAME_LENGTH 8u
 
 typedef struct pidProfile_s {
@@ -173,9 +197,9 @@ typedef struct pidProfile_s {
     pidf_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_lpf1_type;                // Filter type for dterm lowpass 1
-    uint8_t itermWindupPointPercent;        // iterm windup threshold, percent motor saturation
-    uint16_t pidSumLimit;
-    uint16_t pidSumLimitYaw;
+    uint8_t itermWindup;                    // iterm windup threshold, percentage of pidSumLimit within which to limit iTerm
+    uint16_t pidSumLimit;                   // pidSum limit value for pitch and roll
+    uint16_t pidSumLimitYaw;                // pidSum limit value for yaw
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t angle_limit;                    // Max angle in degrees in Angle mode
 
@@ -222,9 +246,9 @@ typedef struct pidProfile_s {
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
     uint8_t thrustLinearization;            // Compensation factor for pid linearization
-    uint8_t d_min[XYZ_AXIS_COUNT];          // Minimum D value on each axis
-    uint8_t d_min_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
-    uint8_t d_min_advance;                  // Percentage multiplier for setpoint input to boost algorithm
+    uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
+    uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
+    uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
@@ -235,7 +259,6 @@ typedef struct pidProfile_s {
     uint8_t dyn_idle_i_gain;                // I gain during active control of rpm
     uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
     uint8_t dyn_idle_max_increase;          // limit on maximum possible increase in motor idle drive during active control
-    uint8_t dyn_idle_start_increase;        // limit on maximum possible increase in motor idle drive with airmode not activated
 
     uint8_t feedforward_transition;         // Feedforward attenuation around centre sticks
     uint8_t feedforward_averaging;          // Number of packets to average when averaging is on
@@ -245,7 +268,7 @@ typedef struct pidProfile_s {
     uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
     uint8_t feedforward_yaw_hold_gain;          // Amount of sustained high-pass yaw setpoint to add to feedforward, zero disables
     uint8_t feedforward_yaw_hold_time ;     // Time constant of the sustained yaw hold element in ms to add to feed forward, higher values decay slower
-    
+
     uint8_t dterm_lpf1_dyn_expo;            // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calculation is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
@@ -256,7 +279,7 @@ typedef struct pidProfile_s {
     uint8_t simplified_i_gain;
     uint8_t simplified_d_gain;
     uint8_t simplified_pi_gain;
-    uint8_t simplified_dmin_ratio;
+    uint8_t simplified_d_max_gain;
     uint8_t simplified_feedforward_gain;
     uint8_t simplified_dterm_filter;
     uint8_t simplified_dterm_filter_multiplier;
@@ -280,17 +303,25 @@ typedef struct pidProfile_s {
     uint8_t ez_landing_speed;               // Speed below which motor output is limited
     uint8_t landing_disarm_threshold;            // Accelerometer vector delta (jerk) threshold with disarms if exceeded
 
-    uint16_t tpa_delay_ms;                  // TPA delay for fixed wings using pt2 filter (time constant)
     uint16_t spa_center[XYZ_AXIS_COUNT];    // RPY setpoint at which PIDs are reduced to 50% (setpoint PID attenuation)
     uint16_t spa_width[XYZ_AXIS_COUNT];     // Width of smooth transition around spa_center
     uint8_t spa_mode[XYZ_AXIS_COUNT];       // SPA mode for each axis
-    uint16_t tpa_gravity_thr0;              // For wings: gravity force addition to tpa argument in % when zero throttle
-    uint16_t tpa_gravity_thr100;            // For wings: gravity force addition to tpa argument in % when full throttle
     uint8_t tpa_curve_type;                 // Classic type - for multirotor, hyperbolic - usually for wings
-    uint8_t tpa_curve_stall_throttle;        // For wings: speed at which PIDs should be maxed out (stall speed)
+    uint8_t tpa_curve_stall_throttle;       // For wings: speed at which PIDs should be maxed out (stall speed)
     uint16_t tpa_curve_pid_thr0;            // For wings: PIDs multiplier at stall speed
     uint16_t tpa_curve_pid_thr100;          // For wings: PIDs multiplier at full speed
     int8_t tpa_curve_expo;                  // For wings: how fast PIDs do transition as speed grows
+    uint8_t tpa_speed_type;             // For wings: relative air speed estimation model type
+    uint16_t tpa_speed_basic_delay;     // For wings when tpa_speed_type = BASIC: delay of air speed estimation from throttle in milliseconds (time of reaching 50% of terminal speed in horizontal flight at full throttle)
+    uint16_t tpa_speed_basic_gravity;   // For wings when tpa_speed_type = BASIC: gravity effect on air speed estimation in percents
+    uint16_t tpa_speed_adv_prop_pitch;  // For wings when tpa_speed_type = ADVANCED: prop pitch in inches * 100
+    uint16_t tpa_speed_adv_mass;        // For wings when tpa_speed_type = ADVANCED: craft mass in grams
+    uint16_t tpa_speed_adv_drag_k;      // For wings when tpa_speed_type = ADVANCED: craft drag coefficient
+    uint16_t tpa_speed_adv_thrust;      // For wings when tpa_speed_type = ADVANCED: stationary thrust in grams
+    uint16_t tpa_speed_max_voltage;     // For wings: theoretical max voltage; used for throttle scailing with voltage for air speed estimation
+    int16_t tpa_speed_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
+    uint8_t yaw_type;                   // For wings: type of yaw (rudder or differential thrust)
+    int16_t angle_pitch_offset;         // For wings: pitch offset for angle modes; in decidegrees; positive values tilting the wing down
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -331,6 +362,16 @@ typedef struct pidCoefficient_s {
     float Kf;
 } pidCoefficient_t;
 
+typedef struct tpaSpeedParams_s {
+    float maxSpeed;
+    float dragMassRatio;
+    float inversePropMaxSpeed;
+    float twr;
+    float speed;
+    float maxVoltage;
+    float pitchOffset;
+} tpaSpeedParams_t;
+
 typedef struct pidRuntime_s {
     float dT;
     float pidFrequency;
@@ -361,7 +402,6 @@ typedef struct pidRuntime_s {
     float horizonLimitDegreesInv;
     float horizonIgnoreSticks;
     float maxVelocity[XYZ_AXIS_COUNT];
-    float itermWindupPointInv;
     bool inCrashRecoveryMode;
     timeUs_t crashDetectedAtUs;
     timeDelta_t crashTimeLimitUs;
@@ -373,6 +413,7 @@ typedef struct pidRuntime_s {
     float crashSetpointThreshold;
     float crashLimitYaw;
     float itermLimit;
+    float itermLimitYaw;
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
@@ -401,12 +442,13 @@ typedef struct pidRuntime_s {
     float oldSetpointCorrection[XYZ_AXIS_COUNT];
 #endif
 
-#ifdef USE_D_MIN
-    pt2Filter_t dMinRange[XYZ_AXIS_COUNT];
-    pt2Filter_t dMinLowpass[XYZ_AXIS_COUNT];
-    float dMinPercent[XYZ_AXIS_COUNT];
-    float dMinGyroGain;
-    float dMinSetpointGain;
+#ifdef USE_D_MAX
+    pt2Filter_t dMaxRange[XYZ_AXIS_COUNT];
+    pt2Filter_t dMaxLowpass[XYZ_AXIS_COUNT];
+    float dMaxPercent[XYZ_AXIS_COUNT];
+    uint8_t dMax[XYZ_AXIS_COUNT];
+    float dMaxGyroGain;
+    float dMaxSetpointGain;
 #endif
 
 #ifdef USE_AIRMODE_LPF
@@ -420,7 +462,7 @@ typedef struct pidRuntime_s {
     uint8_t acroTrainerDebugAxis;
     float acroTrainerGain;
     bool acroTrainerActive;
-    int acroTrainerAxisState[2];  // only need roll and pitch
+    int acroTrainerAxisState[RP_AXIS_COUNT];  // only need roll and pitch
 #endif
 
 #ifdef USE_DYN_LPF
@@ -461,31 +503,31 @@ typedef struct pidRuntime_s {
     uint8_t feedforwardMaxRateLimit;
     float feedforwardYawHoldGain;
     float feedforwardYawHoldTime;
-    bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values 
+    bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_ACC
-    pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
+    pt3Filter_t attitudeFilter[RP_AXIS_COUNT];  // Only for ROLL and PITCH
     pt1Filter_t horizonSmoothingPt1;
     uint16_t horizonDelayMs;
     float angleYawSetpoint;
     float angleEarthRef;
-    float angleTarget[2];
+    float angleTarget[RP_AXIS_COUNT];
     bool axisInAngleMode[3];
-    float maxRcRateInv[2];
 #endif
 
 #ifdef USE_WING
-    pt2Filter_t tpaLpf;
     float spa[XYZ_AXIS_COUNT]; // setpoint pid attenuation (0.0 to 1.0). 0 - full attenuation, 1 - no attenuation
-    float tpaGravityThr0;
-    float tpaGravityThr100;
+    tpaSpeedParams_t tpaSpeed;
+    float tpaFactorYaw;
+    float tpaFactorSterm[XYZ_AXIS_COUNT];
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
     pwl_t tpaCurvePwl;
     float tpaCurvePwl_yValues[TPA_CURVE_PWL_SIZE];
+    tpaCurveType_t tpaCurveType;
 #endif // USE_ADVANCED_TPA
 } pidRuntime_t;
 
@@ -508,7 +550,7 @@ void pidSetItermAccelerator(float newItermAccelerator);
 bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
-void pidUpdateTpaFactor(float throttle, const pidProfile_t *pidProfile);
+void pidUpdateTpaFactor(float throttle);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
 void pidSetAntiGravityState(bool newState);

@@ -383,7 +383,6 @@ typedef enum {
     BARO_STATE_COUNT
 } barometerState_e;
 
-
 bool isBaroReady(void)
 {
     return baroReady;

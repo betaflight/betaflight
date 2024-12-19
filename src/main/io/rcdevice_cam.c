@@ -46,14 +46,12 @@
 #define IS_LO(X) (rcData[X] < FIVE_KEY_CABLE_JOYSTICK_MIN)
 #define IS_MID(X) (rcData[X] > FIVE_KEY_CABLE_JOYSTICK_MID_START && rcData[X] < FIVE_KEY_CABLE_JOYSTICK_MID_END)
 
-
 static runcamDevice_t runcamDevice;
 runcamDevice_t *camDevice = &runcamDevice;
 rcdeviceSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
 bool rcdeviceInMenu = false;
 bool isButtonPressed = false;
 bool waitingDeviceResponse = false;
-
 
 static bool isFeatureSupported(uint16_t feature)
 {

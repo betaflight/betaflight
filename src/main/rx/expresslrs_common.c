@@ -335,7 +335,7 @@ uint16_t convertSwitch1b(const uint16_t val)
 }
 
 // 3b to decode 7 pos switches
-uint16_t convertSwitch3b(const uint16_t val) 
+uint16_t convertSwitch3b(const uint16_t val)
 {
     switch (val) {
     case 0: return 1000;

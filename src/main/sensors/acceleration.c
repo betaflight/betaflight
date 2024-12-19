@@ -28,7 +28,6 @@
 
 #include "build/debug.h"
 
-#include "common/axis.h"
 #include "common/filter.h"
 #include "common/utils.h"
 
@@ -36,58 +35,93 @@
 
 #include "sensors/acceleration_init.h"
 #include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
 
 #include "acceleration.h"
 
 FAST_DATA_ZERO_INIT acc_t acc;                       // acc access functions
 
-static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
+static inline void alignAccelerometer(void)
 {
-    acc.accADC[X] -= accelerationTrims->raw[X];
-    acc.accADC[Y] -= accelerationTrims->raw[Y];
-    acc.accADC[Z] -= accelerationTrims->raw[Z];
+    switch (acc.dev.accAlign) {
+        case ALIGN_CUSTOM:
+            alignSensorViaMatrix(&acc.accADC, &acc.dev.rotationMatrix);
+            break;
+        default:
+            alignSensorViaRotation(&acc.accADC, acc.dev.accAlign);
+            break;
+    }
 }
 
-void accUpdate(timeUs_t currentTimeUs)
+static inline void calibrateAccelerometer(void)
 {
-    UNUSED(currentTimeUs);
-    static float previousAccMagnitude;
-
-    if (!acc.dev.readFn(&acc.dev)) {
-        return;
-    }
-    acc.isAccelUpdatedAtLeastOnce = true;
-
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        const int16_t val =  acc.dev.ADCRaw[axis];
-        acc.accADC[axis] = val;
-    }
-
-    if (acc.dev.accAlign == ALIGN_CUSTOM) {
-        alignSensorViaMatrix(acc.accADC, &acc.dev.rotationMatrix);
-    } else {
-        alignSensorViaRotation(acc.accADC, acc.dev.accAlign);
-    }
-
     if (!accIsCalibrationComplete()) {
+        // acc.accADC is held at 0 until calibration is completed
         performAcclerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
     }
 
     if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
         performInflightAccelerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
     }
-
-    applyAccelerationTrims(accelerationRuntime.accelerationTrims);
-
-    float accAdcSquaredSum = 0.0f;
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        const float val = acc.accADC[axis];
-        acc.accADC[axis] = accelerationRuntime.accLpfCutHz ? pt2FilterApply(&accelerationRuntime.accFilter[axis], val) : val;
-        accAdcSquaredSum += sq(acc.accADC[axis]);
-    }
-    acc.accMagnitude = sqrtf(accAdcSquaredSum) * acc.dev.acc_1G_rec; // normally 1.0; used for disarm on impact detection
-    acc.accDelta = (acc.accMagnitude - previousAccMagnitude) * acc.sampleRateHz;
-    previousAccMagnitude = acc.accMagnitude;
 }
 
-#endif
+static inline void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
+{
+    acc.accADC.x -= accelerationTrims->raw[X];
+    acc.accADC.y -= accelerationTrims->raw[Y];
+    acc.accADC.z -= accelerationTrims->raw[Z];
+}
+
+static inline void postProcessAccelerometer(void)
+{
+    static vector3_t accAdcPrev;
+
+    for (unsigned axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+
+        // Apply anti-alias filter for attitude task (if enabled)
+        if (axis == gyro.gyroDebugAxis) {
+            DEBUG_SET(DEBUG_ACCELEROMETER, 0, lrintf(acc.accADC.v[axis]));
+        }
+
+        if (accelerationRuntime.accLpfCutHz) {
+            acc.accADC.v[axis] = pt2FilterApply(&accelerationRuntime.accFilter[axis], acc.accADC.v[axis]);
+        }
+
+        // Calculate derivative of acc (jerk)
+        acc.jerk.v[axis] = (acc.accADC.v[axis] - accAdcPrev.v[axis]) * acc.sampleRateHz;
+        accAdcPrev.v[axis] = acc.accADC.v[axis];
+
+        if (axis == gyro.gyroDebugAxis) {
+            DEBUG_SET(DEBUG_ACCELEROMETER, 1, lrintf(acc.accADC.v[axis]));
+            DEBUG_SET(DEBUG_ACCELEROMETER, 3, lrintf(acc.jerk.v[axis] * 1e-2f));
+        }
+    }
+
+    acc.accMagnitude = vector3Norm(&acc.accADC) * acc.dev.acc_1G_rec;
+    acc.jerkMagnitude = vector3Norm(&acc.jerk) * acc.dev.acc_1G_rec;
+
+    DEBUG_SET(DEBUG_ACCELEROMETER, 2, lrintf(acc.accMagnitude * 1e3f));
+    DEBUG_SET(DEBUG_ACCELEROMETER, 4, lrintf(acc.jerkMagnitude * 1e3f));
+}
+
+void accUpdate(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (!acc.dev.readFn(&acc.dev)) {
+        return;
+    }
+
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        acc.accADC.v[axis] = acc.dev.ADCRaw[axis];
+    }
+
+    alignAccelerometer();
+    calibrateAccelerometer();
+    applyAccelerationTrims(accelerationRuntime.accelerationTrims);
+    postProcessAccelerometer();
+
+    acc.isAccelUpdatedAtLeastOnce = true;
+}
+
+#endif // USE_ACC

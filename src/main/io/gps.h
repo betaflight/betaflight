@@ -25,15 +25,17 @@
 
 #include "common/axis.h"
 #include "common/time.h"
+#include <common/vector.h>
 
 #include "io/serial.h"
 
 #include "pg/gps.h"
 
 #define GPS_DEGREES_DIVIDER 10000000L
+#define EARTH_ANGLE_TO_CM (111.3195f * 1000 * 100 / GPS_DEGREES_DIVIDER) // 1.113195 cm per latitude unit at the equator (111.3195km/deg)
 #define GPS_X 1
 #define GPS_Y 0
-#define GPS_MIN_SAT_COUNT 4      // number of sats to trigger low sat count sanity check
+#define GPS_MIN_SAT_COUNT 4     // number of sats to trigger low sat count sanity check
 
 #ifdef USE_GPS_UBLOX
 typedef enum {
@@ -222,10 +224,13 @@ typedef struct gpsCoordinateDDDMMmmmm_s {
 } gpsCoordinateDDDMMmmmm_t;
 
 /* LLH Location in NEU axis system */
-typedef struct gpsLocation_s {
-    int32_t lat;                    // latitude * 1e+7
-    int32_t lon;                    // longitude * 1e+7
-    int32_t altCm;                  // altitude in 0.01m
+typedef union gpsLocation_u {
+    struct {
+        int32_t lat;                // latitude * 1e+7
+        int32_t lon;                // longitude * 1e+7
+        int32_t altCm;              // altitude in 0.01m
+    };
+    int32_t coords[3];              // added to provide direct access within loops
 } gpsLocation_t;
 
 /* A value below 100 means great accuracy is possible with GPS satellite constellation */
@@ -246,8 +251,8 @@ typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
     gpsAccuracy_t acc;
-    uint16_t speed3d;               // speed in 0.1m/s
-    uint16_t groundSpeed;           // speed in 0.1m/s
+    uint16_t speed3d;               // speed in cm/s
+    uint16_t groundSpeed;           // speed in cm/s
     uint16_t groundCourse;          // degrees * 10
     uint8_t numSat;
     uint32_t time;                  // GPS msToW
@@ -282,8 +287,8 @@ typedef struct gpsData_s {
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
-    uint8_t userBaudRateIndex;          // index into auto-detecting or current baudrate
-    uint8_t tempBaudRateIndex;          // index into auto-detecting or current baudrate
+    uint8_t userBaudRateIndex;      // index into auto-detecting or current baudrate
+    uint8_t tempBaudRateIndex;      // index into auto-detecting or current baudrate
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
     ubloxAckState_e ackState;       // Ack State
@@ -301,7 +306,7 @@ typedef struct gpsData_s {
 extern gpsLocation_t GPS_home_llh;
 extern uint16_t GPS_distanceToHome;        // distance to home point in meters
 extern uint32_t GPS_distanceToHomeCm;      // distance to home point in cm
-extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+extern int16_t GPS_directionToHome;        // direction to home point in degrees * 10
 extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 
 typedef enum {
@@ -313,39 +318,43 @@ extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
 #define GPS_SV_MAXSATS_LEGACY   16U
-#define GPS_SV_MAXSATS_M8N      32U
+#define GPS_SV_MAXSATS_M8N      32U                     // must be larger than MAXSATS_LEGACY
 
 extern uint8_t GPS_update;                              // toggles on GPS nav position update (directly or via MSP)
-extern uint8_t GPS_numCh;                               // Number of channels
-extern uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];      // When NumCh is 16 or less: Channel number
-                                                        // When NumCh is more than 16: GNSS Id
-                                                        //   0 = GPS, 1 = SBAS, 2 = Galileo, 3 = BeiDou
-                                                        //   4 = IMES, 5 = QZSS, 6 = Glonass
-extern uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];     // Satellite ID
-extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or less: Bitfield Qualtity
-                                                        // When NumCh is more than 16: flags
-                                                        //   bits 2..0: signal quality indicator
-                                                        //     0 = no signal
-                                                        //     1 = searching signal
-                                                        //     2 = signal acquired
-                                                        //     3 = signal detected but unusable
-                                                        //     4 = code locked and time synchronized
-                                                        //     5,6,7 = code and carrier locked and time synchronized
-                                                        //   bit 3:
-                                                        //     1 = signal currently being used for navigaion
-                                                        //   bits 5..4: signal health flag
-                                                        //     0 = unknown
-                                                        //     1 = healthy
-                                                        //     2 = unhealthy
-                                                        //   bit 6:
-                                                        //     1 = differential correction data available for this SV
-                                                        //   bit 7:
-                                                        //     1 = carrier smoothed pseudorange used
-extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Ratio (Signal Strength)
+
+extern uint8_t GPS_numCh;                               // Number of svinfo channels
+
+typedef struct GPS_svinfo_s {
+    uint8_t chn;      // When NumCh is 16 or less: Channel number
+                      // When NumCh is more than 16: GNSS Id
+                      //   0 = GPS, 1 = SBAS, 2 = Galileo, 3 = BeiDou
+                      //   4 = IMES, 5 = QZSS, 6 = Glonass
+    uint8_t svid;     // Satellite ID
+    uint8_t quality;  // When NumCh is 16 or less: Bitfield Qualtity
+                      // When NumCh is more than 16: flags
+                      //   bits 2..0: signal quality indicator
+                      //     0 = no signal
+                      //     1 = searching signal
+                      //     2 = signal acquired
+                      //     3 = signal detected but unusable
+                      //     4 = code locked and time synchronized
+                      //     5,6,7 = code and carrier locked and time synchronized
+                      //   bit 3:
+                      //     1 = signal currently being used for navigaion
+                      //   bits 5..4: signal health flag
+                      //     0 = unknown
+                      //     1 = healthy
+                      //     2 = unhealthy
+                      //   bit 6:
+                      //     1 = differential correction data available for this SV
+                      //   bit 7:
+                      //     1 = carrier smoothed pseudorange used
+    uint8_t cno;      // Carrier to Noise Ratio (Signal Strength)
+} GPS_svinfo_t;
+extern GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 
 #define TASK_GPS_RATE       100     // default update rate of GPS task
 #define TASK_GPS_RATE_FAST  500    // update rate of GPS task while Rx buffer is not empty
-
 
 #ifdef USE_DASHBOARD
 // Data used *only* by the dashboard device (OLED display).
@@ -375,22 +384,23 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 #define GPS_DBHZ_MAX 55
 #endif  // USE_DASHBOARD
 
-
-#ifdef USE_GPS_UBLOX
-ubloxVersion_e ubloxParseVersion(const uint32_t version);
-void setSatInfoMessageRate(uint8_t divisor);
-#endif
-
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
 bool gpsIsHealthy(void); // Returns true when the gps state is RECEIVING_DATA
 struct serialPort_s;
-void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
+bool gpsPassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);
 void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
 void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing);
+
+void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance);
+
 void gpsSetFixState(bool state);
-float getGpsDataIntervalSeconds(void);      // sends GPS Nav Data interval to GPS Rescue
+
+bool gpsHasNewData(uint16_t *stamp);
+float getGpsDataIntervalSeconds(void);  // range 0.05 - 2.5s
+float getGpsDataFrequencyHz(void);      // range 20Hz - 0.4Hz
+
 baudRate_e getGpsPortActualBaudRateIndex(void);

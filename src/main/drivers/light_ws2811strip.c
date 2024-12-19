@@ -200,7 +200,6 @@ bool ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
         return false;
     }
 
-
     // fill transmit buffer with correct compare values to achieve
     // correct pulse widths according to color values
     const unsigned ledUpdateCount = needsFullRefresh ? WS2811_DATA_BUFFER_SIZE : usedLedCount;

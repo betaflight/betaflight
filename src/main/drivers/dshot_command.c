@@ -208,6 +208,10 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 
     if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+        bool isBitbangActive = false;
+#ifdef USE_DSHOT_BITBANG
+        isBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
+#endif
         // Fake command in queue. Blocking commands are launched from cli, and no inline commands are running
         for (uint8_t i = 0; i < motorDeviceCount(); i++) {
             commandQueue[commandQueueTail].command[i] = (i == index || index == ALL_MOTORS) ? command : DSHOT_CMD_MOTOR_STOP;
@@ -217,6 +221,11 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
         for (; repeats; repeats--) {
             delayMicroseconds(DSHOT_COMMAND_DELAY_US);
 
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+            if (!isBitbangActive) {
+                vTable->decodeTelemetry();
+            }
+#endif
             // Initialise the output buffers
             if (vTable->updateInit) {
                 vTable->updateInit();
@@ -235,10 +244,10 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 
             vTable->updateComplete();
 
-            // Perform the decode of the last data received
-            // New data will be received once the send of motor data, triggered above, completes
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-            vTable->decodeTelemetry();
+            if (isBitbangActive) {
+                vTable->decodeTelemetry();
+            }
 #endif
         }
         delayMicroseconds(delayAfterCommandUs);

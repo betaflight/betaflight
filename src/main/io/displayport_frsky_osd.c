@@ -423,7 +423,6 @@ static void contextPop(displayCanvas_t *displayCanvas)
     frskyOsdContextPop();
 }
 
-
 static const displayCanvasVTable_t frskyOsdCanvasVTable = {
     .setStrokeColor = setStrokeColor,
     .setFillColor = setFillColor,

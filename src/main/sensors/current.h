@@ -61,7 +61,6 @@ typedef enum {
     CURRENT_SENSOR_MSP
 } currentSensor_e;
 
-
 //
 // ADC
 //
@@ -104,7 +103,6 @@ typedef struct currentMeterESCState_s {
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
 } currentMeterESCState_t;
 
-
 //
 // MSP
 //
@@ -113,7 +111,6 @@ typedef struct currentMeterMSPState_s {
     int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
 } currentMeterMSPState_t;
-
 
 //
 // Current Meter API

@@ -59,7 +59,6 @@ static uint32_t sumhChannels[SUMH_MAX_CHANNEL_COUNT];
 
 static serialPort_t *sumhPort;
 
-
 // Receive ISR callback
 static void sumhDataReceive(uint16_t c, void *data)
 {
