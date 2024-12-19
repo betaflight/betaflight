@@ -24,6 +24,7 @@
 #include <stdbool.h>
 
 #include "pg/pg.h"
+#include "osd/osd.h"
 
 #define MAX_NAME_LENGTH 16u
 
