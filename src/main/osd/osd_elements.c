@@ -815,7 +815,7 @@ static void osdElementCompassBar(osdElementParms_t *element)
 static void osdElementCustomMsg(osdElementParms_t *element)
 {
     int msgIndex = element->item - OSD_CUSTOM_MSG0;
-    if (msgIndex < 0 || msgIndex >= OSD_CUSTOM_MSG_COUNT || pilotConfig()->message[msgIndex][0] == '\0'){
+    if (msgIndex < 0 || msgIndex >= OSD_CUSTOM_MSG_COUNT || pilotConfig()->message[msgIndex][0] == '\0') {
         tfp_sprintf(element->buff, "CUSTOM_MSG%d", msgIndex + 1);
     } else {
         strncpy(element->buff, pilotConfig()->message[msgIndex], MAX_NAME_LENGTH);
