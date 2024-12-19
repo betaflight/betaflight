@@ -124,6 +124,7 @@
 #include "pg/gps_rescue.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
+#include "pg/pilot.h"
 #include "pg/pos_hold.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"

@@ -34,8 +34,6 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
-#define OSD_CUSTOM_MSG_COUNT 4
-
 #define OSD_PROFILE_NAME_LENGTH 16
 
 #ifdef USE_OSD_PROFILES

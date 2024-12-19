@@ -161,6 +161,7 @@
 #include "osd/osd_warnings.h"
 
 #include "pg/motor.h"
+#include "pg/pilot.h"
 #include "pg/stats.h"
 
 #include "rx/rx.h"

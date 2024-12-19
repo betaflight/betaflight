@@ -58,6 +58,7 @@ extern "C" {
     #include "pg/gps_rescue.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/pilot.h"
     #include "pg/rx.h"
 
     #include "sensors/acceleration.h"
