@@ -85,6 +85,23 @@
 #endif
 #endif // GYRO_1_ALIGN_ROLL || GYRO_1_ALIGN_PITCH || GYRO_1_ALIGN_YAW
 
+#if defined(GYRO_2_ALIGN_ROLL) || defined(GYRO_2_ALIGN_PITCH) || defined(GYRO_2_ALIGN_YAW)
+#ifndef GYRO_2_ALIGN_ROLL
+#define GYRO_2_ALIGN_ROLL 0
+#endif
+#ifndef GYRO_2_ALIGN_PITCH
+#define GYRO_2_ALIGN_PITCH 0
+#endif
+#ifndef GYRO_2_ALIGN_YAW
+#define GYRO_2_ALIGN_YAW 0
+#endif
+#ifndef GYRO_2_CUSTOM_ALIGN
+#define GYRO_2_CUSTOM_ALIGN     SENSOR_ALIGNMENT( GYRO_2_ALIGN_ROLL / 10, GYRO_2_ALIGN_PITCH / 10, GYRO_2_ALIGN_YAW / 10 )
+#else
+#error "GYRO_2_ALIGN_x and GYRO_2_CUSTOM_ALIGN are mutually exclusive"
+#endif
+#endif // GYRO_2_ALIGN_ROLL || GYRO_2_ALIGN_PITCH || GYRO_2_ALIGN_YAW
+
 #ifndef GYRO_1_ALIGN
 #ifdef GYRO_1_CUSTOM_ALIGN
 #define GYRO_1_ALIGN            ALIGN_CUSTOM
