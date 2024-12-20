@@ -181,7 +181,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     }
 #else
     {
-        const int idx = identifier - SERIAL_PORT_USART1;
+        const int idx = identifier - SERIAL_PORT_UART_FIRST;
         if (idx >= 0 && idx < SERIAL_UART_MAX) {
             if (BIT(idx) & SERIAL_UART_MASK) {
                 // return number of enabled UART ports smaller than idx

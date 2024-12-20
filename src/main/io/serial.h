@@ -89,8 +89,9 @@ extern const uint32_t baudRates[];
 typedef enum {
     SERIAL_PORT_ALL = -2,
     SERIAL_PORT_NONE = -1,
+    // prepare for transition to SERIAL_PORT_UART0
     SERIAL_PORT_UART_FIRST = 0,
-#if defined(USE_UART0)
+#if SERIAL_UART_FIRST_INDEX == 0
     SERIAL_PORT_UART0 = SERIAL_PORT_UART_FIRST,
     SERIAL_PORT_USART1,
 #else
@@ -112,6 +113,7 @@ typedef enum {
     SERIAL_PORT_UART9,
     SERIAL_PORT_USART10,
     SERIAL_PORT_UART10 = SERIAL_PORT_USART10,
+
     SERIAL_PORT_USB_VCP = 20,
 
     SERIAL_PORT_SOFTSERIAL1 = 30,
