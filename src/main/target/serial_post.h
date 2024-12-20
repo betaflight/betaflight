@@ -39,15 +39,15 @@ All <type><n>_(RX|TX)_PINS are normalized too:
  - if port is not enable, both will be undefined, possibly with warning
   - pass -DWARN_UNUSED_SERIAL_PORT to compiler to check pin defined without corresponding port being enabled.
 
-Generated on 2024-12-19
+Generated on 2024-12-20
 
 Configuration used:
 {   'LPUART': {'depends': {'UART'}, 'ids': [1]},
     'SOFTSERIAL': {   'force_continuous': True,
                       'ids': [1, 2],
                       'use_enables_all': True},
-    'UART': {   'first_index': 1,
-                'ids': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'UART': {   'first_index': True,
+                'ids': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 'inverter': True},
     'VCP': {'no_pins': True, 'singleton': True}}
 */
@@ -56,6 +56,24 @@ Configuration used:
 
 /****                                UART                                 *****/
 
+// normalize SERIAL_UART_FIRST_INDEX
+#ifndef SERIAL_UART_FIRST_INDEX
+#define SERIAL_UART_FIRST_INDEX 1
+#endif
+
+#if SERIAL_UART_FIRST_INDEX == 0
+#if defined(USE_UART0)
+# define SERIAL_UART0_USED 1
+#else
+# define SERIAL_UART0_USED 0
+#endif
+#else // USE_UART0 is not allowed
+# if defined(USE_UART0)
+#  error "USE_UART0 is defined, but SERIAL_UART does not allow index 0"
+# else
+#  define SERIAL_UART0_USED 0
+# endif
+#endif
 #if defined(USE_UART1)
 # define SERIAL_UART1_USED 1
 #else
@@ -107,16 +125,43 @@ Configuration used:
 # define SERIAL_UART10_USED 0
 #endif
 
-#define SERIAL_UART_MASK ((SERIAL_UART1_USED * BIT(1 - 1)) | (SERIAL_UART2_USED * BIT(2 - 1)) | (SERIAL_UART3_USED * BIT(3 - 1)) | (SERIAL_UART4_USED * BIT(4 - 1)) | (SERIAL_UART5_USED * BIT(5 - 1)) | (SERIAL_UART6_USED * BIT(6 - 1)) | (SERIAL_UART7_USED * BIT(7 - 1)) | (SERIAL_UART8_USED * BIT(8 - 1)) | (SERIAL_UART9_USED * BIT(9 - 1)) | (SERIAL_UART10_USED * BIT(10 - 1)))
-#define SERIAL_UART_COUNT (SERIAL_UART1_USED + SERIAL_UART2_USED + SERIAL_UART3_USED + SERIAL_UART4_USED + SERIAL_UART5_USED + SERIAL_UART6_USED + SERIAL_UART7_USED + SERIAL_UART8_USED + SERIAL_UART9_USED + SERIAL_UART10_USED)
+#define SERIAL_UART_MASK ((SERIAL_UART0_USED * BIT(0)) | (SERIAL_UART1_USED * BIT(1 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART2_USED * BIT(2 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART3_USED * BIT(3 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART4_USED * BIT(4 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART5_USED * BIT(5 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART6_USED * BIT(6 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART7_USED * BIT(7 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART8_USED * BIT(8 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART9_USED * BIT(9 - SERIAL_UART_FIRST_INDEX)) | (SERIAL_UART10_USED * BIT(10 - SERIAL_UART_FIRST_INDEX)))
+#define SERIAL_UART_COUNT (SERIAL_UART0_USED + SERIAL_UART1_USED + SERIAL_UART2_USED + SERIAL_UART3_USED + SERIAL_UART4_USED + SERIAL_UART5_USED + SERIAL_UART6_USED + SERIAL_UART7_USED + SERIAL_UART8_USED + SERIAL_UART9_USED + SERIAL_UART10_USED)
 // 0 if no port is defined
 #define SERIAL_UART_MAX (SERIAL_UART_MASK ? LOG2(SERIAL_UART_MASK) + 1 : 0)
 // enable USE_INVERTED first, before normalization
-#if !defined(USE_INVERTER) && (INVERTER_PIN_UART1 || INVERTER_PIN_UART2 || INVERTER_PIN_UART3 || INVERTER_PIN_UART4 || INVERTER_PIN_UART5 || INVERTER_PIN_UART6 || INVERTER_PIN_UART7 || INVERTER_PIN_UART8 || INVERTER_PIN_UART9 || INVERTER_PIN_UART10)
+#if !defined(USE_INVERTER) && (INVERTER_PIN_UART0 || INVERTER_PIN_UART1 || INVERTER_PIN_UART2 || INVERTER_PIN_UART3 || INVERTER_PIN_UART4 || INVERTER_PIN_UART5 || INVERTER_PIN_UART6 || INVERTER_PIN_UART7 || INVERTER_PIN_UART8 || INVERTER_PIN_UART9 || INVERTER_PIN_UART10)
 # define USE_INVERTER
 #endif
 
 // Normalize UART TX/RX/INVERTER
+#if SERIAL_UART0_USED && !defined(UART0_RX_PIN)
+# define UART0_RX_PIN NONE
+#endif
+#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_UART0_USED && defined(UART0_RX_PIN)
+# warning "UART0_RX_PIN is defined but UART0 is not enabled"
+#endif
+#if !SERIAL_UART0_USED &&  defined(UART0_RX_PIN)
+# undef UART0_RX_PIN
+#endif
+#if SERIAL_UART0_USED && !defined(UART0_TX_PIN)
+# define UART0_TX_PIN NONE
+#endif
+#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_UART0_USED && defined(UART0_TX_PIN)
+# warning "UART0_TX_PIN is defined but UART0 is not enabled"
+#endif
+#if !SERIAL_UART0_USED &&  defined(UART0_TX_PIN)
+# undef UART0_TX_PIN
+#endif
+#if SERIAL_UART0_USED && !defined(INVERTER_PIN_UART0)
+# define INVERTER_PIN_UART0 NONE
+#endif
+#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_UART0_USED && defined(INVERTER_PIN_UART0)
+# warning "INVERTER_PIN_UART0 is defined but UART0 is not enabled"
+#endif
+#if !SERIAL_UART0_USED &&  defined(INVERTER_PIN_UART0)
+# undef INVERTER_PIN_UART0
+#endif
 #if SERIAL_UART1_USED && !defined(UART1_RX_PIN)
 # define UART1_RX_PIN NONE
 #endif
@@ -432,6 +477,7 @@ Configuration used:
 #  define USE_SOFTSERIAL2
 # endif
 #endif
+
 #if defined(USE_SOFTSERIAL1)
 # define SERIAL_SOFTSERIAL1_USED 1
 #else
