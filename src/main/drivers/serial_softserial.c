@@ -197,8 +197,8 @@ static void resetBuffers(softSerial_t *softSerial)
 
 softSerial_t* softSerialFromIdentifier(serialPortIdentifier_e identifier)
 {
-    if (identifier >= SERIAL_PORT_SOFTSERIAL1 && identifier < SERIAL_PORT_SOFTSERIAL1 + SERIAL_SOFTSERIAL_COUNT) {
-        return &softSerialPorts[identifier - SERIAL_PORT_SOFTSERIAL1];
+    if (identifier >= SERIAL_PORT_SOFTSERIAL_FIRST && identifier < SERIAL_PORT_SOFTSERIAL_FIRST + SERIAL_SOFTSERIAL_COUNT) {
+        return &softSerialPorts[identifier - SERIAL_PORT_SOFTSERIAL_FIRST];
     }
     return NULL;
 }
