@@ -32,11 +32,18 @@ Configuration used:
 */
 
 #include "common/utils.h" // BIT, LOG2
-{# config array is passed to this script. It is flattened version of user_config, with default fileld in #}
+{# config array is passed to this script. It is flattened version of user_config, with defaults filled in #}
 {% for cfg in config %}
 
 /****                                {{ cfg.typ }}                                 *****/
 
+{%   if cfg.first_index %}
+// normalize SERIAL_{{ cfg.typ }}_FIRST_INDEX
+#ifndef SERIAL_{{ cfg.typ }}_FIRST_INDEX
+#define SERIAL_{{ cfg.typ }}_FIRST_INDEX 1
+#endif
+
+{%   endif %}
 {#   use_enables_all - USE_<type> enables all ports of this type #}
 {%   if cfg.use_enables_all %}
 #if defined(USE_{{cfg.typ}})
@@ -47,20 +54,35 @@ Configuration used:
 # endif
 {%     endfor %}
 #endif
+
 {%   endif %}
 {#   USE_<port> - SERIAL_<port>_USED 0/1 #}
-{%   for port in cfg.ports %}
+{%   for port, i in cfg.ports|zip(cfg.ids|default([-1])) %}{# handle singleton without ids #}
+{%    if i == 0 and cfg.first_index %}{# port 0, test if it is allowed #}
+#if SERIAL_{{ cfg.typ }}_FIRST_INDEX == 0
+{%    endif %}
 #if defined(USE_{{port}})
 # define SERIAL_{{port}}_USED 1
 #else
 # define SERIAL_{{port}}_USED 0
 #endif
+{%    if i == 0 and cfg.first_index %}{# port 0, #else branch #}
+#else // USE_{{port}} is not allowed
+# if defined(USE_{{port}})
+#  error "USE_{{port}} is defined, but SERIAL_{{ cfg.typ }} does not allow index 0"
+# else
+#  define SERIAL_{{port}}_USED 0
+# endif
+#endif
+{%    endif %}
 {%   endfor %}
 
 {#   SERIAL_<port>_* summary macros #}
 {%   if not cfg.singleton %}
 {%     set pipe = joiner(' | ') %}
-#define SERIAL_{{ cfg.typ }}_MASK ({% for port, i in cfg.ports|zip(cfg.ids) %}{{ pipe() }}(SERIAL_{{ port }}_USED * BIT({{ i }} - {{ cfg.first_index }})){% endfor %})
+#define SERIAL_{{ cfg.typ }}_MASK ({% for port, i in cfg.ports|zip(cfg.ids) %}
+    {{- pipe() }}(SERIAL_{{ port }}_USED * BIT({{ "0" if i==0 else "{} - SERIAL_{}_FIRST_INDEX".format(i, cfg.typ) if cfg.first_index else "{} - 1".format(i) }})){% endfor %})
+{# export first index information, so serial.h can assert that it does match #}
 {%   else %}
 {#     one port without number is defined #}
 // for consistency, set one bit if port is enabled
@@ -68,8 +90,8 @@ Configuration used:
 {%   endif %}
 {%   set plus = joiner(' + ') %}
 #define SERIAL_{{ cfg.typ }}_COUNT ({% for port in cfg.ports %}{{ plus() }}SERIAL_{{ port }}_USED{% endfor %})
-{# LOG2 is simpler than chaining MAX(SERIAL_x1_USED * 1, MAX(SERIAL_x2_USED * 2, ... #}
 // 0 if no port is defined
+{# LOG2 is simpler than chaining MAX(SERIAL_x1_USED * 1, MAX(SERIAL_x2_USED * 2, ... #}
 #define SERIAL_{{ cfg.typ }}_MAX (SERIAL_{{cfg.typ}}_MASK ? LOG2(SERIAL_{{cfg.typ}}_MASK) + 1 : 0)
 {#   for softserial, we don't want softserial2 only #}
 {%   if cfg.force_continuous %}

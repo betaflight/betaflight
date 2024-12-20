@@ -8,9 +8,9 @@ import pprint
 
 # configuration for template generation
 serials = {
-    "UART": {"ids": list(range(1, 10 + 1)),
+    "UART": {"ids": list(range(0, 10 + 1)),
              "inverter": True,
-             "first_index": 1,
+             "first_index": True,   # support configurable first index for this port
              },
     "LPUART": {"ids": [1],
                "depends": {"UART"},
@@ -70,7 +70,7 @@ def main():
         singleton = cfg.setdefault('singleton', False)
         no_pins = cfg.setdefault('no_pins', False)
         inverter = cfg.setdefault('inverter', False)
-        cfg.setdefault('first_index', 1)
+        cfg.setdefault('first_index', False)
         cfg.setdefault("use_enables_all", False)
         cfg.setdefault("force_continuous", False)
         cfg.setdefault("depends", {})
