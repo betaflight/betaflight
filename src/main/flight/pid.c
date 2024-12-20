@@ -1328,7 +1328,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         float pidSetpointDelta = 0;
 
-#ifdef USE_FEEDFORWARD
+#if defined(USE_FEEDFORWARD) && defined(USE_ACC)
         if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
             // this axis is fully under self-levelling control
             // it will already have stick based feedforward applied in the input to their angle setpoint
