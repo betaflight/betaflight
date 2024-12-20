@@ -20,7 +20,6 @@
 
 #include "platform.h"
 
-#if defined(USE_NEROS_RX)
 
 #include "drivers/io.h"
 
@@ -32,7 +31,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig, PG_NELRS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig,
-    .bindPhraseLow = "lowlowlow",
+    .bindPhraseLow = "testtesttest",
     .bindPhraseHigh = "testtesttest"
 );
-#endif
+

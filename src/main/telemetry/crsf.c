@@ -291,9 +291,10 @@ void crsfFrameHeartbeat(sbuf_t *dst)
 
 void crsfFrameBindPhrase(sbuf_t *dst,bool rxSelect)
 {   
-    char * bindPhrase = nelrsConfigMutable()->bindPhraseLow;
-    if(rxSelect){
-       bindPhrase = nelrsConfigMutable()->bindPhraseHigh;
+    UNUSED(rxSelect);
+    char* bindPhrase = nelrsConfigMutable()->bindPhraseHigh;
+    if(rxSelect == true){
+       bindPhrase = nelrsConfigMutable()->bindPhraseLow;
     }
     
     uint8_t buff[6] = {0};
@@ -524,29 +525,32 @@ void crsfSendRXBindPhrases(void){
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
-    pinioSet(switchPin,false);
-    crsfInitializeFrame(dst);
-    crsfFrameBindPhrase(dst,false);
-    crsfRxSendTelemetryData();
-    crsfFinalize(dst);
-    crsfRxSendTelemetryData();
-
-    pinioSet(switchPin,true);
-    crsfInitializeFrame(dst);
-    crsfFrameBindPhrase(dst,true);
-    crsfRxSendTelemetryData();
-    crsfFinalize(dst);
-    crsfRxSendTelemetryData();
-
-    pinioSet(switchPin,false);
-
-    bindPhrasesSent+=1;
+    if(bindPhrasesSent == 1){
+        pinioSet(switchPin,false);
+        crsfInitializeFrame(dst);
+        crsfFrameBindPhrase(dst,false);
+        crsfRxSendTelemetryData();
+        crsfFinalize(dst);
+        crsfRxSendTelemetryData();
+    }
+    else if (bindPhrasesSent == 3){
+        pinioSet(switchPin,true);
+        crsfInitializeFrame(dst);
+        crsfFrameBindPhrase(dst,true);
+        crsfRxSendTelemetryData();
+        crsfFinalize(dst);
+        crsfRxSendTelemetryData();
+    }
+    else if(bindPhrasesSent == 4){
+        pinioSet(switchPin,false);
+    }
 }
 
 void bindPhraseProcess(uint32_t currentTime) {
     UNUSED(currentTime);
-    if(bindPhrasesSent < 2){
+    if(bindPhrasesSent < 5){
         crsfSendRXBindPhrases();
+        bindPhrasesSent+=1;
     }
 }
 #endif

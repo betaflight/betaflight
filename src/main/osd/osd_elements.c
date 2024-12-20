@@ -554,18 +554,18 @@ static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, unsigned directi
     return direction; // return segment number
 }
 
-// static uint8_t osdGetDirectionSymbolFromHeading(int heading)
-// {
-//     heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
+static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+{
+    heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
 
-//     // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
-//     // Our symbols are Down=0, Right=4, Up=8 and Left=12
-//     // There're 16 arrow symbols. Transform it.
-//     heading = 16 - heading;
-//     heading = (heading + 8) % 16;
+    // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
+    // Our symbols are Down=0, Right=4, Up=8 and Left=12
+    // There're 16 arrow symbols. Transform it.
+    heading = 16 - heading;
+    heading = (heading + 8) % 16;
 
-//     return SYM_ARROW_SOUTH + heading;
-// }
+    return SYM_ARROW_SOUTH + heading;
+}
 
 
 /**
@@ -975,7 +975,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
 
 #if defined(USE_N1_TEMP_SENSOR)
 {   
-    tfp_sprintf(element->buff, "VTX:%u:%u:%u,%u", settingCounter, messageCounter,vtxTemp1Temperature,vtxTemp2Temperature);
+    tfp_sprintf(element->buff, "VTX:%u%c",vtxCombinedTemp,SYM_C);
 
 }
 #else
@@ -1050,19 +1050,28 @@ static void osdElementGpsFlightDistance(osdElementParms_t *element)
     }
 }
 
-//GLEB ADDITION. TAKING OVER THIS METHOD TO ESTIMATE RANGE
 static void osdElementGpsHomeDirection(osdElementParms_t *element)
-{  
-    if(ARMING_FLAG(ARMED) && STATE(GPS_FIX) && GPS_distanceFlownInCm > 1000){
-        int32_t batteryUsed = getMAhDrawn();
-        int32_t batteryLeft = batteryConfig()->batteryCapacity - batteryUsed;
-        float efficiency = GPS_distanceFlownInCm / ((float)batteryUsed+0.000001);
-        float estimatedRangeLeft = (float)batteryLeft * efficiency;
-        osdPrintFloat(element->buff, SYM_NONE, constrainf(estimatedRangeLeft/100000.0, 0, 200), "%2u", 2, false, SYM_KM);
-    } else{
-        tfp_sprintf(element->buff, "NO ESTIMATE");
+{
+    if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+        if (GPS_distanceToHome > 0) {
+            int direction = GPS_directionToHome;
+#ifdef USE_GPS_LAP_TIMER
+            // Override the "home" point to the start/finish location if the lap timer is running
+            if (gpsLapTimerData.timerRunning) {
+                direction = lrintf(gpsLapTimerData.dirToPoint * 0.1f); // Convert from centidegree to degree and round to nearest
+            }
+#endif
+            element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(direction - attitude.values.yaw));
+        } else {
+            element->buff[0] = SYM_OVER_HOME;
+        }
+
+    } else {
+        // We use this symbol when we don't have a FIX
+        element->buff[0] = SYM_HYPHEN;
     }
-    
+
+    element->buff[1] = 0;
 }
 
 static void osdElementGpsHomeDistance(osdElementParms_t *element)
@@ -1348,14 +1357,9 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
 
 static void osdElementNumericalHeading(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, statusStrings[currentStatusMessageIdx]);
+    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+    tfp_sprintf(element->buff, "%c%03d", osdGetDirectionSymbolFromHeading(heading), heading);
 }
-
-// static void osdElementNumericalHeading(osdElementParms_t *element)
-// {
-//     const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-//     tfp_sprintf(element->buff, "%c%03d", osdGetDirectionSymbolFromHeading(heading), heading);
-// }
 
 #ifdef USE_VARIO
 static void osdElementNumericalVario(osdElementParms_t *element)
@@ -1455,22 +1459,37 @@ static void osdElementRcChannels(osdElementParms_t *element)
     element->drawElement = false;  // element already drawn
 }
 
+// static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
+// {
+//     const int mAhDrawn = getMAhDrawn();
+
+//     if (mAhDrawn >= osdConfig()->cap_alarm) {
+//         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+//     }
+
+//     if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
+//         tfp_sprintf(element->buff, "--:--");
+//     } else if (mAhDrawn > osdConfig()->cap_alarm) {
+//         tfp_sprintf(element->buff, "00:00");
+//     } else {
+//         const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
+//         osdFormatTime(element->buff, OSD_TIMER_PREC_SECOND, remaining_time);
+//     }
+// }
+
+//GLEB ADDITION. TAKING OVER THIS METHOD TO ESTIMATE RANGE INSTEAD OF TIME
 static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
-{
-    const int mAhDrawn = getMAhDrawn();
-
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
-        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+{  
+    if(ARMING_FLAG(ARMED) && STATE(GPS_FIX) && GPS_distanceFlownInCm > 1000){
+        int32_t batteryUsed = getMAhDrawn();
+        int32_t batteryLeft = batteryConfig()->batteryCapacity - batteryUsed;
+        float efficiency = GPS_distanceFlownInCm / ((float)batteryUsed+0.000001);
+        float estimatedRangeLeft = (float)batteryLeft * efficiency;
+        osdPrintFloat(element->buff, SYM_NONE, constrainf(estimatedRangeLeft/100000.0, 0, 200), "%2u", 2, false, SYM_KM);
+    } else{
+        tfp_sprintf(element->buff, "NO ESTIMATE");
     }
-
-    if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
-        tfp_sprintf(element->buff, "--:--");
-    } else if (mAhDrawn > osdConfig()->cap_alarm) {
-        tfp_sprintf(element->buff, "00:00");
-    } else {
-        const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
-        osdFormatTime(element->buff, OSD_TIMER_PREC_SECOND, remaining_time);
-    }
+    
 }
 
 static void osdElementRssi(osdElementParms_t *element)
@@ -1618,9 +1637,15 @@ switch (element->type) {
 }
 #endif // USE_VTX_COMMON
 
+// static void osdElementAuxValue(osdElementParms_t *element)
+// {
+//     tfp_sprintf(element->buff, "%c%d", osdConfig()->aux_symbol, osdAuxValue);
+// }
+
+//OVERWRITEN TO DISPLAY STATUS MESSAGES INSTED OF AUX VALUE
 static void osdElementAuxValue(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%c%d", osdConfig()->aux_symbol, osdAuxValue);
+    tfp_sprintf(element->buff, statusStrings[currentStatusMessageIdx]);
 }
 
 static void osdElementWarnings(osdElementParms_t *element)
