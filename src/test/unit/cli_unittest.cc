@@ -368,12 +368,14 @@ void generateLedConfig(ledConfig_t *, char *, size_t) {}
 //void serialSetCtrlLineStateCb(serialPort_t *, void (*)(void *, uint16_t ), void *) {}
 void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
 void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+
 serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *candidate))
 {
     UNUSED(portName);
     UNUSED(cmp);
     return SERIAL_PORT_NONE;
 }
+
 const char* serialName(serialPortIdentifier_e identifier, const char* notFound)
 {
     UNUSED(identifier);
