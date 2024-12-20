@@ -1316,15 +1316,16 @@ static void cliSerial(const char *cmdName, char *cmdline)
     uint8_t validArgumentCount = 0;
 
     const char *ptr = cmdline;
-
-    char* tok = cmdline;
+    char *tok = cmdline;
     int val = findSerialPortByName(strsep(&tok, " "), strcasecmp);
     serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(val);
 
-    if (currentConfig) {
-        portConfig.identifier = val;
-        validArgumentCount++;
+    if (!currentConfig) {
+        cliShowParseError(cmdName);
+        return;
     }
+    validArgumentCount++;
+    ptr = tok;
 
     ptr = nextArg(ptr);
     if (ptr) {
