@@ -1680,7 +1680,7 @@ case MSP_NAME:
             if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier | SERIAL_UARTINDEX_INDICATOR);
             sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
@@ -1700,7 +1700,7 @@ case MSP_NAME:
             if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier | SERIAL_UARTINDEX_INDICATOR);
             sbufWriteU32(dst, serialConfig()->portConfigs[i].functionMask);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
@@ -3864,7 +3864,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             uint8_t remainingPortsInPacket = dataSize / portConfigSize;
 
             while (remainingPortsInPacket--) {
-                uint8_t identifier = sbufReadU8(src);
+                uint8_t identifier = sbufReadU8(src) & ~(SERIAL_UARTINDEX_INDICATOR);
 
                 serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
 
@@ -3872,7 +3872,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     return MSP_RESULT_ERROR;
                 }
 
-                portConfig->identifier = identifier;
                 portConfig->functionMask = sbufReadU16(src);
                 portConfig->msp_baudrateIndex = sbufReadU8(src);
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
@@ -3893,14 +3892,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         for (unsigned ii = 0; ii < count; ii++) {
             unsigned start = sbufBytesRemaining(src);
-            uint8_t identifier = sbufReadU8(src);
+            uint8_t identifier = sbufReadU8(src) & ~(SERIAL_UARTINDEX_INDICATOR);
             serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
 
             if (!portConfig) {
                 return MSP_RESULT_ERROR;
             }
 
-            portConfig->identifier = identifier;
             portConfig->functionMask = sbufReadU32(src);
             portConfig->msp_baudrateIndex = sbufReadU8(src);
             portConfig->gps_baudrateIndex = sbufReadU8(src);

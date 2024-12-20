@@ -162,8 +162,10 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #endif
 };
 
-const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
-        400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
+const uint32_t baudRates[] = {
+        0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
+        400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000
+    }; // see baudRate_e
 
 static serialPortConfig_t* findInPortConfigs_identifier(const serialPortConfig_t cfgs[], size_t count, serialPortIdentifier_e identifier)
 {
