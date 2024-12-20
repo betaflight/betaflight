@@ -689,7 +689,7 @@ static void osdElementAltitude(osdElementParms_t *element)
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
     const float angle = ((element->item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll) / 10.0f;
-    osdPrintFloat(element->buff, (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL, fabsf(angle), ((angle < 0) ? "-%02u" : " %02u"), 1, true, SYM_NONE);
+    osdPrintFloat(element->buff, (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL, fabsf(angle), ((angle < 0) ? "-%u" : " %u"), 0, true, SYM_NONE);
 }
 #endif
 
@@ -975,7 +975,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
 
 #if defined(USE_N1_TEMP_SENSOR)
 {   
-    tfp_sprintf(element->buff, "VTX:%u%c",vtxCombinedTemp,SYM_C);
+    tfp_sprintf(element->buff, "%c%u%c",SYM_TEMPERATURE,vtxCombinedTemp,SYM_C);
 
 }
 #else
@@ -1612,13 +1612,6 @@ static void osdElementVtxChannel(osdElementParms_t *element)
     }
     const char *vtxPowerLabel = vtxCommonLookupPowerName(vtxDevice, vtxPower);
 
-    char vtxStatusIndicator = '\0';
-    if (IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-        vtxStatusIndicator = 'D';
-    } else if (vtxStatus & VTX_STATUS_PIT_MODE) {
-        vtxStatusIndicator = 'P';
-    }
-
 switch (element->type) {
     case OSD_ELEMENT_TYPE_2:
             tfp_sprintf(element->buff, "%s", vtxPowerLabel);
@@ -1627,9 +1620,8 @@ switch (element->type) {
     default:
         if (vtxStatus & VTX_STATUS_LOCKED) {
             tfp_sprintf(element->buff, "-:-:-:L");
-        } else if (vtxStatusIndicator) {
-            tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
-        } else {
+        } 
+         else {
             tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
         }
         break;
