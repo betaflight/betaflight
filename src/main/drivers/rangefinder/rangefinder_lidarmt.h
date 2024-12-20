@@ -21,6 +21,7 @@
 #pragma once
 
 #include "drivers/rangefinder/rangefinder.h"
+#include "drivers/opticalflow/opticalflow.h"
 #include "sensors/rangefinder.h"
 
 #define RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES  900
@@ -31,6 +32,14 @@ typedef struct {
     uint16_t maxRangeCm;
 } MTRangefinderConfig;
 
+typedef struct {
+    uint32_t timestampUs;
+    int32_t distanceMm;
+} mtRangefinderData_t;
+
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse);
 void mtRangefinderReceiveNewData(const uint8_t * bufferPtr);
 const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse);
+
+bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinderToUse);
+void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr);

@@ -252,6 +252,7 @@ COMMON_SRC = \
             osd/osd_warnings.c \
             sensors/barometer.c \
             sensors/rangefinder.c \
+            sensors/opticalflow.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
             telemetry/ghst.c \

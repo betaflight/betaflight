@@ -57,6 +57,9 @@ uint32_t featuresSupportedByBuild =
 #ifdef USE_RANGEFINDER
     | FEATURE_RANGEFINDER
 #endif
+#ifdef USE_OPTICALFLOW
+    | FEATURE_OPTICALFLOW
+#endif
 #ifdef USE_TELEMETRY
     | FEATURE_TELEMETRY
 #endif
