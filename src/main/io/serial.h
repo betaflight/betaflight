@@ -79,10 +79,10 @@ typedef enum {
 
 extern const uint32_t baudRates[];
 
-#if defined(USE_UART0)
-#define SERIAL_UARTINDEX_INDICATOR  0x80
+#if SERIAL_UART_FIRST_INDEX == 0
+#define SERIAL_UART_INDEX_BITFLAG  0x80
 #else
-#define SERIAL_UARTINDEX_INDICATOR  0x0
+#define SERIAL_UART_INDEX_BITFLAG  0x0
 #endif
 
 // serial port identifiers are now fixed, these values are used by MSP commands.
