@@ -1321,7 +1321,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
     char *tok = cmdline;
     serialPortIdentifier_e identifier = findSerialPortByName(strsep(&tok, " "), strcasecmp);
     if (identifier == SERIAL_PORT_NONE) {
-        identifier = atol(ptr++);
+        identifier = atoi(ptr++);
     } else {
         ptr = tok;
     }
