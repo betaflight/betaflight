@@ -642,7 +642,7 @@ help: Makefile mk/tools.mk
 	@echo "Or:"
 	@echo "        make <config-target> [V=<verbosity>] [OPTIONS=\"<options>\"] [EXTRA_FLAGS=\"<extra_flags>\"]"
 	@echo ""
-	@echo "To pupulate configuration targets:"
+	@echo "To populate configuration targets:"
 	@echo "        make configs"
 	@echo ""
 	@echo "Valid TARGET values are: $(BASE_TARGETS)"
