@@ -209,6 +209,7 @@ static bool signatureUpdated = false;
 #endif // USE_BOARD_INFO
 
 static const char* const emptyName = "-";
+static const char* const invalidName = "INVALID";
 
 #define MAX_CHANGESET_ID_LENGTH 8
 #define MAX_DATE_LENGTH 20
@@ -1284,7 +1285,7 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
             equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialConfig->portConfigs[i]));
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
-                serialName(serialConfigDefault->portConfigs[i].identifier, emptyName),
+                serialName(serialConfigDefault->portConfigs[i].identifier, invalidName),
                 serialConfigDefault->portConfigs[i].functionMask,
                 baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
                 baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
@@ -1293,7 +1294,7 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
             );
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
-            serialName(serialConfig->portConfigs[i].identifier, emptyName),
+            serialName(serialConfig->portConfigs[i].identifier, invalidName),
             serialConfig->portConfigs[i].functionMask,
             baudRates[serialConfig->portConfigs[i].msp_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
@@ -1314,18 +1315,25 @@ static void cliSerial(const char *cmdName, char *cmdline)
     memset(&portConfig, 0 , sizeof(portConfig));
 
     uint8_t validArgumentCount = 0;
+    int val = 0;
 
     const char *ptr = cmdline;
     char *tok = cmdline;
-    int val = findSerialPortByName(strsep(&tok, " "), strcasecmp);
-    serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(val);
+    serialPortIdentifier_e identifier = findSerialPortByName(strsep(&tok, " "), strcasecmp);
+    if (identifier == SERIAL_PORT_NONE) {
+        identifier = atol(ptr++);
+    } else {
+        ptr = tok;
+    }
+
+    serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(identifier);
 
     if (!currentConfig) {
         cliShowParseError(cmdName);
         return;
     }
+
     validArgumentCount++;
-    ptr = tok;
 
     ptr = nextArg(ptr);
     if (ptr) {
@@ -1385,7 +1393,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
 
     cliDumpPrintLinef(0, false, format,
-        serialName(portConfig.identifier, emptyName),
+        serialName(portConfig.identifier, invalidName),
         portConfig.functionMask,
         baudRates[portConfig.msp_baudrateIndex],
         baudRates[portConfig.gps_baudrateIndex],

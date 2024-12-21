@@ -3864,7 +3864,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             uint8_t remainingPortsInPacket = dataSize / portConfigSize;
 
             while (remainingPortsInPacket--) {
-                uint8_t identifier = sbufReadU8(src) & ~(SERIAL_UART_INDEX_BITFLAG);
+                uint8_t identifier = sbufReadU8(src) & ~SERIAL_UART_INDEX_BITFLAG;
 
                 serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
 
@@ -3892,7 +3892,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         for (unsigned ii = 0; ii < count; ii++) {
             unsigned start = sbufBytesRemaining(src);
-            uint8_t identifier = sbufReadU8(src) & ~(SERIAL_UART_INDEX_BITFLAG);
+            uint8_t identifier = sbufReadU8(src) & ~SERIAL_UART_INDEX_BITFLAG;
             serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
 
             if (!portConfig) {

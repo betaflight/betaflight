@@ -169,12 +169,17 @@ const uint32_t baudRates[] = {
 
 static serialPortConfig_t* findInPortConfigs_identifier(const serialPortConfig_t cfgs[], size_t count, serialPortIdentifier_e identifier)
 {
+    if (identifier == SERIAL_PORT_NONE || identifier == SERIAL_PORT_ALL) {
+        return NULL;
+    }
+
     for (unsigned i = 0; i < count; i++) {
         if (cfgs[i].identifier == identifier) {
             // drop const on return - wrapper function will add it back if necessary
             return (serialPortConfig_t*)&cfgs[i];
         }
     }
+
     return NULL;
 }
 

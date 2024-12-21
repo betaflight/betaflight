@@ -44,15 +44,18 @@ static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
+
 bool tcpIsStart(void)
 {
     return tcpStart;
 }
+
 static void onData(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     tcpDataIn(s, (uint8_t*)e->data, e->size);
 }
+
 static void onClose(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
@@ -63,6 +66,7 @@ static void onClose(dyad_Event *e)
         s->connected = false;
     }
 }
+
 static void onAccept(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
@@ -81,6 +85,7 @@ static void onAccept(dyad_Event *e)
     dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, e->udata);
     dyad_addListener(e->remote, DYAD_EVENT_CLOSE, onClose, e->udata);
 }
+
 static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 {
     if (tcpPortInitialized[id]) {
@@ -93,6 +98,7 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
         // TODO: clean up & re-init
         return NULL;
     }
+
     if (pthread_mutex_init(&s->rxLock, NULL) != 0) {
         fprintf(stderr, "RX mutex init failed - %d\n", errno);
         // TODO: clean up & re-init
@@ -122,11 +128,10 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCa
 {
     tcpPort_t *s = NULL;
 
-#if defined(USE_UART0) || defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8) || defined(USE_UART9) || defined(USE_UART10)
-    if (id >= 0 && id < SERIAL_PORT_COUNT) {
+    if (id > SERIAL_PORT_NONE && id < SERIAL_PORT_COUNT) {
         s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
-#endif
+
     if (!s) {
         return NULL;
     }
