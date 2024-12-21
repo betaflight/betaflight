@@ -36,8 +36,9 @@ serialType_e serialType(serialPortIdentifier_e identifier)
     }
 #endif
 #ifdef USE_UART
-    if (identifier >= SERIAL_PORT_USART1 && identifier < SERIAL_PORT_USART1 + SERIAL_UART_MAX) {
-        const unsigned idx = identifier - SERIAL_PORT_USART1;
+    if (identifier >= SERIAL_PORT_UART_FIRST
+        && identifier < SERIAL_PORT_UART_FIRST + SERIAL_UART_MAX) {
+        const unsigned idx = identifier - SERIAL_PORT_UART_FIRST;
         if (BIT(idx) & SERIAL_UART_MASK) {
             return SERIALTYPE_UART;
         } else {
@@ -47,8 +48,9 @@ serialType_e serialType(serialPortIdentifier_e identifier)
     }
 #endif
 #ifdef USE_LPUART
-    if (identifier >= SERIAL_PORT_LPUART1 && identifier < SERIAL_PORT_LPUART1 + SERIAL_LPUART_MAX) {
-        const unsigned idx = identifier - SERIAL_PORT_LPUART1;
+    if (identifier >= SERIAL_PORT_LPUART_FIRST
+        && identifier < SERIAL_PORT_LPUART_FIRST + SERIAL_LPUART_MAX) {
+        const unsigned idx = identifier - SERIAL_PORT_LPUART_FIRST;
         if (BIT(idx) & SERIAL_LPUART_MASK) {
             return SERIALTYPE_LPUART;
         } else {
@@ -58,8 +60,9 @@ serialType_e serialType(serialPortIdentifier_e identifier)
     }
 #endif
 #ifdef USE_SOFTSERIAL
-    if (identifier >= SERIAL_PORT_SOFTSERIAL1 && identifier < SERIAL_PORT_SOFTSERIAL1 + SERIAL_SOFTSERIAL_MAX) {
-        // sotserials always start from 1, without holes
+    if (identifier >= SERIAL_PORT_SOFTSERIAL_FIRST
+        && identifier < SERIAL_PORT_SOFTSERIAL_FIRST + SERIAL_SOFTSERIAL_MAX) {
+        // sotserials always start from first index, without holes
         return SERIALTYPE_SOFTSERIAL;
     }
 #endif
@@ -72,9 +75,9 @@ static const struct SerialTypeInfo {
     int8_t resourceOffset;
 } serialTypeMap[] = {
     [SERIALTYPE_USB_VCP] = { OWNER_FREE /* no owner*/, SERIAL_PORT_USB_VCP, -1 },
-    [SERIALTYPE_UART] = { OWNER_SERIAL_TX, SERIAL_PORT_USART1, RESOURCE_UART_OFFSET },
-    [SERIALTYPE_LPUART] = { OWNER_LPUART_TX, SERIAL_PORT_LPUART1, RESOURCE_LPUART_OFFSET },
-    [SERIALTYPE_SOFTSERIAL] = { OWNER_SOFTSERIAL_TX, SERIAL_PORT_SOFTSERIAL1, RESOURCE_SOFTSERIAL_OFFSET },
+    [SERIALTYPE_UART] = { OWNER_SERIAL_TX, SERIAL_PORT_UART_FIRST, RESOURCE_UART_OFFSET },
+    [SERIALTYPE_LPUART] = { OWNER_LPUART_TX, SERIAL_PORT_LPUART_FIRST, RESOURCE_LPUART_OFFSET },
+    [SERIALTYPE_SOFTSERIAL] = { OWNER_SOFTSERIAL_TX, SERIAL_PORT_SOFTSERIAL_FIRST, RESOURCE_SOFTSERIAL_OFFSET },
 };
 
 STATIC_ASSERT(ARRAYLEN(serialTypeMap) == SERIALTYPE_COUNT, "type table mismatch");

@@ -149,6 +149,7 @@
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
+#include "sensors/opticalflow.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
@@ -2054,7 +2055,7 @@ case MSP_NAME:
         break;
 
     case MSP_SENSOR_CONFIG:
-        // use sensorIndex_e index: 0:GyroHardware, 1:AccHardware, 2:BaroHardware, 3:MagHardware, 4:RangefinderHardware
+        // use sensorIndex_e index: 0:GyroHardware, 1:AccHardware, 2:BaroHardware, 3:MagHardware, 4:RangefinderHardware 5:OpticalflowHardware
 #if defined(USE_ACC)
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
 #else
@@ -2075,6 +2076,12 @@ case MSP_NAME:
         sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);    // no RANGEFINDER_DEFAULT value
 #else
         sbufWriteU8(dst, RANGEFINDER_NONE);
+#endif
+
+#ifdef USE_OPTICALFLOW
+        sbufWriteU8(dst, opticalflowConfig()->opticalflow_hardware);
+#else
+        sbufWriteU8(dst, OPTICALFLOW_NONE);
 #endif
         break;
 
@@ -2105,6 +2112,11 @@ case MSP_NAME:
 #endif
 #ifdef USE_RANGEFINDER
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_RANGEFINDER]);
+#else
+        sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
+#endif
+#ifdef USE_OPTICAL_FLOW
+        sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_OPTICALFLOW]);
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
@@ -3301,7 +3313,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_RANGEFINDER
         rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
 #else
-        sbufReadU8(src);        // rangefinder hardware
+        sbufReadU8(src);
+#endif
+
+#ifdef USE_OPTICALFLOW
+        opticalflowConfigMutable()->opticalflow_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
 #endif
         break;
 #ifdef USE_ACC
@@ -3658,7 +3676,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP2_SENSOR_RANGEFINDER_LIDARMT:
         mtRangefinderReceiveNewData(sbufPtr(src));
         break;
+
+    case MSP2_SENSOR_OPTICALFLOW_MT:
+        mtOpticalflowReceiveNewData(sbufPtr(src));
+        break;
 #endif
+
 #ifdef USE_GPS
     case MSP2_SENSOR_GPS:
         (void)sbufReadU8(src);              // instance

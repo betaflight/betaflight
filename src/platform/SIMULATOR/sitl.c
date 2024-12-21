@@ -445,6 +445,7 @@ uint32_t clockMicrosToCycles(uint32_t micros)
 {
     return micros;
 }
+
 uint32_t getCycleCounter(void)
 {
     return (uint32_t) (micros64() & 0xFFFFFFFF);
