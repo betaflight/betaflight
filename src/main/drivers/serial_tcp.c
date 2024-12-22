@@ -128,7 +128,7 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCa
 {
     tcpPort_t *s = NULL;
 
-    if (id > SERIAL_PORT_NONE && id < SERIAL_PORT_COUNT) {
+    if (id >= SERIAL_PORT_START_INDEX && id < SERIAL_PORT_COUNT) {
         s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
 

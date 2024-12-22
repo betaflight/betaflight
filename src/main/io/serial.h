@@ -77,7 +77,7 @@ typedef enum {
     BAUD_COUNT
 } baudRate_e;
 
-extern const uint32_t baudRates[];
+extern const uint32_t baudRates[BAUD_COUNT];
 
 #if SERIAL_UART_FIRST_INDEX == 0
 #define SERIAL_UART_INDEX_BITFLAG  0x80
@@ -89,8 +89,8 @@ extern const uint32_t baudRates[];
 typedef enum {
     SERIAL_PORT_ALL = -2,
     SERIAL_PORT_NONE = -1,
-    // prepare for transition to SERIAL_PORT_UART0
-    SERIAL_PORT_UART_FIRST = 0,
+    SERIAL_PORT_START_INDEX = 0,
+    SERIAL_PORT_UART_FIRST = SERIAL_PORT_START_INDEX,
 #if SERIAL_UART_FIRST_INDEX == 0
     SERIAL_PORT_UART0 = SERIAL_PORT_UART_FIRST,
     SERIAL_PORT_USART1,
