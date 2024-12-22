@@ -135,6 +135,7 @@
 #include "drivers/osd_symbols.h"
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
+#include "drivers/pinio.h"
 
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
@@ -975,7 +976,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
 
 #if defined(USE_N1_TEMP_SENSOR)
 {   
-    tfp_sprintf(element->buff, "%c%u%c",SYM_TEMPERATURE,vtxCombinedTemp,SYM_C);
+    tfp_sprintf(element->buff, "V%c%u%c",SYM_TEMPERATURE,vtxCombinedTemp,SYM_C);
 
 }
 #else
@@ -1032,12 +1033,15 @@ static void osdElementReadyMode(osdElementParms_t *element)
 }
 
 
-#ifdef USE_ACC
+//Overloading this to show 3V3 output status
 static void osdElementGForce(osdElementParms_t *element)
 {
-    osdPrintFloat(element->buff, SYM_NONE, osdGForce, "", 1, true, 'G');
+    if(pinioGet(3) == true){
+    tfp_sprintf(element->buff, "3V3 HI");
+    } else {
+        tfp_sprintf(element->buff, "3V3 LO");
+    }
 }
-#endif // USE_ACC
 
 #ifdef USE_GPS
 static void osdElementGpsFlightDistance(osdElementParms_t *element)
@@ -1682,14 +1686,10 @@ static void osdElementWarnings(osdElementParms_t *element)
 #endif // USE_CRAFTNAME_MSGS
 }
 
-#ifdef USE_MSP_DISPLAYPORT
 static void osdElementSys(osdElementParms_t *element)
 {
-    UNUSED(element);
-
-    // Nothing to render for a system element
+UNUSED(element);
 }
-#endif
 
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier

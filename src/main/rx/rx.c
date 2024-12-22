@@ -675,8 +675,7 @@ uint32_t startTimeMs = 0;
 uint32_t lastSwitchMs = 0;
 uint8_t bandOneLQ = 100;
 uint8_t bandTwoLQ = 100;
-bool bandOneBelowThresh = false;
-bool bandTwoBelowThresh = false;
+
 void detectAndApplySignalLossBehaviour(void)
 {
     //GLEB ADDITION. Set a start time first time that this method is called

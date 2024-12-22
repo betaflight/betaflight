@@ -75,4 +75,5 @@ extern uint8_t vtxTemp2Temperature;
 extern uint8_t vtxMcuTemp;
 extern uint8_t vtxCombinedTemp;
 extern uint8_t settingCounter;
+extern bool threeOutput;
 extern uint8_t debugSABuffer[100];
