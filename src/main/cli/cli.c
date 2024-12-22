@@ -1317,13 +1317,22 @@ static void cliSerial(const char *cmdName, char *cmdline)
     uint8_t validArgumentCount = 0;
     int val = 0;
 
-    const char *ptr = cmdline;
-    char *tok = cmdline;
-    serialPortIdentifier_e identifier = findSerialPortByName(strsep(&tok, " "), strcasecmp);
+    char *ptr = cmdline;
+    char *tok = strsep(&ptr, " ");
+    serialPortIdentifier_e identifier = findSerialPortByName(tok, strcasecmp);
     if (identifier == SERIAL_PORT_NONE) {
-        identifier = atoi(ptr++);
-    } else {
-        ptr = tok;
+        char *eptr;
+        identifier = strtoul(tok, &eptr, 10);
+        if (*eptr) {
+            // parsing ended before end of token indicating an invalid identifier
+            identifier = SERIAL_PORT_NONE;
+        } else {
+           // when using index then UART1 == 0
+           if (identifier > SERIAL_PORT_NONE && identifier < SERIAL_UART_MAX - 1 + SERIAL_UART_FIRST_INDEX) {
+               // adjust uarts only, handle UART0 correctly
+               identifier += SERIAL_PORT_UART1;
+           }
+       }
     }
 
     serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(identifier);
@@ -1335,20 +1344,20 @@ static void cliSerial(const char *cmdName, char *cmdline)
 
     validArgumentCount++;
 
-    ptr = nextArg(ptr);
-    if (ptr) {
-        val = strtoul(ptr, NULL, 10);
+    tok = strsep(&ptr, " ");
+    if (tok) {
+        val = strtoul(tok, NULL, 10);
         portConfig.functionMask = val;
         validArgumentCount++;
     }
 
     for (int i = 0; i < 4; i ++) {
-        ptr = nextArg(ptr);
-        if (!ptr) {
+        tok = strsep(&ptr, " ");
+        if (!tok) {
             break;
         }
 
-        val = atoi(ptr);
+        val = atoi(tok);
 
         uint8_t baudRateIndex = lookupBaudRateIndex(val);
         if (baudRates[baudRateIndex] != (uint32_t) val) {
