@@ -95,6 +95,7 @@
 #include "pg/msp.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/pilot.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
 #include "pg/pos_hold.h"

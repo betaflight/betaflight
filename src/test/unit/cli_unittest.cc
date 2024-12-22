@@ -53,6 +53,7 @@ extern "C" {
     #include "pg/pg_ids.h"
     #include "pg/beeper.h"
     #include "pg/gps.h"
+    #include "pg/pilot.h"
     #include "pg/rx.h"
     #include "rx/rx.h"
     #include "scheduler/scheduler.h"

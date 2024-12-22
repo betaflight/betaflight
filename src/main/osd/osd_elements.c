@@ -161,6 +161,7 @@
 #include "osd/osd_warnings.h"
 
 #include "pg/motor.h"
+#include "pg/pilot.h"
 #include "pg/stats.h"
 
 #include "rx/rx.h"
@@ -808,6 +809,18 @@ static void osdElementCompassBar(osdElementParms_t *element)
 {
     memcpy(element->buff, compassBar + osdGetHeadingIntoDiscreteDirections(DECIDEGREES_TO_DEGREES(attitude.values.yaw), 16), 9);
     element->buff[9] = 0;
+}
+
+//display custom message from MSPv2
+static void osdElementCustomMsg(osdElementParms_t *element)
+{
+    int msgIndex = element->item - OSD_CUSTOM_MSG0;
+    if (msgIndex < 0 || msgIndex >= OSD_CUSTOM_MSG_COUNT || pilotConfig()->message[msgIndex][0] == '\0') {
+        tfp_sprintf(element->buff, "CUSTOM_MSG%d", msgIndex + 1);
+    } else {
+        strncpy(element->buff, pilotConfig()->message[msgIndex], MAX_NAME_LENGTH);
+        element->buff[MAX_NAME_LENGTH] = 0;   // terminate maximum-length string
+    }
 }
 
 #ifdef USE_ADC_INTERNAL
@@ -1804,6 +1817,10 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_MAH_DRAWN,
     OSD_WATT_HOURS_DRAWN,
     OSD_CRAFT_NAME,
+    OSD_CUSTOM_MSG0,
+    OSD_CUSTOM_MSG1,
+    OSD_CUSTOM_MSG2,
+    OSD_CUSTOM_MSG3,
     OSD_ALTITUDE,
     OSD_ROLL_PIDS,
     OSD_PITCH_PIDS,
@@ -1902,6 +1919,10 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_ITEM_TIMER_2]            = osdElementTimer,
     [OSD_FLYMODE]                 = osdElementFlymode,
     [OSD_CRAFT_NAME]              = NULL,  // only has background
+    [OSD_CUSTOM_MSG0]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG1]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG2]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG3]             = osdElementCustomMsg,
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
 #ifdef USE_VTX_COMMON
     [OSD_VTX_CHANNEL]             = osdElementVtxChannel,

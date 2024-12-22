@@ -139,6 +139,7 @@ bool cliMode = false;
 #include "pg/max7456.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
+#include "pg/pilot.h"
 #include "pg/pinio.h"
 #include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
