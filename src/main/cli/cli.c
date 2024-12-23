@@ -1327,10 +1327,9 @@ static void cliSerial(const char *cmdName, char *cmdline)
             identifier = SERIAL_PORT_NONE;
         } else {
            // when using index then UART1 == 0
-           if (identifier >= SERIAL_PORT_START_INDEX && identifier < SERIAL_UART_MAX - 1 + SERIAL_UART_FIRST_INDEX) {
-               // adjust uarts only, handle UART0 correctly
-               identifier += SERIAL_PORT_UART1;
-           }
+            if (identifier >= SERIAL_PORT_LEGACY_START_IDENTIFIER && identifier < SERIAL_PORT_START_IDENTIFIER) {
+                identifier += SERIAL_PORT_UART1;
+            }
        }
     }
 
