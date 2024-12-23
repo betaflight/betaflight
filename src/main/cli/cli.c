@@ -1326,7 +1326,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
             // parsing ended before end of token indicating an invalid identifier
             identifier = SERIAL_PORT_NONE;
         } else {
-           // when using index then UART1 == 0
+            // correction for legacy configuration where UART1 == 0
             if (identifier >= SERIAL_PORT_LEGACY_START_IDENTIFIER && identifier < SERIAL_PORT_START_IDENTIFIER) {
                 identifier += SERIAL_PORT_UART1;
             }
