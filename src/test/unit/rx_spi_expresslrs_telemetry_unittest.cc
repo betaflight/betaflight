@@ -226,7 +226,7 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestFlightMode)
 TEST(RxSpiExpressLrsTelemetryUnitTest, TestMspVersionRequest)
 { 
     uint8_t request[15] = {238, 12, 122, 200, 234, 48, 0, 1, 1, 0, 0, 0, 0, 128, 0};
-    uint8_t response[12] = {200, 10, 123, 234, 200, 48, 3, 1, 0, API_VERSION_MAJOR, API_VERSION_MINOR, 0x80};
+    uint8_t response[12] = {200, 10, 123, 234, 200, 48, 3, 1, 0, API_VERSION_MAJOR, API_VERSION_MINOR, 0xAF};
     uint8_t data1[6] = {1, request[0], request[1], request[2], request[3], request[4]};
     uint8_t data2[6] = {2, request[5], request[6], request[7], request[8], request[9]};
     uint8_t data3[6] = {3, request[10], request[11], request[12], request[13], request[14]};
