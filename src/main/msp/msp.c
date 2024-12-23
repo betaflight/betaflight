@@ -1680,7 +1680,7 @@ case MSP_NAME:
             if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier | SERIAL_UART_INDEX_BITFLAG);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
             sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
@@ -1700,7 +1700,7 @@ case MSP_NAME:
             if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier | SERIAL_UART_INDEX_BITFLAG);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
             sbufWriteU32(dst, serialConfig()->portConfigs[i].functionMask);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
@@ -3864,7 +3864,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             uint8_t remainingPortsInPacket = dataSize / portConfigSize;
 
             while (remainingPortsInPacket--) {
-                uint8_t identifier = sbufReadU8(src) & ~SERIAL_UART_INDEX_BITFLAG;
+                uint8_t identifier = sbufReadU8(src);
 
                 serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
 
@@ -3892,7 +3892,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         for (unsigned ii = 0; ii < count; ii++) {
             unsigned start = sbufBytesRemaining(src);
-            uint8_t identifier = sbufReadU8(src) & ~SERIAL_UART_INDEX_BITFLAG;
+            uint8_t identifier = sbufReadU8(src);
             serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
 
             if (!portConfig) {

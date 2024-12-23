@@ -79,22 +79,17 @@ typedef enum {
 
 extern const uint32_t baudRates[BAUD_COUNT];
 
-#if SERIAL_UART_FIRST_INDEX == 0
-#define SERIAL_UART_INDEX_BITFLAG  0x80
-#else
-#define SERIAL_UART_INDEX_BITFLAG  0x0
-#endif
-
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
     SERIAL_PORT_ALL = -2,
     SERIAL_PORT_NONE = -1,
     SERIAL_PORT_START_INDEX = 0,
-    SERIAL_PORT_UART_FIRST = SERIAL_PORT_START_INDEX,
 #if SERIAL_UART_FIRST_INDEX == 0
+    SERIAL_PORT_UART_FIRST = 50,
     SERIAL_PORT_UART0 = SERIAL_PORT_UART_FIRST,
     SERIAL_PORT_USART1,
 #else
+    SERIAL_PORT_UART_FIRST = SERIAL_PORT_START_INDEX,
     SERIAL_PORT_USART1 = SERIAL_PORT_UART_FIRST,
 #endif
     SERIAL_PORT_UART1 = SERIAL_PORT_USART1,
