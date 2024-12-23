@@ -485,5 +485,5 @@
 #endif // USE_WING
 
 #if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
-#undef USE_POSITION_HOLD
+#error "USE_POSITION_HOLD requires USE_GPS to be defined"
 #endif
