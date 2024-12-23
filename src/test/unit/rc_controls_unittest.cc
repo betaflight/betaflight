@@ -654,7 +654,7 @@ void resetTryingToArm(void) {}
 void setLedProfile(uint8_t profile) { UNUSED(profile); }
 uint8_t getLedProfile(void) { return 0; }
 uint8_t getLedBrightness(void) { return 50; }
-void setLedBrightness (uint8_t brightness) { UNUSED(brightness); }
+void setLedBrightness(uint8_t brightness) { UNUSED(brightness); }
 void compassStartCalibration(void) {}
 void pinioBoxTaskControl(void) {}
 void schedulerIgnoreTaskExecTime(void) {}
