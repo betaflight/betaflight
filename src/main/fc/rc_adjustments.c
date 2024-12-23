@@ -269,7 +269,7 @@ static const char * const adjustmentLabels[] = {
     "YAW F",
     "OSD PROFILE",
     "LED PROFILE",
-    "LED DIMMER"
+    "LED DIMMER",
 };
 
 static int adjustmentRangeNameIndex = 0;
