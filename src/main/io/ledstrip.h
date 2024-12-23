@@ -237,4 +237,4 @@ void updateRequiredOverlay(void);
 uint8_t getLedProfile(void);
 void setLedProfile(uint8_t profile);
 uint8_t getLedBrightness(void);
-void setLedBrightness (uint8_t brightness);
+void setLedBrightness(uint8_t brightness);
