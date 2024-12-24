@@ -130,7 +130,7 @@ serialPort_t *serTcpOpen(serialPortIdentifier_e identifier, serialReceiveCallbac
 
     int id = findSerialPortIndexByIdentifier(identifier);
 
-    if (id >= 0) {
+    if (id >= 0 && id < (int)ARRAYLEN(tcpSerialPorts)) {
         s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
 
