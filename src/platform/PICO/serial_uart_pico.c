@@ -102,7 +102,7 @@ static void uartIrqHandler(uartPort_t *s)
                 uart_putc(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
                 s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
             } else {
-                uart_set_irq_enables(s->USARTx, true, false);
+                uart_set_irqs_enabled(s->USARTx, true, false);
                 break;
             }
         }
@@ -168,7 +168,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     irq_set_exclusive_handler(hardware->irqn, hardware->irqn == UART0_IRQ ? on_uart0 : on_uart1);
     irq_set_enabled(hardware->irqn, true);
     if ((mode & MODE_RX) && rxIO) {
-        uart_set_irq_enables(hardware->reg, true, false);
+        uart_set_irqs_enabled(hardware->reg, true, false);
     }
 
     return s;
@@ -190,7 +190,7 @@ void uartTryStartTx(uartPort_t *s)
     if (s->port.txBufferTail == s->port.txBufferHead) {
         return;
     }
-    uart_set_irq_enables(s->USARTx, uart_get_hw(s->USARTx)->imsc & UART_UARTIMSC_RXIM_BITS, true);
+    uart_set_irqs_enabled(s->USARTx, uart_get_hw(s->USARTx)->imsc & UART_UARTIMSC_RXIM_BITS, true);
 }
 
 void uartReconfigure(uartPort_t *s)
