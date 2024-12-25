@@ -16,6 +16,7 @@
 #
 
 # The target to build, see BASE_TARGETS below
+DEFAULT_TARGET ?= STM32F405
 TARGET    ?=
 CONFIG    ?=
 
@@ -123,6 +124,12 @@ FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 # import config handling
 include $(MAKE_SCRIPT_DIR)/config.mk
 
+ifeq ($(CONFIG),)
+ifeq ($(TARGET),)
+TARGET := $(DEFAULT_TARGET)
+SKIPCHECKS := yes
+endif
+endif
 
 # default xtal value
 HSE_VALUE       ?= 8000000
@@ -134,9 +141,7 @@ TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(di
 TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
 LINKER_DIR          := $(TARGET_PLATFORM_DIR)/link
 
-ifneq ($(TARGET),)
 include $(TARGET_PLATFORM_DIR)/target/$(TARGET)/target.mk
-endif
 
 REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
@@ -177,8 +182,6 @@ endif
 
 VPATH 			:= $(VPATH):$(MAKE_SCRIPT_DIR)
 
-ifneq ($(TARGET),)
-
 # start specific includes
 ifeq ($(TARGET_MCU),)
 $(error No TARGET_MCU specified. Is the target.mk valid for $(TARGET)?)
@@ -199,6 +202,9 @@ SIZE_OPTIMISED_SRC  :=
 
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
 
+# openocd specific includes
+include $(MAKE_SCRIPT_DIR)/openocd.mk
+
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(TARGET_FLASH_SIZE),)
 ifneq ($(MCU_FLASH_SIZE),)
@@ -215,12 +221,8 @@ DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
 TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
-endif # TARGET specified
 
-# openocd specific includes
-include $(MAKE_SCRIPT_DIR)/openocd.mk
-
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := hex
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
@@ -232,7 +234,7 @@ VPATH           := $(VPATH):$(TARGET_DIR)
 
 include $(MAKE_SCRIPT_DIR)/source.mk
 
-ifneq ($(TARGET),)
+ifneq ($(SKIPCHECKS),yes)
 ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
 $(error Speed optimised sources not valid: $(strip $(filter-out $(SRC),$(SPEED_OPTIMISED_SRC))))
 endif
