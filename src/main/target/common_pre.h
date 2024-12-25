@@ -483,3 +483,7 @@
 #undef USE_RUNAWAY_TAKEOFF
 
 #endif // USE_WING
+
+#if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
+#error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#endif
