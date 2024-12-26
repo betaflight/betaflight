@@ -121,10 +121,6 @@
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE   4
 #define FLASH_CONFIG_BUFFER_ALIGN_TYPE      uint32_t
 
-#define U_ID_0 0
-#define U_ID_1 1
-#define U_ID_2 2
-
 /* to be moved to a config file once target if working */
 #define LED0_PIN             PA6
 #define LED1_PIN             PA7

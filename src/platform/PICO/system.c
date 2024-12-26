@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include "hardware/timer.h"
 #include "hardware/clocks.h"
+#include "pico/unique_id.h"
 
 int main(int argc, char * argv[]);
 
@@ -85,9 +86,15 @@ void systemReset(void)
     //TODO: implement
 }
 
+uint32_t *systemUniqueId = NULL;
+
 void systemInit(void)
 {
     //TODO: implement
+
+    pico_unique_board_id_t id;
+    pico_get_unique_board_id(&id);
+    systemUniqueId = (uint32_t*)id.id;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
