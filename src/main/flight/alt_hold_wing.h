@@ -17,5 +17,19 @@
 
 #pragma once
 
-#include "flight/gps_rescue_multirotor.h"
-#include "flight/gps_rescue_wing.h"
+#ifdef USE_WING
+
+#include "pg/alt_hold.h"
+
+#ifdef USE_ALTITUDE_HOLD
+#include "common/time.h"
+
+#define ALTHOLD_TASK_RATE_HZ 100         // hz
+
+void altHoldInit(void);
+void updateAltHold(timeUs_t currentTimeUs);
+bool isAltHoldActive(void);
+
+#endif
+
+#endif // USE_WING

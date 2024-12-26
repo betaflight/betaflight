@@ -17,5 +17,25 @@
 
 #pragma once
 
-#include "flight/gps_rescue_multirotor.h"
-#include "flight/gps_rescue_wing.h"
+#ifdef USE_WING
+
+#include <stdbool.h>
+
+#include "common/axis.h"
+
+#include "pg/gps_rescue.h"
+
+#define TASK_GPS_RESCUE_RATE_HZ 100  // in sync with altitude task rate
+
+extern float gpsRescueAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+
+void gpsRescueInit(void);
+void gpsRescueUpdate(void);
+float gpsRescueGetYawRate(void);
+bool gpsRescueIsConfigured(void);
+bool gpsRescueIsAvailable(void);
+bool gpsRescueIsDisabled(void);
+bool gpsRescueDisableMag(void);
+float gpsRescueGetImuYawCogGain(void);
+
+#endif // USE_WING

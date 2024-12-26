@@ -570,7 +570,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
 #endif
-#ifdef USE_POSITION_HOLD
+#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         angleFeedforward = 0.0f; // otherwise the lag of the PT3 carries recent stick inputs into the hold
         if (isAutopilotInControl()) {
@@ -1127,7 +1127,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 || FLIGHT_MODE(ALT_HOLD_MODE) // todo - check if this is needed
 #endif
 #ifdef USE_POSITION_HOLD
-                || FLIGHT_MODE(POS_HOLD_MODE) 
+                || FLIGHT_MODE(POS_HOLD_MODE)
 #endif
                 ;
     levelMode_e levelMode;

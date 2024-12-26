@@ -17,5 +17,21 @@
 
 #pragma once
 
-#include "flight/gps_rescue_multirotor.h"
-#include "flight/gps_rescue_wing.h"
+#ifdef USE_WING
+
+// #include "pg/pos_hold.h"
+
+#ifdef USE_POSITION_HOLD
+#include "common/time.h"
+#include "io/gps.h"
+
+#define POSHOLD_TASK_RATE_HZ 100 // hz
+
+void posHoldInit(void);
+void updatePosHold(timeUs_t currentTimeUs);
+
+bool posHoldFailure(void);
+
+#endif
+
+#endif // USE_WING

@@ -15,7 +15,45 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "flight/gps_rescue_multirotor.h"
-#include "flight/gps_rescue_wing.h"
+#ifdef USE_WING
+
+#include "math.h"
+
+#ifdef USE_ALTITUDE_HOLD
+
+#include "build/debug.h"
+#include "common/maths.h"
+#include "config/config.h"
+
+#include "fc/rc.h"
+#include "fc/runtime_config.h"
+
+#include "flight/autopilot.h"
+#include "flight/failsafe.h"
+#include "flight/position.h"
+
+#include "rx/rx.h"
+#include "pg/autopilot.h"
+
+#include "alt_hold.h"
+
+void altHoldReset(void)
+{
+}
+
+void altHoldInit(void)
+{
+}
+
+void updateAltHold(timeUs_t currentTimeUs) {
+    UNUSED(currentTimeUs);
+}
+
+bool isAltHoldActive(void) {
+    return false;
+}
+
+#endif // USE_ALTITUDE_HOLD
+#endif // USE_WING

@@ -19,7 +19,34 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "pg/autopilot_multirotor.h"
-#include "pg/autopilot_wing.h"
+#ifndef USE_WING
+
+#include "flight/autopilot.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "autopilot.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(apConfig_t, apConfig, PG_AUTOPILOT, 2);
+
+PG_RESET_TEMPLATE(apConfig_t, apConfig,
+    .landing_altitude_m = 4,
+    .hover_throttle = 1275,
+    .throttle_min = 1100,
+    .throttle_max = 1700,
+    .altitude_P = 15,
+    .altitude_I = 15,
+    .altitude_D = 15,
+    .altitude_F = 15,
+    .position_P = 30,
+    .position_I = 30,
+    .position_D = 30,
+    .position_A = 30,
+    .position_cutoff = 80,
+    .max_angle = 50,
+);
+
+#endif // !USE_WING

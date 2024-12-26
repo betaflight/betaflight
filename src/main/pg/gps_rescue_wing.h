@@ -20,5 +20,17 @@
 
 #pragma once
 
-#include "pg/gps_rescue_multirotor.h"
-#include "pg/gps_rescue_wing.h"
+#ifdef USE_WING
+
+#include <stdint.h>
+
+#include "pg/pg.h"
+
+typedef struct gpsRescue_s {
+    uint8_t  allowArmingWithoutFix;
+    uint8_t  minSats;
+} gpsRescueConfig_t;
+
+PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
+
+#endif // USE_WING

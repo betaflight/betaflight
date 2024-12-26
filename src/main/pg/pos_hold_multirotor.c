@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifndef USE_WING
+
 #ifdef USE_POSITION_HOLD
 
 #include "flight/pos_hold.h"
@@ -37,3 +39,5 @@ PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
     .pos_hold_deadband = 5,          // deadband in percent of stick travel for roll and pitch. Must be non-zero, and exceeded, for target location to be changed with sticks
 );
 #endif
+
+#endif // !USE_WING

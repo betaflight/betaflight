@@ -19,21 +19,17 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
+#pragma once
 
-#ifdef USE_ALTITUDE_HOLD
+#ifdef USE_WING
 
-#include "flight/alt_hold.h"
+#include <stdint.h>
 
 #include "pg/pg.h"
-#include "pg/pg_ids.h"
 
-#include "alt_hold.h"
+typedef struct apConfig_s {
+} apConfig_t;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 4);
+PG_DECLARE(apConfig_t, apConfig);
 
-PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
-    .alt_hold_adjust_rate = 50, // max vertical velocity change at full/zero throttle. 50 means 5 m/s
-    .alt_hold_deadband = 20, // throttle deadband in percent of stick travel
-);
-#endif
+#endif // USE_WING
