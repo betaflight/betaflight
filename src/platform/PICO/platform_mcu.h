@@ -41,6 +41,7 @@
 
 #include "RP2350.h"
 #include "pico/stdlib.h"
+#include "hardware/spi.h"
 
 #if defined(RP2350A) || defined(RP2350B)
 
@@ -48,7 +49,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define I2C_TypeDef          i2c0_hw
 //#define I2C_HandleTypeDef
-#define GPIO_TypeDef         io_bank0_hw
+#define GPIO_TypeDef         io_bank0_hw_t
 //#define GPIO_InitTypeDef
 #define TIM_TypeDef          void*
 //#define TIM_OCInitTypeDef
@@ -74,7 +75,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
-#define STATIC_DMA_DATA_AUTO        static
+#define STATIC_DMA_DATA_AUTO            static
 
 #define DEFAULT_CPU_OVERCLOCK           0
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
