@@ -116,8 +116,10 @@
 #undef USE_FLASH_PY25Q128HA
 #undef USE_FLASH_W25Q64FV
 
-#define FLASH_PAGE_SIZE 0x1000
-#define CONFIG_IN_RAM
+#define FLASH_PAGE_SIZE                     0x4000
+#define CONFIG_IN_FLASH
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE   4
+#define FLASH_CONFIG_BUFFER_ALIGN_TYPE      uint32_t
 
 #define U_ID_0 0
 #define U_ID_1 1
