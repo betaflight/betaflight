@@ -93,13 +93,14 @@ void systemInit(void)
 // Return system uptime in milliseconds (rollover in 49 days)
 uint32_t millis(void)
 {
-    return time_us_32();
+    //TODO: correction required?
+    return time_us_32() / 1000;
 }
 
 // Return system uptime in micros
 uint32_t micros(void)
 {
-    return time_us_32() / 1000;
+    return time_us_32();
 }
 
 uint32_t microsISR(void)
@@ -115,8 +116,9 @@ void delayMicroseconds(uint32_t us)
 
 void delay(uint32_t ms)
 {
-    while (ms--)
+    while (ms--) {
         delayMicroseconds(1000);
+    }
 }
 
 uint32_t getCycleCounter(void)
