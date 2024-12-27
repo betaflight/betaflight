@@ -28,6 +28,7 @@
 #include "pg/pg.h"
 
 typedef struct apConfig_s {
+    uint8_t dummy;
 } apConfig_t;
 
 PG_DECLARE(apConfig_t, apConfig);

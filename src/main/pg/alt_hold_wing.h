@@ -28,6 +28,7 @@
 #include "pg/pg.h"
 
 typedef struct altHoldConfig_s {
+    uint8_t dummy;
 } altHoldConfig_t;
 
 PG_DECLARE(altHoldConfig_t, altHoldConfig);
