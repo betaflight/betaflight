@@ -1311,6 +1311,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
         printSerial(DUMP_MASTER, serialConfig(), NULL, NULL);
         return;
     }
+
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
 
@@ -1340,6 +1341,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
         return;
     }
 
+    portConfig.identifier = identifier;
     validArgumentCount++;
 
     tok = strsep(&ptr, " ");
