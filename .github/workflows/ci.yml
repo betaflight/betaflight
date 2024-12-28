@@ -15,7 +15,7 @@ on:
 jobs:
   setup:
     name: Setup
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
     steps:
@@ -43,7 +43,7 @@ jobs:
   build:
     name: Build
     needs: setup
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
@@ -79,7 +79,7 @@ jobs:
 
   test:
     name: Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -96,7 +96,7 @@ jobs:
     name: Complete
     needs: [build, test]
     if: ${{ always() }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check build matrix result
         if: ${{ needs.build.result != 'success' }}
