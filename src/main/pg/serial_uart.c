@@ -46,6 +46,9 @@ typedef struct uartDmaopt_s {
 } uartDmaopt_t;
 
 static const uartDmaopt_t uartDmaopt[] = {
+#ifdef USE_UART0
+    { SERIAL_PORT_UART0, UART0_TX_DMA_OPT, UART0_RX_DMA_OPT },
+#endif
 #ifdef USE_UART1
     { SERIAL_PORT_USART1, UART1_TX_DMA_OPT, UART1_RX_DMA_OPT },
 #endif

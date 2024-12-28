@@ -60,9 +60,8 @@ serialType_e serialType(serialPortIdentifier_e identifier)
     }
 #endif
 #ifdef USE_SOFTSERIAL
-    if (identifier >= SERIAL_PORT_SOFTSERIAL_FIRST
-        && identifier < SERIAL_PORT_SOFTSERIAL_FIRST + SERIAL_SOFTSERIAL_MAX) {
-        // sotserials always start from first index, without holes
+    if (identifier >= SERIAL_PORT_SOFTSERIAL_FIRST && identifier < SERIAL_PORT_SOFTSERIAL_FIRST + SERIAL_SOFTSERIAL_MAX) {
+        // sotserials always start from 1, without holes
         return SERIALTYPE_SOFTSERIAL;
     }
 #endif

@@ -3889,7 +3889,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     return MSP_RESULT_ERROR;
                 }
 
-                portConfig->identifier = identifier;
                 portConfig->functionMask = sbufReadU16(src);
                 portConfig->msp_baudrateIndex = sbufReadU8(src);
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
@@ -3917,7 +3916,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 return MSP_RESULT_ERROR;
             }
 
-            portConfig->identifier = identifier;
             portConfig->functionMask = sbufReadU32(src);
             portConfig->msp_baudrateIndex = sbufReadU8(src);
             portConfig->gps_baudrateIndex = sbufReadU8(src);

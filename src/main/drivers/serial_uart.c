@@ -71,6 +71,10 @@
     UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s \
 /**/
 
+#ifdef USE_UART0
+UART_BUFFERS(0);
+#endif
+
 #ifdef USE_UART1
 UART_BUFFERS(1);
 #endif
@@ -136,6 +140,9 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     // table is for UART only to save space (LPUART is handled separately)
 #define _R(id, dev) [id] = (dev) + 1
     static const uartDeviceIdx_e uartMap[] = {
+#ifdef USE_UART0
+        _R(SERIAL_PORT_UART0, UARTDEV_0),
+#endif
 #ifdef USE_UART1
         _R(SERIAL_PORT_USART1, UARTDEV_1),
 #endif

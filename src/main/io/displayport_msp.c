@@ -220,7 +220,8 @@ displayPort_t *displayPortMspInit(void)
     return &mspDisplayPort;
 }
 
-void displayPortMspSetSerial(serialPortIdentifier_e serialPort) {
+void displayPortMspSetSerial(serialPortIdentifier_e serialPort)
+{
     displayPortSerial = serialPort;
 }
 
