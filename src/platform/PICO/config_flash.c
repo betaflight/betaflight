@@ -32,13 +32,13 @@
 
 static uint32_t interrupts;
 
-void configFlashUnlock(void)
+void configUnlock(void)
 {
     // TODO: think this one through
     interrupts = save_and_disable_interrupts();
 }
 
-void configFlashLock(void)
+void configLock(void)
 {
     restore_interrupts(interrupts);
 }
@@ -48,24 +48,19 @@ void configFlashClearFlag(void)
     // NOOP
 }
 
-configStreamerResult_e configFlashWriteWord(config_streamer_t *c, config_streamer_buffer_align_type_t *buffer)
+configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_align_type_t value)
 {
-    if (c->address % FLASH_PAGE_SIZE == 0) {
+    if (address == __config_start) {
         // Erase the flash sector before writing
-        const int status = flash_range_erase(c->address, FLASH_PAGE_SIZE);
-        if (status != 0) {
-            return CONFIG_RESULT_FAILURE;
-        }
+        flash_range_erase(address, FLASH_PAGE_SIZE);
     }
 
     STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
 
-    // TODO: stream the entire buffer to flash here.
+    // TODO: refactor to stream the entire buffer to flash.
     // Write data to flash
-    const int status = flash_range_program(c->address, (uint32_t)*buffer, sizeof(uint32_t));
-    if (status != 0) {
-        return CONFIG_RESULT_ADDRESS_INVALID;
-    }
+    flash_range_program(address, (uint32_t)&value, sizeof(uint32_t));
+    return CONFIG_RESULT_SUCCESS;
 }
 
 #endif // CONFIG_IN_FLASH
