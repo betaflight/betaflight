@@ -144,7 +144,7 @@ static void altHoldUpdate(void)
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {
-    UNUSED(currentTimeUs); 
+    UNUSED(currentTimeUs);
 
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
     altHoldProcessTransitions();

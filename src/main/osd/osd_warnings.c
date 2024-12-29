@@ -78,10 +78,10 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     warningText[0] = '\0';
 
 #ifdef USE_GPS_RESCUE
-    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_FAILING) &&
-      ARMING_FLAG(ARMED) &&
-      FLIGHT_MODE(GPS_RESCUE_MODE) &&
-      !gpsRescueIsOK()) {
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_FAILING)
+      && ARMING_FLAG(ARMED)
+      && FLIGHT_MODE(GPS_RESCUE_MODE)
+      && !gpsRescueIsOK()) {
         tfp_sprintf(warningText, "RESCUE FAIL");
         // more important than RXLOSS which otherwise takes precendence
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
@@ -236,10 +236,10 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
 #ifdef USE_GPS_RESCUE
-    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&
-      ARMING_FLAG(ARMED) &&
-      gpsRescueIsConfigured() &&
-      !gpsRescueIsAvailable()) {
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
+      && ARMING_FLAG(ARMED)
+      && gpsRescueIsConfigured()
+      && !gpsRescueIsAvailable()) {
         tfp_sprintf(warningText, "RESCUE N/A");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
