@@ -262,9 +262,15 @@ protected:
     controlRateConfig_t controlRateConfig = {
         .thrMid8 = 0,
         .thrExpo8 = 0,
+        .rates_type = RATES_TYPE_BETAFLIGHT,
         .rcRates = {[FD_ROLL] = 90, [FD_PITCH] = 90},
         .rcExpo = {[FD_ROLL] = 0, [FD_PITCH] = 0, [FD_YAW] = 0},
         .rates = {0, 0, 0},
+        .throttle_limit_type = THROTTLE_LIMIT_TYPE_OFF,
+        .throttle_limit_percent = 100,
+        .rate_limit = {0, 0, 0},
+        .profileName = "default",
+        .quickRatesRcExpo = 0,
     };
 
     channelRange_t fullRange = {
@@ -361,9 +367,15 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     controlRateConfig_t controlRateConfig = {
         .thrMid8 = 0,
         .thrExpo8 = 0,
+        .rates_type = RATES_TYPE_BETAFLIGHT,
         .rcRates = {[FD_ROLL] = 90, [FD_PITCH] = 90},
         .rcExpo = {[FD_ROLL] = 0, [FD_PITCH] = 0, [FD_YAW] = 0},
-        .rates = {0,0,0},
+        .rates = {0, 0, 0},
+        .throttle_limit_type = THROTTLE_LIMIT_TYPE_OFF,
+        .throttle_limit_percent = 100,
+        .rate_limit = {0, 0, 0},
+        .profileName = "default",
+        .quickRatesRcExpo = 0,
     };
 
     // and

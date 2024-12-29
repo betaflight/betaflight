@@ -41,7 +41,7 @@ extern "C" {
     uint8_t batteryCellCount = 3;
     float rcCommand[4] = {0, 0, 0, 0};
     int16_t telemTemperature1 = 0;
-    baro_t baro = { .temperature = 50 };
+    // baro_t baro = { .temperature = 50 };
     telemetryConfig_t telemetryConfig_System;
     timeUs_t rxFrameTimeUs(void) { return 0; }
 }
@@ -88,6 +88,10 @@ static serialPort_t serialTestInstance;
 static serialPortConfig_t serialTestInstanceConfig = {
     .functionMask = 0,
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
+    .msp_baudrateIndex = 0,
+    .gps_baudrateIndex = 0,
+    .blackbox_baudrateIndex = 0,
+    .telemetry_baudrateIndex = 0,
 };
 
 static serialReceiveCallbackPtr stub_serialRxCallback;
