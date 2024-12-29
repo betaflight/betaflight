@@ -112,10 +112,6 @@ extern "C" {
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
 
-    acc_t acc;
-    attitudeEulerAngles_t attitude;
-    gpsSolutionData_t gpsSol;
-
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 0.0f; }

@@ -1144,6 +1144,7 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
 
+    bool isAltitudeAvailable(void)  { return true; }
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
 
