@@ -30,23 +30,11 @@ extern "C" {
 #include "telemetry/telemetry.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
-#include "sensors/barometer.h"
 #include "sensors/battery.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
-
-extern "C" {
-    uint8_t batteryCellCount = 3;
-    float rcCommand[4] = {0, 0, 0, 0};
-    int16_t telemTemperature1 = 0;
-    baro_t baro;
-    telemetryConfig_t telemetryConfig_System;
-    timeUs_t rxFrameTimeUs(void) { return 0; }
-}
-
 
 bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
 {
