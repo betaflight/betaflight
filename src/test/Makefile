@@ -517,12 +517,9 @@ GTEST_DIR = ../../lib/test/gtest
 
 CC  := clang-18
 CXX := clang++-18
-ifeq ($(shell which $(CC) 2>/dev/null),)
+ifeq ($(shell which $(CC) 2>/dev/null && which $(CXX) 2>/dev/null),)
 $(info Falling back to 'clang')
 CC  := clang
-endif
-ifeq ($(shell which $(CXX) 2>/dev/null),)
-$(info Falling back to 'clang++')
 CXX := clang++
 endif
 
