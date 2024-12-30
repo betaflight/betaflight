@@ -15,7 +15,26 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "pg/gps_rescue_multirotor.h"
-#include "pg/gps_rescue_wing.h"
+#ifdef USE_WING
+
+#ifdef USE_GPS_RESCUE
+
+#include "flight/gps_rescue.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "gps_rescue.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 7);
+
+PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
+    .allowArmingWithoutFix = false,
+    .minSats = 8,
+);
+
+#endif // USE_GPS_RESCUE
+
+#endif // USE_WING

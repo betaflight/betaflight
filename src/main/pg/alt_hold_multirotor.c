@@ -19,7 +19,25 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "pg/autopilot_multirotor.h"
-#include "pg/autopilot_wing.h"
+#ifndef USE_WING
+
+#ifdef USE_ALTITUDE_HOLD
+
+#include "flight/alt_hold.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "alt_hold.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 4);
+
+PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
+    .alt_hold_adjust_rate = 50, // max vertical velocity change at full/zero throttle. 50 means 5 m/s
+    .alt_hold_deadband = 20, // throttle deadband in percent of stick travel
+);
+#endif
+
+#endif // USE_WING

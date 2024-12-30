@@ -21,5 +21,16 @@
 
 #pragma once
 
-#include "pg/autopilot_multirotor.h"
-#include "pg/autopilot_wing.h"
+#ifdef USE_WING
+
+#include <stdint.h>
+
+#include "pg/pg.h"
+
+typedef struct altHoldConfig_s {
+    uint8_t dummy;
+} altHoldConfig_t;
+
+PG_DECLARE(altHoldConfig_t, altHoldConfig);
+
+#endif // USE_WING

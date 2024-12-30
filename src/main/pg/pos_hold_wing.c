@@ -19,7 +19,23 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "pg/autopilot_multirotor.h"
-#include "pg/autopilot_wing.h"
+#ifdef USE_WING
+
+#ifdef USE_POSITION_HOLD
+
+#include "flight/pos_hold.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "pos_hold.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
+
+PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
+);
+#endif
+
+#endif // USE_WING

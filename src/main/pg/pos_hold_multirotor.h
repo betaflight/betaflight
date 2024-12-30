@@ -19,21 +19,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
+#pragma once
 
-#ifdef USE_POSITION_HOLD
+#ifndef USE_WING
 
-#include "flight/pos_hold.h"
+#include <stdint.h>
 
 #include "pg/pg.h"
-#include "pg/pg_ids.h"
 
-#include "pos_hold.h"
+typedef struct posHoldConfig_s {
+    bool pos_hold_without_mag;
+    uint8_t pos_hold_deadband;
+} posHoldConfig_t;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
+PG_DECLARE(posHoldConfig_t, posHoldConfig);
 
-PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
-    .pos_hold_without_mag = false,   // position hold within this percentage stick deflection
-    .pos_hold_deadband = 5,          // deadband in percent of stick travel for roll and pitch. Must be non-zero, and exceeded, for target location to be changed with sticks
-);
-#endif
+#endif // !USE_WING
