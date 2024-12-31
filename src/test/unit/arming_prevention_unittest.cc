@@ -66,7 +66,7 @@ extern "C" {
     #include "telemetry/telemetry.h"
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
-    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+    PG_REGISTER(apConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
     PG_REGISTER(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);

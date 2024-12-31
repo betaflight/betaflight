@@ -95,7 +95,7 @@ void updatePosHold(timeUs_t currentTimeUs) {
         posHold.areSensorsOk = sensorsOk();
         if (posHold.areSensorsOk) {
             posHoldCheckSticks();
-            posHold.isControlOk = positionControl(); // permanent stop on sanity check failure
+            posHold.isControlOk = positionControl(); // false only on sanity check failure
         }
     }
 }

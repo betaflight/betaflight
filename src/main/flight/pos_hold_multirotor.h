@@ -18,10 +18,8 @@
 #pragma once
 
 #ifndef USE_WING
-
-// #include "pg/pos_hold.h"
-
 #ifdef USE_POSITION_HOLD
+
 #include "common/time.h"
 #include "io/gps.h"
 
@@ -33,5 +31,4 @@ void updatePosHold(timeUs_t currentTimeUs);
 bool posHoldFailure(void);
 
 #endif // USE_POSITION_HOLD
-
 #endif // !USE_WING

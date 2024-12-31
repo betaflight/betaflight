@@ -80,10 +80,10 @@ bool gpsRescueIsConfigured(void)
 
 bool gpsRescueIsAvailable(void)
 {
-    return false;
+    return true;
 }
 
-bool gpsRescueIsDisabled(void)
+bool gpsRescueIsOK(void)
 {
     return true;
 }
