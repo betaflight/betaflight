@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -31,63 +32,63 @@
 #error "Unsupported target MCU type for PICO"
 #endif
 
-// DEFIO_GPIOID__ --> there is only one gpioid
-#define DEFIO_GPIOID__ 0
+#undef DEFIO_TAG_MAKE
+#define DEFIO_TAG_MAKE(pin) ((ioTag_t)(((1) << DEFIO_PORT_BITSHIFT) | (pin)))
 
 // DEFIO_TAG__P<port><pin> will expand to TAG if defined for target, error is triggered otherwise
 // DEFIO_TAG_E__P<port><pin> will expand to TAG if defined, to NONE otherwise (usefull for tables that are CPU-specific)
 // DEFIO_REC__P<port><pin> will expand to ioRec* (using DEFIO_REC_INDEX(idx))
 
-#define DEFIO_TAG__P0    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 0)
-#define DEFIO_TAG__P1    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 1)
-#define DEFIO_TAG__P2    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 2)
-#define DEFIO_TAG__P3    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 3)
-#define DEFIO_TAG__P4    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 4)
-#define DEFIO_TAG__P5    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 5)
-#define DEFIO_TAG__P6    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 6)
-#define DEFIO_TAG__P7    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 7)
-#define DEFIO_TAG__P8    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 8)
-#define DEFIO_TAG__P9    DEFIO_TAG_MAKE(DEFIO_GPIOID__, 9)
-#define DEFIO_TAG__P10   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 10)
-#define DEFIO_TAG__P11   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 11)
-#define DEFIO_TAG__P12   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 12)
-#define DEFIO_TAG__P13   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 13)
-#define DEFIO_TAG__P14   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 14)
-#define DEFIO_TAG__P15   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 15)
-#define DEFIO_TAG__P16   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 16)
-#define DEFIO_TAG__P17   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 17)
-#define DEFIO_TAG__P18   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 18)
-#define DEFIO_TAG__P19   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 19)
-#define DEFIO_TAG__P20   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 20)
-#define DEFIO_TAG__P21   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 21)
-#define DEFIO_TAG__P22   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 22)
-#define DEFIO_TAG__P23   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 23)
-#define DEFIO_TAG__P24   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 24)
-#define DEFIO_TAG__P25   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 25)
-#define DEFIO_TAG__P26   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 26)
-#define DEFIO_TAG__P27   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 27)
-#define DEFIO_TAG__P28   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 28)
-#define DEFIO_TAG__P29   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 29)
+#define DEFIO_TAG__P0    DEFIO_TAG_MAKE(0)
+#define DEFIO_TAG__P1    DEFIO_TAG_MAKE(1)
+#define DEFIO_TAG__P2    DEFIO_TAG_MAKE(2)
+#define DEFIO_TAG__P3    DEFIO_TAG_MAKE(3)
+#define DEFIO_TAG__P4    DEFIO_TAG_MAKE(4)
+#define DEFIO_TAG__P5    DEFIO_TAG_MAKE(5)
+#define DEFIO_TAG__P6    DEFIO_TAG_MAKE(6)
+#define DEFIO_TAG__P7    DEFIO_TAG_MAKE(7)
+#define DEFIO_TAG__P8    DEFIO_TAG_MAKE(8)
+#define DEFIO_TAG__P9    DEFIO_TAG_MAKE(9)
+#define DEFIO_TAG__P10   DEFIO_TAG_MAKE(10)
+#define DEFIO_TAG__P11   DEFIO_TAG_MAKE(11)
+#define DEFIO_TAG__P12   DEFIO_TAG_MAKE(12)
+#define DEFIO_TAG__P13   DEFIO_TAG_MAKE(13)
+#define DEFIO_TAG__P14   DEFIO_TAG_MAKE(14)
+#define DEFIO_TAG__P15   DEFIO_TAG_MAKE(15)
+#define DEFIO_TAG__P16   DEFIO_TAG_MAKE(16)
+#define DEFIO_TAG__P17   DEFIO_TAG_MAKE(17)
+#define DEFIO_TAG__P18   DEFIO_TAG_MAKE(18)
+#define DEFIO_TAG__P19   DEFIO_TAG_MAKE(19)
+#define DEFIO_TAG__P20   DEFIO_TAG_MAKE(20)
+#define DEFIO_TAG__P21   DEFIO_TAG_MAKE(21)
+#define DEFIO_TAG__P22   DEFIO_TAG_MAKE(22)
+#define DEFIO_TAG__P23   DEFIO_TAG_MAKE(23)
+#define DEFIO_TAG__P24   DEFIO_TAG_MAKE(24)
+#define DEFIO_TAG__P25   DEFIO_TAG_MAKE(25)
+#define DEFIO_TAG__P26   DEFIO_TAG_MAKE(26)
+#define DEFIO_TAG__P27   DEFIO_TAG_MAKE(27)
+#define DEFIO_TAG__P28   DEFIO_TAG_MAKE(28)
+#define DEFIO_TAG__P29   DEFIO_TAG_MAKE(29)
 
 #if defined(RP2350B)
-#define DEFIO_TAG__P30   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 30)
-#define DEFIO_TAG__P31   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 31)
-#define DEFIO_TAG__P32   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 32)
-#define DEFIO_TAG__P33   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 33)
-#define DEFIO_TAG__P34   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 34)
-#define DEFIO_TAG__P35   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 35)
-#define DEFIO_TAG__P36   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 36)
-#define DEFIO_TAG__P37   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 37)
-#define DEFIO_TAG__P38   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 38)
-#define DEFIO_TAG__P39   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 39)
-#define DEFIO_TAG__P40   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 40)
-#define DEFIO_TAG__P41   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 41)
-#define DEFIO_TAG__P42   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 42)
-#define DEFIO_TAG__P43   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 43)
-#define DEFIO_TAG__P44   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 44)
-#define DEFIO_TAG__P45   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 45)
-#define DEFIO_TAG__P46   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 46)
-#define DEFIO_TAG__P47   DEFIO_TAG_MAKE(DEFIO_GPIOID__, 47)
+#define DEFIO_TAG__P30   DEFIO_TAG_MAKE(30)
+#define DEFIO_TAG__P31   DEFIO_TAG_MAKE(31)
+#define DEFIO_TAG__P32   DEFIO_TAG_MAKE(32)
+#define DEFIO_TAG__P33   DEFIO_TAG_MAKE(33)
+#define DEFIO_TAG__P34   DEFIO_TAG_MAKE(34)
+#define DEFIO_TAG__P35   DEFIO_TAG_MAKE(35)
+#define DEFIO_TAG__P36   DEFIO_TAG_MAKE(36)
+#define DEFIO_TAG__P37   DEFIO_TAG_MAKE(37)
+#define DEFIO_TAG__P38   DEFIO_TAG_MAKE(38)
+#define DEFIO_TAG__P39   DEFIO_TAG_MAKE(39)
+#define DEFIO_TAG__P40   DEFIO_TAG_MAKE(40)
+#define DEFIO_TAG__P41   DEFIO_TAG_MAKE(41)
+#define DEFIO_TAG__P42   DEFIO_TAG_MAKE(42)
+#define DEFIO_TAG__P43   DEFIO_TAG_MAKE(43)
+#define DEFIO_TAG__P44   DEFIO_TAG_MAKE(44)
+#define DEFIO_TAG__P45   DEFIO_TAG_MAKE(45)
+#define DEFIO_TAG__P46   DEFIO_TAG_MAKE(46)
+#define DEFIO_TAG__P47   DEFIO_TAG_MAKE(47)
 #endif
 
 #define DEFIO_TAG_E__P0  DEFIO_TAG__P0
