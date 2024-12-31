@@ -1469,9 +1469,6 @@ case MSP_NAME:
 #ifdef USE_MAG
     case MSP_COMPASS_CONFIG:
         sbufWriteU16(dst, imuConfig()->mag_declination);
-        sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
-        sbufWriteU16(dst, compassConfig()->mag_customAlignment.pitch);
-        sbufWriteU16(dst, compassConfig()->mag_customAlignment.yaw);
         break;
 #endif
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
@@ -1852,7 +1849,16 @@ case MSP_NAME:
         sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, ALIGN_DEFAULT);
 #endif
-
+        // Added in MSP API 1.47
+#ifdef USE_MAG
+        sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
+        sbufWriteU16(dst, compassConfig()->mag_customAlignment.pitch);
+        sbufWriteU16(dst, compassConfig()->mag_customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
         break;
     }
     case MSP_ADVANCED_CONFIG:
@@ -2873,9 +2879,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
         imuConfigMutable()->mag_declination = sbufReadU16(src);
-        compassConfigMutable()->mag_customAlignment.roll = sbufReadU16(src);
-        compassConfigMutable()->mag_customAlignment.pitch = sbufReadU16(src);
-        compassConfigMutable()->mag_customAlignment.yaw = sbufReadU16(src);
         break;
 #endif
 
@@ -3018,8 +3021,18 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
             gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
 #endif
-
         }
+        // Added in API 1.47
+        if (sbufBytesRemaining(src) >= 6) {
+#ifdef USE_MAG
+            compassConfigMutable()->mag_customAlignment.roll = sbufReadU16(src);
+            compassConfigMutable()->mag_customAlignment.pitch = sbufReadU16(src);
+            compassConfigMutable()->mag_customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
         break;
     }
 
