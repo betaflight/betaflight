@@ -44,15 +44,18 @@ static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
+
 bool tcpIsStart(void)
 {
     return tcpStart;
 }
+
 static void onData(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     tcpDataIn(s, (uint8_t*)e->data, e->size);
 }
+
 static void onClose(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
@@ -63,6 +66,7 @@ static void onClose(dyad_Event *e)
         s->connected = false;
     }
 }
+
 static void onAccept(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
@@ -81,6 +85,7 @@ static void onAccept(dyad_Event *e)
     dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, e->udata);
     dyad_addListener(e->remote, DYAD_EVENT_CLOSE, onClose, e->udata);
 }
+
 static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 {
     if (tcpPortInitialized[id]) {
@@ -93,6 +98,7 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
         // TODO: clean up & re-init
         return NULL;
     }
+
     if (pthread_mutex_init(&s->rxLock, NULL) != 0) {
         fprintf(stderr, "RX mutex init failed - %d\n", errno);
         // TODO: clean up & re-init
@@ -118,17 +124,19 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
     return s;
 }
 
-serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+serialPort_t *serTcpOpen(serialPortIdentifier_e identifier, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     tcpPort_t *s = NULL;
 
-#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
-    if (id >= 0 && id < SERIAL_PORT_COUNT) {
-    s = tcpReconfigure(&tcpSerialPorts[id], id);
+    int id = findSerialPortIndexByIdentifier(identifier);
+
+    if (id >= 0 && id < (int)ARRAYLEN(tcpSerialPorts)) {
+        s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
-#endif
-    if (!s)
+
+    if (!s) {
         return NULL;
+    }
 
     s->port.vTable = &tcpVTable;
 

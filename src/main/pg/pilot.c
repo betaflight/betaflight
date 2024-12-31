@@ -19,21 +19,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
+#include <string.h>
+
 #include "platform.h"
-
-#ifdef USE_POSITION_HOLD
-
-#include "flight/pos_hold.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "pos_hold.h"
+#include "pilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 2);
 
-PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
-    .pos_hold_without_mag = false,   // position hold within this percentage stick deflection
-    .pos_hold_deadband = 5,          // deadband in percent of stick travel for roll and pitch. Must be non-zero, and exceeded, for target location to be changed with sticks
+PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
+    .craftName = { 0 },
+    .pilotName = { 0 },
+    .message = { {0} },
 );
-#endif

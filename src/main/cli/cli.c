@@ -139,6 +139,7 @@ bool cliMode = false;
 #include "pg/max7456.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
+#include "pg/pilot.h"
 #include "pg/pinio.h"
 #include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
@@ -209,6 +210,7 @@ static bool signatureUpdated = false;
 #endif // USE_BOARD_INFO
 
 static const char* const emptyName = "-";
+static const char* const invalidName = "INVALID";
 
 #define MAX_CHANGESET_ID_LENGTH 8
 #define MAX_DATE_LENGTH 20
@@ -1274,7 +1276,7 @@ static void cliAux(const char *cmdName, char *cmdline)
 
 static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig, const serialConfig_t *serialConfigDefault, const char *headingStr)
 {
-    const char *format = "serial %d %d %ld %ld %ld %ld";
+    const char *format = "serial %s %d %ld %ld %ld %ld";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (unsigned i = 0; i < ARRAYLEN(serialConfig->portConfigs); i++) {
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
@@ -1285,7 +1287,7 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
             equalsDefault = !memcmp(&serialConfig->portConfigs[i], &serialConfigDefault->portConfigs[i], sizeof(serialConfig->portConfigs[i]));
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
-                serialConfigDefault->portConfigs[i].identifier,
+                serialName(serialConfigDefault->portConfigs[i].identifier, invalidName),
                 serialConfigDefault->portConfigs[i].functionMask,
                 baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
                 baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
@@ -1294,7 +1296,7 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
             );
         }
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
-            serialConfig->portConfigs[i].identifier,
+            serialName(serialConfig->portConfigs[i].identifier, invalidName),
             serialConfig->portConfigs[i].functionMask,
             baudRates[serialConfig->portConfigs[i].msp_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
@@ -1306,40 +1308,58 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
 
 static void cliSerial(const char *cmdName, char *cmdline)
 {
-    const char *format = "serial %d %d %ld %ld %ld %ld";
+    const char *format = "serial %s %d %ld %ld %ld %ld";
     if (isEmpty(cmdline)) {
         printSerial(DUMP_MASTER, serialConfig(), NULL, NULL);
         return;
     }
+
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
 
     uint8_t validArgumentCount = 0;
 
-    const char *ptr = cmdline;
-
-    int val = atoi(ptr++);
-    serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(val);
-
-    if (currentConfig) {
-        portConfig.identifier = val;
-        validArgumentCount++;
+    char *ptr = cmdline;
+    char *tok = strsep(&ptr, " ");
+    serialPortIdentifier_e identifier = findSerialPortByName(tok, strcasecmp);
+    if (identifier == SERIAL_PORT_NONE) {
+        char *eptr;
+        identifier = strtoul(tok, &eptr, 10);
+        if (*eptr) {
+            // parsing ended before end of token indicating an invalid identifier
+            identifier = SERIAL_PORT_NONE;
+        } else {
+            // correction for legacy configuration where UART1 == 0
+            if (identifier >= SERIAL_PORT_LEGACY_START_IDENTIFIER && identifier < SERIAL_PORT_START_IDENTIFIER) {
+                identifier += SERIAL_PORT_UART1;
+            }
+       }
     }
 
-    ptr = nextArg(ptr);
-    if (ptr) {
-        val = strtoul(ptr, NULL, 10);
+    serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(identifier);
+
+    if (!currentConfig) {
+        cliShowParseError(cmdName);
+        return;
+    }
+
+    portConfig.identifier = identifier;
+    validArgumentCount++;
+
+    tok = strsep(&ptr, " ");
+    if (tok) {
+        int val = strtoul(tok, NULL, 10);
         portConfig.functionMask = val;
         validArgumentCount++;
     }
 
     for (int i = 0; i < 4; i ++) {
-        ptr = nextArg(ptr);
-        if (!ptr) {
+        tok = strsep(&ptr, " ");
+        if (!tok) {
             break;
         }
 
-        val = atoi(ptr);
+        int val = atoi(tok);
 
         uint8_t baudRateIndex = lookupBaudRateIndex(val);
         if (baudRates[baudRateIndex] != (uint32_t) val) {
@@ -1384,14 +1404,13 @@ static void cliSerial(const char *cmdName, char *cmdline)
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
 
     cliDumpPrintLinef(0, false, format,
-        portConfig.identifier,
+        serialName(portConfig.identifier, invalidName),
         portConfig.functionMask,
         baudRates[portConfig.msp_baudrateIndex],
         baudRates[portConfig.gps_baudrateIndex],
         baudRates[portConfig.telemetry_baudrateIndex],
         baudRates[portConfig.blackbox_baudrateIndex]
         );
-
 }
 
 #if defined(USE_SERIAL_PASSTHROUGH)

@@ -124,6 +124,7 @@
 #include "pg/gps_rescue.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
+#include "pg/pilot.h"
 #include "pg/pos_hold.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -1158,12 +1159,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         break;
 
 case MSP_NAME:
-        {
-            const int nameLen = strlen(pilotConfig()->craftName);
-            for (int i = 0; i < nameLen; i++) {
-                sbufWriteU8(dst, pilotConfig()->craftName[i]);
-            }
-        }
+        sbufWriteString(dst, pilotConfig()->craftName);
         break;
 
 #ifdef USE_SERVOS
@@ -1537,6 +1533,7 @@ case MSP_NAME:
         break;
 
 #ifdef USE_GPS_RESCUE
+#ifndef USE_WING
     case MSP_GPS_RESCUE:
         sbufWriteU16(dst, gpsRescueConfig()->maxRescueAngle);
         sbufWriteU16(dst, gpsRescueConfig()->returnAltitudeM);
@@ -1569,6 +1566,7 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsRescueConfig()->velD);
         sbufWriteU16(dst, gpsRescueConfig()->yawP);
         break;
+#endif // !USE_WING
 #endif
 #endif
 
@@ -1806,7 +1804,7 @@ case MSP_NAME:
     case MSP_RC_DEADBAND:
         sbufWriteU8(dst, rcControlsConfig()->deadband);
         sbufWriteU8(dst, rcControlsConfig()->yaw_deadband);
-#ifdef USE_POSITION_HOLD
+#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
         sbufWriteU8(dst, posHoldConfig()->pos_hold_deadband);
 #else
         sbufWriteU8(dst, 0);
@@ -2610,9 +2608,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             //  type byte, then length byte followed by the actual characters
             sbufWriteU8(dst, textType);
             sbufWriteU8(dst, textLength);
-            for (unsigned int i = 0; i < textLength; i++) {
-                sbufWriteU8(dst, textVar[i]);
-            }
+            sbufWriteData(dst, textVar, textLength);
         }
         break;
 #ifdef USE_LED_STRIP
@@ -2885,6 +2881,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
 #ifdef USE_GPS
 #ifdef USE_GPS_RESCUE
+#ifndef USE_WING
     case MSP_SET_GPS_RESCUE:
         gpsRescueConfigMutable()->maxRescueAngle = sbufReadU16(src);
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16(src);
@@ -2922,6 +2919,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->velD = sbufReadU16(src);
         gpsRescueConfigMutable()->yawP = sbufReadU16(src);
         break;
+#endif // !USE_WING
 #endif
 #endif
 
@@ -2977,7 +2975,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_RC_DEADBAND:
         rcControlsConfigMutable()->deadband = sbufReadU8(src);
         rcControlsConfigMutable()->yaw_deadband = sbufReadU8(src);
-#ifdef USE_POSITION_HOLD
+#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
         posHoldConfigMutable()->pos_hold_deadband = sbufReadU8(src);
 #else
         sbufReadU8(src);
@@ -3895,7 +3893,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     return MSP_RESULT_ERROR;
                 }
 
-                portConfig->identifier = identifier;
                 portConfig->functionMask = sbufReadU16(src);
                 portConfig->msp_baudrateIndex = sbufReadU8(src);
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
@@ -3923,7 +3920,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 return MSP_RESULT_ERROR;
             }
 
-            portConfig->identifier = identifier;
             portConfig->functionMask = sbufReadU32(src);
             portConfig->msp_baudrateIndex = sbufReadU8(src);
             portConfig->gps_baudrateIndex = sbufReadU8(src);
@@ -3985,10 +3981,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
     case MSP_SET_NAME:
-        memset(pilotConfigMutable()->craftName, 0, ARRAYLEN(pilotConfig()->craftName));
-        for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
-            pilotConfigMutable()->craftName[i] = sbufReadU8(src);
-        }
+        memset(pilotConfigMutable()->craftName, 0, sizeof(pilotConfigMutable()->craftName));
+        sbufReadData(src, pilotConfigMutable()->craftName, MIN(ARRAYLEN(pilotConfigMutable()->craftName) - 1, dataSize));
 #ifdef USE_OSD
         osdAnalyzeActiveElements();
 #endif
@@ -4068,35 +4062,51 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP2_SET_TEXT:
         {
             // type byte, then length byte followed by the actual characters
-            const uint8_t textType = sbufReadU8(src);
+            const unsigned textType = sbufReadU8(src);
 
             char* textVar;
-            const uint8_t textLength = MIN(MAX_NAME_LENGTH, sbufReadU8(src));
+            unsigned textSpace;
             switch (textType) {
                 case MSP2TEXT_PILOT_NAME:
                     textVar = pilotConfigMutable()->pilotName;
+                    textSpace = sizeof(pilotConfigMutable()->pilotName) - 1;
                     break;
 
                 case MSP2TEXT_CRAFT_NAME:
                     textVar = pilotConfigMutable()->craftName;
+                    textSpace = sizeof(pilotConfigMutable()->craftName) - 1;
                     break;
 
                 case MSP2TEXT_PID_PROFILE_NAME:
                     textVar = currentPidProfile->profileName;
+                    textSpace = sizeof(currentPidProfile->profileName) - 1;
                     break;
 
                 case MSP2TEXT_RATE_PROFILE_NAME:
                     textVar = currentControlRateProfile->profileName;
+                    textSpace = sizeof(currentControlRateProfile->profileName) - 1;
                     break;
 
+                case MSP2TEXT_CUSTOM_MSG_0:
+                case MSP2TEXT_CUSTOM_MSG_0 + 1:
+                case MSP2TEXT_CUSTOM_MSG_0 + 2:
+                case MSP2TEXT_CUSTOM_MSG_0 + 3: {
+                    unsigned msgIdx = textType - MSP2TEXT_CUSTOM_MSG_0;
+                    if (msgIdx < OSD_CUSTOM_MSG_COUNT) {
+                        textVar = pilotConfigMutable()->message[msgIdx];
+                        textSpace = sizeof(pilotConfigMutable()->message[msgIdx]) - 1;
+                    } else {
+                        return MSP_RESULT_ERROR;
+                    }
+                    break;
+                }
                 default:
                     return MSP_RESULT_ERROR;
             }
 
+            const unsigned textLength = MIN(textSpace, sbufReadU8(src));
             memset(textVar, 0, strlen(textVar));
-            for (unsigned int i = 0; i < textLength; i++) {
-                textVar[i] = sbufReadU8(src);
-            }
+            sbufReadData(src, textVar, textLength);
 
 #ifdef USE_OSD
             if (textType == MSP2TEXT_PILOT_NAME || textType == MSP2TEXT_CRAFT_NAME) {

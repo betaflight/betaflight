@@ -17,6 +17,8 @@
 
 #include "platform.h"
 
+#ifndef USE_WING
+
 #ifdef USE_POSITION_HOLD
 
 #include "math.h"
@@ -55,7 +57,7 @@ void posHoldInit(void)
 
 void posHoldCheckSticks(void)
 {
-    // if failsafe is active, eg landing mode, don't update the original start point 
+    // if failsafe is active, eg landing mode, don't update the original start point
     if (!failsafeIsActive() && posHold.useStickAdjustment) {
         const bool sticksDeflected = (getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband);
         setSticksActiveStatus(sticksDeflected);
@@ -65,20 +67,20 @@ void posHoldCheckSticks(void)
 bool sensorsOk(void)
 {
     if (!STATE(GPS_FIX)) {
-        return false; 
+        return false;
     }
     if (
 #ifdef USE_MAG
         !compassIsHealthy() &&
 #endif
         (!posHoldConfig()->pos_hold_without_mag || !canUseGPSHeading)) {
-        return false; 
+        return false;
     }
     return true;
 }
 
 void updatePosHold(timeUs_t currentTimeUs) {
-    UNUSED(currentTimeUs); 
+    UNUSED(currentTimeUs);
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!posHold.isEnabled) {
             resetPositionControl(&gpsSol.llh, POSHOLD_TASK_RATE_HZ); // sets target location to current location
@@ -104,3 +106,5 @@ bool posHoldFailure(void) {
 }
 
 #endif // USE_POS_HOLD
+
+#endif // !USE_WING

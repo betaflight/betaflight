@@ -21,19 +21,23 @@
 
 #include "platform.h"
 
-#ifdef USE_ALTITUDE_HOLD
+#ifndef USE_WING
 
-#include "flight/alt_hold.h"
+#ifdef USE_POSITION_HOLD
+
+#include "flight/pos_hold.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "alt_hold.h"
+#include "pos_hold.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
 
-PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
-    .alt_hold_adjust_rate = 50, // max vertical velocity change at full/zero throttle. 50 means 5 m/s
-    .alt_hold_deadband = 20, // throttle deadband in percent of stick travel
+PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
+    .pos_hold_without_mag = false,   // position hold within this percentage stick deflection
+    .pos_hold_deadband = 5,          // deadband in percent of stick travel for roll and pitch. Must be non-zero, and exceeded, for target location to be changed with sticks
 );
 #endif
+
+#endif // !USE_WING

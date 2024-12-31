@@ -211,6 +211,15 @@
 #endif
 #endif
 
+#ifdef USE_UART0
+#ifndef UART0_TX_DMA_OPT
+#define UART0_TX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#ifndef UART0_RX_DMA_OPT
+#define UART0_RX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#endif
+
 #ifdef USE_UART1
 #ifndef UART1_TX_DMA_OPT
 #define UART1_TX_DMA_OPT (DMA_OPT_UNUSED)

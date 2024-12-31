@@ -81,8 +81,9 @@
 #include "pg/alt_hold.h"
 #include "pg/autopilot.h"
 #include "pg/motor.h"
-#include "pg/rx.h"
+#include "pg/pilot.h"
 #include "pg/pos_hold.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -744,7 +745,7 @@ static void writeIntraframe(void)
     if (testBlackboxCondition(CONDITION(ACC))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->accADC, XYZ_AXIS_COUNT);
     }
-    
+
     if (testBlackboxCondition(CONDITION(ATTITUDE))) {
         blackboxWriteSigned16VBArray(blackboxCurrent->imuAttitudeQuaternion, XYZ_AXIS_COUNT);
     }
@@ -929,7 +930,7 @@ static void writeInterframe(void)
     if (testBlackboxCondition(CONDITION(ACC))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accADC), XYZ_AXIS_COUNT);
     }
-    
+
     if (testBlackboxCondition(CONDITION(ATTITUDE))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, imuAttitudeQuaternion), XYZ_AXIS_COUNT);
     }
@@ -1243,14 +1244,14 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->axisPID_F[i] = lrintf(pidData[i].F);
 #ifdef USE_WING
         blackboxCurrent->axisPID_S[i] = lrintf(pidData[i].S);
-#endif        
+#endif
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i] * blackboxHighResolutionScale);
         blackboxCurrent->gyroUnfilt[i] = lrintf(gyro.gyroADC[i] * blackboxHighResolutionScale);
 
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC.v[i]);
         STATIC_ASSERT(offsetof(quaternion_t, w) == 0, "Code expects quaternion in w, x, y, z order");
-        blackboxCurrent->imuAttitudeQuaternion[i] = lrintf(imuAttitudeQuaternion.v[i + 1] * 0x7FFF);  //Scale to int16 by value 0x7FFF = 2^15 - 1; Use i+1 index for x,y,z components access, [0] - w 
+        blackboxCurrent->imuAttitudeQuaternion[i] = lrintf(imuAttitudeQuaternion.v[i + 1] * 0x7FFF);  //Scale to int16 by value 0x7FFF = 2^15 - 1; Use i+1 index for x,y,z components access, [0] - w
 #endif
 #ifdef USE_MAG
         blackboxCurrent->magADC[i] = lrintf(mag.magADC.v[i]);
@@ -1694,6 +1695,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_LPF, "%d",         positionConfig()->altitude_lpf);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D_LPF, "%d",       positionConfig()->altitude_d_lpf);
 
+#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_LANDING_ALTITUDE, "%d",     apConfig()->landing_altitude_m);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_HOVER_THROTTLE, "%d",       apConfig()->hover_throttle);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_THROTTLE_MIN, "%d",         apConfig()->throttle_min);
@@ -1708,6 +1710,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_A, "%d",           apConfig()->position_A);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_CUTOFF, "%d",      apConfig()->position_cutoff);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_ANGLE, "%d",         apConfig()->max_angle);
+#endif // !USE_WING
 
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
@@ -1784,6 +1787,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_USE_3D_SPEED, "%d",           gpsConfig()->gps_use_3d_speed)
 
 #ifdef USE_GPS_RESCUE
+#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_START_DIST, "%d",  gpsRescueConfig()->minStartDistM)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALT_MODE, "%d",        gpsRescueConfig()->altitudeMode)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB, "%d",   gpsRescueConfig()->initialClimbM)
@@ -1808,21 +1812,25 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_VELOCITY_I, "%d",      gpsRescueConfig()->velI)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_VELOCITY_D, "%d",      gpsRescueConfig()->velD)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_YAW_P, "%d",           gpsRescueConfig()->yawP)
-
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_USE_MAG, "%d",         gpsRescueConfig()->useMag)
 #endif // USE_MAG
+#endif // !USE_WING
 #endif // USE_GPS_RESCUE
 #endif // USE_GPS
 
 #ifdef USE_ALTITUDE_HOLD
+#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_THROTTLE_RESPONSE, "%d", altHoldConfig()->alt_hold_adjust_rate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND,    "%d", altHoldConfig()->alt_hold_deadband);
-#endif
+#endif // !USE_WING
+#endif // USE_ALTITUDE_HOLD
 
 #ifdef USE_POSITION_HOLD
+#ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_WITHOUT_MAG, "%d", posHoldConfig()->pos_hold_without_mag);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", posHoldConfig()->pos_hold_deadband);
+#endif // !USE_WING
 #endif
 
 #ifdef USE_WING

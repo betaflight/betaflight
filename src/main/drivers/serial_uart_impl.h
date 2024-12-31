@@ -132,6 +132,9 @@
 // compressed index of UART/LPUART. Direct index into uartDevice[]
 typedef enum {
     UARTDEV_INVALID = -1,
+#ifdef USE_UART0
+    UARTDEV_0,
+#endif
 #ifdef USE_UART1
     UARTDEV_1,
 #endif
@@ -284,6 +287,10 @@ void uartTxMonitor(uartPort_t *s);
     UART_BUFFER(extern, n, R);                \
     UART_BUFFER(extern, n, T); struct dummy_s \
 /**/
+
+#ifdef USE_UART0
+UART_BUFFERS_EXTERN(0);
+#endif
 
 #ifdef USE_UART1
 UART_BUFFERS_EXTERN(1);

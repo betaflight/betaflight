@@ -270,8 +270,9 @@
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
+#define USE_OPTICALFLOW_MT
 
-#endif // TARGET_FLASH_SIZE > 512
+#endif // TARGET_FLASH_SIZE >= 1024
 
 #endif // !defined(CLOUD_BUILD)
 
@@ -482,3 +483,7 @@
 #undef USE_RUNAWAY_TAKEOFF
 
 #endif // USE_WING
+
+#if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
+#error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#endif
