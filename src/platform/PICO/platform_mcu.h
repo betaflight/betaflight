@@ -90,3 +90,5 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define IOCFG_IPD             IO_CONFIG(GPIO_IN, 0, 0)
 #define IOCFG_IPU             IO_CONFIG(GPIO_IN, 0, 0)
 #define IOCFG_IN_FLOATING     IO_CONFIG(GPIO_IN, 0, 0)
+
+#define SERIAL_UART_FIRST_INDEX     0
