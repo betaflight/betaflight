@@ -135,7 +135,7 @@ extern "C" {
     }
 
     static const rxSpiConfig_t injectedConfig = {
-        .extiIoTag = IO_TAG(PA0),
+        .extiIoTag = 0,
     };
 }
 
