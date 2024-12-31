@@ -3033,6 +3033,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
             sbufReadU16(src);
 #endif
+        }
         break;
     }
 
