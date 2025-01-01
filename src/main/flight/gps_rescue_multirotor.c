@@ -111,6 +111,7 @@ typedef struct {
     rescueSensorData_s sensor;
     rescueIntent_s intent;
     bool isAvailable;
+    bool isHeadingOK;
     bool isOK;
 } rescueState_s;
 
@@ -129,6 +130,7 @@ void gpsRescueInit(void)
     rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
     rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
     rescueState.isAvailable = true;
+    rescueState.isHeadingOK = true;
     rescueState.isOK = true;
 }
 
@@ -289,6 +291,12 @@ static void performSanityChecks(void)
         return;
     }
 
+    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);
+    DEBUG_SET(DEBUG_RTH, 4, rescueState.intent.secondsFailing);
+    DEBUG_SET(DEBUG_RTH, 5, secondsLowSats);
+    DEBUG_SET(DEBUG_RTH, 6, secondsDoingNothing);
+
     if (rescueState.phase == RESCUE_INITIALIZE) {
         if (GPS_distanceToHome < 5 && isBelowLandingAltitude()) {
             // the rescue started within 5m of home, or 'on the ground'
@@ -296,13 +304,6 @@ static void performSanityChecks(void)
             rescueDisarmNow();
             //  ** this could be closer perhaps ** ?? should it be landing mode ??
             return;
-        }
-
-        // it's a failure if there is no home fix when the rescue started
-        if (STATE(GPS_FIX_HOME)) {
-            rescueState.failure = RESCUE_HEALTHY;
-        } else {
-            rescueState.failure = RESCUE_NO_HOME_POINT;
         }
 
         // Initialize these variables each time a GPS Rescue is started
@@ -313,67 +314,79 @@ static void performSanityChecks(void)
         secondsLowSats = 0;
         secondsDoingNothing = 0;
         rescueState.isAvailable = true;
+        rescueState.isHeadingOK = true;
         rescueState.isOK = true;
     }
 
-    const bool hardFailsafe = !isRxReceivingSignal(); // ie true Rx signal loss
-
-    // Handle failures, typically after a 10-20s up/down counter timeout
-    // Note that there is 'no going back' once a rescue failure response is initiated
-    // either the aircraft is disarmed, or it enters an inevitable descent/landing phase.
-
-    if (rescueState.failure != RESCUE_HEALTHY) {
-        switch(gpsRescueConfig()->sanityChecks) {
-        case RESCUE_SANITY_ON:
-            rescueEmergDescent();
-            // if sanity checks are 'ON', handle both switch-initiated, and true Rx signal loss, by attempting to descend and disarm
-            break;
-        case RESCUE_SANITY_FS_ONLY:
-            if (hardFailsafe) {
-                rescueEmergDescent(); // as above, for true Rx signal loss rescues
-            } else {
-                rescueState.phase = RESCUE_DO_NOTHING; // additional 20s allowed to revert the switch
-            }
-            break;
-        default:
-            // with sanity checks off, ignore sanity failures (very unsafe)
-            // aircraft can climb, drift, or flyaway indefinitely
-            // can disarm if a crash is detected, but otherwise will never disarm if stuck in a tree, etc
-            // However if no Home Fix, and a true Rx signal loss, it will attempt an emergency descent
-            if (!STATE(GPS_FIX_HOME) && hardFailsafe) {
-                rescueEmergDescent();
-            }
-        }
-    }
-
-    // Crash detection is enabled in all rescues.  If crash is detected, immediately disarm.
+    // Crash detection is enabled in all rescues at all times.  If crash is detected, immediately disarm.
     if (crashRecoveryModeActive()) {
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
         rescueDisarmNow();
     }
 
-    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);
+    // if the craft is in emergency descent mode, there is no way back
+    // either it descends and lands, or disarms, or the pilot regains control and exits
+    if (rescueState.phase == RESCUE_EMERG_DESCENT){
+        return;
+    }
 
-    // ** once per second from now on **
+    // otherwise, determine how to respond to a sanity check failure
+
+    const bool hardFailsafe = !isRxReceivingSignal(); // ie true Rx signal loss
+
+    if (rescueState.failure == RESCUE_HEALTHY) {
+        rescueState.isOK = true;
+        // move on and perform sanity tests
+    } else {
+        rescueState.isOK = false;
+        // flashes the GPS RESCUE FAIL warning in OSD
+        switch(gpsRescueConfig()->sanityChecks) {
+        case RESCUE_SANITY_ON:
+            rescueEmergDescent();
+            return;
+        case RESCUE_SANITY_FS_ONLY:
+            if (hardFailsafe) {
+                rescueEmergDescent();
+                return;
+            }
+            break;
+        default:
+            // with sanity checks off, ignore sanity failures (very unsafe) - can climb, drift, or flyaway until battery fails
+            // But: if no HomeFix, 3D fix or altitude, and a true Rx signal loss, try an emergency descent
+            if ((!rescueState.isAvailable) && hardFailsafe) {
+                rescueEmergDescent();
+                return;
+            }
+            break;
+        }
+    }
+
+    // otherwise either the craft is:
+    // - in normal condition, and the code should check the sanity of the rescue, or
+    // - there is a stick induced failure, in FS-only mode, and no hard Rx loss, so we try to descend gracefully
+
+    // ** once per second checks from now on **
 
     static timeUs_t lastSanityCheck = 0;
     if (!oneSecondPassed(currentTimeUs, &lastSanityCheck)) {
         return;
     }
 
-    // GPS comms failure always results in rescue failure
-    if (!rescueState.sensor.gpsHealthy) {
-        rescueState.failure = RESCUE_GPSLOST;
-    }
+    // detect sanity failures
 
     secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < GPS_MIN_SAT_COUNT)) ? 1 : -1;
     secondsLowSats = MAX(0, secondsLowSats);
     // note that GPS_MIN_SAT_COUNT is 4, and a 3D fix requires at least 4 sats
-    // but we could lose the 3D fix with more than 4 sats.
-    // ?? not sure that the GPS_MIN_SAT_COUNT check is useful here ??
-    if (secondsLowSats >= 10) {
+    // but we could lose the 3D fix with more than 4 sats - is the GPS_MIN_SAT_COUNT check useful here ??
+    if (secondsLowSats >= 15) {
         rescueState.failure = RESCUE_LOWSATS;
+        rescueEmergDescent();
+        // no way back if this happens, 15s is a long time for uncontrolled behaviour without any GPS data
+        return;
     }
+
+    // in all other cases, a controlled descent should be possible; we can descend with xy control
+    // in most cases, do nothing for a short time, then descend -> land
 
     // calculate altitude control error magnitude
     const float measuredAltitudeChange = getAltitudeCm() - prevAltitudeCm;
@@ -391,7 +404,7 @@ static void performSanityChecks(void)
         // > 0.5 means achieving at least 50% of the required altitude change
     }
 
-    // calculate velocity to home to compare to set velocity
+    // calculate velocity to home error magnitude, compared to set velocity
     const float velocityToHomeCmS = previousDistanceToHomeCm - GPS_distanceToHomeCm; // cm/s
     previousDistanceToHomeCm = GPS_distanceToHomeCm;
 
@@ -400,7 +413,10 @@ static void performSanityChecks(void)
         rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
         if (rescueState.intent.secondsFailing >= 10) {
-            // if can't climb, enter to descend phase and try to descend normally
+            // if can't climb, probably stuck in a tree
+            // reset altitude and enter descend phase; try to descend normally
+            rescueState.intent.targetAltitudeCm = getAltitudeCm();
+            rescueState.failure = RESCUE_STALLED;
             rescueState.phase = RESCUE_DESCENT;
             rescueState.intent.secondsFailing = 0;
         }
@@ -409,12 +425,14 @@ static void performSanityChecks(void)
         rescueState.intent.secondsFailing = rescueState.intent.secondsFailing + 1;
         if (rescueState.intent.secondsFailing >= 15) {
             rescueState.intent.secondsFailing = 15;
-            // if unable to orient the IMU after 15s of forward flight, give up
+            // if unable to orient the IMU after 15s of forward flight, fail
             rescueState.failure = RESCUE_NO_HEADING;
+            rescueState.phase = RESCUE_DO_NOTHING;
         }
         break;
     case RESCUE_ROTATE:
         rescueState.intent.secondsFailing = 0;
+        // no sanity check for failure to rotate at present
         break;
     case RESCUE_FLY_HOME:
         rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.2f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
@@ -431,7 +449,16 @@ static void performSanityChecks(void)
 #endif
             {
                 rescueState.failure = RESCUE_FLYAWAY;
+                rescueState.phase = RESCUE_DO_NOTHING;
             }
+        }
+        break;
+    case RESCUE_DO_NOTHING:
+        // drift around for 20s before attempting controlled descent
+        secondsDoingNothing = secondsDoingNothing + 1;
+        if (secondsDoingNothing >= 15) {
+            secondsDoingNothing = 0;
+            rescueState.phase = RESCUE_DESCENT;
         }
         break;
     case RESCUE_EMERG_DESCENT:
@@ -441,6 +468,7 @@ static void performSanityChecks(void)
         rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
         // on average, must achieve at least half the requested descent rate
         if (rescueState.intent.secondsFailing >= 15) {
+            rescueState.failure = RESCUE_STALLED;
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0;
             // if can't descend, go to landing phase
@@ -457,29 +485,10 @@ static void performSanityChecks(void)
             // Will trigger after timeout if the aircraft has landed but did not auto-disarm
         }
         break;
-    case RESCUE_DO_NOTHING:
-        // switch-induced rescue failure is allowed to drift around for 20s before starting emergency descent
-        secondsDoingNothing = secondsDoingNothing + 1;
-        if (secondsDoingNothing >= 20) {
-            secondsDoingNothing = 0;
-            rescueEmergDescent();
-        }
-        break;
     default:
         // do nothing
         break;
     }
-    const int8_t failWarningTime = 5;
-    if (rescueState.failure != RESCUE_HEALTHY || rescueState.intent.secondsFailing > failWarningTime || secondsLowSats > failWarningTime || secondsDoingNothing > failWarningTime){
-        rescueState.isOK = false;
-        // flashes the GPS RESCUE FAIL warning in OSD to warn the pilot visually before a disarm, or in established failure mode
-    } else {
-        rescueState.isOK = true;
-    }
-    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);
-    DEBUG_SET(DEBUG_RTH, 4, rescueState.intent.secondsFailing);
-    DEBUG_SET(DEBUG_RTH, 5, secondsLowSats);
-    DEBUG_SET(DEBUG_RTH, 6, secondsDoingNothing);
 }
 
 static void sensorUpdate(bool newGpsData)
@@ -599,15 +608,17 @@ void initRescueValues (void)
     rescueState.intent.forceDisableMag = false; // use Mag every rescue start even if it failed on a previous rescue
 }
 
-static void checkGPSRescueIsAvailable(void)
+static void checkGPSRescueStatus(void)
 {
     bool rescueAvailable = true;
-    if (!gpsIsHealthy() || !STATE(GPS_FIX_HOME) || !isHeadingOK() || !isAltitudeAvailable()) {
+    if (!gpsIsHealthy() || !STATE(GPS_FIX_HOME) || !isAltitudeAvailable()) {
         rescueAvailable = false;
     }
-    // note that GPS_FIX_HOME is set at arm time, and requires a 3D fix and minSats at that time
-    // Flashes "RESCUE N/A" in the OSD if triggered
     rescueState.isAvailable = rescueAvailable;
+    // flash "RESCUE N/A" in the OSD if false
+    // note that GPS_FIX_HOME is set at arm time, and requires a 3D fix and minSats at that time
+    rescueState.isHeadingOK = isHeadingOK();
+    // Flash "HEADING N/A" in the OSD no heading available
 }
 
 void gpsRescueUpdate(void)
@@ -624,9 +635,7 @@ void gpsRescueUpdate(void)
 
     sensorUpdate(newGpsData); // get latest velocity to home and Altitude data, set some defaults
 
-    checkGPSRescueIsAvailable();
-    // Show the 'RESCUE N/A' warning in OSD if Rescue is unavailable
-    // *** strangely, checkGPSRescueIsAvailable won't work properly if put within performSanityChecks() ??? ***
+    checkGPSRescueStatus();
 
     performSanityChecks();
 
@@ -655,7 +664,7 @@ void gpsRescueUpdate(void)
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
             rescueState.intent.targetAltitudeStepCm = 0.0f;
             rescueState.intent.secondsFailing = 0;
-            if (isHeadingOK()) {
+            if (rescueState.isHeadingOK) {
                 rescueState.phase = RESCUE_ROTATE;
             } else {
                 // if no Mag and IMU not oriented, pitch forward until oriented
@@ -670,7 +679,7 @@ void gpsRescueUpdate(void)
     case RESCUE_PITCH_FORWARD:
         // pitch forward at high angle until IMU is oriented to  GPS course over ground
         // only applies if Mag is not available and IMU was not yet oriented
-        if (isHeadingOK()) {
+        if (rescueState.isHeadingOK) {
             rescueState.phase = RESCUE_ROTATE;
         }
         break;
@@ -741,8 +750,6 @@ void gpsRescueUpdate(void)
     DEBUG_SET(DEBUG_ATTITUDE, 6, lrintf(rescueState.intent.targetVelocityCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));
     DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.intent.maxAltitudeCm / 10.0f));
-    DEBUG_SET(DEBUG_RTH, 5, (rescueState.isAvailable == true ? 1 : 0));
-    DEBUG_SET(DEBUG_RTH, 6, (rescueState.isOK == true ? 1 : 0));
 
     // only active in rotate, fly home, descent and landing phases:
     rescueControlPosition(newGpsData);
@@ -765,12 +772,17 @@ bool gpsRescueIsConfigured(void)
 
 bool gpsRescueIsAvailable(void)
 {
-    return rescueState.isAvailable; // when false, flashes `RESCUE N/A` when not available (IMU disoriented, no Home Point)
+    return rescueState.isAvailable; // when false, flashes `RESCUE N/A` for 5s when no Home Point, no altitude value, or no GPS Module
+}
+
+bool gpsRescueIsHeadingOK(void)
+{
+    return rescueState.isHeadingOK; // when false, flashes `HEADING N/A` until IMU is oriented
 }
 
 bool gpsRescueIsOK(void)
 {
-    return rescueState.isOK; // when false, flashes `RESCUE FAIL` in OSD when failure time exceeds 5s or when in a failure mode
+    return rescueState.isOK; // when a sanity check fails, flashes `RESCUE FAIL` in OSD until rescue stop or disarm
 }
 
 #ifdef USE_MAG
