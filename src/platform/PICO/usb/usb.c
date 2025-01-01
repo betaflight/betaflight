@@ -22,12 +22,14 @@
 
 #include "platform.h"
 
+#include "tusb_config.h"
 #include "tusb.h"
 #include "usb.h"
 
 #include "pico/binary_info.h"
 #include "pico/time.h"
 #include "pico/mutex.h"
+#include "pico/critical_section.h"
 #include "hardware/irq.h"
 
 #ifndef CDC_USB_TASK_INTERVAL_US
@@ -117,8 +119,9 @@ int cdc_usb_write(const char *buf, int length)
     int written = 0;
 
     if (!mutex_try_enter_block_until(&cdc_usb_mutex, make_timeout_time_ms(CDC_DEADLOCK_TIMEOUT_MS))) {
-        return;
+        return 0;
     }
+
     if (cdc_usb_connected()) {
         for (int i = 0; i < length;) {
             int n = length - i;

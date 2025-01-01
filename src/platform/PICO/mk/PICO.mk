@@ -30,14 +30,15 @@ STDPERIPH_SRC  := \
             hardware_flash/flash.c \
             pico_unique_id/unique_id.c
 
+TINY_USB_SRC_DIR = $(LIB_MAIN_DIR)/tinyUSB/src
+TINYUSB_SRC := \
+            $(TINY_USB_SRC_DIR)/tusb.c
+
 VPATH := $(VPATH):$(STDPERIPH_DIR)
 
 DEVICE_STDPERIPH_SRC := \
             $(STDPERIPH_SRC) \
-            $(USBCORE_SRC) \
-            $(USBCDC_SRC) \
-            $(USBHID_SRC) \
-            $(USBMSC_SRC)
+            $(TINYUSB_SRC)
 
 ifeq ($(TARGET_MCU),RP2350B)
 TARGET_MCU_LIB_LOWER = rp2350
@@ -147,7 +148,8 @@ INCLUDE_DIRS += \
             $(CMSIS_DIR)/Device/$(TARGET_MCU_LIB_UPPER)/Include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/pico_platform/include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_regs/include \
-            $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_structs/include
+            $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_structs/include \
+            $(LIB_MAIN_DIR)/tinyUSB/src
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mfloat-abi=softfp -mcmse
@@ -190,6 +192,8 @@ MCU_COMMON_SRC = \
             PICO/bus_spi_pico.c \
             PICO/serial_uart_pico.c \
             PICO/exti_pico.c \
-            PICO/config_flash.c
+            PICO/config_flash.c \
+            PICO/serial_usb_vcp_pico.c \
+            PICO/usb/usb.c
 
 DEVICE_FLAGS +=
