@@ -89,6 +89,7 @@ typedef struct {
     int8_t secondsFailing;
     float rescueYawRate;
     float yawAttenuator;
+    float xyAttenuator;
     float proximityAttenuator;
     bool initialLocationSet;
     float disarmThreshold;
@@ -163,11 +164,20 @@ static bool isHeadingOK(void)
     canUseGPSHeading);                // IMU heading has been aligned to GPS course over ground
 }
 
+void smoothStart(float *attenuator)
+{
+    // increases an attenuator value that starts at 0 to 1.0, typically over 1s, each task interval step
+    *attenuator += taskIntervalSeconds;
+    if (*attenuator > 1.0f) {
+        *attenuator = 1.0f;
+    }
+}
+
 static void controlYaw(void)
 {
     // Heading / yaw controller
     if (rescueState.intent.yawAttenuator < 1.0f) {
-        rescueState.intent.yawAttenuator += taskIntervalSeconds;
+        smoothStart(&rescueState.intent.yawAttenuator);
     }
     float yawRateTemp = rescueState.sensor.errorAngleDeg * rescueState.intent.yawAttenuator * gpsRescueConfig()->yawP * 0.1f;
     yawRateTemp = constrainf(yawRateTemp, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
@@ -196,7 +206,8 @@ static void updatePosition(void)
     if (rescueState.intent.targetVelocityCmS > 0.0f) {
         // only possible in fly home or descend modes
         // move target location along a path, step by step
-        const float distanceToMove = rescueState.intent.targetVelocityCmS * getGpsDataIntervalSeconds();
+        // start smoothly over 1s
+        const float distanceToMove = rescueState.intent.targetVelocityCmS * getGpsDataIntervalSeconds() * rescueState.intent.xyAttenuator;
         setLatLonSteps(); // update latitude and longitude step from current location to home at current target velocity
         vector2Scale(&rescueState.intent.latLonSteps, &rescueState.intent.latLonSteps, distanceToMove);
         // send steps to update the target location in autopilot.c 
@@ -215,13 +226,17 @@ void rescueControlPosition (bool newGpsData)
         case RESCUE_FLY_HOME:
         case RESCUE_DESCENT:
         case RESCUE_LANDING:
-            // initialise position hold at this location
-            if (!rescueState.intent.initialLocationSet) {
-                resetPositionControl(&gpsSol.llh, TASK_GPS_RESCUE_RATE_HZ);
-                rescueState.intent.initialLocationSet = true;
-            }
             if (newGpsData) {
+                if (!rescueState.intent.initialLocationSet) {
+                    // initialise position hold at this location
+                    resetPositionControl(&gpsSol.llh, TASK_GPS_RESCUE_RATE_HZ);
+                    rescueState.intent.initialLocationSet = true;
+                    return; // skip updatePosition until the next GPS data point, which will have a full getGpsDataIntervalSeconds of data
+                }
                 updatePosition();
+            }
+            if (rescueState.intent.yawAttenuator < 1.0f) {
+                smoothStart(&rescueState.intent.xyAttenuator);
             }
             // smooth and upsample the pitch and roll setpoints for pid.c at gps_rescue task rate
             posControlOutput();
@@ -577,6 +592,7 @@ void initRescueValues (void)
     rescueState.sensor.velocityToHomeCmS = 0.0f;
 
     rescueState.intent.initialLocationSet = false;
+    rescueState.intent.xyAttenuator = 0.0f;        // for a slower start to gaining velocity with less overshoot from excessive iTerm
     autopilotAngle[AI_ROLL] = 0.0f;
     autopilotAngle[AI_PITCH] = 0.0f;
     vector2Zero(&rescueState.intent.latLonSteps);
