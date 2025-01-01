@@ -43,12 +43,12 @@ void configLock(void)
     restore_interrupts(interrupts);
 }
 
-void configFlashClearFlag(void)
+void configFlashClearFlags(void)
 {
     // NOOP
 }
 
-configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_align_type_t value)
+configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t value)
 {
     if (address == __config_start) {
         // Erase the flash sector before writing
