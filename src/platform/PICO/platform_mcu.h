@@ -93,7 +93,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define SERIAL_UART_FIRST_INDEX     0
 
-extern uint32_t systemUniqueId[];
+extern uint32_t systemUniqueId[3];
 
 // PICOs have an 8 byte unique identifier.
 #define U_ID_0 (systemUniqueId[0])
