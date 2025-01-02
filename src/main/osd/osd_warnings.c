@@ -79,8 +79,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_GPS_RESCUE
     if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
-      && ARMING_FLAG(ARMED)
-      && gpsRescueIsConfigured()
+        && ARMING_FLAG(ARMED)
+        && gpsRescueIsConfigured()) {
+
         statistic_t *stats = osdGetStats();
         if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
             tfp_sprintf(warningText, "RESCUE N/A");
@@ -255,11 +256,11 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
       && ARMING_FLAG(ARMED)
       && gpsRescueIsConfigured()
       && !gpsRescueIsOK()) {
-            tfp_sprintf(warningText, "RESCUE FAIL");
-            // when a rescue sanity check has timed out
-            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-            *blinking = true;
-            return;
+        tfp_sprintf(warningText, "RESCUE FAIL");
+        // when a rescue sanity check has timed out
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
     }
 #endif // USE_GPS_RESCUE
 
