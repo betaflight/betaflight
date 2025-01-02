@@ -34,13 +34,12 @@ static uint32_t interrupts;
 
 void configUnlock(void)
 {
-    // TODO: think this one through
-    interrupts = save_and_disable_interrupts();
+    // NOOP
 }
 
 void configLock(void)
 {
-    restore_interrupts(interrupts);
+    // NOOP
 }
 
 void configFlashClearFlags(void)
@@ -57,9 +56,11 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
 
     STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
 
-    // TODO: refactor to stream the entire buffer to flash.
+    // TODO: refactor to stream the entire buffer to flash also possibly avoid disabling interrupts.
     // Write data to flash
-    flash_range_program(address, (uint32_t)&value, sizeof(uint32_t));
+    uint32_t interrupts = save_and_disable_interrupts();
+    flash_range_program(address, (uint8_t*)&value, sizeof(uint32_t));
+    restore_interrupts(interrupts);
     return CONFIG_RESULT_SUCCESS;
 }
 
