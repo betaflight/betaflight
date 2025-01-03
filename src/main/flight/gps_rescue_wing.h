@@ -34,8 +34,8 @@ void gpsRescueUpdate(void);
 float gpsRescueGetYawRate(void);
 bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
+bool gpsRescueIsHeadingOK(void);
 bool gpsRescueIsOK(void);
 bool gpsRescueDisableMag(void);
-float gpsRescueGetImuYawCogGain(void);
 
 #endif // USE_WING

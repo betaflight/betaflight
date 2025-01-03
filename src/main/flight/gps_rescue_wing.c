@@ -68,17 +68,17 @@ float gpsRescueGetYawRate(void)
     return 0.0f; // the control yaw value for rc.c to be used while flightMode gps_rescue is active.
 }
 
-float gpsRescueGetImuYawCogGain(void)
-{
-    return 1.0f;
-}
-
 bool gpsRescueIsConfigured(void)
 {
     return false;
 }
 
 bool gpsRescueIsAvailable(void)
+{
+    return true;
+}
+
+bool gpsRescueIsHeadingOK(void)
 {
     return true;
 }
