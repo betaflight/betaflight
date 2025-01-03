@@ -104,6 +104,15 @@ static void displayPortTestRedraw(displayPort_t *displayPort)
     UNUSED(displayPort);
 }
 
+static int displayportWriteSys(displayPort_t *displayPort, uint8_t x, uint8_t y, displayPortSystemElement_e systemElement)
+{
+    UNUSED(displayPort);
+    UNUSED(x);
+    UNUSED(y);
+    UNUSED(systemElement);
+    return 0;
+}
+
 static uint32_t displayPortTestTxBytesFree(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
@@ -116,12 +125,23 @@ static const displayPortVTable_t testDisplayPortVTable = {
     .clearScreen = displayPortTestClearScreen,
     .drawScreen = displayPortTestDrawScreen,
     .screenSize = displayPortTestScreenSize,
+    .writeSys = displayportWriteSys,
     .writeString = displayPortTestWriteString,
     .writeChar = displayPortTestWriteChar,
     .isTransferInProgress = displayPortTestIsTransferInProgress,
     .heartbeat = displayPortTestHeartbeat,
     .redraw = displayPortTestRedraw,
-    .txBytesFree = displayPortTestTxBytesFree
+    .isSynced = displayPortTestIsTransferInProgress,
+    .txBytesFree = displayPortTestTxBytesFree,
+    .layerSupported = NULL,
+    .layerSelect = NULL,
+    .layerCopy = NULL,
+    .writeFontCharacter = NULL,
+    .checkReady = NULL,
+    .beginTransaction = NULL,
+    .commitTransaction = NULL,
+    .getCanvas = NULL,
+    .setBackgroundType = NULL,
 };
 
 displayPort_t *displayPortTestInit(void)

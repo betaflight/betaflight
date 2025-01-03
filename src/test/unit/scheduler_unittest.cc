@@ -73,9 +73,7 @@ extern "C" {
 
     // set up tasks to take a simulated representative time to execute
     bool gyroFilterReady(void) { return taskFilterReady; }
-    gyroDev_t gyro {
-        .gyroModeSPI = GYRO_EXTI_NO_INT
-    };
+    gyroDev_t gyro;
     gyroDev_t *gyroActiveDev(void) { return &gyro; }
     bool pidLoopReady(void) { return taskPidReady; }
     void failsafeCheckDataFailurePeriod(void) {}
