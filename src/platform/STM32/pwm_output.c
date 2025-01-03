@@ -291,7 +291,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
         const ioTag_t tag = servoConfig->ioTags[servoIndex];
 
         if (!tag) {
-            break;
+            continue;
         }
 
         servos[servoIndex].io = IOGetByTag(tag);
