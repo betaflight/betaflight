@@ -19,10 +19,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
 #include <stdint.h>
+#include <string.h>
+
+#include "platform.h"
+
 #include "hardware/timer.h"
 #include "hardware/clocks.h"
+#include "pico/unique_id.h"
 
 int main(int argc, char * argv[]);
 
@@ -85,9 +89,16 @@ void systemReset(void)
     //TODO: implement
 }
 
+uint32_t systemUniqueId[3] = { 0 };
+
 void systemInit(void)
 {
     //TODO: implement
+
+    // load the unique id into a local array
+    pico_unique_board_id_t id;
+    pico_get_unique_board_id(&id);
+    memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)

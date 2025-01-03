@@ -92,3 +92,11 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define IOCFG_IN_FLOATING     IO_CONFIG(GPIO_IN, 0, 0)
 
 #define SERIAL_UART_FIRST_INDEX     0
+
+extern uint32_t systemUniqueId[3];
+
+// PICOs have an 8 byte unique identifier.
+#define U_ID_0 (systemUniqueId[0])
+#define U_ID_1 (systemUniqueId[1])
+#define U_ID_2 (systemUniqueId[2])
+
