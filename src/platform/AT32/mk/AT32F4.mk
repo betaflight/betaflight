@@ -63,6 +63,7 @@ DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR)/startup \
                    $(TARGET_PLATFORM_DIR) \
+                   $(PLATFORM_DIR)/common/stm32 \
                    $(STDPERIPH_DIR)/inc \
                    $(CMSIS_DIR)/cm4/core_support \
                    $(CMSIS_DIR)/cm4 \
@@ -124,7 +125,8 @@ MCU_COMMON_SRC = \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
+            msc/emfat_file.c \
+            msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
             common/stm32/system.c

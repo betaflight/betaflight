@@ -29,7 +29,7 @@ jobs:
   release:
     name: Nightly release
     needs: ci
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Code Checkout
         uses: actions/checkout@v4

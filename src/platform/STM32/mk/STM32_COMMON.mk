@@ -1,0 +1,2 @@
+
+INCLUDE_DIRS += $(PLATFORM_DIR)/common/stm32

@@ -146,6 +146,7 @@ CMS_Menu cmsx_menuMain = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
+    .onDisplayUpdate = NULL,
     .entries = menuMainEntries,
 };
 uint8_t armingFlags;

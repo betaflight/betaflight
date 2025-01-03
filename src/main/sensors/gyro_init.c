@@ -37,27 +37,24 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
+
 #include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
+
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
+
+#include "drivers/accgyro/accgyro_spi_l3gd20.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
+#include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
-#include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
-
-#ifdef USE_GYRO_L3GD20
-#include "drivers/accgyro/accgyro_spi_l3gd20.h"
-#endif
-
-#ifdef USE_GYRO_L3G4200D
-#include "drivers/accgyro/legacy/accgyro_l3g4200d.h"
-#endif
 
 #include "drivers/accgyro/gyro_sync.h"
 
@@ -71,17 +68,6 @@
 
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-
-#if !defined(USE_GYRO_L3G4200D) && !defined(USE_GYRO_L3GD20) \
-    && !defined(USE_GYRO_MPU3050) && !defined(USE_GYRO_MPU6050) && !defined(USE_GYRO_MPU6500) \
-    && !defined(USE_GYRO_SPI_MPU6000) && !defined(USE_GYRO_SPI_MPU6500) && !defined(USE_GYRO_SPI_MPU9250) \
-    && !defined(USE_GYRO_SPI_ICM20602) && !defined(USE_GYRO_SPI_ICM20649) && !defined(USE_GYRO_SPI_ICM20689) \
-    && !defined(USE_ACCGYRO_BMI160) && !defined(USE_ACCGYRO_BMI270) \
-    && !defined(USE_GYRO_SPI_ICM42605) && !defined(USE_GYRO_SPI_ICM42688P) \
-    && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_LSM6DSV16X) \
-    && !defined(USE_VIRTUAL_GYRO)
-#error At least one USE_GYRO device definition required
-#endif
 
 #ifdef USE_MULTI_GYRO
 #define ACTIVE_GYRO ((gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_2) ? &gyro.gyroSensor2 : &gyro.gyroSensor1)
@@ -319,8 +305,6 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     case GYRO_DEFAULT:
     case GYRO_VIRTUAL:
     case GYRO_MPU6050:
-    case GYRO_L3G4200D:
-    case GYRO_MPU3050:
     case GYRO_L3GD20:
     case GYRO_BMI160:
     case GYRO_BMI270:
@@ -362,24 +346,6 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
     case GYRO_MPU6050:
         if (mpu6050GyroDetect(dev)) {
             gyroHardware = GYRO_MPU6050;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_L3G4200D
-    case GYRO_L3G4200D:
-        if (l3g4200dDetect(dev)) {
-            gyroHardware = GYRO_L3G4200D;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_MPU3050
-    case GYRO_MPU3050:
-        if (mpu3050Detect(dev)) {
-            gyroHardware = GYRO_MPU3050;
             break;
         }
         FALLTHROUGH;

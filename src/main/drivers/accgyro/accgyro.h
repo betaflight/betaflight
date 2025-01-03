@@ -41,12 +41,11 @@
 #define GYRO_SCALE_2000DPS (2000.0f / (1 << 15))   // 16.384 dps/lsb scalefactor for 2000dps sensors
 #define GYRO_SCALE_4000DPS (4000.0f / (1 << 15))   //  8.192 dps/lsb scalefactor for 4000dps sensors
 
+// Gyro hardware types were updated in PR #14087 (removed GYRO_L3G4200D, GYRO_MPU3050)
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
     GYRO_MPU6050,
-    GYRO_L3G4200D,
-    GYRO_MPU3050,
     GYRO_L3GD20,
     GYRO_MPU6000,
     GYRO_MPU6500,

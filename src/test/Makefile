@@ -515,9 +515,9 @@ GTEST_DIR = ../../lib/test/gtest
 
 # Use clang/clang++ by default
 
-CC  := clang-15
-CXX := clang++-15
-ifeq ($(shell which $(CC) 2>/dev/null),)
+CC  := clang-18
+CXX := clang++-18
+ifeq ($(and $(shell which $(CC) 2>/dev/null), $(shell which $(CXX) 2>/dev/null)),)
 $(info Falling back to 'clang')
 CC  := clang
 CXX := clang++
@@ -539,11 +539,10 @@ CXX_VERSION = $(shell $(CXX) -dumpversion)
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 
-# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 16 }
-# Travis reports CC_VERSION of 4.2.1
+# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 18 }
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 16
+CC_VERSION_CHECK_MAX := 18
 
 # c99-designator is fine, code is not expected to be clean C++
 COMMON_FLAGS += -Wno-c99-designator
@@ -552,7 +551,7 @@ COMMON_FLAGS += -Wno-c99-designator
 COMMON_FLAGS += -Werror
 
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
-$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-15'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
+$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-18'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
 COMMON_FLAGS += -fblocks
