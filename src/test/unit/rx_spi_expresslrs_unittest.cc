@@ -54,7 +54,7 @@ extern "C" {
     static rxRuntimeState_t config = rxRuntimeState_t();
     static rxSpiExtiConfig_t extiConfig;
     static const rxSpiConfig_t injectedConfig = {
-        .extiIoTag = IO_TAG(PA0),
+        .extiIoTag = IO_TAG_NONE,
     };
 }
 
