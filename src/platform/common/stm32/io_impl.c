@@ -23,10 +23,6 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 
-#include "drivers/rcc.h"
-
-#include "common/utils.h"
-
 #if DEFIO_PORT_USED_COUNT > 0
 static const uint16_t ioDefUsedMask[DEFIO_PORT_USED_COUNT] = { DEFIO_PORT_USED_LIST };
 static const uint8_t ioDefUsedOffset[DEFIO_PORT_USED_COUNT] = { DEFIO_PORT_OFFSET_LIST };
