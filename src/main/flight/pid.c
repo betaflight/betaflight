@@ -1475,9 +1475,19 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
     }
 
+#ifdef USE_WING
+    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control 
+    // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
+    bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
+#endif // USE_WING
     // Disable PID control if at zero throttle or if gyro overflow detected
     // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
-    if (!pidRuntime.pidStabilisationEnabled || gyroOverflowDetected()) {
+    if (!pidRuntime.pidStabilisationEnabled
+        || gyroOverflowDetected()
+#ifdef USE_WING
+        || isFixedWingAndPassthru
+#endif
+        ) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             pidData[axis].P = 0;
             pidData[axis].I = 0;
