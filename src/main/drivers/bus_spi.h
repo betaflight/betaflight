@@ -20,35 +20,14 @@
 
 #pragma once
 
+#include "platform.h"
+
 #include "drivers/bus.h"
 #include "drivers/io_types.h"
 #include "drivers/bus.h"
-#include "drivers/rcc_types.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-
-#if defined(STM32F4)
-#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
-#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
-#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
-#define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
-#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
-#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
-#elif defined(AT32F4)
-#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_MUX, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_NONE)
-#define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_MUX, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_UP)
-#define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_MUX, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_DOWN)
-#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_MODE_MUX, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_UP)
-#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_NONE)
-#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_UP)
-#endif
 
 // De facto standard mode
 // See https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
@@ -67,7 +46,12 @@ typedef enum {
 
 typedef enum SPIDevice {
     SPIINVALID = -1,
+#if defined(USE_SPI_DEVICE_0)
+    SPIDEV_0   = 0,
+    SPIDEV_1,
+#else
     SPIDEV_1   = 0,
+#endif
     SPIDEV_2,
     SPIDEV_3,
     SPIDEV_4,
@@ -75,30 +59,9 @@ typedef enum SPIDevice {
     SPIDEV_6
 } SPIDevice;
 
-#if defined(STM32F4)
-#define SPIDEV_COUNT 3
-#elif defined(STM32F7)
-#define SPIDEV_COUNT 4
-#elif defined(STM32H7)
-#define SPIDEV_COUNT 6
-#elif defined(APM32F4)
-#define SPIDEV_COUNT 3
-#else
-#define SPIDEV_COUNT 4
-#endif
-
 // Macros to convert between CLI bus number and SPIDevice.
 #define SPI_CFG_TO_DEV(x)   ((x) - 1)
 #define SPI_DEV_TO_CFG(x)   ((x) + 1)
-
-// Work around different check routines in the libraries for different MCU types
-#if defined(STM32H7)
-#define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXWNE(instance)
-#define SPI_RX_DATA_REGISTER(base) ((base)->RXDR)
-#else
-#define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXNE(instance)
-#define SPI_RX_DATA_REGISTER(base) ((base)->DR)
-#endif
 
 void spiPreinit(void);
 void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, uint8_t init);
@@ -180,4 +143,3 @@ bool spiUseSDO_DMA(const extDevice_t *dev);
 void spiBusDeviceRegister(const extDevice_t *dev);
 uint8_t spiGetRegisteredDeviceCount(void);
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev);
-
