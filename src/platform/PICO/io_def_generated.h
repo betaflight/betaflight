@@ -32,8 +32,17 @@
 #error "Unsupported target MCU type for PICO"
 #endif
 
+#define DEFIO_PIN_BITMASK   0x7f
+#define DEFIO_PORT_BITSHIFT 7
+
 #undef DEFIO_TAG_MAKE
 #define DEFIO_TAG_MAKE(pin) ((ioTag_t)(((1) << DEFIO_PORT_BITSHIFT) | (pin)))
+
+#undef DEFIO_TAG_GPIOID
+#define DEFIO_TAG_GPIOID(tag) (((tag) >> DEFIO_PORT_BITSHIFT) - 1)
+
+#undef DEFIO_TAG_PIN
+#define DEFIO_TAG_PIN(tag) ((tag) & DEFIO_PIN_BITMASK)
 
 // DEFIO_TAG__P<port><pin> will expand to TAG if defined for target, error is triggered otherwise
 // DEFIO_TAG_E__P<port><pin> will expand to TAG if defined, to NONE otherwise (usefull for tables that are CPU-specific)

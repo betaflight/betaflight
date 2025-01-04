@@ -152,9 +152,6 @@
 //#define USE_FLASH_W25Q128FV
 //#define USE_MAX7456
 
-#define DEFIO_PIN_BITMASK   0x7f
-#define DEFIO_PORT_BITSHIFT 7
-
 /*
 
 SPI0_CS         P1
