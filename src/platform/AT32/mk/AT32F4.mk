@@ -118,7 +118,7 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
+            common/stm32/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
@@ -136,7 +136,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/inverter.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
+            common/stm32/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c

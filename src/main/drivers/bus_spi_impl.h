@@ -92,4 +92,3 @@ void spiInternalStopDMA (const extDevice_t *dev);
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor);
 void spiInternalResetDescriptors(busDevice_t *bus);
 void spiSequenceStart(const extDevice_t *dev);
-
