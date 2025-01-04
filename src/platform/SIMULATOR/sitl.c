@@ -766,5 +766,5 @@ void IOInitGlobal(void)
 IO_t IOGetByTag(ioTag_t tag)
 {
     UNUSED(tag);
-    return IO_TAG_NONE;
+    return NULL;
 }
