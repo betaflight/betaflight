@@ -76,6 +76,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO            static
+#define FAST_IRQ_HANDLER
 
 #define DEFAULT_CPU_OVERCLOCK           0
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz

@@ -37,9 +37,10 @@
 #define USE_UART0
 #define USE_UART1
 
-#define USE_SPI
-#define USE_SPI_DEVICE_1
-#define USE_SPI_DEVICE_2
+//#define USE_SPI
+//#define USE_SPI_DEVICE_0
+//#define USE_SPI_DEVICE_1
+#undef USE_SPI
 
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
@@ -142,7 +143,7 @@
 
 #define MAX7456_SPI_INSTANCE SPI1
 #define SDCARD_SPI_INSTANCE  SPI1
-#define GYRO_1_SPI_INSTANCE  SPI0
+//#define GYRO_1_SPI_INSTANCE  SPI0
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM42688P
