@@ -757,3 +757,8 @@ void IOLo(IO_t io)
 {
     UNUSED(io);
 }
+
+void IOInitGlobal(void)
+{
+    // NOOP
+}
