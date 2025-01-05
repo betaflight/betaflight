@@ -106,52 +106,35 @@ bool spiInit(SPIDevice device)
 {
     switch (device) {
     case SPIINVALID:
-        return false;
 
-#ifdef USE_SPI_DEVICE_0
-    case SPIDEV_0:
-        spiInitDevice(device);
-        return true;
-#endif
-
-#ifdef USE_SPI_DEVICE_1
+#if !defined(USE_SPI_DEVICE_1)
     case SPIDEV_1:
-        spiInitDevice(device);
-        return true;
 #endif
 
-#ifdef USE_SPI_DEVICE_2
+#if !defined(USE_SPI_DEVICE_2)
     case SPIDEV_2:
-        spiInitDevice(device);
-        return true;
 #endif
 
-#if defined(USE_SPI_DEVICE_3)
+#if !defined(USE_SPI_DEVICE_3)
     case SPIDEV_3:
-        spiInitDevice(device);
-        return true;
 #endif
 
-#if defined(USE_SPI_DEVICE_4)
+#if !defined(USE_SPI_DEVICE_4)
     case SPIDEV_4:
-        spiInitDevice(device);
-        return true;
 #endif
 
-#if defined(USE_SPI_DEVICE_5)
+#if !defined(USE_SPI_DEVICE_5)
     case SPIDEV_5:
-        spiInitDevice(device);
-        return true;
 #endif
 
-#if defined(USE_SPI_DEVICE_6)
+#if !defined(USE_SPI_DEVICE_6)
     case SPIDEV_6:
-        spiInitDevice(device);
-        return true;
 #endif
-    default:
         return false;
     }
+
+    spiInitDevice(device);
+    return true;
 }
 
 // Return true if DMA engine is busy

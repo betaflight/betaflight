@@ -46,11 +46,12 @@ typedef enum {
 
 typedef enum SPIDevice {
     SPIINVALID = -1,
+    SPIDEV_FIRST = 0,
 #if defined(USE_SPI_DEVICE_0)
-    SPIDEV_0   = 0,
+    SPIDEV_0   = SPIDEV_FIRST,
     SPIDEV_1,
 #else
-    SPIDEV_1   = 0,
+    SPIDEV_1   = SPIDEV_FIRST,
 #endif
     SPIDEV_2,
     SPIDEV_3,
