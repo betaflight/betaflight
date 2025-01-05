@@ -301,3 +301,53 @@ extern uint8_t _dmaram_end__;
 #define IO_CONFIG_GET_PULL(cfg)  (((cfg) >> 5) & 0x03)
 
 #endif
+
+#if defined(STM32F4)
+#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
+#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
+#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#else
+#error "Invalid STM MCU defined - requires SPI implementation"
+#endif
+
+#if defined(STM32F4)
+#define SPIDEV_COUNT 3
+#elif defined(STM32F7)
+#define SPIDEV_COUNT 4
+#elif defined(STM32H7)
+#define SPIDEV_COUNT 6
+#else
+#define SPIDEV_COUNT 4
+#endif
+
+// Work around different check routines in the libraries for different MCU types
+#if defined(STM32H7)
+#define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXWNE(instance)
+#define SPI_RX_DATA_REGISTER(base) ((base)->RXDR)
+#else
+#define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXNE(instance)
+#define SPI_RX_DATA_REGISTER(base) ((base)->DR)
+#endif
+
+#if defined(STM32F4) || defined(STM32G4)
+#define MAX_SPI_PIN_SEL 2
+#elif defined(STM32F7)
+#define MAX_SPI_PIN_SEL 4
+#elif defined(STM32H7)
+#define MAX_SPI_PIN_SEL 5
+#else
+#error Unknown MCU family
+#endif
+
+#if !defined(STM32G4) && !defined(STM32H7)
+#define USE_TX_IRQ_HANDLER
+#endif

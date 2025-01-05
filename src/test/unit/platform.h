@@ -123,6 +123,7 @@ typedef struct
     void* test;
 } ADC_TypeDef;
 
+#define SPIDEV_COUNT 0
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 #define NVIC_PriorityGroup_2 0x500
