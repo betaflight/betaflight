@@ -148,6 +148,7 @@ endif
 MCU_COMMON_SRC = \
         common/stm32/system.c \
         common/stm32/io_impl.c \
+        common/stm32/config_flash.c \
         APM32/startup/system_apm32f4xx.c \
         drivers/inverter.c \
         drivers/dshot_bitbang_decode.c \
@@ -177,8 +178,7 @@ MCU_COMMON_SRC = \
         drivers/adc.c \
         drivers/bus_i2c_config.c \
         drivers/bus_spi_config.c \
-        common/stm32/bus_spi_pinconfig.c \
-        common/stm32/bus_spi_hw.c \
+        drivers/bus_spi_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \
         drivers/serial_uart_pinconfig.c \
@@ -204,7 +204,6 @@ MSC_SRC = \
         msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-        common/stm32/bus_spi_hw.c \
         common/stm32/system.c
 
 SIZE_OPTIMISED_SRC += \
@@ -212,7 +211,7 @@ SIZE_OPTIMISED_SRC += \
         drivers/inverter.c \
         drivers/bus_i2c_config.c \
         drivers/bus_spi_config.c \
-        common/stm32/bus_spi_pinconfig.c \
+        drivers/bus_spi_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \
         drivers/serial_uart_pinconfig.c

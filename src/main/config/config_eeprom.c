@@ -30,7 +30,10 @@
 #include "common/utils.h"
 
 #include "config/config_eeprom.h"
+#include "config/config_eeprom_impl.h"
 #include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
+
 #include "pg/pg.h"
 #include "config/config.h"
 
@@ -283,13 +286,6 @@ bool loadEEPROMFromSDCard(void)
 }
 #endif
 
-#ifdef CONFIG_IN_FILE
-void loadEEPROMFromFile(void)
-{
-    FLASH_Unlock(); // load existing config file into eepromData
-}
-#endif
-
 void initEEPROM(void)
 {
     // Verify that this architecture packs as expected.
@@ -301,7 +297,11 @@ void initEEPROM(void)
     STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
 
 #if defined(CONFIG_IN_FILE)
-    loadEEPROMFromFile();
+    bool eepromLoaded = loadEEPROMFromFile();
+    if (!eepromLoaded) {
+        // File read failed - just die now
+        failureMode(FAILURE_FILE_READ_FAILED);
+    }
 #elif defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     bool eepromLoaded = loadEEPROMFromExternalFlash();
     if (!eepromLoaded) {

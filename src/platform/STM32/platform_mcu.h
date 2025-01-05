@@ -302,6 +302,18 @@ extern uint8_t _dmaram_end__;
 
 #endif
 
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
+#define FLASH_CONFIG_BUFFER_TYPE uint32_t
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 16  // Flash word = 128-bits (4 rows, uint32_t per row - 4 x 32)
+#define FLASH_CONFIG_BUFFER_TYPE uint32_t
+#elif defined(STM32G4)
+#define FLASH_CONFIG_BUFFER_TYPE uint64_t
+#else
+#define FLASH_CONFIG_BUFFER_TYPE uint32_t
+#endif
+
 #if defined(STM32F4)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)

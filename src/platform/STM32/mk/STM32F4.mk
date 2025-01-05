@@ -171,6 +171,7 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 MCU_COMMON_SRC = \
             common/stm32/system.c \
+            common/stm32/config_flash.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \

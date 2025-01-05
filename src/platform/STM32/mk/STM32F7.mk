@@ -141,6 +141,7 @@ VCP_SRC = \
 
 MCU_COMMON_SRC = \
             common/stm32/system.c \
+            common/stm32/config_flash.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
