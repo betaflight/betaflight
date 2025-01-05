@@ -131,10 +131,10 @@ bool spiInit(SPIDevice device)
     case SPIDEV_6:
 #endif
         return false;
+    default:
+        spiInitDevice(device);
+        return true;
     }
-
-    spiInitDevice(device);
-    return true;
 }
 
 // Return true if DMA engine is busy
