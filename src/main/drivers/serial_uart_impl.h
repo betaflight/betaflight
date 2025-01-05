@@ -31,102 +31,10 @@
 // Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
 // increase size further.
 
-// define some common UART features
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F43x)
-#define UART_TRAIT_AF_PIN 1        // pin AF mode is configured for each pin individually
-#else
-#define UART_TRAIT_AF_PORT 1       // all pins on given uart use same AF
-#endif
+#include "platform.h"
 
-#if !defined(STM32F4) || !defined(APM32F4) // all others support pinswap
-#define UART_TRAIT_PINSWAP 1
-#endif
-
-#if defined(STM32F4)
-
-#define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-
-#elif defined(STM32F7)
-
-#define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-
-#elif defined(STM32H7)
-
-#define UARTHARDWARE_MAX_PINS 5
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-
-#elif defined(STM32G4)
-
-#define UARTHARDWARE_MAX_PINS 3
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-
-#elif defined(AT32F4)
-
-#define UARTHARDWARE_MAX_PINS 5
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-#elif defined(APM32F4)
-
-#define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
-
-#else
-#error unknown MCU family
+#if !defined(UART_TRAIT_AF_PIN) && !defined(UART_TRAIT_AF_PORT)
+#error "Must specify either AF mode for MCU"
 #endif
 
 // compressed index of UART/LPUART. Direct index into uartDevice[]
@@ -188,10 +96,10 @@ typedef struct uartHardware_s {
     // For H7 and G4  , {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); H7:RM0433 Table 110, G4:RM0440 Table 80.
     // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x)
     // For at32f435/7 DmaChannel is the dmamux, need to call dmamuxenable using dmamuxid
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+#if defined(DMA_TRAIT_CHANNEL)
     uint32_t txDMAChannel;
     uint32_t rxDMAChannel;
-#elif defined(AT32F4)
+#elif defined(DMA_TRAIT_MUX)
     uint32_t txDMAMuxId;//for dmaspec->dmamux  and using dmaMuxEnable(dmax,muxid)
     uint32_t rxDMAMuxId;
 #endif
@@ -266,20 +174,6 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor);
 
 bool checkUsartTxOutput(uartPort_t *s);
 void uartTxMonitor(uartPort_t *s);
-
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-#define UART_REG_RXD(base) ((base)->RDR)
-#define UART_REG_TXD(base) ((base)->TDR)
-#elif defined(STM32F4)
-#define UART_REG_RXD(base) ((base)->DR)
-#define UART_REG_TXD(base) ((base)->DR)
-#elif defined(AT32F43x)
-#define UART_REG_RXD(base) ((base)->dt)
-#define UART_REG_TXD(base) ((base)->dt)
-#elif defined(APM32F4)
-#define UART_REG_RXD(base) ((base)->DATA)
-#define UART_REG_TXD(base) ((base)->DATA)
-#endif
 
 #define UART_BUFFER(type, n, rxtx) type volatile uint8_t uart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
 

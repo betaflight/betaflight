@@ -187,6 +187,28 @@
 
 #define USE_TX_IRQ_HANDLER
 
+#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
+#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
+
+#define UART_TRAIT_AF_PORT 1
+
+#define UARTHARDWARE_MAX_PINS 4
+#ifndef UART_RX_BUFFER_SIZE
+#define UART_RX_BUFFER_SIZE     256
+#endif
+#ifndef UART_TX_BUFFER_SIZE
+#ifdef USE_MSP_DISPLAYPORT
+#define UART_TX_BUFFER_SIZE     1280
+#else
+#define UART_TX_BUFFER_SIZE     256
+#endif
+#endif
+
+#define UART_REG_RXD(base) ((base)->DATA)
+#define UART_REG_TXD(base) ((base)->DATA)
+
+#define DMA_TRAIT_CHANNEL
+
 #endif
 
 #if defined(APM32F4)
