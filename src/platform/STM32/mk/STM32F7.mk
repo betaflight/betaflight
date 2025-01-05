@@ -140,8 +140,6 @@ VCP_SRC = \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            common/stm32/system.c \
-            common/stm32/config_flash.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
@@ -190,7 +188,6 @@ MSC_SRC = \
             msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c \
             STM32/bus_i2c_hal.c \
             STM32/bus_spi_ll.c \
             drivers/max7456.c \
