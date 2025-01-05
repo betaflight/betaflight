@@ -68,3 +68,11 @@ IO_t IOGetByTag(ioTag_t tag)
     offset += ioDefUsedOffset[portIdx];
     return ioRecs + offset;
 }
+
+int IO_GPIOPortIdx(IO_t io)
+{
+    if (!io) {
+        return -1;
+    }
+    return (((size_t)IO_GPIO(io) - GPIOA_BASE) >> 10);
+}
