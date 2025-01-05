@@ -757,3 +757,14 @@ void IOLo(IO_t io)
 {
     UNUSED(io);
 }
+
+void IOInitGlobal(void)
+{
+    // NOOP
+}
+
+IO_t IOGetByTag(ioTag_t tag)
+{
+    UNUSED(tag);
+    return NULL;
+}
