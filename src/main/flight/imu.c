@@ -173,7 +173,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     imuRuntimeConfig.imuDcmKp = imuConfig()->imu_dcm_kp / 10000.0f;
     imuRuntimeConfig.imuDcmKi = imuConfig()->imu_dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
-    const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination / 10.0f);
+    const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination);
     north_ef.x = cos_approx(imuMagneticDeclinationRad);
     north_ef.y = -sin_approx(imuMagneticDeclinationRad);
 
