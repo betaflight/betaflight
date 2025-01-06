@@ -59,7 +59,7 @@ typedef struct imuConfig_s {
     uint16_t imu_dcm_ki;          // DCM filter integral gain ( x 10000)
     uint8_t small_angle;
     uint8_t imu_process_denom;
-    int8_t mag_declination;       // Magnetic declination in degrees
+    int16_t mag_declination;      // Magnetic declination in degrees * 10
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);
