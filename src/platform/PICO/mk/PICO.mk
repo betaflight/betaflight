@@ -183,6 +183,7 @@ MCU_COMMON_SRC = \
             PICO/system.c \
             PICO/io_pico.c \
             PICO/bus_spi_pico.c \
-            PICO/serial_uart_pico.c
+            PICO/serial_uart_pico.c \
+            PICO/config_flash.c
 
 DEVICE_FLAGS +=

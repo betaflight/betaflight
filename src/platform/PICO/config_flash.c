@@ -45,7 +45,7 @@ void configFlashClearFlags(void)
     // NOOP
 }
 
-configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t value)
+configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer)
 {
     uint32_t interrupts = save_and_disable_interrupts();
 
@@ -54,13 +54,12 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
         flash_range_erase(address, FLASH_PAGE_SIZE);
     }
 
-    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(config_streamer_buffer_type_t) * CONFIG_STREAMER_BUFFER_SIZE,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
 
-    // TODO: refactor to stream the entire buffer to flash also possibly avoid disabling interrupts.
     // Write data to flash
     // TODO: synchronise second core...
 
-    flash_range_program(address, (uint8_t*)&value, sizeof(uint32_t));
+    flash_range_program(address, buffer, CONFIG_STREAMER_BUFFER_SIZE);
 
     restore_interrupts(interrupts);
     return CONFIG_RESULT_SUCCESS;

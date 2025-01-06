@@ -31,8 +31,6 @@
 #define SPI_IO_AF_SDI_CFG       0
 #define SPI_IO_CS_CFG           0
 
-
-
 // Register address offsets for atomic RMW aliases
 #define REG_ALIAS_RW_BITS  (_u(0x0) << _u(12))
 #define REG_ALIAS_XOR_BITS (_u(0x1) << _u(12))
