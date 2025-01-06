@@ -142,3 +142,5 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define MAX_SPI_PIN_SEL 4
 
 #endif
+
+#define FLASH_CONFIG_BUFFER_TYPE      uint32_t

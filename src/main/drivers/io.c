@@ -52,14 +52,6 @@ uint16_t IO_Pin(IO_t io)
     return ioRec->pin;
 }
 
-int IO_GPIOPortIdx(IO_t io)
-{
-    if (!io) {
-        return -1;
-    }
-    return (((size_t)IO_GPIO(io) - GPIOA_BASE) >> 10);
-}
-
 int IO_EXTI_PortSourceGPIO(IO_t io)
 {
     return IO_GPIOPortIdx(io);

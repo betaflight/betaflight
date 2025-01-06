@@ -236,15 +236,6 @@ typedef struct
     void* test;
 } I2C_TypeDef;
 
-typedef enum
-{
-  FLASH_BUSY = 1,
-  FLASH_ERROR_PG,
-  FLASH_ERROR_WRP,
-  FLASH_COMPLETE,
-  FLASH_TIMEOUT
-} FLASH_Status;
-
 typedef struct {
     double timestamp;                   // in seconds
     double imu_angular_velocity_rpy[3]; // rad/s -> range: +/- 8192; +/- 2000 deg/se
@@ -268,11 +259,6 @@ typedef struct {
     uint16_t motorCount; // Count of motor in the PWM output.
     float pwm_output_raw[SIMULATOR_MAX_PWM_CHANNELS];   // Raw PWM from 1100 to 1900
 } servo_packet_raw;
-
-void FLASH_Unlock(void);
-void FLASH_Lock(void);
-FLASH_Status FLASH_ErasePage(uintptr_t Page_Address);
-FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t Data);
 
 uint64_t nanos64_real(void);
 uint64_t micros64_real(void);
