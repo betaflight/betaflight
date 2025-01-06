@@ -83,6 +83,7 @@ DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 
 MCU_COMMON_SRC = \
             common/stm32/system.c \
             common/stm32/io_impl.c \
+            common/stm32/config_flash.c \
             AT32/startup/at32f435_437_clock.c \
             AT32/startup/system_at32f435_437.c \
             AT32/adc_at32f43x.c \
