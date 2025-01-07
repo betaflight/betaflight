@@ -165,6 +165,7 @@ uartPort_t *serialUART(uartDevice_t *uart, uint32_t baudRate, portMode_e mode, p
 void uartConfigureExternalPinInversion(uartPort_t *uartPort);
 
 void uartIrqHandler(uartPort_t *s);
+void uartEnableTxInterrupt(uartPort_t *uartPort);
 
 void uartReconfigure(uartPort_t *uartPort);
 
