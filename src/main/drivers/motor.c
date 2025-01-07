@@ -317,13 +317,20 @@ bool isMotorProtocolBidirDshot(void)
 
 void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount)
 {
+#if defined(USE_PWM_OUTPUT) || defined(USE_DSHOT)
     memset(motors, 0, sizeof(motors));
-
     bool useUnsyncedPwm = motorDevConfig->useUnsyncedPwm;
+#else
+    UNUSED(motors);
+    UNUSED(idlePulse);
+    UNUSED(motorDevConfig);
+#endif
 
     if (isMotorProtocolEnabled()) {
         if (!isMotorProtocolDshot()) {
+#ifdef USE_PWM_OUTPUT
             motorDevice = motorPwmDevInit(motorDevConfig, idlePulse, motorCount, useUnsyncedPwm);
+#endif
         }
 #ifdef USE_DSHOT
         else {
