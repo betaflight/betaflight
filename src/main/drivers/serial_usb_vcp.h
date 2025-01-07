@@ -21,7 +21,6 @@
 #pragma once
 
 #include "drivers/serial.h"
-#include "serial_usb_vcp_impl.h"
 
 typedef struct {
     serialPort_t port;

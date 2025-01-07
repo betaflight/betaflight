@@ -83,6 +83,7 @@ typedef struct __attribute__ ((packed))
 } LINE_CODING;
 
 extern USBD_CDC_ItfTypeDef  USBD_CDC_fops;
+extern USBD_HandleTypeDef   USBD_Device;
 
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength);
 uint32_t CDC_Send_FreeBytes(void);
