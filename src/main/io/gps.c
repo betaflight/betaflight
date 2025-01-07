@@ -46,6 +46,9 @@
 #include "io/dashboard.h"
 #endif
 #include "io/gps.h"
+#if defined(USE_VIRTUAL_GPS)
+#include "io/gps_virtual.h"
+#endif
 #include "io/serial.h"
 
 #include "config/config.h"
@@ -61,6 +64,7 @@
 
 #include "sensors/sensors.h"
 #include "common/typeconversion.h"
+
 
 // **********************
 // GPS
@@ -1337,8 +1341,32 @@ static void calculateNavInterval (void)
     gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
 }
 
+#if defined(USE_VIRTUAL_GPS)
+static void updateVirtualGPS(void)
+{
+    const uint32_t updateInterval = 100; // 100ms 10Hz update time interval
+    static uint32_t nextUpdateTime = 0;
+    uint32_t currentTime = millis();
+    if (currentTime > nextUpdateTime)
+    {
+        getVirtualGPS(&gpsSol);
+        gpsSol.time = currentTime;     // ms_tow
+        gpsSol.navIntervalMs = updateInterval;
+        gpsSetFixState(GPS_FIX); // fix_type
+        sensorsSet(SENSOR_GPS);
+        nextUpdateTime = currentTime + updateInterval;
+    }
+}
+#endif
+
+
 void gpsUpdate(timeUs_t currentTimeUs)
 {
+#if defined(USE_VIRTUAL_GPS)
+    updateVirtualGPS();
+    return;
+#endif
+
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
     timeDelta_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
@@ -1391,7 +1419,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
             }
         }
-    }
+    } 
 
     switch (gpsData.state) {
         case GPS_STATE_UNKNOWN:
