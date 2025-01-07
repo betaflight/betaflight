@@ -57,10 +57,8 @@
 
 #include "rx/rx.h"
 
-#ifdef USE_VIRTUAL_GPS
 #include "io/gps.h"
 #include "io/gps_virtual.h"
-#endif
 
 #include "dyad.h"
 #include "udplink.h"
