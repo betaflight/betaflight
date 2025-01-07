@@ -45,10 +45,10 @@
 #ifdef USE_DASHBOARD
 #include "io/dashboard.h"
 #endif
+
 #include "io/gps.h"
-#if defined(USE_VIRTUAL_GPS)
 #include "io/gps_virtual.h"
-#endif
+
 #include "io/serial.h"
 
 #include "config/config.h"

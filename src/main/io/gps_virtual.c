@@ -37,24 +37,14 @@ void setVirtualGPS(double latitude, double longitude, double altiutude, double s
     gpsVirtualData.dop.pdop = 10; // hdop in 4.4 and earlier, pdop in 4.5 and above
     gpsVirtualData.llh.lon = (int32_t)(longitude * GPS_DEGREES_DIVIDER);
     gpsVirtualData.llh.lat = (int32_t)(latitude * GPS_DEGREES_DIVIDER);
-    gpsVirtualData.llh.altCm = (int32_t)(altiutude * 100.0); // alt
-    gpsVirtualData.groundSpeed = (uint16_t)(speed * 100.0);
-    gpsVirtualData.speed3d = (uint16_t)(speed3D * 100.0);
-    gpsVirtualData.groundCourse = (uint16_t)(course * 10.0); // incoming value expected to be in centidegrees, output value in decidegrees
+    gpsVirtualData.llh.altCm = (int32_t)(altiutude * 100.0); // alt, cm
+    gpsVirtualData.groundSpeed = (uint16_t)(speed * 100.0);  // cm/sec
+    gpsVirtualData.speed3d = (uint16_t)(speed3D * 100.0);	// cm/sec
+    gpsVirtualData.groundCourse = (uint16_t)(course * 10.0); // decidegrees
 }
 
 void getVirtualGPS(gpsSolutionData_t *gpsSolData)
 {
-    gpsSolData->numSat = gpsVirtualData.numSat;
-    gpsSolData->acc.hAcc = gpsVirtualData.acc.hAcc;
-    gpsSolData->acc.vAcc = gpsVirtualData.acc.vAcc;
-    gpsSolData->acc.sAcc = gpsVirtualData.acc.sAcc;
-    gpsSolData->dop.pdop = gpsVirtualData.dop.pdop;
-    gpsSolData->llh.lon = gpsVirtualData.llh.lon;
-    gpsSolData->llh.lat = gpsVirtualData.llh.lat;
-    gpsSolData->llh.altCm = gpsVirtualData.llh.altCm;
-    gpsSolData->groundSpeed = gpsVirtualData.groundSpeed;
-    gpsSolData->speed3d = gpsVirtualData.speed3d;
-    gpsSolData->groundCourse = gpsVirtualData.groundCourse;
+    *gpsSolData = gpsVirtualData;
 }
 #endif

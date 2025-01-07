@@ -188,8 +188,8 @@ void updateState(const fdm_packet* pkt)
     longitude = pkt->position_xyz[0];
     latitude = pkt->position_xyz[1];
     altitude = pkt->position_xyz[2];
-    speed = sqrt(pkt->velocity_xyz[0] * pkt->velocity_xyz[0] + pkt->velocity_xyz[1] * pkt->velocity_xyz[1]);
-    speed3D = sqrt(pkt->velocity_xyz[0] * pkt->velocity_xyz[0] + pkt->velocity_xyz[1] * pkt->velocity_xyz[1] + pkt->velocity_xyz[2] * pkt->velocity_xyz[2]);
+    speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
+    speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
     course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
     if (course < 0.0)
         course += 360.0;
