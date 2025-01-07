@@ -37,10 +37,6 @@ uint8_t eepromData[EEPROM_SIZE];
 #endif
 #endif
 
-#if !defined(FLASH_PAGE_SIZE)
-#error "Flash page size not defined for target."
-#endif
-
 void config_streamer_init(config_streamer_t *c)
 {
     memset(c, 0, sizeof(*c));
