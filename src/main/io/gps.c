@@ -1347,8 +1347,7 @@ static void updateVirtualGPS(void)
     const uint32_t updateInterval = 100; // 100ms 10Hz update time interval
     static uint32_t nextUpdateTime = 0;
     uint32_t currentTime = millis();
-    if (currentTime > nextUpdateTime)
-    {
+    if (cmp32(currentTime, nextUpdateTime) > 0) {
         getVirtualGPS(&gpsSol);
         gpsSol.time = currentTime;     // ms_tow
         gpsSol.navIntervalMs = updateInterval;
