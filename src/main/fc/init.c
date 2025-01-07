@@ -211,6 +211,9 @@ static void configureSPIBusses(void)
 #ifdef USE_SPI
     spiPreinit();
 
+#ifdef USE_SPI_DEVICE_0
+    spiInit(SPIDEV_0);
+#endif
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
