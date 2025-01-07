@@ -24,7 +24,6 @@
 #include "platform.h"
 
 #ifdef USE_VIRTUAL_GPS
-#include "io/gps.h"
 #include "io/gps_virtual.h"
 #include <stdio.h>
 static gpsSolutionData_t gpsVirtualData;
@@ -43,7 +42,7 @@ void setVirtualGPS(double latitude, double longitude, double altiutude, double s
     gpsVirtualData.groundCourse = (uint16_t)(course * 10.0); // decidegrees
 }
 
-void getVirtualGPS(struct gpsSolutionData_s *gpsSolData)
+void getVirtualGPS(gpsSolutionData_t *gpsSolData)
 {
     *gpsSolData = gpsVirtualData;
 }
