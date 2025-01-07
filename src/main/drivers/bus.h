@@ -62,9 +62,9 @@ typedef struct busDevice_s {
     } busType_u;
     bool useDMA;
     uint8_t deviceCount;
+#ifdef USE_DMA
     dmaChannelDescriptor_t *dmaTx;
     dmaChannelDescriptor_t *dmaRx;
-#ifdef USE_DMA
     // Use a reference here as this saves RAM for unused descriptors
 #if defined(USE_FULL_LL_DRIVER)
     LL_DMA_InitTypeDef          *initTx;
