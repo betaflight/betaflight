@@ -186,7 +186,16 @@ void updateState(const fdm_packet* pkt)
 #endif
 
 #if defined(USE_VIRTUAL_GPS)
-    setVirtualGPS(55.5f, 37.5f, 5.0f, 10.0f, 10.0f, 45.0f);
+    float longitude, latitude, altitude, speed, speed3D, course;
+    longitude = (float)pkt->position_xyz[0];
+    latitude = (float)pkt->position_xyz[1];
+    altitude = (float)pkt->position_xyz[2];
+    speed = (float)sqrt(pkt->velocity_xyz[0] * pkt->velocity_xyz[0] + pkt->velocity_xyz[1] * pkt->velocity_xyz[1]);
+    speed3D = (float)sqrt(pkt->velocity_xyz[0] * pkt->velocity_xyz[0] + pkt->velocity_xyz[1] * pkt->velocity_xyz[1] + pkt->velocity_xyz[2] * pkt->velocity_xyz[2]);
+    course = (float)(atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG);
+    if (course < 0.0f)
+        course += 360.0f;
+    setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
 #endif
 
 #if defined(SIMULATOR_IMU_SYNC)
