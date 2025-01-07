@@ -28,19 +28,19 @@
 #include "io/gps_virtual.h"
 #include <stdio.h>
 static gpsSolutionData_t gpsVirtualData;
-void setVirtualGPS(float latitude, float longitude, float altiutude, float speed, float speed3D, float course)
+void setVirtualGPS(double latitude, double longitude, double altiutude, double speed, double speed3D, double course)
 {
     gpsVirtualData.numSat = 12;    // satellites_in_view
     gpsVirtualData.acc.hAcc = 500; // horizontal_pos_accuracy - convert cm to mm
     gpsVirtualData.acc.vAcc = 500; // vertical_pos_accuracy - convert cm to mm
     gpsVirtualData.acc.sAcc = 400; // horizontal_vel_accuracy - convert cm to mm
-    gpsVirtualData.dop.pdop = 1; // hdop in 4.4 and earlier, pdop in 4.5 and above
+    gpsVirtualData.dop.pdop = 10; // hdop in 4.4 and earlier, pdop in 4.5 and above
     gpsVirtualData.llh.lon = (int32_t)(longitude * GPS_DEGREES_DIVIDER);
     gpsVirtualData.llh.lat = (int32_t)(latitude * GPS_DEGREES_DIVIDER);
-    gpsVirtualData.llh.altCm = (int32_t)(altiutude * 100.0f); // alt
-    gpsVirtualData.groundSpeed = (uint16_t)(speed * 100.0f);
-    gpsVirtualData.speed3d = (uint16_t)(speed3D * 100.0f);
-    gpsVirtualData.groundCourse = (uint16_t)(course * 10.0f); // incoming value expected to be in centidegrees, output value in decidegrees
+    gpsVirtualData.llh.altCm = (int32_t)(altiutude * 100.0); // alt
+    gpsVirtualData.groundSpeed = (uint16_t)(speed * 100.0);
+    gpsVirtualData.speed3d = (uint16_t)(speed3D * 100.0);
+    gpsVirtualData.groundCourse = (uint16_t)(course * 10.0); // incoming value expected to be in centidegrees, output value in decidegrees
 }
 
 void getVirtualGPS(gpsSolutionData_t *gpsSolData)
