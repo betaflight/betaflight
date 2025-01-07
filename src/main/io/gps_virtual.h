@@ -20,4 +20,5 @@
 
 #pragma once
 void setVirtualGPS(double latitude, double longitude, double altiutude, double velocity, double velocity3D, double course);
-void getVirtualGPS(gpsSolutionData_t *gpsSolData);
+struct gpsSolutionData_s;
+void getVirtualGPS(struct gpsSolutionData_s *gpsSolData);

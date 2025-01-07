@@ -43,7 +43,7 @@ void setVirtualGPS(double latitude, double longitude, double altiutude, double s
     gpsVirtualData.groundCourse = (uint16_t)(course * 10.0); // decidegrees
 }
 
-void getVirtualGPS(gpsSolutionData_t *gpsSolData)
+void getVirtualGPS(struct gpsSolutionData_s *gpsSolData)
 {
     *gpsSolData = gpsVirtualData;
 }
