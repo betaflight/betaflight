@@ -1419,7 +1419,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
             }
         }
-    } 
+    }
 
     switch (gpsData.state) {
         case GPS_STATE_UNKNOWN:
