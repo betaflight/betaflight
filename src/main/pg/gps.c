@@ -32,7 +32,11 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 4);
 
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
+#if defined(USE_VIRTUAL_GPS)
+    .provider = GPS_VIRTUAL,
+#else
     .provider = GPS_UBLOX,
+#endif
     .sbasMode = SBAS_NONE,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,

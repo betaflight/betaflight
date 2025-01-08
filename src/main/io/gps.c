@@ -1358,20 +1358,22 @@ static void updateVirtualGPS(void)
 }
 #endif
 
-
 void gpsUpdate(timeUs_t currentTimeUs)
 {
-#if defined(USE_VIRTUAL_GPS)
-    updateVirtualGPS();
-    return;
-#endif
-
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
     timeDelta_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
     gpsData.now = millis();
 
+#if defined(USE_VIRTUAL_GPS)
+    if (gpsConfig()->provider == GPS_VIRTUAL) {
+        updateVirtualGPS();
+        return;
+    }
+#endif
+
     if (gpsPort) {
+
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         static uint8_t wait = 0;
         static bool isFast = false;
