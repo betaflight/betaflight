@@ -37,21 +37,6 @@
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 
-
-static uint16_t spiDivisorToBRbits(spi_inst_t *instance, uint16_t divisor)
-{
-    UNUSED(instance);
-    divisor = constrain(divisor, 2, 256);
-    return 0;
-}
-
-static void spiSetDivisorBRreg(spi_inst_t *instance, uint16_t divisor)
-{
-    //TODO: implement
-    UNUSED(instance);
-    UNUSED(divisor);
-}
-
 void spiInitDevice(SPIDevice device)
 {
     //TODO: implement
@@ -68,16 +53,6 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 {
     //TODO: implement
     UNUSED(descriptor);
-}
-
-static bool spiInternalReadWriteBufPolled(spi_inst_t *instance, const uint8_t *txData, uint8_t *rxData, int len)
-{
-    //TODO: implement
-    UNUSED(instance);
-    UNUSED(txData);
-    UNUSED(rxData);
-    UNUSED(len);
-    return true;
 }
 
 void spiInternalInitStream(const extDevice_t *dev, bool preInit)
@@ -104,5 +79,11 @@ void spiSequenceStart(const extDevice_t *dev)
 {
     //TODO: implement
     UNUSED(dev);
+}
+
+uint16_t spiCalculateDivider(uint32_t freq)
+{
+    UNUSED(freq);
+    return 0;
 }
 #endif
