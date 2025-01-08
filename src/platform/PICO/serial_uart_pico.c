@@ -32,7 +32,7 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_impl.h"
-#include "serial_uart_impl.h"
+#include "drivers/serial_uart_impl.h"
 
 #include "hardware/uart.h"
 #include "hardware/irq.h"
@@ -82,7 +82,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 };
 
-static void uartIrqHandler(uartPort_t *s)
+void uartIrqHandler(uartPort_t *s)
 {
     if ((uart_get_hw(s->USARTx)->imsc & UART_UARTIMSC_RXIM_BITS) != 0) {
         while (uart_is_readable(s->USARTx)) {
