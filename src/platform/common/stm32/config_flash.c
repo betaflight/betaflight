@@ -27,6 +27,10 @@
 
 #if defined(CONFIG_IN_FLASH)
 
+#if !defined(FLASH_PAGE_SIZE)
+#error "Flash page size not defined for STM (or clone) target."
+#endif
+
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
 /*
 Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
