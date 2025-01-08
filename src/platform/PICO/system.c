@@ -24,6 +24,12 @@
 
 #include "platform.h"
 
+#include "drivers/system.h"
+
+#include "drivers/io.h"
+#include "drivers/light_led.h"
+#include "drivers/sound_beeper.h"
+
 #include "hardware/timer.h"
 #include "hardware/clocks.h"
 #include "pico/unique_id.h"
@@ -101,6 +107,12 @@ void systemInit(void)
     memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
 }
 
+void systemResetToBootloader(bootloaderRequestType_e requestType)
+{
+    UNUSED(requestType);
+    //TODO: implement
+}
+
 // Return system uptime in milliseconds (rollover in 49 days)
 uint32_t millis(void)
 {
@@ -140,4 +152,65 @@ uint32_t getCycleCounter(void)
 uint32_t clockMicrosToCycles(uint32_t micros)
 {
     return micros / usTicks;
+}
+
+static void indicate(uint8_t count, uint16_t duration)
+{
+    if (count) {
+        LED1_ON;
+        LED0_OFF;
+
+        while (count--) {
+            LED1_TOGGLE;
+            LED0_TOGGLE;
+            BEEP_ON;
+            delay(duration);
+
+            LED1_TOGGLE;
+            LED0_TOGGLE;
+            BEEP_OFF;
+            delay(duration);
+        }
+    }
+}
+
+void indicateFailure(failureMode_e mode, int codeRepeatsRemaining)
+{
+    while (codeRepeatsRemaining--) {
+        indicate(WARNING_FLASH_COUNT, WARNING_FLASH_DURATION_MS);
+
+        delay(WARNING_PAUSE_DURATION_MS);
+
+        indicate(mode + 1, WARNING_CODE_DURATION_LONG_MS);
+
+        delay(1000);
+    }
+}
+
+void failureMode(failureMode_e mode)
+{
+    indicateFailure(mode, 10);
+
+#ifdef DEBUG
+    systemReset();
+#else
+    systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
+#endif
+}
+
+void __unhandled_user_irq(void)
+{
+    // TODO
+}
+
+static void unusedPinInit(IO_t io)
+{
+    if (IOGetOwner(io) == OWNER_FREE) {
+        IOConfigGPIO(io, 0);
+    }
+}
+
+void unusedPinsInit(void)
+{
+    IOTraversePins(unusedPinInit);
 }
