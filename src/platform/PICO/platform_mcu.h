@@ -54,7 +54,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_TypeDef          void*
 //#define DMA_InitTypeDef
 //#define DMA_Channel_TypeDef
-#define SPI_TypeDef          spi_inst_t
+#define SPI_TypeDef          SPI0_Type
 #define ADC_TypeDef          void*
 #define USART_TypeDef        uart_inst_t
 #define TIM_OCInitTypeDef    void*
@@ -99,3 +99,5 @@ extern uint32_t systemUniqueId[3];
 #define U_ID_1 (systemUniqueId[1])
 #define U_ID_2 (systemUniqueId[2])
 
+#define UART_TX_BUFFER_ATTRIBUTE
+#define UART_RX_BUFFER_ATTRIBUTE

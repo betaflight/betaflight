@@ -37,10 +37,10 @@
 #define USE_UART0
 #define USE_UART1
 
-//#define USE_SPI
-//#define USE_SPI_DEVICE_0
-//#define USE_SPI_DEVICE_1
-#undef USE_SPI
+#define USE_SPI
+#define USE_SPI_DEVICE_0
+#define USE_SPI_DEVICE_1
+//#undef USE_SPI
 
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
@@ -69,8 +69,6 @@
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_MULTI_GYRO
 #undef USE_BARO
-
-
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_CRSF
@@ -117,6 +115,18 @@
 #undef USE_FLASH_PY25Q128HA
 #undef USE_FLASH_W25Q64FV
 
+#undef USE_RPM_LIMIT
+
+#undef USE_SERVOS
+#undef USE_LED_STRIP
+#undef USE_OSD
+#undef USE_OSD_SD
+#undef USE_OSD_HD
+#undef USE_OSD_QUICK_MENU
+#undef USE_GPS
+#undef USE_POSITION_HOLD
+
+
 //#define FLASH_PAGE_SIZE                     0x1
 #define CONFIG_IN_FLASH
 
@@ -144,7 +154,7 @@
 
 #define MAX7456_SPI_INSTANCE SPI1
 #define SDCARD_SPI_INSTANCE  SPI1
-//#define GYRO_1_SPI_INSTANCE  SPI0
+#define GYRO_1_SPI_INSTANCE  SPI0
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM42688P
@@ -210,3 +220,12 @@ I2C0_SCL        P45
 SPARE3          P47
 
 */
+
+#define SPIDEV_COUNT 2
+#define UART_RX_BUFFER_SIZE 1024
+#define UART_TX_BUFFER_SIZE 1024
+
+#define UARTHARDWARE_MAX_PINS 4
+#define UART_TRAIT_AF_PORT 1
+
+#define MAX_SPI_PIN_SEL 4

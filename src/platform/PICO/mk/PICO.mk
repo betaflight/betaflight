@@ -14,7 +14,6 @@ CMSIS_DIR      := $(SDK_DIR)/rp2_common/cmsis/stub/CMSIS
 #STDPERIPH
 STDPERIPH_DIR  := $(SDK_DIR)/rp2_common
 STDPERIPH_SRC  := \
-            pico_clib_interface/newlib_interface.c \
             hardware_sync_spin_lock/sync_spin_lock.c \
             hardware_gpio/gpio.c \
             pico_stdio/stdio.c \
@@ -28,7 +27,8 @@ STDPERIPH_SRC  := \
             hardware_adc/adc.c \
             hardware_pio/pio.c \
             hardware_watchdog/watchdog.c \
-            hardware_flash/flash.c
+            hardware_flash/flash.c \
+            pico_unique_id/unique_id.c
 
 VPATH := $(VPATH):$(STDPERIPH_DIR)
 
@@ -180,10 +180,15 @@ MCU_COMMON_SRC = \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
             drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart_pinconfig.c \
+            PICO/misc_todo.c \
             PICO/system.c \
             PICO/io_pico.c \
             PICO/bus_spi_pico.c \
             PICO/serial_uart_pico.c \
+            PICO/exti_pico.c \
             PICO/config_flash.c
 
 DEVICE_FLAGS +=
