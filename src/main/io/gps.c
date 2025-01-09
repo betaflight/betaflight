@@ -1361,7 +1361,7 @@ static void updateVirtualGPS(void)
         if (gpsSol.numSat > 3) {
             gpsSetFixState(GPS_FIX);
         } else {
-            gpsSetFixState(false);
+            gpsSetFixState(0);
         }
         GPS_update ^= GPS_DIRECT_TICK;
 
