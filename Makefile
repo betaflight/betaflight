@@ -219,10 +219,14 @@ endif # TARGET specified
 # openocd specific includes
 include $(MAKE_SCRIPT_DIR)/openocd.mk
 
-ifneq ($(CONFIG),)
-.DEFAULT_GOAL := $(CONFIG)
-else
+ifeq ($(CONFIG),)
+ifeq ($(TARGET),)
 .DEFAULT_GOAL := all
+else
+.DEFAULT_GOAL := hex
+endif
+else
+.DEFAULT_GOAL := hex
 endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
