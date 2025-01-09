@@ -211,7 +211,6 @@ void uartConfigureExternalPinInversion(uartPort_t *uartPort)
 #endif
 }
 
-// TODO - move to serial_uart_hw.c
 #ifdef USE_DMA
 void uartConfigureDma(uartDevice_t *uartdev)
 {
