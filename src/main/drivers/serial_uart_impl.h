@@ -96,10 +96,10 @@ typedef struct uartHardware_s {
     // For H7 and G4  , {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); H7:RM0433 Table 110, G4:RM0440 Table 80.
     // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x)
     // For at32f435/7 DmaChannel is the dmamux, need to call dmamuxenable using dmamuxid
-#if defined(DMA_TRAIT_CHANNEL)
+#if DMA_TRAIT_CHANNEL
     uint32_t txDMAChannel;
     uint32_t rxDMAChannel;
-#elif defined(DMA_TRAIT_MUX)
+#elif DMA_TRAIT_MUX
     uint32_t txDMAMuxId;//for dmaspec->dmamux  and using dmaMuxEnable(dmax,muxid)
     uint32_t rxDMAMuxId;
 #endif

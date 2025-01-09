@@ -237,9 +237,9 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, uartDeviceIdx, cfg->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->txDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+#if DMA_TRAIT_CHANNEL
             uartPort->txDMAChannel = dmaChannelSpec->channel;
-#elif defined(AT32F4)
+#elif DMA_TRAIT_MUX
             uartPort->txDMAMuxId = dmaChannelSpec->dmaMuxId;
 #endif
         }
@@ -249,9 +249,9 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+#if DMA_TRAIT_CHANNEL
             uartPort->rxDMAChannel = dmaChannelSpec->channel;
-#elif defined(AT32F4)
+#elif DMA_TRAIT_MUX
             uartPort->rxDMAMuxId = dmaChannelSpec->dmaMuxId;
 #endif
         }
@@ -261,18 +261,18 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
     if (hardware->rxDMAResource) {
         uartPort->rxDMAResource = hardware->rxDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+#if DMA_TRAIT_CHANNEL
         uartPort->rxDMAChannel = hardware->rxDMAChannel;
-#elif defined(AT32F4)
+#elif DMA_TRAIT_MUX
         uartPort->rxDMAMuxId = hardware->rxDMAMuxId;
 #endif
     }
 
     if (hardware->txDMAResource) {
         uartPort->txDMAResource = hardware->txDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+#if DMA_TRAIT_CHANNEL
         uartPort->txDMAChannel = hardware->txDMAChannel;
-#elif defined(AT32F4)
+#elif DMA_TRAIT_MUX
         uartPort->txDMAMuxId = hardware->txDMAMuxId;
 #endif
     }
@@ -282,7 +282,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
         const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
         if (dmaAllocate(identifier, ownerTxRx, ownerIndex)) {
             dmaEnable(identifier);
-#if defined(AT32F4)
+#if DMA_TRAIT_MUX
             dmaMuxEnable(identifier, uartPort->txDMAMuxId);
 #endif
             dmaSetHandler(identifier, uartDmaIrqHandler, hardware->txPriority, (uint32_t)uartdev);
@@ -294,7 +294,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
         const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
         if (dmaAllocate(identifier, ownerTxRx + 1, ownerIndex)) {
             dmaEnable(identifier);
-#if defined(AT32F4)
+#if DMA_TRAIT_MUX
             dmaMuxEnable(identifier, uartPort->rxDMAMuxId);
 #endif
             uartPort->rxDMAPeripheralBaseAddr = (uint32_t)&UART_REG_RXD(hardware->reg);

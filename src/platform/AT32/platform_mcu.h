@@ -162,7 +162,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_REG_RXD(base) ((base)->dt)
 #define UART_REG_TXD(base) ((base)->dt)
 
-#define DMA_TRAIT_MUX
+#define DMA_TRAIT_MUX 1
 
 #endif
 

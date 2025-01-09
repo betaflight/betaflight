@@ -458,5 +458,5 @@ extern uint8_t _dmaram_end__;
 
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-#define DMA_TRAIT_CHANNEL
+#define DMA_TRAIT_CHANNEL 1
 #endif
