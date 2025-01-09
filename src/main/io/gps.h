@@ -178,7 +178,7 @@ typedef enum {
     GPS_NMEA = 0,
     GPS_UBLOX,
     GPS_MSP,
-    GPS_VIRTUAL
+    GPS_VIRTUAL,
 } gpsProvider_e;
 
 typedef enum {
@@ -405,4 +405,3 @@ float getGpsDataIntervalSeconds(void);  // range 0.05 - 2.5s
 float getGpsDataFrequencyHz(void);      // range 20Hz - 0.4Hz
 
 baudRate_e getGpsPortActualBaudRateIndex(void);
-

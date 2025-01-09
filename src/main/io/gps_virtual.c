@@ -25,9 +25,11 @@
 #include "platform.h"
 
 #ifdef USE_VIRTUAL_GPS
+
 #include "io/gps_virtual.h"
-#include <stdio.h>
+
 static gpsSolutionData_t gpsVirtualData;
+
 void setVirtualGPS(double latitude, double longitude, double altiutude, double speed, double speed3D, double course)
 {
     gpsVirtualData.numSat = 12;    // satellites_in_view
@@ -39,7 +41,7 @@ void setVirtualGPS(double latitude, double longitude, double altiutude, double s
     gpsVirtualData.llh.lat = (int32_t)(latitude * GPS_DEGREES_DIVIDER);
     gpsVirtualData.llh.altCm = (int32_t)(altiutude * 100.0); // alt, cm
     gpsVirtualData.groundSpeed = (uint16_t)(speed * 100.0);  // cm/sec
-    gpsVirtualData.speed3d = (uint16_t)(speed3D * 100.0);	// cm/sec
+    gpsVirtualData.speed3d = (uint16_t)(speed3D * 100.0);    // cm/sec
     gpsVirtualData.groundCourse = (uint16_t)(course * 10.0); // decidegrees
 }
 

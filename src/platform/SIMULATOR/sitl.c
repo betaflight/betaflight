@@ -191,8 +191,9 @@ void updateState(const fdm_packet* pkt)
     speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
     speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
     course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
-    if (course < 0.0)
+    if (course < 0.0) {
         course += 360.0;
+    }
     setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
 #endif
 
