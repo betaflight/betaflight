@@ -411,7 +411,7 @@ void gpsInit(void)
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_STATE_UNKNOWN);
 
-    if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
+    if (gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) { // no serial ports used when GPS_MSP or GPS_VIRTUAL is configured
         gpsSetState(GPS_STATE_INITIALIZED);
         return;
     }
@@ -1346,14 +1346,29 @@ static void updateVirtualGPS(void)
 {
     const uint32_t updateInterval = 100; // 100ms 10Hz update time interval
     static uint32_t nextUpdateTime = 0;
-    uint32_t currentTime = millis();
-    if (cmp32(currentTime, nextUpdateTime) > 0) {
+
+    if (cmp32(gpsData.now, nextUpdateTime) > 0) {
+        if (gpsData.state == GPS_STATE_INITIALIZED) {
+            gpsSetState(GPS_STATE_RECEIVING_DATA);
+        }
+
         getVirtualGPS(&gpsSol);
-        gpsSol.time = currentTime;     // ms_tow
-        gpsSol.navIntervalMs = updateInterval;
-        gpsSetFixState(GPS_FIX); // fix_type
+        gpsSol.time = gpsData.now;
+
+        gpsData.lastNavMessage = gpsData.now;
         sensorsSet(SENSOR_GPS);
-        nextUpdateTime = currentTime + updateInterval;
+
+        if (gpsSol.numSat > 3) {
+            gpsSetFixState(GPS_FIX);
+        } else {
+            gpsSetFixState(false);
+        }
+        GPS_update ^= GPS_DIRECT_TICK;
+
+        calculateNavInterval();
+        onGpsNewData();
+
+        nextUpdateTime = gpsData.now + updateInterval;
     }
 }
 #endif
@@ -1368,10 +1383,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
 #if defined(USE_VIRTUAL_GPS)
     if (gpsConfig()->provider == GPS_VIRTUAL) {
         updateVirtualGPS();
-        return;
     }
+    else
 #endif
-
     if (gpsPort) {
 
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
@@ -1443,7 +1457,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_STATE_RECEIVING_DATA:
 #ifdef USE_GPS_UBLOX
-            if (gpsConfig()->provider != GPS_MSP) {
+            if (gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL) {
                 if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
                     // when we are connected up, and get a 3D fix, enable the 'flight' fix model
                     if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
