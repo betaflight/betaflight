@@ -148,16 +148,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_TRAIT_PINSWAP 1
 
 #define UARTHARDWARE_MAX_PINS 5
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
 
 #define UART_REG_RXD(base) ((base)->dt)
 #define UART_REG_TXD(base) ((base)->dt)

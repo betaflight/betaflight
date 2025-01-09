@@ -393,58 +393,18 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32F4)
 
 #define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
 
 #elif defined(STM32F7)
 
 #define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
 
 #elif defined(STM32H7)
 
 #define UARTHARDWARE_MAX_PINS 5
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
 
 #elif defined(STM32G4)
 
 #define UARTHARDWARE_MAX_PINS 3
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     256
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#endif
 
 #endif
 
