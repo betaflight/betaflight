@@ -184,13 +184,12 @@ void updateState(const fdm_packet* pkt)
 #endif
 
 #if defined(USE_VIRTUAL_GPS)
-    double longitude, latitude, altitude, speed, speed3D, course;
-    longitude = pkt->position_xyz[0];
-    latitude = pkt->position_xyz[1];
-    altitude = pkt->position_xyz[2];
-    speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
-    speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
-    course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
+    const double longitude = pkt->position_xyz[0];
+    const double latitude = pkt->position_xyz[1];
+    const double altitude = pkt->position_xyz[2];
+    const double speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
+    const double speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
+    double course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
     if (course < 0.0) {
         course += 360.0;
     }
