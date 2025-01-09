@@ -366,8 +366,8 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
     bus->useDMA = false;
     bus->deviceCount = 1;
 #ifdef USE_DMA
-    bus->initTx = &dev->initTx;
-    bus->initRx = &dev->initRx;
+    bus->dmaInitTx = &dev->dmaInitTx;
+    bus->dmaInitRx = &dev->dmaInitRx;
 #endif
 
     return true;

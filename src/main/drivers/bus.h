@@ -67,11 +67,11 @@ typedef struct busDevice_s {
     dmaChannelDescriptor_t *dmaRx;
     // Use a reference here as this saves RAM for unused descriptors
 #if defined(USE_FULL_LL_DRIVER)
-    LL_DMA_InitTypeDef          *initTx;
-    LL_DMA_InitTypeDef          *initRx;
+    LL_DMA_InitTypeDef          *dmaInitTx;
+    LL_DMA_InitTypeDef          *dmaInitRx;
 #else
-    DMA_InitTypeDef             *initTx;
-    DMA_InitTypeDef             *initRx;
+    DMA_InitTypeDef             *dmaInitTx;
+    DMA_InitTypeDef             *dmaInitRx;
 #endif
 #endif // USE_DMA
     volatile struct busSegment_s* volatile curSegment;
@@ -97,11 +97,11 @@ typedef struct extDevice_s {
 #ifdef USE_DMA
     // Cache the init structure for the next DMA transfer to reduce inter-segment delay
 #if defined(USE_FULL_LL_DRIVER)
-    LL_DMA_InitTypeDef          initTx;
-    LL_DMA_InitTypeDef          initRx;
+    LL_DMA_InitTypeDef          dmaInitTx;
+    LL_DMA_InitTypeDef          dmaInitRx;
 #else
-    DMA_InitTypeDef             initTx;
-    DMA_InitTypeDef             initRx;
+    DMA_InitTypeDef             dmaInitTx;
+    DMA_InitTypeDef             dmaInitRx;
 #endif
 #endif // USE_DMA
     // Support disabling DMA on a per device basis

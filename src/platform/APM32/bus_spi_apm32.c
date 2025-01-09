@@ -99,31 +99,31 @@ void spiInitDevice(SPIDevice device)
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
-    DDL_DMA_InitTypeDef *initTx = bus->initTx;
+    DDL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
-    DDL_DMA_StructInit(initTx);
+    DDL_DMA_StructInit(dmaInitTx);
 
-    initTx->Channel = bus->dmaTx->channel;
-    initTx->Mode = DDL_DMA_MODE_NORMAL;
-    initTx->Direction = DDL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-    initTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DATA;
-    initTx->Priority = DDL_DMA_PRIORITY_LOW;
-    initTx->PeriphOrM2MSrcIncMode  = DDL_DMA_PERIPH_NOINCREMENT;
-    initTx->PeriphOrM2MSrcDataSize = DDL_DMA_PDATAALIGN_BYTE;
-    initTx->MemoryOrM2MDstDataSize = DDL_DMA_MDATAALIGN_BYTE;
+    dmaInitTx->Channel = bus->dmaTx->channel;
+    dmaInitTx->Mode = DDL_DMA_MODE_NORMAL;
+    dmaInitTx->Direction = DDL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+    dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DATA;
+    dmaInitTx->Priority = DDL_DMA_PRIORITY_LOW;
+    dmaInitTx->PeriphOrM2MSrcIncMode  = DDL_DMA_PERIPH_NOINCREMENT;
+    dmaInitTx->PeriphOrM2MSrcDataSize = DDL_DMA_PDATAALIGN_BYTE;
+    dmaInitTx->MemoryOrM2MDstDataSize = DDL_DMA_MDATAALIGN_BYTE;
 
     if (bus->dmaRx) {
-        DDL_DMA_InitTypeDef *initRx = bus->initRx;
+        DDL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
 
-        DDL_DMA_StructInit(initRx);
+        DDL_DMA_StructInit(dmaInitRx);
 
-        initRx->Channel = bus->dmaRx->channel;
-        initRx->Mode = DDL_DMA_MODE_NORMAL;
-        initRx->Direction = DDL_DMA_DIRECTION_PERIPH_TO_MEMORY;
-        initRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DATA;
-        initRx->Priority = DDL_DMA_PRIORITY_LOW;
-        initRx->PeriphOrM2MSrcIncMode  = DDL_DMA_PERIPH_NOINCREMENT;
-        initRx->PeriphOrM2MSrcDataSize = DDL_DMA_PDATAALIGN_BYTE;
+        dmaInitRx->Channel = bus->dmaRx->channel;
+        dmaInitRx->Mode = DDL_DMA_MODE_NORMAL;
+        dmaInitRx->Direction = DDL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+        dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DATA;
+        dmaInitRx->Priority = DDL_DMA_PRIORITY_LOW;
+        dmaInitRx->PeriphOrM2MSrcIncMode  = DDL_DMA_PERIPH_NOINCREMENT;
+        dmaInitRx->PeriphOrM2MSrcDataSize = DDL_DMA_PDATAALIGN_BYTE;
     }
 }
 
@@ -175,34 +175,34 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     int len = segment->len;
 
     uint8_t *txData = segment->u.buffers.txData;
-    DDL_DMA_InitTypeDef *initTx = bus->initTx;
+    DDL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
     if (txData) {
-        initTx->MemoryOrM2MDstAddress = (uint32_t)txData;
-        initTx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_INCREMENT;
+        dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)txData;
+        dmaInitTx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_INCREMENT;
     } else {
         dummyTxByte = 0xff;
-        initTx->MemoryOrM2MDstAddress = (uint32_t)&dummyTxByte;
-        initTx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_NOINCREMENT;
+        dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)&dummyTxByte;
+        dmaInitTx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_NOINCREMENT;
     }
-    initTx->NbData = len;
+    dmaInitTx->NbData = len;
 
     if (dev->bus->dmaRx) {
         uint8_t *rxData = segment->u.buffers.rxData;
-        DDL_DMA_InitTypeDef *initRx = bus->initRx;
+        DDL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
 
         if (rxData) {
             /* Flush the D cache for the start and end of the receive buffer as
              * the cache will be invalidated after the transfer and any valid data
              * just before/after must be in memory at that point
              */
-            initRx->MemoryOrM2MDstAddress = (uint32_t)rxData;
-            initRx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_INCREMENT;
+            dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)rxData;
+            dmaInitRx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_INCREMENT;
         } else {
-            initRx->MemoryOrM2MDstAddress = (uint32_t)&dummyRxByte;
-            initRx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_NOINCREMENT;
+            dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)&dummyRxByte;
+            dmaInitRx->MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_NOINCREMENT;
         }
-        initRx->NbData = len;
+        dmaInitRx->NbData = len;
     }
 }
 
@@ -235,8 +235,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
         DDL_EX_DMA_EnableIT_TC(streamRegsRx);
 
         // Update streams
-        DDL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->initTx);
-        DDL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->initRx);
+        DDL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
+        DDL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->dmaInitRx);
 
         /* Note from AN4031
          *
@@ -265,7 +265,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         DDL_EX_DMA_EnableIT_TC(streamRegsTx);
 
         // Update streams
-        DDL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->initTx);
+        DDL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
 
         /* Note from AN4031
          *
