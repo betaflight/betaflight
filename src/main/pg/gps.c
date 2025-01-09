@@ -32,7 +32,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 4);
 
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
-#if defined(SITL) && defined(USE_VIRTUAL_GPS)
+#if defined(SIMULATOR_BUILD) && defined(USE_VIRTUAL_GPS)
     .provider = GPS_VIRTUAL,
 #else
     .provider = GPS_UBLOX,
