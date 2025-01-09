@@ -1380,60 +1380,66 @@ void gpsUpdate(timeUs_t currentTimeUs)
     gpsState_e gpsCurrentState = gpsData.state;
     gpsData.now = millis();
 
-#if defined(USE_VIRTUAL_GPS)
-    if (gpsConfig()->provider == GPS_VIRTUAL) {
-        updateVirtualGPS();
-    }
-    else
-#endif
-    if (gpsPort) {
-
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
-        static uint8_t wait = 0;
-        static bool isFast = false;
-        while (serialRxBytesWaiting(gpsPort)) {
-            wait = 0;
-            if (!isFast) {
-                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
-                isFast = true;
-            }
-            if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
+    switch (gpsConfig()->provider) {
+        case GPS_UBLOX:
+        case GPS_NMEA:
+            if (!gpsPort) {
                 break;
             }
-            // Add every byte to _buffer, when enough bytes are received, convert data to values
-            gpsNewData(serialRead(gpsPort));
-        }
-        if (wait < 1) {
-            wait++;
-        } else if (wait == 1) {
-            wait++;
-            // wait one iteration be sure the buffer is empty, then reset to the slower task interval
-            isFast = false;
-            rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
-        }
-    } else if (gpsConfig()->provider == GPS_MSP) {
-        if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
-            if (gpsData.state == GPS_STATE_INITIALIZED) {
-                gpsSetState(GPS_STATE_RECEIVING_DATA);
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
+            static uint8_t wait = 0;
+            static bool isFast = false;
+            while (serialRxBytesWaiting(gpsPort)) {
+                wait = 0;
+                if (!isFast) {
+                    rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
+                    isFast = true;
+                }
+                if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
+                    break;
+                }
+                // Add every byte to _buffer, when enough bytes are received, convert data to values
+                gpsNewData(serialRead(gpsPort));
             }
-
-            // Data is available
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
-            gpsData.lastNavMessage = gpsData.now;
-            sensorsSet(SENSOR_GPS);
-
-            GPS_update ^= GPS_DIRECT_TICK;
-            calculateNavInterval();
-            onGpsNewData();
-
-            GPS_update &= ~GPS_MSP_UPDATE;
-        } else {
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
-            // check for no data/gps timeout/cable disconnection etc
-            if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
-                gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+            if (wait < 1) {
+                wait++;
+            } else if (wait == 1) {
+                wait++;
+                // wait one iteration be sure the buffer is empty, then reset to the slower task interval
+                isFast = false;
+                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
             }
-        }
+            break;
+
+        case GPS_MSP:
+            if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+                if (gpsData.state == GPS_STATE_INITIALIZED) {
+                    gpsSetState(GPS_STATE_RECEIVING_DATA);
+                }
+
+                // Data is available
+                DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
+                gpsData.lastNavMessage = gpsData.now;
+                sensorsSet(SENSOR_GPS);
+
+                GPS_update ^= GPS_DIRECT_TICK;
+                calculateNavInterval();
+                onGpsNewData();
+
+                GPS_update &= ~GPS_MSP_UPDATE;
+            } else {
+                DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+                // check for no data/gps timeout/cable disconnection etc
+                if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
+                    gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+                }
+            }
+            break;
+#if defined(USE_VIRTUAL_GPS)
+        case GPS_VIRTUAL:
+            updateVirtualGPS();
+            break;
+#endif
     }
 
     switch (gpsData.state) {
@@ -1457,7 +1463,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_STATE_RECEIVING_DATA:
 #ifdef USE_GPS_UBLOX
-            if (gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL) {
+            if (gpsConfig()->provider == GPS_UBLOX || gpsConfig()->provider == GPS_NMEA) {      // TODO  Send ublox message to nmea GPS?
                 if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
                     // when we are connected up, and get a 3D fix, enable the 'flight' fix model
                     if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
