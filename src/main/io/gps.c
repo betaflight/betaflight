@@ -65,7 +65,6 @@
 #include "sensors/sensors.h"
 #include "common/typeconversion.h"
 
-
 // **********************
 // GPS
 // **********************
