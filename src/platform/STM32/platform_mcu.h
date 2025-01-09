@@ -360,52 +360,46 @@ extern uint8_t _dmaram_end__;
 #error Unknown MCU family
 #endif
 
-#if !defined(STM32G4) && !defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7)
 #define USE_TX_IRQ_HANDLER
 #endif
 
 #if defined(STM32H7)
-#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
-#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM /* D2 SRAM */
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM /* D2 SRAM */
 #elif defined(STM32G4)
-#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM_W          // SRAM MPU NOT_BUFFERABLE
-#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM_R          // SRAM MPU NOT CACHABLE
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM_W /* SRAM MPU NOT_BUFFERABLE */
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM_R /* SRAM MPU NOT CACHABLE */
 #elif defined(STM32F7)
-#define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
+#define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT /* DTCM RAM */
+#define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT /* DTCM RAM */
 #elif defined(STM32F4)
-#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
-#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
+#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
+#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
 #endif
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
  // pin AF mode is configured for each pin individually
 #define UART_TRAIT_AF_PIN 1
-#else
+#elif defined(STM32F4)
 // all pins on given uart use same AF
 #define UART_TRAIT_AF_PORT 1
+#else
+#error UART_TRAIT_x not defined for STM MCU
 #endif
 
-#if !defined(STM32F4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define UART_TRAIT_PINSWAP 1
 #endif
 
 #if defined(STM32F4)
-
 #define UARTHARDWARE_MAX_PINS 4
-
 #elif defined(STM32F7)
-
 #define UARTHARDWARE_MAX_PINS 4
-
 #elif defined(STM32H7)
-
 #define UARTHARDWARE_MAX_PINS 5
-
 #elif defined(STM32G4)
-
 #define UARTHARDWARE_MAX_PINS 3
-
 #endif
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)

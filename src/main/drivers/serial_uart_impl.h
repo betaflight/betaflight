@@ -44,7 +44,7 @@
 #endif
 #endif
 
-#if !defined(UART_TRAIT_AF_PIN) && !defined(UART_TRAIT_AF_PORT)
+#if !UART_TRAIT_AF_PIN && !UART_TRAIT_AF_PORT
 #error "Must specify either AF mode for MCU"
 #endif
 
