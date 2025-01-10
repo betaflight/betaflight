@@ -773,3 +773,9 @@ IO_t IOGetByTag(ioTag_t tag)
     UNUSED(tag);
     return NULL;
 }
+
+const mcuTypeInfo_t *getMcuTypeInfo(void)
+{
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_SIMULATOR, .name = "SIMULATOR" };
+    return &info;
+}

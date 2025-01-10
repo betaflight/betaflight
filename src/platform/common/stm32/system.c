@@ -322,3 +322,63 @@ void unusedPinsInit(void)
 {
     IOTraversePins(unusedPinInit);
 }
+
+const mcuTypeInfo_t *getMcuTypeInfo(void)
+{
+#if defined(STM32H743xx)
+    static const mcuTypeInfo_t info[] = {
+        { .id = MCU_TYPE_H743_REV_Y, .name = "H743 (Rev.Y)" },
+        { .id = MCU_TYPE_H743_REV_X, .name = "H743 (Rev.X)" },
+        { .id = MCU_TYPE_H743_REV_V, .name = "H743 (Rev.V)" },
+        { .id = MCU_TYPE_H743_REV_UNKNOWN, .name = "H743 (Rev Unknown)" },
+    };
+
+    switch (HAL_GetREVID()) {
+    case REV_ID_Y:
+        return &info[0];
+    case REV_ID_X:
+        return &info[1];
+    case REV_ID_V:
+        return &info[2];
+    default:
+        return &info[3];
+    }
+#else
+#if defined(STM32F40_41xxx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_F40X, .name = "F40X" };
+#elif defined(STM32F411xE)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_F411, .name = "F411" };
+#elif defined(STM32F446xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_F446, .name = "F446" };
+#elif defined(STM32F722xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_F722, .name = "F722" };
+#elif defined(STM32F745xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_F745, .name = "F745" };
+#elif defined(STM32F746xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_F746, .name = "F746" };
+#elif defined(STM32F765xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_F765, .name = "F765" };
+#elif defined(STM32H750xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_H750, .name = "H750" };
+#elif defined(STM32H730xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_H730, .name = "H730" };
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_H7A3, .name = "H7A3" };
+#elif defined(STM32H723xx) || defined(STM32H725xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_H723_725, .name = "H723/H725" };
+#elif defined(STM32G474xx)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_G474, .name = "G474" };
+#elif defined(AT32F435G)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_AT32F435G, .name = "AT32F435G" };
+#elif defined(AT32F435M)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_AT32F435M, .name = "AT32F435M" };
+#elif defined(APM32F405)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_APM32F405, .name = "APM32F405" };
+#elif defined(APM32F407)
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_APM32F407, .name = "APM32F407" };
+#else
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_UNKNOWN, .name = "Unknown" };
+#endif
+    return &info;
+#endif
+}

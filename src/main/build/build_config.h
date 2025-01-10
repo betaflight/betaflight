@@ -68,4 +68,11 @@ typedef enum {
     MCU_TYPE_UNKNOWN = 255,
 } mcuTypeId_e;
 
+typedef struct mcuTypeInfo_s {
+   const mcuTypeId_e id;
+   const char* name;
+} mcuTypeInfo_t;
+
 mcuTypeId_e getMcuTypeId(void);
+const mcuTypeInfo_t *getMcuTypeInfo(void);
+const char *getMcuTypeName(void);
