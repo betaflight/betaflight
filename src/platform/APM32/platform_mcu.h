@@ -187,6 +187,18 @@
 
 #define USE_TX_IRQ_HANDLER
 
+#define UART_TX_BUFFER_ATTRIBUTE /* NONE */
+#define UART_RX_BUFFER_ATTRIBUTE /* NONE */
+
+#define UART_TRAIT_AF_PORT 1
+
+#define UARTHARDWARE_MAX_PINS 4
+
+#define UART_REG_RXD(base) ((base)->DATA)
+#define UART_REG_TXD(base) ((base)->DATA)
+
+#define DMA_TRAIT_CHANNEL 1
+
 #endif
 
 #if defined(APM32F4)

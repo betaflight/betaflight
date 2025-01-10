@@ -134,12 +134,25 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_NONE)
 #define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_UP)
 
-#define SPIDEV_COUNT 4
+#define SPIDEV_COUNT       4
 
 #define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXNE(instance)
 #define SPI_RX_DATA_REGISTER(base) ((base)->DR)
 
-#define MAX_SPI_PIN_SEL 4
+#define MAX_SPI_PIN_SEL    4
+
+#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
+#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
+
+#define UART_TRAIT_AF_PIN  1
+#define UART_TRAIT_PINSWAP 1
+
+#define UARTHARDWARE_MAX_PINS 5
+
+#define UART_REG_RXD(base) ((base)->dt)
+#define UART_REG_TXD(base) ((base)->dt)
+
+#define DMA_TRAIT_MUX 1
 
 #endif
 
