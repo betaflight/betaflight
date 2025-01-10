@@ -199,8 +199,7 @@
 
 #define DMA_TRAIT_CHANNEL 1
 
-#endif
+#define USB_DP_PIN PA12
 
-#if defined(APM32F4)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #endif

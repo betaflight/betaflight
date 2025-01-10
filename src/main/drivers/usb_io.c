@@ -67,8 +67,9 @@ bool usbCableIsInserted(void)
 
 void usbGenerateDisconnectPulse(void)
 {
-    /* Pull down PA12 to create USB disconnect pulse */
-    IO_t usbPin = IOGetByTag(IO_TAG(PA12));
+#ifdef USB_DP_PIN
+    /* Pull down USB_DP_PIN to create USB disconnect pulse */
+    IO_t usbPin = IOGetByTag(IO_TAG(USB_DP_PIN));
     IOConfigGPIO(usbPin, IOCFG_OUT_OD);
 
     IOLo(usbPin);
@@ -76,5 +77,6 @@ void usbGenerateDisconnectPulse(void)
     delay(200);
 
     IOHi(usbPin);
+#endif
 }
 #endif
