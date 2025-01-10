@@ -1441,9 +1441,12 @@ STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
 }
 
 #ifndef BLACKBOX_PRINT_HEADER_LINE
-#define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) case __COUNTER__: \
-                                                blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
-                                                break;
+#define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) \
+    do { \
+        case __COUNTER__: \
+            blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
+            break; \
+    } while (0)
 #define BLACKBOX_PRINT_HEADER_LINE_CUSTOM(...) case __COUNTER__: \
                                                     {__VA_ARGS__}; \
                                                break;
@@ -1790,7 +1793,7 @@ static bool blackboxWriteSysinfo(void)
 #ifndef USE_WING
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_START_DIST, "%d",  gpsRescueConfig()->minStartDistM);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALT_MODE, "%d",        gpsRescueConfig()->altitudeMode);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB, "%d",   gpsRescueConfig()->initialClimbM)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB, "%d",   gpsRescueConfig()->initialClimbM);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ASCEND_RATE, "%d",     gpsRescueConfig()->ascendRate);
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_RETURN_ALT, "%d",      gpsRescueConfig()->returnAltitudeM);
@@ -1813,7 +1816,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_VELOCITY_D, "%d",      gpsRescueConfig()->velD);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_YAW_P, "%d",           gpsRescueConfig()->yawP);
 #ifdef USE_MAG
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_USE_MAG, "%d",         gpsRescueConfig()->useMag)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_USE_MAG, "%d",         gpsRescueConfig()->useMag);
 #endif // USE_MAG
 #endif // !USE_WING
 #endif // USE_GPS_RESCUE
