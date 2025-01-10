@@ -280,7 +280,7 @@ static const char * const *sensorHardwareNames[] = {
 #endif // USE_SENSOR_NAMES
 
 // Needs to be aligned with mcuTypeId_e
-static const char *mcuTypeNames[] = {
+static const char *mcuTypeNames[MCU_TYPE_COUNT] = {
     "SIMULATOR",
     "F40X",
     "F411",
@@ -298,9 +298,11 @@ static const char *mcuTypeNames[] = {
     "H723/H725",
     "G474",
     "H730",
-    "AT32F435",
+    "AT32F435G",
     "APM32F405",
     "APM32F407",
+    "AT32F435M",
+    "RP2350B",
 };
 
 static const char *configurationStates[] = {
