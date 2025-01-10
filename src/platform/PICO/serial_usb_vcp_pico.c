@@ -77,14 +77,14 @@ static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 static uint32_t usbVcpAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
-    return cdc_usb_data_available();
+    return cdc_usb_bytes_available();
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    uint8_t buf[1];
+    char buf[1];
 
     while (true) {
         if (cdc_usb_read(buf, 1)) {
@@ -97,11 +97,11 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 {
     UNUSED(instance);
 
-    if (!(usbIsConnected() && usbIsConfigured())) {
+    if (!(cdc_usb_connected() && cdc_usb_configured())) {
         return;
     }
 
-    const uint8_t *p = data;
+    const char *p = data;
     while (count > 0) {
         uint32_t txed = cdc_usb_write(p, count);
         count -= txed;
@@ -118,11 +118,11 @@ static bool usbVcpFlush(vcpPort_t *port)
         return true;
     }
 
-    if (!usbIsConnected() || !usbIsConfigured()) {
+    if (!cdc_usb_connected() || !cdc_usb_configured()) {
         return false;
     }
 
-    uint8_t *p = port->txBuf;
+    const char *p = (char *)port->txBuf;
     while (count > 0) {
         uint32_t txed = cdc_usb_write(p, count);
         count -= txed;
@@ -194,7 +194,7 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 
 uint8_t usbVcpIsConnected(void)
 {
-    return usbIsConnected();
+    return cdc_usb_connected();
 }
 
 #endif // USE_VCP

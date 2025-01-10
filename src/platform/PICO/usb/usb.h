@@ -31,6 +31,7 @@ int cdc_usb_write(const char *buf, int length);
 int cdc_usb_read(char *buf, int length);
 bool cdc_usb_init(void);
 bool cdc_usb_deinit(void);
+bool cdc_usb_configured(void);
 bool cdc_usb_connected(void);
 bool cdc_usb_bytes_available(void);
 uint32_t cdc_usb_baud_rate(void);

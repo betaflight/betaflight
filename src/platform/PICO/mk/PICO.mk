@@ -12,27 +12,41 @@ SDK_DIR         = $(LIB_MAIN_DIR)/pico-sdk
 CMSIS_DIR      := $(SDK_DIR)/rp2_common/cmsis/stub/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR  := $(SDK_DIR)/rp2_common
+STDPERIPH_DIR  := $(SDK_DIR)
 STDPERIPH_SRC  := \
-            hardware_sync_spin_lock/sync_spin_lock.c \
-            hardware_gpio/gpio.c \
-            pico_stdio/stdio.c \
-            hardware_uart/uart.c \
-            hardware_irq/irq.c \
-            hardware_timer/timer.c \
-            hardware_clocks/clocks.c \
-            hardware_pll/pll.c \
-            hardware_spi/spi.c \
-            hardware_i2c/i2c.c \
-            hardware_adc/adc.c \
-            hardware_pio/pio.c \
-            hardware_watchdog/watchdog.c \
-            hardware_flash/flash.c \
-            pico_unique_id/unique_id.c
+            rp2_common/hardware_sync_spin_lock/sync_spin_lock.c \
+            rp2_common/hardware_gpio/gpio.c \
+            rp2_common/pico_stdio/stdio.c \
+            rp2_common/hardware_uart/uart.c \
+            rp2_common/hardware_irq/irq.c \
+            rp2_common/hardware_irq/irq_handler_chain.S \
+            rp2_common/hardware_timer/timer.c \
+            rp2_common/hardware_clocks/clocks.c \
+            rp2_common/hardware_pll/pll.c \
+            rp2_common/hardware_spi/spi.c \
+            rp2_common/hardware_i2c/i2c.c \
+            rp2_common/hardware_adc/adc.c \
+            rp2_common/hardware_pio/pio.c \
+            rp2_common/hardware_watchdog/watchdog.c \
+            rp2_common/hardware_flash/flash.c \
+            rp2_common/pico_unique_id/unique_id.c \
+            rp2_common/pico_platform_panic/panic.c \
+            common/pico_sync/mutex.c \
+            common/pico_time/time.c \
+            common/pico_sync/lock_core.c \
+            common/hardware_claim/claim.c \
+            common/pico_sync/critical_section.c \
+            rp2_common/hardware_sync/sync.c
 
-TINY_USB_SRC_DIR = $(LIB_MAIN_DIR)/tinyUSB/src
+TINY_USB_SRC_DIR = tinyUSB/src
 TINYUSB_SRC := \
-            $(TINY_USB_SRC_DIR)/tusb.c
+            $(TINY_USB_SRC_DIR)/tusb.c \
+            $(TINY_USB_SRC_DIR)/class/cdc/cdc_device.c \
+            $(TINY_USB_SRC_DIR)/common/tusb_fifo.c \
+            $(TINY_USB_SRC_DIR)/device/usbd.c \
+            $(TINY_USB_SRC_DIR)/device/usbd_control.c \
+            $(TINY_USB_SRC_DIR)/portable/raspberrypi/rp2040/dcd_rp2040.c \
+            $(TINY_USB_SRC_DIR)/portable/raspberrypi/rp2040/rp2040_usb.c
 
 VPATH := $(VPATH):$(STDPERIPH_DIR)
 
@@ -49,9 +63,9 @@ endif
 VPATH       := $(VPATH):$(CMSIS_DIR)/Core/Include:$(CMSIS_DIR)/Device/$(TARGET_MCU_LIB_UPPER)/Include
 CMSIS_SRC   := \
 
-
 INCLUDE_DIRS += \
             $(TARGET_PLATFORM_DIR) \
+            $(TARGET_PLATFORM_DIR)/usb \
             $(TARGET_PLATFORM_DIR)/startup \
             $(SDK_DIR)/common/pico_bit_ops_headers/include \
             $(SDK_DIR)/common/pico_base_headers/include \
@@ -185,6 +199,7 @@ MCU_COMMON_SRC = \
             drivers/bus_spi_config.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
+            drivers/usb_io.c \
             PICO/stdio_pico_stub.c \
             PICO/debug_pico.c \
             PICO/system.c \
@@ -194,6 +209,7 @@ MCU_COMMON_SRC = \
             PICO/exti_pico.c \
             PICO/config_flash.c \
             PICO/serial_usb_vcp_pico.c \
-            PICO/usb/usb.c
+            PICO/usb/usb.c \
+            PICO/usb/usb_descriptors.c
 
 DEVICE_FLAGS +=

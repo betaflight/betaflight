@@ -48,6 +48,7 @@
 #define CDC_USD_BAUD_RATE 115200
 #endif
 
+static bool configured = false;
 static mutex_t cdc_usb_mutex;
 
 // if this crit_sec is initialized, we are not in periodic timer mode, and must make sure
@@ -217,6 +218,7 @@ bool cdc_usb_init(void)
         rc = add_alarm_in_us(CDC_USB_TASK_INTERVAL_US, timer_task, NULL, true) >= 0;
     }
 
+    configured = rc;
     return rc;
 }
 
@@ -243,7 +245,13 @@ bool cdc_usb_deinit(void)
     irq_set_enabled(low_priority_irq_num, false);
     user_irq_unclaim(low_priority_irq_num);
 
+    configured = false;
     return true;
+}
+
+bool cdc_usb_configured(void)
+{
+    return configured;
 }
 
 bool cdc_usb_connected(void)

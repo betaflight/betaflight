@@ -96,6 +96,15 @@ SECTIONS
     *(.data*)          /* .data* sections */
 
     . = ALIGN(4);
+    *(.after_data.*)
+    . = ALIGN(4);
+    /* preinit data */
+    PROVIDE_HIDDEN (__mutex_array_start = .);
+    KEEP(*(SORT(.mutex_array.*)))
+    KEEP(*(.mutex_array))
+    PROVIDE_HIDDEN (__mutex_array_end = .);
+
+    . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT >FLASH
 
