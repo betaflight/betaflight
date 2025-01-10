@@ -1412,26 +1412,26 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     case GPS_MSP:
         if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
-        if (gpsData.state == GPS_STATE_INITIALIZED) {
-            gpsSetState(GPS_STATE_RECEIVING_DATA);
-        }
+            if (gpsData.state == GPS_STATE_INITIALIZED) {
+                gpsSetState(GPS_STATE_RECEIVING_DATA);
+            }
 
-        // Data is available
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
-        gpsData.lastNavMessage = gpsData.now;
-        sensorsSet(SENSOR_GPS);
+            // Data is available
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
+            gpsData.lastNavMessage = gpsData.now;
+            sensorsSet(SENSOR_GPS);
 
-        GPS_update ^= GPS_DIRECT_TICK;
-        calculateNavInterval();
-        onGpsNewData();
+            GPS_update ^= GPS_DIRECT_TICK;
+            calculateNavInterval();
+            onGpsNewData();
 
-        GPS_update &= ~GPS_MSP_UPDATE;
+            GPS_update &= ~GPS_MSP_UPDATE;
         } else {
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
-        // check for no data/gps timeout/cable disconnection etc
-        if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
-            gpsSetState(GPS_STATE_LOST_COMMUNICATION);
-        }
+            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+            // check for no data/gps timeout/cable disconnection etc
+            if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
+                gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+            }
         }
         break;
 #if defined(USE_VIRTUAL_GPS)
@@ -1463,19 +1463,19 @@ void gpsUpdate(timeUs_t currentTimeUs)
     case GPS_STATE_RECEIVING_DATA:
 #ifdef USE_GPS_UBLOX
         if (gpsConfig()->provider == GPS_UBLOX || gpsConfig()->provider == GPS_NMEA) {      // TODO  Send ublox message to nmea GPS?
-        if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
-            // when we are connected up, and get a 3D fix, enable the 'flight' fix model
-            if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
-            gpsData.ubloxUsingFlightModel = true;
-            ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
+            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
+                // when we are connected up, and get a 3D fix, enable the 'flight' fix model
+                if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
+                    gpsData.ubloxUsingFlightModel = true;
+                    ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
+                }
             }
-        }
         }
 #endif
         DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
         // check for no data/gps timeout/cable disconnection etc
         if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
-        gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+            gpsSetState(GPS_STATE_LOST_COMMUNICATION);
         }
         break;
     }
