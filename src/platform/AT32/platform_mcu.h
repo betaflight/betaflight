@@ -144,6 +144,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 
+#define PLATFORM_TRAIT_RCC 1
 #define UART_TRAIT_AF_PIN  1
 #define UART_TRAIT_PINSWAP 1
 
