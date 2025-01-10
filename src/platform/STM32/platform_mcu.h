@@ -385,7 +385,7 @@ extern uint8_t _dmaram_end__;
 // all pins on given uart use same AF
 #define UART_TRAIT_AF_PORT 1
 #else
-#error UART_TRAIT_x not defined for STM MCU
+#error Unknown STM MCU when defining UART_TRAIT_x 
 #endif
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
