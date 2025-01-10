@@ -120,7 +120,7 @@ typedef struct uartHardware_s {
     uartPinDef_t rxPins[UARTHARDWARE_MAX_PINS];
     uartPinDef_t txPins[UARTHARDWARE_MAX_PINS];
 
-#if UART_TRAIT_RCC
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;
 #endif
 
