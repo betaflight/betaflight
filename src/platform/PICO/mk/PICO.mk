@@ -183,7 +183,8 @@ MCU_COMMON_SRC = \
             drivers/bus_spi_config.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
-            PICO/misc_todo.c \
+            PICO/stdio_pico_stub.c \
+            PICO/debug_pico.c \
             PICO/system.c \
             PICO/io_pico.c \
             PICO/bus_spi_pico.c \

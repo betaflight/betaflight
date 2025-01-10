@@ -37,6 +37,11 @@
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 
+void spiPinConfigure(const struct spiPinConfig_s *pConfig)
+{
+    UNUSED(pConfig);
+}
+
 void spiInitDevice(SPIDevice device)
 {
     //TODO: implement
