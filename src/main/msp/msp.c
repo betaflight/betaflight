@@ -1847,7 +1847,33 @@ case MSP_NAME:
         sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, ALIGN_DEFAULT);
 #endif
+        // Added in MSP API 1.47
+        switch (gyroConfig()->gyro_to_use) {
+#ifdef USE_MULTI_GYRO
+        case GYRO_CONFIG_USE_GYRO_2:
+            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.roll);
+            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.pitch);
+            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.yaw);
+            break;
+#endif
+        case GYRO_CONFIG_USE_GYRO_BOTH:
+            // for dual-gyro in "BOTH" mode we only read/write gyro 0
+        default:
+            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
+            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
+            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
+            break;
+        }
 
+#ifdef USE_MAG
+        sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
+        sbufWriteU16(dst, compassConfig()->mag_customAlignment.pitch);
+        sbufWriteU16(dst, compassConfig()->mag_customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
         break;
     }
     case MSP_ADVANCED_CONFIG:
@@ -3024,7 +3050,36 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
             gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
 #endif
-
+        }
+        // Added in API 1.47
+        if (sbufBytesRemaining(src) >= 6) {
+            switch (gyroConfig()->gyro_to_use) {
+#ifdef USE_MULTI_GYRO
+            case GYRO_CONFIG_USE_GYRO_2:
+                gyroDeviceConfigMutable(1)->customAlignment.roll = sbufReadU16(src);
+                gyroDeviceConfigMutable(1)->customAlignment.pitch = sbufReadU16(src);
+                gyroDeviceConfigMutable(1)->customAlignment.yaw = sbufReadU16(src);
+                break;
+#endif
+            case GYRO_CONFIG_USE_GYRO_BOTH:
+                // For dual-gyro in "BOTH" mode we'll only update gyro 0
+            default:
+                gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
+                gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
+                gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
+                break;
+            }
+        }
+        if (sbufBytesRemaining(src) >= 6) {
+#ifdef USE_MAG
+            compassConfigMutable()->mag_customAlignment.roll = sbufReadU16(src);
+            compassConfigMutable()->mag_customAlignment.pitch = sbufReadU16(src);
+            compassConfigMutable()->mag_customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
         }
         break;
     }

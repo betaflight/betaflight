@@ -6,7 +6,8 @@ MCU_COMMON_SRC += \
             common/stm32/config_flash.c \
             common/stm32/bus_spi_pinconfig.c \
             common/stm32/bus_spi_hw.c \
-            common/stm32/io_impl.c
+            common/stm32/io_impl.c \
+            common/stm32/serial_uart_hw.c
 
 SIZE_OPTIMISED_SRC += \
             common/stm32/config_flash.c \

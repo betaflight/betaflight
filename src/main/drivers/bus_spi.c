@@ -365,8 +365,10 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
     bus->busType = BUS_TYPE_SPI;
     bus->useDMA = false;
     bus->deviceCount = 1;
-    bus->initTx = &dev->initTx;
-    bus->initRx = &dev->initRx;
+#ifdef USE_DMA
+    bus->dmaInitTx = &dev->dmaInitTx;
+    bus->dmaInitRx = &dev->dmaInitRx;
+#endif
 
     return true;
 }

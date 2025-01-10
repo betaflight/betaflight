@@ -112,7 +112,6 @@ COMMON_SRC = \
             drivers/resource.c \
             drivers/serial.c \
             drivers/serial_impl.c \
-            drivers/serial_uart_hw.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/timer_common.c \

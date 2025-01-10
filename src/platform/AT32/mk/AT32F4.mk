@@ -122,6 +122,7 @@ MCU_COMMON_SRC = \
             drivers/bus_spi_config.c \
             common/stm32/bus_spi_pinconfig.c \
             common/stm32/bus_spi_hw.c \
+            common/stm32/serial_uart_hw.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
