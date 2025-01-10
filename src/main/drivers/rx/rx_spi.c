@@ -149,7 +149,11 @@ void rxSpiExtiInit(ioConfig_t rxSpiExtiPinConfig, extiTrigger_t rxSpiExtiPinTrig
 
 void rxSpiDmaEnable(bool enable)
 {
+#ifdef USE_DMA
     spiDmaEnable(dev, enable);
+#else
+    UNUSED(enable);
+#endif
 }
 
 uint8_t rxSpiTransferByte(uint8_t data)
