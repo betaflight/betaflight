@@ -40,7 +40,7 @@ void configLock(void)
     // NOOP
 }
 
-void configFlashClearFlags(void)
+void configClearFlags(void)
 {
     // NOOP
 }

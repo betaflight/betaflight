@@ -202,4 +202,10 @@ void uartReconfigure(uartPort_t *s)
     uartConfigureExternalPinInversion(s);
 }
 
+void uartEnableTxInterrupt(uartPort_t *uartPort)
+{
+    UNUSED(uartPort);
+    //TODO: Implement
+}
+
 #endif /* USE_UART */
