@@ -36,6 +36,12 @@
 // expand pinid to to ioTag_t
 #define IO_TAG(pinid) DEFIO_TAG(pinid)
 
+#define GPIO_STATE_HIGH 1
+#define GPIO_STATE_LOW 0
+
+#define GPIO_CONFIG(pin, mode, state) \
+    { IO_TAG(pin), mode, state }
+
 // declare available IO pins. Available pins are specified per target
 #include "io_def.h"
 
@@ -57,6 +63,7 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af);
 #endif
 
 void IOInitGlobal(void);
+void IOInitGPIODefault(void);
 
 typedef void (*IOTraverseFuncPtr_t)(IO_t io);
 

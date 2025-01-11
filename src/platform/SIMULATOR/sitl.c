@@ -768,6 +768,12 @@ void IOInitGlobal(void)
     // NOOP
 }
 
+void IOInitGPIODefault(void)
+{
+    // NOOP
+}
+
+
 IO_t IOGetByTag(ioTag_t tag)
 {
     UNUSED(tag);

@@ -278,6 +278,9 @@ void init(void)
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
 
+    // initialize default GPIO
+    IOInitGPIODefault();
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
 #endif

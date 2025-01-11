@@ -33,6 +33,21 @@ static const uint16_t ioDefUsedMask[1] = {0};
 static const uint8_t ioDefUsedOffset[1] = {0};
 #endif
 
+typedef struct defaultGpioConfig_s {
+    ioTag_t pin;
+    uint8_t mode;
+    bool state;
+} gpioConfig_t;
+
+#ifdef DEFAULT_GPIO_ARRAY
+static const gpioConfig_t defaultGpios[] = {
+    DEFAULT_GPIO_ARRAY
+};
+#else
+// Avoid -Wpedantic warning
+static const gpioConfig_t defaultGpios[1] = {};
+#endif
+
 // initialize all ioRec_t structures from ROM
 // currently only bitmask is used, this may change in future
 void IOInitGlobal(void)
@@ -46,6 +61,26 @@ void IOInitGlobal(void)
                 ioRec->pin = 1 << pin;
                 ioRec++;
             }
+        }
+    }
+}
+
+void IOInitGPIODefault(void)
+{
+    for (unsigned i = 0; i < ARRAYLEN(defaultGpios); i++) {
+        IO_t io = IOGetByTag(defaultGpios[i].pin);
+        if (io == IO_TAG_NONE) {
+            continue;
+        }
+
+        IOInit(io, OWNER_SYSTEM, 0);
+        IOConfigGPIO(io, defaultGpios[i].mode);
+
+        bool is_output = (defaultGpios[i].mode & GPIO_MODE_OUTPUT_PP) ||
+                         (defaultGpios[i].mode & GPIO_MODE_OUTPUT_OD);
+
+        if (is_output) {
+            IOWrite(io, defaultGpios[i].state);
         }
     }
 }
