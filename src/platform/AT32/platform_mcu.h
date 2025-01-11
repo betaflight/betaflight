@@ -158,3 +158,5 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #endif
 
 #define FLASH_CONFIG_BUFFER_TYPE      uint32_t
+
+#define USB_DP_PIN PA12
