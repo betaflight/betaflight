@@ -756,7 +756,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
             IOHi(io);
         }
 
-        // Fill in motors structure for 4way access (XXX Should be refactored)
+        // Fill in motors structure for 4way access (TODO: Should be refactored)
         motors[motorIndex].io = bbMotors[motorIndex].io;
     }
 
