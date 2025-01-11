@@ -1,0 +1,9 @@
+MCU_VARIANT = mm32f327x
+CFLAGS += \
+	-DHSE_VALUE=8000000
+
+JLINK_DEVICE = MM32F3273G9P
+
+LD_FILE = $(BOARD_PATH)/flash.ld
+
+flash: flash-jlink

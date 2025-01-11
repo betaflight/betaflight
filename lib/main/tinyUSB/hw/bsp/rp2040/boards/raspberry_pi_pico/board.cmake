@@ -1,0 +1,2 @@
+set(PICO_PLATFORM rp2040)
+set(PICO_BOARD pico)

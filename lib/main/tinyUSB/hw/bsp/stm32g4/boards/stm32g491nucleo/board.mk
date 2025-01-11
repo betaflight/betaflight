@@ -1,0 +1,11 @@
+MCU_VARIANT = stm32g491xx
+
+CFLAGS += \
+	-DSTM32G491xx \
+	-DHSE_VALUE=24000000
+
+# Linker
+LD_FILE_GCC = $(BOARD_PATH)/STM32G491RETX_FLASH.ld
+
+# For flash-jlink target
+JLINK_DEVICE = stm32g491re

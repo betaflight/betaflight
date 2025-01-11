@@ -1,0 +1,56 @@
+import rtconfig
+from building import *
+
+cwd     = GetCurrentDir()
+src     = Split("""
+../../src/tusb.c
+../../src/common/tusb_fifo.c
+./tusb_rt_thread_port.c
+""")
+path = [cwd, cwd + "/../../src"]
+
+LOCAL_CFLAGS = ''
+
+# for device stack
+if GetDepend(["PKG_TINYUSB_DEVICE_ENABLE"]):
+    src += ["../../src/device/usbd.c",
+            "../../src/device/usbd_control.c"]
+    # BSP
+    if GetDepend(["SOC_FAMILY_STM32"]):
+        src += ["../../src/portable/synopsys/dwc2/dcd_dwc2.c",
+                "../../src/portable/st/stm32_fsdev/dcd_stm32_fsdev.c"]
+
+    if GetDepend(["SOC_NRF52840"]):
+        src += ["../../src/portable/nordic/nrf5x/dcd_nrf5x.c"]
+
+    if GetDepend(["SOC_FAMILY_RENESAS"]):
+        src += ["../../src/portable/renesas/rusb2/dcd_rusb2.c",
+                "../../src/portable/renesas/rusb2/rusb2_common.c"]
+
+    # Device class
+    if GetDepend(["PKG_TINYUSB_DEVICE_UVC"]):
+        src += ["../../src/class/video/video_device.c"]
+    if GetDepend(["PKG_TINYUSB_DEVICE_CDC"]):
+        src += ["../../src/class/cdc/cdc_device.c"]
+    if GetDepend(["PKG_TINYUSB_DEVICE_MSC"]):
+        src += ["../../src/class/msc/msc_device.c", "port/msc_device_port.c"]
+    if GetDepend(["PKG_TINYUSB_DEVICE_HID"]):
+        src += ["../../src/class/hid/hid_device.c"]
+
+# for host stack
+if GetDepend(["PKG_TINYUSB_HOST_ENABLE"]):
+    src += ["../../src/host/usbh.c", "../../src/host/hub.c"]
+
+    if GetDepend(["SOC_FAMILY_RENESAS"]):
+        src += ["../../src/portable/renesas/rusb2/hcd_rusb2.c",
+                "../../src/portable/renesas/rusb2/rusb2_common.c"]
+
+
+if rtconfig.PLATFORM == 'gcc' or rtconfig.PLATFORM == 'armclang': # GCC or Keil AC6
+    LOCAL_CFLAGS += ' -std=c99'
+elif rtconfig.PLATFORM == 'armcc': # Keil AC5
+    LOCAL_CFLAGS += ' --c99 --gnu'
+
+group = DefineGroup('TinyUSB', src, depend = ['PKG_USING_TINYUSB'], CPPPATH = path, LOCAL_CFLAGS = LOCAL_CFLAGS)
+
+Return('group')

@@ -1,0 +1,3 @@
+MCU_VARIANT = msp432e401y
+CFLAGS += \
+	-D__MSP432E401Y__ \

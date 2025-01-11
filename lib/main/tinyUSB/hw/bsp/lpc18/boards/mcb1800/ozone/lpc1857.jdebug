@@ -1,0 +1,37 @@
+
+/*********************************************************************
+*
+*       OnProjectLoad
+*
+* Function description
+*   Project load routine. Required.
+*
+**********************************************************************
+*/
+void OnProjectLoad (void) {
+  Project.AddSvdFile ("Cortex-M3.svd");
+  Project.AddSvdFile ("../../../../../../../cmsis-svd/data/NXP/LPC18xx.svd");
+
+  Project.SetDevice ("LPC1857");
+  Project.SetHostIF ("USB", "");
+  Project.SetTargetIF ("SWD");
+  Project.SetTIFSpeed ("50 MHz");
+
+  Project.SetTraceSource ("Trace Pins");
+  Project.SetTracePortWidth (4);
+
+  //File.Open ("../../../../../../examples/cmake-build-mcb1800/device/cdc_msc/cdc_msc.elf");
+  File.Open ("../../../../../../examples/cmake-build-mcb1800/host/cdc_msc_hid/cdc_msc_hid.elf");
+}
+/*********************************************************************
+*
+*       BeforeTargetConnect
+*
+**********************************************************************
+*/
+void BeforeTargetConnect (void) {
+  //
+  // Trace pin init is done by J-Link script file as J-Link script files are IDE independent
+  //
+  // Project.SetJLinkScript("./NXP_LPC1857JET256_TraceExample.pex");
+}

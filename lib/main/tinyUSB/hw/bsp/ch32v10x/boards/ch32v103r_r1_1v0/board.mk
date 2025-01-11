@@ -1,0 +1,5 @@
+CFLAGS += -DCFG_EXAMPLE_MSC_DUAL_READONLY
+
+LDFLAGS += \
+  -Wl,--defsym=__FLASH_SIZE=64K \
+  -Wl,--defsym=__RAM_SIZE=20K \

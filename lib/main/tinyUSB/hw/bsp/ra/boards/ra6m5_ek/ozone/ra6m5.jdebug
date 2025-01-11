@@ -1,0 +1,104 @@
+
+/*********************************************************************
+*
+*       OnProjectLoad
+*
+* Function description
+*   Project load routine. Required.
+*
+**********************************************************************
+*/
+void OnProjectLoad (void) {
+  Project.AddSvdFile ("Cortex-M33.svd");
+  Project.AddSvdFile ("./R7FA6M5BH.svd");
+
+  Project.SetDevice ("R7FA6M5BH");
+  Project.SetHostIF ("USB", "");
+  Project.SetTargetIF ("SWD");
+  Project.SetTIFSpeed ("50 MHz");
+
+  Project.SetTraceSource ("Trace Pins");
+  Project.SetTracePortWidth (4);
+
+  File.Open ("../../../../../../examples/cmake-build-ra6m5_ek/device/cdc_msc/cdc_msc.elf");
+}
+/*********************************************************************
+*
+*       BeforeTargetConnect
+*
+**********************************************************************
+*/
+void BeforeTargetConnect (void) {
+  // Trace pin init is done by J-Link script file as J-Link script files are IDE independent
+	Project.SetJLinkScript("../../../debug.jlinkscript");
+}
+
+/*********************************************************************
+*
+*       AfterTargetReset
+*
+* Function description
+*   Event handler routine.
+*    - Sets the PC register to program reset value.
+*    - Sets the SP register to program reset value on Cortex-M.
+*
+**********************************************************************
+*/
+void AfterTargetReset (void) {
+  unsigned int SP;
+  unsigned int PC;
+  unsigned int VectorTableAddr;
+
+  VectorTableAddr = Elf.GetBaseAddr();
+
+  if (VectorTableAddr != 0xFFFFFFFF) {
+    SP = Target.ReadU32(VectorTableAddr);
+    Target.SetReg("SP", SP);
+  } else {
+    Util.Log("Project file error: failed to get program base");
+  }
+
+  PC = Elf.GetEntryPointPC();
+
+  if (PC != 0xFFFFFFFF) {
+    Target.SetReg("PC", PC);
+  } else if (VectorTableAddr != 0xFFFFFFFF) {
+    PC = Target.ReadU32(VectorTableAddr + 4);
+    Target.SetReg("PC", PC);
+  }
+}
+
+/*********************************************************************
+*
+*      AfterTargetDownload
+*
+* Function description
+*   Event handler routine.
+*    - Sets the PC register to program reset value.
+*    - Sets the SP register to program reset value on Cortex-M.
+*
+**********************************************************************
+*/
+void AfterTargetDownload (void) {
+  unsigned int SP;
+  unsigned int PC;
+  unsigned int VectorTableAddr;
+
+  VectorTableAddr = Elf.GetBaseAddr();
+
+  if (VectorTableAddr != 0xFFFFFFFF) {
+    SP = Target.ReadU32(VectorTableAddr);
+    Target.SetReg("SP", SP);
+  } else {
+    Util.Log("Project file error: failed to get program base");
+  }
+
+  PC = Elf.GetEntryPointPC();
+
+  if (PC != 0xFFFFFFFF) {
+    Target.SetReg("PC", PC);
+  } else if (VectorTableAddr != 0xFFFFFFFF) {
+    PC = Target.ReadU32(VectorTableAddr + 4);
+    Target.SetReg("PC", PC);
+  }
+}
