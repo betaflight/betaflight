@@ -190,6 +190,7 @@
 #define UART_TX_BUFFER_ATTRIBUTE /* NONE */
 #define UART_RX_BUFFER_ATTRIBUTE /* NONE */
 
+#define PLATFORM_TRAIT_RCC 1
 #define UART_TRAIT_AF_PORT 1
 
 #define UARTHARDWARE_MAX_PINS 4
@@ -199,8 +200,7 @@
 
 #define DMA_TRAIT_CHANNEL 1
 
-#endif
+#define USB_DP_PIN PA12
 
-#if defined(APM32F4)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #endif

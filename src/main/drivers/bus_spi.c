@@ -35,7 +35,6 @@
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/motor.h"
-#include "drivers/rcc.h"
 #include "drivers/nvic.h"
 #include "pg/bus_spi.h"
 
@@ -384,6 +383,7 @@ void spiSetClkPhasePolarity(const extDevice_t *dev, bool leadingEdge)
     ((extDevice_t *)dev)->busType_u.spi.leadingEdge = leadingEdge;
 }
 
+#ifdef USE_DMA
 // Enable/disable DMA on a specific device. Enabled by default.
 void spiDmaEnable(const extDevice_t *dev, bool enable)
 {
@@ -400,6 +400,7 @@ bool spiUseSDO_DMA(const extDevice_t *dev)
 {
     return dev->bus->useDMA && dev->useDMA;
 }
+#endif
 
 void spiBusDeviceRegister(const extDevice_t *dev)
 {
