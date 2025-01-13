@@ -367,17 +367,21 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
 #error MCU Type info not defined for STM (or clone)
 #endif
     };
+    unsigned revision = 0;
 #if defined(STM32H743xx)
     switch (HAL_GetREVID()) {
     case REV_ID_Y:
-        return info + 1;
+        revision = 1;
+        break;
     case REV_ID_X:
-        return info + 2;
+        revision = 2;
+        break;
     case REV_ID_V:
-        return info + 3;
+        revision = 3;
+        break;
     default:
-        return info;
+        revision = 0;
     }
 #endif
-    return info;
+    return info + revision;
 }

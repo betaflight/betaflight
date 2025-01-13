@@ -32,17 +32,11 @@
 mcuTypeId_e getMcuTypeId(void)
 {
     const mcuTypeInfo_t *mcuTypeInfo = getMcuTypeInfo();
-    if (mcuTypeInfo) {
-        return mcuTypeInfo->id;
-    }
-    return MCU_TYPE_UNKNOWN;
+    return mcuTypeInfo ? mcuTypeInfo->id : MCU_TYPE_UNKNOWN;
 }
 
 const char *getMcuTypeName(void)
 {
     const mcuTypeInfo_t *mcuTypeInfo = getMcuTypeInfo();
-    if (mcuTypeInfo) {
-        return mcuTypeInfo->name;
-    }
-    return "Unknown";
+     return mcuTypeInfo ? mcuTypeInfo->name : "Unknown";
 }

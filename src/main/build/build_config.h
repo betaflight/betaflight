@@ -69,10 +69,10 @@ typedef enum {
 } mcuTypeId_e;
 
 typedef struct mcuTypeInfo_s {
-   const mcuTypeId_e id;
+   mcuTypeId_e id;
    const char* name;
 } mcuTypeInfo_t;
 
-mcuTypeId_e getMcuTypeId(void);
 const mcuTypeInfo_t *getMcuTypeInfo(void);
+mcuTypeId_e getMcuTypeId(void);
 const char *getMcuTypeName(void);

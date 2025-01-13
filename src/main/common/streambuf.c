@@ -82,6 +82,12 @@ void sbufWriteString(sbuf_t *dst, const char *string)
     sbufWriteData(dst, string, strlen(string));
 }
 
+void sbufWritePString(sbuf_t *dst, const char *string)
+{
+    sbufWriteU8(dst, strlen(string));
+    sbufWriteData(dst, string, strlen(string));
+}
+
 void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string)
 {
     sbufWriteData(dst, string, strlen(string) + 1);

@@ -641,11 +641,9 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
         break;
 
-    case MSP2_MCU_TYPE_INFO: {
+    case MSP2_MCU_INFO: {
         sbufWriteU8(dst, getMcuTypeId());
-        const char *name = getMcuTypeName();
-        sbufWriteU8(dst, strlen(name));
-        sbufWriteString(dst, name);
+        sbufWritePString(dst, getMcuTypeName());
         break;
     }
 
@@ -687,19 +685,14 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, targetCapabilities);
 
         // Target name with explicit length
-        sbufWriteU8(dst, strlen(targetName));
-        sbufWriteData(dst, targetName, strlen(targetName));
+        sbufWritePString(dst, targetName);
 
 #if defined(USE_BOARD_INFO)
         // Board name with explicit length
-        char *value = getBoardName();
-        sbufWriteU8(dst, strlen(value));
-        sbufWriteString(dst, value);
+        sbufWritePString(dst, getBoardName());
 
         // Manufacturer id with explicit length
-        value = getManufacturerId();
-        sbufWriteU8(dst, strlen(value));
-        sbufWriteString(dst, value);
+        sbufWritePString(dst, getManufacturerId());
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -1299,14 +1292,13 @@ case MSP_NAME:
         char warningsBuffer[OSD_WARNINGS_MAX_SIZE + 1];
 
         renderOsdWarning(warningsBuffer, &isBlinking, &displayAttr);
-        const uint8_t warningsLen = strlen(warningsBuffer);
 
         if (isBlinking) {
             displayAttr |= DISPLAYPORT_BLINK;
         }
         sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
-        sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
-        sbufWriteData(dst, warningsBuffer, warningsLen);
+        sbufWritePString(dst, warningsBuffer);
+
         break;
     }
 #endif
@@ -2627,12 +2619,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 
             if (!textVar) return MSP_RESULT_ERROR;
 
-            const uint8_t textLength = strlen(textVar);
-
             //  type byte, then length byte followed by the actual characters
             sbufWriteU8(dst, textType);
-            sbufWriteU8(dst, textLength);
-            sbufWriteData(dst, textVar, textLength);
+            sbufWritePString(dst, textVar);
         }
         break;
 #ifdef USE_LED_STRIP
