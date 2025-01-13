@@ -160,7 +160,11 @@ void sdioPinConfigure(void)
 
 #undef SDIOFINDPIN
 
+#if defined(USE_SDIO_PULLUP)
+#define IOCFG_SDMMC       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#else
 #define IOCFG_SDMMC       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#endif
 
 void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
 {
