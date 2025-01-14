@@ -24,6 +24,7 @@
 #include "platform.h"
 
 #include "streambuf.h"
+#include "common/maths.h"
 
 sbuf_t *sbufInit(sbuf_t *sbuf, uint8_t *ptr, uint8_t *end)
 {
@@ -84,8 +85,9 @@ void sbufWriteString(sbuf_t *dst, const char *string)
 
 void sbufWritePString(sbuf_t *dst, const char *string)
 {
-    sbufWriteU8(dst, strlen(string));
-    sbufWriteData(dst, string, strlen(string));
+    const int length = MIN((int)strlen(string), 255);
+    sbufWriteU8(dst, length);
+    sbufWriteData(dst, string, length);
 }
 
 void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string)
