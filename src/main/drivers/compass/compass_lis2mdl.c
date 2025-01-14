@@ -140,7 +140,7 @@ static bool lis2mdlRead(magDev_t * mag, int16_t *magData)
     int16_t y = (int16_t)(buf[3] << 8 | buf[2]);
     int16_t z = (int16_t)(buf[5] << 8 | buf[4]);
 
-    // adapt LIS2MDL left-handed frame to common senor axis orientation  (match LIS3MDL)
+    // adapt LIS2MDL left-handed frame to common sensor axis orientation  (match LIS3MDL)
     // pin 1 mark becomes +X -Y
     magData[X] = -x;
     magData[Y] = y;
