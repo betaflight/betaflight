@@ -396,9 +396,9 @@ void icm426xxGyroInit(gyroDev_t *gyro)
         gyro->gyroRateKHz = GYRO_RATE_1_kHz;
     }
 
-    // NOTE:
-    // This sets the gyro/accel to the maximum FSR. Depending on the chip, either
-    // 4000DPS and 32G  will be selected or 2000DPS and 16G.
+    // This sets the gyro/accel to the maximum FSR, depending on the chip
+    // ICM42605, ICM_42688P: 2000DPS and 16G.
+    // IIM42653: 4000DPS and 32G
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
     delay(15);
     spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
