@@ -603,8 +603,14 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(canUseGPSHeading);
     UNUSED(imuCalcKpGain);
     UNUSED(imuCalcMagErr);
-
     UNUSED(currentTimeUs);
+
+#if defined(USE_GPS)
+    UNUSED(imuComputeQuaternionFromRPY);
+    UNUSED(imuDebug_GPS_RESCUE_HEADING);
+    UNUSED(imuCalcCourseErr);
+    UNUSED(imuCalcGroundspeedGain);
+#endif
 }
 #else
 

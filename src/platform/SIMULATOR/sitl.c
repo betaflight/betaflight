@@ -57,6 +57,9 @@
 
 #include "rx/rx.h"
 
+#include "io/gps.h"
+#include "io/gps_virtual.h"
+
 #include "dyad.h"
 #include "udplink.h"
 
@@ -178,6 +181,19 @@ void updateState(const fdm_packet* pkt)
 #else
     imuSetAttitudeQuat(pkt->imu_orientation_quat[0], pkt->imu_orientation_quat[1], pkt->imu_orientation_quat[2], pkt->imu_orientation_quat[3]);
 #endif
+#endif
+
+#if defined(USE_VIRTUAL_GPS)
+    const double longitude = pkt->position_xyz[0];
+    const double latitude = pkt->position_xyz[1];
+    const double altitude = pkt->position_xyz[2];
+    const double speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
+    const double speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
+    double course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
+    if (course < 0.0) {
+        course += 360.0;
+    }
+    setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
 #endif
 
 #if defined(SIMULATOR_IMU_SYNC)
