@@ -39,8 +39,6 @@
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/nvic.h"
-#include "drivers/pwm_output.h" // XXX for pwmOutputPort_t motors[]; should go away with refactoring
-#include "dshot_dpwm.h" // XXX for motorDmaOutput_t *getMotorDmaOutput(uint8_t index); should go away with refactoring
 #include "drivers/dshot_bitbang_decode.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
@@ -683,10 +681,6 @@ static void bbPostInit(void)
         }
 
         bbMotors[motorIndex].enabled = true;
-
-        // Fill in motors structure for 4way access (XXX Should be refactored)
-
-        motors[motorIndex].enabled = true;
     }
 }
 
@@ -768,9 +762,6 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
         } else {
             IOHi(io);
         }
-
-        // Fill in motors structure for 4way access (XXX Should be refactored)
-        motors[motorIndex].io = bbMotors[motorIndex].io;
     }
 
     return &bbDevice;
