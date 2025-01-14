@@ -136,9 +136,15 @@ static bool lis2mdlRead(magDev_t * mag, int16_t *magData)
         return false;
     }
 
-    magData[X] = (int16_t)(buf[1] << 8 | buf[0]);
-    magData[Y] = (int16_t)(buf[3] << 8 | buf[2]);
-    magData[Z] = (int16_t)(buf[5] << 8 | buf[4]);
+    int16_t x = (int16_t)(buf[1] << 8 | buf[0]);
+    int16_t y = (int16_t)(buf[3] << 8 | buf[2]);
+    int16_t z = (int16_t)(buf[5] << 8 | buf[4]);
+
+    // adapt LIS2MDL left-handed frame to common sensor axis orientation  (match LIS3MDL)
+    // pin 1 mark becomes +X -Y
+    magData[X] = -x;
+    magData[Y] = y;
+    magData[Z] = z;
 
     pendingRead = true;
 
