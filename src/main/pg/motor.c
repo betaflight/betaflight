@@ -31,14 +31,6 @@
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
 
-#if !defined(BRUSHED_MOTORS_PWM_RATE)
-#define BRUSHED_MOTORS_PWM_RATE 16000
-#endif
-
-#if !defined(BRUSHLESS_MOTORS_PWM_RATE)
-#define BRUSHLESS_MOTORS_PWM_RATE 480
-#endif
-
 #if !defined(DEFAULT_DSHOT_BITBANG)
 #define DEFAULT_DSHOT_BITBANG DSHOT_BITBANG_AUTO
 #endif
