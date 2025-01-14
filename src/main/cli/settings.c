@@ -161,7 +161,7 @@ const char * const lookupTableAccHardware[] = {
     "LSM6DSO",
     "LSM6DSV16X",
     "IIM42653",
-    "VIRTUAL",
+    "VIRTUAL"
 };
 
 // sync with gyroHardware_e
@@ -185,7 +185,7 @@ const char * const lookupTableGyroHardware[] = {
     "LSM6DSO",
     "LSM6DSV16X",
     "IIM42653",
-    "VIRTUAL",
+    "VIRTUAL"
 };
 
 #if defined(USE_SENSOR_NAMES) || defined(USE_BARO)
