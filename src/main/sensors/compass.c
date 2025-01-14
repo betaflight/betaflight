@@ -237,7 +237,7 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (lis2mdlDetect(magDev)) {
-#ifdef MAG_LIS3MDL_ALIGN
+#ifdef MAG_LIS2MDL_ALIGN
             *alignment = MAG_LIS2MDL_ALIGN;
 #endif
             magHardware = MAG_LIS2MDL;
