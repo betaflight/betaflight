@@ -148,15 +148,16 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM14, CH1N, PF9, 0, 0, 0),
 
 // Port H
-// Port H is not available for LPQFP-100 or 144 and TFBGA-100 package
-//    DEF_TIM(TIM12, CH1, PH6, 0, 0, 0),
-//    DEF_TIM(TIM12, CH2, PH9, 0, 0, 0),
-//    DEF_TIM(TIM5, CH1, PH10, 0, 0, 0),
-//    DEF_TIM(TIM5, CH2, PH11, 0, 0, 0),
-//    DEF_TIM(TIM5, CH3, PH12, 0, 0, 0),
-//    DEF_TIM(TIM8, CH1N, PH13, 0, 0, 0),
-//    DEF_TIM(TIM8, CH2N, PH14, 0, 0, 0),
-//    DEF_TIM(TIM8, CH3N, PH15, 0, 0, 0),
+    DEF_TIM(TIM5, CH1,  PH10, 0, 0, 0),
+    DEF_TIM(TIM5, CH2,  PH11, 0, 0, 0),
+    DEF_TIM(TIM5, CH3,  PH12, 0, 0, 0),
+
+// Port I
+    DEF_TIM(TIM5, CH4,  PI0,  0, 0, 0),
+    DEF_TIM(TIM8, CH4,  PI2,  0, 0, 0),
+    DEF_TIM(TIM8, CH1,  PI5,  0, 0, 0),
+    DEF_TIM(TIM8, CH2,  PI6,  0, 0, 0),
+    DEF_TIM(TIM8, CH3,  PI7,  0, 0, 0),
 };
 #endif
 
