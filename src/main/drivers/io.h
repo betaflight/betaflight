@@ -39,8 +39,11 @@
 #define GPIO_STATE_HIGH 1
 #define GPIO_STATE_LOW 0
 
-#define GPIO_CONFIG(pin, mode, state) \
-    { IO_TAG(pin), mode, state }
+#define GPIO_CONFIG_OUTPUT(pin, mode, state) \
+    { IO_TAG(pin), mode, state, true }
+
+#define GPIO_CONFIG_INPUT(pin, mode) \
+    { IO_TAG(pin), mode, false, false }
 
 // declare available IO pins. Available pins are specified per target
 #include "io_def.h"

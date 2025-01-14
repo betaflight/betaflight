@@ -37,6 +37,7 @@ typedef struct defaultGpioConfig_s {
     ioTag_t pin;
     uint8_t mode;
     bool state;
+    bool isOutput;
 } gpioConfig_t;
 
 #ifdef DEFAULT_GPIO_ARRAY
@@ -76,10 +77,7 @@ void IOInitGPIODefault(void)
         IOInit(io, OWNER_SYSTEM, 0);
         IOConfigGPIO(io, defaultGpios[i].mode);
 
-        bool is_output = (defaultGpios[i].mode & GPIO_MODE_OUTPUT_PP) ||
-                         (defaultGpios[i].mode & GPIO_MODE_OUTPUT_OD);
-
-        if (is_output) {
+        if (defaultGpios[i].isOutput) {
             IOWrite(io, defaultGpios[i].state);
         }
     }
