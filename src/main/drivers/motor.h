@@ -26,48 +26,7 @@
 
 #include "pg/motor.h"
 
-typedef enum {
-    PWM_TYPE_STANDARD = 0,
-    PWM_TYPE_ONESHOT125,
-    PWM_TYPE_ONESHOT42,
-    PWM_TYPE_MULTISHOT,
-    PWM_TYPE_BRUSHED,
-    PWM_TYPE_DSHOT150,
-    PWM_TYPE_DSHOT300,
-    PWM_TYPE_DSHOT600,
-//    PWM_TYPE_DSHOT1200, removed
-    PWM_TYPE_PROSHOT1000,
-    PWM_TYPE_DISABLED,
-    PWM_TYPE_MAX
-} motorPwmProtocolTypes_e;
-
-typedef struct motorVTable_s {
-    // Common
-    void (*postInit)(void);
-    float (*convertExternalToMotor)(uint16_t externalValue);
-    uint16_t (*convertMotorToExternal)(float motorValue);
-    bool (*enable)(void);
-    void (*disable)(void);
-    bool (*isMotorEnabled)(uint8_t index);
-    bool (*telemetryWait)(void);
-    bool (*decodeTelemetry)(void);
-    void (*updateInit)(void);
-    void (*write)(uint8_t index, float value);
-    void (*writeInt)(uint8_t index, uint16_t value);
-    void (*updateComplete)(void);
-    void (*shutdown)(void);
-
-    // Digital commands
-
-} motorVTable_t;
-
-typedef struct motorDevice_s {
-    motorVTable_t vTable;
-    uint8_t       count;
-    bool          initialized;
-    bool          enabled;
-    timeMs_t      motorEnableTimeMs;
-} motorDevice_t;
+#include "drivers/motor_types.h"
 
 void motorPostInitNull();
 void motorWriteNull(uint8_t index, float value);
@@ -76,6 +35,7 @@ void motorUpdateCompleteNull(void);
 
 void motorPostInit();
 void motorWriteAll(float *values);
+void motorRequestTelemetry(uint8_t index);
 
 void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
 
@@ -96,6 +56,7 @@ void motorEnable(void);
 float motorEstimateMaxRpm(void);
 bool motorIsEnabled(void);
 bool motorIsMotorEnabled(uint8_t index);
+bool motorIsMotorIdle(uint8_t index);
 timeMs_t motorGetMotorEnableTimeMs(void);
 void motorShutdown(void); // Replaces stopPwmAllMotors
 

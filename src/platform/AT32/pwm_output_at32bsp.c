@@ -149,7 +149,7 @@ static motorVTable_t motorPwmVTable = {
     .convertMotorToExternal = pwmConvertToExternal,
 };
 
-motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
+motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedUpdate)
 {
     memset(motors, 0, sizeof(motors));
 
@@ -157,36 +157,36 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
 
     float sMin = 0;
     float sLen = 0;
-    switch (motorConfig->motorPwmProtocol) {
+    switch (motorConfig->motorProtocol) {
     default:
-    case PWM_TYPE_ONESHOT125:
+    case MOTOR_PROTOCOL_ONESHOT125:
         sMin = 125e-6f;
         sLen = 125e-6f;
         break;
-    case PWM_TYPE_ONESHOT42:
+    case MOTOR_PROTOCOL_ONESHOT42:
         sMin = 42e-6f;
         sLen = 42e-6f;
         break;
-    case PWM_TYPE_MULTISHOT:
+    case MOTOR_PROTOCOL_MULTISHOT:
         sMin = 5e-6f;
         sLen = 20e-6f;
         break;
-    case PWM_TYPE_BRUSHED:
+    case MOTOR_PROTOCOL_BRUSHED:
         sMin = 0;
-        useUnsyncedPwm = true;
+        useUnsyncedUpdate = true;
         idlePulse = 0;
         break;
-    case PWM_TYPE_STANDARD:
+    case MOTOR_PROTOCOL_STANDARD:
         sMin = 1e-3f;
         sLen = 1e-3f;
-        useUnsyncedPwm = true;
+        useUnsyncedUpdate = true;
         idlePulse = 0;
         break;
     }
 
     motorPwmDevice.vTable.write = pwmWriteStandard;
     motorPwmDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
-    motorPwmDevice.vTable.updateComplete = useUnsyncedPwm ? motorUpdateCompleteNull : pwmCompleteOneshotMotorUpdate;
+    motorPwmDevice.vTable.updateComplete = useUnsyncedUpdate ? motorUpdateCompleteNull : pwmCompleteOneshotMotorUpdate;
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
@@ -208,23 +208,23 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
-        const unsigned pwmRateHz = useUnsyncedPwm ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
+        const unsigned pwmRateHz = useUnsyncedUpdate ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
 
         const uint32_t clock = timerClock(timerHardware->tim);
         /* used to find the desired timer frequency for max resolution */
         const unsigned prescaler = ((clock / pwmRateHz) + 0xffff) / 0x10000; /* rounding up */
         const uint32_t hz = clock / prescaler;
-        const unsigned period = useUnsyncedPwm ? hz / pwmRateHz : 0xffff;
+        const unsigned period = useUnsyncedUpdate ? hz / pwmRateHz : 0xffff;
 
         /*
             if brushed then it is the entire length of the period.
             TODO: this can be moved back to periodMin and periodLen
             once mixer outputs a 0..1 float value.
         */
-        motors[motorIndex].pulseScale = ((motorConfig->motorPwmProtocol == PWM_TYPE_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
+        motors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         motors[motorIndex].pulseOffset = (sMin * hz) - (motors[motorIndex].pulseScale * 1000);
 
-        pwmOutConfig(&motors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorPwmInversion);
+        pwmOutConfig(&motors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorInversion);
 
         bool timerAlreadyUsed = false;
         for (int i = 0; i < motorIndex; i++) {

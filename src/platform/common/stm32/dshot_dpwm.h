@@ -23,7 +23,7 @@
 #pragma once
 
 #include "drivers/dshot.h"
-#include "drivers/motor.h"
+#include "drivers/motor_types.h"
 
 // Timer clock frequency for the dshot speeds
 #define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
@@ -47,10 +47,7 @@ extern FAST_DATA_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet);
 uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet);
 
-uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
-
-struct motorDevConfig_s;
-motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedPwm);
+uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType);
 
 /* Motor DMA related, moved from pwm_output.h */
 
@@ -70,7 +67,7 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #elif defined(STM32F7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT
 #else
-#define DSHOT_DMA_BUFFER_ATTRIBUTE // None
+#define DSHOT_DMA_BUFFER_ATTRIBUTE /* Empty */
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(APM32F4)
@@ -159,7 +156,7 @@ typedef struct motorDmaOutput_s {
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value);
-bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
+bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output);
 #ifdef USE_DSHOT_TELEMETRY
 bool pwmTelemetryDecode(void);
 #endif

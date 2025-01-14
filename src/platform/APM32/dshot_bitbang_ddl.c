@@ -34,7 +34,7 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_bitbang_impl.h"
+#include "dshot_bitbang_impl.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/nvic.h"

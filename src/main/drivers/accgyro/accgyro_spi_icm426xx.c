@@ -42,7 +42,6 @@
 #include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
-#include "drivers/pwm_output.h"
 
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"

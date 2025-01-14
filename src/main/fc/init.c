@@ -64,7 +64,6 @@
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
 #include "drivers/pin_pull_up_down.h"
-#include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
@@ -545,7 +544,7 @@ void init(void)
     if (featureIsEnabled(FEATURE_3D)) {
         idlePulse = flight3DConfig()->neutral3d;
     }
-    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->dev.motorProtocol == MOTOR_PROTOCOL_BRUSHED) {
         idlePulse = 0; // brushed motors
     }
 #ifdef USE_MOTOR

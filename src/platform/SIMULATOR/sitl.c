@@ -627,10 +627,10 @@ static motorDevice_t motorPwmDevice = {
     }
 };
 
-motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
+motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount, bool useUnsyncedUpdate)
 {
     UNUSED(motorConfig);
-    UNUSED(useUnsyncedPwm);
+    UNUSED(useUnsyncedUpdate);
 
     printf("Initialized motor count %d\n", motorCount);
     pwmRawPkt.motorCount = motorCount;

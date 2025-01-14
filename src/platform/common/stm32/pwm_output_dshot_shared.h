@@ -20,28 +20,13 @@
 
 #ifdef USE_DSHOT
 
+#include "drivers/dshot.h"
+#include "dshot_dpwm.h"
+
 extern FAST_DATA_ZERO_INIT uint8_t dmaMotorTimerCount;
-#if defined(STM32F7) || defined(STM32H7)
+
 extern FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 extern FAST_DATA_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
-#else
-extern motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
-extern motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
-#endif
-
-#ifdef USE_DSHOT_TELEMETRY
-extern uint32_t readDoneCount;
-
-FAST_DATA_ZERO_INIT extern uint32_t inputStampUs;
-
-typedef struct dshotDMAHandlerCycleCounters_s {
-    uint32_t irqAt;
-    uint32_t changeDirectionCompletedAt;
-} dshotDMAHandlerCycleCounters_t;
-
-FAST_DATA_ZERO_INIT extern dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCounters;
-
-#endif
 
 uint8_t getTimerIndex(TIM_TypeDef *timer);
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
@@ -59,6 +44,8 @@ void pwmDshotSetDirectionOutput(
 #endif
 );
 
+void pwmDshotRequestTelemetry(uint8_t index);
+bool pwmDshotIsMotorIdle(uint8_t index);
 bool pwmTelemetryDecode(void);
 
 #endif

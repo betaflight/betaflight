@@ -39,9 +39,9 @@
 
 #include "drivers/pwm_output.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
+#include "dshot_dpwm.h"
 #include "drivers/dshot_command.h"
-#include "drivers/pwm_output_dshot_shared.h"
+#include "pwm_output_dshot_shared.h"
 
 /**
  *  Convert from BF channel to AT32 constants for timer output channels
@@ -130,7 +130,7 @@ void dshotEnableChannels(uint8_t motorCount)
  * Set the timer and dma of the specified motor for use as an output
  *
  * Called from pwmDshotMotorHardwareConfig in this file and also from
- * pwmTelemetryDecode in src/main/drivers/pwm_output_dshot_shared.c
+ * pwmTelemetryDecode in src/main/common/stm32/pwm_output_dshot_shared.c
 */
 FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
@@ -360,7 +360,7 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 }
 
 bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex,
-                                 motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+                                 motorProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     #ifdef USE_DSHOT_TELEMETRY
     #define OCINIT motor->ocInitStruct
@@ -450,7 +450,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         tmr_counter_enable(timer, FALSE);
 
         uint32_t prescaler = (uint16_t)(lrintf((float) timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
-        uint32_t period = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
+        uint32_t period = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
 
         tmr_clock_source_div_set(timer, TMR_CLOCK_DIV1);
         tmr_repetition_counter_set(timer, 0);
@@ -522,7 +522,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DMAINIT.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 
         DMAINIT.DMA_PeripheralBaseAddr = (uint32_t)&timerHardware->tim->DMAR;
-        DMAINIT.DMA_BufferSize = (pwmProtocolType == PWM_TYPE_PROSHOT1000) ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE; // XXX
+        DMAINIT.DMA_BufferSize = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000) ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE; // XXX
         DMAINIT.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
         DMAINIT.DMA_MemoryInc = DMA_MemoryInc_Enable;
         DMAINIT.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
@@ -550,7 +550,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     #ifdef USE_DSHOT_TELEMETRY
     motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
         (16 * MOTOR_BITLENGTH) / getDshotHz(pwmProtocolType);
-    motor->timer->outputPeriod = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
+    motor->timer->outputPeriod = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
     pwmDshotSetDirectionOutput(motor);
     #else
     pwmDshotSetDirectionOutput(motor, &OCINIT, &DMAINIT);

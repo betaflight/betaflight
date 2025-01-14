@@ -40,9 +40,9 @@
 #include "stm32f4xx.h"
 #endif
 
-#include "pwm_output.h"
+#include "drivers/pwm_output.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
+#include "dshot_dpwm.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 
@@ -60,12 +60,24 @@ motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 #ifdef USE_DSHOT_TELEMETRY
 FAST_DATA_ZERO_INIT uint32_t inputStampUs;
 
-FAST_DATA_ZERO_INIT dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCounters;
+FAST_DATA_ZERO_INIT dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
 #endif
 
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
 {
     return &dmaMotors[index];
+}
+
+bool pwmDshotIsMotorIdle(uint8_t index)
+{
+    const motorDmaOutput_t *motor = getMotorDmaOutput(index);
+    return motor->protocolControl.value;
+}
+
+void pwmDshotRequestTelemetry(uint8_t index)
+{
+    motorDmaOutput_t * const motor = getMotorDmaOutput(index);
+    motor->protocolControl.requestTelemetry = true;
 }
 
 uint8_t getTimerIndex(TIM_TypeDef *timer)
@@ -127,12 +139,12 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 #else
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);
 
-        // XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
-        #ifdef AT32F435
+// XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
+#ifdef AT32F435
         xDMA_Cmd(motor->dmaRef, TRUE);
-        #else
+#else
         xDMA_Cmd(motor->dmaRef, ENABLE);
-        #endif
+#endif
 
 #endif // USE_FULL_LL_DRIVER
     }

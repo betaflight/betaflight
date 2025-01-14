@@ -89,7 +89,6 @@ COMMON_SRC = \
             cli/settings.c \
             config/config.c \
             drivers/dshot.c \
-            drivers/dshot_dpwm.c \
             drivers/dshot_command.c \
             drivers/buf_writer.c \
             drivers/bus.c \

@@ -30,13 +30,9 @@
 #include "drivers/io.h"
 #include "drivers/motor.h"
 #include "drivers/time.h"
-#include "drivers/timer.h"
 
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
-#include "drivers/pwm_output.h"
-
-#include "dshot_command.h"
+#include "drivers/dshot_command.h"
 
 #define DSHOT_PROTOCOL_DETECTION_DELAY_MS 3000
 #define DSHOT_INITIAL_DELAY_US 10000
@@ -143,8 +139,7 @@ static dshotCommandControl_t* addCommand(void)
 static bool allMotorsAreIdle(void)
 {
     for (unsigned i = 0; i < motorDeviceCount(); i++) {
-        const motorDmaOutput_t *motor = getMotorDmaOutput(i);
-        if (motor->protocolControl.value) {
+        if (motorIsMotorIdle(i)) {
             return false;
         }
     }
@@ -232,8 +227,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
             }
 
             for (uint8_t i = 0; i < motorDeviceCount(); i++) {
-                motorDmaOutput_t *const motor = getMotorDmaOutput(i);
-                motor->protocolControl.requestTelemetry = true;
+                vTable->requestTelemetry(i);
                 vTable->writeInt(i, (i == index || index == ALL_MOTORS) ? command : DSHOT_CMD_MOTOR_STOP);
             }
 

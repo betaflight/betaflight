@@ -29,16 +29,9 @@
 #include "drivers/motor.h"
 #include "drivers/timer.h"
 
-#define BRUSHED_MOTORS_PWM_RATE 16000
-#define BRUSHLESS_MOTORS_PWM_RATE 480
-
-#define ALL_MOTORS 255
-
-#define MOTOR_OUTPUT_LIMIT_PERCENT_MIN 1
-#define MOTOR_OUTPUT_LIMIT_PERCENT_MAX 100
-
 #define PWM_TIMER_1MHZ        MHZ_TO_HZ(1)
 
+// TODO: move the implementation defintions to impl header (platform)
 struct timerHardware_s;
 
 typedef struct {

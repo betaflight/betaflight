@@ -25,6 +25,14 @@
 #include "drivers/io.h"
 #include "drivers/dshot_bitbang.h"
 
+#if !defined(BRUSHED_MOTORS_PWM_RATE)
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#endif
+
+#if !defined(BRUSHLESS_MOTORS_PWM_RATE)
+#define BRUSHLESS_MOTORS_PWM_RATE 480
+#endif
+
 typedef enum {
     DSHOT_BITBANGED_TIMER_AUTO = 0,
     DSHOT_BITBANGED_TIMER_TIM1,
@@ -44,9 +52,9 @@ typedef enum {
 
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
-    uint8_t  motorPwmProtocol;              // Pwm Protocol
-    uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
-    uint8_t  useUnsyncedPwm;
+    uint8_t  motorProtocol;              // Pwm Protocol
+    uint8_t  motorInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
+    uint8_t  useUnsyncedUpdate;
     uint8_t  useBurstDshot;
     uint8_t  useDshotTelemetry;
     uint8_t  useDshotEdt;

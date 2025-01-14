@@ -36,7 +36,6 @@
 #include "config/config_reset.h"
 #include "config/simplified_tuning.h"
 
-#include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
 

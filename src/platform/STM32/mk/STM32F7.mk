@@ -143,7 +143,6 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/adc_stm32f7xx.c \
             STM32/audio_stm32f7xx.c \
             STM32/bus_i2c_hal_init.c \
@@ -191,7 +190,6 @@ SPEED_OPTIMISED_SRC += \
             STM32/bus_i2c_hal.c \
             STM32/bus_spi_ll.c \
             drivers/max7456.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/exti.c
 

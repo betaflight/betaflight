@@ -120,7 +120,6 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/adc_stm32g4xx.c \
             STM32/bus_i2c_hal_init.c \
             STM32/bus_i2c_hal.c \

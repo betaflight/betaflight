@@ -35,12 +35,12 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_bitbang.h"
-#include "drivers/dshot_bitbang_impl.h"
+#include "dshot_bitbang_impl.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/nvic.h"
+#include "pwm_output_dshot_shared.h"
 #include "drivers/pwm_output.h" // XXX for pwmOutputPort_t motors[]; should go away with refactoring
-#include "drivers/dshot_dpwm.h" // XXX for motorDmaOutput_t *getMotorDmaOutput(uint8_t index); should go away with refactoring
 #include "drivers/dshot_bitbang_decode.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
@@ -93,7 +93,7 @@ const timerHardware_t bbTimerHardware[] = {
 static FAST_DATA_ZERO_INIT motorDevice_t bbDevice;
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
 
-static motorPwmProtocolTypes_e motorPwmProtocol;
+static motorProtocolTypes_e motorProtocol;
 
 // DMA GPIO output buffer formatting
 
@@ -243,15 +243,15 @@ const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer)
 
 // Return frequency of smallest change [state/sec]
 
-static uint32_t getDshotBaseFrequency(motorPwmProtocolTypes_e pwmProtocolType)
+static uint32_t getDshotBaseFrequency(motorProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-    case(PWM_TYPE_DSHOT600):
+    case(MOTOR_PROTOCOL_DSHOT600):
         return MOTOR_DSHOT600_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
-    case(PWM_TYPE_DSHOT300):
+    case(MOTOR_PROTOCOL_DSHOT300):
         return MOTOR_DSHOT300_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
     default:
-    case(PWM_TYPE_DSHOT150):
+    case(MOTOR_PROTOCOL_DSHOT150):
         return MOTOR_DSHOT150_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
     }
 }
@@ -364,7 +364,7 @@ static void bbFindPacerTimer(void)
     }
 }
 
-static void bbTimebaseSetup(bbPort_t *bbPort, motorPwmProtocolTypes_e dshotProtocolType)
+static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
     uint32_t timerclock = timerClock(bbPort->timhw->tim);
 
@@ -382,7 +382,7 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorPwmProtocolTypes_e dshotProto
 // it does not use the timer channel associated with the pin.
 //
 
-static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     int pinIndex = IO_GPIOPinIdx(io);
     int portIndex = IO_GPIOPortIdx(io);
@@ -669,7 +669,7 @@ static void bbPostInit(void)
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
 
-        if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorPwmProtocol, bbMotors[motorIndex].output)) {
+        if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorProtocol, bbMotors[motorIndex].output)) {
             return;
         }
 
@@ -695,6 +695,8 @@ static motorVTable_t bbVTable = {
     .convertExternalToMotor = dshotConvertFromExternal,
     .convertMotorToExternal = dshotConvertToExternal,
     .shutdown = bbShutdown,
+    .isMotorIdle = bbDshotIsMotorIdle,
+    .requestTelemetry = bbDshotRequestTelemetry,
 };
 
 dshotBitbangStatus_e dshotBitbangGetStatus(void)
@@ -707,7 +709,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
     dbgPinLo(0);
     dbgPinLo(1);
 
-    motorPwmProtocol = motorConfig->motorPwmProtocol;
+    motorProtocol = motorConfig->motorProtocol;
     bbDevice.vTable = bbVTable;
     motorCount = count;
     bbStatus = DSHOT_BITBANG_STATUS_OK;
@@ -723,7 +725,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
-        uint8_t output = motorConfig->motorPwmInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
+        uint8_t output = motorConfig->motorInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
         bbPuPdMode = (output & TIMER_OUTPUT_INVERTED) ? BB_GPIO_PULLDOWN : BB_GPIO_PULLUP;
 
 #ifdef USE_DSHOT_TELEMETRY

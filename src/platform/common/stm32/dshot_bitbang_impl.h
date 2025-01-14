@@ -22,6 +22,7 @@
 
 #include "common/time.h"
 #include "drivers/motor.h"
+#include "drivers/dshot.h"
 
 #define USE_DMA_REGISTER_CACHE
 
@@ -275,3 +276,6 @@ void bbDMA_Cmd(bbPort_t *bbPort, confirm_state NewState);
 void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
 #endif
 int  bbDMA_Count(bbPort_t *bbPort);
+
+void bbDshotRequestTelemetry(uint8_t motorIndex);
+bool bbDshotIsMotorIdle(uint8_t motorIndex);

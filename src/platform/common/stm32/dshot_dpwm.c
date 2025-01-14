@@ -30,8 +30,9 @@
 #ifdef USE_DSHOT
 
 #include "drivers/pwm_output.h"
+#include "pwm_output_dshot_shared.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
+#include "dshot_dpwm.h"
 #include "drivers/motor.h"
 
 #include "pg/motor.h"
@@ -79,17 +80,17 @@ FAST_CODE_NOINLINE uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride,
     return PROSHOT_DMA_BUFFER_SIZE;
 }
 
-uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
+uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-    case(PWM_TYPE_PROSHOT1000):
+    case(MOTOR_PROTOCOL_PROSHOT1000):
         return MOTOR_PROSHOT1000_HZ;
-    case(PWM_TYPE_DSHOT600):
+    case(MOTOR_PROTOCOL_DSHOT600):
         return MOTOR_DSHOT600_HZ;
-    case(PWM_TYPE_DSHOT300):
+    case(MOTOR_PROTOCOL_DSHOT300):
         return MOTOR_DSHOT300_HZ;
     default:
-    case(PWM_TYPE_DSHOT150):
+    case(MOTOR_PROTOCOL_DSHOT150):
         return MOTOR_DSHOT150_HZ;
     }
 }
@@ -147,14 +148,16 @@ static motorVTable_t dshotPwmVTable = {
     .convertExternalToMotor = dshotConvertFromExternal,
     .convertMotorToExternal = dshotConvertToExternal,
     .shutdown = dshotPwmShutdown,
+    .requestTelemetry = pwmDshotRequestTelemetry,
+    .isMotorIdle = pwmDshotIsMotorIdle,
 };
 
 FAST_DATA_ZERO_INIT motorDevice_t dshotPwmDevice;
 
-motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
+motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedUpdate)
 {
     UNUSED(idlePulse);
-    UNUSED(useUnsyncedPwm);
+    UNUSED(useUnsyncedUpdate);
 
     dshotPwmDevice.vTable = dshotPwmVTable;
 
@@ -163,13 +166,13 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
     dshotPwmDevice.vTable.decodeTelemetry = pwmTelemetryDecode;
 #endif
 
-    switch (motorConfig->motorPwmProtocol) {
-    case PWM_TYPE_PROSHOT1000:
+    switch (motorConfig->motorProtocol) {
+    case MOTOR_PROTOCOL_PROSHOT1000:
         loadDmaBuffer = loadDmaBufferProshot;
         break;
-    case PWM_TYPE_DSHOT600:
-    case PWM_TYPE_DSHOT300:
-    case PWM_TYPE_DSHOT150:
+    case MOTOR_PROTOCOL_DSHOT600:
+    case MOTOR_PROTOCOL_DSHOT300:
+    case MOTOR_PROTOCOL_DSHOT150:
         loadDmaBuffer = loadDmaBufferDshot;
 #ifdef USE_DSHOT_DMAR
         useBurstDshot = motorConfig->useBurstDshot == DSHOT_DMAR_ON ||
@@ -190,8 +193,8 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
             if (pwmDshotMotorHardwareConfig(timerHardware,
                 motorIndex,
                 reorderedMotorIndex,
-                motorConfig->motorPwmProtocol,
-                motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output)) {
+                motorConfig->motorProtocol,
+                motorConfig->motorInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output)) {
                 motors[motorIndex].enabled = true;
 
                 continue;

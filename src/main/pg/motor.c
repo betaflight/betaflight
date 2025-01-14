@@ -25,11 +25,19 @@
 
 #ifdef USE_MOTOR
 
-#include "drivers/pwm_output.h"
+#include "drivers/motor_types.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
+
+#if !defined(BRUSHED_MOTORS_PWM_RATE)
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#endif
+
+#if !defined(BRUSHLESS_MOTORS_PWM_RATE)
+#define BRUSHLESS_MOTORS_PWM_RATE 480
+#endif
 
 #if !defined(DEFAULT_DSHOT_BITBANG)
 #define DEFAULT_DSHOT_BITBANG DSHOT_BITBANG_AUTO
@@ -53,19 +61,19 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
     motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-    motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
-    motorConfig->dev.useUnsyncedPwm = true;
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_BRUSHED;
+    motorConfig->dev.useUnsyncedUpdate = true;
 #else
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #ifndef USE_DSHOT
-    if (motorConfig->dev.motorPwmProtocol == PWM_TYPE_STANDARD) {
-        motorConfig->dev.useUnsyncedPwm = true;
+    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_STANDARD) {
+        motorConfig->dev.useUnsyncedUpdate = true;
     }
-    motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;
 #elif defined(DEFAULT_MOTOR_DSHOT_SPEED)
-    motorConfig->dev.motorPwmProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
+    motorConfig->dev.motorProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
 #else
-    motorConfig->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DSHOT600;
 #endif // USE_DSHOT
 #endif // BRUSHED_MOTORS
 

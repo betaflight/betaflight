@@ -181,11 +181,7 @@ static void escSerialGPIOConfig(const timerHardware_t *timhw, ioConfig_t cfg)
     }
 
     IOInit(IOGetByTag(tag), OWNER_MOTOR, 0);
-#if defined(STM32F7) || defined(STM32H7)
     IOConfigGPIOAF(IOGetByTag(tag), cfg, timhw->alternateFunction);
-#else
-    IOConfigGPIO(IOGetByTag(tag), cfg);
-#endif
 }
 
 static void escSerialInputPortConfig(const timerHardware_t *timerHardwarePtr)
