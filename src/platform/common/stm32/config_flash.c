@@ -24,6 +24,7 @@
 #include "platform.h"
 #include "drivers/system.h"
 #include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
 
 #if defined(CONFIG_IN_FLASH)
 
@@ -49,7 +50,7 @@ Sector 10   0x08180000 - 0x081BFFFF 256 Kbytes
 Sector 11   0x081C0000 - 0x081FFFFF 256 Kbytes
 */
 
-uint32_t getFLASHSectorForEEPROM(void)
+static uint32_t getFLASHSectorForEEPROM(void)
 {
     if ((uint32_t)&__config_start <= 0x08007FFF)
         return FLASH_SECTOR_0;
@@ -96,7 +97,7 @@ Sector 6    0x08040000 - 0x0805FFFF 128 Kbytes
 Sector 7    0x08060000 - 0x0807FFFF 128 Kbytes
 */
 
-uint32_t getFLASHSectorForEEPROM(void)
+static uint32_t getFLASHSectorForEEPROM(void)
 {
     if ((uint32_t)&__config_start <= 0x08003FFF)
         return FLASH_SECTOR_0;
@@ -137,7 +138,7 @@ Sector 10   0x080C0000 - 0x080DFFFF 128 Kbytes
 Sector 11   0x080E0000 - 0x080FFFFF 128 Kbytes
 */
 
-uint32_t getFLASHSectorForEEPROM(void)
+static uint32_t getFLASHSectorForEEPROM(void)
 {
     if ((uint32_t)&__config_start <= 0x08003FFF)
         return FLASH_Sector_0;
@@ -210,7 +211,7 @@ FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 #define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE)
 #endif
 
-void getFLASHSectorForEEPROM(uint32_t address, uint32_t *bank, uint32_t *sector)
+static void getFLASHSectorForEEPROM(uint32_t address, uint32_t *bank, uint32_t *sector)
 {
 #if defined(FLASH_BANK2_BASE)
     if (address >= FLASH_BANK1_BASE && address < FLASH_BANK2_BASE) {
@@ -244,7 +245,7 @@ Sector 0    0x08000000 - 0x0801FFFF 128 Kbytes
 
 */
 
-void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
+static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
 {
 
     uint32_t start = (uint32_t)&__config_start;
@@ -275,7 +276,7 @@ Sector 10   0x080C0000 - 0x080DFFFF 128 Kbytes
 Sector 11   0x080E0000 - 0x080FFFFF 128 Kbytes
 */
 
-uint32_t getFLASHSectorForEEPROM(void)
+static uint32_t getFLASHSectorForEEPROM(void)
 {
     if ((uint32_t)&__config_start <= 0x08003FFF)
         return FLASH_SECTOR_0;

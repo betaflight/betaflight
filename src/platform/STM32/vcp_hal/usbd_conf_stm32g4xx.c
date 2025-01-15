@@ -31,6 +31,8 @@
 
 #include "platform.h"
 
+#include "common/irq_all.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,7 +46,7 @@
 /* USER CODE END PV */
 
 PCD_HandleTypeDef hpcd_USB_FS;
-void Error_Handler(void);
+static void Error_Handler(void) { while(1); }
 
 /* USER CODE BEGIN 0 */
 
@@ -714,7 +716,7 @@ void USBD_LL_Delay(uint32_t Delay)
   * @param  size: Size of allocated memory
   * @retval None
   */
-void *USBD_static_malloc(uint32_t size)
+UNUSED_ static void *USBD_static_malloc(uint32_t size)
 {
   UNUSED(size);
 
@@ -727,7 +729,7 @@ void *USBD_static_malloc(uint32_t size)
   * @param  p: Pointer to allocated  memory address
   * @retval None
   */
-void USBD_static_free(void *p)
+UNUSED_ static void USBD_static_free(void *p)
 {
   UNUSED(p);
 }

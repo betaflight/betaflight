@@ -26,6 +26,8 @@
 #include "usbd_core.h"
 #include "usbd_sdr.h"
 
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
 /** @addtogroup AT32F435_437_middlewares_usbd_drivers
   * @{
   */

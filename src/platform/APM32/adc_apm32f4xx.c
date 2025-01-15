@@ -96,7 +96,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA7, ADC_DEVICES_12,  ADC_CHANNEL_7  },
 };
 
-void adcInitDevice(adcDevice_t *adcdev, int channelCount)
+static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
     ADC_HandleTypeDef *hadc = &adcdev->ADCHandle;
 
@@ -132,7 +132,7 @@ static adcDevice_t adc;
 static adcDevice_t adcInternal;
 static ADC_HandleTypeDef *adcInternalHandle;
 
-void adcInitInternalInjected(adcDevice_t *adcdev)
+static void adcInitInternalInjected(adcDevice_t *adcdev)
 {
     adcInternalHandle = &adcdev->ADCHandle;
 

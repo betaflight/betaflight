@@ -58,6 +58,8 @@
 #define UNUSED(x) (void)(x) // Variables and parameters that are not used
 #endif
 
+#define UNUSED_ __attribute__ ((unused))
+
 #define DISCARD(x) (void)(x) // To explicitly ignore result of x (usually an I/O register access).
 
 #ifndef __cplusplus

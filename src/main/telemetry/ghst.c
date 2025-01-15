@@ -96,7 +96,7 @@ static void ghstFinalize(sbuf_t *dst)
 }
 
 // Battery (Pack) status
-void ghstFramePackTelemetry(sbuf_t *dst)
+static void ghstFramePackTelemetry(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, GHST_FRAME_PACK_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
@@ -119,7 +119,7 @@ void ghstFramePackTelemetry(sbuf_t *dst)
 }
 
 // GPS data, primary, positional data
-void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
+UNUSED_ static void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
@@ -138,7 +138,7 @@ void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
 }
 
 // GPS data, secondary, auxiliary data
-void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
+UNUSED_ static void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
@@ -162,7 +162,7 @@ void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
 }
 
 // Mag, Baro (and Vario) data
-void ghstFrameMagBaro(sbuf_t *dst)
+static void ghstFrameMagBaro(sbuf_t *dst)
 {
     int16_t vario = 0;
     int16_t altitude = 0;

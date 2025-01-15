@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
 /** @addtogroup APM32_USB_Library
   @{
   */

@@ -219,7 +219,7 @@ void failsafeCheckDataFailurePeriod(void)
     }
 }
 
-uint32_t failsafeFailurePeriodMs(void)
+UNUSED_ static uint32_t failsafeFailurePeriodMs(void)
 {
     return failsafeState.rxDataFailurePeriod;
 }

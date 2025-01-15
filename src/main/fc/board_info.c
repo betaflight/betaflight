@@ -25,6 +25,7 @@
 
 #if defined(USE_BOARD_INFO)
 #include "pg/board.h"
+#include "fc/board_info.h"
 
 #if !defined(BOARD_NAME)
 static bool boardInformationSet = false;

@@ -50,6 +50,8 @@ void SystemClock_Config(void); // Forward
 
 void SystemInit(void)
 {
+  persistentObjectInit();
+
   systemProcessResetReason();
 
   initialiseMemorySections();
@@ -199,7 +201,7 @@ int SystemPLLSource(void)
     return (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC) & 1; // LSB determines HSI(0) or HSE(1)
 }
 
-void Error_Handler(void)
+static void Error_Handler(void)
 {
     while (1) {
     }

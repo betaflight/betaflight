@@ -35,6 +35,8 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
+#include "common/irq_all.h"
+
 #define I2C_TIMEOUT                      0x870 //about 7 us at 288 mhz
 
 #ifdef USE_I2C_DEVICE_1

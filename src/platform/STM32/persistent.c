@@ -31,6 +31,8 @@
 
 #define PERSISTENT_OBJECT_MAGIC_VALUE (('B' << 24)|('e' << 16)|('f' << 8)|('1' << 0))
 
+static void persistentObjectRTCEnable(void);
+
 #ifdef USE_HAL_DRIVER
 
 uint32_t persistentObjectRead(persistentObjectId_e id)
@@ -60,7 +62,7 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
 #endif
 }
 
-void persistentObjectRTCEnable(void)
+static void persistentObjectRTCEnable(void)
 {
 #if !defined(STM32G4)
     // G4 library V1.0.0 __HAL_RTC_WRITEPROTECTION_ENABLE/DISABLE macro does not use handle parameter
@@ -95,7 +97,7 @@ void persistentObjectRTCEnable(void)
     __HAL_RTC_WRITEPROTECTION_DISABLE(&rtcHandle); // Apply sequence
 }
 
-#else
+#else // USE_HAL_DRIVER
 uint32_t persistentObjectRead(persistentObjectId_e id)
 {
     uint32_t value = RTC_ReadBackupRegister(id);
@@ -108,7 +110,7 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
     RTC_WriteBackupRegister(id, value);
 }
 
-void persistentObjectRTCEnable(void)
+static void persistentObjectRTCEnable(void)
 {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE); // Enable Access to PWR
     PWR_BackupAccessCmd(ENABLE); // Disable backup domain protection

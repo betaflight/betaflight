@@ -298,7 +298,7 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
     }
 }
 
-bool isValidPacket(const uint8_t *packet)
+static bool isValidPacket(const uint8_t *packet)
 {
     bool useBindTxId2 = false;
 

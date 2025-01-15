@@ -40,6 +40,8 @@
 #include "drivers/timer.h"
 #include "drivers/timer_impl.h"
 
+#include "common/irq_all.h"
+
 #define TIM_N(n) (1 << (n))
 
 /*
@@ -310,7 +312,7 @@ uint8_t timerInputIrq(const TIM_TypeDef *tim)
     return 0;
 }
 
-void timerNVICConfigure(uint8_t irq)
+static void timerNVICConfigure(uint8_t irq)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 

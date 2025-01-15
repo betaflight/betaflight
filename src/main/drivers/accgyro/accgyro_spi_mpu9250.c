@@ -69,7 +69,7 @@ static bool mpu9250SpiSlowReadRegisterBuffer(const extDevice_t *dev, uint8_t reg
     return true;
 }
 
-void mpu9250SpiGyroInit(gyroDev_t *gyro)
+static void mpu9250SpiGyroInit(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
 
@@ -86,7 +86,7 @@ void mpu9250SpiGyroInit(gyroDev_t *gyro)
     }
 }
 
-void mpu9250SpiAccInit(accDev_t *acc)
+static void mpu9250SpiAccInit(accDev_t *acc)
 {
     acc->acc_1G = 512 * 4;
 }

@@ -37,7 +37,7 @@
 
 #include "pg/bus_quadspi.h"
 
-static void Error_Handler(void) { while (1) { } }
+static void Error_Handler(void) { while (1); }
 
 void quadSpiInitDevice(QUADSPIDevice device)
 {
@@ -134,7 +134,7 @@ static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
 /**
  * Return true if the bus is currently in the middle of a transmission.
  */
-bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
+UNUSED_ static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
     if(quadSpiDevice[device].hquadSpi.State == HAL_QSPI_STATE_BUSY)
@@ -145,7 +145,7 @@ bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 
 #define QUADSPI_DEFAULT_TIMEOUT 10
 
-void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
 
@@ -174,7 +174,7 @@ void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
     }
 }
 
-void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
 

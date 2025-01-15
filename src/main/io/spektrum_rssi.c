@@ -50,7 +50,7 @@ static uint16_t spek_fade_last_sec_count = 0; // Stores the fade count at the la
 #endif
 
 // Linear mapping and interpolation function
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
+static int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
 {
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }

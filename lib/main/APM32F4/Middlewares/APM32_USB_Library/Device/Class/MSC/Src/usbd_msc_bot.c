@@ -28,6 +28,8 @@
 #include "usbd_msc.h"
 #include "usbd_dataXfer.h"
 
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
 /** @addtogroup APM32_USB_Library
   @{
   */

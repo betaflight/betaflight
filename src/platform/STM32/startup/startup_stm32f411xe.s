@@ -70,12 +70,10 @@ defined in linker script */
   .section  .text.Reset_Handler
   .weak  Reset_Handler
   .type  Reset_Handler, %function
-Reset_Handler: 
-  // Defined in C code
-  bl persistentObjectInit
-  bl checkForBootLoaderRequest
+Reset_Handler:
+  ldr   sp, =_estack      /* set stack pointer (don't depend on value from vector table) */
 
-/* Copy the data segment initializers from flash to SRAM */  
+/* Copy the data segment initializers from flash to SRAM */
   movs  r1, #0
   b  LoopCopyDataInit
 
@@ -116,22 +114,12 @@ LoopMarkHeapStack:
   cmp	r2, r3
   bcc	MarkHeapStack
 
-/*FPU settings*/
- ldr     r0, =0xE000ED88           /* Enable CP10,CP11 */
- ldr     r1,[r0]
- orr     r1,r1,#(0xF << 20)
- str     r1,[r0]
-
 /* Call the clock system intitialization function.*/
   bl  SystemInit
 
 /* Call the application's entry point.*/
   bl  main
   bx  lr    
-
-LoopForever:
-  b LoopForever
-
 .size  Reset_Handler, .-Reset_Handler
 
 /**

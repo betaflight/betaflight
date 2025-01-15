@@ -69,6 +69,8 @@ defined in linker script */
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler: 
+  ldr   sp, =_estack      /* set stack pointer (don't depend on value from vector table) */
+
   // Enable CCM
   // RCC->AHB1ENR |= RCC_AHB1ENR_CCMDATARAMEN;
   ldr     r0, =0x40023800       // RCC_BASE
@@ -76,10 +78,6 @@ Reset_Handler:
   orr     r1, r1, 0x00100000    // RCC_AHB1ENR_CCMDATARAMEN
   str     r1, [r0, #0x30]
   dsb
-
-  // Defined in C code
-  bl persistentObjectInit
-  bl checkForBootLoaderRequest
 
 /* Copy the data segment initializers from flash to SRAM */  
   movs  r1, #0
@@ -135,12 +133,6 @@ LoopMarkHeapStack:
   cmp	r2, r3
   bcc	MarkHeapStack
 
-/*FPU settings*/
- ldr     r0, =0xE000ED88           /* Enable CP10,CP11 */
- ldr     r1,[r0]
- orr     r1,r1,#(0xF << 20)
- str     r1,[r0]
-
 /* Call the clock system intitialization function.*/
 /* Done in system_stm32f4xx.c */
  bl  SystemInit
@@ -148,9 +140,6 @@ LoopMarkHeapStack:
 /* Call the application's entry point.*/
   bl  main
   bx  lr    
-
-LoopForever:
-  b LoopForever
 
 .size  Reset_Handler, .-Reset_Handler
 

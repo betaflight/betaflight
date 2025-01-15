@@ -170,6 +170,8 @@ void system_core_clock_update(void)
   system_core_clock = system_core_clock >> div_value;
 }
 
+// TODO
+void _init(void);
 extern void _init(void) {;}
 
 /**

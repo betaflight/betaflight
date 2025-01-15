@@ -65,14 +65,14 @@ typedef enum SPIDevice {
 #define SPI_DEV_TO_CFG(x)   ((x) + 1)
 
 void spiPreinit(void);
-void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, uint8_t init);
+void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init);
 void spiPreinitByIO(const IO_t io);
 void spiPreinitByTag(ioTag_t tag);
 
 bool spiInit(SPIDevice device);
 
 // Called after all devices are initialised to enable SPI DMA where streams are available.
-void spiInitBusDMA();
+void spiInitBusDMA(void);
 
 SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance);
 SPI_TypeDef *spiInstanceByDevice(SPIDevice device);

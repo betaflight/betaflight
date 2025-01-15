@@ -22,6 +22,8 @@
 #pragma once
 
 #include <stdbool.h>
+#include "drivers/resource.h"
+#include "io/serial.h"
 
 /*
  * common functions related to serial port implementation

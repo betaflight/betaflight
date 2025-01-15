@@ -31,6 +31,8 @@
 
 #include "flight/mixer.h"
 
+#include "common/irq_all.h"
+
 #ifdef STM32F7
 void MemManage_Handler(void)
 {

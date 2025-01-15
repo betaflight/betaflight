@@ -148,7 +148,7 @@ static bool isFrameComplete(void)
     return bufferPosition == bufferSize;
 }
 
-bool isEscSensorActive(void)
+UNUSED_ static bool isEscSensorActive(void)
 {
     return escSensorPort != NULL;
 }

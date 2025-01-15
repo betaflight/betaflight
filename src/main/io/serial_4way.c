@@ -318,7 +318,7 @@ void esc4wayRelease(void)
   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE. */
-uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data)
+static uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data)
 {
         int i;
 

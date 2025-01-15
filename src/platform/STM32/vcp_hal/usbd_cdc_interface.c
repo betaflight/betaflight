@@ -63,6 +63,8 @@
 #include "drivers/serial_usb_vcp.h"
 #include "drivers/time.h"
 
+#include "common/irq_all.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define APP_RX_DATA_SIZE  2048

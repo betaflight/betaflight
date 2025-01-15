@@ -227,7 +227,7 @@ static bool lps22dfGetUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void lps22dfCalculate(int32_t *pressure, int32_t *temperature);
 
-void lps22dfBusInit(const extDevice_t *dev)
+static void lps22dfBusInit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_LPS22DF
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -241,7 +241,7 @@ void lps22dfBusInit(const extDevice_t *dev)
 #endif
 }
 
-void lps22dfBusDeinit(const extDevice_t *dev)
+static void lps22dfBusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_LPS22DF
     if (dev->bus->busType == BUS_TYPE_SPI) {

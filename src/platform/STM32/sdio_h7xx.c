@@ -41,6 +41,8 @@
 #include "drivers/nvic.h"
 #include "drivers/sdio.h"
 
+#include "common/irq_all.h"
+
 typedef struct SD_Handle_s
 {
     uint32_t          CSD[4];           // SD card specific data table

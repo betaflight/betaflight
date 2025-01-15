@@ -57,7 +57,7 @@ typedef struct isrVector_s {
 } isrVector_t;
 
 // Used in the startup files for F4
-void checkForBootLoaderRequest(void)
+static void checkForBootLoaderRequest(void)
 {
     uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
@@ -128,8 +128,6 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-    persistentObjectInit();
-
     checkForBootLoaderRequest();
 
 #ifdef USE_DAL_DRIVER

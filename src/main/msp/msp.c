@@ -398,7 +398,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 
 #define MSP_DISPATCH_DELAY_US 1000000
 
-void mspReboot(dispatchEntry_t* self)
+static void mspReboot(dispatchEntry_t* self)
 {
     UNUSED(self);
 
@@ -414,7 +414,7 @@ dispatchEntry_t mspRebootEntry =
     mspReboot, 0, NULL, false
 };
 
-void writeReadEeprom(dispatchEntry_t* self)
+static void writeReadEeprom(dispatchEntry_t* self)
 {
     UNUSED(self);
 
@@ -686,15 +686,19 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteData(dst, targetName, strlen(targetName));
 
 #if defined(USE_BOARD_INFO)
-        // Board name with explicit length
-        char *value = getBoardName();
-        sbufWriteU8(dst, strlen(value));
-        sbufWriteString(dst, value);
+        {
+            // Board name with explicit length
+            const char * const value = getBoardName();
+            sbufWriteU8(dst, strlen(value));
+            sbufWriteString(dst, value);
+        }
 
-        // Manufacturer id with explicit length
-        value = getManufacturerId();
-        sbufWriteU8(dst, strlen(value));
-        sbufWriteString(dst, value);
+        {
+            // Manufacturer id with explicit length
+            const char * const value = getManufacturerId();
+            sbufWriteU8(dst, strlen(value));
+            sbufWriteString(dst, value);
+        }
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);

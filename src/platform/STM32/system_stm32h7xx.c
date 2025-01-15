@@ -30,7 +30,7 @@
 
 void SystemClock_Config(void);
 
-void configureMasterClockOutputs(void)
+UNUSED_ static void configureMasterClockOutputs(void)
 {
     // Initialize pins for MCO1 and MCO2 for clock testing/verification
 
@@ -180,7 +180,7 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 
 typedef void *(*bootJumpPtr)(void);
 
-void systemJumpToBootloader(void)
+static void systemJumpToBootloader(void)
 {
     __SYSCFG_CLK_ENABLE();
 

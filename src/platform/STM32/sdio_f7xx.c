@@ -47,6 +47,8 @@
 
 #include "build/debug.h"
 
+#include "common/irq_all.h"
+
 #define BLOCK_SIZE                      ((uint32_t)(512))
 
 #define IFCR_CLEAR_MASK_STREAM3         (DMA_LIFCR_CTCIF3 | DMA_LIFCR_CHTIF3 | DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3 | DMA_LIFCR_CFEIF3)
@@ -1178,7 +1180,7 @@ SD_Error_t HAL_SD_HighSpeed(void)
   * @brief  Gets the current card's data status.
   * @retval Data Transfer state
   */
-SD_Error_t SD_GetStatus(void)
+static SD_Error_t SD_GetStatus(void)
 {
     SD_Error_t     ErrorState;
     uint32_t       Response1;

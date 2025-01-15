@@ -144,6 +144,8 @@ void DAL_ErrorHandler(void);
  */
 void SystemInit(void)
 {
+    persistentObjectInit();
+
     initialiseMemorySections();
 
     /* FPU settings */
@@ -343,7 +345,7 @@ void DAL_ErrorHandler(void)
     }
 }
 
-void AssertFailedHandler(uint8_t *file, uint32_t line)
+UNUSED_ static void AssertFailedHandler(uint8_t *file, uint32_t line)
 {
     /* When the function is needed, this function
        could be implemented in the user file

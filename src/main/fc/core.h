@@ -91,10 +91,10 @@ int8_t calculateThrottlePercent(void);
 uint8_t calculateThrottlePercentAbs(void);
 bool areSticksActive(uint8_t stickPercentLimit);
 void runawayTakeoffTemporaryDisable(uint8_t disableFlag);
-bool wasThrottleRaised();
+bool wasThrottleRaised(void);
 timeUs_t getLastDisarmTimeUs(void);
-bool isTryingToArm();
-void resetTryingToArm();
+bool isTryingToArm(void);
+void resetTryingToArm(void);
 
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs);
 

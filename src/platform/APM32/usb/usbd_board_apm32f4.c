@@ -26,6 +26,8 @@
 #include "usbd_core.h"
 #include "platform.h"
 
+#include "common/irq_all.h"
+
 /* Private macro **********************************************************/
 #define USBD_FS_RX_FIFO_SIZE                128
 #define USBD_FS_TX_FIFO_0_SIZE              64

@@ -35,6 +35,8 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
+#include "common/irq_all.h"
+
 #ifdef USE_I2C_DEVICE_1
 void I2C1_ER_IRQHandler(void)
 {

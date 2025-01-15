@@ -48,6 +48,12 @@
 #include "drivers/nvic.h"
 #include "at32f435_437_tmr.h"
 
+#include "common/irq_all.h"
+// TODO!
+// #include "usb/vcp/usbd_cdc_vcp.h"
+#include "usb/platform_config.h"
+#include "usb/hw_config.h"
+
 #define USB_TIMEOUT  50
 
 static vcpPort_t vcpPort = {0};
@@ -92,7 +98,7 @@ void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), v
     ctrlLineStateCb = cb;
 }
 
-void usb_clock48m_select(usb_clk48_s clk_s)
+static void usb_clock48m_select(usb_clk48_s clk_s)
 {
     if(clk_s == USB_CLK_HICK)
     {
@@ -173,7 +179,7 @@ void usb_clock48m_select(usb_clk48_s clk_s)
     }
 }
 
-void usb_gpio_config(void)
+static void usb_gpio_config(void)
 {
     gpio_init_type gpio_init_struct;
 
@@ -255,7 +261,7 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
     return sendLength;
 }
 
-void TxTimerConfig(void)
+static void TxTimerConfig(void)
 {
     tmr_base_init(usbTxTmr, (CDC_POLLING_INTERVAL - 1), ((system_core_clock)/1000 - 1));
     tmr_clock_source_div_set(usbTxTmr, TMR_CLOCK_DIV1);

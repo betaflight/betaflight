@@ -39,7 +39,7 @@
 
 #include "alt_hold.h"
 
-void altHoldReset(void)
+UNUSED_ static void altHoldReset(void)
 {
 }
 

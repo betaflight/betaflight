@@ -27,3 +27,9 @@ void configUnlock(void);
 void configLock(void);
 void configClearFlags(void);
 configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer);
+
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
+// No flash sector method required.
+#elif defined(CONFIG_IN_FLASH)
+//uint32_t getFLASHSectorForEEPROM(void);
+#endif

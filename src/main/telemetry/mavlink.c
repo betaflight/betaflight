@@ -200,7 +200,7 @@ void checkMAVLinkTelemetryState(void)
     }
 }
 
-void mavlinkSendSystemStatus(void)
+static void mavlinkSendSystemStatus(void)
 {
     uint16_t msgLength;
 
@@ -265,7 +265,7 @@ void mavlinkSendSystemStatus(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void mavlinkSendRCChannelsAndRSSI(void)
+static void mavlinkSendRCChannelsAndRSSI(void)
 {
     uint16_t msgLength;
     mavlink_msg_rc_channels_raw_pack(0, 200, &mavMsg,
@@ -296,7 +296,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(USE_GPS)
-void mavlinkSendPosition(void)
+static void mavlinkSendPosition(void)
 {
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
@@ -376,7 +376,7 @@ void mavlinkSendPosition(void)
 }
 #endif
 
-void mavlinkSendAttitude(void)
+static void mavlinkSendAttitude(void)
 {
     uint16_t msgLength;
     mavlink_msg_attitude_pack(0, 200, &mavMsg,
@@ -398,7 +398,7 @@ void mavlinkSendAttitude(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void mavlinkSendHUDAndHeartbeat(void)
+static void mavlinkSendHUDAndHeartbeat(void)
 {
     uint16_t msgLength;
     float mavAltitude = 0;
@@ -508,7 +508,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void processMAVLinkTelemetry(void)
+static void processMAVLinkTelemetry(void)
 {
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {

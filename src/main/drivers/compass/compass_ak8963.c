@@ -372,7 +372,7 @@ static bool ak8963Init(magDev_t *mag)
     return true;
 }
 
-void ak8963BusInit(const extDevice_t *dev)
+static void ak8963BusInit(const extDevice_t *dev)
 {
     switch (dev->bus->busType) {
 #ifdef USE_MAG_AK8963
@@ -409,7 +409,7 @@ void ak8963BusInit(const extDevice_t *dev)
     }
 }
 
-void ak8963BusDeInit(const extDevice_t *dev)
+static void ak8963BusDeInit(const extDevice_t *dev)
 {
     switch (dev->bus->busType) {
 #ifdef USE_MAG_AK8963

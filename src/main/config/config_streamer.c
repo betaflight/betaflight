@@ -64,12 +64,6 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, size_t size)
     c->err = CONFIG_RESULT_SUCCESS;
 }
 
-#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
-// No flash sector method required.
-#elif defined(CONFIG_IN_FLASH)
-uint32_t getFLASHSectorForEEPROM(void);
-#endif
-
 static int write_word(config_streamer_t *c, config_streamer_buffer_type_t *buffer)
 {
     if (c->err != CONFIG_RESULT_SUCCESS) {

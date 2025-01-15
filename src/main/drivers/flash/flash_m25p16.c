@@ -248,7 +248,7 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     return true;
 }
 
-void m25p16_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
+static void m25p16_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 {
     if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
         return;
@@ -289,7 +289,7 @@ static void m25p16_setCommandAddress(uint8_t *buf, uint32_t address, bool useLon
 
 // Called in ISR context
 // A write enable has just been issued
-busStatus_e m25p16_callbackWriteEnable(uint32_t arg)
+static busStatus_e m25p16_callbackWriteEnable(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
@@ -301,7 +301,7 @@ busStatus_e m25p16_callbackWriteEnable(uint32_t arg)
 
 // Called in ISR context
 // Write operation has just completed
-busStatus_e m25p16_callbackWriteComplete(uint32_t arg)
+static busStatus_e m25p16_callbackWriteComplete(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
@@ -317,7 +317,7 @@ busStatus_e m25p16_callbackWriteComplete(uint32_t arg)
 
 // Called in ISR context
 // Check if the status was busy and if so repeat the poll
-busStatus_e m25p16_callbackReady(uint32_t arg)
+static busStatus_e m25p16_callbackReady(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
     extDevice_t *dev = fdevice->io.handle.dev;

@@ -26,6 +26,8 @@
 #include "usbh_ctrl.h"
 #include "usb_conf.h"
 
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
 /** @addtogroup AT32F435_437_middlewares_usbh_drivers
   * @{
   */

@@ -58,8 +58,7 @@ defined in linker script */
 Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
-  
-  bl persistentObjectInit
+
 /* Call the clock system initialization function.*/
   bl  SystemInit
 
@@ -100,9 +99,6 @@ LoopFillZerobss:
 /* Call the application's entry point.*/
   bl main
   bx lr
-
-LoopForever:
-    b LoopForever
 
   .size Reset_Handler, .-Reset_Handler
 

@@ -30,6 +30,8 @@
 #include "drivers/io_impl.h"
 #include "drivers/exti.h"
 
+#include "common/irq_all.h"
+
 typedef struct {
     extiCallbackRec_t* handler;
 } extiChannelRec_t;
@@ -164,7 +166,7 @@ void EXTIDisable(IO_t io)
 
 #define EXTI_EVENT_MASK 0xFFFF // first 16 bits only, see also definition of extiChannelRecs.
 
-void EXTI_IRQHandler(uint32_t mask)
+static void EXTI_IRQHandler(uint32_t mask)
 {
     uint32_t exti_active = (EXTI_REG_IMR & EXTI_REG_PR) & mask;
 
@@ -184,7 +186,7 @@ void EXTI_IRQHandler(uint32_t mask)
     }                                            \
     struct dummy                                 \
     /**/
-
+// TODO - no version for GCC ? 
 _EXTI_IRQ_HANDLER(EINT0_IRQHandler, 0x0001);
 _EXTI_IRQ_HANDLER(EINT1_IRQHandler, 0x0002);
 #if defined(APM32F4)

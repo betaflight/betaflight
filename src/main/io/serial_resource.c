@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "drivers/serial_impl.h"
+
 #include "io/serial.h"
 
 // convert identifier into port type

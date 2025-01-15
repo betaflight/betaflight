@@ -31,6 +31,8 @@
 #include "drivers/rcc.h"
 #include "drivers/resource.h"
 
+#include "common/irq_all.h"
+
 /*
  * DMA descriptors.
  */

@@ -31,8 +31,11 @@
 #include "drivers/nvic.h"
 #include "drivers/resource.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/time.h"
 
 #include "drivers/system.h"
+
+#include "common/irq_all.h"
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4)
 // See "RM CoreSight Architecture Specification"

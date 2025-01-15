@@ -121,7 +121,7 @@ typedef struct isrVector_s {
     resetHandler_t *resetHandler;
 } isrVector_t;
 
-void checkForBootLoaderRequest(void)
+static void checkForBootLoaderRequest(void)
 {
     volatile uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 

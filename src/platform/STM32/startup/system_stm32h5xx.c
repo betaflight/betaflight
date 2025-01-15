@@ -203,12 +203,12 @@
 
 void SystemInit(void)
 {
-  uint32_t reg_opsr;
+  persistentObjectInit();
 
   /* FPU settings ------------------------------------------------------------*/
-  #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
-   SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
-  #endif
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+  SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
+#endif
 
   /* Reset the RCC clock configuration to the default reset state ------------*/
   /* Set HSION bit */
@@ -256,19 +256,17 @@ void SystemInit(void)
   RCC->CIER = 0U;
 
   /* Configure the Vector Table location add offset address ------------------*/
-  #ifdef VECT_TAB_SRAM
-    SCB->VTOR = SRAM1_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
-  #else
-    SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
-  #endif /* VECT_TAB_SRAM */
+#ifdef VECT_TAB_SRAM
+  SCB->VTOR = SRAM1_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+#else
+  SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+#endif /* VECT_TAB_SRAM */
 
   /* Check OPSR register to verify if there is an ongoing swap or option bytes update interrupted by a reset */
-  reg_opsr = FLASH->OPSR & FLASH_OPSR_CODE_OP;
-  if ((reg_opsr == FLASH_OPSR_CODE_OP) || (reg_opsr == (FLASH_OPSR_CODE_OP_2 | FLASH_OPSR_CODE_OP_1)))
-  {
+  uint32_t reg_opsr = FLASH->OPSR & FLASH_OPSR_CODE_OP;
+  if ((reg_opsr == FLASH_OPSR_CODE_OP) || (reg_opsr == (FLASH_OPSR_CODE_OP_2 | FLASH_OPSR_CODE_OP_1))) {
     /* Check FLASH Option Control Register access */
-    if ((FLASH->OPTCR & FLASH_OPTCR_OPTLOCK) != 0U)
-    {
+    if ((FLASH->OPTCR & FLASH_OPTCR_OPTLOCK) != 0U) {
       /* Authorizes the Option Byte registers programming */
       FLASH->OPTKEYR = 0x08192A3BU;
       FLASH->OPTKEYR = 0x4C5D6E7FU;

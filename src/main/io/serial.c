@@ -338,7 +338,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
     return NULL;
 }
 
-serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
+static serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
 {
     for (serialPortUsage_t* usage = serialPortUsageList; usage < ARRAYEND(serialPortUsageList); usage++) {
         if (usage->serialPort == serialPort) {

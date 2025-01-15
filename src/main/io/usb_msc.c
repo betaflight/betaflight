@@ -27,6 +27,7 @@
 #include "drivers/sdcard.h"
 
 #include "io/flashfs.h"
+#include "io/usb_msc.h"
 
 #if defined(USE_USB_MSC)
 

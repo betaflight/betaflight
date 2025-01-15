@@ -217,7 +217,7 @@ typedef struct
 
 #pragma pack(pop)
 
-bool emfat_init_entries(emfat_entry_t *entries)
+static bool emfat_init_entries(emfat_entry_t *entries)
 {
     emfat_entry_t *e;
     int i, n;
@@ -339,7 +339,7 @@ bool emfat_init(emfat_t *emfat, const char *label, emfat_entry_t *entries)
     return true;
 }
 
-void read_mbr_sector(const emfat_t *emfat, uint8_t *sect)
+static void read_mbr_sector(const emfat_t *emfat, uint8_t *sect)
 {
     mbr_t *mbr;
     memset(sect, 0, SECT);
@@ -356,7 +356,7 @@ void read_mbr_sector(const emfat_t *emfat, uint8_t *sect)
     mbr->BootSignature[1] = 0xAA;
 }
 
-void read_boot_sector(const emfat_t *emfat, uint8_t *sect)
+static void read_boot_sector(const emfat_t *emfat, uint8_t *sect)
 {
     boot_sector *bs;
     memset(sect, 0, SECT);
@@ -398,7 +398,7 @@ void read_boot_sector(const emfat_t *emfat, uint8_t *sect)
 
 #define IS_CLUST_OF(clust, entry) ((clust) >= (entry)->priv.first_clust && (clust) <= (entry)->priv.last_reserved)
 
-emfat_entry_t *find_entry(const emfat_t *emfat, uint32_t clust, emfat_entry_t *nearest)
+static emfat_entry_t *find_entry(const emfat_t *emfat, uint32_t clust, emfat_entry_t *nearest)
 {
     if (nearest == NULL) {
         nearest = emfat->priv.entries;
@@ -420,7 +420,7 @@ emfat_entry_t *find_entry(const emfat_t *emfat, uint32_t clust, emfat_entry_t *n
     return NULL;
 }
 
-void read_fsinfo_sector(const emfat_t *emfat, uint8_t *sect)
+static void read_fsinfo_sector(const emfat_t *emfat, uint8_t *sect)
 {
     UNUSED(emfat);
 
@@ -436,7 +436,7 @@ void read_fsinfo_sector(const emfat_t *emfat, uint8_t *sect)
     info->signature3 = 0xAA550000;
 }
 
-void read_fat_sector(emfat_t *emfat, uint8_t *sect, uint32_t index)
+static void read_fat_sector(emfat_t *emfat, uint8_t *sect, uint32_t index)
 {
     emfat_entry_t *le;
     uint32_t *values;
@@ -489,7 +489,7 @@ void read_fat_sector(emfat_t *emfat, uint8_t *sect, uint32_t index)
     emfat->priv.last_entry = le;
 }
 
-void fill_entry(dir_entry *entry, const char *name, uint8_t attr, uint32_t clust, const uint32_t cma[3], uint32_t size)
+static void fill_entry(dir_entry *entry, const char *name, uint8_t attr, uint32_t clust, const uint32_t cma[3], uint32_t size)
 {
     int i, l, l1, l2;
     int dot_pos;
@@ -553,7 +553,7 @@ void fill_entry(dir_entry *entry, const char *name, uint8_t attr, uint32_t clust
     return;
 }
 
-void fill_dir_sector(emfat_t *emfat, uint8_t *data, emfat_entry_t *entry, uint32_t rel_sect)
+static void fill_dir_sector(emfat_t *emfat, uint8_t *data, emfat_entry_t *entry, uint32_t rel_sect)
 {
     dir_entry *de;
     uint32_t avail;
@@ -600,7 +600,7 @@ void fill_dir_sector(emfat_t *emfat, uint8_t *data, emfat_entry_t *entry, uint32
     }
 }
 
-void read_data_sector(emfat_t *emfat, uint8_t *data, uint32_t rel_sect)
+static void read_data_sector(emfat_t *emfat, uint8_t *data, uint32_t rel_sect)
 {
     emfat_entry_t *le;
     uint32_t cluster;
@@ -659,7 +659,7 @@ void emfat_read(emfat_t *emfat, uint8_t *data, uint32_t sector, int num_sectors)
     }
 }
 
-void write_data_sector(emfat_t *emfat, const uint8_t *data, uint32_t rel_sect)
+UNUSED_ static void write_data_sector(emfat_t *emfat, const uint8_t *data, uint32_t rel_sect)
 {
     emfat_entry_t *le;
     uint32_t cluster;

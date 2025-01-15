@@ -282,7 +282,7 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
  *
  * Returns the number of bytes written
  */
-void flashfsWriteCallback(uint32_t arg)
+static void flashfsWriteCallback(uint32_t arg)
 {
     // Advance the cursor in the file system to match the bytes we wrote
     flashfsSetTailAddress(tailAddress + arg);

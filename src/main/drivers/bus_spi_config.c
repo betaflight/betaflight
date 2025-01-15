@@ -25,6 +25,7 @@
 
 #ifdef USE_SPI
 
+#include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/resource.h"
 #include "drivers/system.h"

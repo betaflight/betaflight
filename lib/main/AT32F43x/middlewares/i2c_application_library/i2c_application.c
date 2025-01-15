@@ -24,6 +24,8 @@
 
 #include "i2c_application.h"
 
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
 /** @addtogroup AT32F435_437_middlewares_i2c_application_library
   * @{
   */

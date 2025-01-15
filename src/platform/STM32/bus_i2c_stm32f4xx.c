@@ -36,6 +36,8 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_utils.h"
 
+#include "common/irq_all.h"
+
 static void i2c_er_handler(I2CDevice device);
 static void i2c_ev_handler(I2CDevice device);
 
@@ -212,7 +214,7 @@ bool i2cBusy(I2CDevice device, bool *error)
     return state->busy;
 }
 
-bool i2cWait(I2CDevice device)
+static bool i2cWait(I2CDevice device)
 {
     i2cState_t *state = &i2cDevice[device].state;
     timeUs_t timeoutStartUs = microsISR();

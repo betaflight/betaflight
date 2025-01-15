@@ -69,7 +69,7 @@ void gpsLapTimerStartSetGate(void)
     gpsLapTimerData.numberOfSetReadings = 0;
 }
 
-void gpsLapTimerProcessSettingGate(void)
+static void gpsLapTimerProcessSettingGate(void)
 {
     if (gpsLapTimerData.numberOfSetReadings < MAX_GATE_SET_READINGS){
         gateSetLatReadings += gpsSol.llh.lat;
