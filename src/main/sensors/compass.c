@@ -158,7 +158,11 @@ void compassPreInit(void)
 #if !defined(SIMULATOR_BUILD)
 bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 {
-    *alignment = ALIGN_DEFAULT;  // may be overridden if target specifies MAG_ALIGN
+#ifdef MAG_ALIGN
+    *alignment = MAG_ALIGN;
+#else
+    *alignment = ALIGN_DEFAULT;
+#endif
 
     magSensor_e magHardware = MAG_NONE;
 
@@ -221,9 +225,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (hmc5883lDetect(magDev)) {
-#ifdef MAG_ALIGN
-            *alignment = MAG_ALIGN;
-#endif
             magHardware = MAG_HMC5883;
             break;
         }
@@ -237,9 +238,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (lis2mdlDetect(magDev)) {
-#ifdef MAG_ALIGN
-            *alignment = MAG_ALIGN;
-#endif
             magHardware = MAG_LIS2MDL;
             break;
         }
@@ -253,9 +251,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (lis3mdlDetect(magDev)) {
-#ifdef MAG_ALIGN
-            *alignment = MAG_ALIGN;
-#endif
             magHardware = MAG_LIS3MDL;
             break;
         }
@@ -269,9 +264,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (ak8975Detect(magDev)) {
-#ifdef MAG_ALIGN
-            *alignment = MAG_ALIGN;
-#endif
             magHardware = MAG_AK8975;
             break;
         }
@@ -290,9 +282,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (ak8963Detect(magDev)) {
-#ifdef MAG_ALIGN
-            *alignment = MAG_ALIGN;
-#endif
             magHardware = MAG_AK8963;
             break;
         }
@@ -306,9 +295,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (qmc5883lDetect(magDev)) {
-#ifdef MAG_ALIGN
-            *alignment = MAG_ALIGN;
-#endif
             magHardware = MAG_QMC5883;
             break;
         }
@@ -322,9 +308,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (ist8310Detect(magDev)) {
-#ifdef MAG_ALIGN
-            *alignment = MAG_ALIGN;
-#endif
             magHardware = MAG_IST8310;
             break;
         }
