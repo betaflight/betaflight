@@ -76,13 +76,16 @@ static LL_SPI_InitTypeDef defaultInit =
 
 static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor)
 {
-#if !defined(STM32H7)
-    // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
-
+#if defined(STM32F7)
+    /* On F7 we run SPI2 and SPI3 (on the APB1 bus) at a division of PCLK1 which is
+     * half that of HCLK driving the APB2 bus and SPI1. So we need to reduce the
+     * division factors for SPI2/3 by a corresponding factor of 2.
+     */
     if (instance == SPI2 || instance == SPI3) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
 #else
+    // On the G4 and H7 processors the SPI busses are all derived from the same base frequency
     UNUSED(instance);
 #endif
 
