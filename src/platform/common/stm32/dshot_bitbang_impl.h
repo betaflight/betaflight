@@ -277,5 +277,5 @@ void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
 #endif
 int  bbDMA_Count(bbPort_t *bbPort);
 
-void bbDshotRequestTelemetry(uint8_t motorIndex);
-bool bbDshotIsMotorIdle(uint8_t motorIndex);
+void bbDshotRequestTelemetry(unsigned motorIndex);
+bool bbDshotIsMotorIdle(unsigned motorIndex);

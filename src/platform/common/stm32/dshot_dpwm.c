@@ -121,7 +121,7 @@ static bool dshotPwmEnableMotors(void)
     return true;
 }
 
-static bool dshotPwmIsMotorEnabled(uint8_t index)
+static bool dshotPwmIsMotorEnabled(unsigned index)
 {
     return motors[index].enabled;
 }

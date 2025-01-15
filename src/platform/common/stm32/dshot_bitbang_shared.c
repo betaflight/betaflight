@@ -21,8 +21,11 @@
 
 #include "dshot_bitbang_impl.h"
 
-void bbDshotRequestTelemetry(uint8_t motorIndex)
+void bbDshotRequestTelemetry(unsigned motorIndex)
 {
+    if (motorIndex >= ARRAYLEN(bbMotors)) {
+        return;
+    }
     bbMotor_t *const bbmotor = &bbMotors[motorIndex];
 
     if (!bbmotor->configured) {
@@ -31,8 +34,12 @@ void bbDshotRequestTelemetry(uint8_t motorIndex)
     bbmotor->protocolControl.requestTelemetry = true;
 }
 
-bool bbDshotIsMotorIdle(uint8_t motorIndex)
+bool bbDshotIsMotorIdle(unsigned motorIndex)
 {
+    if (motorIndex >= ARRAYLEN(bbMotors)) {
+        return false;
+    }
+
     bbMotor_t *const bbmotor = &bbMotors[motorIndex];
-    return bbmotor->protocolControl.value;
+    return bbmotor->protocolControl.value != 0;
 }

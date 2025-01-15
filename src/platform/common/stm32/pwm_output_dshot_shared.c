@@ -63,21 +63,26 @@ FAST_DATA_ZERO_INIT uint32_t inputStampUs;
 FAST_DATA_ZERO_INIT dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
 #endif
 
-motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
+motorDmaOutput_t *getMotorDmaOutput(unsigned index)
 {
+    if (index >= ARRAYLEN(dmaMotors)) {
+        return NULL;
+    }
     return &dmaMotors[index];
 }
 
-bool pwmDshotIsMotorIdle(uint8_t index)
+bool pwmDshotIsMotorIdle(unsigned index)
 {
     const motorDmaOutput_t *motor = getMotorDmaOutput(index);
-    return motor->protocolControl.value;
+    return motor && motor->protocolControl.value != 0;
 }
 
-void pwmDshotRequestTelemetry(uint8_t index)
+void pwmDshotRequestTelemetry(unsigned index)
 {
     motorDmaOutput_t * const motor = getMotorDmaOutput(index);
-    motor->protocolControl.requestTelemetry = true;
+    if (motor) {
+        motor->protocolControl.requestTelemetry = true;
+    }
 }
 
 uint8_t getTimerIndex(TIM_TypeDef *timer)
@@ -153,7 +158,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
 #ifdef USE_DSHOT_TELEMETRY
 
-void dshotEnableChannels(uint8_t motorCount);
+void dshotEnableChannels(unsigned motorCount);
 
 static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
 {

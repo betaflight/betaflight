@@ -58,7 +58,7 @@ void motorShutdown(void)
     motorDevice->initialized = false;
 
     switch (motorConfig()->dev.motorProtocol) {
-    case MOTOR_PROTOCOL_STANDARD:
+    case MOTOR_PROTOCOL_PWM50HZ :
     case MOTOR_PROTOCOL_ONESHOT125:
     case MOTOR_PROTOCOL_ONESHOT42:
     case MOTOR_PROTOCOL_MULTISHOT:
@@ -125,9 +125,9 @@ void motorWriteAll(float *values)
 #endif
 }
 
-void motorRequestTelemetry(uint8_t index)
+void motorRequestTelemetry(unsigned index)
 {
-    if (index > motorDevice->count - 1) {
+    if (index >= motorDevice->count) {
         return;
     }
 
@@ -170,7 +170,7 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
     bool isDshot = false;
 
     switch (motorDevConfig->motorProtocol) {
-    case MOTOR_PROTOCOL_STANDARD:
+    case MOTOR_PROTOCOL_PWM50HZ :
     case MOTOR_PROTOCOL_ONESHOT125:
     case MOTOR_PROTOCOL_ONESHOT42:
     case MOTOR_PROTOCOL_MULTISHOT:
@@ -248,13 +248,7 @@ static void motorDisableNull(void)
 {
 }
 
-static bool motorIsEnabledNull(uint8_t index)
-{
-    UNUSED(index);
-    return false;
-}
-
-static bool motorIsIdleNull(uint8_t index)
+static bool motorIsEnabledNull(unsigned index)
 {
     UNUSED(index);
     return false;
@@ -309,7 +303,8 @@ static const motorVTable_t motorNullVTable = {
     .convertExternalToMotor = motorConvertFromExternalNull,
     .convertMotorToExternal = motorConvertToExternalNull,
     .shutdown = motorShutdownNull,
-    .isMotorIdle = motorIsIdleNull,
+    .requestTelemetry = NULL,
+    .isMotorIdle = NULL,
 };
 
 static motorDevice_t motorNullDevice = {
@@ -407,7 +402,7 @@ bool motorIsMotorEnabled(uint8_t index)
     return motorDevice->vTable.isMotorEnabled(index);
 }
 
-bool motorIsMotorIdle(uint8_t index)
+bool motorIsMotorIdle(unsigned index)
 {
     return motorDevice->vTable.isMotorIdle ? motorDevice->vTable.isMotorIdle(index) : false;
 }

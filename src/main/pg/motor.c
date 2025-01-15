@@ -51,14 +51,14 @@ PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
-#ifdef BRUSHED_MOTORS
+#ifdef USE_BRUSHED_MOTORS
     motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_BRUSHED;
     motorConfig->dev.useUnsyncedUpdate = true;
 #else
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #ifndef USE_DSHOT
-    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_STANDARD) {
+    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_PWM50HZ ) {
         motorConfig->dev.useUnsyncedUpdate = true;
     }
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;

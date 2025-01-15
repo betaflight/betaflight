@@ -575,7 +575,7 @@ static void pwmShutdownPulsesForAllMotors(void)
     motorPwmDevice.enabled = false;
 }
 
-bool pwmIsMotorEnabled(uint8_t index)
+bool pwmIsMotorEnabled(unsigned index)
 {
     return motors[index].enabled;
 }
@@ -624,6 +624,8 @@ static motorDevice_t motorPwmDevice = {
         .writeInt = pwmWriteMotorInt,
         .updateComplete = pwmCompleteMotorUpdate,
         .shutdown = pwmShutdownPulsesForAllMotors,
+        .requestTelemetry = NULL,
+        .isMotorIdle = NULL,
     }
 };
 

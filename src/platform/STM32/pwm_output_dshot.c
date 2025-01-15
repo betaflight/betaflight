@@ -48,9 +48,9 @@
 
 #ifdef USE_DSHOT_TELEMETRY
 
-void dshotEnableChannels(uint8_t motorCount)
+void dshotEnableChannels(unsigned motorCount)
 {
-    for (int i = 0; i < motorCount; i++) {
+    for (unsigned i = 0; i < motorCount; i++) {
         if (dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL) {
             TIM_CCxNCmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerHardware->channel, TIM_CCxN_Enable);
         } else {

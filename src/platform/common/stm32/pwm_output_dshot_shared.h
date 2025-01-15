@@ -29,8 +29,8 @@ extern FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 extern FAST_DATA_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 uint8_t getTimerIndex(TIM_TypeDef *timer);
-motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
-void dshotEnableChannels(uint8_t motorCount);
+motorDmaOutput_t *getMotorDmaOutput(unsigned index);
+void dshotEnableChannels(unsigned motorCount);
 
 #ifdef USE_DSHOT_TELEMETRY
 void pwmDshotSetDirectionOutput(
@@ -44,8 +44,8 @@ void pwmDshotSetDirectionOutput(
 #endif
 );
 
-void pwmDshotRequestTelemetry(uint8_t index);
-bool pwmDshotIsMotorIdle(uint8_t index);
+void pwmDshotRequestTelemetry(unsigned index);
+bool pwmDshotIsMotorIdle(unsigned index);
 bool pwmTelemetryDecode(void);
 
 #endif

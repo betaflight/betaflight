@@ -35,7 +35,7 @@ void motorUpdateCompleteNull(void);
 
 void motorPostInit();
 void motorWriteAll(float *values);
-void motorRequestTelemetry(uint8_t index);
+void motorRequestTelemetry(unsigned index);
 
 void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
 
@@ -56,7 +56,7 @@ void motorEnable(void);
 float motorEstimateMaxRpm(void);
 bool motorIsEnabled(void);
 bool motorIsMotorEnabled(uint8_t index);
-bool motorIsMotorIdle(uint8_t index);
+bool motorIsMotorIdle(unsigned index);
 timeMs_t motorGetMotorEnableTimeMs(void);
 void motorShutdown(void); // Replaces stopPwmAllMotors
 

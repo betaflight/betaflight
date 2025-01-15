@@ -114,9 +114,9 @@ tmr_channel_select_type toCHSelectType(const uint8_t bfChannel, const bool useNC
  *   Called once for every dshot update if telemetry is being used (not just enabled by #def)
  *   Called from pwm_output_dshot_shared.c pwmTelemetryDecode
 */
-void dshotEnableChannels(uint8_t motorCount)
+void dshotEnableChannels(unsigned motorCount)
 {
-    for (int i = 0; i < motorCount; i++) {
+    for (unsigned i = 0; i < motorCount; i++) {
         tmr_primary_mode_select(dmaMotors[i].timerHardware->tim, TMR_PRIMARY_SEL_COMPARE);
 
         tmr_channel_select_type atCh = toCHSelectType(dmaMotors[i].timerHardware->channel, dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL);

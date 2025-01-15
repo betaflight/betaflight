@@ -139,7 +139,7 @@ static dshotCommandControl_t* addCommand(void)
 static bool allMotorsAreIdle(void)
 {
     for (unsigned i = 0; i < motorDeviceCount(); i++) {
-        if (motorIsMotorIdle(i)) {
+        if (!motorIsMotorIdle(i)) {
             return false;
         }
     }

@@ -697,7 +697,7 @@ static void bbShutdown(void)
     return;
 }
 
-static bool bbIsMotorEnabled(uint8_t index)
+static bool bbIsMotorEnabled(unsigned index)
 {
     return bbMotors[index].enabled;
 }

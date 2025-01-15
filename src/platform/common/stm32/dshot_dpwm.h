@@ -153,7 +153,7 @@ typedef struct motorDmaOutput_s {
     DSHOT_DMA_BUFFER_UNIT *dmaBuffer;
 } motorDmaOutput_t;
 
-motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
+motorDmaOutput_t *getMotorDmaOutput(unsigned index);
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value);
 bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output);

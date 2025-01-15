@@ -144,7 +144,7 @@ bool pwmEnableMotors(void)
     return (motorPwmVTable.write != &pwmWriteUnused);
 }
 
-bool pwmIsMotorEnabled(uint8_t index)
+bool pwmIsMotorEnabled(unsigned index)
 {
     return motors[index].enabled;
 }
@@ -179,6 +179,8 @@ static motorVTable_t motorPwmVTable = {
     .shutdown = pwmShutdownPulsesForAllMotors,
     .convertExternalToMotor = pwmConvertFromExternal,
     .convertMotorToExternal = pwmConvertToExternal,
+    .requestTelemetry = NULL,
+    .isMotorIdle = NULL,
 };
 
 motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedUpdate)
@@ -208,7 +210,7 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         useUnsyncedUpdate = true;
         idlePulse = 0;
         break;
-    case MOTOR_PROTOCOL_STANDARD:
+    case MOTOR_PROTOCOL_PWM50HZ :
         sMin = 1e-3f;
         sLen = 1e-3f;
         useUnsyncedUpdate = true;

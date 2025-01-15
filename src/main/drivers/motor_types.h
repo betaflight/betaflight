@@ -28,7 +28,7 @@
 #define MOTOR_OUTPUT_LIMIT_PERCENT_MAX 100
 
 typedef enum {
-    MOTOR_PROTOCOL_STANDARD = 0,
+    MOTOR_PROTOCOL_PWM50HZ = 0,
     MOTOR_PROTOCOL_ONESHOT125,
     MOTOR_PROTOCOL_ONESHOT42,
     MOTOR_PROTOCOL_MULTISHOT,
@@ -49,7 +49,7 @@ typedef struct motorVTable_s {
     uint16_t (*convertMotorToExternal)(float motorValue);
     bool (*enable)(void);
     void (*disable)(void);
-    bool (*isMotorEnabled)(uint8_t index);
+    bool (*isMotorEnabled)(unsigned index);
     bool (*telemetryWait)(void);
     bool (*decodeTelemetry)(void);
     void (*updateInit)(void);
@@ -57,10 +57,10 @@ typedef struct motorVTable_s {
     void (*writeInt)(uint8_t index, uint16_t value);
     void (*updateComplete)(void);
     void (*shutdown)(void);
-    bool (*isMotorIdle)(uint8_t index);
+    bool (*isMotorIdle)(unsigned index);
 
     // Digital commands
-    void (*requestTelemetry)(uint8_t index);
+    void (*requestTelemetry)(unsigned index);
 } motorVTable_t;
 
 typedef struct motorDevice_s {
