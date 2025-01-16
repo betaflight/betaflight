@@ -246,7 +246,7 @@ uint16_t    GPS heading ( degree / 100 )
 uint16      Altitude ( meter ­1000m offset )
 uint8_t     Satellites in use ( counter )
 */
-void crsfFrameGps(sbuf_t *dst)
+MAYBE_UNUSED static void crsfFrameGps(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_GPS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
@@ -265,7 +265,7 @@ void crsfFrameGps(sbuf_t *dst)
 Payload:
 int16_t     Vertical speed ( cm/s )
 */
-void crsfFrameVarioSensor(sbuf_t *dst)
+MAYBE_UNUSED static void crsfFrameVarioSensor(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_VARIO_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
@@ -359,7 +359,8 @@ static void crsfFrameAltitude(sbuf_t *dst)
 Payload:
 int16_t    origin_add ( Origin Device address )
 */
-void crsfFrameHeartbeat(sbuf_t *dst)
+
+MAYBE_UNUSED static void crsfFrameHeartbeat(sbuf_t *dst)
 {
     sbufWriteU8(dst, CRSF_FRAME_HEARTBEAT_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_HEARTBEAT);
@@ -372,7 +373,8 @@ Payload:
 int8_t    destination_add ( Destination Device address )
 int8_t    origin_add ( Origin Device address )
 */
-void crsfFramePing(sbuf_t *dst)
+
+MAYBE_UNUSED static void crsfFramePing(sbuf_t *dst)
 {
     sbufWriteU8(dst, CRSF_FRAME_DEVICE_PING_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_DEVICE_PING);

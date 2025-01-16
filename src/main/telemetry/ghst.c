@@ -119,7 +119,7 @@ static void ghstFramePackTelemetry(sbuf_t *dst)
 }
 
 // GPS data, primary, positional data
-void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
+MAYBE_UNUSED static void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
@@ -138,7 +138,7 @@ void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
 }
 
 // GPS data, secondary, auxiliary data
-void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
+MAYBE_UNUSED static void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
