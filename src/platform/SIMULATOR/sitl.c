@@ -31,6 +31,8 @@
 #include "common/maths.h"
 
 #include "build/debug.h"
+
+#include "drivers/adc_impl.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/motor.h"
