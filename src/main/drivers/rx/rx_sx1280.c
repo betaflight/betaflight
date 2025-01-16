@@ -591,7 +591,7 @@ void sx1280GetLastPacketStats(int8_t *rssi, int8_t *snr)
     }
 }
 
-void sx1280DoFHSS(void)
+LOCAL_UNUSED_FUNCTION static void sx1280DoFHSS(void)
 {
     return;
 }

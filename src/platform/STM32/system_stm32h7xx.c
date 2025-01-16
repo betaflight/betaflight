@@ -30,7 +30,7 @@
 
 void SystemClock_Config(void);
 
-void configureMasterClockOutputs(void)
+LOCAL_UNUSED_FUNCTION static void configureMasterClockOutputs(void)
 {
     // Initialize pins for MCO1 and MCO2 for clock testing/verification
 

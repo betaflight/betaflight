@@ -928,7 +928,7 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     return transferLength;
 }
 
-int w25n_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
+LOCAL_UNUSED_FUNCTION static int w25n_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
 {
 
     if (!w25n_waitForReady(fdevice)) {
@@ -1027,7 +1027,7 @@ static busStatus_e w25n_readBBLUTCallback(uint32_t arg)
     return BUS_READY; // All done
 }
 
-void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
+LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 {
     cb_context_t cb_context;
     uint8_t in[4];
@@ -1078,7 +1078,7 @@ void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 #endif
 }
 
-void w25n_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
+LOCAL_UNUSED_FUNCTION static void w25n_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
 {
     w25n_waitForReady(fdevice);
 

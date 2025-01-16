@@ -1697,7 +1697,7 @@ SD_Error_t SD_Init(void)
 /**
   * @brief  This function handles SD card interrupt request.
   */
-void SDIO_IRQHandler(void)
+LOCAL_UNUSED_FUNCTION static void SDIO_IRQHandler(void)
 {
     // Check for SDIO interrupt flags
     if ((SDIO->STA & SDIO_STA_DATAEND) != 0) {

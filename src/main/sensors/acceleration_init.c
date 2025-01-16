@@ -99,7 +99,7 @@ bool accHasBeenCalibrated(void)
 #endif
 }
 
-void accResetRollAndPitchTrims(void)
+LOCAL_UNUSED_FUNCTION static void accResetRollAndPitchTrims(void)
 {
     resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);
 }

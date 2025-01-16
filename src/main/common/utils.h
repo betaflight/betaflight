@@ -59,6 +59,7 @@
 #endif
 
 #define MAYBE_UNUSED __attribute__ ((unused))
+#define LOCAL_UNUSED_FUNCTION __attribute__ ((unused, deprecated ("function is marked as LOCAL_UNUSED_FUNCTION")))
 
 #define DISCARD(x) (void)(x) // To explicitly ignore result of x (usually an I/O register access).
 

@@ -134,7 +134,7 @@ static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
 /**
  * Return true if the bus is currently in the middle of a transmission.
  */
-bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
+LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
     if(quadSpiDevice[device].hquadSpi.State == HAL_QSPI_STATE_BUSY)
