@@ -125,11 +125,14 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-#ifdef DEBUG_PPM_ISR
 typedef enum {
     SOURCE_OVERFLOW = 0,
     SOURCE_EDGE = 1
 } eventSource_e;
+
+static void ppmISREvent(eventSource_e source, uint32_t capture);
+
+#ifdef DEBUG_PPM_ISR
 
 typedef struct ppmISREvent_s {
     uint32_t capture;
@@ -147,7 +150,7 @@ static void ppmISREvent(eventSource_e source, uint32_t capture)
     ppmEvents[ppmEventIndex].capture = capture;
 }
 #else
-void ppmISREvent(eventSource_e source, uint32_t capture) {}
+static void ppmISREvent(eventSource_e source, uint32_t capture) {}
 #endif
 
 static void ppmResetDevice(void)
