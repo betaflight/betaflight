@@ -3262,7 +3262,7 @@ static void cliManufacturerId(const char *cmdName, char *cmdline)
 }
 
 #if defined(USE_SIGNATURE)
-static void writeSignature(char *signatureStr, uint8_t *signature)
+static void writeSignature(char *signatureStr, const uint8_t *signature)
 {
     for (unsigned i = 0; i < SIGNATURE_LENGTH; i++) {
         tfp_sprintf(&signatureStr[2 * i], "%02x", signature[i]);
