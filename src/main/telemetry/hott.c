@@ -181,7 +181,7 @@ static void initialiseMessages(void)
 }
 
 #ifdef USE_GPS
-void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude)
+STATIC_UNIT_TESTED void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude)
 {
     int16_t deg = latitude / GPS_DEGREES_DIVIDER;
     int32_t sec = (latitude - (deg * GPS_DEGREES_DIVIDER)) * 6;

@@ -136,7 +136,7 @@ static timeMs_t lastFailsafeCheckMs = 0;
 #endif
 STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT task_t* taskQueueArray[TASK_COUNT + 1 + TASK_QUEUE_RESERVE]; // extra item for NULL pointer at end of queue (+ overflow check in UNTT_TEST)
 
-void queueClear(void)
+STATIC_UNIT_TESTED void queueClear(void)
 {
     memset(taskQueueArray, 0, sizeof(taskQueueArray));
     taskQueuePos = 0;
@@ -153,7 +153,7 @@ static bool queueContains(const task_t *task)
     return false;
 }
 
-bool queueAdd(task_t *task)
+STATIC_UNIT_TESTED bool queueAdd(task_t *task)
 {
     if ((taskQueueSize >= TASK_COUNT) || queueContains(task)) {
         return false;
@@ -169,7 +169,7 @@ bool queueAdd(task_t *task)
     return false;
 }
 
-bool queueRemove(task_t *task)
+STATIC_UNIT_TESTED bool queueRemove(task_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {
@@ -184,7 +184,7 @@ bool queueRemove(task_t *task)
 /*
  * Returns first item queue or NULL if queue empty
  */
-FAST_CODE task_t *queueFirst(void)
+STATIC_UNIT_TESTED FAST_CODE task_t *queueFirst(void)
 {
     taskQueuePos = 0;
     return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
@@ -193,7 +193,7 @@ FAST_CODE task_t *queueFirst(void)
 /*
  * Returns next item in queue or NULL if at end of queue
  */
-FAST_CODE task_t *queueNext(void)
+STATIC_UNIT_TESTED FAST_CODE task_t *queueNext(void)
 {
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }

@@ -4471,7 +4471,7 @@ static uint8_t getWordLength(const char *bufBegin, const char *bufEnd)
     return bufEnd - bufBegin;
 }
 
-uint16_t cliGetSettingIndex(const char *name, size_t length)
+STATIC_UNIT_TESTED uint16_t cliGetSettingIndex(const char *name, size_t length)
 {
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         const char *settingName = valueTable[i].name;
