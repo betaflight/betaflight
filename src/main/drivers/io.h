@@ -64,3 +64,14 @@ void IOTraversePins(IOTraverseFuncPtr_t func);
 
 GPIO_TypeDef* IO_GPIO(IO_t io);
 uint16_t IO_Pin(IO_t io);
+
+typedef enum {
+    PREINIT_OWNER_ALL     = 0,
+    PREINIT_OWNER_DEFAULT = 1,
+    PREINIT_OWNER_SPI     = 2,
+} ioPreinitOwner_e;
+
+void ioPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init, ioPreinitOwner_e owner);
+void ioPreinit(ioPreinitOwner_e owner);
+void ioPreinitByIO(const IO_t io);
+void ioPreinitByTag(ioTag_t tag);

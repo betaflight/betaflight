@@ -330,9 +330,9 @@ void max7456ReInit(void)
     max7456ClearShadowBuffer();
 }
 
-void max7456PreInit(const max7456Config_t *max7456Config)
+void max7456Preinit(const max7456Config_t *max7456Config)
 {
-    spiPreinitRegister(max7456Config->csTag, max7456Config->preInitOPU ? IOCFG_OUT_PP : IOCFG_IPU, 1);
+    ioPreinitRegister(max7456Config->csTag, max7456Config->preInitOPU ? IOCFG_OUT_PP : IOCFG_IPU, 1, PREINIT_OWNER_SPI);
 }
 
 // Here we init only CS and try to init MAX for first time.

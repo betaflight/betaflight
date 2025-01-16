@@ -245,7 +245,7 @@ void lps22dfBusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_LPS22DF
     if (dev->bus->busType == BUS_TYPE_SPI) {
-        spiPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin);
     }
 #else
     UNUSED(dev);

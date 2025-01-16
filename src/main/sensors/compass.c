@@ -150,7 +150,7 @@ void compassPreInit(void)
 {
 #ifdef USE_SPI
     if (compassConfig()->mag_busType == BUS_TYPE_SPI) {
-        spiPreinitRegister(compassConfig()->mag_spi_csn, IOCFG_IPU, 1);
+        ioPreinitRegister(compassConfig()->mag_spi_csn, IOCFG_IPU, 1, PREINIT_OWNER_SPI);
     }
 #endif
 }

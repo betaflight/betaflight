@@ -80,7 +80,7 @@ void ms5611BusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_MS5611
     if (dev->bus->busType == BUS_TYPE_SPI) {
-        spiPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin);
     }
 #else
     UNUSED(dev);
