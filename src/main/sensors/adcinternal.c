@@ -23,6 +23,8 @@
 
 #include "platform.h"
 
+#include "adcinternal.h"
+
 #if defined(USE_ADC_INTERNAL)
 
 #include "build/debug.h"

@@ -54,6 +54,7 @@
 #include "usbd_int.h"
 #include "msc_class.h"
 #include "msc_desc.h"
+#include "msc_diskio.h"
 
 #include "drivers/usb_io.h"
 

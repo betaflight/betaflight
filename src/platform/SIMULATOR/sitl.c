@@ -30,12 +30,14 @@
 
 #include "common/maths.h"
 
+#include "build/debug.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/motor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_tcp.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
 
@@ -49,6 +51,8 @@
 #include "config/feature.h"
 #include "config/config.h"
 #include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
+#include "config/config_eeprom_impl.h"
 
 #include "scheduler/scheduler.h"
 
@@ -56,6 +60,7 @@
 #include "pg/motor.h"
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
 
 #include "dyad.h"
 #include "udplink.h"

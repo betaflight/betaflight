@@ -76,6 +76,8 @@
 #include "drivers/memprot.h"
 #include "drivers/system.h"
 
+#include "system_stm32f7xx.h"
+
 #define HSI_FREQ ((uint32_t)64000000) // Frequency of HSI is 64Mhz on all H7 variants.
 
 // If `HSE_VALUE` isn't specified, use HSI. This allows HSI to be selected as the PLL source

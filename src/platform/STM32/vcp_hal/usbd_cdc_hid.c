@@ -37,6 +37,8 @@
 #include "usbd_hid.h"
 #include "vcp_hal/usbd_cdc_interface.h"
 
+#include "io/usb_cdc_hid.h"
+
 #define USB_HID_CDC_CONFIG_DESC_SIZ  (USB_HID_CONFIG_DESC_SIZ - 9 + USB_CDC_CONFIG_DESC_SIZ + 8)
 
 #define HID_INTERFACE 0x0

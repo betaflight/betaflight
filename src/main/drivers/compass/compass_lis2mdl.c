@@ -32,6 +32,8 @@
 #include "drivers/time.h"
 #include "common/axis.h"
 
+#include "compass_lis2mdl.h"
+
 #define LIS2MDL_MAG_I2C_ADDRESS     0x1E
 
 // Macros to encode/decode multi-bit values
