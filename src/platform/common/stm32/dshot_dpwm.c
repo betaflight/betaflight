@@ -111,7 +111,7 @@ static void dshotPwmDisableMotors(void)
 
 static bool dshotPwmEnableMotors(void)
 {
-    for (int i = 0; i < dshotPwmDevice.count; i++) {
+    for (int i = 0; i < motorCount; i++) {
         motorDmaOutput_t *motor = getMotorDmaOutput(i);
         const IO_t motorIO = IOGetByTag(motor->timerHardware->tag);
         IOConfigGPIOAF(motorIO, motor->iocfg, motor->timerHardware->alternateFunction);
@@ -136,12 +136,12 @@ static FAST_CODE void dshotWrite(uint8_t index, float value)
     pwmWriteDshotInt(index, lrintf(value));
 }
 
-static motorVTable_t dshotPwmVTable = {
+static const motorVTable_t dshotPwmVTable = {
     .postInit = motorPostInitNull,
     .enable = dshotPwmEnableMotors,
     .disable = dshotPwmDisableMotors,
     .isMotorEnabled = dshotPwmIsMotorEnabled,
-    .decodeTelemetry = motorDecodeTelemetryNull, // May be updated after copying
+    .decodeTelemetry = pwmTelemetryDecode,
     .write = dshotWrite,
     .writeInt = dshotWriteInt,
     .updateComplete = pwmCompleteDshotMotorUpdate,
@@ -152,18 +152,12 @@ static motorVTable_t dshotPwmVTable = {
     .isMotorIdle = pwmDshotIsMotorIdle,
 };
 
-FAST_DATA_ZERO_INIT motorDevice_t dshotPwmDevice;
-
-motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedUpdate)
+void dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 {
-    UNUSED(idlePulse);
-    UNUSED(useUnsyncedUpdate);
-
-    dshotPwmDevice.vTable = dshotPwmVTable;
-
+    device->vTable = &dshotPwmVTable;
+    motorCount = device->count;
 #ifdef USE_DSHOT_TELEMETRY
     useDshotTelemetry = motorConfig->useDshotTelemetry;
-    dshotPwmDevice.vTable.decodeTelemetry = pwmTelemetryDecode;
 #endif
 
     switch (motorConfig->motorProtocol) {
@@ -202,14 +196,11 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         }
 
         /* not enough motors initialised for the mixer or a break in the motors */
-        dshotPwmDevice.vTable.write = motorWriteNull;
-        dshotPwmDevice.vTable.updateComplete = motorUpdateCompleteNull;
-
+        device->vTable = NULL;
+        motorCount = 0;
         /* TODO: block arming and add reason system cannot arm */
-        return NULL;
+        return;
     }
-
-    return &dshotPwmDevice;
 }
 
 #endif // USE_DSHOT

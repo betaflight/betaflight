@@ -19,27 +19,12 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dshot_bitbang_impl.h"
+#pragma once
 
-void bbDshotRequestTelemetry(unsigned motorIndex)
-{
-    if (motorIndex >= ARRAYLEN(bbMotors)) {
-        return;
-    }
-    bbMotor_t *const bbmotor = &bbMotors[motorIndex];
+#include "drivers/motor_types.h"
 
-    if (!bbmotor->configured) {
-        return;
-    }
-    bbmotor->protocolControl.requestTelemetry = true;
-}
+void motorPostInitNull(void);
+bool motorDecodeTelemetryNull(void);
+void motorUpdateCompleteNull(void);
 
-bool bbDshotIsMotorIdle(unsigned motorIndex)
-{
-    if (motorIndex >= ARRAYLEN(bbMotors)) {
-        return false;
-    }
-
-    bbMotor_t *const bbmotor = &bbMotors[motorIndex];
-    return bbmotor->protocolControl.value == 0;
-}
+void motorNullDevInit(motorDevice_t *device);

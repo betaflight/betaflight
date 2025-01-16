@@ -163,5 +163,3 @@ bool pwmTelemetryDecode(void);
 void pwmCompleteDshotMotorUpdate(void);
 
 extern bool useBurstDshot;
-
-extern motorDevice_t dshotPwmDevice;

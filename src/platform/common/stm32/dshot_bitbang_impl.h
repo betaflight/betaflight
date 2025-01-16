@@ -20,8 +20,12 @@
 
 #pragma once
 
+#include "platform.h"
+
 #include "common/time.h"
-#include "drivers/motor.h"
+
+#include "drivers/timer.h"
+#include "drivers/motor_types.h"
 #include "drivers/dshot.h"
 
 #define USE_DMA_REGISTER_CACHE

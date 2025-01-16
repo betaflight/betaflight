@@ -28,14 +28,16 @@
 #ifdef USE_PWM_OUTPUT
 
 #include "drivers/io.h"
-#include "drivers/motor.h"
 #include "drivers/pwm_output.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 
-#include "pg/motor.h"
+#include "drivers/motor_impl.h"
 
 FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
+
+static int motorCount = 0;
+static bool useContinuousUpdate = true;
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -108,14 +110,6 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
     *channel->ccr = 0;
 }
 
-static FAST_DATA_ZERO_INIT motorDevice_t motorPwmDevice;
-
-static void pwmWriteUnused(uint8_t index, float value)
-{
-    UNUSED(index);
-    UNUSED(value);
-}
-
 static void pwmWriteStandard(uint8_t index, float value)
 {
     /* TODO: move value to be a number between 0-1 (i.e. percent throttle from mixer) */
@@ -124,7 +118,7 @@ static void pwmWriteStandard(uint8_t index, float value)
 
 void pwmShutdownPulsesForAllMotors(void)
 {
-    for (int index = 0; index < motorPwmDevice.count; index++) {
+    for (int index = 0; motorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         if (motors[index].channel.ccr) {
             *motors[index].channel.ccr = 0;
@@ -137,11 +131,10 @@ void pwmDisableMotors(void)
     pwmShutdownPulsesForAllMotors();
 }
 
-static motorVTable_t motorPwmVTable;
 bool pwmEnableMotors(void)
 {
     /* check motors can be enabled */
-    return (motorPwmVTable.write != &pwmWriteUnused);
+    return motorCount > 0;
 }
 
 bool pwmIsMotorEnabled(unsigned index)
@@ -149,9 +142,13 @@ bool pwmIsMotorEnabled(unsigned index)
     return motors[index].enabled;
 }
 
-static void pwmCompleteOneshotMotorUpdate(void)
+static void pwmCompleteMotorUpdate(void)
 {
-    for (int index = 0; index < motorPwmDevice.count; index++) {
+    if (useContinuousUpdate) {
+        return;
+    }
+
+    for (int index = 0; motorCount; index++) {
         if (motors[index].forceOverflow) {
             timerForceOverflow(motors[index].channel.tim);
         }
@@ -171,23 +168,28 @@ static uint16_t pwmConvertToExternal(float motorValue)
     return (uint16_t)motorValue;
 }
 
-static motorVTable_t motorPwmVTable = {
-    .postInit = motorPostInitNull,
+static const motorVTable_t motorPwmVTable = {
+    .postInit = NULL,
     .enable = pwmEnableMotors,
     .disable = pwmDisableMotors,
     .isMotorEnabled = pwmIsMotorEnabled,
     .shutdown = pwmShutdownPulsesForAllMotors,
     .convertExternalToMotor = pwmConvertFromExternal,
     .convertMotorToExternal = pwmConvertToExternal,
+    .write = pwmWriteStandard,
+    .decodeTelemetry = NULL,
+    .updateComplete = pwmCompleteMotorUpdate,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
 };
 
-motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedUpdate)
+void motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t idlePulse)
 {
     memset(motors, 0, sizeof(motors));
 
-    motorPwmDevice.vTable = motorPwmVTable;
+    motorCount = device->count;
+    device->vTable = &motorPwmVTable;
+    useContinuousUpdate = motorConfig->useUnsyncedUpdate;
 
     float sMin = 0;
     float sLen = 0;
@@ -207,20 +209,16 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         break;
     case MOTOR_PROTOCOL_BRUSHED:
         sMin = 0;
-        useUnsyncedUpdate = true;
+        useContinuousUpdate = true;
         idlePulse = 0;
         break;
-    case MOTOR_PROTOCOL_PWM50HZ :
+    case MOTOR_PROTOCOL_PWM :
         sMin = 1e-3f;
         sLen = 1e-3f;
-        useUnsyncedUpdate = true;
+        useContinuousUpdate = true;
         idlePulse = 0;
         break;
     }
-
-    motorPwmDevice.vTable.write = pwmWriteStandard;
-    motorPwmDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
-    motorPwmDevice.vTable.updateComplete = useUnsyncedUpdate ? motorUpdateCompleteNull : pwmCompleteOneshotMotorUpdate;
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
@@ -229,10 +227,10 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
 
         if (timerHardware == NULL) {
             /* not enough motors initialised for the mixer or a break in the motors */
-            motorPwmDevice.vTable.write = &pwmWriteUnused;
-            motorPwmDevice.vTable.updateComplete = motorUpdateCompleteNull;
+            device->vTable = NULL;
+            motorCount = 0;
             /* TODO: block arming and add reason system cannot arm */
-            return NULL;
+            return;
         }
 
         motors[motorIndex].io = IOGetByTag(tag);
@@ -242,13 +240,13 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
-        const unsigned pwmRateHz = useUnsyncedUpdate ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
+        const unsigned pwmRateHz = useContinuousUpdate ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
 
         const uint32_t clock = timerClock(timerHardware->tim);
         /* used to find the desired timer frequency for max resolution */
         const unsigned prescaler = ((clock / pwmRateHz) + 0xffff) / 0x10000; /* rounding up */
         const uint32_t hz = clock / prescaler;
-        const unsigned period = useUnsyncedUpdate ? hz / pwmRateHz : 0xffff;
+        const unsigned period = useContinuousUpdate ? hz / pwmRateHz : 0xffff;
 
         /*
             if brushed then it is the entire length of the period.
@@ -271,7 +269,6 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         motors[motorIndex].enabled = true;
     }
 
-    return &motorPwmDevice;
 }
 
 pwmOutputPort_t *pwmGetMotors(void)

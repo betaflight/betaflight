@@ -28,7 +28,7 @@
 #define MOTOR_OUTPUT_LIMIT_PERCENT_MAX 100
 
 typedef enum {
-    MOTOR_PROTOCOL_PWM50HZ = 0,
+    MOTOR_PROTOCOL_PWM = 0,
     MOTOR_PROTOCOL_ONESHOT125,
     MOTOR_PROTOCOL_ONESHOT42,
     MOTOR_PROTOCOL_MULTISHOT,
@@ -64,7 +64,7 @@ typedef struct motorVTable_s {
 } motorVTable_t;
 
 typedef struct motorDevice_s {
-    motorVTable_t vTable;
+    const motorVTable_t *vTable;
     uint8_t       count;
     bool          initialized;
     bool          enabled;

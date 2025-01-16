@@ -177,7 +177,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 
     uint8_t repeats = 1;
     timeUs_t delayAfterCommandUs = DSHOT_COMMAND_DELAY_US;
-    motorVTable_t *vTable = motorGetVTable();
+    const motorVTable_t *vTable = motorGetVTable();
 
     switch (command) {
     case DSHOT_CMD_SPIN_DIRECTION_1:
@@ -274,7 +274,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 }
 
-uint8_t dshotCommandGetCurrent(uint8_t index)
+uint8_t dshotCommandGetCurrent(unsigned index)
 {
     return commandQueue[commandQueueTail].command[index];
 }
@@ -284,7 +284,7 @@ uint8_t dshotCommandGetCurrent(uint8_t index)
 // allows the motor output to be sent, "false" means delay until next loop. So take
 // the example of a dshot command that needs to repeat 10 times at 1ms intervals.
 // If we have a 8KHz PID loop we'll end up sending the dshot command every 8th motor output.
-FAST_CODE_NOINLINE bool dshotCommandOutputIsEnabled(uint8_t motorCount)
+FAST_CODE_NOINLINE bool dshotCommandOutputIsEnabled(unsigned motorCount)
 {
     UNUSED(motorCount);
 

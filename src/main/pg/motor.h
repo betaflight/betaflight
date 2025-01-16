@@ -23,7 +23,6 @@
 #include "pg/pg.h"
 
 #include "drivers/io.h"
-#include "drivers/dshot_bitbang.h"
 
 #if !defined(BRUSHED_MOTORS_PWM_RATE)
 #define BRUSHED_MOTORS_PWM_RATE 16000
@@ -46,6 +45,12 @@ typedef enum {
     DSHOT_DMAR_ON,
     DSHOT_DMAR_AUTO
 } dshotDmar_e;
+
+typedef enum {
+    DSHOT_BITBANG_OFF,
+    DSHOT_BITBANG_ON,
+    DSHOT_BITBANG_AUTO,
+} dshotBitbangMode_e;
 
 typedef enum {
     DSHOT_TELEMETRY_OFF,

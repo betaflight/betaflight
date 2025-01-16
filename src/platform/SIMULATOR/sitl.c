@@ -611,29 +611,32 @@ void pwmWriteServo(uint8_t index, float value)
     }
 }
 
-static motorDevice_t motorPwmDevice = {
-    .vTable = {
-        .postInit = motorPostInitNull,
-        .convertExternalToMotor = pwmConvertFromExternal,
-        .convertMotorToExternal = pwmConvertToExternal,
-        .enable = pwmEnableMotors,
-        .disable = pwmDisableMotors,
-        .isMotorEnabled = pwmIsMotorEnabled,
-        .decodeTelemetry = motorDecodeTelemetryNull,
-        .write = pwmWriteMotor,
-        .writeInt = pwmWriteMotorInt,
-        .updateComplete = pwmCompleteMotorUpdate,
-        .shutdown = pwmShutdownPulsesForAllMotors,
-        .requestTelemetry = NULL,
-        .isMotorIdle = NULL,
-    }
+static const motorVTable_t vTable = {
+    .postInit = motorPostInitNull,
+    .convertExternalToMotor = pwmConvertFromExternal,
+    .convertMotorToExternal = pwmConvertToExternal,
+    .enable = pwmEnableMotors,
+    .disable = pwmDisableMotors,
+    .isMotorEnabled = pwmIsMotorEnabled,
+    .decodeTelemetry = motorDecodeTelemetryNull,
+    .write = pwmWriteMotor,
+    .writeInt = pwmWriteMotorInt,
+    .updateComplete = pwmCompleteMotorUpdate,
+    .shutdown = pwmShutdownPulsesForAllMotors,
+    .requestTelemetry = NULL,
+    .isMotorIdle = NULL,
+
 };
 
-motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount, bool useUnsyncedUpdate)
+void motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t _idlePulse)
 {
     UNUSED(motorConfig);
-    UNUSED(useUnsyncedUpdate);
 
+    if (!device) {
+        return;
+    }
+    device->vTable = &vTable;
+    uint8_t motorCount = device->count;
     printf("Initialized motor count %d\n", motorCount);
     pwmRawPkt.motorCount = motorCount;
 
@@ -642,11 +645,6 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _id
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         motors[motorIndex].enabled = true;
     }
-    motorPwmDevice.count = motorCount; // Never used, but seemingly a right thing to set it anyways.
-    motorPwmDevice.initialized = true;
-    motorPwmDevice.enabled = false;
-
-    return &motorPwmDevice;
 }
 
 // ADC part

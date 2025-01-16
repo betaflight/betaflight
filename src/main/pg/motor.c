@@ -58,7 +58,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #else
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #ifndef USE_DSHOT
-    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_PWM50HZ ) {
+    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_PWM ) {
         motorConfig->dev.useUnsyncedUpdate = true;
     }
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;

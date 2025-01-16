@@ -57,7 +57,6 @@ FAST_DATA_ZERO_INIT int usedMotorPorts;
 
 FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
 
-static FAST_DATA_ZERO_INIT int motorCount;
 dshotBitbangStatus_e bbStatus;
 
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
@@ -89,7 +88,6 @@ const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TMR1,  CH4, NONE, 0, 3, 0),
 };
 
-static FAST_DATA_ZERO_INIT motorDevice_t bbDevice;
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
 
 static motorProtocolTypes_e motorProtocol;
@@ -408,10 +406,6 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
         }
 
         if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->owner.owner, bbPort->owner.resourceIndex)) {
-            bbDevice.vTable.write = motorWriteNull;
-            bbDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
-            bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
-
             return false;
         }
 
@@ -592,7 +586,7 @@ static void bbUpdateComplete(void)
     // If there is a dshot command loaded up, time it correctly with motor update
 
     if (!dshotCommandQueueEmpty()) {
-        if (!dshotCommandOutputIsEnabled(bbDevice.count)) {
+        if (!dshotCommandOutputIsEnabled(motorCount)) {
             return;
         }
     }
@@ -699,14 +693,15 @@ dshotBitbangStatus_e dshotBitbangGetStatus(void)
     return bbStatus;
 }
 
-motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
+void dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 {
     dbgPinLo(0);
     dbgPinLo(1);
 
     motorProtocol = motorConfig->motorProtocol;
-    bbDevice.vTable = bbVTable;
-    motorCount = count;
+    device->vTable = &bbVTable;
+    motorCount = device->count;
+
     bbStatus = DSHOT_BITBANG_STATUS_OK;
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -731,11 +726,10 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
 
         if (!IOIsFreeOrPreinit(io)) {
             /* not enough motors initialised for the mixer or a break in the motors */
-            bbDevice.vTable.write = motorWriteNull;
-            bbDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
-            bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
             bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
-            return NULL;
+            device->vTable = NULL;
+            motorCount = 0;
+            return;
         }
 
         int pinIndex = IO_GPIOPinIdx(io);
@@ -753,8 +747,6 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
             IOHi(io);
         }
     }
-
-    return &bbDevice;
 }
 
 #endif // USE_DSHOT_BB
