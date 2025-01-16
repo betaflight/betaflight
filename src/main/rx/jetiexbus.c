@@ -102,7 +102,7 @@ uint16_t jetiExBusCalcCRC16(const uint8_t *pt, uint8_t msgLen)
     return(crc16_data);
 }
 
-void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
+static void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
 {
     uint16_t value;
     uint8_t frameAddr;
@@ -123,7 +123,7 @@ void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
     }
 }
 
-void jetiExBusFrameReset(void)
+static void jetiExBusFrameReset(void)
 {
     jetiExBusFramePosition = 0;
     jetiExBusFrameLength = EXBUS_MAX_CHANNEL_FRAME_SIZE;

@@ -1178,7 +1178,7 @@ SD_Error_t HAL_SD_HighSpeed(void)
   * @brief  Gets the current card's data status.
   * @retval Data Transfer state
   */
-SD_Error_t SD_GetStatus(void)
+static SD_Error_t SD_GetStatus(void)
 {
     SD_Error_t     ErrorState;
     uint32_t       Response1;

@@ -197,7 +197,7 @@ static bool isCalibrating(void)
 }
 
 #ifdef USE_LAUNCH_CONTROL
-bool canUseLaunchControl(void)
+static bool canUseLaunchControl(void)
 {
     if (!isFixedWing()
         && !isUsingSticksForArming()     // require switch arming for safety
@@ -212,7 +212,7 @@ bool canUseLaunchControl(void)
 #endif
 
 #ifdef USE_DSHOT
-void setMotorSpinDirection(uint8_t spinDirection)
+static void setMotorSpinDirection(uint8_t spinDirection)
 {
     if (isMotorProtocolDshot() && !featureIsEnabled(FEATURE_3D)) {
         dshotCommandWrite(ALL_MOTORS, getMotorCount(), spinDirection, DSHOT_CMD_TYPE_INLINE);

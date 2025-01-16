@@ -212,7 +212,7 @@ bool i2cBusy(I2CDevice device, bool *error)
     return state->busy;
 }
 
-bool i2cWait(I2CDevice device)
+static bool i2cWait(I2CDevice device)
 {
     i2cState_t *state = &i2cDevice[device].state;
     timeUs_t timeoutStartUs = microsISR();

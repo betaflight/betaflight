@@ -178,7 +178,7 @@ static void ErrorHandler(void)
     while (1);
 }
 
-void HandleStuckSysTick(void)
+static void HandleStuckSysTick(void)
 {
     uint32_t tickStart = HAL_GetTick();
     uint32_t tickEnd = 0;
@@ -709,7 +709,7 @@ void CRS_IRQHandler(void)
 }
 #endif
 
-void initialiseD2MemorySections(void)
+static void initialiseD2MemorySections(void)
 {
     /* Load DMA_DATA variable intializers into D2 RAM */
     extern uint8_t _sdmaram_bss;

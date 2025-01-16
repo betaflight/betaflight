@@ -288,7 +288,7 @@ static void w25n_deviceReset(flashDevice_t *fdevice)
     w25n_writeRegister(io, W25N_CONF_REG, W25N_CONFIG_ECC_ENABLE|W25N_CONFIG_BUFFER_READ_MODE);
 }
 
-bool w25n_isReady(flashDevice_t *fdevice)
+static bool w25n_isReady(flashDevice_t *fdevice)
 {
     // If we're waiting on DMA completion, then SPI is busy
     if (fdevice->io.mode == FLASHIO_SPI) {
@@ -372,7 +372,7 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
 
 static void w25n_deviceInit(flashDevice_t *flashdev);
 
-void w25n_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
+static void w25n_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 {
     if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
         return;
@@ -404,7 +404,7 @@ void w25n_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 /**
  * Erase a sector full of bytes to all 1's at the given byte offset in the flash chip.
  */
-void w25n_eraseSector(flashDevice_t *fdevice, uint32_t address)
+static void w25n_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
 
     w25n_waitForReady(fdevice);
@@ -420,7 +420,7 @@ void w25n_eraseSector(flashDevice_t *fdevice, uint32_t address)
 // W25N01G does not support full chip erase.
 // Call eraseSector repeatedly.
 
-void w25n_eraseCompletely(flashDevice_t *fdevice)
+static void w25n_eraseCompletely(flashDevice_t *fdevice)
 {
     for (uint32_t block = 0; block < fdevice->geometry.sectors; block++) {
         w25n_eraseSector(fdevice, W25N_BLOCK_TO_LINEAR(block));
@@ -537,7 +537,7 @@ bool bufferDirty = false;
 
 // Called in ISR context
 // Check if the status was busy and if so repeat the poll
-busStatus_e w25n_callbackReady(uint32_t arg)
+static busStatus_e w25n_callbackReady(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
     extDevice_t *dev = fdevice->io.handle.dev;
@@ -557,7 +557,7 @@ busStatus_e w25n_callbackReady(uint32_t arg)
 #ifdef USE_QUADSPI
 bool isProgramming = false;
 
-void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
 {
     fdevice->callback = callback;
 
@@ -579,7 +579,7 @@ void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*call
     }
 }
 
-uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     if (bufferCount < 1) {
         fdevice->callback(0);
@@ -612,7 +612,7 @@ uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffer
 
 static uint32_t currentPage = UINT32_MAX;
 
-void w25n_pageProgramFinish(flashDevice_t *fdevice)
+static void w25n_pageProgramFinish(flashDevice_t *fdevice)
 {
     if (bufferDirty && W25N_LINEAR_TO_COLUMN(programLoadAddress) == 0) {
 
@@ -627,7 +627,7 @@ void w25n_pageProgramFinish(flashDevice_t *fdevice)
     }
 }
 #else
-void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
 {
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
@@ -638,7 +638,7 @@ static uint32_t currentPage = UINT32_MAX;
 
 // Called in ISR context
 // A write enable has just been issued
-busStatus_e w25n_callbackWriteEnable(uint32_t arg)
+static busStatus_e w25n_callbackWriteEnable(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
@@ -650,7 +650,7 @@ busStatus_e w25n_callbackWriteEnable(uint32_t arg)
 
 // Called in ISR context
 // Write operation has just completed
-busStatus_e w25n_callbackWriteComplete(uint32_t arg)
+static busStatus_e w25n_callbackWriteComplete(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
@@ -663,7 +663,7 @@ busStatus_e w25n_callbackWriteComplete(uint32_t arg)
     return BUS_READY;
 }
 
-uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     if (bufferCount < 1) {
         fdevice->callback(0);
@@ -771,7 +771,7 @@ uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffer
     return fdevice->callbackArg;
 }
 
-void w25n_pageProgramFinish(flashDevice_t *fdevice)
+static void w25n_pageProgramFinish(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 }
@@ -793,14 +793,14 @@ void w25n_pageProgramFinish(flashDevice_t *fdevice)
  * break this operation up into one beginProgram call, one or more continueProgram calls, and one finishProgram call.
  */
 
-void w25n_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void w25n_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
 {
     w25n_pageProgramBegin(fdevice, address, callback);
     w25n_pageProgramContinue(fdevice, &data, &length, 1);
     w25n_pageProgramFinish(fdevice);
 }
 
-void w25n_flush(flashDevice_t *fdevice)
+static void w25n_flush(flashDevice_t *fdevice)
 {
     if (bufferDirty) {
         currentPage = W25N_LINEAR_TO_PAGE(programStartAddress); // reset page to the page being written
@@ -811,7 +811,7 @@ void w25n_flush(flashDevice_t *fdevice)
     }
 }
 
-void w25n_addError(uint32_t address, uint8_t code)
+static void w25n_addError(uint32_t address, uint8_t code)
 {
     UNUSED(address);
     UNUSED(code);
@@ -837,7 +837,7 @@ void w25n_addError(uint32_t address, uint8_t code)
 // (3) Issue READ_DATA on column address.
 // (4) Return transferLength.
 
-int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
+static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
 {
     uint32_t targetPage = W25N_LINEAR_TO_PAGE(address);
 
@@ -981,7 +981,7 @@ int w25n_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
  *
  * Can be called before calling w25n_init() (the result would have totalSize = 0).
  */
-const flashGeometry_t* w25n_getGeometry(flashDevice_t *fdevice)
+static const flashGeometry_t* w25n_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }
@@ -1010,7 +1010,7 @@ typedef volatile struct cb_context_s {
 
 // Called in ISR context
 // Read of BBLUT entry has just completed
-busStatus_e w25n_readBBLUTCallback(uint32_t arg)
+static busStatus_e w25n_readBBLUTCallback(uint32_t arg)
 {
     cb_context_t *cb_context = (cb_context_t *)arg;
     flashDevice_t *fdevice = cb_context->fdevice;

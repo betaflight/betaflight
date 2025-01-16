@@ -40,7 +40,7 @@ typedef struct movingAverageStateUint16_s {
     uint8_t pos;
 } movingAverageStateUint16_t;
 
-uint16_t updateMovingAverageUint16(movingAverageStateUint16_t *state, uint16_t newValue)
+static uint16_t updateMovingAverageUint16(movingAverageStateUint16_t *state, uint16_t newValue)
 {
     state->sum -= state->values[state->pos];
     state->values[state->pos] = newValue;

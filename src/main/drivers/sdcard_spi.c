@@ -112,7 +112,7 @@ static void sdcard_reset(void)
 
 // Called in ISR context
 // Wait until idle indicated by a read value of SDCARD_IDLE_TOKEN
-busStatus_e sdcard_callbackIdle(uint32_t arg)
+static busStatus_e sdcard_callbackIdle(uint32_t arg)
 {
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
@@ -135,7 +135,7 @@ busStatus_e sdcard_callbackIdle(uint32_t arg)
 
 // Called in ISR context
 // Wait until idle is no longer indicated by a read value of SDCARD_IDLE_TOKEN
-busStatus_e sdcard_callbackNotIdle(uint32_t arg)
+static busStatus_e sdcard_callbackNotIdle(uint32_t arg)
 {
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
@@ -340,7 +340,7 @@ typedef enum {
 
 /// Called in ISR context
 // Wait until the arrival of the SDCARD_SINGLE_BLOCK_READ_START_TOKEN token
-busStatus_e sdcard_callbackNotIdleDataBlock(uint32_t arg)
+static busStatus_e sdcard_callbackNotIdleDataBlock(uint32_t arg)
 {
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
@@ -536,7 +536,7 @@ static bool sdcard_checkInitDone(void)
     return status == 0x00;
 }
 
-void sdcardSpi_preInit(const sdcardConfig_t *config)
+static void sdcardSpi_preInit(const sdcardConfig_t *config)
 {
     spiPreinitRegister(config->chipSelectTag, IOCFG_IPU, 1);
 }

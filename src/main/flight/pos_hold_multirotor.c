@@ -55,7 +55,7 @@ void posHoldInit(void)
     posHold.useStickAdjustment = posHoldConfig()->pos_hold_deadband;
 }
 
-void posHoldCheckSticks(void)
+static void posHoldCheckSticks(void)
 {
     // if failsafe is active, eg landing mode, don't update the original start point
     if (!failsafeIsActive() && posHold.useStickAdjustment) {
@@ -64,7 +64,7 @@ void posHoldCheckSticks(void)
     }
 }
 
-bool sensorsOk(void)
+static bool sensorsOk(void)
 {
     if (!STATE(GPS_FIX)) {
         return false;

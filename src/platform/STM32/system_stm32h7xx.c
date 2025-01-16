@@ -180,7 +180,7 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 
 typedef void *(*bootJumpPtr)(void);
 
-void systemJumpToBootloader(void)
+static void systemJumpToBootloader(void)
 {
     __SYSCFG_CLK_ENABLE();
 

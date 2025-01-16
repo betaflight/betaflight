@@ -98,7 +98,7 @@ const uint8_t vtxSaPi[SPEKTRUM_VTX_POWER_COUNT] = {
 };
 #endif // USE_VTX_SMARTAUDIO
 
-uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
+static uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
 {
     uint8_t devicePower = 0;
 

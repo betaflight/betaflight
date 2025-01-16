@@ -159,7 +159,7 @@ static void processMspPacket(void)
     sbufSwitchToReader(&responsePacket.buf, responseBuffer);
 }
 
-void sendMspErrorResponse(uint8_t error, int16_t cmd)
+static void sendMspErrorResponse(uint8_t error, int16_t cmd)
 {
     responsePacket.cmd = cmd;
     responsePacket.result = 0;

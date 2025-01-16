@@ -143,7 +143,7 @@ void queueClear(void)
     taskQueueSize = 0;
 }
 
-bool queueContains(const task_t *task)
+static bool queueContains(const task_t *task)
 {
     for (int ii = 0; ii < taskQueueSize; ++ii) {
         if (taskQueueArray[ii] == task) {

@@ -133,7 +133,7 @@ uint32_t getCrsfCachedBaudrate(void)
     return CRSF_BAUDRATE;
 }
 
-bool checkCrsfCustomizedSpeed(void)
+static bool checkCrsfCustomizedSpeed(void)
 {
     return crsfSpeed.index < BAUD_COUNT ? true : false;
 }
@@ -281,7 +281,7 @@ uint16_t    Current ( mA * 100 )
 uint24_t    Fuel ( drawn mAh )
 uint8_t     Battery remaining ( percent )
 */
-void crsfFrameBatterySensor(sbuf_t *dst)
+static void crsfFrameBatterySensor(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
@@ -424,7 +424,7 @@ static int16_t decidegrees2Radians10000(int16_t angle_decidegree)
 }
 
 // fill dst buffer with crsf-attitude telemetry frame
-void crsfFrameAttitude(sbuf_t *dst)
+static void crsfFrameAttitude(sbuf_t *dst)
 {
     sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
@@ -438,7 +438,7 @@ void crsfFrameAttitude(sbuf_t *dst)
 Payload:
 char[]      Flight mode ( Null terminated string )
 */
-void crsfFrameFlightMode(sbuf_t *dst)
+static void crsfFrameFlightMode(sbuf_t *dst)
 {
     // write zero for frame length, since we don't know it yet
     uint8_t *lengthPtr = sbufPtr(dst);
@@ -497,7 +497,7 @@ uint32_t    Null Bytes
 uint8_t     255 (Max MSP Parameter)
 uint8_t     0x01 (Parameter version 1)
 */
-void crsfFrameDeviceInfo(sbuf_t *dst)
+static void crsfFrameDeviceInfo(sbuf_t *dst)
 {
     char buff[30];
     tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
@@ -517,7 +517,7 @@ void crsfFrameDeviceInfo(sbuf_t *dst)
 }
 
 #if defined(USE_CRSF_V3)
-void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
+static void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
 {
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, 0);
@@ -545,7 +545,7 @@ static void crsfProcessSpeedNegotiationCmd(const uint8_t *frameStart)
     crsfSpeed.index = ii;
 }
 
-void crsfScheduleSpeedNegotiationResponse(void)
+static void crsfScheduleSpeedNegotiationResponse(void)
 {
     crsfSpeed.hasPendingReply = true;
     crsfSpeed.isNewSpeedValid = false;

@@ -139,7 +139,7 @@ typedef struct ppmISREvent_s {
 static ppmISREvent_t ppmEvents[20];
 static uint8_t ppmEventIndex = 0;
 
-void ppmISREvent(eventSource_e source, uint32_t capture)
+static void ppmISREvent(eventSource_e source, uint32_t capture)
 {
     ppmEventIndex = (ppmEventIndex + 1) % ARRAYLEN(ppmEvents);
 
@@ -403,7 +403,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 #define FIRST_PWM_PORT 0
 
 #ifdef USE_PWM_OUTPUT
-void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
+static void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
 {
     pwmOutputPort_t *motors = pwmGetMotors();
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {

@@ -311,7 +311,7 @@ static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
 }
 #endif
 
-void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
+static void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     // Reset alarms
     hottEAMMessage->warning_beeps = 0x0;

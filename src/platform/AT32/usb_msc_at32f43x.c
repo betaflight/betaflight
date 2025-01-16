@@ -60,7 +60,7 @@
 
 extern otg_core_type otg_core_struct;
 
-void msc_usb_gpio_config(void)
+static void msc_usb_gpio_config(void)
 {
     gpio_init_type gpio_init_struct;
 
@@ -95,7 +95,7 @@ void msc_usb_gpio_config(void)
 
 }
 
-void msc_usb_clock48m_select(usb_clk48_s clk_s)
+static void msc_usb_clock48m_select(usb_clk48_s clk_s)
 {
     if(clk_s == USB_CLK_HICK) {
         crm_usb_clock_source_select(CRM_USB_CLOCK_SOURCE_HICK);

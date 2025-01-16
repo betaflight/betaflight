@@ -4297,7 +4297,7 @@ static bool prepareSave(void)
     return true;
 }
 
-bool tryPrepareSave(const char *cmdName)
+static bool tryPrepareSave(const char *cmdName)
 {
     bool success = prepareSave();
 #if defined(USE_CLI_BATCH)

@@ -246,7 +246,7 @@ void batteryUpdatePresence(void)
     }
 }
 
-void batteryUpdateWhDrawn(void)
+static void batteryUpdateWhDrawn(void)
 {
     static int32_t mAhDrawnPrev = 0;
     const int32_t mAhDrawnCurrent = getMAhDrawn();

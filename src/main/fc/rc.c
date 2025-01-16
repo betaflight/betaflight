@@ -166,7 +166,7 @@ STATIC_ASSERT(CONTROL_RATE_CONFIG_RATE_LIMIT_MAX <= (uint16_t)SETPOINT_RATE_LIMI
 
 #define RC_RATE_INCREMENTAL 14.54f
 
-float applyBetaflightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+static float applyBetaflightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     if (currentControlRateProfile->rcExpo[axis]) {
         const float expof = currentControlRateProfile->rcExpo[axis] / 100.0f;
@@ -186,7 +186,7 @@ float applyBetaflightRates(const int axis, float rcCommandf, const float rcComma
     return angleRate;
 }
 
-float applyRaceFlightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+static float applyRaceFlightRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     // -1.0 to 1.0 ranged and curved
     rcCommandf = ((1.0f + 0.01f * currentControlRateProfile->rcExpo[axis] * (rcCommandf * rcCommandf - 1.0f)) * rcCommandf);
@@ -197,7 +197,7 @@ float applyRaceFlightRates(const int axis, float rcCommandf, const float rcComma
     return angleRate;
 }
 
-float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+static float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     const float rcCurvef = currentControlRateProfile->rcExpo[axis] / 100.0f;
 
@@ -208,7 +208,7 @@ float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs
     return kissAngle;
 }
 
-float applyActualRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+static float applyActualRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     float expof = currentControlRateProfile->rcExpo[axis] / 100.0f;
     expof = rcCommandfAbs * (power5(rcCommandf) * expof + rcCommandf * (1 - expof));
@@ -220,7 +220,7 @@ float applyActualRates(const int axis, float rcCommandf, const float rcCommandfA
     return angleRate;
 }
 
-float applyQuickRates(const int axis, float rcCommandf, const float rcCommandfAbs)
+static float applyQuickRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     const uint16_t rcRate = currentControlRateProfile->rcRates[axis] * 2;
     const uint16_t maxDPS = MAX(currentControlRateProfile->rates[axis] * 10, rcRate);
@@ -322,7 +322,7 @@ bool getRxRateValid(void)
 
 // Initialize or update the filters base on either the manually selected cutoff, or
 // the auto-calculated cutoff frequency based on detected rx frame rate.
-FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
+static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
 {
     // in auto mode, calculate the RC smoothing cutoff from the smoothed Rx link frequency
     const uint16_t oldSetpointCutoff = smoothingData->setpointCutoffFrequency;
@@ -518,7 +518,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
 #endif // USE_RC_SMOOTHING_FILTER
 
 #ifdef USE_FEEDFORWARD
-FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dynamics_index_t axis)
+static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dynamics_index_t axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
     float rxRate = currentRxRateHz;                 // 1e6f / currentRxIntervalUs;

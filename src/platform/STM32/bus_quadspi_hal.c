@@ -37,7 +37,7 @@
 
 #include "pg/bus_quadspi.h"
 
-static void Error_Handler(void) { while (1) { } }
+static void Error_Handler(void) { while (1); }
 
 void quadSpiInitDevice(QUADSPIDevice device)
 {
@@ -145,7 +145,7 @@ bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 
 #define QUADSPI_DEFAULT_TIMEOUT 10
 
-void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
 
@@ -174,7 +174,7 @@ void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
     }
 }
 
-void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
 

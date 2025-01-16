@@ -112,12 +112,12 @@ int lockMainPID(void)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
 
-void sendMotorUpdate(void)
+static void sendMotorUpdate(void)
 {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
 
-void updateState(const fdm_packet* pkt)
+static void updateState(const fdm_packet* pkt)
 {
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
@@ -458,7 +458,7 @@ uint32_t getCycleCounter(void)
     return (uint32_t) (micros64() & 0xFFFFFFFF);
 }
 
-void microsleep(uint32_t usec)
+static void microsleep(uint32_t usec)
 {
     struct timespec ts;
     ts.tv_sec = 0;
@@ -580,7 +580,7 @@ static void pwmShutdownPulsesForAllMotors(void)
     motorPwmDevice.enabled = false;
 }
 
-bool pwmIsMotorEnabled(uint8_t index)
+static bool pwmIsMotorEnabled(uint8_t index)
 {
     return motors[index].enabled;
 }

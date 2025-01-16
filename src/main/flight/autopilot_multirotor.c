@@ -98,7 +98,7 @@ static void resetEFAxisFilters(efPidAxis_t* efAxis, const float vaGain)
     pt1FilterInit(&efAxis->accelerationLpf, vaGain);
 }
 
-void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
+static void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
 {
     // at start only
     resetEFAxisFilters(efAxis, vaGain);
@@ -223,7 +223,7 @@ void setSticksActiveStatus(bool areSticksActive)
     ap.sticksActive = areSticksActive;
 }
 
-void setTargetLocationByAxis(const gpsLocation_t* newTargetLocation, axisEF_e efAxisIdx)
+static void setTargetLocationByAxis(const gpsLocation_t* newTargetLocation, axisEF_e efAxisIdx)
 // not used at present but needed by upcoming GPS code
 {
     if (efAxisIdx == LON) {

@@ -389,7 +389,7 @@ static bool isRedpineFast(void)
     return (redpineFast);
 }
 
-void switchRedpineMode(void)
+static void switchRedpineMode(void)
 {
     redpineFast = !redpineFast;
 }

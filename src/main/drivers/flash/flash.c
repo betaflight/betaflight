@@ -361,7 +361,7 @@ void flashPreInit(const flashConfig_t *flashConfig)
     spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
 }
 
-bool flashDeviceInit(const flashConfig_t *flashConfig)
+static bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
     bool haveFlash = false;
 

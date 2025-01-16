@@ -75,7 +75,7 @@ void rxSpiDevicePreInit(const rxSpiConfig_t *rxSpiConfig)
     spiPreinitRegister(rxSpiConfig->csnTag, IOCFG_IPU, 1);
 }
 
-void rxSpiExtiHandler(extiCallbackRec_t* callback)
+static void rxSpiExtiHandler(extiCallbackRec_t* callback)
 {
     UNUSED(callback);
 

@@ -118,7 +118,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
 #ifdef USE_DMA_REGISTER_CACHE
 
-void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
+static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 {
     ((DMA_ARCH_TYPE *)dmaResource)->ctrl = dmaRegCache->CCR;
     ((DMA_ARCH_TYPE *)dmaResource)->dtcnt = dmaRegCache->CNDTR;

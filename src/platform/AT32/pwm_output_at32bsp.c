@@ -90,7 +90,7 @@ static void pwmWriteStandard(uint8_t index, float value)
     *motors[index].channel.ccr = lrintf((value * motors[index].pulseScale) + motors[index].pulseOffset);
 }
 
-void pwmShutdownPulsesForAllMotors(void)
+static void pwmShutdownPulsesForAllMotors(void)
 {
     for (int index = 0; index < motorPwmDevice.count; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
@@ -100,19 +100,19 @@ void pwmShutdownPulsesForAllMotors(void)
     }
 }
 
-void pwmDisableMotors(void)
+static void pwmDisableMotors(void)
 {
     pwmShutdownPulsesForAllMotors();
 }
 
 static motorVTable_t motorPwmVTable;
-bool pwmEnableMotors(void)
+static bool pwmEnableMotors(void)
 {
     /* check motors can be enabled */
     return (motorPwmVTable.write != &pwmWriteUnused);
 }
 
-bool pwmIsMotorEnabled(uint8_t index)
+static bool pwmIsMotorEnabled(uint8_t index)
 {
     return motors[index].enabled;
 }
