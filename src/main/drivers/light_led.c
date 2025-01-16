@@ -27,6 +27,8 @@
 
 #include "light_led.h"
 
+#if !(defined(UNIT_TEST) || defined(USE_VIRTUAL_LED))
+
 PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
 
 static IO_t leds[STATUS_LED_NUMBER];
@@ -91,3 +93,4 @@ void ledSet(int led, bool on)
     const bool inverted = (1 << (led)) & ledInversion;
     IOWrite(leds[led], on ? inverted : !inverted);
 }
+#endif
