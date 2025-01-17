@@ -46,16 +46,13 @@
 #define LIS2MDL_ADDR_WHO_AM_I   0x4F
 
 // LIS2MDL Definitions
-#define LIS2MDL_WHO_AM_I         0b01000000
-#define LIS2MDL_STATUS_REG_READY 0b00001111
-// CFG_REG_A
-#define COMP_TEMP_EN    (1 << 7)
-#define MD_CONTINUOUS   (0 << 0)
-#define ODR_100         ((1 << 3) | (1 << 2))
-// CFG_REG_B
-#define OFF_CANC        (1 << 1)
-// CFG_REG_C
-#define BDU             (1 << 4)
+#define LIS2MDL_WHO_AM_I         0x40
+#define LIS2MDL_STATUS_REG_READY 0x0F
+#define CFGA_MD_CONTINUOUS   (0 << 0)
+#define CFGA_ODR_100         ((1 << 3) | (1 << 2))
+#define CFGA_COMP_TEMP_EN    (1 << 7)
+#define CFGB_OFF_CANC        (1 << 1)
+#define CFGC_BDU             (1 << 4)
 
 static bool lis2mdlInit(magDev_t *mag)
 {
@@ -64,9 +61,9 @@ static bool lis2mdlInit(magDev_t *mag)
 
     busDeviceRegister(dev);
 
-    ack = ack && busWriteRegister(dev, LIS2MDL_ADDR_CFG_REG_A, MD_CONTINUOUS | ODR_100 | COMP_TEMP_EN);
-    ack = ack && busWriteRegister(dev, LIS2MDL_ADDR_CFG_REG_B, OFF_CANC);
-    ack = ack && busWriteRegister(dev, LIS2MDL_ADDR_CFG_REG_C, BDU);
+    ack = ack && busWriteRegister(dev, LIS2MDL_ADDR_CFG_REG_A, CFGA_MD_CONTINUOUS | CFGA_ODR_100 | CFGA_COMP_TEMP_EN);
+    ack = ack && busWriteRegister(dev, LIS2MDL_ADDR_CFG_REG_B, CFGB_OFF_CANC);
+    ack = ack && busWriteRegister(dev, LIS2MDL_ADDR_CFG_REG_C, CFGC_BDU);
 
     if (!ack) {
         return false;
@@ -79,11 +76,11 @@ static bool lis2mdlInit(magDev_t *mag)
 static bool lis2mdlRead(magDev_t *mag, int16_t *magData)
 {
     uint8_t status = 0;
-    uint8_t buf[6] = {};
+    uint8_t buf[6];
 
     extDevice_t *dev = &mag->dev;
 
-    if (!busReadRegisterBuffer(dev, LIS2MDL_ADDR_STATUS_REG, &status, 1)) {
+    if (!busReadRegisterBuffer(dev, LIS2MDL_ADDR_STATUS_REG, &status, sizeof(status))) {
         return false;
     }
 
@@ -91,14 +88,12 @@ static bool lis2mdlRead(magDev_t *mag, int16_t *magData)
         return false;
     }
 
-    if (!busReadRegisterBuffer(dev, LIS2MDL_ADDR_OUTX_L_REG, (uint8_t *) &buf, sizeof(buf))) {
+    if (!busReadRegisterBuffer(dev, LIS2MDL_ADDR_OUTX_L_REG, (uint8_t *)&buf, sizeof(buf))) {
         return false;
     }
 
-    // Question: Why is the scale not applied in magnetometer drivers? Every mag has
-    // a different sensitivity. Shouldn't drivers be outputting values in Gauss?
-
-    // const float range_scale = 100.f / 65.535f; // +/- 50,000 milligauss, 16bit
+    // Sensitivity is +/- 50,000 milligauss, 16bit
+    // e.g. gauss = val * (100.f / 65.535f)
 
     int16_t x = (int16_t)(buf[1] << 8 | buf[0]);
     int16_t y = (int16_t)(buf[3] << 8 | buf[2]);
@@ -121,8 +116,8 @@ bool lis2mdlDetect(magDev_t *mag)
         dev->busType_u.i2c.address = LIS2MDL_MAG_I2C_ADDRESS;
     }
 
-    uint8_t whoami = 0;
-    bool ack = busReadRegisterBuffer(dev, LIS2MDL_ADDR_WHO_AM_I, &whoami, 1);
+    uint8_t whoami;
+    bool ack = busReadRegisterBuffer(dev, LIS2MDL_ADDR_WHO_AM_I, &whoami, sizeof(whoami));
 
     if (ack && whoami == LIS2MDL_WHO_AM_I) {
         mag->init = lis2mdlInit;
