@@ -45,7 +45,7 @@
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 
-#undef USE_VCP
+#define USE_VCP
 
 #undef USE_TRANSPONDER
 #undef USE_DMA
