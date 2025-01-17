@@ -209,7 +209,7 @@ MCU_COMMON_SRC = \
             PICO/exti_pico.c \
             PICO/config_flash.c \
             PICO/serial_usb_vcp_pico.c \
-            PICO/usb/usb.c \
+            PICO/usb/usb_cdc.c \
             PICO/usb/usb_descriptors.c
 
 DEVICE_FLAGS +=

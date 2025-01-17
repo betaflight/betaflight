@@ -34,7 +34,7 @@
 
 #include "pg/usb.h"
 
-#include "usb/usb.h"
+#include "usb/usb_cdc.h"
 
 #include "drivers/time.h"
 #include "drivers/serial.h"
@@ -74,7 +74,7 @@ static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
     return true;
 }
 
-static uint32_t usbVcpAvailable(const serialPort_t *instance)
+static uint32_t usbVcpRxBytesAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
     return cdc_usb_bytes_available();
@@ -84,7 +84,7 @@ static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    char buf[1];
+    uint8_t buf[1];
 
     while (true) {
         if (cdc_usb_read(buf, 1)) {
@@ -101,9 +101,13 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
         return;
     }
 
-    const char *p = data;
+    const uint8_t *p = data;
     while (count > 0) {
-        uint32_t txed = cdc_usb_write(p, count);
+        int txed = cdc_usb_write(p, count);
+
+        if (txed <= 0) {
+            break;
+        }
         count -= txed;
         p += txed;
     }
@@ -122,9 +126,13 @@ static bool usbVcpFlush(vcpPort_t *port)
         return false;
     }
 
-    const char *p = (char *)port->txBuf;
+    const uint8_t *p = port->txBuf;
     while (count > 0) {
-        uint32_t txed = cdc_usb_write(p, count);
+        int txed = cdc_usb_write(p, count);
+
+        if (txed <= 0) {
+            break;
+        }
         count -= txed;
         p += txed;
     }
@@ -163,7 +171,7 @@ static void usbVcpEndWrite(serialPort_t *instance)
 static const struct serialPortVTable usbVTable[] = {
     {
         .serialWrite = usbVcpWrite,
-        .serialTotalRxWaiting = usbVcpAvailable,
+        .serialTotalRxWaiting = usbVcpRxBytesAvailable,
         .serialTotalTxFree = usbTxBytesFree,
         .serialRead = usbVcpRead,
         .serialSetBaudRate = usbVcpSetBaudRate,

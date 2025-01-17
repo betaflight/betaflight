@@ -19,12 +19,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "platform.h"
 
 #include "tusb_config.h"
 #include "tusb.h"
-#include "usb.h"
+#include "usb_cdc.h"
 
 #include "pico/binary_info.h"
 #include "pico/time.h"
@@ -114,22 +113,22 @@ static void usb_irq(void)
     irq_set_pending(low_priority_irq_num);
 }
 
-int cdc_usb_write(const char *buf, int length)
+int cdc_usb_write(const uint8_t *buf, unsigned length)
 {
     static uint64_t last_avail_time;
     int written = 0;
 
     if (!mutex_try_enter_block_until(&cdc_usb_mutex, make_timeout_time_ms(CDC_DEADLOCK_TIMEOUT_MS))) {
-        return 0;
+        return -1;
     }
 
     if (cdc_usb_connected()) {
-        for (int i = 0; i < length;) {
-            int n = length - i;
-            int avail = (int)tud_cdc_write_available();
+        for (unsigned i = 0; i < length;) {
+            unsigned n = length - i;
+            uint32_t avail = tud_cdc_write_available();
             if (n > avail) n = avail;
             if (n) {
-                int n2 = (int)tud_cdc_write(buf + i, (uint32_t)n);
+                uint32_t n2 = tud_cdc_write(buf + i, n);
                 tud_task();
                 tud_cdc_write_flush();
                 i += n2;
@@ -162,7 +161,7 @@ void cdc_usb_write_flush(void)
     mutex_exit(&cdc_usb_mutex);
 }
 
-int cdc_usb_read(char *buf, int length)
+int cdc_usb_read(uint8_t *buf, unsigned length)
 {
     // note we perform this check outside the lock, to try and prevent possible deadlock conditions
     // with printf in IRQs (which we will escape through timeouts elsewhere, but that would be less graceful).
@@ -178,8 +177,8 @@ int cdc_usb_read(char *buf, int length)
             return PICO_ERROR_NO_DATA; // would deadlock otherwise
         }
         if (cdc_usb_connected() && tud_cdc_available()) {
-            int count = (int) tud_cdc_read(buf, (uint32_t) length);
-            rc = count ? count : PICO_ERROR_NO_DATA;
+            uint32_t count = tud_cdc_read(buf, length);
+            rc = count ? (int)count : PICO_ERROR_NO_DATA;
         } else {
             // because our mutex use may starve out the background task, run tud_task here (we own the mutex)
             tud_task();
@@ -201,9 +200,11 @@ bool cdc_usb_init(void)
     // initialize TinyUSB, as user hasn't explicitly linked it
     tusb_init();
 
-    if (!mutex_is_initialized(&cdc_usb_mutex)) mutex_init(&cdc_usb_mutex);
+    if (!mutex_is_initialized(&cdc_usb_mutex)) {
+        mutex_init(&cdc_usb_mutex);
+    }
     bool rc = true;
-    low_priority_irq_num = (uint8_t) user_irq_claim_unused(true);
+    low_priority_irq_num = (uint8_t)user_irq_claim_unused(true);
 
     irq_set_exclusive_handler(low_priority_irq_num, low_priority_worker_irq);
     irq_set_enabled(low_priority_irq_num, true);
@@ -271,5 +272,5 @@ uint32_t cdc_usb_baud_rate(void)
 
 uint32_t cdc_usb_tx_bytes_free(void)
 {
-    return (uint32_t)tud_cdc_write_available();
+    return tud_cdc_write_available();
 }
