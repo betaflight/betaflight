@@ -54,20 +54,25 @@ typedef union sensorAlignment_u {
     };
 } sensorAlignment_t;
 
-#define SENSOR_ALIGNMENT(ROLL, PITCH, YAW) ((sensorAlignment_t){\
-    .roll = DEGREES_TO_DECIDEGREES(ROLL), \
-    .pitch = DEGREES_TO_DECIDEGREES(PITCH), \
-    .yaw = DEGREES_TO_DECIDEGREES(YAW), \
+#define SENSOR_ALIGNMENT(ROLL, PITCH, YAW) ((const sensorAlignment_t) { \
+    .roll = DEGREES_TO_DECIDEGREES(ROLL),                               \
+    .pitch = DEGREES_TO_DECIDEGREES(PITCH),                             \
+    .yaw = DEGREES_TO_DECIDEGREES(YAW),                                 \
 })
 
-#define CUSTOM_ALIGN_CW0_DEG         SENSOR_ALIGNMENT(  0,   0,   0)
-#define CUSTOM_ALIGN_CW90_DEG        SENSOR_ALIGNMENT(  0,   0,  90)
-#define CUSTOM_ALIGN_CW180_DEG       SENSOR_ALIGNMENT(  0,   0, 180)
-#define CUSTOM_ALIGN_CW270_DEG       SENSOR_ALIGNMENT(  0,   0, 270)
-#define CUSTOM_ALIGN_CW0_DEG_FLIP    SENSOR_ALIGNMENT(  0, 180,   0)
-#define CUSTOM_ALIGN_CW90_DEG_FLIP   SENSOR_ALIGNMENT(  0, 180,  90)
-#define CUSTOM_ALIGN_CW180_DEG_FLIP  SENSOR_ALIGNMENT(  0, 180, 180)
-#define CUSTOM_ALIGN_CW270_DEG_FLIP  SENSOR_ALIGNMENT(  0, 180, 270)
+#define CUSTOM_ALIGN_CW(deg)         SENSOR_ALIGNMENT( 0, 0, (deg) )
+#define CUSTOM_ALIGN_CW_FLIP(deg)    SENSOR_ALIGNMENT( 0, 180, (deg) )
+
+#define CUSTOM_ALIGN_CW0_DEG         CUSTOM_ALIGN_CW( 0 )
+#define CUSTOM_ALIGN_CW45_DEG        CUSTOM_ALIGN_CW( 45 )
+#define CUSTOM_ALIGN_CW90_DEG        CUSTOM_ALIGN_CW( 90 )
+#define CUSTOM_ALIGN_CW180_DEG       CUSTOM_ALIGN_CW( 180 )
+#define CUSTOM_ALIGN_CW270_DEG       CUSTOM_ALIGN_CW( 270 )
+#define CUSTOM_ALIGN_CW0_DEG_FLIP    CUSTOM_ALIGN_CW_FLIP( 0 )
+#define CUSTOM_ALIGN_CW45_DEG_FLIP   CUSTOM_ALIGN_CW_FLIP( 45 )
+#define CUSTOM_ALIGN_CW90_DEG_FLIP   CUSTOM_ALIGN_CW_FLIP( 90 )
+#define CUSTOM_ALIGN_CW180_DEG_FLIP  CUSTOM_ALIGN_CW_FLIP( 180 )
+#define CUSTOM_ALIGN_CW270_DEG_FLIP  CUSTOM_ALIGN_CW_FLIP( 270 )
 
 void buildRotationMatrixFromAlignment(const sensorAlignment_t* alignment, fp_rotationMatrix_t* rm);
 void buildAlignmentFromStandardAlignment(sensorAlignment_t* sensorAlignment, sensor_align_e alignment);
