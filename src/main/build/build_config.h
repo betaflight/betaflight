@@ -70,7 +70,7 @@ typedef enum {
 
 typedef struct mcuTypeInfo_s {
    mcuTypeId_e id;
-   const char* name;
+   const char *name;
 } mcuTypeInfo_t;
 
 const mcuTypeInfo_t *getMcuTypeInfo(void);
