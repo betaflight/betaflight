@@ -284,7 +284,6 @@ MCU_COMMON_SRC = \
             STM32/memprot_hal.c \
             STM32/memprot_stm32h7xx.c \
             STM32/persistent.c \
-            STM32/pwm_output.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_h7xx.c \

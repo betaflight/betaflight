@@ -108,6 +108,7 @@ COMMON_SRC = \
             drivers/motor.c \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \
+            drivers/pwm_output.c \
             drivers/resource.c \
             drivers/serial.c \
             drivers/serial_impl.c \

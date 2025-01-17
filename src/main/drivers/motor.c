@@ -132,7 +132,7 @@ void motorRequestTelemetry(unsigned index)
         return;
     }
 
-    if (motorDevice.vTable && motorDevice.vTable->requestTelemetry) {
+    if (motorDevice.vTable->requestTelemetry) {
         motorDevice.vTable->requestTelemetry(index);
     }
 }
@@ -145,24 +145,6 @@ unsigned motorDeviceCount(void)
 const motorVTable_t *motorGetVTable(void)
 {
     return motorDevice.vTable;
-}
-
-// This is not motor generic anymore; should be moved to analog pwm module
-static void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
-{
-    if (featureIsEnabled(FEATURE_3D)) {
-        float outputLimitOffset = (flight3DConfig()->limit3d_high - flight3DConfig()->limit3d_low) * (1 - outputLimit) / 2;
-        *disarm = flight3DConfig()->neutral3d;
-        *outputLow = flight3DConfig()->limit3d_low + outputLimitOffset;
-        *outputHigh = flight3DConfig()->limit3d_high - outputLimitOffset;
-        *deadbandMotor3dHigh = flight3DConfig()->deadband3d_high;
-        *deadbandMotor3dLow = flight3DConfig()->deadband3d_low;
-    } else {
-        *disarm = motorConfig->mincommand;
-        const float minThrottle = motorConfig->mincommand + motorConfig->motorIdle * 0.1f;
-        *outputLow = minThrottle;
-        *outputHigh = motorConfig->maxthrottle - ((motorConfig->maxthrottle - minThrottle) * (1 - outputLimit));
-    }
 }
 
 bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isProtocolDshot)
@@ -199,6 +181,29 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
     return enabled;
 }
 
+motorProtocolFamily_e motorGetProtocolFamily(void)
+{
+    switch (motorConfig()->dev.motorProtocol) {
+#ifdef USE_PWMOUTPUT
+    case MOTOR_PROTOCOL_PWM :
+    case MOTOR_PROTOCOL_ONESHOT125:
+    case MOTOR_PROTOCOL_ONESHOT42:
+    case MOTOR_PROTOCOL_MULTISHOT:
+    case MOTOR_PROTOCOL_BRUSHED:
+        return MOTOR_PROTOCOL_FAMILY_PWM;
+#endif
+#ifdef USE_DSHOT
+    case MOTOR_PROTOCOL_DSHOT150:
+    case MOTOR_PROTOCOL_DSHOT300:
+    case MOTOR_PROTOCOL_DSHOT600:
+    case MOTOR_PROTOCOL_PROSHOT1000:
+        return MOTOR_PROTOCOL_FAMILY_DSHOT;
+#endif
+    default:
+        return MOTOR_PROTOCOL_FAMILY_UNKNOWN;
+    }
+}
+
 static void checkMotorProtocol(const motorDevConfig_t *motorDevConfig)
 {
     motorProtocolEnabled = checkMotorProtocolEnabled(motorDevConfig, &motorProtocolDshot);
@@ -210,14 +215,21 @@ void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, flo
     checkMotorProtocol(&motorConfig->dev);
 
     if (isMotorProtocolEnabled()) {
-        if (!isMotorProtocolDshot()) {
+        switch (motorGetProtocolFamily()) {
+#ifdef USE_PWM_OUTPUT
+        case MOTOR_PROTOCOL_FAMILY_PWM:
             analogInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
-        }
-#ifdef USE_DSHOT
-        else {
-            dshotInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
-        }
+            break;
 #endif
+#ifdef USE_DSHOT
+        case MOTOR_PROTOCOL_FAMILY_DSHOT:
+            dshotInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
+            break;
+#endif
+        default:
+            // TODO: perhaps a failure mode here?
+            break;
+        }
     }
 }
 
@@ -233,7 +245,7 @@ uint16_t motorConvertToExternal(float motorValue)
 
 void motorPostInit(void)
 {
-    if (motorDevice.vTable && motorDevice.vTable->postInit) {
+    if (motorDevice.vTable->postInit) {
         motorDevice.vTable->postInit();
     }
 }
@@ -311,7 +323,7 @@ void motorDisable(void)
 
 void motorEnable(void)
 {
-    if (motorDevice.initialized && motorDevice.vTable && motorDevice.vTable->enable()) {
+    if (motorDevice.initialized && motorDevice.vTable->enable()) {
         motorDevice.enabled = true;
         motorDevice.motorEnableTimeMs = millis();
     }
@@ -346,20 +358,6 @@ bool motorIsMotorIdle(unsigned index)
 timeMs_t motorGetMotorEnableTimeMs(void)
 {
     return motorDevice.motorEnableTimeMs;
-}
-#endif
-
-//TODO: Remove this function
-#ifdef USE_DSHOT_BITBANG
-bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
-{
-#if defined(STM32F4) || defined(APM32F4)
-    return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
-        (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorProtocol != MOTOR_PROTOCOL_PROSHOT1000);
-#else
-    return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
-        (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->motorProtocol != MOTOR_PROTOCOL_PROSHOT1000);
-#endif
 }
 #endif
 

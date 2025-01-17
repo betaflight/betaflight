@@ -46,6 +46,9 @@ void motorDevInit(unsigned motorCount);
 unsigned motorDeviceCount(void);
 const motorVTable_t *motorGetVTable(void);
 bool checkMotorProtocolEnabled(const motorDevConfig_t *motorConfig, bool *protocolIsDshot);
+
+motorProtocolFamily_e motorGetProtocolFamily(void);
+
 bool isMotorProtocolDshot(void);
 bool isMotorProtocolBidirDshot(void);
 bool isMotorProtocolEnabled(void);
@@ -58,9 +61,3 @@ bool motorIsMotorEnabled(unsigned index);
 bool motorIsMotorIdle(unsigned index);
 timeMs_t motorGetMotorEnableTimeMs(void);
 void motorShutdown(void); // Replaces stopPwmAllMotors
-
-#ifdef USE_DSHOT_BITBANG
-struct motorDevConfig_s;
-typedef struct motorDevConfig_s motorDevConfig_t;
-bool isDshotBitbangActive(const motorDevConfig_t *motorConfig);
-#endif

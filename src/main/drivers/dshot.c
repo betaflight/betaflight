@@ -39,7 +39,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/motor.h"
+#include "drivers/motor_types.h"
 #include "drivers/timer.h"
 
 #include "drivers/dshot_command.h"

@@ -138,6 +138,8 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 void initDshotTelemetry(const timeUs_t looptimeUs);
 void updateDshotTelemetry(void);
 
+bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig);
+
 uint16_t getDshotErpm(uint8_t motorIndex);
 float getDshotRpm(uint8_t motorIndex);
 float getDshotRpmAverage(void);

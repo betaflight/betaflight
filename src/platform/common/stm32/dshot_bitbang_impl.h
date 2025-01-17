@@ -27,6 +27,7 @@
 #include "drivers/timer.h"
 #include "drivers/motor_types.h"
 #include "drivers/dshot.h"
+#include "pg/motor.h"
 
 #define USE_DMA_REGISTER_CACHE
 
