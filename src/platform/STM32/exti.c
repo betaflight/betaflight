@@ -89,10 +89,10 @@ void EXTIInit(void)
     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #ifdef REMAP_TIM16_DMA
-    SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_TIM16, ENABLE);
+    SYSCFG_DMAChannelRemautopilotConfig(SYSCFG_DMARemap_TIM16, ENABLE);
 #endif
 #ifdef REMAP_TIM17_DMA
-    SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_TIM17, ENABLE);
+    SYSCFG_DMAChannelRemautopilotConfig(SYSCFG_DMARemap_TIM17, ENABLE);
 #endif
 #endif
     memset(extiChannelRecs, 0, sizeof(extiChannelRecs));

@@ -579,7 +579,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
         }
         // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
-        angleLimit = fminf(0.5f * apConfig()->ap_max_angle, angleLimit);
+        angleLimit = fminf(0.5f * autopilotConfig()->ap_max_angle, angleLimit);
     }
 #endif
 

@@ -1699,20 +1699,20 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALTITUDE_D_LPF, "%d",       positionConfig()->altitude_d_lpf);
 
 #ifndef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_LANDING_ALTITUDE_M, "%d", apConfig()->ap_landing_altitude_m);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_HOVER_THROTTLE, "%d",     apConfig()->ap_hover_throttle);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_THROTTLE_MIN, "%d",       apConfig()->ap_throttle_min);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_THROTTLE_MAX, "%d",       apConfig()->ap_throttle_max);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_P, "%d",         apConfig()->ap_altitude_P);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_I, "%d",         apConfig()->ap_altitude_I);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_D, "%d",         apConfig()->ap_altitude_D);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         apConfig()->ap_altitude_F);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         apConfig()->ap_position_P);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         apConfig()->ap_position_I);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         apConfig()->ap_position_D);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         apConfig()->ap_position_A);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    apConfig()->ap_position_cutoff);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_ANGLE, "%d",          apConfig()->ap_max_angle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_LANDING_ALTITUDE_M, "%d", autopilotConfig()->ap_landing_altitude_m);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_HOVER_THROTTLE, "%d",     autopilotConfig()->ap_hover_throttle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_THROTTLE_MIN, "%d",       autopilotConfig()->ap_throttle_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_THROTTLE_MAX, "%d",       autopilotConfig()->ap_throttle_max);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_P, "%d",         autopilotConfig()->ap_altitude_P);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_I, "%d",         autopilotConfig()->ap_altitude_I);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_D, "%d",         autopilotConfig()->ap_altitude_D);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->ap_altitude_F);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->ap_position_P);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->ap_position_I);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         autopilotConfig()->ap_position_D);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         autopilotConfig()->ap_position_A);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->ap_position_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_ANGLE, "%d",          autopilotConfig()->ap_max_angle);
 #endif // !USE_WING
 
 #ifdef USE_MAG

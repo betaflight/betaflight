@@ -30,9 +30,9 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(apConfig_t, apConfig, PG_AUTOPILOT, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 2);
 
-PG_RESET_TEMPLATE(apConfig_t, apConfig,
+PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .ap_landing_altitude_m = 4,
     .ap_hover_throttle = 1275,
     .ap_throttle_min = 1100,

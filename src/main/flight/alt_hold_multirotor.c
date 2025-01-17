@@ -101,8 +101,8 @@ void altHoldUpdateTargetAltitude(void)
 
     if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
         const float rcThrottle = rcCommand[THROTTLE];
-        const float lowThreshold = apConfig()->ap_hover_throttle - altHold.deadband * (apConfig()->ap_hover_throttle - PWM_RANGE_MIN);
-        const float highThreshold = apConfig()->ap_hover_throttle + altHold.deadband * (PWM_RANGE_MAX - apConfig()->ap_hover_throttle);
+        const float lowThreshold = autopilotConfig()->ap_hover_throttle - altHold.deadband * (autopilotConfig()->ap_hover_throttle - PWM_RANGE_MIN);
+        const float highThreshold = autopilotConfig()->ap_hover_throttle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->ap_hover_throttle);
 
         if (rcThrottle < lowThreshold) {
             stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
