@@ -139,7 +139,7 @@ endif
 
 REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
-REVISION := $(shell git log -1 --format="%h" | head -c 7)
+REVISION := $(shell git rev-parse --short=9 HEAD | head -c 9)
 endif
 
 LD_FLAGS        :=
