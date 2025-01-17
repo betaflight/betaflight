@@ -473,6 +473,37 @@ void pidUpdateTpaFactor(float throttle)
     updateStermTpaFactors();
 #endif // USE_WING
 }
+#ifdef USE_WING
+static float computeAngleOfAttackEstimation(void)
+{
+    const float multipler = 100000.0;   //scale multipler
+    const float speedThreshold = 2.0;    //speed thresold 
+    float angleOfAttackParameter = 0.0;
+    float angleOfAttackEstimation = 0.0;
+#ifdef USE_GPS
+#ifdef USE_ACC
+    if (sensors(SENSOR_GPS) && STATE(GPS_FIX))
+    {
+        float speed = 0.1 * gpsSol.speed3d; //speed m/s
+        float overloadZ = acc.accADC.z * acc.dev.acc_1G_rec;
+        if (speed > speedThreshold)
+        {
+            angleOfAttackParameter = overloadZ / (speed * speed) * multipler;
+        }
+
+//TODO add estimatorAOA parameters in pidRuntime and cli to use
+        //angleOfAttackEstimation = (angleOfAttackParameter - pidRuntime->estimatorAOA.maxSpeedAOA) / (pidRuntime->estimatorAOA.minSpeedAOA - pidRuntime->estimatorAOA.maxSpeedAOA);
+
+        DEBUG_SET(DEBUG_GYRO_SAMPLE, 4, lrintf(speed * 10.0));
+        DEBUG_SET(DEBUG_GYRO_SAMPLE, 5, lrintf(overloadZ * 100.0));
+        DEBUG_SET(DEBUG_GYRO_SAMPLE, 6, lrintf(angleOfAttackParameter * 10.0));
+        DEBUG_SET(DEBUG_GYRO_SAMPLE, 7, lrintf(angleOfAttackEstimation * 100.0));
+    }
+#endif
+#endif
+    return angleOfAttackEstimation;
+}
+#endif
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
 {
@@ -1550,6 +1581,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     } else if (pidRuntime.zeroThrottleItermReset) {
         pidResetIterm();
     }
+#ifdef USE_WING
+    computeAngleOfAttackEstimation();
+#endif
 }
 
 bool crashRecoveryModeActive(void)
