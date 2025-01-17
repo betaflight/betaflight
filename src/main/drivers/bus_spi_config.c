@@ -60,8 +60,6 @@ void spiPreinit(void)
 #ifdef USE_MAX7456
     max7456Preinit(max7456Config());
 #endif
-
-    ioPreinit(PREINIT_OWNER_SPI);
 }
 
 #endif

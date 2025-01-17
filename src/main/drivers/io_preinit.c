@@ -28,67 +28,24 @@
 #include "drivers/resource.h"
 #include "drivers/system.h"
 
-typedef struct ioPreinit_s {
-    ioTag_t iotag;
-    uint8_t iocfg;
-    bool init;
-    ioPreinitOwner_e owner;
-} ioPreinit_t;
+static unsigned preinit_index = 0;
 
-static ioPreinit_t ioPreinitArray[IO_PREINIT_COUNT];
-static int ioPreinitCount = 0;
-
-static void ioPreinitPin(ioPreinit_t *preinit, int index)
+void ioPreinitByIO(const IO_t io, uint8_t iocfg, ioPreinitPinState_e init)
 {
-    IO_t io = IOGetByTag(preinit->iotag);
-    IOInit(io, OWNER_PREINIT, RESOURCE_INDEX(index));
-    IOConfigGPIO(io, preinit->iocfg);
-    if (preinit->init) {
-        IOHi(io);
-    } else {
-        IOLo(io);
-    }
-}
-
-void ioPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init, ioPreinitOwner_e owner)
-{
-    if (!iotag) {
+    if (!io) {
         return;
     }
+    preinit_index++;
 
-    if (ioPreinitCount == IO_PREINIT_COUNT) {
-        indicateFailure(FAILURE_DEVELOPER, 5);
-        return;
-    }
+    IOInit(io, OWNER_PREINIT, preinit_index);
+    IOConfigGPIO(io, iocfg);
 
-    ioPreinitArray[ioPreinitCount].iotag = iotag;
-    ioPreinitArray[ioPreinitCount].iocfg = iocfg;
-    ioPreinitArray[ioPreinitCount].init = init;
-    ioPreinitArray[ioPreinitCount].owner = owner;
-    ++ioPreinitCount;
-}
-
-void ioPreinit(ioPreinitOwner_e owner)
-{
-    for (int i = 0; i < ioPreinitCount; i++) {
-        if (owner != PREINIT_OWNER_ALL && ioPreinitArray[i].owner != owner) {
-            continue;
-        }
-        ioPreinitPin(&ioPreinitArray[i], i);
+    if (init != PREINIT_PIN_STATE_DEFAULT) {
+        IOWrite(io, init == PREINIT_PIN_STATE_LOW);
     }
 }
 
-void ioPreinitByIO(const IO_t io)
+void ioPreinitByTag(ioTag_t tag, uint8_t iocfg, ioPreinitPinState_e init)
 {
-    for (int i = 0; i < ioPreinitCount; i++) {
-        if (io == IOGetByTag(ioPreinitArray[i].iotag)) {
-            ioPreinitPin(&ioPreinitArray[i], i);
-            return;
-        }
-    }
-}
-
-void ioPreinitByTag(ioTag_t tag)
-{
-    ioPreinitByIO(IOGetByTag(tag));
+    ioPreinitByIO(IOGetByTag(tag), iocfg, init);
 }

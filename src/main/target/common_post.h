@@ -498,12 +498,6 @@
 #define SYSTEM_HSE_MHZ 0
 #endif
 
-// Number of pins that needs pre-init
-#ifndef IO_PREINIT_COUNT
-// 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
-#define IO_PREINIT_COUNT 16
-#endif
-
 #ifndef USE_BLACKBOX
 #undef USE_USB_MSC
 #endif

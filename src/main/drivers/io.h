@@ -66,12 +66,10 @@ GPIO_TypeDef* IO_GPIO(IO_t io);
 uint16_t IO_Pin(IO_t io);
 
 typedef enum {
-    PREINIT_OWNER_ALL     = 0,
-    PREINIT_OWNER_DEFAULT = 1,
-    PREINIT_OWNER_SPI     = 2,
-} ioPreinitOwner_e;
+    PREINIT_PIN_STATE_DEFAULT = 0,
+    PREINIT_PIN_STATE_LOW,
+    PREINIT_PIN_STATE_HIGH
+} ioPreinitPinState_e;
 
-void ioPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init, ioPreinitOwner_e owner);
-void ioPreinit(ioPreinitOwner_e owner);
-void ioPreinitByIO(const IO_t io);
-void ioPreinitByTag(ioTag_t tag);
+void ioPreinitByIO(const IO_t io, uint8_t iocfg, ioPreinitPinState_e init);
+void ioPreinitByTag(ioTag_t tag, uint8_t iocfg, ioPreinitPinState_e init);

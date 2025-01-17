@@ -377,7 +377,7 @@ static void deviceDeInit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_DPS310
     if (dev->bus->busType == BUS_TYPE_SPI) {
-        ioPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_LOW);
     }
 #else
     UNUSED(dev);
