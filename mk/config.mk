@@ -52,7 +52,7 @@ endif #config
 .PHONY: configs
 configs:
 ifeq ($(shell realpath $(CONFIG_DIR)),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
-	git submodule update --init -- $(CONFIGS_SUBMODULE_DIR)
+	git submodule update --init --remote -- $(CONFIGS_SUBMODULE_DIR)
 else
 ifeq ($(wildcard $(CONFIG_DIR)),)
 	@echo "Hydrating clone for configs: $(CONFIG_DIR)"
