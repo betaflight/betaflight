@@ -45,7 +45,7 @@
 // [1:0] count of 90 degree rotations from 0
 // [3:2] indicates 90 degree rotations on pitch
 // [5:4] indicates 90 degree rotations on roll
-#define ALIGNMENT_TO_BITMASK(alignment) (((alignment - CW0_DEG) & 0x3) | (((alignment - CW0_DEG) & 0x4) << 1))
+#define ALIGNMENT_TO_BITMASK(alignment) ((((alignment) - CW0_DEG) & 0x3) | ((((alignment) - CW0_DEG) & 0x4) << 1))
 
 // build sensorAlignment_t from sensor_align_e as compile-time constant
 #define SENSOR_ALIGNMENT_FROM_STD(std_)                                 \
