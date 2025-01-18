@@ -449,7 +449,7 @@ static void validateAndFixConfig(void)
 #if defined(USE_DSHOT)
     // If using DSHOT protocol disable unsynched PWM as it's meaningless
     if (configuredMotorProtocolDshot) {
-        motorConfigMutable()->dev.useUnsyncedUpdate = false;
+        motorConfigMutable()->dev.useContinuousUpdate = false;
     }
 
 #if defined(USE_DSHOT_TELEMETRY)
@@ -620,7 +620,7 @@ void validateAndFixGyroConfig(void)
             break;
         }
 
-        if (motorConfig()->dev.useUnsyncedUpdate) {
+        if (motorConfig()->dev.useContinuousUpdate) {
             bool configuredMotorProtocolDshot = false;
             checkMotorProtocolEnabled(&motorConfig()->dev, &configuredMotorProtocolDshot);
             // Prevent overriding the max rate of motors

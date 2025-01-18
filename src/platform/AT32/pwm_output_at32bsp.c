@@ -166,7 +166,7 @@ void motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
     device->vTable = &motorPwmVTable;
     motorPwmDevice = device;
     motorCount = device->count;
-    useContinuousUpdate = motorConfig->useUnsyncedUpdate;
+    useContinuousUpdate = motorConfig->useContinuousUpdate;
 
     float sMin = 0;
     float sLen = 0;

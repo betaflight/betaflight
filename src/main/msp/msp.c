@@ -1879,7 +1879,7 @@ case MSP_NAME:
     case MSP_ADVANCED_CONFIG:
         sbufWriteU8(dst, 1);  // was gyroConfig()->gyro_sync_denom - removed in API 1.43
         sbufWriteU8(dst, pidConfig()->pid_process_denom);
-        sbufWriteU8(dst, motorConfig()->dev.useUnsyncedUpdate);
+        sbufWriteU8(dst, motorConfig()->dev.useContinuousUpdate);
         sbufWriteU8(dst, motorConfig()->dev.motorProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
         sbufWriteU16(dst, motorConfig()->motorIdle);
@@ -3087,7 +3087,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_ADVANCED_CONFIG:
         sbufReadU8(src); // was gyroConfigMutable()->gyro_sync_denom - removed in API 1.43
         pidConfigMutable()->pid_process_denom = sbufReadU8(src);
-        motorConfigMutable()->dev.useUnsyncedUpdate = sbufReadU8(src);
+        motorConfigMutable()->dev.useContinuousUpdate = sbufReadU8(src);
         motorConfigMutable()->dev.motorProtocol = sbufReadU8(src);
         motorConfigMutable()->dev.motorPwmRate = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {

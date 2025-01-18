@@ -54,12 +54,12 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #ifdef USE_BRUSHED_MOTORS
     motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_BRUSHED;
-    motorConfig->dev.useUnsyncedUpdate = true;
+    motorConfig->dev.useContinuousUpdate = true;
 #else
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #ifndef USE_DSHOT
     if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_PWM ) {
-        motorConfig->dev.useUnsyncedUpdate = true;
+        motorConfig->dev.useContinuousUpdate = true;
     }
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;
 #elif defined(DEFAULT_MOTOR_DSHOT_SPEED)
