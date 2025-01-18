@@ -40,8 +40,18 @@ void ioPreinitByIO(const IO_t io, uint8_t iocfg, ioPreinitPinState_e init)
     IOInit(io, OWNER_PREINIT, preinit_index);
     IOConfigGPIO(io, iocfg);
 
-    if (init != PREINIT_PIN_STATE_DEFAULT) {
-        IOWrite(io, init == PREINIT_PIN_STATE_LOW);
+    switch(init) {
+        case PREINIT_PIN_STATE_LOW:
+            IOLo(io);
+            break;
+        case PREINIT_PIN_STATE_HIGH:
+            IOHi(io);
+            break;
+        case PREINIT_PIN_STATE_TOGGLE:
+            IOToggle(io);
+            break;
+        default:
+            // Do nothing
     }
 }
 
