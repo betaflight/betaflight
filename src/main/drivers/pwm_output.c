@@ -30,7 +30,7 @@
 void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
     if (featureIsEnabled(FEATURE_3D)) {
-        float outputLimitOffset = (flight3DConfig()->limit3d_high - flight3DConfig()->limit3d_low) * (1 - outputLimit) / 2;
+        const float outputLimitOffset = (flight3DConfig()->limit3d_high - flight3DConfig()->limit3d_low) * (1 - outputLimit) / 2;
         *disarm = flight3DConfig()->neutral3d;
         *outputLow = flight3DConfig()->limit3d_low + outputLimitOffset;
         *outputHigh = flight3DConfig()->limit3d_high - outputLimitOffset;
