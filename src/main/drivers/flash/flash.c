@@ -350,14 +350,14 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
         return detected;
     }
 
-    ioPreinitByTag(flashConfig->csTag, IOCFG_IPU, PREINIT_PIN_STATE_LOW);
+    ioPreinitByTag(flashConfig->csTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     return false;
 }
 #endif // USE_FLASH_SPI
 
 void flashPreinit(const flashConfig_t *flashConfig)
 {
-    ioPreinitByTag(flashConfig->csTag, IOCFG_IPU, PREINIT_PIN_STATE_LOW);
+    ioPreinitByTag(flashConfig->csTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 }
 
 bool flashDeviceInit(const flashConfig_t *flashConfig)

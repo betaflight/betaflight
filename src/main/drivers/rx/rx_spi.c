@@ -72,7 +72,7 @@ extDevice_t *rxSpiGetDevice(void)
 
 void rxSpiDevicePreinit(const rxSpiConfig_t *rxSpiConfig)
 {
-    ioPreinitByTag(rxSpiConfig->csnTag, IOCFG_IPU, PREINIT_PIN_STATE_LOW);
+    ioPreinitByTag(rxSpiConfig->csnTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 }
 
 void rxSpiExtiHandler(extiCallbackRec_t* callback)

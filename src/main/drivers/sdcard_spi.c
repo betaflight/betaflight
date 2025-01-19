@@ -538,7 +538,7 @@ static bool sdcard_checkInitDone(void)
 
 void sdcardSpi_preinit(const sdcardConfig_t *config)
 {
-    ioPreinitByTag(config->chipSelectTag, IOCFG_IPU, PREINIT_PIN_STATE_LOW);
+    ioPreinitByTag(config->chipSelectTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 }
 
 /**
