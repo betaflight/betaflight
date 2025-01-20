@@ -69,7 +69,6 @@ typedef enum {
     PREINIT_PIN_STATE_NOCHANGE = 0,
     PREINIT_PIN_STATE_LOW,
     PREINIT_PIN_STATE_HIGH,
-    PREINIT_PIN_STATE_TOGGLE,
 } ioPreinitPinState_e;
 
 void ioPreinitByIO(const IO_t io, uint8_t iocfg, ioPreinitPinState_e init);

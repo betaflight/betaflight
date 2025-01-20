@@ -160,7 +160,7 @@ void spiSetClkDivisor()
 {
 }
 
-void ioPreinitByIO(IO_t)
+void ioPreinitByIO()
 {
 }
 

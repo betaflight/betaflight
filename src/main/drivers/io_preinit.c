@@ -28,16 +28,16 @@
 #include "drivers/resource.h"
 #include "drivers/system.h"
 
-static unsigned preinit_index = 0;
+static unsigned preinitIndex = 0;
 
 void ioPreinitByIO(const IO_t io, uint8_t iocfg, ioPreinitPinState_e init)
 {
     if (!io) {
         return;
     }
-    preinit_index++;
+    preinitIndex++;
 
-    IOInit(io, OWNER_PREINIT, preinit_index);
+    IOInit(io, OWNER_PREINIT, preinitIndex);
     IOConfigGPIO(io, iocfg);
 
     switch(init) {
@@ -46,9 +46,6 @@ void ioPreinitByIO(const IO_t io, uint8_t iocfg, ioPreinitPinState_e init)
         break;
     case PREINIT_PIN_STATE_HIGH:
         IOHi(io);
-        break;
-    case PREINIT_PIN_STATE_TOGGLE:
-        IOToggle(io);
         break;
     default:
         // Do nothing
