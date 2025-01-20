@@ -43,7 +43,7 @@ stm32.mak
 # artefacts for VS Code
 /.vscode/
 
-# artefacts for Visual Studio 
+# artefacts for Visual Studio
 /.vs
 
 # artefacts for CLion
@@ -57,5 +57,6 @@ ubuntu*.log
 eeprom.bin
 
 # config used for building targets
-/src/config
+# changed to submodule
+#/src/config
 

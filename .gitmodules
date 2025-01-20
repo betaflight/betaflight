@@ -1,0 +1,4 @@
+[submodule "config"]
+	path = src/config
+	url = https://github.com/betaflight/config.git
+	branch = master

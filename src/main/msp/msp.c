@@ -409,8 +409,7 @@ static void mspReboot(dispatchEntry_t* self)
     mspRebootFn(NULL);
 }
 
-dispatchEntry_t mspRebootEntry =
-{
+dispatchEntry_t mspRebootEntry = {
     mspReboot, 0, NULL, false
 };
 
@@ -433,8 +432,7 @@ static void writeReadEeprom(dispatchEntry_t* self)
 #endif
 }
 
-dispatchEntry_t writeReadEepromEntry =
-{
+dispatchEntry_t writeReadEepromEntry = {
     writeReadEeprom, 0, NULL, false
 };
 
@@ -643,8 +641,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
         break;
 
-    case MSP_BOARD_INFO:
-    {
+    case MSP2_MCU_INFO: {
+        sbufWriteU8(dst, getMcuTypeId());
+        sbufWritePString(dst, getMcuTypeName());
+        break;
+    }
+
+    case MSP_BOARD_INFO: {
         sbufWriteData(dst, systemConfig()->boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
         sbufWriteU16(dst, hardwareRevision);
@@ -682,23 +685,14 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, targetCapabilities);
 
         // Target name with explicit length
-        sbufWriteU8(dst, strlen(targetName));
-        sbufWriteData(dst, targetName, strlen(targetName));
+        sbufWritePString(dst, targetName);
 
 #if defined(USE_BOARD_INFO)
-        {
-            // Board name with explicit length
-            const char * const value = getBoardName();
-            sbufWriteU8(dst, strlen(value));
-            sbufWriteString(dst, value);
-        }
+        // Board name with explicit length
+        sbufWritePString(dst, getBoardName());
 
-        {
-            // Manufacturer id with explicit length
-            const char * const value = getManufacturerId();
-            sbufWriteU8(dst, strlen(value));
-            sbufWriteString(dst, value);
-        }
+        // Manufacturer id with explicit length
+        sbufWritePString(dst, getManufacturerId());
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -849,28 +843,27 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
     }
 
-    case MSP_VOLTAGE_METER_CONFIG:
-        {
-            // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
-            // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
-            // different configuration requirements.
-            STATIC_ASSERT(VOLTAGE_SENSOR_ADC_VBAT == 0, VOLTAGE_SENSOR_ADC_VBAT_incorrect); // VOLTAGE_SENSOR_ADC_VBAT should be the first index
-            sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
-            for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
-                const uint8_t adcSensorSubframeLength = 1 + 1 + 1 + 1 + 1; // length of id, type, vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
-                sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
+    case MSP_VOLTAGE_METER_CONFIG: {
+        // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
+        // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
+        // different configuration requirements.
+        STATIC_ASSERT(VOLTAGE_SENSOR_ADC_VBAT == 0, VOLTAGE_SENSOR_ADC_VBAT_incorrect); // VOLTAGE_SENSOR_ADC_VBAT should be the first index
+        sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
+        for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
+            const uint8_t adcSensorSubframeLength = 1 + 1 + 1 + 1 + 1; // length of id, type, vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
+            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
 
-                sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
-                sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
+            sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
+            sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
 
-                sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
-                sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
-                sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
-            }
-            // if we had any other voltage sensors, this is where we would output any needed configuration
+            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
+            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
+            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
         }
-
+        // if we had any other voltage sensors, this is where we would output any needed configuration
         break;
+    }
+
     case MSP_CURRENT_METER_CONFIG: {
         // the ADC and VIRTUAL sensors have the same configuration requirements, however this API reflects
         // that this situation may change and allows us to support configuration of any current sensor with
@@ -1089,78 +1082,75 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
-    case MSP_STATUS:
-        {
-            boxBitmask_t flightModeFlags;
-            const int flagBits = packFlightModeFlags(&flightModeFlags);
+    case MSP_STATUS: {
+        boxBitmask_t flightModeFlags;
+        const int flagBits = packFlightModeFlags(&flightModeFlags);
 
-            sbufWriteU16(dst, getTaskDeltaTimeUs(TASK_PID));
+        sbufWriteU16(dst, getTaskDeltaTimeUs(TASK_PID));
 #ifdef USE_I2C
-            sbufWriteU16(dst, i2cGetErrorCounter());
+        sbufWriteU16(dst, i2cGetErrorCounter());
 #else
-            sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
 #endif
-            sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5);
-            sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
-            sbufWriteU8(dst, getCurrentPidProfileIndex());
-            sbufWriteU16(dst, constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
-            if (cmdMSP == MSP_STATUS_EX) {
-                sbufWriteU8(dst, PID_PROFILE_COUNT);
-                sbufWriteU8(dst, getCurrentControlRateProfileIndex());
-            } else {  // MSP_STATUS
-                sbufWriteU16(dst, 0); // gyro cycle time
-            }
+        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5);
+        sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
+        sbufWriteU8(dst, getCurrentPidProfileIndex());
+        sbufWriteU16(dst, constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
+        if (cmdMSP == MSP_STATUS_EX) {
+            sbufWriteU8(dst, PID_PROFILE_COUNT);
+            sbufWriteU8(dst, getCurrentControlRateProfileIndex());
+        } else {  // MSP_STATUS
+            sbufWriteU16(dst, 0); // gyro cycle time
+        }
 
-            // write flightModeFlags header. Lowest 4 bits contain number of bytes that follow
-            // header is emited even when all bits fit into 32 bits to allow future extension
-            int byteCount = (flagBits - 32 + 7) / 8;        // 32 already stored, round up
-            byteCount = constrain(byteCount, 0, 15);        // limit to 16 bytes (128 bits)
-            sbufWriteU8(dst, byteCount);
-            sbufWriteData(dst, ((uint8_t*)&flightModeFlags) + 4, byteCount);
+        // write flightModeFlags header. Lowest 4 bits contain number of bytes that follow
+        // header is emited even when all bits fit into 32 bits to allow future extension
+        int byteCount = (flagBits - 32 + 7) / 8;        // 32 already stored, round up
+        byteCount = constrain(byteCount, 0, 15);        // limit to 16 bytes (128 bits)
+        sbufWriteU8(dst, byteCount);
+        sbufWriteData(dst, ((uint8_t*)&flightModeFlags) + 4, byteCount);
 
-            // Write arming disable flags
-            // 1 byte, flag count
-            sbufWriteU8(dst, ARMING_DISABLE_FLAGS_COUNT);
-            // 4 bytes, flags
-            const uint32_t armingDisableFlags = getArmingDisableFlags();
-            sbufWriteU32(dst, armingDisableFlags);
+        // Write arming disable flags
+        // 1 byte, flag count
+        sbufWriteU8(dst, ARMING_DISABLE_FLAGS_COUNT);
+        // 4 bytes, flags
+        const uint32_t armingDisableFlags = getArmingDisableFlags();
+        sbufWriteU32(dst, armingDisableFlags);
 
-            // config state flags - bits to indicate the state of the configuration, reboot required, etc.
-            // other flags can be added as needed
-            sbufWriteU8(dst, (getRebootRequired() << 0));
+        // config state flags - bits to indicate the state of the configuration, reboot required, etc.
+        // other flags can be added as needed
+        sbufWriteU8(dst, (getRebootRequired() << 0));
 
-            // Added in API version 1.46
-            // Write CPU temp
+        // Added in API version 1.46
+        // Write CPU temp
 #ifdef USE_ADC_INTERNAL
-            sbufWriteU16(dst, getCoreTemperatureCelsius());
+        sbufWriteU16(dst, getCoreTemperatureCelsius());
+#else
+        sbufWriteU16(dst, 0);
+#endif
+        break;
+    }
+
+    case MSP_RAW_IMU: {
+        for (int i = 0; i < 3; i++) {
+#if defined(USE_ACC)
+            sbufWriteU16(dst, lrintf(acc.accADC.v[i]));
+#else
+            sbufWriteU16(dst, 0);
+#endif
+        }
+        for (int i = 0; i < 3; i++) {
+            sbufWriteU16(dst, gyroRateDps(i));
+        }
+        for (int i = 0; i < 3; i++) {
+#if defined(USE_MAG)
+            sbufWriteU16(dst, lrintf(mag.magADC.v[i]));
 #else
             sbufWriteU16(dst, 0);
 #endif
         }
         break;
-
-    case MSP_RAW_IMU:
-        {
-
-            for (int i = 0; i < 3; i++) {
-#if defined(USE_ACC)
-                sbufWriteU16(dst, lrintf(acc.accADC.v[i]));
-#else
-                sbufWriteU16(dst, 0);
-#endif
-            }
-            for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, gyroRateDps(i));
-            }
-            for (int i = 0; i < 3; i++) {
-#if defined(USE_MAG)
-                sbufWriteU16(dst, lrintf(mag.magADC.v[i]));
-#else
-                sbufWriteU16(dst, 0);
-#endif
-            }
-        }
-        break;
+    }
 
 case MSP_NAME:
         sbufWriteString(dst, pilotConfig()->craftName);
@@ -1207,7 +1197,6 @@ case MSP_NAME:
             sbufWriteU16(dst, 0);
 #endif
         }
-
         break;
 
     // Added in API version 1.42
@@ -1289,32 +1278,29 @@ case MSP_NAME:
         break;
 
 #ifdef USE_VTX_COMMON
-    case MSP2_GET_VTX_DEVICE_STATUS:
-        {
-            const vtxDevice_t *vtxDevice = vtxCommonDevice();
-            vtxCommonSerializeDeviceStatus(vtxDevice, dst);
-        }
+    case MSP2_GET_VTX_DEVICE_STATUS: {
+        const vtxDevice_t *vtxDevice = vtxCommonDevice();
+        vtxCommonSerializeDeviceStatus(vtxDevice, dst);
         break;
+    }
 #endif
 
 #ifdef USE_OSD
-    case MSP2_GET_OSD_WARNINGS:
-        {
-            bool isBlinking;
-            uint8_t displayAttr;
-            char warningsBuffer[OSD_WARNINGS_MAX_SIZE + 1];
+    case MSP2_GET_OSD_WARNINGS: {
+        bool isBlinking;
+        uint8_t displayAttr;
+        char warningsBuffer[OSD_WARNINGS_MAX_SIZE + 1];
 
-            renderOsdWarning(warningsBuffer, &isBlinking, &displayAttr);
-            const uint8_t warningsLen = strlen(warningsBuffer);
+        renderOsdWarning(warningsBuffer, &isBlinking, &displayAttr);
 
-            if (isBlinking) {
-                displayAttr |= DISPLAYPORT_BLINK;
-            }
-            sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
-            sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
-            sbufWriteData(dst, warningsBuffer, warningsLen);
-            break;
+        if (isBlinking) {
+            displayAttr |= DISPLAYPORT_BLINK;
         }
+        sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
+        sbufWritePString(dst, warningsBuffer);
+
+        break;
+    }
 #endif
 
     case MSP_RC:
@@ -1691,6 +1677,7 @@ case MSP_NAME:
             sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
         }
         break;
+
     case MSP2_COMMON_SERIAL_CONFIG: {
         uint8_t count = 0;
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
@@ -1880,6 +1867,7 @@ case MSP_NAME:
 #endif
         break;
     }
+
     case MSP_ADVANCED_CONFIG:
         sbufWriteU8(dst, 1);  // was gyroConfig()->gyro_sync_denom - removed in API 1.43
         sbufWriteU8(dst, pidConfig()->pid_process_denom);
@@ -1898,9 +1886,9 @@ case MSP_NAME:
         //Added in MSP API 1.42
         sbufWriteU8(dst, systemConfig()->debug_mode);
         sbufWriteU8(dst, DEBUG_COUNT);
-
         break;
-    case MSP_FILTER_CONFIG :
+
+    case MSP_FILTER_CONFIG:
         sbufWriteU8(dst, gyroConfig()->gyro_lpf1_static_hz);
         sbufWriteU16(dst, currentPidProfile->dterm_lpf1_static_hz);
         sbufWriteU16(dst, currentPidProfile->yaw_lowpass_hz);
@@ -1967,8 +1955,8 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, 0);
 #endif
-
         break;
+
     case MSP_PID_ADVANCED:
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -2151,44 +2139,43 @@ case MSP_NAME:
         break;
 
 #if defined(USE_VTX_COMMON)
-    case MSP_VTX_CONFIG:
-        {
-            const vtxDevice_t *vtxDevice = vtxCommonDevice();
-            unsigned vtxStatus = 0;
-            vtxDevType_e vtxType = VTXDEV_UNKNOWN;
-            uint8_t deviceIsReady = 0;
-            if (vtxDevice) {
-                vtxCommonGetStatus(vtxDevice, &vtxStatus);
-                vtxType = vtxCommonGetDeviceType(vtxDevice);
-                deviceIsReady = vtxCommonDeviceIsReady(vtxDevice) ? 1 : 0;
-            }
-            sbufWriteU8(dst, vtxType);
-            sbufWriteU8(dst, vtxSettingsConfig()->band);
-            sbufWriteU8(dst, vtxSettingsConfig()->channel);
-            sbufWriteU8(dst, vtxSettingsConfig()->power);
-            sbufWriteU8(dst, (vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0);
-            sbufWriteU16(dst, vtxSettingsConfig()->freq);
-            sbufWriteU8(dst, deviceIsReady);
-            sbufWriteU8(dst, vtxSettingsConfig()->lowPowerDisarm);
+    case MSP_VTX_CONFIG: {
+        const vtxDevice_t *vtxDevice = vtxCommonDevice();
+        unsigned vtxStatus = 0;
+        vtxDevType_e vtxType = VTXDEV_UNKNOWN;
+        uint8_t deviceIsReady = 0;
+        if (vtxDevice) {
+            vtxCommonGetStatus(vtxDevice, &vtxStatus);
+            vtxType = vtxCommonGetDeviceType(vtxDevice);
+            deviceIsReady = vtxCommonDeviceIsReady(vtxDevice) ? 1 : 0;
+        }
+        sbufWriteU8(dst, vtxType);
+        sbufWriteU8(dst, vtxSettingsConfig()->band);
+        sbufWriteU8(dst, vtxSettingsConfig()->channel);
+        sbufWriteU8(dst, vtxSettingsConfig()->power);
+        sbufWriteU8(dst, (vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0);
+        sbufWriteU16(dst, vtxSettingsConfig()->freq);
+        sbufWriteU8(dst, deviceIsReady);
+        sbufWriteU8(dst, vtxSettingsConfig()->lowPowerDisarm);
 
-            // API version 1.42
-            sbufWriteU16(dst, vtxSettingsConfig()->pitModeFreq);
+        // API version 1.42
+        sbufWriteU16(dst, vtxSettingsConfig()->pitModeFreq);
 #ifdef USE_VTX_TABLE
-            sbufWriteU8(dst, 1);   // vtxtable is available
-            sbufWriteU8(dst, vtxTableConfig()->bands);
-            sbufWriteU8(dst, vtxTableConfig()->channels);
-            sbufWriteU8(dst, vtxTableConfig()->powerLevels);
+        sbufWriteU8(dst, 1);   // vtxtable is available
+        sbufWriteU8(dst, vtxTableConfig()->bands);
+        sbufWriteU8(dst, vtxTableConfig()->channels);
+        sbufWriteU8(dst, vtxTableConfig()->powerLevels);
 #else
-            sbufWriteU8(dst, 0);
-            sbufWriteU8(dst, 0);
-            sbufWriteU8(dst, 0);
-            sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
 #endif
 #ifdef USE_VTX_MSP
-            setMspVtxDeviceStatusReady(srcDesc);
+        setMspVtxDeviceStatusReady(srcDesc);
 #endif
-        }
         break;
+    }
 #endif
 
     case MSP_TX_INFO:
@@ -2203,25 +2190,24 @@ case MSP_NAME:
         rtcDateTimeIsSet = RTC_NOT_SUPPORTED;
 #endif
         sbufWriteU8(dst, rtcDateTimeIsSet);
-
         break;
+
 #ifdef USE_RTC_TIME
-    case MSP_RTC:
-        {
-            dateTime_t dt;
-            if (rtcGetDateTime(&dt)) {
-                sbufWriteU16(dst, dt.year);
-                sbufWriteU8(dst, dt.month);
-                sbufWriteU8(dst, dt.day);
-                sbufWriteU8(dst, dt.hours);
-                sbufWriteU8(dst, dt.minutes);
-                sbufWriteU8(dst, dt.seconds);
-                sbufWriteU16(dst, dt.millis);
-            }
+    case MSP_RTC: {
+        dateTime_t dt;
+        if (rtcGetDateTime(&dt)) {
+            sbufWriteU16(dst, dt.year);
+            sbufWriteU8(dst, dt.month);
+            sbufWriteU8(dst, dt.day);
+            sbufWriteU8(dst, dt.hours);
+            sbufWriteU8(dst, dt.minutes);
+            sbufWriteU8(dst, dt.seconds);
+            sbufWriteU16(dst, dt.millis);
         }
-
         break;
+    }
 #endif
+
     default:
         unsupportedCommand = true;
     }
@@ -2633,12 +2619,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 
             if (!textVar) return MSP_RESULT_ERROR;
 
-            const uint8_t textLength = strlen(textVar);
-
             //  type byte, then length byte followed by the actual characters
             sbufWriteU8(dst, textType);
-            sbufWriteU8(dst, textLength);
-            sbufWriteData(dst, textVar, textLength);
+            sbufWritePString(dst, textVar);
         }
         break;
 #ifdef USE_LED_STRIP

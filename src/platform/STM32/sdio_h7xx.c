@@ -285,11 +285,14 @@ static SD_Error_t SD_DoInit(void)
         hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B; // FIXME untested
     }
     hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
-#if defined(STM32H730xx)
-    hsd1.Init.ClockDiv = 2; // 200Mhz / (2 * 2 ) = 50Mhz, used for "UltraHigh speed SD card" only, see   HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
-#else
-    hsd1.Init.ClockDiv = 1; // 200Mhz / (2 * 1 ) = 100Mhz, used for "UltraHigh speed SD card" only, see   HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
+#if !defined(SDIO_CLOCK_DIV)
+# if defined(STM32H730xx)
+#  define SDIO_CLOCK_DIV 2  // 200Mhz / (2 * 2 ) = 50Mhz, used for "UltraHigh speed SD card" only, see    HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
+# else 
+#  define SDIO_CLOCK_DIV 1  // 200Mhz / (2 * 1 ) = 100Mhz, used for "UltraHigh speed SD card" only, see    HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
+# endif
 #endif
+ hsd1.Init.ClockDiv = SDIO_CLOCK_DIV;
     status = HAL_SD_Init(&hsd1); // Will call HAL_SD_MspInit
 
     if (status != HAL_OK) {

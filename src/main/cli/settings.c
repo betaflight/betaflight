@@ -160,6 +160,7 @@ const char * const lookupTableAccHardware[] = {
     "BMI270",
     "LSM6DSO",
     "LSM6DSV16X",
+    "IIM42653",
     "VIRTUAL"
 };
 
@@ -183,6 +184,7 @@ const char * const lookupTableGyroHardware[] = {
     "BMI270",
     "LSM6DSO",
     "LSM6DSV16X",
+    "IIM42653",
     "VIRTUAL"
 };
 
@@ -242,7 +244,7 @@ static const char * const lookupTableGyro[] = {
 
 #ifdef USE_GPS
 static const char * const lookupTableGpsProvider[] = {
-    "NMEA", "UBLOX", "MSP"
+    "NMEA", "UBLOX", "MSP", "VIRTUAL"
 };
 
 static const char * const lookupTableGpsSbasMode[] = {

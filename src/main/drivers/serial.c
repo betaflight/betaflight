@@ -76,7 +76,10 @@ uint8_t serialRead(serialPort_t *instance)
 
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
-    instance->vTable->serialSetBaudRate(instance, baudRate);
+    //vTable->serialSetBaudRate is NULL for SIMULATOR_BUILD, because the TCP port is used
+    if (instance->vTable->serialSetBaudRate != NULL) {
+        instance->vTable->serialSetBaudRate(instance, baudRate);
+    }
 }
 
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
