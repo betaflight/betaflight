@@ -4,9 +4,9 @@
 #
 # NOTE: These are not tied to the default goals and must be invoked manually
 #
-# ARM SDK Version: 13.3.Rel1
+# ARM SDK Version: 14.2.Rel1
 #
-# Release date: July 04, 2024
+# Release date: December 10, 2024
 #
 # PICO SDK Version: 2.X - July 03, 2025
 #
@@ -21,24 +21,26 @@
 # Set up ARM (STM32) SDK
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
 # must match arm-none-eabi-gcc-<version> file in arm sdk distribution
-GCC_REQUIRED_VERSION ?= 13.3.1
+GCC_REQUIRED_VERSION ?= 14.2.1
+ARM_SDK_VERSION := 14.2.rel1
 
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
 # source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
+ARM_BASE_URL := https://developer.arm.com/-/media/Files/downloads/gnu/$(ARM_SDK_VERSION)/binrel/arm-gnu-toolchain-$(ARM_SDK_VERSION)
 ifeq ($(OSFAMILY)-$(ARCHFAMILY), linux-x86_64)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = 0601a9588bc5b9c99ad2b56133b7f118
+  ARM_SDK_URL := $(ARM_BASE_URL)-x86_64-arm-none-eabi.tar.xz
+  DL_CHECKSUM = fcdcd7c8d5b22d2d0cc6bf3721686e69
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-x86_64)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = 4bb141e44b831635fde4e8139d470f1f
+  ARM_SDK_URL := $(ARM_BASE_URL)-darwin-x86_64-arm-none-eabi.tar.xz
+  DL_CHECKSUM = d5fb1ae60e4d67eb2986837dbcd6a066
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-arm64)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-arm64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = f1c18320bb3121fa89dca11399273f4e
+  ARM_SDK_URL := $(ARM_BASE_URL)-darwin-arm64-arm-none-eabi.tar.xz
+  DL_CHECKSUM = 40d1c9208aed7fab08b0f27e5383dcef
 else ifeq ($(OSFAMILY), windows)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-arm-none-eabi.zip
-  DL_CHECKSUM = 39d9882ca0eb475e81170ae826c1435d
+  ARM_SDK_URL := $(ARM_BASE_URL)-mingw-w64-i686-arm-none-eabi.zip
+  DL_CHECKSUM = 42ab20ec8d5c52cbcb07e3fb27791ecd
 else
   $(error No toolchain URL defined for $(OSFAMILY)-$(ARCHFAMILY))
 endif
