@@ -29,21 +29,24 @@ ARM_SDK_VERSION := 14.2.rel1
 
 # source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 ARM_BASE_URL := https://developer.arm.com/-/media/Files/downloads/gnu/$(ARM_SDK_VERSION)/binrel/arm-gnu-toolchain-$(ARM_SDK_VERSION)
+
 ifeq ($(OSFAMILY)-$(ARCHFAMILY), linux-x86_64)
-  ARM_SDK_URL := $(ARM_BASE_URL)-x86_64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = fcdcd7c8d5b22d2d0cc6bf3721686e69
+	ARM_SDK_SUFFIX := -x86_64-arm-none-eabi.tar.xz
+	DL_CHECKSUM = fcdcd7c8d5b22d2d0cc6bf3721686e69
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-x86_64)
-  ARM_SDK_URL := $(ARM_BASE_URL)-darwin-x86_64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = d5fb1ae60e4d67eb2986837dbcd6a066
+	ARM_SDK_SUFFIX := -darwin-x86_64-arm-none-eabi.tar.xz
+	DL_CHECKSUM = d5fb1ae60e4d67eb2986837dbcd6a066
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-arm64)
-  ARM_SDK_URL := $(ARM_BASE_URL)-darwin-arm64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = 40d1c9208aed7fab08b0f27e5383dcef
+	ARM_SDK_SUFFIX := -darwin-arm64-arm-none-eabi.tar.xz
+	DL_CHECKSUM = 40d1c9208aed7fab08b0f27e5383dcef
 else ifeq ($(OSFAMILY), windows)
-  ARM_SDK_URL := $(ARM_BASE_URL)-mingw-w64-i686-arm-none-eabi.zip
-  DL_CHECKSUM = 42ab20ec8d5c52cbcb07e3fb27791ecd
+	ARM_SDK_SUFFIX := -mingw-w64-i686-arm-none-eabi.zip
+	DL_CHECKSUM = 42ab20ec8d5c52cbcb07e3fb27791ecd
 else
-  $(error No toolchain URL defined for $(OSFAMILY)-$(ARCHFAMILY))
+	$(error No toolchain URL defined for $(OSFAMILY)-$(ARCHFAMILY))
 endif
+
+ARM_SDK_URL := $(ARM_BASE_URL)$(ARM_SDK_SUFFIX)
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
 # remove compression suffixes
