@@ -25,7 +25,8 @@
 #include "platform.h"
 
 #include "common/utils.h"
-#include "common/strtol.h"
+
+#include "strtol.h"
 
 #define _STRTO_ENDPTR 1
 

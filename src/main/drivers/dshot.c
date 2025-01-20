@@ -44,7 +44,6 @@
 #include "drivers/motor.h"
 #include "drivers/timer.h"
 
-#include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
 #include "drivers/nvic.h"
 
