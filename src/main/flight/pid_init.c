@@ -317,6 +317,14 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pidRuntime.angleYawSetpoint = 0.0f;
 #endif
 
+#ifdef USE_CHIRP
+    const float alpha = pidRuntime.chirpLeadFreqHz / pidRuntime.chirpLagFreqHz;
+    const float centerFreqHz = pidRuntime.chirpLagFreqHz * sqrtf(alpha);
+    const float centerPhaseDeg = asinf( (1.0f - alpha) / (1.0f + alpha) ) / RAD;
+    phaseCompInit(&pidRuntime.chirpFilter, centerFreqHz, centerPhaseDeg, targetPidLooptime);
+    chirpInit(&pidRuntime.chirp, pidRuntime.chirpFrequencyStartHz, pidRuntime.chirpFrequencyEndHz, pidRuntime.chirpTimeSeconds, targetPidLooptime);
+#endif
+
     pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
 #ifdef USE_WING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -409,6 +417,17 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.horizonLimitDegreesInv = (pidProfile->horizon_limit_degrees) ? 1.0f / pidRuntime.horizonLimitDegrees : 1.0f;
 #ifdef USE_ACC
     pidRuntime.horizonDelayMs = pidProfile->horizon_delay_ms;
+#endif
+
+#ifdef USE_CHIRP
+    pidRuntime.chirpLagFreqHz = pidProfile->chirp_lag_freq_hz;
+    pidRuntime.chirpLeadFreqHz = pidProfile->chirp_lead_freq_hz;
+    pidRuntime.chirpAmplitude[FD_ROLL] = pidProfile->chirp_amplitude_roll;
+    pidRuntime.chirpAmplitude[FD_PITCH] = pidProfile->chirp_amplitude_pitch;
+    pidRuntime.chirpAmplitude[FD_YAW]= pidProfile->chirp_amplitude_yaw;
+    pidRuntime.chirpFrequencyStartHz = pidProfile->chirp_frequency_start_deci_hz / 10.0f;
+    pidRuntime.chirpFrequencyEndHz = pidProfile->chirp_frequency_end_deci_hz / 10.0f;
+    pidRuntime.chirpTimeSeconds = pidProfile->chirp_time_seconds;
 #endif
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
