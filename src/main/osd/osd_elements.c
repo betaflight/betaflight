@@ -2269,14 +2269,13 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
     // Only advance to the next element if rendering is complete
     if (osdDrawSingleElement(osdDisplayPort, item)) {
         // If rendering is complete then advance to the next element
-        if (activeElement.rendered) {
-            // Prepare to render the background of the next element
-            backgroundRendered = false;
 
-            if (++activeElementNumber >= activeOsdElementCount) {
-                activeElementNumber = 0;
-                return false;
-            }
+        // Prepare to render the background of the next element
+        backgroundRendered = false;
+
+        if (++activeElementNumber >= activeOsdElementCount) {
+            activeElementNumber = 0;
+            return false;
         }
     }
 
