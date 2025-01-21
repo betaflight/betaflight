@@ -2123,6 +2123,9 @@ void osdAddActiveElements(void)
 
 static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
 {
+    // By default mark the element as rendered in case it's in the off blink state
+    activeElement.rendered = true;
+
     if (!osdElementDrawFunction[item]) {
         // Element has no drawing function
         return true;
@@ -2143,7 +2146,6 @@ static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     activeElement.buff = elementBuff;
     activeElement.osdDisplayPort = osdDisplayPort;
     activeElement.drawElement = true;
-    activeElement.rendered = true;
     activeElement.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element drawing function
