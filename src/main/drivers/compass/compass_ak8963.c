@@ -420,7 +420,7 @@ void ak8963BusDeInit(const extDevice_t *dev)
 
 #ifdef USE_MAG_SPI_AK8963
     case BUS_TYPE_SPI:
-        spiPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
         break;
 #endif
 

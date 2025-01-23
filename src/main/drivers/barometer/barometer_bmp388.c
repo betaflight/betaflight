@@ -230,7 +230,7 @@ void bmp388BusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_BMP388
     if (dev->bus->busType == BUS_TYPE_SPI) {
-        spiPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     }
 #else
     UNUSED(dev);
