@@ -4851,7 +4851,7 @@ if (buildKey) {
             if (!gpsPortConfig) {
                 cliPrint("NO PORT, ");
             } else {
-                cliPrintf("UART%d %ld (set to ", (gpsPortConfig->identifier + 1), baudRates[getGpsPortActualBaudRateIndex()]);
+                cliPrintf("%s %ld (set to ", serialName(gpsPortConfig->identifier, invalidName), baudRates[getGpsPortActualBaudRateIndex()]);
                 if (gpsConfig()->autoBaud == GPS_AUTOBAUD_ON) {
                     cliPrint("AUTO");
                 } else {
