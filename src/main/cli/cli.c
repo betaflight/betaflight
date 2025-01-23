@@ -1530,7 +1530,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
             cliPrintLinef("Invalid port%d %d", i + 1, ports[i].id);
             return;
         } else {
-            cliPrintLinef("Port%d: %s", i + 1, serialName(ports[i].id, "<invalid>"));
+            cliPrintLinef("Port%d: %s", i + 1, serialName(ports[i].id, invalidName));
         }
     }
 
