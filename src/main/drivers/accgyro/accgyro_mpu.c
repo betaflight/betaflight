@@ -273,6 +273,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
         // We need some offset from the gyro interrupts to ensure sampling after the interrupt
         gyro->gyroDmaMaxDuration = 5;
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
+#ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
                 gyro->dev.callbackArg = (uint32_t)gyro;
                 gyro->dev.txBuf[0] = gyro->accDataReg | 0x80;
@@ -282,7 +283,9 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
                 gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
-            } else {
+            } else
+#endif
+            {
                 // Interrupts are present, but no DMA
                 gyro->gyroModeSPI = GYRO_EXTI_INT;
             }
@@ -362,7 +365,7 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #ifdef USE_ACCGYRO_BMI270
     bmi270Detect,
 #endif
-#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42653)
     icm426xxSpiDetect,
 #endif
 #ifdef USE_GYRO_SPI_ICM20649

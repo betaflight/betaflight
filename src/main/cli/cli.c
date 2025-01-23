@@ -279,30 +279,6 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
-// Needs to be aligned with mcuTypeId_e
-static const char *mcuTypeNames[] = {
-    "SIMULATOR",
-    "F40X",
-    "F411",
-    "F446",
-    "F722",
-    "F745",
-    "F746",
-    "F765",
-    "H750",
-    "H743 (Rev Unknown)",
-    "H743 (Rev.Y)",
-    "H743 (Rev.X)",
-    "H743 (Rev.V)",
-    "H7A3",
-    "H723/H725",
-    "G474",
-    "H730",
-    "AT32F435",
-    "APM32F405",
-    "APM32F407",
-};
-
 static const char *configurationStates[] = {
     [CONFIGURATION_STATE_UNCONFIGURED] = "UNCONFIGURED",
     [CONFIGURATION_STATE_CONFIGURED] = "CONFIGURED"
@@ -4690,15 +4666,6 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
-static const char *getMcuTypeById(mcuTypeId_e id)
-{
-    if (id < ARRAYLEN(mcuTypeNames)) {
-        return mcuTypeNames[id];
-    } else {
-        return "UNKNOWN";
-    }
-}
-
 static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -4706,7 +4673,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf("MCU %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
+    cliPrintf("MCU %s Clock=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
 
 #if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)

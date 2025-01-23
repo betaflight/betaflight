@@ -128,7 +128,7 @@ void altHoldUpdateTargetAltitude(void)
     // using maxVelocity means the stick can bring altitude target to current within 1s
     // this constrains the P and I response to user target changes, but not D of F responses
     // Range is compared to distance that might be traveled in one second
-    if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0 /* s */) {
+    if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
 }

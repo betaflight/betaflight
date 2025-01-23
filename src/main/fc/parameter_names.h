@@ -192,6 +192,15 @@
 #define PARAM_NAME_HORIZON_IGNORE_STICKS "horizon_ignore_sticks"
 #define PARAM_NAME_HORIZON_DELAY_MS "horizon_delay_ms"
 
+#define PARAM_NAME_CHIRP_LAG_FREQ_HZ "chirp_lag_freq_hz"
+#define PARAM_NAME_CHIRP_LEAD_FREQ_HZ "chirp_lead_freq_hz"
+#define PARAM_NAME_CHIRP_AMPLITUDE_ROLL "chirp_amplitude_roll"
+#define PARAM_NAME_CHIRP_AMPLITUDE_PITCH "chirp_amplitude_pitch"
+#define PARAM_NAME_CHIRP_AMPLITUDE_YAW "chirp_amplitude_yaw"
+#define PARAM_NAME_CHIRP_FREQUENCY_START_DECI_HZ "chirp_frequency_start_deci_hz"
+#define PARAM_NAME_CHIRP_FREQUENCY_END_DECI_HZ "chirp_frequency_end_deci_hz"
+#define PARAM_NAME_CHIRP_TIME_SECONDS "chirp_time_seconds"
+
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
 #define PARAM_NAME_GPS_SBAS_MODE "gps_sbas_mode"
@@ -262,6 +271,7 @@
 #define PARAM_NAME_IMU_DCM_KI "imu_dcm_ki"
 #define PARAM_NAME_IMU_SMALL_ANGLE "small_angle"
 #define PARAM_NAME_IMU_PROCESS_DENOM "imu_process_denom"
+
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif

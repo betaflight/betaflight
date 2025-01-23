@@ -45,7 +45,10 @@
 #ifdef USE_DASHBOARD
 #include "io/dashboard.h"
 #endif
+
 #include "io/gps.h"
+#include "io/gps_virtual.h"
+
 #include "io/serial.h"
 
 #include "config/config.h"
@@ -407,7 +410,7 @@ void gpsInit(void)
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_STATE_UNKNOWN);
 
-    if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
+    if (gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) { // no serial ports used when GPS_MSP or GPS_VIRTUAL is configured
         gpsSetState(GPS_STATE_INITIALIZED);
         return;
     }
@@ -1337,6 +1340,38 @@ static void calculateNavInterval (void)
     gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
 }
 
+#if defined(USE_VIRTUAL_GPS)
+static void updateVirtualGPS(void)
+{
+    const uint32_t updateInterval = 100; // 100ms 10Hz update time interval
+    static uint32_t nextUpdateTime = 0;
+
+    if (cmp32(gpsData.now, nextUpdateTime) > 0) {
+        if (gpsData.state == GPS_STATE_INITIALIZED) {
+            gpsSetState(GPS_STATE_RECEIVING_DATA);
+        }
+
+        getVirtualGPS(&gpsSol);
+        gpsSol.time = gpsData.now;
+
+        gpsData.lastNavMessage = gpsData.now;
+        sensorsSet(SENSOR_GPS);
+
+        if (gpsSol.numSat > 3) {
+            gpsSetFixState(GPS_FIX);
+        } else {
+            gpsSetFixState(0);
+        }
+        GPS_update ^= GPS_DIRECT_TICK;
+
+        calculateNavInterval();
+        onGpsNewData();
+
+        nextUpdateTime = gpsData.now + updateInterval;
+    }
+}
+#endif
+
 void gpsUpdate(timeUs_t currentTimeUs)
 {
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
@@ -1344,7 +1379,12 @@ void gpsUpdate(timeUs_t currentTimeUs)
     gpsState_e gpsCurrentState = gpsData.state;
     gpsData.now = millis();
 
-    if (gpsPort) {
+    switch (gpsConfig()->provider) {
+    case GPS_UBLOX:
+    case GPS_NMEA:
+        if (!gpsPort) {
+            break;
+        }
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
         static uint8_t wait = 0;
         static bool isFast = false;
@@ -1368,7 +1408,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
             isFast = false;
             rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
         }
-    } else if (gpsConfig()->provider == GPS_MSP) {
+        break;
+
+    case GPS_MSP:
         if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
             if (gpsData.state == GPS_STATE_INITIALIZED) {
                 gpsSetState(GPS_STATE_RECEIVING_DATA);
@@ -1391,45 +1433,51 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 gpsSetState(GPS_STATE_LOST_COMMUNICATION);
             }
         }
+        break;
+#if defined(USE_VIRTUAL_GPS)
+    case GPS_VIRTUAL:
+        updateVirtualGPS();
+        break;
+#endif
     }
 
     switch (gpsData.state) {
-        case GPS_STATE_UNKNOWN:
-        case GPS_STATE_INITIALIZED:
-            break;
+    case GPS_STATE_UNKNOWN:
+    case GPS_STATE_INITIALIZED:
+        break;
 
-        case GPS_STATE_DETECT_BAUD:
-        case GPS_STATE_CHANGE_BAUD:
-        case GPS_STATE_CONFIGURE:
-            gpsConfigureHardware();
-            break;
+    case GPS_STATE_DETECT_BAUD:
+    case GPS_STATE_CHANGE_BAUD:
+    case GPS_STATE_CONFIGURE:
+        gpsConfigureHardware();
+        break;
 
-        case GPS_STATE_LOST_COMMUNICATION:
-            gpsData.timeouts++;
-            // previously we would attempt a different baud rate here if gps auto-baud was enabled.  that code has been removed.
-            gpsSol.numSat = 0;
-            DISABLE_STATE(GPS_FIX);
-            gpsSetState(GPS_STATE_DETECT_BAUD);
-            break;
+    case GPS_STATE_LOST_COMMUNICATION:
+        gpsData.timeouts++;
+        // previously we would attempt a different baud rate here if gps auto-baud was enabled.  that code has been removed.
+        gpsSol.numSat = 0;
+        DISABLE_STATE(GPS_FIX);
+        gpsSetState(GPS_STATE_DETECT_BAUD);
+        break;
 
-        case GPS_STATE_RECEIVING_DATA:
+    case GPS_STATE_RECEIVING_DATA:
 #ifdef USE_GPS_UBLOX
-            if (gpsConfig()->provider != GPS_MSP) {
-                if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
-                    // when we are connected up, and get a 3D fix, enable the 'flight' fix model
-                    if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
-                        gpsData.ubloxUsingFlightModel = true;
-                        ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
-                    }
+        if (gpsConfig()->provider == GPS_UBLOX || gpsConfig()->provider == GPS_NMEA) {      // TODO  Send ublox message to nmea GPS?
+            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) {
+                // when we are connected up, and get a 3D fix, enable the 'flight' fix model
+                if (!gpsData.ubloxUsingFlightModel && STATE(GPS_FIX)) {
+                    gpsData.ubloxUsingFlightModel = true;
+                    ubloxSendNAV5Message(gpsConfig()->gps_ublox_flight_model);
                 }
             }
+        }
 #endif
-            DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
-            // check for no data/gps timeout/cable disconnection etc
-            if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
-                gpsSetState(GPS_STATE_LOST_COMMUNICATION);
-            }
-            break;
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 2, gpsData.now - gpsData.lastNavMessage); // time since last Nav data, updated each GPS task interval
+        // check for no data/gps timeout/cable disconnection etc
+        if (cmp32(gpsData.now, gpsData.lastNavMessage) > GPS_TIMEOUT_MS) {
+            gpsSetState(GPS_STATE_LOST_COMMUNICATION);
+        }
+        break;
     }
 
     DEBUG_SET(DEBUG_GPS_CONNECTION, 4, (gpsData.state * 100 + gpsData.state_position));

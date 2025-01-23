@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_UART) && !defined(SIMULATOR_BUILD)
+#if defined(USE_UART)
 
 #include "build/build_config.h"
 
@@ -39,6 +39,10 @@
 #include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
+#include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
+
+#include "pg/serial_uart.h"
 
 // TODO: split this function into mcu-specific UART files ?
 static void enableRxIrq(const uartHardware_t *hardware)
@@ -204,6 +208,108 @@ void uartConfigureExternalPinInversion(uartPort_t *uartPort)
 #else
     const bool inverted = uartPort->port.options & SERIAL_INVERTED;
     enableInverter(uartPort->port.identifier, inverted);
+#endif
+}
+
+#ifdef USE_DMA
+void uartConfigureDma(uartDevice_t *uartdev)
+{
+    uartPort_t *uartPort = &(uartdev->port);
+    const uartHardware_t *hardware = uartdev->hardware;
+
+#ifdef USE_DMA_SPEC
+    const serialPortIdentifier_e uartPortIdentifier = hardware->identifier;
+    const uartDeviceIdx_e uartDeviceIdx = uartDeviceIdxFromIdentifier(uartPortIdentifier);
+    if (uartDeviceIdx == UARTDEV_INVALID) {
+        return;
+    }
+    const int resourceIdx = serialResourceIndex(uartPortIdentifier);
+    const int ownerIndex = serialOwnerIndex(uartPortIdentifier);
+    const resourceOwner_e ownerTxRx = serialOwnerTxRx(uartPortIdentifier); // rx is always +1
+
+    const dmaChannelSpec_t *dmaChannelSpec;
+    const serialUartConfig_t *cfg = serialUartConfig(resourceIdx);
+    if (!cfg) {
+        return;
+    }
+    if (cfg->txDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, uartDeviceIdx, cfg->txDmaopt);
+        if (dmaChannelSpec) {
+            uartPort->txDMAResource = dmaChannelSpec->ref;
+#if DMA_TRAIT_CHANNEL
+            uartPort->txDMAChannel = dmaChannelSpec->channel;
+#elif DMA_TRAIT_MUX
+            uartPort->txDMAMuxId = dmaChannelSpec->dmaMuxId;
+#endif
+        }
+    }
+
+    if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
+        if (dmaChannelSpec) {
+            uartPort->rxDMAResource = dmaChannelSpec->ref;
+#if DMA_TRAIT_CHANNEL
+            uartPort->rxDMAChannel = dmaChannelSpec->channel;
+#elif DMA_TRAIT_MUX
+            uartPort->rxDMAMuxId = dmaChannelSpec->dmaMuxId;
+#endif
+        }
+    }
+#else /* USE_DMA_SPEC */
+    // Non USE_DMA_SPEC does not support configurable ON/OFF of UART DMA
+
+    if (hardware->rxDMAResource) {
+        uartPort->rxDMAResource = hardware->rxDMAResource;
+#if DMA_TRAIT_CHANNEL
+        uartPort->rxDMAChannel = hardware->rxDMAChannel;
+#elif DMA_TRAIT_MUX
+        uartPort->rxDMAMuxId = hardware->rxDMAMuxId;
+#endif
+    }
+
+    if (hardware->txDMAResource) {
+        uartPort->txDMAResource = hardware->txDMAResource;
+#if DMA_TRAIT_CHANNEL
+        uartPort->txDMAChannel = hardware->txDMAChannel;
+#elif DMA_TRAIT_MUX
+        uartPort->txDMAMuxId = hardware->txDMAMuxId;
+#endif
+    }
+#endif /* USE_DMA_SPEC */
+
+    if (uartPort->txDMAResource) {
+        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
+        if (dmaAllocate(identifier, ownerTxRx, ownerIndex)) {
+            dmaEnable(identifier);
+#if DMA_TRAIT_MUX
+            dmaMuxEnable(identifier, uartPort->txDMAMuxId);
+#endif
+            dmaSetHandler(identifier, uartDmaIrqHandler, hardware->txPriority, (uint32_t)uartdev);
+            uartPort->txDMAPeripheralBaseAddr = (uint32_t)&UART_REG_TXD(hardware->reg);
+        }
+    }
+
+    if (uartPort->rxDMAResource) {
+        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
+        if (dmaAllocate(identifier, ownerTxRx + 1, ownerIndex)) {
+            dmaEnable(identifier);
+#if DMA_TRAIT_MUX
+            dmaMuxEnable(identifier, uartPort->rxDMAMuxId);
+#endif
+            uartPort->rxDMAPeripheralBaseAddr = (uint32_t)&UART_REG_RXD(hardware->reg);
+        }
+    }
+}
+#endif
+
+void uartEnableTxInterrupt(uartPort_t *uartPort)
+{
+#if defined(USE_HAL_DRIVER)
+    __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+#elif defined(USE_ATBSP_DRIVER)
+    usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+#else
+    USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
 }
 

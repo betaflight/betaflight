@@ -82,6 +82,8 @@ DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 
 
 MCU_COMMON_SRC = \
             common/stm32/system.c \
+            common/stm32/io_impl.c \
+            common/stm32/config_flash.c \
             AT32/startup/at32f435_437_clock.c \
             AT32/startup/system_at32f435_437.c \
             AT32/adc_at32f43x.c \
@@ -118,7 +120,9 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
+            common/stm32/bus_spi_pinconfig.c \
+            common/stm32/bus_spi_hw.c \
+            common/stm32/serial_uart_hw.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
@@ -129,6 +133,7 @@ MCU_COMMON_SRC = \
             msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
+            common/stm32/bus_spi_hw.c \
             common/stm32/system.c
 
 SIZE_OPTIMISED_SRC += \
@@ -136,7 +141,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/inverter.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
+            common/stm32/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c

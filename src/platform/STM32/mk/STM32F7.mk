@@ -140,7 +140,6 @@ VCP_SRC = \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            common/stm32/system.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
@@ -173,7 +172,6 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
@@ -190,7 +188,6 @@ MSC_SRC = \
             msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c \
             STM32/bus_i2c_hal.c \
             STM32/bus_spi_ll.c \
             drivers/max7456.c \
@@ -204,7 +201,6 @@ SIZE_OPTIMISED_SRC += \
             STM32/serial_usb_vcp.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c

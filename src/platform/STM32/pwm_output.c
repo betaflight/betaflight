@@ -183,6 +183,8 @@ static motorVTable_t motorPwmVTable = {
 
 motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
 {
+    memset(motors, 0, sizeof(motors));
+
     motorPwmDevice.vTable = motorPwmVTable;
 
     float sMin = 0;

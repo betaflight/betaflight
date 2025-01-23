@@ -211,6 +211,9 @@ static void configureSPIBusses(void)
 #ifdef USE_SPI
     spiPreinit();
 
+#ifdef USE_SPI_DEVICE_0
+    spiInit(SPIDEV_0);
+#endif
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
@@ -275,13 +278,13 @@ void init(void)
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-    detectHardwareRevision();
-#endif
-
 #if defined(USE_TARGET_CONFIG)
     // Call once before the config is loaded for any target specific configuration required to support loading the config
     targetConfiguration();
+#endif
+
+#if defined(USE_CONFIG_TARGET_PREINIT)
+    configTargetPreInit();
 #endif
 
     enum {

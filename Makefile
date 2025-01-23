@@ -123,7 +123,6 @@ FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 # import config handling
 include $(MAKE_SCRIPT_DIR)/config.mk
 
-
 # default xtal value
 HSE_VALUE       ?= 8000000
 
@@ -220,7 +219,15 @@ endif # TARGET specified
 # openocd specific includes
 include $(MAKE_SCRIPT_DIR)/openocd.mk
 
+ifeq ($(CONFIG),)
+ifeq ($(TARGET),)
 .DEFAULT_GOAL := all
+else
+.DEFAULT_GOAL := hex
+endif
+else
+.DEFAULT_GOAL := hex
+endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
@@ -292,7 +299,6 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(TEMPORARY_FLAGS) \
               $(DEVICE_FLAGS) \
               -D_GNU_SOURCE \
-              -DUSE_STDPERIPH_DRIVER \
               -D$(TARGET) \
               $(TARGET_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \

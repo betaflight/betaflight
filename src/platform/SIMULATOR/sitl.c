@@ -48,12 +48,17 @@
 
 #include "config/feature.h"
 #include "config/config.h"
+#include "config/config_streamer.h"
+
 #include "scheduler/scheduler.h"
 
 #include "pg/rx.h"
 #include "pg/motor.h"
 
 #include "rx/rx.h"
+
+#include "io/gps.h"
+#include "io/gps_virtual.h"
 
 #include "dyad.h"
 #include "udplink.h"
@@ -176,6 +181,19 @@ void updateState(const fdm_packet* pkt)
 #else
     imuSetAttitudeQuat(pkt->imu_orientation_quat[0], pkt->imu_orientation_quat[1], pkt->imu_orientation_quat[2], pkt->imu_orientation_quat[3]);
 #endif
+#endif
+
+#if defined(USE_VIRTUAL_GPS)
+    const double longitude = pkt->position_xyz[0];
+    const double latitude = pkt->position_xyz[1];
+    const double altitude = pkt->position_xyz[2];
+    const double speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
+    const double speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
+    double course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
+    if (course < 0.0) {
+        course += 360.0;
+    }
+    setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
 #endif
 
 #if defined(SIMULATOR_IMU_SYNC)
@@ -659,18 +677,18 @@ char _Min_Stack_Size;
 // virtual EEPROM
 static FILE *eepromFd = NULL;
 
-void FLASH_Unlock(void)
+bool loadEEPROMFromFile(void)
 {
     if (eepromFd != NULL) {
         fprintf(stderr, "[FLASH_Unlock] eepromFd != NULL\n");
-        return;
+        return false;
     }
 
     // open or create
-    eepromFd = fopen(EEPROM_FILENAME,"r+");
+    eepromFd = fopen(EEPROM_FILENAME, "r+");
     if (eepromFd != NULL) {
         // obtain file size:
-        fseek(eepromFd , 0 , SEEK_END);
+        fseek(eepromFd, 0, SEEK_END);
         size_t lSize = ftell(eepromFd);
         rewind(eepromFd);
 
@@ -679,21 +697,29 @@ void FLASH_Unlock(void)
             printf("[FLASH_Unlock] loaded '%s', size = %ld / %ld\n", EEPROM_FILENAME, lSize, sizeof(eepromData));
         } else {
             fprintf(stderr, "[FLASH_Unlock] failed to load '%s'\n", EEPROM_FILENAME);
-            return;
+            return false;
         }
     } else {
         printf("[FLASH_Unlock] created '%s', size = %ld\n", EEPROM_FILENAME, sizeof(eepromData));
         if ((eepromFd = fopen(EEPROM_FILENAME, "w+")) == NULL) {
             fprintf(stderr, "[FLASH_Unlock] failed to create '%s'\n", EEPROM_FILENAME);
-            return;
+            return false;
         }
+
         if (fwrite(eepromData, sizeof(eepromData), 1, eepromFd) != 1) {
             fprintf(stderr, "[FLASH_Unlock] write failed: %s\n", strerror(errno));
+            return false;
         }
     }
+    return true;
 }
 
-void FLASH_Lock(void)
+void configUnlock(void)
+{
+    loadEEPROMFromFile();
+}
+
+void configLock(void)
 {
     // flush & close
     if (eepromFd != NULL) {
@@ -707,22 +733,17 @@ void FLASH_Lock(void)
     }
 }
 
-FLASH_Status FLASH_ErasePage(uintptr_t Page_Address)
+configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer)
 {
-    UNUSED(Page_Address);
-//    printf("[FLASH_ErasePage]%x\n", Page_Address);
-    return FLASH_COMPLETE;
-}
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t), "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
 
-FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t value)
-{
-    if ((addr >= (uintptr_t)eepromData) && (addr < (uintptr_t)ARRAYEND(eepromData))) {
-        *((uint32_t*)addr) = value;
-        printf("[FLASH_ProgramWord]%p = %08x\n", (void*)addr, *((uint32_t*)addr));
+    if ((address >= (uintptr_t)eepromData) && (address + sizeof(uint32_t) <= (uintptr_t)ARRAYEND(eepromData))) {
+        memcpy((void*)address, buffer, sizeof(config_streamer_buffer_type_t));
+        printf("[FLASH_ProgramWord]%p = %08x\n", (void*)address, *((uint32_t*)address));
     } else {
-            printf("[FLASH_ProgramWord]%p out of range!\n", (void*)addr);
+        printf("[FLASH_ProgramWord]%p out of range!\n", (void*)address);
     }
-    return FLASH_COMPLETE;
+    return CONFIG_RESULT_SUCCESS;
 }
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
@@ -756,4 +777,21 @@ void IOHi(IO_t io)
 void IOLo(IO_t io)
 {
     UNUSED(io);
+}
+
+void IOInitGlobal(void)
+{
+    // NOOP
+}
+
+IO_t IOGetByTag(ioTag_t tag)
+{
+    UNUSED(tag);
+    return NULL;
+}
+
+const mcuTypeInfo_t *getMcuTypeInfo(void)
+{
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_SIMULATOR, .name = "SIMULATOR" };
+    return &info;
 }

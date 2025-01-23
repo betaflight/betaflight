@@ -125,7 +125,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .imu_dcm_ki = 0,         // 0.003 * 10000
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
-    .mag_declination = 0
+    .mag_declination = 0,
 );
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
@@ -603,8 +603,14 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(canUseGPSHeading);
     UNUSED(imuCalcKpGain);
     UNUSED(imuCalcMagErr);
-
     UNUSED(currentTimeUs);
+
+#if defined(USE_GPS)
+    UNUSED(imuComputeQuaternionFromRPY);
+    UNUSED(imuDebug_GPS_RESCUE_HEADING);
+    UNUSED(imuCalcCourseErr);
+    UNUSED(imuCalcGroundspeedGain);
+#endif
 }
 #else
 

@@ -301,3 +301,120 @@ extern uint8_t _dmaram_end__;
 #define IO_CONFIG_GET_PULL(cfg)  (((cfg) >> 5) & 0x03)
 
 #endif
+
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
+#define FLASH_CONFIG_BUFFER_TYPE uint32_t
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 16  // Flash word = 128-bits (4 rows, uint32_t per row - 4 x 32)
+#define FLASH_CONFIG_BUFFER_TYPE uint32_t
+#elif defined(STM32G4)
+#define FLASH_CONFIG_BUFFER_TYPE uint64_t
+#else
+#define FLASH_CONFIG_BUFFER_TYPE uint32_t
+#endif
+
+#if defined(STM32F4)
+#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
+#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
+#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#else
+#error "Invalid STM MCU defined - requires SPI implementation"
+#endif
+
+#if defined(STM32F4)
+#define SPIDEV_COUNT 3
+#elif defined(STM32F7)
+#define SPIDEV_COUNT 4
+#elif defined(STM32H7)
+#define SPIDEV_COUNT 6
+#else
+#define SPIDEV_COUNT 4
+#endif
+
+// Work around different check routines in the libraries for different MCU types
+#if defined(STM32H7)
+#define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXWNE(instance)
+#define SPI_RX_DATA_REGISTER(base) ((base)->RXDR)
+#else
+#define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXNE(instance)
+#define SPI_RX_DATA_REGISTER(base) ((base)->DR)
+#endif
+
+#if defined(STM32F4) || defined(STM32G4)
+#define MAX_SPI_PIN_SEL 2
+#elif defined(STM32F7)
+#define MAX_SPI_PIN_SEL 4
+#elif defined(STM32H7)
+#define MAX_SPI_PIN_SEL 5
+#else
+#error Unknown MCU family
+#endif
+
+#if defined(STM32F4) || defined(STM32F7)
+#define USE_TX_IRQ_HANDLER
+#endif
+
+#if defined(STM32H7)
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM /* D2 SRAM */
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM /* D2 SRAM */
+#elif defined(STM32G4)
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM_W /* SRAM MPU NOT_BUFFERABLE */
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM_R /* SRAM MPU NOT CACHABLE */
+#elif defined(STM32F7)
+#define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT /* DTCM RAM */
+#define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT /* DTCM RAM */
+#elif defined(STM32F4)
+#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
+#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
+#endif
+
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+ // pin AF mode is configured for each pin individually
+#define UART_TRAIT_AF_PIN 1
+#elif defined(STM32F4)
+// all pins on given uart use same AF
+#define UART_TRAIT_AF_PORT 1
+#else
+#error Unknown STM MCU when defining UART_TRAIT_x
+#endif
+
+#define PLATFORM_TRAIT_RCC 1
+
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define UART_TRAIT_PINSWAP 1
+#endif
+
+#if defined(STM32F4)
+#define UARTHARDWARE_MAX_PINS 4
+#elif defined(STM32F7)
+#define UARTHARDWARE_MAX_PINS 4
+#elif defined(STM32H7)
+#define UARTHARDWARE_MAX_PINS 5
+#elif defined(STM32G4)
+#define UARTHARDWARE_MAX_PINS 3
+#endif
+
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define UART_REG_RXD(base) ((base)->RDR)
+#define UART_REG_TXD(base) ((base)->TDR)
+#elif defined(STM32F4)
+#define UART_REG_RXD(base) ((base)->DR)
+#define UART_REG_TXD(base) ((base)->DR)
+#endif
+
+
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define DMA_TRAIT_CHANNEL 1
+#endif
+
+#define USB_DP_PIN PA12

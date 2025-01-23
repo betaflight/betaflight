@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -646,29 +647,29 @@ _TIM_IRQ_HANDLER(TMR7_GLOBAL_IRQHandler, 7);
 #endif
 
 #if USED_TIMERS & TIM_N(8)
-_TIM_IRQ_HANDLER(TMR8_CH_IRQnHandler, 8);
+_TIM_IRQ_HANDLER(TMR8_CH_IRQHandler, 8);
 #endif
 #if USED_TIMERS & TIM_N(9)
-_TIM_IRQ_HANDLER(TMR1_BRK_TMR9_IRQnHandler, 9);
+_TIM_IRQ_HANDLER(TMR1_BRK_TMR9_IRQHandler, 9);
 #endif
 //TODO: there may be a bug
 #if USED_TIMERS & TIM_N(10)
-_TIM_IRQ_HANDLER2(TMR1_OVF_TMR10_IRQnHandler, 1,10);
+_TIM_IRQ_HANDLER2(TMR1_OVF_TMR10_IRQHandler, 1,10);
 #endif
 #  if USED_TIMERS & TIM_N(11)
-_TIM_IRQ_HANDLER(TMR1_TRG_HALL_TMR11_IRQnHandler, 11);
+_TIM_IRQ_HANDLER(TMR1_TRG_HALL_TMR11_IRQHandler, 11);
 #  endif
 #if USED_TIMERS & TIM_N(12)
-_TIM_IRQ_HANDLER(TMR8_BRK_TMR12_IRQnHandler, 12);
+_TIM_IRQ_HANDLER(TMR8_BRK_TMR12_IRQHandler, 12);
 #endif
 #if USED_TIMERS & TIM_N(13)
-_TIM_IRQ_HANDLER(TMR8_OVF_TMR13_IRQnHandler, 13);
+_TIM_IRQ_HANDLER(TMR8_OVF_TMR13_IRQHandler, 13);
 #endif
 #if USED_TIMERS & TIM_N(14)
-_TIM_IRQ_HANDLER(TMR8_TRG_HALL_TMR14_IRQnHandler, 14);
+_TIM_IRQ_HANDLER(TMR8_TRG_HALL_TMR14_IRQHandler, 14);
 #endif
 #if USED_TIMERS & TIM_N(20)
-_TIM_IRQ_HANDLER(TMR20_CH_IRQnHandler, 20);
+_TIM_IRQ_HANDLER(TMR20_CH_IRQHandler, 20);
 #endif
 
 void timerInit(void)

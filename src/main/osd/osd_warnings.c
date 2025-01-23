@@ -432,6 +432,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
+#ifdef USE_CHIRP
+    // Visual info that chirp excitation is finished
+    if (pidChirpIsFinished()) {
+        tfp_sprintf(warningText, "CHIRP EXC FINISHED");
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        *blinking = true;
+        return;
+    }
+#endif // USE_CHIRP
+
 }
 
 #endif // USE_OSD

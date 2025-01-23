@@ -1074,16 +1074,21 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         strcpy(element->buff, "PASS");
-    } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
-        strcpy(element->buff, "ALTH");
     } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
         strcpy(element->buff, "POSH");
+    } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+        strcpy(element->buff, "ALTH");
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         strcpy(element->buff, "ANGL");
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         strcpy(element->buff, "HOR ");
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
         strcpy(element->buff, "ATRN");
+#ifdef USE_CHIRP
+    // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their googles
+    } else if (FLIGHT_MODE(CHIRP_MODE) && !pidChirpIsFinished()) {
+#endif
+        strcpy(element->buff, "CHIR");
     } else if (isAirmodeEnabled()) {
         strcpy(element->buff, "AIR ");
     } else {
@@ -2123,6 +2128,9 @@ void osdAddActiveElements(void)
 
 static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
 {
+    // By default mark the element as rendered in case it's in the off blink state
+    activeElement.rendered = true;
+
     if (!osdElementDrawFunction[item]) {
         // Element has no drawing function
         return true;
@@ -2143,7 +2151,6 @@ static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     activeElement.buff = elementBuff;
     activeElement.osdDisplayPort = osdDisplayPort;
     activeElement.drawElement = true;
-    activeElement.rendered = true;
     activeElement.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element drawing function
@@ -2267,14 +2274,13 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
     // Only advance to the next element if rendering is complete
     if (osdDrawSingleElement(osdDisplayPort, item)) {
         // If rendering is complete then advance to the next element
-        if (activeElement.rendered) {
-            // Prepare to render the background of the next element
-            backgroundRendered = false;
 
-            if (++activeElementNumber >= activeOsdElementCount) {
-                activeElementNumber = 0;
-                return false;
-            }
+        // Prepare to render the background of the next element
+        backgroundRendered = false;
+
+        if (++activeElementNumber >= activeOsdElementCount) {
+            activeElementNumber = 0;
+            return false;
         }
     }
 

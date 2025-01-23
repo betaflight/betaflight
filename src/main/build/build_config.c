@@ -31,48 +31,12 @@
 
 mcuTypeId_e getMcuTypeId(void)
 {
-#if defined(SIMULATOR_BUILD)
-    return MCU_TYPE_SIMULATOR;
-#elif defined(STM32F40_41xxx)
-    return MCU_TYPE_F40X;
-#elif defined(STM32F411xE)
-    return MCU_TYPE_F411;
-#elif defined(STM32F446xx)
-    return MCU_TYPE_F446;
-#elif defined(STM32F722xx)
-    return MCU_TYPE_F722;
-#elif defined(STM32F745xx)
-    return MCU_TYPE_F745;
-#elif defined(STM32F746xx)
-    return MCU_TYPE_F746;
-#elif defined(STM32F765xx)
-    return MCU_TYPE_F765;
-#elif defined(STM32H750xx)
-    return MCU_TYPE_H750;
-#elif defined(STM32H730xx)
-    return MCU_TYPE_H730;
-#elif defined(STM32H743xx)
-    switch (HAL_GetREVID()) {
-    case REV_ID_Y:
-        return MCU_TYPE_H743_REV_Y;
-    case REV_ID_X:
-        return MCU_TYPE_H743_REV_X;
-    case REV_ID_V:
-        return MCU_TYPE_H743_REV_V;
-    default:
-        return MCU_TYPE_H743_REV_UNKNOWN;
-    }
-#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
-    return MCU_TYPE_H7A3;
-#elif defined(STM32H723xx) || defined(STM32H725xx)
-    return MCU_TYPE_H723_725;
-#elif defined(STM32G474xx)
-    return MCU_TYPE_G474;
-#elif defined(AT32F435)
-    return MCU_TYPE_AT32;
-#elif defined(APM32F4)
-    return MCU_TYPE_APM32F40X;
-#else
-    return MCU_TYPE_UNKNOWN;
-#endif
+    const mcuTypeInfo_t *mcuTypeInfo = getMcuTypeInfo();
+    return mcuTypeInfo ? mcuTypeInfo->id : MCU_TYPE_UNKNOWN;
+}
+
+const char *getMcuTypeName(void)
+{
+    const mcuTypeInfo_t *mcuTypeInfo = getMcuTypeInfo();
+    return mcuTypeInfo ? mcuTypeInfo->name : "Unknown";
 }
