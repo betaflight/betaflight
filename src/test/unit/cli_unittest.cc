@@ -342,7 +342,7 @@ void schedulerResetTaskMaxExecutionTime(taskId_e) {}
 void schedulerResetCheckFunctionMaxExecutionTime(void) {}
 
 const char * const targetName = "UNITTEST";
-const char* const buildDate = "Jan 01 2017";
+const char * const buildDate = "Jan 01 2017";
 const char * const buildTime = "00:00:00";
 const char * const shortGitRevision = "MASTER";
 
@@ -401,6 +401,7 @@ bool isModeActivationConditionConfigured(const modeActivationCondition_t *, cons
 void delay(uint32_t) {}
 displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
 mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
+const char *getMcuTypeName(void) { return targetName; }
 uint16_t getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }

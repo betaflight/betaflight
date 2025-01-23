@@ -103,12 +103,12 @@ static const sdioHardware_t sdioPinHardware[SDIODEV_COUNT] = {
     {
         .instance = SDMMC2,
         .irqn = SDMMC2_IRQn,
-        .sdioPinCK  = { PINDEF(2, PC1,   9), PINDEF(2, PD6, 11) },
-        .sdioPinCMD = { PINDEF(2, PA0,   9), PINDEF(2, PD7, 11) },
-        .sdioPinD0  = { PINDEF(2, PB14,  9) },
-        .sdioPinD1  = { PINDEF(2, PB15,  9) },
-        .sdioPinD2  = { PINDEF(2, PB3,   9) },
-        .sdioPinD3  = { PINDEF(2, PB4,   9) },
+        .sdioPinCK  = { PINDEF(2, PC1,   9), PINDEF(2, PD6,  11) },
+        .sdioPinCMD = { PINDEF(2, PA0,   9), PINDEF(2, PD7,  11) },
+        .sdioPinD0  = { PINDEF(2, PB14,  9),                     },
+        .sdioPinD1  = { PINDEF(2, PB15,  9),                     },
+        .sdioPinD2  = { PINDEF(2, PB3,   9), PINDEF(2, PG11, 10) },
+        .sdioPinD3  = { PINDEF(2, PB4,   9),                     },
     }
 };
 
@@ -160,7 +160,11 @@ void sdioPinConfigure(void)
 
 #undef SDIOFINDPIN
 
+#if defined(USE_SDIO_PULLUP)
+#define IOCFG_SDMMC       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#else
 #define IOCFG_SDMMC       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#endif
 
 void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
 {
@@ -281,11 +285,14 @@ static SD_Error_t SD_DoInit(void)
         hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B; // FIXME untested
     }
     hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
-#if defined(STM32H730xx)
-    hsd1.Init.ClockDiv = 2; // 200Mhz / (2 * 2 ) = 50Mhz, used for "UltraHigh speed SD card" only, see   HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
-#else
-    hsd1.Init.ClockDiv = 1; // 200Mhz / (2 * 1 ) = 100Mhz, used for "UltraHigh speed SD card" only, see   HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
+#if !defined(SDIO_CLOCK_DIV)
+# if defined(STM32H730xx)
+#  define SDIO_CLOCK_DIV 2  // 200Mhz / (2 * 2 ) = 50Mhz, used for "UltraHigh speed SD card" only, see    HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
+# else 
+#  define SDIO_CLOCK_DIV 1  // 200Mhz / (2 * 1 ) = 100Mhz, used for "UltraHigh speed SD card" only, see    HAL_SD_ConfigWideBusOperation, SDMMC_HSpeed_CLK_DIV, SDMMC_NSpeed_CLK_DIV
+# endif
 #endif
+ hsd1.Init.ClockDiv = SDIO_CLOCK_DIV;
     status = HAL_SD_Init(&hsd1); // Will call HAL_SD_MspInit
 
     if (status != HAL_OK) {

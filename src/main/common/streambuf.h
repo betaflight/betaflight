@@ -39,6 +39,7 @@ void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val);
 void sbufFill(sbuf_t *dst, uint8_t data, int len);
 void sbufWriteData(sbuf_t *dst, const void *data, int len);
 void sbufWriteString(sbuf_t *dst, const char *string);
+void sbufWritePString(sbuf_t *dst, const char *string);
 void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string);
 
 uint8_t sbufReadU8(sbuf_t *src);

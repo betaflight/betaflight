@@ -107,7 +107,8 @@
     && !defined(USE_ACC_SPI_MPU6000) \
     && !defined(USE_ACC_SPI_MPU6500) \
     && !defined(USE_ACC_SPI_MPU9250) \
-    && !defined(USE_VIRTUAL_ACC)
+    && !defined(USE_VIRTUAL_ACC) \
+    && !defined(USE_ACCGYRO_IIM42653)
 #error At least one USE_ACC device definition required
 #endif
 
@@ -126,7 +127,8 @@
     && !defined(USE_GYRO_SPI_MPU6000) \
     && !defined(USE_GYRO_SPI_MPU6500) \
     && !defined(USE_GYRO_SPI_MPU9250) \
-    && !defined(USE_VIRTUAL_GYRO)
+    && !defined(USE_VIRTUAL_GYRO) \
+    && !defined(USE_ACCGYRO_IIM42653)
 #error At least one USE_GYRO device definition required
 #endif
 
@@ -466,8 +468,8 @@
 
 // Generate USE_SPI_GYRO or USE_I2C_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_BMI160) \
-    || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO)
+    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42653) \
+    || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif

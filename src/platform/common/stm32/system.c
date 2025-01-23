@@ -322,3 +322,66 @@ void unusedPinsInit(void)
 {
     IOTraversePins(unusedPinInit);
 }
+
+const mcuTypeInfo_t *getMcuTypeInfo(void)
+{
+    static const mcuTypeInfo_t info[] = {
+#if defined(STM32H743xx)
+        { .id = MCU_TYPE_H743_REV_UNKNOWN, .name = "STM32H743 (Rev Unknown)" },
+        { .id = MCU_TYPE_H743_REV_Y, .name = "STM32H743 (Rev.Y)" },
+        { .id = MCU_TYPE_H743_REV_X, .name = "STM32H743 (Rev.X)" },
+        { .id = MCU_TYPE_H743_REV_V, .name = "STM32H743 (Rev.V)" },
+#elif defined(STM32F40_41xxx)
+        { .id = MCU_TYPE_F40X, .name = "STM32F40X" },
+#elif defined(STM32F411xE)
+        { .id = MCU_TYPE_F411, .name = "STM32F411" },
+#elif defined(STM32F446xx)
+        { .id = MCU_TYPE_F446, .name = "STM32F446" },
+#elif defined(STM32F722xx)
+        { .id = MCU_TYPE_F722, .name = "STM32F722" },
+#elif defined(STM32F745xx)
+        { .id = MCU_TYPE_F745, .name = "STM32F745" },
+#elif defined(STM32F746xx)
+        { .id = MCU_TYPE_F746, .name = "STM32F746" },
+#elif defined(STM32F765xx)
+        { .id = MCU_TYPE_F765, .name = "STM32F765" },
+#elif defined(STM32H750xx)
+        { .id = MCU_TYPE_H750, .name = "STM32H750" },
+#elif defined(STM32H730xx)
+        { .id = MCU_TYPE_H730, .name = "STM32H730" },
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+        { .id = MCU_TYPE_H7A3, .name = "STM32H7A3" },
+#elif defined(STM32H723xx) || defined(STM32H725xx)
+        { .id = MCU_TYPE_H723_725, .name = "STM32H723/H725" },
+#elif defined(STM32G474xx)
+        { .id = MCU_TYPE_G474, .name = "STM32G474" },
+#elif defined(AT32F435G)
+        { .id = MCU_TYPE_AT32F435G, .name = "AT32F435G" },
+#elif defined(AT32F435M)
+        { .id = MCU_TYPE_AT32F435M, .name = "AT32F435M" },
+#elif defined(APM32F405)
+        { .id = MCU_TYPE_APM32F405, .name = "APM32F405" },
+#elif defined(APM32F407)
+        { .id = MCU_TYPE_APM32F407, .name = "APM32F407" },
+#else
+#error MCU Type info not defined for STM (or clone)
+#endif
+    };
+    unsigned revision = 0;
+#if defined(STM32H743xx)
+    switch (HAL_GetREVID()) {
+    case REV_ID_Y:
+        revision = 1;
+        break;
+    case REV_ID_X:
+        revision = 2;
+        break;
+    case REV_ID_V:
+        revision = 3;
+        break;
+    default:
+        revision = 0;
+    }
+#endif
+    return info + revision;
+}

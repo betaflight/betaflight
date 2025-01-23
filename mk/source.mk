@@ -56,8 +56,8 @@ COMMON_SRC = \
             build/debug_pin.c \
             build/version.c \
             main.c \
-            $(PG_SRC) \
             common/bitarray.c \
+            common/chirp.c \
             common/colorconversion.c \
             common/crc.c \
             common/encoding.c \
@@ -369,9 +369,8 @@ SDCARD_SRC += \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c
 
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
+INCLUDE_DIRS += $(FATFS_DIR)
+VPATH        := $(VPATH):$(FATFS_DIR)
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC += \
@@ -411,22 +410,20 @@ SPEED_OPTIMISED_SRC += \
 
 endif
 
-COMMON_DEVICE_SRC = \
-            $(CMSIS_SRC) \
-            $(DEVICE_STDPERIPH_SRC)
+COMMON_DEVICE_SRC = $(CMSIS_SRC) $(DEVICE_STDPERIPH_SRC)
 
-COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC) $(RX_SRC)
+COMMON_SRC += $(CONFIG_SRC) $(PG_SRC) $(COMMON_DEVICE_SRC) $(RX_SRC)
 
 ifeq ($(EXST),yes)
-TARGET_FLAGS := -DUSE_EXST $(TARGET_FLAGS)
+TARGET_FLAGS += -DUSE_EXST
 endif
 
 ifeq ($(RAM_BASED),yes)
-TARGET_FLAGS := -DUSE_EXST -DCONFIG_IN_RAM -DRAMBASED $(TARGET_FLAGS)
+TARGET_FLAGS += -DUSE_EXST -DCONFIG_IN_RAM -DRAMBASED
 endif
 
 ifeq ($(SIMULATOR_BUILD),yes)
-TARGET_FLAGS := -DSIMULATOR_BUILD $(TARGET_FLAGS)
+TARGET_FLAGS += -DSIMULATOR_BUILD
 endif
 
 SPEED_OPTIMISED_SRC += \

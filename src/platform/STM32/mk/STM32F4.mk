@@ -42,6 +42,8 @@ STDPERIPH_SRC   = \
 VPATH       := $(VPATH):$(STDPERIPH_DIR)/src
 endif
 
+DEVICE_FLAGS = -DSTM32F4
+
 ifneq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
 STDPERIPH_SRC += stm32f4xx_fsmc.c
 endif
@@ -141,25 +143,27 @@ INCLUDE_DIRS    := \
             $(CMSIS_DIR)/Core/Include \
             $(LIB_MAIN_DIR)/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
             $(TARGET_PLATFORM_DIR)/vcpf4
+
+DEVICE_FLAGS += -DUSE_STDPERIPH_DRIVER
 endif
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 
 ifeq ($(TARGET_MCU),STM32F411xE)
-DEVICE_FLAGS    = -DSTM32F411xE -finline-limit=20
+DEVICE_FLAGS    += -DSTM32F411xE -finline-limit=20
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
 STARTUP_SRC     = STM32/startup/startup_stm32f411xe.s
 MCU_FLASH_SIZE  := 512
 
 else ifeq ($(TARGET_MCU),STM32F405xx)
-DEVICE_FLAGS    = -DSTM32F40_41xxx -DSTM32F405xx
+DEVICE_FLAGS    += -DSTM32F40_41xxx -DSTM32F405xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
 STARTUP_SRC     = STM32/startup/startup_stm32f40xx.s
 MCU_FLASH_SIZE  := 1024
 
 else ifeq ($(TARGET_MCU),STM32F446xx)
-DEVICE_FLAGS    = -DSTM32F446xx
+DEVICE_FLAGS    += -DSTM32F446xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f446.ld
 STARTUP_SRC     = STM32/startup/startup_stm32f446xx.s
 MCU_FLASH_SIZE  := 512
@@ -167,7 +171,7 @@ MCU_FLASH_SIZE  := 512
 else
 $(error Unknown MCU for F4 target)
 endif
-DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
+DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
 MCU_COMMON_SRC = \
             common/stm32/system.c \
