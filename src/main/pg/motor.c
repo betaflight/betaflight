@@ -51,31 +51,28 @@ PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
-#ifdef USE_BRUSHED_MOTORS
+#if defined(USE_BRUSHED_MOTORS)
     motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_BRUSHED;
     motorConfig->dev.useContinuousUpdate = true;
+    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
 #else
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-#ifndef USE_DSHOT
-    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_PWM ) {
-        motorConfig->dev.useContinuousUpdate = true;
-    }
-    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;
-#elif defined(DEFAULT_MOTOR_DSHOT_SPEED)
+    motorConfig->motorIdle = 550;
+#if !defined(USE_DSHOT) && defined(USE_PWM_OUTPUT)
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_PWM;
+    motorConfig->dev.useContinuousUpdate = true;
+#elif defined(USE_DSHOT) && defined(DEFAULT_MOTOR_DSHOT_SPEED)
     motorConfig->dev.motorProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
-#else
+#elif defined(USE_DSHOT)
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DSHOT600;
-#endif // USE_DSHOT
-#endif // BRUSHED_MOTORS
+#else
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;
+#endif // protocol selection
+#endif // brushed motors
 
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
-#ifdef BRUSHED_MOTORS
-    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
-#else
-    motorConfig->motorIdle = 550;
-#endif // BRUSHED_MOTORS
     motorConfig->kv = 1960;
 
 #ifdef USE_TIMER
