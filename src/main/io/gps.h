@@ -193,14 +193,6 @@ typedef enum {
 #define SBAS_MODE_MAX SBAS_GAGAN
 
 typedef enum {
-    GPS_BAUDRATE_115200 = 0,
-    GPS_BAUDRATE_57600,
-    GPS_BAUDRATE_38400,
-    GPS_BAUDRATE_19200,
-    GPS_BAUDRATE_9600
-} gpsBaudRate_e;
-
-typedef enum {
     GPS_AUTOCONFIG_OFF = 0,
     GPS_AUTOCONFIG_ON
 } gpsAutoConfig_e;
@@ -216,8 +208,6 @@ typedef enum {
     UBLOX_ACK_GOT_ACK,
     UBLOX_ACK_GOT_NACK
 } ubloxAckState_e;
-
-#define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
