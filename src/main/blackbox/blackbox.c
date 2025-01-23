@@ -1444,7 +1444,7 @@ STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
 #define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) \
     case __COUNTER__: {                               \
         blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
-    } break
+    } break // absence of semicolon on this line is what enforces the presence of a semicolon at the end of each input line
 
 #define BLACKBOX_PRINT_HEADER_LINE_CUSTOM(...) \
     case __COUNTER__: {                        \
