@@ -35,7 +35,7 @@ CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
 
 TARGET        := $(shell grep " FC_TARGET_MCU" $(CONFIG_HEADER_FILE) | awk '{print $$3}' )
-HSE_VALUE_MHZ := $(shell grep " SYSTEM_HSE_MHZ" $(CONFIG_HEADER_FILE) | awk '{print $$3}' )
+HSE_VALUE_MHZ := $(shell grep " SYSTEM_HSE_MHZ" $(CONFIG_HEADER_FILE) | grep -v "^\s*//" | awk '{print $$3}' )
 ifneq ($(HSE_VALUE_MHZ),)
 HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
 endif
