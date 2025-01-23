@@ -127,7 +127,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
 FAST_CODE void pwmCompleteDshotMotorUpdate(void)
 {
     /* If there is a dshot command loaded up, time it correctly with motor update*/
-    if (!dshotCommandQueueEmpty() && !dshotCommandOutputIsEnabled(motorCount)) {
+    if (!dshotCommandQueueEmpty() && !dshotCommandOutputIsEnabled(dshotMotorCount)) {
         return;
     }
 

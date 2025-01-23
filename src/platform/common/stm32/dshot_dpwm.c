@@ -33,7 +33,7 @@
 #include "pwm_output_dshot_shared.h"
 #include "drivers/dshot.h"
 #include "dshot_dpwm.h"
-#include "drivers/motor.h"
+#include "drivers/motor_impl.h"
 
 #include "pg/motor.h"
 
@@ -111,7 +111,7 @@ static void dshotPwmDisableMotors(void)
 
 static bool dshotPwmEnableMotors(void)
 {
-    for (int i = 0; i < motorCount; i++) {
+    for (int i = 0; i < dshotMotorCount; i++) {
         motorDmaOutput_t *motor = getMotorDmaOutput(i);
         const IO_t motorIO = IOGetByTag(motor->timerHardware->tag);
         IOConfigGPIOAF(motorIO, motor->iocfg, motor->timerHardware->alternateFunction);
@@ -152,10 +152,10 @@ static const motorVTable_t dshotPwmVTable = {
     .isMotorIdle = pwmDshotIsMotorIdle,
 };
 
-void dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
+bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 {
     device->vTable = &dshotPwmVTable;
-    motorCount = device->count;
+    dshotMotorCount = device->count;
 #ifdef USE_DSHOT_TELEMETRY
     useDshotTelemetry = motorConfig->useDshotTelemetry;
 #endif
@@ -175,7 +175,7 @@ void dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         break;
     }
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
         const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
         const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
@@ -196,11 +196,12 @@ void dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         }
 
         /* not enough motors initialised for the mixer or a break in the motors */
-        device->vTable = NULL;
-        motorCount = 0;
+        dshotMotorCount = 0;
         /* TODO: block arming and add reason system cannot arm */
-        return;
+        return false;
     }
+
+    return true;
 }
 
 #endif // USE_DSHOT

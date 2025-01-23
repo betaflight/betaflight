@@ -24,8 +24,12 @@
 #include "pg/motor.h"
 #include "fc/rc_controls.h" // for flight3DConfig_t
 #include "config/feature.h"
+#include "drivers/pwm_output.h"
 
 #if defined(USE_PWM_OUTPUT) && defined(USE_MOTOR)
+
+FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT uint8_t pwmMotorCount;
 
 void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {

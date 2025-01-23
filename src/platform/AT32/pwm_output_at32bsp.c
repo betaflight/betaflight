@@ -28,15 +28,12 @@
 #ifdef USE_PWM_OUTPUT
 
 #include "drivers/io.h"
-#include "drivers/motor.h"
+#include "drivers/motor_impl.h"
 #include "drivers/pwm_output.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 
 #include "pg/motor.h"
-
-FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
-static int motorCount = 0;
 
 static void pwmOCConfig(tmr_type *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -77,7 +74,7 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
     *channel->ccr = 0;
 }
 
-static FAST_DATA_ZERO_INIT motorDevice_t *motorPwmDevice;
+static FAST_DATA_ZERO_INIT motorDevice_t *pwmMotorDevice;
 
 static void pwmWriteStandard(uint8_t index, float value)
 {
@@ -87,7 +84,7 @@ static void pwmWriteStandard(uint8_t index, float value)
 
 void pwmShutdownPulsesForAllMotors(void)
 {
-    for (int index = 0; index < motorCount; index++) {
+    for (int index = 0; index < pwmMotorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         if (motors[index].channel.ccr) {
             *motors[index].channel.ccr = 0;
@@ -104,7 +101,7 @@ static motorVTable_t motorPwmVTable;
 bool pwmEnableMotors(void)
 {
     /* check motors can be enabled */
-    return (motorPwmDevice->vTable);
+    return (pwmMotorDevice->vTable);
 }
 
 bool pwmIsMotorEnabled(unsigned index)
@@ -120,7 +117,7 @@ static void pwmCompleteMotorUpdate(void)
         return;
     }
 
-    for (int index = 0; index < motorCount; index++) {
+    for (int index = 0; index < pwmMotorCount; index++) {
         if (motors[index].forceOverflow) {
             timerForceOverflow(motors[index].channel.tim);
         }
@@ -155,17 +152,17 @@ static motorVTable_t motorPwmVTable = {
     .isMotorIdle = NULL,
 };
 
-void motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t idlePulse)
+bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t idlePulse)
 {
     memset(motors, 0, sizeof(motors));
 
     if (!device) {
-        return;
+        return false;
     }
 
     device->vTable = &motorPwmVTable;
-    motorPwmDevice = device;
-    motorCount = device->count;
+    pwmMotorDevice = device;
+    pwmMotorCount = device->count;
     useContinuousUpdate = motorConfig->useContinuousUpdate;
 
     float sMin = 0;
@@ -197,7 +194,7 @@ void motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         break;
     }
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < pwmMotorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
         const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
         const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
@@ -205,9 +202,9 @@ void motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         if (timerHardware == NULL) {
             /* not enough motors initialised for the mixer or a break in the motors */
             device->vTable = NULL;
-            motorCount = 0;
+            pwmMotorCount = 0;
             /* TODO: block arming and add reason system cannot arm */
-            return;
+            return false;
         }
 
         motors[motorIndex].io = IOGetByTag(tag);
@@ -245,6 +242,7 @@ void motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         motors[motorIndex].forceOverflow = !timerAlreadyUsed;
         motors[motorIndex].enabled = true;
     }
+    return true;
 }
 
 pwmOutputPort_t *pwmGetMotors(void)

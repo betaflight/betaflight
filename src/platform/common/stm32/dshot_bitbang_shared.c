@@ -21,6 +21,16 @@
 
 #include "dshot_bitbang_impl.h"
 
+FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
+FAST_DATA_ZERO_INIT int usedMotorPacers = 0;
+
+FAST_DATA_ZERO_INIT bbPort_t bbPorts[MAX_SUPPORTED_MOTOR_PORTS];
+FAST_DATA_ZERO_INIT int usedMotorPorts;
+
+FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
+
+dshotBitbangStatus_e bbStatus;
+
 void bbDshotRequestTelemetry(unsigned motorIndex)
 {
     if (motorIndex >= ARRAYLEN(bbMotors)) {

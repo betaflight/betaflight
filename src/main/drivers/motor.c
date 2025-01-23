@@ -283,29 +283,30 @@ void motorDevInit(unsigned motorCount)
     }
 #endif
 
+    bool success = false;
     motorDevice.count = motorCount;
     if (isMotorProtocolEnabled()) {
         do {
             if (!isMotorProtocolDshot()) {
 #ifdef USE_PWM_OUTPUT
-                motorPwmDevInit(&motorDevice, motorDevConfig, idlePulse);
+                success = motorPwmDevInit(&motorDevice, motorDevConfig, idlePulse);
 #endif
                 break;
             }
 #ifdef USE_DSHOT
 #ifdef USE_DSHOT_BITBANG
             if (isDshotBitbangActive(motorDevConfig)) {
-                dshotBitbangDevInit(&motorDevice, motorDevConfig);
+                success = dshotBitbangDevInit(&motorDevice, motorDevConfig);
                 break;
             }
 #endif
-            dshotPwmDevInit(&motorDevice, motorDevConfig);
+            success = dshotPwmDevInit(&motorDevice, motorDevConfig);
 #endif
         } while(0);
     }
 
     // if the VTable has been populated, the device is initialized.
-    if (motorDevice.vTable) {
+    if (success) {
         motorDevice.initialized = true;
         motorDevice.motorEnableTimeMs = 0;
         motorDevice.enabled = false;

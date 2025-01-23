@@ -24,7 +24,6 @@
 #include "dshot_dpwm.h"
 
 extern FAST_DATA_ZERO_INIT uint8_t dmaMotorTimerCount;
-extern FAST_DATA_ZERO_INIT uint8_t motorCount;
 
 extern FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 extern FAST_DATA_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];

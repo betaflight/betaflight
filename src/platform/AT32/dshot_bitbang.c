@@ -49,16 +49,6 @@
 // Maximum time to wait for telemetry reception to complete
 #define DSHOT_TELEMETRY_TIMEOUT 2000
 
-FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
-FAST_DATA_ZERO_INIT int usedMotorPacers = 0;
-
-FAST_DATA_ZERO_INIT bbPort_t bbPorts[MAX_SUPPORTED_MOTOR_PORTS];
-FAST_DATA_ZERO_INIT int usedMotorPorts;
-
-FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
-
-dshotBitbangStatus_e bbStatus;
-
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
 // on manipulating input buffer content especially if it is read multiple times,
 // as the buffer region is attributed as not cachable.
@@ -503,7 +493,7 @@ static bool bbDecodeTelemetry(void)
             SCB_InvalidateDCache_by_Addr((uint32_t *)bbPort->portInputBuffer, DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES);
         }
 #endif
-        for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+        for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
 
             uint32_t rawValue = decode_bb_bitband(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
@@ -586,7 +576,7 @@ static void bbUpdateComplete(void)
     // If there is a dshot command loaded up, time it correctly with motor update
 
     if (!dshotCommandQueueEmpty()) {
-        if (!dshotCommandOutputIsEnabled(motorCount)) {
+        if (!dshotCommandOutputIsEnabled(dshotMotorCount)) {
             return;
         }
     }
@@ -633,7 +623,7 @@ static void bbUpdateComplete(void)
 
 static bool bbEnableMotors(void)
 {
-    for (int i = 0; i < motorCount; i++) {
+    for (int i = 0; i < dshotMotorCount; i++) {
         if (bbMotors[i].configured) {
             IOConfigGPIO(bbMotors[i].io, bbMotors[i].iocfg);
         }
@@ -660,7 +650,7 @@ static void bbPostInit(void)
 {
     bbFindPacerTimer();
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
 
         if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorProtocol, bbMotors[motorIndex].output)) {
             return;
@@ -693,14 +683,14 @@ dshotBitbangStatus_e dshotBitbangGetStatus(void)
     return bbStatus;
 }
 
-void dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
+bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 {
     dbgPinLo(0);
     dbgPinLo(1);
 
     motorProtocol = motorConfig->motorProtocol;
     device->vTable = &bbVTable;
-    motorCount = device->count;
+    dshotMotorCount = device->count;
 
     bbStatus = DSHOT_BITBANG_STATUS_OK;
 
@@ -710,7 +700,7 @@ void dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
 
     memset(bbOutputBuffer, 0, sizeof(bbOutputBuffer));
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
@@ -728,8 +718,8 @@ void dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
             /* not enough motors initialised for the mixer or a break in the motors */
             bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
             device->vTable = NULL;
-            motorCount = 0;
-            return;
+            dshotMotorCount = 0;
+            return false;
         }
 
         int pinIndex = IO_GPIOPinIdx(io);
@@ -747,6 +737,7 @@ void dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
             IOHi(io);
         }
     }
+    return true;
 }
 
 #endif // USE_DSHOT_BB

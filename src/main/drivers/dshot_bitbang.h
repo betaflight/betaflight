@@ -38,7 +38,7 @@ typedef enum {
     DSHOT_BITBANG_STATUS_TOO_MANY_PORTS,
 } dshotBitbangStatus_e;
 
-void dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
+bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
 dshotBitbangStatus_e dshotBitbangGetStatus();
 const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel);
 const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer);

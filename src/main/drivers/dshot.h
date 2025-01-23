@@ -93,6 +93,7 @@ uint16_t dshotConvertToExternal(float motorValue);
 
 uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb);
 extern bool useDshotTelemetry;
+extern uint8_t dshotMotorCount;
 
 #ifdef USE_DSHOT_TELEMETRY
 
@@ -126,7 +127,7 @@ FAST_DATA_ZERO_INIT extern dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCou
 
 #endif
 
-void dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
+bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
 
 extern dshotTelemetryState_t dshotTelemetryState;
 

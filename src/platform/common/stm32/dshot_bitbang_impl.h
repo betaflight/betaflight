@@ -229,6 +229,7 @@ extern FAST_DATA_ZERO_INIT int usedMotorPorts;
 extern FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
 
 extern uint8_t bbPuPdMode;
+extern dshotBitbangStatus_e bbStatus;
 
 // DMA buffers
 // Note that we are not sharing input and output buffers,
