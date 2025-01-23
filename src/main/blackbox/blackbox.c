@@ -1442,14 +1442,14 @@ STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
 
 #ifndef BLACKBOX_PRINT_HEADER_LINE
 #define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) \
-    do { \
-        case __COUNTER__: \
-            blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
-            break; \
-    } while (0)
-#define BLACKBOX_PRINT_HEADER_LINE_CUSTOM(...) case __COUNTER__: \
-                                                    {__VA_ARGS__}; \
-                                               break;
+    case __COUNTER__: {                               \
+        blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
+    } break
+
+#define BLACKBOX_PRINT_HEADER_LINE_CUSTOM(...) \
+    case __COUNTER__: {                        \
+        __VA_ARGS__;                           \
+    } break
 #endif
 
 /**
