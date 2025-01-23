@@ -127,7 +127,9 @@ include $(MAKE_SCRIPT_DIR)/config.mk
 HSE_VALUE       ?= 8000000
 
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
-CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(filter STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF, $(BASE_CONFIGS))
+CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF
+CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS))
+PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
 
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
 TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
@@ -548,6 +550,9 @@ $(CONFIGS_CLEAN):
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
 
+## preview           : build one target for each platform and execute make test
+preview: $(PREVIEW_TARGETS) test
+
 ## all_configs       : Build all configs
 all_configs: $(BASE_CONFIGS)
 
@@ -655,9 +660,13 @@ help: Makefile mk/tools.mk
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
+	@echo "Platforms:           $(PLATFORMS)"
 	@echo "Valid targets:       $(BASE_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
+	@echo "CI common targets:   $(CI_COMMON_TARGETS)"
+	@echo "CI excluded targets: $(CI_EXCLUDED_TARGETS)"
+	@echo "Preview targets:     $(PREVIEW_TARGETS)"
 
 targets-ci-print:
 	@echo $(CI_TARGETS)
