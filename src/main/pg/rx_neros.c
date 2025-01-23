@@ -32,6 +32,14 @@ PG_REGISTER_WITH_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig, PG_NELRS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig,
     .bindPhraseLow = "testtesttest",
-    .bindPhraseHigh = "testtesttest"
+    .bindPhraseHigh = "testtesttest",
+    .startFrequencyLow = 903500000,
+    .midFrequencyLow = 915000000,
+    .endFrequencyLow = 926900000,
+    .numChannelsLow = 40,
+    .startFrequencyHigh = 903500000,
+    .midFrequencyHigh = 915000000,
+    .endFrequencyHigh = 926900000,
+    .numChannelsHigh = 40
 );
 

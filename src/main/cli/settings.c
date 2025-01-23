@@ -1664,8 +1664,16 @@ const clivalue_t valueTable[] = {
     { "expresslrs_model_id",    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, modelId) },
 #endif
 #ifdef USE_NEROS_RX
-    { "elrs_bind_phrase_low",       VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_NAME_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseLow) },
-    { "elrs_bind_phrase_high",      VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_NAME_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseHigh) },
+    { "elrs_bind_phrase_low",       VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1,  MAX_PHRASE_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseLow) },
+    { "elrs_bind_phrase_high",      VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1,  MAX_PHRASE_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseHigh) },
+    { "elrs_start_frequency_low",      VAR_UINT32  | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, startFrequencyLow) },
+    { "elrs_mid_frequency_low",      VAR_UINT32  | MASTER_VALUE , .config.u32Max = UINT32_MAX, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, midFrequencyLow) },
+    { "elrs_end_frequency_low",      VAR_UINT32  | MASTER_VALUE , .config.u32Max = UINT32_MAX, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, endFrequencyLow) },
+    { "elrs_num_channels_low",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, numChannelsLow) },
+    { "elrs_start_frequency_high",      VAR_UINT32  | MASTER_VALUE , .config.u32Max = UINT32_MAX, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, startFrequencyHigh) },
+    { "elrs_mid_frequency_high",      VAR_UINT32  | MASTER_VALUE , .config.u32Max = UINT32_MAX, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, midFrequencyHigh) },
+    { "elrs_end_frequency_high",      VAR_UINT32  | MASTER_VALUE , .config.u32Max = UINT32_MAX, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, endFrequencyHigh) },
+    { "elrs_num_channels_high",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, numChannelsHigh) },
 #endif
 
 

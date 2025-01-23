@@ -291,10 +291,17 @@ void crsfFrameHeartbeat(sbuf_t *dst)
 
 void crsfFrameBindPhrase(sbuf_t *dst,bool rxSelect)
 {   
-    UNUSED(rxSelect);
     char* bindPhrase = nelrsConfigMutable()->bindPhraseHigh;
+    uint32_t startFrequency = nelrsConfigMutable()->startFrequencyHigh;
+    uint32_t midFrequency = nelrsConfigMutable()->midFrequencyHigh;
+    uint32_t endFrequency = nelrsConfigMutable()->endFrequencyHigh;
+    uint8_t numChannels = nelrsConfigMutable()->numChannelsHigh;
     if(rxSelect == true){
-       bindPhrase = nelrsConfigMutable()->bindPhraseLow;
+        bindPhrase = nelrsConfigMutable()->bindPhraseLow;
+        startFrequency = nelrsConfigMutable()->startFrequencyLow;
+        midFrequency = nelrsConfigMutable()->midFrequencyLow;
+        endFrequency = nelrsConfigMutable()->endFrequencyLow;
+        numChannels = nelrsConfigMutable()->numChannelsLow;
     }
     
     uint8_t buff[6] = {0};
@@ -308,6 +315,10 @@ void crsfFrameBindPhrase(sbuf_t *dst,bool rxSelect)
     sbufWriteU8(dst,buff[3]);
     sbufWriteU8(dst,buff[4]);
     sbufWriteU8(dst,buff[5]);
+    sbufWriteU32BigEndian(dst, startFrequency);
+    sbufWriteU32BigEndian(dst, midFrequency);
+    sbufWriteU32BigEndian(dst, endFrequency);
+    sbufWriteU8(dst, numChannels);
 }
 
 typedef enum {
@@ -525,7 +536,7 @@ void crsfSendRXBindPhrases(void){
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
-    if(bindPhrasesSent == 1){
+    if(bindPhrasesSent == 2){
         pinioSet(switchPin,false);
         crsfInitializeFrame(dst);
         crsfFrameBindPhrase(dst,false);
@@ -533,7 +544,7 @@ void crsfSendRXBindPhrases(void){
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
     }
-    else if (bindPhrasesSent == 3){
+    else if (bindPhrasesSent == 4){
         pinioSet(switchPin,true);
         crsfInitializeFrame(dst);
         crsfFrameBindPhrase(dst,true);
@@ -541,14 +552,14 @@ void crsfSendRXBindPhrases(void){
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
     }
-    else if(bindPhrasesSent == 4){
+    else if(bindPhrasesSent == 6){
         pinioSet(switchPin,false);
     }
 }
 
 void bindPhraseProcess(uint32_t currentTime) {
     UNUSED(currentTime);
-    if(bindPhrasesSent < 5){
+    if(bindPhrasesSent < 7){
         crsfSendRXBindPhrases();
         bindPhrasesSent+=1;
     }
