@@ -179,7 +179,6 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/pwm_output_dshot.c \
             STM32/adc_stm32f4xx.c \
             STM32/bus_i2c_stm32f4xx.c \
@@ -193,7 +192,6 @@ MCU_COMMON_SRC = \
             STM32/io_stm32.c \
             STM32/light_ws2811strip_stdperiph.c \
             STM32/persistent.c \
-            STM32/pwm_output.c \
             STM32/rcc_stm32.c \
             STM32/sdio_f4xx.c \
             STM32/serial_uart_stdperiph.c \

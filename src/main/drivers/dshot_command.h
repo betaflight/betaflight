@@ -71,6 +71,6 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 void dshotSetPidLoopTime(uint32_t pidLoopTime);
 bool dshotCommandQueueEmpty(void);
 bool dshotCommandIsProcessing(void);
-uint8_t dshotCommandGetCurrent(uint8_t index);
-bool dshotCommandOutputIsEnabled(uint8_t motorCount);
+uint8_t dshotCommandGetCurrent(unsigned index);
+bool dshotCommandOutputIsEnabled(unsigned motorCount);
 bool dshotStreamingCommandsAreEnabled(void);

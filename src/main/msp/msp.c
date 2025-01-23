@@ -1871,12 +1871,12 @@ case MSP_NAME:
     case MSP_ADVANCED_CONFIG:
         sbufWriteU8(dst, 1);  // was gyroConfig()->gyro_sync_denom - removed in API 1.43
         sbufWriteU8(dst, pidConfig()->pid_process_denom);
-        sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
-        sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
+        sbufWriteU8(dst, motorConfig()->dev.useContinuousUpdate);
+        sbufWriteU8(dst, motorConfig()->dev.motorProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
         sbufWriteU16(dst, motorConfig()->motorIdle);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_use_32kHz
-        sbufWriteU8(dst, motorConfig()->dev.motorPwmInversion);
+        sbufWriteU8(dst, motorConfig()->dev.motorInversion);
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
         sbufWriteU8(dst, gyroConfig()->gyro_high_fsr);
         sbufWriteU8(dst, gyroConfig()->gyroMovementCalibrationThreshold);
@@ -3074,8 +3074,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_ADVANCED_CONFIG:
         sbufReadU8(src); // was gyroConfigMutable()->gyro_sync_denom - removed in API 1.43
         pidConfigMutable()->pid_process_denom = sbufReadU8(src);
-        motorConfigMutable()->dev.useUnsyncedPwm = sbufReadU8(src);
-        motorConfigMutable()->dev.motorPwmProtocol = sbufReadU8(src);
+        motorConfigMutable()->dev.useContinuousUpdate = sbufReadU8(src);
+        motorConfigMutable()->dev.motorProtocol = sbufReadU8(src);
         motorConfigMutable()->dev.motorPwmRate = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->motorIdle = sbufReadU16(src);
@@ -3084,7 +3084,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src); // DEPRECATED: gyro_use_32khz
         }
         if (sbufBytesRemaining(src)) {
-            motorConfigMutable()->dev.motorPwmInversion = sbufReadU8(src);
+            motorConfigMutable()->dev.motorInversion = sbufReadU8(src);
         }
         if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_to_use = sbufReadU8(src);

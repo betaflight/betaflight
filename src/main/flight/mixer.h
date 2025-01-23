@@ -30,7 +30,7 @@
 #include "pg/pg.h"
 
 #include "drivers/io_types.h"
-#include "drivers/pwm_output.h"
+#include "drivers/motor.h"
 
 #define QUAD_MOTOR_COUNT 4
 
