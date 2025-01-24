@@ -107,6 +107,7 @@ typedef struct gpsInitData_s {
 
 // UBX will cycle through these until valid data is received
 static const gpsInitData_t gpsInitData[] = {
+    { BAUD_230400, "$PUBX,41,1,0003,0001,230400,0*1C\r\n" },
     { BAUD_115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n" },
     { BAUD_57600,  "$PUBX,41,1,0003,0001,57600,0*2D\r\n" },
     { BAUD_38400,  "$PUBX,41,1,0003,0001,38400,0*26\r\n" },

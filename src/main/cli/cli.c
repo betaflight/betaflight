@@ -1348,7 +1348,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
             portConfig.msp_baudrateIndex = baudRateIndex;
             break;
         case 1:
-            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_230400) {
                 continue;
             }
             portConfig.gps_baudrateIndex = baudRateIndex;
@@ -1528,7 +1528,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
             cliPrintLinef("Invalid port%d %d", i + 1, ports[i].id);
             return;
         } else {
-            cliPrintLinef("Port%d: %s", i + 1, serialName(ports[i].id, "<invalid>"));
+            cliPrintLinef("Port%d: %s", i + 1, serialName(ports[i].id, invalidName));
         }
     }
 
