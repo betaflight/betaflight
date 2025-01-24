@@ -747,6 +747,11 @@
 #define DEF_TIM_AF__PB14__TCH_TIM12_CH1   D(2, 12)
 #define DEF_TIM_AF__PB15__TCH_TIM12_CH2   D(2, 12)
 
+#define DEF_TIM_AF__PB0__TCH_TIM8_CH2N     D(3, 8)
+#define DEF_TIM_AF__PB1__TCH_TIM8_CH3N     D(3, 8)
+#define DEF_TIM_AF__PB14__TCH_TIM8_CH2N    D(3, 8)
+#define DEF_TIM_AF__PB15__TCH_TIM8_CH3N    D(3, 8)
+
 //PORTC
 #define DEF_TIM_AF__PC6__TCH_TIM3_CH1     D(2, 3)
 #define DEF_TIM_AF__PC7__TCH_TIM3_CH2     D(2, 3)
