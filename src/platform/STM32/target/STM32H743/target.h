@@ -62,7 +62,6 @@
 #define TARGET_IO_PORTH 0xffff
 #define TARGET_IO_PORTI 0xffff
 
-
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
