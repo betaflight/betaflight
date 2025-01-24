@@ -677,7 +677,7 @@ void timerInit(void)
     memset(timerConfig, 0, sizeof(timerConfig));
 
 #if defined(PARTIAL_REMAP_TIM3)
-    GPIO_PinRemautopilotConfig(GPIO_PartialRemap_TIM3, ENABLE);
+    GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
 #endif
 
     #ifdef USE_TIMER_MGMT
