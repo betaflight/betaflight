@@ -37,9 +37,9 @@ PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
     .dev = {
         .motorPwmRate = 400,
-        .motorPwmProtocol = 0,
-        .motorPwmInversion = 0,
-        .useUnsyncedPwm = 0,
+        .motorProtocol = 0,
+        .motorInversion = 0,
+        .useContinuousUpdate = 0,
         .useBurstDshot = 0,
         .useDshotTelemetry = 0,
         .useDshotEdt = 0,

@@ -266,7 +266,6 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_timing.c \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/adc_stm32h7xx.c \
             STM32/audio_stm32h7xx.c \
             STM32/bus_i2c_hal_init.c \
@@ -285,7 +284,6 @@ MCU_COMMON_SRC = \
             STM32/memprot_hal.c \
             STM32/memprot_stm32h7xx.c \
             STM32/persistent.c \
-            STM32/pwm_output.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_h7xx.c \

@@ -40,15 +40,16 @@
 #include "stm32f4xx.h"
 #endif
 
-#include "pwm_output.h"
+#include "drivers/pwm_output.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
+#include "dshot_dpwm.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 
 #include "pwm_output_dshot_shared.h"
 
 FAST_DATA_ZERO_INIT uint8_t dmaMotorTimerCount = 0;
+
 #ifdef STM32F7
 FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 FAST_DATA_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
@@ -60,12 +61,29 @@ motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 #ifdef USE_DSHOT_TELEMETRY
 FAST_DATA_ZERO_INIT uint32_t inputStampUs;
 
-FAST_DATA_ZERO_INIT dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCounters;
+FAST_DATA_ZERO_INIT dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
 #endif
 
-motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
+motorDmaOutput_t *getMotorDmaOutput(unsigned index)
 {
+    if (index >= ARRAYLEN(dmaMotors)) {
+        return NULL;
+    }
     return &dmaMotors[index];
+}
+
+bool pwmDshotIsMotorIdle(unsigned index)
+{
+    const motorDmaOutput_t *motor = getMotorDmaOutput(index);
+    return motor && motor->protocolControl.value == 0;
+}
+
+void pwmDshotRequestTelemetry(unsigned index)
+{
+    motorDmaOutput_t * const motor = getMotorDmaOutput(index);
+    if (motor) {
+        motor->protocolControl.requestTelemetry = true;
+    }
 }
 
 uint8_t getTimerIndex(TIM_TypeDef *timer)
@@ -127,12 +145,12 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 #else
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);
 
-        // XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
-        #ifdef AT32F435
+// XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
+#ifdef AT32F435
         xDMA_Cmd(motor->dmaRef, TRUE);
-        #else
+#else
         xDMA_Cmd(motor->dmaRef, ENABLE);
-        #endif
+#endif
 
 #endif // USE_FULL_LL_DRIVER
     }
@@ -141,7 +159,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
 #ifdef USE_DSHOT_TELEMETRY
 
-void dshotEnableChannels(uint8_t motorCount);
+void dshotEnableChannels(unsigned motorCount);
 
 static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
 {
@@ -191,13 +209,15 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
 
 #endif
 
-#ifdef USE_DSHOT_TELEMETRY
 /**
  * Process dshot telemetry packets before switching the channels back to outputs
  *
 */
 FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 {
+#ifndef USE_DSHOT_TELEMETRY
+    return true;
+#else
     if (!useDshotTelemetry) {
         return true;
     }
@@ -207,7 +227,7 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 #endif
     const timeUs_t currentUs = micros();
 
-    for (int i = 0; i < dshotPwmDevice.count; i++) {
+    for (int i = 0; i < dshotMotorCount; i++) {
         timeDelta_t usSinceInput = cmpTimeUs(currentUs, inputStampUs);
         if (usSinceInput >= 0 && usSinceInput < dmaMotors[i].dshotTelemetryDeadtimeUs) {
             return false;
@@ -257,9 +277,9 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 
     dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
     inputStampUs = 0;
-    dshotEnableChannels(dshotPwmDevice.count);
+    dshotEnableChannels(dshotMotorCount);
     return true;
+#endif // USE_DSHOT_TELEMETRY
 }
 
-#endif // USE_DSHOT_TELEMETRY
 #endif // USE_DSHOT

@@ -36,15 +36,14 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_bitbang.h"
-#include "drivers/dshot_bitbang_impl.h"
+#include "dshot_bitbang_impl.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/nvic.h"
-#include "drivers/pwm_output.h" // XXX for pwmOutputPort_t motors[]; should go away with refactoring
-#include "drivers/dshot_dpwm.h" // XXX for motorDmaOutput_t *getMotorDmaOutput(uint8_t index); should go away with refactoring
 #include "drivers/dshot_bitbang_decode.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "pwm_output_dshot_shared.h"
 
 #include "pg/motor.h"
 #include "pg/pinio.h"
@@ -57,17 +56,6 @@
 
 // Maximum time to wait for telemetry reception to complete
 #define DSHOT_TELEMETRY_TIMEOUT 2000
-
-FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
-FAST_DATA_ZERO_INIT int usedMotorPacers = 0;
-
-FAST_DATA_ZERO_INIT bbPort_t bbPorts[MAX_SUPPORTED_MOTOR_PORTS];
-FAST_DATA_ZERO_INIT int usedMotorPorts;
-
-FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
-
-static FAST_DATA_ZERO_INIT int motorCount;
-dshotBitbangStatus_e bbStatus;
 
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
 // on manipulating input buffer content especially if it is read multiple times,
@@ -106,10 +94,9 @@ const timerHardware_t bbTimerHardware[] = {
 #endif
 };
 
-static FAST_DATA_ZERO_INIT motorDevice_t bbDevice;
 static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
 
-static motorPwmProtocolTypes_e motorPwmProtocol;
+static motorProtocolTypes_e motorProtocol;
 
 // DMA GPIO output buffer formatting
 
@@ -259,15 +246,15 @@ const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer)
 
 // Return frequency of smallest change [state/sec]
 
-static uint32_t getDshotBaseFrequency(motorPwmProtocolTypes_e pwmProtocolType)
+static uint32_t getDshotBaseFrequency(motorProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-    case(PWM_TYPE_DSHOT600):
+    case(MOTOR_PROTOCOL_DSHOT600):
         return MOTOR_DSHOT600_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
-    case(PWM_TYPE_DSHOT300):
+    case(MOTOR_PROTOCOL_DSHOT300):
         return MOTOR_DSHOT300_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
     default:
-    case(PWM_TYPE_DSHOT150):
+    case(MOTOR_PROTOCOL_DSHOT150):
         return MOTOR_DSHOT150_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
     }
 }
@@ -380,7 +367,7 @@ static void bbFindPacerTimer(void)
     }
 }
 
-static void bbTimebaseSetup(bbPort_t *bbPort, motorPwmProtocolTypes_e dshotProtocolType)
+static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
     uint32_t timerclock = timerClock(bbPort->timhw->tim);
 
@@ -398,7 +385,7 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorPwmProtocolTypes_e dshotProto
 // it does not use the timer channel associated with the pin.
 //
 
-static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     // Return if no GPIO is specified
     if (!io) {
@@ -430,10 +417,6 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
         }
 
         if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->owner.owner, bbPort->owner.resourceIndex)) {
-            bbDevice.vTable.write = motorWriteNull;
-            bbDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
-            bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
-
             return false;
         }
 
@@ -531,7 +514,7 @@ static bool bbDecodeTelemetry(void)
             SCB_InvalidateDCache_by_Addr((uint32_t *)bbPort->portInputBuffer, DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES);
         }
 #endif
-        for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+        for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
 #ifdef APM32F4
             uint32_t rawValue = decode_bb_bitband(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
@@ -614,7 +597,7 @@ static void bbUpdateComplete(void)
     // If there is a dshot command loaded up, time it correctly with motor update
 
     if (!dshotCommandQueueEmpty()) {
-        if (!dshotCommandOutputIsEnabled(bbDevice.count)) {
+        if (!dshotCommandOutputIsEnabled(dshotMotorCount)) {
             return;
         }
     }
@@ -649,7 +632,7 @@ static void bbUpdateComplete(void)
 
 static bool bbEnableMotors(void)
 {
-    for (int i = 0; i < motorCount; i++) {
+    for (int i = 0; i < dshotMotorCount; i++) {
         if (bbMotors[i].configured) {
             IOConfigGPIO(bbMotors[i].io, bbMotors[i].iocfg);
         }
@@ -667,7 +650,7 @@ static void bbShutdown(void)
     return;
 }
 
-static bool bbIsMotorEnabled(uint8_t index)
+static bool bbIsMotorEnabled(unsigned index)
 {
     return bbMotors[index].enabled;
 }
@@ -676,17 +659,13 @@ static void bbPostInit(void)
 {
     bbFindPacerTimer();
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
 
-        if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorPwmProtocol, bbMotors[motorIndex].output)) {
+        if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorProtocol, bbMotors[motorIndex].output)) {
             return;
         }
 
         bbMotors[motorIndex].enabled = true;
-
-        // Fill in motors structure for 4way access (XXX Should be refactored)
-
-        motors[motorIndex].enabled = true;
     }
 }
 
@@ -704,6 +683,8 @@ static motorVTable_t bbVTable = {
     .convertExternalToMotor = dshotConvertFromExternal,
     .convertMotorToExternal = dshotConvertToExternal,
     .shutdown = bbShutdown,
+    .isMotorIdle = bbDshotIsMotorIdle,
+    .requestTelemetry = bbDshotRequestTelemetry,
 };
 
 dshotBitbangStatus_e dshotBitbangGetStatus(void)
@@ -711,14 +692,18 @@ dshotBitbangStatus_e dshotBitbangGetStatus(void)
     return bbStatus;
 }
 
-motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
+bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 {
     dbgPinLo(0);
     dbgPinLo(1);
 
-    motorPwmProtocol = motorConfig->motorPwmProtocol;
-    bbDevice.vTable = bbVTable;
-    motorCount = count;
+    if (!device || !motorConfig) {
+        return false;
+    }
+
+    motorProtocol = motorConfig->motorProtocol;
+    device->vTable = &bbVTable;
+    dshotMotorCount = device->count;
     bbStatus = DSHOT_BITBANG_STATUS_OK;
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -727,12 +712,12 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
 
     memset(bbOutputBuffer, 0, sizeof(bbOutputBuffer));
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
-        uint8_t output = motorConfig->motorPwmInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
+        uint8_t output = motorConfig->motorInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
         bbPuPdMode = (output & TIMER_OUTPUT_INVERTED) ? BB_GPIO_PULLDOWN : BB_GPIO_PULLUP;
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -743,11 +728,10 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
 
         if (!IOIsFreeOrPreinit(io)) {
             /* not enough motors initialised for the mixer or a break in the motors */
-            bbDevice.vTable.write = motorWriteNull;
-            bbDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
-            bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
+            device->vTable = NULL;
+            dshotMotorCount = 0;
             bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
-            return NULL;
+            return false;
         }
 
         int pinIndex = IO_GPIOPinIdx(io);
@@ -766,12 +750,8 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
         } else {
             IOHi(io);
         }
-
-        // Fill in motors structure for 4way access (XXX Should be refactored)
-        motors[motorIndex].io = bbMotors[motorIndex].io;
     }
-
-    return &bbDevice;
+    return true;
 }
 
 #endif // USE_DSHOT_BITBANG

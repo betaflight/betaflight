@@ -26,6 +26,9 @@
 #include "common/time.h"
 
 #include "pg/motor.h"
+#include "drivers/motor_types.h"
+// TODO: move bitbang as implementation detail of dshot (i.e. dshot should be the interface)
+#include "drivers/dshot_bitbang.h"
 
 #define DSHOT_MIN_THROTTLE              (48)
 #define DSHOT_MAX_THROTTLE              (2047)
@@ -90,6 +93,7 @@ uint16_t dshotConvertToExternal(float motorValue);
 
 uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb);
 extern bool useDshotTelemetry;
+extern uint8_t dshotMotorCount;
 
 #ifdef USE_DSHOT_TELEMETRY
 
@@ -109,6 +113,22 @@ typedef struct dshotTelemetryState_s {
     dshotRawValueState_t rawValueState;
 } dshotTelemetryState_t;
 
+#ifdef USE_DSHOT_TELEMETRY
+extern uint32_t readDoneCount;
+
+FAST_DATA_ZERO_INIT extern uint32_t inputStampUs;
+
+typedef struct dshotTelemetryCycleCounters_s {
+    uint32_t irqAt;
+    uint32_t changeDirectionCompletedAt;
+} dshotTelemetryCycleCounters_t;
+
+FAST_DATA_ZERO_INIT extern dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
+
+#endif
+
+bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
+
 extern dshotTelemetryState_t dshotTelemetryState;
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
@@ -118,6 +138,8 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 
 void initDshotTelemetry(const timeUs_t looptimeUs);
 void updateDshotTelemetry(void);
+
+bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig);
 
 uint16_t getDshotErpm(uint8_t motorIndex);
 float getDshotRpm(uint8_t motorIndex);

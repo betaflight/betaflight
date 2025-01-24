@@ -30,9 +30,10 @@
 #ifdef USE_DSHOT
 
 #include "drivers/pwm_output.h"
+#include "pwm_output_dshot_shared.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
-#include "drivers/motor.h"
+#include "dshot_dpwm.h"
+#include "drivers/motor_impl.h"
 
 #include "pg/motor.h"
 
@@ -79,17 +80,17 @@ FAST_CODE_NOINLINE uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride,
     return PROSHOT_DMA_BUFFER_SIZE;
 }
 
-uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
+uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-    case(PWM_TYPE_PROSHOT1000):
+    case(MOTOR_PROTOCOL_PROSHOT1000):
         return MOTOR_PROSHOT1000_HZ;
-    case(PWM_TYPE_DSHOT600):
+    case(MOTOR_PROTOCOL_DSHOT600):
         return MOTOR_DSHOT600_HZ;
-    case(PWM_TYPE_DSHOT300):
+    case(MOTOR_PROTOCOL_DSHOT300):
         return MOTOR_DSHOT300_HZ;
     default:
-    case(PWM_TYPE_DSHOT150):
+    case(MOTOR_PROTOCOL_DSHOT150):
         return MOTOR_DSHOT150_HZ;
     }
 }
@@ -110,7 +111,7 @@ static void dshotPwmDisableMotors(void)
 
 static bool dshotPwmEnableMotors(void)
 {
-    for (int i = 0; i < dshotPwmDevice.count; i++) {
+    for (int i = 0; i < dshotMotorCount; i++) {
         motorDmaOutput_t *motor = getMotorDmaOutput(i);
         const IO_t motorIO = IOGetByTag(motor->timerHardware->tag);
         IOConfigGPIOAF(motorIO, motor->iocfg, motor->timerHardware->alternateFunction);
@@ -120,7 +121,7 @@ static bool dshotPwmEnableMotors(void)
     return true;
 }
 
-static bool dshotPwmIsMotorEnabled(uint8_t index)
+static bool dshotPwmIsMotorEnabled(unsigned index)
 {
     return motors[index].enabled;
 }
@@ -135,41 +136,37 @@ static FAST_CODE void dshotWrite(uint8_t index, float value)
     pwmWriteDshotInt(index, lrintf(value));
 }
 
-static motorVTable_t dshotPwmVTable = {
+static const motorVTable_t dshotPwmVTable = {
     .postInit = motorPostInitNull,
     .enable = dshotPwmEnableMotors,
     .disable = dshotPwmDisableMotors,
     .isMotorEnabled = dshotPwmIsMotorEnabled,
-    .decodeTelemetry = motorDecodeTelemetryNull, // May be updated after copying
+    .decodeTelemetry = pwmTelemetryDecode,
     .write = dshotWrite,
     .writeInt = dshotWriteInt,
     .updateComplete = pwmCompleteDshotMotorUpdate,
     .convertExternalToMotor = dshotConvertFromExternal,
     .convertMotorToExternal = dshotConvertToExternal,
     .shutdown = dshotPwmShutdown,
+    .requestTelemetry = pwmDshotRequestTelemetry,
+    .isMotorIdle = pwmDshotIsMotorIdle,
 };
 
-FAST_DATA_ZERO_INIT motorDevice_t dshotPwmDevice;
-
-motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
+bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 {
-    UNUSED(idlePulse);
-    UNUSED(useUnsyncedPwm);
-
-    dshotPwmDevice.vTable = dshotPwmVTable;
-
+    device->vTable = &dshotPwmVTable;
+    dshotMotorCount = device->count;
 #ifdef USE_DSHOT_TELEMETRY
     useDshotTelemetry = motorConfig->useDshotTelemetry;
-    dshotPwmDevice.vTable.decodeTelemetry = pwmTelemetryDecode;
 #endif
 
-    switch (motorConfig->motorPwmProtocol) {
-    case PWM_TYPE_PROSHOT1000:
+    switch (motorConfig->motorProtocol) {
+    case MOTOR_PROTOCOL_PROSHOT1000:
         loadDmaBuffer = loadDmaBufferProshot;
         break;
-    case PWM_TYPE_DSHOT600:
-    case PWM_TYPE_DSHOT300:
-    case PWM_TYPE_DSHOT150:
+    case MOTOR_PROTOCOL_DSHOT600:
+    case MOTOR_PROTOCOL_DSHOT300:
+    case MOTOR_PROTOCOL_DSHOT150:
         loadDmaBuffer = loadDmaBufferDshot;
 #ifdef USE_DSHOT_DMAR
         useBurstDshot = motorConfig->useBurstDshot == DSHOT_DMAR_ON ||
@@ -178,7 +175,7 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         break;
     }
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
         const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
         const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
@@ -190,8 +187,8 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
             if (pwmDshotMotorHardwareConfig(timerHardware,
                 motorIndex,
                 reorderedMotorIndex,
-                motorConfig->motorPwmProtocol,
-                motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output)) {
+                motorConfig->motorProtocol,
+                motorConfig->motorInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output)) {
                 motors[motorIndex].enabled = true;
 
                 continue;
@@ -199,14 +196,12 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         }
 
         /* not enough motors initialised for the mixer or a break in the motors */
-        dshotPwmDevice.vTable.write = motorWriteNull;
-        dshotPwmDevice.vTable.updateComplete = motorUpdateCompleteNull;
-
+        dshotMotorCount = 0;
         /* TODO: block arming and add reason system cannot arm */
-        return NULL;
+        return false;
     }
 
-    return &dshotPwmDevice;
+    return true;
 }
 
 #endif // USE_DSHOT

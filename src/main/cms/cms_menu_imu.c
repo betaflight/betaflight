@@ -42,8 +42,6 @@
 #include "config/feature.h"
 #include "config/simplified_tuning.h"
 
-#include "drivers/pwm_output.h"
-
 #include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
