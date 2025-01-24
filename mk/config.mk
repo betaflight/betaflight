@@ -34,19 +34,17 @@ CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
 
-TARGET        := $(shell grep " FC_TARGET_MCU" $(CONFIG_HEADER_FILE) | awk '{print $$3}' )
 HSE_VALUE_MHZ := $(shell sed -E -n "/^\s*#\s*define\s+SYSTEM_HSE_MHZ\s+([0-9]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifneq ($(HSE_VALUE_MHZ),)
 HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
 endif
 
-GYRO_DEFINE   := $(shell grep " USE_GYRO_" $(CONFIG_HEADER_FILE) | awk '{print $$2}' )
-
+TARGET        := $(shell sed -E -n "/^\s*#\s*define\s+FC_TARGET_MCU\s+(\w+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifeq ($(TARGET),)
 $(error No TARGET identified. Is the $(CONFIG_HEADER_FILE) valid for $(CONFIG)?)
 endif
 
-EXST_ADJUST_VMA := $(shell grep " FC_VMA_ADDRESS" $(CONFIG_HEADER_FILE) | awk '{print $$3}' )
+EXST_ADJUST_VMA := $(shell sed -E -n "/^\s*#\s*define\s+FC_VMA_ADDRESS\s+(0[xX][0-9a-fA-F]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifneq ($(EXST_ADJUST_VMA),)
 EXST = yes
 endif
