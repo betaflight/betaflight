@@ -44,7 +44,7 @@ ifeq ($(TARGET),)
 $(error No TARGET identified. Is the $(CONFIG_HEADER_FILE) valid for $(CONFIG)?)
 endif
 
-EXST_ADJUST_VMA := $(shell sed -E -n "/^\s*#\s*define\s+FC_VMA_ADDRESS\s+(0[xX][0-9a-fA-F]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
+EXST_ADJUST_VMA := $(shell sed -E -n "/^\s*#\s*define\s+FC_VMA_ADDRESS\s+((0[xX])?[[:xdigit:]]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifneq ($(EXST_ADJUST_VMA),)
 EXST = yes
 endif
