@@ -166,7 +166,7 @@ INCLUDE_DIRS += \
             $(LIB_MAIN_DIR)/tinyUSB/src
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mfloat-abi=softfp -mcmse
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse
 
 DEVICE_FLAGS    =
 
