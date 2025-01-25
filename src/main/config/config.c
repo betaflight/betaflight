@@ -452,7 +452,7 @@ static void validateAndFixConfig(void)
         motorConfigMutable()->dev.useContinuousUpdate = false;
     }
 
-#if defined(USE_DSHOT_TELEMETRY)
+#if defined(USE_DSHOT_TELEMETRY) && defined(USE_TIMER)
     bool nChannelTimerUsed = false;
     for (unsigned i = 0; i < getMotorCount(); i++) {
         const ioTag_t tag = motorConfig()->dev.ioTags[i];
