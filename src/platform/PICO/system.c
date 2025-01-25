@@ -214,3 +214,15 @@ void unusedPinsInit(void)
 {
     IOTraversePins(unusedPinInit);
 }
+
+const mcuTypeInfo_t *getMcuTypeInfo(void)
+{
+    static const mcuTypeInfo_t info = {
+#if defined(RP2350B)
+        .id = MCU_TYPE_RP2350B, .name = "RP2350B"
+#else
+#error MCU Type info not defined for STM (or clone)
+#endif
+    };
+    return &info;
+}
