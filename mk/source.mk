@@ -103,6 +103,7 @@ COMMON_SRC = \
             drivers/display_canvas.c \
             drivers/dma_common.c \
             drivers/io.c \
+            drivers/io_preinit.c \
             drivers/light_led.c \
             drivers/mco.c \
             drivers/motor.c \

@@ -145,8 +145,6 @@ MCU_COMMON_SRC = \
             STM32/transponder_ir_io_hal.c \
             STM32/camera_control_stm32.c \
             drivers/adc.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
@@ -170,8 +168,6 @@ SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \
             STM32/serial_usb_vcp.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c

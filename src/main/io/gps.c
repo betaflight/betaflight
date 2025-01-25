@@ -101,18 +101,18 @@ static float gpsDataFrequencyHz = 10.0f;
 static uint16_t currentGpsStamp = 0; // logical timer for received position update
 
 typedef struct gpsInitData_s {
-    uint8_t index;
     uint8_t baudrateIndex; // see baudRate_e
     const char *ubx;
 } gpsInitData_t;
 
 // UBX will cycle through these until valid data is received
 static const gpsInitData_t gpsInitData[] = {
-    { GPS_BAUDRATE_115200,   BAUD_115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n" },
-    { GPS_BAUDRATE_57600,    BAUD_57600,  "$PUBX,41,1,0003,0001,57600,0*2D\r\n" },
-    { GPS_BAUDRATE_38400,    BAUD_38400,  "$PUBX,41,1,0003,0001,38400,0*26\r\n" },
-    { GPS_BAUDRATE_19200,    BAUD_19200,  "$PUBX,41,1,0003,0001,19200,0*23\r\n" },
-    { GPS_BAUDRATE_9600,     BAUD_9600,   "$PUBX,41,1,0003,0001,9600,0*16\r\n" }
+    { BAUD_230400, "$PUBX,41,1,0003,0001,230400,0*1C\r\n" },
+    { BAUD_115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n" },
+    { BAUD_57600,  "$PUBX,41,1,0003,0001,57600,0*2D\r\n" },
+    { BAUD_38400,  "$PUBX,41,1,0003,0001,38400,0*26\r\n" },
+    { BAUD_19200,  "$PUBX,41,1,0003,0001,19200,0*23\r\n" },
+    { BAUD_9600,   "$PUBX,41,1,0003,0001,9600,0*16\r\n" }
 };
 
 #define DEFAULT_BAUD_RATE_INDEX 0
@@ -1081,7 +1081,7 @@ void gpsConfigureUblox(void)
             // failed to connect at that rate after five attempts
             // try other GPS baudrates, starting at 9600 and moving up
             if (gpsData.tempBaudRateIndex == 0) {
-                gpsData.tempBaudRateIndex = GPS_BAUDRATE_MAX; // slowest baud rate 9600
+                gpsData.tempBaudRateIndex = ARRAYLEN(gpsInitData) - 1; // slowest baud rate (9600)
             } else {
                 gpsData.tempBaudRateIndex--;
             }

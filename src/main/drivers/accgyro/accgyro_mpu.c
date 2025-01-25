@@ -410,9 +410,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
     }
 
     // Detection failed, disable CS pin again
-
-    spiPreinitByTag(config->csnTag);
-
+    ioPreinitByIO(gyro->dev.busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     return false;
 }
 #endif
@@ -420,7 +418,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
 void mpuPreInit(const struct gyroDeviceConfig_s *config)
 {
 #ifdef USE_SPI_GYRO
-    spiPreinitRegister(config->csnTag, IOCFG_IPU, 1);
+    ioPreinitByTag(config->csnTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 #else
     UNUSED(config);
 #endif
