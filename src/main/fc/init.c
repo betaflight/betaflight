@@ -535,6 +535,12 @@ void init(void)
             serialPortToAvoid = SERIALPORT_TO_AVOID;
         }
 #endif
+
+#if !defined(USE_SOFTSERIAL)
+        if (featureIsEnabled(FEATURE_SOFTSERIAL)) {
+            featureDisableImmediate(FEATURE_SOFTSERIAL);
+        }
+#endif
         serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), serialPortToAvoid);
     }
 
