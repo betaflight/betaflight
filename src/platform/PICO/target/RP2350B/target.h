@@ -40,7 +40,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_0
 #define USE_SPI_DEVICE_1
-//#undef USE_SPI
 
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
@@ -56,10 +55,8 @@
 #undef USE_TIMER
 #undef USE_I2C
 #undef USE_UART
-#undef USE_DSHOT
 #undef USE_RCC
 #undef USE_CLI
-#undef USE_PWM_OUTPUT
 #undef USE_RX_PWM
 #undef USE_RX_PPM
 #undef USE_RX_SPI
