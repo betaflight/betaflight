@@ -580,21 +580,21 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
 
         if (serialPortToDisable != SERIAL_PORT_NONE && serialPortUsageList[index].identifier == serialPortToDisable) {
-            // this index is deleted
+            // disable port
             serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
             continue;
         }
 
-#if defined(USE_SERIAL_PIN_CONFIG)
+#if SERIAL_TRAIT_PIN_CONFIG
         const int resourceIndex = serialResourceIndex(serialPortUsageList[index].identifier);
         if (resourceIndex >= 0 && !(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
-            // resource exists but is not valid
+            // resource exists but no pin is assigned
             serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
             continue;
         }
 #endif
         if (serialType(serialPortUsageList[index].identifier) == SERIALTYPE_SOFTSERIAL && !softserialEnabled) {
-            // soft serial is not enabled, or built into the firmware
+            // soft serial is not enabled, or not built into the firmware
             serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
             continue;
         }

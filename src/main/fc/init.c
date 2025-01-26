@@ -521,6 +521,12 @@ void init(void)
     uartPinConfigure(serialPinConfig());
 #endif
 
+/*
+    TODO: validate this avoidance is still necessary
+    potential better solution would be to initialise and
+    configure the RX PPM / PWM devices before the uarts to
+    take ownership and avoid initialisation of the UARTs
+*/
 #if defined(AVOID_UART1_FOR_PWM_PPM)
 # define SERIALPORT_TO_AVOID SERIAL_PORT_USART1
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
@@ -528,21 +534,13 @@ void init(void)
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
 # define SERIALPORT_TO_AVOID SERIAL_PORT_USART3
 #endif
-    {
-        serialPortIdentifier_e serialPortToAvoid = SERIAL_PORT_NONE;
+    serialPortIdentifier_e serialPortToAvoid = SERIAL_PORT_NONE;
 #if defined(SERIALPORT_TO_AVOID)
-        if (featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
-            serialPortToAvoid = SERIALPORT_TO_AVOID;
-        }
-#endif
-
-#if !defined(USE_SOFTSERIAL)
-        if (featureIsEnabled(FEATURE_SOFTSERIAL)) {
-            featureDisableImmediate(FEATURE_SOFTSERIAL);
-        }
-#endif
-        serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), serialPortToAvoid);
+    if (featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+        serialPortToAvoid = SERIALPORT_TO_AVOID;
     }
+#endif
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), serialPortToAvoid);
 
     mixerInit(mixerConfig()->mixerMode);
 

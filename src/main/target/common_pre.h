@@ -62,7 +62,7 @@
 #define USE_MOTOR
 #define USE_DMA
 #define USE_TIMER
-#define USE_SERIAL_PIN_CONFIG
+#define SERIAL_TRAIT_PIN_CONFIG 1
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH

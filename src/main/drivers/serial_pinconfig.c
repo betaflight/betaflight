@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_SERIAL_PIN_CONFIG)
+#if SERIAL_TRAIT_PIN_CONFIG
 
 #include "build/build_config.h"
 
