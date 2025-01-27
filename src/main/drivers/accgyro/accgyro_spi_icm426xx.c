@@ -40,9 +40,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
-#ifdef USE_GYRO_CLKIN
 #include "drivers/pwm_output.h"
-#endif
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
