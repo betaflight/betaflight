@@ -180,7 +180,7 @@ void baroPreInit(void)
 {
 #ifdef USE_SPI
     if (barometerConfig()->baro_busType == BUS_TYPE_SPI) {
-        spiPreinitRegister(barometerConfig()->baro_spi_csn, IOCFG_IPU, 1);
+        ioPreinitByTag(barometerConfig()->baro_spi_csn, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     }
 #endif
 }

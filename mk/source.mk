@@ -89,7 +89,6 @@ COMMON_SRC = \
             cli/settings.c \
             config/config.c \
             drivers/dshot.c \
-            drivers/dshot_dpwm.c \
             drivers/dshot_command.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -104,11 +103,13 @@ COMMON_SRC = \
             drivers/display_canvas.c \
             drivers/dma_common.c \
             drivers/io.c \
+            drivers/io_preinit.c \
             drivers/light_led.c \
             drivers/mco.c \
             drivers/motor.c \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \
+            drivers/pwm_output.c \
             drivers/resource.c \
             drivers/serial.c \
             drivers/serial_impl.c \

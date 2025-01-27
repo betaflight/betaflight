@@ -143,7 +143,6 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/adc_stm32f7xx.c \
             STM32/audio_stm32f7xx.c \
             STM32/bus_i2c_hal_init.c \
@@ -158,7 +157,6 @@ MCU_COMMON_SRC = \
             STM32/io_stm32.c \
             STM32/light_ws2811strip_hal.c \
             STM32/persistent.c \
-            STM32/pwm_output.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_f7xx.c \
@@ -170,8 +168,6 @@ MCU_COMMON_SRC = \
             STM32/transponder_ir_io_hal.c \
             STM32/camera_control_stm32.c \
             drivers/adc.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
@@ -191,7 +187,6 @@ SPEED_OPTIMISED_SRC += \
             STM32/bus_i2c_hal.c \
             STM32/bus_spi_ll.c \
             drivers/max7456.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/exti.c
 
@@ -199,8 +194,6 @@ SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \
             STM32/serial_usb_vcp.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c

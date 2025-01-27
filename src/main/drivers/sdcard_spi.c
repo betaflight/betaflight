@@ -536,9 +536,9 @@ static bool sdcard_checkInitDone(void)
     return status == 0x00;
 }
 
-static void sdcardSpi_preInit(const sdcardConfig_t *config)
+static void sdcardSpi_preinit(const sdcardConfig_t *config)
 {
-    spiPreinitRegister(config->chipSelectTag, IOCFG_IPU, 1);
+    ioPreinitByTag(config->chipSelectTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 }
 
 /**
@@ -1101,7 +1101,7 @@ static void sdcardSpi_setProfilerCallback(sdcard_profilerCallback_c callback)
 #endif
 
 sdcardVTable_t sdcardSpiVTable = {
-    sdcardSpi_preInit,
+    sdcardSpi_preinit,
     sdcardSpi_init,
     sdcardSpi_readBlock,
     sdcardSpi_beginWriteBlocks,

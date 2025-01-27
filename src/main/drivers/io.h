@@ -64,3 +64,12 @@ void IOTraversePins(IOTraverseFuncPtr_t func);
 
 GPIO_TypeDef* IO_GPIO(IO_t io);
 uint16_t IO_Pin(IO_t io);
+
+typedef enum {
+    PREINIT_PIN_STATE_NOCHANGE = 0,
+    PREINIT_PIN_STATE_LOW,
+    PREINIT_PIN_STATE_HIGH,
+} ioPreinitPinState_e;
+
+void ioPreinitByIO(const IO_t io, uint8_t iocfg, ioPreinitPinState_e init);
+void ioPreinitByTag(ioTag_t tag, uint8_t iocfg, ioPreinitPinState_e init);

@@ -837,10 +837,6 @@ void timerInit(void)
 {
     memset(timerConfig, 0, sizeof(timerConfig));
 
-#if defined(PARTIAL_REMAP_TIM3)
-    GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
-#endif
-
     /* enable the timer peripherals */
     for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         RCC_ClockCmd(timerRCC(TIMER_HARDWARE[i].tim), ENABLE);

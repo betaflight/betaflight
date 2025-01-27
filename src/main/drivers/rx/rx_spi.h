@@ -32,7 +32,7 @@
 struct rxSpiConfig_s;
 
 extDevice_t *rxSpiGetDevice(void);
-void rxSpiDevicePreInit(const struct rxSpiConfig_s *rxSpiConfig);
+void rxSpiDevicePreinit(const struct rxSpiConfig_s *rxSpiConfig);
 bool rxSpiDeviceInit(const struct rxSpiConfig_s *rxSpiConfig);
 void rxSpiSetNormalSpeedMhz(uint32_t mhz);
 void rxSpiNormalSpeed(void);

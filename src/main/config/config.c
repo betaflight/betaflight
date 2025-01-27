@@ -36,6 +36,7 @@
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
+#include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/system.h"
@@ -91,8 +92,6 @@
 #include "sensors/gyro.h"
 
 #include "config.h"
-
-#include "drivers/dshot.h"
 
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 
@@ -277,7 +276,7 @@ static void validateAndFixConfig(void)
 #endif
     }
 
-    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->dev.motorProtocol == MOTOR_PROTOCOL_BRUSHED) {
         featureDisableImmediate(FEATURE_3D);
 
         if (motorConfig()->mincommand < 1000) {
@@ -285,7 +284,7 @@ static void validateAndFixConfig(void)
         }
     }
 
-    if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->dev.motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
+    if ((motorConfig()->dev.motorProtocol == MOTOR_PROTOCOL_PWM ) && (motorConfig()->dev.motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     }
 
@@ -381,7 +380,7 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_DSHOT_TELEMETRY) && defined(USE_DSHOT_BITBANG)
-    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_PROSHOT1000 && motorConfig()->dev.useDshotTelemetry &&
+    if (motorConfig()->dev.motorProtocol == MOTOR_PROTOCOL_PROSHOT1000 && motorConfig()->dev.useDshotTelemetry &&
         motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_ON) {
         motorConfigMutable()->dev.useDshotBitbang = DSHOT_BITBANG_AUTO;
     }
@@ -450,10 +449,10 @@ static void validateAndFixConfig(void)
 #if defined(USE_DSHOT)
     // If using DSHOT protocol disable unsynched PWM as it's meaningless
     if (configuredMotorProtocolDshot) {
-        motorConfigMutable()->dev.useUnsyncedPwm = false;
+        motorConfigMutable()->dev.useContinuousUpdate = false;
     }
 
-#if defined(USE_DSHOT_TELEMETRY)
+#if defined(USE_DSHOT_TELEMETRY) && defined(USE_TIMER)
     bool nChannelTimerUsed = false;
     for (unsigned i = 0; i < getMotorCount(); i++) {
         const ioTag_t tag = motorConfig()->dev.ioTags[i];
@@ -590,29 +589,29 @@ void validateAndFixGyroConfig(void)
 #endif
         && motorConfig()->dev.useDshotTelemetry
         ) {
-            if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600) {
-                motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+            if (motorConfig()->dev.motorProtocol == MOTOR_PROTOCOL_DSHOT600) {
+                motorConfigMutable()->dev.motorProtocol = MOTOR_PROTOCOL_DSHOT300;
             }
             if (gyro.sampleRateHz > 4000) {
                 pidConfigMutable()->pid_process_denom = MAX(2, pidConfig()->pid_process_denom);
             }
         }
 #endif // USE_DSHOT && USE_PID_DENOM_CHECK
-        switch (motorConfig()->dev.motorPwmProtocol) {
-        case PWM_TYPE_STANDARD:
+        switch (motorConfig()->dev.motorProtocol) {
+        case MOTOR_PROTOCOL_PWM :
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
                 break;
-        case PWM_TYPE_ONESHOT125:
+        case MOTOR_PROTOCOL_ONESHOT125:
                 motorUpdateRestriction = 0.0005f;
                 break;
-        case PWM_TYPE_ONESHOT42:
+        case MOTOR_PROTOCOL_ONESHOT42:
                 motorUpdateRestriction = 0.0001f;
                 break;
 #ifdef USE_DSHOT
-        case PWM_TYPE_DSHOT150:
+        case MOTOR_PROTOCOL_DSHOT150:
                 motorUpdateRestriction = 0.000250f;
                 break;
-        case PWM_TYPE_DSHOT300:
+        case MOTOR_PROTOCOL_DSHOT300:
                 motorUpdateRestriction = 0.0001f;
                 break;
 #endif
@@ -621,11 +620,11 @@ void validateAndFixGyroConfig(void)
             break;
         }
 
-        if (motorConfig()->dev.useUnsyncedPwm) {
+        if (motorConfig()->dev.useContinuousUpdate) {
             bool configuredMotorProtocolDshot = false;
             checkMotorProtocolEnabled(&motorConfig()->dev, &configuredMotorProtocolDshot);
             // Prevent overriding the max rate of motors
-            if (!configuredMotorProtocolDshot && motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD) {
+            if (!configuredMotorProtocolDshot && motorConfig()->dev.motorProtocol != MOTOR_PROTOCOL_PWM ) {
                 const uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
                 motorConfigMutable()->dev.motorPwmRate = MIN(motorConfig()->dev.motorPwmRate, maxEscRate);
             }

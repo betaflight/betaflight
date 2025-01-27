@@ -20,8 +20,14 @@
 
 #pragma once
 
+#include "platform.h"
+
 #include "common/time.h"
-#include "drivers/motor.h"
+
+#include "drivers/timer.h"
+#include "drivers/motor_types.h"
+#include "drivers/dshot.h"
+#include "pg/motor.h"
 
 #define USE_DMA_REGISTER_CACHE
 
@@ -223,6 +229,7 @@ extern FAST_DATA_ZERO_INIT int usedMotorPorts;
 extern FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
 
 extern uint8_t bbPuPdMode;
+extern dshotBitbangStatus_e bbStatus;
 
 // DMA buffers
 // Note that we are not sharing input and output buffers,
@@ -275,3 +282,6 @@ void bbDMA_Cmd(bbPort_t *bbPort, confirm_state NewState);
 void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
 #endif
 int  bbDMA_Count(bbPort_t *bbPort);
+
+void bbDshotRequestTelemetry(unsigned motorIndex);
+bool bbDshotIsMotorIdle(unsigned motorIndex);
