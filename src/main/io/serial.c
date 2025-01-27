@@ -572,36 +572,12 @@ void closeSerialPort(serialPort_t *serialPort)
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(bool softserialEnabled, bool serialAvoidanceCheck)
+void serialInit(bool softserialEnabled)
 {
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
-/*
-    TODO: validate this avoidance is still necessary
-    potential better solution would be to initialise and
-    configure the RX PPM / PWM devices before the uarts to
-    take ownership and avoid initialisation of the UARTs
-*/
-#if defined(AVOID_UART1_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART1
-#elif defined(AVOID_UART2_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART2
-#elif defined(AVOID_UART3_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART3
-#else
-# define SERIALPORT_TO_AVOID SERIAL_PORT_NONE
-#endif
-    // initialise serial ports - blocked to reduce scope of serialPortToAvoid - refactor
-    const serialPortIdentifier_e serialPortToDisable = serialAvoidanceCheck ? SERIALPORT_TO_AVOID : SERIAL_PORT_NONE;
-
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
-
-        if (serialPortToDisable != SERIAL_PORT_NONE && serialPortUsageList[index].identifier == serialPortToDisable) {
-            // disable port
-            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-            continue;
-        }
 
 #if SERIAL_TRAIT_PIN_CONFIG
         const int resourceIndex = serialResourceIndex(serialPortUsageList[index].identifier);
@@ -611,6 +587,7 @@ void serialInit(bool softserialEnabled, bool serialAvoidanceCheck)
             continue;
         }
 #endif
+
         if (serialType(serialPortUsageList[index].identifier) == SERIALTYPE_SOFTSERIAL && !softserialEnabled) {
             // soft serial is not enabled, or not built into the firmware
             serialPortUsageList[index].identifier = SERIAL_PORT_NONE;

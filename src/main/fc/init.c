@@ -521,7 +521,7 @@ void init(void)
     uartPinConfigure(serialPinConfig());
 #endif
 
-    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM));
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL));
 
     mixerInit(mixerConfig()->mixerMode);
 

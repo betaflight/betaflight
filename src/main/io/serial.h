@@ -171,7 +171,7 @@ typedef void serialConsumer(uint8_t);
 //
 // configuration
 //
-void serialInit(bool softserialEnabled, bool serialAvoidanceCheck);
+void serialInit(bool softserialEnabled);
 void serialRemovePort(serialPortIdentifier_e identifier);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
 bool isSerialConfigValid(serialConfig_t *serialConfig);

@@ -417,4 +417,5 @@ extern uint8_t _dmaram_end__;
 #define DMA_TRAIT_CHANNEL 1
 #endif
 
+#define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
