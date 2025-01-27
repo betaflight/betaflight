@@ -174,10 +174,12 @@ FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 uint16_t spiCalculateDivider(uint32_t freq)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
+#elif defined(STM32G4)
+    uint32_t spiClk = SystemCoreClock;
 #elif defined(AT32F4)
     if(freq > 36000000){
         freq = 36000000;
