@@ -572,9 +572,27 @@ void closeSerialPort(serialPort_t *serialPort)
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
+void serialInit(bool softserialEnabled, bool serialAvoidanceCheck)
 {
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
+
+/*
+    TODO: validate this avoidance is still necessary
+    potential better solution would be to initialise and
+    configure the RX PPM / PWM devices before the uarts to
+    take ownership and avoid initialisation of the UARTs
+*/
+#if defined(AVOID_UART1_FOR_PWM_PPM)
+# define SERIALPORT_TO_AVOID SERIAL_PORT_USART1
+#elif defined(AVOID_UART2_FOR_PWM_PPM)
+# define SERIALPORT_TO_AVOID SERIAL_PORT_USART2
+#elif defined(AVOID_UART3_FOR_PWM_PPM)
+# define SERIALPORT_TO_AVOID SERIAL_PORT_USART3
+#else
+# define SERIALPORT_TO_AVOID SERIAL_PORT_NONE
+#endif
+    // initialise serial ports - blocked to reduce scope of serialPortToAvoid - refactor
+    const serialPortIdentifier_e serialPortToDisable = serialAvoidanceCheck ? SERIALPORT_TO_AVOID : SERIAL_PORT_NONE;
 
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];

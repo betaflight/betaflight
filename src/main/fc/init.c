@@ -521,26 +521,7 @@ void init(void)
     uartPinConfigure(serialPinConfig());
 #endif
 
-/*
-    TODO: validate this avoidance is still necessary
-    potential better solution would be to initialise and
-    configure the RX PPM / PWM devices before the uarts to
-    take ownership and avoid initialisation of the UARTs
-*/
-#if defined(AVOID_UART1_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART1
-#elif defined(AVOID_UART2_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART2
-#elif defined(AVOID_UART3_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART3
-#endif
-    serialPortIdentifier_e serialPortToAvoid = SERIAL_PORT_NONE;
-#if defined(SERIALPORT_TO_AVOID)
-    if (featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
-        serialPortToAvoid = SERIALPORT_TO_AVOID;
-    }
-#endif
-    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), serialPortToAvoid);
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM));
 
     mixerInit(mixerConfig()->mixerMode);
 
@@ -549,20 +530,24 @@ void init(void)
      * may send spurious pulses to esc's causing their early initialization. Also ppm
      * receiver may share timer with motors so motors MUST be initialized here. */
     motorDevInit(getMotorCount());
+    // TODO: add check here that motors actually initialised correctly
     systemState |= SYSTEM_STATE_MOTORS_READY;
 #endif
 
-    if (0) {}
+    do {
 #if defined(USE_RX_PPM)
-    else if (featureIsEnabled(FEATURE_RX_PPM)) {
-        ppmRxInit(ppmConfig());
-    }
+        if (featureIsEnabled(FEATURE_RX_PPM)) {
+            ppmRxInit(ppmConfig());
+            break;
+        }
 #endif
 #if defined(USE_RX_PWM)
-    else if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(pwmConfig());
-    }
+        if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+            pwmRxInit(pwmConfig());
+            break;
+        }
 #endif
+    } while (false);
 
 #ifdef USE_BEEPER
     beeperInit(beeperDevConfig());
