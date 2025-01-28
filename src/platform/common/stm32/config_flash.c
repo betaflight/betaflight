@@ -24,6 +24,7 @@
 #include "platform.h"
 #include "drivers/system.h"
 #include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
 
 #if defined(CONFIG_IN_FLASH)
 

@@ -195,7 +195,7 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-softSerial_t* softSerialFromIdentifier(serialPortIdentifier_e identifier)
+static softSerial_t* softSerialFromIdentifier(serialPortIdentifier_e identifier)
 {
     if (identifier >= SERIAL_PORT_SOFTSERIAL_FIRST && identifier < SERIAL_PORT_SOFTSERIAL_FIRST + SERIAL_SOFTSERIAL_COUNT) {
         return &softSerialPorts[identifier - SERIAL_PORT_SOFTSERIAL_FIRST];
@@ -330,7 +330,7 @@ serialPort_t *softSerialOpen(serialPortIdentifier_e identifier, serialReceiveCal
  * Serial Engine
  */
 
-void processTxState(softSerial_t *softSerial)
+static void processTxState(softSerial_t *softSerial)
 {
     if (!softSerial->isTransmittingData) {
         if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
@@ -387,7 +387,7 @@ enum {
     LEADING
 };
 
-void applyChangedBits(softSerial_t *softSerial)
+static void applyChangedBits(softSerial_t *softSerial)
 {
     if (softSerial->rxEdge == TRAILING) {
         for (unsigned bitToSet = softSerial->rxLastLeadingEdgeAtBitIndex; bitToSet < softSerial->rxBitIndex; bitToSet++) {
@@ -396,7 +396,7 @@ void applyChangedBits(softSerial_t *softSerial)
     }
 }
 
-void prepareForNextRxByte(softSerial_t *softSerial)
+static void prepareForNextRxByte(softSerial_t *softSerial)
 {
     // prepare for next byte
     softSerial->rxBitIndex = 0;
@@ -411,7 +411,7 @@ void prepareForNextRxByte(softSerial_t *softSerial)
 #define STOP_BIT_MASK (1 << 0)
 #define START_BIT_MASK (1 << (RX_TOTAL_BITS - 1))
 
-void extractAndStoreRxByte(softSerial_t *softSerial)
+static void extractAndStoreRxByte(softSerial_t *softSerial)
 {
     if ((softSerial->port.mode & MODE_RX) == 0) {
         return;
@@ -435,7 +435,7 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
     }
 }
 
-void processRxState(softSerial_t *softSerial)
+static void processRxState(softSerial_t *softSerial)
 {
     if (softSerial->isSearchingForStartBit) {
         return;
@@ -597,7 +597,7 @@ void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
     serialTimerConfigureTimebase(softSerial->timerHardware, baudRate);
 }
 
-void softSerialSetMode(serialPort_t *instance, portMode_e mode)
+static void softSerialSetMode(serialPort_t *instance, portMode_e mode)
 {
     instance->mode = mode;
 }

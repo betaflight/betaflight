@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "gps_conversion.h"
+
 #ifdef USE_GPS
 
 #define DIGIT_TO_VAL(_x)    (_x - '0')

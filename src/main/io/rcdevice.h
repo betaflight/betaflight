@@ -172,4 +172,4 @@ void runcamDeviceSimulate5KeyOSDCableButtonRelease(runcamDevice_t *device, rcdev
 
 void runcamDeviceSendAttitude(runcamDevice_t *device);
 
-runcamDeviceRequest_t* rcdeviceGetRequest();
+runcamDeviceRequest_t* rcdeviceGetRequest(void);

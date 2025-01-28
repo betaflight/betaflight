@@ -22,16 +22,16 @@
 
 void initBoardInformation(void);
 
-char *getBoardName(void);
-char *getManufacturerId(void);
+const char *getBoardName(void);
+const char *getManufacturerId(void);
 bool boardInformationIsSet(void);
 
-bool setBoardName(char *newBoardName);
-bool setManufacturerId(char *newManufacturerId);
+bool setBoardName(const char *newBoardName);
+bool setManufacturerId(const char *newManufacturerId);
 bool persistBoardInformation(void);
 
-uint8_t * getSignature(void);
+const uint8_t * getSignature(void);
 bool signatureIsSet(void);
 
-bool setSignature(uint8_t *newSignature);
+bool setSignature(const uint8_t *newSignature);
 bool persistSignature(void);

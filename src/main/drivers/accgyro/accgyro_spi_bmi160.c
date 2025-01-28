@@ -267,7 +267,7 @@ extiCallbackRec_t bmi160IntCallbackRec;
 
 // Called in ISR context
 // Gyro read has just completed
-busStatus_e bmi160Intcallback(uint32_t arg)
+static busStatus_e bmi160Intcallback(uint32_t arg)
 {
     gyroDev_t *gyro = (gyroDev_t *)arg;
     int32_t gyroDmaDuration = cmpTimeCycles(getCycleCounter(), gyro->gyroLastEXTI);
@@ -281,7 +281,7 @@ busStatus_e bmi160Intcallback(uint32_t arg)
     return BUS_READY;
 }
 
-void bmi160ExtiHandler(extiCallbackRec_t *cb)
+static void bmi160ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     extDevice_t *dev = &gyro->dev;
@@ -440,7 +440,7 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
     return true;
 }
 
-void bmi160SpiGyroInit(gyroDev_t *gyro)
+static void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
 
@@ -450,7 +450,7 @@ void bmi160SpiGyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(dev, spiCalculateDivider(BMI160_MAX_SPI_CLK_HZ));
 }
 
-void bmi160SpiAccInit(accDev_t *acc)
+static void bmi160SpiAccInit(accDev_t *acc)
 {
     acc->acc_1G = 512 * 8;
 }

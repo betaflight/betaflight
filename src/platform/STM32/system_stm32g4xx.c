@@ -110,7 +110,7 @@ typedef struct isrVector_s {
     resetHandler_t *resetHandler;
 } isrVector_t;
 
-void systemJumpToBootloader(void)
+static void systemJumpToBootloader(void)
 {
     //DeInit all used peripherals
     HAL_RCC_DeInit();

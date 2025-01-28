@@ -398,7 +398,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 
 #define MSP_DISPATCH_DELAY_US 1000000
 
-void mspReboot(dispatchEntry_t* self)
+static void mspReboot(dispatchEntry_t* self)
 {
     UNUSED(self);
 
@@ -413,7 +413,7 @@ dispatchEntry_t mspRebootEntry = {
     mspReboot, 0, NULL, false
 };
 
-void writeReadEeprom(dispatchEntry_t* self)
+static void writeReadEeprom(dispatchEntry_t* self)
 {
     UNUSED(self);
 

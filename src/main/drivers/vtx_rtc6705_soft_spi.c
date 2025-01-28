@@ -31,6 +31,8 @@
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 
+#include "vtx_rtc6705_soft_spi.h"
+
 #define DP_5G_MASK                  0x7000
 #define PA5G_BS_MASK                0x0E00
 #define PA5G_PW_MASK                0x0180

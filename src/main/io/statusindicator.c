@@ -38,7 +38,7 @@ typedef enum {
 
 static warningLedState_e warningLedState = WARNING_LED_OFF;
 
-void warningLedResetTimer(void)
+LOCAL_UNUSED_FUNCTION static void warningLedResetTimer(void)
 {
     uint32_t now = millis();
     warningLedTimer = now + 500000;

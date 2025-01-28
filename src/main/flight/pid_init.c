@@ -69,7 +69,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 }
 
 #ifdef USE_WING
-void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
+static void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
 {
     // basic model assumes prop pitch speed is inf
     const float gravityFactor = pidProfile->tpa_speed_basic_gravity / 100.0f;
@@ -82,7 +82,7 @@ void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
     pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
 }
 
-void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
+static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
 {
     // Advanced model uses prop pitch speed, and is quite limited when craft speed is far above prop pitch speed.
     pidRuntime.tpaSpeed.twr = (float)pidProfile->tpa_speed_adv_thrust / (float)pidProfile->tpa_speed_adv_mass;
@@ -109,7 +109,7 @@ void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     UNUSED(pidProfile);
 }
 
-void tpaSpeedInit(const pidProfile_t *pidProfile)
+static void tpaSpeedInit(const pidProfile_t *pidProfile)
 {
     pidRuntime.tpaSpeed.speed = 0.0f;
     pidRuntime.tpaSpeed.maxVoltage = pidProfile->tpa_speed_max_voltage / 100.0f;
@@ -334,7 +334,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 #ifdef USE_ADVANCED_TPA
-float tpaCurveHyperbolicFunction(float x, void *args)
+static float tpaCurveHyperbolicFunction(float x, void *args)
 {
     const pidProfile_t *pidProfile = (const pidProfile_t*)args;
 
@@ -356,13 +356,13 @@ float tpaCurveHyperbolicFunction(float x, void *args)
     return pidThr0 / divisor;
 }
 
-void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
+static void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
 {
     pwlInitialize(&pidRuntime.tpaCurvePwl, pidRuntime.tpaCurvePwl_yValues, TPA_CURVE_PWL_SIZE, 0.0f, 1.0f);
     pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicFunction, (void*)pidProfile);
 }
 
-void tpaCurveInit(const pidProfile_t *pidProfile)
+static void tpaCurveInit(const pidProfile_t *pidProfile)
 {
         pidRuntime.tpaCurveType = pidProfile->tpa_curve_type;
         switch (pidRuntime.tpaCurveType) {

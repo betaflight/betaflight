@@ -506,7 +506,7 @@ static bool isValidPacket(const uint8_t *packet)
     return true;
 }
 
-rx_spi_received_e spektrumReadPacket(uint8_t *payload, const uint32_t timeStamp)
+static rx_spi_received_e spektrumReadPacket(uint8_t *payload, const uint32_t timeStamp)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
 

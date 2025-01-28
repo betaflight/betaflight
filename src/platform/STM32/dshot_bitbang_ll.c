@@ -124,7 +124,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 }
 
 #ifdef USE_DMA_REGISTER_CACHE
-void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
+static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 {
 #if defined(STM32F7) || defined(STM32H7)
     ((DMA_ARCH_TYPE *)dmaResource)->CR = dmaRegCache->CR;

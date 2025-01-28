@@ -360,7 +360,7 @@ void flashPreinit(const flashConfig_t *flashConfig)
     ioPreinitByTag(flashConfig->csTag, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 }
 
-bool flashDeviceInit(const flashConfig_t *flashConfig)
+static bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
     bool haveFlash = false;
 

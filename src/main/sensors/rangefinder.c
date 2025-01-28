@@ -243,7 +243,7 @@ void rangefinderUpdate(void)
     }
 }
 
-bool isSurfaceAltitudeValid(void)
+static bool isSurfaceAltitudeValid(void)
 {
 
     /*

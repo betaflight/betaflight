@@ -39,6 +39,8 @@
 
 #include "pg/bus_i2c.h"
 
+PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CONFIG, 1);
+
 #ifndef I2C1_SCL_PIN
 #define I2C1_SCL_PIN NONE
 #endif
@@ -99,7 +101,5 @@ void pgResetFn_i2cConfig(i2cConfig_t *i2cConfig)
         i2cConfig[device].clockSpeed = defconf->clockSpeed;
     }
 }
-
-PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CONFIG, 1);
 
 #endif // defined(USE_I2C) && !defined(USE_SOFT_I2C)

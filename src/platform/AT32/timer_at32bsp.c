@@ -321,7 +321,7 @@ uint8_t timerInputIrq(const tmr_type *tim)
     return 0;
 }
 
-void timerNVICConfigure(uint8_t irq)
+static void timerNVICConfigure(uint8_t irq)
 {
     nvic_irq_enable(irq,NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER),NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
 }

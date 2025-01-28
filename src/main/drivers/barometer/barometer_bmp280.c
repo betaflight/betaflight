@@ -117,7 +117,7 @@ static bool bmp280GetUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void bmp280Calculate(int32_t *pressure, int32_t *temperature);
 
-void bmp280BusInit(const extDevice_t *dev)
+static void bmp280BusInit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -131,7 +131,7 @@ void bmp280BusInit(const extDevice_t *dev)
 #endif
 }
 
-void bmp280BusDeinit(const extDevice_t *dev)
+static void bmp280BusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (dev->bus->busType == BUS_TYPE_SPI) {

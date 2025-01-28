@@ -43,7 +43,7 @@ static IO_t ws2811IO = IO_NONE;
 static TMR_HandleTypeDef TmrHandle;
 static uint16_t timerChannel = 0;
 
-FAST_IRQ_HANDLER void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+static FAST_IRQ_HANDLER void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     DAL_DMA_IRQHandler(TmrHandle.hdma[descriptor->userParam]);
     TIM_DMACmd(&TmrHandle, timerChannel, DISABLE);

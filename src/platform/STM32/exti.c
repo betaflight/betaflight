@@ -205,7 +205,7 @@ void EXTIDisable(IO_t io)
 
 #define EXTI_EVENT_MASK 0xFFFF // first 16 bits only, see also definition of extiChannelRecs.
 
-void EXTI_IRQHandler(uint32_t mask)
+static void EXTI_IRQHandler(uint32_t mask)
 {
     uint32_t exti_active = (EXTI_REG_IMR & EXTI_REG_PR) & mask;
 

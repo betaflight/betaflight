@@ -353,7 +353,7 @@ void sx1280SetDioIrqParams(const uint16_t irqMask, const uint16_t dio1Mask, cons
 void sx1280ClearIrqStatus(const uint16_t irqMask);
 void sx1280GetIrqReason(void);
 
-void sx1280HandleFromTock();
+void sx1280HandleFromTock(void);
 
 void sx1280TransmitData(const uint8_t *data, const uint8_t length);
 void sx1280ReceiveData(uint8_t *data, const uint8_t length);

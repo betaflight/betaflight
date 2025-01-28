@@ -26,9 +26,11 @@
 
 #include "common/utils.h"
 
+#include "strtol.h"
+
 #define _STRTO_ENDPTR 1
 
-unsigned long _strto_l(const char * str, char ** endptr, int base, int sflag)
+static unsigned long _strto_l(const char * str, char ** endptr, int base, int sflag)
 {
     unsigned long number, cutoff;
 #if _STRTO_ENDPTR

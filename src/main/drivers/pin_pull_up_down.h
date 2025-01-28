@@ -28,4 +28,4 @@
 
 struct pinPullUpDownConfig_s;
 
-void pinPullupPulldownInit();
+void pinPullupPulldownInit(void);

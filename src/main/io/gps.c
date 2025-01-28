@@ -958,7 +958,7 @@ static void setSatInfoMessageRate(uint8_t divisor)
 #endif // USE_GPS_UBLOX
 
 #ifdef USE_GPS_NMEA
-void gpsConfigureNmea(void)
+static void gpsConfigureNmea(void)
 {
     // minimal support for NMEA, we only:
     // - set the FC's GPS port to the user's configured rate, and
@@ -1031,7 +1031,7 @@ void gpsConfigureNmea(void)
 
 #ifdef USE_GPS_UBLOX
 
-void gpsConfigureUblox(void)
+static void gpsConfigureUblox(void)
 {
 
     // Wait until GPS transmit buffer is empty
@@ -1302,7 +1302,7 @@ void gpsConfigureUblox(void)
 }
 #endif // USE_GPS_UBLOX
 
-void gpsConfigureHardware(void)
+static void gpsConfigureHardware(void)
 {
     switch (gpsConfig()->provider) {
     case GPS_NMEA:
@@ -2628,7 +2628,7 @@ void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t* to,
     }
 }
 
-void GPS_calculateDistanceAndDirectionToHome(void)
+static void GPS_calculateDistanceAndDirectionToHome(void)
 {
     if (STATE(GPS_FIX_HOME)) {
         uint32_t dist;

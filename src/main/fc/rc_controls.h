@@ -139,7 +139,7 @@ PG_DECLARE(armingConfig_t, armingConfig);
 bool areUsingSticksToArm(void);
 
 throttleStatus_e calculateThrottleStatus(void);
-void processRcStickPositions();
+void processRcStickPositions(void);
 
 bool isUsingSticksForArming(void);
 

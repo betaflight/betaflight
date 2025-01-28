@@ -289,7 +289,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 #endif // USE_BARO || USE_GPS
 
 #if defined(USE_RANGEFINDER)
-void taskUpdateRangefinder(timeUs_t currentTimeUs)
+static void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
@@ -304,7 +304,7 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_OPTICALFLOW
-void taskUpdateOpticalflow(timeUs_t currentTimeUs)
+static void taskUpdateOpticalflow(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 

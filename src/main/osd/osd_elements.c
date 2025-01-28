@@ -644,7 +644,7 @@ char osdGetSpeedToSelectedUnitSymbol(void)
     }
 }
 
-char osdGetVarioToSelectedUnitSymbol(void)
+MAYBE_UNUSED static char osdGetVarioToSelectedUnitSymbol(void)
 {
     switch (osdConfig()->units) {
     case UNIT_IMPERIAL:

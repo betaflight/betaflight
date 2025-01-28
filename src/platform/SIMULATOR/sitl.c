@@ -30,12 +30,16 @@
 
 #include "common/maths.h"
 
+#include "build/debug.h"
+
+#include "drivers/adc_impl.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/motor_impl.h"
 #include "drivers/serial.h"
 #include "drivers/serial_tcp.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
 
@@ -49,6 +53,8 @@
 #include "config/feature.h"
 #include "config/config.h"
 #include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
+#include "config/config_eeprom_impl.h"
 
 #include "scheduler/scheduler.h"
 
@@ -56,6 +62,7 @@
 #include "pg/motor.h"
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
 
 #include "io/gps.h"
 #include "io/gps_virtual.h"
@@ -110,12 +117,12 @@ int lockMainPID(void)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
 
-void sendMotorUpdate(void)
+static void sendMotorUpdate(void)
 {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
 
-void updateState(const fdm_packet* pkt)
+static void updateState(const fdm_packet* pkt)
 {
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
@@ -469,7 +476,7 @@ uint32_t getCycleCounter(void)
     return (uint32_t) (micros64() & 0xFFFFFFFF);
 }
 
-void microsleep(uint32_t usec)
+static void microsleep(uint32_t usec)
 {
     struct timespec ts;
     ts.tv_sec = 0;
@@ -590,7 +597,7 @@ static void pwmShutdownPulsesForAllMotors(void)
     pwmMotorDevice.enabled = false;
 }
 
-bool pwmIsMotorEnabled(unsigned index)
+static bool pwmIsMotorEnabled(unsigned index)
 {
     return motors[index].enabled;
 }

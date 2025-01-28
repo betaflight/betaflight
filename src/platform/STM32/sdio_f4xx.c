@@ -1113,7 +1113,7 @@ static SD_Error_t SD_WideBusOperationConfig(uint32_t WideMode)
   *         This API must be used after "Transfer State"
   * @retval SD Card error state
   */
-SD_Error_t SD_HighSpeed(void)
+static SD_Error_t SD_HighSpeed(void)
 {
     SD_Error_t  ErrorState;
     uint8_t     SD_hs[64]  = {0};
@@ -1192,7 +1192,7 @@ SD_Error_t SD_HighSpeed(void)
   * @brief  Gets the current card's data status.
   * @retval Data Transfer state
   */
-SD_Error_t SD_GetStatus(void)
+static SD_Error_t SD_GetStatus(void)
 {
     SD_Error_t     ErrorState;
     uint32_t       Response1;
@@ -1697,7 +1697,7 @@ SD_Error_t SD_Init(void)
 /**
   * @brief  This function handles SD card interrupt request.
   */
-void SDIO_IRQHandler(void)
+LOCAL_UNUSED_FUNCTION static void SDIO_IRQHandler(void)
 {
     // Check for SDIO interrupt flags
     if ((SDIO->STA & SDIO_STA_DATAEND) != 0) {

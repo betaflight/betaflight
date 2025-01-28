@@ -217,7 +217,7 @@ static void validateAndFixConfig(void)
 #endif
 
     if (!isSerialConfigValid(serialConfigMutable())) {
-        pgResetFn_serialConfig(serialConfigMutable());
+        PG_RESET(serialConfig);
     }
 
 #if defined(USE_GPS)

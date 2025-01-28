@@ -127,7 +127,7 @@ voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
 
 static bool sagCompensationConfigured;
 
-voltageMeterADCState_t *getVoltageMeterADC(uint8_t index)
+LOCAL_UNUSED_FUNCTION static voltageMeterADCState_t *getVoltageMeterADC(uint8_t index)
 {
     return &voltageMeterADCStates[index];
 }

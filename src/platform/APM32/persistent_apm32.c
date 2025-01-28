@@ -59,7 +59,7 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
 #endif
 }
 
-void persistentObjectRTCEnable(void)
+static void persistentObjectRTCEnable(void)
 {
     RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
 
