@@ -33,7 +33,7 @@ extern "C" {
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
 
-    void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
+    void serialInit(bool softserialEnabled);
 
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
@@ -45,7 +45,7 @@ extern "C" {
 TEST(IoSerialTest, TestFindPortConfig)
 {
     // given
-    serialInit(false, SERIAL_PORT_NONE);
+    serialInit(false);
 
     // when
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);

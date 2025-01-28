@@ -31,10 +31,6 @@ struct ioPortDef_s {
     rccPeriphTag_t rcc;
 };
 
-#if defined(SITL)
-const struct ioPortDef_s ioPortDefs[] = { 0 };
-#endif
-
 ioRec_t* IO_Rec(IO_t io)
 {
     return io;

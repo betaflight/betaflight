@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_UART) || defined(USE_LPUART) || defined(USE_SOFTSERIAL)
+#if SERIAL_TRAIT_PIN_CONFIG
 
 #include "build/build_config.h"
 

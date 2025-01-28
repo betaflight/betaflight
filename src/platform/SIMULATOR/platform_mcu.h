@@ -30,3 +30,6 @@
 #define IOCFG_IN_FLOATING   0
 
 #define SPIDEV_COUNT        0
+
+// no serial pins are defined for the simulator
+#define SERIAL_TRAIT_PIN_CONFIG 0
