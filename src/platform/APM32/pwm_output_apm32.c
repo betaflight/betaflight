@@ -31,6 +31,7 @@
 #include "drivers/io.h"
 #include "drivers/motor.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_output_impl.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 

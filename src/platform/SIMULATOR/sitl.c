@@ -41,6 +41,7 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_output_impl.h"
 #include "drivers/light_led.h"
 
 #include "drivers/timer.h"
@@ -542,8 +543,6 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
         servos[servoIndex].enabled = true;
     }
 }
-
-static motorDevice_t pwmMotorDevice; // Forward
 
 pwmOutputPort_t *pwmGetMotors(void)
 {

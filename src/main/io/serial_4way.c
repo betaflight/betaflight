@@ -144,19 +144,22 @@ inline void setEscOutput(uint8_t selEsc)
 uint8_t esc4wayInit(void)
 {
     motorShutdown();
-    escCount = 0;
+    uint8_t escIndex = 0;
+
     memset(&escHardware, 0, sizeof(escHardware));
     for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (motorIsMotorEnabled(i)) {
-            if (motorGetIo(i) != IO_NONE) {
-                escHardware[escCount].io = motorGetIo(i);
-                setEscInput(escCount);
-                setEscHi(escCount);
-                escCount++;
+            const IO_t io = motorGetIo(i);
+            if (io != IO_NONE) {
+                escHardware[escIndex].io = io;
+                setEscInput(escIndex);
+                setEscHi(escIndex);
+                escIndex++;
             }
         }
     }
     motorDisable();
+    escCount = escIndex;
     return escCount;
 }
 
