@@ -40,6 +40,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
+#include "drivers/pwm_output.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
