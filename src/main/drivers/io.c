@@ -31,10 +31,6 @@ struct ioPortDef_s {
     rccPeriphTag_t rcc;
 };
 
-#if defined(SITL)
-const struct ioPortDef_s ioPortDefs[] = { 0 };
-#endif
-
 ioRec_t* IO_Rec(IO_t io)
 {
     return io;
@@ -52,10 +48,12 @@ uint16_t IO_Pin(IO_t io)
     return ioRec->pin;
 }
 
+#if defined(STM32F4) || defined(APM32F4)
 int IO_EXTI_PortSourceGPIO(IO_t io)
 {
     return IO_GPIOPortIdx(io);
 }
+#endif
 
 int IO_GPIO_PortSource(IO_t io)
 {
@@ -71,10 +69,12 @@ int IO_GPIOPinIdx(IO_t io)
     return 31 - __builtin_clz(IO_Pin(io));
 }
 
+#if defined(STM32F4) || defined(APM32F4)
 int IO_EXTI_PinSource(IO_t io)
 {
     return IO_GPIOPinIdx(io);
 }
+#endif
 
 int IO_GPIO_PinSource(IO_t io)
 {

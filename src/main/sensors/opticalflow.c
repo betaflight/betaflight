@@ -186,7 +186,7 @@ static void applyLPF(vector2_t * flowRates) {
     flowRates->y = pt2FilterApply(&yFlowLpf, flowRates->y);
 }
 
-const opticalflow_t * getLatestFlowOpticalflowData(void) {
+LOCAL_UNUSED_FUNCTION static const opticalflow_t * getLatestFlowOpticalflowData(void) {
     return &opticalflow;
 }
 

@@ -181,7 +181,7 @@ static uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item);
 static uint8_t getNextActiveSensor(uint8_t currentSensor);
 
 // Jeti Ex Telemetry CRC calculations for a frame
-uint8_t calcCRC8(const uint8_t *pt, uint8_t msgLen)
+static uint8_t calcCRC8(const uint8_t *pt, uint8_t msgLen)
 {
     uint8_t crc=0;
     for (uint8_t mlen = 0; mlen < msgLen; mlen++) {
@@ -191,7 +191,7 @@ uint8_t calcCRC8(const uint8_t *pt, uint8_t msgLen)
     return(crc);
 }
 
-void enableGpsTelemetry(bool enable)
+static void enableGpsTelemetry(bool enable)
 {
     if (enable) {
         bitArraySet(&exSensorEnabled, EX_GPS_SATS);
@@ -269,7 +269,7 @@ void initJetiExBusTelemetry(void)
     firstActiveSensor = getNextActiveSensor(0);     // find the first active sensor
 }
 
-void createExTelemetryTextMessage(uint8_t *exMessage, uint8_t messageID, const exBusSensor_t *sensor)
+static void createExTelemetryTextMessage(uint8_t *exMessage, uint8_t messageID, const exBusSensor_t *sensor)
 {
     uint8_t labelLength = strlen(sensor->label);
     uint8_t unitLength = strlen(sensor->unit);
@@ -285,7 +285,7 @@ void createExTelemetryTextMessage(uint8_t *exMessage, uint8_t messageID, const e
     exMessage[exMessage[EXTEL_HEADER_TYPE_LEN] + EXTEL_CRC_LEN] = calcCRC8(&exMessage[EXTEL_HEADER_TYPE_LEN], exMessage[EXTEL_HEADER_TYPE_LEN]);
 }
 
-uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
+static uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
 {
     uint32_t absValue = abs(value);
     uint16_t deg16 = absValue / GPS_DEGREES_DIVIDER;
@@ -300,7 +300,7 @@ uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
     return exGps.vInt;
 }
 
-int32_t getSensorValue(uint8_t sensor)
+static int32_t getSensorValue(uint8_t sensor)
 {
     switch (sensor) {
     case EX_VOLTAGE:
@@ -407,7 +407,7 @@ uint8_t getNextActiveSensor(uint8_t currentSensor)
     return currentSensor;
 }
 
-uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
+static uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
 {
     uint8_t startItem = item;
     uint8_t sensorItemMaxGroup = (item & 0xF0) + 0x10;
@@ -452,7 +452,7 @@ uint8_t createExTelemetryValueMessage(uint8_t *exMessage, uint8_t item)
     return item;        // return the next item
 }
 
-void createExBusMessage(uint8_t *exBusMessage, const uint8_t *exMessage, uint8_t packetID)
+static void createExBusMessage(uint8_t *exBusMessage, const uint8_t *exMessage, uint8_t packetID)
 {
     uint16_t crc16;
 

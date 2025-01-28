@@ -478,7 +478,7 @@ bool initFrSkyHubTelemetryExternal(frSkyHubWriteByteFn *frSkyHubWriteByteExterna
     return false;
 }
 
-void freeFrSkyHubTelemetryPort(void)
+static void freeFrSkyHubTelemetryPort(void)
 {
     closeSerialPort(frSkyHubPort);
     frSkyHubPort = NULL;

@@ -228,7 +228,7 @@ static void w25q128fv_deviceReset(flashDevice_t *fdevice)
 #endif
 }
 
-MMFLASH_CODE bool w25q128fv_isReady(flashDevice_t *fdevice)
+static MMFLASH_CODE bool w25q128fv_isReady(flashDevice_t *fdevice)
 {
     uint8_t status = w25q128fv_readRegister(&fdevice->io, W25Q128FV_INSTRUCTION_READ_STATUS1_REG);
 
@@ -246,7 +246,7 @@ MMFLASH_CODE static bool w25q128fv_isWritable(flashDevice_t *fdevice)
     return writable;
 }
 
-MMFLASH_CODE bool w25q128fv_hasTimedOut(flashDevice_t *fdevice)
+static MMFLASH_CODE bool w25q128fv_hasTimedOut(flashDevice_t *fdevice)
 {
     uint32_t nowMs = microsISR() / 1000;
     if (cmp32(nowMs, fdevice->timeoutAt) >= 0) {
@@ -335,7 +335,7 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
     return true;
 }
 
-void w25q128fv_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
+static void w25q128fv_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 {
     if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
         return;
@@ -437,7 +437,7 @@ MMFLASH_CODE static void w25q128fv_pageProgram(flashDevice_t *fdevice, uint32_t 
     w25q128fv_pageProgramFinish(fdevice);
 }
 
-MMFLASH_CODE void w25q128fv_flush(flashDevice_t *fdevice)
+static MMFLASH_CODE void w25q128fv_flush(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 }
@@ -473,7 +473,7 @@ MMFLASH_CODE static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t add
     return length;
 }
 
-const flashGeometry_t* w25q128fv_getGeometry(flashDevice_t *fdevice)
+static const flashGeometry_t* w25q128fv_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }

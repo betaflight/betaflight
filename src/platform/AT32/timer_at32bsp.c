@@ -321,7 +321,7 @@ uint8_t timerInputIrq(const tmr_type *tim)
     return 0;
 }
 
-void timerNVICConfigure(uint8_t irq)
+static void timerNVICConfigure(uint8_t irq)
 {
     nvic_irq_enable(irq,NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER),NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
 }
@@ -675,10 +675,6 @@ _TIM_IRQ_HANDLER(TMR20_CH_IRQHandler, 20);
 void timerInit(void)
 {
     memset(timerConfig, 0, sizeof(timerConfig));
-
-#if defined(PARTIAL_REMAP_TIM3)
-    GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
-#endif
 
     #ifdef USE_TIMER_MGMT
     /* enable the timer peripherals */

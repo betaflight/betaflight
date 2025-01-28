@@ -141,7 +141,7 @@ typedef struct
 #define STRU_TELE_QOS_EMPTY_FIELDS_COUNT 14
 #define STRU_TELE_QOS_EMPTY_FIELDS_VALUE 0xff
 
-bool srxlFrameQos(sbuf_t *dst, timeUs_t currentTimeUs)
+static bool srxlFrameQos(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
@@ -181,7 +181,7 @@ typedef struct
 #define SPEKTRUM_MIN_RPM 999      // Min RPM to show the user, indicating RPM is really below 999
 #define SPEKTRUM_MAX_RPM 60000000
 
-uint16_t getMotorAveragePeriod(void)
+static uint16_t getMotorAveragePeriod(void)
 {
 
 #if defined( USE_ESC_SENSOR_TELEMETRY) || defined( USE_DSHOT_TELEMETRY)
@@ -214,7 +214,7 @@ uint16_t getMotorAveragePeriod(void)
 #endif
 }
 
-bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
+static bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     int16_t coreTemp = SPEKTRUM_TEMP_UNUSED;
 #if defined(USE_ADC_INTERNAL)
@@ -290,7 +290,7 @@ typedef struct
 #define GPS_FLAGS_3D_FIX_BIT                0x20
 #define GPS_FLAGS_NEGATIVE_ALT_BIT          0x80
 
-bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
+static bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     gpsCoordinateDDDMMmmmm_t coordinate;
@@ -358,7 +358,7 @@ typedef struct
 #define STRU_TELE_GPS_STAT_EMPTY_FIELDS_COUNT 6
 #define SPEKTRUM_TIME_UNKNOWN 0xFFFFFFFF
 
-bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
+static bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     uint32_t timeBcd;
@@ -431,7 +431,7 @@ typedef struct
 
 #define FP_MAH_KEEPALIVE_TIME_OUT 2000000 // 2s
 
-bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
+static bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     uint16_t amps = getAmperage() / 10;
     uint16_t mah  = getMAhDrawn();
@@ -505,7 +505,7 @@ int spektrumTmTextGenPutChar(uint8_t col, uint8_t row, char c)
 }
 //**************************************************************************
 
-bool srxlFrameText(sbuf_t *dst, timeUs_t currentTimeUs)
+static bool srxlFrameText(sbuf_t *dst, timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     static uint8_t lineNo = 0;

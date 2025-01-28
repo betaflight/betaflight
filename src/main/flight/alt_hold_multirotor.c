@@ -52,7 +52,7 @@ typedef struct {
 
 altHoldState_t altHold;
 
-void altHoldReset(void)
+static void altHoldReset(void)
 {
     resetAltitudeControl();
     altHold.targetAltitudeCm = getAltitudeCm();
@@ -68,7 +68,7 @@ void altHoldInit(void)
     altHoldReset();
 }
 
-void altHoldProcessTransitions(void) {
+static void altHoldProcessTransitions(void) {
 
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         if (!altHold.isActive) {
@@ -90,7 +90,7 @@ void altHoldProcessTransitions(void) {
     // user throttle must be not more than half way out from hover for a stable hold
 }
 
-void altHoldUpdateTargetAltitude(void)
+static void altHoldUpdateTargetAltitude(void)
 {
     // User can adjust the target altitude with throttle, but only when
     // - throttle is outside deadband, and
@@ -133,7 +133,7 @@ void altHoldUpdateTargetAltitude(void)
     }
 }
 
-void altHoldUpdate(void)
+static void altHoldUpdate(void)
 {
     // check if the user has changed the target altitude using sticks
     if (altHoldConfig()->alt_hold_adjust_rate) {

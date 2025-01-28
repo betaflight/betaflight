@@ -278,7 +278,7 @@ bool osdWarnGetState(uint8_t warningIndex)
 }
 
 #ifdef USE_OSD_PROFILES
-void setOsdProfile(uint8_t value)
+static void setOsdProfile(uint8_t value)
 {
     // 1 ->> 001
     // 2 ->> 010
@@ -1279,7 +1279,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
     return refreshStatsRequired;
 }
 
-void osdProcessStats2(timeUs_t currentTimeUs)
+static void osdProcessStats2(timeUs_t currentTimeUs)
 {
     displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
 
@@ -1307,7 +1307,7 @@ void osdProcessStats2(timeUs_t currentTimeUs)
 #endif
 }
 
-void osdProcessStats3(void)
+static void osdProcessStats3(void)
 {
 #if defined(USE_ACC)
     osdGForce = 0.0f;

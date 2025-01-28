@@ -158,7 +158,7 @@ serialPort_t *serTcpOpen(serialPortIdentifier_e identifier, serialReceiveCallbac
     return (serialPort_t *)s;
 }
 
-uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance)
+static uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance)
 {
     tcpPort_t *s = (tcpPort_t*)instance;
     uint32_t count;
@@ -173,7 +173,7 @@ uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance)
     return count;
 }
 
-uint32_t tcpTotalTxBytesFree(const serialPort_t *instance)
+static uint32_t tcpTotalTxBytesFree(const serialPort_t *instance)
 {
     tcpPort_t *s = (tcpPort_t*)instance;
     uint32_t bytesUsed;
@@ -190,7 +190,7 @@ uint32_t tcpTotalTxBytesFree(const serialPort_t *instance)
     return bytesFree;
 }
 
-bool isTcpTransmitBufferEmpty(const serialPort_t *instance)
+static bool isTcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
     pthread_mutex_lock(&s->txLock);
@@ -199,7 +199,7 @@ bool isTcpTransmitBufferEmpty(const serialPort_t *instance)
     return isEmpty;
 }
 
-uint8_t tcpRead(serialPort_t *instance)
+static uint8_t tcpRead(serialPort_t *instance)
 {
     uint8_t ch;
     tcpPort_t *s = (tcpPort_t *)instance;
@@ -216,7 +216,7 @@ uint8_t tcpRead(serialPort_t *instance)
     return ch;
 }
 
-void tcpWrite(serialPort_t *instance, uint8_t ch)
+static void tcpWrite(serialPort_t *instance, uint8_t ch)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
     pthread_mutex_lock(&s->txLock);

@@ -28,6 +28,7 @@
 
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_i2c_busdev.h"
 
 static uint8_t i2cRegisteredDeviceCount = 0;
 

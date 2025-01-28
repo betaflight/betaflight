@@ -31,6 +31,7 @@
 #include "drivers/nvic.h"
 #include "drivers/resource.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/time.h"
 
 #include "drivers/system.h"
 

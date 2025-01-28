@@ -338,7 +338,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
     return NULL;
 }
 
-serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
+static serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
 {
     for (serialPortUsage_t* usage = serialPortUsageList; usage < ARRAYEND(serialPortUsageList); usage++) {
         if (usage->serialPort == serialPort) {
@@ -572,41 +572,26 @@ void closeSerialPort(serialPort_t *serialPort)
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
+void serialInit(bool softserialEnabled)
 {
-#if !defined(USE_SOFTSERIAL)
-    UNUSED(softserialEnabled);
-#endif
-
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
 
-        if (serialPortToDisable != SERIAL_PORT_NONE
-            && serialPortUsageList[index].identifier == serialPortToDisable) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                continue;  // this index is deleted
+#if SERIAL_TRAIT_PIN_CONFIG
+        const int resourceIndex = serialResourceIndex(serialPortUsageList[index].identifier);
+        if (resourceIndex >= 0 && !(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
+            // resource exists but no pin is assigned
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            continue;
         }
-        {
-#if !defined(SIMULATOR_BUILD)  // no serialPinConfig on SITL
-            const int resourceIndex = serialResourceIndex(serialPortUsageList[index].identifier);
-            if (resourceIndex >= 0   // resource exists
-                && !(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                continue;
-            }
 #endif
-        }
-        if (serialType(serialPortUsageList[index].identifier) == SERIALTYPE_SOFTSERIAL) {
-            if (true
-#ifdef USE_SOFTSERIAL
-                && !softserialEnabled
-#endif
-                ) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                continue;
-            }
+
+        if (serialType(serialPortUsageList[index].identifier) == SERIALTYPE_SOFTSERIAL && !softserialEnabled) {
+            // soft serial is not enabled, or not built into the firmware
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            continue;
         }
     }
 }

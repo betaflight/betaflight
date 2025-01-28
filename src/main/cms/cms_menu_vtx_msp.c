@@ -41,6 +41,8 @@
 #include "io/vtx_msp.h"
 #include "io/vtx.h"
 
+#include "cms_menu_vtx_msp.h"
+
 char mspCmsStatusString[31] = "- -- ---- ----";
 //                               m bc ffff tppp
 //                               01234567890123

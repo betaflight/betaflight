@@ -128,7 +128,7 @@ static void lidarTFSendCommand(void)
     }
 }
 
-void lidarTFInit(rangefinderDev_t *dev)
+static void lidarTFInit(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 
@@ -136,7 +136,7 @@ void lidarTFInit(rangefinderDev_t *dev)
     tfReceivePosition = 0;
 }
 
-void lidarTFUpdate(rangefinderDev_t *dev)
+static void lidarTFUpdate(rangefinderDev_t *dev)
 {
     UNUSED(dev);
     static timeMs_t lastFrameReceivedMs = 0;
@@ -232,7 +232,7 @@ void lidarTFUpdate(rangefinderDev_t *dev)
 
 // Return most recent device output in cm
 
-int32_t lidarTFGetDistance(rangefinderDev_t *dev)
+static int32_t lidarTFGetDistance(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 

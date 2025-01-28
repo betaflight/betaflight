@@ -82,7 +82,7 @@ void dmaEnable(dmaIdentifier_e identifier)
 
 #define RETURN_TCIF_FLAG(s, n) if (s == DMA1_Stream ## n || s == DMA2_Stream ## n) return DMA_IT_TCIF ## n
 
-uint32_t dmaFlag_IT_TCIF(const dmaResource_t *stream)
+static uint32_t dmaFlag_IT_TCIF(const dmaResource_t *stream)
 {
     RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 0);
     RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 1);

@@ -68,7 +68,7 @@ void spiPreinit(void);
 bool spiInit(SPIDevice device);
 
 // Called after all devices are initialised to enable SPI DMA where streams are available.
-void spiInitBusDMA();
+void spiInitBusDMA(void);
 
 SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance);
 SPI_TypeDef *spiInstanceByDevice(SPIDevice device);

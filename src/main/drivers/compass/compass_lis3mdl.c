@@ -31,6 +31,8 @@
 #include "drivers/time.h"
 #include "common/axis.h"
 
+#include "compass_lis3mdl.h"
+
 #define LIS3MDL_MAG_I2C_ADDRESS     0x1E
 #define LIS3MDL_DEVICE_ID           0x3D
 

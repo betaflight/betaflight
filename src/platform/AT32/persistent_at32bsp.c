@@ -45,7 +45,7 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
     ertc_write_protect_enable();
 }
 
-void persistentObjectRTCEnable(void)
+static void persistentObjectRTCEnable(void)
 {
     crm_periph_clock_enable(CRM_PWC_PERIPH_CLOCK, TRUE);
     pwc_battery_powered_domain_access(TRUE);

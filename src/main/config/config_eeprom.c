@@ -87,7 +87,7 @@ typedef struct {
 } PG_PACKED packingTest_t;
 
 #if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
-MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
+static MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
 {
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
     const flashGeometry_t *flashGeometry = flashGetGeometry();

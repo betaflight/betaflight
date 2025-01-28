@@ -584,7 +584,7 @@ float pidCompensateThrustLinearization(float throttle);
 
 #ifdef USE_AIRMODE_LPF
 void pidUpdateAirmodeLpf(float currentOffset);
-float pidGetAirmodeThrottleOffset();
+float pidGetAirmodeThrottleOffset(void);
 #endif
 
 #ifdef UNIT_TEST
@@ -602,8 +602,8 @@ float calcHorizonLevelStrength(void);
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
-float pidGetDT();
-float pidGetPidFrequency();
+float pidGetDT(void);
+float pidGetPidFrequency(void);
 
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
 #ifdef USE_CHIRP

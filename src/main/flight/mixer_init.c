@@ -396,7 +396,7 @@ void mixerResetRpmLimiter(void)
 // Create a custom mixer for launch control based on the current settings
 // but disable the front motors. We don't care about roll or yaw because they
 // are limited in the PID controller.
-void loadLaunchControlMixer(void)
+static void loadLaunchControlMixer(void)
 {
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         mixerRuntime.launchControlMixer[i] = mixerRuntime.currentMixer[i];

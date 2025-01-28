@@ -29,6 +29,8 @@
 
 #include "platform.h"
 
+#include "dshot.h"
+
 #ifdef USE_DSHOT
 
 #include "build/debug.h"
@@ -49,8 +51,6 @@
 #include "pg/rpm_filter.h"
 
 #include "rx/rx.h"
-
-#include "dshot.h"
 
 #define ERPM_PER_LSB            100.0f
 

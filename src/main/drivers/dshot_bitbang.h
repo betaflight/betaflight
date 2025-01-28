@@ -39,6 +39,6 @@ typedef enum {
 } dshotBitbangStatus_e;
 
 bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
-dshotBitbangStatus_e dshotBitbangGetStatus();
+dshotBitbangStatus_e dshotBitbangGetStatus(void);
 const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel);
 const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer);

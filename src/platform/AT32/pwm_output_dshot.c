@@ -57,7 +57,7 @@
  *
  * @see TIM_CH_TO_SELCHANNEL macro
 */
-tmr_channel_select_type toCHSelectType(const uint8_t bfChannel, const bool useNChannel)
+static tmr_channel_select_type toCHSelectType(const uint8_t bfChannel, const bool useNChannel)
 {
     tmr_channel_select_type result = TMR_SELECT_CHANNEL_1; // XXX I don't like using ch 1 as a default result, but what to do?
     if (useNChannel)

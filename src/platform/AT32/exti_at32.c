@@ -155,7 +155,7 @@ void EXTIDisable(IO_t io)
 
 #define EXTI_EVENT_MASK 0xFFFF
 
-void EXTI_IRQHandler(uint32_t mask)
+static void EXTI_IRQHandler(uint32_t mask)
 {
     uint32_t exti_active = (EXTI_REG_IMR & EXTI_REG_PR) & mask;
 

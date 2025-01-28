@@ -62,7 +62,7 @@ static uint8_t ms5611_osr = CMD_ADC_4096;
 #define MS5611_DATA_FRAME_SIZE 3
 static DMA_DATA_ZERO_INIT uint8_t sensor_data[MS5611_DATA_FRAME_SIZE];
 
-void ms5611BusInit(const extDevice_t *dev)
+static void ms5611BusInit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_MS5611
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -76,7 +76,7 @@ void ms5611BusInit(const extDevice_t *dev)
 #endif
 }
 
-void ms5611BusDeinit(const extDevice_t *dev)
+static void ms5611BusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_MS5611
     if (dev->bus->busType == BUS_TYPE_SPI) {

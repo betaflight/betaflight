@@ -191,17 +191,17 @@
 static uint32_t rawP = 0;
 static uint16_t rawT = 0;
 
-bool lpsWriteCommand(const extDevice_t *dev, uint8_t cmd, uint8_t byte)
+static bool lpsWriteCommand(const extDevice_t *dev, uint8_t cmd, uint8_t byte)
 {
     return spiWriteRegRB(dev, cmd, byte);
 }
 
-bool lpsReadCommand(const extDevice_t *dev, uint8_t cmd, uint8_t *data, uint8_t len)
+static bool lpsReadCommand(const extDevice_t *dev, uint8_t cmd, uint8_t *data, uint8_t len)
 {
     return spiReadRegMskBufRB(dev, cmd | 0x80 | 0x40, data, len);
 }
 
-bool lpsWriteVerify(const extDevice_t *dev, uint8_t cmd, uint8_t byte)
+static bool lpsWriteVerify(const extDevice_t *dev, uint8_t cmd, uint8_t byte)
 {
     uint8_t temp = 0xff;
     spiWriteReg(dev, cmd, byte);

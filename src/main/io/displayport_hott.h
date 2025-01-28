@@ -21,6 +21,6 @@
 #pragma once
 #include "drivers/display.h"
 
-void hottDisplayportRegister();
-void hottCmsOpen();
+void hottDisplayportRegister(void);
+void hottCmsOpen(void);
 void hottSetCmsKey(uint8_t hottKey, bool esc);

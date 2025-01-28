@@ -76,6 +76,8 @@
 #include "drivers/memprot.h"
 #include "drivers/system.h"
 
+#include "system_stm32f7xx.h"
+
 #define HSI_FREQ ((uint32_t)64000000) // Frequency of HSI is 64Mhz on all H7 variants.
 
 // If `HSE_VALUE` isn't specified, use HSI. This allows HSI to be selected as the PLL source
@@ -176,7 +178,7 @@ static void ErrorHandler(void)
     while (1);
 }
 
-void HandleStuckSysTick(void)
+static void HandleStuckSysTick(void)
 {
     uint32_t tickStart = HAL_GetTick();
     uint32_t tickEnd = 0;
@@ -707,7 +709,7 @@ void CRS_IRQHandler(void)
 }
 #endif
 
-void initialiseD2MemorySections(void)
+static void initialiseD2MemorySections(void)
 {
     /* Load DMA_DATA variable intializers into D2 RAM */
     extern uint8_t _sdmaram_bss;

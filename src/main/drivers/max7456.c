@@ -281,7 +281,7 @@ static void max7456ClearLayer(displayPortLayer_e layer)
     memset(getLayerBuffer(layer), 0x20, VIDEO_BUFFER_CHARS_PAL);
 }
 
-void max7456ReInit(void)
+static void max7456ReInit(void)
 {
     uint8_t srdata = 0;
 
@@ -612,7 +612,7 @@ bool max7456ReInitIfRequired(bool forceStallCheck)
 }
 
 // Called in ISR context
-busStatus_e max7456_callbackReady(uint32_t arg)
+static busStatus_e max7456_callbackReady(uint32_t arg)
 {
     UNUSED(arg);
 

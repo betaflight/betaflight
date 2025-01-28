@@ -190,7 +190,7 @@ static float spektrumReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t c
 
 #ifdef USE_SPEKTRUM_BIND
 
-bool spekShouldBind(uint8_t spektrum_sat_bind)
+static bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
 #ifdef USE_SPEKTRUM_BIND_PLUG
     IO_t BindPlug = IOGetByTag(rxConfig()->spektrum_bind_plug_ioTag);
