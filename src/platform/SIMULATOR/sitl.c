@@ -562,14 +562,7 @@ static uint16_t pwmConvertToExternal(float motorValue)
 
 static void pwmDisableMotors(void)
 {
-    pwmMotorDevice.enabled = false;
-}
-
-static bool pwmEnableMotors(void)
-{
-    pwmMotorDevice.enabled = true;
-
-    return true;
+    // NOOP
 }
 
 static void pwmWriteMotor(uint8_t index, float value)
@@ -594,12 +587,7 @@ static void pwmWriteMotorInt(uint8_t index, uint16_t value)
 
 static void pwmShutdownPulsesForAllMotors(void)
 {
-    pwmMotorDevice.enabled = false;
-}
-
-static bool pwmIsMotorEnabled(unsigned index)
-{
-    return motors[index].enabled;
+    // NOOP
 }
 
 static void pwmCompleteMotorUpdate(void)
@@ -647,7 +635,7 @@ static const motorVTable_t vTable = {
     .shutdown = pwmShutdownPulsesForAllMotors,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
-
+    .getMotorIO = NULL,
 };
 
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t _idlePulse)

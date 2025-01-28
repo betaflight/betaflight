@@ -362,6 +362,14 @@ timeMs_t motorGetMotorEnableTimeMs(void)
 }
 #endif
 
+IO_t motorGetIo(unsigned index)
+{
+    if (index >= motorDevice.count) {
+        return IO_NONE;
+    }
+    return motorDevice.vTable->getMotorIO ? motorDevice.vTable->getMotorIO(index) : IO_NONE;
+}
+
 /* functions below for empty methods and no active motors */
 void motorPostInitNull(void)
 {
@@ -433,6 +441,7 @@ static const motorVTable_t motorNullVTable = {
     .shutdown = motorShutdownNull,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
+    .getMotorIO = NULL,
 };
 
 void motorNullDevInit(motorDevice_t *device)

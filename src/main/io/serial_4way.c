@@ -36,7 +36,7 @@
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/light_led.h"
-#include "drivers/pwm_output.h"
+#include "drivers/motor.h"
 #include "flight/mixer.h"
 
 #include "io/beeper.h"
@@ -143,16 +143,13 @@ inline void setEscOutput(uint8_t selEsc)
 
 uint8_t esc4wayInit(void)
 {
-    // StopPwmAllMotors();
-    // XXX Review effect of motor refactor
-    //pwmDisableMotors();
+    motorShutdown();
     escCount = 0;
     memset(&escHardware, 0, sizeof(escHardware));
-    pwmOutputPort_t *pwmMotors = pwmGetMotors();
     for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        if (pwmMotors[i].enabled) {
-            if (pwmMotors[i].io != IO_NONE) {
-                escHardware[escCount].io = pwmMotors[i].io;
+        if (motorIsMotorEnabled(i)) {
+            if (motorGetIo(i) != IO_NONE) {
+                escHardware[escCount].io = motorGetIo(i);
                 setEscInput(escCount);
                 setEscHi(escCount);
                 escCount++;

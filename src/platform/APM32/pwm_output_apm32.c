@@ -108,16 +108,6 @@ static void pwmDisableMotors(void)
 }
 
 static motorVTable_t motorPwmVTable;
-static bool pwmEnableMotors(void)
-{
-    /* check motors can be enabled */
-    return pwmMotorCount > 0;
-}
-
-static bool pwmIsMotorEnabled(unsigned index)
-{
-    return motors[index].enabled;
-}
 
 static void pwmCompleteMotorUpdate(void)
 {
@@ -158,6 +148,7 @@ static motorVTable_t motorPwmVTable = {
     .updateComplete = pwmCompleteMotorUpdate,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
+    .getMotorIO = pwmGetMotorIO,
 };
 
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t idlePulse)

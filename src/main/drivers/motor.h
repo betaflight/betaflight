@@ -54,5 +54,7 @@ float motorEstimateMaxRpm(void);
 bool motorIsEnabled(void);
 bool motorIsMotorEnabled(unsigned index);
 bool motorIsMotorIdle(unsigned index);
+IO_t motorGetIo(unsigned index);
+
 timeMs_t motorGetMotorEnableTimeMs(void);
 void motorShutdown(void); // Replaces stopPwmAllMotors

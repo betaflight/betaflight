@@ -48,4 +48,23 @@ void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, fl
     }
 }
 
+IO_t pwmGetMotorIO(unsigned index)
+{
+    if (index >= pwmMotorCount) {
+        return IO_NONE;
+    }
+    return motors[index].io;
+}
+
+bool pwmIsMotorEnabled(unsigned index)
+{
+    return motors[index].enabled;
+}
+
+bool pwmEnableMotors(void)
+{
+    /* check motors can be enabled */
+    return pwmMotorCount > 0;
+}
+
 #endif
