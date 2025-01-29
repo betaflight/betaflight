@@ -661,14 +661,6 @@ static void bbPostInit(void)
     }
 }
 
-static IO_t bbGetMotorIO(unsigned index)
-{
-    if (index >= dshotMotorCount) {
-        return IO_NONE;
-    }
-    return bbMotors[index].io;
-}
-
 static motorVTable_t bbVTable = {
     .postInit = bbPostInit,
     .enable = bbEnableMotors,
