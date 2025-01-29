@@ -358,10 +358,12 @@ uint8_t spiReadRegMsk(const extDevice_t *dev, uint8_t reg)
 
 uint16_t spiCalculateDivider(uint32_t freq)
 {
-#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
+#elif defined(STM32G4)
+    uint32_t spiClk = SystemCoreClock;
 #elif defined(AT32F4)
     if(freq > 36000000){
         freq = 36000000;
