@@ -583,7 +583,7 @@ static void bbUpdateComplete(void)
     }
 
 #ifdef USE_DSHOT_CACHE_MGMT
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
         // Only clean each buffer once. If all motors are on a common port they'll share a buffer.
         bool clean = false;
         for (int i = 0; i < motorIndex; i++) {

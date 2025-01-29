@@ -546,7 +546,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 
 pwmOutputPort_t *pwmGetMotors(void)
 {
-    return motors;
+    return pwmMotors;
 }
 
 static float pwmConvertFromExternal(uint16_t externalValue)
@@ -652,7 +652,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
     idlePulse = _idlePulse;
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        motors[motorIndex].enabled = true;
+        pwmMotors[motorIndex].enabled = true;
     }
 
     return true;

@@ -123,7 +123,7 @@ static bool dshotPwmEnableMotors(void)
 
 static bool dshotPwmIsMotorEnabled(unsigned index)
 {
-    return motors[index].enabled;
+    return pwmMotors[index].enabled;
 }
 
 static IO_t pwmDshotGetMotorIO(unsigned index)
@@ -131,7 +131,7 @@ static IO_t pwmDshotGetMotorIO(unsigned index)
     if (index >= dshotMotorCount) {
         return IO_NONE;
     }
-    return motors[index].io;
+    return pwmMotors[index].io;
 }
 
 static FAST_CODE void dshotWriteInt(uint8_t index, uint16_t value)
@@ -190,15 +190,15 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
         if (timerHardware != NULL) {
-            motors[motorIndex].io = IOGetByTag(tag);
-            IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
+            pwmMotors[motorIndex].io = IOGetByTag(tag);
+            IOInit(pwmMotors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
             if (pwmDshotMotorHardwareConfig(timerHardware,
                 motorIndex,
                 reorderedMotorIndex,
                 motorConfig->motorProtocol,
                 motorConfig->motorInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output)) {
-                motors[motorIndex].enabled = true;
+                pwmMotors[motorIndex].enabled = true;
 
                 continue;
             }
