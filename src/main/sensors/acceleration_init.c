@@ -167,11 +167,12 @@ retry:
         FALLTHROUGH;
 #endif
 
+
+#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
     case ACC_MPU6500:
     case ACC_ICM20601:
     case ACC_ICM20602:
     case ACC_ICM20608G:
-#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500SpiAccDetect(dev)) {
 #else
@@ -195,8 +196,8 @@ retry:
             }
             break;
         }
-#endif
         FALLTHROUGH;
+#endif
 
 #ifdef USE_ACC_SPI_ICM20649
     case ACC_ICM20649:
@@ -287,6 +288,7 @@ retry:
 
     default:
     case ACC_NONE: // disable ACC
+        UNUSED(dev);
         accHardware = ACC_NONE;
         break;
     }
