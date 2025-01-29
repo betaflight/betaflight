@@ -126,6 +126,14 @@ static bool dshotPwmIsMotorEnabled(unsigned index)
     return motors[index].enabled;
 }
 
+static IO_t pwmDshotGetMotorIO(unsigned index)
+{
+    if (index >= dshotMotorCount) {
+        return IO_NONE;
+    }
+    return motors[index].io;
+}
+
 static FAST_CODE void dshotWriteInt(uint8_t index, uint16_t value)
 {
     pwmWriteDshotInt(index, value);
@@ -150,6 +158,7 @@ static const motorVTable_t dshotPwmVTable = {
     .shutdown = dshotPwmShutdown,
     .requestTelemetry = pwmDshotRequestTelemetry,
     .isMotorIdle = pwmDshotIsMotorIdle,
+    .getMotorIO = pwmDshotGetMotorIO,
 };
 
 bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)

@@ -31,6 +31,7 @@
 #include "drivers/io.h"
 #include "drivers/motor_impl.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_output_impl.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 
@@ -98,18 +99,6 @@ static void pwmDisableMotors(void)
     pwmShutdownPulsesForAllMotors();
 }
 
-static motorVTable_t motorPwmVTable;
-static bool pwmEnableMotors(void)
-{
-    /* check motors can be enabled */
-    return (pwmMotorDevice->vTable);
-}
-
-static bool pwmIsMotorEnabled(unsigned index)
-{
-    return motors[index].enabled;
-}
-
 static bool useContinuousUpdate = true;
 
 static void pwmCompleteMotorUpdate(void)
@@ -151,6 +140,7 @@ static motorVTable_t motorPwmVTable = {
     .updateComplete = pwmCompleteMotorUpdate,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
+    .getMotorIO = pwmGetMotorIO,
 };
 
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t idlePulse)

@@ -22,6 +22,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "drivers/io_types.h"
 
 #define ALL_MOTORS 255
 #define MOTOR_OUTPUT_LIMIT_PERCENT_MIN 1
@@ -64,6 +65,7 @@ typedef struct motorVTable_s {
     void (*updateComplete)(void);
     void (*shutdown)(void);
     bool (*isMotorIdle)(unsigned index);
+    IO_t (*getMotorIO)(unsigned index);
 
     // Digital commands
     void (*requestTelemetry)(unsigned index);

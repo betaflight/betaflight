@@ -669,6 +669,14 @@ static void bbPostInit(void)
     }
 }
 
+static IO_t bbGetMotorIO(unsigned index)
+{
+    if (index >= dshotMotorCount) {
+        return IO_NONE;
+    }
+    return bbMotors[index].io;
+}
+
 static motorVTable_t bbVTable = {
     .postInit = bbPostInit,
     .enable = bbEnableMotors,
@@ -685,6 +693,7 @@ static motorVTable_t bbVTable = {
     .shutdown = bbShutdown,
     .isMotorIdle = bbDshotIsMotorIdle,
     .requestTelemetry = bbDshotRequestTelemetry,
+    .getMotorIO = bbGetMotorIO,
 };
 
 dshotBitbangStatus_e dshotBitbangGetStatus(void)
