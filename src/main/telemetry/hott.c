@@ -59,7 +59,6 @@
 
 #include "platform.h"
 
-
 #ifdef USE_TELEMETRY_HOTT
 
 #include "build/build_config.h"
@@ -182,7 +181,7 @@ static void initialiseMessages(void)
 }
 
 #ifdef USE_GPS
-void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude)
+STATIC_UNIT_TESTED void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t longitude)
 {
     int16_t deg = latitude / GPS_DEGREES_DIVIDER;
     int32_t sec = (latitude - (deg * GPS_DEGREES_DIVIDER)) * 6;
@@ -312,7 +311,7 @@ static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
 }
 #endif
 
-void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
+static void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     // Reset alarms
     hottEAMMessage->warning_beeps = 0x0;
@@ -372,13 +371,13 @@ static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_e
     if (telemetryConfig()->halfDuplex) {
         portOptions |= SERIAL_BIDIR;
     }
-
+    // TODO - identifier is set only after opening port
     hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, NULL, HOTT_BAUDRATE, mode, portOptions);
 }
 
 static bool hottIsUsingHardwareUART(void)
 {
-    return !(portConfig->identifier == SERIAL_PORT_SOFTSERIAL1 || portConfig->identifier == SERIAL_PORT_SOFTSERIAL2);
+    return serialType(portConfig->identifier) != SERIALTYPE_SOFTSERIAL;
 }
 
 static void hottConfigurePortForTX(void)

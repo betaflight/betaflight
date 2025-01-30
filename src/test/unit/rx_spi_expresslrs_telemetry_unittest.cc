@@ -44,11 +44,14 @@ extern "C" {
     #include "telemetry/msp_shared.h"
     #include "rx/crsf_protocol.h"
     #include "rx/expresslrs_telemetry.h"
+    #include "fc/rc_modes.h"
+    #include "flight/gps_rescue.h"
     #include "flight/imu.h"
 
     #include "sensors/battery.h"
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
 
     #include "config/config.h"
 
@@ -70,6 +73,7 @@ extern "C" {
 
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
 }
 
 #include "unittest_macros.h"
@@ -209,10 +213,10 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestFlightMode)
     getNextTelemetryPayload(&payloadSize, &payload);
     EXPECT_EQ(currentPayloadIndex, 0);
 
-    EXPECT_EQ('W', payload[3]);
-    EXPECT_EQ('A', payload[4]);
-    EXPECT_EQ('I', payload[5]);
-    EXPECT_EQ('T', payload[6]);
+    EXPECT_EQ('A', payload[3]);
+    EXPECT_EQ('C', payload[4]);
+    EXPECT_EQ('R', payload[5]);
+    EXPECT_EQ('O', payload[6]);
     EXPECT_EQ('*', payload[7]);
     EXPECT_EQ(0, payload[8]);
 
@@ -222,7 +226,7 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestFlightMode)
 TEST(RxSpiExpressLrsTelemetryUnitTest, TestMspVersionRequest)
 { 
     uint8_t request[15] = {238, 12, 122, 200, 234, 48, 0, 1, 1, 0, 0, 0, 0, 128, 0};
-    uint8_t response[12] = {200, 10, 123, 234, 200, 48, 3, 1, 0, API_VERSION_MAJOR, API_VERSION_MINOR, 0x55};
+    uint8_t response[12] = {200, 10, 123, 234, 200, 48, 3, 1, 0, API_VERSION_MAJOR, API_VERSION_MINOR, 0x80};
     uint8_t data1[6] = {1, request[0], request[1], request[2], request[3], request[4]};
     uint8_t data2[6] = {2, request[5], request[6], request[7], request[8], request[9]};
     uint8_t data3[6] = {3, request[10], request[11], request[12], request[13], request[14]};
@@ -396,6 +400,7 @@ extern "C" {
     uint8_t armingFlags;
     uint8_t stateFlags;
     uint16_t flightModeFlags;
+    baro_t baro;
 
     uint32_t microsISR(void) {return 0; }
 
@@ -417,7 +422,7 @@ extern "C" {
     bool telemetryIsSensorEnabled(sensor_e) {return true; }
     bool sensors(uint32_t ) { return true; }
 
-    bool airmodeIsEnabled(void) {return airMode; }
+    bool isAirmodeEnabled(void) {return airMode; }
 
     bool isBatteryVoltageConfigured(void) { return true; }
     bool isAmperageConfigured(void) { return true; }
@@ -464,4 +469,9 @@ extern "C" {
 
     timeUs_t rxFrameTimeUs(void) { return 0; }
 
+    bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+
+    int getArmingDisableFlags(void) { return 0; }
+
+    bool gpsRescueIsConfigured(void) { return false; }
 }

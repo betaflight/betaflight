@@ -36,7 +36,6 @@
 #include "drivers/vtx_common.h"
 #endif
 
-
 #if defined(USE_VTX_TABLE)
 int            vtxTableBandCount;
 int            vtxTableChannelCount;
@@ -160,7 +159,7 @@ void vtxTableConfigClearChannels(vtxTableConfig_t *config, int band, int channel
 }
 
 // Clear a channel name for "channel"
-void vtxTableConfigClearChannelNames(vtxTableConfig_t *config, int channel)
+static void vtxTableConfigClearChannelNames(vtxTableConfig_t *config, int channel)
 {
     tfp_sprintf(config->channelNames[channel], "%d", channel + 1);
 }

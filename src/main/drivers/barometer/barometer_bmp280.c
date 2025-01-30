@@ -42,7 +42,6 @@
 
 #if defined(USE_BARO) && (defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280))
 
-
 #define BMP280_I2C_ADDR                      (0x76)
 #define BMP280_DEFAULT_CHIP_ID               (0x58)
 #define BME280_DEFAULT_CHIP_ID               (0x60)
@@ -118,7 +117,7 @@ static bool bmp280GetUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void bmp280Calculate(int32_t *pressure, int32_t *temperature);
 
-void bmp280BusInit(const extDevice_t *dev)
+static void bmp280BusInit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -132,11 +131,11 @@ void bmp280BusInit(const extDevice_t *dev)
 #endif
 }
 
-void bmp280BusDeinit(const extDevice_t *dev)
+static void bmp280BusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (dev->bus->busType == BUS_TYPE_SPI) {
-        spiPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     }
 #else
     UNUSED(dev);

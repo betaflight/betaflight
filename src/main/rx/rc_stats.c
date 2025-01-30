@@ -42,20 +42,19 @@ timeUs_t fullThrottleTimeUs = 0;
 uint32_t fullThrottleCounter = 0;
 int8_t previousThrottlePercent = 0;
 
-
 void rcStatsUpdate(timeUs_t currentTimeUs)
 {
     uint32_t deltaT = currentTimeUs - previousTimeUs;
     previousTimeUs = currentTimeUs;
     const int8_t throttlePercent = calculateThrottlePercent();
 
-    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) && !throttleEverRaisedAfterArming) {
+    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && !throttleEverRaisedAfterArming) {
         if (abs(throttlePercent) >= 15) { // start counting stats if throttle was raised >= 15% after arming
             throttleEverRaisedAfterArming = true;
         }
     }
 
-    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) && throttleEverRaisedAfterArming) {
+    if (ARMING_FLAG(ARMED) && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && throttleEverRaisedAfterArming) {
         counter++;
         totalTrottleNumber += throttlePercent;
 
@@ -84,7 +83,7 @@ timeUs_t RcStatsGetFullThrottleTimeUs(void)
 
 int8_t RcStatsGetAverageThrottle(void)
 {
-    return (float)totalTrottleNumber/(float)counter + 0.5; // rounding
+    return (float)totalTrottleNumber/(float)counter + 0.5f; // rounding
 }
 
 void NotifyRcStatsArming(void)

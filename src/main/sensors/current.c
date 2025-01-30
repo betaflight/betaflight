@@ -251,7 +251,6 @@ void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 }
 #endif
 
-
 #ifdef USE_MSP_CURRENT_METER
 #include "common/streambuf.h"
 

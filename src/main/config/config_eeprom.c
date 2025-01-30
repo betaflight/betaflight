@@ -30,7 +30,10 @@
 #include "common/utils.h"
 
 #include "config/config_eeprom.h"
+#include "config/config_eeprom_impl.h"
 #include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
+
 #include "pg/pg.h"
 #include "config/config.h"
 
@@ -38,7 +41,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #endif
 
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/system.h"
 
 static uint16_t eepromConfigSize;
@@ -84,7 +87,7 @@ typedef struct {
 } PG_PACKED packingTest_t;
 
 #if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
-MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
+static MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
 {
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
     const flashGeometry_t *flashGeometry = flashGetGeometry();
@@ -152,7 +155,6 @@ MMFLASH_CODE_NOINLINE void saveEEPROMToMemoryMappedFlash(void)
     flashMemoryMappedModeEnable();
 }
 #endif
-
 
 #elif defined(CONFIG_IN_SDCARD)
 
@@ -284,13 +286,6 @@ bool loadEEPROMFromSDCard(void)
 }
 #endif
 
-#ifdef CONFIG_IN_FILE
-void loadEEPROMFromFile(void)
-{
-    FLASH_Unlock(); // load existing config file into eepromData
-}
-#endif
-
 void initEEPROM(void)
 {
     // Verify that this architecture packs as expected.
@@ -302,7 +297,11 @@ void initEEPROM(void)
     STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
 
 #if defined(CONFIG_IN_FILE)
-    loadEEPROMFromFile();
+    bool eepromLoaded = loadEEPROMFromFile();
+    if (!eepromLoaded) {
+        // File read failed - just die now
+        failureMode(FAILURE_FILE_READ_FAILED);
+    }
 #elif defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     bool eepromLoaded = loadEEPROMFromExternalFlash();
     if (!eepromLoaded) {
@@ -477,7 +476,6 @@ static bool writeSettingsToEEPROM(void)
                 .flags = 0,
             };
 
-
             record.flags |= CR_CLASSICATION_SYSTEM;
             config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
             crc = crc16_ccitt_update(crc, (uint8_t *)&record, sizeof(record));
@@ -509,7 +507,7 @@ void writeConfigToEEPROM(void)
     bool success = false;
     // write it
     for (int attempt = 0; attempt < 3 && !success; attempt++) {
-        if (writeSettingsToEEPROM()) {
+        if (writeSettingsToEEPROM() && isEEPROMVersionValid() && isEEPROMStructureValid()) {
             success = true;
 
 #if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
@@ -523,8 +521,7 @@ void writeConfigToEEPROM(void)
         }
     }
 
-
-    if (success && isEEPROMVersionValid() && isEEPROMStructureValid()) {
+    if (success) {
         return;
     }
 

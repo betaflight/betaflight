@@ -23,14 +23,23 @@
 #include "pg/pg.h"
 
 #include "drivers/io.h"
-#include "drivers/dshot_bitbang.h"
 
+#if !defined(BRUSHED_MOTORS_PWM_RATE)
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#endif
+
+#if !defined(BRUSHLESS_MOTORS_PWM_RATE)
+#define BRUSHLESS_MOTORS_PWM_RATE 480
+#endif
+
+//TODO: Timers are platform specific. This should be moved to platform specific code.
 typedef enum {
     DSHOT_BITBANGED_TIMER_AUTO = 0,
     DSHOT_BITBANGED_TIMER_TIM1,
     DSHOT_BITBANGED_TIMER_TIM8,
 } dshotBitbangedTimer_e;
 
+//TODO: DMAR is platform specific. This should be moved to platform specific code.
 typedef enum {
     DSHOT_DMAR_OFF,
     DSHOT_DMAR_ON,
@@ -38,15 +47,21 @@ typedef enum {
 } dshotDmar_e;
 
 typedef enum {
+    DSHOT_BITBANG_OFF,
+    DSHOT_BITBANG_ON,
+    DSHOT_BITBANG_AUTO,
+} dshotBitbangMode_e;
+
+typedef enum {
     DSHOT_TELEMETRY_OFF,
     DSHOT_TELEMETRY_ON,
 } dshotTelemetry_e;
 
 typedef struct motorDevConfig_s {
-    uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
-    uint8_t  motorPwmProtocol;              // Pwm Protocol
-    uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
-    uint8_t  useUnsyncedPwm;
+    uint16_t motorPwmRate;               // The update rate of motor outputs (50-498Hz)
+    uint8_t  motorProtocol;              // Pwm Protocol
+    uint8_t  motorInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
+    uint8_t  useContinuousUpdate;
     uint8_t  useBurstDshot;
     uint8_t  useDshotTelemetry;
     uint8_t  useDshotEdt;
@@ -59,8 +74,7 @@ typedef struct motorDevConfig_s {
 
 typedef struct motorConfig_s {
     motorDevConfig_t dev;
-    uint16_t digitalIdleOffsetValue;        // Idle value for DShot protocol, full motor output = 10000
-    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
+    uint16_t motorIdle;                     // When motors are idling, the percentage of the motor range added above the disarmed value, in percent * 100.
     uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power. This value can be increased up to 2000
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
     uint16_t kv;                            // Motor velocity constant (Kv) to estimate RPM under no load (unloadedRpm = Kv * batteryVoltage)

@@ -28,7 +28,6 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 1);
 
 PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
@@ -38,8 +37,8 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 // bitmask of features that are supported in current build configuration
 uint32_t featuresSupportedByBuild =
     0
-#ifdef USE_PPM
-    | FEATURE_RX_PPM,
+#ifdef USE_RX_PPM
+    | FEATURE_RX_PPM
 #endif
     | FEATURE_INFLIGHT_ACC_CAL // always available
 #ifdef USE_SERIALRX
@@ -57,6 +56,9 @@ uint32_t featuresSupportedByBuild =
 #endif
 #ifdef USE_RANGEFINDER
     | FEATURE_RANGEFINDER
+#endif
+#ifdef USE_OPTICALFLOW
+    | FEATURE_OPTICALFLOW
 #endif
 #ifdef USE_TELEMETRY
     | FEATURE_TELEMETRY

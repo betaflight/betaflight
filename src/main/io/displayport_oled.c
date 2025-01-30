@@ -28,6 +28,8 @@
 #include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
 
+#include "displayport_oled.h"
+
 static displayPort_t oledDisplayPort;
 
 static int oledGrab(displayPort_t *displayPort)

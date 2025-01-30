@@ -44,4 +44,3 @@ void rtc6705SetRFPower(uint8_t rf_power);
 void rtc6705Disable(void);
 void rtc6705Enable(void);
 
-

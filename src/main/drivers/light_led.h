@@ -31,8 +31,6 @@ typedef struct statusLedConfig_s {
     uint8_t inversion;
 } statusLedConfig_t;
 
-PG_DECLARE(statusLedConfig_t, statusLedConfig);
-
 // Helpful macros
 #if defined(UNIT_TEST) || defined(USE_VIRTUAL_LED)
 
@@ -49,6 +47,8 @@ PG_DECLARE(statusLedConfig_t, statusLedConfig);
 #define LED2_ON                  NOOP
 
 #else
+
+PG_DECLARE(statusLedConfig_t, statusLedConfig);
 
 #define LED0_TOGGLE              ledToggle(0)
 #define LED0_OFF                 ledSet(0, false)

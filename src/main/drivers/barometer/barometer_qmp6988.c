@@ -105,7 +105,7 @@ static bool qmp6988GetUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void qmp6988Calculate(int32_t *pressure, int32_t *temperature);
 
-void qmp6988BusInit(const extDevice_t *dev)
+static void qmp6988BusInit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_QMP6988
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -119,7 +119,7 @@ void qmp6988BusInit(const extDevice_t *dev)
 #endif
 }
 
-void qmp6988BusDeinit(const extDevice_t *dev)
+static void qmp6988BusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_QMP6988
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -341,8 +341,6 @@ static float qmp6988CompensateTemperature(int32_t adc_T)
 
     return T;
 }
-
-
 
 STATIC_UNIT_TESTED void qmp6988Calculate(int32_t *pressure, int32_t *temperature)
 {

@@ -51,9 +51,12 @@
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
-// Handle case where we'd prefer code to be in ITCM, but it won't fit on the device
 #ifndef FAST_CODE_PREF
 #define FAST_CODE_PREF              FAST_CODE
+// If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
+// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM
+// but if FAST_CODE_PREF is not defined for the target, FAST_CODE_PREF is an alias to FAST_CODE, and
+// functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
 #endif
 
 #define FAST_CODE_NOINLINE          NOINLINE
@@ -84,6 +87,50 @@
     Simplified options for the moment, i.e. adding USE_MAG or USE_BARO and the entire driver suite is added.
     In the future we can move to specific drivers being added only - to save flash space.
 */
+
+// normalize serial ports definitions
+#include "serial_post.h"
+
+#if defined(USE_ACC) \
+    && !defined(USE_ACC_MPU6000) \
+    && !defined(USE_ACC_MPU6050) \
+    && !defined(USE_ACC_MPU6500) \
+    && !defined(USE_ACCGYRO_BMI160) \
+    && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_ACC_SPI_ICM20602) \
+    && !defined(USE_ACC_SPI_ICM20649) \
+    && !defined(USE_ACC_SPI_ICM20689) \
+    && !defined(USE_ACC_SPI_ICM42605) \
+    && !defined(USE_ACC_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_LSM6DSO) \
+    && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACC_SPI_MPU6000) \
+    && !defined(USE_ACC_SPI_MPU6500) \
+    && !defined(USE_ACC_SPI_MPU9250) \
+    && !defined(USE_VIRTUAL_ACC) \
+    && !defined(USE_ACCGYRO_IIM42653)
+#error At least one USE_ACC device definition required
+#endif
+
+#if defined(USE_GYRO) \
+    && !defined(USE_GYRO_MPU6050) \
+    && !defined(USE_GYRO_MPU6500) \
+    && !defined(USE_ACCGYRO_BMI160) \
+    && !defined(USE_ACCGYRO_BMI270) \
+    && !defined(USE_GYRO_SPI_ICM20602) \
+    && !defined(USE_GYRO_SPI_ICM20649) \
+    && !defined(USE_GYRO_SPI_ICM20689) \
+    && !defined(USE_GYRO_SPI_ICM42605) \
+    && !defined(USE_GYRO_SPI_ICM42688P) \
+    && !defined(USE_ACCGYRO_LSM6DSO) \
+    && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_GYRO_SPI_MPU6000) \
+    && !defined(USE_GYRO_SPI_MPU6500) \
+    && !defined(USE_GYRO_SPI_MPU9250) \
+    && !defined(USE_VIRTUAL_GYRO) \
+    && !defined(USE_ACCGYRO_IIM42653)
+#error At least one USE_GYRO device definition required
+#endif
 
 #if defined(USE_MAG) && !defined(USE_VIRTUAL_MAG)
 
@@ -232,8 +279,20 @@
 #endif
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED) && !defined(USE_TELEMETRY_IBUS)
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
 #define USE_TELEMETRY_IBUS
 #endif
+
+#ifdef USE_SERIALRX_JETIEXBUS
+#ifndef USE_TELEMETRY
+#define USE_TELEMETRY
+#endif
+#ifndef USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_JETIEXBUS
+#endif
+#endif // USE_SERIALRX_JETIEXBUS
 
 #if !defined(USE_SERIALRX_CRSF)
 #undef USE_TELEMETRY_CRSF
@@ -265,8 +324,8 @@
 #undef USE_TELEMETRY_IBUS_EXTENDED
 #endif
 
-// If USE_SERIALRX_SPEKTRUM was dropped by a target, drop all related options
-#ifndef USE_SERIALRX_SPEKTRUM
+// If USE_SERIALRX_SPEKTRUM or SERIALRX_SRXL2 was dropped by a target, drop all related options
+#if !defined(USE_SERIALRX_SPEKTRUM) && !defined(USE_SERIALRX_SRXL2)
 #undef USE_SPEKTRUM_BIND
 #undef USE_SPEKTRUM_BIND_PLUG
 #undef USE_SPEKTRUM_REAL_RSSI
@@ -275,7 +334,7 @@
 #undef USE_SPEKTRUM_VTX_CONTROL
 #undef USE_SPEKTRUM_VTX_TELEMETRY
 #undef USE_TELEMETRY_SRXL
-#endif
+#endif // !defined(USE_SERIALRX_SPEKTRUM) && !defined(USE_SERIALRX_SRXL2)
 
 #if !defined(USE_CMS) || !defined(USE_TELEMETRY_SRXL)
 #undef USE_SPEKTRUM_CMS_TELEMETRY
@@ -324,36 +383,34 @@
 #endif
 
 #if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_PY25Q128HA)) && !defined(USE_FLASH_M25P16)
-#if !defined(USE_FLASH_M25P16)
 #define USE_FLASH_M25P16
-#endif
 #endif
 
 #if defined(USE_FLASH_W25M02G) && !defined(USE_FLASH_W25N01G)
-#if !defined(USE_FLASH_W25N01G)
 #define USE_FLASH_W25N01G
 #endif
+
+#if defined(USE_FLASH_W25N02K) || defined(USE_FLASH_W25N01G)
+#define USE_FLASH_W25N
 #endif
 
-#if (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)) && !defined(USE_FLASH_W25M)
-#if !defined(USE_FLASH_W25M)
+#if (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N)) && !defined(USE_FLASH_W25M)
 #define USE_FLASH_W25M
 #endif
-#endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25Q128FV)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV)
 #if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
 #endif
 
-#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25M02G))
+#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25M02G))
 #if !defined(USE_FLASH_SPI)
 #define USE_FLASH_SPI
 #endif
 #endif
 
-#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N01G))
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N))
 #if !defined(USE_FLASH_QUADSPI)
 #define USE_FLASH_QUADSPI
 #endif
@@ -410,15 +467,9 @@
 #endif
 
 // Generate USE_SPI_GYRO or USE_I2C_GYRO
-#if defined(USE_GYRO_L3G4200D) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6000) || defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU6500)
-#ifndef USE_I2C_GYRO
-#define USE_I2C_GYRO
-#endif
-#endif
-
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_BMI160) \
-    || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO)
+    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42653) \
+    || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
@@ -445,14 +496,6 @@
 // Can be set at runtime with with CLI parameter 'system_hse_mhz'.
 #ifndef SYSTEM_HSE_MHZ
 #define SYSTEM_HSE_MHZ 0
-#endif
-
-// Number of pins that needs pre-init
-#ifdef USE_SPI
-#ifndef SPI_PREINIT_COUNT
-// 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
-#define SPI_PREINIT_COUNT 16
-#endif
 #endif
 
 #ifndef USE_BLACKBOX
@@ -539,19 +582,24 @@
 #undef USED_TIMERS
 #endif
 
-#if !defined(USE_RANGEFINDER)
-#undef USE_RANGEFINDER_HCSR04
-#undef USE_RANGEFINDER_SRF10
-#undef USE_RANGEFINDER_HCSR04_I2C
-#undef USE_RANGEFINDER_VL53L0X
-#undef USE_RANGEFINDER_UIB
-#undef USE_RANGEFINDER_TF
+#if defined(USE_OPTICALFLOW_MT)
+#ifndef USE_RANGEFINDER_MT
+#define USE_RANGEFINDER_MT
 #endif
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
+#endif // USE_OPTICALFLOW_MT
+
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_SRF10) || defined(USE_RANGEFINDER_HCSR04_I2C) || defined(USE_RANGEFINDER_VL53L0X) || defined(USE_RANGEFINDER_UIB) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT)
+#ifndef USE_RANGEFINDER
+#define USE_RANGEFINDER
+#endif
+#endif // USE_RANGEFINDER_XXX
 
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
-
 
 #if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
 #ifndef EEPROM_SIZE

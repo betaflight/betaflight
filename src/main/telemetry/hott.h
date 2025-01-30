@@ -74,7 +74,6 @@ typedef enum {
     HOTT_EAM_ALARM2_FLAG_ON_SIGN_OR_TEXT_ACTIVE = (1 << 7)
 } hottEamAlarm2Flag_e;
 
-
 //
 // Messages
 //
@@ -101,7 +100,6 @@ typedef enum {
 
 //Graupner #33620 Electric Air Module
 #define HOTT_TELEMETRY_EAM_SENSOR_ID    0x8e
-
 
 #define HOTT_EAM_SENSOR_TEXT_ID  0xE0 // Electric Air Module ID
 #define HOTT_GPS_SENSOR_TEXT_ID  0xA0 // GPS Module ID
@@ -235,7 +233,6 @@ typedef struct HOTT_VARIO_MSG_s {
                                 // Y    Maximum RPM
                                 // C    m/s negative difference
                                 // A    m/3s negative difference
-
 
     uint8_t sensor_id;           //#04 constant value 0x90
     uint8_t alarm_invers1;       //#05 Inverse display (alarm?) bitmask
@@ -502,9 +499,9 @@ void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
 
 #if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
-bool hottTextmodeIsAlive();
-void hottTextmodeGrab();
-void hottTextmodeExit();
+bool hottTextmodeIsAlive(void);
+void hottTextmodeGrab(void);
+void hottTextmodeExit(void);
 void hottTextmodeWriteChar(uint8_t column, uint8_t row, char c);
 #endif
 

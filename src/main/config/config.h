@@ -25,19 +25,10 @@
 
 #include "pg/pg.h"
 
-#define MAX_NAME_LENGTH 16u
-
 typedef enum {
     CONFIGURATION_STATE_UNCONFIGURED = 0,
     CONFIGURATION_STATE_CONFIGURED,
 } configurationState_e;
-
-typedef struct pilotConfig_s {
-    char craftName[MAX_NAME_LENGTH + 1];
-    char pilotName[MAX_NAME_LENGTH + 1];
-} pilotConfig_t;
-
-PG_DECLARE(pilotConfig_t, pilotConfig);
 
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
@@ -83,11 +74,10 @@ void changeControlRateProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
 
-uint16_t getCurrentMinthrottle(void);
-
 void resetConfig(void);
 void targetConfiguration(void);
 void targetValidateConfiguration(void);
+void configTargetPreInit(void);
 
 bool isSystemConfigured(void);
 void setRebootRequired(void);

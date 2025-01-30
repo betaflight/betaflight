@@ -109,7 +109,6 @@ typedef enum
     SD_SDMMC_UNKNOWN_FUNCTION          = (33),
     SD_OUT_OF_BOUND                    = (34),
 
-
     // Standard error defines
     SD_INTERNAL_ERROR                  = (35),
     SD_NOT_CONFIGURED                  = (36),
@@ -122,7 +121,6 @@ typedef enum
     SD_BUSY                            = (43),
     SD_OK                              = (0)
 } SD_Error_t;
-
 
 typedef struct
 {

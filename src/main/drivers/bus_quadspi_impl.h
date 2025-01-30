@@ -22,7 +22,6 @@
 
 #pragma once
 
-
 typedef struct quadSpiPinDef_s {
     ioTag_t pin;
 #if defined(STM32H7)

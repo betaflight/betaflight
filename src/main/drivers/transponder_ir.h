@@ -35,7 +35,6 @@
 #define TRANSPONDER_TRANSMIT_JITTER_ARCITIMER 10000
 /*** ******** ***/
 
-
 /*** ILAP ***/
 #define TRANSPONDER_BITS_PER_BYTE_ILAP 10 // start + 8 data + stop
 #define TRANSPONDER_DATA_LENGTH_ILAP 6
@@ -49,7 +48,6 @@
 #define TRANSPONDER_TRANSMIT_JITTER_ILAP  10000
 /*** ******** ***/
 
-
 /*** ERLT ***/
 #define TRANSPONDER_DATA_LENGTH_ERLT        1
 
@@ -62,7 +60,6 @@
 #define TRANSPONDER_TRANSMIT_DELAY_ERLT     22500
 #define TRANSPONDER_TRANSMIT_JITTER_ERLT    5000
 /*** ******** ***/
-
 
 /*
  * Implementation note:
@@ -78,7 +75,7 @@
         uint8_t erlt[TRANSPONDER_DMA_BUFFER_SIZE_ERLT]; // 91-200
     } transponderIrDMABuffer_t;
 
-#elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
 
     typedef union transponderIrDMABuffer_s {
         uint32_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
@@ -94,7 +91,7 @@ typedef struct transponder_s {
     uint16_t bitToggleOne;
     uint32_t dma_buffer_size;
 
-    #if defined(STM32F4)|| defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST)
+    #if defined(STM32F4)|| defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4) || defined(UNIT_TEST)
         transponderIrDMABuffer_t transponderIrDMABuffer;
     #endif
 

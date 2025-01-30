@@ -93,6 +93,12 @@ int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, co
 {
     instance->posX = x + strlen(text);
     instance->posY = y;
+
+    if (strlen(text) == 0) {
+        // No point sending a message to do nothing
+        return 0;
+    }
+
     return instance->vTable->writeString(instance, x, y, attr, text);
 }
 

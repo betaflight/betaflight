@@ -129,7 +129,6 @@ static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
     return 0;
 }
 
-
 static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)
 {
     for (int i = 0; i < length; i++)
@@ -145,7 +144,6 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
     // heading Current heading in degrees, in compass units (0..360, 0=north)
     return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
-
 
 void freeMAVLinkTelemetryPort(void)
 {
@@ -202,7 +200,7 @@ void checkMAVLinkTelemetryState(void)
     }
 }
 
-void mavlinkSendSystemStatus(void)
+static void mavlinkSendSystemStatus(void)
 {
     uint16_t msgLength;
 
@@ -267,7 +265,7 @@ void mavlinkSendSystemStatus(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void mavlinkSendRCChannelsAndRSSI(void)
+static void mavlinkSendRCChannelsAndRSSI(void)
 {
     uint16_t msgLength;
     mavlink_msg_rc_channels_raw_pack(0, 200, &mavMsg,
@@ -298,7 +296,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(USE_GPS)
-void mavlinkSendPosition(void)
+static void mavlinkSendPosition(void)
 {
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
@@ -368,9 +366,9 @@ void mavlinkSendPosition(void)
 
     mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
         // latitude Latitude (WGS84), expressed as * 1E7
-        GPS_home[GPS_LATITUDE],
+        GPS_home_llh.lat,
         // longitude Longitude (WGS84), expressed as * 1E7
-        GPS_home[GPS_LONGITUDE],
+        GPS_home_llh.lon,
         // altitude Altitude(WGS84), expressed as * 1000
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
@@ -378,7 +376,7 @@ void mavlinkSendPosition(void)
 }
 #endif
 
-void mavlinkSendAttitude(void)
+static void mavlinkSendAttitude(void)
 {
     uint16_t msgLength;
     mavlink_msg_attitude_pack(0, 200, &mavMsg,
@@ -400,7 +398,7 @@ void mavlinkSendAttitude(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void mavlinkSendHUDAndHeartbeat(void)
+static void mavlinkSendHUDAndHeartbeat(void)
 {
     uint16_t msgLength;
     float mavAltitude = 0;
@@ -432,7 +430,6 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavClimbRate);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
-
 
     uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
     if (ARMING_FLAG(ARMED))
@@ -478,7 +475,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     // Custom mode for compatibility with APM OSDs
     uint8_t mavCustomMode = 1;  // Acro by default
 
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
@@ -511,7 +508,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void processMAVLinkTelemetry(void)
+static void processMAVLinkTelemetry(void)
 {
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {

@@ -72,7 +72,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_throttle = 1000,                           // default throttle off.
     .failsafe_throttle_low_delay = 100,                  // default throttle low delay for "just disarm" on failsafe condition
     .failsafe_delay = 15,                                // 1.5 sec stage 1 period, can regain control on signal recovery, at idle in drop mode
-    .failsafe_off_delay = 10,                            // 1 sec in landing phase, if enabled
+    .failsafe_landing_time = 60,                         // 60 sec allowed in landing phase, if enabled, before disarm
     .failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE1, // default failsafe switch action is identical to rc link loss
     .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT,    // default full failsafe procedure is 0: auto-landing
     .failsafe_recovery_delay = DEFAULT_FAILSAFE_RECOVERY_DELAY,
@@ -149,7 +149,7 @@ static bool failsafeShouldHaveCausedLandingByNow(void)
 bool failsafeIsReceivingRxData(void)
 {
     return (failsafeState.rxLinkState == FAILSAFE_RXLINK_UP);
-    // False with BOXFAILSAFE switch or when no valid packets for 100ms or any flight channel invalid for 300ms,
+    // False with BOXFAILSAFE switch or when no valid packets for RXLOSS_TRIGGER_INTERVAL or any flight channel invalid for 300ms,
     // becomes true immediately BOXFAILSAFE switch reverts, or after recovery period expires when valid packets are received
     // rxLinkState RXLINK_DOWN (not up) is the trigger for the various failsafe stage 2 outcomes.
 }
@@ -184,7 +184,7 @@ void failsafeOnValidDataReceived(void)
 
     if (cmp32(failsafeState.validRxDataReceivedAt, failsafeState.validRxDataFailedAt) > (int32_t)failsafeState.receivingRxDataPeriodPreset) {
         // receivingRxDataPeriodPreset is rxDataRecoveryPeriod unless set to zero to allow immediate control recovery after switch induced failsafe
-        // rxDataRecoveryPeriod defaults to 1.0s with minimum of PERIOD_RXDATA_RECOVERY (200ms)
+        // rxDataRecoveryPeriod defaults to 1.0s with minimum of PERIOD_RXDATA_RECOVERY (100ms)
         // link is not considered 'up', after it has been 'down', until that recovery period has expired
         failsafeState.rxLinkState = FAILSAFE_RXLINK_UP;
         // after the rxDataRecoveryPeriod, typically 1s after receiving valid data, clear RXLOSS in OSD and permit arming
@@ -193,11 +193,11 @@ void failsafeOnValidDataReceived(void)
 }
 
 void failsafeOnValidDataFailed(void)
-// run from rc.c when packets are lost for more than the signal validation period (100ms), or immediately BOXFAILSAFE switch is active
+// run from rc.c when packets are lost for more than RXLOSS_TRIGGER_INTERVAL, or immediately BOXFAILSAFE switch is active
 // after the stage 1 delay has expired, sets the rxLinkState to RXLINK_DOWN, ie not up, causing failsafeIsReceivingRxData to become false
 // if failsafe is configured to go direct to stage 2, this is emulated immediately in failsafeUpdateState()
 {
-    //  set RXLOSS in OSD and block arming after 100ms of signal loss
+    //  set RXLOSS in OSD and block arming after RXLOSS_TRIGGER_INTERVAL of frame loss
     setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
 
     failsafeState.validRxDataFailedAt = millis();
@@ -219,7 +219,7 @@ void failsafeCheckDataFailurePeriod(void)
     }
 }
 
-uint32_t failsafeFailurePeriodMs(void)
+LOCAL_UNUSED_FUNCTION static uint32_t failsafeFailurePeriodMs(void)
 {
     return failsafeState.rxDataFailurePeriod;
 }
@@ -232,7 +232,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
     }
 
     bool receivingRxData = failsafeIsReceivingRxData();
-    // returns state of FAILSAFE_RXLINK_UP, which 
+    // returns state of FAILSAFE_RXLINK_UP, which
     // goes false after the stage 1 delay, whether from signal loss or BOXFAILSAFE switch activation
     // goes true immediately BOXFAILSAFE switch is reverted, or after recovery delay once signal recovers
     // essentially means 'should be in failsafe stage 2'
@@ -319,7 +319,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             //  Enter Stage 2 with settings for landing mode
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                             failsafeState.phase = FAILSAFE_LANDING;
-                            failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
+                            failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
                             break;
 
                         case FAILSAFE_PROCEDURE_DROP_IT:
@@ -367,7 +367,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
                     if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn) {
-                        // exits the rescue immediately if failsafe was initiated by switch, otherwise 
+                        // exits the rescue immediately if failsafe was initiated by switch, otherwise
                         // requires stick input to exit the rescue after a true Rx loss failsafe
                         // NB this test requires stick inputs to be received during GPS Rescue see PR #7936 for rationale
                         failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
@@ -425,8 +425,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
         }
 
-    DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.boxFailsafeSwitchWasOn);
-    DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);
+        DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.boxFailsafeSwitchWasOn);
+        DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);
 
     } while (reprocessState);
 

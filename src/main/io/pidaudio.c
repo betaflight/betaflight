@@ -44,12 +44,12 @@ void pidAudioInit(void)
     audioSetupIO();
 }
 
-void pidAudioStart(void)
+static void pidAudioStart(void)
 {
     audioGenerateWhiteNoise();
 }
 
-void pidAudioStop(void)
+static void pidAudioStop(void)
 {
     audioSilence();
 }

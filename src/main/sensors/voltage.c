@@ -82,7 +82,6 @@ const uint8_t voltageMeterIds[] = {
 
 const uint8_t supportedVoltageMeterCount = ARRAYLEN(voltageMeterIds);
 
-
 //
 // ADC/ESC shared
 //
@@ -128,7 +127,7 @@ voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
 
 static bool sagCompensationConfigured;
 
-voltageMeterADCState_t *getVoltageMeterADC(uint8_t index)
+LOCAL_UNUSED_FUNCTION static voltageMeterADCState_t *getVoltageMeterADC(uint8_t index)
 {
     return &voltageMeterADCStates[index];
 }
@@ -145,7 +144,6 @@ void pgResetFn_voltageSensorADCConfig(voltageSensorADCConfig_t *instance)
         );
     }
 }
-
 
 static const uint8_t voltageMeterAdcChannelMap[] = {
     ADC_BATTERY,
@@ -261,8 +259,6 @@ typedef struct voltageMeterESCState_s {
 static voltageMeterESCState_t voltageMeterESCState;
 #endif
 
-
-
 void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
@@ -314,7 +310,6 @@ void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter)
 //
 // This API is used by MSP, for configuration/status.
 //
-
 
 // the order of these much match the indexes in voltageSensorADC_e
 const uint8_t voltageMeterADCtoIDMap[MAX_VOLTAGE_SENSOR_ADC] = {
@@ -386,5 +381,5 @@ void voltageStableUpdate(voltageMeter_t* vm)
 // voltage is stable when it was within VOLTAGE_STABLE_MAX_DELTA for 10 update periods
 bool voltageIsStable(voltageMeter_t* vm)
 {
-    return __builtin_popcount(vm->voltageStableBits & (BIT(VOLTAGE_STABLE_BITS_TOTAL + 1) - 1)) >= VOLTAGE_STABLE_BITS_THRESHOLD;
+    return popcount(vm->voltageStableBits & (BIT(VOLTAGE_STABLE_BITS_TOTAL + 1) - 1)) >= VOLTAGE_STABLE_BITS_THRESHOLD;
 }

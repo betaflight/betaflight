@@ -20,12 +20,12 @@
 
 #include "platform.h"
 
+#include "debug_pin.h"
+
 #ifdef USE_DEBUG_PIN
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-
-#include "debug_pin.h"
 
 typedef struct dbgPinState_s {
     GPIO_TypeDef *gpio;

@@ -33,7 +33,6 @@
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 
-
 static vtxDevice_t *vtxDevice = NULL;
 static uint8_t selectedBand = 0;
 static uint8_t selectedChannel = 0;

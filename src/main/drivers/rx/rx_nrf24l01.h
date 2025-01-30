@@ -154,7 +154,6 @@ enum {
     NRF24L01_04_SETUP_RETR_ARC_14       = 0x0e,
     NRF24L01_04_SETUP_RETR_ARC_15       = 0x0f,
 
-
     NRF24L01_06_RF_SETUP_RF_DR_2Mbps    = 0x08,
     NRF24L01_06_RF_SETUP_RF_DR_1Mbps    = 0x00,
     NRF24L01_06_RF_SETUP_RF_DR_250Kbps  = 0x20,
@@ -184,7 +183,6 @@ void NRF24L01_WriteAckPayload(const uint8_t *data, uint8_t length, uint8_t pipe)
 uint8_t NRF24L01_ReadReg(uint8_t reg);
 void NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length);
 void NRF24L01_ReadPayload(uint8_t *data, uint8_t length);
-
 
 // Utility functions
 

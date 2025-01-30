@@ -60,11 +60,7 @@
 #define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
 DMA_RW_AXI __attribute__((aligned(32))) uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
 #else
-#if defined(STM32F7)
 FAST_DATA_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#else
-uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#endif
 #endif
 
 static ioTag_t ledStripIoTag;
@@ -199,7 +195,6 @@ bool ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
         schedulerIgnoreTaskStateTime();
         return false;
     }
-
 
     // fill transmit buffer with correct compare values to achieve
     // correct pulse widths according to color values

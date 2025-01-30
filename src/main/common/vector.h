@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -24,176 +25,55 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "common/maths.h"
 
-typedef union {
+typedef union vector2_u {
     float v[2];
     struct {
-       float x,y;
+       float x, y;
     };
-} fpVector2_t;
+} vector2_t;
 
-
-typedef union {
+typedef union vector3_u {
     float v[3];
     struct {
        float x, y, z;
     };
-} fpVector3_t;
+} vector3_t;
 
-typedef struct {
+typedef struct matrix33_s {
     float m[3][3];
-} fpMat33_t;
+} matrix33_t;
 
-static inline fpVector3_t * vectorZero(fpVector3_t *v)
-{
-    v->x = 0.0f;
-    v->y = 0.0f;
-    v->z = 0.0f;
-    return v;
-}
+bool vector2Equal(const vector2_t *a, const vector2_t *b);
+vector2_t *vector2Zero(vector2_t *v);
+vector2_t *vector2Add(vector2_t *result, const vector2_t *a, const vector2_t *b);
+vector2_t *vector2Sub(vector2_t *result, const vector2_t *a, const vector2_t *b);
+vector2_t *vector2Scale(vector2_t *result, const vector2_t *v, const float k);
+float vector2Dot(const vector2_t *a, const vector2_t *b);
+float vector2Cross(const vector2_t *a, const vector2_t *b);
+float vector2NormSq(const vector2_t *v);
+float vector2Norm(const vector2_t *v);
+vector2_t *vector2Normalize(vector2_t *result, const vector2_t *v);
+vector2_t *vector2Rotate(vector2_t *result, const vector2_t *v, const float angle);
 
-static inline float vectorNormSquared(const fpVector3_t * v)
-{
-    return sq(v->x) + sq(v->y) + sq(v->z);
-}
+bool vector3Equal(const vector3_t *a, const vector3_t *b);
+vector3_t *vector3Zero(vector3_t *v);
+vector3_t *vector3Add(vector3_t *result, const vector3_t *a, const vector3_t *b);
+vector3_t *vector3Sub(vector3_t *result, const vector3_t *a, const vector3_t *b);
+vector3_t *vector3Scale(vector3_t *result, const vector3_t *v, const float k);
+float vector3Dot(const vector3_t *a, const vector3_t *b);
+vector3_t *vector3Cross(vector3_t *result, const vector3_t *a, const vector3_t *b);
+float vector3NormSq(const vector3_t *v);
+float vector3Norm(const vector3_t *v);
+vector3_t *vector3Normalize(vector3_t *result, const vector3_t *v);
 
-static inline float vectorNorm(const fpVector3_t * v)
-{
-    return sqrtf(vectorNormSquared(v));
-}
+vector3_t *matrixVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *v);
+vector3_t *matrixTrnVectorMul(vector3_t *result, const matrix33_t *mat, const vector3_t *v);
 
-static inline fpVector3_t * vectorCrossProduct(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b)
-{
-    fpVector3_t ab;
+matrix33_t *buildRotationMatrix(matrix33_t *result, const fp_angles_t *rpy);
+vector3_t *applyRotationMatrix(vector3_t *v, const matrix33_t *rotationMatrix);
 
-    ab.x = a->y * b->z - a->z * b->y;
-    ab.y = a->z * b->x - a->x * b->z;
-    ab.z = a->x * b->y - a->y * b->x;
-
-    *result = ab;
-    return result;
-}
-
-static inline fpVector3_t * vectorAdd(fpVector3_t *result, const fpVector3_t *a, const fpVector3_t *b)
-{
-    fpVector3_t ab;
-
-    ab.x = a->x + b->x;
-    ab.y = a->y + b->y;
-    ab.z = a->z + b->z;
-
-    *result = ab;
-    return result;
-}
-
-static inline fpVector3_t * vectorScale(fpVector3_t *result, const fpVector3_t *a, const float b)
-{
-    fpVector3_t ab;
-
-    ab.x = a->x * b;
-    ab.y = a->y * b;
-    ab.z = a->z * b;
-
-    *result = ab;
-    return result;
-}
-
-static inline fpVector3_t * vectorNormalize(fpVector3_t *result, const fpVector3_t *v)
-{
-    float normSq = vectorNormSquared(v);
-    if (normSq > 0) {              // Hopefully sqrt(nonzero) is quite large
-        return vectorScale(result, v, 1.0f / sqrtf(normSq));
-    } else {
-        return vectorZero(result);
-    }
-}
-
-
-static inline float vector2NormSquared(const fpVector2_t *a)
-{
-    return sq(a->x) + sq(a->y);
-}
-
-static inline float vector2Norm(const fpVector2_t *a)
-{
-    return sqrtf(vector2NormSquared(a));
-}
-
-
-static inline fpVector2_t * vector2Scale(fpVector2_t *result, const fpVector2_t *a, const float b)
-{
-    fpVector2_t ab;
-
-    ab.x = a->x * b;
-    ab.y = a->y * b;
-
-    *result = ab;
-    return result;
-}
-
-static inline fpVector2_t * vector2Normalize(fpVector2_t *result, const fpVector2_t *v)
-{
-    float normSq = vector2NormSquared(v);
-    if (normSq > 0.0f) {
-        return vector2Scale(result, v, 1.0f / sqrtf(normSq));
-    } else {
-        *result = (fpVector2_t){.x = 0.0f, .y = 0.0f};
-        return result;
-    }
-}
-
-static inline fpVector3_t * matrixVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
-{
-    fpVector3_t r;
-
-    r.x = mat->m[0][0] * a->x + mat->m[0][1] * a->y + mat->m[0][2] * a->z;
-    r.y = mat->m[1][0] * a->x + mat->m[1][1] * a->y + mat->m[1][2] * a->z;
-    r.z = mat->m[2][0] * a->x + mat->m[2][1] * a->y + mat->m[2][2] * a->z;
-
-    *result = r;
-    return result;
-}
-
-static inline fpMat33_t * yawToRotationMatrixZ(fpMat33_t * result, const float yaw)
-{
-    fpMat33_t r;
-    const float sinYaw = sin_approx(yaw);
-    const float cosYaw = cos_approx(yaw);
-
-    r.m[0][0] = cosYaw;
-    r.m[1][0] = sinYaw;
-    r.m[2][0] = 0.0f;
-    r.m[0][1] = -sinYaw;
-    r.m[1][1] = cosYaw;
-    r.m[2][1] = 0.0f;
-    r.m[0][2] = 0.0f;
-    r.m[1][2] = 0.0f;
-    r.m[2][2] = 1.0f;
-
-    *result = r;
-    return result;
-}
-
-static inline fpVector3_t * matrixTrnVectorMul(fpVector3_t * result, const fpMat33_t * mat, const fpVector3_t * a)
-{
-    fpVector3_t r;
-
-    r.x = mat->m[0][0] * a->x + mat->m[1][0] * a->y + mat->m[2][0] * a->z;
-    r.y = mat->m[0][1] * a->x + mat->m[1][1] * a->y + mat->m[2][1] * a->z;
-    r.z = mat->m[0][2] * a->x + mat->m[1][2] * a->y + mat->m[2][2] * a->z;
-
-    *result = r;
-    return result;
-}
-
-static inline float vector2Cross(const fpVector2_t *a, const fpVector2_t *b)
-{
-    return a->x * b->y - a->y * b->x;
-}
-
-static inline float vector2Dot(const fpVector2_t *a, const fpVector2_t *b)
-{
-    return a->x * b->x + a->y * b->y;
-}
-
+matrix33_t *yawToRotationMatrixZ(matrix33_t *result, const float yaw);

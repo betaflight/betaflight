@@ -33,9 +33,10 @@ extern "C" {
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
 
-    void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
+    void serialInit(bool softserialEnabled);
 
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+    PG_REGISTER(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -44,7 +45,7 @@ extern "C" {
 TEST(IoSerialTest, TestFindPortConfig)
 {
     // given
-    serialInit(false, SERIAL_PORT_NONE);
+    serialInit(false);
 
     // when
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
@@ -70,11 +71,11 @@ extern "C" {
 
     serialPort_t *usbVcpOpen(void) { return NULL; }
 
-    serialPort_t *uartOpen(UARTDevice_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
+    serialPort_t *uartOpen(serialPortIdentifier_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
 
-    serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
+    serialPort_t *softSerialOpen(serialPortIdentifier_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
 

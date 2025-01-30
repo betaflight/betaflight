@@ -32,6 +32,8 @@ Stripped down for BF use
 
 #include "platform.h"
 
+#include "common/maths.h"
+
 /* Workaround a lack of optimization in gcc */
 float exp_cst1 = 2139095040.f;
 float exp_cst2 = 0.f;
@@ -81,7 +83,6 @@ float log_approx(float val)
   addcst = val > 0 ? -89.970756366f : -(float)INFINITY;
   valu.i = (valu.i & 0x7FFFFF) | 0x3F800000;
   x = valu.f;
-
 
   /* Generated in Sollya using:
     > f = remez(log(x)-(x-1)*log(2),

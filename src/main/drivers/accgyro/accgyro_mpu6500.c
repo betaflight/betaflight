@@ -24,6 +24,11 @@
 
 #include "platform.h"
 
+#if defined(USE_ACC_SPI_MPU6500) \
+    || defined(USE_GYRO_SPI_MPU6500) \
+    || defined(USE_ACC_MPU6500) \
+    || defined(USE_GYRO_MPU6500)
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -108,3 +113,5 @@ bool mpu6500GyroDetect(gyroDev_t *gyro)
 
     return true;
 }
+
+#endif // USE_ACC_SPI_MPU6500 || USE_GYRO_SPI_MPU6500 || USE_ACC_MPU6500 || USE_GYRO_MPU6500

@@ -42,7 +42,6 @@
 #include "drivers/timer.h"
 #include "drivers/motor.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
@@ -148,7 +147,7 @@ static bool isFrameComplete(void)
     return bufferPosition == bufferSize;
 }
 
-bool isEscSensorActive(void)
+LOCAL_UNUSED_FUNCTION static bool isEscSensorActive(void)
 {
     return escSensorPort != NULL;
 }
@@ -321,8 +320,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
             escTriggerTimestamp = currentTimeMs;
 
             startEscDataRead(telemetryBuffer, TELEMETRY_FRAME_SIZE);
-            motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
-            motor->protocolControl.requestTelemetry = true;
+            motorRequestTelemetry(escSensorMotor);
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
 
             DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);

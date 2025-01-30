@@ -27,4 +27,4 @@ extern CMS_Menu cmsx_menuVtxSmartAudio;
 
 void saCmsUpdate(void);
 void saUpdateStatusString(void);
-void saCmsResetOpmodel();
+void saCmsResetOpmodel(void);

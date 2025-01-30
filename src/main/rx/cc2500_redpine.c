@@ -34,7 +34,6 @@
 #include "config/feature.h"
 #include "drivers/adc.h"
 #include "drivers/io.h"
-#include "drivers/io_def.h"
 #include "drivers/io_types.h"
 #include "drivers/resource.h"
 #include "drivers/rx/rx_cc2500.h"
@@ -87,7 +86,7 @@ static void initBindTuneRx(void);
 static bool tuneRx1(uint8_t *packet);
 static bool tuneRx2(uint8_t *packet);
 static bool tuneRx3(uint8_t *packet);
-static void nextChannel();
+static void nextChannel(void);
 static bool redpineRxPacketBind(uint8_t *packet);
 static bool isRedpineFast(void);
 
@@ -390,7 +389,7 @@ static bool isRedpineFast(void)
     return (redpineFast);
 }
 
-void switchRedpineMode(void)
+static void switchRedpineMode(void)
 {
     redpineFast = !redpineFast;
 }

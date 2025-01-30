@@ -125,11 +125,14 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-#ifdef DEBUG_PPM_ISR
 typedef enum {
     SOURCE_OVERFLOW = 0,
     SOURCE_EDGE = 1
 } eventSource_e;
+
+static void ppmISREvent(eventSource_e source, uint32_t capture);
+
+#ifdef DEBUG_PPM_ISR
 
 typedef struct ppmISREvent_s {
     uint32_t capture;
@@ -139,7 +142,7 @@ typedef struct ppmISREvent_s {
 static ppmISREvent_t ppmEvents[20];
 static uint8_t ppmEventIndex = 0;
 
-void ppmISREvent(eventSource_e source, uint32_t capture)
+static void ppmISREvent(eventSource_e source, uint32_t capture)
 {
     ppmEventIndex = (ppmEventIndex + 1) % ARRAYLEN(ppmEvents);
 
@@ -147,7 +150,7 @@ void ppmISREvent(eventSource_e source, uint32_t capture)
     ppmEvents[ppmEventIndex].capture = capture;
 }
 #else
-void ppmISREvent(eventSource_e source, uint32_t capture) {}
+static void ppmISREvent(eventSource_e source, uint32_t capture) {}
 #endif
 
 static void ppmResetDevice(void)
@@ -208,7 +211,6 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
     }
 
     ppmDev.overflowed = false;
-
 
     /* Store the current measurement */
     ppmDev.currentTime = currentTime;
@@ -404,7 +406,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 #define FIRST_PWM_PORT 0
 
 #ifdef USE_PWM_OUTPUT
-void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
+static void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
 {
     pwmOutputPort_t *motors = pwmGetMotors();
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {

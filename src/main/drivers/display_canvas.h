@@ -102,7 +102,6 @@ typedef struct displayCanvasVTable_s {
     void (*contextPop)(displayCanvas_t *displayCanvas);
 } displayCanvasVTable_t;
 
-
 void displayCanvasSetStrokeColor(displayCanvas_t *displayCanvas, displayCanvasColor_e color);
 void displayCanvasSetFillColor(displayCanvas_t *displayCanvas, displayCanvasColor_e color);
 void displayCanvasSetStrokeAndFillColor(displayCanvas_t *displayCanvas, displayCanvasColor_e color);

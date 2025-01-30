@@ -289,7 +289,6 @@
 #define LSM6DSV_CTRL2_ODR_G_3200HZ                      11
 #define LSM6DSV_CTRL2_ODR_G_6400HZ                      12
 
-
 // Control register 3 (R/W)
 #define LSM6DSV_CTRL3                       0x12
 #define LSM6DSV_CTRL3_BOOT                              0x80
@@ -846,7 +845,6 @@
 #define LSM6DSV_FIFO_DATA_OUT_Z_L           0x7D
 #define LSM6DSV_FIFO_DATA_OUT_Z_H           0x7E
 
-
 uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
 {
     const uint8_t whoAmI = spiReadRegMsk(dev, LSM6DSV_WHO_AM_I);
@@ -858,25 +856,8 @@ uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
     return LSM6DSV16X_SPI;
 }
 
-void lsm6dsv16xAccInit(accDev_t *acc)
+static void lsm6dsv16xAccInit(accDev_t *acc)
 {
-    const extDevice_t *dev = &acc->gyro->dev;
-
-    // Enable the accelerometer in high accuracy mode at 1kHz
-    spiWriteReg(dev, LSM6DSV_CTRL1,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_OP_MODE_XL_HIGH_ACCURACY,
-                                    LSM6DSV_CTRL1_OP_MODE_XL_MASK,
-                                    LSM6DSV_CTRL1_OP_MODE_XL_SHIFT) |
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_ODR_XL_1000HZ,
-                                    LSM6DSV_CTRL1_ODR_XL_MASK,
-                                    LSM6DSV_CTRL1_ODR_XL_SHIFT));
-
-    // Enable 16G sensitivity
-    spiWriteReg(dev, LSM6DSV_CTRL8,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_16G,
-                                    LSM6DSV_CTRL8_FS_XL_MASK,
-                                    LSM6DSV_CTRL8_FS_XL_SHIFT));
-
     // ±16G mode
     acc->acc_1G = 512 * 4;
 }
@@ -943,7 +924,7 @@ bool lsm6dsv16xSpiAccDetect(accDev_t *acc)
     return true;
 }
 
-void lsm6dsv16xGyroInit(gyroDev_t *gyro)
+static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 {
     const extDevice_t *dev = &gyro->dev;
     // Set default LPF1 filter bandwidth to be as close as possible to MPU6000's 250Hz cutoff
@@ -961,22 +942,50 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     // Perform a software reset
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_SW_RESET);
 
-    // Select high-accuracy ODR mode 1 before leaving power-off mode
+    // Wait for the device to be ready
+    while (spiReadRegMsk(dev, LSM6DSV_CTRL3) & LSM6DSV_CTRL3_SW_RESET) {}
+
+    // Autoincrement register address when doing block SPI reads and update continuously
+    spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC | LSM6DSV_CTRL3_BDU);      /*BDU bit need to be set*/
+
+    // Select high-accuracy ODR mode 1
     spiWriteReg(dev, LSM6DSV_HAODR_CFG,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_HAODR_MODE1,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_MASK,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_SHIFT));
 
-    // Enable the gyro in high accuracy mode at 8kHz
+    // Enable the accelerometer in high accuracy
+    spiWriteReg(dev, LSM6DSV_CTRL1,
+                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_OP_MODE_XL_HIGH_ACCURACY,
+                                    LSM6DSV_CTRL1_OP_MODE_XL_MASK,
+                                    LSM6DSV_CTRL1_OP_MODE_XL_SHIFT));
+
+    // Enable the gyro in high accuracy
     spiWriteReg(dev, LSM6DSV_CTRL2,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_OP_MODE_G_HIGH_ACCURACY,
                                     LSM6DSV_CTRL2_OP_MODE_G_MASK,
-                                    LSM6DSV_CTRL2_OP_MODE_G_SHIFT) |
+                                    LSM6DSV_CTRL2_OP_MODE_G_SHIFT));
+
+    // Enable 16G sensitivity
+    spiWriteReg(dev, LSM6DSV_CTRL8,
+                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_16G,
+                                    LSM6DSV_CTRL8_FS_XL_MASK,
+                                    LSM6DSV_CTRL8_FS_XL_SHIFT));
+
+    // Enable the accelerometer odr at 1kHz
+    spiWriteReg(dev, LSM6DSV_CTRL1,
+                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_ODR_XL_1000HZ,
+                                    LSM6DSV_CTRL1_ODR_XL_MASK,
+                                    LSM6DSV_CTRL1_ODR_XL_SHIFT));
+
+    // Enable the gyro odr at 8kHz
+    spiWriteReg(dev, LSM6DSV_CTRL2,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_ODR_G_8000HZ,
                                     LSM6DSV_CTRL2_ODR_G_MASK,
                                     LSM6DSV_CTRL2_ODR_G_SHIFT));
 
     // Enable 2000 deg/s sensitivity and selected LPF1 filter setting
+    // Set the LPF1 filter bandwidth
     spiWriteReg(dev, LSM6DSV_CTRL6,
                 LSM6DSV_ENCODE_BITS(lsm6dsv16xLPF1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
                                     LSM6DSV_CTRL6_LPF1_G_BW_MASK,
@@ -985,8 +994,8 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
                                     LSM6DSV_CTRL6_FS_G_MASK,
                                     LSM6DSV_CTRL6_FS_G_SHIFT));
 
-    // Autoincrement register address when doing block SPI reads and update continuously
-    spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC);
+    // Enable the gyro digital LPF1 filter
+    spiWriteReg(dev, LSM6DSV_CTRL7, LSM6DSV_CTRL7_LPF1_G_EN);
 
     // Generate pulse on interrupt line, not requiring a read to clear
     spiWriteReg(dev, LSM6DSV_CTRL4, LSM6DSV_CTRL4_DRDY_PULSED);
@@ -1000,7 +1009,7 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
 }
 
-bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
+static bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
 {
     int16_t *gyroData = (int16_t *)gyro->dev.rxBuf;
     switch (gyro->gyroModeSPI) {
@@ -1014,6 +1023,7 @@ bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
         // We need some offset from the gyro interrupts to ensure sampling after the interrupt
         gyro->gyroDmaMaxDuration = 5;
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
+#ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
                 gyro->dev.callbackArg = (uint32_t)gyro;
                 gyro->dev.txBuf[0] = LSM6DSV_OUTX_L_G | 0x80;
@@ -1024,7 +1034,9 @@ bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
                 gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
-            } else {
+            } else
+#endif
+            {
                 // Interrupts are present, but no DMA
                 gyro->gyroModeSPI = GYRO_EXTI_INT;
             }
@@ -1037,7 +1049,7 @@ bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        gyro->dev.txBuf[0] = gyro->gyroDataReg | 0x80;
+        gyro->dev.txBuf[0] = LSM6DSV_OUTX_L_G | 0x80;
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},

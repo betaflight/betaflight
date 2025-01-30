@@ -30,6 +30,6 @@ typedef enum {
 #define SDIODEV_COUNT 2
 
 #if defined(STM32H7)
-void sdioPinConfigure();
+void sdioPinConfigure(void);
 void SDIO_GPIO_Init(void);
 #endif

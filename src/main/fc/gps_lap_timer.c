@@ -69,7 +69,7 @@ void gpsLapTimerStartSetGate(void)
     gpsLapTimerData.numberOfSetReadings = 0;
 }
 
-void gpsLapTimerProcessSettingGate(void)
+static void gpsLapTimerProcessSettingGate(void)
 {
     if (gpsLapTimerData.numberOfSetReadings < MAX_GATE_SET_READINGS){
         gateSetLatReadings += gpsSol.llh.lat;
@@ -89,8 +89,8 @@ void gpsLapTimerEndSetGate(void)
 
 void gpsLapTimerNewGpsData(void)
 {
-    GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &gpsLapTimerData.gateLocation.lat, &gpsLapTimerData.gateLocation.lon, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
-    
+    GPS_distance_cm_bearing(&gpsSol.llh, &gpsLapTimerData.gateLocation, false, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
+
     if (settingGate) {
         gpsLapTimerProcessSettingGate();
         return;

@@ -34,7 +34,6 @@
 
 #include "drivers/adc.h"
 #include "drivers/io.h"
-#include "drivers/io_def.h"
 #include "drivers/io_types.h"
 #include "drivers/resource.h"
 #include "drivers/rx/rx_cc2500.h"
@@ -276,7 +275,6 @@ static void frSkyXTelemetryWriteFrame(const smartPortPayload_t *payload)
 #endif
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
-
 void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     uint16_t c[8];
@@ -300,7 +298,7 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
     }
 }
 
-bool isValidPacket(const uint8_t *packet)
+static bool isValidPacket(const uint8_t *packet)
 {
     bool useBindTxId2 = false;
 
@@ -311,7 +309,7 @@ bool isValidPacket(const uint8_t *packet)
         }
     }
 
-    uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7)); 
+    uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7));
 
     if ((lcrc >> 8) == packet[packetLength - 4] && (lcrc & 0x00FF) == packet[packetLength - 3] &&
         (packet[0] == packetLength - 3) &&

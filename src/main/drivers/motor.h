@@ -26,68 +26,24 @@
 
 #include "pg/motor.h"
 
-typedef enum {
-    PWM_TYPE_STANDARD = 0,
-    PWM_TYPE_ONESHOT125,
-    PWM_TYPE_ONESHOT42,
-    PWM_TYPE_MULTISHOT,
-    PWM_TYPE_BRUSHED,
-    PWM_TYPE_DSHOT150,
-    PWM_TYPE_DSHOT300,
-    PWM_TYPE_DSHOT600,
-//    PWM_TYPE_DSHOT1200, removed
-    PWM_TYPE_PROSHOT1000,
-    PWM_TYPE_DISABLED,
-    PWM_TYPE_MAX
-} motorPwmProtocolTypes_e;
+#include "drivers/motor_types.h"
 
-
-typedef struct motorVTable_s {
-    // Common
-    void (*postInit)(void);
-    float (*convertExternalToMotor)(uint16_t externalValue);
-    uint16_t (*convertMotorToExternal)(float motorValue);
-    bool (*enable)(void);
-    void (*disable)(void);
-    bool (*isMotorEnabled)(uint8_t index);
-    bool (*telemetryWait)(void);
-    bool (*decodeTelemetry)(void);
-    void (*updateInit)(void);
-    void (*write)(uint8_t index, float value);
-    void (*writeInt)(uint8_t index, uint16_t value);
-    void (*updateComplete)(void);
-    void (*shutdown)(void);
-
-    // Digital commands
-
-} motorVTable_t;
-
-typedef struct motorDevice_s {
-    motorVTable_t vTable;
-    uint8_t       count;
-    bool          initialized;
-    bool          enabled;
-    timeMs_t      motorEnableTimeMs;
-} motorDevice_t;
-
-void motorPostInitNull();
-void motorWriteNull(uint8_t index, float value);
-bool motorDecodeTelemetryNull(void);
-void motorUpdateCompleteNull(void);
-
-void motorPostInit();
+void motorPostInit(void);
 void motorWriteAll(float *values);
+void motorRequestTelemetry(unsigned index);
 
 void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
 
 float motorConvertFromExternal(uint16_t externalValue);
 uint16_t motorConvertToExternal(float motorValue);
 
-struct motorDevConfig_s; // XXX Shouldn't be needed once pwm_output* is really cleaned up.
-void motorDevInit(const struct motorDevConfig_s *motorConfig, uint16_t idlePulse, uint8_t motorCount);
+void motorDevInit(unsigned motorCount);
 unsigned motorDeviceCount(void);
-motorVTable_t *motorGetVTable(void);
+const motorVTable_t *motorGetVTable(void);
 bool checkMotorProtocolEnabled(const motorDevConfig_t *motorConfig, bool *protocolIsDshot);
+
+motorProtocolFamily_e motorGetProtocolFamily(void);
+
 bool isMotorProtocolDshot(void);
 bool isMotorProtocolBidirDshot(void);
 bool isMotorProtocolEnabled(void);
@@ -96,14 +52,9 @@ void motorDisable(void);
 void motorEnable(void);
 float motorEstimateMaxRpm(void);
 bool motorIsEnabled(void);
-bool motorIsMotorEnabled(uint8_t index);
+bool motorIsMotorEnabled(unsigned index);
+bool motorIsMotorIdle(unsigned index);
+IO_t motorGetIo(unsigned index);
+
 timeMs_t motorGetMotorEnableTimeMs(void);
 void motorShutdown(void); // Replaces stopPwmAllMotors
-
-#ifdef USE_DSHOT_BITBANG
-struct motorDevConfig_s;
-typedef struct motorDevConfig_s motorDevConfig_t;
-bool isDshotBitbangActive(const motorDevConfig_t *motorConfig);
-#endif
-
-float getDigitalIdleOffset(const motorConfig_t *motorConfig);

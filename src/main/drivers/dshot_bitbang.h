@@ -20,13 +20,16 @@
 
 #pragma once
 
+#include "platform.h"
+
+#include "common/time.h"
+
+#include "drivers/dma.h"
+#include "drivers/io_types.h"
+#include "drivers/motor_types.h"
 #include "drivers/timer.h"
 
-typedef enum {
-    DSHOT_BITBANG_OFF,
-    DSHOT_BITBANG_ON,
-    DSHOT_BITBANG_AUTO,
-} dshotBitbangMode_e;
+#include "pg/motor.h"
 
 typedef enum {
     DSHOT_BITBANG_STATUS_OK,
@@ -35,9 +38,7 @@ typedef enum {
     DSHOT_BITBANG_STATUS_TOO_MANY_PORTS,
 } dshotBitbangStatus_e;
 
-struct motorDevConfig_s;
-struct motorDevice_s;
-struct motorDevice_s *dshotBitbangDevInit(const struct motorDevConfig_s *motorConfig, uint8_t motorCount);
-dshotBitbangStatus_e dshotBitbangGetStatus();
+bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
+dshotBitbangStatus_e dshotBitbangGetStatus(void);
 const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel);
 const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer);

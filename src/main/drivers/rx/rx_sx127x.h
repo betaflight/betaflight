@@ -294,7 +294,7 @@ typedef enum {
 
 #define SX127x_FREQ_STEP 61.03515625
 
-#define SX127x_FREQ_CORRECTION_MAX ((int32_t)(100000 / SX127x_FREQ_STEP)) 
+#define SX127x_FREQ_CORRECTION_MAX ((int32_t)(100000 / SX127x_FREQ_STEP))
 #define SX127x_FREQ_CORRECTION_MIN ((int32_t)(-100000 / SX127x_FREQ_STEP))
 
 bool sx127xInit(IO_t resetPin, IO_t busyPin);
@@ -319,13 +319,14 @@ void sx127xSetFrequencyReg(const uint32_t freq);
 void sx127xTransmitData(const uint8_t *data, const uint8_t length);
 void sx127xReceiveData(uint8_t *data, const uint8_t length);
 void sx127xStartReceiving(void);
-void sx127xConfig(const sx127xBandwidth_e bw, const sx127xSpreadingFactor_e sf, const sx127xCodingRate_e cr, const uint32_t freq, const uint8_t preambleLen, const bool iqInverted);
-
+void sx127xConfig(const uint8_t bw, const uint8_t sfbt, const uint8_t cr,
+    const uint32_t freq, const uint8_t preambleLength, const bool iqInverted,
+    const uint32_t flrcSyncWord, const uint16_t flrcCrcSeed, const bool isFlrc);
 uint32_t sx127xGetCurrBandwidth(const sx127xBandwidth_e bw);
 uint32_t sx127xGetCurrBandwidthNormalisedShifted(const sx127xBandwidth_e bw);
 void sx127xSetPPMoffsetReg(const int32_t offset, const uint32_t freq);
 int32_t sx127xGetFrequencyError(const sx127xBandwidth_e bw);
-void sx127xAdjustFrequency(int32_t offset, const uint32_t freq);
+void sx127xAdjustFrequency(int32_t *offset, const uint32_t freq);
 uint8_t sx127xUnsignedGetLastPacketRSSI(void);
 int8_t sx127xGetLastPacketRSSI(void);
 int8_t sx127xGetCurrRSSI(void);

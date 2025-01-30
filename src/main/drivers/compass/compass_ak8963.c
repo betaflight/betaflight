@@ -372,7 +372,7 @@ static bool ak8963Init(magDev_t *mag)
     return true;
 }
 
-void ak8963BusInit(const extDevice_t *dev)
+static void ak8963BusInit(const extDevice_t *dev)
 {
     switch (dev->bus->busType) {
 #ifdef USE_MAG_AK8963
@@ -393,8 +393,10 @@ void ak8963BusInit(const extDevice_t *dev)
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
     case BUS_TYPE_MPU_SLAVE:
 
+#ifdef USE_DMA
         // Disable DMA on gyro as this upsets slave access timing
         spiDmaEnable(dev->bus->busType_u.mpuSlave.master, false);
+#endif
 
         // initialize I2C master via SPI bus
         ak8963SpiWriteRegisterDelay(dev->bus->busType_u.mpuSlave.master, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR | MPU6500_BIT_BYPASS_EN);
@@ -407,7 +409,7 @@ void ak8963BusInit(const extDevice_t *dev)
     }
 }
 
-void ak8963BusDeInit(const extDevice_t *dev)
+static void ak8963BusDeInit(const extDevice_t *dev)
 {
     switch (dev->bus->busType) {
 #ifdef USE_MAG_AK8963
@@ -418,7 +420,7 @@ void ak8963BusDeInit(const extDevice_t *dev)
 
 #ifdef USE_MAG_SPI_AK8963
     case BUS_TYPE_SPI:
-        spiPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
         break;
 #endif
 

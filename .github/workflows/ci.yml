@@ -3,7 +3,7 @@
 
 name: CI
 
-on: 
+on:
   workflow_call:
     inputs:
       release_build:
@@ -15,7 +15,7 @@ on:
 jobs:
   setup:
     name: Setup
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
     steps:
@@ -43,7 +43,7 @@ jobs:
   build:
     name: Build
     needs: setup
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
@@ -71,15 +71,15 @@ jobs:
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
 
       - name: Publish build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Assets
+          name: ${{ matrix.target }}
           path: obj/*.hex
           retention-days: 60
 
   test:
     name: Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -96,7 +96,7 @@ jobs:
     name: Complete
     needs: [build, test]
     if: ${{ always() }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check build matrix result
         if: ${{ needs.build.result != 'success' }}

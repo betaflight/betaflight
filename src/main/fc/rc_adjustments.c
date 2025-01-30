@@ -226,6 +226,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_LED_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_LED_DIMMER,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 100 }
     }
 };
 
@@ -264,6 +268,8 @@ static const char * const adjustmentLabels[] = {
     "ROLL F",
     "YAW F",
     "OSD PROFILE",
+    "LED PROFILE",
+    "LED DIMMER",
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -643,6 +649,13 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         }
 #endif
         break;
+    case ADJUSTMENT_LED_DIMMER:
+#ifdef USE_LED_STRIP
+        if (getLedBrightness() != position) {
+            setLedBrightness(position);
+        }
+#endif
+        break;
 
     default:
         break;
@@ -835,7 +848,7 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
 
 void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
-    const bool canUseRxData = rxIsReceivingSignal();
+    const bool canUseRxData = isRxReceivingSignal();
 
     // Recalculate the new active adjustments if required
     if (stepwiseAdjustmentCount == ADJUSTMENT_RANGE_COUNT_INVALID) {

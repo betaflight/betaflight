@@ -23,7 +23,11 @@
 #include "drivers/resource.h"
 
 #if defined(USE_ATBSP_DRIVER)
-#include "drivers/at32/dma_atbsp.h"
+#include "dma_atbsp.h"
+#endif
+
+#if defined(APM32F4)
+#include "dma_apm32.h"
 #endif
 
 #define CACHE_LINE_SIZE 32
@@ -45,6 +49,8 @@ typedef struct dmaResource_s dmaResource_t;
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #elif defined(AT32F435)
 #define DMA_ARCH_TYPE dma_channel_type
+#elif defined(APM32F4)
+#define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #else
 #define DMA_ARCH_TYPE DMA_Channel_TypeDef
 #endif
@@ -55,7 +61,7 @@ typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channel
 typedef struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
     dmaResource_t               *ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
     uint8_t                     stream;
 #endif
     uint32_t                    channel;
@@ -74,6 +80,9 @@ typedef struct dmaChannelDescriptor_s {
 #define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
 
 #if defined(USE_ATBSP_DRIVER)
+
+#elif defined(APM32F4)
+// dma_apm32.h
 
 #elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 
@@ -125,7 +134,6 @@ typedef enum {
 
 #define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
 #define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? d->dma->HISR & (flag << (d->flagsShift - 32)): d->dma->LISR & (flag << d->flagsShift))
-
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)
@@ -246,8 +254,11 @@ typedef enum {
 // Missing __HAL_DMA_SET_COUNTER in FW library V1.0.0
 #define __HAL_DMA_SET_COUNTER(__HANDLE__, __COUNTER__) ((__HANDLE__)->Instance->CNDTR = (uint16_t)(__COUNTER__))
 #elif defined(AT32F4)
-#define DMA_CCR_EN 1 
+#define DMA_CCR_EN 1
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->ctrl_bit.chen & DMA_CCR_EN)
+#elif defined(APM32F4)
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->SCFG & DMA_SCFGx_EN)
+#define REG_NDTR NDATA
 #else
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 #define DMAx_SetMemoryAddress(reg, address) ((DMA_ARCH_TYPE *)(reg))->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail]

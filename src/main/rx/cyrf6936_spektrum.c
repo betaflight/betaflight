@@ -327,7 +327,6 @@ bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState
 
     rxSpiCommonIOInit(rxConfig);
 
-
     rxRuntimeState->channelCount = DSM_MAX_CHANNEL_COUNT;
 
     extiConfig->ioConfig = IOCFG_IPD;
@@ -507,7 +506,7 @@ static bool isValidPacket(const uint8_t *packet)
     return true;
 }
 
-rx_spi_received_e spektrumReadPacket(uint8_t *payload, const uint32_t timeStamp)
+static rx_spi_received_e spektrumReadPacket(uint8_t *payload, const uint32_t timeStamp)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
 

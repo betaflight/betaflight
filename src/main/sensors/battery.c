@@ -101,6 +101,10 @@ static float wattHoursDrawn;
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_NONE
 #endif
 
+#ifndef DEFAULT_IBAT_LPF_PERIOD
+#define DEFAULT_IBAT_LPF_PERIOD 10
+#endif
+
 PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 3);
 
 PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
@@ -129,7 +133,7 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
 
     .vbatDisplayLpfPeriod = 30,
     .vbatSagLpfPeriod = 2,
-    .ibatLpfPeriod = 10,
+    .ibatLpfPeriod = DEFAULT_IBAT_LPF_PERIOD,
     .vbatDurationForWarning = 0,
     .vbatDurationForCritical = 0,
 );
@@ -242,7 +246,7 @@ void batteryUpdatePresence(void)
     }
 }
 
-void batteryUpdateWhDrawn(void)
+static void batteryUpdateWhDrawn(void)
 {
     static int32_t mAhDrawnPrev = 0;
     const int32_t mAhDrawnCurrent = getMAhDrawn();

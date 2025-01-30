@@ -3,7 +3,7 @@ name: Release
 on:
   release:
     types: [published]
-        
+
 jobs:
   ci:
     name: CI
@@ -14,13 +14,13 @@ jobs:
   release:
     name: Release
     needs: ci
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Code Checkout
         uses: actions/checkout@v4
 
       - name: Fetch build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: List assets
         run: ls -al Assets
@@ -29,7 +29,7 @@ jobs:
         run: |
           set -x
           ASSETS=()
-          for asset in Assets/*.hex; do
+          for asset in ./*/*.hex; do
             ASSETS+=("$asset")
             echo "$asset"
           done

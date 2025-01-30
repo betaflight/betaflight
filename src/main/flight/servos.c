@@ -55,7 +55,6 @@
 
 #include "rx/rx.h"
 
-
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 void pgResetFn_servoConfig(servoConfig_t *servoConfig)
@@ -105,7 +104,6 @@ int16_t servo[MAX_SUPPORTED_SERVOS];
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
 static int useServo;
-
 
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
 // mixer rule format servo, input, rate, speed, min, max, box
@@ -206,7 +204,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },
 };
 
-int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
+static int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
     const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
 
@@ -263,7 +261,6 @@ static void servoConfigureOutput(void)
         break;
     }
 }
-
 
 void servosInit(void)
 {
@@ -484,7 +481,6 @@ void servoMixer(void)
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
-
 
 static void servoTable(void)
 {

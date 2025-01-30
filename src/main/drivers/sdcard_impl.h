@@ -91,7 +91,7 @@ typedef struct sdcard_t {
 
 #ifdef USE_SDCARD_SPI
     extDevice_t dev;
-    uint8_t idleCount;
+    int8_t idleCount;
 #endif
 
 #ifdef USE_SDCARD_SDIO
@@ -109,7 +109,7 @@ STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properl
 bool sdcard_isInserted(void);
 
 typedef struct sdcardVTable_s {
-    void (*sdcard_preInit)(const sdcardConfig_t *config);
+    void (*sdcard_preinit)(const sdcardConfig_t *config);
     void (*sdcard_init)(const sdcardConfig_t *config, const spiPinConfig_t *spiConfig);
     bool (*sdcard_readBlock)(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData);
     sdcardOperationStatus_e (*sdcard_beginWriteBlocks)(uint32_t blockIndex, uint32_t blockCount);

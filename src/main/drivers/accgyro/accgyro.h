@@ -26,6 +26,7 @@
 #include "common/maths.h"
 #include "common/sensor_alignment.h"
 #include "common/time.h"
+#include "common/vector.h"
 
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/bus.h"
@@ -40,12 +41,11 @@
 #define GYRO_SCALE_2000DPS (2000.0f / (1 << 15))   // 16.384 dps/lsb scalefactor for 2000dps sensors
 #define GYRO_SCALE_4000DPS (4000.0f / (1 << 15))   //  8.192 dps/lsb scalefactor for 4000dps sensors
 
+// Gyro hardware types were updated in PR #14087 (removed GYRO_L3G4200D, GYRO_MPU3050)
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
     GYRO_MPU6050,
-    GYRO_L3G4200D,
-    GYRO_MPU3050,
     GYRO_L3GD20,
     GYRO_MPU6000,
     GYRO_MPU6500,
@@ -61,6 +61,7 @@ typedef enum {
     GYRO_BMI270,
     GYRO_LSM6DSO,
     GYRO_LSM6DSV16X,
+    GYRO_IIM42653,
     GYRO_VIRTUAL
 } gyroHardware_e;
 
@@ -103,7 +104,7 @@ typedef struct gyroDev_s {
     extDevice_t dev;
     float scale;                                             // scalefactor
     float gyroZero[XYZ_AXIS_COUNT];
-    float gyroADC[XYZ_AXIS_COUNT];                           // gyro data after calibration and alignment
+    vector3_t gyroADC;                                       // gyro data after calibration and alignment
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];                      // raw data from sensor
     int16_t temperature;
@@ -125,7 +126,7 @@ typedef struct gyroDev_s {
     ioTag_t mpuIntExtiTag;
     uint8_t gyroHasOverflowProtection;
     gyroHardware_e gyroHardware;
-    fp_rotationMatrix_t rotationMatrix;
+    matrix33_t rotationMatrix;
     uint16_t gyroSampleRateHz;
     uint16_t accSampleRateHz;
     uint8_t accDataReg;
@@ -148,7 +149,7 @@ typedef struct accDev_s {
     bool acc_high_fsr;
     char revisionCode;                                      // a revision code for the sensor, if known
     uint8_t filler[2];
-    fp_rotationMatrix_t rotationMatrix;
+    matrix33_t rotationMatrix;
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)

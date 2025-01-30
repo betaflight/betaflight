@@ -59,7 +59,6 @@ typedef struct voltageMeter_s {
     bool lowVoltageCutoff;
 } voltageMeter_t;
 
-
 //
 // sensors
 //
@@ -68,7 +67,6 @@ typedef enum {
     VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER = 0,
     VOLTAGE_SENSOR_TYPE_ESC
 } voltageSensorType_e;
-
 
 //
 // adc sensors
@@ -95,7 +93,6 @@ typedef enum {
     VOLTAGE_SENSOR_ADC_9V = 2,
     VOLTAGE_SENSOR_ADC_5V = 3
 } voltageSensorADC_e; // see also voltageMeterADCtoIDMap
-
 
 typedef struct voltageSensorADCConfig_s {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value

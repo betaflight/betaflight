@@ -59,8 +59,20 @@ typedef enum {
     MCU_TYPE_H723_725,
     MCU_TYPE_G474,
     MCU_TYPE_H730,
-    MCU_TYPE_AT32,
+    MCU_TYPE_AT32F435G,
+    MCU_TYPE_APM32F405,
+    MCU_TYPE_APM32F407,
+    MCU_TYPE_AT32F435M,
+    MCU_TYPE_RP2350B,
+    MCU_TYPE_COUNT,
     MCU_TYPE_UNKNOWN = 255,
 } mcuTypeId_e;
 
+typedef struct mcuTypeInfo_s {
+   mcuTypeId_e id;
+   const char *name;
+} mcuTypeInfo_t;
+
+const mcuTypeInfo_t *getMcuTypeInfo(void);
 mcuTypeId_e getMcuTypeId(void);
+const char *getMcuTypeName(void);

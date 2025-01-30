@@ -44,7 +44,6 @@
 uint16_t bbBuffer[134];
 #endif
 
-
 /* Bit band SRAM definitions */
 #define BITBAND_SRAM_REF   0x20000000
 #define BITBAND_SRAM_BASE  0x22000000
@@ -70,7 +69,6 @@ typedef struct bitBandWord_s {
 uint32_t sequence[MAX_GCR_EDGES];
 int sequenceIndex = 0;
 #endif
-
 
 static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t count, uint32_t bit)
 {

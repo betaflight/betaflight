@@ -94,16 +94,6 @@
 #endif
 #endif
 
-#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
-#define USE_UART
-#endif
-
-#ifdef USE_UART
-#if defined(INVERTER_PIN_UART1) || defined(INVERTER_PIN_UART2) || defined(INVERTER_PIN_UART3) || defined(INVERTER_PIN_UART4) || defined(INVERTER_PIN_UART5) || defined(INVERTER_PIN_UART6)
-#define USE_INVERTER
-#endif
-#endif
-
 #ifndef DEFAULT_MIXER
 #define DEFAULT_MIXER    MIXER_QUADX
 #endif
@@ -218,6 +208,15 @@
 #ifndef SPI6_RX_DMA_OPT
 #define SPI6_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
+#endif
+#endif
+
+#ifdef USE_UART0
+#ifndef UART0_TX_DMA_OPT
+#define UART0_TX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#ifndef UART0_RX_DMA_OPT
+#define UART0_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
@@ -339,4 +338,20 @@
 #define MAX_SUPPORTED_MOTORS 8
 #endif
 #define MAX_SUPPORTED_SERVOS 8
+#endif
+
+#ifndef BOX_USER1_NAME
+#define BOX_USER1_NAME "USER1"
+#endif
+
+#ifndef BOX_USER2_NAME
+#define BOX_USER2_NAME "USER2"
+#endif
+
+#ifndef BOX_USER3_NAME
+#define BOX_USER3_NAME "USER3"
+#endif
+
+#ifndef BOX_USER4_NAME
+#define BOX_USER4_NAME "USER4"
 #endif

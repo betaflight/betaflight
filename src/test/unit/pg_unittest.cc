@@ -35,10 +35,25 @@ extern "C" {
 PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 
 PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
-    .dev = {.motorPwmRate = 400},
-    .minthrottle = 1150,
+    .dev = {
+        .motorPwmRate = 400,
+        .motorProtocol = 0,
+        .motorInversion = 0,
+        .useContinuousUpdate = 0,
+        .useBurstDshot = 0,
+        .useDshotTelemetry = 0,
+        .useDshotEdt = 0,
+        .ioTags = {IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE, IO_TAG_NONE},
+        .motorTransportProtocol = 0,
+        .useDshotBitbang = 0,
+        .useDshotBitbangedTimer = 0,
+        .motorOutputReordering = {0, 1, 2, 3},
+    },
+    .motorIdle = 0,
     .maxthrottle = 1850,
     .mincommand = 1000,
+    .kv = 1000,
+    .motorPoleCount = 14,
 );
 }
 
@@ -50,7 +65,6 @@ TEST(ParameterGroupsfTest, Test_pgResetAll)
 {
     memset(motorConfigMutable(), 0, sizeof(motorConfig_t));
     pgResetAll();
-    EXPECT_EQ(1150, motorConfig()->minthrottle);
     EXPECT_EQ(1850, motorConfig()->maxthrottle);
     EXPECT_EQ(1000, motorConfig()->mincommand);
     EXPECT_EQ(400, motorConfig()->dev.motorPwmRate);
@@ -61,7 +75,6 @@ TEST(ParameterGroupsfTest, Test_pgFind)
     memset(motorConfigMutable(), 0, sizeof(motorConfig_t));
     const pgRegistry_t *pgRegistry = pgFind(PG_MOTOR_CONFIG);
     pgReset(pgRegistry);
-    EXPECT_EQ(1150, motorConfig()->minthrottle);
     EXPECT_EQ(1850, motorConfig()->maxthrottle);
     EXPECT_EQ(1000, motorConfig()->mincommand);
     EXPECT_EQ(400, motorConfig()->dev.motorPwmRate);
@@ -70,7 +83,6 @@ TEST(ParameterGroupsfTest, Test_pgFind)
     memset(&motorConfig2, 0, sizeof(motorConfig_t));
     motorConfigMutable()->dev.motorPwmRate = 500;
     pgStore(pgRegistry, &motorConfig2, sizeof(motorConfig_t));
-    EXPECT_EQ(1150, motorConfig2.minthrottle);
     EXPECT_EQ(1850, motorConfig2.maxthrottle);
     EXPECT_EQ(1000, motorConfig2.mincommand);
     EXPECT_EQ(500, motorConfig2.dev.motorPwmRate);
@@ -78,7 +90,6 @@ TEST(ParameterGroupsfTest, Test_pgFind)
     motorConfig_t motorConfig3;
     memset(&motorConfig3, 0, sizeof(motorConfig_t));
     pgResetCopy(&motorConfig3, PG_MOTOR_CONFIG);
-    EXPECT_EQ(1150, motorConfig3.minthrottle);
     EXPECT_EQ(1850, motorConfig3.maxthrottle);
     EXPECT_EQ(1000, motorConfig3.mincommand);
     EXPECT_EQ(400, motorConfig3.dev.motorPwmRate);

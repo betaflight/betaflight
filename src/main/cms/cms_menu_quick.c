@@ -35,7 +35,7 @@
 #include "common/printf.h"
 #include "config/config.h"
 
-#include "drivers/pwm_output.h"
+#include "drivers/motor_types.h"
 
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"

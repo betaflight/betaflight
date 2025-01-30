@@ -41,7 +41,6 @@
 #include "drivers/osd_symbols.h"
 #include "drivers/time.h"
 
-
 // 10 MHz max SPI frequency
 #define MAX7456_MAX_SPI_CLK_HZ 10000000
 #define MAX7456_INIT_MAX_SPI_CLK_HZ 5000000
@@ -282,7 +281,7 @@ static void max7456ClearLayer(displayPortLayer_e layer)
     memset(getLayerBuffer(layer), 0x20, VIDEO_BUFFER_CHARS_PAL);
 }
 
-void max7456ReInit(void)
+static void max7456ReInit(void)
 {
     uint8_t srdata = 0;
 
@@ -331,9 +330,9 @@ void max7456ReInit(void)
     max7456ClearShadowBuffer();
 }
 
-void max7456PreInit(const max7456Config_t *max7456Config)
+void max7456Preinit(const max7456Config_t *max7456Config)
 {
-    spiPreinitRegister(max7456Config->csTag, max7456Config->preInitOPU ? IOCFG_OUT_PP : IOCFG_IPU, 1);
+    ioPreinitByTag(max7456Config->csTag, max7456Config->preInitOPU ? IOCFG_OUT_PP : IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 }
 
 // Here we init only CS and try to init MAX for first time.
@@ -512,7 +511,7 @@ void max7456Write(uint8_t x, uint8_t y, const char *text)
 
 bool max7456LayerSupported(displayPortLayer_e layer)
 {
-    if (layer == DISPLAYPORT_LAYER_FOREGROUND || layer == DISPLAYPORT_LAYER_BACKGROUND) {
+    if (layer == DISPLAYPORT_LAYER_FOREGROUND) {
         return true;
     } else {
         return false;
@@ -613,7 +612,7 @@ bool max7456ReInitIfRequired(bool forceStallCheck)
 }
 
 // Called in ISR context
-busStatus_e max7456_callbackReady(uint32_t arg)
+static busStatus_e max7456_callbackReady(uint32_t arg)
 {
     UNUSED(arg);
 
@@ -641,8 +640,13 @@ bool max7456DrawScreen(void)
         bool autoInc = false;
         int posLimit = pos + (maxScreenSize / 2);
 
-        maxSpiBufStartIndex = spiUseSDO_DMA(dev) ? MAX_BYTES2SEND : MAX_BYTES2SEND_POLLED;
-        maxEncodeTime = spiUseSDO_DMA(dev) ? MAX_ENCODE_US : MAX_ENCODE_US_POLLED;
+#ifdef USE_DMA
+        const bool useDma = spiUseSDO_DMA(dev);
+#else
+        const bool useDma = false;
+#endif
+        maxSpiBufStartIndex = useDma ? MAX_BYTES2SEND : MAX_BYTES2SEND_POLLED;
+        maxEncodeTime = useDma ? MAX_ENCODE_US : MAX_ENCODE_US_POLLED;
 
         // Abort for now if the bus is still busy
         if (spiIsBusy(dev)) {

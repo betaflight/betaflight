@@ -26,6 +26,7 @@
 
 extern "C" {
     #include "common/maths.h"
+    #include "common/vector.h"
 }
 
 #include "unittest_macros.h"
@@ -195,11 +196,11 @@ TEST(MathsUnittest, TestApplyDeadband)
     EXPECT_EQ(applyDeadband(-11, 10), -1);
 }
 
-void expectVectorsAreEqual(struct fp_vector *a, struct fp_vector *b, float absTol)
+void expectVectorsAreEqual(vector3_t *a, vector3_t *b, float absTol)
 {
-    EXPECT_NEAR(a->X, b->X, absTol);
-    EXPECT_NEAR(a->Y, b->Y, absTol);
-    EXPECT_NEAR(a->Z, b->Z, absTol);
+    EXPECT_NEAR(a->x, b->x, absTol);
+    EXPECT_NEAR(a->y, b->y, absTol);
+    EXPECT_NEAR(a->z, b->z, absTol);
 }
 
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)

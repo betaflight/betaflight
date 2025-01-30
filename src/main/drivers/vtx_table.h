@@ -42,7 +42,6 @@
 #define VTX_TABLE_POWER_LABEL_LENGTH    3
 #endif
 
-
 #define VTX_TABLE_MIN_USER_FREQ         5000
 #define VTX_TABLE_MAX_USER_FREQ         5999
 #define VTX_TABLE_DEFAULT_BAND          4

@@ -20,20 +20,22 @@
 
 #pragma once
 
+#include "common/axis.h"
 #include "common/time.h"
-#include "pg/pg.h"
+#include "common/vector.h"
+
 #include "drivers/accgyro/accgyro.h"
+
+#include "pg/pg.h"
+
 #include "sensors/sensors.h"
 
 // Type of accelerometer used/detected
+// Acc hardware types were updated in PR #14087 (removed ACC_ADXL345, ACC_MMA8452, ACC_BMA280, ACC_LSM303DLHC)
 typedef enum {
     ACC_DEFAULT,
     ACC_NONE,
-    ACC_ADXL345,
     ACC_MPU6050,
-    ACC_MMA8452,
-    ACC_BMA280,
-    ACC_LSM303DLHC,
     ACC_MPU6000,
     ACC_MPU6500,
     ACC_MPU9250,
@@ -48,13 +50,17 @@ typedef enum {
     ACC_BMI270,
     ACC_LSM6DSO,
     ACC_LSM6DSV16X,
+    ACC_IIM42653,
     ACC_VIRTUAL
 } accelerationSensor_e;
 
 typedef struct acc_s {
     accDev_t dev;
     uint16_t sampleRateHz;
-    float accADC[XYZ_AXIS_COUNT];
+    vector3_t accADC;                       // rotated but unscaled ADC value
+    vector3_t jerk;
+    float accMagnitude;                     // in multiples of 1G
+    float jerkMagnitude;                    // in multiples of 1G/s (measure of collision strength)
     bool isAccelUpdatedAtLeastOnce;
 } acc_t;
 
@@ -66,13 +72,13 @@ typedef struct rollAndPitchTrims_s {
 } rollAndPitchTrims_t_def;
 
 typedef union rollAndPitchTrims_u {
-    int16_t raw[2];
+    int16_t raw[RP_AXIS_COUNT];
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 
 #if defined(USE_ACC)
 typedef struct accelerometerConfig_s {
-    uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    uint16_t acc_lpf_hz;                    // cutoff frequency for attitude anti-aliasing filter
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     bool acc_high_fsr;
     flightDynamicsTrims_t accZero;

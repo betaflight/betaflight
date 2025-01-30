@@ -24,6 +24,7 @@
 #include "platform.h"
 
 #include "streambuf.h"
+#include "common/maths.h"
 
 sbuf_t *sbufInit(sbuf_t *sbuf, uint8_t *ptr, uint8_t *end)
 {
@@ -65,7 +66,6 @@ void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val)
     sbufWriteU8(dst, (uint8_t)val);
 }
 
-
 void sbufFill(sbuf_t *dst, uint8_t data, int len)
 {
     memset(dst->ptr, data, len);
@@ -81,6 +81,13 @@ void sbufWriteData(sbuf_t *dst, const void *data, int len)
 void sbufWriteString(sbuf_t *dst, const char *string)
 {
     sbufWriteData(dst, string, strlen(string));
+}
+
+void sbufWritePString(sbuf_t *dst, const char *string)
+{
+    const int length = MIN((int)strlen(string), 255);
+    sbufWriteU8(dst, length);
+    sbufWriteData(dst, string, length);
 }
 
 void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string)
@@ -114,6 +121,7 @@ uint32_t sbufReadU32(sbuf_t *src)
 void sbufReadData(sbuf_t *src, void *data, int len)
 {
     memcpy(data, src->ptr, len);
+    src->ptr += len;
 }
 
 // reader - return bytes remaining in buffer

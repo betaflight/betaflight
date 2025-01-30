@@ -36,7 +36,6 @@
  * Jeti EX Bus -> Serial TX (connect directly)
  */
 
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -56,7 +55,6 @@
 #include "rx/rx.h"
 #include "rx/jetiexbus.h"
 
-
 //
 // Serial driver for Jeti EX Bus receiver
 //
@@ -65,7 +63,6 @@
 #define JETIEXBUS_MIN_FRAME_GAP     1000
 #define JETIEXBUS_CHANNEL_COUNT     16                  // most Jeti TX transmit 16 channels
 
-
 #define EXBUS_START_CHANNEL_FRAME       (0x3E)
 #define EXBUS_START_REQUEST_FRAME       (0x3D)
 #define EXBUS_JETIBOX_REQUEST           (0x3B)
@@ -73,8 +70,6 @@
 #define EXBUS_CHANNELDATA               (0x3E03)        // Frame contains Channel Data
 #define EXBUS_CHANNELDATA_DATA_REQUEST  (0x3E01)        // Frame contains Channel Data, but with a request for data
 #define EXBUS_TELEMETRY_REQUEST         (0x3D01)        // Frame is a request Frame
-
-
 
 serialPort_t *jetiExBusPort;
 
@@ -107,7 +102,7 @@ uint16_t jetiExBusCalcCRC16(const uint8_t *pt, uint8_t msgLen)
     return(crc16_data);
 }
 
-void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
+static void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
 {
     uint16_t value;
     uint8_t frameAddr;
@@ -128,7 +123,7 @@ void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
     }
 }
 
-void jetiExBusFrameReset(void)
+static void jetiExBusFrameReset(void)
 {
     jetiExBusFramePosition = 0;
     jetiExBusFrameLength = EXBUS_MAX_CHANNEL_FRAME_SIZE;
@@ -262,7 +257,6 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = JETIEXBUS_CHANNEL_COUNT;
     rxRuntimeState->rcReadRawFn = jetiExBusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = jetiExBusFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 
     jetiExBusFrameReset();
 

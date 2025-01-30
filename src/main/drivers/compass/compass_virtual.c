@@ -33,7 +33,6 @@
 #include "compass.h"
 #include "compass_virtual.h"
 
-
 static int16_t virtualMagData[XYZ_AXIS_COUNT];
 
 static bool virtualMagInit(magDev_t *mag)

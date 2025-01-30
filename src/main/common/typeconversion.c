@@ -26,7 +26,9 @@
 #include "platform.h"
 
 #include "build/build_config.h"
-#include "maths.h"
+#include "common/maths.h"
+
+#include "typeconversion.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT
 
@@ -86,7 +88,7 @@ void i2a(int num, char *bf)
     ui2a(num, 10, 0, bf);
 }
 
-int a2d(char ch)
+static int a2d(char ch)
 {
     if (ch >= '0' && ch <= '9')
         return ch - '0';

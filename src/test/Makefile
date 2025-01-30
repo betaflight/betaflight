@@ -33,16 +33,31 @@ VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 alignsensor_unittest_SRC := \
 		$(USER_DIR)/sensors/boardalignment.c \
 		$(USER_DIR)/common/sensor_alignment.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+althold_unittest_SRC := \
+		$(USER_DIR)/flight/alt_hold_multirotor.c \
+		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/pg/rx.c
+
+althold_unittest_DEFINES := \
+		USE_ALTITUDE_HOLD= \
 
 arming_prevention_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/fc/core.c \
 		$(USER_DIR)/fc/dispatch.c \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/flight/gps_rescue.c
+		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/gps_rescue_multirotor.c
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
@@ -96,7 +111,8 @@ blackbox_unittest_SRC :=  \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/accgyro/gyro_sync.c
+		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/pg/gps.c
 
 blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox_encoding.c \
@@ -113,9 +129,11 @@ cli_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/io/gps.c \
+		$(USER_DIR)/io/serial_resource.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c \
 		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
@@ -152,6 +170,8 @@ flight_failsafe_unittest_DEFINES := \
 flight_imu_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/position.c \
@@ -170,7 +190,7 @@ gps_conversion_unittest_SRC := \
 
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
-		$(USER_DIR)/drivers/serial_pinconfig.c
+		$(USER_DIR)/io/serial_resource.c
 
 
 ledstrip_unittest_SRC := \
@@ -183,7 +203,8 @@ ledstrip_unittest_DEFINES := \
 
 
 maths_unittest_SRC := \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
 
 
 motor_output_unittest_SRC := \
@@ -197,12 +218,13 @@ osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
 		$(USER_DIR)/osd/osd_warnings.c \
-		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/display.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/time.c \
-		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
@@ -215,21 +237,23 @@ link_quality_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
 		$(USER_DIR)/osd/osd_warnings.c \
-		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/display.c \
-		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/time.c \
-		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/drivers/display.c \
+		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c \
 		$(USER_DIR)/fc/rc_modes.c \
-		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/pg/pg.c \
-		$(USER_DIR)/rx/crsf.c \
-		$(USER_DIR)/pg/rx.c
+		$(USER_DIR)/pg/rx.c \
+		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/rx/crsf.c
 
 link_quality_unittest_DEFINES := \
 		USE_OSD= \
@@ -259,7 +283,8 @@ rx_crsf_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/common/streambuf.c \
-		$(USER_DIR)/drivers/serial.c
+		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c
 
 
 rx_ibus_unittest_SRC := \
@@ -303,11 +328,12 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/gyro_init.c \
 		$(USER_DIR)/sensors/boardalignment.c \
-		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/sensor_alignment.c \
+		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_virtual.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
@@ -338,6 +364,7 @@ telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/drivers/serial_impl.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/telemetry/crsf.c \
 		$(USER_DIR)/common/gps_conversion.c \
@@ -350,6 +377,7 @@ telemetry_crsf_msp_unittest_DEFINES := \
 
 telemetry_hott_unittest_SRC := \
 		$(USER_DIR)/telemetry/hott.c \
+		$(USER_DIR)/io/serial_resource.c \
 		$(USER_DIR)/common/gps_conversion.c
 
 
@@ -383,6 +411,7 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/pwl.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/fc/controlrate_profile.c \
@@ -396,7 +425,8 @@ pid_unittest_DEFINES := \
 		USE_RC_SMOOTHING_FILTER= \
 		USE_ABSOLUTE_CONTROL= \
 		USE_LAUNCH_CONTROL= \
-		USE_FEEDFORWARD=
+		USE_FEEDFORWARD= \
+		USE_ADVANCED_TPA= \
 
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
@@ -472,6 +502,9 @@ vtx_msp_unittest_DEFINES := \
 		USE_VTX_TABLE= \
 		USE_VTX_MSP=
 
+pwl_unittest_SRC := \
+		$(USER_DIR)/common/pwl.c
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
@@ -482,9 +515,9 @@ GTEST_DIR = ../../lib/test/gtest
 
 # Use clang/clang++ by default
 
-CC  := clang-15
-CXX := clang++-15
-ifeq ($(shell which $(CC) 2>/dev/null),)
+CC  := clang-18
+CXX := clang++-18
+ifeq ($(and $(shell which $(CC) 2>/dev/null), $(shell which $(CXX) 2>/dev/null)),)
 $(info Falling back to 'clang')
 CC  := clang
 CXX := clang++
@@ -506,11 +539,10 @@ CXX_VERSION = $(shell $(CXX) -dumpversion)
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 
-# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 16 }
-# Travis reports CC_VERSION of 4.2.1
+# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 18 }
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 16
+CC_VERSION_CHECK_MAX := 18
 
 # c99-designator is fine, code is not expected to be clean C++
 COMMON_FLAGS += -Wno-c99-designator
@@ -519,7 +551,7 @@ COMMON_FLAGS += -Wno-c99-designator
 COMMON_FLAGS += -Werror
 
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
-$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-15'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
+$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-18'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
 COMMON_FLAGS += -fblocks

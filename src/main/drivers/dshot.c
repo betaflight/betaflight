@@ -29,6 +29,8 @@
 
 #include "platform.h"
 
+#include "dshot.h"
+
 #ifdef USE_DSHOT
 
 #include "build/debug.h"
@@ -39,33 +41,33 @@
 
 #include "config/feature.h"
 
-#include "drivers/motor.h"
+#include "drivers/motor_types.h"
 #include "drivers/timer.h"
 
 #include "drivers/dshot_command.h"
 #include "drivers/nvic.h"
 
-#include "flight/mixer.h"
 
 #include "pg/rpm_filter.h"
 
 #include "rx/rx.h"
 
-#include "dshot.h"
-
 #define ERPM_PER_LSB            100.0f
+
+FAST_DATA_ZERO_INIT uint8_t dshotMotorCount = 0;
 
 void dshotInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
     float outputLimitOffset = DSHOT_RANGE * (1 - outputLimit);
+    const float motorIdlePercent = CONVERT_PARAMETER_TO_PERCENT(motorConfig->motorIdle * 0.01f);
     *disarm = DSHOT_CMD_MOTOR_STOP;
     if (featureIsEnabled(FEATURE_3D)) {
-        *outputLow = DSHOT_MIN_THROTTLE + getDigitalIdleOffset(motorConfig) * (DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - DSHOT_MIN_THROTTLE);
+        *outputLow = DSHOT_MIN_THROTTLE + motorIdlePercent * (DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - DSHOT_MIN_THROTTLE);
         *outputHigh = DSHOT_MAX_THROTTLE - outputLimitOffset / 2;
-        *deadbandMotor3dHigh = DSHOT_3D_FORWARD_MIN_THROTTLE + getDigitalIdleOffset(motorConfig) * (DSHOT_MAX_THROTTLE - DSHOT_3D_FORWARD_MIN_THROTTLE);
+        *deadbandMotor3dHigh = DSHOT_3D_FORWARD_MIN_THROTTLE + motorIdlePercent * (DSHOT_MAX_THROTTLE - DSHOT_3D_FORWARD_MIN_THROTTLE);
         *deadbandMotor3dLow = DSHOT_3D_FORWARD_MIN_THROTTLE - 1 - outputLimitOffset / 2;
     } else {
-        *outputLow = DSHOT_MIN_THROTTLE + getDigitalIdleOffset(motorConfig) * DSHOT_RANGE;
+        *outputLow = DSHOT_MIN_THROTTLE + motorIdlePercent * DSHOT_RANGE;
         *outputHigh = DSHOT_MAX_THROTTLE - outputLimitOffset;
     }
 }
@@ -159,12 +161,16 @@ void initDshotTelemetry(const timeUs_t looptimeUs)
     // erpmToHz is used by bidir dshot and ESC telemetry
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
 
+#ifdef USE_RPM_FILTER
     if (motorConfig()->dev.useDshotTelemetry) {
         // init LPFs for RPM data
-        for (int i = 0; i < getMotorCount(); i++) {
+        for (unsigned i = 0; i < dshotMotorCount; i++) {
             pt1FilterInit(&motorFreqLpf[i], pt1FilterGain(rpmFilterConfig()->rpm_filter_lpf_hz, looptimeUs * 1e-6f));
         }
     }
+#else
+    UNUSED(looptimeUs);
+#endif
 }
 
 static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
@@ -187,7 +193,7 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
-    const unsigned motorCount = motorDeviceCount();
+    const unsigned motorCount = dshotMotorCount;
 
     if (dshotTelemetryState.motorState[motorIndex].telemetryTypes == DSHOT_NORMAL_TELEMETRY_MASK) {   /* Check DSHOT_TELEMETRY_TYPE_eRPM mask */
         // Decode eRPM telemetry
@@ -300,7 +306,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
         return;
     }
 
-    const unsigned motorCount = motorDeviceCount();
+    const unsigned motorCount = dshotMotorCount;
     uint32_t erpmTotal = 0;
     uint32_t rpmSamples = 0;
 
@@ -329,7 +335,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
 
     // update filtered rotation speed of motors for features (e.g. "RPM filter")
     minMotorFrequencyHz = FLT_MAX;
-    for (int motor = 0; motor < getMotorCount(); motor++) {
+    for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
         motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], erpmToHz * getDshotErpm(motor));
         minMotorFrequencyHz = MIN(minMotorFrequencyHz, motorFrequencyHz[motor]);
     }
@@ -370,7 +376,7 @@ bool isDshotMotorTelemetryActive(uint8_t motorIndex)
 
 bool isDshotTelemetryActive(void)
 {
-    const unsigned motorCount = motorDeviceCount();
+    const unsigned motorCount = dshotMotorCount;
     if (motorCount) {
         for (unsigned i = 0; i < motorCount; i++) {
             if (!isDshotMotorTelemetryActive(i)) {

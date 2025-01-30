@@ -41,6 +41,8 @@
 #include "io/vtx_tramp.h"
 #include "io/vtx.h"
 
+#include "cms_menu_vtx_tramp.h"
+
 char trampCmsStatusString[31] = "- -- ---- ----";
 //                               m bc ffff tppp
 //                               01234567890123

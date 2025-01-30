@@ -29,7 +29,6 @@
 #include "flight/mixer_tricopter.h"
 #include "flight/servos.h"
 
-
 bool servosTricopterIsEnabledServoUnarmed(void)
 {
     return servoConfig()->tri_unarmed_servo;

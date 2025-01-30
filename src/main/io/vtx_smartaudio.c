@@ -48,7 +48,6 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 
-
 // Timing parameters
 // Note that vtxSAProcess() is normally called at 200ms interval
 #define SMARTAUDIO_CMD_TIMEOUT       120    // Time until the command is considered lost
@@ -85,17 +84,14 @@ enum {
 // This is not a good design; can't distinguish command from response this way.
 #define SACMD(cmd) (((cmd) << 1) | 1)
 
-
 #define SA_IS_PITMODE(n) ((n) & SA_MODE_GET_PITMODE)
 #define SA_IS_PIRMODE(n) (((n) & SA_MODE_GET_PITMODE) && ((n) & SA_MODE_GET_IN_RANGE_PITMODE))
 #define SA_IS_PORMODE(n) (((n) & SA_MODE_GET_PITMODE) && ((n) & SA_MODE_GET_OUT_RANGE_PITMODE))
-
 
 // convert between 'saDevice.channel' and band/channel values
 #define SA_DEVICE_CHVAL_TO_BAND(val) ((val) / (uint8_t)vtxTableChannelCount) + 1
 #define SA_DEVICE_CHVAL_TO_CHANNEL(val) ((val) % (uint8_t)vtxTableChannelCount) + 1
 #define SA_BANDCHAN_TO_DEVICE_CHVAL(band, channel) ((band - 1) * (uint8_t)vtxTableChannelCount + (channel - 1))
-
 
 // Statistical counters, for user side trouble shooting.
 
@@ -171,7 +167,6 @@ static uint8_t CRC8(const uint8_t *data, const int8_t len)
     }
     return crc;
 }
-
 
 #ifdef USE_SMARTAUDIO_DPRINTF
 static void saPrintSettings(void)
@@ -497,24 +492,34 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-        switch (smartAudioSerialPort->identifier) {
-        case SERIAL_PORT_SOFTSERIAL1:
-        case SERIAL_PORT_SOFTSERIAL2:
-            if (vtxSettingsConfig()->softserialAlt) {
-                serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-            }
+        bool prepend00;
+        switch (serialType(smartAudioSerialPort->identifier)) {
+        case SERIALTYPE_SOFTSERIAL:
+            prepend00 = vtxSettingsConfig()->softserialAlt;
+            break;
+        case SERIALTYPE_UART:
+        case SERIALTYPE_LPUART: // decide HW uarts by MCU type
+#ifdef AT32F4
+            prepend00 = false;
+#else
+            prepend00 = true;
+#endif
             break;
         default:
-            serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
-            break;
+            prepend00 = false;
+        }
+        if (prepend00) {
+            // line is in MARK/BREAK, so only 2 stopbits will be visible (startbit and zeroes are not visible)
+            // startbit of next byte (0xaa) can be recognized
+            serialWrite(smartAudioSerialPort, 0x00);
         }
 
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
         }
-        #ifdef USE_AKK_SMARTAUDIO
+#ifdef USE_AKK_SMARTAUDIO
         serialWrite(smartAudioSerialPort, 0x00); // AKK/RDQ SmartAudio devices can expect an extra byte due to manufacturing errors.
-        #endif // USE_AKK_SMARTAUDIO
+#endif
 
         saStat.pktsent++;
     } else {
@@ -685,7 +690,6 @@ void saSetMode(int mode)
     saQueueCmd(buf, 6);
 }
 
-
 bool vtxSmartAudioInit(void)
 {
 #if !defined(USE_VTX_TABLE)
@@ -703,14 +707,15 @@ bool vtxSmartAudioInit(void)
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
-    // Note, for SA, which uses bidirectional mode, would normally require pullups. 
-    // the SA protocol instead requires pulldowns, and therefore uses SERIAL_BIDIR_PP_PD instead of SERIAL_BIDIR_PP
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
-    if (portConfig) {
-        portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP_PD;
-
-        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
+    if (!portConfig) {
+        return false;
     }
+    // Note, for SA, which uses bidirectional mode, would normally require pullups.
+    // the SA protocol usually requires pulldowns, and therefore uses SERIAL_PULL_SMARTAUDIO together with SERIAL_BIDIR_PP
+    // serial driver handles different pullup/pulldown/nopull quirks when SERIAL_PULL_SMARTAUDIO is used
+    const portOptions_e portOptions = SERIAL_NOT_INVERTED | SERIAL_STOPBITS_2 | SERIAL_BIDIR | SERIAL_BIDIR_PP | SERIAL_PULL_SMARTAUDIO;
+    smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
 
     if (!smartAudioSerialPort) {
         return false;
@@ -721,8 +726,6 @@ bool vtxSmartAudioInit(void)
     }
 
     dprintf(("vtxSmartAudioInit %d power levels recorded\r\n", vtxTablePowerLevels));
-
-
 
     vtxCommonSetDevice(&vtxSmartAudio);
 #ifndef USE_VTX_TABLE
@@ -851,7 +854,7 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 #ifdef USE_VTX_COMMON
 // Interface to common VTX API
 
-vtxDevType_e vtxSAGetDeviceType(const vtxDevice_t *vtxDevice)
+static vtxDevType_e vtxSAGetDeviceType(const vtxDevice_t *vtxDevice)
 {
     UNUSED(vtxDevice);
     return VTXDEV_SMARTAUDIO;
@@ -959,7 +962,6 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
     dprintf(("vtxSASetPitMode %s with stored mode 0x%x por %s, pir %s, newMode 0x%x\r\n", onoff ? "on" : "off", saDevice.mode,
             (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE) ? "on" : "off",
             (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) ? "on" : "off" , newMode));
-
 
     saSetMode(newMode);
 
@@ -1080,6 +1082,5 @@ static const vtxVTable_t saVTable = {
     .serializeCustomDeviceStatus = vtxSASerializeCustomDeviceStatus,
 };
 #endif // VTX_COMMON
-
 
 #endif // VTX_SMARTAUDIO

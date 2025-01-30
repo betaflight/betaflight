@@ -25,11 +25,12 @@
 
 #ifdef USE_SPI
 
+#include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/resource.h"
 #include "drivers/system.h"
 
-#include "drivers/flash.h"
+#include "drivers/flash/flash.h"
 #include "drivers/max7456.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/sdcard.h"
@@ -39,48 +40,10 @@
 #include "pg/rx_spi.h"
 #include "pg/sdcard.h"
 
-typedef struct spiPreinit_s {
-    ioTag_t iotag;
-    uint8_t iocfg;
-    bool init;
-} spiPreinit_t;
-
-static spiPreinit_t spiPreinitArray[SPI_PREINIT_COUNT];
-static int spiPreinitCount = 0;
-
-void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init)
-{
-    if (!iotag) {
-        return;
-    }
-
-    if (spiPreinitCount == SPI_PREINIT_COUNT) {
-        indicateFailure(FAILURE_DEVELOPER, 5);
-        return;
-    }
-
-    spiPreinitArray[spiPreinitCount].iotag = iotag;
-    spiPreinitArray[spiPreinitCount].iocfg = iocfg;
-    spiPreinitArray[spiPreinitCount].init = init;
-    ++spiPreinitCount;
-}
-
-static void spiPreinitPin(spiPreinit_t *preinit, int index)
-{
-    IO_t io = IOGetByTag(preinit->iotag);
-    IOInit(io, OWNER_PREINIT, RESOURCE_INDEX(index));
-    IOConfigGPIO(io, preinit->iocfg);
-    if (preinit->init) {
-        IOHi(io);
-    } else {
-        IOLo(io);
-    }
-}
-
 void spiPreinit(void)
 {
 #ifdef USE_SDCARD_SPI
-    sdcard_preInit(sdcardConfig());
+    sdcard_preinit(sdcardConfig());
 #endif
 
 #if defined(RTC6705_CS_PIN) && !defined(USE_VTX_RTC6705_SOFTSPI) // RTC6705 soft SPI initialisation handled elsewhere.
@@ -88,34 +51,16 @@ void spiPreinit(void)
 #endif
 
 #ifdef USE_FLASH_CHIP
-    flashPreInit(flashConfig());
+    flashPreinit(flashConfig());
 #endif
 
 #if defined(USE_RX_SPI)
-    rxSpiDevicePreInit(rxSpiConfig());
+    rxSpiDevicePreinit(rxSpiConfig());
 #endif
 
 #ifdef USE_MAX7456
-    max7456PreInit(max7456Config());
+    max7456Preinit(max7456Config());
 #endif
-
-    for (int i = 0; i < spiPreinitCount; i++) {
-        spiPreinitPin(&spiPreinitArray[i], i);
-    }
 }
 
-void spiPreinitByIO(const IO_t io)
-{
-    for (int i = 0; i < spiPreinitCount; i++) {
-        if (io == IOGetByTag(spiPreinitArray[i].iotag)) {
-            spiPreinitPin(&spiPreinitArray[i], i);
-            return;
-        }
-    }
-}
-
-void spiPreinitByTag(ioTag_t tag)
-{
-    spiPreinitByIO(IOGetByTag(tag));
-}
 #endif
