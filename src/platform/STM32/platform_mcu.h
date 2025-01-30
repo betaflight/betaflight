@@ -419,7 +419,3 @@ extern uint8_t _dmaram_end__;
 
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
-
-#if defined(STM32F7) || defined(STM32H7)
-#define PLATFORM_TRAIT_TIMER_AF_FOR_ESCSERIAL 1
-#endif
