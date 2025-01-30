@@ -4147,7 +4147,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             }
 
             const unsigned textLength = MIN(textSpace, sbufReadU8(src));
-            memset(textVar, 0, textLength + 1);
+            textVar[textLength] = '\0';
             sbufReadData(src, textVar, textLength);
 
 #ifdef USE_OSD
