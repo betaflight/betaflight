@@ -92,7 +92,8 @@ void uartReconfigure(uartPort_t *uartPort)
     uartPort->Handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     uartPort->Handle.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
     uartPort->Handle.Init.Mode = 0;
-#if defined(STM32G4) || defined(STM32H7)
+#if defined(STM32G4) || defined(STM32H7) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
     if (uartPort->Handle.Instance == LPUART1) {
         uartPort->Handle.Init.ClockPrescaler = UART_PRESCALER_DIV8;
     }

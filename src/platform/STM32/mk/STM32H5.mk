@@ -170,13 +170,13 @@ MCU_COMMON_SRC = \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
-            STM32/startup/system_stm32h5xx.c
-
-#            memprot_hal.c \
+            STM32/startup/system_stm32h5xx.c \
+            STM32/memprot_hal.c \
+            STM32/timer_stm32h5xx.c
 #            memprot_stm32h5xx.c \
 #            serial_uart_stm32h5xx.c \
 #            sdio_h5xx.c \
-#            timer_stm32h5xx.c \
+
 #            adc_stm32h5xx.c \
 #            dma_stm32h5xx.c \
 
@@ -194,6 +194,8 @@ MSC_SRC =
 SPEED_OPTIMISED_SRC += \
             STM32/exti.c
 
+# @todo [Project-H5] deactivate optimized size for USB until we have a solution
+#            STM32/serial_usb_vcp.c
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \

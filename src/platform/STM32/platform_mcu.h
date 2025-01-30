@@ -46,7 +46,9 @@
 #endif
 
 #elif defined(STM32H563xx)
+/// @todo [Project-H5] need to check if it's all right
 #include "stm32h5xx.h"
+#include "stm32h563xx.h"
 #include "stm32h5xx_hal.h"
 #include "system_stm32h5xx.h"
 
@@ -277,8 +279,8 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
 // speed is packed between modebits 4 and 1,
 // 7       6        5        4         3         2        1        0
 // 0 <pupd-1> <pupd-0> <mode-4> <speed-1> <speed-0> <mode-1> <mode-0>
@@ -344,7 +346,8 @@ extern uint8_t _dmaram_end__;
 #define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)  || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
@@ -380,6 +383,10 @@ extern uint8_t _dmaram_end__;
 #define MAX_SPI_PIN_SEL 4
 #elif defined(STM32H7)
 #define MAX_SPI_PIN_SEL 5
+#elif defined(STM32H5)
+/// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 57
+// note: there is 6 SPI and 3 of them (1,2,3) are I2S compatible
+#define MAX_SPI_PIN_SEL 6
 #else
 #error Unknown MCU family
 #endif
@@ -403,6 +410,7 @@ extern uint8_t _dmaram_end__;
 #endif
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
  // pin AF mode is configured for each pin individually
 #define UART_TRAIT_AF_PIN 1
 #elif defined(STM32F4)
@@ -414,7 +422,8 @@ extern uint8_t _dmaram_end__;
 
 #define PLATFORM_TRAIT_RCC 1
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
 #define UART_TRAIT_PINSWAP 1
 #endif
 
@@ -426,9 +435,15 @@ extern uint8_t _dmaram_end__;
 #define UARTHARDWARE_MAX_PINS 5
 #elif defined(STM32G4)
 #define UARTHARDWARE_MAX_PINS 3
+#elif defined(STM32H5)
+/// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 53
+// based on documentation, we have 6 USART, 6 UART and 1 LPUART
+// (USART1/USART2/USART3/USART6/USART10/USART11), (UART4/UART5/UART7/UART8/UART9/UART12), (LPUART1)
+#define UARTHARDWARE_MAX_PINS 13
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
 #define UART_REG_RXD(base) ((base)->RDR)
 #define UART_REG_TXD(base) ((base)->TDR)
 #elif defined(STM32F4)
@@ -437,9 +452,17 @@ extern uint8_t _dmaram_end__;
 #endif
 
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+/// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 2
+// there is two DMA controllers, i'm not sure how to handle this (as there is only one currently for other MCU)
+
+
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
 #define DMA_TRAIT_CHANNEL 1
 #endif
 
 #define SERIAL_TRAIT_PIN_CONFIG 1
+
+/// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 92
+// USB DP pin seems to be always the same for all STM32 MCUs
 #define USB_DP_PIN PA12

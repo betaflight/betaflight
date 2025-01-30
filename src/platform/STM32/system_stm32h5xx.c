@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// @todo [Project-H5] this files should be checked correctly, I cannot continue to do Cargo cult programming
+
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -34,25 +36,98 @@
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_CSR_SFTRSTF)
+    if (cachedRccCsrValue & RCC_RSR_SFTRSTF)
         return true;
     else
         return false;
 }
 
-void systemInit(void)
+/************************* Miscellaneous Configuration ************************/
+/*!< Uncomment the following line if you need to relocate your vector Table in
+     Internal SRAM. */
+/* #define VECT_TAB_SRAM */
+#define VECT_TAB_OFFSET  0x00U /*!< Vector Table base offset field.
+                                   This value must be a multiple of 0x200. */
+/******************************************************************************/
+
+void SystemInit(void)
 {
-    memProtReset();
-    memProtConfigure(mpuRegions, mpuRegionCount);
+  uint32_t reg_opsr;
 
-    // Configure NVIC preempt/priority groups
-    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
+  /* FPU settings ------------------------------------------------------------*/
+  #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+   SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
+  #endif
 
-    // cache RCC->RSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->CSR;
+  /* Reset the RCC clock configuration to the default reset state ------------*/
+  /* Set HSION bit */
+  RCC->CR = RCC_CR_HSION;
 
-    // Init cycle counter
-    cycleCounterInit();
+  /* Reset CFGR register */
+  RCC->CFGR1 = 0U;
+  RCC->CFGR2 = 0U;
+
+  /* Reset HSEON, HSECSSON, HSEBYP, HSEEXT, HSIDIV, HSIKERON, CSION, CSIKERON, HSI48 and PLLxON bits */
+#if defined(RCC_CR_PLL3ON)
+  RCC->CR &= ~(RCC_CR_HSEON | RCC_CR_HSECSSON | RCC_CR_HSEBYP | RCC_CR_HSEEXT | RCC_CR_HSIDIV | RCC_CR_HSIKERON | \
+               RCC_CR_CSION | RCC_CR_CSIKERON |RCC_CR_HSI48ON | RCC_CR_PLL1ON | RCC_CR_PLL2ON | RCC_CR_PLL3ON);
+#else
+  RCC->CR &= ~(RCC_CR_HSEON | RCC_CR_HSECSSON | RCC_CR_HSEBYP | RCC_CR_HSEEXT | RCC_CR_HSIDIV | RCC_CR_HSIKERON | \
+               RCC_CR_CSION | RCC_CR_CSIKERON |RCC_CR_HSI48ON | RCC_CR_PLL1ON | RCC_CR_PLL2ON);
+#endif
+
+  /* Reset PLLxCFGR register */
+  RCC->PLL1CFGR = 0U;
+  RCC->PLL2CFGR = 0U;
+#if defined(RCC_CR_PLL3ON)
+  RCC->PLL3CFGR = 0U;
+#endif /* RCC_CR_PLL3ON */
+
+  /* Reset PLL1DIVR register */
+  RCC->PLL1DIVR = 0x01010280U;
+  /* Reset PLL1FRACR register */
+  RCC->PLL1FRACR = 0x00000000U;
+  /* Reset PLL2DIVR register */
+  RCC->PLL2DIVR = 0x01010280U;
+  /* Reset PLL2FRACR register */
+  RCC->PLL2FRACR = 0x00000000U;
+#if defined(RCC_CR_PLL3ON)
+  /* Reset PLL3DIVR register */
+  RCC->PLL3DIVR = 0x01010280U;
+  /* Reset PLL3FRACR register */
+  RCC->PLL3FRACR = 0x00000000U;
+#endif /* RCC_CR_PLL3ON */
+
+  /* Reset HSEBYP bit */
+  RCC->CR &= ~(RCC_CR_HSEBYP);
+
+  /* Disable all interrupts */
+  RCC->CIER = 0U;
+
+  /* Configure the Vector Table location add offset address ------------------*/
+  #ifdef VECT_TAB_SRAM
+    SCB->VTOR = SRAM1_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+  #else
+    SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+  #endif /* VECT_TAB_SRAM */
+
+  /* Check OPSR register to verify if there is an ongoing swap or option bytes update interrupted by a reset */
+  reg_opsr = FLASH->OPSR & FLASH_OPSR_CODE_OP;
+  if ((reg_opsr == FLASH_OPSR_CODE_OP) || (reg_opsr == (FLASH_OPSR_CODE_OP_2 | FLASH_OPSR_CODE_OP_1)))
+  {
+    /* Check FLASH Option Control Register access */
+    if ((FLASH->OPTCR & FLASH_OPTCR_OPTLOCK) != 0U)
+    {
+      /* Authorizes the Option Byte registers programming */
+      FLASH->OPTKEYR = 0x08192A3BU;
+      FLASH->OPTKEYR = 0x4C5D6E7FU;
+    }
+    /* Launch the option bytes change operation */
+    FLASH->OPTCR |= FLASH_OPTCR_OPTSTART;
+
+    /* Lock the FLASH Option Control Register access */
+    FLASH->OPTCR |= FLASH_OPTCR_OPTLOCK;
+  }
 }
 
 void systemReset(void)
@@ -89,28 +164,6 @@ typedef struct isrVector_s {
 
 void systemJumpToBootloader(void)
 {
-    //DeInit all used peripherals
-    HAL_RCC_DeInit();
-
-    //Disable all system timers and set to default values
-    SysTick->CTRL = 0;
-    SysTick->LOAD = 0;
-    SysTick->VAL = 0;
-
-    //Disable all interrupts
-    __disable_irq();
-
-    //remap system memory
-    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
-
-    //default bootloader call stack routine
-    uint32_t bootStack = SYSMEMBOOT_VECTOR_TABLE[0];
-
-    bootJumpPtr SysMemBootJump = (bootJumpPtr)SYSMEMBOOT_VECTOR_TABLE[1];
-
-    __set_MSP(bootStack); //Set the main stack pointer to its default values
-
-    SysMemBootJump();
-
-    while (1);
+    /// @todo Implement systemJumpToBootloader
+    // source from G4 does not work
 }

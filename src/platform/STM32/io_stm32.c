@@ -64,15 +64,17 @@ const struct ioPortDef_s ioPortDefs[] = {
 #endif
 };
 #elif defined(STM32H5)
+/// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 144
 const struct ioPortDef_s ioPortDefs[] = {
-    { RCC_AHB4(GPIOA) },
-    { RCC_AHB4(GPIOB) },
-    { RCC_AHB4(GPIOC) },
-    { RCC_AHB4(GPIOD) },
-    { RCC_AHB4(GPIOE) },
-    { RCC_AHB4(GPIOF) },
-    { RCC_AHB4(GPIOG) },
-    { RCC_AHB4(GPIOH) },
+    { RCC_AHB2(GPIOA) },
+    { RCC_AHB2(GPIOB) },
+    { RCC_AHB2(GPIOC) },
+    { RCC_AHB2(GPIOD) },
+    { RCC_AHB2(GPIOE) },
+    { RCC_AHB2(GPIOF) },
+    { RCC_AHB2(GPIOG) },
+    { RCC_AHB2(GPIOH) },
+    { RCC_AHB2(GPIOI) },
 };
 #elif defined(STM32G4)
 const struct ioPortDef_s ioPortDefs[] = {
@@ -93,7 +95,8 @@ uint32_t IO_EXTI_Line(IO_t io)
     if (!io) {
         return 0;
     }
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(SIMULATOR_BUILD)
     return 0;
@@ -200,8 +203,8 @@ void IOToggle(IO_t io)
 #endif
 }
 
-#if defined(STM32H7) || defined(STM32G4)
-
+#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
     IOConfigGPIOAF(io, cfg, 0);

@@ -313,6 +313,7 @@ uint32_t getFLASHSectorForEEPROM(void)
 void configUnlock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
     HAL_FLASH_Unlock();
 #elif defined(APM32F4)
     DAL_FLASH_Unlock();
@@ -326,6 +327,7 @@ void configUnlock(void)
 void configLock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
         HAL_FLASH_Lock();
 #elif defined(AT32F4)
         flash_lock();
@@ -343,6 +345,7 @@ void configClearFlags(void)
 #elif defined(STM32F7)
     // NOP
 #elif defined(STM32H7) || defined(STM32H5)
+/// @todo [Project-H5] suppose H5 is similar to H7
     // NOP
 #elif defined(STM32G4)
     // NOP

@@ -58,6 +58,14 @@ enum rcc_reg {
     RCC_AHB3,
     RCC_APB2,
     RCC_APB1,
+#elif defined(STM32H5)
+/// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 143-146
+    RCC_AHB1,
+    RCC_AHB2,
+    RCC_AHB4,
+    RCC_APB1,
+    RCC_APB2,
+    RCC_APB3,
 #else
     RCC_AHB,
     RCC_APB2,
