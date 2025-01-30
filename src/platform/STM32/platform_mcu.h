@@ -45,6 +45,30 @@
 #define STM32G4
 #endif
 
+#elif defined(STM32H563xx)
+#include "stm32h5xx.h"
+#include "stm32h5xx_hal.h"
+#include "system_stm32h5xx.h"
+
+#include "stm32h5xx_ll_spi.h"
+#include "stm32h5xx_ll_gpio.h"
+#include "stm32h5xx_ll_dma.h"
+#include "stm32h5xx_ll_rcc.h"
+#include "stm32h5xx_ll_bus.h"
+#include "stm32h5xx_ll_tim.h"
+#include "stm32h5xx_ll_system.h"
+
+// Chip Unique ID on H5
+#define U_ID_0 (*(uint32_t*)UID_BASE)
+#define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
+#define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
+
+#define USE_PIN_AF
+
+#ifndef STM32H5
+#define STM32H5
+#endif
+
 #elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
@@ -320,7 +344,7 @@ extern uint8_t _dmaram_end__;
 #define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
@@ -350,7 +374,7 @@ extern uint8_t _dmaram_end__;
 #define SPI_RX_DATA_REGISTER(base) ((base)->DR)
 #endif
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32H5)
 #define MAX_SPI_PIN_SEL 2
 #elif defined(STM32F7)
 #define MAX_SPI_PIN_SEL 4
@@ -378,7 +402,7 @@ extern uint8_t _dmaram_end__;
 #define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
  // pin AF mode is configured for each pin individually
 #define UART_TRAIT_AF_PIN 1
 #elif defined(STM32F4)

@@ -312,7 +312,7 @@ uint32_t getFLASHSectorForEEPROM(void)
 
 void configUnlock(void)
 {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
     HAL_FLASH_Unlock();
 #elif defined(APM32F4)
     DAL_FLASH_Unlock();
@@ -325,7 +325,7 @@ void configUnlock(void)
 
 void configLock(void)
 {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
         HAL_FLASH_Lock();
 #elif defined(AT32F4)
         flash_lock();
@@ -342,7 +342,7 @@ void configClearFlags(void)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 #elif defined(STM32F7)
     // NOP
-#elif defined(STM32H7)
+#elif defined(STM32H7) || defined(STM32H5)
     // NOP
 #elif defined(STM32G4)
     // NOP
