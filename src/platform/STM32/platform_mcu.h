@@ -346,7 +346,7 @@ extern uint8_t _dmaram_end__;
 #define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)  || defined(STM32H5)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
 /// @todo [Project-H5] suppose H5 is similar to H7
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
@@ -385,8 +385,8 @@ extern uint8_t _dmaram_end__;
 #define MAX_SPI_PIN_SEL 5
 #elif defined(STM32H5)
 /// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 57
-// note: there is 6 SPI and 3 of them (1,2,3) are I2S compatible
-#define MAX_SPI_PIN_SEL 6
+// note: there is 3 multiplexed SPI (1,2,3)
+#define MAX_SPI_PIN_SEL 3
 #else
 #error Unknown MCU family
 #endif

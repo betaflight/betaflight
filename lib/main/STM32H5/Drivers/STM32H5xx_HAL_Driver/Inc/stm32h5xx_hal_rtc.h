@@ -578,6 +578,8 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
   */
 #define __HAL_RTC_WRITEPROTECTION_ENABLE(__HANDLE__)              \
   do{                                       \
+    /// @warning handmade modification on generated ST code to avoid warning
+    UNUSED(__HANDLE__); \
     RTC->WPR = 0xFFU;   \
   } while(0U)
 

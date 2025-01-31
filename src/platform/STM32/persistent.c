@@ -62,11 +62,7 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
 
 void persistentObjectRTCEnable(void)
 {
-#if !defined(STM32G4) && !defined(STM32H5)
-/// @todo [Project-H5] suppose H5 is similar to G4
-    // G4 library V1.0.0 __HAL_RTC_WRITEPROTECTION_ENABLE/DISABLE macro does not use handle parameter
     RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
-#endif
 
 #if !defined(STM32H7) && !defined(STM32H5)
 /// @todo [Project-H5] suppose H5 is similar to H7
@@ -133,7 +129,6 @@ void persistentObjectInit(void)
     uint32_t wasSoftReset;
 
 #if defined(STM32H7) || defined(STM32H5)
-/// @todo [Project-H5] suppose H5 is similar to H7
     wasSoftReset = RCC->RSR & RCC_RSR_SFTRSTF;
 #else
     wasSoftReset = RCC->CSR & RCC_CSR_SFTRSTF;
