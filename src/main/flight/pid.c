@@ -505,10 +505,11 @@ static void computeAngleOfAttackEstimation(void)
         }
     }
 
-    DEBUG_SET(DEBUG_GYRO_SAMPLE, 4, lrintf(speed * 10.0f));
-    DEBUG_SET(DEBUG_GYRO_SAMPLE, 5, lrintf(overloadZ * 100.0f));
-    DEBUG_SET(DEBUG_GYRO_SAMPLE, 6, lrintf(angleOfAttackParameter * 10.0f));
-    DEBUG_SET(DEBUG_GYRO_SAMPLE, 7, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(overloadZ * 100.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttackParameter * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
+	DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(pidRuntime.aoaCurrentAngleProcent * 10.0f));
 #endif
     return;
 }
