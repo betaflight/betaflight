@@ -1397,9 +1397,9 @@ const clivalue_t valueTable[] = {
 #endif
 
 #if defined(USE_WING)
-	{ PARAM_NAME_AOA_MIN_PARAM,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -10000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_param) },
-	{ PARAM_NAME_AOA_MIN_ANGLE,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -10000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_angle) },
-	{ PARAM_NAME_AOA_MAX_PARAM,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -10000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_max_est_param) },
+	{ PARAM_NAME_AOA_MIN_PARAM,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -1000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_param) },
+	{ PARAM_NAME_AOA_MIN_ANGLE,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -200, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_angle) },
+	{ PARAM_NAME_AOA_MAX_PARAM,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_max_est_param) },
 	{ PARAM_NAME_AOA_MAX_ANGLE,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -200, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_max_est_angle) },
 	{ PARAM_NAME_AOA_WARNING_ANGLE,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_warning_angle) },
 #endif

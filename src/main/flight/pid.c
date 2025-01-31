@@ -270,9 +270,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_time_seconds = 20,
 
 #if defined(USE_WING)
-        .aoa_min_est_param = 100,
+        .aoa_min_est_param = 518,
         .aoa_min_est_angle = 10,
-        .aoa_max_est_param = 5000,
+        .aoa_max_est_param = 3240,
         .aoa_max_est_angle = 100,
         .aoa_warning_angle = 80,
 #endif
@@ -507,7 +507,7 @@ static void computeAngleOfAttackEstimation(void)
 
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(overloadZ * 100.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttackParameter * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttackParameter));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
 	DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(pidRuntime.aoaCurrentAngleProcent * 10.0f));
 #endif
