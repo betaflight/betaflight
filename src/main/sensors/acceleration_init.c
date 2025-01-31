@@ -167,7 +167,6 @@ retry:
         FALLTHROUGH;
 #endif
 
-
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
     case ACC_MPU6500:
     case ACC_ICM20601:
