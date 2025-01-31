@@ -383,10 +383,10 @@ void aoaEstimatorInit(const pidProfile_t *pidProfile)
     pidRuntime.aoaMinEstimatorsAngle = 0.1f * pidProfile->aoa_min_est_angle;
     pidRuntime.aoaEstimatorsGain = ((float)(pidProfile->aoa_max_est_angle - pidProfile->aoa_min_est_angle)) / (float)(pidProfile->aoa_max_est_param - pidProfile->aoa_min_est_param);
     pidRuntime.aoaEstimatorsRange = 0.1f * (pidProfile->aoa_max_est_angle - pidProfile->aoa_min_est_angle);
-	pidRuntime.aoaWarningAngle = 0.1f * pidProfile->aoa_warning_angle;
+    pidRuntime.aoaWarningAngle = 0.1f * pidProfile->aoa_warning_angle;
     pidRuntime.aoaCurrentAngle = 0.0f;
-	pidRuntime.aoaCurrentAngleProcent = 0.0f;
-	pidRuntime.aoaWarning = false;
+    pidRuntime.aoaCurrentAngleProcent = 0.0f;
+    pidRuntime.aoaWarning = false;
 }
 #endif
 
