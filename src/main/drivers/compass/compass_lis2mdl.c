@@ -84,7 +84,6 @@ static bool lis2mdlRead(magDev_t *mag, int16_t *magData)
 
     if (pendingRead && busReadRegisterBufferStart(dev, LIS2MDL_ADDR_OUTX_L_REG, (uint8_t *)buf, sizeof(buf))) {
         pendingRead = false;
-    }
         return false;
     }
 
