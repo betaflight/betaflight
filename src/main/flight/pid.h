@@ -332,6 +332,14 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+
+#if defined(USE_WING)
+    int16_t aoa_min_est_param;          //For wings: minimum AOA estimators parametr value
+    int16_t aoa_min_est_angle;          //For wings: minimum AOA estimators angle value degrees*10
+    int16_t aoa_max_est_param;          //For wings: maximum AOA estimators parametr value
+    int16_t aoa_max_est_angle;          //For wings: maximum AOA estimators angle value degrees*10
+    int16_t aoa_warning_angle;          //For wings: warninf AOA value degrees*10
+#endif
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -550,6 +558,17 @@ typedef struct pidRuntime_s {
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
 #endif // USE_CHIRP
+
+#if defined(USE_WING)
+    float aoaMinEstimatorsParameter;
+    float aoaMinEstimatorsAngle;
+    float aoaEstimatorsGain;
+	float aoaEstimatorsRange;
+    float aoaWarningAngle;
+    float aoaCurrentAngle;			// Current angle of attack value, grad
+	float aoaCurrentAngleProcent;	// Current angle of attack value, % from min to max range
+	bool  aoaWarning;
+#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;

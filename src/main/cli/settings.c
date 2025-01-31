@@ -1396,6 +1396,14 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
 #endif
 
+#if defined(USE_WING)
+	{ PARAM_NAME_AOA_MIN_PARAM,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -10000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_param) },
+	{ PARAM_NAME_AOA_MIN_ANGLE,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -10000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_angle) },
+	{ PARAM_NAME_AOA_MAX_PARAM,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -10000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_max_est_param) },
+	{ PARAM_NAME_AOA_MAX_ANGLE,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { -200, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_max_est_angle) },
+	{ PARAM_NAME_AOA_WARNING_ANGLE,    VAR_INT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_warning_angle) },
+#endif
+
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },

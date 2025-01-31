@@ -259,6 +259,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_speed_pitch_offset = 0,
         .yaw_type = YAW_TYPE_RUDDER,
         .angle_pitch_offset = 0,
+
         .chirp_lag_freq_hz = 3,
         .chirp_lead_freq_hz = 30,
         .chirp_amplitude_roll = 230,
@@ -267,6 +268,14 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+
+#if defined(USE_WING)
+        .aoa_min_est_param = 100,
+        .aoa_min_est_angle = 10,
+        .aoa_max_est_param = 5000,
+        .aoa_max_est_angle = 100,
+        .aoa_warning_angle = 80,
+#endif
     );
 }
 
@@ -473,35 +482,35 @@ void pidUpdateTpaFactor(float throttle)
     updateStermTpaFactors();
 #endif // USE_WING
 }
-#ifdef USE_WING
-static float computeAngleOfAttackEstimation(void)
+
+#if defined(USE_WING)
+static void computeAngleOfAttackEstimation(void)
 {
-    const float multipler = 100000.0;   //scale multipler
-    const float speedThreshold = 2.0;    //speed thresold 
-    float angleOfAttackParameter = 0.0;
-    float angleOfAttackEstimation = 0.0;
-#ifdef USE_GPS
-#ifdef USE_ACC
-    if (sensors(SENSOR_GPS) && STATE(GPS_FIX))
-    {
-        float speed = 0.1 * gpsSol.speed3d; //speed m/s
-        float overloadZ = acc.accADC.z * acc.dev.acc_1G_rec;
-        if (speed > speedThreshold)
-        {
+#if defined(USE_GPS) && defined(USE_ACC)
+    const float multipler = 100000.0f,   //scale multipler
+                speedThreshold = 2.0f;    //gps speed thresold
+    float angleOfAttackParameter = 0.0f,
+          speed = 0.0f,
+          overloadZ = 0.0f;
+    pidRuntime.aoaCurrentAngle = 0.0f;
+	pidRuntime.aoaWarning = false;
+    if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+        speed = 0.1f * gpsSol.speed3d; //speed m/s
+        overloadZ = acc.accADC.z * acc.dev.acc_1G_rec;
+        if (speed > speedThreshold) {
             angleOfAttackParameter = overloadZ / (speed * speed) * multipler;
+            pidRuntime.aoaCurrentAngle = pidRuntime.aoaMinEstimatorsAngle + (angleOfAttackParameter - pidRuntime.aoaMinEstimatorsParameter) * pidRuntime.aoaEstimatorsGain;
+			pidRuntime.aoaCurrentAngleProcent = 100.0f * (pidRuntime.aoaCurrentAngle - pidRuntime.aoaMinEstimatorsAngle) / pidRuntime.aoaEstimatorsRange;
+			pidRuntime.aoaWarning = pidRuntime.aoaCurrentAngle > pidRuntime.aoaWarningAngle;
         }
-
-//TODO add estimatorAOA parameters in pidRuntime and cli to use
-        //angleOfAttackEstimation = (angleOfAttackParameter - pidRuntime->estimatorAOA.maxSpeedAOA) / (pidRuntime->estimatorAOA.minSpeedAOA - pidRuntime->estimatorAOA.maxSpeedAOA);
-
-        DEBUG_SET(DEBUG_GYRO_SAMPLE, 4, lrintf(speed * 10.0));
-        DEBUG_SET(DEBUG_GYRO_SAMPLE, 5, lrintf(overloadZ * 100.0));
-        DEBUG_SET(DEBUG_GYRO_SAMPLE, 6, lrintf(angleOfAttackParameter * 10.0));
-        DEBUG_SET(DEBUG_GYRO_SAMPLE, 7, lrintf(angleOfAttackEstimation * 100.0));
     }
+
+    DEBUG_SET(DEBUG_GYRO_SAMPLE, 4, lrintf(speed * 10.0f));
+    DEBUG_SET(DEBUG_GYRO_SAMPLE, 5, lrintf(overloadZ * 100.0f));
+    DEBUG_SET(DEBUG_GYRO_SAMPLE, 6, lrintf(angleOfAttackParameter * 10.0f));
+    DEBUG_SET(DEBUG_GYRO_SAMPLE, 7, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
 #endif
-#endif
-    return angleOfAttackEstimation;
+    return;
 }
 #endif
 
@@ -1557,7 +1566,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
 
 #ifdef USE_WING
-    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control 
+    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control
     // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
     bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
 #endif // USE_WING
@@ -1581,7 +1590,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     } else if (pidRuntime.zeroThrottleItermReset) {
         pidResetIterm();
     }
-#ifdef USE_WING
+#if defined(USE_WING)
     computeAngleOfAttackEstimation();
 #endif
 }

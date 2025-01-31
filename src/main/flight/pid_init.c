@@ -376,6 +376,20 @@ static void tpaCurveInit(const pidProfile_t *pidProfile)
 }
 #endif // USE_ADVANCED_TPA
 
+#if defined(USE_WING)
+void aoaEstimatorInit(const pidProfile_t *pidProfile)
+{
+    pidRuntime.aoaMinEstimatorsParameter = 0.1f * pidProfile->aoa_min_est_param;
+    pidRuntime.aoaMinEstimatorsAngle = 0.1f * pidProfile->aoa_min_est_angle;
+    pidRuntime.aoaEstimatorsGain = ((float)(pidProfile->aoa_max_est_angle - pidProfile->aoa_min_est_angle)) / (float)(pidProfile->aoa_max_est_param - pidProfile->aoa_min_est_param);
+    pidRuntime.aoaEstimatorsRange = 0.1f * (pidProfile->aoa_max_est_angle - pidProfile->aoa_min_est_angle);
+	pidRuntime.aoaWarningAngle = 0.1f * pidProfile->aoa_warning_angle;
+    pidRuntime.aoaCurrentAngle = 0.0f;
+	pidRuntime.aoaCurrentAngleProcent = 0.0f;
+	pidRuntime.aoaWarning = false;
+}
+#endif
+
 void pidInit(const pidProfile_t *pidProfile)
 {
     pidSetTargetLooptime(gyro.targetLooptime); // Initialize pid looptime
@@ -386,6 +400,9 @@ void pidInit(const pidProfile_t *pidProfile)
 #endif
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
+#endif
+#if defined(USE_WING)
+    aoaEstimatorInit(pidProfile);
 #endif
 }
 
