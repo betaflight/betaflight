@@ -216,3 +216,9 @@ uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_
 int8_t timerGetNumberByIndex(uint8_t index);
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
 uint8_t timerLookupChannelIndex(const uint16_t channel);
+
+// TODO: replace TIM_TypeDef with alternate
+void timerDeInitTimer(TIM_TypeDef *timer);
+void timerSetTimerPeriod(TIM_TypeDef *timer, uint32_t period);
+uint32_t timerGetTimerPeriod(TIM_TypeDef *timer);
+void timerSetTimerCounter(TIM_TypeDef *timer, uint32_t counter);

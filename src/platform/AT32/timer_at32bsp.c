@@ -777,4 +777,32 @@ uint16_t timerGetPrescalerByDesiredHertz(tmr_type *tim, uint32_t hz)
     }
     return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
 }
+
+void timerDeInitTimer(tmr_type *timer)
+{
+    ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+        tmr_counter_enable(timer, FALSE);
+    }
+}
+
+void timerSetTimerPeriod(tmr_type *timer, uint32_t period)
+{
+    tmr_period_value_set(timer, period);
+}
+
+uint32_t timerGetTimerPeriod(tmr_type *timer)
+{
+    return tmr_period_value_get(timer);
+}
+
+void timerSetTimerCounter(tmr_type *timer, uint32_t counter)
+{
+    tmr_counter_value_set(timer, counter);
+}
+
+void timerReconfigureTimeBase(tmr_type *timer, uint16_t period, uint32_t hz)
+{
+    configTimeBase(timer, period, hz);
+}
+
 #endif

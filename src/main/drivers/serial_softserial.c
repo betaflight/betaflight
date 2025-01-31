@@ -487,11 +487,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         // Synchronize the bit timing so that it will interrupt at the center
         // of the bit period.
 
-#ifdef USE_HAL_DRIVER
-        __HAL_TIM_SetCounter(self->timerHandle, __HAL_TIM_GetAutoreload(self->timerHandle) / 2);
-#else
-        TIM_SetCounter(self->timerHardware->tim, self->timerHardware->tim->ARR / 2);
-#endif
+        timerSetTimerCounter(self->timerHardware->tim, timerGetTimerPeriod(self->timerHardware->tim) / 2);
 
         // For a mono-timer full duplex configuration, this may clobber the
         // transmission because the next callback to the onSerialTimerOverflow

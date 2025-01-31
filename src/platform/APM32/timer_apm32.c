@@ -330,8 +330,9 @@ static void timerNVICConfigure(uint8_t irq)
 TMR_HandleTypeDef* timerFindTimerHandle(TMR_TypeDef *tim)
 {
     uint8_t timerIndex = lookupTimerIndex(tim);
-    if (timerIndex >= USED_TIMER_COUNT)
+    if (timerIndex >= USED_TIMER_COUNT) {
         return NULL;
+    }
 
     return &timerHandle[timerIndex].Handle;
 }
@@ -1196,4 +1197,25 @@ DAL_StatusTypeDef DMA_SetCurrDataCounter(TMR_HandleTypeDef *htim, uint32_t Chann
     /* Return function status */
     return DAL_OK;
 }
+
+void timerDeInitTimer(TIM_TypeDef *timer)
+{
+    LL_TIM_DeInit(timer);
+}
+
+void timerSetTimerPeriod(TIM_TypeDef *timer, uint32_t period)
+{
+    timer->AUTORLD = period;
+}
+
+uint32_t timerGetTimerPeriod(TIM_TypeDef *timer)
+{
+    return timer->AUTORLD;
+}
+
+void timerSetTimerCounter(TIM_TypeDef *timer, uint32_t counter)
+{
+    timer->CNT = counter;
+}
+
 #endif

@@ -1251,4 +1251,25 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     /* Return function status */
     return HAL_OK;
 }
+
+void timerDeInitTimer(TIM_TypeDef *timer)
+{
+    LL_TIM_DeInit(timer);
+}
+
+void timerSetTimerPeriod(TIM_TypeDef *timer, uint32_t period)
+{
+    timer->ARR = period;
+}
+
+uint32_t timerGetTimerPeriod(TIM_TypeDef *timer)
+{
+    return timer->ARR;
+}
+
+void timerSetTimerCounter(TIM_TypeDef *timer, uint32_t counter)
+{
+    timer->CNT = counter;
+}
+
 #endif
