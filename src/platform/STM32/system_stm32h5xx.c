@@ -55,9 +55,9 @@ void SystemInit(void)
   uint32_t reg_opsr;
 
   /* FPU settings ------------------------------------------------------------*/
-  #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
    SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
-  #endif
+#endif
 
   /* Reset the RCC clock configuration to the default reset state ------------*/
   /* Set HSION bit */
@@ -113,8 +113,7 @@ void SystemInit(void)
 
   /* Check OPSR register to verify if there is an ongoing swap or option bytes update interrupted by a reset */
   reg_opsr = FLASH->OPSR & FLASH_OPSR_CODE_OP;
-  if ((reg_opsr == FLASH_OPSR_CODE_OP) || (reg_opsr == (FLASH_OPSR_CODE_OP_2 | FLASH_OPSR_CODE_OP_1)))
-  {
+  if ((reg_opsr == FLASH_OPSR_CODE_OP) || (reg_opsr == (FLASH_OPSR_CODE_OP_2 | FLASH_OPSR_CODE_OP_1))) {
     /* Check FLASH Option Control Register access */
     if ((FLASH->OPTCR & FLASH_OPTCR_OPTLOCK) != 0U)
     {
@@ -164,6 +163,28 @@ typedef struct isrVector_s {
 
 void systemJumpToBootloader(void)
 {
-    /// @todo Implement systemJumpToBootloader
-    // source from G4 does not work
+    //DeInit all used peripherals
+    HAL_RCC_DeInit();
+
+    //Disable all system timers and set to default values
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL = 0;
+
+    //Disable all interrupts
+    __disable_irq();
+
+    //remap system memory
+    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+
+    //default bootloader call stack routine
+    uint32_t bootStack = SYSMEMBOOT_VECTOR_TABLE[0];
+
+    bootJumpPtr SysMemBootJump = (bootJumpPtr)SYSMEMBOOT_VECTOR_TABLE[1];
+
+    __set_MSP(bootStack); //Set the main stack pointer to its default values
+
+    SysMemBootJump();
+
+    while (1);
 }
