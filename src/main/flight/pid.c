@@ -511,7 +511,6 @@ static void computeAngleOfAttackEstimation(void)
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(pidRuntime.aoaCurrentAngleProcent * 10.0f));
 #endif
-    return;
 }
 #endif
 
