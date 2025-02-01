@@ -509,7 +509,8 @@ static void computeAngleOfAttackEstimation(void)
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(overloadZ * 100.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttackParameter * AOA_ESTIMATOR_MULTIPLER));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(pidRuntime.aoaCurrentAnglePercent * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(attitude.values.pitch * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 5, lrintf(pidRuntime.aoaCurrentAnglePercent * 10.0f));
 #endif
 }
 #endif
