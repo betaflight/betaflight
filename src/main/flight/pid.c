@@ -487,8 +487,8 @@ void pidUpdateTpaFactor(float throttle)
 static void computeAngleOfAttackEstimation(void)
 {
 #if defined(USE_GPS) && defined(USE_ACC)
-    const float multipler = 100000.0f,
-    speedThreshold = 2.0f;    //gps speed thresold
+    const float multipler = 100000.0f;
+    const float speedThreshold = 2.0f;    //gps speed thresold
     float angleOfAttackParameter = 0.0f,
           speed = 0.0f,
           overloadZ = 0.0f;
