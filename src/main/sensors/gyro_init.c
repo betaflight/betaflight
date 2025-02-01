@@ -500,6 +500,7 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
 #endif
 
     default:
+        UNUSED(dev);
         gyroHardware = GYRO_NONE;
     }
 
