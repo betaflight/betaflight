@@ -566,10 +566,14 @@ typedef struct pidRuntime_s {
     float aoaEstimatorsRange;
     float aoaWarningAngle;
     float aoaCurrentAngle;            // Current angle of attack value, grad
-    float aoaCurrentAngleProcent;    // Current angle of attack value, % from min to max range
+    float aoaCurrentAnglePercent;    // Current angle of attack value, percent from min to max range
     bool  aoaWarning;
 #endif
 } pidRuntime_t;
+
+#if defined(USE_WING)
+#define AOA_ESTIMATOR_MULTIPLER 100000.0f
+#endif
 
 extern pidRuntime_t pidRuntime;
 

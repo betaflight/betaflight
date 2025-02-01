@@ -487,8 +487,7 @@ void pidUpdateTpaFactor(float throttle)
 static void computeAngleOfAttackEstimation(void)
 {
 #if defined(USE_GPS) && defined(USE_ACC)
-    const float multipler = 100000.0f,   //scale multipler
-                speedThreshold = 2.0f;    //gps speed thresold
+    const float speedThreshold = 2.0f;    //gps speed thresold
     float angleOfAttackParameter = 0.0f,
           speed = 0.0f,
           overloadZ = 0.0f;
@@ -498,18 +497,19 @@ static void computeAngleOfAttackEstimation(void)
         speed = 0.1f * gpsSol.speed3d; //speed m/s
         overloadZ = acc.accADC.z * acc.dev.acc_1G_rec;
         if (speed > speedThreshold) {
-            angleOfAttackParameter = overloadZ / (speed * speed) * multipler;
+            angleOfAttackParameter = overloadZ / (speed * speed);
             pidRuntime.aoaCurrentAngle = pidRuntime.aoaMinEstimatorsAngle + (angleOfAttackParameter - pidRuntime.aoaMinEstimatorsParameter) * pidRuntime.aoaEstimatorsGain;
-            pidRuntime.aoaCurrentAngleProcent = 100.0f * (pidRuntime.aoaCurrentAngle - pidRuntime.aoaMinEstimatorsAngle) / pidRuntime.aoaEstimatorsRange;
+            pidRuntime.aoaCurrentAngle = constrainf(pidRuntime.aoaCurrentAngle, -20.0f, 20.0f);
+            pidRuntime.aoaCurrentAnglePercent = 100.0f * (pidRuntime.aoaCurrentAngle - pidRuntime.aoaMinEstimatorsAngle) / pidRuntime.aoaEstimatorsRange;
             pidRuntime.aoaWarning = pidRuntime.aoaCurrentAngle > pidRuntime.aoaWarningAngle;
         }
     }
 
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(overloadZ * 100.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttackParameter));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttackParameter * AOA_ESTIMATOR_MULTIPLER));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(pidRuntime.aoaCurrentAngleProcent * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(pidRuntime.aoaCurrentAnglePercent * 10.0f));
 #endif
 }
 #endif
