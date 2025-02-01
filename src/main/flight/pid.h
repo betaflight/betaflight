@@ -571,10 +571,6 @@ typedef struct pidRuntime_s {
 #endif
 } pidRuntime_t;
 
-#if defined(USE_WING)
-#define AOA_ESTIMATOR_MULTIPLER 100000.0f
-#endif
-
 extern pidRuntime_t pidRuntime;
 
 extern const char pidNames[];

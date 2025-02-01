@@ -379,10 +379,10 @@ static void tpaCurveInit(const pidProfile_t *pidProfile)
 #if defined(USE_WING)
 void aoaEstimatorInit(const pidProfile_t *pidProfile)
 {
-    pidRuntime.aoaMinEstimatorsParameter = pidProfile->aoa_min_est_param / AOA_ESTIMATOR_MULTIPLER;
+    pidRuntime.aoaMinEstimatorsParameter = pidProfile->aoa_min_est_param;
     pidRuntime.aoaMinEstimatorsAngle = 0.1f * pidProfile->aoa_min_est_angle;
     if (pidProfile->aoa_max_est_param != pidProfile->aoa_min_est_param) {       // prevent divide by zero
-        pidRuntime.aoaEstimatorsGain = ((float)(pidProfile->aoa_max_est_angle - pidProfile->aoa_min_est_angle)) / (float)(pidProfile->aoa_max_est_param - pidProfile->aoa_min_est_param);
+        pidRuntime.aoaEstimatorsGain = 0.1f * ((float)(pidProfile->aoa_max_est_angle - pidProfile->aoa_min_est_angle)) / (float)(pidProfile->aoa_max_est_param - pidProfile->aoa_min_est_param);
     } else {
         pidRuntime.aoaEstimatorsGain = 0.0f;
     }
