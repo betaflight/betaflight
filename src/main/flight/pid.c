@@ -491,23 +491,28 @@ static void computeAngleOfAttackEstimation(void)
     const float speedThreshold = 2.0f;    //gps speed thresold
     float angleOfAttackParameter = 0.0f,
           speed = 0.0f,
-          overloadZ = 0.0f;
-    pidRuntime.aoaCurrentAngle = 0.0f;
-    pidRuntime.aoaWarning = false;
+          accelZ = 0.0f;
+    float aoaCurrentAngle = 0.0f;
+    float aoaCurrentAnglePercent = 0.0f;
+    float aoaWarning = false;
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
         speed = gpsSol.speed3d / 100.0f;   //speed m/s
-        overloadZ = acc.accADC.z * acc.dev.acc_1G_rec;
+        accelZ = acc.accADC.z * acc.dev.acc_1G_rec;
         if (speed > speedThreshold) {
-            angleOfAttackParameter = multipler * overloadZ / (speed * speed);
-            pidRuntime.aoaCurrentAngle = pidRuntime.aoaMinEstimatorsAngle + (angleOfAttackParameter - pidRuntime.aoaMinEstimatorsParameter) * pidRuntime.aoaEstimatorsGain;
-            pidRuntime.aoaCurrentAngle = constrainf(pidRuntime.aoaCurrentAngle, -20.0f, 30.0f);
-            pidRuntime.aoaCurrentAnglePercent = 100.0f * (pidRuntime.aoaCurrentAngle - pidRuntime.aoaMinEstimatorsAngle) / pidRuntime.aoaEstimatorsRange;
-            pidRuntime.aoaWarning = pidRuntime.aoaCurrentAngle > pidRuntime.aoaWarningAngle;
+            angleOfAttackParameter = multipler * accelZ / (speed * speed);
+            aoaCurrentAngle = pidRuntime.aoaMinEstimatorsAngle + (angleOfAttackParameter - pidRuntime.aoaMinEstimatorsParameter) * pidRuntime.aoaEstimatorsGain;
+            aoaCurrentAngle = constrainf(pidRuntime.aoaCurrentAngle, -20.0f, 30.0f);
+            aoaCurrentAnglePercent = 100.0f * (pidRuntime.aoaCurrentAngle - pidRuntime.aoaMinEstimatorsAngle) / pidRuntime.aoaEstimatorsRange;
+            aoaWarning = pidRuntime.aoaCurrentAngle > pidRuntime.aoaWarningAngle;
         }
     }
+    
+    pidRuntime.aoaCurrentAngle = aoaCurrentAngle;
+    pidRuntime.aoaCurrentAnglePercent = aoaCurrentAnglePercent;
+    pidRuntime.aoaWarning = aoaWarning;
 
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(overloadZ * 100.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 100.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(accelZ * 100.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttackParameter));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(pidRuntime.aoaCurrentAngle * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(attitude.values.pitch * 10.0f));
