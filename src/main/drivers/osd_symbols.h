@@ -165,3 +165,6 @@
 #define SYM_GPS_DEGREE              SYM_STICK_OVERLAY_SPRITE_HIGH  // kind of looks like the degree symbol
 #define SYM_GPS_MINUTE              0x27 // '
 #define SYM_GPS_SECOND              0x22 // "
+
+// Angle of attack symbol
+#define SYM_ANGLE_OF_ATTACK         0x40 the mail @ symbol is most like greec alpha symbol, what is used as AoA title usualy

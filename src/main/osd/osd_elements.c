@@ -1802,7 +1802,11 @@ static void osdElementSys(osdElementParms_t *element)
 
 #ifdef USE_WING
 static void osdElementAngleOfAttack(osdElementParms_t *element) {
-    tfp_sprintf(element->buff, "AoA%3d", lrintf(pidRuntime.aoaCurrentAngle));
+    if (pidRuntime.aoaWarning) {
+        element->attr = DISPLAYPORT_SEVERITY_WARNING;
+    }
+    element->buff[0] = SYM_ANGLE_OF_ATTACK;    //the mail @ symbol is most like alpha symbol, what is used in AoA formulas
+    tfp_sprintf(element->buff + 1, "%3d", lrintf(pidRuntime.aoaCurrentAngle));
 }
 #endif
 
