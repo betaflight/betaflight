@@ -778,24 +778,24 @@ uint16_t timerGetPrescalerByDesiredHertz(tmr_type *tim, uint32_t hz)
     return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
 }
 
-void timerDeInitTimer(tmr_type *timer)
+void timerReset(tmr_type *timer)
 {
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         tmr_counter_enable(timer, FALSE);
     }
 }
 
-void timerSetTimerPeriod(tmr_type *timer, uint32_t period)
+void timerSetPeriod(tmr_type *timer, uint32_t period)
 {
     tmr_period_value_set(timer, period);
 }
 
-uint32_t timerGetTimerPeriod(tmr_type *timer)
+uint32_t timerGetPeriod(tmr_type *timer)
 {
     return tmr_period_value_get(timer);
 }
 
-void timerSetTimerCounter(tmr_type *timer, uint32_t counter)
+void timerSetCounter(tmr_type *timer, uint32_t counter)
 {
     tmr_counter_value_set(timer, counter);
 }
@@ -803,6 +803,24 @@ void timerSetTimerCounter(tmr_type *timer, uint32_t counter)
 void timerReconfigureTimeBase(tmr_type *timer, uint16_t period, uint32_t hz)
 {
     configTimeBase(timer, period, hz);
+}
+
+void timerDisable(TIM_TypeDef *timer)
+{
+    tmr_interrupt_enable(timer, TMR_OVF_INT, FALSE);
+    tmr_counter_enable(timer, FALSE);
+}
+
+void timerEnable(TIM_TypeDef *timer)
+{
+    tmr_counter_enable(timer, TRUE);
+    tmr_overflow_event_disable(timer, TRUE);
+}
+
+void timerEnableInterrupt(TIM_TypeDef *timer)
+{
+    tmr_flag_clear(timer, TMR_OVF_FLAG);
+    tmr_interrupt_enable(timer, TMR_OVF_INT, TRUE);
 }
 
 #endif

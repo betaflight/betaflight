@@ -955,24 +955,42 @@ uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
     return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
 }
 
-void timerDeInitTimer(TIM_TypeDef *timer)
+void timerReset(TIM_TypeDef *timer)
 {
     TIM_DeInit(timer);
 }
 
-void timerSetTimerPeriod(TIM_TypeDef *timer, uint32_t period)
+void timerSetPeriod(TIM_TypeDef *timer, uint32_t period)
 {
     timer->ARR = period;
 }
 
-uint32_t timerGetTimerPeriod(TIM_TypeDef *timer)
+uint32_t timerGetPeriod(TIM_TypeDef *timer)
 {
     return timer->ARR;
 }
 
-void timerSetTimerCounter(TIM_TypeDef *timer, uint32_t counter)
+void timerSetCounter(TIM_TypeDef *timer, uint32_t counter)
 {
     timer->CNT = counter;
+}
+
+void timerDisable(TIM_TypeDef *timer)
+{
+    TIM_ITConfig(timer, TIM_IT_Update, DISABLE);
+    TIM_Cmd(timer, DISABLE);
+}
+
+void timerEnable(TIM_TypeDef *timer)
+{
+    TIM_Cmd(timer, ENABLE);
+    TIM_GenerateEvent(timer, TIM_EventSource_Update);
+}
+
+void timerEnableInterrupt(TIM_TypeDef *timer)
+{
+    TIM_ClearFlag(timer, TIM_FLAG_Update);
+    TIM_ITConfig(timer, TIM_IT_Update, ENABLE);
 }
 
 #endif

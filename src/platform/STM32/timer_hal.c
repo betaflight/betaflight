@@ -1252,24 +1252,42 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     return HAL_OK;
 }
 
-void timerDeInitTimer(TIM_TypeDef *timer)
+void timerReset(TIM_TypeDef *timer)
 {
     LL_TIM_DeInit(timer);
 }
 
-void timerSetTimerPeriod(TIM_TypeDef *timer, uint32_t period)
+void timerSetPeriod(TIM_TypeDef *timer, uint32_t period)
 {
     timer->ARR = period;
 }
 
-uint32_t timerGetTimerPeriod(TIM_TypeDef *timer)
+uint32_t timerGetPeriod(TIM_TypeDef *timer)
 {
     return timer->ARR;
 }
 
-void timerSetTimerCounter(TIM_TypeDef *timer, uint32_t counter)
+void timerSetCounter(TIM_TypeDef *timer, uint32_t counter)
 {
     timer->CNT = counter;
+}
+
+void timerDisable(TIM_TypeDef *timer)
+{
+    LL_TIM_DisableIT_UPDATE(timer);
+    LL_TIM_DisableCounter(timer);
+}
+
+void timerEnable(TIM_TypeDef *timer)
+{
+    LL_TIM_EnableCounter(timer);
+    LL_TIM_GenerateEvent_UPDATE(timer);
+}
+
+void timerEnableInterrupt(TIM_TypeDef *timer)
+{
+    LL_TIM_ClearFlag_UPDATE(timer);
+    LL_TIM_EnableIT_UPDATE(timer);
 }
 
 #endif

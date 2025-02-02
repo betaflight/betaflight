@@ -218,7 +218,10 @@ int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
 uint8_t timerLookupChannelIndex(const uint16_t channel);
 
 // TODO: replace TIM_TypeDef with alternate
-void timerDeInitTimer(TIM_TypeDef *timer);
-void timerSetTimerPeriod(TIM_TypeDef *timer, uint32_t period);
-uint32_t timerGetTimerPeriod(TIM_TypeDef *timer);
-void timerSetTimerCounter(TIM_TypeDef *timer, uint32_t counter);
+void timerReset(TIM_TypeDef *timer);
+void timerSetPeriod(TIM_TypeDef *timer, uint32_t period);
+uint32_t timerGetPeriod(TIM_TypeDef *timer);
+void timerSetCounter(TIM_TypeDef *timer, uint32_t counter);
+void timerDisable(TIM_TypeDef *timer);
+void timerEnable(TIM_TypeDef *timer);
+void timerEnableInterrupt(TIM_TypeDef *timer);

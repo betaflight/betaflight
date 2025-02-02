@@ -487,7 +487,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         // Synchronize the bit timing so that it will interrupt at the center
         // of the bit period.
 
-        timerSetTimerCounter(self->timerHardware->tim, timerGetTimerPeriod(self->timerHardware->tim) / 2);
+        timerSetCounter(self->timerHardware->tim, timerGetPeriod(self->timerHardware->tim) / 2);
 
         // For a mono-timer full duplex configuration, this may clobber the
         // transmission because the next callback to the onSerialTimerOverflow
