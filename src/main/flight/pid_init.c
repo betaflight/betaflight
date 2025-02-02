@@ -394,7 +394,7 @@ void aoaEstimatorInit(const pidProfile_t *pidProfile)
     
     pidRuntime.aoaWarningAngle = 0.1f * pidProfile->aoa_warning_angle;
     pidRuntime.aoaCurrentAngle = 0.0f;
-    pidRuntime.aoaCurrentAnglePercent = 0.0f;
+    pidRuntime.aoaCurrentRelativeAngle = 0.0f;
     pidRuntime.aoaWarning = false;
 }
 #endif
