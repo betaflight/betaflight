@@ -194,6 +194,9 @@ typedef enum {
     OSD_CUSTOM_MSG1,
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
+#ifdef USE_WING
+    OSD_ANGLE_OF_ATTACK,
+#endif
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
