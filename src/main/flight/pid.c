@@ -495,7 +495,7 @@ static void computeAngleOfAttackEstimation(void)
     pidRuntime.aoaCurrentAngle = 0.0f;
     pidRuntime.aoaWarning = false;
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-        speed = 0.1f * gpsSol.speed3d; //speed m/s
+        speed = gpsSol.speed3d / 100.0f;   //speed m/s
         overloadZ = acc.accADC.z * acc.dev.acc_1G_rec;
         if (speed > speedThreshold) {
             angleOfAttackParameter = multipler * overloadZ / (speed * speed);
