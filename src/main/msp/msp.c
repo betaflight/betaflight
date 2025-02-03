@@ -3350,18 +3350,23 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         sbufReadU8(src);
 #endif
 
+        if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_RANGEFINDER
-        rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
+            rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
 #else
-        sbufReadU8(src);
+            sbufReadU8(src);
 #endif
+        }
 
+        if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_OPTICALFLOW
-        opticalflowConfigMutable()->opticalflow_hardware = sbufReadU8(src);
+            opticalflowConfigMutable()->opticalflow_hardware = sbufReadU8(src);
 #else
-        sbufReadU8(src);
+            sbufReadU8(src);
 #endif
+        }
         break;
+
 #ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
