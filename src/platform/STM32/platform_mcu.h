@@ -439,7 +439,7 @@ extern uint8_t _dmaram_end__;
 /// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 53
 // based on documentation, we have 6 USART, 6 UART and 1 LPUART
 // (USART1/USART2/USART3/USART6/USART10/USART11), (UART4/UART5/UART7/UART8/UART9/UART12), (LPUART1)
-#define UARTHARDWARE_MAX_PINS 13
+#define UARTHARDWARE_MAX_PINS 6
 #endif
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
@@ -454,10 +454,11 @@ extern uint8_t _dmaram_end__;
 
 /// [Project-H5] source: https://www.st.com/resource/en/datasheet/stm32h562ag.pdf | version: DS14258 Rev 5 | pages 2
 // there is two DMA controllers, i'm not sure how to handle this (as there is only one currently for other MCU)
-
+//
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
-/// @todo [Project-H5] suppose H5 is similar to H7
+/// @todo [Project-H5] more analyses needed, to be solve in future ticket
+// IIRC multiple MCU families use 2 DMAs. DMA_TRAIT_CHANNEL is 0(or undefined)/1 value if TMA uses channels for setup. Mux it used on AT32.
 #define DMA_TRAIT_CHANNEL 1
 #endif
 

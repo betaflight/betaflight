@@ -40,7 +40,8 @@
 
 // MCU type IDs.
 // IDs are permanent as they have a dependency to configurator through MSP reporting
-
+/// @note new MCU types must be added to the end of the list
+/// @todo [STM32-legacy] rename ST MCU type with STM32 prefix
 typedef enum {
     MCU_TYPE_SIMULATOR = 0,
     MCU_TYPE_F40X,
@@ -59,13 +60,12 @@ typedef enum {
     MCU_TYPE_H723_725,
     MCU_TYPE_G474,
     MCU_TYPE_H730,
-    MCU_TYPE_H563,
     MCU_TYPE_AT32F435G,
     MCU_TYPE_APM32F405,
     MCU_TYPE_APM32F407,
     MCU_TYPE_AT32F435M,
     MCU_TYPE_RP2350B,
-    MCU_TYPE_STM32H563,
+    MCU_TYPE_H563,
     MCU_TYPE_COUNT,
     MCU_TYPE_UNKNOWN = 255,
 } mcuTypeId_e;
