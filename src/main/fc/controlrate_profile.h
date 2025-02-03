@@ -51,6 +51,7 @@ typedef enum {
 typedef struct controlRateConfig_s {
     uint8_t thrMid8;
     uint8_t thrExpo8;
+    uint8_t thrHover8;
     uint8_t rates_type;
     uint8_t rcRates[3];
     uint8_t rcExpo[3];

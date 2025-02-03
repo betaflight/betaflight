@@ -45,6 +45,7 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
         RESET_CONFIG(controlRateConfig_t, &controlRateConfig[i],
             .thrMid8 = 50,
             .thrExpo8 = 0,
+            .thrHover8 = 50,
             .rates_type = RATES_TYPE_ACTUAL,
             .rcRates[FD_ROLL] = 7,
             .rcRates[FD_PITCH] = 7,

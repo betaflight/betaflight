@@ -828,15 +828,47 @@ void initRcProcessing(void)
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
     rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
 
+    // Retrieve throttle parameters from the current control rate profile.
+    // Note: currentControlRateProfile is assumed to be a pointer to a structure containing these fields.
+    float thrMid   = currentControlRateProfile->thrMid8   / 100.0f;  // normalized x coordinate for hover point
+    float thrHover = currentControlRateProfile->thrHover8 / 100.0f;  // normalized y coordinate for hover point
+    float expo     = currentControlRateProfile->thrExpo8   / 100.0f;  // normalized expo (0.0 .. 1.0)
+
+    // Generate the throttle lookup table with THROTTLE_LOOKUP_LENGTH points.
+    // We sample x uniformly from 0 to 1.
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
-        const int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
-        uint8_t y = 1;
-        if (tmp > 0)
-            y = 100 - currentControlRateProfile->thrMid8;
-        if (tmp < 0)
-            y = currentControlRateProfile->thrMid8;
-        lookupThrottleRC[i] = 10 * currentControlRateProfile->thrMid8 + tmp * (100 - currentControlRateProfile->thrExpo8 + (int32_t) currentControlRateProfile->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = PWM_RANGE_MIN + PWM_RANGE * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+        // Normalized input x: 0.0 for no throttle, 1.0 for full throttle.
+        float x = (float)i / (THROTTLE_LOOKUP_LENGTH - 1);
+        float y;  // normalized throttle output
+
+        if (x <= thrMid) {
+            // --- First segment: from (0,0) to (thrMid, thrHover) ---
+            // Parameter t runs from 0 to 1 as x goes from 0 to thrMid.
+            float t = (thrMid > 0.0f) ? x / thrMid : 0.0f;
+            // Determine control point's y coordinate (cp1y) by blending:
+            //   - For expo=0: cp1y should be thrHover/2 (linear)
+            //   - For expo=1: cp1y should be thrHover (full expo)
+            float cp1y = (thrHover / 2.0f) * (1.0f - expo) + thrHover * expo;
+            // Quadratic Bézier formula for y:
+            //   y = (1-t)^2 * 0 + 2*(1-t)*t * cp1y + t^2 * thrHover
+            y = 2.0f * (1.0f - t) * t * cp1y + t * t * thrHover;
+        } else {
+            // --- Second segment: from (thrMid, thrHover) to (1,1) ---
+            // Parameter t runs from 0 to 1 as x goes from thrMid to 1.
+            float t = ((1.0f - thrMid) > 0.0f) ? (x - thrMid) / (1.0f - thrMid) : 0.0f;
+            // Determine control point's y coordinate (cp2y) by blending:
+            //   - For expo=0: cp2y should be (thrHover+1)/2 (linear)
+            //   - For expo=1: cp2y should be thrHover (full expo)
+            float cp2y = (((thrHover + 1.0f) / 2.0f) * (1.0f - expo)) + (thrHover * expo);
+            // Quadratic Bézier formula for y:
+            //   y = (1-t)^2 * thrHover + 2*(1-t)*t * cp2y + t^2 * 1
+            y = (1.0f - t) * (1.0f - t) * thrHover + 2.0f * (1.0f - t) * t * cp2y + t * t;
+        }
+
+        // Convert normalized y (0.0 to 1.0) to an integer value (0–1000)
+        int16_t y_int = (int16_t)(y * 1000.0f + 0.5f);
+        // Map to the PWM range: output value = PWM_RANGE_MIN + PWM_RANGE * (y_int / 1000)
+        lookupThrottleRC[i] = PWM_RANGE_MIN + (PWM_RANGE * y_int) / 1000;
     }
 
     switch (currentControlRateProfile->rates_type) {
