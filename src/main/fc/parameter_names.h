@@ -69,6 +69,7 @@
 #define PARAM_NAME_TPA_SPEED_ADV_PROP_PITCH "tpa_speed_adv_prop_pitch"
 #define PARAM_NAME_TPA_SPEED_ADV_MASS "tpa_speed_adv_mass"
 #define PARAM_NAME_TPA_SPEED_ADV_DRAG_K "tpa_speed_adv_drag_k"
+#define PARAM_NAME_TPA_SPEED_INDUCTIVE_DRAG_K "tpa_speed_inductive_drag_k" //
 #define PARAM_NAME_TPA_SPEED_ADV_THRUST "tpa_speed_adv_thrust"
 #define PARAM_NAME_TPA_SPEED_MAX_VOLTAGE "tpa_speed_max_voltage"
 #define PARAM_NAME_TPA_SPEED_PITCH_OFFSET "tpa_speed_pitch_offset"

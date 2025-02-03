@@ -259,6 +259,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_speed_pitch_offset = 0,
         .yaw_type = YAW_TYPE_RUDDER,
         .angle_pitch_offset = 0,
+        .tpa_speed_inductive_drag_k = 0,
 
         .chirp_lag_freq_hz = 3,
         .chirp_lead_freq_hz = 30,
@@ -344,13 +345,40 @@ static float calcWingThrottle(void)
     return getMotorOutputRms() * batteryThrottleFactor;
 }
 
+//Compute trajectories tilt angle by using angle of attack value
+static float calcTrajectoryTiltAngle(void) {
+//TODO: check transform matrix actions sequense
+    vector3_t direction;
+//  the unit vector in body frame reference system
+    direction.x = cos_approx(DEGREES_TO_RADIANS(pidRuntime.aoaCurrentAngle));
+    direction.y = 0.0f;
+    direction.z = sin_approx(DEGREES_TO_RADIANS(pidRuntime.aoaCurrentAngle));
+
+//  Body to earth transform matrix
+    matrix33_t body_to_earth_matrix;
+    fp_angles_t euler_angles;
+    euler_angles.angles.roll = DECIDEGREES_TO_RADIANS(attitude.values.roll);
+    euler_angles.angles.pitch = DECIDEGREES_TO_RADIANS(attitude.values.pitch);
+    euler_angles.angles.yaw = 0.0f;
+    buildRotationMatrix(&body_to_earth_matrix, &euler_angles);
+
+//  the unit vector in earth frame reference system
+    applyRotationMatrix(&direction, &body_to_earth_matrix);
+    float trajectoryTiltAngle = -acos_approx(direction.z);
+
+    return trajectoryTiltAngle;
+}
+
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
+    UNUSED(pitchAngleRadians);
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
 
-    const float thrust = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
-    const float drag = tpa->speed * tpa->speed * tpa->dragMassRatio;
-    const float gravity = G_ACCELERATION * sin_approx(pitchAngleRadians);
+    const float cosAoA = cos_approx(DEGREES_TO_RADIANS(pidRuntime.aoaCurrentAngle));
+    const float sinTrajectTiltAngle = sin_approx(calcTrajectoryTiltAngle()); // compute trajectory tilt angle sinuse
+    const float thrust = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION * cosAoA; //The equition needs the projection thrust to speed axis
+    const float drag = tpa->speed * tpa->speed * tpa->dragMassRatio * (1.0f + tpa->inductiveDragGain * sq(pidRuntime.aoaCurrentRelativeAngle)); //The inductive drag is added
+    const float gravity = G_ACCELERATION * sinTrajectTiltAngle; //trajectory tilt angle is used for gravity
 
     return thrust - drag + gravity;
 }
@@ -486,7 +514,7 @@ void pidUpdateTpaFactor(float throttle)
 #if defined(USE_WING)
 static void computeAngleOfAttackEstimation(void)
 {
-#if defined(USE_GPS) && defined(USE_ACC)
+#if defined(USE_ACC)
     const float multipler = 100000.0f;
     const float speedThreshold = 2.0f;    //gps speed thresold
     float angleOfAttackParameter = 0.0f,
@@ -495,8 +523,8 @@ static void computeAngleOfAttackEstimation(void)
     float aoaCurrentAngle = 0.0f;
     float aoaCurrentRelativeAngle = 0.0f;
     float aoaWarning = false;
-    if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-        speed = gpsSol.speed3d / 100.0f;   //speed m/s
+    if (sensors(SENSOR_ACC)) {
+        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed
         accelZ = acc.accADC.z * acc.dev.acc_1G_rec;
         if (speed > speedThreshold) {
             angleOfAttackParameter = multipler * accelZ / (speed * speed);
@@ -506,7 +534,7 @@ static void computeAngleOfAttackEstimation(void)
             aoaWarning = pidRuntime.aoaCurrentAngle > pidRuntime.aoaWarningAngle;
         }
     }
-    
+
     pidRuntime.aoaCurrentAngle = aoaCurrentAngle;
     pidRuntime.aoaCurrentRelativeAngle = aoaCurrentRelativeAngle;
     pidRuntime.aoaWarning = aoaWarning;

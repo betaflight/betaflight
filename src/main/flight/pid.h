@@ -323,6 +323,7 @@ typedef struct pidProfile_s {
     int16_t tpa_speed_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
     uint8_t yaw_type;                   // For wings: type of yaw (rudder or differential thrust)
     int16_t angle_pitch_offset;         // For wings: pitch offset for angle modes; in decidegrees; positive values tilting the wing down
+    uint16_t tpa_speed_inductive_drag_k;  // For wings when tpa_speed_type = ADVANCED: craft inductive drag addition coefficient
 
     uint8_t chirp_lag_freq_hz;              // leadlag1Filter cutoff/pole to shape the excitation signal
     uint8_t chirp_lead_freq_hz;             // leadlag1Filter cutoff/zero
@@ -388,6 +389,7 @@ typedef struct tpaSpeedParams_s {
     float speed;
     float maxVoltage;
     float pitchOffset;
+    float inductiveDragGain;    // inductive drag gain is percent addition to drag
 } tpaSpeedParams_t;
 
 typedef struct pidRuntime_s {

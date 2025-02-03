@@ -106,6 +106,7 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     const float maxDiveSpeed = (-b + sqrtf(b*b - 4.0f * a * c)) / (2.0f * a);
 
     pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
+    pidRuntime.tpaSpeed.inductiveDragGain = pidProfile->tpa_speed_inductive_drag_k / 100.0f;
     UNUSED(pidProfile);
 }
 
