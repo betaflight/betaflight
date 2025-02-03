@@ -831,8 +831,8 @@ void initRcProcessing(void)
     // Retrieve throttle parameters from the current control rate profile.
     // Note: currentControlRateProfile is assumed to be a pointer to a structure containing these fields.
     float thrMid   = currentControlRateProfile->thrMid8   / 100.0f;  // normalized x coordinate for hover point
-    float thrHover = currentControlRateProfile->thrHover8 / 100.0f;  // normalized y coordinate for hover point
     float expo     = currentControlRateProfile->thrExpo8   / 100.0f;  // normalized expo (0.0 .. 1.0)
+    float thrHover = currentControlRateProfile->thrHover8 / 100.0f;  // normalized y coordinate for hover point
 
     // Generate the throttle lookup table with THROTTLE_LOOKUP_LENGTH points.
     // We sample x uniformly from 0 to 1.
