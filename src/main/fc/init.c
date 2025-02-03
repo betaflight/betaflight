@@ -984,6 +984,11 @@ void init(void)
     motorEnable();
 #endif
 
+    // MOTOR_STOP is not used when AIRMODE is enabled, note AIRMODE can be on a switch
+    if (featureIsEnabled(FEATURE_AIRMODE)) {
+        featureDisableImmediate(FEATURE_MOTOR_STOP);
+    }
+
 // allocate SPI DMA streams after motor timers as SPI DMA allocate will always be possible
 #if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_LATE) && !defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
