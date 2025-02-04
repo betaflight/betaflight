@@ -2855,7 +2855,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             }
 
             // version 1.47
-            currentControlRateProfile->thrHover8 = sbufReadU8(src);
+            if (sbufBytesRemaining(src) >= 1) {
+                currentControlRateProfile->thrHover8 = sbufReadU8(src);
+            }
 
             initRcProcessing();
         } else {
