@@ -823,50 +823,52 @@ bool isMotorsReversed(void)
     return reverseMotors;
 }
 
+static float quadraticBezier(float t, float p0, float p1, float p2) {
+    return (1.0f - t) * (1.0f - t) * p0 + 2.0f * (1.0f - t) * t * p1 + t * t * p2;
+}
+
 void initRcProcessing(void)
 {
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
     rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
 
-    // Retrieve throttle parameters from the current control rate profile.
-    // Note: currentControlRateProfile is assumed to be a pointer to a structure containing these fields.
     float thrMid   = currentControlRateProfile->thrMid8   / 100.0f;  // normalized x coordinate for hover point
     float expo     = currentControlRateProfile->thrExpo8   / 100.0f;  // normalized expo (0.0 .. 1.0)
     float thrHover = currentControlRateProfile->thrHover8 / 100.0f;  // normalized y coordinate for hover point
 
-    // Generate the throttle lookup table with THROTTLE_LOOKUP_LENGTH points.
-    // We sample x uniformly from 0 to 1.
+    /*
+    Algorithm Overview:
+      - thrMid and thrHover define a key point (hover point) in the throttle curve.
+        • thrMid is the normalized x-coordinate at which the curve reaches the hover point.
+        • thrHover is the normalized y-coordinate at that point.
+      - The curve is built in two segments using quadratic Bezier interpolation:
+        Segment 1: from (0, 0) to (thrMid, thrHover)
+          • ymin = 0, ymid = thrHover.
+          • The control point cp1y blends between (thrHover/2) for expo=0 and thrHover for expo=1.
+        Segment 2: from (thrMid, thrHover) to (1, 1)
+          • ymid = thrHover, ymax = 1.
+          • The control point cp2y blends between [thrHover + (1 - thrHover) / 2] for expo=0 and thrHover for expo=1.
+      - The output y is mapped from [0,1] to the PWM range.
+    */
+
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
-        // Normalized input x: 0.0 for no throttle, 1.0 for full throttle.
         float x = (float)i / (THROTTLE_LOOKUP_LENGTH - 1);
-        float y;  // normalized throttle output
+        float y = 0.0f;
 
         if (x <= thrMid) {
-            // --- First segment: from (0,0) to (thrMid, thrHover) ---
-            // Parameter t runs from 0 to 1 as x goes from 0 to thrMid.
             float t = (thrMid > 0.0f) ? x / thrMid : 0.0f;
-            // Determine control point's y coordinate (cp1y) by blending:
-            //   - For expo=0: cp1y should be thrHover/2 (linear)
-            //   - For expo=1: cp1y should be thrHover (full expo)
+            float ymin = 0.0f;
+            float ymid = thrHover;
             float cp1y = (thrHover / 2.0f) * (1.0f - expo) + thrHover * expo;
-            // Quadratic Bézier formula for y:
-            //   y = (1-t)^2 * 0 + 2*(1-t)*t * cp1y + t^2 * thrHover
-            y = 2.0f * (1.0f - t) * t * cp1y + t * t * thrHover;
+            y = quadraticBezier(t, ymin, cp1y, ymid);
         } else {
-            // --- Second segment: from (thrMid, thrHover) to (1,1) ---
-            // Parameter t runs from 0 to 1 as x goes from thrMid to 1.
             float t = ((1.0f - thrMid) > 0.0f) ? (x - thrMid) / (1.0f - thrMid) : 0.0f;
-            // Determine control point's y coordinate (cp2y) by blending:
-            //   - For expo=0: cp2y should be thrHover + (1 - thrHover) / 2 (linear)
-            //   - For expo=1: cp2y should be thrHover (full expo)
-            float cp2y = (((thrHover + 1.0f) / 2.0f) * (1.0f - expo)) + (thrHover * expo);
-            // Quadratic Bézier formula for y:
-            //   y = (1-t)^2 * thrHover + 2*(1-t)*t * cp2y + t^2 * 1
-            y = (1.0f - t) * (1.0f - t) * thrHover + 2.0f * (1.0f - t) * t * cp2y + t * t;
+            float ymid = thrHover;
+            float ymax = 1.0f;
+            float cp2y = (thrHover + (1.0f - thrHover) / 2.0f) * (1.0f - expo) + thrHover * expo;
+            y = quadraticBezier(t, ymid, cp2y, ymax);
         }
 
-        // Convert normalized y (0.0 to 1.0) to an integer value (0–1000)
-        // Map to the PWM range
         lookupThrottleRC[i] = lrintf(scaleRangef(y, 0.0f, 1.0f, PWM_RANGE_MIN, PWM_RANGE_MAX));
     }
 
