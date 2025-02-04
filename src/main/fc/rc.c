@@ -866,9 +866,8 @@ void initRcProcessing(void)
         }
 
         // Convert normalized y (0.0 to 1.0) to an integer value (0–1000)
-        int16_t y_int = (int16_t)(y * 1000.0f + 0.5f);
-        // Map to the PWM range: output value = PWM_RANGE_MIN + PWM_RANGE * (y_int / 1000)
-        lookupThrottleRC[i] = PWM_RANGE_MIN + (PWM_RANGE * y_int) / 1000;
+        // Map to the PWM range
+        lookupThrottleRC[i] = lrintf(scaleRangef(y, 0.0f, 1.0f, PWM_RANGE_MIN, PWM_RANGE_MAX));
     }
 
     switch (currentControlRateProfile->rates_type) {
