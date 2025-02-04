@@ -1355,7 +1355,6 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);   // was currentControlRateProfile->tpa_rate
         sbufWriteU8(dst, currentControlRateProfile->thrMid8);
         sbufWriteU8(dst, currentControlRateProfile->thrExpo8);
-        sbufWriteU8(dst, currentControlRateProfile->thrHover8);
         sbufWriteU16(dst, 0);   // was currentControlRateProfile->tpa_breakpoint
         sbufWriteU8(dst, currentControlRateProfile->rcExpo[FD_YAW]);
         sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_YAW]);
@@ -1374,6 +1373,8 @@ case MSP_NAME:
         // added in 1.43
         sbufWriteU8(dst, currentControlRateProfile->rates_type);
 
+        sbufWriteU8(dst, currentControlRateProfile->thrHover8);
+        
         break;
 
     case MSP_PID:
