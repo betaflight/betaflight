@@ -857,7 +857,7 @@ void initRcProcessing(void)
             // Parameter t runs from 0 to 1 as x goes from thrMid to 1.
             float t = ((1.0f - thrMid) > 0.0f) ? (x - thrMid) / (1.0f - thrMid) : 0.0f;
             // Determine control point's y coordinate (cp2y) by blending:
-            //   - For expo=0: cp2y should be (thrHover+1)/2 (linear)
+            //   - For expo=0: cp2y should be thrHover + (1 - thrHover) / 2 (linear)
             //   - For expo=1: cp2y should be thrHover (full expo)
             float cp2y = (((thrHover + 1.0f) / 2.0f) * (1.0f - expo)) + (thrHover * expo);
             // Quadratic Bézier formula for y:
