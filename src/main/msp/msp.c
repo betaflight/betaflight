@@ -2131,7 +2131,7 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
-#ifdef USE_OPTICAL_FLOW
+#ifdef USE_OPTICALFLOW
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_OPTICALFLOW]);
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
