@@ -1128,6 +1128,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 #else
         sbufWriteU16(dst, 0);
 #endif
+        sbufWriteU8(dst, CONTROL_RATE_PROFILE_COUNT);
         break;
     }
 
