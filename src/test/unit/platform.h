@@ -53,6 +53,10 @@
 #define USE_SERVOS
 #define USE_TRANSPONDER
 
+// ---- DMA ---
+/// @todo [DMA-Codeclean] UT should be able to test all DMA architectures, need to improve after
+#define DMA_TRAIT_ARCH_CHANNEL_TYPE
+
 #ifndef LED_STRIP_MAX_LENGTH
     #ifdef USE_LED_STRIP_64
         #define LED_STRIP_MAX_LENGTH           64
@@ -122,6 +126,19 @@ typedef struct
 {
     void* test;
 } ADC_TypeDef;
+
+typedef enum dmaIdentifier_enum {
+    DMA_NONE = 0,
+    DMA1_CH1_HANDLER = 1,
+    DMA1_CH2_HANDLER,
+    DMA1_CH3_HANDLER,
+    DMA1_CH4_HANDLER,
+    DMA1_CH5_HANDLER,
+    DMA1_CH6_HANDLER,
+    DMA1_CH7_HANDLER,
+    DMA_LAST_HANDLER = DMA1_CH7_HANDLER
+} dmaIdentifier_e;
+
 
 #define SPIDEV_COUNT 0
 #define WS2811_DMA_TC_FLAG (void *)1

@@ -23,46 +23,11 @@
 
 #include "platform.h"
 #include "drivers/resource.h"
+#include "dma_arch_stream_type.h"
 
-typedef enum {
-    DMA_NONE = 0,
-    DMA1_ST0_HANDLER = 1,
-    DMA1_ST1_HANDLER,
-    DMA1_ST2_HANDLER,
-    DMA1_ST3_HANDLER,
-    DMA1_ST4_HANDLER,
-    DMA1_ST5_HANDLER,
-    DMA1_ST6_HANDLER,
-    DMA1_ST7_HANDLER,
-    DMA2_ST0_HANDLER,
-    DMA2_ST1_HANDLER,
-    DMA2_ST2_HANDLER,
-    DMA2_ST3_HANDLER,
-    DMA2_ST4_HANDLER,
-    DMA2_ST5_HANDLER,
-    DMA2_ST6_HANDLER,
-    DMA2_ST7_HANDLER,
-    DMA_LAST_HANDLER = DMA2_ST7_HANDLER
-} dmaIdentifier_e;
-
-#define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
-#define DMA_DEVICE_INDEX(x) ((((x)-1) % 8))
-#define DMA_OUTPUT_INDEX    0
-#define DMA_OUTPUT_STRING   "DMA%d Stream %d:"
-#define DMA_INPUT_STRING    "DMA%d_ST%d"
-
-#define DEFINE_DMA_CHANNEL(d, s, f) { \
-    .dma = d, \
-    .ref = (dmaResource_t *)d ## _Stream ## s, \
-    .stream = s, \
-    .irqHandlerCallback = NULL, \
-    .flagsShift = f, \
-    .irqN = d ## _Stream ## s ## _IRQn, \
-    .userParam = 0, \
-    .owner.owner = 0, \
-    .owner.resourceIndex = 0 \
-    }
-
+/// @todo [DMA-Cleanup] this is really similar to the STM32 version (DMA_TRAIT_ARCH_STREAM_TYPE ones),
+// except few naming like _STR instead of _Stream
+// and HIFCLR/LIFCLR instead of HIFCR/LIFCR
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) FAST_IRQ_HANDLER void DMA ## d ## _STR ## s ## _IRQHandler(void) {\
                                                                 const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
                                                                 dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
@@ -81,10 +46,5 @@ typedef enum {
 #define xDDL_EX_DMA_SetDataLength(dmaResource, length) DDL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xDDL_EX_DMA_EnableIT_TC(dmaResource) DDL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
 
-#define DMA_IT_TCIF         ((uint32_t)0x00000020)
-#define DMA_IT_HTIF         ((uint32_t)0x00000010)
-#define DMA_IT_TEIF         ((uint32_t)0x00000008)
-#define DMA_IT_DMEIF        ((uint32_t)0x00000004)
-#define DMA_IT_FEIF         ((uint32_t)0x00000001)
-
-void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->SCFG & DMA_SCFGx_EN)
+#define REG_NDTR NDATA

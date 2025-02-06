@@ -235,7 +235,8 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(TARGET_DIR)
+                   $(TARGET_DIR) \
+				   $(PLATFORM_DIR)/common
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
