@@ -236,7 +236,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR) \
-				   $(PLATFORM_DIR)/common
+                   $(PLATFORM_DIR)/common
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
