@@ -511,13 +511,12 @@ static void computeAngleOfAttackEstimation(void)
     float airSpeedPressure = 0.0f;
     float angleOfAttack = 0.0f;
     float isStallWarning = false;
-    const float gravity = 9.81;
     if (sensors(SENSOR_ACC)) {
         speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed
         if (speed > speedThreshold) {
             airSpeedPressure = pidRuntime.tpaSpeed.airDensity * sq(speed) / 2.0f;
             loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
-            liftForceC = loadZ * pidRuntime.tpaSpeed.wingLoad * gravity;
+            liftForceC = loadZ * pidRuntime.tpaSpeed.wingLoad * G_ACCELERATION / airSpeedPressure;
             angleOfAttack = (liftForceC - pidRuntime.tpaSpeed.zeroLiftC) / pidRuntime.tpaSpeed.differLiftC;
             isStallWarning = angleOfAttack > pidRuntime.tpaSpeed.stallAngleOfAttack - stallAngleOfAttackPad;
         }
