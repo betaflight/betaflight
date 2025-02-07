@@ -1806,7 +1806,7 @@ static void osdElementAngleOfAttack(osdElementParms_t *element) {
         element->attr = DISPLAYPORT_SEVERITY_WARNING;
     }
     element->buff[0] = SYM_ANGLE_OF_ATTACK;    //the mail @ symbol is most like alpha symbol, what is used in AoA formulas
-    tfp_sprintf(element->buff + 1, "%3d", lrintf(pidRuntime.adParams.angleOfAttack));
+    tfp_sprintf(element->buff + 1, "%3d", lrintf(pidRuntime.aeroProperty.angleOfAttack));
 }
 #endif
 // Define the order in which the elements are drawn.
@@ -2499,7 +2499,7 @@ void osdUpdateAlarms(void)
     }
 
 #ifdef USE_WING
-    if (pidRuntime.adParams.isStallWarning) {
+    if (pidRuntime.aeroProperty.isStallWarning) {
         SET_BLINK(OSD_ANGLE_OF_ATTACK);
     } else {
         CLR_BLINK(OSD_ANGLE_OF_ATTACK);

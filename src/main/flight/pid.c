@@ -504,14 +504,14 @@ static void computeAngleOfAttackEstimation(void)
             airSpeedPressure = pidRuntime.tpaSpeed.airDensity * sq(speed) / 2.0f;
             loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
             liftForceC = loadZ * pidRuntime.tpaSpeed.wingLoad * gravity;
-            angleOfAttack = (liftForceC - pidRuntime.tpaSpeed.adZeroLiftC) / pidRuntime.tpaSpeed.adDifferLiftC;
+            angleOfAttack = (liftForceC - pidRuntime.tpaSpeed.zeroLiftC) / pidRuntime.tpaSpeed.differLiftC;
             isStallWarning = angleOfAttack > pidRuntime.tpaSpeed.stallAngleOfAttack - stallAngleOfAttackPad;
         }
     }
 
-    pidRuntime.adParams.angleOfAttack = angleOfAttack;
-    pidRuntime.adParams.adLiftForceC = liftForceC;
-    pidRuntime.adParams.isStallWarning = isStallWarning;
+    pidRuntime.aeroProperty.angleOfAttack = angleOfAttack;
+    pidRuntime.aeroProperty.liftForceC = liftForceC;
+    pidRuntime.aeroProperty.isStallWarning = isStallWarning;
 
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(loadZ * 100.0f));
