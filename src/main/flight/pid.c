@@ -346,6 +346,20 @@ static float calcWingThrottle(void)
     return getMotorOutputRms() * batteryThrottleFactor;
 }
 
+//Compute trajectories tilt angle by using angle of attack value
+static float calcTrajectoryTiltAngleSin(void) {
+    vector3_t direction;
+    const angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.aeroProperty.angleOfAttack);
+//  the velocity unit vector in body frame reference system
+    direction.x = cos_approx(angleOfAttackRadians);
+    direction.y = 0.0f;
+    direction.z = -sin_approx(angleOfAttackRadians);
+
+//  the unit velocity vector in earth frame reference system
+    applyRotationMatrix(&direction, &rMat);
+
+    return direction.z;     //sin trajectory tilt angle
+}
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
