@@ -357,7 +357,7 @@ static float calcAccelerationByEngineThrust(float throttle)
 static float calcTrajectoryTiltAngleSin(void)
 {
     vector3_t direction;
-    const angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.planeAerodynProperty.angleOfAttack);
+    const float angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.planeAerodynProperty.angleOfAttack);
 //  the velocity unit vector in body frame reference system
     direction.x = cos_approx(angleOfAttackRadians);
     direction.y = 0.0f;
@@ -377,7 +377,7 @@ static float calcWingAcceleration(float throttle, float pitchAngleRadians)
     float gravityAccel = 0.0f;
     
     if (pidRuntime.planeAerodynProperty.mode == AD_TPA) {
-        const float speed = tpa.speed;   //speed m/s  use estimators speed
+        const float speed = tpa->speed;   //speed m/s  use estimators speed
         const float airSpeedPressure = pidRuntime.planeAerodynProperty.airDensity * sq(speed) / 2.0f;
         const float dragC = pidRuntime.planeAerodynProperty.zeroDragC + pidRuntime.planeAerodynProperty.induceDragC * sq(pidRuntime.planeAerodynProperty.liftForceC);
         dragAccel = dragC * airSpeedPressure / pidRuntime.planeAerodynProperty.wingLoad;
@@ -524,7 +524,7 @@ static void computeAngleOfAttackEstimation(void)
 #ifdef USE_ACC
     const float speedThreshold = 2.0f;    //gps speed thresold
     const float stallAngleOfAttackPad = 2.0f;
-    float speed = 0.0f,
+    float speed = 0.0f;
     float loadZ = 0.0f;
     float liftForceC = 0.0f;
     float airSpeedPressure = 0.0f;
@@ -1318,14 +1318,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // ToDo: check if this can be reconstructed offline for rotating filter and if so, remove the debug
     // fit (0...2*pi) into int16_t (-32768 to 32767)
     DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
+#endif // USE_CHIRP
 
 #ifdef USE_WING
     if (pidProfile->ad_mode != AD_OFF) {
         computeAngleOfAttackEstimation();
     }
 #endif
-
-#endif // USE_CHIRP
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {

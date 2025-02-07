@@ -104,6 +104,7 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     const float c = -mass * (pidRuntime.tpaSpeed.twr + 1) * G_ACCELERATION;
 
     const float maxDiveSpeed = (-b + sqrtf(b*b - 4.0f * a * c)) / (2.0f * a);
+    pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
 
     UNUSED(pidProfile);
 }
@@ -111,7 +112,6 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
 static void aerodynamicsInit(const pidProfile_t *pidProfile)
 {
     pidRuntime.planeAerodynProperty.mode = (aerodynamicsMode_e)pidProfile->ad_mode;
-    pidRuntime.planeAerodynProperty.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
     pidRuntime.planeAerodynProperty.planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
     pidRuntime.planeAerodynProperty.wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
     pidRuntime.planeAerodynProperty.airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
