@@ -110,18 +110,19 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
 
 static void aerodynamicsInit(const pidProfile_t *pidProfile)
 {
-    pidRuntime.aeroProperty.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
-    pidRuntime.aeroProperty.planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
-    pidRuntime.aeroProperty.wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
-    pidRuntime.aeroProperty.airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
-    pidRuntime.aeroProperty.zeroLiftC = pidProfile->ad_zero_lift_c / 1000.0f;
-    pidRuntime.aeroProperty.differLiftC = pidProfile->ad_differ_lift_c / 1000.0f;
-    pidRuntime.aeroProperty.zeroDragC = pidProfile->ad_zero_drag_c / 1000.0f;
-    pidRuntime.aeroProperty.induceDragC = pidProfile->ad_induce_drag_c / 1000.0f;
-    pidRuntime.aeroProperty.liftForceC = 0.0f;
-    pidRuntime.aeroProperty.stallAngleOfAttack = pidProfile->stall_angle_of_attack;
-    pidRuntime.aeroProperty.angleOfAttack = 0.0f;
-    pidRuntime.aeroProperty.isStallWarning = false;
+    pidRuntime.planeAerodynProperty.mode = (aerodynamicsMode_e)pidProfile->ad_mode;
+    pidRuntime.planeAerodynProperty.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
+    pidRuntime.planeAerodynProperty.planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
+    pidRuntime.planeAerodynProperty.wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
+    pidRuntime.planeAerodynProperty.airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
+    pidRuntime.planeAerodynProperty.zeroLiftC = pidProfile->ad_zero_lift_c / 1000.0f;
+    pidRuntime.planeAerodynProperty.differLiftC = pidProfile->ad_differ_lift_c / 1000.0f;
+    pidRuntime.planeAerodynProperty.zeroDragC = pidProfile->ad_zero_drag_c / 1000.0f;
+    pidRuntime.planeAerodynProperty.induceDragC = pidProfile->ad_induce_drag_c / 1000.0f;
+    pidRuntime.planeAerodynProperty.liftForceC = 0.0f;
+    pidRuntime.planeAerodynProperty.stallAngleOfAttack = pidProfile->stall_angle_of_attack;
+    pidRuntime.planeAerodynProperty.angleOfAttack = 0.0f;
+    pidRuntime.planeAerodynProperty.isStallWarning = false;
 }
 
 static void tpaSpeedInit(const pidProfile_t *pidProfile)

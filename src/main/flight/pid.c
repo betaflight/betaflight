@@ -357,7 +357,7 @@ static float calcAccelerationByEngineThrust(float throttle)
 static float calcTrajectoryTiltAngleSin(void)
 {
     vector3_t direction;
-    const angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.aeroProperty.angleOfAttack);
+    const angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.planeAerodynProperty.angleOfAttack);
 //  the velocity unit vector in body frame reference system
     direction.x = cos_approx(angleOfAttackRadians);
     direction.y = 0.0f;
@@ -366,20 +366,28 @@ static float calcTrajectoryTiltAngleSin(void)
 //  the unit velocity vector in earth frame reference system
     applyRotationMatrix(&direction, &rMat);
 
-    return direction.z;     //sin trajectory tilt angle, >0 - up, <0 down
+    return -direction.z;     //sin trajectory tilt angle, >0 - down, <0 up
 }
 
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
     const float thrustAccel = calcAccelerationByEngineThrust(throttle);
-    float drag = 0.0f;
-    float gravity = 0.0f;
+    float dragAccel = 0.0f;
+    float gravityAccel = 0.0f;
     
-    const float drag = tpa->speed * tpa->speed * tpa->dragMassRatio;
-    const float gravity = G_ACCELERATION * sin_approx(pitchAngleRadians);
+    if (pidRuntime.planeAerodynProperty.mode == AD_TPA) {
+        const float speed = tpa.speed;   //speed m/s  use estimators speed
+        const float airSpeedPressure = pidRuntime.planeAerodynProperty.airDensity * sq(speed) / 2.0f;
+        const float dragC = pidRuntime.planeAerodynProperty.zeroDragC + pidRuntime.planeAerodynProperty.induceDragC * sq(pidRuntime.planeAerodynProperty.liftForceC);
+        dragAccel = dragC * airSpeedPressure / pidRuntime.planeAerodynProperty.wingLoad;
+        gravityAccel = G_ACCELERATION * calcTrajectoryTiltAngleSin();
+    } else {
+        dragAccel = tpa->speed * tpa->speed * tpa->dragMassRatio;
+        gravityAccel = G_ACCELERATION * sin_approx(pitchAngleRadians);
+    }
 
-    return thrustAccel - drag + gravity;
+    return thrustAccel - dragAccel + gravityAccel;
 }
 
 static float calcWingTpaArgument(void)
@@ -523,19 +531,19 @@ static void computeAngleOfAttackEstimation(void)
     float angleOfAttack = 0.0f;
     float isStallWarning = false;
     if (sensors(SENSOR_ACC)) {
-        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed
+        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed TODO: add mode to use GPS speed
         if (speed > speedThreshold) {
-            airSpeedPressure = pidRuntime.tpaSpeed.airDensity * sq(speed) / 2.0f;
+            airSpeedPressure = pidRuntime.planeAerodynProperty.airDensity * sq(speed) / 2.0f;
             loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
-            liftForceC = loadZ * pidRuntime.tpaSpeed.wingLoad * G_ACCELERATION / airSpeedPressure;
-            angleOfAttack = (liftForceC - pidRuntime.tpaSpeed.zeroLiftC) / pidRuntime.tpaSpeed.differLiftC;
-            isStallWarning = angleOfAttack > pidRuntime.tpaSpeed.stallAngleOfAttack - stallAngleOfAttackPad;
+            liftForceC = loadZ * pidRuntime.planeAerodynProperty.wingLoad * G_ACCELERATION / airSpeedPressure;
+            angleOfAttack = (liftForceC - pidRuntime.planeAerodynProperty.zeroLiftC) / pidRuntime.planeAerodynProperty.differLiftC;
+            isStallWarning = angleOfAttack > pidRuntime.planeAerodynProperty.stallAngleOfAttack - stallAngleOfAttackPad;
         }
     }
 
-    pidRuntime.aeroProperty.angleOfAttack = angleOfAttack;
-    pidRuntime.aeroProperty.liftForceC = liftForceC;
-    pidRuntime.aeroProperty.isStallWarning = isStallWarning;
+    pidRuntime.planeAerodynProperty.angleOfAttack = angleOfAttack;
+    pidRuntime.planeAerodynProperty.liftForceC = liftForceC;
+    pidRuntime.planeAerodynProperty.isStallWarning = isStallWarning;
 
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(loadZ * 100.0f));
