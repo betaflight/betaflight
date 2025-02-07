@@ -346,8 +346,16 @@ static float calcWingThrottle(void)
     return getMotorOutputRms() * batteryThrottleFactor;
 }
 
+static float calcAccelerationByEngineThrust(float throttle)
+{
+    const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
+    const float thrustAccel = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
+    return thrustAccel;
+}
+
 //Compute trajectories tilt angle by using angle of attack value
-static float calcTrajectoryTiltAngleSin(void) {
+static float calcTrajectoryTiltAngleSin(void)
+{
     vector3_t direction;
     const angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.aeroProperty.angleOfAttack);
 //  the velocity unit vector in body frame reference system
@@ -358,17 +366,20 @@ static float calcTrajectoryTiltAngleSin(void) {
 //  the unit velocity vector in earth frame reference system
     applyRotationMatrix(&direction, &rMat);
 
-    return direction.z;     //sin trajectory tilt angle
+    return direction.z;     //sin trajectory tilt angle, >0 - up, <0 down
 }
+
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
-
-    const float thrust = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
+    const float thrustAccel = calcAccelerationByEngineThrust(throttle);
+    float drag = 0.0f;
+    float gravity = 0.0f;
+    
     const float drag = tpa->speed * tpa->speed * tpa->dragMassRatio;
     const float gravity = G_ACCELERATION * sin_approx(pitchAngleRadians);
 
-    return thrust - drag + gravity;
+    return thrustAccel - drag + gravity;
 }
 
 static float calcWingTpaArgument(void)
