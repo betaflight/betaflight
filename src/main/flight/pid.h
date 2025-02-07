@@ -187,6 +187,12 @@ typedef enum {
     YAW_TYPE_DIFF_THRUST,
 } yawType_e;
 
+typedef enum {
+    AD_OFF,     //off
+    AD_AOA,     // angle of attack OSD indication only
+    AD_TPA,     // using aerodynamics in TPA airspeed estimators + AoA OSD indication
+} aerodynamicsMode_e;
+
 #define MAX_PROFILE_NAME_LENGTH 8u
 
 typedef struct pidProfile_s {
@@ -324,6 +330,8 @@ typedef struct pidProfile_s {
     uint8_t yaw_type;                   // For wings: type of yaw (rudder or differential thrust)
     int16_t angle_pitch_offset;         // For wings: pitch offset for angle modes; in decidegrees; positive values tilting the wing down
 
+    // use aerodynamics
+    uint8_t  ad_mode;                   //For wings: The aerodynamics using mode: off, angle of attack, tpa
     uint16_t ad_zero_lift_c;            //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
     uint16_t ad_differ_lift_c;          //For wings: aerodynamics lift force coefficient differencial by angle of attack value, 1000*dClift/dAoA units, AoA [grad]
     uint16_t ad_zero_drag_c;            //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
@@ -332,6 +340,7 @@ typedef struct pidProfile_s {
     uint16_t wing_load;                 //For wings: wing load (mass / WingArea) [g/decimeter^2]
     uint16_t air_density;               //For wings: the current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
     uint16_t stall_angle_of_attack;     //For wings: stall angle of attack
+    
     uint8_t chirp_lag_freq_hz;              // leadlag1Filter cutoff/pole to shape the excitation signal
     uint8_t chirp_lead_freq_hz;             // leadlag1Filter cutoff/zero
     uint16_t chirp_amplitude_roll;          // amplitude roll in degree/second

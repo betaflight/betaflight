@@ -591,6 +591,10 @@ const char* const lookupTableTpaSpeedType[] = {
 const char* const lookupTableYawType[] = {
     "RUDDER", "DIFF_THRUST",
 };
+
+const char* const lookupTableAerodynamicsMode[] = {
+    "OFF", "AOA", "TPA",
+};
 #endif // USE_WING
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
@@ -725,6 +729,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_WING
     LOOKUP_TABLE_ENTRY(lookupTableTpaSpeedType),
     LOOKUP_TABLE_ENTRY(lookupTableYawType),
+    LOOKUP_TABLE_ENTRY(lookupTableAerodynamicsMode),
 #endif // USE_WING
 };
 
@@ -1394,12 +1399,14 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_SPA_YAW_MODE,       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_mode[FD_YAW]) },
     { PARAM_NAME_YAW_TYPE,           VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_YAW_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_type) },
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
+    
+    { PARAM_NAME_AERODYNAMICS_MODE, VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_AERODYNAMICS_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_mode) },
     { PARAM_NAME_AD_ZERO_LIFT_C,    VAR_UINT16, .config.minmaxUnsigned = { 0, 300 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_zero_lift_c) },
     { PARAM_NAME_AD_DIFFER_LIFT_C,  VAR_UINT16, .config.minmaxUnsigned = { 0, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_differ_lift_c) },
     { PARAM_NAME_AD_ZERO_DRAG_C,    VAR_UINT16, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_zero_drag_c) },
     { PARAM_NAME_AD_INDUCE_DRAG_C,  VAR_UINT16, .config.minmaxUnsigned = { 0, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_induce_drag_c) },
-    { PARAM_NAME_PLANE_MASS,        VAR_UINT16, .config.minmaxUnsigned = { 75, 20000 }, PG_PID_PROFILE, offsetof(pidProfile_t, plane_mass) },
-    { PARAM_NAME_WING_LOAD,         VAR_UINT16, .config.minmaxUnsigned = { 200, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_load) },
+    { PARAM_NAME_PLANE_MASS,        VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 75, 20000 }, PG_PID_PROFILE, offsetof(pidProfile_t, plane_mass) },
+    { PARAM_NAME_WING_LOAD,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_load) },
     { PARAM_NAME_AIR_DENSITY,       VAR_UINT16, .config.minmaxUnsigned = { 0, 1300 }, PG_PID_PROFILE, offsetof(pidProfile_t, air_density) },
     { PARAM_NAME_STALL_ANGLE_OF_ATTACK, VAR_INT16,  .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, stall_angle_of_attack) },
 #endif

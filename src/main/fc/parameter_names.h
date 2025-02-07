@@ -187,6 +187,7 @@
 #define PARAM_NAME_ANGLE_PITCH_OFFSET "angle_pitch_offset"
 
 #if defined(USE_WING)
+#define PARAM_NAME_AERODYNAMICS_MODE   "ad_mode"
 #define PARAM_NAME_AD_ZERO_LIFT_C   "ad_zero_lift_c"
 #define PARAM_NAME_AD_DIFFER_LIFT_C "ad_differ_lift_c"
 #define PARAM_NAME_AD_ZERO_DRAG_C "ad_zero_drag_c"
