@@ -485,6 +485,43 @@ void pidUpdateTpaFactor(float throttle)
 #endif // USE_WING
 }
 
+#ifdef USE_WING
+static void computeAngleOfAttackEstimation(void)
+{
+#ifdef USE_ACC
+    const float speedThreshold = 2.0f;    //gps speed thresold
+    const float stallAngleOfAttackPad = 2.0f;
+    float speed = 0.0f,
+    float loadZ = 0.0f;
+    float liftForceC = 0.0f;
+    float airSpeedPressure = 0.0f;
+    float angleOfAttack = 0.0f;
+    float isStallWarning = false;
+    const float gravity = 9.81;
+    if (sensors(SENSOR_ACC)) {
+        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed
+        if (speed > speedThreshold) {
+            airSpeedPressure = pidRuntime.tpaSpeed.airDensity * sq(speed) / 2.0f;
+            loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
+            liftForceC = loadZ * pidRuntime.tpaSpeed.wingLoad * gravity;
+            angleOfAttack = (liftForceC - pidRuntime.tpaSpeed.adZeroLiftC) / pidRuntime.tpaSpeed.adDifferLiftC;
+            isStallWarning = angleOfAttack > pidRuntime.tpaSpeed.stallAngleOfAttack - stallAngleOfAttackPad;
+        }
+    }
+
+    pidRuntime.adParams.angleOfAttack = angleOfAttack;
+    pidRuntime.adParams.adLiftForceC = liftForceC;
+    pidRuntime.adParams.isStallWarning = isStallWarning;
+
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(loadZ * 100.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttack * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(-attitude.values.pitch * 10.0f));  // log opposite pitch value, because it is equivalent to angle of attack in horizon flight
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(liftForceC * 1000.0f));
+#endif
+}
+#endif
+
 void pidUpdateAntiGravityThrottleFilter(float throttle)
 {
     static float previousThrottle = 0.0f;
@@ -1249,6 +1286,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // fit (0...2*pi) into int16_t (-32768 to 32767)
     DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
 
+#ifdef USE_WING
+    if (pidProfile->ad_mode != AD_OFF) {
+        computeAngleOfAttackEstimation();
+    }
+#endif
+
 #endif // USE_CHIRP
 
     // ----------PID controller----------
@@ -1537,7 +1580,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
 
 #ifdef USE_WING
-    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control 
+    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control
     // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
     bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
 #endif // USE_WING
