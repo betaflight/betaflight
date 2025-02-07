@@ -186,6 +186,16 @@
 #define PARAM_NAME_ANGLE_EARTH_REF "angle_earth_ref"
 #define PARAM_NAME_ANGLE_PITCH_OFFSET "angle_pitch_offset"
 
+#if defined(USE_WING)
+#define PARAM_NAME_AD_ZERO_LIFT_C   "ad_zero_lift_c"
+#define PARAM_NAME_AD_DIFFER_LIFT_C "ad_differ_lift_c"
+#define PARAM_NAME_AD_ZERO_DRAG_C "ad_zero_drag_c"
+#define PARAM_NAME_AD_INDUCE_DRAG_C "ad_induce_drag_c"
+#define PARAM_NAME_PLANE_MASS "plane_mass"
+#define PARAM_NAME_WING_LOAD "wing_load"
+#define PARAM_NAME_AIR_DENSITY "air_density"
+#define PARAM_NAME_STALL_ANGLE_OF_ATTACK "stall_angle_of_attack"
+#endif
 #define PARAM_NAME_HORIZON_LEVEL_STRENGTH "horizon_level_strength"
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"
 #define PARAM_NAME_HORIZON_LIMIT_STICKS "horizon_limit_sticks"

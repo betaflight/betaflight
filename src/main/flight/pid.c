@@ -267,6 +267,16 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+#if defined(USE_WING)
+        .ad_zero_lift_c = 150,
+        .ad_differ_lift_c = 80,
+        .ad_zero_drag_c = 25,
+        .ad_induce_drag_c = 60,
+        .plane_mass = 300,
+        .wing_load = 90,
+        .air_density = 1225,
+        .stall_angle_of_attack = 12,
+#endif
     );
 }
 
