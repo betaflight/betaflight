@@ -531,6 +531,7 @@ static void computeAngleOfAttackEstimation(void)
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttack * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(-attitude.values.pitch * 10.0f));  // log opposite pitch value, because it is equivalent to angle of attack in horizon flight
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(liftForceC * 1000.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 5, lrintf(airSpeedPressure));
 #endif
 }
 #endif
