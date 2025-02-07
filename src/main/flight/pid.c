@@ -335,6 +335,42 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
+static void computeAngleOfAttackEstimation(void)
+{
+#ifdef USE_ACC
+    aerodynamicsProperty_t *planeProperty = &pidRuntime.planeAerodynProperty;
+    const float speedThreshold = 2.0f;    //gps speed thresold
+    const float stallAngleOfAttackPad = 2.0f;
+    float speed = 0.0f;
+    float loadZ = 0.0f;
+    float liftForceC = 0.0f;
+    float airSpeedPressure = 0.0f;
+    float angleOfAttack = 0.0f;
+    float isStallWarning = false;
+    if (sensors(SENSOR_ACC)) {
+        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed TODO: add mode to use GPS speed
+        if (speed > speedThreshold) {
+            airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
+            loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
+            liftForceC = loadZ * planeProperty->wingLoad * G_ACCELERATION / airSpeedPressure;
+            angleOfAttack = (liftForceC - planeProperty->zeroLiftC) / planeProperty->differLiftC;
+            isStallWarning = angleOfAttack > planeProperty->stallAngleOfAttack - stallAngleOfAttackPad;
+        }
+    }
+
+    planeProperty->angleOfAttack = angleOfAttack;
+    planeProperty->liftForceC = liftForceC;
+    planeProperty->isStallWarning = isStallWarning;
+
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(loadZ * 100.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttack * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(-attitude.values.pitch * 10.0f));  // log opposite pitch value, because it is equivalent to angle of attack in horizon flight
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(liftForceC * 1000.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 5, lrintf(airSpeedPressure));
+#endif
+}
+
 static float calcWingThrottle(void)
 {
     float batteryThrottleFactor = 1.0f;
@@ -372,18 +408,18 @@ static float calcTrajectoryTiltAngleSin(void)
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
-    const tpaSpeedParams_t *planeAerodynProperty = &pidRuntime.planeAerodynProperty;
+    const aerodynamicsProperty_t *planeProperty = &pidRuntime.planeAerodynProperty;
     float thrustAccel = calcAccelerationByEngineThrust(throttle);
     float dragAccel = 0.0f;
     float gravityAccel = 0.0f;
     
-    if (planeAerodynProperty->mode == AD_TPA) {
+    if (planeProperty->mode == AD_TPA) {
         const float speed = tpa->speed;   //speed m/s  use estimators speed
-        const float airSpeedPressure = planeAerodynProperty->airDensity * sq(speed) / 2.0f;
-        const float dragC = planeAerodynProperty->zeroDragC + planeAerodynProperty->induceDragC * sq(planeAerodynProperty->liftForceC);
-        dragAccel = dragC * airSpeedPressure / planeAerodynProperty->wingLoad;
+        const float airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
+        const float dragC = planeProperty->zeroDragC + planeProperty->induceDragC * sq(planeProperty->liftForceC);
+        dragAccel = dragC * airSpeedPressure / planeProperty->wingLoad;
         gravityAccel = G_ACCELERATION * calcTrajectoryTiltAngleSin();
-        thrustAccel *= cos_approx(DEGREES_TO_RADIANS(planeAerodynProperty->angleOfAttack));   //aproximally, because we do not know the real engine force direction 
+        thrustAccel *= cos_approx(DEGREES_TO_RADIANS(planeProperty->angleOfAttack));   //aproximally, because we do not know the real engine force direction 
     } else {
         dragAccel = tpa->speed * tpa->speed * tpa->dragMassRatio;
         gravityAccel = G_ACCELERATION * sin_approx(pitchAngleRadians);
@@ -519,43 +555,6 @@ void pidUpdateTpaFactor(float throttle)
     updateStermTpaFactors();
 #endif // USE_WING
 }
-
-#ifdef USE_WING
-static void computeAngleOfAttackEstimation(void)
-{
-#ifdef USE_ACC
-    const float speedThreshold = 2.0f;    //gps speed thresold
-    const float stallAngleOfAttackPad = 2.0f;
-    float speed = 0.0f;
-    float loadZ = 0.0f;
-    float liftForceC = 0.0f;
-    float airSpeedPressure = 0.0f;
-    float angleOfAttack = 0.0f;
-    float isStallWarning = false;
-    if (sensors(SENSOR_ACC)) {
-        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed TODO: add mode to use GPS speed
-        if (speed > speedThreshold) {
-            airSpeedPressure = pidRuntime.planeAerodynProperty.airDensity * sq(speed) / 2.0f;
-            loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
-            liftForceC = loadZ * pidRuntime.planeAerodynProperty.wingLoad * G_ACCELERATION / airSpeedPressure;
-            angleOfAttack = (liftForceC - pidRuntime.planeAerodynProperty.zeroLiftC) / pidRuntime.planeAerodynProperty.differLiftC;
-            isStallWarning = angleOfAttack > pidRuntime.planeAerodynProperty.stallAngleOfAttack - stallAngleOfAttackPad;
-        }
-    }
-
-    pidRuntime.planeAerodynProperty.angleOfAttack = angleOfAttack;
-    pidRuntime.planeAerodynProperty.liftForceC = liftForceC;
-    pidRuntime.planeAerodynProperty.isStallWarning = isStallWarning;
-
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(loadZ * 100.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttack * 10.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(-attitude.values.pitch * 10.0f));  // log opposite pitch value, because it is equivalent to angle of attack in horizon flight
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(liftForceC * 1000.0f));
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 5, lrintf(airSpeedPressure));
-#endif
-}
-#endif
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
 {
