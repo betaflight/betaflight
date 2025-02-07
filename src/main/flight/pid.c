@@ -372,16 +372,18 @@ static float calcTrajectoryTiltAngleSin(void)
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
-    const float thrustAccel = calcAccelerationByEngineThrust(throttle);
+    const tpaSpeedParams_t *planeAerodynProperty = &pidRuntime.planeAerodynProperty;
+    float thrustAccel = calcAccelerationByEngineThrust(throttle);
     float dragAccel = 0.0f;
     float gravityAccel = 0.0f;
     
-    if (pidRuntime.planeAerodynProperty.mode == AD_TPA) {
+    if (planeAerodynProperty->mode == AD_TPA) {
         const float speed = tpa->speed;   //speed m/s  use estimators speed
-        const float airSpeedPressure = pidRuntime.planeAerodynProperty.airDensity * sq(speed) / 2.0f;
-        const float dragC = pidRuntime.planeAerodynProperty.zeroDragC + pidRuntime.planeAerodynProperty.induceDragC * sq(pidRuntime.planeAerodynProperty.liftForceC);
-        dragAccel = dragC * airSpeedPressure / pidRuntime.planeAerodynProperty.wingLoad;
+        const float airSpeedPressure = planeAerodynProperty->airDensity * sq(speed) / 2.0f;
+        const float dragC = planeAerodynProperty->zeroDragC + planeAerodynProperty->induceDragC * sq(planeAerodynProperty->liftForceC);
+        dragAccel = dragC * airSpeedPressure / planeAerodynProperty->wingLoad;
         gravityAccel = G_ACCELERATION * calcTrajectoryTiltAngleSin();
+        thrustAccel *= cos_approx(DEGREES_TO_RADIANS(planeAerodynProperty->angleOfAttack));   //aproximally, because we do not know the real engine force direction 
     } else {
         dragAccel = tpa->speed * tpa->speed * tpa->dragMassRatio;
         gravityAccel = G_ACCELERATION * sin_approx(pitchAngleRadians);
