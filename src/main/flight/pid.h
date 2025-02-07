@@ -397,7 +397,9 @@ typedef struct tpaSpeedParams_s {
     float speed;
     float maxVoltage;
     float pitchOffset;
+} tpaSpeedParams_t;
 
+typedef struct aerodynamicsParams_s {
     float planeMass;
     float wingLoad;
     float airDensity;
@@ -409,8 +411,7 @@ typedef struct tpaSpeedParams_s {
     float stallAngleOfAttack;
     float angleOfAttack;
     bool  isStallWarning;
-
-} tpaSpeedParams_t;
+} aerodynamicsParams_t;
 
 typedef struct pidRuntime_s {
     float dT;
@@ -562,6 +563,7 @@ typedef struct pidRuntime_s {
     tpaSpeedParams_t tpaSpeed;
     float tpaFactorYaw;
     float tpaFactorSterm[XYZ_AXIS_COUNT];
+    aerodynamicsParams_t adParams;
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA

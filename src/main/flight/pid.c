@@ -268,6 +268,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
 #if defined(USE_WING)
+        .ad_mode = AD_OFF,
         .ad_zero_lift_c = 150,
         .ad_differ_lift_c = 80,
         .ad_zero_drag_c = 25,

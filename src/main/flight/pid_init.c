@@ -110,18 +110,18 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
 
 static void aerodynamicsInit(const pidProfile_t *pidProfile)
 {
-    pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
-    pidRuntime.tpaSpeed.planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
-    pidRuntime.tpaSpeed.wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
-    pidRuntime.tpaSpeed.airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
-    pidRuntime.tpaSpeed.adZeroLiftC = pidProfile->ad_zero_lift_c / 1000.0f;
-    pidRuntime.tpaSpeed.adDifferLiftC = pidProfile->ad_differ_lift_c / 1000.0f;
-    pidRuntime.tpaSpeed.adZeroDragC = pidProfile->ad_zero_drag_c / 1000.0f;
-    pidRuntime.tpaSpeed.adInduceDragC = pidProfile->ad_induce_drag_c / 1000.0f;
-    pidRuntime.tpaSpeed.adLiftForceC = 0.0f;
-    pidRuntime.tpaSpeed.stallAngleOfAttack = pidProfile->stall_angle_of_attack;
-    pidRuntime.tpaSpeed.angleOfAttack = 0.0f;
-    pidRuntime.tpaSpeed.isStallWarning = false;
+    pidRuntime.adParams.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
+    pidRuntime.adParams.planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
+    pidRuntime.adParams.wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
+    pidRuntime.adParams.airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
+    pidRuntime.adParams.adZeroLiftC = pidProfile->ad_zero_lift_c / 1000.0f;
+    pidRuntime.adParams.adDifferLiftC = pidProfile->ad_differ_lift_c / 1000.0f;
+    pidRuntime.adParams.adZeroDragC = pidProfile->ad_zero_drag_c / 1000.0f;
+    pidRuntime.adParams.adInduceDragC = pidProfile->ad_induce_drag_c / 1000.0f;
+    pidRuntime.adParams.adLiftForceC = 0.0f;
+    pidRuntime.adParams.stallAngleOfAttack = pidProfile->stall_angle_of_attack;
+    pidRuntime.adParams.angleOfAttack = 0.0f;
+    pidRuntime.adParams.isStallWarning = false;
 }
 
 static void tpaSpeedInit(const pidProfile_t *pidProfile)
