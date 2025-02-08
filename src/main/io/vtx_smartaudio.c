@@ -497,6 +497,7 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
+#ifdef USE_NONCOMPLIANT_SMARTAUDIO
         switch (smartAudioSerialPort->identifier) {
         case SERIAL_PORT_SOFTSERIAL1:
         case SERIAL_PORT_SOFTSERIAL2:
@@ -508,6 +509,7 @@ static void saSendFrame(uint8_t *buf, int len)
             serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
             break;
         }
+#endif // USE_NONCOMPLIANT_SMARTAUDIO
 
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
