@@ -36,6 +36,9 @@ jobs:
         
       - name: Fetch build artifacts
         uses: actions/download-artifact@v4
+        with:
+          pattern: 'Assets/*.hex'
+          merge-multiple: true
 
       - name: Select release notes
         id: notes

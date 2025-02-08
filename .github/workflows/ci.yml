@@ -73,7 +73,7 @@ jobs:
       - name: Publish build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Assets
+          name: Assets-${{ strategy.job-index }}
           path: obj/*.hex
           retention-days: 60
 
