@@ -138,21 +138,22 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
 
 void autopilotInit(void)
 {
+    const apConfig_t *cfg = autopilotConfig();
     ap.sticksActive = false;
-    ap.maxAngle = autopilotConfig()->ap_max_angle;
-    altitudePidCoeffs.Kp = autopilotConfig()->ap_altitude_P * ALTITUDE_P_SCALE;
-    altitudePidCoeffs.Ki = autopilotConfig()->ap_altitude_I * ALTITUDE_I_SCALE;
-    altitudePidCoeffs.Kd = autopilotConfig()->ap_altitude_D * ALTITUDE_D_SCALE;
-    altitudePidCoeffs.Kf = autopilotConfig()->ap_altitude_F * ALTITUDE_F_SCALE;
-    positionPidCoeffs.Kp = autopilotConfig()->ap_position_P * POSITION_P_SCALE;
-    positionPidCoeffs.Ki = autopilotConfig()->ap_position_I * POSITION_I_SCALE;
-    positionPidCoeffs.Kd = autopilotConfig()->ap_position_D * POSITION_D_SCALE;
-    positionPidCoeffs.Kf = autopilotConfig()->ap_position_A * POSITION_A_SCALE; // Kf used for acceleration
+    ap.maxAngle = cfg->ap_max_angle;
+    altitudePidCoeffs.Kp = cfg->ap_altitude_P * ALTITUDE_P_SCALE;
+    altitudePidCoeffs.Ki = cfg->ap_altitude_I * ALTITUDE_I_SCALE;
+    altitudePidCoeffs.Kd = cfg->ap_altitude_D * ALTITUDE_D_SCALE;
+    altitudePidCoeffs.Kf = cfg->ap_altitude_F * ALTITUDE_F_SCALE;
+    positionPidCoeffs.Kp = cfg->ap_position_P * POSITION_P_SCALE;
+    positionPidCoeffs.Ki = cfg->ap_position_I * POSITION_I_SCALE;
+    positionPidCoeffs.Kd = cfg->ap_position_D * POSITION_D_SCALE;
+    positionPidCoeffs.Kf = cfg->ap_position_A * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gains; location isn't used at this point.
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
     resetUpsampleFilters();
     // Initialise PT1 filters for velocity and acceleration in earth frame axes
-    ap.vaLpfCutoff = autopilotConfig()->ap_position_cutoff * 0.01f;
+    ap.vaLpfCutoff = cfg->ap_position_cutoff * 0.01f;
     const float vaGain = pt1FilterGain(ap.vaLpfCutoff,  0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
         resetEFAxisFilters(&ap.efAxis[i], vaGain);
