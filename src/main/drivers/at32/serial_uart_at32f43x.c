@@ -387,7 +387,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     if ((options & SERIAL_BIDIR) && txIO) {
         //mode,speed,otype,pupd
-#ifndef USE_NONCOMPIANT_SMARTAUDIO
+#ifndef USE_NONCOMPLIANT_SMARTAUDIO
         ioConfig_t ioCfg = IO_CONFIG(
             GPIO_MODE_MUX,
             GPIO_DRIVE_STRENGTH_STRONGER,
