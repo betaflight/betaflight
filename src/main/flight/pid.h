@@ -332,14 +332,14 @@ typedef struct pidProfile_s {
 
     // use aerodynamics
     uint8_t  ad_mode;                   //For wings: The aerodynamics using mode: off, angle of attack, tpa
-    uint16_t ad_zero_lift_c;            //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
-    uint16_t ad_differ_lift_c;          //For wings: aerodynamics lift force coefficient differencial by angle of attack value, 1000*dClift/dAoA units, AoA [grad]
-    uint16_t ad_zero_drag_c;            //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
-    uint16_t ad_induce_drag_c;          //For wings: aerodynamics induce drag force coefficient, 1000*Cinduce units
+    uint8_t ad_zero_lift_c;            //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
+    uint8_t ad_differ_lift_c;          //For wings: aerodynamics lift force coefficient differencial by angle of attack value, 1000*dClift/dAoA units, AoA [grad]
+    uint8_t ad_zero_drag_c;            //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
+    uint8_t ad_induce_drag_c;          //For wings: aerodynamics induce drag force coefficient, 1000*Cinduce units
     uint16_t plane_mass;                //For wings: airplane mass, [g]
     uint16_t wing_load;                 //For wings: wing load (mass / WingArea) [g/decimeter^2]
     uint16_t air_density;               //For wings: the current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
-    uint16_t stall_angle_of_attack;     //For wings: stall angle of attack
+    uint8_t stall_angle_of_attack;     //For wings: stall angle of attack
     
     uint8_t chirp_lag_freq_hz;              // leadlag1Filter cutoff/pole to shape the excitation signal
     uint8_t chirp_lead_freq_hz;             // leadlag1Filter cutoff/zero
