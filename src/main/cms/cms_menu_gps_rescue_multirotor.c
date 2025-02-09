@@ -75,10 +75,10 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    autopilotConfig_altitude_P = autopilotConfig()->ap_altitude_P;
-    autopilotConfig_altitude_I = autopilotConfig()->ap_altitude_I;
-    autopilotConfig_altitude_D = autopilotConfig()->ap_altitude_D;
-    autopilotConfig_altitude_F = autopilotConfig()->ap_altitude_F;
+    autopilotConfig_altitude_P = autopilotConfig()->altitudeP;
+    autopilotConfig_altitude_I = autopilotConfig()->altitudeI;
+    autopilotConfig_altitude_D = autopilotConfig()->altitudeD;
+    autopilotConfig_altitude_F = autopilotConfig()->altitudeF;
 
     gpsRescueConfig_yawP = gpsRescueConfig()->yawP;
 
@@ -97,10 +97,10 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     UNUSED(pDisp);
     UNUSED(self);
 
-    autopilotConfigMutable()->ap_altitude_P = autopilotConfig_altitude_P;
-    autopilotConfigMutable()->ap_altitude_I = autopilotConfig_altitude_I;
-    autopilotConfigMutable()->ap_altitude_D = autopilotConfig_altitude_D;
-    autopilotConfigMutable()->ap_altitude_F = autopilotConfig_altitude_F;
+    autopilotConfigMutable()->altitudeP = autopilotConfig_altitude_P;
+    autopilotConfigMutable()->altitudeI = autopilotConfig_altitude_I;
+    autopilotConfigMutable()->altitudeD = autopilotConfig_altitude_D;
+    autopilotConfigMutable()->altitudeF = autopilotConfig_altitude_F;
 
     gpsRescueConfigMutable()->yawP = gpsRescueConfig_yawP;
 
@@ -162,11 +162,11 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
     gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
-    autopilotConfig_landingAltitudeM = autopilotConfig()->ap_landing_altitude_m;
+    autopilotConfig_landingAltitudeM = autopilotConfig()->landingAltitudeM;
 
-    autopilotConfig_throttleMin = autopilotConfig()->ap_throttle_min;
-    autopilotConfig_throttleMax = autopilotConfig()->ap_throttle_max;
-    autopilotConfig_hoverThrottle = autopilotConfig()->ap_hover_throttle;
+    autopilotConfig_throttleMin = autopilotConfig()->throttleMin;
+    autopilotConfig_throttleMax = autopilotConfig()->throttleMax;
+    autopilotConfig_hoverThrottle = autopilotConfig()->hoverThrottle;
 
     gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
     gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
@@ -190,11 +190,11 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
 
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
     gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
-    autopilotConfigMutable()->ap_landing_altitude_m = autopilotConfig_landingAltitudeM;
+    autopilotConfigMutable()->landingAltitudeM = autopilotConfig_landingAltitudeM;
 
-    autopilotConfigMutable()->ap_throttle_min = autopilotConfig_throttleMin;
-    autopilotConfigMutable()->ap_throttle_max = autopilotConfig_throttleMax;
-    autopilotConfigMutable()->ap_hover_throttle = autopilotConfig_hoverThrottle;
+    autopilotConfigMutable()->throttleMin = autopilotConfig_throttleMin;
+    autopilotConfigMutable()->throttleMax = autopilotConfig_throttleMax;
+    autopilotConfigMutable()->hoverThrottle = autopilotConfig_hoverThrottle;
 
     gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
     gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;

@@ -62,9 +62,9 @@ void altHoldReset(void)
 void altHoldInit(void)
 {
     altHold.isActive = false;
-    altHold.deadband = altHoldConfig()->alt_hold_deadband / 100.0f;
-    altHold.allowStickAdjustment = altHoldConfig()->alt_hold_deadband;
-    altHold.maxVelocity = altHoldConfig()->alt_hold_climb_rate * 10.0f; // 50 in CLI means 500cm/s
+    altHold.deadband = altHoldConfig()->deadband / 100.0f;
+    altHold.allowStickAdjustment = altHoldConfig()->deadband;
+    altHold.maxVelocity = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
     altHoldReset();
 }
 
@@ -101,8 +101,8 @@ void altHoldUpdateTargetAltitude(void)
 
     if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
         const float rcThrottle = rcCommand[THROTTLE];
-        const float lowThreshold = autopilotConfig()->ap_hover_throttle - altHold.deadband * (autopilotConfig()->ap_hover_throttle - PWM_RANGE_MIN);
-        const float highThreshold = autopilotConfig()->ap_hover_throttle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->ap_hover_throttle);
+        const float lowThreshold = autopilotConfig()->hoverThrottle - altHold.deadband * (autopilotConfig()->hoverThrottle - PWM_RANGE_MIN);
+        const float highThreshold = autopilotConfig()->hoverThrottle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->hoverThrottle);
 
         if (rcThrottle < lowThreshold) {
             stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
@@ -136,7 +136,7 @@ void altHoldUpdateTargetAltitude(void)
 void altHoldUpdate(void)
 {
     // check if the user has changed the target altitude using sticks
-    if (altHoldConfig()->alt_hold_climb_rate) {
+    if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude();
     }
     altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity);

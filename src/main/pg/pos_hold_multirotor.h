@@ -28,8 +28,8 @@
 #include "pg/pg.h"
 
 typedef struct posHoldConfig_s {
-    bool pos_hold_without_mag;
-    uint8_t pos_hold_deadband;
+    bool posHoldWithoutMag;
+    uint8_t deadband;
 } posHoldConfig_t;
 
 PG_DECLARE(posHoldConfig_t, posHoldConfig);

@@ -28,20 +28,20 @@
 #include "pg/pg.h"
 
 typedef struct autopilotConfig_s {
-    uint8_t ap_landing_altitude_m;   // altitude below which landing behaviours can change, metres
-    uint16_t ap_hover_throttle;      // value used at the start of a rescue or position hold
-    uint16_t ap_throttle_min;
-    uint16_t ap_throttle_max;
-    uint8_t ap_altitude_P;
-    uint8_t ap_altitude_I;
-    uint8_t ap_altitude_D;
-    uint8_t ap_altitude_F;
-    uint8_t ap_position_P;
-    uint8_t ap_position_I;
-    uint8_t ap_position_D;
-    uint8_t ap_position_A;
-    uint8_t ap_position_cutoff;
-    uint8_t ap_max_angle;
+    uint8_t landingAltitudeM;   // altitude below which landing behaviours can change, metres
+    uint16_t hoverThrottle;      // value used at the start of a rescue or position hold
+    uint16_t throttleMin;
+    uint16_t throttleMax;
+    uint8_t altitudeP;
+    uint8_t altitudeI;
+    uint8_t altitudeD;
+    uint8_t altitudeF;
+    uint8_t positionP;
+    uint8_t positionI;
+    uint8_t positionD;
+    uint8_t positionA;
+    uint8_t positionCutoff;
+    uint8_t maxAngle;
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);
