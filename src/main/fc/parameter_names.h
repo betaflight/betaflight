@@ -161,20 +161,20 @@
 #define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
 
-#define PARAM_NAME_AP_LANDING_ALTITUDE_M "landingAltitudeM"
-#define PARAM_NAME_AP_HOVER_THROTTLE "hoverThrottle"
-#define PARAM_NAME_AP_THROTTLE_MIN "throttleMin"
-#define PARAM_NAME_AP_THROTTLE_MAX "throttleMax"
-#define PARAM_NAME_AP_ALTITUDE_P "altitudeP"
-#define PARAM_NAME_AP_ALTITUDE_I "altitudeI"
-#define PARAM_NAME_AP_ALTITUDE_D "altitudeD"
-#define PARAM_NAME_AP_ALTITUDE_F "altitudeF"
-#define PARAM_NAME_AP_POSITION_P "positionP"
-#define PARAM_NAME_AP_POSITION_I "positionI"
-#define PARAM_NAME_AP_POSITION_D "positionD"
-#define PARAM_NAME_AP_POSITION_A "positionA"
-#define PARAM_NAME_AP_POSITION_CUTOFF "positionCutoff"
-#define PARAM_NAME_AP_MAX_ANGLE "maxAngle"
+#define PARAM_NAME_AP_LANDING_ALTITUDE_M "ap_landing_altitude_m"
+#define PARAM_NAME_AP_HOVER_THROTTLE "ap_hover_throttle"
+#define PARAM_NAME_AP_THROTTLE_MIN "ap_throttle_min"
+#define PARAM_NAME_AP_THROTTLE_MAX "ap_throttle_max"
+#define PARAM_NAME_AP_ALTITUDE_P "ap_altitude_P"
+#define PARAM_NAME_AP_ALTITUDE_I "ap_altitude_I"
+#define PARAM_NAME_AP_ALTITUDE_D "ap_altitude_D"
+#define PARAM_NAME_AP_ALTITUDE_F "ap_altitude_F"
+#define PARAM_NAME_AP_POSITION_P "ap_position_P"
+#define PARAM_NAME_AP_POSITION_I "ap_position_I"
+#define PARAM_NAME_AP_POSITION_D "ap_position_D"
+#define PARAM_NAME_AP_POSITION_A "ap_position_A"
+#define PARAM_NAME_AP_POSITION_CUTOFF "ap_position_cutoff"
+#define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
@@ -258,13 +258,13 @@
 #endif // USE_GPS
 
 #ifdef USE_ALTITUDE_HOLD
-#define PARAM_NAME_ALT_HOLD_DEADBAND "deadband"
-#define PARAM_NAME_ALT_HOLD_CLIMB_RATE "climbRate"
+#define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband"
+#define PARAM_NAME_ALT_HOLD_CLIMB_RATE "alt_hold_climb_Rate"
 #endif
 
 #ifdef USE_POSITION_HOLD
-#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "posHoldWithoutMag"
-#define PARAM_NAME_POS_HOLD_DEADBAND "deadband"
+#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
+#define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband"
 #endif
 
 #define PARAM_NAME_IMU_DCM_KP "imu_dcm_kp"
