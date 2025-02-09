@@ -51,8 +51,8 @@ static posHoldState_t posHold;
 
 void posHoldInit(void)
 {
-    posHold.deadband = posHoldConfig()->pos_hold_deadband * 0.01f;
-    posHold.useStickAdjustment = posHoldConfig()->pos_hold_deadband;
+    posHold.deadband = posHoldConfig()->deadband * 0.01f;
+    posHold.useStickAdjustment = posHoldConfig()->deadband;
 }
 
 static void posHoldCheckSticks(void)
@@ -73,7 +73,7 @@ static bool sensorsOk(void)
 #ifdef USE_MAG
         !compassIsHealthy() &&
 #endif
-        (!posHoldConfig()->pos_hold_without_mag || !canUseGPSHeading)) {
+        (!posHoldConfig()->posHoldWithoutMag || !canUseGPSHeading)) {
         return false;
     }
     return true;
