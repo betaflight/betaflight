@@ -259,7 +259,7 @@
 
 #ifdef USE_ALTITUDE_HOLD
 #define PARAM_NAME_ALT_HOLD_DEADBAND "alt_hold_deadband"
-#define PARAM_NAME_ALT_HOLD_CLIMB_RATE "alt_hold_climb_Rate"
+#define PARAM_NAME_ALT_HOLD_CLIMB_RATE "alt_hold_climb_rate"
 #endif
 
 #ifdef USE_POSITION_HOLD
