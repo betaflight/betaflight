@@ -112,18 +112,19 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
 #ifdef USE_WING
 static void aerodynamicsInit(const pidProfile_t *pidProfile)
 {
-    pidRuntime.planeAerodynProperty.mode = (aerodynamicsMode_e)pidProfile->ad_mode;
-    pidRuntime.planeAerodynProperty.planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
-    pidRuntime.planeAerodynProperty.wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
-    pidRuntime.planeAerodynProperty.airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
-    pidRuntime.planeAerodynProperty.liftZeroC = pidProfile->ad_lift_zero / 1000.0f;
-    pidRuntime.planeAerodynProperty.liftSlopeC = pidProfile->ad_lift_slope / 1000.0f;
-    pidRuntime.planeAerodynProperty.dragParasiticC = pidProfile->ad_drag_parasitic / 1000.0f;
-    pidRuntime.planeAerodynProperty.dragInducedC = pidProfile->ad_drag_induced / 1000.0f;
-    pidRuntime.planeAerodynProperty.liftActualC = 0.0f;
-    pidRuntime.planeAerodynProperty.stallAngleOfAttack = pidProfile->stall_aoa_pos;
-    pidRuntime.planeAerodynProperty.angleOfAttack = 0.0f;
-    pidRuntime.planeAerodynProperty.isStallWarning = false;
+    aerodynamicsProperty_t *adp = &pidRuntime.planeDynamics;
+    adp->mode = (aerodynamicsMode_e)pidProfile->ad_mode;
+    adp->planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
+    adp->wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
+    adp->airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
+    adp->liftZeroC = pidProfile->ad_lift_zero / 1000.0f;
+    adp->liftSlopeC = pidProfile->ad_lift_slope / 1000.0f;
+    adp->dragParasiticC = pidProfile->ad_drag_parasitic / 1000.0f;
+    adp->dragInducedC = pidProfile->ad_drag_induced / 1000.0f;
+    adp->liftActualC = 0.0f;
+    adp->stallAngleOfAttack = pidProfile->stall_aoa_pos;
+    adp->angleOfAttack = 0.0f;
+    adp->isStallWarning = false;
 }
 #endif
 

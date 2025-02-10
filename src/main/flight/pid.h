@@ -588,7 +588,7 @@ typedef struct pidRuntime_s {
 #endif // USE_CHIRP
 
 #ifdef USE_WING
-    aerodynamicsProperty_t planeAerodynProperty;
+    aerodynamicsProperty_t planeDynamics;
 #endif
 } pidRuntime_t;
 

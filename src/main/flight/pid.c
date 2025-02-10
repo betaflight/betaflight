@@ -338,7 +338,7 @@ void pidResetIterm(void)
 static void computeAngleOfAttackEstimate(void)
 {
 #ifdef USE_ACC
-    aerodynamicsProperty_t *planeProperty = &pidRuntime.planeAerodynProperty;
+    aerodynamicsProperty_t *planeProperty = &pidRuntime.planeDynamics;
     const float speedThreshold = 2.0f;    //gps speed thresold
     const float stallAngleOfAttackPad = 2.0f;
     float speed = 0.0f;
@@ -393,7 +393,7 @@ static float calcAccelerationByEngineThrust(float throttle)
 static float calcPlaneSinPathAngle(void)
 {
     vector3_t direction;
-    const float angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.planeAerodynProperty.angleOfAttack);
+    const float angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.planeDynamics.angleOfAttack);
 //  the velocity unit vector in body frame reference system
     direction.x = cos_approx(angleOfAttackRadians);
     direction.y = 0.0f;
@@ -408,13 +408,13 @@ static float calcPlaneSinPathAngle(void)
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
-    const aerodynamicsProperty_t *planeProperty = &pidRuntime.planeAerodynProperty;
+    const aerodynamicsProperty_t *planeProperty = &pidRuntime.planeDynamics;
     float thrustAccel = calcAccelerationByEngineThrust(throttle);
     float dragAccel = 0.0f;
     float gravityAccel = 0.0f;
     
     if (planeProperty->mode == AD_TPA) {
-        const float speed = tpa->speed;   //speed m/s  use estimators speed
+        const float speed = tpa->speed;   //[m/s]  use estimate from last step
         const float airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
         const float dragC = planeProperty->dragParasiticC + planeProperty->dragInducedC * sq(planeProperty->liftActualC);
         dragAccel = dragC * airSpeedPressure / planeProperty->wingLoad;
