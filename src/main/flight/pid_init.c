@@ -109,6 +109,7 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     UNUSED(pidProfile);
 }
 
+#ifdef USE_WING
 static void aerodynamicsInit(const pidProfile_t *pidProfile)
 {
     pidRuntime.planeAerodynProperty.mode = (aerodynamicsMode_e)pidProfile->ad_mode;
@@ -124,6 +125,7 @@ static void aerodynamicsInit(const pidProfile_t *pidProfile)
     pidRuntime.planeAerodynProperty.angleOfAttack = 0.0f;
     pidRuntime.planeAerodynProperty.isStallWarning = false;
 }
+#endif
 
 static void tpaSpeedInit(const pidProfile_t *pidProfile)
 {
