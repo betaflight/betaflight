@@ -342,14 +342,14 @@ typedef struct pidProfile_s {
     // use aerodynamics
 #ifdef USE_WING
     uint8_t  ad_mode;                   //For wings: The aerodynamics using mode: off, angle of attack, tpa
-    uint8_t ad_zero_lift_c;            //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
-    uint8_t ad_differ_lift_c;          //For wings: aerodynamics lift force coefficient differencial by angle of attack value, 1000*dClift/dAoA units, AoA [grad]
-    uint8_t ad_zero_drag_c;            //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
-    uint8_t ad_induce_drag_c;          //For wings: aerodynamics induce drag force coefficient, 1000*Cinduce units
+    uint8_t ad_lift_zero;            //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
+    uint8_t ad_lift_slope;          //For wings: aerodynamics lift force coefficient differencial by angle of attack value, 1000*dClift/dAoA units, AoA [grad]
+    uint8_t ad_drag_parasitic;            //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
+    uint8_t ad_drag_induced;          //For wings: aerodynamics induce drag force coefficient, 1000*Cinduce units
     uint16_t plane_mass;                //For wings: airplane mass, [g]
     uint16_t wing_load;                 //For wings: wing load (mass / WingArea) [g/decimeter^2]
     uint16_t air_density;               //For wings: the current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
-    uint8_t stall_angle_of_attack;     //For wings: stall angle of attack
+    uint8_t stall_aoa_pos;     //For wings: stall angle of attack
 #endif
 } pidProfile_t;
 
@@ -403,15 +403,17 @@ typedef struct tpaSpeedParams_s {
 
 typedef struct aerodynamicsProperty_s {
     aerodynamicsMode_e mode;
+    float stallAngleOfAttack;
+    
+    float airDensity;
     float planeMass;
     float wingLoad;
-    float airDensity;
-    float zeroLiftC;
-    float differLiftC;
-    float zeroDragC;
-    float induceDragC;
-    float liftForceC;
-    float stallAngleOfAttack;
+    float liftZeroC;
+    float liftSlopeC;
+    float dragParasiticC;
+    float dragInducedC;
+
+    float liftActualC;
     float angleOfAttack;
     bool  isStallWarning;
 } aerodynamicsProperty_t;

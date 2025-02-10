@@ -269,14 +269,14 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_time_seconds = 20,
 #ifdef USE_WING
         .ad_mode = AD_OFF,
-        .ad_zero_lift_c = 150,
-        .ad_differ_lift_c = 80,
-        .ad_zero_drag_c = 25,
-        .ad_induce_drag_c = 60,
+        .ad_lift_zero = 150,
+        .ad_lift_slope = 80,
+        .ad_drag_parasitic = 25,
+        .ad_drag_induced = 60,
         .plane_mass = 300,
         .wing_load = 90,
         .air_density = 1225,
-        .stall_angle_of_attack = 12,
+        .stall_aoa_pos = 12,
 #endif
     );
 }
@@ -335,7 +335,7 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
-static void computeAngleOfAttackEstimation(void)
+static void computeAngleOfAttackEstimate(void)
 {
 #ifdef USE_ACC
     aerodynamicsProperty_t *planeProperty = &pidRuntime.planeAerodynProperty;
@@ -343,7 +343,7 @@ static void computeAngleOfAttackEstimation(void)
     const float stallAngleOfAttackPad = 2.0f;
     float speed = 0.0f;
     float loadZ = 0.0f;
-    float liftForceC = 0.0f;
+    float liftActualC = 0.0f;
     float airSpeedPressure = 0.0f;
     float angleOfAttack = 0.0f;
     float isStallWarning = false;
@@ -352,21 +352,21 @@ static void computeAngleOfAttackEstimation(void)
         if (speed > speedThreshold) {
             airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
             loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
-            liftForceC = loadZ * planeProperty->wingLoad * G_ACCELERATION / airSpeedPressure;
-            angleOfAttack = (liftForceC - planeProperty->zeroLiftC) / planeProperty->differLiftC;
+            liftActualC = loadZ * planeProperty->wingLoad * G_ACCELERATION / airSpeedPressure;
+            angleOfAttack = (liftActualC - planeProperty->liftZeroC) / planeProperty->liftSlopeC;
             isStallWarning = angleOfAttack > planeProperty->stallAngleOfAttack - stallAngleOfAttackPad;
         }
     }
 
     planeProperty->angleOfAttack = angleOfAttack;
-    planeProperty->liftForceC = liftForceC;
+    planeProperty->liftActualC = liftActualC;
     planeProperty->isStallWarning = isStallWarning;
 
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(loadZ * 100.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttack * 10.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(-attitude.values.pitch * 10.0f));  // log opposite pitch value, because it is equivalent to angle of attack in horizon flight
-    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(liftForceC * 1000.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(liftActualC * 1000.0f));
     DEBUG_SET(DEBUG_AOA_ESTIMATOR, 5, lrintf(airSpeedPressure));
 #endif
 }
@@ -389,8 +389,8 @@ static float calcAccelerationByEngineThrust(float throttle)
     return thrustAccel;
 }
 
-//Compute trajectories tilt angle by using angle of attack value
-static float calcTrajectoryTiltAngleSin(void)
+//Compute flight path angle by using angle of attack value and IMU orientation
+static float calcPlaneSinPathAngle(void)
 {
     vector3_t direction;
     const float angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.planeAerodynProperty.angleOfAttack);
@@ -416,9 +416,9 @@ static float calcWingAcceleration(float throttle, float pitchAngleRadians)
     if (planeProperty->mode == AD_TPA) {
         const float speed = tpa->speed;   //speed m/s  use estimators speed
         const float airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
-        const float dragC = planeProperty->zeroDragC + planeProperty->induceDragC * sq(planeProperty->liftForceC);
+        const float dragC = planeProperty->dragParasiticC + planeProperty->dragInducedC * sq(planeProperty->liftActualC);
         dragAccel = dragC * airSpeedPressure / planeProperty->wingLoad;
-        gravityAccel = G_ACCELERATION * calcTrajectoryTiltAngleSin();
+        gravityAccel = G_ACCELERATION * calcPlaneSinPathAngle();
         thrustAccel *= cos_approx(DEGREES_TO_RADIANS(planeProperty->angleOfAttack));   //aproximally, because we do not know the real engine force direction 
     } else {
         dragAccel = tpa->speed * tpa->speed * tpa->dragMassRatio;
@@ -1323,7 +1323,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_WING
     if (pidProfile->ad_mode != AD_OFF) {
-        computeAngleOfAttackEstimation();
+        computeAngleOfAttackEstimate();
     }
 #endif
 

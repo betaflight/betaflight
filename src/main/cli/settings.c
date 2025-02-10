@@ -1401,14 +1401,14 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
     
     { PARAM_NAME_AERODYNAMICS_MODE, VAR_UINT8  | MODE_LOOKUP, .config.lookup = { TABLE_AERODYNAMICS_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_mode) },
-    { PARAM_NAME_AD_ZERO_LIFT_C,    VAR_UINT8, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_zero_lift_c) },
-    { PARAM_NAME_AD_DIFFER_LIFT_C,  VAR_UINT8, .config.minmaxUnsigned = { 0, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_differ_lift_c) },
-    { PARAM_NAME_AD_ZERO_DRAG_C,    VAR_UINT8, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_zero_drag_c) },
-    { PARAM_NAME_AD_INDUCE_DRAG_C,  VAR_UINT8, .config.minmaxUnsigned = { 0, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_induce_drag_c) },
+    { PARAM_NAME_AD_LIFT_ZERO,    VAR_UINT8, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_lift_zero) },
+    { PARAM_NAME_AD_LIFT_SLOPE,  VAR_UINT8, .config.minmaxUnsigned = { 0, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_lift_slope) },
+    { PARAM_NAME_AD_DRAG_PARASITIC,    VAR_UINT8, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_drag_parasitic) },
+    { PARAM_NAME_AD_DRAG_INDUCED,  VAR_UINT8, .config.minmaxUnsigned = { 0, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, ad_drag_induced) },
     { PARAM_NAME_PLANE_MASS,        VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 75, 20000 }, PG_PID_PROFILE, offsetof(pidProfile_t, plane_mass) },
     { PARAM_NAME_WING_LOAD,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_load) },
     { PARAM_NAME_AIR_DENSITY,       VAR_UINT16, .config.minmaxUnsigned = { 0, 1300 }, PG_PID_PROFILE, offsetof(pidProfile_t, air_density) },
-    { PARAM_NAME_STALL_ANGLE_OF_ATTACK, VAR_UINT8,  .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, stall_angle_of_attack) },
+    { PARAM_NAME_STALL_AOA_POS, VAR_UINT8,  .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, stall_aoa_pos) },
 #endif
 
 // PG_TELEMETRY_CONFIG

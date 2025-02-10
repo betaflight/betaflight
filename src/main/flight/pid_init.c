@@ -116,12 +116,12 @@ static void aerodynamicsInit(const pidProfile_t *pidProfile)
     pidRuntime.planeAerodynProperty.planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
     pidRuntime.planeAerodynProperty.wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
     pidRuntime.planeAerodynProperty.airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
-    pidRuntime.planeAerodynProperty.zeroLiftC = pidProfile->ad_zero_lift_c / 1000.0f;
-    pidRuntime.planeAerodynProperty.differLiftC = pidProfile->ad_differ_lift_c / 1000.0f;
-    pidRuntime.planeAerodynProperty.zeroDragC = pidProfile->ad_zero_drag_c / 1000.0f;
-    pidRuntime.planeAerodynProperty.induceDragC = pidProfile->ad_induce_drag_c / 1000.0f;
-    pidRuntime.planeAerodynProperty.liftForceC = 0.0f;
-    pidRuntime.planeAerodynProperty.stallAngleOfAttack = pidProfile->stall_angle_of_attack;
+    pidRuntime.planeAerodynProperty.liftZeroC = pidProfile->ad_lift_zero / 1000.0f;
+    pidRuntime.planeAerodynProperty.liftSlopeC = pidProfile->ad_lift_slope / 1000.0f;
+    pidRuntime.planeAerodynProperty.dragParasiticC = pidProfile->ad_drag_parasitic / 1000.0f;
+    pidRuntime.planeAerodynProperty.dragInducedC = pidProfile->ad_drag_induced / 1000.0f;
+    pidRuntime.planeAerodynProperty.liftActualC = 0.0f;
+    pidRuntime.planeAerodynProperty.stallAngleOfAttack = pidProfile->stall_aoa_pos;
     pidRuntime.planeAerodynProperty.angleOfAttack = 0.0f;
     pidRuntime.planeAerodynProperty.isStallWarning = false;
 }
