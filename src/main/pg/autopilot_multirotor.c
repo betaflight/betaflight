@@ -37,10 +37,12 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .hoverThrottle = 1275,
     .throttleMin = 1100,
     .throttleMax = 1700,
+
     .altitudeP = 15,
     .altitudeI = 15,
     .altitudeD = 15,
     .altitudeF = 15,
+
     .positionP = 30,
     .positionI = 30,
     .positionD = 30,

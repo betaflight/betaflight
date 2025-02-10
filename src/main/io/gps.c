@@ -2553,8 +2553,9 @@ bool gpsPassthrough(serialPort_t *gpsPassthroughPort)
     return true;
 }
 
-float GPS_cosLat = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
-                          // longitude difference * scale is approximate distance in degrees
+static float GPS_cosLat = 1.0f;
+    // this is used to offset the shrinking longitude as we go towards the poles
+    // longitude difference * scale is approximate distance in degrees
 
 void GPS_calc_longitude_scaling(int32_t lat)
 {
@@ -2721,7 +2722,7 @@ float getGpsDataFrequencyHz(void)
 
 float getGpsCosLat(void)
 {
-    return GPS_cosLat;
+    return GPS_cosLat; // note this scaling factor is set only when the home point is updated
 }
 
 baudRate_e getGpsPortActualBaudRateIndex(void)
