@@ -51,7 +51,7 @@ static uint16_t gpsRescueConfig_ascendRate;
 
 static uint16_t gpsRescueConfig_returnAltitudeM; //meters
 static uint16_t gpsRescueConfig_groundSpeedCmS; // centimeters per second
-static uint8_t apConfig_max_angle; //degrees
+static uint8_t autopilotConfig_maxAngle; //degrees
 
 static uint16_t gpsRescueConfig_descentDistanceM; //meters
 static uint16_t gpsRescueConfig_descendRate;
@@ -64,29 +64,27 @@ static uint16_t autopilotConfig_hoverThrottle;
 static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
-static uint8_t autopilotConfig_altitude_P, autopilotConfig_altitude_I, autopilotConfig_altitude_D, autopilotConfig_altitude_F;
+static uint8_t autopilotConfig_altitudeP, autopilotConfig_altitudeI, autopilotConfig_altitudeD, autopilotConfig_altitudeF;
 static uint8_t gpsRescueConfig_yawP;
-static uint8_t apConfig_position_P, apConfig_position_I, apConfig_position_D;
-
-static uint8_t apConfig_position_cutoff;
-static uint8_t gpsRescueConfig_imuYawGain;
+static uint8_t autopilotConfig_positionP, autopilotConfig_positionI, autopilotConfig_positionD;
+static uint8_t autopilotConfig_positionCutoff;
 
 static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    autopilotConfig_altitude_P = autopilotConfig()->altitudeP;
-    autopilotConfig_altitude_I = autopilotConfig()->altitudeI;
-    autopilotConfig_altitude_D = autopilotConfig()->altitudeD;
-    autopilotConfig_altitude_F = autopilotConfig()->altitudeF;
+    autopilotConfig_altitudeP = autopilotConfig()->altitudeP;
+    autopilotConfig_altitudeI = autopilotConfig()->altitudeI;
+    autopilotConfig_altitudeD = autopilotConfig()->altitudeD;
+    autopilotConfig_altitudeF = autopilotConfig()->altitudeF;
 
     gpsRescueConfig_yawP = gpsRescueConfig()->yawP;
 
-    apConfig_position_P = apConfig()->ap_position_P;
-    apConfig_position_I = apConfig()->ap_position_I;
-    apConfig_position_D = apConfig()->ap_position_D;
+    autopilotConfig_positionP = autopilotConfig()->positionP;
+    autopilotConfig_positionI = autopilotConfig()->positionI;
+    autopilotConfig_positionD = autopilotConfig()->positionD;
 
-    apConfig_position_cutoff = apConfig()->ap_position_cutoff;
+    autopilotConfig_positionCutoff = autopilotConfig()->positionCutoff;
 
     return NULL;
 }
@@ -96,18 +94,18 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     UNUSED(pDisp);
     UNUSED(self);
 
-    autopilotConfigMutable()->altitudeP = autopilotConfig_altitude_P;
-    autopilotConfigMutable()->altitudeI = autopilotConfig_altitude_I;
-    autopilotConfigMutable()->altitudeD = autopilotConfig_altitude_D;
-    autopilotConfigMutable()->altitudeF = autopilotConfig_altitude_F;
+    autopilotConfigMutable()->altitudeP = autopilotConfig_altitudeP;
+    autopilotConfigMutable()->altitudeI = autopilotConfig_altitudeI;
+    autopilotConfigMutable()->altitudeD = autopilotConfig_altitudeD;
+    autopilotConfigMutable()->altitudeF = autopilotConfig_altitudeF;
 
     gpsRescueConfigMutable()->yawP = gpsRescueConfig_yawP;
 
-    apConfigMutable()->ap_position_P = apConfig_position_P;
-    apConfigMutable()->ap_position_I = apConfig_position_I;
-    apConfigMutable()->ap_position_D = apConfig_position_D;
+    autopilotConfigMutable()->positionP = autopilotConfig_positionP;
+    autopilotConfigMutable()->positionI = autopilotConfig_positionI;
+    autopilotConfigMutable()->positionD = autopilotConfig_positionD;
 
-    apConfigMutable()->ap_position_cutoff = apConfig_position_cutoff;
+    autopilotConfigMutable()->positionCutoff = autopilotConfig_positionCutoff;
 
     return NULL;
 }
@@ -116,19 +114,18 @@ const OSD_Entry cms_menuGpsRescuePidEntries[] =
 {
     {"--- GPS RESCUE PID---", OME_Label, NULL, NULL},
 
-    { "ALTITUDE P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_P, 0, 200, 1 } },
-    { "ALTITUDE I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_I, 0, 200, 1 } },
-    { "ALTITUDE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_D, 0, 200, 1 } },
-    { "ALTITUDE F",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitude_F, 0, 200, 1 } },
+    { "ALTITUDE P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeP, 0, 200, 1 } },
+    { "ALTITUDE I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeI, 0, 200, 1 } },
+    { "ALTITUDE D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeD, 0, 200, 1 } },
+    { "ALTITUDE F",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_altitudeF, 0, 200, 1 } },
 
     { "YAW P",             OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_yawP, 0, 200, 1 } },
 
-    { "POSITION P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_position_P, 0, 200, 1 } },
-    { "POSITION I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_position_I, 0, 200, 1 } },
-    { "POSITION D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_position_D, 0, 200, 1 } },
+    { "POSITION P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionP, 0, 200, 1 } },
+    { "POSITION I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionI, 0, 200, 1 } },
+    { "POSITION D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionD, 0, 200, 1 } },
 
-    { "SMOOTHING",         OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &apConfig_position_cutoff, 10, 255, 1 } },
-    { "IMU_YAW_GAIN",      OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_imuYawGain, 5, 20, 1 } },
+    { "SMOOTHING",         OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &autopilotConfig_positionCutoff, 10, 255, 1 } },
 
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
@@ -156,7 +153,7 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 
     gpsRescueConfig_returnAltitudeM = gpsRescueConfig()->returnAltitudeM;
     gpsRescueConfig_groundSpeedCmS = gpsRescueConfig()->groundSpeedCmS;
-    apConfig_max_angle = apConfig()->ap_max_angle;
+    autopilotConfig_maxAngle = autopilotConfig()->maxAngle;
 
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
     gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
@@ -184,7 +181,7 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
 
     gpsRescueConfigMutable()->returnAltitudeM = gpsRescueConfig_returnAltitudeM;
     gpsRescueConfigMutable()->groundSpeedCmS = gpsRescueConfig_groundSpeedCmS;
-    apConfigMutable()->ap_max_angle = apConfig_max_angle;
+    autopilotConfigMutable()->maxAngle = autopilotConfig_maxAngle;
 
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
     gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
@@ -205,13 +202,13 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
     {"--- GPS RESCUE ---", OME_Label, NULL, NULL},
 
     { "MIN START DIST  M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minStartDistM, 5, 30, 1 } },
-    { "ALTITUDE MODE"    , OME_TAB    | REBOOT_REQUIRED, NULL, &(OSD_TAB_t) { &gpsRescueConfig_altitudeMode, 2, lookupTableRescueAltitudeMode} },
+    { "ALTITUDE MODE"    , OME_TAB    | REBOOT_REQUIRED, NULL, &(OSD_TAB_t)   { &gpsRescueConfig_altitudeMode, 2, lookupTableRescueAltitudeMode} },
     { "INITAL CLIMB    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialClimbM, 0, 100, 1 } },
     { "ASCEND RATE  CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, 50, 2500, 1 } },
 
     { "RETURN ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_returnAltitudeM, 5, 1000, 1 } },
     { "RETURN SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_groundSpeedCmS, 0, 3000, 1 } },
-    { "PITCH ANGLE MAX",   OME_UINT8  | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &apConfig_max_angle, 0, 60, 1 } },
+    { "PITCH ANGLE MAX",   OME_UINT8  | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t) { &autopilotConfig_maxAngle, 0, 60, 1 } },
 
     { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 5, 500, 1 } },
     { "DESCENT RATE CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 25, 500, 1 } },
