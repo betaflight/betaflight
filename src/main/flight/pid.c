@@ -274,7 +274,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ad_drag_parasitic = 25,
         .ad_drag_induced = 60,
         .plane_mass = 300,
-        .wing_load = 90,
+        .wing_load = 900,
         .air_density = 1225,
         .stall_aoa_pos = 12,
 #endif

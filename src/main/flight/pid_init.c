@@ -115,7 +115,7 @@ static void aerodynamicsInit(const pidProfile_t *pidProfile)
     aerodynamicsProperty_t *adp = &pidRuntime.planeDynamics;
     adp->mode = (aerodynamicsMode_e)pidProfile->ad_mode;
     adp->planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
-    adp->wingLoad = pidProfile->wing_load * 10.0f;           // g/decim^2 -> kg/m^2
+    adp->wingLoad = pidProfile->wing_load;           // g/decim^2 *10 = kg/m^2
     adp->airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
     adp->liftZeroC = pidProfile->ad_lift_zero / 1000.0f;
     adp->liftSlopeC = pidProfile->ad_lift_slope / 1000.0f;

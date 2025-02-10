@@ -341,15 +341,15 @@ typedef struct pidProfile_s {
 
     // use aerodynamics
 #ifdef USE_WING
-    uint8_t  ad_mode;                   //For wings: The aerodynamics using mode: off, angle of attack, tpa
-    uint8_t ad_lift_zero;            //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
+    uint8_t  ad_mode;               //For wings: The aerodynamics using mode: off, angle of attack, tpa
+    uint8_t ad_lift_zero;           //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
     uint8_t ad_lift_slope;          //For wings: aerodynamics lift force coefficient differencial by angle of attack value, 1000*dClift/dAoA units, AoA [grad]
-    uint8_t ad_drag_parasitic;            //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
-    uint8_t ad_drag_induced;          //For wings: aerodynamics induce drag force coefficient, 1000*Cinduce units
-    uint16_t plane_mass;                //For wings: airplane mass, [g]
-    uint16_t wing_load;                 //For wings: wing load (mass / WingArea) [g/decimeter^2]
-    uint16_t air_density;               //For wings: the current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
-    uint8_t stall_aoa_pos;     //For wings: stall angle of attack
+    uint8_t ad_drag_parasitic;      //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
+    uint8_t ad_drag_induced;        //For wings: aerodynamics induce drag force coefficient, 1000*Cinduce units
+    uint16_t plane_mass;            //For wings: airplane mass, [g]
+    uint16_t wing_load;             //For wings: wing load (mass / WingArea) [g/decimeter^2 * 10 = kg/m^2]
+    uint16_t air_density;           //For wings: the current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
+    uint8_t stall_aoa_pos;          //For wings: stall angle of attack positive, TODO: add negative value
 #endif
 } pidProfile_t;
 
