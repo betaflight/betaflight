@@ -402,7 +402,7 @@ static float calcPlaneSinPathAngle(void)
 //  the unit velocity vector in earth frame reference system
     applyRotationMatrix(&direction, &rMat);
 
-    return -direction.z;     //sin trajectory tilt angle, >0 - down, <0 up
+    return direction.z;     //sin path angle, >0 - up, <0 down
 }
 
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
@@ -418,14 +418,14 @@ static float calcWingAcceleration(float throttle, float pitchAngleRadians)
         const float airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
         const float dragC = planeProperty->dragParasiticC + planeProperty->dragInducedC * sq(planeProperty->liftActualC);
         dragAccel = dragC * airSpeedPressure / planeProperty->wingLoad;
-        gravityAccel = G_ACCELERATION * calcPlaneSinPathAngle();
+        gravityAccel = G_ACCELERATION * calcPlaneSinPathAngle();   
         thrustAccel *= cos_approx(DEGREES_TO_RADIANS(planeProperty->angleOfAttack));   //aproximally, because we do not know the real engine force direction 
     } else {
         dragAccel = tpa->speed * tpa->speed * tpa->dragMassRatio;
-        gravityAccel = G_ACCELERATION * sin_approx(pitchAngleRadians);
+        gravityAccel = -G_ACCELERATION * sin_approx(pitchAngleRadians); // add negative sign for RHS dynamics equition
     }
 
-    return thrustAccel - dragAccel + gravityAccel;
+    return thrustAccel - dragAccel - gravityAccel; //the standard speed accel equition in rhs frame system
 }
 
 static float calcWingTpaArgument(void)
