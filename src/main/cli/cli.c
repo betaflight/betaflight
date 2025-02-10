@@ -6896,7 +6896,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         setPrintfSerialPort(cliPort);
     }
 
-    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufBlockingShim, serialPort);
     cliErrorWriter = cliWriter = &cliWriterDesc;
 
     if (interactive) {
