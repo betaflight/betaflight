@@ -93,8 +93,8 @@ static void altHoldProcessTransitions(void) {
 static void altHoldUpdateTargetAltitude(void)
 {
     // User can adjust the target altitude with throttle, but only when
-    // - throttle is outside deadband, and 
-    // - throttle is not low (zero), and 
+    // - throttle is outside deadband, and
+    // - throttle is not low (zero), and
     // - deadband is not configured to zero
 
     float stickFactor = 0.0f;
