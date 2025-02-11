@@ -348,13 +348,13 @@ static void computeAngleOfAttackEstimate(void)
     float angleOfAttack = 0.0f;
     float isStallWarning = false;
     if (sensors(SENSOR_ACC)) {
-        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed TODO: add mode to use GPS speed
+        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed. TODO: add mode to use GPS speed for using in unwind conditions,  tuning and debug
         if (speed > speedThreshold) {
             airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
             loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
             liftActualC = loadZ * planeProperty->wingLoad * G_ACCELERATION / airSpeedPressure;
             angleOfAttack = (liftActualC - planeProperty->liftZeroC) / planeProperty->liftSlopeC;
-            isStallWarning = angleOfAttack > planeProperty->stallAngleOfAttack - stallAngleOfAttackPad;
+            isStallWarning = angleOfAttack > planeProperty->stallAngleOfAttack - stallAngleOfAttackPad; // TODO: add cli input of stallAngleOfAttackPad and do OSD blink symbols warning
         }
     }
 

@@ -1802,9 +1802,11 @@ static void osdElementSys(osdElementParms_t *element)
 
 #ifdef USE_WING
 static void osdElementAngleOfAttack(osdElementParms_t *element) {
+/*  TODO: To check and add in the next PR
     if (pidRuntime.planeDynamics.isStallWarning) {
         element->attr = DISPLAYPORT_SEVERITY_WARNING;
     }
+*/
     element->buff[0] = SYM_ANGLE_OF_ATTACK;    //the mail @ symbol is most like alpha symbol, what is used in AoA formulas
     tfp_sprintf(element->buff + 1, "%3d", lrintf(pidRuntime.planeDynamics.angleOfAttack));
 }
@@ -2497,7 +2499,7 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_ALTITUDE);
     }
-
+/* TODO: To check and add in the next PR
 #ifdef USE_WING
     if (pidRuntime.planeDynamics.isStallWarning) {
         SET_BLINK(OSD_ANGLE_OF_ATTACK);
@@ -2505,6 +2507,7 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_ANGLE_OF_ATTACK);
     }
 #endif
+*/
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         if (osdConfig()->distance_alarm && GPS_distanceToHome >= osdConfig()->distance_alarm) {
