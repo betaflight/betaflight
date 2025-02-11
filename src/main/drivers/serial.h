@@ -155,5 +155,6 @@ uint32_t serialGetBaudRate(serialPort_t *instance);
 
 // A shim that adapts the bufWriter API to the serialWriteBuf() API.
 void serialWriteBufShim(void *instance, const uint8_t *data, int count);
+void serialWriteBufBlockingShim(void *instance, const uint8_t *data, int count);
 void serialBeginWrite(serialPort_t *instance);
 void serialEndWrite(serialPort_t *instance);

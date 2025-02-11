@@ -6777,7 +6777,7 @@ void cliEnter(serialPort_t *serialPort)
     cliMode = true;
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
-    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufBlockingShim, serialPort);
     cliErrorWriter = cliWriter = &cliWriterDesc;
 
 #ifndef MINIMAL_CLI
