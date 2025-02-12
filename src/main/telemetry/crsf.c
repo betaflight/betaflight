@@ -315,9 +315,9 @@ void crsfFrameBindPhrase(sbuf_t *dst,bool rxSelect)
     sbufWriteU8(dst,buff[3]);
     sbufWriteU8(dst,buff[4]);
     sbufWriteU8(dst,buff[5]);
-    sbufWriteU32BigEndian(dst, startFrequency);
-    sbufWriteU32BigEndian(dst, midFrequency);
-    sbufWriteU32BigEndian(dst, endFrequency);
+    sbufWriteU16BigEndian(dst, startFrequency);
+    sbufWriteU16BigEndian(dst, midFrequency);
+    sbufWriteU16BigEndian(dst, endFrequency);
     sbufWriteU8(dst, numChannels);
 }
 

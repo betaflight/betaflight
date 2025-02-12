@@ -521,13 +521,19 @@ const char *statusStrings[] = {
     "NO PAYLOAD",
     "STARTUP",
     "IDLE",
-    "SST",
+    "SST_90","SST_89","SST_88","SST_87","SST_86","SST_85","SST_84","SST_83","SST_82","SST_81","SST_80","SST_79","SST_78","SST_77","SST_76","SST_75","SST_74","SST_73","SST_72","SST_71","SST_70","SST_69","SST_68","SST_67","SST_66","SST_65","SST_64","SST_63","SST_62","SST_61","SST_60","SST_59","SST_58","SST_57","SST_56","SST_55","SST_54","SST_53","SST_52","SST_51","SST_50","SST_49","SST_48","SST_47","SST_46","SST_45","SST_44","SST_43","SST_42","SST_41","SST_40","SST_39","SST_38","SST_37","SST_36","SST_35","SST_34","SST_33","SST_32","SST_31","SST_30","SST_29","SST_28","SST_27","SST_26","SST_25","SST_24","SST_23","SST_22","SST_21","SST_20","SST_19","SST_18","SST_17","SST_16","SST_15","SST_14","SST_13","SST_12","SST_11","SST_10","SST_9","SST_8","SST_7","SST_6","SST_5","SST_4","SST_3","SST_2","SST_1",
+    "SST_END",
     "INPUT_WARNING",
-    "ARMED",
-    "ENABLED",
+    "ARMED_IMP",
+    "ARMED_NEAR",
+    "ARMED_FAR",
+    "ENABLED_IMP",
+    "ENABLED_NEAR",
+    "ENABLED_FAR",
     "TRIGGERED",
     "ERROR"
 };
+const int statusStringsCount = sizeof(statusStrings)/sizeof(statusStrings[0]);
 
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
@@ -553,7 +559,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 const uint8_t c = serialRead(mspPort->port);
 
                 if(mspPort->port->identifier == SERIAL_PORT_USART2){
-                    if(payloadTempBufferIndex<64 && ((c >= 'A' && c <= 'Z') || c =='_')){
+                    if(payloadTempBufferIndex<64 && ((c >= 'A' && c <= 'Z') || c =='_' || (c >= '0' && c <= '9'))){
                         payloadTempBuffer[payloadTempBufferIndex] = c;
                         payloadTempBufferIndex+=1;
                     }
@@ -580,9 +586,8 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 }
                 }
             }
-
             if((mspPort->port->identifier == SERIAL_PORT_USART2) && payloadTempBufferIndex>0){
-                for (int i = 0; i < 9; i++) {
+                for (int i = 0; i < statusStringsCount; i++) {
                     if (strcmp(statusStrings[i],payloadTempBuffer) == 0) {
                         currentStatusMessageIdx = i;
                         break;

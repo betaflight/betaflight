@@ -198,9 +198,12 @@ typedef struct crsfPayloadLinkstatistics_s {
     uint8_t rf_Mode;
     uint8_t tlm_Ratio;
     uint8_t uplink_TX_Power;
-    uint8_t downlink_RSSI_1;
+    uint8_t downlink_RSSI;
     uint8_t downlink_Link_quality;
     int8_t downlink_SNR;
+    uint16_t freq_low;
+    uint16_t freq_high;
+    uint8_t num_channels;
     uint8_t uid[6];
     uint8_t bind_phrase[12];
 } crsfLinkStatistics_t;
