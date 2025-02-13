@@ -63,6 +63,7 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
 #define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_EXTI
