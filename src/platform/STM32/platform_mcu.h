@@ -412,10 +412,30 @@ extern uint8_t _dmaram_end__;
 #define UART_REG_TXD(base) ((base)->DR)
 #endif
 
-
+// ---- DMA ---
+// ---- DMA UART ---
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define DMA_TRAIT_CHANNEL 1
 #endif
+// ---- DMA ARCH ---
+// ST HAL library uses DMA_Stream_TypeDef or BDMA_Channel_TypeDef, depending the MCU generation
+// thoses structure are completly different,
+// and even with same name, DMA_Stream_TypeDef is not the same between F4 and F7 (or H7)
+// elt name change, but structure is the same
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#define DMA_TRAIT_ARCH_STREAM_TYPE
+#elif defined(STM32G4)
+#define DMA_TRAIT_ARCH_CHANNEL_TYPE
+#else
+#error "No DMA architecture type defined for this target"
+#endif
+// ---- DMA SPI ---
+#if defined(STM32F4) || defined(STM32F7)|| defined(STM32H7) || defined(STM32G4)
+#define DMA_TRAIT_SPI_STREAM
+#endif
+
+// include done after DMA macro and define declaration
+#include "dma_stm32.h"
 
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12

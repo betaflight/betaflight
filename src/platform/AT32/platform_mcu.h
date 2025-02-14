@@ -25,6 +25,7 @@
 #include "at32f435_437.h"
 #include "at32f435_437_i2c.h"
 #include "i2c_application.h"
+#include "dma_atbsp.h"
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
@@ -154,7 +155,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_REG_RXD(base) ((base)->dt)
 #define UART_REG_TXD(base) ((base)->dt)
 
+// -- DMA --
 #define DMA_TRAIT_MUX 1
+#define DMA_TRAIT_ARCH_AT_TYPE /// @todo better name could be choosen
 
 #endif
 

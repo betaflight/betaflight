@@ -65,3 +65,5 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define IOCFG_IPU             0
 #define IOCFG_IN_FLOATING     0
 
+/// @todo [DMA-Codeclean] Check if this is correct, as I don't know how PICO works
+#define DMA_TRAIT_ARCH_CHANNEL_TYPE

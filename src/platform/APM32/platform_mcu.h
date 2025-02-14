@@ -37,6 +37,8 @@
 
 #include "apm32f4xx_ddl_ex.h"
 
+#include "dma_apm32.h"
+
 // Aliases
 #define HAL_StatusTypeDef           DAL_StatusTypeDef
 #define HAL_RCC_GetSysClockFreq     DAL_RCM_GetSysClockFreq
@@ -199,7 +201,10 @@
 #define UART_REG_RXD(base) ((base)->DATA)
 #define UART_REG_TXD(base) ((base)->DATA)
 
+// -- DMA --
 #define DMA_TRAIT_CHANNEL 1
+#define DMA_TRAIT_ARCH_STREAM_TYPE
+#define DMA_TRAIT_SPI_STREAM
 
 #define USB_DP_PIN PA12
 
