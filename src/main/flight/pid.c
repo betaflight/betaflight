@@ -353,6 +353,7 @@ static void computeAngleOfAttackEstimate(void)
             airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
             loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
             liftActualC = loadZ * planeProperty->wingLoad * G_ACCELERATION / airSpeedPressure;
+            liftActualC = constrainf(liftActualC, -2.0f, 2.0f); //limit lift force coef value for small speed to prevent unreal AoA and drag force
             angleOfAttack = (liftActualC - planeProperty->liftZeroC) / planeProperty->liftSlopeC;
             isStallWarning = angleOfAttack > planeProperty->stallAngleOfAttack - stallAngleOfAttackPad; // TODO: add cli input of stallAngleOfAttackPad and do OSD blink symbols warning
         }
