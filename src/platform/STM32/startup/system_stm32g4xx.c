@@ -300,7 +300,7 @@ static bool systemClock_PLLConfig(int overclockLevel)
         } else if (pllInput == 26) {
             targetMhz = sysclkSeries26[overclockLevel];
         } else if (pllInput == 27) {
-            targetMhz = sysclkSeries8[overclockLevel];
+            targetMhz = sysclkSeries27[overclockLevel];
         } else {
             return false;
         }
