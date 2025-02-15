@@ -315,7 +315,7 @@ void systemClockSetHSEValue(uint32_t frequency)
 
     // Only supported HSE crystal/resonator is 27MHz, 26 MHz or integer multiples of 8MHz
 
-    if (freqMhz != 27 && (freqMhz / 8) * 8 != freqMhz) {
+    if (freqMhz != 27 && freqMhz != 26 && (freqMhz / 8) * 8 != freqMhz) {
         return;
     }
 
