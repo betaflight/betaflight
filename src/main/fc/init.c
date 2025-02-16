@@ -485,7 +485,7 @@ void init(void)
 
 #if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     // F4 has non-8MHz boards
-    // G4 for Betaflight allow 24 or 27MHz oscillator
+    // G4 for Betaflight allow 8, 16, 24, 26 or 27MHz oscillator
     systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
 #endif
 
