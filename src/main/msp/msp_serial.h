@@ -27,7 +27,7 @@
 #include "msp/msp.h"
 
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 3 MSP ports.
-#define MAX_MSP_PORT_COUNT 3
+#define MAX_MSP_PORT_COUNT 4
 
 typedef enum {
     PORT_IDLE,
