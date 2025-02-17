@@ -28,7 +28,7 @@
 
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 3 MSP ports.
 #ifndef MAX_MSP_PORT_COUNT 
-#define MAX_MSP_PORT_COUNT 6  
+#define MAX_MSP_PORT_COUNT 3  
 #endif
 
 typedef enum {
