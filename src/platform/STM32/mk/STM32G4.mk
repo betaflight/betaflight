@@ -97,7 +97,15 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER -DUSE_DMA_RAM -DMAX_MPU_
 
 # G47X_TARGETS includes G47{3,4}{RE,CE,CEU}
 
-ifeq ($(TARGET_MCU),STM32G474xx)
+ifeq ($(TARGET_MCU),STM32G473xx)
+DEVICE_FLAGS    += -DSTM32G473xx
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_g473.ld
+STARTUP_SRC     = STM32/startup/startup_stm32g474xx.s
+MCU_FLASH_SIZE  = 512
+# Override the OPTIMISE_SPEED compiler setting to save flash space on these 512KB targets.
+# Performance is only slightly affected but around 50 kB of flash are saved.
+OPTIMISE_SPEED  = -O2
+else ifeq ($(TARGET_MCU),STM32G474xx)
 DEVICE_FLAGS    += -DSTM32G474xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_g474.ld
 STARTUP_SRC     = STM32/startup/startup_stm32g474xx.s
