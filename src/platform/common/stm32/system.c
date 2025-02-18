@@ -354,8 +354,10 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
         { .id = MCU_TYPE_H730, .name = "STM32H730" },
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
         { .id = MCU_TYPE_H7A3, .name = "STM32H7A3" },
-#elif defined(STM32H723xx) || defined(STM32H725xx)
-        { .id = MCU_TYPE_H723_725, .name = "STM32H723/H725" },
+#elif defined(STM32H723xx)
+        { .id = MCU_TYPE_H723, .name = "STM32H723" },
+#elif defined(STM32H725xx)
+        { .id = MCU_TYPE_H725, .name = "STM32H725" },
 #elif defined(STM32G473xx)
         { .id = MCU_TYPE_G473, .name = "STM32G473" },
 #elif defined(STM32G474xx)
