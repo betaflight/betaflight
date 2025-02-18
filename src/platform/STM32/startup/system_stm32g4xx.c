@@ -225,6 +225,7 @@ void Error_Handler(void)
 // Target frequencies for cpu_overclock (Levels 0 through 3)
 
 uint16_t sysclkSeries8[] =  { 168, 192, 216, 240 };
+uint16_t sysclkSeries26[] = { 169, 195, 221, 247 };
 uint16_t sysclkSeries27[] = { 171, 198, 225, 252 };
 #define OVERCLOCK_LEVELS ARRAYLEN(sysclkSeries8)
 
@@ -247,6 +248,13 @@ static bool systemComputePLLParameters(uint8_t src, uint16_t target, int *sysclk
         multDiff = vcoDiff / 16 * 2;
         *plln = 42 + multDiff;
         vcoFreq = 8 * *plln;
+    } else if (src == 26) {
+        *pllm = 2;
+        vcoBase = 169 * 2;
+        vcoDiff = vcoTarget - vcoBase;
+        multDiff = vcoDiff / 26 * 2;
+        *plln = 26 + multDiff;
+        vcoFreq = 13 * *plln;
     } else if (src == 27) {
         *pllm = 3;
         vcoBase = 171 * 2;
@@ -289,8 +297,10 @@ static bool systemClock_PLLConfig(int overclockLevel)
         pllSrc = RCC_PLLSOURCE_HSE;
         if (pllInput == 8 || pllInput == 16 || pllInput == 24) {
             targetMhz = sysclkSeries8[overclockLevel];
+        } else if (pllInput == 26) {
+            targetMhz = sysclkSeries26[overclockLevel];
         } else if (pllInput == 27) {
-            targetMhz = sysclkSeries8[overclockLevel];
+            targetMhz = sysclkSeries27[overclockLevel];
         } else {
             return false;
         }
@@ -303,9 +313,9 @@ void systemClockSetHSEValue(uint32_t frequency)
 {
     uint32_t freqMhz = frequency / 1000000;
 
-    // Only supported HSE crystal/resonator is 27MHz or integer multiples of 8MHz
+    // Only supported HSE crystal/resonator is 27MHz, 26 MHz or integer multiples of 8MHz
 
-    if (freqMhz != 27 && (freqMhz / 8) * 8 != freqMhz) {
+    if (freqMhz != 27 && freqMhz != 26 && (freqMhz / 8) * 8 != freqMhz) {
         return;
     }
 
