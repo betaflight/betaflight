@@ -27,10 +27,10 @@
 
 #include "pg/pg.h"
 
-typedef struct apConfig_s {
+typedef struct autopilotConfig_s {
     uint8_t dummy;
-} apConfig_t;
+} autopilotConfig_t;
 
-PG_DECLARE(apConfig_t, apConfig);
+PG_DECLARE(autopilotConfig_t, autopilotConfig);
 
 #endif // USE_WING

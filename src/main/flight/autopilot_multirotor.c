@@ -138,23 +138,22 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
 
 void autopilotInit(void)
 {
-    const apConfig_t *cfg = apConfig();
-
+    const autopilotConfig_t *cfg = autopilotConfig();
     ap.sticksActive = false;
-    ap.maxAngle = cfg->max_angle;
-    altitudePidCoeffs.Kp = cfg->altitude_P * ALTITUDE_P_SCALE;
-    altitudePidCoeffs.Ki = cfg->altitude_I * ALTITUDE_I_SCALE;
-    altitudePidCoeffs.Kd = cfg->altitude_D * ALTITUDE_D_SCALE;
-    altitudePidCoeffs.Kf = cfg->altitude_F * ALTITUDE_F_SCALE;
-    positionPidCoeffs.Kp = cfg->position_P * POSITION_P_SCALE;
-    positionPidCoeffs.Ki = cfg->position_I * POSITION_I_SCALE;
-    positionPidCoeffs.Kd = cfg->position_D * POSITION_D_SCALE;
-    positionPidCoeffs.Kf = cfg->position_A * POSITION_A_SCALE; // Kf used for acceleration
+    ap.maxAngle = cfg->maxAngle;
+    altitudePidCoeffs.Kp = cfg->altitudeP * ALTITUDE_P_SCALE;
+    altitudePidCoeffs.Ki = cfg->altitudeI * ALTITUDE_I_SCALE;
+    altitudePidCoeffs.Kd = cfg->altitudeD * ALTITUDE_D_SCALE;
+    altitudePidCoeffs.Kf = cfg->altitudeF * ALTITUDE_F_SCALE;
+    positionPidCoeffs.Kp = cfg->positionP * POSITION_P_SCALE;
+    positionPidCoeffs.Ki = cfg->positionI * POSITION_I_SCALE;
+    positionPidCoeffs.Kd = cfg->positionD * POSITION_D_SCALE;
+    positionPidCoeffs.Kf = cfg->positionA * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gains; location isn't used at this point.
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
     resetUpsampleFilters();
     // Initialise PT1 filters for velocity and acceleration in earth frame axes
-    ap.vaLpfCutoff = cfg->position_cutoff * 0.01f;
+    ap.vaLpfCutoff = cfg->positionCutoff * 0.01f;
     const float vaGain = pt1FilterGain(ap.vaLpfCutoff,  0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
         resetEFAxisFilters(&ap.efAxis[i], vaGain);
@@ -193,7 +192,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
 
-    const float hoverOffset = apConfig()->hover_throttle - PWM_RANGE_MIN;
+    const float hoverOffset = autopilotConfig()->hoverThrottle - PWM_RANGE_MIN;
     float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
 
     const float tiltMultiplier = 1.0f / fmaxf(getCosTiltAngle(), 0.5f);
@@ -203,7 +202,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     throttleOffset *= tiltMultiplier;
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
-    newThrottle = constrainf(newThrottle, apConfig()->throttle_min, apConfig()->throttle_max);
+    newThrottle = constrainf(newThrottle, autopilotConfig()->throttleMin, autopilotConfig()->throttleMax);
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
 
     newThrottle = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
@@ -386,7 +385,7 @@ bool positionControl(void)
 
 bool isBelowLandingAltitude(void)
 {
-    return getAltitudeCm() < 100.0f * apConfig()->landing_altitude_m;
+    return getAltitudeCm() < 100.0f * autopilotConfig()->landingAltitudeM;
 }
 
 float getAutopilotThrottle(void)

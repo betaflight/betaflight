@@ -129,8 +129,20 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
     serialEndWrite(instance);
 }
 
+void serialWriteBufBlocking(serialPort_t *instance, const uint8_t *data, int count)
+{
+    while (serialTxBytesFree(instance) < (uint32_t)count) /* NOP */;
+    serialWriteBuf(instance, data, count);
+}
+
 void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);
 }
+
+void serialWriteBufBlockingShim(void *instance, const uint8_t *data, int count)
+{
+    serialWriteBufBlocking(instance, data, count);
+}
+
 
