@@ -27,32 +27,26 @@
 
 #include "light_led.h"
 
-#if !(defined(UNIT_TEST) || defined(USE_VIRTUAL_LED))
+#if !defined(USE_VIRTUAL_LED)
 
-PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
-
-static IO_t leds[STATUS_LED_NUMBER];
+static IO_t leds[STATUS_LED_COUNT];
 static uint8_t ledInversion = 0;
 
-#ifndef LED0_PIN
-#define LED0_PIN NONE
+PG_REGISTER_WITH_RESET_TEMPLATE(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
+
+PG_RESET_TEMPLATE(statusLedConfig_t, statusLedConfig,
+    .ioTags = {
+#if STATUS_LED_COUNT > 0 && defined(LED0_PIN)
+        [0] = IO_TAG(LED0_PIN),
 #endif
-
-#ifndef LED1_PIN
-#define LED1_PIN NONE
+#if STATUS_LED_COUNT > 1 && defined(LED1_PIN)
+        [1] = IO_TAG(LED1_PIN),
 #endif
-
-#ifndef LED2_PIN
-#define LED2_PIN NONE
+#if STATUS_LED_COUNT > 2 && defined(LED2_PIN)
+        [2] = IO_TAG(LED2_PIN),
 #endif
-
-void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
-{
-    statusLedConfig->ioTags[0] = IO_TAG(LED0_PIN);
-    statusLedConfig->ioTags[1] = IO_TAG(LED1_PIN);
-    statusLedConfig->ioTags[2] = IO_TAG(LED2_PIN);
-
-    statusLedConfig->inversion = 0
+    },
+    .inversion = 0
 #ifdef LED0_INVERTED
     | BIT(0)
 #endif
@@ -62,35 +56,37 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
 #ifdef LED2_INVERTED
     | BIT(2)
 #endif
-    ;
-}
+    ,
+);
 
 void ledInit(const statusLedConfig_t *statusLedConfig)
 {
     ledInversion = statusLedConfig->inversion;
-    for (int i = 0; i < STATUS_LED_NUMBER; i++) {
-        if (statusLedConfig->ioTags[i]) {
-            leds[i] = IOGetByTag(statusLedConfig->ioTags[i]);
+    for (int i = 0; i < (int)ARRAYLEN(leds); i++) {
+        leds[i] = IOGetByTag(statusLedConfig->ioTags[i]);
+        if (leds[i]) {
             IOInit(leds[i], OWNER_LED, RESOURCE_INDEX(i));
             IOConfigGPIO(leds[i], IOCFG_OUT_PP);
-        } else {
-            leds[i] = IO_NONE;
         }
+        ledSet(i, false);
     }
-
-    LED0_OFF;
-    LED1_OFF;
-    LED2_OFF;
 }
 
 void ledToggle(int led)
 {
+    if (led < 0 || led >= (int)ARRAYLEN(leds)) {
+        return;
+    }
     IOToggle(leds[led]);
 }
 
 void ledSet(int led, bool on)
 {
-    const bool inverted = (1 << (led)) & ledInversion;
+    if (led < 0 || led >= (int)ARRAYLEN(leds)) {
+        return;
+    }
+    const bool inverted = ledInversion & (1 << led);
     IOWrite(leds[led], on ? inverted : !inverted);
 }
+
 #endif
