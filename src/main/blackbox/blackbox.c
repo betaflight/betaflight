@@ -365,7 +365,7 @@ typedef struct blackboxMainState_s {
     int16_t gyroUnfilt[XYZ_AXIS_COUNT];
 #ifdef USE_ACC
     int16_t accADC[XYZ_AXIS_COUNT];
-    int16_t imuAttitudeQuaternion[XYZ_AXIS_COUNT];
+    int16_t imuAttitudeQuaternion3[XYZ_AXIS_COUNT]; // only x,y,z is stored; w is always positive
 #endif
     int16_t debug[DEBUG16_VALUE_COUNT];
     int16_t motor[MAX_SUPPORTED_MOTORS];
@@ -747,7 +747,7 @@ static void writeIntraframe(void)
     }
 
     if (testBlackboxCondition(CONDITION(ATTITUDE))) {
-        blackboxWriteSigned16VBArray(blackboxCurrent->imuAttitudeQuaternion, XYZ_AXIS_COUNT);
+        blackboxWriteSigned16VBArray(blackboxCurrent->imuAttitudeQuaternion3, XYZ_AXIS_COUNT);
     }
 #endif
 
@@ -932,7 +932,7 @@ static void writeInterframe(void)
     }
 
     if (testBlackboxCondition(CONDITION(ATTITUDE))) {
-        blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, imuAttitudeQuaternion), XYZ_AXIS_COUNT);
+        blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, imuAttitudeQuaternion3), XYZ_AXIS_COUNT);
     }
 #endif
 
@@ -1250,14 +1250,22 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC.v[i]);
-        STATIC_ASSERT(offsetof(quaternion_t, w) == 0, "Code expects quaternion in w, x, y, z order");
-        blackboxCurrent->imuAttitudeQuaternion[i] = lrintf(imuAttitudeQuaternion.v[i + 1] * 0x7FFF);  //Scale to int16 by value 0x7FFF = 2^15 - 1; Use i+1 index for x,y,z components access, [0] - w
 #endif
 #ifdef USE_MAG
         blackboxCurrent->magADC[i] = lrintf(mag.magADC.v[i]);
 #endif
     }
-
+#if defined(USE_ACC) // IMU quaternion
+    {
+        // write x,y,z of IMU quaternion. Make sure that w is always positive
+        STATIC_ASSERT(offsetof(quaternion_t, w) == 0, "Code expects quaternion in w, x, y, z order");
+        const float q_sign = imuAttitudeQuaternion.w < 0 ? -1 : 1;     // invert quaternion if w is negative
+        const float q_scale = q_sign * 0x7FFF;                         // Scale to int16 by value 0x7FFF = 2^15 - 1 (-1 <= x,y,z <= 1)
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            blackboxCurrent->imuAttitudeQuaternion3[i] = lrintf(imuAttitudeQuaternion.v[i + 1] * q_scale); // Use i+1 index for x,y,z components access, [0] - w
+        }
+    }
+#endif
     for (int i = 0; i < 4; i++) {
         blackboxCurrent->rcCommand[i] = lrintf(rcCommand[i] * blackboxHighResolutionScale);
     }
