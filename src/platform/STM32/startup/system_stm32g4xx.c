@@ -117,12 +117,7 @@ void SystemInit(void)
   */
 void SystemCoreClockUpdate(void)
 {
-  uint32_t hse_value =
-  #ifdef USE_CLOCK_SOURCE_HSI
-        0;
-  #else
-      persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
-  #endif
+  uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
   uint32_t tmp, pllvco, pllr, pllsource, pllm;
 
   /* Get SYSCLK source -------------------------------------------------------*/
@@ -280,12 +275,7 @@ static int sysclkMhz;
 
 static bool systemClock_PLLConfig(int overclockLevel)
 {
-    uint32_t hse_value = 
-    #ifdef USE_CLOCK_SOURCE_HSI
-      0;
-    #else
-      persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
-    #endif//uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
+    uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
     int pllInput;
     int targetMhz;
 
@@ -380,20 +370,18 @@ void SystemClock_Config(void)
 
   // Initializes the CPU, AHB and APB busses clocks
 
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI48
-                              | RCC_OSCILLATORTYPE_LSI
-  #ifndef USE_CLOCK_SOURCE_HSI
-                              | RCC_OSCILLATORTYPE_HSE
-  #endif
-                              ;
-
-  //RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEState = 
-#ifdef USE_CLOCK_SOURCE_HSI
-    RCC_HSE_OFF;
-#else
-    RCC_HSE_ON;
-#endif
+  uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
+  if(hse_value == 0)
+  {
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_LSI;
+    RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
+  }
+  else
+  {
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  }
+ 
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
