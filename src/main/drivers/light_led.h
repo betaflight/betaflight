@@ -43,7 +43,7 @@
 // use dummy functions for unittest
 #if defined(UNIT_TEST) || defined(USE_VIRTUAL_LED)
 
-// ledInit is mising intentionally
+// ledInit is missing intentionally
 static inline void ledToggle(int led) { UNUSED(led); }
 static inline void ledSet(int led, bool state) { UNUSED(led); UNUSED(state); }
 
