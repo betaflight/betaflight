@@ -41,7 +41,7 @@
 #define LED2_ON                  ledSet(2, true)
 
 // use dummy functions for unittest
-#if defined(UNIT_TEST) || defined(USE_VIRTUAL_LED)
+#if defined(USE_VIRTUAL_LED)
 
 // ledInit is missing intentionally
 static inline void ledToggle(int led) { UNUSED(led); }
