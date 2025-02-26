@@ -370,17 +370,11 @@ void SystemClock_Config(void)
 
   // Initializes the CPU, AHB and APB busses clocks
 
-  uint32_t hse_value = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE);
-  if(hse_value == 0)
-  {
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_LSI;
-    RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
-  }
-  else
-  {
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  }
+  const bool useHse = persistentObjectRead(PERSISTENT_OBJECT_HSE_VALUE) != 0;
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48 
+        | RCC_OSCILLATORTYPE_LSI 
+        | (useHse ? RCC_OSCILLATORTYPE_HSE : 0);
+    RCC_OscInitStruct.HSEState = useHse ? RCC_HSE_ON : RCC_HSE_OFF;
  
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
