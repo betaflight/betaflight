@@ -184,7 +184,7 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
 motorProtocolFamily_e motorGetProtocolFamily(void)
 {
     switch (motorConfig()->dev.motorProtocol) {
-#ifdef USE_PWMOUTPUT
+#ifdef USE_PWM_OUTPUT
     case MOTOR_PROTOCOL_PWM :
     case MOTOR_PROTOCOL_ONESHOT125:
     case MOTOR_PROTOCOL_ONESHOT42:
