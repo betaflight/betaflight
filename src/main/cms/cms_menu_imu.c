@@ -429,6 +429,7 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
 
     { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1} },
     { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1} },
+    { "THR HOVER",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrHover8,         0,  100,  1} },
 
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType} },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
