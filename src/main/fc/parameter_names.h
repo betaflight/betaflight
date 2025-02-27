@@ -186,6 +186,14 @@
 #define PARAM_NAME_ANGLE_EARTH_REF "angle_earth_ref"
 #define PARAM_NAME_ANGLE_PITCH_OFFSET "angle_pitch_offset"
 
+#if defined(USE_WING)
+#define PARAM_NAME_AOA_MIN_PARAM "aoa_min_param"
+#define PARAM_NAME_AOA_MIN_ANGLE "aoa_min_angle"
+#define PARAM_NAME_AOA_MAX_PARAM "aoa_max_param"
+#define PARAM_NAME_AOA_MAX_ANGLE "aoa_max_angle"
+#define PARAM_NAME_AOA_WARNING_ANGLE "aoa_warning_angle"
+#endif
+
 #define PARAM_NAME_HORIZON_LEVEL_STRENGTH "horizon_level_strength"
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"
 #define PARAM_NAME_HORIZON_LIMIT_STICKS "horizon_limit_sticks"
