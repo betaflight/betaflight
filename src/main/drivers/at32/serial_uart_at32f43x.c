@@ -387,12 +387,21 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     if ((options & SERIAL_BIDIR) && txIO) {
         //mode,speed,otype,pupd
+#ifndef USE_NONCOMPLIANT_SMARTAUDIO
         ioConfig_t ioCfg = IO_CONFIG(
             GPIO_MODE_MUX,
             GPIO_DRIVE_STRENGTH_STRONGER,
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PULL_DOWN : GPIO_PULL_UP
         );
+#else
+        ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_MODE_MUX,
+            GPIO_DRIVE_STRENGTH_STRONGER,
+            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
+            (options & SERIAL_INVERTED) ? GPIO_PULL_DOWN : GPIO_PULL_UP
+        );
+#endif
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         IOConfigGPIOAF(txIO, ioCfg, uartdev->tx.af);
     } else {

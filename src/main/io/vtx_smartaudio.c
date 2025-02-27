@@ -497,7 +497,7 @@ static void saReceiveFrame(uint8_t c)
 static void saSendFrame(uint8_t *buf, int len)
 {
     if (!IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
-#ifndef AT32F4
+#ifdef USE_NONCOMPLIANT_SMARTAUDIO
         switch (smartAudioSerialPort->identifier) {
         case SERIAL_PORT_SOFTSERIAL1:
         case SERIAL_PORT_SOFTSERIAL2:
@@ -509,14 +509,14 @@ static void saSendFrame(uint8_t *buf, int len)
             serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start byte
             break;
         }
-#endif //AT32F4
+#endif // USE_NONCOMPLIANT_SMARTAUDIO
 
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
         }
-        #ifdef USE_AKK_SMARTAUDIO
+#ifdef USE_AKK_SMARTAUDIO
         serialWrite(smartAudioSerialPort, 0x00); // AKK/RDQ SmartAudio devices can expect an extra byte due to manufacturing errors.
-        #endif // USE_AKK_SMARTAUDIO
+#endif // USE_AKK_SMARTAUDIO
 
         saStat.pktsent++;
     } else {
