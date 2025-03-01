@@ -144,7 +144,7 @@ MAYBE_UNUSED static void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
     sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
     sbufWriteU8(dst, GHST_DL_GPS_SECONDARY);
 
-    sbufWriteU16(dst, gpsSol.groundSpeed);      // speed in 0.1m/s
+    sbufWriteU16(dst, gpsSol.groundSpeed);      // speed in 0.01m/s
     sbufWriteU16(dst, gpsSol.groundCourse);     // degrees * 10
     sbufWriteU8(dst, gpsSol.numSat);
 

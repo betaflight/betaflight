@@ -1526,7 +1526,7 @@ case MSP_NAME:
 #ifdef USE_GPS_RESCUE
 #ifndef USE_WING
     case MSP_GPS_RESCUE:
-        sbufWriteU16(dst, gpsRescueConfig()->maxRescueAngle);
+        sbufWriteU16(dst, autopilotConfig()->maxAngle);
         sbufWriteU16(dst, gpsRescueConfig()->returnAltitudeM);
         sbufWriteU16(dst, gpsRescueConfig()->descentDistanceM);
         sbufWriteU16(dst, gpsRescueConfig()->groundSpeedCmS);
@@ -1552,9 +1552,9 @@ case MSP_NAME:
         sbufWriteU16(dst, autopilotConfig()->altitudeI);
         sbufWriteU16(dst, autopilotConfig()->altitudeD);
         // altitude_F not implemented yet
-        sbufWriteU16(dst, gpsRescueConfig()->velP);
-        sbufWriteU16(dst, gpsRescueConfig()->velI);
-        sbufWriteU16(dst, gpsRescueConfig()->velD);
+        sbufWriteU16(dst, autopilotConfig()->positionP);
+        sbufWriteU16(dst, autopilotConfig()->positionI);
+        sbufWriteU16(dst, autopilotConfig()->positionD);
         sbufWriteU16(dst, gpsRescueConfig()->yawP);
         break;
 #endif // !USE_WING
@@ -2897,7 +2897,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_GPS_RESCUE
 #ifndef USE_WING
     case MSP_SET_GPS_RESCUE:
-        gpsRescueConfigMutable()->maxRescueAngle = sbufReadU16(src);
+        autopilotConfigMutable()->maxAngle = sbufReadU16(src);
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16(src);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
         gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
@@ -2928,9 +2928,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         autopilotConfigMutable()->altitudeI = sbufReadU16(src);
         autopilotConfigMutable()->altitudeD = sbufReadU16(src);
         // altitude_F not included in msp yet
-        gpsRescueConfigMutable()->velP = sbufReadU16(src);
-        gpsRescueConfigMutable()->velI = sbufReadU16(src);
-        gpsRescueConfigMutable()->velD = sbufReadU16(src);
+        autopilotConfigMutable()->positionP = sbufReadU16(src);
+        autopilotConfigMutable()->positionI = sbufReadU16(src);
+        autopilotConfigMutable()->positionD = sbufReadU16(src);
         gpsRescueConfigMutable()->yawP = sbufReadU16(src);
         break;
 #endif // !USE_WING
