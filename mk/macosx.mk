@@ -29,3 +29,19 @@ else
 endif
 
 export PYTHON
+
+# If OBJCOPY is not already defined by the user, try to set it up automatically.
+ifndef OBJCOPY
+  # Check for llvm-objcopy in the typical Homebrew location on macOS (for M1 systems)
+  ifneq ($(wildcard /opt/homebrew/opt/llvm/bin/llvm-objcopy),)
+    OBJCOPY := /opt/homebrew/opt/llvm/bin/llvm-objcopy
+  else
+    # Otherwise, look for objcopy in the user's PATH.
+    OBJCOPY := $(shell which objcopy 2>/dev/null)
+    ifeq ($(OBJCOPY),)
+      $(error "No objcopy found. Please install llvm-objcopy (e.g. via Homebrew llvm) or ensure objcopy is available in your PATH.")
+    endif
+  endif
+endif
+
+export OBJCOPY
