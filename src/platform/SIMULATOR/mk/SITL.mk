@@ -1,4 +1,3 @@
-
 INCLUDE_DIRS := \
         $(INCLUDE_DIRS) \
         $(TARGET_PLATFORM_DIR) \
@@ -10,7 +9,7 @@ MCU_COMMON_SRC  := \
         SIMULATOR/sitl.c \
         SIMULATOR/udplink.c
 
-#Flags
+# Flags
 ARCH_FLAGS      =
 DEVICE_FLAGS    =
 LD_SCRIPT       = $(LINKER_DIR)/sitl.ld
@@ -30,7 +29,21 @@ MCU_EXCLUDES = \
 
 TARGET_MAP  = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
-LD_FLAGS    := \
+# Choose LD_FLAGS based on the operating system and architecture.
+ifeq ($(shell uname -s),Darwin)
+  ifeq ($(shell uname -m),arm64)
+    # Apple Silicon Mac
+    LD_FLAGS := \
+            -lm \
+            -lpthread \
+            -lc \
+            $(ARCH_FLAGS) \
+            $(LTO_FLAGS) \
+            $(DEBUG_FLAGS) \
+            -Wl,-map,$(TARGET_MAP)
+  else
+    # Intel Mac
+    LD_FLAGS := \
             -lm \
             -lpthread \
             -lc \
@@ -42,17 +55,33 @@ LD_FLAGS    := \
             -Wl,-L$(LINKER_DIR) \
             -Wl,--cref \
             -T$(LD_SCRIPT)
+  endif
+else
+  # Linux
+  LD_FLAGS := \
+            -lm \
+            -lpthread \
+            -lc \
+            -lrt \
+            $(ARCH_FLAGS) \
+            $(LTO_FLAGS) \
+            $(DEBUG_FLAGS) \
+            -Wl,-gc-sections,-Map,$(TARGET_MAP) \
+            -Wl,-L$(LINKER_DIR) \
+            -Wl,--cref \
+            -T$(LD_SCRIPT)
+endif
 
 ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
-LD_FLAGS     += \
-              -static \
-              -static-libgcc
+LD_FLAGS += \
+          -static \
+          -static-libgcc
 endif
 
 ifneq ($(DEBUG),GDB)
-OPTIMISE_DEFAULT    := -Ofast
-OPTIMISE_SPEED      := -Ofast
-OPTIMISE_SIZE       := -Os
+OPTIMISE_DEFAULT := -Ofast
+OPTIMISE_SPEED   := -Ofast
+OPTIMISE_SIZE    := -Os
 
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+LTO_FLAGS        := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
