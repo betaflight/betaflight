@@ -173,14 +173,6 @@ OPTIMISE_DEFAULT      := -O2
 OPTIMISE_SPEED        := -Ofast
 OPTIMISE_SIZE         := -Os
 
-# MacOS arm64 does not support -fuse-linker-plugin
-ifeq ($(shell uname -s),Darwin)
-  ifeq ($(shell uname -m),arm64)
-    # Remove -fuse-linker-plugin for macOS arm64
-    OPTIMISATION_BASE := -flto=auto -ffast-math -fmerge-all-constants
-  endif
-endif
-
 LTO_FLAGS             := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
 
@@ -294,6 +286,7 @@ CC_NO_OPTIMISATION      :=
 #
 TEMPORARY_FLAGS :=
 
+WARNING_FLAGS := -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion
 EXTRA_WARNING_FLAGS := -Wold-style-definition
 
 CFLAGS     += $(ARCH_FLAGS) \
@@ -301,7 +294,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
-              -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion \
+              $(WARNING_FLAGS) \
               $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
@@ -318,34 +311,6 @@ CFLAGS     += $(ARCH_FLAGS) \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
-
-# MacOS arm64 specific flags
-ifeq ($(shell uname -s),Darwin)
-	ifeq ($(shell uname -m),arm64)
-	    CFLAGS := $(ARCH_FLAGS) \
-	            $(addprefix -D,$(OPTIONS)) \
-	            $(addprefix -I,$(INCLUDE_DIRS)) \
-	            $(DEBUG_FLAGS) \
-	            -std=gnu17 \
-	            -Wall -Wextra -Werror -Wdouble-promotion -Wno-error=double-promotion -Wno-error=parentheses-equality -Wno-error=unknown-pragmas -Wno-error=unneeded-internal-declaration \
-	            $(EXTRA_WARNING_FLAGS) \
-	            -ffunction-sections \
-	            -fdata-sections \
-	            -fno-common \
-	            $(TEMPORARY_FLAGS) \
-	            $(DEVICE_FLAGS) \
-	            -D_GNU_SOURCE \
-	            -D$(TARGET) \
-	            $(TARGET_FLAGS) \
-	            -D'__FORKNAME__="$(FORKNAME)"' \
-	            -D'__TARGET__="$(TARGET)"' \
-	            -D'__REVISION__="$(REVISION)"' \
-	            $(CONFIG_REVISION_DEFINE) \
-	            -pipe \
-	            -MMD -MP \
-	            $(EXTRA_FLAGS)
-	endif
-endif
 
 ASFLAGS     = $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
