@@ -60,7 +60,7 @@ endif
 ifeq ($(OSFAMILY),macosx)
   ifneq ($(findstring arm,$(ARCHFAMILY)),)
     override OPTIMISATION_BASE := $(filter-out -fuse-linker-plugin,$(OPTIMISATION_BASE))
-    override WARNING_FLAGS := $(filter-out -Werror -Wunsafe-loop-optimizations,$(WARNING_FLAGS))
+    override WARNING_FLAGS := $(filter-out -Wunsafe-loop-optimizations,$(WARNING_FLAGS))
     override LD_FLAGS := \
             -lm \
             -lpthread \
