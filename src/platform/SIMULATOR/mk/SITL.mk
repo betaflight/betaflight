@@ -61,6 +61,7 @@ ifeq ($(OSFAMILY),macosx)
   ifneq ($(findstring arm,$(ARCHFAMILY)),)
     override OPTIMISATION_BASE := $(filter-out -fuse-linker-plugin,$(OPTIMISATION_BASE))
     override WARNING_FLAGS := $(filter-out -Wunsafe-loop-optimizations,$(WARNING_FLAGS))
+    # This removes the linker script for MacOS apple silicon builds and may cause issues with PG.
     override LD_FLAGS := \
             -lm \
             -lpthread \
