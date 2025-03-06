@@ -169,7 +169,7 @@ static aafConfig_t aafLUT42688[AAF_CONFIG_COUNT] = {  // see table in section 5.
     [AAF_CONFIG_1962HZ] = { 37, 1376,  4 },
 };
 
-// Possible gyro Anti-Alias Filter (AAF) cutoffs for ICM-42688P
+// Possible gyro Anti-Alias Filter (AAF) cutoffs for ICM-42605
 // actual cutoff differs slightly from those of the 42688P
 static aafConfig_t aafLUT42605[AAF_CONFIG_COUNT] = {  // see table in section 5.3
     [AAF_CONFIG_258HZ]  = { 21,  440,  6 }, // actually 249 Hz
