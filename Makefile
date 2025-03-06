@@ -47,6 +47,10 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+# Disabled build flags
+CFLAGS_DISABLED         :=
+OPTIMISATION_DISABLED   :=
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -281,12 +285,15 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 CC_NO_OPTIMISATION      :=
 
+CC_DEFAULT_OPTIMISATION := $(filter-out $(OPTIMISATION_DISABLED), $(CC_DEFAULT_OPTIMISATION))
+CC_SPEED_OPTIMISATION   := $(filter-out $(OPTIMISATION_DISABLED), $(CC_SPEED_OPTIMISATION))
+CC_SIZE_OPTIMISATION    := $(filter-out $(OPTIMISATION_DISABLED), $(CC_SIZE_OPTIMISATION))
+
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
 TEMPORARY_FLAGS :=
 
-WARNING_FLAGS := -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion
 EXTRA_WARNING_FLAGS := -Wold-style-definition
 
 CFLAGS     += $(ARCH_FLAGS) \
@@ -294,7 +301,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
-              $(WARNING_FLAGS) \
+              -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion \
               $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
@@ -311,6 +318,8 @@ CFLAGS     += $(ARCH_FLAGS) \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
+
+CFLAGS := $(filter-out $(CFLAGS_DISABLED), $(CFLAGS))
 
 ASFLAGS     = $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
