@@ -20,7 +20,7 @@
 
 #pragma once
 
-#if defined(STM32G474xx)
+#if defined(STM32G473xx) || defined(STM32G474xx)
 #include "stm32g4xx.h"
 #include "stm32g4xx_hal.h"
 #include "system_stm32g4xx.h"
