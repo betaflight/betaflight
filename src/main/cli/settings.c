@@ -1664,6 +1664,7 @@ const clivalue_t valueTable[] = {
     { "expresslrs_model_id",    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, modelId) },
 #endif
 #ifdef USE_NEROS_RX
+    { "use_vtx_sync",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, useVTXSync) },
     { "elrs_bind_phrase_low",       VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1,  MAX_PHRASE_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseLow) },
     { "elrs_bind_phrase_high",      VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1,  MAX_PHRASE_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseHigh) },
     { "elrs_start_frequency_low",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, startFrequencyLow) },

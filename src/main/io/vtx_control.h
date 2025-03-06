@@ -28,7 +28,7 @@
 #include "pg/pg.h"
 #include "fc/rc_modes.h"
 
-#define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  14
+#define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  80
 
 typedef struct vtxChannelActivationCondition_s {
     uint8_t auxChannelIndex;
@@ -41,6 +41,7 @@ typedef struct vtxChannelActivationCondition_s {
 typedef struct vtxConfig_s {
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
     uint8_t halfDuplex;
+    uint8_t useVTXSync;
 } vtxConfig_t;
 
 PG_DECLARE(vtxConfig_t, vtxConfig);

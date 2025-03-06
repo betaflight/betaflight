@@ -52,7 +52,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
 //    .vtxChannelActivationConditions = { 0 },
-    .halfDuplex = true
+    .halfDuplex = true,
+    .useVTXSync = true
 );
 
 static uint8_t locked = 0;
@@ -104,6 +105,7 @@ void vtxDecrementChannel(void)
     vtxUpdateBandAndChannel(0, -1);
 }
 
+uint8_t numPowerRules = 5;
 void vtxUpdateActivatedChannel(void)
 {
     // if (ARMING_FLAG(ARMED)) {
@@ -115,7 +117,10 @@ void vtxUpdateActivatedChannel(void)
 
         for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
             const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
-
+            //Added logic to disable non-power rules when VTX sync is disabled
+            if((index >= numPowerRules) && (vtxConfig()->useVTXSync == false)) {
+                break;
+            }
             if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)
                 && index != lastIndex) {
                 lastIndex = index;
