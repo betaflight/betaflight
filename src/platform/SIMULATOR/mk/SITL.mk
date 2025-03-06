@@ -60,7 +60,7 @@ endif
 ifeq ($(OSFAMILY),macosx)
   ifneq ($(findstring arm,$(ARCHFAMILY)),)
     CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations
-    OPTIMISATION_DISABLED := -fuse-linker-plugin
+    OPTIMISATIONS_DISABLED := -fuse-linker-plugin
 
     # This removes the linker script for MacOS apple silicon builds and may cause issues with PG.
     LD_FLAGS := \
