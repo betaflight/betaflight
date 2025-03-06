@@ -51,6 +51,7 @@
 #define PARAM_NAME_MOTOR_POLES "motor_poles"
 #define PARAM_NAME_THR_MID "thr_mid"
 #define PARAM_NAME_THR_EXPO "thr_expo"
+#define PARAM_NAME_THR_HOVER "thr_hover"
 #define PARAM_NAME_RATES_TYPE "rates_type"
 #define PARAM_NAME_TPA_RATE "tpa_rate"
 #define PARAM_NAME_TPA_BREAKPOINT "tpa_breakpoint"
