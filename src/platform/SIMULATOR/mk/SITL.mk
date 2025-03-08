@@ -63,8 +63,8 @@ ifeq ($(OSFAMILY),macosx)
     OPTIMISATIONS_DISABLED := -fuse-linker-plugin
 
     ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
-        # Static builds are not supported on MacOS apple silicon
-        $(error Static builds are not supported on MacOS apple silicon)
+        # Static builds are not supported on MacOS
+        $(error Static builds are not supported on MacOS)
     endif
 
 
