@@ -535,8 +535,8 @@ $(BASE_TARGETS):
 SITL:
 	@echo "Building SITL target"
 	$(V0) $(MAKE) elf TARGET=SITL
-	@echo "Copying SITL executable to bin directory"	
-	$(V0) mv $(OBJECT_DIR)/$(FORKNAME)_SITL.elf $(BIN_DIR)/$(FORKNAME)_SITL
+	@echo "Copying SITL executable"	
+	$(V0) cp $(OBJECT_DIR)/$(FORKNAME)_SITL.elf $(BIN_DIR)/$(FORKNAME)_SITL
 	@echo "SITL build succeeded. Executable at: $(BIN_DIR)/$(FORKNAME)_SITL"
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
