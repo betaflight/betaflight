@@ -93,7 +93,7 @@ include $(MAKE_SCRIPT_DIR)/checks.mk
 
 # basic target list
 PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
-BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
+BASE_TARGETS     := $(filter-out SITL,$(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk))))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
@@ -523,7 +523,6 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
@@ -531,6 +530,14 @@ $(BASE_TARGETS):
 	$(V0) @echo "Building target $@" && \
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
+
+## SITL              : Builds the SITL target
+SITL:
+	@echo "Building SITL target"
+	$(V0) $(MAKE) elf TARGET=SITL
+	@echo "Copying SITL executable to bin directory"	
+	$(V0) mv $(OBJECT_DIR)/$(FORKNAME)_SITL.elf $(BIN_DIR)/$(FORKNAME)_SITL
+	@echo "SITL build succeeded. Executable at: $(BIN_DIR)/$(FORKNAME)_SITL"
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
@@ -620,6 +627,9 @@ binary:
 
 hex:
 	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
+
+elf:
+	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_ELF)
 
 TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename

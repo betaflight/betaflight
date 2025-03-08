@@ -71,14 +71,5 @@ ifeq ($(OSFAMILY),macosx)
             $(LTO_FLAGS) \
             $(DEBUG_FLAGS) \
             -Wl,-map,$(TARGET_MAP)
-    OBJCOPY_EXISTS := $(shell command -v $(OBJCOPY) 2>/dev/null)
-    ifeq ($(OBJCOPY_EXISTS),)
-      BREW_LLVM_PREFIX := $(shell brew --prefix llvm 2>/dev/null)
-      ifneq ($(BREW_LLVM_PREFIX),)
-        override OBJCOPY := $(BREW_LLVM_PREFIX)/bin/llvm-objcopy
-      else
-        $(error OBJCOPY is not found, please install llvm and set PATH or install llvm through homebrew)
-      endif
-    endif
   endif
 endif
