@@ -398,6 +398,8 @@ CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS := $(BIN_DIR)/$(FORKNAME)_SITL
+CLEAN_ARTIFACTS := $(BIN_DIR)/eeprom.bin
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
