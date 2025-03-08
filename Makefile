@@ -229,7 +229,11 @@ ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 .DEFAULT_GOAL := all
 else
+ifeq ($(TARGET),SITL)
+.DEFAULT_GOAL := sitl_target
+else
 .DEFAULT_GOAL := hex
+endif
 endif
 else
 .DEFAULT_GOAL := hex
@@ -531,6 +535,10 @@ $(BASE_TARGETS):
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
+## sitl_target       : Alias for SITL target (for TARGET=SITL syntax)
+sitl_target:
+	$(MAKE) SITL
+	
 ## SITL              : Builds the SITL target
 SITL:
 	@echo "Building SITL target"
