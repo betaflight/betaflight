@@ -43,20 +43,6 @@ LD_FLAGS    := \
             -Wl,--cref \
             -T$(LD_SCRIPT)
 
-ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
-LD_FLAGS     += \
-              -static \
-              -static-libgcc
-endif
-
-ifneq ($(DEBUG),GDB)
-OPTIMISE_DEFAULT    := -Ofast
-OPTIMISE_SPEED      := -Ofast
-OPTIMISE_SIZE       := -Os
-
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
-endif
-
 ifeq ($(OSFAMILY),macosx)
   ifneq ($(findstring arm,$(ARCHFAMILY)),)
     CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations
@@ -72,4 +58,18 @@ ifeq ($(OSFAMILY),macosx)
             $(DEBUG_FLAGS) \
             -Wl,-map,$(TARGET_MAP)
   endif
+endif
+
+ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+LD_FLAGS     += \
+              -static \
+              -static-libgcc
+endif
+
+ifneq ($(DEBUG),GDB)
+OPTIMISE_DEFAULT    := -Ofast
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
