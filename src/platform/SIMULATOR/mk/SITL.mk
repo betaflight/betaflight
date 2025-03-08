@@ -62,6 +62,12 @@ ifeq ($(OSFAMILY),macosx)
     CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations
     OPTIMISATIONS_DISABLED := -fuse-linker-plugin
 
+    ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+        # Static builds are not supported on MacOS apple silicon
+        $(error Static builds are not supported on MacOS apple silicon)
+    endif
+
+
     # This removes the linker script for MacOS apple silicon builds and may cause issues with PG.
     LD_FLAGS := \
             -lm \
