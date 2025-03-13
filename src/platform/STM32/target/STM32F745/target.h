@@ -88,7 +88,3 @@
 // For this target, functions decorated FAST_CODE_PREF will not be put into ITCM RAM; 
 // on other targets, the same function *will* go into ITCM RAM
 #define FAST_CODE_PREF
-
-#if defined(USE_LED_STRIP) || defined(USE_LED_STRIP_64)
-#define USE_LED_STRIP_FAST_DATA
-#endif
