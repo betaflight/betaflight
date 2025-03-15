@@ -279,7 +279,7 @@ static void unpackChannelDataHybridWide(uint16_t *rcData, volatile elrsOtaPacket
     } else {
         uint8_t bins;
         uint16_t switchValue;
-        if (currTlmDenom > 1 && currTlmDenom < 8) {
+        if (currTlmDenom < 8) {
             bins = 63;
             switchValue = switchByte & 0x3F; // 6-bit
         } else {
