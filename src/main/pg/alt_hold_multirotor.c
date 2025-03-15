@@ -22,7 +22,6 @@
 #include "platform.h"
 
 #ifndef USE_WING
-
 #ifdef USE_ALTITUDE_HOLD
 
 #include "flight/alt_hold.h"
@@ -38,6 +37,6 @@ PG_RESET_TEMPLATE(altHoldConfig_t, altHoldConfig,
     .climbRate = 50, // max vertical velocity change at full/zero throttle. 50 means 5 m/s
     .deadband = 20, // throttle deadband in percent of stick travel
 );
-#endif
 
+#endif // USE_ALTITUDE_HOLD
 #endif // USE_WING
