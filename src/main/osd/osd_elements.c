@@ -1800,6 +1800,17 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_WING
+static void osdElementAngleOfAttack(osdElementParms_t *element) {
+/*  TODO: To check and add in the next PR
+    if (pidRuntime.planeDynamics.isStallWarning) {
+        element->attr = DISPLAYPORT_SEVERITY_WARNING;
+    }
+*/
+    element->buff[0] = SYM_ANGLE_OF_ATTACK;    //the mail @ symbol is most like alpha symbol, what is used in AoA formulas
+    tfp_sprintf(element->buff + 1, "%3d", lrintf(pidRuntime.planeDynamics.angleOfAttack));
+}
+#endif
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -1905,6 +1916,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_WARNINGS,
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
+#ifdef USE_WING
+    OSD_ANGLE_OF_ATTACK,
+#endif
 #endif
 };
 
@@ -2049,6 +2063,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_WARNINGS]            = osdElementSys,
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
+#ifdef USE_WING
+    [OSD_ANGLE_OF_ATTACK]         = osdElementAngleOfAttack,
+#endif
 #endif
 };
 
@@ -2482,7 +2499,15 @@ void osdUpdateAlarms(void)
     } else {
         CLR_BLINK(OSD_ALTITUDE);
     }
-
+/* TODO: To check and add in the next PR
+#ifdef USE_WING
+    if (pidRuntime.planeDynamics.isStallWarning) {
+        SET_BLINK(OSD_ANGLE_OF_ATTACK);
+    } else {
+        CLR_BLINK(OSD_ANGLE_OF_ATTACK);
+    }
+#endif
+*/
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         if (osdConfig()->distance_alarm && GPS_distanceToHome >= osdConfig()->distance_alarm) {
@@ -2545,9 +2570,9 @@ bool osdElementsNeedAccelerometer(void)
            osdElementIsActive(OSD_ROLL_ANGLE) ||
            osdElementIsActive(OSD_G_FORCE) ||
            osdElementIsActive(OSD_FLIP_ARROW) ||
-           osdElementIsActive(OSD_UP_DOWN_REFERENCE);
+           osdElementIsActive(OSD_UP_DOWN_REFERENCE) ||
+           osdElementIsActive(OSD_ANGLE_OF_ATTACK);
 }
 
 #endif // USE_ACC
-
 #endif // USE_OSD
