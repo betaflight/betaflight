@@ -194,6 +194,7 @@ typedef enum {
     OSD_CUSTOM_MSG1,
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
+    OSD_WARNINGS_WIDTH,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -362,6 +363,7 @@ typedef struct osdConfig_s {
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
     displayPortSeverity_e arming_logo;        // font from which to display logo on arming
+    uint8_t osd_warnings_width;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

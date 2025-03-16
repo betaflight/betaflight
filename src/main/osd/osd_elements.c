@@ -1753,6 +1753,18 @@ static void osdElementWarnings(osdElementParms_t *element)
 {
     bool elementBlinking = false;
     renderOsdWarning(element->buff, &elementBlinking, &element->attr);
+
+    int warningsLen = strlen(element->buff);
+    const int warningsWidth = osdConfig()->osd_warnings_width;
+    if (warningsWidth && warningsLen < warningsWidth) {
+        int padLen = (warningsWidth - warningsLen) / 2;
+        int i = 0;
+        while (padLen && element->buff[i++] == ' ') {
+            padLen--;
+        }
+        element->elemPosX += padLen;
+    }
+
     if (elementBlinking) {
         SET_BLINK(OSD_WARNINGS);
     } else {
