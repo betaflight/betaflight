@@ -431,7 +431,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
 
-    osdConfig->osd_warnings_width = 0;
+    osdConfig->osd_warnings_centered = false;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
