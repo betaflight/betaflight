@@ -757,7 +757,6 @@ FAST_CODE void processRcCommand(void)
                 float lengthExpoPitch = applyRates(FD_PITCH, length, length);
                 float lengthExpoRoll = applyRates(FD_ROLL, length, length);
                 float lengthExpoCombined = lengthExpoPitch * (1.f - stickRatio) + lengthExpoRoll * stickRatio;
-                
                 /* apply same final expo to both pitch and roll, therby preserving the user's stick direction intent, and ensuring a consistent amount of expo when tracing any circle around the center of the stick. */
                 angleRateRoll = (r / length) * lengthExpoCombined;
                 angleRatePitch = (p / length) * lengthExpoCombined;
