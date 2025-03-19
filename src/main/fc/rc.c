@@ -753,7 +753,7 @@ FAST_CODE void processRcCommand(void)
                 }
                 /* interpolate between pitch and roll expo settings depending on the stick angle (how much pitch vs roll is the user requesting?) */
                 float stickAngle = fabs(atan(r/p));
-                float stickRatio = stickAngle / M_PI_2;
+                float stickRatio = stickAngle / (float)M_PI_2;
                 float lengthExpoPitch = applyRates(FD_PITCH, length, length);
                 float lengthExpoRoll = applyRates(FD_ROLL, length, length);
                 float lengthExpoCombined = lengthExpoPitch * (1.f - stickRatio) + lengthExpoRoll * stickRatio;
