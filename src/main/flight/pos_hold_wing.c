@@ -52,6 +52,6 @@ bool posHoldFailure(void) {
     return true;
 }
 
-#endif // USE_POS_HOLD
+#endif // USE_POSITION_HOLD
 
 #endif // USE_WING

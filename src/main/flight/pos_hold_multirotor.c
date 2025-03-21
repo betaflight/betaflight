@@ -105,6 +105,6 @@ bool posHoldFailure(void) {
     return FLIGHT_MODE(POS_HOLD_MODE) && (!posHold.isControlOk || !posHold.areSensorsOk);
 }
 
-#endif // USE_POS_HOLD
+#endif // USE_POSITION_HOLD
 
 #endif // !USE_WING
