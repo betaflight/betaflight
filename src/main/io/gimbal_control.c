@@ -288,7 +288,7 @@ void gimbalUpdate(timeUs_t currentTimeUs)
                 if (gimbalInCount == sizeof(gimbalCmdIn.u.gimbalCmd)) {
                     uint16_t crc = gimbalCrc((uint8_t *)&gimbalCmdIn, sizeof(gimbalCmdIn) - 2);
                     // Only use the data if the CRC is correct
-                    if (gimbalCmdIn.u.crc == crc) {
+                    if (gimbalCmdIn.u.gimbalCmd.crc == crc) {
                         gimbalCmdOut = gimbalCmdIn.u.gimbalCmd;
                         gimbalSet(gimbalCmdIn.u.gimbalCmd.roll, gimbalCmdIn.u.gimbalCmd.pitch, gimbalCmdIn.u.gimbalCmd.yaw);
                         serialWriteBuf(gimbalSerialPort, (uint8_t *)&gimbalCmdOut, sizeof(gimbalCmdOut));
