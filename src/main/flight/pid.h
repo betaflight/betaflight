@@ -187,6 +187,12 @@ typedef enum {
     YAW_TYPE_DIFF_THRUST,
 } yawType_e;
 
+typedef enum {
+    AD_OFF,     //off
+    AD_AOA,     // angle of attack OSD indication only
+    AD_TPA,     // using aerodynamics in TPA airspeed estimators + AoA OSD indication
+} aerodynamicsMode_e;
+
 #define MAX_PROFILE_NAME_LENGTH 8u
 
 typedef struct pidProfile_s {
@@ -332,6 +338,19 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+
+    // use aerodynamics
+#ifdef USE_WING
+    uint8_t  ad_mode;               //For wings: The aerodynamics using mode: off, angle of attack, tpa
+    uint8_t ad_lift_zero;           //For wings: aerodynamics lift force coefficient in case of zero angle of attack value, 1000*Clift0 units
+    uint8_t ad_lift_slope;          //For wings: aerodynamics lift force coefficient differencial by angle of attack value, 1000*dClift/dAoA units, AoA [grad]
+    uint8_t ad_drag_parasitic;      //For wings: aerodynamics drag force coefficient in case of zero lift force value, 1000*Cdrag0 units
+    uint8_t ad_drag_induced;        //For wings: aerodynamics induce drag force coefficient, 1000*Cinduce units
+    uint16_t plane_mass;            //For wings: airplane mass, [g]
+    uint16_t wing_load;             //For wings: wing load (mass / WingArea) g/decimeter^2 * 100. The g/decimeter^2 units is more comfortable for perception, than kg/m^2, i think
+    uint16_t air_density;           //For wings: the current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
+    uint8_t stall_aoa_pos;          //For wings: stall angle of attack positive, TODO: add negative value
+#endif
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -381,6 +400,23 @@ typedef struct tpaSpeedParams_s {
     float maxVoltage;
     float pitchOffset;
 } tpaSpeedParams_t;
+
+typedef struct aerodynamicsProperty_s {
+    aerodynamicsMode_e mode;
+    float stallAngleOfAttack;
+    
+    float airDensity;
+    float planeMass;
+    float wingLoad;
+    float liftZeroC;
+    float liftSlopeC;
+    float dragParasiticC;
+    float dragInducedC;
+
+    float liftActualC;
+    float angleOfAttack;
+    bool  isStallWarning;
+} aerodynamicsProperty_t;
 
 typedef struct pidRuntime_s {
     float dT;
@@ -550,6 +586,10 @@ typedef struct pidRuntime_s {
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
 #endif // USE_CHIRP
+
+#ifdef USE_WING
+    aerodynamicsProperty_t planeDynamics;
+#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
