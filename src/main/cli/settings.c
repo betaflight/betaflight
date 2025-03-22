@@ -1367,6 +1367,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_TPA_SPEED_ADV_THRUST, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_adv_thrust) },
     { PARAM_NAME_TPA_SPEED_MAX_VOLTAGE, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_max_voltage) },
     { PARAM_NAME_TPA_SPEED_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { INT16_MIN, INT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_pitch_offset) },
+    { PARAM_NAME_TPA_SPEED_INDUCTIVE_DRAG_K, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { INT16_MIN, INT16_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_speed_inductive_drag_k) },
 #endif // USE_WING
 
 #ifdef USE_ADVANCED_TPA
@@ -1394,6 +1395,14 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_SPA_YAW_MODE,       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_mode[FD_YAW]) },
     { PARAM_NAME_YAW_TYPE,           VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_YAW_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_type) },
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
+#endif
+
+#ifdef USE_WING
+    { PARAM_NAME_AOA_MIN_PARAM,    VAR_INT16, .config.minmaxUnsigned = { -1000, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_param) },
+    { PARAM_NAME_AOA_MIN_ANGLE,    VAR_INT16, .config.minmaxUnsigned = { -200, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_min_est_angle) },
+    { PARAM_NAME_AOA_MAX_PARAM,    VAR_INT16, .config.minmaxUnsigned = { 0, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_max_est_param) },
+    { PARAM_NAME_AOA_MAX_ANGLE,    VAR_INT16, .config.minmaxUnsigned = { -200, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_max_est_angle) },
+    { PARAM_NAME_AOA_WARNING_ANGLE, VAR_INT16, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, aoa_warning_angle) },
 #endif
 
 // PG_TELEMETRY_CONFIG
@@ -1664,6 +1673,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_CRAFTNAME_MSGS
     { "osd_craftname_msgs",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_craftname_msgs) },
 #endif //USE_CRAFTNAME_MSGS
+#ifdef USE_WING
+    { "osd_plane_aoa_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_ANGLE_OF_ATTACK]) },
+#endif
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
