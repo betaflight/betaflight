@@ -51,7 +51,6 @@ typedef enum {
 typedef struct controlRateConfig_s {
     uint8_t thrMid8;
     uint8_t thrExpo8;
-    uint8_t thrHover8;
     uint8_t rates_type;
     uint8_t rcRates[3];
     uint8_t rcExpo[3];
@@ -61,6 +60,7 @@ typedef struct controlRateConfig_s {
     uint16_t rate_limit[3];                 // Sets the maximum rate for the axes
     char profileName[MAX_RATE_PROFILE_NAME_LENGTH + 1]; // Descriptive name for rate profile
     uint8_t quickRatesRcExpo;               // Sets expo on rc command for quick rates
+    uint8_t thrHover8;
 } controlRateConfig_t;
 
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
