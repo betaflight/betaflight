@@ -644,14 +644,16 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
     if (!device) {
         return false;
     }
+
+    pwmMotorCount = device->count;
     device->vTable = &vTable;
-    const uint8_t motorCount = device->count;
-    printf("Initialized motor count %d\n", motorCount);
-    pwmRawPkt.motorCount = motorCount;
+    
+    printf("Initialized motor count %d\n", pwmMotorCount);
+    pwmRawPkt.motorCount = pwmMotorCount;
 
     idlePulse = _idlePulse;
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < pwmMotorCount; motorIndex++) {
         pwmMotors[motorIndex].enabled = true;
     }
 
