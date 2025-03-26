@@ -25,16 +25,12 @@
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
-#else
-#define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 0
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #elif defined(STM32H7)
 // H7 has stream based DMA and channel based BDMA, but we ignore BDMA (for now).
-#define DMA_ARCH_TYPE DMA_Stream_TypeDef
-#elif defined(APM32F4)
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #else
 #define DMA_ARCH_TYPE DMA_Channel_TypeDef

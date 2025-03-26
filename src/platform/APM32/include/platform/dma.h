@@ -26,8 +26,6 @@
 
 #if defined(APM32F4)
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
-#else
-#define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 0
 #endif
 
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
