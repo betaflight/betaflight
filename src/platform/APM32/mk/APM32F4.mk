@@ -111,8 +111,9 @@ DEVICE_STDPERIPH_SRC := \
 VPATH := $(VPATH):$(LIB_MAIN_DIR)/APM32F4/Libraries/Device/Geehy/APM32F4xx
 
 INCLUDE_DIRS += \
-        $(TARGET_PLATFORM_DIR)/startup \
         $(TARGET_PLATFORM_DIR) \
+        $(TARGET_PLATFORM_DIR)/include \
+        $(TARGET_PLATFORM_DIR)/startup \
         $(PLATFORM_DIR)/common/stm32 \
         $(STDPERIPH_DIR)/Include \
         $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \

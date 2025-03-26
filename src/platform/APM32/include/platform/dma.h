@@ -24,6 +24,14 @@
 #include "platform.h"
 #include "drivers/resource.h"
 
+#if defined(APM32F4)
+#define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
+#else
+#define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 0
+#endif
+
+#define DMA_ARCH_TYPE DMA_Stream_TypeDef
+
 typedef enum {
     DMA_NONE = 0,
     DMA1_ST0_HANDLER = 1,
@@ -88,3 +96,17 @@ typedef enum {
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
 void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
+
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->SCFG & DMA_SCFGx_EN)
+#define REG_NDTR NDATA
+
+#if defined(USE_HAL_DRIVER)
+// We actually need these LL case only
+#define xLL_EX_DMA_DeInit(dmaResource) LL_EX_DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_Init(dmaResource, initstruct) LL_EX_DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initstruct)
+#define xLL_EX_DMA_DisableResource(dmaResource) LL_EX_DMA_DisableResource((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_EnableResource(dmaResource) LL_EX_DMA_EnableResource((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
+#define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
+#endif
