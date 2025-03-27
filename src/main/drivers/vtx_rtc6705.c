@@ -56,8 +56,7 @@
 static IO_t vtxPowerPin     = IO_NONE;
 #endif
 
-static extDevice_t rtc6705Device;
-static extDevice_t *dev = &rtc6705Device;
+static extDevice_t *dev = NULL;
 
 #define DISABLE_RTC6705()   IOHi(dev->busType_u.spi.csnPin)
 #define ENABLE_RTC6705()    IOLo(dev->busType_u.spi.csnPin)
@@ -95,7 +94,7 @@ static uint32_t reverse32(uint32_t in)
  */
 bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 {
-
+    static extDevice_t devInstance;
     IO_t csnPin = IOGetByTag(vtxIOConfig->csTag);
     if (!csnPin) {
         return false;
@@ -112,15 +111,16 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 
     // RTC6705 when using SOFT SPI driver doesn't use an SPI device, so don't attempt to initialise an spiInstance.
     SPI_TypeDef *spiInstance = spiInstanceByDevice(SPI_CFG_TO_DEV(vtxIOConfig->spiDevice));
-    if (spiInstance && spiSetBusInstance(dev, vtxIOConfig->spiDevice)) {
-        rtc6705Device.busType_u.spi.csnPin = csnPin;
-        IOInit(rtc6705Device.busType_u.spi.csnPin, OWNER_VTX_CS, 0);
-
+    if (spiInstance && spiSetBusInstance(&devInstance, vtxIOConfig->spiDevice)) {
+        dev = &devInstance;
+        dev->busType_u.spi.csnPin = csnPin;
+        IOInit(dev->busType_u.spi.csnPin, OWNER_VTX_CS, 0);
         DISABLE_RTC6705();
         // GPIO bit is enabled so here so the output is not pulled low when the GPIO is set in output mode.
         // Note: It's critical to ensure that incorrect signals are not sent to the VTX.
-        IOConfigGPIO(rtc6705Device.busType_u.spi.csnPin, IOCFG_OUT_PP);
+        IOConfigGPIO(dev->busType_u.spi.csnPin, IOCFG_OUT_PP);
 
+        spiSetBusInstance(dev, vtxIOConfig->spiDevice);
         return true;
 #if defined(USE_VTX_RTC6705_SOFTSPI)
     } else {
