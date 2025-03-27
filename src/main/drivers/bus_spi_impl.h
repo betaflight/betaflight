@@ -46,7 +46,11 @@ typedef struct spiHardware_s {
     SPI_TypeDef *reg;
     spiPinDef_t sckPins[MAX_SPI_PIN_SEL];
     spiPinDef_t misoPins[MAX_SPI_PIN_SEL];
+#if defined(AT32F4)
+    spiPinDef_t mosiPins[MAX_SPI_PIN_SEL+1];
+#else
     spiPinDef_t mosiPins[MAX_SPI_PIN_SEL];
+#endif
 #ifndef STM32F7
     uint8_t af;
 #endif
