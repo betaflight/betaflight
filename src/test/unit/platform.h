@@ -52,6 +52,7 @@
 #define USE_LED_STRIP
 #define USE_SERVOS
 #define USE_TRANSPONDER
+#define USE_BLACKBOX
 
 #ifndef LED_STRIP_MAX_LENGTH
     #ifdef USE_LED_STRIP_64
