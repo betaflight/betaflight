@@ -57,6 +57,10 @@
 #define USE_RACE_PRO
 #endif
 
+#if !defined USE_LED_STRIP
+#define USE_LED_STRIP
+#endif
+
 #ifdef USE_DSHOT
 #define USE_DSHOT_BITBANG
 #define USE_DSHOT_TELEMETRY
