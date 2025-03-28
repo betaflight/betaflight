@@ -71,7 +71,7 @@ static bool sensorsOk(void)
     }
     if (
 #ifdef USE_MAG
-        !compassIsHealthy() &&
+        !compassEnabledAndCalibrated() &&
 #endif
         (!posHoldConfig()->posHoldWithoutMag || !canUseGPSHeading)) {
         return false;
