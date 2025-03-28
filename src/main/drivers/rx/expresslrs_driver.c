@@ -171,7 +171,7 @@ void expressLrsTimerResume(void)
 {
     timerState.tickTock = TOCK;
 
-    timerSetPeriod(timer, (timerState.intervalUs / TICK_TOCK_COUNT) - 1);
+    timerSetPeriod(timer, (timerState.intervalUs / TICK_TOCK_COUNT));
     timerSetCounter(timer, 0);
 
     timerEnableInterrupt(timer);
