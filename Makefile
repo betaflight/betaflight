@@ -47,6 +47,10 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+# Disabled build flags
+CFLAGS_DISABLED         :=
+OPTIMISATIONS_DISABLED  :=
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -89,7 +93,7 @@ include $(MAKE_SCRIPT_DIR)/checks.mk
 
 # basic target list
 PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
-BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
+BASE_TARGETS     := $(filter-out SITL,$(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk))))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
@@ -225,7 +229,11 @@ ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 .DEFAULT_GOAL := all
 else
+ifeq ($(TARGET),SITL)
+.DEFAULT_GOAL := sitl_target
+else
 .DEFAULT_GOAL := hex
+endif
 endif
 else
 .DEFAULT_GOAL := hex
@@ -281,6 +289,11 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 CC_NO_OPTIMISATION      :=
 
+CC_DEBUG_OPTIMISATION   := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_DEBUG_OPTIMISATION))
+CC_DEFAULT_OPTIMISATION := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_DEFAULT_OPTIMISATION))
+CC_SPEED_OPTIMISATION   := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_SPEED_OPTIMISATION))
+CC_SIZE_OPTIMISATION    := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_SIZE_OPTIMISATION))
+
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
@@ -310,6 +323,8 @@ CFLAGS     += $(ARCH_FLAGS) \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
+
+CFLAGS := $(filter-out $(CFLAGS_DISABLED), $(CFLAGS))
 
 ASFLAGS     = $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
@@ -512,7 +527,6 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
@@ -520,6 +534,18 @@ $(BASE_TARGETS):
 	$(V0) @echo "Building target $@" && \
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
+
+## sitl_target       : Alias for SITL target (for TARGET=SITL syntax)
+sitl_target:
+	$(MAKE) SITL
+	
+## SITL              : Builds the SITL target
+SITL:
+	@echo "Building SITL target"
+	$(V0) $(MAKE) elf TARGET=SITL
+	@echo "Copying SITL executable"	
+	$(V0) cp $(OBJECT_DIR)/$(FORKNAME)_SITL.elf $(BIN_DIR)/$(FORKNAME)_SITL
+	@echo "SITL build succeeded. Executable at: $(BIN_DIR)/$(FORKNAME)_SITL"
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
@@ -609,6 +635,9 @@ binary:
 
 hex:
 	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
+
+elf:
+	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_ELF)
 
 TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
