@@ -35,7 +35,7 @@ static FILE *blackboxVirtualFile = NULL;
 static int32_t largestLogFileNumber = 0;
 bool blackboxVirtualOpen(void)
 {
-    const int log_name_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 1; //file name template: LOG00001.BFL
+    const size_t log_name_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 1; //file name template: LOG00001.BFL
     DIR *dir = opendir(".");
     if (!dir) {
         return false; // Failed to open directory
@@ -86,9 +86,9 @@ bool blackboxVirtualBeginLog(void)
     if (blackboxVirtualFile != NULL) {
         return false;
     }
-
-    char filename[13];
-    sprintf(filename, "%3s%05i.%3s", LOGFILE_PREFIX, largestLogFileNumber + 1, LOGFILE_SUFFIX);
+    const size_t name_buffer_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 2; //file name template: LOG00001.BFL
+    char filename[name_buffer_length];
+    sprintf(filename, "%s%05i.%s", LOGFILE_PREFIX, largestLogFileNumber + 1, LOGFILE_SUFFIX);
     blackboxVirtualFile = fopen(filename, "w");
     if (blackboxVirtualFile != NULL) {
         largestLogFileNumber++;
