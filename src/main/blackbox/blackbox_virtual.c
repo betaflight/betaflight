@@ -35,7 +35,7 @@ static FILE *blackboxVirtualFile = NULL;
 static int32_t largestLogFileNumber = 0;
 bool blackboxVirtualOpen(void)
 {
-    const int log_name_length = 12; //file name template: LOG00001.BFL
+    const int log_name_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 1; //file name template: LOG00001.BFL
     DIR *dir = opendir(".");
     if (!dir) {
         return false; // Failed to open directory
