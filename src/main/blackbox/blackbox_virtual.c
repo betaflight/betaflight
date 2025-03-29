@@ -35,11 +35,13 @@ static FILE *blackboxVirtualFile = NULL;
 static int32_t largestLogFileNumber = 0;
 bool blackboxVirtualOpen(void)
 {
+    const int log_name_length = 12; //file name template: LOG00001.BFL
     DIR *dir = opendir(".");
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
-        if (strncmp(entry->d_name, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
-                    && strncmp(entry->d_name + 9, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
+        if (strlen(entry->d_name) == log_name_length
+            && strncmp(entry->d_name, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
+            && strncmp(entry->d_name + 9, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
 
             char logSequenceNumberString[6];
             memcpy(logSequenceNumberString, entry->d_name + 3, 5);
