@@ -1051,7 +1051,7 @@ void blackboxValidateConfig(void)
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
 #endif
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
 #endif
     case BLACKBOX_DEVICE_SERIAL:

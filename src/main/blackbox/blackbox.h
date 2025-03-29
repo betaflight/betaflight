@@ -30,7 +30,7 @@ typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_FLASH = 1,
     BLACKBOX_DEVICE_SDCARD = 2,
     BLACKBOX_DEVICE_SERIAL = 3,
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     BLACKBOX_DEVICE_VIRTUAL = 4
 #endif
 } BlackboxDevice_e;

@@ -59,7 +59,7 @@
 #include "drivers/sdcard.h"
 #endif
 
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
 #include "blackbox_virtual.h"
 #endif
 
@@ -129,7 +129,7 @@ void blackboxWrite(uint8_t value)
         afatfs_fputc(blackboxSDCard.logFile, value);
         break;
 #endif
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         blackboxVirtualPutChar(value);
         break;
@@ -194,7 +194,7 @@ int blackboxWriteString(const char *s)
         break;
 #endif // USE_SDCARD
 
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         length = strlen(s);
         blackboxVirtualWrite((const uint8_t*) s, length);
@@ -233,7 +233,7 @@ void blackboxDeviceFlush(void)
         flashfsFlushAsync(false);
         break;
 #endif // USE_FLASHFS
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         blackboxVirtualFlush();
         break;
@@ -270,7 +270,7 @@ bool blackboxDeviceFlushForce(void)
         // been physically written to the SD card yet.
         return afatfs_flush();
 #endif // USE_SDCARD
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         return blackboxVirtualFlush();
 #endif
@@ -294,7 +294,7 @@ bool blackboxDeviceFlushForceComplete(void)
             return false;
         }
 #endif // USE_SDCARD
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         blackboxVirtualFlush();
         return true;
@@ -390,7 +390,7 @@ bool blackboxDeviceOpen(void)
         return true;
         break;
 #endif // USE_SDCARD
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         return blackboxVirtualOpen();
 
@@ -464,7 +464,7 @@ void blackboxDeviceClose(void)
         flashfsClose();
         break;
 #endif
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         blackboxVirtualClose();
         break;
@@ -604,7 +604,7 @@ bool blackboxDeviceBeginLog(void)
     case BLACKBOX_DEVICE_SDCARD:
         return blackboxSDCardBeginLog();
 #endif // USE_SDCARD
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         return blackboxVirtualBeginLog();
 #endif
@@ -643,7 +643,7 @@ bool blackboxDeviceEndLog(bool retainLog)
         return false;
 #endif // USE_SDCARD
 
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         blackboxVirtualEndLog();
         return true;
@@ -691,7 +691,7 @@ bool isBlackboxDeviceWorking(void)
         return flashfsIsReady();
 #endif
 
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         return true;
 #endif
@@ -709,7 +709,7 @@ int32_t blackboxGetLogNumber(void)
         return blackboxSDCard.largestLogFileNumber;
 #endif
 
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         return blackboxVirtualLogFileNumber();
         break;
@@ -742,7 +742,7 @@ void blackboxReplenishHeaderBudget(void)
         freeSpace = afatfs_getFreeBufferSpace();
         break;
 #endif
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         blackboxHeaderBudget = 1024*8;
         return;
@@ -812,7 +812,7 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
         return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 #endif // USE_SDCARD
 
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     case BLACKBOX_DEVICE_VIRTUAL:
         return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 #endif

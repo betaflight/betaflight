@@ -36,13 +36,13 @@ static int32_t largestLogFileNumber = 0;
 bool blackboxVirtualOpen(void)
 {
     DIR *dir = opendir(".");
-    struct dirent *file;
-    while ((file = readdir(dir)) != NULL) {
-        if (strncmp(file->d_name, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
-                    && strncmp(file->d_name + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strncmp(entry->d_name, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
+                    && strncmp(entry->d_name + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
 
             char logSequenceNumberString[6];
-            memcpy(logSequenceNumberString, file->d_name + 3, 5);
+            memcpy(logSequenceNumberString, entry->d_name + 3, 5);
             logSequenceNumberString[5] = '\0';
             largestLogFileNumber = MAX((int32_t)atoi(logSequenceNumberString), largestLogFileNumber);
         }
@@ -73,7 +73,6 @@ bool blackboxVirtualFlush(void)
     } else {
         return false;
     }
-
 }
 
 bool blackboxVirtualBeginLog(void)
@@ -82,14 +81,8 @@ bool blackboxVirtualBeginLog(void)
         return false;
     }
 
-    int32_t remainder = largestLogFileNumber + 1;
-    char filename[] = LOGFILE_PREFIX "00000." LOGFILE_SUFFIX;
-
-    for (int i = 7; i >= 3; i--) {
-        filename[i] = (remainder % 10) + '0';
-        remainder /= 10;
-    }
-
+    char filename[13];
+    sprintf(filename, "%3s%05i.%3s", LOGFILE_PREFIX, largestLogFileNumber, LOGFILE_SUFFIX);
     blackboxVirtualFile = fopen(filename, "w");
     if (blackboxVirtualFile != NULL) {
         largestLogFileNumber++;

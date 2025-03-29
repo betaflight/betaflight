@@ -272,7 +272,7 @@ static const char * const lookupTableBlackboxDevice[] = {
     "SPIFLASH",
     "SDCARD",
     "SERIAL",
-#if defined(SIMULATOR_BUILD) && defined(USE_BLACKBOX_VIRTUAL)
+#ifdef USE_BLACKBOX_VIRTUAL
     "VIRTUAL"
 #endif
 };
