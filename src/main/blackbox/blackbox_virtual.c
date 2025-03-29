@@ -37,6 +37,10 @@ bool blackboxVirtualOpen(void)
 {
     const int log_name_length = 12; //file name template: LOG00001.BFL
     DIR *dir = opendir(".");
+    if (!dir) {
+        return false; // Failed to open directory
+    }
+
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if (strlen(entry->d_name) == log_name_length
