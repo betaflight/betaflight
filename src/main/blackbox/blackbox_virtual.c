@@ -39,7 +39,7 @@ bool blackboxVirtualOpen(void)
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if (strncmp(entry->d_name, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
-                    && strncmp(entry->d_name + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
+                    && strncmp(entry->d_name + 9, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
 
             char logSequenceNumberString[6];
             memcpy(logSequenceNumberString, entry->d_name + 3, 5);
@@ -82,7 +82,7 @@ bool blackboxVirtualBeginLog(void)
     }
 
     char filename[13];
-    sprintf(filename, "%3s%05i.%3s", LOGFILE_PREFIX, largestLogFileNumber, LOGFILE_SUFFIX);
+    sprintf(filename, "%3s%05i.%3s", LOGFILE_PREFIX, largestLogFileNumber + 1, LOGFILE_SUFFIX);
     blackboxVirtualFile = fopen(filename, "w");
     if (blackboxVirtualFile != NULL) {
         largestLogFileNumber++;
