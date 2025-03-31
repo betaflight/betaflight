@@ -1434,6 +1434,20 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
 #endif
 
+#ifdef USE_AIRPLANE_FCS
+    { PARAM_NAME_AFCS_PITCH_STICK_GAIN,    VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_stick_gain) },
+    { PARAM_NAME_AFCS_PITCH_DAMPING_GAIN,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_damping_gain) },
+    { PARAM_NAME_AFCS_PITCH_DAMPING_FILTER_TIME,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_damping_filter_time) },
+    { PARAM_NAME_AFCS_PITCH_STABILITY_GAIN,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_stability_gain) },
+
+    { PARAM_NAME_AFCS_ROLL_STICK_GAIN,    VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_roll_stick_gain) },
+    { PARAM_NAME_AFCS_ROLL_DAMPING_GAIN,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_roll_damping_gain) },
+
+    { PARAM_NAME_AFCS_YAW_STICK_GAIN,    VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_stick_gain) },
+    { PARAM_NAME_AFCS_YAW_DAMPING_GAIN,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_damping_gain) },
+    { PARAM_NAME_AFCS_YAW_DAMPING_FILTER_TIME,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_damping_filter_time) },
+    { PARAM_NAME_AFCS_YAW_STABILITY_GAIN,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_stability_gain) },
+#endif
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },

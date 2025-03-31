@@ -64,6 +64,9 @@
 
 #include "pid.h"
 
+#ifdef USE_AIRPLANE_FCS
+#include "airplane_fcs.h"
+#endif
 typedef enum {
     LEVEL_MODE_OFF = 0,
     LEVEL_MODE_R,
@@ -267,6 +270,18 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+#ifdef USE_AIRPLANE_FCS
+        .afcs_pitch_stick_gain = 100,
+        .afcs_pitch_damping_gain = 20,
+        .afcs_pitch_damping_filter_time = 100,
+        .afcs_pitch_stability_gain = 0,
+        .afcs_roll_stick_gain = 100,
+        .afcs_roll_damping_gain = 25,
+        .afcs_yaw_stick_gain = 100,
+        .afcs_yaw_damping_gain = 500,
+        .afcs_yaw_damping_filter_time = 3000,
+        .afcs_yaw_stability_gain = 0,
+#endif
     );
 }
 
@@ -1239,6 +1254,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
 
 #endif // USE_CHIRP
+
+#ifdef USE_AIRPLANE_FCS
+    bool isAFCS = isFixedWing() && FLIGHT_MODE(AIRPLANE_FCS_MODE);
+    if (isAFCS) {
+        afcsUpdate(pidProfile, currentTimeUs);
+        return;         // The airplanes FCS do not need PID controller
+    }
+#endif
 
     // ----------PID controller----------
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {

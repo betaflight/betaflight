@@ -275,3 +275,16 @@
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif
+
+#ifdef USE_AIRPLANE_FCS
+#define PARAM_NAME_AFCS_PITCH_STICK_GAIN "afcs_pitch_stick_gain"
+#define PARAM_NAME_AFCS_PITCH_DAMPING_GAIN "afcs_pitch_damping_gain"
+#define PARAM_NAME_AFCS_PITCH_DAMPING_FILTER_TIME "afcs_pitch_damping_filter_time"
+#define PARAM_NAME_AFCS_PITCH_STABILITY_GAIN "afcs_pitch_stability_gain"
+#define PARAM_NAME_AFCS_ROLL_STICK_GAIN "afcs_roll_stick_gain"
+#define PARAM_NAME_AFCS_ROLL_DAMPING_GAIN "afcs_roll_damping_gain"
+#define PARAM_NAME_AFCS_YAW_STICK_GAIN "afcs_yaw_stick_gain"
+#define PARAM_NAME_AFCS_YAW_DAMPING_GAIN "afcs_yaw_damping_gain"
+#define PARAM_NAME_AFCS_YAW_DAMPING_FILTER_TIME "afcs_yaw_damping_filter_time"
+#define PARAM_NAME_AFCS_YAW_STABILITY_GAIN "afcs_yaw_stability_gain"
+#endif

@@ -332,6 +332,19 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+
+#ifdef USE_AIRPLANE_FCS
+    uint16_t afcs_pitch_stick_gain;
+    uint16_t afcs_pitch_damping_gain;
+    uint16_t afcs_pitch_damping_filter_time;
+    uint16_t afcs_pitch_stability_gain;
+    uint16_t afcs_roll_stick_gain;
+    uint16_t afcs_roll_damping_gain;
+    uint16_t afcs_yaw_stick_gain;
+    uint16_t afcs_yaw_damping_gain;
+    uint16_t afcs_yaw_damping_filter_time;
+    uint16_t afcs_yaw_stability_gain;
+#endif
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -550,6 +563,11 @@ typedef struct pidRuntime_s {
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
 #endif // USE_CHIRP
+
+#ifdef USE_AIRPLANE_FCS
+    pt1Filter_t afcsPitchDampingLowpass;
+    pt1Filter_t afcsYawDampingLowpass;
+#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
