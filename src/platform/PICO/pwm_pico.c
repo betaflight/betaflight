@@ -72,13 +72,13 @@ bool pwmEnableMotors(void)
 
 bool pwmIsMotorEnabled(unsigned index)
 {
-    return motors[index].enabled;
+    return pwmMotors[index].enabled;
 }
 
 static void pwmWriteStandard(uint8_t index, float value)
 {
     /* TODO: move value to be a number between 0-1 (i.e. percent throttle from mixer) */
-    pwm_set_chan_level(picoPwmMotors[index].slice, picoPwmMotors[index].channel, lrintf((value * motors[index].pulseScale) + motors[index].pulseOffset));
+    pwm_set_chan_level(picoPwmMotors[index].slice, picoPwmMotors[index].channel, lrintf((value * pwmMotors[index].pulseScale) + pwmMotors[index].pulseOffset));
 }
 
 static void pwmCompleteMotorUpdate(void)
@@ -127,7 +127,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
 
     pwmMotorCount = device->count;
 
-    memset(motors, 0, sizeof(motors));
+    memset(pwmMotors, 0, sizeof(pwmMotors));
 
     if (!device || !motorConfig) {
         return false;
@@ -170,13 +170,13 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
         const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
 
-        motors[motorIndex].io = IOGetByTag(tag);
+        pwmMotors[motorIndex].io = IOGetByTag(tag);
         uint8_t pin = IO_PINBYTAG(tag);
 
         const uint16_t slice = pwm_gpio_to_slice_num(pin);
         const uint16_t channel = pwm_gpio_to_channel(pin);
 
-        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
+        IOInit(pwmMotors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
         picoPwmMotors[motorIndex].slice = slice;
         picoPwmMotors[motorIndex].channel = channel;
@@ -215,9 +215,9 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
             TODO: this can be moved back to periodMin and periodLen
             once mixer outputs a 0..1 float value.
         */
-        motors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
-        motors[motorIndex].pulseOffset = (sMin * hz) - (motors[motorIndex].pulseScale * 1000);
-        motors[motorIndex].enabled = true;
+        pwmMotors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
+        pwmMotors[motorIndex].pulseOffset = (sMin * hz) - (pwmMotors[motorIndex].pulseScale * 1000);
+        pwmMotors[motorIndex].enabled = true;
     }
 
     return true;
