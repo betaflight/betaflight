@@ -41,6 +41,7 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_output_impl.h"
 #include "drivers/light_led.h"
 
 #include "drivers/timer.h"
@@ -543,11 +544,9 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
     }
 }
 
-static motorDevice_t pwmMotorDevice; // Forward
-
 pwmOutputPort_t *pwmGetMotors(void)
 {
-    return motors;
+    return pwmMotors;
 }
 
 static float pwmConvertFromExternal(uint16_t externalValue)
@@ -562,14 +561,7 @@ static uint16_t pwmConvertToExternal(float motorValue)
 
 static void pwmDisableMotors(void)
 {
-    pwmMotorDevice.enabled = false;
-}
-
-static bool pwmEnableMotors(void)
-{
-    pwmMotorDevice.enabled = true;
-
-    return true;
+    // NOOP
 }
 
 static void pwmWriteMotor(uint8_t index, float value)
@@ -594,12 +586,7 @@ static void pwmWriteMotorInt(uint8_t index, uint16_t value)
 
 static void pwmShutdownPulsesForAllMotors(void)
 {
-    pwmMotorDevice.enabled = false;
-}
-
-static bool pwmIsMotorEnabled(unsigned index)
-{
-    return motors[index].enabled;
+    // NOOP
 }
 
 static void pwmCompleteMotorUpdate(void)
@@ -647,7 +634,7 @@ static const motorVTable_t vTable = {
     .shutdown = pwmShutdownPulsesForAllMotors,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
-
+    .getMotorIO = NULL,
 };
 
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t _idlePulse)
@@ -657,15 +644,17 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
     if (!device) {
         return false;
     }
+
+    pwmMotorCount = device->count;
     device->vTable = &vTable;
-    const uint8_t motorCount = device->count;
-    printf("Initialized motor count %d\n", motorCount);
-    pwmRawPkt.motorCount = motorCount;
+    
+    printf("Initialized motor count %d\n", pwmMotorCount);
+    pwmRawPkt.motorCount = pwmMotorCount;
 
     idlePulse = _idlePulse;
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        motors[motorIndex].enabled = true;
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < pwmMotorCount; motorIndex++) {
+        pwmMotors[motorIndex].enabled = true;
     }
 
     return true;

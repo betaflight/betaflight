@@ -31,6 +31,7 @@
 #include "drivers/io.h"
 #include "drivers/motor_impl.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_output_impl.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 
@@ -80,15 +81,15 @@ static FAST_DATA_ZERO_INIT motorDevice_t *pwmMotorDevice;
 static void pwmWriteStandard(uint8_t index, float value)
 {
     /* TODO: move value to be a number between 0-1 (i.e. percent throttle from mixer) */
-    *motors[index].channel.ccr = lrintf((value * motors[index].pulseScale) + motors[index].pulseOffset);
+    *pwmMotors[index].channel.ccr = lrintf((value * pwmMotors[index].pulseScale) + pwmMotors[index].pulseOffset);
 }
 
 static void pwmShutdownPulsesForAllMotors(void)
 {
     for (int index = 0; index < pwmMotorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
-        if (motors[index].channel.ccr) {
-            *motors[index].channel.ccr = 0;
+        if (pwmMotors[index].channel.ccr) {
+            *pwmMotors[index].channel.ccr = 0;
         }
     }
 }
@@ -96,18 +97,6 @@ static void pwmShutdownPulsesForAllMotors(void)
 static void pwmDisableMotors(void)
 {
     pwmShutdownPulsesForAllMotors();
-}
-
-static motorVTable_t motorPwmVTable;
-static bool pwmEnableMotors(void)
-{
-    /* check motors can be enabled */
-    return (pwmMotorDevice->vTable);
-}
-
-static bool pwmIsMotorEnabled(unsigned index)
-{
-    return motors[index].enabled;
 }
 
 static bool useContinuousUpdate = true;
@@ -119,12 +108,12 @@ static void pwmCompleteMotorUpdate(void)
     }
 
     for (int index = 0; index < pwmMotorCount; index++) {
-        if (motors[index].forceOverflow) {
-            timerForceOverflow(motors[index].channel.tim);
+        if (pwmMotors[index].forceOverflow) {
+            timerForceOverflow(pwmMotors[index].channel.tim);
         }
         // Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
         // This compare register will be set to the output value on the next main loop.
-        *motors[index].channel.ccr = 0;
+        *pwmMotors[index].channel.ccr = 0;
     }
 }
 
@@ -151,11 +140,12 @@ static motorVTable_t motorPwmVTable = {
     .updateComplete = pwmCompleteMotorUpdate,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
+    .getMotorIO = pwmGetMotorIO,
 };
 
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t idlePulse)
 {
-    memset(motors, 0, sizeof(motors));
+    memset(pwmMotors, 0, sizeof(pwmMotors));
 
     if (!device) {
         return false;
@@ -208,10 +198,10 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
             return false;
         }
 
-        motors[motorIndex].io = IOGetByTag(tag);
-        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
+        pwmMotors[motorIndex].io = IOGetByTag(tag);
+        IOInit(pwmMotors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
-        IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
+        IOConfigGPIOAF(pwmMotors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
@@ -228,27 +218,27 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
             TODO: this can be moved back to periodMin and periodLen
             once mixer outputs a 0..1 float value.
         */
-        motors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
-        motors[motorIndex].pulseOffset = (sMin * hz) - (motors[motorIndex].pulseScale * 1000);
+        pwmMotors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
+        pwmMotors[motorIndex].pulseOffset = (sMin * hz) - (pwmMotors[motorIndex].pulseScale * 1000);
 
-        pwmOutConfig(&motors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorInversion);
+        pwmOutConfig(&pwmMotors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorInversion);
 
         bool timerAlreadyUsed = false;
         for (int i = 0; i < motorIndex; i++) {
-            if (motors[i].channel.tim == motors[motorIndex].channel.tim) {
+            if (pwmMotors[i].channel.tim == pwmMotors[motorIndex].channel.tim) {
                 timerAlreadyUsed = true;
                 break;
             }
         }
-        motors[motorIndex].forceOverflow = !timerAlreadyUsed;
-        motors[motorIndex].enabled = true;
+        pwmMotors[motorIndex].forceOverflow = !timerAlreadyUsed;
+        pwmMotors[motorIndex].enabled = true;
     }
     return true;
 }
 
 pwmOutputPort_t *pwmGetMotors(void)
 {
-    return motors;
+    return pwmMotors;
 }
 
 #ifdef USE_SERVOS

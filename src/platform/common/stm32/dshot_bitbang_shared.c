@@ -54,6 +54,14 @@ bool bbDshotIsMotorIdle(unsigned motorIndex)
     return bbmotor->protocolControl.value == 0;
 }
 
+IO_t bbGetMotorIO(unsigned index)
+{
+    if (index >= dshotMotorCount) {
+        return IO_NONE;
+    }
+    return bbMotors[index].io;
+}
+
 #ifdef USE_DSHOT_BITBANG
 bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 {

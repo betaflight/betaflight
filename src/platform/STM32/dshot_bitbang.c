@@ -716,6 +716,7 @@ static const motorVTable_t bbVTable = {
     .shutdown = bbShutdown,
     .isMotorIdle = bbDshotIsMotorIdle,
     .requestTelemetry = bbDshotRequestTelemetry,
+    .getMotorIO = bbGetMotorIO,
 };
 
 dshotBitbangStatus_e dshotBitbangGetStatus(void)

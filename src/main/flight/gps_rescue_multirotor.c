@@ -630,7 +630,7 @@ static void descend(bool newGpsData)
 {
     if (newGpsData) {
         // consider landing area to be a circle half landing height around home, to avoid overshooting home point
-        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * apConfig()->landing_altitude_m);
+        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * autopilotConfig()->landingAltitudeM);
         const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
 
         // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home

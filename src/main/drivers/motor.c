@@ -109,7 +109,9 @@ void motorWriteAll(float *values)
             // Perform the decode of the last data received
             // New data will be received once the send of motor data, triggered above, completes
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-            motorDevice.vTable->decodeTelemetry();
+            if (motorDevice.vTable->decodeTelemetry) {
+                motorDevice.vTable->decodeTelemetry();
+            }
 #endif
 
             // Update the motor data
@@ -184,7 +186,7 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
 motorProtocolFamily_e motorGetProtocolFamily(void)
 {
     switch (motorConfig()->dev.motorProtocol) {
-#ifdef USE_PWMOUTPUT
+#ifdef USE_PWM_OUTPUT
     case MOTOR_PROTOCOL_PWM :
     case MOTOR_PROTOCOL_ONESHOT125:
     case MOTOR_PROTOCOL_ONESHOT42:
@@ -362,6 +364,14 @@ timeMs_t motorGetMotorEnableTimeMs(void)
 }
 #endif
 
+IO_t motorGetIo(unsigned index)
+{
+    if (index >= motorDevice.count) {
+        return IO_NONE;
+    }
+    return motorDevice.vTable->getMotorIO ? motorDevice.vTable->getMotorIO(index) : IO_NONE;
+}
+
 /* functions below for empty methods and no active motors */
 void motorPostInitNull(void)
 {
@@ -433,6 +443,7 @@ static const motorVTable_t motorNullVTable = {
     .shutdown = motorShutdownNull,
     .requestTelemetry = NULL,
     .isMotorIdle = NULL,
+    .getMotorIO = NULL,
 };
 
 void motorNullDevInit(motorDevice_t *device)
