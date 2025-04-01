@@ -2,6 +2,7 @@
 INCLUDE_DIRS := \
         $(INCLUDE_DIRS) \
         $(TARGET_PLATFORM_DIR) \
+        $(TARGET_PLATFORM_DIR)/include \
         $(LIB_MAIN_DIR)/dyad
 
 MCU_COMMON_SRC  := \

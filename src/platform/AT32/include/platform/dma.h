@@ -24,6 +24,12 @@
 #include "platform.h"
 #include "drivers/resource.h"
 
+#if defined(USE_ATBSP_DRIVER)
+#define PLATFORM_TRAIT_DMA_MUX_REQUIRED 1
+#endif
+
+#define DMA_ARCH_TYPE dma_channel_type
+
 typedef enum {
     DMA_NONE = 0,
     DMA1_CH1_HANDLER = 1,
@@ -90,3 +96,6 @@ void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
 #define xDMA_SetCurrDataCounter(dmaResource, count) dma_data_number_set((DMA_ARCH_TYPE *)(dmaResource), count)
 #define xDMA_GetFlagStatus(dmaResource, flags) dma_flag_get((DMA_ARCH_TYPE *)(dmaResource), flags)
 #define xDMA_ClearFlag(dmaResource, flags) dma_flag_clear((DMA_ARCH_TYPE *)(dmaResource), flags)
+
+#define DMA_CCR_EN 1
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->ctrl_bit.chen & DMA_CCR_EN)
