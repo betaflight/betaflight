@@ -224,5 +224,3 @@ SPARE3          P47
 
 #define UARTHARDWARE_MAX_PINS 4
 #define UART_TRAIT_AF_PORT 1
-
-#define MAX_SPI_PIN_SEL 4

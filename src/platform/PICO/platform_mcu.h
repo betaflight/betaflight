@@ -101,3 +101,5 @@ extern uint32_t systemUniqueId[3];
 
 #define UART_TX_BUFFER_ATTRIBUTE
 #define UART_RX_BUFFER_ATTRIBUTE
+
+#define MAX_SPI_PIN_SEL 4
