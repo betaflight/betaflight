@@ -65,6 +65,7 @@ CMSIS_SRC   := \
 
 INCLUDE_DIRS += \
             $(TARGET_PLATFORM_DIR) \
+            $(TARGET_PLATFORM_DIR)/include \
             $(TARGET_PLATFORM_DIR)/usb \
             $(TARGET_PLATFORM_DIR)/startup \
             $(SDK_DIR)/common/pico_bit_ops_headers/include \
