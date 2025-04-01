@@ -49,7 +49,6 @@ FLASH_SIZE ?=
 
 # Disabled build flags
 CFLAGS_DISABLED         :=
-OPTIMISATIONS_DISABLED  :=
 
 ###############################################################################
 # Things that need to be maintained as the source changes
@@ -228,12 +227,10 @@ include $(MAKE_SCRIPT_DIR)/openocd.mk
 ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 .DEFAULT_GOAL := all
-else
-ifeq ($(TARGET),SITL)
+else ifeq ($(TARGET),SITL)
 .DEFAULT_GOAL := sitl_target
 else
 .DEFAULT_GOAL := hex
-endif
 endif
 else
 .DEFAULT_GOAL := hex
@@ -289,10 +286,10 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 CC_NO_OPTIMISATION      :=
 
-CC_DEBUG_OPTIMISATION   := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_DEBUG_OPTIMISATION))
-CC_DEFAULT_OPTIMISATION := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_DEFAULT_OPTIMISATION))
-CC_SPEED_OPTIMISATION   := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_SPEED_OPTIMISATION))
-CC_SIZE_OPTIMISATION    := $(filter-out $(OPTIMISATIONS_DISABLED), $(CC_SIZE_OPTIMISATION))
+CC_DEBUG_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_DEBUG_OPTIMISATION))
+CC_DEFAULT_OPTIMISATION := $(filter-out $(CFLAGS_DISABLED), $(CC_DEFAULT_OPTIMISATION))
+CC_SPEED_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_SPEED_OPTIMISATION))
+CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATION))
 
 #
 # Added after GCC version update, remove once the warnings have been fixed

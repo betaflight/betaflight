@@ -59,8 +59,7 @@ endif
 
 ifeq ($(OSFAMILY),macosx)
   ifneq ($(findstring arm,$(ARCHFAMILY)),)
-    CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations
-    OPTIMISATIONS_DISABLED := -fuse-linker-plugin
+    CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations -fuse-linker-plugin
 
     ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
         # Static builds are not supported on MacOS
