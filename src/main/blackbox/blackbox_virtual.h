@@ -21,7 +21,7 @@
 
 #pragma once
 #ifndef SIMULATOR_BUILD
-#error "USE_BLACKBOX_VIRTUAL uses in SITL build only"
+#error "USE_BLACKBOX_VIRTUAL valid for SITL build only"
 #endif
 bool blackboxVirtualOpen(void);
 void blackboxVirtualPutChar(uint8_t value);
