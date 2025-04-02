@@ -94,6 +94,7 @@
 #include "fc/tasks.h"
 
 #include "flight/alt_hold.h"
+#include "flight/alt_limit.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -993,6 +994,10 @@ void init(void)
 // autopilot must be initialised before modes that require the autopilot pids
 #ifdef USE_ALTITUDE_HOLD
     altHoldInit();
+#endif
+
+#ifdef USE_ALTITUDE_LIMIT
+    altLimitInit();
 #endif
 
 #ifdef USE_POSITION_HOLD

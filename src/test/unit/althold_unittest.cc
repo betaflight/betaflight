@@ -50,6 +50,7 @@ extern "C" {
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(altHoldConfig_t, altHoldConfig, PG_ALTHOLD_CONFIG, 0);
+    PG_REGISTER(altLimitConfig_t, altLimitConfig, PG_ALTLIMIT_CONFIG, 0);
     PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);

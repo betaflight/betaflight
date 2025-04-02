@@ -60,6 +60,7 @@
 #include "flight/pid.h"
 #include "flight/position.h"
 #include "flight/pos_hold.h"
+#include "flight/alt_limit.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -397,6 +398,10 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_ALTHOLD] = DEFINE_TASK("ALTHOLD", NULL, NULL, updateAltHold, TASK_PERIOD_HZ(ALTHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
+#ifdef USE_ALTITUDE_LIMIT
+    [TASK_ALTLIMIT] = DEFINE_TASK("ALTLIMIT", NULL, NULL, updateAltLimit, TASK_PERIOD_HZ(ALTLIMIT_TASK_RATE_HZ), TASK_PRIORITY_LOW),
+#endif
+
 #ifdef USE_POSITION_HOLD
     [TASK_POSHOLD] = DEFINE_TASK("POSHOLD", NULL, NULL, updatePosHold, TASK_PERIOD_HZ(POSHOLD_TASK_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
@@ -569,6 +574,10 @@ void tasksInit(void)
 
 #ifdef USE_ALTITUDE_HOLD
     setTaskEnabled(TASK_ALTHOLD, sensors(SENSOR_BARO) || featureIsEnabled(FEATURE_GPS));
+#endif
+
+#ifdef USE_ALTITUDE_LIMIT
+    setTaskEnabled(TASK_ALTLIMIT, sensors(SENSOR_BARO));
 #endif
 
 #ifdef USE_POSITION_HOLD

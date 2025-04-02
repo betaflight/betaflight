@@ -46,6 +46,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/alt_hold.h"
+#include "flight/alt_limit.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
@@ -803,6 +804,11 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         throttle = getAutopilotThrottle();
     }
+#endif
+
+#ifdef USE_ALTITUDE_LIMIT
+    // Throttle value to be used when altitude limiting is used 
+        throttle = getAltLimitedThrottle(throttle);
 #endif
 
 #ifdef USE_GPS_RESCUE
