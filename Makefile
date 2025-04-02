@@ -535,6 +535,13 @@ $(BASE_TARGETS):
 ## sitl_target       : Alias for SITL target (for TARGET=SITL syntax)
 sitl_target:
 	$(MAKE) SITL
+
+## SITL_rev          : Build SITL target and add revision to filename
+SITL_rev:
+	$(MAKE) SITL
+	@echo "Adding revision to SITL target"
+	$(V0) mv $(BIN_DIR)/$(FORKNAME)_SITL $(BIN_DIR)/$(FORKNAME)_SITL_$(REVISION)
+	@echo "Revision added to executable. Executable at: $(BIN_DIR)/$(FORKNAME)_SITL_$(REVISION)"
 	
 ## SITL              : Builds the SITL target
 SITL:
