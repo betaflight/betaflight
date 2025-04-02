@@ -248,6 +248,7 @@
 #define USE_ESCSERIAL_SIMONK
 #define USE_ALTITUDE_HOLD
 #define USE_POSITION_HOLD
+#define USE_ALTITUDE_LIMIT
 
 #if !defined(USE_GPS)
 #define USE_GPS
@@ -489,4 +490,8 @@
 
 #if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
 #error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#endif
+
+#if defined(USE_ALTITUDE_LIMIT) && !defined(USE_BARO)
+#error "USE_ALTITUDE_LIMIT requires USE_BARO to be defined"
 #endif

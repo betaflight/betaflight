@@ -62,6 +62,7 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/alt_hold.h"
+#include "flight/alt_limit.h"
 #include "flight/pos_hold.h"
 
 #if defined(USE_DYN_NOTCH_FILTER)

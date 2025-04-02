@@ -262,6 +262,12 @@
 #define PARAM_NAME_ALT_HOLD_CLIMB_RATE "alt_hold_climb_rate"
 #endif
 
+#ifdef USE_ALTITUDE_LIMIT
+#define PARAM_NAME_ALT_LIMIT_CEILING "altitude_limit_ceiling"
+#define PARAM_NAME_ALT_LIMIT_BUFFER "altitude_limit_buffer"
+#define PARAM_NAME_ALT_LIMIT_ACTIVE "altitude_limit_active"
+#endif
+
 #ifdef USE_POSITION_HOLD
 #define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
 #define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband"

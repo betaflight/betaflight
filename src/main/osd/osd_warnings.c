@@ -51,6 +51,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/pos_hold.h"
+#include "flight/alt_limit.h"
 
 #include "io/beeper.h"
 
@@ -248,6 +249,15 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
 #endif // USE_GPS_RESCUE
+
+#ifdef USE_ALTITUDE_LIMIT
+    if (osdWarnGetState(OSD_WARNING_ALTITUDE_LIMIT) && altLimitWarn()) {
+        tfp_sprintf(warningText, "ALTI LIMIT");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif
 
 #ifdef USE_POSITION_HOLD
     if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure()) {

@@ -2,6 +2,7 @@ PG_SRC = \
             pg/adc.c \
             pg/alt_hold_multirotor.c \
             pg/alt_hold_wing.c \
+            pg/alt_limit.c \
             pg/autopilot_multirotor.c \
             pg/autopilot_wing.c \
             pg/beeper.c \
@@ -160,6 +161,7 @@ COMMON_SRC = \
             fc/rc_modes.c \
             flight/alt_hold_multirotor.c \
             flight/alt_hold_wing.c \
+            flight/alt_limit.c \
             flight/autopilot_multirotor.c \
             flight/autopilot_wing.c \
             flight/dyn_notch_filter.c \

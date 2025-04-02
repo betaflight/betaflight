@@ -104,6 +104,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_ALTITUDE_HOLD
         BUILD_OPTION_ALTITUDE_HOLD,
 #endif
+#ifdef USE_ALTITUDE_LIMIT
+        BUILD_OPTION_ALTITUDE_LIMIT,
+#endif
 #ifdef USE_BATTERY_CONTINUE
         BUILD_OPTION_BATTERY_CONTINUE,
 #endif
