@@ -15,21 +15,18 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
- #pragma once
+#pragma once
 
- #include "pg/alt_limit.h"
+#include "pg/alt_limit.h"
  
- #ifdef USE_ALTITUDE_LIMIT
- #include "common/time.h"
+#ifdef USE_ALTITUDE_LIMIT
+#include "common/time.h"
  
- #define ALTLIMIT_TASK_RATE_HZ 20         // hz
+#define ALTLIMIT_TASK_RATE_HZ 20         // hz
  
- void altLimitInit(void);
- float getAltLimitedThrottle(float throttle);
- bool isAltLimitActive(void);
- void updateAltLimit(timeUs_t currentTimeUs);
- bool altLimitWarn(void);
- #endif
- 
-
- 
+void altLimitInit(void);
+float getAltLimitedThrottle(float throttle);
+bool isAltLimitActive(void);
+void updateAltLimit(timeUs_t currentTimeUs);
+bool altLimitWarn(void);
+#endif
