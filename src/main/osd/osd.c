@@ -128,7 +128,7 @@ const char * const osdTimerSourceNames[] = {
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
 timeUs_t osdFlyTime = 0;
-timeUs_t osdRaceTime = 0;
+timeUs_t osdLaunchTime = 0;
 #if defined(USE_ACC)
 float osdGForce = 0;
 #endif
@@ -1247,7 +1247,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
         stats.armed_time += deltaT;
 #ifdef USE_LAUNCH_CONTROL
         if(!isLaunchControlActive())
-            osdRaceTime += deltaT;
+            osdLaunchTime += deltaT;
 #endif
     } else if (osdStatsEnabled) {  // handle showing/hiding stats based on OSD disable switch position
         if (displayIsGrabbed(osdDisplayPort)) {

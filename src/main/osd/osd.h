@@ -393,7 +393,7 @@ typedef struct statistic_s {
 
 extern timeUs_t resumeRefreshAt;
 extern timeUs_t osdFlyTime;
-extern timeUs_t osdRaceTime;
+extern timeUs_t osdLaunchTime;
 #if defined(USE_ACC)
 extern float osdGForce;
 #endif

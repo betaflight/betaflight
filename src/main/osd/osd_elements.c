@@ -536,7 +536,7 @@ static timeUs_t osdGetTimerValue(osd_timer_source_e src)
     case OSD_TIMER_SRC_ON_OR_ARMED:
         return ARMING_FLAG(ARMED) ? osdFlyTime : micros();
     case OSD_TIMER_SRC_LAUNCH_TIME:
-        return osdRaceTime;
+        return osdLaunchTime;
     default:
         return 0;
     }
