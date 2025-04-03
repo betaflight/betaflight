@@ -54,7 +54,8 @@ void altLimitInit(void)
     altLimit.throttle_factor = 1.0f;
 }
 
-bool altLimitWarn(void) {
+bool altLimitWarn(void)
+{
     // used only to display warning in OSD if requested but failing
     if (altLimit.mode > 0) {
         return true;
