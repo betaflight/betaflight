@@ -19,18 +19,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
- #pragma once
+#pragma once
 
- 
- #include <stdint.h>
- 
- #include "pg/pg.h"
- 
- typedef struct altLimitConfig_s {
-     uint16_t ceiling;
-     uint16_t buffer;
-     bool active;
- } altLimitConfig_t;
- 
- PG_DECLARE(altLimitConfig_t, altLimitConfig);
- 
+#include <stdint.h>
+
+#include "pg/pg.h"
+
+typedef struct altLimitConfig_s {
+    uint16_t ceiling;
+    uint16_t buffer;
+    bool active;
+} altLimitConfig_t;
+
+PG_DECLARE(altLimitConfig_t, altLimitConfig);
