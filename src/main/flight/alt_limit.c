@@ -45,7 +45,8 @@ typedef struct {
 
 altLimitState_t altLimit;
 
-void altLimitInit(void){
+void altLimitInit(void)
+{
     altLimit.isActive = altLimitConfig()->active;
     altLimit.mode = 0;
     altLimit.ceiling = altLimitConfig()->ceiling;
