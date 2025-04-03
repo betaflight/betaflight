@@ -91,8 +91,6 @@ void updateAltLimit(timeUs_t currentTimeUs) {
 
 float getAltLimitedThrottle(float throttle){
     return (throttle * altLimit.throttle_factor);
-   //UNUSED(throttle);
-   //return 0.0f;
 }
 
 bool isAltLimitActive(void){
