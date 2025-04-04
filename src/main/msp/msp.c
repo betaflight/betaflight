@@ -1372,7 +1372,10 @@ case MSP_NAME:
 
         // added in 1.43
         sbufWriteU8(dst, currentControlRateProfile->rates_type);
-
+        
+        // added in 1.47
+        sbufWriteU8(dst, currentControlRateProfile->thrHover8);
+        
         break;
 
     case MSP_PID:
@@ -2849,6 +2852,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             // version 1.43
             if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rates_type = sbufReadU8(src);
+            }
+
+            // version 1.47
+            if (sbufBytesRemaining(src) >= 1) {
+                currentControlRateProfile->thrHover8 = sbufReadU8(src);
             }
 
             initRcProcessing();
