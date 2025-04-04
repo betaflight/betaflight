@@ -104,10 +104,29 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     const float c = -mass * (pidRuntime.tpaSpeed.twr + 1) * G_ACCELERATION;
 
     const float maxDiveSpeed = (-b + sqrtf(b*b - 4.0f * a * c)) / (2.0f * a);
-
     pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
+
     UNUSED(pidProfile);
 }
+
+#ifdef USE_WING
+static void aerodynamicsInit(const pidProfile_t *pidProfile)
+{
+    aerodynamicsProperty_t *adp = &pidRuntime.planeDynamics;
+    adp->mode = (aerodynamicsMode_e)pidProfile->ad_mode;
+    adp->planeMass = pidProfile->plane_mass / 1000.0f;       // g -> kg
+    adp->wingLoad = pidProfile->wing_load / 1000.0f;           // kg/m^2 = (g/decim^2 *100)/1000  
+    adp->airDensity = pidProfile->air_density / 1000.0f;     // g/m^3 -> kg/m^3
+    adp->liftZeroC = pidProfile->ad_lift_zero / 1000.0f;
+    adp->liftSlopeC = pidProfile->ad_lift_slope / 1000.0f;
+    adp->dragParasiticC = pidProfile->ad_drag_parasitic / 1000.0f;
+    adp->dragInducedC = pidProfile->ad_drag_induced / 1000.0f;
+    adp->liftActualC = 0.0f;
+    adp->stallAngleOfAttack = pidProfile->stall_aoa_pos;
+    adp->angleOfAttack = 0.0f;
+    adp->isStallWarning = false;
+}
+#endif
 
 static void tpaSpeedInit(const pidProfile_t *pidProfile)
 {
@@ -578,6 +597,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_WING
     tpaSpeedInit(pidProfile);
+    aerodynamicsInit(pidProfile);
 #endif
 }
 
