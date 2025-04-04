@@ -79,6 +79,7 @@
 #include "pg/pg_ids.h"
 
 #include "pg/alt_hold.h"
+#include "pg/alt_limit.h"
 #include "pg/autopilot.h"
 #include "pg/motor.h"
 #include "pg/pilot.h"
@@ -1850,6 +1851,12 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_HOLD_DEADBAND,    "%d", altHoldConfig()->deadband);
 #endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
+
+#ifdef USE_ALTITUDE_LIMIT
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_LIMIT_CEILING,  "%d", altLimitConfig()->ceiling);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_LIMIT_BUFFER,    "%d", altLimitConfig()->buffer);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_LIMIT_ACTIVE,    "%d", altLimitConfig()->active);
+#endif // USE_ALTITUDE_LIMIT
 
 #ifdef USE_POSITION_HOLD
 #ifndef USE_WING

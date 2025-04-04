@@ -79,6 +79,7 @@
 
 #include "pg/adc.h"
 #include "pg/alt_hold.h"
+#include "pg/alt_limit.h"
 #include "pg/autopilot.h"
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
@@ -1165,6 +1166,14 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ALT_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 70 },  PG_ALTHOLD_CONFIG, offsetof(altHoldConfig_t, deadband) },
 #endif // !USE_WING
 #endif // USE_ALTITUDE_HOLD
+
+#ifdef USE_ALTITUDE_LIMIT
+#ifndef USE_WING
+    { PARAM_NAME_ALT_LIMIT_CEILING,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 16, 300 }, PG_ALTLIMIT_CONFIG, offsetof(altLimitConfig_t, ceiling) },
+    { PARAM_NAME_ALT_LIMIT_BUFFER,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 15 },  PG_ALTLIMIT_CONFIG, offsetof(altLimitConfig_t, buffer) },
+    { PARAM_NAME_ALT_LIMIT_ACTIVE,    VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },  PG_ALTLIMIT_CONFIG, offsetof(altLimitConfig_t, active) },
+#endif // !USE_WING
+#endif // USE_ALTITUDE_LIMIT
 
 #ifdef USE_POSITION_HOLD
 #ifndef USE_WING
