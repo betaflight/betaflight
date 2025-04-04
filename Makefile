@@ -47,6 +47,9 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+# Disabled build flags
+CFLAGS_DISABLED         :=
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -89,7 +92,7 @@ include $(MAKE_SCRIPT_DIR)/checks.mk
 
 # basic target list
 PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
-BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
+BASE_TARGETS     := $(filter-out SITL,$(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk))))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
@@ -128,7 +131,7 @@ HSE_VALUE       ?= 8000000
 
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
 CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF
-CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS))
+CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS)) SITL
 PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
 
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
@@ -224,6 +227,8 @@ include $(MAKE_SCRIPT_DIR)/openocd.mk
 ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 .DEFAULT_GOAL := all
+else ifeq ($(TARGET),SITL)
+.DEFAULT_GOAL := sitl_target
 else
 .DEFAULT_GOAL := hex
 endif
@@ -281,6 +286,11 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 CC_NO_OPTIMISATION      :=
 
+CC_DEBUG_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_DEBUG_OPTIMISATION))
+CC_DEFAULT_OPTIMISATION := $(filter-out $(CFLAGS_DISABLED), $(CC_DEFAULT_OPTIMISATION))
+CC_SPEED_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_SPEED_OPTIMISATION))
+CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATION))
+
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
@@ -310,6 +320,8 @@ CFLAGS     += $(ARCH_FLAGS) \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
+
+CFLAGS := $(filter-out $(CFLAGS_DISABLED), $(CFLAGS))
 
 ASFLAGS     = $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
@@ -512,7 +524,6 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
@@ -520,6 +531,25 @@ $(BASE_TARGETS):
 	$(V0) @echo "Building target $@" && \
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
+
+## sitl_target       : Alias for SITL target (for TARGET=SITL syntax)
+sitl_target:
+	$(MAKE) SITL
+
+## SITL_rev          : Build SITL target and add revision to filename
+SITL_rev:
+	$(MAKE) SITL
+	@echo "Adding revision to SITL target"
+	$(V0) mv $(BIN_DIR)/$(FORKNAME)_SITL $(BIN_DIR)/$(FORKNAME)_SITL_$(REVISION)
+	@echo "Revision added to executable. Executable at: $(BIN_DIR)/$(FORKNAME)_SITL_$(REVISION)"
+	
+## SITL              : Builds the SITL target
+SITL:
+	@echo "Building SITL target"
+	$(V0) $(MAKE) elf TARGET=SITL
+	@echo "Copying SITL executable"	
+	$(V0) cp $(OBJECT_DIR)/$(FORKNAME)_SITL.elf $(BIN_DIR)/$(FORKNAME)_SITL
+	@echo "SITL build succeeded. Executable at: $(BIN_DIR)/$(FORKNAME)_SITL"
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
@@ -609,6 +639,9 @@ binary:
 
 hex:
 	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
+
+elf:
+	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_ELF)
 
 TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
