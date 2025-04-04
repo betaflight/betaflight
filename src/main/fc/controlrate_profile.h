@@ -60,6 +60,7 @@ typedef struct controlRateConfig_s {
     uint16_t rate_limit[3];                 // Sets the maximum rate for the axes
     char profileName[MAX_RATE_PROFILE_NAME_LENGTH + 1]; // Descriptive name for rate profile
     uint8_t quickRatesRcExpo;               // Sets expo on rc command for quick rates
+    uint8_t vectorRcExpo;                   // Applies user's expo settings on rc command as vector, to preserve stick direction and provide consistent expo on any circle traced around the stick's center.
 } controlRateConfig_t;
 
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
