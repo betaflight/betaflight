@@ -33,6 +33,7 @@
 
 static FILE *blackboxVirtualFile = NULL;
 static int32_t largestLogFileNumber = 0;
+
 bool blackboxVirtualOpen(void)
 {
     const size_t log_name_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 1; //file name template: LOG00001.BFL
