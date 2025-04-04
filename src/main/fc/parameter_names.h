@@ -69,6 +69,7 @@
 #define PARAM_NAME_TPA_SPEED_ADV_PROP_PITCH "tpa_speed_adv_prop_pitch"
 #define PARAM_NAME_TPA_SPEED_ADV_MASS "tpa_speed_adv_mass"
 #define PARAM_NAME_TPA_SPEED_ADV_DRAG_K "tpa_speed_adv_drag_k"
+#define PARAM_NAME_TPA_SPEED_INDUCTIVE_DRAG_K "tpa_speed_inductive_drag_k" //
 #define PARAM_NAME_TPA_SPEED_ADV_THRUST "tpa_speed_adv_thrust"
 #define PARAM_NAME_TPA_SPEED_MAX_VOLTAGE "tpa_speed_max_voltage"
 #define PARAM_NAME_TPA_SPEED_PITCH_OFFSET "tpa_speed_pitch_offset"
@@ -185,6 +186,14 @@
 #define PARAM_NAME_ANGLE_P_GAIN "angle_p_gain"
 #define PARAM_NAME_ANGLE_EARTH_REF "angle_earth_ref"
 #define PARAM_NAME_ANGLE_PITCH_OFFSET "angle_pitch_offset"
+
+#if defined(USE_WING)
+#define PARAM_NAME_AOA_MIN_PARAM "aoa_min_param"
+#define PARAM_NAME_AOA_MIN_ANGLE "aoa_min_angle"
+#define PARAM_NAME_AOA_MAX_PARAM "aoa_max_param"
+#define PARAM_NAME_AOA_MAX_ANGLE "aoa_max_angle"
+#define PARAM_NAME_AOA_WARNING_ANGLE "aoa_warning_angle"
+#endif
 
 #define PARAM_NAME_HORIZON_LEVEL_STRENGTH "horizon_level_strength"
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"
