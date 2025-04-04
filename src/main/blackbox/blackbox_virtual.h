@@ -20,6 +20,7 @@
  */
 
 #pragma once
+
 #ifndef SIMULATOR_BUILD
 #error "USE_BLACKBOX_VIRTUAL valid for SITL build only"
 #endif
