@@ -59,9 +59,7 @@
 #include "drivers/sdcard.h"
 #endif
 
-#ifdef USE_BLACKBOX_VIRTUAL
 #include "blackbox_virtual.h"
-#endif
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 
