@@ -105,6 +105,9 @@
 #define USE_PWM_OUTPUT
 #endif
 
+#define USE_BLACKBOX
+#define USE_BLACKBOX_VIRTUAL
+
 #undef USE_STACK_CHECK // I think SITL don't need this
 #undef USE_DASHBOARD
 #undef USE_TELEMETRY_LTM
