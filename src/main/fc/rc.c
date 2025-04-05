@@ -47,6 +47,7 @@
 #include "flight/pid_init.h"
 
 #include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
