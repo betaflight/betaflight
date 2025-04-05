@@ -285,6 +285,7 @@ static void createExTelemetryTextMessage(uint8_t *exMessage, uint8_t messageID, 
     exMessage[exMessage[EXTEL_HEADER_TYPE_LEN] + EXTEL_CRC_LEN] = calcCRC8(&exMessage[EXTEL_HEADER_TYPE_LEN], exMessage[EXTEL_HEADER_TYPE_LEN]);
 }
 
+#ifdef USE_GPS
 static uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
 {
     uint32_t absValue = abs(value);
@@ -299,6 +300,7 @@ static uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
 
     return exGps.vInt;
 }
+#endif
 
 static int32_t getSensorValue(uint8_t sensor)
 {
