@@ -34,6 +34,7 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_output_impl.h"
 #include "drivers/motor_types.h"
 
 #include "drivers/time.h"
@@ -63,16 +64,6 @@ void pwmShutdownPulsesForAllMotors(void)
 void pwmDisableMotors(void)
 {
     pwmShutdownPulsesForAllMotors();
-}
-
-bool pwmEnableMotors(void)
-{
-    return pwmMotorCount > 0;
-}
-
-bool pwmIsMotorEnabled(unsigned index)
-{
-    return pwmMotors[index].enabled;
 }
 
 static void pwmWriteStandard(uint8_t index, float value)

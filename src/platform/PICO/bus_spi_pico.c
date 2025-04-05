@@ -157,6 +157,8 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 
 void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 {
+    UNUSED(preInit);
+
     int dma_tx = dma_claim_unused_channel(true);
     int dma_rx = dma_claim_unused_channel(true);
 
@@ -168,28 +170,24 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     const spiDevice_t *spi = &spiDevice[spiDeviceByInstance(dev->bus->busType_u.spi.instance)];
     dma_channel_config config = dma_channel_get_default_config(dma_tx);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
-    channel_config_set_dreq(&config, spi_get_dreq(spi, true));
+    channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), true));
 
-    dma_channel_configure(dma_tx, &config, &spi_get_hw(spi)->dr, dev->txBuf, 0, false);
+    dma_channel_configure(dma_tx, &config, &spi_get_hw(SPI_INST(spi->dev))->dr, dev->txBuf, 0, false);
 
     config = dma_channel_get_default_config(dma_rx);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
-    channel_config_set_dreq(&config, spi_get_dreq(spi, false));
+    channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), false));
 
-    dma_channel_configure(dma_rx, &config, dev->rxBuf, &spi_get_hw(spi)->dr, 0, false);
-
-    dev->
+    dma_channel_configure(dma_rx, &config, dev->rxBuf, &spi_get_hw(SPI_INST(spi->dev))->dr, 0, false);
 }
 
 void spiInternalStartDMA(const extDevice_t *dev)
 {
-    const spiDevice_t *spi = &spiDevice[spiDeviceByInstance(dev->bus->busType_u.spi.instance)];
+    dma_channel_set_trans_count(dev->bus->dmaTx->channel, dev->bus->curSegment->len + 1, false);
+    dma_channel_set_trans_count(dev->bus->dmaRx->channel, dev->bus->curSegment->len + 1, false);
 
-    dma_channel_set_trans_count(dev->bus->dmaTx, dev->bus->curSegment->len + 1, false);
-    dma_channel_set_trans_count(dev->bus->dmaRx, dev->bus->curSegment->len + 1, false);
-
-    dma_channel_start(dev->bus->dmaTx);
-    dma_channel_start(dev->bus->dmaRx);
+    dma_channel_start(dev->bus->dmaTx->channel);
+    dma_channel_start(dev->bus->dmaRx->channel);
 }
 
 void spiInternalStopDMA (const extDevice_t *dev)

@@ -26,6 +26,8 @@
 
 #ifdef USE_UART
 
+#include "build/build_config.h"
+
 #include "drivers/system.h"
 #include "drivers/io.h"
 
@@ -207,5 +209,13 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
     UNUSED(uartPort);
     //TODO: Implement
 }
+
+#ifdef USE_DMA
+void uartTryStartTxDMA(uartPort_t *s)
+{
+    UNUSED(s);
+    //TODO: Implement
+}
+#endif
 
 #endif /* USE_UART */

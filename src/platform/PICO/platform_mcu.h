@@ -40,6 +40,7 @@
 #include "RP2350.h"
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
+#include "hardware/dma.h"
 
 #if defined(RP2350A) || defined(RP2350B)
 
@@ -52,7 +53,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define TIM_TypeDef          void*
 //#define TIM_OCInitTypeDef
 #define DMA_TypeDef          void*
-//#define DMA_InitTypeDef
+#define DMA_InitTypeDef      void*
 //#define DMA_Channel_TypeDef
 #define SPI_TypeDef          SPI0_Type
 #define ADC_TypeDef          void*
@@ -68,6 +69,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 //#define EXTI_TypeDef
 //#define EXTI_InitTypeDef
 //#define IRQn_Type           void*
+
+#define SPI_INST(spi) ((spi_inst_t *)(spi))
+
 
 #endif
 
@@ -103,3 +107,6 @@ extern uint32_t systemUniqueId[3];
 #define UART_RX_BUFFER_ATTRIBUTE
 
 #define MAX_SPI_PIN_SEL 4
+#define SERIAL_TRAIT_PIN_CONFIG 1
+
+#define xDMA_GetCurrDataCounter(dma_resource) (((dma_channel_hw_t *)(dma_resource))->transfer_count)

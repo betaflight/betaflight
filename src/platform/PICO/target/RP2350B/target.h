@@ -47,14 +47,12 @@
 #define USE_VCP
 
 #undef USE_TRANSPONDER
-#undef USE_DMA
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
 #undef USE_SDCARD
 
 #undef USE_TIMER
 #undef USE_I2C
-#undef USE_UART
 #undef USE_RCC
 #undef USE_CLI
 #undef USE_RX_PWM
