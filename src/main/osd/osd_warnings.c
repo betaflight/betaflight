@@ -252,7 +252,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_ALTITUDE_LIMIT
     if (osdWarnGetState(OSD_WARNING_ALTITUDE_LIMIT) && altLimitWarn()) {
-        tfp_sprintf(warningText, "ALTI LIMIT");
+        tfp_sprintf(warningText, "ALT LIMIT");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
