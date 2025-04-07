@@ -57,11 +57,7 @@ void altLimitInit(void)
 bool altLimitWarn(void)
 {
     // used only to display warning in OSD if requested but failing
-    if (altLimit.mode > 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return altLimit.mode > 0;
 }
 
 static void altLimitUpdate(void)
