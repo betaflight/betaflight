@@ -143,12 +143,6 @@ void spiInitDevice(SPIDevice device)
     gpio_set_function(IO_PINBYTAG(spi->sck), GPIO_FUNC_SPI);
 }
 
-void spiInternalResetDescriptors(busDevice_t *bus)
-{
-    //TODO: implement
-    UNUSED(bus);
-}
-
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 {
     //TODO: implement
@@ -190,16 +184,10 @@ void spiInternalStartDMA(const extDevice_t *dev)
     dma_channel_start(dev->bus->dmaRx->channel);
 }
 
-void spiInternalStopDMA (const extDevice_t *dev)
-{
-    //TODO: implement
-    UNUSED(dev);
-}
-
 // DMA transfer setup and start
 void spiSequenceStart(const extDevice_t *dev)
 {
-    //TODO: implement
+    //TODO: implementation for PICO
     UNUSED(dev);
 }
 
