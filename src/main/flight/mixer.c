@@ -808,7 +808,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
 #ifdef USE_ALTITUDE_LIMIT
     // Throttle value to be used when altitude limiting is used 
-        throttle = getAltLimitedThrottle(throttle);
+    throttle = getAltLimitedThrottle(throttle);
 #endif
 
 #ifdef USE_GPS_RESCUE
