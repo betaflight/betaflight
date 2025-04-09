@@ -643,6 +643,11 @@ TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 $(TARGETS_REVISION):
 	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
 
+EXE_TARGETS_REVISION = $(addsuffix _rev,$(EXE_TARGETS))
+## <EXE_TARGET>_rev : build executable target and add revision to filename
+$(EXE_TARGETS_REVISION):
+	$(V0) $(MAKE) exe REV=yes TARGET=$(subst _rev,,$@)
+
 all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
 unbrick_$(TARGET): $(TARGET_HEX)
