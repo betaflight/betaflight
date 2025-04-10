@@ -115,7 +115,7 @@ const char * const osdTimerSourceNames[] = {
     "TOTAL ARM",
     "LAST ARM ",
     "ON/ARM   ",
-    "LAUNCH TIME"
+    "LAUNCH TIME",
 };
 
 #define OSD_LOGO_ROWS 4
