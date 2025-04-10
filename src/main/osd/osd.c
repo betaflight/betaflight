@@ -1247,8 +1247,11 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
         osdFlyTime += deltaT;
         stats.armed_time += deltaT;
 #ifdef USE_LAUNCH_CONTROL
-        if (!isLaunchControlActive())
+        if (!isLaunchControlActive()) {
             osdLaunchTime += deltaT;
+        } else {
+            osdLaunchTime = 0;
+        }
 #endif
     } else if (osdStatsEnabled) {  // handle showing/hiding stats based on OSD disable switch position
         if (displayIsGrabbed(osdDisplayPort)) {
