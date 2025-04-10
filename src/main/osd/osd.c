@@ -129,6 +129,7 @@ const char * const osdTimerSourceNames[] = {
 
 timeUs_t osdFlyTime = 0;
 timeUs_t osdLaunchTime = 0;
+
 #if defined(USE_ACC)
 float osdGForce = 0;
 #endif
