@@ -271,14 +271,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
 #ifdef USE_AIRPLANE_FCS
-        .afcs_pitch_stick_gain = 100,
-        .afcs_pitch_damping_gain = 20,
+        .afcs_stick_gain = { 100, 100, 100 },
+        .afcs_damping_gain = { 20, 25, 500 },
         .afcs_pitch_damping_filter_time = 100,
         .afcs_pitch_stability_gain = 0,
-        .afcs_roll_stick_gain = 100,
-        .afcs_roll_damping_gain = 25,
-        .afcs_yaw_stick_gain = 100,
-        .afcs_yaw_damping_gain = 500,
         .afcs_yaw_damping_filter_time = 3000,
         .afcs_yaw_stability_gain = 0,
 #endif
