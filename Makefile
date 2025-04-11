@@ -15,7 +15,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, see BASE_TARGETS below
+# The target to build, see BASE_TARGETS/EXE_TARGETS below
 TARGET    ?=
 CONFIG    ?=
 
@@ -46,6 +46,9 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
+
+# Disabled build flags
+CFLAGS_DISABLED         :=
 
 ###############################################################################
 # Things that need to be maintained as the source changes
@@ -87,9 +90,12 @@ MAKE_PARALLEL 		     = $(if $(filter -j%, $(MAKEFLAGS)),$(EMPTY),-j$(DEFAULT_PAR
 # pre-build sanity checks
 include $(MAKE_SCRIPT_DIR)/checks.mk
 
+# list of targets that  are executed on host (using exe as goal)
+EXE_TARGETS      := SITL
+
 # basic target list
 PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
-BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
+BASE_TARGETS     := $(filter-out $(EXE_TARGETS),$(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk))))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
@@ -128,7 +134,7 @@ HSE_VALUE       ?= 8000000
 
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
 CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF
-CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS))
+CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS) $(EXE_TARGETS)) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS))
 PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
 
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
@@ -224,10 +230,12 @@ include $(MAKE_SCRIPT_DIR)/openocd.mk
 ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 .DEFAULT_GOAL := all
+else ifneq ($(filter $(TARGET),$(EXE_TARGETS)),)
+.DEFAULT_GOAL := exe
 else
 .DEFAULT_GOAL := hex
 endif
-else
+else  # ifeq ($(CONFIG),)
 .DEFAULT_GOAL := hex
 endif
 
@@ -281,6 +289,12 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 CC_NO_OPTIMISATION      :=
 
+CC_DEBUG_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_DEBUG_OPTIMISATION))
+CC_DEFAULT_OPTIMISATION := $(filter-out $(CFLAGS_DISABLED), $(CC_DEFAULT_OPTIMISATION))
+CC_SPEED_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_SPEED_OPTIMISATION))
+CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATION))
+CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION))
+
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
@@ -310,6 +324,8 @@ CFLAGS     += $(ARCH_FLAGS) \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
+
+CFLAGS     := $(filter-out $(CFLAGS_DISABLED), $(CFLAGS))
 
 ASFLAGS     = $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
@@ -361,6 +377,7 @@ TARGET_FULLNAME = $(FORKNAME)_$(FC_VER)_$(TARGET_NAME)
 #
 TARGET_BIN      = $(BIN_DIR)/$(TARGET_FULLNAME).bin
 TARGET_HEX      = $(BIN_DIR)/$(TARGET_FULLNAME).hex
+TARGET_EXE      = $(BIN_DIR)/$(TARGET_FULLNAME)
 TARGET_DFU      = $(BIN_DIR)/$(TARGET_FULLNAME).dfu
 TARGET_ZIP      = $(BIN_DIR)/$(TARGET_FULLNAME).zip
 TARGET_OBJ_DIR  = $(OBJECT_DIR)/$(TARGET_NAME)
@@ -462,6 +479,10 @@ $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
+$(TARGET_EXE): $(TARGET_ELF)
+	@echo Copy $< to $@ "$(STDOUT)"
+	$(V1) cp $< $@
+
 # Compile
 
 ## compile_file takes two arguments: (1) optimisation description string and (2) optimisation compiler flag
@@ -512,7 +533,6 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
@@ -521,7 +541,12 @@ $(BASE_TARGETS):
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
-TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
+$(EXE_TARGETS):
+	$(V0) @echo "Building executable target $@" && \
+	$(MAKE) exe TARGET=$@ && \
+	echo "Building $@ succeeded."
+
+TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS) $(EXE_TARGETS))
 
 CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
@@ -610,10 +635,18 @@ binary:
 hex:
 	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
+.phony: exe
+exe: $(TARGET_EXE)
+
 TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
 $(TARGETS_REVISION):
 	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
+
+EXE_TARGETS_REVISION = $(addsuffix _rev,$(EXE_TARGETS))
+## <EXE_TARGET>_rev : build executable target and add revision to filename
+$(EXE_TARGETS_REVISION):
+	$(V0) $(MAKE) exe REV=yes TARGET=$(subst _rev,,$@)
 
 all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
@@ -654,7 +687,7 @@ help: Makefile mk/tools.mk
 	@echo "To populate configuration targets:"
 	@echo "        make configs"
 	@echo ""
-	@echo "Valid TARGET values are: $(BASE_TARGETS)"
+	@echo "Valid TARGET values are: $(EXE_TARGETS) $(BASE_TARGETS)"
 	@echo ""
 	@sed -n 's/^## //p' $?
 
@@ -662,6 +695,7 @@ help: Makefile mk/tools.mk
 targets:
 	@echo "Platforms:           $(PLATFORMS)"
 	@echo "Valid targets:       $(BASE_TARGETS)"
+	@echo "Executable targets:  $(EXE_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
 	@echo "CI common targets:   $(CI_COMMON_TARGETS)"
