@@ -50,7 +50,7 @@ void altLimitInit(void)
     altLimit.isActive = altLimitConfig()->active;
     altLimit.mode = 0;
     altLimit.ceiling = altLimitConfig()->ceiling;
-    altLimit.buffer = altLimitConfig()->buffer;
+    altLimit.transition = altLimitConfig()->transition;
     altLimit.throttle_factor = 1.0f;
 }
 
@@ -64,7 +64,7 @@ static void altLimitUpdate(void)
 {
     float altimeter = 0;
     altimeter = getAltitudeCm() / 100.0f;
-    if (altimeter < (altLimit.ceiling - altLimit.buffer)) {
+    if (altimeter < (altLimit.ceiling - altLimit.transition)) {
         altLimit.mode = 0;
         altLimit.throttle_factor = 1.0f;
     } else if (altimeter > altLimit.ceiling) {
@@ -72,7 +72,7 @@ static void altLimitUpdate(void)
         altLimit.throttle_factor = 0.0f;
     } else {
         altLimit.mode = 1;
-        altLimit.throttle_factor = 1.0f + (-1.0f * (altimeter - (altLimit.ceiling - altLimit.buffer)) / altLimit.buffer);
+        altLimit.throttle_factor = 1.0f + (-1.0f * (altimeter - (altLimit.ceiling - altLimit.transition)) / altLimit.transition);
     }
 }
 

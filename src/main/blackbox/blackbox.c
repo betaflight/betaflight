@@ -1851,7 +1851,7 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_ALTITUDE_LIMIT
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_LIMIT_CEILING,  "%d", altLimitConfig()->ceiling);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_LIMIT_BUFFER,    "%d", altLimitConfig()->buffer);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_LIMIT_TRANSITION,    "%d", altLimitConfig()->transition);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ALT_LIMIT_ACTIVE,    "%d", altLimitConfig()->active);
 #endif // USE_ALTITUDE_LIMIT
 

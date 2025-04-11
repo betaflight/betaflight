@@ -264,7 +264,7 @@
 
 #ifdef USE_ALTITUDE_LIMIT
 #define PARAM_NAME_ALT_LIMIT_CEILING "altitude_limit_ceiling"
-#define PARAM_NAME_ALT_LIMIT_BUFFER "altitude_limit_buffer"
+#define PARAM_NAME_ALT_LIMIT_TRANSITION "altitude_limit_transition"
 #define PARAM_NAME_ALT_LIMIT_ACTIVE "altitude_limit_active"
 #endif
 

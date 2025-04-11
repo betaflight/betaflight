@@ -1164,7 +1164,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_ALTITUDE_LIMIT
 #ifndef USE_WING
     { PARAM_NAME_ALT_LIMIT_CEILING,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 16, 300 }, PG_ALTLIMIT_CONFIG, offsetof(altLimitConfig_t, ceiling) },
-    { PARAM_NAME_ALT_LIMIT_BUFFER,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 15 },  PG_ALTLIMIT_CONFIG, offsetof(altLimitConfig_t, buffer) },
+    { PARAM_NAME_ALT_LIMIT_TRANSITION,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 15 },  PG_ALTLIMIT_CONFIG, offsetof(altLimitConfig_t, transition) },
     { PARAM_NAME_ALT_LIMIT_ACTIVE,    VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON },  PG_ALTLIMIT_CONFIG, offsetof(altLimitConfig_t, active) },
 #endif // !USE_WING
 #endif // USE_ALTITUDE_LIMIT
