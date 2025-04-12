@@ -271,12 +271,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
 #ifdef USE_AIRPLANE_FCS
-        .afcs_stick_gain = { 100, 100, 100 },
-        .afcs_damping_gain = { 20, 25, 500 },
-        .afcs_pitch_damping_filter_time = 100,
-        .afcs_pitch_stability_gain = 0,
-        .afcs_yaw_damping_filter_time = 3000,
-        .afcs_yaw_stability_gain = 0,
+        .afcs_stick_gain = { 100, 100, 100 },   // Percent control output with full stick
+        .afcs_damping_gain = { 20, 30, 100 },   // percent control range addition by 1 degree per second angle rate * 1000
+        .afcs_pitch_damping_filter_freq = 160,  // pitch damping filter cut freq Hz * 100
+        .afcs_pitch_stability_gain = 0,         // percent control range addition by 1g accel z change *100
+        .afcs_yaw_damping_filter_freq = 5,      // yaw damping filter cut freq Hz * 100
+        .afcs_yaw_stability_gain = 0,            // percent control range by 1g accel y change *100
 #endif
     );
 }

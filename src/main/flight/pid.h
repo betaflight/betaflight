@@ -334,15 +334,11 @@ typedef struct pidProfile_s {
     uint8_t chirp_time_seconds;             // excitation time
 
 #ifdef USE_AIRPLANE_FCS
-    uint16_t afcs_pitch_stick_gain;
-    uint16_t afcs_pitch_damping_gain;
-    uint16_t afcs_pitch_damping_filter_time;
+    uint8_t afcs_stick_gain[XYZ_AXIS_COUNT];
+    uint16_t afcs_damping_gain[XYZ_AXIS_COUNT];
+    uint16_t afcs_pitch_damping_filter_freq;
     uint16_t afcs_pitch_stability_gain;
-    uint16_t afcs_roll_stick_gain;
-    uint16_t afcs_roll_damping_gain;
-    uint16_t afcs_yaw_stick_gain;
-    uint16_t afcs_yaw_damping_gain;
-    uint16_t afcs_yaw_damping_filter_time;
+    uint16_t afcs_yaw_damping_filter_freq;
     uint16_t afcs_yaw_stability_gain;
 #endif
 } pidProfile_t;
