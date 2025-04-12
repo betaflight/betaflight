@@ -1435,18 +1435,18 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef USE_AIRPLANE_FCS
-    { PARAM_NAME_AFCS_PITCH_STICK_GAIN,           VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_stick_gain[FD_PITCH]) },
+    { PARAM_NAME_AFCS_PITCH_STICK_GAIN,           VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_stick_gain[FD_PITCH]) },
     { PARAM_NAME_AFCS_PITCH_DAMPING_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_damping_gain[FD_PITCH]) },
-    { PARAM_NAME_AFCS_PITCH_DAMPING_FILTER_TIME,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_damping_filter_time) },
-    { PARAM_NAME_AFCS_PITCH_STABILITY_GAIN,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_stability_gain) },
+    { PARAM_NAME_AFCS_PITCH_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_damping_filter_freq) },
+    { PARAM_NAME_AFCS_PITCH_STABILITY_GAIN,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_stability_gain) },
 
-    { PARAM_NAME_AFCS_ROLL_STICK_GAIN,   VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_stick_gain[FD_ROLL]) },
+    { PARAM_NAME_AFCS_ROLL_STICK_GAIN,   VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_stick_gain[FD_ROLL]) },
     { PARAM_NAME_AFCS_ROLL_DAMPING_GAIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_damping_gain[FD_ROLL]) },
 
-    { PARAM_NAME_AFCS_YAW_STICK_GAIN,           VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_stick_gain[FD_YAW]) },
+    { PARAM_NAME_AFCS_YAW_STICK_GAIN,           VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_stick_gain[FD_YAW]) },
     { PARAM_NAME_AFCS_YAW_DAMPING_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_damping_gain[FD_YAW]) },
-    { PARAM_NAME_AFCS_YAW_DAMPING_FILTER_TIME,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_damping_filter_time) },
-    { PARAM_NAME_AFCS_YAW_STABILITY_GAIN,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_stability_gain) },
+    { PARAM_NAME_AFCS_YAW_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_damping_filter_freq) },
+    { PARAM_NAME_AFCS_YAW_STABILITY_GAIN,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_stability_gain) },
 #endif
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
