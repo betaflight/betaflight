@@ -1,7 +1,10 @@
 #ifdef USE_AIRPLANE_FCS
+
 #include "fc/rc.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include <math.h>
+#include "build/debug.h"
 
 void afcsInit(const pidProfile_t *pidProfile)
 {
@@ -32,9 +35,9 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f) / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
-    pidData[FD_PITCH].F = 5.0f * (pitchPilotCtrl + pidRuntime.afcsAutoTrimPosition[FD_PITCH]);
-    pidData[FD_PITCH].D = 5.0f * pitchDampingCtrl;
-    pidData[FD_PITCH].P = 5.0f * pitchStabilityCtrl;
+    pidData[FD_PITCH].F = 10.0f * pitchPilotCtrl;
+    pidData[FD_PITCH].D = 10.0f * pitchDampingCtrl;
+    pidData[FD_PITCH].P = 10.0f * pitchStabilityCtrl;
 
     // Roll channel
     float rollPilotCtrl = getSetpointRate(FD_ROLL) / getMaxRcRate(FD_ROLL) * (pidProfile->afcs_stick_gain[FD_ROLL]);
@@ -43,8 +46,8 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs
     pidData[FD_ROLL].Sum = constrainf(pidData[FD_ROLL].Sum, -100.0f, 100.0f) / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
-    pidData[FD_ROLL].F = 5.0f * (rollPilotCtrl + pidRuntime.afcsAutoTrimPosition[FD_ROLL]);
-    pidData[FD_ROLL].D = 5.0f * rollDampingCtrl;
+    pidData[FD_ROLL].F = 10.0f * rollPilotCtrl;
+    pidData[FD_ROLL].D = 10.0f * rollDampingCtrl;
 
     // Yaw channel
     float yawPilotCtrl = getSetpointRate(FD_YAW) / getMaxRcRate(FD_YAW) * (pidProfile->afcs_stick_gain[FD_YAW]);
@@ -57,8 +60,8 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs
     pidData[FD_YAW].Sum = constrainf(pidData[FD_YAW].Sum, -100.0f, 100.0f) / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
-    pidData[FD_YAW].F = 5.0f * (yawPilotCtrl + pidRuntime.afcsAutoTrimPosition[FD_YAW]);
-    pidData[FD_YAW].D = 5.0f * yawDampingCtrl;
-    pidData[FD_YAW].P = 5.0f * yawStabilityCtrl;
+    pidData[FD_YAW].F = 10.0f * yawPilotCtrl;
+    pidData[FD_YAW].D = 10.0f * yawDampingCtrl;
+    pidData[FD_YAW].P = 10.0f * yawStabilityCtrl;
 }
 #endif
