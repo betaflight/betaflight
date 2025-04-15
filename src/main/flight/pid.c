@@ -271,12 +271,15 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
 #ifdef USE_AIRPLANE_FCS
-        .afcs_stick_gain = { 100, 100, 100 },   // Percent control output with full stick
-        .afcs_damping_gain = { 20, 30, 100 },   // percent control range addition by 1 degree per second angle rate * 1000
-        .afcs_pitch_damping_filter_freq = 160,  // pitch damping filter cut freq Hz * 100
-        .afcs_pitch_stability_gain = 0,         // percent control range addition by 1g accel z change *100
-        .afcs_yaw_damping_filter_freq = 5,      // yaw damping filter cut freq Hz * 100
-        .afcs_yaw_stability_gain = 0,            // percent control range by 1g accel y change *100
+        .afcs_stick_gain = { 100, 100, 100 },  // Percent control output
+        .afcs_damping_gain = { 20, 30, 50 },   // percent control range addition by 1 degree per second angle rate * 1000
+        .afcs_pitch_damping_filter_freq = 160, // pitch damping filter cut freq Hz * 100
+        .afcs_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *100
+        .afcs_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq Hz * 100
+        .afcs_yaw_stability_gain = 0,          // percent control by 1g accel change *100
+        .afcs_pitch_accel_i_gain = 0,          // elevator speed for 1g accel difference in %/sec *10
+        .afcs_pitch_accel_max = 80,            // maximal positive z accel value *10
+        .afcs_pitch_accel_min = 60,            // maximal negative z accel value *10
 #endif
     );
 }

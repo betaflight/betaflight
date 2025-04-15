@@ -338,6 +338,9 @@ typedef struct pidProfile_s {
     uint16_t afcs_damping_gain[XYZ_AXIS_COUNT];
     uint16_t afcs_pitch_damping_filter_freq;
     uint16_t afcs_pitch_stability_gain;
+    uint8_t afcs_pitch_accel_i_gain;
+    uint8_t afcs_pitch_accel_max;
+    uint8_t afcs_pitch_accel_min;
     uint16_t afcs_yaw_damping_filter_freq;
     uint16_t afcs_yaw_stability_gain;
 #endif
@@ -563,6 +566,7 @@ typedef struct pidRuntime_s {
 #ifdef USE_AIRPLANE_FCS
     pt1Filter_t afcsPitchDampingLowpass;
     pt1Filter_t afcsYawDampingLowpass;
+    float afcsAccelError;
 #endif
 } pidRuntime_t;
 
