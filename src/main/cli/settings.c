@@ -1439,6 +1439,9 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AFCS_PITCH_DAMPING_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_damping_gain[FD_PITCH]) },
     { PARAM_NAME_AFCS_PITCH_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_damping_filter_freq) },
     { PARAM_NAME_AFCS_PITCH_STABILITY_GAIN,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_stability_gain) },
+    { PARAM_NAME_AFCS_PITCH_ACCEL_I_GAIN,         VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_accel_i_gain) },
+    { PARAM_NAME_AFCS_PITCH_ACCEL_MAX,            VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_accel_max) },
+    { PARAM_NAME_AFCS_PITCH_ACCEL_MIN,            VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_pitch_accel_min) },
 
     { PARAM_NAME_AFCS_ROLL_STICK_GAIN,   VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_stick_gain[FD_ROLL]) },
     { PARAM_NAME_AFCS_ROLL_DAMPING_GAIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_damping_gain[FD_ROLL]) },
