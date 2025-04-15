@@ -217,7 +217,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB9),  GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PD1),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PH13), GPIO_AF8_UART4 }
+            { DEFIO_TAG_E(PH13), GPIO_AF8_UART4 },
         },
         .rcc = RCC_APB1L(UART4),
         .irqn = UART4_IRQn,
