@@ -334,15 +334,19 @@ typedef struct pidProfile_s {
     uint8_t chirp_time_seconds;             // excitation time
 
 #ifdef USE_AIRPLANE_FCS
-    uint8_t afcs_stick_gain[XYZ_AXIS_COUNT];
-    uint16_t afcs_damping_gain[XYZ_AXIS_COUNT];
-    uint16_t afcs_pitch_damping_filter_freq;
-    uint16_t afcs_pitch_stability_gain;
-    uint8_t afcs_pitch_accel_i_gain;
-    uint8_t afcs_pitch_accel_max;
-    uint8_t afcs_pitch_accel_min;
-    uint16_t afcs_yaw_damping_filter_freq;
-    uint16_t afcs_yaw_stability_gain;
+    uint8_t afcs_stick_gain[XYZ_AXIS_COUNT];    // Percent control output
+    uint16_t afcs_damping_gain[XYZ_AXIS_COUNT]; // percent control range addition by 1 degree per second angle rate * 1000
+    uint16_t afcs_pitch_damping_filter_freq;    // pitch damping filter cut freq Hz * 100
+    uint16_t afcs_pitch_stability_gain;         // percent control range addition by 1g accel z change *100
+    uint16_t afcs_pitch_accel_i_gain;            // elevator speed for 1g Z accel difference in %/sec *10
+    uint8_t afcs_pitch_accel_max;               // maximal positive Z accel value *10
+    uint8_t afcs_pitch_accel_min;               // maximal negative Z accel value *10
+    uint16_t afcs_yaw_damping_filter_freq;      // yaw damping filter cut freq Hz *100
+    uint16_t afcs_yaw_stability_gain;           // percent control by 1g Y accel change *100
+    uint16_t afcs_wing_load;                    // wing load (mass / WingArea) g/decimeter^2 * 100. 
+    uint16_t afcs_air_density;                  // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
+    uint8_t afcs_lift_c_limit;                  // Limit aerodinamics lift force coefficient value *10
+    uint16_t afcs_aoa_limiter_gain;             // elevator speed for 0.1 lift force coef difference in %/sec *10
 #endif
 } pidProfile_t;
 
@@ -566,7 +570,7 @@ typedef struct pidRuntime_s {
 #ifdef USE_AIRPLANE_FCS
     pt1Filter_t afcsPitchDampingLowpass;
     pt1Filter_t afcsYawDampingLowpass;
-    float afcsAccelError;
+    float afcsPitchControlErrorSum;
 #endif
 } pidRuntime_t;
 

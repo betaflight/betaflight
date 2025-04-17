@@ -290,4 +290,8 @@
 #define PARAM_NAME_AFCS_YAW_DAMPING_GAIN "afcs_yaw_damping_gain"
 #define PARAM_NAME_AFCS_YAW_DAMPING_FILTER_FREQ "afcs_yaw_damping_filter_freq"
 #define PARAM_NAME_AFCS_YAW_STABILITY_GAIN "afcs_yaw_stability_gain"
+#define PARAM_NAME_AFCS_WING_LOAD "afcs_wing_load"
+#define PARAM_NAME_AFCS_AIR_DENSITY "afcs_air_density"
+#define PARAM_NAME_AFCS_LIFT_C_LIMIT "afcs_lift_c_limit"
+#define PARAM_NAME_AFCS_AOA_LIMITER_GAIN "afcs_aoa_limiter_gain"
 #endif

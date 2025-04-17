@@ -3,6 +3,7 @@
 #include "fc/rc.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include "io/gps.h"
 #include <math.h>
 #include "build/debug.h"
 
@@ -10,7 +11,21 @@ void afcsInit(const pidProfile_t *pidProfile)
 {
     pt1FilterInit(&pidRuntime.afcsPitchDampingLowpass, pt1FilterGain(pidProfile->afcs_pitch_damping_filter_freq * 0.01, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.afcsYawDampingLowpass, pt1FilterGain(pidProfile->afcs_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
-    pidRuntime.afcsAccelError = 0.0f;
+    pidRuntime.afcsPitchControlErrorSum = 0.0f;
+}
+
+static float computeLiftCoefficient(const pidProfile_t *pidProfile, float speed, float accelZ)
+{
+    float liftC = 0.0f;
+    const float speedThreshold = 2.0f;    //gps speed thresold
+    const float limitLiftC = 2.0f;
+    if (speed > speedThreshold) {
+        const float airSpeedPressure = (0.001f * pidProfile->afcs_air_density) * sq(speed) / 2.0f;
+        liftC = accelZ * (0.001f * pidProfile->afcs_wing_load) * G_ACCELERATION / airSpeedPressure;
+        liftC = constrainf(liftC, -limitLiftC, limitLiftC); //limit lift force coef value for small speed to prevent unreal AoA
+    }
+
+    return liftC;
 }
 
 void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
@@ -38,25 +53,49 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs
 
     pidData[FD_PITCH].Sum = pitchPilotCtrl + pitchDampingCtrl + pitchStabilityCtrl;
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
-    if (pidProfile->afcs_pitch_accel_i_gain != 0) {
+
+    bool isLimitAoA = false;
+    if (gpsSol.numSat > 5 && pidProfile->afcs_aoa_limiter_gain != 0) {
+        float speed = 0.01f * gpsSol.speed3d;
+        float liftCoef = computeLiftCoefficient(pidProfile, speed, accelZ);
+        float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
+        float delta;
+        if (liftCoef > 0.5f) {
+            delta = limitLiftC - liftCoef;
+            if (delta < 0.0f) {
+                isLimitAoA = true;
+                pidRuntime.afcsPitchControlErrorSum += delta * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
+            }
+        } else if (liftCoef < -0.5f) {
+            delta = -limitLiftC - liftCoef;
+            if (delta > 0.0f) {
+                isLimitAoA = true;
+                pidRuntime.afcsPitchControlErrorSum += delta * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
+            }
+        }
+    }
+
+    if (isLimitAoA == false && pidProfile->afcs_pitch_accel_i_gain != 0) {
         float accelReq = pitchPilotCtrl > 0.0f ? (0.1f * pidProfile->afcs_pitch_accel_max - 1.0f) * pitchPilotCtrl * 0.01f + 1.0f
                                                : (0.1f * pidProfile->afcs_pitch_accel_min + 1.0f) * pitchPilotCtrl * 0.01f + 1.0f;
         float accelDelta = accelReq - accelZ;
-        pidRuntime.afcsAccelError += accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f) * pidRuntime.dT;
-        float output = pidData[FD_PITCH].Sum + pidRuntime.afcsAccelError;
+        pidRuntime.afcsPitchControlErrorSum += accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f) * pidRuntime.dT;
+        float output = pidData[FD_PITCH].Sum + pidRuntime.afcsPitchControlErrorSum;
         if ( output > 100.0f) {
-            pidRuntime.afcsAccelError = 100.0f - pidData[FD_PITCH].Sum;
+            pidRuntime.afcsPitchControlErrorSum = 100.0f - pidData[FD_PITCH].Sum;
         } else if (output < -100.0f) {
-            pidRuntime.afcsAccelError = -100.0f - pidData[FD_PITCH].Sum;
+            pidRuntime.afcsPitchControlErrorSum = -100.0f - pidData[FD_PITCH].Sum;
         }
-        pidData[FD_PITCH].Sum += pidRuntime.afcsAccelError;
-        DEBUG_SET(DEBUG_AFCS, 3, lrintf(pidRuntime.afcsAccelError));
+
+        DEBUG_SET(DEBUG_AFCS, 3, lrintf(pidRuntime.afcsPitchControlErrorSum));
         DEBUG_SET(DEBUG_AFCS, 4, lrintf(pidData[FD_PITCH].Sum));
         DEBUG_SET(DEBUG_AFCS, 5, lrintf(accelReq * 10.0f));
         DEBUG_SET(DEBUG_AFCS, 6, lrintf(accelZ * 10.0f));
         DEBUG_SET(DEBUG_AFCS, 7, lrintf(accelDelta * 10.0f));
     }
-
+    
+    pidData[FD_PITCH].Sum += pidRuntime.afcsPitchControlErrorSum;
+    
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].Sum / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
