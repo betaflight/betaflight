@@ -294,4 +294,5 @@
 #define PARAM_NAME_AFCS_AIR_DENSITY "afcs_air_density"
 #define PARAM_NAME_AFCS_LIFT_C_LIMIT "afcs_lift_c_limit"
 #define PARAM_NAME_AFCS_AOA_LIMITER_GAIN "afcs_aoa_limiter_gain"
+#define PARAM_NAME_AFCS_SERVO_TIME "afcs_servo_time"
 #endif
