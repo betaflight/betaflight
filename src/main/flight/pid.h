@@ -347,6 +347,7 @@ typedef struct pidProfile_s {
     uint16_t afcs_air_density;                  // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
     uint8_t afcs_lift_c_limit;                  // Limit aerodinamics lift force coefficient value *10
     uint16_t afcs_aoa_limiter_gain;             // elevator speed for 0.1 lift force coef difference in %/sec *10
+    uint16_t afcs_servo_time;                   // minimal time of servo movement from neutrale to maximum, ms
 #endif
 } pidProfile_t;
 

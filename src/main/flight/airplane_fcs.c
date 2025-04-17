@@ -16,25 +16,32 @@ void afcsInit(const pidProfile_t *pidProfile)
 
 static float computeLiftCoefficient(const pidProfile_t *pidProfile, float speed, float accelZ)
 {
-    float liftC = 0.0f;
-    const float speedThreshold = 2.0f;    //gps speed thresold
     const float limitLiftC = 2.0f;
+    float liftC = 0.0f;
+    const float speedThreshold = 2.5f;    //gps speed thresold
     if (speed > speedThreshold) {
         const float airSpeedPressure = (0.001f * pidProfile->afcs_air_density) * sq(speed) / 2.0f;
         liftC = accelZ * (0.001f * pidProfile->afcs_wing_load) * G_ACCELERATION / airSpeedPressure;
-        liftC = constrainf(liftC, -limitLiftC, limitLiftC); //limit lift force coef value for small speed to prevent unreal AoA
+        liftC = constrainf(liftC, -limitLiftC, limitLiftC); //limit lift force coef value for small speed to prevent unreal values during plane launch
+    } else {
+        liftC = limitLiftC;
     }
 
     return liftC;
 }
 
+//The astatic accel Z controller by stick position
 static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchPilotCtrl, float accelZ)
 {
     if (pidProfile->afcs_pitch_accel_i_gain != 0) {
+        const float servoVelocityLimit = 100.0f / (pidProfile->afcs_servo_time * 0.001f); // Limit servo velocity %/s
         float accelReq = pitchPilotCtrl > 0.0f ? (0.1f * pidProfile->afcs_pitch_accel_max - 1.0f) * pitchPilotCtrl * 0.01f + 1.0f
                                                : (0.1f * pidProfile->afcs_pitch_accel_min + 1.0f) * pitchPilotCtrl * 0.01f + 1.0f;
         float accelDelta = accelReq - accelZ;
-        pidRuntime.afcsElevatorAddition += accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f) * pidRuntime.dT;
+        float servoVelocity = accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f);
+        servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+        pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
+
         float output = pidData[FD_PITCH].Sum + pidRuntime.afcsElevatorAddition;
         if ( output > 100.0f) {
             pidRuntime.afcsElevatorAddition = 100.0f - pidData[FD_PITCH].Sum;
@@ -56,17 +63,23 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float acc
         float liftCoef = computeLiftCoefficient(pidProfile, speed, accelZ);
         float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
         float liftCoefDiff;
+        const float servoVelocityLimit = 100.0f / (pidProfile->afcs_servo_time * 0.001f); // Limit servo velocity %/s
+        float servoVelocity;
         if (liftCoef > 0.5f) {
             liftCoefDiff = limitLiftC - liftCoef;
             if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;
-                pidRuntime.afcsElevatorAddition += liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
+                servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
+                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+                pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
             }
         } else if (liftCoef < -0.5f) {
             liftCoefDiff = -limitLiftC - liftCoef;
             if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
-                pidRuntime.afcsElevatorAddition += liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
+                servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
+                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+                pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
             }
         }
         DEBUG_SET(DEBUG_AFCS, 3, lrintf(liftCoef * 100.0f));
@@ -76,9 +89,8 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float acc
 }
 
 
-void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
+void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
 {
-    UNUSED(currentTimeUs);
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         pidData[axis].P = 0;
         pidData[axis].I = 0;
