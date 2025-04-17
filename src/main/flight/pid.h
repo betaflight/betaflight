@@ -570,7 +570,7 @@ typedef struct pidRuntime_s {
 #ifdef USE_AIRPLANE_FCS
     pt1Filter_t afcsPitchDampingLowpass;
     pt1Filter_t afcsYawDampingLowpass;
-    float afcsPitchControlErrorSum;
+    float afcsElevatorAddition;
 #endif
 } pidRuntime_t;
 

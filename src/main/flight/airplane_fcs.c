@@ -11,7 +11,7 @@ void afcsInit(const pidProfile_t *pidProfile)
 {
     pt1FilterInit(&pidRuntime.afcsPitchDampingLowpass, pt1FilterGain(pidProfile->afcs_pitch_damping_filter_freq * 0.01, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.afcsYawDampingLowpass, pt1FilterGain(pidProfile->afcs_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
-    pidRuntime.afcsPitchControlErrorSum = 0.0f;
+    pidRuntime.afcsElevatorAddition = 0.0f;
 }
 
 static float computeLiftCoefficient(const pidProfile_t *pidProfile, float speed, float accelZ)
@@ -27,6 +27,54 @@ static float computeLiftCoefficient(const pidProfile_t *pidProfile, float speed,
 
     return liftC;
 }
+
+static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchPilotCtrl, float accelZ)
+{
+    if (pidProfile->afcs_pitch_accel_i_gain != 0) {
+        float accelReq = pitchPilotCtrl > 0.0f ? (0.1f * pidProfile->afcs_pitch_accel_max - 1.0f) * pitchPilotCtrl * 0.01f + 1.0f
+                                               : (0.1f * pidProfile->afcs_pitch_accel_min + 1.0f) * pitchPilotCtrl * 0.01f + 1.0f;
+        float accelDelta = accelReq - accelZ;
+        pidRuntime.afcsElevatorAddition += accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f) * pidRuntime.dT;
+        float output = pidData[FD_PITCH].Sum + pidRuntime.afcsElevatorAddition;
+        if ( output > 100.0f) {
+            pidRuntime.afcsElevatorAddition = 100.0f - pidData[FD_PITCH].Sum;
+        } else if (output < -100.0f) {
+            pidRuntime.afcsElevatorAddition = -100.0f - pidData[FD_PITCH].Sum;
+        }
+
+        DEBUG_SET(DEBUG_AFCS, 1, lrintf(accelReq * 10.0f));
+        DEBUG_SET(DEBUG_AFCS, 2, lrintf(accelDelta * 10.0f));
+    }
+}
+
+// The angle of attack limiter. The aerodynamics lift force coefficient depends by angle of attack. Therefore it possible to use this coef instead of AoA value.
+static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float accelZ)
+{
+    bool isLimitAoA = false;
+    if (gpsSol.numSat > 5 && pidProfile->afcs_aoa_limiter_gain != 0) {
+        float speed = 0.01f * gpsSol.speed3d;
+        float liftCoef = computeLiftCoefficient(pidProfile, speed, accelZ);
+        float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
+        float liftCoefDiff;
+        if (liftCoef > 0.5f) {
+            liftCoefDiff = limitLiftC - liftCoef;
+            if (liftCoefDiff < 0.0f) {
+                isLimitAoA = true;
+                pidRuntime.afcsElevatorAddition += liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
+            }
+        } else if (liftCoef < -0.5f) {
+            liftCoefDiff = -limitLiftC - liftCoef;
+            if (liftCoefDiff > 0.0f) {
+                isLimitAoA = true;
+                pidRuntime.afcsElevatorAddition += liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
+            }
+        }
+        DEBUG_SET(DEBUG_AFCS, 3, lrintf(liftCoef * 100.0f));
+        DEBUG_SET(DEBUG_AFCS, 4, lrintf(liftCoefDiff * 100.0f));
+    }
+    return isLimitAoA;
+}
+
 
 void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
@@ -54,48 +102,13 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs
     pidData[FD_PITCH].Sum = pitchPilotCtrl + pitchDampingCtrl + pitchStabilityCtrl;
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
 
-    bool isLimitAoA = false;
-    if (gpsSol.numSat > 5 && pidProfile->afcs_aoa_limiter_gain != 0) {
-        float speed = 0.01f * gpsSol.speed3d;
-        float liftCoef = computeLiftCoefficient(pidProfile, speed, accelZ);
-        float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
-        float delta;
-        if (liftCoef > 0.5f) {
-            delta = limitLiftC - liftCoef;
-            if (delta < 0.0f) {
-                isLimitAoA = true;
-                pidRuntime.afcsPitchControlErrorSum += delta * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
-            }
-        } else if (liftCoef < -0.5f) {
-            delta = -limitLiftC - liftCoef;
-            if (delta > 0.0f) {
-                isLimitAoA = true;
-                pidRuntime.afcsPitchControlErrorSum += delta * (pidProfile->afcs_aoa_limiter_gain * 0.1f) * pidRuntime.dT;
-            }
-        }
+    bool isLimitAoA = updateAngleOfAttackLimiter(pidProfile, accelZ);
+    if (isLimitAoA == false) {
+        updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
     }
+    pidData[FD_PITCH].Sum += pidRuntime.afcsElevatorAddition;
+    DEBUG_SET(DEBUG_AFCS, 0, lrintf(pidRuntime.afcsElevatorAddition * 10.0f));
 
-    if (isLimitAoA == false && pidProfile->afcs_pitch_accel_i_gain != 0) {
-        float accelReq = pitchPilotCtrl > 0.0f ? (0.1f * pidProfile->afcs_pitch_accel_max - 1.0f) * pitchPilotCtrl * 0.01f + 1.0f
-                                               : (0.1f * pidProfile->afcs_pitch_accel_min + 1.0f) * pitchPilotCtrl * 0.01f + 1.0f;
-        float accelDelta = accelReq - accelZ;
-        pidRuntime.afcsPitchControlErrorSum += accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f) * pidRuntime.dT;
-        float output = pidData[FD_PITCH].Sum + pidRuntime.afcsPitchControlErrorSum;
-        if ( output > 100.0f) {
-            pidRuntime.afcsPitchControlErrorSum = 100.0f - pidData[FD_PITCH].Sum;
-        } else if (output < -100.0f) {
-            pidRuntime.afcsPitchControlErrorSum = -100.0f - pidData[FD_PITCH].Sum;
-        }
-
-        DEBUG_SET(DEBUG_AFCS, 3, lrintf(pidRuntime.afcsPitchControlErrorSum));
-        DEBUG_SET(DEBUG_AFCS, 4, lrintf(pidData[FD_PITCH].Sum));
-        DEBUG_SET(DEBUG_AFCS, 5, lrintf(accelReq * 10.0f));
-        DEBUG_SET(DEBUG_AFCS, 6, lrintf(accelZ * 10.0f));
-        DEBUG_SET(DEBUG_AFCS, 7, lrintf(accelDelta * 10.0f));
-    }
-    
-    pidData[FD_PITCH].Sum += pidRuntime.afcsPitchControlErrorSum;
-    
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].Sum / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
@@ -130,9 +143,8 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile, timeUs_t currentTimeUs
     pidData[FD_YAW].D = 10.0f * yawDampingCtrl;
     pidData[FD_YAW].P = 10.0f * yawStabilityCtrl;
 
-    DEBUG_SET(DEBUG_AFCS, 0, lrintf(pitchPilotCtrl));
-    DEBUG_SET(DEBUG_AFCS, 1, lrintf(pitchDampingCtrl));
-    DEBUG_SET(DEBUG_AFCS, 2, lrintf(pitchStabilityCtrl));
-
+    DEBUG_SET(DEBUG_AFCS, 5, lrintf(pitchPilotCtrl * 10.0f));
+    DEBUG_SET(DEBUG_AFCS, 6, lrintf(pitchDampingCtrl * 10.0f));
+    DEBUG_SET(DEBUG_AFCS, 7, lrintf(pitchStabilityCtrl * 10.0f));
 }
 #endif
