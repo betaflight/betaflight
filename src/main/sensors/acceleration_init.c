@@ -47,6 +47,7 @@
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
+#include "drivers/accgyro/accgyro_spi_icm456xx.h"
 
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
@@ -230,6 +231,27 @@ retry:
                 break;
             case IIM_42653_SPI:
                 accHardware = ACC_IIM42653;
+                break;
+            default:
+                accHardware = ACC_NONE;
+                break;
+            }
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
+    case ACC_ICM45686:
+    case ACC_ICM45605:
+        if (icm456xxSpiAccDetect(dev)) {
+            switch (dev->mpuDetectionResult.sensor)
+            {
+            case ICM_45686_SPI:
+                accHardware = ACC_ICM45686;
+                break;
+            case ICM_45605_SPI:
+                accHardware = ACC_ICM45605;
                 break;
             default:
                 accHardware = ACC_NONE;
