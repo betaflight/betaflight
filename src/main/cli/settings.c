@@ -1451,11 +1451,11 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AFCS_YAW_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_damping_filter_freq) },
     { PARAM_NAME_AFCS_YAW_STABILITY_GAIN,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_yaw_stability_gain) },
 
-    { PARAM_NAME_AFCS_WING_LOAD,   VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_wing_load) },
-    { PARAM_NAME_AFCS_AIR_DENSITY, VAR_UINT16, .config.minmaxUnsigned = { 0, 1300 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_air_density) },
-    { PARAM_NAME_AFCS_LIFT_C_LIMIT, VAR_UINT8, .config.minmaxUnsigned = { 5, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_lift_c_limit) },
+    { PARAM_NAME_AFCS_WING_LOAD,   VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 1500 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_wing_load) },
+    { PARAM_NAME_AFCS_AIR_DENSITY, VAR_UINT16, .config.minmaxUnsigned = { 1200, 1300 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_air_density) },
+    { PARAM_NAME_AFCS_LIFT_C_LIMIT, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_lift_c_limit) },
     { PARAM_NAME_AFCS_AOA_LIMITER_GAIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_aoa_limiter_gain) },
-    { PARAM_NAME_AFCS_SERVO_TIME, VAR_UINT16, .config.minmaxUnsigned = { 5, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_servo_time) },
+    { PARAM_NAME_AFCS_SERVO_TIME, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, afcs_servo_time) },
 #endif
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY

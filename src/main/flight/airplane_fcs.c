@@ -1,6 +1,7 @@
 #ifdef USE_AIRPLANE_FCS
 
 #include "fc/rc.h"
+#include "fc/runtime_config.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "io/gps.h"
@@ -21,7 +22,7 @@ static float computeLiftCoefficient(const pidProfile_t *pidProfile, float speed,
     const float speedThreshold = 2.5f;    //gps speed thresold
     if (speed > speedThreshold) {
         const float airSpeedPressure = (0.001f * pidProfile->afcs_air_density) * sq(speed) / 2.0f;
-        liftC = accelZ * (0.001f * pidProfile->afcs_wing_load) * G_ACCELERATION / airSpeedPressure;
+        liftC = accelZ * (0.01f * pidProfile->afcs_wing_load) * G_ACCELERATION / airSpeedPressure;
         liftC = constrainf(liftC, -limitLiftC, limitLiftC); //limit lift force coef value for small speed to prevent unreal values during plane launch
     } else {
         liftC = limitLiftC;
@@ -49,41 +50,65 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
             pidRuntime.afcsElevatorAddition = -100.0f - pidData[FD_PITCH].Sum;
         }
 
-        DEBUG_SET(DEBUG_AFCS, 1, lrintf(accelReq * 10.0f));
-        DEBUG_SET(DEBUG_AFCS, 2, lrintf(accelDelta * 10.0f));
+        DEBUG_SET(DEBUG_AFCS, 4, lrintf(accelReq * 10.0f));
+        DEBUG_SET(DEBUG_AFCS, 5, lrintf(accelDelta * 10.0f));
     }
 }
 
 // The angle of attack limiter. The aerodynamics lift force coefficient depends by angle of attack. Therefore it possible to use this coef instead of AoA value.
 static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float accelZ)
 {
+    static bool isLimiterEnabled = false;
+    static float validLiftCoefTime = 0.0f;
+    const float timeForValid = 3.0f;
     bool isLimitAoA = false;
-    if (gpsSol.numSat > 5 && pidProfile->afcs_aoa_limiter_gain != 0) {
-        float speed = 0.01f * gpsSol.speed3d;
-        float liftCoef = computeLiftCoefficient(pidProfile, speed, accelZ);
-        float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
-        float liftCoefDiff;
-        const float servoVelocityLimit = 100.0f / (pidProfile->afcs_servo_time * 0.001f); // Limit servo velocity %/s
-        float servoVelocity;
-        if (liftCoef > 0.5f) {
-            liftCoefDiff = limitLiftC - liftCoef;
-            if (liftCoefDiff < 0.0f) {
-                isLimitAoA = true;
-                servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
-                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
-            }
-        } else if (liftCoef < -0.5f) {
-            liftCoefDiff = -limitLiftC - liftCoef;
-            if (liftCoefDiff > 0.0f) {
-                isLimitAoA = true;
-                servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
-                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
+
+    if (pidProfile->afcs_aoa_limiter_gain != 0
+        && ARMING_FLAG(ARMED)
+        && gpsSol.numSat > 5) {
+
+        float speed = 0.01f * gpsSol.speed3d,
+              liftCoef = computeLiftCoefficient(pidProfile, speed, accelZ),
+              limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
+
+        // Enable AoA limiter after 2s flight with good lift coef. It prevents issues during plane launch
+        if (isLimiterEnabled == false) {
+            if (liftCoef < limitLiftC && liftCoef > -limitLiftC) {
+                validLiftCoefTime += pidRuntime.dT;
+                if (validLiftCoefTime > timeForValid) {
+                    isLimiterEnabled = true;
+                }
             }
         }
-        DEBUG_SET(DEBUG_AFCS, 3, lrintf(liftCoef * 100.0f));
-        DEBUG_SET(DEBUG_AFCS, 4, lrintf(liftCoefDiff * 100.0f));
+
+        if (isLimiterEnabled) {
+            const float servoVelocityLimit = 100.0f / (pidProfile->afcs_servo_time * 0.001f); // Limit servo velocity %/s
+            float liftCoefDiff = 0.0f,
+                  servoVelocity = 0.0f;
+            if (liftCoef > 0.5f) {
+                liftCoefDiff = limitLiftC - liftCoef;
+                if (liftCoefDiff < 0.0f) {
+                    isLimitAoA = true;
+                    servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
+                    servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+                    pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
+                }
+            } else if (liftCoef < -0.5f) {
+                liftCoefDiff = -limitLiftC - liftCoef;
+                if (liftCoefDiff > 0.0f) {
+                    isLimitAoA = true;
+                    servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
+                    servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+                    pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
+                }
+            }
+            DEBUG_SET(DEBUG_AFCS, 7, lrintf(liftCoefDiff * 100.0f));
+        }
+
+        DEBUG_SET(DEBUG_AFCS, 6, lrintf(liftCoef * 100.0f));
+    } else if (isLimiterEnabled) {
+        isLimiterEnabled = false;
+        validLiftCoefTime = 0.0f;
     }
     return isLimitAoA;
 }
@@ -114,19 +139,21 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     pidData[FD_PITCH].Sum = pitchPilotCtrl + pitchDampingCtrl + pitchStabilityCtrl;
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
 
+    // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
     bool isLimitAoA = updateAngleOfAttackLimiter(pidProfile, accelZ);
     if (isLimitAoA == false) {
         updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
     }
     pidData[FD_PITCH].Sum += pidRuntime.afcsElevatorAddition;
-    DEBUG_SET(DEBUG_AFCS, 0, lrintf(pidRuntime.afcsElevatorAddition * 10.0f));
 
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].Sum / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
+    // Do not use I, because it needs init to zero after switch to other flight modes from current AFCS mode
     pidData[FD_PITCH].F = 10.0f * pitchPilotCtrl;
     pidData[FD_PITCH].D = 10.0f * pitchDampingCtrl;
     pidData[FD_PITCH].P = 10.0f * pitchStabilityCtrl;
+    pidData[FD_PITCH].S = 10.0f * pidRuntime.afcsElevatorAddition;
 
     // Roll channel
     float rollPilotCtrl = getSetpointRate(FD_ROLL) / getMaxRcRate(FD_ROLL) * (pidProfile->afcs_stick_gain[FD_ROLL]);
@@ -155,8 +182,9 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     pidData[FD_YAW].D = 10.0f * yawDampingCtrl;
     pidData[FD_YAW].P = 10.0f * yawStabilityCtrl;
 
-    DEBUG_SET(DEBUG_AFCS, 5, lrintf(pitchPilotCtrl * 10.0f));
-    DEBUG_SET(DEBUG_AFCS, 6, lrintf(pitchDampingCtrl * 10.0f));
-    DEBUG_SET(DEBUG_AFCS, 7, lrintf(pitchStabilityCtrl * 10.0f));
+    DEBUG_SET(DEBUG_AFCS, 0, lrintf(pitchPilotCtrl * 10.0f));
+    DEBUG_SET(DEBUG_AFCS, 1, lrintf(pitchDampingCtrl * 10.0f));
+    DEBUG_SET(DEBUG_AFCS, 2, lrintf(pitchStabilityCtrl * 10.0f));
+    DEBUG_SET(DEBUG_AFCS, 3, lrintf(pidRuntime.afcsElevatorAddition * 10.0f));
 }
 #endif
