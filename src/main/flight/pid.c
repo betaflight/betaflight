@@ -280,7 +280,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .afcs_pitch_accel_i_gain = 250,        // elevator speed for 1g Z accel difference in %/sec *10
         .afcs_pitch_accel_max = 80,            // maximal positive Z accel value *10
         .afcs_pitch_accel_min = 60,            // maximal negative Z accel value *10
-        .afcs_wing_load = 5600,                // wing load (mass / WingArea) g/decimeter^2 * 100. The g/decimeter^2 units is more comfortable for perception, than kg/m^2, i think
+        .afcs_wing_load = 560,                 // wing load (mass / WingArea) g/decimeter^2 * 10. The g/decimeter^2 units is more comfortable for perception, than kg/m^2, i think
         .afcs_air_density = 1225,              // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
         .afcs_lift_c_limit = 12,               // Limit aerodinamics lift force coefficient value *10
         .afcs_aoa_limiter_gain = 250,          // elevator speed for 0.1 lift force coef difference in %/sec *10
