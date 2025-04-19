@@ -564,8 +564,9 @@ void tryArm(void)
             // hence we only get here with crashFlipModeActive if the switch was reversed and result successful
             if (crashFlipModeActive) {
                 // flip was successful, continue into normal flight without need to disarm/rearm
-                // note: preceding disarm will have set motors to normal rotation direction
+                // note: preceding disarm should have set motors to normal rotation direction, but bugs were reported.
                 crashFlipModeActive = false;
+                setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL); //mitigate bug reports.
             } else {
                 // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
                 // otherwise consider only the switch position
