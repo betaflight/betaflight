@@ -140,7 +140,7 @@ static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rol
     if (pidProfile->afcs_roll_to_yaw_link && liftCoef > roll_yaw_clift_start) {
         float k = (liftCoef - roll_yaw_clift_start) / (roll_yaw_clift_stop - roll_yaw_clift_start);
         k = constrainf(k, 0.0f, 1.0f);
-        crossYawControl = k * rollPilotControl * (pidProfile->afcs_roll_to_yaw_link * 0.1f);
+        crossYawControl = k * (0.01f * rollPilotControl) * (pidProfile->afcs_roll_to_yaw_link * 0.1f);
     }
 
     return crossYawControl;
