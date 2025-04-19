@@ -295,4 +295,7 @@
 #define PARAM_NAME_AFCS_LIFT_C_LIMIT "afcs_lift_c_limit"
 #define PARAM_NAME_AFCS_AOA_LIMITER_GAIN "afcs_aoa_limiter_gain"
 #define PARAM_NAME_AFCS_SERVO_TIME "afcs_servo_time"
+#define PARAM_NAME_AFCS_ROLL_YAW_CLIFT_START "afcs_roll_yaw_clift_start"
+#define PARAM_NAME_AFCS_ROLL_YAW_CLIFT_STOP "afcs_roll_yaw_clift_stop"
+#define PARAM_NAME_AFCS_ROLL_TO_YAW_LINK "afcs_roll_to_yaw_link"
 #endif

@@ -83,7 +83,7 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
         float servoVelocity = accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f);
         servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
         pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
-        
+
         // limit integrator output
         float output = pidData[FD_PITCH].Sum + pidRuntime.afcsElevatorAddition;
         if ( output > 100.0f) {
@@ -130,6 +130,21 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
     return isLimitAoA;
 }
 
+// Roll to yaw control cross link to improve roll rotation at high angle of attack
+static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rollPilotControl, float liftCoef)
+{
+    float crossYawControl = 0.0f,
+          roll_yaw_clift_start = 0.1f * pidProfile->afcs_roll_yaw_clift_start,
+          roll_yaw_clift_stop = 0.1f * pidProfile->afcs_roll_yaw_clift_stop;
+
+    if (pidProfile->afcs_roll_to_yaw_link && liftCoef > roll_yaw_clift_start) {
+        float k = (liftCoef - roll_yaw_clift_start) / (roll_yaw_clift_stop - roll_yaw_clift_start);
+        k = constrainf(k, 0.0f, 1.0f);
+        crossYawControl = k * rollPilotControl * (pidProfile->afcs_roll_to_yaw_link * 0.1f);
+    }
+
+    return crossYawControl;
+}
 
 void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
 {
@@ -158,9 +173,9 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
 
     // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
     float liftCoef;
-    bool isValidLiftC = computeLiftCoefficient(pidProfile, accelZ, &liftCoef);
+    bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef);
     bool isLimitAoA = false;
-    if (isValidLiftC) {
+    if (isValidLiftCoef) {
         isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef);
     }
     if (isLimitAoA == false) {
@@ -196,13 +211,18 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     }
     float yawDampingCtrl = gyroYaw * (pidProfile->afcs_damping_gain[FD_YAW] * 0.001f);
     float yawStabilityCtrl = acc.accADC.y * acc.dev.acc_1G_rec * (pidProfile->afcs_yaw_stability_gain * 0.01f);
-    pidData[FD_YAW].Sum = yawPilotCtrl + yawDampingCtrl + yawStabilityCtrl;
+    float rollToYawCrossControl = 0.0f;
+    if (isValidLiftCoef) {
+        rollToYawCrossControl = rollToYawCrossLinkControl(pidProfile, rollPilotCtrl, liftCoef);
+    }
+    pidData[FD_YAW].Sum = yawPilotCtrl + yawDampingCtrl + yawStabilityCtrl + rollToYawCrossControl;
     pidData[FD_YAW].Sum = constrainf(pidData[FD_YAW].Sum, -100.0f, 100.0f) / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
     pidData[FD_YAW].F = 10.0f * yawPilotCtrl;
     pidData[FD_YAW].D = 10.0f * yawDampingCtrl;
     pidData[FD_YAW].P = 10.0f * yawStabilityCtrl;
+    pidData[FD_YAW].S = 10.0f * rollToYawCrossControl;
 
     DEBUG_SET(DEBUG_AFCS, 0, lrintf(pitchPilotCtrl * 10.0f));
     DEBUG_SET(DEBUG_AFCS, 1, lrintf(pitchDampingCtrl * 10.0f));
