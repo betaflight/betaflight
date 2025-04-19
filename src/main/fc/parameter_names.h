@@ -276,3 +276,27 @@
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif
+
+#ifdef USE_AIRPLANE_FCS
+#define PARAM_NAME_AFCS_PITCH_STICK_GAIN "afcs_pitch_stick_gain"
+#define PARAM_NAME_AFCS_PITCH_DAMPING_GAIN "afcs_pitch_damping_gain"
+#define PARAM_NAME_AFCS_PITCH_DAMPING_FILTER_FREQ "afcs_pitch_damping_filter_freq"
+#define PARAM_NAME_AFCS_PITCH_STABILITY_GAIN "afcs_pitch_stability_gain"
+#define PARAM_NAME_AFCS_PITCH_ACCEL_I_GAIN "afcs_pitch_accel_i_gain"
+#define PARAM_NAME_AFCS_PITCH_ACCEL_MAX "afcs_pitch_accel_max"
+#define PARAM_NAME_AFCS_PITCH_ACCEL_MIN "afcs_pitch_accel_min"
+#define PARAM_NAME_AFCS_ROLL_STICK_GAIN "afcs_roll_stick_gain"
+#define PARAM_NAME_AFCS_ROLL_DAMPING_GAIN "afcs_roll_damping_gain"
+#define PARAM_NAME_AFCS_YAW_STICK_GAIN "afcs_yaw_stick_gain"
+#define PARAM_NAME_AFCS_YAW_DAMPING_GAIN "afcs_yaw_damping_gain"
+#define PARAM_NAME_AFCS_YAW_DAMPING_FILTER_FREQ "afcs_yaw_damping_filter_freq"
+#define PARAM_NAME_AFCS_YAW_STABILITY_GAIN "afcs_yaw_stability_gain"
+#define PARAM_NAME_AFCS_WING_LOAD "afcs_wing_load"
+#define PARAM_NAME_AFCS_AIR_DENSITY "afcs_air_density"
+#define PARAM_NAME_AFCS_LIFT_C_LIMIT "afcs_lift_c_limit"
+#define PARAM_NAME_AFCS_AOA_LIMITER_GAIN "afcs_aoa_limiter_gain"
+#define PARAM_NAME_AFCS_SERVO_TIME "afcs_servo_time"
+#define PARAM_NAME_AFCS_ROLL_YAW_CLIFT_START "afcs_roll_yaw_clift_start"
+#define PARAM_NAME_AFCS_ROLL_YAW_CLIFT_STOP "afcs_roll_yaw_clift_stop"
+#define PARAM_NAME_AFCS_ROLL_TO_YAW_LINK "afcs_roll_to_yaw_link"
+#endif
