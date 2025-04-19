@@ -348,6 +348,9 @@ typedef struct pidProfile_s {
     uint8_t afcs_lift_c_limit;                  // Limit aerodinamics lift force coefficient value *10
     uint16_t afcs_aoa_limiter_gain;             // elevator speed for 0.1 lift force coef difference in %/sec *10
     uint16_t afcs_servo_time;                   // minimal time of servo movement from neutrale to maximum, ms
+    uint8_t afcs_roll_yaw_clift_start;          // Aerodynamics lift force coef to start yaw control for roll rotation  *10
+    uint8_t afcs_roll_yaw_clift_stop;           // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
+    uint8_t afcs_roll_to_yaw_link;               // The maximal yaw control value to support roll rotation, % *10
 #endif
 } pidProfile_t;
 
