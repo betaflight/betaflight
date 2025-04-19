@@ -140,3 +140,10 @@ bool spiUseSDO_DMA(const extDevice_t *dev);
 void spiBusDeviceRegister(const extDevice_t *dev);
 uint8_t spiGetRegisteredDeviceCount(void);
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev);
+
+// Common code to process linked segments, to be called from spiSequenceStart.
+// DMA path makes use of spiInternalInitStream, spiInternalStartDMA.
+void spiProcessSegmentsDMA(const extDevice_t *dev);
+void spiIrqHandler(const extDevice_t *dev);
+// Polling code calls spiInternalReadWriteBufPolled.
+void spiProcessSegmentsPolled(const extDevice_t *dev);
