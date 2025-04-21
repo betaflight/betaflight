@@ -79,7 +79,7 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
         const float servoVelocityLimit = 100.0f / (pidProfile->afcs_servo_time * 0.001f); // Limit servo velocity %/s
         float accelReq = pitchPilotCtrl > 0.0f ? (0.1f * pidProfile->afcs_pitch_accel_max - 1.0f) * pitchPilotCtrl * 0.01f + 1.0f
                                                : (0.1f * pidProfile->afcs_pitch_accel_min + 1.0f) * pitchPilotCtrl * 0.01f + 1.0f;
-        float accelDelta = accelReq - accelZ;
+        float accelDelta = accelZ - accelReq;
         float servoVelocity = accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f);
         servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
         pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
@@ -108,16 +108,16 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
         float liftCoefDiff = 0.0f,
               servoVelocity = 0.0f;
         if (liftCoef > 0.0f) {
-            liftCoefDiff = limitLiftC - liftCoef;
-            if (liftCoefDiff < 0.0f) {
+            liftCoefDiff = liftCoef - limitLiftC;
+            if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
                 pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
             }
         } else {
-            liftCoefDiff = -limitLiftC - liftCoef;
-            if (liftCoefDiff > 0.0f) {
+            liftCoefDiff = liftCoef + limitLiftC;
+            if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
