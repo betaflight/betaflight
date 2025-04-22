@@ -474,12 +474,12 @@ bool osdFormatRtcDateTime(char *buffer)
     }
 
     switch (activeElement.type) {
-        case OSD_ELEMENT_TYPE_2:
-            tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
-            break;
-        default:
-            dateTimeFormatLocalShort(buffer, &dateTime);
-            break;
+    case OSD_ELEMENT_TYPE_2:
+        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
+        break;
+    default:
+        dateTimeFormatLocalShort(buffer, &dateTime);
+        break;
     }
 
     return true;
