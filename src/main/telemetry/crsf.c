@@ -709,22 +709,25 @@ static void processCrsf(void)
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
-    if (currentSchedule & BIT(CRSF_FRAME_ATTITUDE_INDEX)) {
-        crsfInitializeFrame(dst);
-        crsfFrameAttitude(dst);
-        crsfFinalize(dst);
-    }
-    if (currentSchedule & BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
-        crsfInitializeFrame(dst);
-        crsfFrameBatterySensor(dst);
-        crsfFinalize(dst);
-    }
+    /**
+     * @note disabling to test GPS update rates on ATAK
+     */
+    // if (currentSchedule & BIT(CRSF_FRAME_ATTITUDE_INDEX)) {
+    //     crsfInitializeFrame(dst);
+    //     crsfFrameAttitude(dst);
+    //     crsfFinalize(dst);
+    // }
+    // if (currentSchedule & BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
+    //     crsfInitializeFrame(dst);
+    //     crsfFrameBatterySensor(dst);
+    //     crsfFinalize(dst);
+    // }
 
-    if (currentSchedule & BIT(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
-        crsfInitializeFrame(dst);
-        crsfFrameFlightMode(dst);
-        crsfFinalize(dst);
-    }
+    // if (currentSchedule & BIT(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
+    //     crsfInitializeFrame(dst);
+    //     crsfFrameFlightMode(dst);
+    //     crsfFinalize(dst);
+    // }
 #ifdef USE_GPS
     if (currentSchedule & BIT(CRSF_FRAME_GPS_INDEX)) {
         crsfInitializeFrame(dst);
@@ -765,16 +768,16 @@ void initCrsfTelemetry(void)
 #endif
 
     int index = 0;
-    if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
-        crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
-    }
-    if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
-        || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
-        crsfSchedule[index++] = BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX);
-    }
-    if (telemetryIsSensorEnabled(SENSOR_MODE)) {
-        crsfSchedule[index++] = BIT(CRSF_FRAME_FLIGHT_MODE_INDEX);
-    }
+    // if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
+    //     crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
+    // }
+    // if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
+    //     || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
+    //     crsfSchedule[index++] = BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX);
+    // }
+    // if (telemetryIsSensorEnabled(SENSOR_MODE)) {
+    //     crsfSchedule[index++] = BIT(CRSF_FRAME_FLIGHT_MODE_INDEX);
+    // }
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)
        && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
