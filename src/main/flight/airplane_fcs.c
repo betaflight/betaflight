@@ -77,8 +77,8 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
 {
     if (pidProfile->afcs_pitch_accel_i_gain != 0) {
         const float servoVelocityLimit = 100.0f / (pidProfile->afcs_servo_time * 0.001f); // Limit servo velocity %/s
-        float accelReq = pitchPilotCtrl > 0.0f ? (0.1f * pidProfile->afcs_pitch_accel_max - 1.0f) * pitchPilotCtrl * 0.01f + 1.0f
-                                               : (0.1f * pidProfile->afcs_pitch_accel_min + 1.0f) * pitchPilotCtrl * 0.01f + 1.0f;
+        float accelReq = pitchPilotCtrl < 0.0f ? (1.0f - 0.1f * pidProfile->afcs_pitch_accel_max) * pitchPilotCtrl * 0.01f + 1.0f
+                                               : -(1.0f + 0.1f * pidProfile->afcs_pitch_accel_min) * pitchPilotCtrl * 0.01f + 1.0f;
         float accelDelta = accelZ - accelReq;
         float servoVelocity = accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f);
         servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
