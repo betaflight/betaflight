@@ -571,10 +571,12 @@ void tryArm(void)
                 // otherwise consider only the switch position
                 crashFlipModeActive = (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
 #ifdef USE_DSHOT
-                // previous disarm will have set direction to normal
-                // at this point we only need to reverse the motors if crashflipMode is active
+                // previous disarm should have set direction to normal
+                // at this point should only need to reverse the motors if crashflipMode is active, but there are bug reports.
                 if (crashFlipModeActive) {
                     setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_REVERSED);
+                } else {
+                    setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL); //mitigate bug reports.
                 }
 #endif
             }
