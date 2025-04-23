@@ -836,20 +836,50 @@ bool isMotorsReversed(void)
     return reverseMotors;
 }
 
-static float quadraticBezier(float t, float p0, float p1, float p2) {
-    return (1.0f - t) * (1.0f - t) * p0 + 2.0f * (1.0f - t) * t * p1 + t * t * p2;
-}
+// Calculates the y-coordinate of a point on a quadratic Bezier curve for a given x-coordinate.
+// It first solves for the parameter t such that Bezier_x(t) = x, using the x control points (p0x, p1x, p2x).
+// Then, it calculates the y-coordinate using the found t and the y control points (p0y, p1y, p2y).
+static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y, float p1y, float p2y) {
+    // Solve for t such that Bezier_x(t) = x
+    // Bezier_x(t) = (1-t)^2*p0x + 2*(1-t)*t*p1x + t^2*p2x
+    // Rearranging into A*t^2 + B*t + C = 0, where C = p0x - x
+    float a = p0x - 2.0f * p1x + p2x;
+    float b = 2.0f * p1x - 2.0f * p0x;
+    float c = p0x - x;
+    float t = 0.0f; // Default t
 
-// helper to solve a*t^2 + b*t + c = 0 for t in [0,1]
-static inline float solveQuadratic(float a, float b, float c) {
-    float disc = b*b - 4.0f * a * c;
-    if (disc < 0.0f) {
-        return 0.0f;
+    // Solve the quadratic equation for t
+    if (fabsf(a) < 1e-6f) { // Linear equation case (a is close to zero)
+        if (fabsf(b) > 1e-6f) {
+            t = -c / b;
+        }
+        // If both a and b are zero, t remains 0 (degenerate case)
+    } else {
+        float disc = b * b - 4.0f * a * c;
+        if (disc >= 0.0f) { // Real roots exist
+            float sqrtD = sqrtf(disc);
+            float t1 = (-b + sqrtD) / (2.0f * a);
+            float t2 = (-b - sqrtD) / (2.0f * a);
+
+            // Select the root within [0, 1], preferring t1 if both are valid.
+            // Replicates the original solveQuadratic logic: use t1 if valid, otherwise use t2.
+            if (t1 >= 0.0f && t1 <= 1.0f) {
+                t = t1;
+            } else {
+                t = t2; // Use t2 even if it's outside [0, 1] as per original logic
+            }
+        }
+        // If disc < 0, no real roots, t remains 0.
     }
-    float sqrtD = sqrtf(disc);
-    float t1 = (-b + sqrtD) / (2.0f * a);
-    float t2 = (-b - sqrtD) / (2.0f * a);
-    return (t1 >= 0.0f && t1 <= 1.0f) ? t1 : t2;
+
+    // Clamp t to the valid range [0, 1] before calculating y
+    t = constrainf(t, 0.0f, 1.0f);
+
+    // Calculate y using the parameter t and y-control points
+    // y = (1-t)^2 * p0y + 2*(1-t)*t * p1y + t^2 * p2y
+    float omt = 1.0f - t;
+    float y = omt * omt * p0y + 2.0f * omt * t * p1y + t * t * p2y;
+    return y;
 }
 
 void initRcProcessing(void)
@@ -885,22 +915,14 @@ void initRcProcessing(void)
     // build throttle lookup table by solving for t so that Bézier_x(t)=x
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
         float x = (float)i / (THROTTLE_LOOKUP_LENGTH - 1);
-        float t, y;
+        float y;
 
         if (x <= thrMid) {
-            // segment 1: p0x=0, p1x=cp1x, p2x=thrMid
-            float a = thrMid - 2.0f * cp1x;
-            float b = 2.0f * cp1x;
-            float c = -x;
-            t = solveQuadratic(a, b, c);
-            y = quadraticBezier(t, 0.0f, cp1y, thrHover);
+            // Segment 1: Control points (0,0), (cp1x, cp1y), (thrMid, thrHover)
+            y = quadraticBezier(x, 0.0f, cp1x, thrMid, 0.0f, cp1y, thrHover);
         } else {
-            // segment 2: p0x=thrMid, p1x=cp2x, p2x=1
-            float a = 1.0f - 2.0f * cp2x + thrMid;
-            float b = 2.0f * cp2x - 2.0f * thrMid;
-            float c = thrMid - x;
-            t = solveQuadratic(a, b, c);
-            y = quadraticBezier(t, thrHover, cp2y, 1.0f);
+            // Segment 2: Control points (thrMid, thrHover), (cp2x, cp2y), (1, 1)
+            y = quadraticBezier(x, thrMid, cp2x, 1.0f, thrHover, cp2y, 1.0f);
         }
 
         lookupThrottleRC[i] = lrintf(scaleRangef(y, 0.0f, 1.0f, PWM_RANGE_MIN, PWM_RANGE_MAX));
