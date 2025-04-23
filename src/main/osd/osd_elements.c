@@ -1099,8 +1099,8 @@ static void osdElementFlymode(osdElementParms_t *element)
 #ifdef USE_CHIRP
     // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their googles
     } else if (FLIGHT_MODE(CHIRP_MODE) && !pidChirpIsFinished()) {
-#endif
         strcpy(element->buff, "CHIR");
+#endif
     } else if (isAirmodeEnabled()) {
         strcpy(element->buff, "AIR ");
     } else {
