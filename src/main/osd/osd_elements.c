@@ -331,6 +331,26 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
 }
 
 #ifdef USE_GPS
+
+#ifdef USE_MGRS
+
+#define MGRS_BUF_LEN 18
+
+static void osdFormatMgrs(char *buff) {
+    
+    if (getGpsMgrsString(5, buff) == 0 && STATE(GPS_FIX_EVER)) {
+        buff[MGRS_BUF_LEN] = '\0';
+    }
+    else {
+        memset(buff, SYM_HYPHEN, MGRS_BUF_LEN);
+        buff[MGRS_BUF_LEN] = '\0';
+    }
+    
+
+}
+
+#else
+
 static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
 {
     int32_t gpsValue = 0;
@@ -397,6 +417,8 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
         break;
     }
 }
+#endif // USE_MGRS
+
 #endif // USE_GPS
 
 void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
@@ -1090,6 +1112,21 @@ static void osdElementGpsHomeDistance(osdElementParms_t *element)
     }
 }
 
+#ifdef USE_MGRS
+
+static void osdElementGpsMgrs(osdElementParms_t *element) {
+
+    osdFormatMgrs(element->buff);
+    if (STATE(GPS_FIX_EVER) && !STATE(GPS_FIX)) {
+        SET_BLINK(element->item); // blink if we had a fix but have since lost it
+    } else {
+        CLR_BLINK(element->item);
+    }
+
+}
+
+#else 
+
 static void osdElementGpsCoordinate(osdElementParms_t *element)
 {
     const gpsCoordinateType_e coordinateType = (element->item == OSD_GPS_LON) ? GPS_LONGITUDE : GPS_LATITUDE;
@@ -1100,6 +1137,9 @@ static void osdElementGpsCoordinate(osdElementParms_t *element)
         CLR_BLINK(element->item);
     }
 }
+
+
+#endif
 
 static void osdElementGpsSats(osdElementParms_t *element)
 {
@@ -1829,8 +1869,13 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
     [OSD_READY_MODE]              = osdElementReadyMode,
 #ifdef USE_GPS
+
+#ifdef USE_MGRS
+    [OSD_GPS_LON]                 = osdElementGpsMgrs,
+#else
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
+#endif
 #endif
     [OSD_DEBUG]                   = osdElementDebug,
 #ifdef USE_ACC

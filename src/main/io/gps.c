@@ -33,6 +33,7 @@
 #include "common/gps_conversion.h"
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/printf.h"
 
 #include "config/feature.h"
 
@@ -1977,4 +1978,67 @@ float getGpsDataIntervalSeconds(void)
     return gpsDataIntervalSeconds;
 }
 
+const char* latBands = "CDEFGHJKLMNPQRSTUVWXX";
+const char* e100kLetters[] = {"ABCDEFGH", "JKLMNPQR", "STUVWXYZ"};
+const char* n100kLetters[] = {"ABCDEFGHJKLMNPQRSTUV", "FGHJKLMNPQRSTUVABCDE"};
+
+void pad(int val, char* out) {
+    tfp_sprintf(out, "%05d", val);
+}
+
+// https://stackoverflow.com/questions/46728319/how-to-convert-between-lat-long-and-mgrs-using-javascript-without-dependence-on
+uint8_t getGpsMgrsString(int precision, char *mgrsString) {
+
+    UNUSED(precision);
+
+    float Lat = (float)gpsSol.llh.lat / GPS_DEGREES_DIVIDER;
+    float Long = (float)gpsSol.llh.lon / GPS_DEGREES_DIVIDER;
+
+    if (Lat < -80.0) {
+        return 1;
+    }
+
+    if (Lat > 84.0) {
+        return 1;
+    }
+
+    int zone = 1 + floor((Long + 180.0) / 6.0);
+    float lonOrigin = zone * 6.0 - 183.0;
+    float latRad = Lat * M_PI / 180.0;
+    float lonRad = Long * M_PI / 180.0;
+    float lonOriginRad = lonOrigin * M_PI / 180.0;
+    float N = 40680631590769.0 / (6356752.314 * sqrtf(1 + 0.006739496819936062 * powf(cosf(latRad), 2)));
+    float T = tan(latRad);
+    float T2 = T * T;
+    float T4 = T2 * T2;
+    float T6 = T4 * T2;
+    float C = 0.006739496819936062 * powf(cosf(latRad), 2);
+    float A = cosf(latRad) * (lonRad - lonOriginRad);
+    float M = 6367449.14570093 * (latRad - (0.00251882794504 * sinf(2 * latRad)) +
+            (0.00000264354112 * sinf(4 * latRad)) - (0.00000000345262 * sinf(6 * latRad)) +
+            (0.000000000004892 * sinf(8 * latRad)));
+    float x = N * A + (N / 6.0 * powf(cosf(latRad), 3) * (1 - T2 + C) * powf(A, 3)) +
+               (N / 120.0 * powf(cosf(latRad), 5) * (5 - 18*T2 + T4 + 14*C - 58*T2*C) * powf(A, 5)) +
+               (N / 5040.0 * powf(cosf(latRad), 7) * (61 - 479*T2 + 179*T4 - T6) * powf(A, 7));
+    float y = M + T / 2.0 * N * powf(cosf(latRad), 2) * powf(A, 2) +
+               T / 24.0 * N * powf(cosf(latRad), 4) * (5 - T2 + 9*C + 4*C*C) * powf(A, 4) +
+               T / 720.0 * N * powf(cosf(latRad), 6) * (61 - 58*T2 + T4 + 270*C - 330*T2*C) * powf(A, 6) +
+               T / 40320.0 * N * powf(cosf(latRad), 8) * (1385 - 3111*T2 + 543*T4 - T6) * powf(A, 8);
+    x = x * 0.9996 + 500000.0;
+    y = y * 0.9996;
+    if (y < 0.0) y += 10000000.0;
+    int e100kIdx = (int)(x / 100000);
+    int n100kIdx = ((int)(y / 100000)) % 20;
+    char latBand = latBands[(int)(Lat / 8.0 + 10)];
+    char e100k = e100kLetters[(zone - 1) % 3][e100kIdx - 1];
+    char n100k = n100kLetters[(zone - 1) % 2][n100kIdx];
+    int xRemainder = ((int)x) % 100000;
+    int yRemainder = ((int)y) % 100000;
+    char paddedX[6], paddedY[6];
+    pad(xRemainder, paddedX);
+    pad(yRemainder, paddedY);
+    tfp_sprintf(mgrsString, "%d%c %c%c %s %s", zone, latBand, e100k, n100k, paddedX, paddedY);
+
+    return 0;
+}
 #endif // USE_GPS

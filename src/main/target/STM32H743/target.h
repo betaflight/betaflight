@@ -86,6 +86,7 @@
 
 #define USE_N1_TEMP_SENSOR
 #define USE_GPS
+// #define USE_MGRS
 #define USE_GPS_RESCUE
 #define USE_MAG
 #define USE_MAG_QMC5883
