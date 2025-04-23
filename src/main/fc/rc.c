@@ -878,8 +878,7 @@ static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y
     // Calculate y using the parameter t and y-control points
     // y = (1-t)^2 * p0y + 2*(1-t)*t * p1y + t^2 * p2y
     float omt = 1.0f - t;
-    float y = omt * omt * p0y + 2.0f * omt * t * p1y + t * t * p2y;
-    return y;
+    return omt * omt * p0y + 2.0f * omt * t * p1y + t * t * p2y;
 }
 
 void initRcProcessing(void)
