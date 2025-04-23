@@ -40,6 +40,8 @@
 #include "drivers/pwm_output.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+
+#include "fc/runtime_config.h"
  
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"
@@ -133,7 +135,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_INT1_STATUS_EN_AUX1_DRDY       (1 << 3)
 #define ICM456XX_INT1_STATUS_EN_DRDY            (1 << 2)
 #define ICM456XX_INT1_STATUS_EN_FIFO_THS        (1 << 1)
-#define ICM456XX_INT1_STATUS_EN_FIFO_FULL       (0 << 1)
+#define ICM456XX_INT1_STATUS_EN_FIFO_FULL       (1 << 0)
 
 // INT1_CONFIG2 - 0x18
 #define ICM456XX_INT1_MODE_PULSED               (0 << 0)
@@ -153,7 +155,9 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_INT1_STATUS_FIFO_THS           (1 << 1)
 #define ICM456XX_INT1_STATUS_FIFO_FULL          (1 << 0)
 
+// REG_MISC2 - 0x7F
 #define ICM456XX_SOFT_RESET                     (1 << 1)
+#define ICM456XX_RESET_TIMEOUT_US               20000  // 20 ms
 
 #define ICM456XX_ACCEL_DATA_X1_UI               0x00
 #define ICM456XX_GYRO_DATA_X1_UI                0x06
@@ -313,6 +317,10 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 // pdf DS-000577 section 14.4 IREG WRITE
 static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
 {
+    if (ARMING_FLAG(ARMED)) {
+        return false; // IREG write not allowed when armed
+    }
+
     const uint8_t msb = (reg >> 8) & 0xFF;
     const uint8_t lsb = reg & 0xFF;
 
@@ -346,8 +354,8 @@ static bool icm456xx_configureGyroLPF(const extDevice_t *dev, bool bypassHPF, ui
     }
 
     uint8_t value = 0;
-    value |= (bypassHPF ? ICM456XX_GYRO_OIS_HPF1_BYPASS : ICM456XX_GYRO_OIS_HPF1_ENABLE);
-    value |= (lpfDiv & 0x07); // only bits 2:0
+    value |= bypassHPF ? ICM456XX_GYRO_OIS_HPF1_BYPASS : ICM456XX_GYRO_OIS_HPF1_ENABLE;
+    value |= lpfDiv & 0x07; // only bits 2:0
 
     return icm456xx_write_ireg(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, value);
 }
@@ -377,20 +385,20 @@ void icm456xxAccInit(accDev_t *acc)
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     switch (acc->mpuDetectionResult.sensor) {
-        case ICM_45686_SPI:
-            acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
-            acc->gyro->accSampleRateHz = 1600;
-            spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
-            break;
-        case ICM_45605_SPI:
-            acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
-            acc->gyro->accSampleRateHz = 1600;
-            spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
-            break;    
-        default:
-            acc->acc_1G = 2048;
-            break;
-        }
+    case ICM_45686_SPI:
+        acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
+        acc->gyro->accSampleRateHz = 1600;
+        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
+        break;
+    case ICM_45605_SPI:
+        acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
+        acc->gyro->accSampleRateHz = 1600;
+        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
+        break;    
+    default:
+        acc->acc_1G = 2048;
+        break;
+    }
 
     // Enable Anti-Alias (AAF) Filter and Interpolator for Accel
     icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true);
@@ -420,26 +428,25 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     spiWriteReg(dev, ICM456XX_RA_SREG_CTRL, ICM456XX_SREG_DATA_ENDIAN_SEL_BIG);
 
-    // TODO: add enum for gyro scale, gyrosale is float
     switch (gyro->mpuDetectionResult.sensor) {
-        case ICM_45686_SPI:
-            gyro->scale = GYRO_SCALE_4000DPS;
-            gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
-            gyro->gyroSampleRateHz = 6400;
-            spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_4000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-            break;
-        case ICM_45605_SPI:
-            gyro->scale = GYRO_SCALE_2000DPS;
-            gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
-            gyro->gyroSampleRateHz = 6400;
-            spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-            break;
-        default:
-            gyro->scale = GYRO_SCALE_2000DPS;
-            gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
-            gyro->gyroSampleRateHz = 6400;
-            spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-            break;
+    case ICM_45686_SPI:
+        gyro->scale = GYRO_SCALE_4000DPS;
+        gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
+        gyro->gyroSampleRateHz = 6400;
+        spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_4000DPS | ICM456XX_GYRO_ODR_6K4_LN);
+        break;
+    case ICM_45605_SPI:
+        gyro->scale = GYRO_SCALE_2000DPS;
+        gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
+        gyro->gyroSampleRateHz = 6400;
+        spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
+        break;
+    default:
+        gyro->scale = GYRO_SCALE_2000DPS;
+        gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
+        gyro->gyroSampleRateHz = 6400;
+        spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
+        break;
     }
 
     spiWriteReg(dev, ICM456XX_INT1_CONFIG2, ICM456XX_INT1_MODE_PULSED | ICM456XX_INT1_DRIVE_CIRCUIT_PP |
@@ -455,9 +462,25 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 {
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
+    uint32_t waited_us = 0;
 
+    // Soft reset
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
-    delay(100);
+
+    // Wait for reset to complete (bit 1 of REG_MISC2 becomes 0)
+    do {
+        uint8_t misc2 = spiReadRegMsk(dev, ICM456XX_REG_MISC2);
+        if ((misc2 & ICM456XX_SOFT_RESET) == 0) {
+            break; // Reset complete
+        }
+        delayMicroseconds(100);
+        waited_us += 100;
+
+        if (waited_us >= ICM456XX_RESET_TIMEOUT_US) {
+            return MPU_NONE;
+        }
+
+    } while (true);
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
@@ -465,23 +488,18 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
         delay(150);
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
         switch (whoAmI) {
-            case ICM45686_WHO_AM_I_CONST:
-                icmDetected = ICM_45686_SPI;
-                break;
-            case ICM45605_WHO_AM_I_CONST:    
-                icmDetected = ICM_45605_SPI;
-                break;
-            default:
-                icmDetected = MPU_NONE;
-                break;
-        }
-        if (icmDetected != MPU_NONE) {
+        case ICM45686_WHO_AM_I_CONST:
+            icmDetected = ICM_45686_SPI;
+            break;
+        case ICM45605_WHO_AM_I_CONST:    
+            icmDetected = ICM_45605_SPI;
+            break;
+        default:
+            icmDetected = MPU_NONE;
             break;
         }
-        if (!attemptsRemaining) {
-            return MPU_NONE;
-        }
-    } while (attemptsRemaining--);
+
+    } while (icmDetected == MPU_NONE && attemptsRemaining--);
 
     return icmDetected;
 
@@ -505,16 +523,16 @@ bool icm456xxAccReadSPI(accDev_t *acc)
 bool icm456xxSpiAccDetect(accDev_t *acc)
 {
     switch (acc->mpuDetectionResult.sensor) {
-        case ICM_45686_SPI:
-        case ICM_45605_SPI:
-            acc->initFn = icm456xxAccInit;
-            acc->readFn = icm456xxAccReadSPI;
-            break;
-        default:
-            return false;
-        }
+    case ICM_45686_SPI:
+    case ICM_45605_SPI:
+        acc->initFn = icm456xxAccInit;
+        acc->readFn = icm456xxAccReadSPI;
+        break;
+    default:
+        return false;
+    }
 
-        return true;
+    return true;
 }
 
 bool icm456xxGyroReadSPI(gyroDev_t *gyro)
@@ -536,16 +554,16 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
 bool icm456xxSpiGyroDetect(gyroDev_t *gyro)
 {
     switch (gyro->mpuDetectionResult.sensor) {
-        case ICM_45686_SPI:
-        case ICM_45605_SPI:
-            gyro->initFn = icm456xxGyroInit;
-            gyro->readFn = icm456xxGyroReadSPI;
-            break;
-        default:
-            return false;
-        }
+    case ICM_45686_SPI:
+    case ICM_45605_SPI:
+        gyro->initFn = icm456xxGyroInit;
+        gyro->readFn = icm456xxGyroReadSPI;
+        break;
+    default:
+        return false;
+    }
     
-        return true;
+    return true;
 }
  
 #endif // USE_ACCGYRO_ICM45686 || USE_ACCGYRO_ICM45605

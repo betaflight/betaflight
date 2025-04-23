@@ -245,8 +245,7 @@ retry:
     case ACC_ICM45686:
     case ACC_ICM45605:
         if (icm456xxSpiAccDetect(dev)) {
-            switch (dev->mpuDetectionResult.sensor)
-            {
+            switch (dev->mpuDetectionResult.sensor) {
             case ICM_45686_SPI:
                 accHardware = ACC_ICM45686;
                 break;
