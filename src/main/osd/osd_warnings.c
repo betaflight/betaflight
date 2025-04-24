@@ -346,7 +346,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             // Add esc warnings
             if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
                     && isDshotMotorTelemetryActive(k)
-                    && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) >= osdConfig()->esc_rpm_alarm) {
+                    && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) <= osdConfig()->esc_rpm_alarm) {
                 warningText[dshotEscErrorLength++] = 'R';
             }
 
