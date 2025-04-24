@@ -294,6 +294,8 @@
 #define PARAM_NAME_AFCS_AIR_DENSITY "afcs_air_density"
 #define PARAM_NAME_AFCS_LIFT_C_LIMIT "afcs_lift_c_limit"
 #define PARAM_NAME_AFCS_AOA_LIMITER_GAIN "afcs_aoa_limiter_gain"
+#define PARAM_NAME_AFCS_AOA_LIMITER_FILTER_FREQ "afcs_aoa_limiter_filter_freq"
+#define PARAM_NAME_AFCS_AOA_LIMITER_FORCAST_TIME "afcs_aoa_limiter_forcast_time"
 #define PARAM_NAME_AFCS_SERVO_TIME "afcs_servo_time"
 #define PARAM_NAME_AFCS_ROLL_YAW_CLIFT_START "afcs_roll_yaw_clift_start"
 #define PARAM_NAME_AFCS_ROLL_YAW_CLIFT_STOP "afcs_roll_yaw_clift_stop"

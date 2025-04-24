@@ -34,6 +34,7 @@ void afcsInit(const pidProfile_t *pidProfile)
 {
     pt1FilterInit(&pidRuntime.afcsPitchDampingLowpass, pt1FilterGain(pidProfile->afcs_pitch_damping_filter_freq * 0.01, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.afcsYawDampingLowpass, pt1FilterGain(pidProfile->afcs_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
+    pt1FilterInit(&pidRuntime.afcsLiftCoefLowpass, pt1FilterGain(pidProfile->afcs_aoa_limiter_filter_freq * 0.1f, pidRuntime.dT));
     pidRuntime.afcsElevatorAddition = 0.0f;
 }
 
@@ -101,14 +102,20 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
 static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float liftCoef)
 {
     bool isLimitAoA = false;
+    static float liftCoefLast = 0.0f;
+    float liftCoefF = pt1FilterApply(&pidRuntime.afcsLiftCoefLowpass, liftCoef);
+    float liftCoefVelocity = (liftCoefF - liftCoefLast) / pidRuntime.dT;
+    liftCoefLast = liftCoefF;
+    liftCoefF += liftCoefVelocity * (pidProfile->afcs_aoa_limiter_forcast_time * 0.1f);
+
     if (pidProfile->afcs_aoa_limiter_gain != 0) {
         const float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
 
         const float servoVelocityLimit = 100.0f / (pidProfile->afcs_servo_time * 0.001f); // Limit servo velocity %/s
         float liftCoefDiff = 0.0f,
               servoVelocity = 0.0f;
-        if (liftCoef > 0.0f) {
-            liftCoefDiff = liftCoef - limitLiftC;
+        if (liftCoefF > 0.0f) {
+            liftCoefDiff = liftCoefF - limitLiftC;
             if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
@@ -116,7 +123,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
                 pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
             }
         } else {
-            liftCoefDiff = liftCoef + limitLiftC;
+            liftCoefDiff = liftCoefF + limitLiftC;
             if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
