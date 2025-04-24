@@ -35,7 +35,7 @@ void afcsInit(const pidProfile_t *pidProfile)
     pt1FilterInit(&pidRuntime.afcsPitchDampingLowpass, pt1FilterGain(pidProfile->afcs_pitch_damping_filter_freq * 0.01, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.afcsYawDampingLowpass, pt1FilterGain(pidProfile->afcs_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.afcsLiftCoefLowpass, pt1FilterGain(pidProfile->afcs_aoa_limiter_filter_freq * 0.1f, pidRuntime.dT));
-    pidRuntime.afcsElevatorAddition = 0.0f;
+    pidRuntime.isReadyAFCS = false;
 }
 
 static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef)
@@ -83,18 +83,18 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
         float accelDelta = accelZ - accelReq;
         float servoVelocity = accelDelta * (pidProfile->afcs_pitch_accel_i_gain * 0.1f);
         servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-        pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
+        pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
 
         // limit integrator output
-        float output = pidData[FD_PITCH].Sum + pidRuntime.afcsElevatorAddition;
+        float output = pidData[FD_PITCH].Sum + pidData[FD_PITCH].I;
         if ( output > 100.0f) {
-            pidRuntime.afcsElevatorAddition = 100.0f - pidData[FD_PITCH].Sum;
+            pidData[FD_PITCH].I = 100.0f - pidData[FD_PITCH].Sum;
         } else if (output < -100.0f) {
-            pidRuntime.afcsElevatorAddition = -100.0f - pidData[FD_PITCH].Sum;
+            pidData[FD_PITCH].I = -100.0f - pidData[FD_PITCH].Sum;
         }
 
-        DEBUG_SET(DEBUG_AFCS, 4, lrintf(accelReq * 10.0f));
-        DEBUG_SET(DEBUG_AFCS, 5, lrintf(accelDelta * 10.0f));
+        DEBUG_SET(DEBUG_AFCS, 0, lrintf(accelReq * 10.0f));
+        DEBUG_SET(DEBUG_AFCS, 1, lrintf(accelDelta * 10.0f));
     }
 }
 
@@ -120,7 +120,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
+                pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
             }
         } else {
             liftCoefDiff = liftCoefF + limitLiftC;
@@ -128,10 +128,11 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                pidRuntime.afcsElevatorAddition += servoVelocity * pidRuntime.dT;
+                pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
             }
         }
-        DEBUG_SET(DEBUG_AFCS, 7, lrintf(liftCoefDiff * 100.0f));
+        DEBUG_SET(DEBUG_AFCS, 3, lrintf(liftCoefF * 100.0f));
+        DEBUG_SET(DEBUG_AFCS, 4, lrintf(liftCoefDiff * 100.0f));
     }
 
     return isLimitAoA;
@@ -155,16 +156,21 @@ static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rol
 
 void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
 {
-    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-        pidData[axis].P = 0;
-        pidData[axis].I = 0;
-        pidData[axis].D = 0;
-        pidData[axis].F = 0;
-        pidData[axis].S = 0;
-        pidData[axis].Sum = 0;
+    // Clear all PID values by first AFCS run
+    if (!pidRuntime.isReadyAFCS) {
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            pidData[axis].P = 0;
+            pidData[axis].I = 0;
+            pidData[axis].D = 0;
+            pidData[axis].F = 0;
+            pidData[axis].S = 0;
+            pidData[axis].Sum = 0;
+        }
+        pidRuntime.isReadyAFCS = true;
     }
 
     // Pitch channel
+    pidData[FD_PITCH].I /= 10.0f;   //restore % last value 
     float pitchPilotCtrl = getSetpointRate(FD_PITCH) / getMaxRcRate(FD_PITCH) * pidProfile->afcs_stick_gain[FD_PITCH];
     float gyroPitch = gyro.gyroADCf[FD_PITCH];
     if (pidProfile->afcs_pitch_damping_filter_freq != 0) {
@@ -188,16 +194,15 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     if (isLimitAoA == false) {
         updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
     }
-    pidData[FD_PITCH].Sum += pidRuntime.afcsElevatorAddition;
+    pidData[FD_PITCH].Sum += pidData[FD_PITCH].I;
 
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].Sum / 100.0f * 500.0f;
 
     // Save control components instead of PID to get logging without additional variables
-    // Do not use I, because it needs init to zero after switch to other flight modes from current AFCS mode
     pidData[FD_PITCH].F = 10.0f * pitchPilotCtrl;
     pidData[FD_PITCH].D = 10.0f * pitchDampingCtrl;
-    pidData[FD_PITCH].P = 10.0f * pitchStabilityCtrl;
-    pidData[FD_PITCH].S = 10.0f * pidRuntime.afcsElevatorAddition;
+    pidData[FD_PITCH].S = 10.0f * pitchStabilityCtrl;
+    pidData[FD_PITCH].I *= 10.0f;  // Store *10 value
 
     // Roll channel
     float rollPilotCtrl = getSetpointRate(FD_ROLL) / getMaxRcRate(FD_ROLL) * (pidProfile->afcs_stick_gain[FD_ROLL]);
@@ -228,13 +233,11 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     // Save control components instead of PID to get logging without additional variables
     pidData[FD_YAW].F = 10.0f * yawPilotCtrl;
     pidData[FD_YAW].D = 10.0f * yawDampingCtrl;
-    pidData[FD_YAW].P = 10.0f * yawStabilityCtrl;
-    pidData[FD_YAW].S = 10.0f * rollToYawCrossControl;
+    pidData[FD_YAW].S = 10.0f * yawStabilityCtrl;
+    pidData[FD_YAW].P = 10.0f * rollToYawCrossControl;
 
-    DEBUG_SET(DEBUG_AFCS, 0, lrintf(pitchPilotCtrl * 10.0f));
-    DEBUG_SET(DEBUG_AFCS, 1, lrintf(pitchDampingCtrl * 10.0f));
-    DEBUG_SET(DEBUG_AFCS, 2, lrintf(pitchStabilityCtrl * 10.0f));
-    DEBUG_SET(DEBUG_AFCS, 3, lrintf(pidRuntime.afcsElevatorAddition * 10.0f));
-    DEBUG_SET(DEBUG_AFCS, 6, lrintf(liftCoef * 100.0f));
+    DEBUG_SET(DEBUG_AFCS, 2, lrintf(liftCoef * 100.0f));
+    DEBUG_SET(DEBUG_AFCS, 5, lrintf(pidData[FD_PITCH].I));
+    DEBUG_SET(DEBUG_AFCS, 6, lrintf(pidData[FD_YAW].P));
 }
 #endif
