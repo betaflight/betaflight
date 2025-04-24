@@ -347,6 +347,8 @@ typedef struct pidProfile_s {
     uint16_t afcs_air_density;                  // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
     uint8_t afcs_lift_c_limit;                  // Limit aerodinamics lift force coefficient value *10
     uint16_t afcs_aoa_limiter_gain;             // elevator speed for 0.1 lift force coef difference in %/sec *10
+    uint8_t afcs_aoa_limiter_filter_freq;       // aoa limiter lift coef filter cut freq Hz * 10
+    uint8_t afcs_aoa_limiter_forcast_time;      // aoa limiter lift coef forcast time, s *10
     uint16_t afcs_servo_time;                   // minimal time of servo movement from neutrale to maximum, ms
     uint8_t afcs_roll_yaw_clift_start;          // Aerodynamics lift force coef to start yaw control for roll rotation  *10
     uint8_t afcs_roll_yaw_clift_stop;           // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
@@ -574,6 +576,7 @@ typedef struct pidRuntime_s {
 #ifdef USE_AIRPLANE_FCS
     pt1Filter_t afcsPitchDampingLowpass;
     pt1Filter_t afcsYawDampingLowpass;
+    pt1Filter_t afcsLiftCoefLowpass;
     float afcsElevatorAddition;
 #endif
 } pidRuntime_t;
