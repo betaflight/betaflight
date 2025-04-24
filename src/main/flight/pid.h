@@ -574,10 +574,10 @@ typedef struct pidRuntime_s {
 #endif // USE_CHIRP
 
 #ifdef USE_AIRPLANE_FCS
+    bool isReadyAFCS;
     pt1Filter_t afcsPitchDampingLowpass;
     pt1Filter_t afcsYawDampingLowpass;
     pt1Filter_t afcsLiftCoefLowpass;
-    float afcsElevatorAddition;
 #endif
 } pidRuntime_t;
 

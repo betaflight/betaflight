@@ -1269,6 +1269,16 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     if (isAFCS) {
         afcsUpdate(pidProfile);
         return;         // The airplanes FCS do not need PID controller
+    } else if (pidRuntime.isReadyAFCS) {      // Clear the all PID values after AFCS work
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            pidData[axis].P = 0;
+            pidData[axis].I = 0;
+            pidData[axis].D = 0;
+            pidData[axis].F = 0;
+            pidData[axis].S = 0;
+            pidData[axis].Sum = 0;
+        }
+        pidRuntime.isReadyAFCS = false;
     }
 #endif
 
