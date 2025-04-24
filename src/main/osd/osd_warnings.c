@@ -336,11 +336,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         warningText[dshotEscErrorLength++] = 'C';
 
         for (uint8_t k = 0; k < getMotorCount(); k++) {
-            // Skip if no extended telemetry at all
-            if ((dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) == 0) {
-                continue;
-            }
-
             // Remember text index before writing warnings
             dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
 
@@ -354,6 +349,12 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                     && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) <= osdConfig()->esc_rpm_alarm) {
                 warningText[dshotEscErrorLength++] = 'R';
             }
+
+            // Skip if no extended telemetry available
+            if ((dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) == 0) {
+                continue;
+            }
+
             if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
                     && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0
                     && dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm) {
