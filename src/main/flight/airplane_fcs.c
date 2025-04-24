@@ -106,7 +106,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
     float liftCoefF = pt1FilterApply(&pidRuntime.afcsLiftCoefLowpass, liftCoef);
     float liftCoefVelocity = (liftCoefF - liftCoefLast) / pidRuntime.dT;
     liftCoefLast = liftCoefF;
-    liftCoefF += liftCoefVelocity * (pidProfile->afcs_aoa_limiter_forcast_time * 0.1f);
+    float liftCoefForcastChange = liftCoefVelocity * (pidProfile->afcs_aoa_limiter_forcast_time * 0.1f);
 
     if (pidProfile->afcs_aoa_limiter_gain != 0) {
         const float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
@@ -116,6 +116,9 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
               servoVelocity = 0.0f;
         if (liftCoefF > 0.0f) {
             liftCoefDiff = liftCoefF - limitLiftC;
+            if (liftCoefForcastChange > 0.0f) {
+                liftCoefDiff += liftCoefForcastChange;
+            }
             if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
@@ -124,6 +127,9 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
             }
         } else {
             liftCoefDiff = liftCoefF + limitLiftC;
+            if (liftCoefForcastChange < 0.0f) {
+                liftCoefDiff += liftCoefForcastChange;
+            }
             if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->afcs_aoa_limiter_gain * 0.1f);
@@ -170,7 +176,7 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     }
 
     // Pitch channel
-    pidData[FD_PITCH].I /= 10.0f;   //restore % last value 
+    pidData[FD_PITCH].I /= 10.0f;   //restore % last value
     float pitchPilotCtrl = getSetpointRate(FD_PITCH) / getMaxRcRate(FD_PITCH) * pidProfile->afcs_stick_gain[FD_PITCH];
     float gyroPitch = gyro.gyroADCf[FD_PITCH];
     if (pidProfile->afcs_pitch_damping_filter_freq != 0) {
