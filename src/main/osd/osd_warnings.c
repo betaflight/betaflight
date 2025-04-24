@@ -351,16 +351,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             }
 
             // Skip if no extended telemetry available
-            if ((dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) == 0) {
-                continue;
-            }
-
-            if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
+            bool edt = (dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+            
+            if (edt && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
                     && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0
                     && dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm) {
                 warningText[dshotEscErrorLength++] = 'T';
             }
-            if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
+            if (edt && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
                     && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0
                     && dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] >= osdConfig()->esc_current_alarm) {
                 warningText[dshotEscErrorLength++] = 'C';
