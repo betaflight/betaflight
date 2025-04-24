@@ -887,9 +887,9 @@ void initRcProcessing(void)
     rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
     rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
 
-    float thrMid   = currentControlRateProfile->thrMid8   / 100.0f;
-    float expo     = currentControlRateProfile->thrExpo8   / 100.0f;
-    float thrHover = currentControlRateProfile->thrHover8 / 100.0f;
+    float thrMid   = currentControlRateProfile->thrMid8   / 100.0f;  // normalized x coordinate for hover point
+    float expo     = currentControlRateProfile->thrExpo8   / 100.0f;  // normalized expo (0.0 .. 1.0)
+    float thrHover = currentControlRateProfile->thrHover8 / 100.0f;  // normalized y coordinate for hover point
 
     /*
     Algorithm Overview:
