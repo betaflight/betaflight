@@ -168,9 +168,7 @@ static int16_t rcLookupThrottle(int32_t tmp)
     }
 
     // Otherwise linearly interpolate between lookupThrottleRC[idx] and [idx+1]
-    const int16_t low  = lookupThrottleRC[idx];
-    const int16_t high = lookupThrottleRC[idx + 1];
-    return low + (int16_t)((rem * (high - low)) / PWM_RANGE);
+return scaleRange(rem, 0, PWM_RANGE, lookupThrottleRC[idx], lookupThrottleRC[idx + 1]);
 }
 
 #define SETPOINT_RATE_LIMIT_MIN -1998.0f
@@ -876,10 +874,7 @@ static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y
     t = constrainf(t, 0.0f, 1.0f);
 
     // Calculate y using the parameter t and y-control points
-    // y = (1-t)^2 * p0y + 2*(1-t)*t * p1y + t^2 * p2y
-    float omt = 1.0f - t;
-    float y = omt * omt * p0y + 2.0f * omt * t * p1y + t * t * p2y;
-    return y;
+    return (1.0f - t) * (1.0f - t) * p0y + 2.0f * (1.0f - t) * t * p1y + t * t * p2y;
 }
 
 void initRcProcessing(void)
