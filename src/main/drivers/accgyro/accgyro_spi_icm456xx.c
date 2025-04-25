@@ -75,7 +75,10 @@ Note: Now implemented only UI Interface with Low-Noise Mode
      | ADC  | --------> | Notch Filter | --->  | HPF  | --->  | LPF  | ---> | Sensor Registers | ---> AUX1 Interface
      |      |           |              |       |      |       |      |      |                  |
      +------+           +--------------+       +------+       +------+      +------------------+
-
+ 
+ The AUX1 interface default configuration can be checked by read only register IOC_PAD_SCENARIO through host interface.
+ By default, AUX1 interface is enabled, and default interface for AUX1 is SPI3W or I3CSM.
+ 
  In Low-Noise Mode, the ADC output is sent through an Anti-Alias Filter (AAF). The AAF is an FIR filter with fixed
  coefficients (not user configurable). The AAF can be enabled or disabled by the user using GYRO_SRC_CTRL and
  ACCEL_SRC_CTRL.
@@ -169,7 +172,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_ACCEL_FS_SEL_4G                (0x03 << 4)
 #define ICM456XX_ACCEL_FS_SEL_2G                (0x04 << 4)
 
-// GYRO_CONFIG0 - 0x1C
+// ACCEL_CONFIG0 - 0x1B
 #define ICM456XX_ACCEL_ODR_6K4_LN               0x03
 #define ICM456XX_ACCEL_ODR_3K2_LN               0x04
 #define ICM456XX_ACCEL_ODR_1K6_LN               0x05
@@ -210,99 +213,45 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_GYRO_ODR_3_125_LP              0x0E
 #define ICM456XX_GYRO_ODR_1_5625_LP             0x0F
 
-// IPREG_SYS1_REG_172 0xAC UI Path LPF Bandwidth Options
-#define ICM456XX_GYRO_UI_LPF_BYPASS             0x00
-#define ICM456XX_GYRO_UI_LPF_ODR_DIV_4          0x01
-#define ICM456XX_GYRO_UI_LPF_ODR_DIV_8          0x02
-#define ICM456XX_GYRO_UI_LPF_ODR_DIV_16         0x03
-#define ICM456XX_GYRO_UI_LPF_ODR_DIV_32         0x04
-#define ICM456XX_GYRO_UI_LPF_ODR_DIV_64         0x05
-#define ICM456XX_GYRO_UI_LPF_ODR_DIV_128        0x06
-
-// HPF1 (AUX1 path) Enable/Bypass
-#define ICM456XX_GYRO_OIS_HPF1_ENABLE           (0 << 7)  // HPF active
-#define ICM456XX_GYRO_OIS_HPF1_BYPASS           (1 << 7)  // HPF bypassed
-
-// GYRO_SRC_CTRL and ACCEL_SRC_CTRL bits
+// Accel IPREG_SYS2_REG_123 - 0x7B
 #define ICM456XX_SRC_CTRL_AAF_ENABLE_BIT        (1 << 0) // Anti-Alias Filter - AAF
 #define ICM456XX_SRC_CTRL_INTERP_ENABLE_BIT     (1 << 1) // Interpolator
 
-// IREG addresses
-#define ICM456XX_GYRO_SRC_CTRL_IREG_ADDR        0xA57B
-#define ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR       0xA57C
+// IPREG_SYS2_REG_123 - 0x7B
+#define ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR       0xA57B // To access register in IPREG_SYS2, add base address 0xA500 + offset
+
+// IPREG_SYS1_REG_166 - 0xA6
+#define ICM456XX_GYRO_SRC_CTRL_IREG_ADDR        0xA4A6 // To access register in IPREG_SYS1, add base address 0xA400 + offset
 
 // HOST INDIRECT ACCESS REGISTER (IREG)
 #define ICM456XX_REG_IREG_ADDR_15_8             0x7C
 #define ICM456XX_REG_IREG_ADDR_7_0              0x7D
 #define ICM456XX_REG_IREG_DATA                  0x7E
 
-/*
- LPF Cutoff Frequency Table (for GYRO_UI_LPFBW_SEL)
- Formula:
-      cutoff_frequency = ODR / divider
-
- Bit values and corresponding cutoff frequencies for ODR = 6400 Hz:
-
- +-------+----------------+----------------------+
- | Bits  | Divider (ODR/X)| Cutoff Frequency (Hz)|
- +-------+----------------+----------------------+
- | 000   | Bypass         |         -            |
- | 001   | 4              |     1600.0 Hz        |
- | 010   | 8              |      800.0 Hz        |
- | 011   | 16             |      400.0 Hz        |
- | 100   | 32             |      200.0 Hz        |
- | 101   | 64             |      100.0 Hz        |
- | 110   | 128            |       50.0 Hz        |
- +-------+----------------+----------------------+
-*/
 
 // IPREG_SYS1_REG_172 - 0xAC
 #define ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR       0xA4AC // To access register in IPREG_SYS1, add base address 0xA400 + offset
 
-// HPF bypass 0xAC PREG_SYS1_REG_172 (bit 7)
-#define ICM456XX_GYRO_OIS_HPF1_BYPASS            (1 << 7)
-#define ICM456XX_GYRO_OIS_HPF1_ENABLE            (0 << 7)
-
 // LPF UI - 0xAC PREG_SYS1_REG_172 (bits 2:0)
 #define ICM456XX_GYRO_UI_LPFBW_BYPASS            0x00
-#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4         0x01
-#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8         0x02
-#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16        0x03
-#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32        0x04
-#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_64        0x05
-#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_128       0x06
-
-/*
- LPF Cutoff Frequency Table (for ACCEL_UI_LPFBW_SEL)
- Formula:
-      cutoff_frequency = ODR / divider
- 
-  Bit values and corresponding cutoff frequencies for ODR = 1600 Hz:
- 
-  +-------+----------------+----------------------+
-  | Bits  | Divider (ODR/X)| Cutoff Frequency (Hz)|
-  +-------+----------------+----------------------+
-  | 000   | Bypass         |         -            |
-  | 001   | 4              |      400.0 Hz        |
-  | 010   | 8              |      200.0 Hz        |
-  | 011   | 16             |      100.0 Hz        |
-  | 100   | 32             |       50.0 Hz        |
-  | 101   | 64             |       25.0 Hz        |
-  | 110   | 128            |       12.5 Hz        |
-  +-------+----------------+----------------------+
-*/
+#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4         0x01 // 1600 Hz ODR = 6400 Hz:
+#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8         0x02 // 800 Hz ODR = 6400 Hz:
+#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16        0x03 // 400 Hz ODR = 6400 Hz:
+#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32        0x04 // 200 Hz ODR = 6400 Hz
+#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_64        0x05 // 100 Hz ODR = 6400 Hz
+#define ICM456XX_GYRO_UI_LPFBW_ODR_DIV_128       0x06 // 50 Hz ODR = 6400 Hz
 
 // IPREG_SYS2_REG_131 - 0x83
 #define ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR      0xA583 // To access register in IPREG_SYS2, add base address 0xA500 + offset
 
 // Accel UI path LPF - 0x83 IPREG_SYS2_REG_131 (bits 2:0)
 #define ICM456XX_ACCEL_UI_LPFBW_BYPASS           0x00
-#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_4        0x01
-#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8        0x02
-#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_16       0x03
-#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_32       0x04
-#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_64       0x05
-#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_128      0x06
+#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_4        0x01 // 400 Hz ODR = 1600 Hz:
+#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8        0x02 // 200 Hz ODR = 1600 Hz:
+#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_16       0x03 // 100 Hz ODR = 1600 Hz:
+#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_32       0x04 // 50 Hz ODR = 1600 Hz
+#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_64       0x05 // 25 Hz ODR = 1600 Hz
+#define ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_128      0x06 // 12.5 Hz ODR = 1600 Hz
 
 
 #ifndef ICM456XX_CLOCK
@@ -313,6 +262,25 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #endif
 
 #define ICM456XX_BIT_IREG_DONE                  (1 << 0)
+
+
+static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
+{
+    switch (hardwareLpf) {
+    case GYRO_HARDWARE_LPF_NORMAL:
+        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32;
+    case GYRO_HARDWARE_LPF_OPTION_1:
+        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
+    case GYRO_HARDWARE_LPF_OPTION_2:
+            return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+    case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4;
+#endif           
+    default:
+        return ICM456XX_GYRO_UI_LPFBW_BYPASS;
+    }
+}
 
 // pdf DS-000577 section 14.4 IREG WRITE
 static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
@@ -347,26 +315,13 @@ static inline void icm456xx_enableAAFandInterpolator(const extDevice_t *dev, uin
     icm456xx_write_ireg(dev, reg, value);
 }
 
-static bool icm456xx_configureGyroLPF(const extDevice_t *dev, bool bypassHPF, uint8_t lpfDiv)
+static bool icm456xx_configureLPF(const extDevice_t *dev, uint16_t reg, uint8_t lpfDiv)
 {
     if (lpfDiv > 0x07) {
         return false; 
     }
 
-    uint8_t value = 0;
-    value |= bypassHPF ? ICM456XX_GYRO_OIS_HPF1_BYPASS : ICM456XX_GYRO_OIS_HPF1_ENABLE;
-    value |= lpfDiv & 0x07; // only bits 2:0
-
-    return icm456xx_write_ireg(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, value);
-}
-
-static bool icm456xx_configureAccelLPF(const extDevice_t *dev, uint8_t lpfDiv)
-{
-    if (lpfDiv > 0x07) {
-        return false;
-    }
-
-    return icm456xx_write_ireg(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, lpfDiv & 0x07);
+    return icm456xx_write_ireg(dev, reg, lpfDiv & 0x07);
 }
 
 static void icm456xx_enableSensors(const extDevice_t *dev, bool enable)
@@ -404,7 +359,7 @@ void icm456xxAccInit(accDev_t *acc)
     icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true);
 
     // Set the Accel UI LPF bandwidth cut-off
-    icm456xx_configureAccelLPF(dev, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_16);
+    icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8);
 }
 
 void icm456xxGyroInit(gyroDev_t *gyro)
@@ -416,24 +371,23 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
     
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-    delay(1);
 
     icm456xx_enableSensors(dev, true);
 
-    // Enable Anti-Alias (AAF) Filter and Interpolator for both Gyro and Accel
+    // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro
     icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true);
 
-    // Set the Gyro UI HPF & LPF bandwidth cut-off
-    icm456xx_configureGyroLPF(dev, true, ICM456XX_GYRO_UI_LPFBW_ODR_DIV_64); // TODO: check cut-off bandwidth of this divider
+    // Set the Gyro UI LPF bandwidth cut-off
+    icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf));
 
     spiWriteReg(dev, ICM456XX_RA_SREG_CTRL, ICM456XX_SREG_DATA_ENDIAN_SEL_BIG);
 
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
-        gyro->scale = GYRO_SCALE_4000DPS;
+        gyro->scale = GYRO_SCALE_2000DPS;
         gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
         gyro->gyroSampleRateHz = 6400;
-        spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_4000DPS | ICM456XX_GYRO_ODR_6K4_LN);
+        spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
         break;
     case ICM_45605_SPI:
         gyro->scale = GYRO_SCALE_2000DPS;
@@ -453,8 +407,6 @@ void icm456xxGyroInit(gyroDev_t *gyro)
                                             ICM456XX_INT1_POLARITY_ACTIVE_HIGH);
 
     spiWriteReg(dev, ICM456XX_INT1_CONFIG0, ICM456XX_INT1_STATUS_EN_DRDY);
-
-    delay(1);
     
 }
  
@@ -473,8 +425,8 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
         if ((misc2 & ICM456XX_SOFT_RESET) == 0) {
             break; // Reset complete
         }
-        delayMicroseconds(100);
-        waited_us += 100;
+        delayMicroseconds(10);
+        waited_us += 10;
 
         if (waited_us >= ICM456XX_RESET_TIMEOUT_US) {
             return MPU_NONE;
@@ -485,7 +437,6 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     do {
-        delay(150);
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
         switch (whoAmI) {
         case ICM45686_WHO_AM_I_CONST:
