@@ -581,6 +581,22 @@ static void icm40609SetAccelUiFiltOrder(const extDevice_t *dev, icm40609UiFiltOr
     spiWriteReg(dev, ICM40609_REG_GYRO_ACCEL_CONFIG1, reg53);
 }
 
+static void icm40609SetGyroDec2M2(const extDevice_t *dev, bool enable)
+{
+    icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
+
+    uint8_t reg51 = spiReadRegMsk(dev, ICM40609_REG_GYRO_CONFIG1);
+    reg51 &= ~ICM40609_GYRO_DEC2_M2_ORD_MASK;
+
+    if (enable) {
+        reg51 |= (2 << 0);
+    } else {
+        reg51 |= (0 << 0);
+    }
+
+    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG1, reg51);
+}
+
 void icm40609AccInit(accDev_t *acc)
 {
     acc->acc_1G = 2048; // 16g scale
@@ -608,6 +624,7 @@ void icm40609GyroInit(gyroDev_t *gyro)
     icm40609SetTempFiltBw(dev, ICM40609_TEMP_FILT_BW_4000HZ); // 4000Hz, 0.125ms latency (default)
     icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_2ND);
     icm40609SetAccelUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_2ND);
+    icm40609SetGyroDec2M2(dev, true);
 
     // Set filter bandwidth: Low Latency
     spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0, 
