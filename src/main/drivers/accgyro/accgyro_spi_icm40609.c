@@ -622,8 +622,8 @@ void icm40609GyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | ICM40609_ACCEL_ODR_1KHZ );
 
     icm40609SetTempFiltBw(dev, ICM40609_TEMP_FILT_BW_4000HZ); // 4000Hz, 0.125ms latency (default)
-    icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_2ND);
-    icm40609SetAccelUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_2ND);
+    icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
+    icm40609SetAccelUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
     icm40609SetGyroDec2M2(dev, true);
 
     // Set filter bandwidth: Low Latency
