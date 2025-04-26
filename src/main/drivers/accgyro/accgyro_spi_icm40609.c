@@ -609,11 +609,31 @@ void icm40609GyroInit(gyroDev_t *gyro)
     icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_2ND);
     icm40609SetAccelUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_2ND);
 
+    // Set filter bandwidth: Low Latency
     spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0, ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR | ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR);
 
-    // Todo: add gyroConfig()->gyro_hardware_lpf
-    icm40609SetGyroAafByHz(dev, true, 450); // Gyro 450 Hz AAF
-    icm40609SetAccelAafByHz(dev, true, 450); // Accel 450 Hz AAF
+    uint16_t gyroHWLpf;
+    switch (gyroConfig()->gyro_hardware_lpf) {
+    case GYRO_HARDWARE_LPF_NORMAL:
+        gyroHWLpf = 258; // 258Hz AAF
+        break;
+    case GYRO_HARDWARE_LPF_OPTION_1:
+        gyroHWLpf = 536; // 536Hz AAF
+        break;
+    case GYRO_HARDWARE_LPF_OPTION_2:
+        gyroHWLpf = 997; // 997Hz AAF
+        break;
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+    case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+        gyroHWLpf = 1962; // 1962Hz AAF
+        break;
+#endif
+        default:
+        gyroHWLpf = 258; // 258Hz AAF
+    }
+
+    icm40609SetGyroAafByHz(dev, true, gyroHWLpf);
+    icm40609SetAccelAafByHz(dev, true, gyroHWLpf);
 
     icm40609SetGyroNotch(dev, true, ICM40609_GYRO_NF_BW_162HZ, 1.0f); // 1kHz notch filter BW = 162Hz
 
