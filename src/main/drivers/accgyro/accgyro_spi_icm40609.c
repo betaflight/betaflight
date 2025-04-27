@@ -46,6 +46,8 @@
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"
 
+// Datasheet: https://invensense.tdk.com/wp-content/uploads/2020/04/ds-000347_icm-42688-p-datasheet.pdf
+
 #define ICM40609_WHO_AM_I_REG               0x75
 
 #define ICM40609_REG_BANK_SEL               0x76
@@ -320,15 +322,36 @@ static const ICM40609_AafProfile aafProfiles[ICM40609_AAF_PROFILE_COUNT] = {
     { 3979, 63, 3968, 3 },
 };
 
+/*
+ * ICM-40609D Group Delay @DC (ODR = 8000 Hz)
+ *
+ * +-------------------+--------------------+----------+
+ * | Filter Order      | Delay (UI_FILT_BW) | NBW (Hz) |
+ * +-------------------+--------------------+----------+
+ * | 1st order filter  | 0.2 ms             |  2204.6  |
+ * | 2nd order filter  | 0.2 ms             |  2204.6  |
+ * | 3rd order filter  | 0.2 ms             |  2096.3  |
+ * +-------------------+--------------------+----------+
+ *
+ * Note:
+ *  Delay is independent of UI_FILT_BW when ODR = 8000Hz.
+ *  5.4 UI FILTER BLOCK TDK ICM-40609D Datasheet Rev 1.2 (2023)
+ * 
+ *  Filter order (standard DSP behavior):
+ *  1st order -6 dB/octave
+ *  2nd order -12 dB/octave
+ *  3rd order -18 dB/octave
+ *  These roll-off rates are typical for LPF/HPF filters in digital signal processing (DSP).
+ */
 typedef enum {
-    ICM40609_UI_FILT_ORDER_1ST = 0, // Smallest signal roll-off (-6 dB/octave). Lowest latency.
-    ICM40609_UI_FILT_ORDER_2ND = 1, // More smoothing, steeper roll-off (-12 dB/octave). Medium latency.
-    ICM40609_UI_FILT_ORDER_3RD = 2, // Even steeper roll-off (-18 dB/octave). Highest latency.
+    ICM40609_UI_FILT_ORDER_1ST = 0,
+    ICM40609_UI_FILT_ORDER_2ND = 1,
+    ICM40609_UI_FILT_ORDER_3RD = 2
 } icm40609UiFiltOrder_e;
 
 typedef enum {
-    ICM40609_HPF_ORDER_1ST = 0, // High-Pass 1st order (-6dB/oct)
-    ICM40609_HPF_ORDER_2ND = 1, // High-Pass 2nd order (-12dB/oct)
+    ICM40609_HPF_ORDER_1ST = 0,
+    ICM40609_HPF_ORDER_2ND = 1
 } icm40609HpfOrder_e;
 
 // Bandwidth selection for High-Pass Filter
