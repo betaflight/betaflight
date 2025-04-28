@@ -568,7 +568,7 @@ void tryArm(void)
             } else {
                 // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
                 // otherwise consider only the switch position
-                crashFlipModeActive =   (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
+                crashFlipModeActive = (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
                 setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
             }
         }
