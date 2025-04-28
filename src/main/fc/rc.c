@@ -853,7 +853,7 @@ static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y
         if (fabsf(b) > 1e-6f) {
             t = -c / b;
         }
-        // If both a and b are zero, t remains 0 (degenerate case)
+        // If both a and b are zero, t = 0 (degenerate case)
     } else {
         float disc = b * b - 4.0f * a * c;
         if (disc >= 0.0f) { // Real roots exist
@@ -869,7 +869,7 @@ static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y
                 t = t2; // Use t2 even if it's outside [0, 1] as per original logic
             }
         }
-        // If disc < 0, no real roots, t remains 0.
+        // If disc < 0, no real roots, t = 0.
     }
 
     // Clamp t to the valid range [0, 1] before calculating y
