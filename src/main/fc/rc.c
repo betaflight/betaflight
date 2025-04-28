@@ -168,7 +168,7 @@ static int16_t rcLookupThrottle(int32_t tmp)
     }
 
     // Otherwise linearly interpolate between lookupThrottleRC[idx] and [idx+1]
-return scaleRange(rem, 0, PWM_RANGE, lookupThrottleRC[idx], lookupThrottleRC[idx + 1]);
+    return scaleRange(rem, 0, PWM_RANGE, lookupThrottleRC[idx], lookupThrottleRC[idx + 1]);
 }
 
 #define SETPOINT_RATE_LIMIT_MIN -1998.0f
