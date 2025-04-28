@@ -557,10 +557,6 @@ void tryArm(void)
                 }
             }
 #endif
-
-            // always set motor direction to normal on arming
-            setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-
             // choose crashflip outcome on arming
             // disarm can arise in processRx() if the crashflip switch is reversed while in crashflip mode
             // if we were unsuccessful, or cannot determin success, arming will be blocked and we can't get here
@@ -572,12 +568,8 @@ void tryArm(void)
             } else {
                 // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
                 // otherwise consider only the switch position
-                crashFlipModeActive = (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
-                // previous disarm will have set direction to normal
-                // at this point we only need to reverse the motors if crashflipMode is active
-                if (crashFlipModeActive) {
-                    setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_REVERSED);
-                }
+                crashFlipModeActive =   (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
+                setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
             }
         }
 #endif // USE_DSHOT
