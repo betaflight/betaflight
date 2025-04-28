@@ -162,9 +162,11 @@ static int16_t rcLookupThrottle(int32_t tmp)
     const int32_t idx    = scaled / PWM_RANGE;         // 0…steps
     const int32_t rem    = scaled % PWM_RANGE;         // for interpolation
 
-    // If index goes to the final slot, just return it
+    // If index goes outside the valid range, clamp it
     if (idx >= steps) {
         return lookupThrottleRC[steps];
+    } else if (idx < 0) {
+        return lookupThrottleRC[0];
     }
 
     // Otherwise linearly interpolate between lookupThrottleRC[idx] and [idx+1]
