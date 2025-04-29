@@ -142,7 +142,6 @@
 #define ICM40609_ACCEL_FS_SEL_0_125G        (7 << 5)
 
 // ACCEL_CONFIG0_REG - 0x50 bits [3:0]
-#define ICM40609_ACCEL_ODR_RESERVED_0       0x00
 #define ICM40609_ACCEL_ODR_32KHZ            0x01
 #define ICM40609_ACCEL_ODR_16KHZ            0x02
 #define ICM40609_ACCEL_ODR_8KHZ             0x03
@@ -154,9 +153,6 @@
 #define ICM40609_ACCEL_ODR_50HZ             0x09
 #define ICM40609_ACCEL_ODR_25HZ             0x0A
 #define ICM40609_ACCEL_ODR_12_5HZ           0x0B
-#define ICM40609_ACCEL_ODR_RESERVED_C       0x0C
-#define ICM40609_ACCEL_ODR_RESERVED_D       0x0D
-#define ICM40609_ACCEL_ODR_RESERVED_E       0x0E
 #define ICM40609_ACCEL_ODR_500HZ            0x0F
 
 // INT_CONFIG_REG - 0x14
@@ -182,9 +178,10 @@
 #define ICM40609_UI_DRDY_INT_CLEAR_STATUS   (0 << 4)
 
 // INT_CONFIG1 - 0x64
-#define ICM40609_INT_TPULSE_100US           (0 << 6) // ODR < 4kHz
+#define ICM40609_INT_TPULSE_100US           (0 << 6) // ODR < 4kHz, optional
 #define ICM40609_INT_TPULSE_8US             (1 << 6) // ODR ≥ 4kHz
 #define ICM40609_INT_TDEASSERT_ENABLED      (0 << 5)
+#define ICM40609_INT_TDEASSERT_DISABLED     (1 << 5)
 #define ICM40609_INT_ASYNC_RESET_ENABLED    (1 << 4)
 #define ICM40609_INT_ASYNC_RESET_DISABLED   (0 << 4)
 
@@ -229,7 +226,7 @@
 //REG_GYRO_CONFIG_STATIC2 - 0x0B bit [0]
 #define ICM40609_GYRO_NF_DIS_BIT            (1 << 0)
 
-// GYRO_HPF_BW_IND [3:1] — High-pass filter 3dB cutoff frequency selection
+// GYRO_HPF_BW_IND - 0x13 bit [3:1] — High-pass filter 3dB cutoff frequency selection
 #define ICM40609_GYRO_HPF_BW_IND_MASK       (0x07 << 1) // bits [3:1]
 
 // GYRO_HPF_ORD_IND [0] — High-pass filter order (1st or 2nd)
@@ -405,7 +402,9 @@ typedef enum {
 
 static void icm40609SelectUserBank(const extDevice_t *dev, uint8_t bank)
 {
-    if (bank > 4) return; // out of range
+    if (bank > 4) {
+        return; // out of range
+    }
     spiWriteReg(dev, ICM40609_REG_BANK_SEL, bank & 0x07); // bit [2:0]
 }
 
@@ -426,17 +425,17 @@ static void setGyroAccPowerMode(const extDevice_t *dev, bool enable)
     }
 }
 
-static void icm40609GetAafParams(uint16_t targetHz, uint8_t *delt, uint8_t *deltsqr, uint8_t *bitshift)
+static void icm40609GetAafParams(uint16_t targetHz, ICM40609_AafProfile* res)
 {
-    *delt = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].delt;
-    *deltsqr = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].deltsqr;
-    *bitshift = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].bitshift;
+    res->delt = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].delt;
+    res->deltsqr = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].deltsqr;
+    res->bitshift = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].bitshift;
 
     for (int i = 0; i < ICM40609_AAF_PROFILE_COUNT; i++) {
         if (targetHz <= aafProfiles[i].hz) {
-            *delt = aafProfiles[i].delt;
-            *deltsqr = aafProfiles[i].deltsqr;
-            *bitshift = aafProfiles[i].bitshift;
+            res->delt = aafProfiles[i].delt;
+            res->deltsqr = aafProfiles[i].deltsqr;
+            res->bitshift = aafProfiles[i].bitshift;
             break;
         }
     }
@@ -446,19 +445,19 @@ static void icm40609SetAccelAafByHz(const extDevice_t *dev, bool aafEnable, uint
 {
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_2);
 
-    if (aafEnable) {
-        uint8_t delt, deltsqr, bitshift;
+    if (aafEnable && targetHz > 0) {
+        ICM40609_AafProfile aafProfile;
 
-        icm40609GetAafParams(targetHz, &delt, &deltsqr, &bitshift);
+        icm40609GetAafParams(targetHz, &aafProfile);
     
         uint8_t reg03 = spiReadRegMsk(dev, ICM40609_REG_ACCEL_CONFIG_STATIC2);
 
         reg03 &= ~ICM40609_ACCEL_AAF_DIS; // Clear ACCEL_AAF_DIS to enable AAF
-        reg03 = (reg03 & 0x81) | (delt << 1); // Keep reserved bit 7, set ACCEL_AAF_DELT
+        reg03 = (reg03 & 0x81) | (aafProfile.delt << 1); // Keep reserved bit 7, set ACCEL_AAF_DELT
         spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG_STATIC2, reg03);
 
-        uint8_t reg04 = deltsqr & 0xFF;
-        uint8_t reg05 = ((bitshift & 0x0F) << 4) | ((deltsqr >> 8) & 0x0F);
+        uint8_t reg04 = aafProfile.deltsqr & 0xFF;
+        uint8_t reg05 = ((aafProfile.bitshift & 0x0F) << 4) | ((aafProfile.deltsqr >> 8) & 0x0F);
 
         spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG_STATIC3, reg04);
         spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG_STATIC4, reg05);
@@ -476,14 +475,14 @@ static void icm40609SetGyroAafByHz(const extDevice_t *dev, bool aafEnable, uint1
 {
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_1);
 
-    if (aafEnable) {
-        uint8_t delt, deltsqr, bitshift;
+    if (aafEnable && targetHz > 0) {
+        ICM40609_AafProfile aafProfile;
 
-        icm40609GetAafParams(targetHz, &delt, &deltsqr, &bitshift);
+        icm40609GetAafParams(targetHz, &aafProfile);
 
-        uint8_t reg0C = delt & 0x3F;
-        uint8_t reg0D = deltsqr & 0xFF;
-        uint8_t reg0E = ((bitshift & 0x0F) << 4) | ((deltsqr >> 8) & 0x0F);
+        uint8_t reg0C = aafProfile.delt & 0x3F;
+        uint8_t reg0D = aafProfile.deltsqr & 0xFF;
+        uint8_t reg0E = ((aafProfile.bitshift & 0x0F) << 4) | ((aafProfile.deltsqr >> 8) & 0x0F);
 
         uint8_t reg0B = spiReadRegMsk(dev, ICM40609_REG_GYRO_CONFIG_STATIC2);
         reg0B &= ~ICM40609_GYRO_AAF_DIS; // Clear AAF_DIS (bit1) to enable AAF
@@ -519,9 +518,9 @@ static void icm40609SetGyroHPF(const extDevice_t *dev, bool hpfEnable, icm40609H
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
 }
 
-static void icm40609SetGyroNotch(const extDevice_t *dev, bool notchEnable, icm40609GyroNfBw_e bwSel, float fdesired_kHz)
+static void icm40609SetGyroNotch(const extDevice_t *dev, bool notchEnable, icm40609GyroNfBw_e bwSel, float fdesiredKhz)
 {
-    if (fdesired_kHz < 1.0f || fdesired_kHz > 3.0f) {
+    if (fdesiredKhz < 1.0f || fdesiredKhz > 3.0f) {
         return; // (1kHz to 3kHz) Operating the notch filter outside this range is not supported. 
     }
 
@@ -545,7 +544,7 @@ static void icm40609SetGyroNotch(const extDevice_t *dev, bool notchEnable, icm40
 
         // Section 5.1.1 (v1.2) Frequency of Notch Filter (each axis)
         // Calculate COSWZ and SEL based on desired frequency
-        float coswz = cosf(2.0f * M_PIf * fdesired_kHz / 32.0f);
+        float coswz = cosf(2.0f * M_PIf * fdesiredKhz / 32.0f);
         uint8_t nf_coswz_lsb = 0;
         uint8_t nf_coswz_msb = 0;
         uint8_t nf_coswz_sel = 0;
@@ -625,8 +624,6 @@ static void icm40609SetGyroDec2M2(const extDevice_t *dev, bool enable)
 
     if (enable) {
         reg51 |= (2 << 0);
-    } else {
-        reg51 |= (0 << 0);
     }
 
     spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG1, reg51);
@@ -718,14 +715,14 @@ void icm40609GyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG, 
         ICM40609_INT1_MODE_PULSED | 
         ICM40609_INT1_DRIVE_PUSH_PULL | 
-        ICM40609_INT1_POLARITY_ACTIVE_HIGH); 
+        ICM40609_INT1_POLARITY_ACTIVE_LOW); 
 
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG0, ICM40609_UI_DRDY_INT_CLEAR_STATUS); // auto clear after read
 
     // Set INT1 pulse width to 8us, deassertion enabled, async reset disabled
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG1,
         ICM40609_INT_TPULSE_8US |
-        ICM40609_INT_TDEASSERT_ENABLED |
+        ICM40609_INT_TDEASSERT_DISABLED |
         ICM40609_INT_ASYNC_RESET_DISABLED);
 
     setGyroAccPowerMode(dev, true);
