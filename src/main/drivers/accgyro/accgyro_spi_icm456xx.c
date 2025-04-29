@@ -111,8 +111,10 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_INT1_STATUS1                   0x1A
 #define ICM456XX_GYRO_CONFIG0                   0x1C
 #define ICM456XX_ACCEL_CONFIG0                  0x1B
-#define ICM456XX_RA_SREG_CTRL                   0x67
 #define ICM456XX_PWR_MGMT0                      0x10
+
+// Register map IPREG_TOP1
+#define ICM456XX_RA_SREG_CTRL                   0xA267 // To access register in IPREG_TOP1, add base address 0xA200 + offset
 
 // SREG_CTRL - 0x67
 #define ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE    (0 << 1)
@@ -141,12 +143,12 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_INT1_STATUS_EN_FIFO_FULL       (1 << 0)
 
 // INT1_CONFIG2 - 0x18
-#define ICM456XX_INT1_MODE_PULSED               (0 << 0)
-#define ICM456XX_INT1_MODE_LATCHED              (1 << 0)
-#define ICM456XX_INT1_DRIVE_CIRCUIT_OD          (0 << 1)
-#define ICM456XX_INT1_DRIVE_CIRCUIT_PP          (1 << 1)
-#define ICM456XX_INT1_POLARITY_ACTIVE_LOW       (0 << 2)
-#define ICM456XX_INT1_POLARITY_ACTIVE_HIGH      (1 << 2)
+#define ICM456XX_INT1_DRIVE_CIRCUIT_PP          (0 << 2)
+#define ICM456XX_INT1_DRIVE_CIRCUIT_OD          (1 << 2)
+#define ICM456XX_INT1_MODE_PULSED               (0 << 1)
+#define ICM456XX_INT1_MODE_LATCHED              (1 << 1)
+#define ICM456XX_INT1_POLARITY_ACTIVE_LOW       (0 << 0)
+#define ICM456XX_INT1_POLARITY_ACTIVE_HIGH      (1 << 0)
 
 // INT1_STATUS0 - 0x19
 #define ICM456XX_INT1_STATUS_RESET_DONE         (1 << 7)
@@ -380,7 +382,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     // Set the Gyro UI LPF bandwidth cut-off
     icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf));
 
-    spiWriteReg(dev, ICM456XX_RA_SREG_CTRL, ICM456XX_SREG_DATA_ENDIAN_SEL_BIG);
+    icm456xx_write_ireg(dev, ICM456XX_RA_SREG_CTRL, ICM456XX_SREG_DATA_ENDIAN_SEL_BIG);
 
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
