@@ -59,6 +59,8 @@
 #define ICM40609_USER_BANK_4                0x04
 
 // Registers in BANK 0
+#define ICM40609_REG_INT_CONFIG             0x14
+#define ICM40609_REG_INTF_CONFIG0           0x4C
 #define ICM40609_REG_PWR_MGMT0              0x4E
 #define ICM40609_REG_GYRO_CONFIG0           0x4F
 #define ICM40609_REG_ACCEL_CONFIG0          0x50
@@ -156,6 +158,16 @@
 #define ICM40609_ACCEL_ODR_RESERVED_D       0x0D
 #define ICM40609_ACCEL_ODR_RESERVED_E       0x0E
 #define ICM40609_ACCEL_ODR_500HZ            0x0F
+
+// INT_CONFIG_REG - 0x14
+#define ICM40609_INT1_MODE_PULSED           (0 << 2)
+#define ICM40609_INT1_MODE_LATCHED          (1 << 2)
+
+#define ICM40609_INT1_DRIVE_OPEN_DRAIN      (0 << 1)
+#define ICM40609_INT1_DRIVE_PUSH_PULL       (1 << 1)
+
+#define ICM40609_INT1_POLARITY_ACTIVE_LOW   (0 << 0)
+#define ICM40609_INT1_POLARITY_ACTIVE_HIGH  (1 << 0)
 
 // NT_SOURCE0_REG - 0x65
 #define ICM40609_UI_FSYNC_INT1_EN           (1 << 6)
@@ -620,6 +632,20 @@ static void icm40609SetGyroDec2M2(const extDevice_t *dev, bool enable)
     spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG1, reg51);
 }
 
+// Set endianness for sensor data (bit 4 of INTF_CONFIG0, reg 0x4C)
+// true  = Big Endian
+// false = Little Endian
+static void icm40609SetEndianess(const extDevice_t *dev, bool bigEndian)
+{
+    icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
+
+    uint8_t reg4C = spiReadRegMsk(dev, ICM40609_REG_INTF_CONFIG0);
+    reg4C &= ~(1 << 4);
+    reg4C |= bigEndian << 4;
+
+    spiWriteReg(dev, ICM40609_REG_INTF_CONFIG0, reg4C);
+}
+
 void icm40609AccInit(accDev_t *acc)
 {
     acc->acc_1G = 2048; // 16g scale
@@ -633,8 +659,12 @@ void icm40609GyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(dev, spiCalculateDivider(ICM40609_MAX_SPI_CLK_HZ));
 
     mpuGyroInit(gyro);
+    gyro->accDataReg = ICM40609_ACCEL_DATA_X1_UI;
+    gyro->gyroDataReg = ICM40609_GYRO_DATA_X1_UI;
 
     setGyroAccPowerMode(dev, false);
+
+    icm40609SetEndianess(dev, true);
 
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
     spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | ICM40609_GYRO_ODR_8KHZ);
@@ -683,7 +713,16 @@ void icm40609GyroInit(gyroDev_t *gyro)
                   
     // Enable interrupt
     spiWriteReg(dev, ICM40609_REG_INT_SOURCE0, ICM40609_UI_DRDY_INT1_EN);
+
+    // Set INT1 to pulse mode, push-pull, active high
+    spiWriteReg(dev, ICM40609_REG_INT_CONFIG, 
+        ICM40609_INT1_MODE_PULSED | 
+        ICM40609_INT1_DRIVE_PUSH_PULL | 
+        ICM40609_INT1_POLARITY_ACTIVE_HIGH); 
+
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG0, ICM40609_UI_DRDY_INT_CLEAR_STATUS); // auto clear after read
+
+    // Set INT1 pulse width to 8us, deassertion enabled, async reset disabled
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG1,
         ICM40609_INT_TPULSE_8US |
         ICM40609_INT_TDEASSERT_ENABLED |
@@ -707,37 +746,11 @@ uint8_t icm40609SpiDetect(const extDevice_t *dev)
     return MPU_NONE;
 }
 
-bool icm40609AccReadSPI(accDev_t *acc)
-{
-    uint8_t raw[6];
-    if (!spiReadRegMskBufRB(&acc->gyro->dev, ICM40609_ACCEL_DATA_X1_UI, raw, 6)) {
-        return false;
-    }
-    acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-    acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-    acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
-
-    return true;
-}
-
-bool icm40609GyroReadSPI(gyroDev_t *gyro)
-{
-    uint8_t raw[6];
-    if (!spiReadRegMskBufRB(&gyro->dev, ICM40609_GYRO_DATA_X1_UI, raw, 6)) {
-        return false;
-    }
-    gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-    gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-    gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
-    
-    return true;
-}
-
 bool icm40609SpiAccDetect(accDev_t *acc)
 {
     if (acc->mpuDetectionResult.sensor == ICM_40609_SPI) {
         acc->initFn = icm40609AccInit;
-        acc->readFn = icm40609AccReadSPI;
+        acc->readFn = mpuAccReadSPI;
         return true;
     }
     return false;
@@ -747,7 +760,7 @@ bool icm40609SpiGyroDetect(gyroDev_t *gyro)
 {
     if (gyro->mpuDetectionResult.sensor == ICM_40609_SPI) {
         gyro->initFn = icm40609GyroInit;
-        gyro->readFn = icm40609GyroReadSPI;
+        gyro->readFn = mpuGyroReadSPI;
         return true;
     }
     return false;
