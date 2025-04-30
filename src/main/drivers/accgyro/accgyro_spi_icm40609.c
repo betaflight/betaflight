@@ -715,7 +715,7 @@ void icm40609GyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG, 
         ICM40609_INT1_MODE_PULSED | 
         ICM40609_INT1_DRIVE_PUSH_PULL | 
-        ICM40609_INT1_POLARITY_ACTIVE_LOW); 
+        ICM40609_INT1_POLARITY_ACTIVE_HIGH); 
 
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG0, ICM40609_UI_DRDY_INT_CLEAR_STATUS); // auto clear after read
 
