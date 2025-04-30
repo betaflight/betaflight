@@ -427,17 +427,15 @@ static void setGyroAccPowerMode(const extDevice_t *dev, bool enable)
 
 static void icm40609GetAafParams(uint16_t targetHz, ICM40609_AafProfile* res)
 {
-    res->delt = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].delt;
-    res->deltsqr = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].deltsqr;
-    res->bitshift = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1].bitshift;
-
-    for (int i = 0; i < ICM40609_AAF_PROFILE_COUNT; i++) {
-        if (targetHz <= aafProfiles[i].hz) {
-            res->delt = aafProfiles[i].delt;
-            res->deltsqr = aafProfiles[i].deltsqr;
-            res->bitshift = aafProfiles[i].bitshift;
-            break;
-        }
+    uint16_t i = 0;
+    while (i < ICM40609_AAF_PROFILE_COUNT && targetHz <= aafProfiles[i].hz) {
+         i++;
+    }
+    if (i < ICM40609_AAF_PROFILE_COUNT) {  
+        *res = aafProfiles[i];
+    } else {
+        // not found - Requested frequency is higher than max available
+        *res = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1]; 
     }
 }
 
