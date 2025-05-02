@@ -356,7 +356,9 @@ void icm456xxAccInit(accDev_t *acc)
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
         break;    
     default:
-        acc->acc_1G = 2048;
+        acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
+        acc->gyro->accSampleRateHz = 1600;
+        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
         break;
     }
 
@@ -467,14 +469,11 @@ bool icm456xxAccReadSPI(accDev_t *acc)
     {
         acc->gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;
 
-        /* reg (1) + 6 dummy bytes = 7 transfers */
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
                 {.u.link    = {NULL, NULL}, 0, true, NULL},
         };
-        /* Fill dummy bytes with 0xFF to clock data out */
         memset(&acc->gyro->dev.txBuf[1], 0xFF, 6);
-
         segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
         segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
         spiSequence(&acc->gyro->dev, &segments[0]);
@@ -564,9 +563,10 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
 
         busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, 6, true, NULL},
+                {.u.buffers = {NULL, NULL}, 7, true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
         };
+        memset(&gyro->dev.txBuf[1], 0xFF, 6);
         segments[0].u.buffers.txData = gyro->dev.txBuf;
         segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
 
