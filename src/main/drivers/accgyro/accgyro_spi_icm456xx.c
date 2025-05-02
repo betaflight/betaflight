@@ -277,7 +277,7 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
     case GYRO_HARDWARE_LPF_OPTION_1:
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
     case GYRO_HARDWARE_LPF_OPTION_2:
-            return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
+        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
     case GYRO_HARDWARE_LPF_EXPERIMENTAL:
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4;
