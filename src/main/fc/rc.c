@@ -150,7 +150,9 @@ float getMaxRcDeflectionAbs(void)
     return maxRcDeflectionAbs;
 }
 
-#define THROTTLE_LOOKUP_LENGTH 50
+#ifndef THROTTLE_LOOKUP_LENGTH
+# define THROTTLE_LOOKUP_LENGTH 12
+#endif
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
 static int16_t rcLookupThrottle(int32_t tmp)
