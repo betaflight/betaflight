@@ -529,7 +529,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INIT:
     {
         // Initialise the tx buffer to all 0xff
-        memset(gyro->dev.txBuf, 0xff, 12);
+        memset(gyro->dev.txBuf, 0xff, 7);
 
         // Check that minimum number of interrupts have been detected
 
@@ -540,7 +540,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
             if (spiUseDMA(&gyro->dev)) {
                 gyro->dev.callbackArg = (uint32_t)gyro;
                 gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
-                gyro->segments[0].len = 12;
+                gyro->segments[0].len = 7; // 1 byte register + 6 bytes data
                 gyro->segments[0].callback = mpuIntCallback;
                 gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
                 gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
