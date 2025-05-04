@@ -115,12 +115,13 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_DSHOT
     if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
-        int armingDelayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - currentTimeUs) / 1e5;
-        if (armingDelayTime < 0) {
-            armingDelayTime = 0;
+        int armingDelayTime = 0;
+        int beaconGuard = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
+        if (beaconGuard < DSHOT_BEACON_GUARD_DELAY_US) {
+            armingDelayTime = (DSHOT_BEACON_GUARD_DELAY_US - beaconGuard) / 1e5;
         }
         if (armingDelayTime >= (DSHOT_BEACON_GUARD_DELAY_US / 1e5 - 5)) {
-            tfp_sprintf(warningText, " BEACON ON"); // Display this message for the first 0.5 seconds
+            tfp_sprintf(warningText, " BEACON ON");
         } else {
             tfp_sprintf(warningText, "ARM IN %d.%d", armingDelayTime / 10, armingDelayTime % 10);
         }
