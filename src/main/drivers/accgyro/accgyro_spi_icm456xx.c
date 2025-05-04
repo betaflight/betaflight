@@ -289,7 +289,17 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
     }
 }
 
-// pdf DS-000577 section 14.4 IREG WRITE
+/**
+ * @brief This function follows the IREG WRITE procedure (Section 14.1-14.4 of the datasheet)
+ * using indirect addressing via IREG_ADDR_15_8, IREG_ADDR_7_0, and IREG_DATA registers.
+ * After writing, an internal operation transfers the data to the target IREG address.
+ * Ensures compliance with the required minimum time gap and checks the IREG_DONE bit.
+ *
+ * @param dev   Pointer to the SPI device structure.
+ * @param reg   16-bit internal IREG register address.
+ * @param value Value to be written to the register.
+ * @return true if the write was successful
+ */
 static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -353,10 +363,6 @@ void icm456xxAccInit(accDev_t *acc)
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
         break;
     case ICM_45605_SPI:
-        acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
-        acc->gyro->accSampleRateHz = 1600;
-        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
-        break;    
     default:
         acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
         acc->gyro->accSampleRateHz = 1600;
@@ -391,17 +397,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
-        gyro->scale = GYRO_SCALE_2000DPS;
-        gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
-        gyro->gyroSampleRateHz = 6400;
-        spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-        break;
     case ICM_45605_SPI:
-        gyro->scale = GYRO_SCALE_2000DPS;
-        gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
-        gyro->gyroSampleRateHz = 6400;
-        spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-        break;
     default:
         gyro->scale = GYRO_SCALE_2000DPS;
         gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
@@ -422,44 +418,35 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 {
     uint8_t icmDetected = MPU_NONE;
-    uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
+
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     // Soft reset
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
 
     // Wait for reset to complete (bit 1 of REG_MISC2 becomes 0)
-    do {
-        uint8_t misc2 = spiReadRegMsk(dev, ICM456XX_REG_MISC2);
-        if ((misc2 & ICM456XX_SOFT_RESET) == 0) {
-            break; // Reset complete
-        }
+    while ((spiReadRegMsk(dev, ICM456XX_REG_MISC2) & ICM456XX_SOFT_RESET) != 0) {
         delayMicroseconds(10);
         waited_us += 10;
 
         if (waited_us >= ICM456XX_RESET_TIMEOUT_US) {
             return MPU_NONE;
         }
+    }
 
-    } while (true);
-
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-
-    do {
-        const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
-        switch (whoAmI) {
-        case ICM45686_WHO_AM_I_CONST:
-            icmDetected = ICM_45686_SPI;
-            break;
-        case ICM45605_WHO_AM_I_CONST:    
-            icmDetected = ICM_45605_SPI;
-            break;
-        default:
-            icmDetected = MPU_NONE;
-            break;
-        }
-
-    } while (icmDetected == MPU_NONE && attemptsRemaining--);
+    const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
+    switch (whoAmI) {
+    case ICM45686_WHO_AM_I_CONST:
+        icmDetected = ICM_45686_SPI;
+        break;
+    case ICM45605_WHO_AM_I_CONST:
+        icmDetected = ICM_45605_SPI;
+        break;
+    default:
+        icmDetected = MPU_NONE;
+        break;
+    }
 
     return icmDetected;
 
@@ -487,8 +474,6 @@ bool icm456xxAccReadSPI(accDev_t *acc)
             // Wait for completion
             spiWait(&acc->gyro->dev);
 
-            // Fall through
-            FALLTHROUGH;
         } else 
 #else
         {
@@ -515,9 +500,9 @@ bool icm456xxAccReadSPI(accDev_t *acc)
         // up an old value.
 
         // This data was read from the gyro, which is the same SPI device as the acc
-        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[3] << 8) | acc->gyro->dev.rxBuf[2]);
-        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[5] << 8) | acc->gyro->dev.rxBuf[4]);
-        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[7] << 8) | acc->gyro->dev.rxBuf[6]);
+        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
+        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
+        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
         break;
     }
 
@@ -559,7 +544,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
             gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;
             gyro->segments[0].callback = mpuIntCallback;
             gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
-            gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
+            gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
             gyro->segments[0].negateCS = true;
             gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
         } else
@@ -591,16 +576,16 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         };
         memset(&gyro->dev.txBuf[1], 0xFF, 6);
         segments[0].u.buffers.txData = gyro->dev.txBuf;
-        segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
+        segments[0].u.buffers.rxData = gyro->dev.rxBuf;
 
         spiSequence(&gyro->dev, &segments[0]);
 
         // Wait for completion
         spiWait(&gyro->dev);
 
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[3] << 8) | gyro->dev.rxBuf[2]);
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[5] << 8) | gyro->dev.rxBuf[4]);
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[7] << 8) | gyro->dev.rxBuf[6]);
+        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
+        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
+        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
         break;
     }
 
@@ -609,9 +594,9 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
 
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[3] << 8) | gyro->dev.rxBuf[2]);
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[5] << 8) | gyro->dev.rxBuf[4]);
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[7] << 8) | gyro->dev.rxBuf[6]);
+        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
+        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
+        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
         break;
     }
 
