@@ -418,6 +418,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 {
     uint8_t icmDetected = MPU_NONE;
+    uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
@@ -435,18 +436,21 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
         }
     }
 
-    const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
-    switch (whoAmI) {
-    case ICM45686_WHO_AM_I_CONST:
-        icmDetected = ICM_45686_SPI;
-        break;
-    case ICM45605_WHO_AM_I_CONST:
-        icmDetected = ICM_45605_SPI;
-        break;
-    default:
-        icmDetected = MPU_NONE;
-        break;
-    }
+    do {
+        const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
+        switch (whoAmI) {
+        case ICM45686_WHO_AM_I_CONST:
+            icmDetected = ICM_45686_SPI;
+            break;
+        case ICM45605_WHO_AM_I_CONST:    
+            icmDetected = ICM_45605_SPI;
+            break;
+        default:
+            icmDetected = MPU_NONE;
+            break;
+        }
+
+    } while (icmDetected == MPU_NONE && attemptsRemaining--);
 
     return icmDetected;
 
