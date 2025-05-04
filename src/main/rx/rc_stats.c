@@ -44,7 +44,7 @@ int8_t previousThrottlePercent = 0;
 
 void rcStatsUpdate(timeUs_t currentTimeUs)
 {
-    uint32_t deltaT = currentTimeUs - previousTimeUs;
+    uint32_t deltaT = cmpTimeUs(currentTimeUs, previousTimeUs); // overflow-safe
     previousTimeUs = currentTimeUs;
     const int8_t throttlePercent = calculateThrottlePercent();
 
