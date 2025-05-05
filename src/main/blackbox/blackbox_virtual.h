@@ -32,4 +32,4 @@ bool blackboxVirtualFlush(void);
 bool blackboxVirtualBeginLog(void);
 bool blackboxVirtualEndLog(void);
 void blackboxVirtualClose(void);
-uint32_t blackboxVirtualLogFileNumber(void);
+int32_t blackboxVirtualLogFileNumber(void);
