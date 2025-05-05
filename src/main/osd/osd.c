@@ -1243,7 +1243,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
 
     if (ARMING_FLAG(ARMED)) {
         osdUpdateStats();
-        timeUs_t deltaT = cmpTimeUs(currentTimeUs, lastTimeUs); // overflow-safe
+        int deltaT = cmpTimeUs(currentTimeUs, lastTimeUs);
         osdFlyTime += deltaT;
         stats.armed_time += deltaT;
 #ifdef USE_LAUNCH_CONTROL
