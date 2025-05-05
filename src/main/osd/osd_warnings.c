@@ -116,7 +116,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_DSHOT
     if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
         const int beaconGuard = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
-        const int armingDelayTime = MAX(DSHOT_BEACON_GUARD_DELAY_US - beaconGuard, 0) / 100000;  // time remaining until BEACON_GUARD_DELAY, it tenths of second
+        const int armingDelayTime = MAX(DSHOT_BEACON_GUARD_DELAY_US - beaconGuard, 0) / 100000;  // time remaining until BEACON_GUARD_DELAY, in tenths of second
         if (beaconGuard < 500 * 1000) {   // first 0.5s since beacon
             tfp_sprintf(warningText, " BEACON ON");
         } else {
