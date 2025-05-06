@@ -163,7 +163,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
     }
 
     while (serialRxBytesWaiting(tfSerialPort)) {
-        uint8_t c = serialRead(tfSerialPort);  
+        uint8_t c = serialRead(tfSerialPort);
         switch (tfFrameState) {
         case TF_FRAME_STATE_WAIT_START1:
             if (c == TF_FRAME_SYNC_BYTE) {  
