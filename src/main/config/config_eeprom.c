@@ -319,6 +319,8 @@ void initEEPROM(void)
 
 bool isEEPROMVersionValid(void)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds" // disregard "length" of __config_start == 1
     const uint8_t *p = &__config_start;
     const configHeader_t *header = (const configHeader_t *)p;
 
@@ -327,11 +329,14 @@ bool isEEPROMVersionValid(void)
     }
 
     return true;
+#pragma GCC diagnostic pop
 }
 
 // Scan the EEPROM config. Returns true if the config is valid.
 bool isEEPROMStructureValid(void)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds" // disregard "length" of __config_start == 1
     const uint8_t *p = &__config_start;
     const configHeader_t *header = (const configHeader_t *)p;
 
@@ -342,6 +347,7 @@ bool isEEPROMStructureValid(void)
     uint16_t crc = CRC_START_VALUE;
     crc = crc16_ccitt_update(crc, header, sizeof(*header));
     p += sizeof(*header);
+#pragma GCC diagnostic pop
 
     for (;;) {
         const configRecord_t *record = (const configRecord_t *)p;

@@ -39,7 +39,9 @@ void pgResetFn_boardConfig(boardConfig_t *boardConfig)
 {
     if (boardInformationIsSet()) {
         strncpy(boardConfig->manufacturerId, getManufacturerId(), MAX_MANUFACTURER_ID_LENGTH + 1);
+        boardConfig->manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0; // avoid GCC stringop-truncation error
         strncpy(boardConfig->boardName, getBoardName(), MAX_BOARD_NAME_LENGTH + 1);
+        boardConfig->boardName[MAX_BOARD_NAME_LENGTH] = 0; // avoid GCC stringop-truncation error
         boardConfig->boardInformationSet = true;
     } else {
         boardConfig->boardInformationSet = false;
