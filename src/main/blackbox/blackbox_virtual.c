@@ -87,7 +87,7 @@ bool blackboxVirtualBeginLog(void)
     if (blackboxVirtualFile != NULL) {
         return false;
     }
-    const size_t name_buffer_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 2; //file name template: LOG00001.BFL
+    const size_t name_buffer_length = snprintf(NULL, 0, "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
     char filename[name_buffer_length];
     snprintf(filename, sizeof(filename), "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
     blackboxVirtualFile = fopen(filename, "w");
