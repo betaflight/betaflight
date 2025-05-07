@@ -108,8 +108,8 @@ static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 #define TF_02_RANGE_MIN 40
 #define TF_02_RANGE_MAX 2200
 
-#define TF_NOVA_RANGE_MIN 40
-#define TF_NOVA_RANGE_MAX 700
+#define TF_NOVA_RANGE_MIN 10
+#define TF_NOVA_RANGE_MAX 1400
 
 #define TF_DETECTION_CONE_DECIDEGREES 900
 
@@ -135,10 +135,6 @@ static uint8_t tfCmdTFmini[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 
 // Same as TFmini for now..
 static uint8_t tfCmdTF02[]   = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
 
-// TFNova
-// Same as TFmini for now..
-static uint8_t tfCmdTFNova[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
-
 static int32_t lidarTFValue;
 static uint16_t lidarTFerrors = 0;
 
@@ -151,9 +147,7 @@ static void lidarTFSendCommand(void)
     case TF_DEVTYPE_02:
         serialWriteBuf(tfSerialPort, tfCmdTF02, sizeof(tfCmdTF02));
         break;
-    case TF_DEVTYPE_NOVA:
-        serialWriteBuf(tfSerialPort, tfCmdTFNova, sizeof(tfCmdTFNova));
-        break;
+
     }
 }
 
@@ -307,6 +301,7 @@ static bool lidarTFDetect(rangefinderDev_t *dev, uint8_t devtype)
         dev->maxRangeCm = 0;
         break;
 }
+
     dev->detectionConeDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
 
