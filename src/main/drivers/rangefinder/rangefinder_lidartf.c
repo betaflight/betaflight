@@ -126,14 +126,10 @@ static tfFrameState_e tfFrameState;
 static uint8_t tfFrame[TF_FRAME_LENGTH];
 static uint8_t tfReceivePosition;
 
-// TFmini
+// TFmini and TF02
 // Command for 100Hz sampling (10msec interval)
 // At 100Hz scheduling, skew will cause 10msec delay at the most.
-static uint8_t tfCmdTFmini[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
-
-// TF02
-// Same as TFmini for now..
-static uint8_t tfCmdTF02[]   = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
+static const uint8_t tfCmd[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
 
 static int32_t lidarTFValue;
 static uint16_t lidarTFerrors = 0;
@@ -142,12 +138,9 @@ static void lidarTFSendCommand(void)
 {
     switch (tfDevtype) {
     case TF_DEVTYPE_MINI:
-        serialWriteBuf(tfSerialPort, tfCmdTFmini, sizeof(tfCmdTFmini));
-        break;
     case TF_DEVTYPE_02:
-        serialWriteBuf(tfSerialPort, tfCmdTF02, sizeof(tfCmdTF02));
+        serialWriteBuf(tfSerialPort, tfCmd, sizeof(tfCmd));
         break;
-
     }
 }
 
@@ -215,7 +208,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
                         if (distance >= TF_MINI_RANGE_MIN && distance < TF_MINI_RANGE_MAX) {
                             lidarTFValue = distance;
                             if (tfFrame[TF_MINI_FRAME_INTEGRAL_TIME] == 7) {
-								// When integral time is long (7), measured distance tends to be longer by 12~13.
+                                 // When integral time is long (7), measured distance tends to be longer by 12~13.
                                 lidarTFValue -= 13;
                             }
                         } else {
@@ -241,11 +234,11 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
                     }
                     lastFrameReceivedMs = timeNowMs;
                 } else {
-					// Checksum error. Simply discard the current frame.
+                    // Checksum error. Simply discard the current frame.
                     ++lidarTFerrors;
-					//DEBUG_SET(DEBUG_LIDAR_TF, 3, lidarTFerrors);
+                    //DEBUG_SET(DEBUG_LIDAR_TF, 3, lidarTFerrors);
                 }
-			}
+            }
 
             tfFrameState = TF_FRAME_STATE_WAIT_START1;
             tfReceivePosition = 0;
@@ -254,7 +247,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
         }
     }
 
-	// If valid frame hasn't been received for more than a timeout, resend command.
+    // If valid frame hasn't been received for more than a timeout, resend command.
 
     if (timeNowMs - lastFrameReceivedMs > TF_TIMEOUT_MS) {
         lidarTFSendCommand();
@@ -300,7 +293,7 @@ static bool lidarTFDetect(rangefinderDev_t *dev, uint8_t devtype)
     default:
         dev->maxRangeCm = 0;
         break;
-}
+    }
 
     dev->detectionConeDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
