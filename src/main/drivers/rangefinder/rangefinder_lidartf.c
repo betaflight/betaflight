@@ -96,8 +96,9 @@ static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 // 9    -   Checksum (Unsigned 8-bit sum of bytes 0~7)
 //
 // Credibility
-// 1. If distance is 7m (700cm), then OoR.
-//
+// 1. If Confidence level < 90, unreliable
+// 2. If distance is 14m (1400cm), then OoR.
+// 
 #define TF_NOVA_FRAME_CONFIDENCE 5
 
 // Maximum ratings
