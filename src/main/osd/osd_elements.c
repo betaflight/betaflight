@@ -1765,6 +1765,17 @@ static void osdElementWarnings(osdElementParms_t *element)
 {
     bool elementBlinking = false;
     renderOsdWarning(element->buff, &elementBlinking, &element->attr);
+
+    if (osdConfig()->osd_warnings_centered == true) {
+        int leadingSpaces = 0;
+        while (element->buff[leadingSpaces] == ' ') {
+            leadingSpaces++;
+        }
+
+        int adjustedLength = strlen(element->buff) - leadingSpaces;
+        element->elemPosX = ((osdConfig()->canvas_cols - adjustedLength) / 2) - leadingSpaces;
+    }
+
     if (elementBlinking) {
         SET_BLINK(OSD_WARNINGS);
     } else {
