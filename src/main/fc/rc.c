@@ -905,11 +905,11 @@ void initRcProcessing(void)
       - The output y is mapped from [0,1] to the PWM range.
     */
 
-    // control points: slide horizontally by expo, keep Y at thrHover
-    float cp1x = thrMid * (1.0f - expo);
-    float cp1y = thrHover;
-    float cp2x = thrMid + (1.0f - thrMid) * expo;
-    float cp2y = thrHover;
+    // control points: move between 'on the diagonal' and 'at the same height as the hover point'
+    float cp1x = thrMid * 0.5f;
+    float cp1y = thrHover * 0.5f * (1.0f + expo);
+    float cp2x = (1.0f + thrMid) * 0.5f;
+    float cp2y = (1.0f + ((thrHover - 1.0f) * 0.5f * (1.0f + expo)));
 
     // build throttle lookup table by solving for t so that Bézier_x(t)=x
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
