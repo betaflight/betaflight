@@ -841,7 +841,8 @@ bool isMotorsReversed(void)
 // Calculates the y-coordinate of a point on a quadratic Bezier curve for a given x-coordinate.
 // It first solves for the parameter t such that Bezier_x(t) = x, using the x control points (p0x, p1x, p2x).
 // Then, it calculates the y-coordinate using the found t and the y control points (p0y, p1y, p2y).
-static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y, float p1y, float p2y) {
+static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y, float p1y, float p2y)
+{
     // Solve for t such that Bezier_x(t) = x
     // Bezier_x(t) = (1-t)^2*p0x + 2*(1-t)*t*p1x + t^2*p2x
     // Rearranging into A*t^2 + B*t + C = 0, where C = p0x - x
