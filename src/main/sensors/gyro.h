@@ -51,6 +51,8 @@
 
 #define GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ 200
 
+#define GYRO_MASK(x) (BIT(x))
+
 typedef union gyroLowpassFilter_u {
     pt1Filter_t pt1FilterState;
     biquadFilter_t biquadFilterState;
@@ -60,10 +62,10 @@ typedef union gyroLowpassFilter_u {
 
 typedef enum gyroDetectionFlags_e {
     GYRO_NONE_MASK = 0,
-    GYRO_1_MASK = BIT(0),
-#if defined(USE_MULTI_GYRO)
-    GYRO_2_MASK = BIT(1),
-    GYRO_ALL_MASK = (GYRO_1_MASK | GYRO_2_MASK),
+#if GYRO_COUNT == 2
+    GYRO_IDENTICAL_MASK = BIT(7), // All gyros are of the same hardware type
+#endif
+#if GYRO_COUNT == 3
     GYRO_IDENTICAL_MASK = BIT(7), // All gyros are of the same hardware type
 #endif
 } gyroDetectionFlags_t;
@@ -90,10 +92,7 @@ typedef struct gyro_s {
     float sampleSum[XYZ_AXIS_COUNT];   // summed samples used for downsampling
     bool downsampleFilterEnabled;      // if true then downsample using gyro lowpass 2, otherwise use averaging
 
-    gyroSensor_t gyroSensor1;
-#ifdef USE_MULTI_GYRO
-    gyroSensor_t gyroSensor2;
-#endif
+    gyroSensor_t gyroSensor[GYRO_COUNT];
 
     gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
 
@@ -155,9 +154,12 @@ typedef enum {
     YAW_SPIN_RECOVERY_AUTO
 } yawSpinRecoveryMode_e;
 
-#define GYRO_CONFIG_USE_GYRO_1      0
-#define GYRO_CONFIG_USE_GYRO_2      1
-#define GYRO_CONFIG_USE_GYRO_BOTH   2
+typedef enum {
+    GYRO_CONFIG_USE_GYRO_1,
+    GYRO_CONFIG_USE_GYRO_2,
+    GYRO_CONFIG_USE_GYRO_3,
+    GYRO_CONFIG_USE_GYRO_ALL,
+} gyroToUse_e;
 
 enum {
     FILTER_LPF1 = 0,

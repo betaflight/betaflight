@@ -26,9 +26,9 @@
 #include "common/sensor_alignment.h"
 #include "drivers/io_types.h"
 
-#ifdef USE_MULTI_GYRO
-#define MAX_GYRODEV_COUNT 2
-#define MAX_ACCDEV_COUNT 2
+#if GYRO_COUNT > 1
+#define MAX_GYRODEV_COUNT GYRO_COUNT
+#define MAX_ACCDEV_COUNT GYRO_COUNT
 #else
 #define MAX_GYRODEV_COUNT 1
 #define MAX_ACCDEV_COUNT 1
