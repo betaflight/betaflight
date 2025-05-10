@@ -211,6 +211,7 @@ static int tfProcessFrame(const uint8_t* frame, int len)
 static void lidarTFUpdate(rangefinderDev_t *dev)
 {
     static timeMs_t lastFrameReceivedMs = 0;
+     static timeMs_t lastReconfMs = 0;
     const timeMs_t timeNowMs = millis();
 
     if (tfSerialPort == NULL || devInfo == NULL) {
@@ -263,8 +264,10 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
     }
 
     // If valid frame hasn't been received for more than a timeout, try reinit.
-    if (cmp32(timeNowMs, lastFrameReceivedMs) > TF_TIMEOUT_MS) {
+    if (cmp32(timeNowMs, lastFrameReceivedMs) > TF_TIMEOUT_MS
+        && cmp32(timeNowMs, lastReconfMs) > 500) {
         lidarTFConfig(dev, devInfo);
+        lastReconfMs = timeNowMs;    // delay sensor reconf
     }
 }
 
