@@ -25,4 +25,4 @@
 
 #include "common/time.h"
 
-bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e mtRangefinderToUse);
+bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e rfType);
