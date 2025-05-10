@@ -58,4 +58,5 @@ eeprom.bin
 
 # config used for building targets
 # changed to submodule
-/src/config
+#/src/config
+
