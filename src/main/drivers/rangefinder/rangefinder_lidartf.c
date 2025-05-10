@@ -254,7 +254,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
             } else {
                 // Checksum error. Simply ignore the current frame.
                 ++lidarTFerrors;
-                //DEBUG_SET(DEBUG_LIDAR_TF, 3, lidarTFerrors);
+                DEBUG_SET(DEBUG_LIDAR_TF, 4, lidarTFerrors);
             }
             tfFrameState = TF_FRAME_STATE_WAIT_START1;
             tfReceivePosition = 0;
