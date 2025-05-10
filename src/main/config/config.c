@@ -294,8 +294,10 @@ static void validateAndFixConfig(void)
     buildAlignmentFromStandardAlignment(&compassConfigMutable()->mag_customAlignment, compassConfig()->mag_alignment);
 #endif
     buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(0)->customAlignment, gyroDeviceConfig(0)->alignment);
-#if defined(USE_MULTI_GYRO)
-    buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(1)->customAlignment, gyroDeviceConfig(1)->alignment);
+#if GYRO_COUNT > 1
+    for (int i = 1; i < GYRO_COUNT; i++) {
+        buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(i)->customAlignment, gyroDeviceConfig(i)->alignment);
+    }
 #endif
 
 #ifdef USE_ACC

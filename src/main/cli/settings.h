@@ -95,7 +95,7 @@ typedef enum {
 #ifdef USE_LED_STRIP
     TABLE_RGB_GRB,
 #endif
-#ifdef USE_MULTI_GYRO
+#if GYRO_COUNT > 1
     TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,

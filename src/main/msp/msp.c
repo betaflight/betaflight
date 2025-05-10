@@ -1806,16 +1806,12 @@ case MSP_NAME:
 
     case MSP_SENSOR_ALIGNMENT: {
         uint8_t gyroAlignment;
-#ifdef USE_MULTI_GYRO
-        switch (gyroConfig()->gyro_to_use) {
-        case GYRO_CONFIG_USE_GYRO_2:
-            gyroAlignment = gyroDeviceConfig(1)->alignment;
-            break;
-        case GYRO_CONFIG_USE_GYRO_BOTH:
-            // for dual-gyro in "BOTH" mode we only read/write gyro 0
-        default:
+#if GYRO_COUNT > 1
+        if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
+            // for Multi-gyro in "ALL" mode we only read/write gyro 0
             gyroAlignment = gyroDeviceConfig(0)->alignment;
-            break;
+        } else {
+            gyroAlignment = gyroDeviceConfig(gyroConfig()->gyro_to_use)->alignment;
         }
 #else
         gyroAlignment = gyroDeviceConfig(0)->alignment;
@@ -1830,7 +1826,7 @@ case MSP_NAME:
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectionFlags());
-#ifdef USE_MULTI_GYRO
+#if GYRO_COUNT > 1
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
         sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, gyroDeviceConfig(1)->alignment);
@@ -1840,22 +1836,22 @@ case MSP_NAME:
         sbufWriteU8(dst, ALIGN_DEFAULT);
 #endif
         // Added in MSP API 1.47
-        switch (gyroConfig()->gyro_to_use) {
-#ifdef USE_MULTI_GYRO
-        case GYRO_CONFIG_USE_GYRO_2:
-            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.roll);
-            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.pitch);
-            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.yaw);
-            break;
-#endif
-        case GYRO_CONFIG_USE_GYRO_BOTH:
-            // for dual-gyro in "BOTH" mode we only read/write gyro 0
-        default:
+#if GYRO_COUNT > 1
+        if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
+            // for Multi-gyro in "ALL" mode we only read/write gyro 0
             sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
             sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
             sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
-            break;
+        } else {
+            sbufWriteU16(dst, gyroDeviceConfig(gyroConfig()->gyro_to_use)->customAlignment.roll);
+            sbufWriteU16(dst, gyroDeviceConfig(gyroConfig()->gyro_to_use)->customAlignment.pitch);
+            sbufWriteU16(dst, gyroDeviceConfig(gyroConfig()->gyro_to_use)->customAlignment.yaw);
         }
+#else
+        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
+#endif
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
@@ -3018,7 +3014,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         if (sbufBytesRemaining(src) >= 3) {
             // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
-#ifdef USE_MULTI_GYRO
+#if GYRO_COUNT > 1
             gyroConfigMutable()->gyro_to_use = sbufReadU8(src);
             gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
             gyroDeviceConfigMutable(1)->alignment = sbufReadU8(src);
@@ -3029,16 +3025,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         } else {
             // maintain backwards compatibility for API < 1.41
-#ifdef USE_MULTI_GYRO
-            switch (gyroConfig()->gyro_to_use) {
-            case GYRO_CONFIG_USE_GYRO_2:
-                gyroDeviceConfigMutable(1)->alignment = gyroAlignment;
-                break;
-            case GYRO_CONFIG_USE_GYRO_BOTH:
-                // For dual-gyro in "BOTH" mode we'll only update gyro 0
-            default:
+#if GYRO_COUNT > 1
+            if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
+                // For multi-gyro in "ALL" mode we'll only update gyro 0
                 gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
-                break;
+            } else {
+                gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->alignment = gyroAlignment;
             }
 #else
             gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
@@ -3046,22 +3038,22 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         // Added in API 1.47
         if (sbufBytesRemaining(src) >= 6) {
-            switch (gyroConfig()->gyro_to_use) {
-#ifdef USE_MULTI_GYRO
-            case GYRO_CONFIG_USE_GYRO_2:
-                gyroDeviceConfigMutable(1)->customAlignment.roll = sbufReadU16(src);
-                gyroDeviceConfigMutable(1)->customAlignment.pitch = sbufReadU16(src);
-                gyroDeviceConfigMutable(1)->customAlignment.yaw = sbufReadU16(src);
-                break;
+#if GYRO_COUNT > 1
+        if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
+            // for Multi-gyro in "ALL" mode we only read/write gyro 0
+            gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
+        } else {
+            gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->customAlignment.yaw = sbufReadU16(src);
+        }
+#else
+        gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
+        gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
+        gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
 #endif
-            case GYRO_CONFIG_USE_GYRO_BOTH:
-                // For dual-gyro in "BOTH" mode we'll only update gyro 0
-            default:
-                gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
-                gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
-                gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
-                break;
-            }
         }
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
