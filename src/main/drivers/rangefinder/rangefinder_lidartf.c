@@ -249,7 +249,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
             }
 
             if (c == cksum) {
-                lidarTFValue = tfProcessFrame(tfFrame, TF_FRAME_LENGTH - 1);  // no checksum
+                lidarTFValue = tfProcessFrame(tfFrame, TF_FRAME_LENGTH);
                 lastFrameReceivedMs = timeNowMs;
             } else {
                 // Checksum error. Simply ignore the current frame.
