@@ -46,6 +46,7 @@
 
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "config/simplified_tuning.h"
 
 #include "io/beeper.h"
 #include "io/ledstrip.h"
@@ -230,6 +231,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_LED_DIMMER,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 100 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 100 }
     }
 };
 
@@ -270,6 +275,7 @@ static const char * const adjustmentLabels[] = {
     "OSD PROFILE",
     "LED PROFILE",
     "LED DIMMER",
+    "SLIDER MASTER MULTIPLIER",
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -656,6 +662,19 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         }
 #endif
         break;
+    case ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER:
+    {
+        static uint8_t lastPosition = 255;
+
+        if (position != lastPosition) {
+            float newMultiplier = 10.0f + (position * 1.9f);
+            currentPidProfile->simplified_master_multiplier = newMultiplier;
+            applySimplifiedTuningPids(currentPidProfile); // recalculate PIDs safely without turning sliders off
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER, (int32_t)newMultiplier);
+            lastPosition = position;
+        }
+    }
+    break;
 
     default:
         break;
