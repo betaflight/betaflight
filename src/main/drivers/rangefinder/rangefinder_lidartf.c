@@ -34,14 +34,12 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 
-typedef enum {
-    TF_DEVTYPE_NONE,
-    TF_DEVTYPE_MINI,
-    TF_DEVTYPE_02,
-    TF_DEVTYPE_NOVA
-} tfDevType_e;
+#define TF_DEVTYPE_NONE 0
+#define TF_DEVTYPE_MINI 1
+#define TF_DEVTYPE_02   2
+#define TF_DEVTYPE_NOVA 3
 
-static tfDevType_e tfDevtype = TF_DEVTYPE_NONE;
+static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 
 #define TF_FRAME_LENGTH    6             // Excluding sync bytes (0x59) x 2 and checksum
 #define TF_FRAME_SYNC_BYTE 0x59
@@ -100,24 +98,19 @@ static tfDevType_e tfDevtype = TF_DEVTYPE_NONE;
 // Credibility
 // 1. If Confidence level < 90, unreliable
 // 2. If distance is 14m (1400cm), then OoR.
-// 
+//
 #define TF_NOVA_FRAME_CONFIDENCE 5
 
 // Maximum ratings
 
-static const uint16_t tfRangeMin[] = {
-    [TF_DEVTYPE_NONE] = 0,
-    [TF_DEVTYPE_MINI] = 40,
-    [TF_DEVTYPE_02]   = 40,
-    [TF_DEVTYPE_NOVA] = 10,
-};
+#define TF_MINI_RANGE_MIN 40
+#define TF_MINI_RANGE_MAX 1200
 
-static const uint16_t tfRangeMax[] = {
-    [TF_DEVTYPE_NONE] = 0,
-    [TF_DEVTYPE_MINI] = 1200,
-    [TF_DEVTYPE_02]   = 2200,
-    [TF_DEVTYPE_NOVA] = 1400,
-};
+#define TF_02_RANGE_MIN 40
+#define TF_02_RANGE_MAX 2200
+
+#define TF_NOVA_RANGE_MIN 10
+#define TF_NOVA_RANGE_MAX 1400
 
 #define TF_DETECTION_CONE_DECIDEGREES 900
 
@@ -151,6 +144,7 @@ static void lidarTFSendCommand(void)
         break;
     default:
         break;
+
     }
 }
 
@@ -215,7 +209,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
 
                     switch (tfDevtype) {
                     case TF_DEVTYPE_MINI:
-                        if (distance >= tfRangeMin[tfDevtype] && distance < tfRangeMax[tfDevtype]) {
+                        if (distance >= TF_MINI_RANGE_MIN && distance < TF_MINI_RANGE_MAX) {
                             lidarTFValue = distance;
                             if (tfFrame[TF_MINI_FRAME_INTEGRAL_TIME] == 7) {
                                  // When integral time is long (7), measured distance tends to be longer by 12~13.
@@ -227,7 +221,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
                         break;
 
                     case TF_DEVTYPE_02:
-                        if (distance >= tfRangeMin[tfDevtype] && distance < tfRangeMax[tfDevtype] && tfFrame[TF_02_FRAME_SIG] >= 7) {
+                        if (distance >= TF_02_RANGE_MIN && distance < TF_02_RANGE_MAX && tfFrame[TF_02_FRAME_SIG] >= 7) {
                             lidarTFValue = distance;
                         } else {
                             lidarTFValue = -1;
@@ -235,7 +229,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
                         break;
 
                     case TF_DEVTYPE_NOVA:
-                        if (distance >= tfRangeMin[tfDevtype] && distance <= tfRangeMax[tfDevtype] && tfFrame[TF_NOVA_FRAME_CONFIDENCE] >= 90) {
+                        if (distance >= TF_NOVA_RANGE_MIN && distance <= TF_NOVA_RANGE_MAX && tfFrame[TF_NOVA_FRAME_CONFIDENCE] >= 90) {
                             lidarTFValue = distance;
                         } else {
                             lidarTFValue = -1;
@@ -273,7 +267,7 @@ static int32_t lidarTFGetDistance(rangefinderDev_t *dev)
     return lidarTFValue;
 }
 
-static bool lidarTFDetect(rangefinderDev_t *dev, tfDevType_e devtype)
+static bool lidarTFDetect(rangefinderDev_t *dev, uint8_t devtype)
 {
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
 
@@ -290,7 +284,20 @@ static bool lidarTFDetect(rangefinderDev_t *dev, tfDevType_e devtype)
     tfDevtype = devtype;
 
     dev->delayMs = 10;
-    dev->maxRangeCm = tfRangeMax[devtype];
+    switch (devtype) {
+    case TF_DEVTYPE_MINI:
+        dev->maxRangeCm = TF_MINI_RANGE_MAX;
+        break;
+    case TF_DEVTYPE_02:
+        dev->maxRangeCm = TF_02_RANGE_MAX;
+        break;
+    case TF_DEVTYPE_NOVA:
+        dev->maxRangeCm = TF_NOVA_RANGE_MAX;
+        break;
+    default:
+        dev->maxRangeCm = 0;
+        break;
+    }
 
     dev->detectionConeDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
