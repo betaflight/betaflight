@@ -20,10 +20,9 @@
 
 #pragma once
 
+#include "drivers/rangefinder/rangefinder.h"
+#include "sensors/rangefinder.h"
+
 #include "common/time.h"
 
-#define RANGEFINDER_TF_TASK_PERIOD_MS 10
-
-bool lidarTFminiDetect(rangefinderDev_t *dev);
-bool lidarTF02Detect(rangefinderDev_t *dev);
-bool lidarTFNovaDetect(rangefinderDev_t *dev);
+bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e mtRangefinderToUse);

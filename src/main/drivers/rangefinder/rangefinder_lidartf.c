@@ -34,18 +34,24 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 
-typedef enum {
-    TF_DEVTYPE_NONE,
-    TF_DEVTYPE_MINI,
-    TF_DEVTYPE_02,
-    TF_DEVTYPE_NOVA
-} tfDevType_e;
+typedef struct {
+    rangefinderType_e rfType;
+    uint16_t rangeMin;
+    uint16_t rangeMax;
+} lidarTFInfo_t;
 
-static tfDevType_e tfDevtype = TF_DEVTYPE_NONE;
+
+static const lidarTFInfo_t *devInfo = NULL;
+static const lidarTFInfo_t devInfos[] = {
+    { .rfType = RANGEFINDER_TFMINI, .rangeMin = 40, .rangeMax = 1200},
+    { .rfType = RANGEFINDER_TF02,   .rangeMin = 40, .rangeMax = 2200},
+    { .rfType = RANGEFINDER_TFNOVA, .rangeMin = 10, .rangeMax = 1400},
+};
 
 #define TF_FRAME_LENGTH    6             // Excluding sync bytes (0x59) x 2 and checksum
 #define TF_FRAME_SYNC_BYTE 0x59
 #define TF_TIMEOUT_MS      (100 * 2)
+#define TF_TASK_PERIOD_MS  10
 
 //
 // Benewake TFmini frame format
@@ -100,26 +106,10 @@ static tfDevType_e tfDevtype = TF_DEVTYPE_NONE;
 // Credibility
 // 1. If Confidence level < 90, unreliable
 // 2. If distance is 14m (1400cm), then OoR.
-// 
+
 #define TF_NOVA_FRAME_CONFIDENCE 5
 
-// Maximum ratings
-
-static const uint16_t tfRangeMin[] = {
-    [TF_DEVTYPE_NONE] = 0,
-    [TF_DEVTYPE_MINI] = 40,
-    [TF_DEVTYPE_02]   = 40,
-    [TF_DEVTYPE_NOVA] = 10,
-};
-
-static const uint16_t tfRangeMax[] = {
-    [TF_DEVTYPE_NONE] = 0,
-    [TF_DEVTYPE_MINI] = 1200,
-    [TF_DEVTYPE_02]   = 2200,
-    [TF_DEVTYPE_NOVA] = 1400,
-};
-
-#define TF_DETECTION_CONE_DECIDEGREES 900
+#define TF_DETECTION_CONE_DECIDEGREES 900  // TODO
 
 static serialPort_t *tfSerialPort = NULL;
 
@@ -137,17 +127,32 @@ static uint8_t tfReceivePosition;
 // TFmini and TF02
 // Command for 100Hz sampling (10msec interval)
 // At 100Hz scheduling, skew will cause 10msec delay at the most.
-static const uint8_t tfCmd[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
+// This command format does not match latest Benewake documentation
+static const uint8_t tfConfigCmd[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
 
-static int32_t lidarTFValue;
-static uint16_t lidarTFerrors = 0;
+static int lidarTFValue;
+static unsigned lidarTFerrors = 0;
 
-static void lidarTFSendCommand(void)
+
+static const lidarTFInfo_t* findInfo(rangefinderType_e rfType)
 {
-    switch (tfDevtype) {
-    case TF_DEVTYPE_MINI:
-    case TF_DEVTYPE_02:
-        serialWriteBuf(tfSerialPort, tfCmd, sizeof(tfCmd));
+    for (const lidarTFInfo_t* p = devInfos; p < ARRAYEND(devInfos); p++) {
+        if (p->rfType == rfType) {
+            return p;
+        }
+    }
+    return NULL;
+}
+
+// configure/reconfigure device
+// may be called multiple times (when frames are missing)
+static void lidarTFConfig(rangefinderDev_t *dev, const lidarTFInfo_t* inf)
+{
+    UNUSED(dev);
+    switch (inf->rfType) {
+    case RANGEFINDER_TFMINI:
+    case RANGEFINDER_TF02:
+        serialWriteBuf(tfSerialPort, tfConfigCmd, sizeof(tfConfigCmd));
         break;
     default:
         break;
@@ -162,13 +167,53 @@ static void lidarTFInit(rangefinderDev_t *dev)
     tfReceivePosition = 0;
 }
 
+static int tfProcessFrame(const uint8_t* frame, int len)
+{
+    UNUSED(len);
+    uint16_t distance = frame[0] | (frame[1] << 8);
+    uint16_t strength = frame[2] | (frame[3] << 8);
+
+    DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);  // 0,1
+    DEBUG_SET(DEBUG_LIDAR_TF, 1, strength);  // 2,3
+    DEBUG_SET(DEBUG_LIDAR_TF, 2, frame[4]);
+    DEBUG_SET(DEBUG_LIDAR_TF, 3, frame[5]);
+
+    // common distance check
+    if (distance < devInfo->rangeMin || distance > devInfo->rangeMax) {
+        return RANGEFINDER_OUT_OF_RANGE;
+    }
+
+    switch (devInfo->rfType) {
+    case RANGEFINDER_TFMINI:
+        if (frame[TF_MINI_FRAME_INTEGRAL_TIME] == 7) {
+            // When integral time is long (7), measured distance tends to be longer by 12~13.
+            distance -= 13;
+        }
+        break;
+    case RANGEFINDER_TF02:
+        if (frame[TF_02_FRAME_SIG] < 7) {
+            return RANGEFINDER_OUT_OF_RANGE;
+
+        }
+        break;
+    case RANGEFINDER_TFNOVA:
+        if (frame[TF_NOVA_FRAME_CONFIDENCE] < 90) {
+            return RANGEFINDER_OUT_OF_RANGE;
+        }
+        break;
+    default:
+        return RANGEFINDER_HARDWARE_FAILURE;  // internal error
+    }
+    // distance is valid
+    return distance;
+}
+
 static void lidarTFUpdate(rangefinderDev_t *dev)
 {
-    UNUSED(dev);
     static timeMs_t lastFrameReceivedMs = 0;
     const timeMs_t timeNowMs = millis();
 
-    if (tfSerialPort == NULL) {
+    if (tfSerialPort == NULL || devInfo == NULL) {
         return;
     }
 
@@ -196,76 +241,35 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
             }
             break;
 
-        case TF_FRAME_STATE_WAIT_CKSUM:
-            {
-                uint8_t cksum = TF_FRAME_SYNC_BYTE + TF_FRAME_SYNC_BYTE;
-                for (int i = 0; i < TF_FRAME_LENGTH; i++) {
-                    cksum += tfFrame[i];
-                }
-
-                if (c == cksum) {
-
-                    uint16_t distance = tfFrame[0] | (tfFrame[1] << 8);
-                    uint16_t strength = tfFrame[2] | (tfFrame[3] << 8);
-
-                    DEBUG_SET(DEBUG_LIDAR_TF, 0, distance);
-                    DEBUG_SET(DEBUG_LIDAR_TF, 1, strength);
-                    DEBUG_SET(DEBUG_LIDAR_TF, 2, tfFrame[4]);
-                    DEBUG_SET(DEBUG_LIDAR_TF, 3, tfFrame[5]);
-
-                    switch (tfDevtype) {
-                    case TF_DEVTYPE_MINI:
-                        if (distance >= tfRangeMin[tfDevtype] && distance < tfRangeMax[tfDevtype]) {
-                            lidarTFValue = distance;
-                            if (tfFrame[TF_MINI_FRAME_INTEGRAL_TIME] == 7) {
-                                 // When integral time is long (7), measured distance tends to be longer by 12~13.
-                                lidarTFValue -= 13;
-                            }
-                        } else {
-                            lidarTFValue = -1;
-                        }
-                        break;
-
-                    case TF_DEVTYPE_02:
-                        if (distance >= tfRangeMin[tfDevtype] && distance < tfRangeMax[tfDevtype] && tfFrame[TF_02_FRAME_SIG] >= 7) {
-                            lidarTFValue = distance;
-                        } else {
-                            lidarTFValue = -1;
-                        }
-                        break;
-
-                    case TF_DEVTYPE_NOVA:
-                        if (distance >= tfRangeMin[tfDevtype] && distance <= tfRangeMax[tfDevtype] && tfFrame[TF_NOVA_FRAME_CONFIDENCE] >= 90) {
-                            lidarTFValue = distance;
-                        } else {
-                            lidarTFValue = -1;
-                        }
-                        break;
-                    }
-                    lastFrameReceivedMs = timeNowMs;
-                } else {
-                    // Checksum error. Simply discard the current frame.
-                    ++lidarTFerrors;
-                    //DEBUG_SET(DEBUG_LIDAR_TF, 3, lidarTFerrors);
-                }
+        case TF_FRAME_STATE_WAIT_CKSUM: {
+            uint8_t cksum = TF_FRAME_SYNC_BYTE + TF_FRAME_SYNC_BYTE;  // SYNC bytes are checksummed too, but not stored
+            for (int i = 0; i < TF_FRAME_LENGTH; i++) {
+                cksum += tfFrame[i];
             }
 
+            if (c == cksum) {
+                lidarTFValue = tfProcessFrame(tfFrame, TF_FRAME_LENGTH - 1);  // no checksum
+                lastFrameReceivedMs = timeNowMs;
+            } else {
+                // Checksum error. Simply ignore the current frame.
+                ++lidarTFerrors;
+                //DEBUG_SET(DEBUG_LIDAR_TF, 3, lidarTFerrors);
+            }
             tfFrameState = TF_FRAME_STATE_WAIT_START1;
             tfReceivePosition = 0;
-
             break;
+        }
         }
     }
 
-    // If valid frame hasn't been received for more than a timeout, resend command.
-
-    if (timeNowMs - lastFrameReceivedMs > TF_TIMEOUT_MS) {
-        lidarTFSendCommand();
+    // If valid frame hasn't been received for more than a timeout, try reinit.
+    if (cmp32(timeNowMs, lastFrameReceivedMs) > TF_TIMEOUT_MS) {
+        lidarTFConfig(dev, devInfo);
     }
 }
 
 // Return most recent device output in cm
-
+// TODO - handle timeout; return value only once (see lidarMT)
 static int32_t lidarTFGetDistance(rangefinderDev_t *dev)
 {
     UNUSED(dev);
@@ -273,24 +277,25 @@ static int32_t lidarTFGetDistance(rangefinderDev_t *dev)
     return lidarTFValue;
 }
 
-static bool lidarTFDetect(rangefinderDev_t *dev, tfDevType_e devtype)
+bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
 {
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
+    const lidarTFInfo_t* inf = findInfo(rfType);
+    if (!inf) {
+        return false; // this type is not TF
+    }
 
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
     if (!portConfig) {
         return false;
     }
 
     tfSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR_TF, NULL, NULL, 115200, MODE_RXTX, 0);
-
     if (tfSerialPort == NULL) {
         return false;
     }
 
-    tfDevtype = devtype;
-
-    dev->delayMs = 10;
-    dev->maxRangeCm = tfRangeMax[devtype];
+    dev->delayMs = TF_TASK_PERIOD_MS;
+    dev->maxRangeCm = inf->rangeMax;
 
     dev->detectionConeDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
@@ -299,22 +304,12 @@ static bool lidarTFDetect(rangefinderDev_t *dev, tfDevType_e devtype)
     dev->update = &lidarTFUpdate;
     dev->read = &lidarTFGetDistance;
 
+    devInfo = inf;
+
+    // configure device
+    lidarTFConfig(dev, devInfo);
+
     return true;
-}
-
-bool lidarTFminiDetect(rangefinderDev_t *dev)
-{
-    return lidarTFDetect(dev, TF_DEVTYPE_MINI);
-}
-
-bool lidarTF02Detect(rangefinderDev_t *dev)
-{
-    return lidarTFDetect(dev, TF_DEVTYPE_02);
-}
-
-bool lidarTFNovaDetect(rangefinderDev_t *dev)
-{
-    return lidarTFDetect(dev, TF_DEVTYPE_NOVA);
 }
 
 #endif
