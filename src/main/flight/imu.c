@@ -55,8 +55,8 @@
 #include "sensors/sensors.h"
 
 // GPS COG Filter Defines
-#define COG_FILTER_IIR_ALPHA 0.15f                                  // Smoothing factor for IIR filter (0.0 to 1.0). Smaller = more smoothing.
-#define COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE 100            // Max change in COG per sample (100 = 10 degrees)
+#define COG_FILTER_IIR_TIME_CONSTANT_MS 30.0f                        // Time constant for IIR filter in milliseconds. Smaller = more responsive, larger = more smoothing.
+#define COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_MILLISECOND 5       // Max change in COG per millisecond (100 = 10 degrees/ms)
 #define COG_MAX_DECIDEGREES 3600                                    // 360.0 degrees in decidegrees
 #define COG_HALF_MAX_DECIDEGREES (COG_MAX_DECIDEGREES / 2)          // 180.0 degrees in decidegrees
 
@@ -711,8 +711,18 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         const int16_t current_raw_gps_cog_decidegrees = gpsSol.groundCourse;
         DEBUG_SET(DEBUG_COG_PROCESSING, 0, current_raw_gps_cog_decidegrees); // Raw COG
 
+        // Calculate dt in milliseconds for time-dependent filter parameters
+        const float dt_ms = dt * 1000.0f;
+
+        // Calculate dynamic filter parameters based on dt
+        // Rate limit: max change allowed for the current dt
+        const int16_t actual_cog_rate_limit_per_sample = (int16_t)(COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_MILLISECOND * dt_ms);
+        
+        // IIR Alpha: calculated from time constant and dt
+        // Add a small epsilon to prevent division by zero if COG_FILTER_IIR_TIME_CONSTANT_MS is zero, though it shouldn't be.
+        const float current_cog_iir_alpha = dt_ms / (COG_FILTER_IIR_TIME_CONSTANT_MS + dt_ms + FLT_EPSILON);
+
         // If ground speed is too low, GPS heading is not reliable for initialization or continuation.
-        // This also implies filters should be re-initialized when speed picks up.
         if (gpsSol.groundSpeed < GPS_COG_MIN_GROUNDSPEED) { // Default 1.0 m/s
             gpsHeadingInitialized = false;
             cog_filters_initialized = false;
@@ -721,7 +731,6 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         if (gpsHeadingInitialized) { // True if previously initialized and speed hasn't dropped below threshold
             if (!cog_filters_initialized) {
                 // This ensures filters are primed if they were reset (e.g. by speed drop)
-                // while gpsHeadingInitialized might have just become true or remained true.
                 cog_filter_previous_rate_limited_decidegrees = current_raw_gps_cog_decidegrees;
                 cog_filter_previous_iir_filtered_decidegrees = current_raw_gps_cog_decidegrees;
                 cog_filters_initialized = true;
@@ -729,8 +738,8 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
             // Apply Rate Limiter
             int16_t cog_diff_from_prev_rate_limited = calculateShortestAngleDifferenceDecidegrees(current_raw_gps_cog_decidegrees, cog_filter_previous_rate_limited_decidegrees);
-            if (abs(cog_diff_from_prev_rate_limited) > COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE) {
-                cog_diff_from_prev_rate_limited = constrain(cog_diff_from_prev_rate_limited, -COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE, COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE);
+            if (abs(cog_diff_from_prev_rate_limited) > actual_cog_rate_limit_per_sample) {
+                cog_diff_from_prev_rate_limited = constrain(cog_diff_from_prev_rate_limited, -actual_cog_rate_limit_per_sample, actual_cog_rate_limit_per_sample);
             }
             int16_t current_rate_limited_cog = cog_filter_previous_rate_limited_decidegrees + cog_diff_from_prev_rate_limited;
             // Normalize current_rate_limited_cog
@@ -741,7 +750,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
             // Apply IIR Filter
             int16_t iir_diff_from_prev_filtered = calculateShortestAngleDifferenceDecidegrees(current_rate_limited_cog, cog_filter_previous_iir_filtered_decidegrees);
-            int16_t processed_cog_decidegrees = cog_filter_previous_iir_filtered_decidegrees + lrintf(COG_FILTER_IIR_ALPHA * (float)iir_diff_from_prev_filtered);
+            int16_t processed_cog_decidegrees = cog_filter_previous_iir_filtered_decidegrees + lrintf(current_cog_iir_alpha * (float)iir_diff_from_prev_filtered);
             // Normalize processed_cog_decidegrees
             while (processed_cog_decidegrees < 0) processed_cog_decidegrees += COG_MAX_DECIDEGREES;
             while (processed_cog_decidegrees >= COG_MAX_DECIDEGREES) processed_cog_decidegrees -= COG_MAX_DECIDEGREES;
