@@ -612,8 +612,9 @@ extern uint8_t eepromData[EEPROM_SIZE];
 #ifndef CONFIG_IN_FLASH
 #define CONFIG_IN_FLASH
 #endif
-extern uint8_t __config_start;   // configured via linker script when building binaries.
-extern uint8_t __config_end;
+struct linker_symbol;
+extern struct linker_symbol __config_start;   // configured via linker script when building binaries.
+extern struct linker_symbol __config_end;
 #endif
 
 #if defined(USE_EXST) && !defined(RAMBASED)
