@@ -44,6 +44,7 @@
 #include "fc/rc.h"
 
 #include "io/gps.h"
+#include "common/maths.h" // Added for constrain macro
 
 #include "scheduler/scheduler.h"
 
@@ -52,6 +53,12 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
+
+// GPS COG Filter Defines
+#define COG_FILTER_IIR_ALPHA 0.15f                                  // Smoothing factor for IIR filter (0.0 to 1.0). Smaller = more smoothing.
+#define COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE 100            // Max change in COG per sample (100 = 10 degrees)
+#define COG_MAX_DECIDEGREES 3600                                    // 360.0 degrees in decidegrees
+#define COG_HALF_MAX_DECIDEGREES (COG_MAX_DECIDEGREES / 2)          // 180.0 degrees in decidegrees
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <stdio.h>
@@ -88,11 +95,32 @@ static bool imuUpdated = false;
 
 bool canUseGPSHeading = false;
 
+// Helper function to calculate the shortest difference between two angles in decidegrees
+// Result is the shortest path from angle_prev to angle_curr
+static int16_t calculateShortestAngleDifferenceDecidegrees(int16_t angle_curr, int16_t angle_prev)
+{
+    int16_t diff = angle_curr - angle_prev;
+    if (diff > COG_HALF_MAX_DECIDEGREES) {
+        diff -= COG_MAX_DECIDEGREES;
+    } else if (diff < -COG_HALF_MAX_DECIDEGREES) {
+        diff += COG_MAX_DECIDEGREES;
+    }
+    return diff;
+}
+
 static float throttleAngleScale;
 static int throttleAngleValue;
 static float smallAngleCosZ = 0;
 
 static imuRuntimeConfig_t imuRuntimeConfig;
+
+// GPS COG Filter static variables
+// These are static to imuCalculateEstimatedAttitude but declared here for clarity
+// regarding their reset conditions.
+static bool gpsHeadingInitialized = false;
+static int16_t cog_filter_previous_rate_limited_decidegrees = 0;
+static int16_t cog_filter_previous_iir_filtered_decidegrees = 0;
+static bool cog_filters_initialized = false;
 
 matrix33_t rMat;
 static vector2_t north_ef;
@@ -673,12 +701,55 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     // *** GoC based error estimate ***
     float cogErr = 0;
 #if defined(USE_GPS)
-    if (!useMag
-        && sensors(SENSOR_GPS)
-        && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
-        static bool gpsHeadingInitialized = false;  // TODO - remove
-        if (gpsHeadingInitialized) {
-            float groundspeedGain;  // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course,
+    // Determine if primary conditions for GPS COG usage are met
+    const bool gpsCogConditionsMet = !useMag
+                                  && sensors(SENSOR_GPS)
+                                  && STATE(GPS_FIX)
+                                  && gpsSol.numSat > GPS_MIN_SAT_COUNT;
+
+    if (gpsCogConditionsMet) {
+        const int16_t current_raw_gps_cog_decidegrees = gpsSol.groundCourse;
+        DEBUG_SET(DEBUG_COG_PROCESSING, 0, current_raw_gps_cog_decidegrees); // Raw COG
+
+        // If ground speed is too low, GPS heading is not reliable for initialization or continuation.
+        // This also implies filters should be re-initialized when speed picks up.
+        if (gpsSol.groundSpeed < GPS_COG_MIN_GROUNDSPEED) { // Default 1.0 m/s
+            gpsHeadingInitialized = false;
+            cog_filters_initialized = false;
+        }
+
+        if (gpsHeadingInitialized) { // True if previously initialized and speed hasn't dropped below threshold
+            if (!cog_filters_initialized) {
+                // This ensures filters are primed if they were reset (e.g. by speed drop)
+                // while gpsHeadingInitialized might have just become true or remained true.
+                cog_filter_previous_rate_limited_decidegrees = current_raw_gps_cog_decidegrees;
+                cog_filter_previous_iir_filtered_decidegrees = current_raw_gps_cog_decidegrees;
+                cog_filters_initialized = true;
+            }
+
+            // Apply Rate Limiter
+            int16_t cog_diff_from_prev_rate_limited = calculateShortestAngleDifferenceDecidegrees(current_raw_gps_cog_decidegrees, cog_filter_previous_rate_limited_decidegrees);
+            if (abs(cog_diff_from_prev_rate_limited) > COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE) {
+                cog_diff_from_prev_rate_limited = constrain(cog_diff_from_prev_rate_limited, -COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE, COG_FILTER_RATE_LIMIT_DECIDEGREES_PER_SAMPLE);
+            }
+            int16_t current_rate_limited_cog = cog_filter_previous_rate_limited_decidegrees + cog_diff_from_prev_rate_limited;
+            // Normalize current_rate_limited_cog
+            while (current_rate_limited_cog < 0) current_rate_limited_cog += COG_MAX_DECIDEGREES;
+            while (current_rate_limited_cog >= COG_MAX_DECIDEGREES) current_rate_limited_cog -= COG_MAX_DECIDEGREES;
+            cog_filter_previous_rate_limited_decidegrees = current_rate_limited_cog;
+            DEBUG_SET(DEBUG_COG_PROCESSING, 1, current_rate_limited_cog); // Rate-limited COG
+
+            // Apply IIR Filter
+            int16_t iir_diff_from_prev_filtered = calculateShortestAngleDifferenceDecidegrees(current_rate_limited_cog, cog_filter_previous_iir_filtered_decidegrees);
+            int16_t processed_cog_decidegrees = cog_filter_previous_iir_filtered_decidegrees + lrintf(COG_FILTER_IIR_ALPHA * (float)iir_diff_from_prev_filtered);
+            // Normalize processed_cog_decidegrees
+            while (processed_cog_decidegrees < 0) processed_cog_decidegrees += COG_MAX_DECIDEGREES;
+            while (processed_cog_decidegrees >= COG_MAX_DECIDEGREES) processed_cog_decidegrees -= COG_MAX_DECIDEGREES;
+            cog_filter_previous_iir_filtered_decidegrees = processed_cog_decidegrees;
+            DEBUG_SET(DEBUG_COG_PROCESSING, 2, processed_cog_decidegrees); // IIR filtered COG
+
+            // Calculate cogErr using the filtered COG
+            float groundspeedGain;
             if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
                 // GPS_Rescue adjusts groundspeedGain during a rescue in a range 0 - 4.5,
                 //   depending on GPS Rescue state and groundspeed relative to speed to home.
@@ -688,24 +759,37 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                 groundspeedGain = imuCalcGroundspeedGain(dt);
             }
 
-            DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(groundspeedGain * 100.0f));
-
-            const float courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+            const float courseOverGround = DECIDEGREES_TO_RADIANS(processed_cog_decidegrees);
             const float imuCourseError = imuCalcCourseErr(courseOverGround);
+            updateGpsHeadingUsable(groundspeedGain, imuCourseError, dt); 
             cogErr = imuCourseError * groundspeedGain;
-            // cogErr is greater with larger heading errors and greater speed in straight pitch forward flight
 
-            updateGpsHeadingUsable(groundspeedGain, imuCourseError, dt);
-
-        } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
+        } else if (gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) { // Speed is sufficient to initialize
             // Reset the reference and reinitialize quaternion factors when GPS groundspeed > GPS_COG_MIN_GROUNDSPEED
-            imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+            imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, current_raw_gps_cog_decidegrees);
             gpsHeadingInitialized = true;
+
+            // Initialize COG filters as well
+            cog_filter_previous_rate_limited_decidegrees = current_raw_gps_cog_decidegrees;
+            cog_filter_previous_iir_filtered_decidegrees = current_raw_gps_cog_decidegrees;
+            cog_filters_initialized = true;
+            // On this cycle, cogErr will remain 0. Next cycle, filtering will begin.
+        } else {
+            // Speed still too low to initialize. gpsHeadingInitialized remains false.
+            // cog_filters_initialized is already false due to the check above or from previous state.
+            // cogErr remains 0.
         }
+    } else {
+        // Conditions for using GPS COG not met (e.g., mag is used, or no GPS fix, or low sats)
+        // Reset filter initialization status and GPS heading initialization status
+        gpsHeadingInitialized = false;
+        cog_filters_initialized = false;
+        // cogErr remains 0.
     }
 #else
-    UNUSED(useMag);
-#endif
+    UNUSED(useMag); // Keep if USE_GPS is not defined
+    UNUSED(dt);     // Keep if USE_GPS is not defined
+#endif // defined(USE_GPS)
 
     float gyroAverage[XYZ_AXIS_COUNT];
     for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
