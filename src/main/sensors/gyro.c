@@ -146,11 +146,10 @@ bool gyroIsCalibrationComplete(void)
                 return false;
             }
         }
+        return true;
     } else {
-        isGyroSensorCalibrationComplete(&gyro.gyroSensor[gyro.gyroToUse]);
+        return isGyroSensorCalibrationComplete(&gyro.gyroSensor[gyro.gyroToUse]);
     }
-
-    return true;
 #else
     return isGyroSensorCalibrationComplete(&gyro.gyroSensor[0]);
 #endif
