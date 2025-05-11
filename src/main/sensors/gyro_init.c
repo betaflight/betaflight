@@ -686,12 +686,12 @@ bool gyroInit(void)
 
     if (gyro.gyroToUse != GYRO_CONFIG_USE_GYRO_1 || gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_ALL) {
         for (int i = 1; i < GYRO_COUNT; i++) {
-            static DMA_DATA uint8_t gyroBuf[GYRO_BUF_SIZE];
+            static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][GYRO_BUF_SIZE];
             // SPI DMA buffer required per device
-            gyro.gyroSensor[i].gyroDev.dev.txBuf = gyroBuf;
-            gyro.gyroSensor[i].gyroDev.dev.rxBuf = &gyroBuf[GYRO_BUF_SIZE / 2];
+            gyro.gyroSensor[i].gyroDev.dev.txBuf = gyroBuf[i];
+            gyro.gyroSensor[i].gyroDev.dev.rxBuf = &gyroBuf[i][GYRO_BUF_SIZE / 2];
 
-            gyroInitSensor(&gyro.gyroSensor[i], gyroDeviceConfig(1));
+            gyroInitSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i));
             gyro.gyroHasOverflowProtection = gyro.gyroHasOverflowProtection && gyro.gyroSensor[i].gyroDev.gyroHasOverflowProtection;
             detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor[i].gyroDev.gyroHardware;
         }
