@@ -367,7 +367,7 @@ bool accInit(uint16_t accSampleRateHz)
     const sensorAlignment_t* customAlignment = &gyroDeviceConfig(0)->customAlignment;
 
 #if GYRO_COUNT > 1
-    for (int i = 1; i > GYRO_COUNT; i++) {
+    for (int i = 1; i < GYRO_COUNT; i++) {
         if (gyroConfig()->gyro_to_use == i) {
             alignment = gyroDeviceConfig(i)->alignment;
             customAlignment = &gyroDeviceConfig(i)->customAlignment;
