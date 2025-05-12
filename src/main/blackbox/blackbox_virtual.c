@@ -87,10 +87,7 @@ bool blackboxVirtualBeginLog(void)
     if (blackboxVirtualFile != NULL) {
         return false;
     }
-    // file name template: LOG00001.BFL.
-    // Add final 8 to avoid compiler errors (format-overflow)
-    // due to possibility of huge largestLogFileNumber.
-    const size_t name_buffer_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 8;
+    const size_t name_buffer_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 2; //file name template: LOG00001.BFL
     char filename[name_buffer_length];
     sprintf(filename, "%s%05i.%s", LOGFILE_PREFIX, largestLogFileNumber + 1, LOGFILE_SUFFIX);
     blackboxVirtualFile = fopen(filename, "w");
