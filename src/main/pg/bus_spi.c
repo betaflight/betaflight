@@ -31,10 +31,12 @@
 
 #include "bus_spi.h"
 
+#ifdef USE_SPI_DEVICE_0
 #ifndef SPI0_SCK_PIN
 #define SPI0_SCK_PIN    NONE
 #define SPI0_SDI_PIN    NONE
 #define SPI0_SDO_PIN    NONE
+#endif
 #endif
 
 #ifndef SPI1_SCK_PIN
