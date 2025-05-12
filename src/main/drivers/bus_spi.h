@@ -51,7 +51,6 @@ typedef enum SPIDevice {
     SPIDEV_0   = SPIDEV_FIRST,
     SPIDEV_1,
 #else
-    SPIDEV_0   = SPIINVALID,
     SPIDEV_1   = SPIDEV_FIRST,
 #endif
     SPIDEV_2,
