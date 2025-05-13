@@ -30,11 +30,11 @@ MCU_EXCLUDES = \
 
 TARGET_MAP  = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
+LIBS        = -lm -lpthread -lc -lrt
+
+# overriden on Apple silicon macosx
 LD_FLAGS    := \
-            -lm \
-            -lpthread \
-            -lc \
-            -lrt \
+            $(LIBS) \
             $(ARCH_FLAGS) \
             $(LTO_FLAGS) \
             $(DEBUG_FLAGS) \
@@ -55,4 +55,21 @@ OPTIMISE_SPEED      := -Ofast
 OPTIMISE_SIZE       := -Os
 
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+endif
+
+ifneq ($(filter macosx-arm%,$(OSFAMILY)-$(ARCHFAMILY)),)
+
+    CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations -fuse-linker-plugin
+
+    ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+        $(error Static builds are not supported on MacOS)
+    endif
+
+    # This removes the linker script for MacOS apple silicon builds and may cause issues with PG.
+    LD_FLAGS := \
+            $(filter-out -lrt, $(LIBS)) \
+            $(ARCH_FLAGS) \
+            $(LTO_FLAGS) \
+            $(DEBUG_FLAGS) \
+            -Wl,-map,$(TARGET_MAP)
 endif

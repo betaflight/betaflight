@@ -116,7 +116,7 @@ static void pwmWriteStandard(uint8_t index, float value)
 
 static void pwmShutdownPulsesForAllMotors(void)
 {
-    for (int index = 0; pwmMotorCount; index++) {
+    for (int index = 0; index < pwmMotorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         if (pwmMotors[index].channel.ccr) {
             *pwmMotors[index].channel.ccr = 0;
@@ -135,7 +135,7 @@ static void pwmCompleteMotorUpdate(void)
         return;
     }
 
-    for (int index = 0; pwmMotorCount; index++) {
+    for (int index = 0; index < pwmMotorCount; index++) {
         if (pwmMotors[index].forceOverflow) {
             timerForceOverflow(pwmMotors[index].channel.tim);
         }

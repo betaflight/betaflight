@@ -473,7 +473,15 @@ bool osdFormatRtcDateTime(char *buffer)
         return false;
     }
 
-    dateTimeFormatLocalShort(buffer, &dateTime);
+    switch (activeElement.type) {
+    case OSD_ELEMENT_TYPE_2:
+        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
+        break;
+    case OSD_ELEMENT_TYPE_1:
+    default:
+        dateTimeFormatLocalShort(buffer, &dateTime);
+        break;
+    }
 
     return true;
 }
@@ -515,6 +523,8 @@ static char osdGetTimerSymbol(osd_timer_source_e src)
         return SYM_FLY_M;
     case OSD_TIMER_SRC_ON_OR_ARMED:
         return ARMING_FLAG(ARMED) ? SYM_FLY_M : SYM_ON_M;
+    case OSD_TIMER_SRC_LAUNCH_TIME:
+        return 'L';
     default:
         return ' ';
     }
@@ -533,6 +543,8 @@ static timeUs_t osdGetTimerValue(osd_timer_source_e src)
     }
     case OSD_TIMER_SRC_ON_OR_ARMED:
         return ARMING_FLAG(ARMED) ? osdFlyTime : micros();
+    case OSD_TIMER_SRC_LAUNCH_TIME:
+        return osdLaunchTime;
     default:
         return 0;
     }
@@ -1085,10 +1097,10 @@ static void osdElementFlymode(osdElementParms_t *element)
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
         strcpy(element->buff, "ATRN");
 #ifdef USE_CHIRP
-    // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their googles
+    // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their goggles
     } else if (FLIGHT_MODE(CHIRP_MODE) && !pidChirpIsFinished()) {
-#endif
         strcpy(element->buff, "CHIR");
+#endif
     } else if (isAirmodeEnabled()) {
         strcpy(element->buff, "AIR ");
     } else {

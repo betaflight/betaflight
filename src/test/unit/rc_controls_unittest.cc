@@ -271,6 +271,7 @@ protected:
         .rate_limit = {0, 0, 0},
         .profileName = "default",
         .quickRatesRcExpo = 0,
+        .thrHover8 = 0,
     };
 
     channelRange_t fullRange = {
@@ -292,6 +293,7 @@ protected:
         controlRateConfig.rcExpo[FD_PITCH] = 0;
         controlRateConfig.thrMid8 = 0;
         controlRateConfig.thrExpo8 = 0;
+        controlRateConfig.thrHover8 = 0;
         controlRateConfig.rcExpo[FD_YAW] = 0;
         controlRateConfig.rates[0] = 0;
         controlRateConfig.rates[1] = 0;
@@ -376,6 +378,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
         .rate_limit = {0, 0, 0},
         .profileName = "default",
         .quickRatesRcExpo = 0,
+        .thrHover8 = 0,
     };
 
     // and
