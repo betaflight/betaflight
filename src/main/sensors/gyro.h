@@ -60,16 +60,6 @@ typedef union gyroLowpassFilter_u {
     pt3Filter_t pt3FilterState;
 } gyroLowpassFilter_t;
 
-typedef enum gyroDetectionFlags_e {
-    GYRO_NONE_MASK = 0,
-#if GYRO_COUNT == 2
-    GYRO_IDENTICAL_MASK = BIT(7), // All gyros are of the same hardware type
-#endif
-#if GYRO_COUNT == 3
-    GYRO_IDENTICAL_MASK = BIT(7), // All gyros are of the same hardware type
-#endif
-} gyroDetectionFlags_t;
-
 typedef struct gyroCalibration_s {
     float sum[XYZ_AXIS_COUNT];
     stdev_t var[XYZ_AXIS_COUNT];
@@ -112,7 +102,7 @@ typedef struct gyro_s {
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
     uint16_t accSampleRateHz;
-    uint8_t gyroToUse;
+    uint8_t gyroEnabledBitmask;
     uint8_t gyroDebugMode;
     bool gyroHasOverflowProtection;
     bool useDualGyroDebugging;
@@ -154,13 +144,6 @@ typedef enum {
     YAW_SPIN_RECOVERY_AUTO
 } yawSpinRecoveryMode_e;
 
-typedef enum {
-    GYRO_CONFIG_USE_GYRO_1,
-    GYRO_CONFIG_USE_GYRO_2,
-    GYRO_CONFIG_USE_GYRO_3,
-    GYRO_CONFIG_USE_GYRO_ALL,
-} gyroToUse_e;
-
 enum {
     FILTER_LPF1 = 0,
     FILTER_LPF2
@@ -170,7 +153,6 @@ typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t gyro_hardware_lpf;                // gyro DLPF setting
     uint8_t gyro_high_fsr;
-    uint8_t gyro_to_use;
 
     uint16_t gyro_lpf1_static_hz;
     uint16_t gyro_lpf2_static_hz;
@@ -200,6 +182,8 @@ typedef struct gyroConfig_s {
     uint8_t gyro_lpf1_dyn_expo; // set the curve for dynamic gyro lowpass filter
     uint8_t simplified_gyro_filter;
     uint8_t simplified_gyro_filter_multiplier;
+
+    uint8_t gyro_enabled_bitmask;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
