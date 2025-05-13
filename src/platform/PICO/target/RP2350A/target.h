@@ -32,16 +32,18 @@ void _bprintf(const char * format, ...);
 #endif
 
 
-#ifndef RP2350B
-#define RP2350B
+#ifndef RP2350A
+#define RP2350A
 #endif
 
 #ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "235B"
+// TODO 235A?
 #endif
 
 #ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight RP2350B"
+// TODO
 #endif
 
 #define USE_IO
@@ -147,8 +149,9 @@ void _bprintf(const char * format, ...);
 /* to be moved to a config file once target if working
    defaults as per Laurel board for now */
 
-#define LED0_PIN             P6
-#define LED1_PIN             P7
+#define LED0_PIN             P25
+#undef LED1_PIN
+#undef LED2_PIN
 
 #define SPI0_SCK_PIN         P2
 #define SPI0_SDI_PIN         P4
@@ -235,10 +238,10 @@ SPARE3          P47
 */
 
 #define SPIDEV_COUNT 2
-#define MAX_SPI_PIN_SEL 6
+#define MAX_SPI_PIN_SEL 4
 
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 
-#define UARTHARDWARE_MAX_PINS 12
+#define UARTHARDWARE_MAX_PINS 8
 #define UART_TRAIT_AF_PORT 1
