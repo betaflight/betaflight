@@ -23,7 +23,7 @@
 #include <stdbool.h>
 
 #ifndef PINIO_COUNT
-#define PINIO_COUNT 4
+#define PINIO_COUNT 8
 #endif
 
 #define PINIO_CONFIG_OUT_INVERTED 0x80
