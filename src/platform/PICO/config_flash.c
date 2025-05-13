@@ -47,19 +47,22 @@ void configClearFlags(void)
 
 configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer)
 {
+    // TODO: synchronise second core... see e.g. pico-examples flash_program, uses flash_safe_execute.
+
+    // pico-sdk flash_range functions use the offset from start of FLASH
+    uint32_t flash_offs = address - XIP_BASE;
+
     uint32_t interrupts = save_and_disable_interrupts();
 
-    if (address == __config_start) {
+    if ((flash_offs % FLASH_SECTOR_SIZE) == 0) {
         // Erase the flash sector before writing
-        flash_range_erase(address, FLASH_PAGE_SIZE);
+        flash_range_erase(flash_offs, FLASH_SECTOR_SIZE);
     }
 
     STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(config_streamer_buffer_type_t) * CONFIG_STREAMER_BUFFER_SIZE,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
 
     // Write data to flash
-    // TODO: synchronise second core...
-
-    flash_range_program(address, buffer, CONFIG_STREAMER_BUFFER_SIZE);
+    flash_range_program(flash_offs, buffer, CONFIG_STREAMER_BUFFER_SIZE);
 
     restore_interrupts(interrupts);
     return CONFIG_RESULT_SUCCESS;

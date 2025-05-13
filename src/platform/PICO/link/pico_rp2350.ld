@@ -1,243 +1,329 @@
-/* Specify the memory areas */
+/* Based on GCC ARM embedded samples.
+   Defines the following symbols for use by code:
+    __exidx_start
+    __exidx_end
+    __etext
+    __data_start__
+    __preinit_array_start
+    __preinit_array_end
+    __init_array_start
+    __init_array_end
+    __fini_array_start
+    __fini_array_end
+    __data_end__
+    __bss_start__
+    __bss_end__
+    __end__
+    end
+    __HeapLimit
+    __StackLimit
+    __StackTop
+    __stack (== StackTop)
+*/
+
 MEMORY
 {
-    FLASH_X (rx)      : ORIGIN = 0x10000000, LENGTH = 16K
-    FLASH_CONFIG (r)  : ORIGIN = 0x10004000, LENGTH = 16K
-    FLASH (rx)        : ORIGIN = 0x10008000, LENGTH = 992K
-    RAM (rwx)         : ORIGIN = 0x20000000, LENGTH = 512K
-    SCRATCH_X(rwx)    : ORIGIN = 0x20080000, LENGTH = 4k
-    SCRATCH_Y(rwx)    : ORIGIN = 0x20081000, LENGTH = 4k
+    /* TODO: Assuming for now that target has >= 4MB boot flash */
+    FLASH (rx)        : ORIGIN = 0x10000000, LENGTH = 4032K
+    FLASH_CONFIG (r)  : ORIGIN = 0x103F0000, LENGTH = 64K
+    RAM(rwx) : ORIGIN =  0x20000000, LENGTH = 512k
+    SCRATCH_X(rwx) : ORIGIN = 0x20080000, LENGTH = 4k
+    SCRATCH_Y(rwx) : ORIGIN = 0x20081000, LENGTH = 4k
 }
 
-REGION_ALIAS("STACKRAM", RAM)
-REGION_ALIAS("FASTRAM", RAM)
-REGION_ALIAS("MOVABLE_FLASH", FLASH)
+ENTRY(_entry_point)
 
-/* Entry Point */
-ENTRY(Reset_Handler)
-
-/* Highest address of the user mode stack */
-_estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - 8; /* Reserve 2 x 4bytes for info across reset */
-
-/* Base address where the config is stored. */
-__config_start = ORIGIN(FLASH_CONFIG);
-__config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
-
-/* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0;      /* required amount of heap  */
-_Min_Stack_Size = 0x800; /* required amount of stack */
-
-/* Define output sections */
 SECTIONS
 {
-  /* The startup code goes first into FLASH_X */
-  .isr_vector :
-  {
-    . = ALIGN(512);
-    PROVIDE (isr_vector_table_base = .);
-    KEEP(*(.isr_vector)) /* Startup code */
-    . = ALIGN(4);
-  } >FLASH_X
+    .flash_begin : {
+        __flash_binary_start = .;
+    } > FLASH
 
-  /* The program code and other data goes into FLASH */
-  .text :
-  {
-    . = ALIGN(4);
-    *(.text)           /* .text sections (code) */
-    *(.text*)          /* .text* sections (code) */
-    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
-    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
-    *(.glue_7)         /* glue arm to thumb code */
-    *(.glue_7t)        /* glue thumb to arm code */
-    *(.eh_frame)
+    /* The bootrom will enter the image at the point indicated in your
+       IMAGE_DEF, which is usually the reset handler of your vector table.
 
-    KEEP (*(.init))
-    KEEP (*(.fini))
+       The debugger will use the ELF entry point, which is the _entry_point
+       symbol, and in our case is *different from the bootrom's entry point.*
+       This is used to go back through the bootrom on debugger launches only,
+       to perform the same initial flash setup that would be performed on a
+       cold boot.
+    */
 
-    . = ALIGN(4);
-    _etext = .;        /* define a global symbols at end of code */
-  } >FLASH
+    .text : {
+        __logical_binary_start = .;
+        KEEP (*(.vectors))
+        KEEP (*(.binary_info_header))
+        __binary_info_header_end = .;
+        KEEP (*(.embedded_block))
+        __embedded_block_end = .;
+        KEEP (*(.reset))
+        /* TODO revisit this now memset/memcpy/float in ROM */
+        /* bit of a hack right now to exclude all floating point and time critical (e.g. memset, memcpy) code from
+         * FLASH ... we will include any thing excluded here in .data below by default */
+        *(.init)
+        *libgcc.a:cmse_nonsecure_call.o
+        *(EXCLUDE_FILE(*libgcc.a: *libc.a:*lib_a-mem*.o *libm.a:) .text*)
+        *(.fini)
+        /* Pull all c'tors into .text */
+        *crtbegin.o(.ctors)
+        *crtbegin?.o(.ctors)
+        *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+        *(SORT(.ctors.*))
+        *(.ctors)
+        /* Followed by destructors */
+        *crtbegin.o(.dtors)
+        *crtbegin?.o(.dtors)
+        *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+        *(SORT(.dtors.*))
+        *(.dtors)
 
-  .ARM.extab   :
-  {
-    *(.ARM.extab* .gnu.linkonce.armextab.*)
-  } >FLASH
+        . = ALIGN(4);
+        /* preinit data */
+        PROVIDE_HIDDEN (__preinit_array_start = .);
+        KEEP(*(SORT(.preinit_array.*)))
+        KEEP(*(.preinit_array))
+        PROVIDE_HIDDEN (__preinit_array_end = .);
 
-  .ARM :
-  {
+        . = ALIGN(4);
+        /* init data */
+        PROVIDE_HIDDEN (__init_array_start = .);
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        PROVIDE_HIDDEN (__init_array_end = .);
+
+        . = ALIGN(4);
+        /* finit data */
+        PROVIDE_HIDDEN (__fini_array_start = .);
+        *(SORT(.fini_array.*))
+        *(.fini_array)
+        PROVIDE_HIDDEN (__fini_array_end = .);
+
+        *(.eh_frame*)
+        . = ALIGN(4);
+    } > FLASH
+
+    /* Note the boot2 section is optional, and should be discarded if there is
+       no reference to it *inside* the binary, as it is not called by the
+       bootrom. (The bootrom performs a simple best-effort XIP setup and
+       leaves it to the binary to do anything more sophisticated.) However
+       there is still a size limit of 256 bytes, to ensure the boot2 can be
+       stored in boot RAM.
+
+       Really this is a "XIP setup function" -- the name boot2 is historic and
+       refers to its dual-purpose on RP2040, where it also handled vectoring
+       from the bootrom into the user image.
+    */
+
+    .boot2 : {
+        __boot2_start__ = .;
+        *(.boot2)
+        __boot2_end__ = .;
+    } > FLASH
+
+    ASSERT(__boot2_end__ - __boot2_start__ <= 256,
+        "ERROR: Pico second stage bootloader must be no more than 256 bytes in size")
+
+    .rodata : {
+        *(EXCLUDE_FILE(*libgcc.a: *libc.a:*lib_a-mem*.o *libm.a:) .rodata*)
+        *(.srodata*)
+        . = ALIGN(4);
+        *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.flashdata*)))
+        . = ALIGN(4);
+    } > FLASH
+
+    .ARM.extab :
+    {
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > FLASH
+
     __exidx_start = .;
-    *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH
+    .ARM.exidx :
+    {
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    } > FLASH
+    __exidx_end = .;
 
-  .pg_registry :
-  {
-    PROVIDE_HIDDEN (__pg_registry_start = .);
-    KEEP (*(.pg_registry))
-    KEEP (*(SORT(.pg_registry.*)))
-    PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >FLASH
-
-  .pg_resetdata :
-  {
-    PROVIDE_HIDDEN (__pg_resetdata_start = .);
-    KEEP (*(.pg_resetdata))
-    PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH
-
-  /* used by the startup to initialize data */
-  _sidata = LOADADDR(.data);
-
-  /* Initialized data sections goes into RAM, load LMA copy after code */
-  .data :
-  {
+    /* Machine inspectable binary information */
     . = ALIGN(4);
-    _sdata = .;        /* create a global symbol at data start */
-    *(.data)           /* .data sections */
-    *(.data*)          /* .data* sections */
-
+    __binary_info_start = .;
+    .binary_info :
+    {
+        KEEP(*(.binary_info.keep.*))
+        *(.binary_info.*)
+    } > FLASH
+    __binary_info_end = .;
     . = ALIGN(4);
-    *(.after_data.*)
-    . = ALIGN(4);
-    /* preinit data */
-    PROVIDE_HIDDEN (__mutex_array_start = .);
-    KEEP(*(SORT(.mutex_array.*)))
-    KEEP(*(.mutex_array))
-    PROVIDE_HIDDEN (__mutex_array_end = .);
 
-    . = ALIGN(4);
-    _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH
+    .ram_vector_table (NOLOAD): {
+        *(.ram_vector_table)
+    } > RAM
 
-  /* Uninitialized data section */
-  . = ALIGN(4);
-  .bss (NOLOAD) :
-  {
-    /* This is used by the startup in order to initialize the .bss secion */
-    _sbss = .;         /* define a global symbol at bss start */
-    __bss_start__ = _sbss;
-    *(.bss)
-    *(SORT_BY_ALIGNMENT(.bss*))
-    *(COMMON)
+    .uninitialized_data (NOLOAD): {
+        . = ALIGN(4);
+        *(.uninitialized_data*)
+    } > RAM
 
-    . = ALIGN(4);
-    _ebss = .;         /* define a global symbol at bss end */
-    __bss_end__ = _ebss;
-  } >RAM
+    .data : {
+        __data_start__ = .;
+        *(vtable)
 
-  /* Uninitialized data section */
-  . = ALIGN(4);
-  .sram2 (NOLOAD) :
-  {
-    /* This is used by the startup in order to initialize the .sram2 secion */
-    _ssram2 = .;         /* define a global symbol at sram2 start */
-    __sram2_start__ = _ssram2;
-    *(.sram2)
-    *(SORT_BY_ALIGNMENT(.sram2*))
+        *(.time_critical*)
 
-    . = ALIGN(4);
-    _esram2 = .;         /* define a global symbol at sram2 end */
-    __sram2_end__ = _esram2;
-  } >RAM
+        /* remaining .text and .rodata; i.e. stuff we exclude above because we want it in RAM */
+        *(.text*)
+        . = ALIGN(4);
+        *(.rodata*)
+        . = ALIGN(4);
 
-  /* used during startup to initialized fastram_data */
-  _sfastram_idata = LOADADDR(.fastram_data);
+        *(.data*)
+        *(.sdata*)
 
-  /* Initialized FAST_DATA section for unsuspecting developers */
-  .fastram_data :
-  {
-    . = ALIGN(4);
-    _sfastram_data = .;        /* create a global symbol at data start */
-    *(.fastram_data)           /* .data sections */
-    *(.fastram_data*)          /* .data* sections */
+        . = ALIGN(4);
+        *(.after_data.*)
+        . = ALIGN(4);
+        /* preinit data */
+        PROVIDE_HIDDEN (__mutex_array_start = .);
+        KEEP(*(SORT(.mutex_array.*)))
+        KEEP(*(.mutex_array))
+        PROVIDE_HIDDEN (__mutex_array_end = .);
 
-    . = ALIGN(4);
-    _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT >FLASH
+        *(.jcr)
+        . = ALIGN(4);
+    } > RAM AT> FLASH
 
-  . = ALIGN(4);
-  .fastram_bss (NOLOAD) :
-  {
-    _sfastram_bss = .;
-    __fastram_bss_start__ = _sfastram_bss;
-    *(.fastram_bss)
-    *(SORT_BY_ALIGNMENT(.fastram_bss*))
+    .tdata : {
+        . = ALIGN(4);
+		*(.tdata .tdata.* .gnu.linkonce.td.*)
+        /* All data end */
+        __tdata_end = .;
+    } > RAM AT> FLASH
+    PROVIDE(__data_end__ = .);
 
-    . = ALIGN(4);
-    _efastram_bss = .;
-    __fastram_bss_end__ = _efastram_bss;
-  } >FASTRAM
+    /* __etext is (for backwards compatibility) the name of the .data init source pointer (...) */
+    __etext = LOADADDR(.data);
 
-  /* used during startup to initialized dmaram_data */
-  _sdmaram_idata = LOADADDR(.dmaram_data);
+    .tbss (NOLOAD) : {
+        . = ALIGN(4);
+        __bss_start__ = .;
+        __tls_base = .;
+        *(.tbss .tbss.* .gnu.linkonce.tb.*)
+        *(.tcommon)
 
-  . = ALIGN(32);
-  .dmaram_data :
-  {
-    PROVIDE(dmaram_start = .);
-    _sdmaram = .;
-    _dmaram_start__ = _sdmaram;
-    _sdmaram_data = .;        /* create a global symbol at data start */
-    *(.dmaram_data)           /* .data sections */
-    *(.dmaram_data*)          /* .data* sections */
-    . = ALIGN(32);
-    _edmaram_data = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH
+        __tls_end = .;
+    } > RAM
 
-  . = ALIGN(32);
-  .dmaram_bss (NOLOAD) :
-  {
-    _sdmaram_bss = .;
-    __dmaram_bss_start__ = _sdmaram_bss;
-    *(.dmaram_bss)
-    *(SORT_BY_ALIGNMENT(.dmaram_bss*))
-    . = ALIGN(32);
-    _edmaram_bss = .;
-    __dmaram_bss_end__ = _edmaram_bss;
-  } >RAM
+    .bss (NOLOAD) : {
+        . = ALIGN(4);
+        __tbss_end = .;
 
-  . = ALIGN(32);
-  .DMA_RAM (NOLOAD) :
-  {
-    KEEP(*(.DMA_RAM))
-    PROVIDE(dmaram_end = .);
-    _edmaram = .;
-    _dmaram_end__ = _edmaram;
-  } >RAM
+        *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.bss*)))
+        *(COMMON)
+        PROVIDE(__global_pointer$ = . + 2K);
+        *(.sbss*)
+        . = ALIGN(4);
+        __bss_end__ = .;
+    } > RAM
 
-  .DMA_RW_AXI (NOLOAD) :
-  {
-    . = ALIGN(32);
-    PROVIDE(dmarwaxi_start = .);
-    _sdmarwaxi = .;
-    _dmarwaxi_start__ = _sdmarwaxi;
-    KEEP(*(.DMA_RW_AXI))
-    PROVIDE(dmarwaxi_end = .);
-    _edmarwaxi = .;
-    _dmarwaxi_end__ = _edmarwaxi;
-  } >RAM
+    .heap (NOLOAD):
+    {
+        __end__ = .;
+        end = __end__;
+        KEEP(*(.heap*))
+    } > RAM
+    /* historically on GCC sbrk was growing past __HeapLimit to __StackLimit, however
+       to be more compatible, we now set __HeapLimit explicitly to where the end of the heap is */
+    __HeapLimit = ORIGIN(RAM) + LENGTH(RAM);
 
-  .persistent_data (NOLOAD) :
-  {
-    __persistent_data_start__ = .;
-    *(.persistent_data)
-    . = ALIGN(4);
-    __persistent_data_end__ = .;
-  } >RAM
+    /* Start and end symbols must be word-aligned */
+    .scratch_x : {
+        __scratch_x_start__ = .;
+        *(.scratch_x.*)
+        . = ALIGN(4);
+        __scratch_x_end__ = .;
+    } > SCRATCH_X AT > FLASH
+    __scratch_x_source__ = LOADADDR(.scratch_x);
+
+    .scratch_y : {
+        __scratch_y_start__ = .;
+        *(.scratch_y.*)
+        . = ALIGN(4);
+        __scratch_y_end__ = .;
+    } > SCRATCH_Y AT > FLASH
+    __scratch_y_source__ = LOADADDR(.scratch_y);
+
+    /* .stack*_dummy section doesn't contains any symbols. It is only
+     * used for linker to calculate size of stack sections, and assign
+     * values to stack symbols later
+     *
+     * stack1 section may be empty/missing if platform_launch_core1 is not used */
+
+    /* by default we put core 0 stack at the end of scratch Y, so that if core 1
+     * stack is not used then all of SCRATCH_X is free.
+     */
+    .stack1_dummy (NOLOAD):
+    {
+        *(.stack1*)
+    } > SCRATCH_X
+    .stack_dummy (NOLOAD):
+    {
+        KEEP(*(.stack*))
+    } > SCRATCH_Y
+
+    /* keep embedded end block as final entry into FLASH 
+     * - helps protect against partial/corrupt load into flash
+     */
+    .flash_end : {
+        KEEP(*(.embedded_end_block*))
+        PROVIDE(__flash_binary_end = .);
+    } > FLASH =0xaa
 
 
-  /* User_heap_stack section, used to check that there is enough RAM left */
-  _heap_stack_end = ORIGIN(STACKRAM)+LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */
-  _heap_stack_begin = _heap_stack_end - _Min_Stack_Size  - _Min_Heap_Size;
-  . = _heap_stack_begin;
-  ._user_heap_stack :
-  {
-    . = ALIGN(4);
-    PROVIDE ( end = . );
-    PROVIDE ( _end = . );
-    . = . + _Min_Heap_Size;
-    . = . + _Min_Stack_Size;
-    . = ALIGN(4);
-  } >STACKRAM = 0xa5
+    /* Base address where the config is stored. */
+    __config_start = ORIGIN(FLASH_CONFIG);
+    __config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
+
+    .pg_registry :
+    {
+      PROVIDE_HIDDEN (__pg_registry_start = .);
+      KEEP (*(.pg_registry))
+      KEEP (*(SORT(.pg_registry.*)))
+      PROVIDE_HIDDEN (__pg_registry_end = .);
+    } >FLASH
+
+    .pg_resetdata :
+    {
+      PROVIDE_HIDDEN (__pg_resetdata_start = .);
+      KEEP (*(.pg_resetdata))
+      PROVIDE_HIDDEN (__pg_resetdata_end = .);
+    } >FLASH
+
+
+    /* stack limit is poorly named, but historically is maximum heap ptr */
+    __StackLimit = ORIGIN(RAM) + LENGTH(RAM);
+    __StackOneTop = ORIGIN(SCRATCH_X) + LENGTH(SCRATCH_X);
+    __StackTop = ORIGIN(SCRATCH_Y) + LENGTH(SCRATCH_Y);
+    __StackOneBottom = __StackOneTop - SIZEOF(.stack1_dummy);
+    __StackBottom = __StackTop - SIZEOF(.stack_dummy);
+    PROVIDE(__stack = __StackTop);
+
+    /* picolibc and LLVM */
+    PROVIDE (__heap_start = __end__);
+    PROVIDE (__heap_end = __HeapLimit);
+    PROVIDE( __tls_align = MAX(ALIGNOF(.tdata), ALIGNOF(.tbss)) );
+    PROVIDE( __tls_size_align = (__tls_size + __tls_align - 1) & ~(__tls_align - 1));
+    PROVIDE( __arm32_tls_tcb_offset = MAX(8, __tls_align) );
+
+    /* llvm-libc */
+    PROVIDE (_end = __end__);
+    PROVIDE (__llvm_libc_heap_limit = __HeapLimit);
+
+    /* Check if data + heap + stack exceeds RAM limit */
+    ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed")
+
+    ASSERT( __binary_info_header_end - __logical_binary_start <= 1024, "Binary info must be in first 1024 bytes of the binary")
+    ASSERT( __embedded_block_end - __logical_binary_start <= 4096, "Embedded block must be in first 4096 bytes of the binary")
+
+    /* todo assert on extra code */
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
@@ -247,5 +333,5 @@ SECTIONS
     libgcc.a ( * )
   }
 
-  .ARM.attributes 0 : { *(.ARM.attributes) }
 }
+
