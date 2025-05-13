@@ -1805,17 +1805,7 @@ case MSP_NAME:
         break;
 
     case MSP_SENSOR_ALIGNMENT: {
-        uint8_t gyroAlignment;
-#if GYRO_COUNT > 1
-        if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
-            // for Multi-gyro in "ALL" mode we only read/write gyro 0
-            gyroAlignment = gyroDeviceConfig(0)->alignment;
-        } else {
-            gyroAlignment = gyroDeviceConfig(gyroConfig()->gyro_to_use)->alignment;
-        }
-#else
-        gyroAlignment = gyroDeviceConfig(0)->alignment;
-#endif
+        uint8_t gyroAlignment = gyroDeviceConfig(0)->alignment;
         sbufWriteU8(dst, gyroAlignment);
         sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same
 #if defined(USE_MAG)
@@ -1826,32 +1816,18 @@ case MSP_NAME:
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectionFlags());
+        sbufWriteU8(dst, 0); // deprecated gyro_to_use
 #if GYRO_COUNT > 1
-        sbufWriteU8(dst, gyroConfig()->gyro_to_use);
         sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, gyroDeviceConfig(1)->alignment);
 #else
-        sbufWriteU8(dst, GYRO_CONFIG_USE_GYRO_1);
         sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, ALIGN_DEFAULT);
 #endif
         // Added in MSP API 1.47
-#if GYRO_COUNT > 1
-        if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
-            // for Multi-gyro in "ALL" mode we only read/write gyro 0
-            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
-            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
-            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
-        } else {
-            sbufWriteU16(dst, gyroDeviceConfig(gyroConfig()->gyro_to_use)->customAlignment.roll);
-            sbufWriteU16(dst, gyroDeviceConfig(gyroConfig()->gyro_to_use)->customAlignment.pitch);
-            sbufWriteU16(dst, gyroDeviceConfig(gyroConfig()->gyro_to_use)->customAlignment.yaw);
-        }
-#else
         sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
         sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
         sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
-#endif
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
@@ -1874,7 +1850,7 @@ case MSP_NAME:
         sbufWriteU16(dst, motorConfig()->motorIdle);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_use_32kHz
         sbufWriteU8(dst, motorConfig()->dev.motorInversion);
-        sbufWriteU8(dst, gyroConfig()->gyro_to_use);
+        sbufWriteU8(dst, 0); // deprecated gyro_to_use
         sbufWriteU8(dst, gyroConfig()->gyro_high_fsr);
         sbufWriteU8(dst, gyroConfig()->gyroMovementCalibrationThreshold);
         sbufWriteU16(dst, gyroConfig()->gyroCalibrationDuration);
@@ -3014,46 +2990,23 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         if (sbufBytesRemaining(src) >= 3) {
             // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
+            sbufReadU8(src);  // deprecated gyro_to_use
 #if GYRO_COUNT > 1
-            gyroConfigMutable()->gyro_to_use = sbufReadU8(src);
             gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
             gyroDeviceConfigMutable(1)->alignment = sbufReadU8(src);
 #else
-            sbufReadU8(src);  // unused gyro_to_use
             gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
             sbufReadU8(src);  // unused gyro_2_sensor_align
 #endif
         } else {
             // maintain backwards compatibility for API < 1.41
-#if GYRO_COUNT > 1
-            if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
-                // For multi-gyro in "ALL" mode we'll only update gyro 0
-                gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
-            } else {
-                gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->alignment = gyroAlignment;
-            }
-#else
             gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
-#endif
         }
         // Added in API 1.47
         if (sbufBytesRemaining(src) >= 6) {
-#if GYRO_COUNT > 1
-        if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
-            // for Multi-gyro in "ALL" mode we only read/write gyro 0
             gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
             gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
             gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
-        } else {
-            gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(gyroConfig()->gyro_to_use)->customAlignment.yaw = sbufReadU16(src);
-        }
-#else
-        gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
-        gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
-        gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
-#endif
         }
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
@@ -3085,7 +3038,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             motorConfigMutable()->dev.motorInversion = sbufReadU8(src);
         }
         if (sbufBytesRemaining(src) >= 8) {
-            gyroConfigMutable()->gyro_to_use = sbufReadU8(src);
+            sbufReadU8(src); // deprecated gyro_to_use
             gyroConfigMutable()->gyro_high_fsr = sbufReadU8(src);
             gyroConfigMutable()->gyroMovementCalibrationThreshold = sbufReadU8(src);
             gyroConfigMutable()->gyroCalibrationDuration = sbufReadU16(src);

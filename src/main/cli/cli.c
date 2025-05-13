@@ -3675,16 +3675,12 @@ static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-#if GYRO_COUNT > 1
     for (int i = 0; i < GYRO_COUNT; i++) {
-        if (gyroConfig()->gyro_to_use == i || gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_ALL) {
+        if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
             cliPrintLinef("\r\n# Gyro %d", i + 1);
             cliPrintGyroRegisters(i);  // assuming this takes a 0-based gyro index
         }
     }
-#else
-    cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
-#endif
 }
 #endif
 
