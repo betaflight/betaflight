@@ -1,3 +1,5 @@
+#if 0
+TODO remove this in favour of rp2_common/pico_clib_interface/newlib_interface.c
 /*
  * This file is part of Betaflight.
  *
@@ -82,3 +84,5 @@ int _write(int handle, char *buffer, int length)
     UNUSED(length);
     return -1;
 }
+
+#endif
