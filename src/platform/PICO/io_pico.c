@@ -91,7 +91,9 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
         return;
     }
 
-    gpio_set_dir(IO_Pin(io), (cfg & 0x01));
+    uint16_t ioPin = IO_Pin(io);
+    gpio_init(ioPin);
+    gpio_set_dir(ioPin, (cfg & 0x01));
 }
 
 IO_t IOGetByTag(ioTag_t tag)

@@ -46,11 +46,35 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = uart0,
         .rxPins = {
             { DEFIO_TAG_E(P1) },
+            { DEFIO_TAG_E(P3) },
+            { DEFIO_TAG_E(P13) },
+            { DEFIO_TAG_E(P15) },
             { DEFIO_TAG_E(P17) },
+            { DEFIO_TAG_E(P19) },
+            { DEFIO_TAG_E(P29) },
+#ifdef RP2350B
+            { DEFIO_TAG_E(P31) },
+            { DEFIO_TAG_E(P33) },
+            { DEFIO_TAG_E(P35) },
+            { DEFIO_TAG_E(P45) },
+            { DEFIO_TAG_E(P47) },
+#endif
         },
         .txPins = {
             { DEFIO_TAG_E(P0) },
+            { DEFIO_TAG_E(P2) },
+            { DEFIO_TAG_E(P12) },
+            { DEFIO_TAG_E(P14) },
             { DEFIO_TAG_E(P16) },
+            { DEFIO_TAG_E(P18) },
+            { DEFIO_TAG_E(P28) },
+#ifdef RP2350B
+            { DEFIO_TAG_E(P30) },
+            { DEFIO_TAG_E(P32) },
+            { DEFIO_TAG_E(P34) },
+            { DEFIO_TAG_E(P44) },
+            { DEFIO_TAG_E(P46) },
+#endif
         },
         .irqn = UART0_IRQ,
         .txBuffer = uart0TxBuffer,
@@ -66,13 +90,35 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = uart1,
         .rxPins = {
             { DEFIO_TAG_E(P5) },
+            { DEFIO_TAG_E(P7) },
             { DEFIO_TAG_E(P9) },
+            { DEFIO_TAG_E(P11) },
+            { DEFIO_TAG_E(P21) },
+            { DEFIO_TAG_E(P23) },
             { DEFIO_TAG_E(P25) },
+            { DEFIO_TAG_E(P27) },
+#ifdef RP2350B
+            { DEFIO_TAG_E(P37) },
+            { DEFIO_TAG_E(P39) },
+            { DEFIO_TAG_E(P41) },
+            { DEFIO_TAG_E(P43) },
+#endif
         },
         .txPins = {
             { DEFIO_TAG_E(P4) },
+            { DEFIO_TAG_E(P6) },
+            { DEFIO_TAG_E(P8) },
+            { DEFIO_TAG_E(P10) },
             { DEFIO_TAG_E(P20) },
+            { DEFIO_TAG_E(P22) },
             { DEFIO_TAG_E(P24) },
+            { DEFIO_TAG_E(P26) },
+#ifdef RP2350B
+            { DEFIO_TAG_E(P36) },
+            { DEFIO_TAG_E(P38) },
+            { DEFIO_TAG_E(P40) },
+            { DEFIO_TAG_E(P42) },
+#endif
         },
         .irqn = UART1_IRQ,
         .txBuffer = uart1TxBuffer,

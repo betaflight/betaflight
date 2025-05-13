@@ -38,6 +38,7 @@
 #undef DEFIO_TAG_MAKE
 #define DEFIO_TAG_MAKE(pin) ((ioTag_t)(((1) << DEFIO_PORT_BITSHIFT) | (pin)))
 
+// GPIOID for potential different banks ("ports")  of GPIO pins - for RP2350 there's only one
 #undef DEFIO_TAG_GPIOID
 #define DEFIO_TAG_GPIOID(tag) (((tag) >> DEFIO_PORT_BITSHIFT) - 1)
 
@@ -225,9 +226,9 @@
 
 // DEFIO_IO_USED_COUNT is number of io pins supported on target
 #if defined(RP2350A)
-#define DEFIO_IO_USED_COUNT 30
+#define DEFIO_IO_USED_COUNT DEFIO_USED_COUNT
 #elif defined(RP2350B)
-#define DEFIO_IO_USED_COUNT 48
+#define DEFIO_IO_USED_COUNT DEFIO_USED_COUNT
 #endif
 
 // DEFIO_PORT_USED_LIST - comma separated list of bitmask for all used ports.
