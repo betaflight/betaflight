@@ -46,6 +46,22 @@
 #define PINIO4_BOX PERMANENT_ID_NONE
 #endif
 
+#ifndef PINIO5_BOX
+#define PINIO5_BOX PERMANENT_ID_NONE
+#endif
+
+#ifndef PINIO6_BOX
+#define PINIO6_BOX PERMANENT_ID_NONE
+#endif
+
+#ifndef PINIO7_BOX
+#define PINIO7_BOX PERMANENT_ID_NONE
+#endif
+
+#ifndef PINIO8_BOX
+#define PINIO8_BOX PERMANENT_ID_NONE
+#endif
+
 PG_REGISTER_WITH_RESET_FN(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 1);
 
 void pgResetFn_pinioBoxConfig(pinioBoxConfig_t *config)
@@ -54,6 +70,10 @@ void pgResetFn_pinioBoxConfig(pinioBoxConfig_t *config)
     config->permanentId[1] = PINIO2_BOX;
     config->permanentId[2] = PINIO3_BOX;
     config->permanentId[3] = PINIO4_BOX;
+    config->permanentId[4] = PINIO5_BOX;
+    config->permanentId[5] = PINIO6_BOX;
+    config->permanentId[6] = PINIO7_BOX;
+    config->permanentId[7] = PINIO8_BOX;
 }
 
 #endif
