@@ -737,13 +737,7 @@ int16_t gyroRateDps(int axis)
 #ifdef USE_GYRO_REGISTER_DUMP
 static extDevice_t *gyroSensorDevByInstance(uint8_t whichSensor)
 {
-    for (int i = 0; i < GYRO_COUNT; i++) {
-        if (whichSensor == i) {
-            return &gyro.gyroSensor[i].gyroDev.dev;
-        }
-    }
-
-    return &gyro.gyroSensor[0].gyroDev.dev;
+    return (whichSensor < GYRO_COUNT) ? &gyro.gyroSensor[whichSensor].gyroDev.dev : &gyro.gyroSensor[0].gyroDev.dev;
 }
 
 uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
