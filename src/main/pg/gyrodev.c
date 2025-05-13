@@ -446,6 +446,56 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 #endif
 #endif // GYRO_COUNT 3
 
+#if GYRO_COUNT > 3
+    devconf[3].index = 3;
+#ifdef GYRO_4_SPI_INSTANCE
+    // TODO: CLKIN gyro 4 on separate pin is not supported yet. need to implement it
+    gyroResetSpiDeviceConfig(&devconf[3], GYRO_4_SPI_INSTANCE, IO_TAG(GYRO_4_CS_PIN), IO_TAG(GYRO_4_EXTI_PIN), IO_TAG(GYRO_4_CLKIN_PIN), GYRO_4_ALIGN, GYRO_4_CUSTOM_ALIGN);
+#else
+    devconf[3].busType = BUS_TYPE_NONE;
+#endif
+#endif // GYRO_COUNT 4
+
+#if GYRO_COUNT > 4
+    devconf[4].index = 4;
+#ifdef GYRO_5_SPI_INSTANCE
+    // TODO: CLKIN gyro 5 on separate pin is not supported yet. need to implement it
+    gyroResetSpiDeviceConfig(&devconf[4], GYRO_5_SPI_INSTANCE, IO_TAG(GYRO_5_CS_PIN), IO_TAG(GYRO_5_EXTI_PIN), IO_TAG(GYRO_5_CLKIN_PIN), GYRO_5_ALIGN, GYRO_5_CUSTOM_ALIGN);
+#else
+    devconf[4].busType = BUS_TYPE_NONE;
+#endif
+#endif // GYRO_COUNT 5
+
+#if GYRO_COUNT > 5
+    devconf[5].index = 5;
+#ifdef GYRO_6_SPI_INSTANCE
+    // TODO: CLKIN gyro 6 on separate pin is not supported yet. need to implement it
+    gyroResetSpiDeviceConfig(&devconf[5], GYRO_6_SPI_INSTANCE, IO_TAG(GYRO_6_CS_PIN), IO_TAG(GYRO_6_EXTI_PIN), IO_TAG(GYRO_6_CLKIN_PIN), GYRO_6_ALIGN, GYRO_6_CUSTOM_ALIGN);
+#else
+    devconf[5].busType = BUS_TYPE_NONE;
+#endif
+#endif // GYRO_COUNT 6
+
+#if GYRO_COUNT > 6
+    devconf[6].index = 6;
+#ifdef GYRO_7_SPI_INSTANCE
+    // TODO: CLKIN gyro 7 on separate pin is not supported yet. need to implement it
+    gyroResetSpiDeviceConfig(&devconf[6], GYRO_7_SPI_INSTANCE, IO_TAG(GYRO_7_CS_PIN), IO_TAG(GYRO_7_EXTI_PIN), IO_TAG(GYRO_7_CLKIN_PIN), GYRO_7_ALIGN, GYRO_7_CUSTOM_ALIGN);
+#else
+    devconf[6].busType = BUS_TYPE_NONE;
+#endif
+#endif // GYRO_COUNT 7
+
+#if GYRO_COUNT > 7
+    devconf[7].index = 7;
+#ifdef GYRO_8_SPI_INSTANCE
+    // TODO: CLKIN gyro 8 on separate pin is not supported yet. need to implement it
+    gyroResetSpiDeviceConfig(&devconf[7], GYRO_8_SPI_INSTANCE, IO_TAG(GYRO_8_CS_PIN), IO_TAG(GYRO_8_EXTI_PIN), IO_TAG(GYRO_8_CLKIN_PIN), GYRO_8_ALIGN, GYRO_8_CUSTOM_ALIGN);
+#else
+    devconf[7].busType = BUS_TYPE_NONE;
+#endif
+#endif // GYRO_COUNT 8
+
 #endif // USE_SPI_GYRO
 
     // I2C gyros appear as a sole gyro in single gyro boards.
