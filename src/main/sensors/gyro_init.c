@@ -612,7 +612,7 @@ bool gyroInit(void)
     gyro.gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
-        if (gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
+        if ((!gyrosToScan || (gyrosToScan & GYRO_MASK(i)) || gyro.gyroEnabledBitmask) && gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
             gyroDetectionFlags |= GYRO_MASK(i);
         }
     }
@@ -628,11 +628,7 @@ bool gyroInit(void)
     }
 
     // check if all enabled sensors are detected
-    for (int i = 0; i < GYRO_COUNT; i++) {
-        if ((gyroDetectionFlags & GYRO_MASK(i)) && (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i))) {
-            gyro.gyroEnabledBitmask |= GYRO_MASK(i);
-        }
-    }
+    gyro.gyroEnabledBitmask = gyroDetectionFlags & gyroConfig()->gyro_enabled_bitmask;
 
     if (gyroConfigMutable()->gyro_enabled_bitmask != gyro.gyroEnabledBitmask) {
         gyroConfigMutable()->gyro_enabled_bitmask = gyro.gyroEnabledBitmask;
@@ -732,15 +728,15 @@ int16_t gyroRateDps(int axis)
 }
 
 #ifdef USE_GYRO_REGISTER_DUMP
-static extDevice_t *gyroSensorDevByInstance(uint8_t whichSensor)
+static extDevice_t *gyroExtDevice(uint8_t idx)
 {
-    return &gyro.gyroSensor[whichSensor].gyroDev.dev;
+    return &gyro.gyroSensor[idx].gyroDev.dev;
 }
 
 uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
 {
     if (whichSensor < GYRO_COUNT) {
-        return mpuGyroReadRegister(gyroSensorDevByInstance(whichSensor), reg);
+        return mpuGyroReadRegister(gyroExtDevice(whichSensor), reg);
     } else {
         return 0;
     }
