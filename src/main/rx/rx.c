@@ -73,6 +73,7 @@
 #include "rx/msp_override.h"
 
 #include "drivers/pinio.h"
+#include "drivers/pwm_output.h"
 
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
@@ -276,8 +277,135 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 }
 #endif
 
+// #include "platform.h"
+// #include "drivers/io.h"
+// #include "drivers/timer.h"
+// #include "drivers/pwm_output.h"
+// #define LED_PWM_TAG      IO_TAG(PA01)  // Your GPIO pin
+// #define LED_PWM_INDEX    0             // Channel index (used with pwmOutWrite)
+// #define LED_PWM_FLAGS    (TIM_USE_LED) // Or TIM_USE_PPM, TIM_USE_ANY, etc.
+// static pwmOutConfig_t ledPwm;
+// void ledPwmInit(void)
+// {
+//     // Attempt to allocate a timer for the LED
+//     const timerHardware_t *hw = timerAllocate(LED_PWM_TAG, OWNER_CUSTOM, LED_PWM_FLAGS);
+//     if (!hw) {
+//         // Handle failure
+//         return;
+//     }
+//     // Store config
+//     ledPwm.timerHardware = hw;
+//     ledPwm.index = LED_PWM_INDEX;
+//     // Init timer
+//     pwmOutInit(&ledPwm, 1);  // 1 = count of channels
+//     // Set duty cycle (0–1000)
+//     pwmOutWrite(LED_PWM_INDEX, 500); // 50% brightness
+// }
+
+// #include "platform.h"
+// #include "drivers/io.h"
+// #include "drivers/timer.h"
+// #include "drivers/pwm_output.h"
+// typedef struct {
+//     IO_t io;
+//     timerCCHandler_t channel;
+//     bool enabled;
+// } pwmLed_t;
+// static pwmLed_t pwmLed;
+// static uint16_t pwmLedFrequency = 1000; // 1 kHz PWM
+// void pwmLedWrite(bool on)
+// {
+//     if (!pwmLed.io) {
+//         return;
+//     }
+//     if (on) {
+//         *pwmLed.channel.ccr = (PWM_TIMER_1MHZ / pwmLedFrequency) / 2;  // 50% duty
+//         pwmLed.enabled = true;
+//     } else {
+//         *pwmLed.channel.ccr = 0;
+//         pwmLed.enabled = false;
+//     }
+// }
+// void pwmLedToggle(void)
+// {
+//     pwmLedWrite(!pwmLed.enabled);
+// }
+// void pwmLedInit(const ioTag_t tag, uint16_t frequency)
+// {
+//     const timerHardware_t *timer = timerAllocate(tag, OWNER_CUSTOM, TIM_USE_LED);
+//     IO_t ledIO = IOGetByTag(tag);
+//     if (ledIO && timer) {
+//         pwmLed.io = ledIO;
+//         IOInit(pwmLed.io, OWNER_CUSTOM, 0);
+//         IOConfigGPIOAF(pwmLed.io, IOCFG_AF_PP, timer->alternateFunction);
+//         pwmLedFrequency = frequency;
+//         pwmOutConfig(
+//             &pwmLed.channel,
+//             timer,
+//             PWM_TIMER_1MHZ,                      // Timer clock (1 MHz)
+//             PWM_TIMER_1MHZ / pwmLedFrequency,    // Period (in ticks)
+//             0,                                   // Initial duty cycle
+//             0                                    // Idle state (0)
+//         );
+//         *pwmLed.channel.ccr = 0; // Start off
+//         pwmLed.enabled = false;
+//     }
+// }
+
+#define ILLUMINATOR_IO_TAG (PB0)
+
+typedef struct {
+    bool enabled;
+    IO_t io;
+    timerChannel_t channel;
+    uint32_t period;
+    uint8_t inverted;
+} illuminatorControlRuntime_t;
+
+static illuminatorControlRuntime_t illuminatorControlRuntime;
+
+#define ONE_M_HZ 1000000
+#define ILLUMINATOR_CONTROL_OFF 1800
+#define ILLUMINATOR_CONTROL_IR_ON 3000
+#define ILLUMINATOR_CONTROL_ALL_ON 3400
+
 void rxInit(void)
-{
+{      
+    ioTag_t illuminatorTag = 0x20;
+    illuminatorControlRuntime.io = IOGetByTag(illuminatorTag);
+
+    IOInit(illuminatorControlRuntime.io, OWNER_ILLUMINATOR, 0);
+    illuminatorControlRuntime.inverted = 0;
+    const timerHardware_t *timerHardware = timerAllocate(illuminatorTag, OWNER_ILLUMINATOR, 0);
+
+    if (timerHardware != NULL) {
+        IOConfigGPIOAF(illuminatorControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
+        pwmOutConfig(&illuminatorControlRuntime.channel, timerHardware, ONE_M_HZ, ILLUMINATOR_CONTROL_OFF, 0, illuminatorControlRuntime.inverted);
+        
+        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_OFF;
+        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
+        illuminatorControlRuntime.enabled = true;
+
+    }
+
+    // IO_t ledIO = IOGetByTag(tag);
+
+    // if (ledIO && timer) {
+    //     pwmLed.io = ledIO;
+    //     IOInit(pwmLed.io, OWNER_CUSTOM, 0);
+    //     IOConfigGPIOAF(pwmLed.io, IOCFG_AF_PP, timer->alternateFunction);
+    //     pwmLedFrequency = frequency;
+    //     pwmOutConfig(
+    //         &pwmLed.channel,
+    //         timer,
+    //         PWM_TIMER_1MHZ,                      // Timer clock (1 MHz)
+    //         PWM_TIMER_1MHZ / pwmLedFrequency,    // Period (in ticks)
+    //         0,                                   // Initial duty cycle
+    //         0                                    // Idle state (0)
+    //     );
+    //     *pwmLed.channel.ccr = 0; // Start off
+    //     pwmLed.enabled = false;
+
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeState.rxProvider = RX_PROVIDER_PARALLEL_PWM;
     } else if (featureIsEnabled(FEATURE_RX_PPM)) {
@@ -831,6 +959,29 @@ void detectAndApplySignalLossBehaviour(void)
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 3, rcData[THROTTLE]);
 }
 
+
+void detectIlluminator(void) {
+
+    float rx_aux8 = rcData[AUX8];
+    
+    if (rx_aux8 < 1200) {
+        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_IR_ON;
+        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
+        illuminatorControlRuntime.enabled = true;
+    }
+    else if ( (rx_aux8 > 1200 && rx_aux8 < 1300) || (rx_aux8 > 1900 && rx_aux8 < 2000) ) {
+        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_OFF;
+        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
+        illuminatorControlRuntime.enabled = true;
+    }
+    else if ( (rx_aux8 > 1300 && rx_aux8 < 1500) || (rx_aux8 > 2000 ) ) {
+        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_ALL_ON;
+        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
+        illuminatorControlRuntime.enabled = true;
+    }
+
+}
+
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 {
     if (auxiliaryProcessingRequired) {
@@ -854,6 +1005,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
     readRxChannelsApplyRanges();            // returns rcRaw
     detectAndApplySignalLossBehaviour();    // returns rcData
+    detectIlluminator();
 
     rcSampleIndex++;
 
