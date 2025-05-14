@@ -683,15 +683,10 @@ bool gyroInit(void)
         writeEEPROM();
     }
 
-    for (int i = 0; i < GYRO_COUNT; i++) {
-        // just use the first enabled sensor
-        // all sensor enabled should have the same scale at this point
-        if (gyro.gyroEnabledBitmask == GYRO_MASK(i)) {
-            gyro.scale = gyro.gyroSensor[i].gyroDev.scale;
-            gyro.rawSensorDev = &gyro.gyroSensor[i].gyroDev;
-            break;
-        }
-    }
+    // Use the first enabled gyro for our scale and raw sensor dev
+    int firstGyro = firstEnabledGyro();
+    gyro.scale = gyro.gyroSensor[firstGyro].gyroDev.scale;
+    gyro.rawSensorDev = &gyro.gyroSensor[firstGyro].gyroDev;
 
     if (gyro.rawSensorDev) {
         gyro.sampleRateHz = gyro.rawSensorDev->gyroSampleRateHz;

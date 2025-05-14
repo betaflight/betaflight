@@ -415,7 +415,7 @@ FAST_CODE void gyroUpdate(void)
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
             gyroUpdateSensor(&gyro.gyroSensor[i]);
-            if (!isGyroSensorCalibrationComplete(&gyro.gyroSensor[i])) {
+            if (isGyroSensorCalibrationComplete(&gyro.gyroSensor[i])) {
                 adcSum[X] += gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale;
                 adcSum[Y] += gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale;
                 adcSum[Z] += gyro.gyroSensor[i].gyroDev.gyroADC.z * gyro.gyroSensor[i].gyroDev.scale;
