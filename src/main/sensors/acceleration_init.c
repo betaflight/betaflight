@@ -363,15 +363,8 @@ bool accInit(uint16_t accSampleRateHz)
     // Copy alignment from active gyro, as all production boards use acc-gyro-combi chip.
     // Exception is STM32F411DISCOVERY, and (may be) handled in future enhancement.
 
-    sensor_align_e alignment;
-    const sensorAlignment_t* customAlignment;
-
-    for (int i = 0; i < GYRO_COUNT; i++) {
-        if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
-            alignment = gyroDeviceConfig(i)->alignment;
-            customAlignment = &gyroDeviceConfig(i)->customAlignment;
-        }
-    }
+    sensor_align_e alignment = gyroDeviceConfig(firstEnabledGyro())->alignment;
+    const sensorAlignment_t* customAlignment = &gyroDeviceConfig(firstEnabledGyro())->customAlignment;
 
     acc.dev.accAlign = alignment;
     buildRotationMatrixFromAngles(&acc.dev.rotationMatrix, customAlignment);

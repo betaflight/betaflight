@@ -1805,7 +1805,7 @@ case MSP_NAME:
         break;
 
     case MSP_SENSOR_ALIGNMENT: {
-        uint8_t gyroAlignment = gyroDeviceConfig(0)->alignment;
+        uint8_t gyroAlignment = gyroDeviceConfig(firstEnabledGyro())->alignment;
         sbufWriteU8(dst, gyroAlignment);
         sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same
 #if defined(USE_MAG)
@@ -1817,17 +1817,16 @@ case MSP_NAME:
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectionFlags());
         sbufWriteU8(dst, 0); // deprecated gyro_to_use
-#if GYRO_COUNT > 1
         sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
+#if GYRO_COUNT > 1
         sbufWriteU8(dst, gyroDeviceConfig(1)->alignment);
 #else
-        sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, ALIGN_DEFAULT);
 #endif
         // Added in MSP API 1.47
-        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
+        sbufWriteU16(dst, gyroDeviceConfig(firstEnabledGyro())->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(firstEnabledGyro())->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(firstEnabledGyro())->customAlignment.yaw);
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);

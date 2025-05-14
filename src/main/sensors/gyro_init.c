@@ -612,7 +612,7 @@ bool gyroInit(void)
     gyro.gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
-        if ((!gyrosToScan || (gyrosToScan & GYRO_MASK(i))) && gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
+        if (gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
             gyroDetectionFlags |= GYRO_MASK(i);
         }
     }
@@ -644,9 +644,11 @@ bool gyroInit(void)
     bool gyro_hardware_identical = true;
     uint16_t gyro_sample_rate = 0;
     float gyro_scale = 0.0f;
+    bool firstFound = false;
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
-            if (gyro_sample_rate == 0 && gyro_scale == 0.0f) {
+            if (!firstFound ) {
+                firstFound = true;
                 gyro_sample_rate = gyro.gyroSensor[i].gyroDev.gyroSampleRateHz;
                 gyro_scale = gyro.gyroSensor[i].gyroDev.scale;
             } else if ((gyro_sample_rate != gyro.gyroSensor[i].gyroDev.gyroSampleRateHz) ||
@@ -658,7 +660,7 @@ bool gyroInit(void)
 
     if (!gyro_hardware_identical) {
         // If the user enabled multiple IMU and they are not the same type, then reset to using only the first IMU.
-        gyro.gyroEnabledBitmask = GYRO_MASK(0);
+        gyro.gyroEnabledBitmask = gyro.gyroEnabledBitmask & -gyro.gyroEnabledBitmask;
         gyroConfigMutable()->gyro_enabled_bitmask = gyro.gyroEnabledBitmask;
         eepromWriteRequired = true;
     }
@@ -737,11 +739,20 @@ int16_t gyroRateDps(int axis)
 #ifdef USE_GYRO_REGISTER_DUMP
 static extDevice_t *gyroSensorDevByInstance(uint8_t whichSensor)
 {
-    return (whichSensor < GYRO_COUNT) ? &gyro.gyroSensor[whichSensor].gyroDev.dev : &gyro.gyroSensor[0].gyroDev.dev;
+    return &gyro.gyroSensor[whichSensor].gyroDev.dev;
 }
 
 uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
 {
-    return mpuGyroReadRegister(gyroSensorDevByInstance(whichSensor), reg);
+    if (whichSensor < GYRO_COUNT) {
+        return mpuGyroReadRegister(gyroSensorDevByInstance(whichSensor), reg);
+    } else {
+        return 0;
+    }
 }
 #endif // USE_GYRO_REGISTER_DUMP
+
+int firstEnabledGyro(void)
+{
+    return llog2(gyro.gyroEnabledBitmask & -gyro.gyroEnabledBitmask);
+}
