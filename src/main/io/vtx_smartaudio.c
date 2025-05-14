@@ -495,8 +495,6 @@ static void saSendFrame(uint8_t *buf, int len)
         bool prepend00;
         switch (serialType(smartAudioSerialPort->identifier)) {
         case SERIALTYPE_SOFTSERIAL:
-            prepend00 = vtxSettingsConfig()->softserialAlt;
-            break;
         case SERIALTYPE_UART:
         case SERIALTYPE_LPUART: // decide HW uarts by MCU type
             // AT32F4 has a bug in the UART peripheral that causes it to

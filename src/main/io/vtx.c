@@ -63,8 +63,11 @@ void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
 #endif
     vtxSettingsConfig->pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ;
     vtxSettingsConfig->lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF;
-    vtxSettingsConfig->softserialAlt = 0;
+#ifdef AT32F4
     vtxSettingsConfig->serialAlt = 0;
+#else
+    vtxSettingsConfig->serialAlt = 1;
+#endif
 }
 
 typedef enum {
