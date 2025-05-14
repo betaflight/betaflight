@@ -153,6 +153,7 @@ void _bprintf(const char * format, ...);
 #undef LED1_PIN
 #undef LED2_PIN
 
+// These pin selections are currently fairly arbitrary for RP2350A
 #define SPI0_SCK_PIN         P2
 #define SPI0_SDI_PIN         P4
 #define SPI0_SDO_PIN         P3
@@ -167,6 +168,11 @@ void _bprintf(const char * format, ...);
 
 #define GYRO_1_CS_PIN        P1
 #define GYRO_2_CS_PIN        NONE
+
+#define MOTOR1_PIN           P18
+#define MOTOR2_PIN           P19
+#define MOTOR3_PIN           P20
+#define MOTOR4_PIN           P21
 
 #define MAX7456_SPI_INSTANCE SPI1
 #define SDCARD_SPI_INSTANCE  SPI1

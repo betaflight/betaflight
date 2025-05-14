@@ -165,6 +165,11 @@ void _bprintf(const char * format, ...);
 #define GYRO_1_CS_PIN        P1
 #define GYRO_2_CS_PIN        NONE
 
+#define MOTOR1_PIN           P28
+#define MOTOR2_PIN           P29
+#define MOTOR3_PIN           P30
+#define MOTOR4_PIN           P31
+
 #define MAX7456_SPI_INSTANCE SPI1
 #define SDCARD_SPI_INSTANCE  SPI1
 #define GYRO_1_SPI_INSTANCE  SPI0
