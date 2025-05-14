@@ -277,82 +277,11 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 }
 #endif
 
-// #include "platform.h"
-// #include "drivers/io.h"
-// #include "drivers/timer.h"
-// #include "drivers/pwm_output.h"
-// #define LED_PWM_TAG      IO_TAG(PA01)  // Your GPIO pin
-// #define LED_PWM_INDEX    0             // Channel index (used with pwmOutWrite)
-// #define LED_PWM_FLAGS    (TIM_USE_LED) // Or TIM_USE_PPM, TIM_USE_ANY, etc.
-// static pwmOutConfig_t ledPwm;
-// void ledPwmInit(void)
-// {
-//     // Attempt to allocate a timer for the LED
-//     const timerHardware_t *hw = timerAllocate(LED_PWM_TAG, OWNER_CUSTOM, LED_PWM_FLAGS);
-//     if (!hw) {
-//         // Handle failure
-//         return;
-//     }
-//     // Store config
-//     ledPwm.timerHardware = hw;
-//     ledPwm.index = LED_PWM_INDEX;
-//     // Init timer
-//     pwmOutInit(&ledPwm, 1);  // 1 = count of channels
-//     // Set duty cycle (0–1000)
-//     pwmOutWrite(LED_PWM_INDEX, 500); // 50% brightness
-// }
-
-// #include "platform.h"
-// #include "drivers/io.h"
-// #include "drivers/timer.h"
-// #include "drivers/pwm_output.h"
-// typedef struct {
-//     IO_t io;
-//     timerCCHandler_t channel;
-//     bool enabled;
-// } pwmLed_t;
-// static pwmLed_t pwmLed;
-// static uint16_t pwmLedFrequency = 1000; // 1 kHz PWM
-// void pwmLedWrite(bool on)
-// {
-//     if (!pwmLed.io) {
-//         return;
-//     }
-//     if (on) {
-//         *pwmLed.channel.ccr = (PWM_TIMER_1MHZ / pwmLedFrequency) / 2;  // 50% duty
-//         pwmLed.enabled = true;
-//     } else {
-//         *pwmLed.channel.ccr = 0;
-//         pwmLed.enabled = false;
-//     }
-// }
-// void pwmLedToggle(void)
-// {
-//     pwmLedWrite(!pwmLed.enabled);
-// }
-// void pwmLedInit(const ioTag_t tag, uint16_t frequency)
-// {
-//     const timerHardware_t *timer = timerAllocate(tag, OWNER_CUSTOM, TIM_USE_LED);
-//     IO_t ledIO = IOGetByTag(tag);
-//     if (ledIO && timer) {
-//         pwmLed.io = ledIO;
-//         IOInit(pwmLed.io, OWNER_CUSTOM, 0);
-//         IOConfigGPIOAF(pwmLed.io, IOCFG_AF_PP, timer->alternateFunction);
-//         pwmLedFrequency = frequency;
-//         pwmOutConfig(
-//             &pwmLed.channel,
-//             timer,
-//             PWM_TIMER_1MHZ,                      // Timer clock (1 MHz)
-//             PWM_TIMER_1MHZ / pwmLedFrequency,    // Period (in ticks)
-//             0,                                   // Initial duty cycle
-//             0                                    // Idle state (0)
-//         );
-//         *pwmLed.channel.ccr = 0; // Start off
-//         pwmLed.enabled = false;
-//     }
-// }
-
-#define ILLUMINATOR_IO_TAG (PB0)
+typedef enum {
+    LED_OFF,
+    LED_IR,
+    LED_OVERT,
+} illuminator_status_t;
 
 typedef struct {
     bool enabled;
@@ -360,51 +289,137 @@ typedef struct {
     timerChannel_t channel;
     uint32_t period;
     uint8_t inverted;
+    timerHardware_t *timerHardware;
+    illuminator_status_t illuminator_status;
 } illuminatorControlRuntime_t;
 
 static illuminatorControlRuntime_t illuminatorControlRuntime;
 
 #define ONE_M_HZ 1000000
-#define ILLUMINATOR_CONTROL_OFF 1800
-#define ILLUMINATOR_CONTROL_IR_ON 3000
-#define ILLUMINATOR_CONTROL_ALL_ON 3400
+#define ILLUMINATOR_OFF_PERIOD 900
+#define ILLUMINATOR_IR_LED_MIN_PERIOD 1100
+#define ILLUMINATOR_IR_LED_PERIOD 1500
+#define ILLUMINATOR_OVERT_LED_MIN_PERIOD 1700
+#define ILLUMINATOR_OVERT_LED_PERIOD 2100
 
-void rxInit(void)
-{      
+static void illuminatorInit(void) {
+
     ioTag_t illuminatorTag = 0x20;
     illuminatorControlRuntime.io = IOGetByTag(illuminatorTag);
 
     IOInit(illuminatorControlRuntime.io, OWNER_ILLUMINATOR, 0);
     illuminatorControlRuntime.inverted = 0;
-    const timerHardware_t *timerHardware = timerAllocate(illuminatorTag, OWNER_ILLUMINATOR, 0);
+    illuminatorControlRuntime.timerHardware = (timerHardware_t *)timerAllocate(illuminatorTag, OWNER_ILLUMINATOR, 0);
 
-    if (timerHardware != NULL) {
-        IOConfigGPIOAF(illuminatorControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
-        pwmOutConfig(&illuminatorControlRuntime.channel, timerHardware, ONE_M_HZ, ILLUMINATOR_CONTROL_OFF, 0, illuminatorControlRuntime.inverted);
+    if (illuminatorControlRuntime.timerHardware != NULL) {
+        IOConfigGPIOAF(illuminatorControlRuntime.io, IOCFG_AF_PP, illuminatorControlRuntime.timerHardware->alternateFunction);
+        // Period is 2x ILLUMINATOR_OVERT_LED_PERIOD
+        pwmOutConfig(&illuminatorControlRuntime.channel, illuminatorControlRuntime.timerHardware, ONE_M_HZ, ILLUMINATOR_OVERT_LED_PERIOD * 2, 0, illuminatorControlRuntime.inverted);
         
-        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_OFF;
-        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
+        illuminatorControlRuntime.period = ILLUMINATOR_OFF_PERIOD;
+        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period;
         illuminatorControlRuntime.enabled = true;
+        illuminatorControlRuntime.illuminator_status = LED_OFF;
+
+    }
+}
+
+static void ilumminator_generate_output(void) {
+
+    // The datasheet recommends starting at a lower brightness before scaling to the maximum
+    // brightness.
+    if (illuminatorControlRuntime.illuminator_status == LED_IR) {
+        // Gradually scale to max brightness.
+        utils_step_towards(&illuminatorControlRuntime.period, ILLUMINATOR_IR_LED_PERIOD, 20);
+    }
+    else if (illuminatorControlRuntime.illuminator_status == LED_OVERT) {
+        // Gradually scale to max brightness.
+        utils_step_towards(&illuminatorControlRuntime.period, ILLUMINATOR_OVERT_LED_PERIOD, 20);
+    }
+
+    *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period;
+    illuminatorControlRuntime.enabled = true;
+}
+
+static void detectIlluminator(void) {
+
+    float rx_aux8 = rcData[AUX8];
+    
+    illuminator_status_t prev_illuminator_status = illuminatorControlRuntime.illuminator_status;
+    
+    // Get the illuminator state based on handset stick position.
+    if (rx_aux8 < 1200.0f) {
+        illuminatorControlRuntime.illuminator_status = LED_IR;
+    }
+    else if ( (rx_aux8 > 1200.0f && rx_aux8 < 1300.0f) || (rx_aux8 > 1900.0f && rx_aux8 < 2000.0f) ) {
+        illuminatorControlRuntime.illuminator_status = LED_OFF;
+    }
+    else if ( (rx_aux8 > 1300.0f && rx_aux8 < 1500.0f) || (rx_aux8 > 2000.0f) ) {
+        illuminatorControlRuntime.illuminator_status = LED_OVERT;
+    }
+
+    // Modify PWM config only if there is a change in user input.
+    if (prev_illuminator_status != illuminatorControlRuntime.illuminator_status) {
+
+        if (illuminatorControlRuntime.illuminator_status == LED_OFF) {
+            illuminatorControlRuntime.period = ILLUMINATOR_OFF_PERIOD;
+        }
+        else if (illuminatorControlRuntime.illuminator_status == LED_IR) {
+            illuminatorControlRuntime.period = ILLUMINATOR_IR_LED_MIN_PERIOD;
+        }
+        else if (illuminatorControlRuntime.illuminator_status == LED_OVERT) {
+            illuminatorControlRuntime.period = ILLUMINATOR_OVERT_LED_MIN_PERIOD;
+        }
 
     }
 
-    // IO_t ledIO = IOGetByTag(tag);
+    // Generate illuminator output.
+    ilumminator_generate_output();
 
-    // if (ledIO && timer) {
-    //     pwmLed.io = ledIO;
-    //     IOInit(pwmLed.io, OWNER_CUSTOM, 0);
-    //     IOConfigGPIOAF(pwmLed.io, IOCFG_AF_PP, timer->alternateFunction);
-    //     pwmLedFrequency = frequency;
-    //     pwmOutConfig(
-    //         &pwmLed.channel,
-    //         timer,
-    //         PWM_TIMER_1MHZ,                      // Timer clock (1 MHz)
-    //         PWM_TIMER_1MHZ / pwmLedFrequency,    // Period (in ticks)
-    //         0,                                   // Initial duty cycle
-    //         0                                    // Idle state (0)
-    //     );
-    //     *pwmLed.channel.ccr = 0; // Start off
-    //     pwmLed.enabled = false;
+}
+
+typedef enum {
+    CAM1,
+    CAM2,
+} camera_status_t;
+
+typedef struct {
+    IO_t io;
+    camera_status_t cam_enabled;
+} cameraControlRuntime_t;
+
+static cameraControlRuntime_t cameraControl;
+
+static void cameraCtrlInit(void) {
+    ioTag_t CameraCtrlTag = 0x33;
+    cameraControl.io = IOGetByTag(CameraCtrlTag);
+
+    IOInit(cameraControl.io, OWNER_CAMERA_CONTROL, 0);
+    IOConfigGPIO(cameraControl.io, IOCFG_OUT_PP);
+    // Enable camera 1 on boot.
+    IOLo(cameraControl.io);
+    cameraControl.cam_enabled = CAM1;
+}
+
+static void detectCamera(void) {
+
+    float rx_aux4 = rcData[AUX4];
+    
+    if (rx_aux4 < 1500) {
+        IOHi(cameraControl.io);
+        cameraControl.cam_enabled = CAM2;
+    }
+    else {
+        IOLo(cameraControl.io);
+        cameraControl.cam_enabled = CAM1;
+    }
+
+}
+
+void rxInit(void)
+{
+    cameraCtrlInit();
+    illuminatorInit();
 
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeState.rxProvider = RX_PROVIDER_PARALLEL_PWM;
@@ -959,29 +974,6 @@ void detectAndApplySignalLossBehaviour(void)
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 3, rcData[THROTTLE]);
 }
 
-
-void detectIlluminator(void) {
-
-    float rx_aux8 = rcData[AUX8];
-    
-    if (rx_aux8 < 1200) {
-        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_IR_ON;
-        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
-        illuminatorControlRuntime.enabled = true;
-    }
-    else if ( (rx_aux8 > 1200 && rx_aux8 < 1300) || (rx_aux8 > 1900 && rx_aux8 < 2000) ) {
-        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_OFF;
-        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
-        illuminatorControlRuntime.enabled = true;
-    }
-    else if ( (rx_aux8 > 1300 && rx_aux8 < 1500) || (rx_aux8 > 2000 ) ) {
-        illuminatorControlRuntime.period = ILLUMINATOR_CONTROL_ALL_ON;
-        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period / 2;
-        illuminatorControlRuntime.enabled = true;
-    }
-
-}
-
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 {
     if (auxiliaryProcessingRequired) {
@@ -1006,6 +998,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
     readRxChannelsApplyRanges();            // returns rcRaw
     detectAndApplySignalLossBehaviour();    // returns rcData
     detectIlluminator();
+    detectCamera();
 
     rcSampleIndex++;
 

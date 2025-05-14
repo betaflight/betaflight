@@ -102,6 +102,22 @@ static inline int32_t cmp32(uint32_t a, uint32_t b) { return (int32_t)(a-b); }
 
 static inline uint32_t llog2(uint32_t n) { return 31 - __builtin_clz(n | 1); }
 
+static inline void utils_step_towards(uint32_t *value, uint32_t goal, uint32_t step) {
+        if (*value < goal) {
+            if ((*value + step) < goal) {
+                *value += step;
+            } else {
+                *value = goal;
+            }
+        } else if (*value > goal) {
+            if ((*value - step) > goal) {
+                *value -= step;
+            } else {
+                *value = goal;
+            }
+        }
+}
+
 // using memcpy_fn will force memcpy function call, instead of inlining it. In most cases function call takes fewer instructions
 //  than inlined version (inlining is cheaper for very small moves < 8 bytes / 2 store instructions)
 #if defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
