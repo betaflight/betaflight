@@ -31,12 +31,6 @@
 
 #define NVIC_PriorityGroup_2         0x500
 
-#define SPI_IO_AF_CFG           0
-#define SPI_IO_AF_SCK_CFG_HIGH  0
-#define SPI_IO_AF_SCK_CFG_LOW   0
-#define SPI_IO_AF_SDI_CFG       0
-#define SPI_IO_CS_CFG           0
-
 #if defined(RP2350A) || defined(RP2350B)
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
@@ -84,6 +78,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
+// TODO update these and IOConfigGPIO
 #define IOCFG_OUT_PP          IO_CONFIG(GPIO_OUT, 0, 0)
 #define IOCFG_OUT_OD          IO_CONFIG(GPIO_OUT, 0, 0)
 #define IOCFG_AF_PP           0
@@ -91,6 +86,14 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define IOCFG_IPD             IO_CONFIG(GPIO_IN, 0, 0)
 #define IOCFG_IPU             IO_CONFIG(GPIO_IN, 0, 0)
 #define IOCFG_IN_FLOATING     IO_CONFIG(GPIO_IN, 0, 0)
+
+// TODO update these and IOConfigGPIO
+#define SPI_IO_AF_CFG           0
+#define SPI_IO_AF_SCK_CFG_HIGH  0
+#define SPI_IO_AF_SCK_CFG_LOW   0
+#define SPI_IO_AF_SDI_CFG       0
+#define SPI_IO_CS_CFG           0
+
 
 #define SERIAL_UART_FIRST_INDEX     0
 
