@@ -50,6 +50,8 @@
 
     Add the mapping for the element ID to the background drawing function to the
     osdElementBackgroundFunction array.
+    
+    You should also add a corresponding entry to the file: cms_menu_osd.c
 
     Accelerometer reqirement:
     -------------------------
@@ -170,6 +172,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/rangefinder.h"
 
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc
@@ -320,7 +323,6 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
     }
 }
 #endif
-
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
     static const struct {
@@ -682,6 +684,18 @@ char osdGetTemperatureSymbolForSelectedUnit(void)
 // Element drawing functions
 // *************************
 
+#ifdef USE_RANGEFINDER
+static void osdElementLidarDist(osdElementParms_t *element)
+{
+    int16_t dist = rangefinderGetLatestAltitude();
+
+    if (dist > 0) {
+        tfp_sprintf(element->buff, "RF:%3d", dist); //This is currently only for HD OSD text output, as the sonar glyph is currently missing from the HD OSD fonts.  
+    } else {                                        //*For analog OSD, you can specify the sonar glyph "SYM_LIDAR_DIST" linked in \src\main\drivers\osd_symbols.h
+        tfp_sprintf(element->buff, "RF:---");       //*For example like this: "tfp_sprintf(element->buff, "%c%3d", SYM_LIDAR_DIST, dist);"
+    }                                               //*if you use a castom GUI
+}
+#endif
 #ifdef USE_OSD_ADJUSTMENTS
 static void osdElementAdjustmentRange(osdElementParms_t *element)
 {
@@ -1819,7 +1833,7 @@ static void osdElementSys(osdElementParms_t *element)
 // to osdAddActiveElements()
 
 static const uint8_t osdElementDisplayOrder[] = {
-    OSD_MAIN_BATT_VOLTAGE,
+	OSD_MAIN_BATT_VOLTAGE,
     OSD_RSSI_VALUE,
     OSD_CROSSHAIRS,
     OSD_HORIZON_SIDEBARS,
@@ -1918,12 +1932,15 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
 #endif
+#ifdef USE_RANGEFINDER
+    OSD_LIDAR_DIST,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
 
 const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
-    [OSD_CAMERA_FRAME]            = NULL,  // only has background. Added first so it's the lowest "layer" and doesn't cover other elements
+	[OSD_CAMERA_FRAME]            = NULL,  // only has background. Added first so it's the lowest "layer" and doesn't cover other elements
     [OSD_RSSI_VALUE]              = osdElementRssi,
     [OSD_MAIN_BATT_VOLTAGE]       = osdElementMainBatteryVoltage,
     [OSD_CROSSHAIRS]              = osdElementCrosshairs,  // only has background, but needs to be over other elements (like artificial horizon)
@@ -1939,7 +1956,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_CUSTOM_MSG0]             = osdElementCustomMsg,
     [OSD_CUSTOM_MSG1]             = osdElementCustomMsg,
     [OSD_CUSTOM_MSG2]             = osdElementCustomMsg,
-    [OSD_CUSTOM_MSG3]             = osdElementCustomMsg,
+[OSD_CUSTOM_MSG3]             = osdElementCustomMsg,
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
 #ifdef USE_VTX_COMMON
     [OSD_VTX_CHANNEL]             = osdElementVtxChannel,
@@ -2061,6 +2078,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_WARNINGS]            = osdElementSys,
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
+#endif
+#ifdef USE_RANGEFINDER
+    [OSD_LIDAR_DIST]              = osdElementLidarDist,
 #endif
 };
 
