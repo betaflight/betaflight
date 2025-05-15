@@ -168,6 +168,12 @@ static illuminatorControlRuntime_t illuminatorControlRuntime;
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
 
+// The tag is calculated as follows:
+// Port A = 1, B = 2, C= 3 ...
+// tag = (port << 4) | pin
+#define PB0_TAG 0x20
+#define PC3_TAG 0x33
+
 // ILLUMINATOR PWM MACROS
 #define ONE_M_HZ 1000000
 #define ILLUMINATOR_OFF_PERIOD 900
@@ -314,9 +320,10 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 }
 #endif
 
+
 static void illuminatorInit(void) {
 
-    ioTag_t illuminatorTag = 0x20;
+    ioTag_t illuminatorTag = PB0_TAG;
     illuminatorControlRuntime.io = IOGetByTag(illuminatorTag);
 
     IOInit(illuminatorControlRuntime.io, OWNER_ILLUMINATOR, 0);
@@ -392,7 +399,7 @@ static void detectIlluminator(void) {
 }
 
 static void cameraCtrlInit(void) {
-    ioTag_t CameraCtrlTag = 0x33;
+    ioTag_t CameraCtrlTag = PC3_TAG;
     cameraControl.io = IOGetByTag(CameraCtrlTag);
 
     IOInit(cameraControl.io, OWNER_CAMERA_CONTROL, 0);
