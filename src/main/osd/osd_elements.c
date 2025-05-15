@@ -349,7 +349,6 @@ static void osdFormatMgrs(char *buff) {
 
 }
 
-#else
 
 static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
 {
@@ -911,9 +910,9 @@ float amperageBuffer[MOVING_AVERAGE_SIZE] = {0};
 float voltageBuffer[MOVING_AVERAGE_SIZE] = {0};
 float amperageSum = 0;
 float voltageSum = 0;
-static int bufferIndex = 0;
-static int readingsCount = 0;
-static float lastValue = 0;
+// static int bufferIndex = 0;
+// static int readingsCount = 0;
+// static float lastValue = 0;
 float avgAmps = 0;
 float avgVolts = 0;
 float amperageShown = 0;
@@ -1125,11 +1124,10 @@ static void osdElementGpsMgrs(osdElementParms_t *element) {
 
 }
 
-#else 
 
 static void osdElementGpsCoordinate(osdElementParms_t *element)
 {
-    const gpsCoordinateType_e coordinateType = (element->item == OSD_GPS_LON) ? GPS_LONGITUDE : GPS_LATITUDE;
+    const gpsCoordinateType_e coordinateType = (element->item == OSD_GPS_LAT) ? GPS_LATITUDE : GPS_LONGITUDE;
     osdFormatCoordinate(element->buff, coordinateType, element->type);
     if (STATE(GPS_FIX_EVER) && !STATE(GPS_FIX)) {
         SET_BLINK(element->item); // blink if we had a fix but have since lost it
@@ -1298,61 +1296,61 @@ static void osdElementWattHoursDrawn(osdElementParms_t *element)
     }
 }
 
-static void osdElementMainBatteryUsage(osdElementParms_t *element)
-{
-    // Set length of indicator bar
-    #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centered.
-    const int mAhDrawn = getMAhDrawn();
-    const int usedCapacity = getMAhDrawn();
-    int displayBasis = usedCapacity;
+// static void osdElementMainBatteryUsage(osdElementParms_t *element)
+// {
+//     // Set length of indicator bar
+//     #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centered.
+//     const int mAhDrawn = getMAhDrawn();
+//     const int usedCapacity = getMAhDrawn();
+//     int displayBasis = usedCapacity;
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
-        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
-    }
+//     if (mAhDrawn >= osdConfig()->cap_alarm) {
+//         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+//     }
 
-    switch (element->type) {
-    case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
-        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
-        FALLTHROUGH;
+//     switch (element->type) {
+//     case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
+//         displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+//         FALLTHROUGH;
 
-    case OSD_ELEMENT_TYPE_4:  // mAh used percentage (counts up as battery is used)
-        {
-            int displayPercent = 0;
-            if (batteryConfig()->batteryCapacity) {
-                displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
-            }
-            tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
-            break;
-        }
+//     case OSD_ELEMENT_TYPE_4:  // mAh used percentage (counts up as battery is used)
+//         {
+//             int displayPercent = 0;
+//             if (batteryConfig()->batteryCapacity) {
+//                 displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
+//             }
+//             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
+//             break;
+//         }
 
-    case OSD_ELEMENT_TYPE_2:  // mAh used graphical progress bar (grows as battery is used)
-        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
-        FALLTHROUGH;
+//     case OSD_ELEMENT_TYPE_2:  // mAh used graphical progress bar (grows as battery is used)
+//         displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+//         FALLTHROUGH;
 
-    case OSD_ELEMENT_TYPE_1:  // mAh remaining graphical progress bar (shrinks as battery is used)
-    default:
-        {
-            uint8_t remainingCapacityBars = 0;
+//     case OSD_ELEMENT_TYPE_1:  // mAh remaining graphical progress bar (shrinks as battery is used)
+//     default:
+//         {
+//             uint8_t remainingCapacityBars = 0;
 
-            if (batteryConfig()->batteryCapacity) {
-                const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
-                remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
-            }
+//             if (batteryConfig()->batteryCapacity) {
+//                 const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
+//                 remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+//             }
 
-            // Create empty battery indicator bar
-            element->buff[0] = SYM_PB_START;
-            for (int i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
-                element->buff[i] = i <= remainingCapacityBars ? SYM_PB_FULL : SYM_PB_EMPTY;
-            }
-            element->buff[MAIN_BATT_USAGE_STEPS + 1] = SYM_PB_CLOSE;
-            if (remainingCapacityBars > 0 && remainingCapacityBars < MAIN_BATT_USAGE_STEPS) {
-                element->buff[1 + remainingCapacityBars] = SYM_PB_END;
-            }
-            element->buff[MAIN_BATT_USAGE_STEPS+2] = '\0';
-            break;
-        }
-    }
-}
+//             // Create empty battery indicator bar
+//             element->buff[0] = SYM_PB_START;
+//             for (int i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
+//                 element->buff[i] = i <= remainingCapacityBars ? SYM_PB_FULL : SYM_PB_EMPTY;
+//             }
+//             element->buff[MAIN_BATT_USAGE_STEPS + 1] = SYM_PB_CLOSE;
+//             if (remainingCapacityBars > 0 && remainingCapacityBars < MAIN_BATT_USAGE_STEPS) {
+//                 element->buff[1 + remainingCapacityBars] = SYM_PB_END;
+//             }
+//             element->buff[MAIN_BATT_USAGE_STEPS+2] = '\0';
+//             break;
+//         }
+//     }
+// }
 
 static void osdElementMainBatteryVoltage(osdElementParms_t *element)
 {
@@ -1449,38 +1447,38 @@ static void osdElementPidsYaw(osdElementParms_t *element)
 }
 
 
-static void osdElementPower(osdElementParms_t *element) {
-    // Get the current readings
-    float amps = fabsf(getAmperage() / 100.0f);
-    float volts = getBatteryVoltage() / 100.0f;
+// static void osdElementPower(osdElementParms_t *element) {
+//     // Get the current readings
+//     float amps = fabsf(getAmperage() / 100.0f);
+//     float volts = getBatteryVoltage() / 100.0f;
 
-    // Subtract the oldest reading from the sum and replace it with the new one
-    amperageSum -= amperageBuffer[bufferIndex];
-    voltageSum -= voltageBuffer[bufferIndex];
-    amperageBuffer[bufferIndex] = amps;
-    voltageBuffer[bufferIndex] = volts;
-    amperageSum += amps;
-    voltageSum += volts;
+//     // Subtract the oldest reading from the sum and replace it with the new one
+//     amperageSum -= amperageBuffer[bufferIndex];
+//     voltageSum -= voltageBuffer[bufferIndex];
+//     amperageBuffer[bufferIndex] = amps;
+//     voltageBuffer[bufferIndex] = volts;
+//     amperageSum += amps;
+//     voltageSum += volts;
 
-    // Update the buffer index and ensure it wraps around
-    bufferIndex = (bufferIndex + 1) % MOVING_AVERAGE_SIZE;
+//     // Update the buffer index and ensure it wraps around
+//     bufferIndex = (bufferIndex + 1) % MOVING_AVERAGE_SIZE;
 
-    // Update the count of readings until it reaches the buffer size
-    if (readingsCount < MOVING_AVERAGE_SIZE) {
-        readingsCount++;
-    }
+//     // Update the count of readings until it reaches the buffer size
+//     if (readingsCount < MOVING_AVERAGE_SIZE) {
+//         readingsCount++;
+//     }
 
-    // Calculate the moving averages
-    avgAmps = amperageSum / readingsCount;
-    avgVolts = voltageSum / readingsCount;
+//     // Calculate the moving averages
+//     avgAmps = amperageSum / readingsCount;
+//     avgVolts = voltageSum / readingsCount;
 
-    // Calculate power using the averages and display it
+//     // Calculate power using the averages and display it
 
-    if(bufferIndex == 5) {
-        lastValue = avgVolts*avgAmps;
-    }
-    tfp_sprintf(element->buff, "%4dW", (int)lastValue);
-}
+//     if(bufferIndex == 5) {
+//         lastValue = avgVolts*avgAmps;
+//     }
+//     tfp_sprintf(element->buff, "%4dW", (int)lastValue);
+// }
 
 
 static void osdElementRcChannels(osdElementParms_t *element)
@@ -1863,7 +1861,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_ROLL_PIDS]               = osdElementPidsRoll,
     [OSD_PITCH_PIDS]              = osdElementPidsPitch,
     [OSD_YAW_PIDS]                = osdElementPidsYaw,
-    [OSD_POWER]                   = osdElementPower,
+    [OSD_POWER]                   = osdElementGpsCoordinate,
     [OSD_PIDRATE_PROFILE]         = osdElementPidRateProfile,
     [OSD_WARNINGS]                = osdElementWarnings,
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
@@ -1872,6 +1870,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 
 #ifdef USE_MGRS
     [OSD_GPS_LON]                 = osdElementGpsMgrs,
+    [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
+
 #else
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
@@ -1882,7 +1882,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_PITCH_ANGLE]             = osdElementAngleRollPitch,
     [OSD_ROLL_ANGLE]              = osdElementAngleRollPitch,
 #endif
-    [OSD_MAIN_BATT_USAGE]         = osdElementMainBatteryUsage,
+    [OSD_MAIN_BATT_USAGE]         = osdElementGpsCoordinate,
     [OSD_DISARMED]                = osdElementDisarmed,
 #ifdef USE_GPS
     [OSD_HOME_DIR]                = osdElementGpsHomeDirection,
