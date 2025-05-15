@@ -93,10 +93,12 @@ void pgResetFn_pinioConfig(pinioConfig_t *config)
     config->ioTag[1] = IO_TAG(PINIO2_PIN);
     config->ioTag[2] = IO_TAG(PINIO3_PIN);
     config->ioTag[3] = IO_TAG(PINIO4_PIN);
+#if PINIO_COUNT > 4
     config->ioTag[4] = IO_TAG(PINIO5_PIN);
     config->ioTag[5] = IO_TAG(PINIO6_PIN);
     config->ioTag[6] = IO_TAG(PINIO7_PIN);
     config->ioTag[7] = IO_TAG(PINIO8_PIN);
+#endif
 
     config->config[0] = PINIO1_CONFIG;
     config->config[1] = PINIO2_CONFIG;
