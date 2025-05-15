@@ -38,6 +38,7 @@
 #ifndef PINIO4_PIN
 #define PINIO4_PIN NONE
 #endif
+#if PINIO_COUNT > 4
 #ifndef PINIO5_PIN
 #define PINIO5_PIN NONE
 #endif
@@ -49,6 +50,7 @@
 #endif
 #ifndef PINIO8_PIN
 #define PINIO8_PIN NONE
+#endif
 #endif
 
 #ifndef PINIO1_CONFIG
