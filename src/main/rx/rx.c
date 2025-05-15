@@ -130,6 +130,35 @@ static float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // last received raw val
 float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];           // scaled, modified, checked and constrained values
 uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
+typedef enum {
+    LED_OFF,
+    LED_IR,
+    LED_OVERT,
+} illuminator_status_t;
+
+typedef struct {
+    bool enabled;
+    IO_t io;
+    timerChannel_t channel;
+    uint32_t period;
+    uint8_t inverted;
+    timerHardware_t *timerHardware;
+    illuminator_status_t illuminator_status;
+} illuminatorControlRuntime_t;
+
+typedef enum {
+    CAM1,
+    CAM2,
+} camera_status_t;
+
+typedef struct {
+    IO_t io;
+    camera_status_t cam_enabled;
+} cameraControlRuntime_t;
+
+static cameraControlRuntime_t cameraControl;
+static illuminatorControlRuntime_t illuminatorControlRuntime;
+
 #define MAX_INVALID_PULSE_TIME_MS 300                   // hold time in milliseconds after bad channel or Rx link loss
 // will not be actioned until the nearest multiple of 100ms
 #define PPM_AND_PWM_SAMPLE_COUNT 3
@@ -138,6 +167,14 @@ uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 #define DELAY_100_MS (100 * 1000)                       // 100ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
+
+// ILLUMINATOR PWM MACROS
+#define ONE_M_HZ 1000000
+#define ILLUMINATOR_OFF_PERIOD 900
+#define ILLUMINATOR_IR_LED_MIN_PERIOD 1100
+#define ILLUMINATOR_IR_LED_PERIOD 1500
+#define ILLUMINATOR_OVERT_LED_MIN_PERIOD 1700
+#define ILLUMINATOR_OVERT_LED_PERIOD 2100
 
 rxRuntimeState_t rxRuntimeState;
 static uint8_t rcSampleIndex = 0;
@@ -277,31 +314,6 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 }
 #endif
 
-typedef enum {
-    LED_OFF,
-    LED_IR,
-    LED_OVERT,
-} illuminator_status_t;
-
-typedef struct {
-    bool enabled;
-    IO_t io;
-    timerChannel_t channel;
-    uint32_t period;
-    uint8_t inverted;
-    timerHardware_t *timerHardware;
-    illuminator_status_t illuminator_status;
-} illuminatorControlRuntime_t;
-
-static illuminatorControlRuntime_t illuminatorControlRuntime;
-
-#define ONE_M_HZ 1000000
-#define ILLUMINATOR_OFF_PERIOD 900
-#define ILLUMINATOR_IR_LED_MIN_PERIOD 1100
-#define ILLUMINATOR_IR_LED_PERIOD 1500
-#define ILLUMINATOR_OVERT_LED_MIN_PERIOD 1700
-#define ILLUMINATOR_OVERT_LED_PERIOD 2100
-
 static void illuminatorInit(void) {
 
     ioTag_t illuminatorTag = 0x20;
@@ -348,6 +360,7 @@ static void detectIlluminator(void) {
     illuminator_status_t prev_illuminator_status = illuminatorControlRuntime.illuminator_status;
     
     // Get the illuminator state based on handset stick position.
+    // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
     if (rx_aux8 < 1200.0f) {
         illuminatorControlRuntime.illuminator_status = LED_IR;
     }
@@ -378,18 +391,6 @@ static void detectIlluminator(void) {
 
 }
 
-typedef enum {
-    CAM1,
-    CAM2,
-} camera_status_t;
-
-typedef struct {
-    IO_t io;
-    camera_status_t cam_enabled;
-} cameraControlRuntime_t;
-
-static cameraControlRuntime_t cameraControl;
-
 static void cameraCtrlInit(void) {
     ioTag_t CameraCtrlTag = 0x33;
     cameraControl.io = IOGetByTag(CameraCtrlTag);
@@ -405,6 +406,7 @@ static void detectCamera(void) {
 
     float rx_aux2 = rcData[AUX2];
     
+    // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
     if ( ((rx_aux2 > 1040) && (rx_aux2 < 1100)) || ((rx_aux2 > 1400) && (rx_aux2 < 1450)) || ((rx_aux2 > 1750) && (rx_aux2 < 1800)) ) {
         IOLo(cameraControl.io);
         cameraControl.cam_enabled = CAM1;
