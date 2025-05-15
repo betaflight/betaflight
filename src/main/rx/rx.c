@@ -403,15 +403,15 @@ static void cameraCtrlInit(void) {
 
 static void detectCamera(void) {
 
-    float rx_aux4 = rcData[AUX4];
+    float rx_aux2 = rcData[AUX2];
     
-    if (rx_aux4 < 1500) {
-        IOHi(cameraControl.io);
-        cameraControl.cam_enabled = CAM2;
-    }
-    else {
+    if ( ((rx_aux2 > 1040) && (rx_aux2 < 1100)) || ((rx_aux2 > 1400) && (rx_aux2 < 1450)) || ((rx_aux2 > 1750) && (rx_aux2 < 1800)) ) {
         IOLo(cameraControl.io);
         cameraControl.cam_enabled = CAM1;
+    }
+    if ( rx_aux2 < 1030 || ((rx_aux2 > 1300) && (rx_aux2 < 1400)) || ((rx_aux2 > 1650) && (rx_aux2 < 1750)) ) {
+        IOHi(cameraControl.io);
+        cameraControl.cam_enabled = CAM2;
     }
 
 }
