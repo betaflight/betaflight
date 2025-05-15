@@ -1833,7 +1833,7 @@ static void osdElementSys(osdElementParms_t *element)
 // to osdAddActiveElements()
 
 static const uint8_t osdElementDisplayOrder[] = {
-	OSD_MAIN_BATT_VOLTAGE,
+    OSD_MAIN_BATT_VOLTAGE,
     OSD_RSSI_VALUE,
     OSD_CROSSHAIRS,
     OSD_HORIZON_SIDEBARS,
@@ -1940,7 +1940,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 // Define the mapping between the OSD element id and the function to draw it
 
 const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
-	[OSD_CAMERA_FRAME]            = NULL,  // only has background. Added first so it's the lowest "layer" and doesn't cover other elements
+    [OSD_CAMERA_FRAME]            = NULL,  // only has background. Added first so it's the lowest "layer" and doesn't cover other elements
     [OSD_RSSI_VALUE]              = osdElementRssi,
     [OSD_MAIN_BATT_VOLTAGE]       = osdElementMainBatteryVoltage,
     [OSD_CROSSHAIRS]              = osdElementCrosshairs,  // only has background, but needs to be over other elements (like artificial horizon)
@@ -1956,7 +1956,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_CUSTOM_MSG0]             = osdElementCustomMsg,
     [OSD_CUSTOM_MSG1]             = osdElementCustomMsg,
     [OSD_CUSTOM_MSG2]             = osdElementCustomMsg,
-[OSD_CUSTOM_MSG3]             = osdElementCustomMsg,
+    [OSD_CUSTOM_MSG3]             = osdElementCustomMsg,
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
 #ifdef USE_VTX_COMMON
     [OSD_VTX_CHANNEL]             = osdElementVtxChannel,
