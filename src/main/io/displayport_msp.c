@@ -168,6 +168,45 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
     return mspSerialTxBytesFree();
 }
 
+#ifdef USE_MSP_DISPLAYPORT_FONT
+static bool writeFontCharacter(displayPort_t *displayPort, uint16_t addr, const osdCharacter_t *chr)
+{
+    uint8_t buf[OSD_CHAR_BYTES + 4];
+
+    if (!chr) {
+        return false;
+    }
+
+    uint8_t *p = buf;
+    *p++ = MSP_DP_FONTCHAR_WRITE; // command (index 0)
+    *p++ = addr & 0xff; // address low (index 1)
+    *p++ = (addr >> 8) & 0xff; // address high (index 2)
+    *p++ = 0; // padding (index 3)
+
+    memcpy(p, chr->data, OSD_CHAR_BYTES); // write font char data (index >= 4 < len(buf))
+    p += OSD_CHAR_BYTES;
+    int res = output(displayPort, MSP_DISPLAYPORT, buf, p - buf);
+
+    // 80ms delay needed to ensure the MSP display has enough time to process the font data
+    delay(80);
+
+    return res > 0;
+}
+
+static bool checkReady(displayPort_t *displayPort, bool rescan)
+{
+    if (
+        !displayPort ||
+        displayPort->deviceType != DISPLAYPORT_DEVICE_TYPE_MSP ||
+        !rescan
+    ) {
+        return false;
+    }
+
+    return true;
+}
+#endif
+
 static const displayPortVTable_t mspDisplayPortVTable = {
     .grab = grab,
     .release = release,
@@ -182,6 +221,10 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .redraw = redraw,
     .isSynced = isSynced,
     .txBytesFree = txBytesFree,
+#ifdef USE_MSP_DISPLAYPORT_FONT
+    .writeFontCharacter = writeFontCharacter,
+    .checkReady = checkReady,
+#endif
     .layerSupported = NULL,
     .layerSelect = NULL,
     .layerCopy = NULL,
