@@ -161,6 +161,7 @@ const char * const lookupTableAccHardware[] = {
     "LSM6DSO",
     "LSM6DSV16X",
     "IIM42653",
+    "ICM40609D",
     "VIRTUAL"
 };
 
@@ -185,6 +186,7 @@ const char * const lookupTableGyroHardware[] = {
     "LSM6DSO",
     "LSM6DSV16X",
     "IIM42653",
+    "ICM40609D",
     "VIRTUAL"
 };
 
