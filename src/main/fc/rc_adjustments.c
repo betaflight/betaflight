@@ -46,6 +46,7 @@
 
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "config/simplified_tuning.h"
 
 #include "io/beeper.h"
 #include "io/ledstrip.h"
@@ -66,6 +67,9 @@
 #define ADJUSTMENT_RANGE_COUNT_INVALID -1
 
 PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 2);
+
+// Track whether the multiplier center has been initialized
+static bool POTBasePositionInitialized = false;
 
 uint8_t pidAudioPositionToModeMap[7] = {
     // on a pot with a center detent, it's easy to have center area for off/default, then three positions to the left and three to the right.
@@ -230,6 +234,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_LED_DIMMER,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 100 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 100 }
     }
 };
 
@@ -270,6 +278,7 @@ static const char * const adjustmentLabels[] = {
     "OSD PROFILE",
     "LED PROFILE",
     "LED DIMMER",
+    "SLIDER MASTER MULTIPLIER",
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -625,6 +634,34 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
             }
         }
         break;
+    case ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER:
+        {
+            static int centerPosition = 0;
+            static int baseMultiplier = 100;
+
+            // When first entering adjustment range, initialize
+            if (!POTBasePositionInitialized) {
+                centerPosition = position;
+                baseMultiplier = currentPidProfile->simplified_master_multiplier;
+                POTBasePositionInitialized = true;
+            }
+
+            // Compute change from center
+            int delta = position - centerPosition;
+            float sensitivity = 2.0f;
+            int adjustedDelta = (int)(delta * sensitivity);
+            int newValue = constrain(baseMultiplier + adjustedDelta, 5, 200);
+
+            // Apply PID update immediately if changed
+            if (newValue != currentPidProfile->simplified_master_multiplier) {
+                currentPidProfile->simplified_master_multiplier = newValue;
+                applySimplifiedTuningPids(currentPidProfile);
+                pidInitConfig(currentPidProfile);
+                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER, newValue);
+            }
+        }
+    break;
+
     case ADJUSTMENT_PID_AUDIO:
 #ifdef USE_PID_AUDIO
         {
@@ -656,7 +693,7 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         }
 #endif
         break;
-
+         
     default:
         break;
     }
@@ -842,6 +879,7 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
             }
         } else {
             adjustmentState->lastRcData = 0;
+            POTBasePositionInitialized = false;
         }
     }
 }
