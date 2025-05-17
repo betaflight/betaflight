@@ -151,6 +151,7 @@ typedef enum {
 #ifdef USE_WING
     TABLE_TPA_SPEED_TYPE,
     TABLE_YAW_TYPE,
+    TABLE_AERODYNAMICS_MODE,
 #endif // USE_WING
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
