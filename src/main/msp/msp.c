@@ -1808,21 +1808,7 @@ case MSP_NAME:
         break;
 
     case MSP_SENSOR_ALIGNMENT: {
-        uint8_t gyroAlignment;
-#ifdef USE_MULTI_GYRO
-        switch (gyroConfig()->gyro_to_use) {
-        case GYRO_CONFIG_USE_GYRO_2:
-            gyroAlignment = gyroDeviceConfig(1)->alignment;
-            break;
-        case GYRO_CONFIG_USE_GYRO_BOTH:
-            // for dual-gyro in "BOTH" mode we only read/write gyro 0
-        default:
-            gyroAlignment = gyroDeviceConfig(0)->alignment;
-            break;
-        }
-#else
-        gyroAlignment = gyroDeviceConfig(0)->alignment;
-#endif
+        uint8_t gyroAlignment = gyroDeviceConfig(firstEnabledGyro())->alignment;
         sbufWriteU8(dst, gyroAlignment);
         sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same
 #if defined(USE_MAG)
@@ -1833,37 +1819,116 @@ case MSP_NAME:
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectionFlags());
-#ifdef USE_MULTI_GYRO
-        sbufWriteU8(dst, gyroConfig()->gyro_to_use);
+        sbufWriteU8(dst, 0); // deprecated gyro_to_use
         sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
+#if GYRO_COUNT > 1
         sbufWriteU8(dst, gyroDeviceConfig(1)->alignment);
 #else
-        sbufWriteU8(dst, GYRO_CONFIG_USE_GYRO_1);
-        sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, ALIGN_DEFAULT);
 #endif
         // Added in MSP API 1.47
-        switch (gyroConfig()->gyro_to_use) {
-#ifdef USE_MULTI_GYRO
-        case GYRO_CONFIG_USE_GYRO_2:
-            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.roll);
-            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.pitch);
-            sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.yaw);
-            break;
-#endif
-        case GYRO_CONFIG_USE_GYRO_BOTH:
-            // for dual-gyro in "BOTH" mode we only read/write gyro 0
-        default:
-            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
-            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
-            sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
-            break;
-        }
+        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.pitch);
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+
+        // Added in MSP API 1.48
+#if GYRO_COUNT > 2
+        sbufWriteU8(dst, gyroDeviceConfig(2)->alignment);
+#else
+        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
+#endif
+#if GYRO_COUNT > 3
+        sbufWriteU8(dst, gyroDeviceConfig(3)->alignment);
+#endif
+#if GYRO_COUNT > 4
+        sbufWriteU8(dst, gyroDeviceConfig(4)->alignment);
+#else
+        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
+#endif
+#if GYRO_COUNT > 5
+        sbufWriteU8(dst, gyroDeviceConfig(5)->alignment);
+#else
+        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
+#endif
+#if GYRO_COUNT > 6
+        sbufWriteU8(dst, gyroDeviceConfig(6)->alignment);
+#else
+        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
+#endif
+#if GYRO_COUNT > 7
+        sbufWriteU8(dst, gyroDeviceConfig(7)->alignment);
+#else
+        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
+#endif
+
+#if GYRO_COUNT > 1
+        sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+#if GYRO_COUNT > 2
+        sbufWriteU16(dst, gyroDeviceConfig(2)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(2)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(2)->customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+#if GYRO_COUNT > 3
+        sbufWriteU16(dst, gyroDeviceConfig(3)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(3)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(3)->customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+#if GYRO_COUNT > 4
+        sbufWriteU16(dst, gyroDeviceConfig(4)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(4)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(4)->customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+#if GYRO_COUNT > 5
+        sbufWriteU16(dst, gyroDeviceConfig(5)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(5)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(5)->customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+#if GYRO_COUNT > 6
+        sbufWriteU16(dst, gyroDeviceConfig(6)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(6)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(6)->customAlignment.yaw);
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+#if GYRO_COUNT > 7
+        sbufWriteU16(dst, gyroDeviceConfig(7)->customAlignment.roll);
+        sbufWriteU16(dst, gyroDeviceConfig(7)->customAlignment.pitch);
+        sbufWriteU16(dst, gyroDeviceConfig(7)->customAlignment.yaw);
 #else
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1881,7 +1946,7 @@ case MSP_NAME:
         sbufWriteU16(dst, motorConfig()->motorIdle);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_use_32kHz
         sbufWriteU8(dst, motorConfig()->dev.motorInversion);
-        sbufWriteU8(dst, gyroConfig()->gyro_to_use);
+        sbufWriteU8(dst, 0); // deprecated gyro_to_use
         sbufWriteU8(dst, gyroConfig()->gyro_high_fsr);
         sbufWriteU8(dst, gyroConfig()->gyroMovementCalibrationThreshold);
         sbufWriteU16(dst, gyroConfig()->gyroCalibrationDuration);
@@ -3021,56 +3086,126 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         if (sbufBytesRemaining(src) >= 3) {
             // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
-#ifdef USE_MULTI_GYRO
-            gyroConfigMutable()->gyro_to_use = sbufReadU8(src);
+            sbufReadU8(src);  // deprecated gyro_to_use
+#if GYRO_COUNT > 1
             gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
             gyroDeviceConfigMutable(1)->alignment = sbufReadU8(src);
 #else
-            sbufReadU8(src);  // unused gyro_to_use
             gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
             sbufReadU8(src);  // unused gyro_2_sensor_align
 #endif
         } else {
             // maintain backwards compatibility for API < 1.41
-#ifdef USE_MULTI_GYRO
-            switch (gyroConfig()->gyro_to_use) {
-            case GYRO_CONFIG_USE_GYRO_2:
-                gyroDeviceConfigMutable(1)->alignment = gyroAlignment;
-                break;
-            case GYRO_CONFIG_USE_GYRO_BOTH:
-                // For dual-gyro in "BOTH" mode we'll only update gyro 0
-            default:
-                gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
-                break;
-            }
-#else
             gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
-#endif
         }
         // Added in API 1.47
         if (sbufBytesRemaining(src) >= 6) {
-            switch (gyroConfig()->gyro_to_use) {
-#ifdef USE_MULTI_GYRO
-            case GYRO_CONFIG_USE_GYRO_2:
-                gyroDeviceConfigMutable(1)->customAlignment.roll = sbufReadU16(src);
-                gyroDeviceConfigMutable(1)->customAlignment.pitch = sbufReadU16(src);
-                gyroDeviceConfigMutable(1)->customAlignment.yaw = sbufReadU16(src);
-                break;
-#endif
-            case GYRO_CONFIG_USE_GYRO_BOTH:
-                // For dual-gyro in "BOTH" mode we'll only update gyro 0
-            default:
-                gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
-                gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
-                gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
-                break;
-            }
+            gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
             compassConfigMutable()->mag_customAlignment.roll = sbufReadU16(src);
             compassConfigMutable()->mag_customAlignment.pitch = sbufReadU16(src);
             compassConfigMutable()->mag_customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+        }
+
+        if (sbufBytesRemaining(src) >= 48) {
+#if GYRO_COUNT > 2
+            gyroDeviceConfigMutable(2)->alignment = sbufReadU8(src);
+#else
+            sbufReadU8(src);  // unused gyro_3_sensor_align
+#endif
+#if GYRO_COUNT > 3
+            gyroDeviceConfigMutable(3)->alignment = sbufReadU8(src);
+#else
+            sbufReadU8(src);  // unused gyro_4_sensor_align
+#endif
+#if GYRO_COUNT > 4
+            gyroDeviceConfigMutable(4)->alignment = sbufReadU8(src);
+#else
+            sbufReadU8(src);  // unused gyro_5_sensor_align
+#endif
+#if GYRO_COUNT > 5
+            gyroDeviceConfigMutable(5)->alignment = sbufReadU8(src);
+#else
+            sbufReadU8(src);  // unused gyro_6_sensor_align
+#endif
+#if GYRO_COUNT > 6
+            gyroDeviceConfigMutable(6)->alignment = sbufReadU8(src);
+#else
+            sbufReadU8(src);  // unused gyro_7_sensor_align
+#endif
+#if GYRO_COUNT > 7
+            gyroDeviceConfigMutable(7)->alignment = sbufReadU8(src);
+#else
+            sbufReadU8(src);  // unused gyro_8_sensor_align
+#endif
+
+#if GYRO_COUNT > 1
+            gyroDeviceConfigMutable(1)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(1)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(1)->customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+#if GYRO_COUNT > 2
+            gyroDeviceConfigMutable(2)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(2)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(2)->customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+#if GYRO_COUNT > 3
+            gyroDeviceConfigMutable(3)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(3)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(3)->customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+#if GYRO_COUNT > 4
+            gyroDeviceConfigMutable(4)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(4)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(4)->customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+#if GYRO_COUNT > 5
+            gyroDeviceConfigMutable(5)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(5)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(5)->customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+#if GYRO_COUNT > 6
+            gyroDeviceConfigMutable(6)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(6)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(6)->customAlignment.yaw = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+#if GYRO_COUNT > 7
+            gyroDeviceConfigMutable(7)->customAlignment.roll = sbufReadU16(src);
+            gyroDeviceConfigMutable(7)->customAlignment.pitch = sbufReadU16(src);
+            gyroDeviceConfigMutable(7)->customAlignment.yaw = sbufReadU16(src);
 #else
             sbufReadU16(src);
             sbufReadU16(src);
@@ -3096,7 +3231,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             motorConfigMutable()->dev.motorInversion = sbufReadU8(src);
         }
         if (sbufBytesRemaining(src) >= 8) {
-            gyroConfigMutable()->gyro_to_use = sbufReadU8(src);
+            sbufReadU8(src); // deprecated gyro_to_use
             gyroConfigMutable()->gyro_high_fsr = sbufReadU8(src);
             gyroConfigMutable()->gyroMovementCalibrationThreshold = sbufReadU8(src);
             gyroConfigMutable()->gyroCalibrationDuration = sbufReadU16(src);
