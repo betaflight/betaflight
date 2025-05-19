@@ -36,7 +36,7 @@ typedef enum {
     MSP_DP_OPTIONS = 5,         // Not used by Betaflight. Reserved by Ardupilot and INAV
     MSP_DP_SYS = 6,             // Display system element displayportSystemElement_e at given coordinates
 #ifdef USE_MSP_DISPLAYPORT_FONT
-    MSP_DP_FONTCHAR_WRITE = 7,      // New OSD chip works over MSP, enables font write over MSP
+    MSP_DP_FONTCHAR_WRITE = 7,  // New OSD chip works over MSP, enables font write over MSP
 #endif
     MSP_DP_COUNT,
 } displayportMspCommand_e;
