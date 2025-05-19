@@ -47,6 +47,14 @@
 static displayPort_t mspDisplayPort;
 static serialPortIdentifier_e displayPortSerial;
 
+typedef struct displayPortMspCommand_s {
+    uint8_t command;
+    uint8_t row;
+    uint8_t col;
+    uint8_t attribute;
+    uint8_t data[OSD_CHAR_BYTES];
+} __attribute__((packed)) displayPortMspCommand_t;
+
 static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
     UNUSED(displayPort);
@@ -171,21 +179,20 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
 #ifdef USE_MSP_DISPLAYPORT_FONT
 static bool writeFontCharacter(displayPort_t *displayPort, uint16_t addr, const osdCharacter_t *chr)
 {
-    uint8_t buf[OSD_CHAR_BYTES + 4];
+    displayPortMspCommand_t displayPortCommand;
 
     if (!chr) {
         return false;
     }
 
-    uint8_t *p = buf;
-    *p++ = MSP_DP_FONTCHAR_WRITE; // command (index 0)
-    *p++ = addr & 0xff; // address low (index 1)
-    *p++ = (addr >> 8) & 0xff; // address high (index 2)
-    *p++ = 0; // padding (index 3)
+    displayPortCommand.command = MSP_DP_FONTCHAR_WRITE;
+    displayPortCommand.row = addr & 0xff;
+    displayPortCommand.col = (addr >> 8) & 0xff;
+    displayPortCommand.attribute = 0;
 
-    memcpy(p, chr->data, OSD_CHAR_BYTES); // write font char data (index >= 4 < len(buf))
-    p += OSD_CHAR_BYTES;
-    int res = output(displayPort, MSP_DISPLAYPORT, buf, p - buf);
+    memcpy(displayPortCommand.data, chr->data, OSD_CHAR_BYTES);
+
+    int res = output(displayPort, MSP_DISPLAYPORT, (uint8_t*)&displayPortCommand, OSD_CHAR_BYTES + 4);
 
     // 80ms delay needed to ensure the MSP display has enough time to process the font data
     delay(80);
