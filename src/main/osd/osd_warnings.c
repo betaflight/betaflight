@@ -76,6 +76,21 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     static armingDisableFlags_e armingDisabledDisplayFlag = 0;
 
     warningText[0] = '\0';
+
+#ifdef USE_GPS_RESCUE
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
+        && FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !gpsRescueIsOK()) {
+
+        tfp_sprintf(warningText, "RESCUE FAIL");
+        // when a rescue sanity check is active (rescue has failed)
+        // takes precedence over RXLOSS warning which otherwise is shown throughout the rescue
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif
+
     *displayAttr = DISPLAYPORT_SEVERITY_NORMAL;
     *blinking = false;
 
@@ -222,31 +237,32 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
 #ifdef USE_GPS_RESCUE
-    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&
-       ARMING_FLAG(ARMED) &&
-       gpsRescueIsConfigured() &&
-       !gpsRescueIsDisabled() &&
-       !gpsRescueIsAvailable()) {
-        tfp_sprintf(warningText, "RESCUE N/A");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-        *blinking = true;
-        return;
-    }
-
-    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_DISABLED) &&
-       ARMING_FLAG(ARMED) &&
-       gpsRescueIsConfigured() &&
-       gpsRescueIsDisabled()) {
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
+        && ARMING_FLAG(ARMED)
+        && gpsRescueIsConfigured() // show this warning on arming (not waiting for the rescue to start)
+        && !gpsRescueIsAvailable()) {
 
         statistic_t *stats = osdGetStats();
         if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
-            tfp_sprintf(warningText, "RESCUE OFF");
+            tfp_sprintf(warningText, "RESCUE N/A");
+            // tell the user that GPS Rescue won't be available if requested later in the flight
+            // auto-remove the message after the warning duration timeout (5s)
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
             return;
         }
     }
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_FAILING)
+        && ARMING_FLAG(ARMED)
+        && gpsRescueIsConfigured()
+        && !gpsRescueIsHeadingOK()) {
 
+        tfp_sprintf(warningText, "HEADING N/A");
+        // show this warning until IMU heading is oriented by pilot flying straight ahead
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_POSITION_HOLD
