@@ -1,0 +1,4 @@
+PICO_WRAPPED_FUNCTIONS = main
+PICO_WRAPPED_FUNCTIONS += init initEEPROM isEEPROMVersionValid
+PICO_TRACE_LD_FLAGS += $(foreach fn, $(PICO_WRAPPED_FUNCTIONS), -Wl,--wrap=$(fn))
+PICO_TRACE_SRC += PICO/pico_trace.c

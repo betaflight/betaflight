@@ -42,12 +42,8 @@ void Default_Handler(void);
 // cycles per microsecond
 static uint32_t usTicks = 0;
 
-void (* const vector_table[])() __attribute__((section(".vectors"))) = {
-    (void (*)())0x20000000, // Initial Stack Pointer
-    Reset_Handler,           // Interrupt Handler for reset
-    Default_Handler,         // Default handler for other interrupts
-};
-
+// SystemInit and SystemCoreClock variables/functions,
+// as per pico-sdk rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c
 uint32_t SystemCoreClock; /* System Clock Frequency (Core Clock)*/
 
 void SystemCoreClockUpdate (void)
@@ -58,6 +54,26 @@ void SystemCoreClockUpdate (void)
 void __attribute__((constructor)) SystemInit (void)
 {
     SystemCoreClockUpdate();
+}
+
+
+/////////////////////////////////////////////////
+
+// TODO: check: don't define functions here provided by pico-sdk crt0
+// crt0.S defines the vector table in the .vectors section, with
+// initial stack pointer at __StackTop (defined in linker script),
+// and with reset handler pointing to code inside crt0.S
+#if 0
+
+void (* const vector_table[])() __attribute__((section(".vectors"))) = {
+    (void (*)())0x20000000, // Initial Stack Pointer
+    Reset_Handler,           // Interrupt Handler for reset
+    Default_Handler,         // Default handler for other interrupts
+};
+
+void Default_Handler(void)
+{
+    while (1); // Infinite loop on default handler
 }
 
 void Reset_Handler(void)
@@ -85,10 +101,16 @@ void Reset_Handler(void)
     main(0, 0);
 }
 
-void Default_Handler(void)
+
+void __unhandled_user_irq(void)
 {
-    while (1); // Infinite loop on default handler
+    // TODO
 }
+
+#endif
+
+/////////////////////////////////////////////////////
+
 
 void systemReset(void)
 {
@@ -131,17 +153,26 @@ uint32_t microsISR(void)
     return micros();
 }
 
+#define PICO_NON_BUSY_SLEEP
 void delayMicroseconds(uint32_t us)
 {
+#ifdef PICO_NON_BUSY_SLEEP
+    sleep_us(us);
+#else
     uint32_t now = micros();
     while (micros() - now < us);
+#endif
 }
 
 void delay(uint32_t ms)
 {
+#ifdef PICO_NON_BUSY_SLEEP
+    sleep_ms(ms);
+#else
     while (ms--) {
         delayMicroseconds(1000);
     }
+#endif
 }
 
 uint32_t getCycleCounter(void)
@@ -151,7 +182,10 @@ uint32_t getCycleCounter(void)
 
 uint32_t clockMicrosToCycles(uint32_t micros)
 {
-    return micros / usTicks;
+    if (!usTicks) {
+        usTicks = clock_get_hz(clk_sys) / 1000000;
+    }
+    return micros * usTicks;
 }
 
 static void indicate(uint8_t count, uint16_t duration)
@@ -198,10 +232,6 @@ void failureMode(failureMode_e mode)
 #endif
 }
 
-void __unhandled_user_irq(void)
-{
-    // TODO
-}
 
 static void unusedPinInit(IO_t io)
 {
@@ -218,10 +248,12 @@ void unusedPinsInit(void)
 const mcuTypeInfo_t *getMcuTypeInfo(void)
 {
     static const mcuTypeInfo_t info = {
-#if defined(RP2350B)
+#if defined(RP2350A)
+        .id = MCU_TYPE_RP2350A, .name = "RP2350A"
+#elif defined(RP2350B)
         .id = MCU_TYPE_RP2350B, .name = "RP2350B"
 #else
-#error MCU Type info not defined for STM (or clone)
+#error MCU Type info not defined for PICO / variant
 #endif
     };
     return &info;

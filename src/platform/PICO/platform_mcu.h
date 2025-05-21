@@ -21,26 +21,15 @@
 
 #pragma once
 
-#define _ADDRESSMAP_H
-
-#define NVIC_PriorityGroup_2         0x500
-
-#define SPI_IO_AF_CFG           0
-#define SPI_IO_AF_SCK_CFG_HIGH  0
-#define SPI_IO_AF_SCK_CFG_LOW   0
-#define SPI_IO_AF_SDI_CFG       0
-#define SPI_IO_CS_CFG           0
-
-// Register address offsets for atomic RMW aliases
-#define REG_ALIAS_RW_BITS  (_u(0x0) << _u(12))
-#define REG_ALIAS_XOR_BITS (_u(0x1) << _u(12))
-#define REG_ALIAS_SET_BITS (_u(0x2) << _u(12))
-#define REG_ALIAS_CLR_BITS (_u(0x3) << _u(12))
-
 #include "RP2350.h"
+
+#include "pico.h"
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/dma.h"
+#include "hardware/flash.h"
+
+#define NVIC_PriorityGroup_2         0x500
 
 #if defined(RP2350A) || defined(RP2350B)
 
@@ -55,7 +44,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_TypeDef          void*
 #define DMA_InitTypeDef      void*
 //#define DMA_Channel_TypeDef
-#define SPI_TypeDef          SPI0_Type
+
 #define ADC_TypeDef          void*
 #define USART_TypeDef        uart_inst_t
 #define TIM_OCInitTypeDef    void*
@@ -70,8 +59,11 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 //#define EXTI_InitTypeDef
 //#define IRQn_Type           void*
 
+// We have to use SPI0_Type (or void) because config will pass in SPI0, SPI1,
+// which are defined in pico-sdk as SPI0_Type*.
+// SPI_INST converts to the correct type for use in pico-sdk functions.
+#define SPI_TypeDef          SPI0_Type
 #define SPI_INST(spi) ((spi_inst_t *)(spi))
-
 
 #endif
 
@@ -86,6 +78,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
+// TODO update these and IOConfigGPIO
 #define IOCFG_OUT_PP          IO_CONFIG(GPIO_OUT, 0, 0)
 #define IOCFG_OUT_OD          IO_CONFIG(GPIO_OUT, 0, 0)
 #define IOCFG_AF_PP           0
@@ -93,6 +86,14 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define IOCFG_IPD             IO_CONFIG(GPIO_IN, 0, 0)
 #define IOCFG_IPU             IO_CONFIG(GPIO_IN, 0, 0)
 #define IOCFG_IN_FLOATING     IO_CONFIG(GPIO_IN, 0, 0)
+
+// TODO update these and IOConfigGPIO
+#define SPI_IO_AF_CFG           0
+#define SPI_IO_AF_SCK_CFG_HIGH  0
+#define SPI_IO_AF_SCK_CFG_LOW   0
+#define SPI_IO_AF_SDI_CFG       0
+#define SPI_IO_CS_CFG           0
+
 
 #define SERIAL_UART_FIRST_INDEX     0
 
@@ -106,7 +107,6 @@ extern uint32_t systemUniqueId[3];
 #define UART_TX_BUFFER_ATTRIBUTE
 #define UART_RX_BUFFER_ATTRIBUTE
 
-#define MAX_SPI_PIN_SEL 4
 #define SERIAL_TRAIT_PIN_CONFIG 1
 
 #define xDMA_GetCurrDataCounter(dma_resource) (((dma_channel_hw_t *)(dma_resource))->transfer_count)

@@ -87,11 +87,26 @@ void IOToggle(IO_t io)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
+    /*
+TODO: update to support the following
+IOCFG_AF_PP
+IOCFG_IN_FLOATING
+IOCFG_IPD
+IOCFG_IPU
+IOCFG_OUT_OD
+IOCFG_OUT_PP
+IO_RESET_CFG
+
+SPI_IO_CS_CFG (as defined)
+SPI_IO_CS_HIGH_CFG (as defined)
+    */
     if (!io) {
         return;
     }
 
-    gpio_set_dir(IO_Pin(io), (cfg & 0x01));
+    uint16_t ioPin = IO_Pin(io);
+    gpio_init(ioPin);
+    gpio_set_dir(ioPin, (cfg & 0x01)); // 0 = in, 1 = out
 }
 
 IO_t IOGetByTag(ioTag_t tag)

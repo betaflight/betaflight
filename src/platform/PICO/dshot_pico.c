@@ -403,10 +403,26 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     return true;
 }
 
+// TODO do we just undef USE_DSHOT_BITBANG ?
 bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 {
     /* DSHOT BIT BANG not required for PICO */
     UNUSED(motorDevConfig);
     return false;
 }
+
+bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
+{
+    // TODO: not required
+    UNUSED(device);
+    UNUSED(motorConfig);
+    return false;
+}
+
+dshotBitbangStatus_e dshotBitbangGetStatus(void)
+{
+    // TODO: not required
+    return 0;
+}
+
 #endif // USE_DSHOT
