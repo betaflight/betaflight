@@ -144,6 +144,7 @@ typedef struct {
     uint8_t inverted;
     timerHardware_t *timerHardware;
     illuminator_status_t illuminator_status;
+    bool is_init;
 } illuminatorControlRuntime_t;
 
 typedef enum {
@@ -339,8 +340,12 @@ static void illuminatorInit(void) {
         *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period;
         illuminatorControlRuntime.enabled = true;
         illuminatorControlRuntime.illuminator_status = LED_OFF;
-
+        illuminatorControlRuntime.is_init = true;
     }
+    else {
+        illuminatorControlRuntime.is_init = false;
+    }
+
 }
 
 static void ilumminator_generate_output(void) {
@@ -361,6 +366,10 @@ static void ilumminator_generate_output(void) {
 }
 
 static void detectIlluminator(void) {
+
+    if (!illuminatorControlRuntime.is_init) {
+        return;
+    }
 
     float rx_aux8 = rcData[AUX8];
     
