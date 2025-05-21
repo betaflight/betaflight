@@ -219,7 +219,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         }
-        if (currentTimeUs - reversalTimeUs < 250000) {
+        if (cmpTimeUs(currentTimeUs, reversalTimeUs) < 250000) {
             // keep iterm zero for 250ms after motor reversal
             pidResetIterm();
         }
