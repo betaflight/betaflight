@@ -34,7 +34,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(altLimitConfig_t, altLimitConfig, PG_ALTLIMIT_CO
 
 PG_RESET_TEMPLATE(altLimitConfig_t, altLimitConfig,
     .ceiling = 120, // maximum allowed altitude in meters (above starting altitude)
-    .buffer = 15, // hight under ceiling where throttle will be scaled down 
+    .transition = 15, // hight under ceiling where throttle will be scaled down 
     .active = false, // set to true to enforce altitude limit
 );
 #endif

@@ -27,7 +27,7 @@
 
 typedef struct altLimitConfig_s {
     uint16_t ceiling;
-    uint16_t buffer;
+    uint16_t transition;
     bool active;
 } altLimitConfig_t;
 

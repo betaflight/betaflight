@@ -39,7 +39,7 @@ typedef struct {
     bool isActive;
     uint8_t mode;  // 0: no limit, 1: scaling throttle, 2: no throttle
     float ceiling;
-    float buffer;
+    float transition;
     float throttle_factor;
 } altLimitState_t;
 
