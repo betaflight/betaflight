@@ -2508,7 +2508,7 @@ void osdUpdateAlarms(void)
 #endif
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
-    bool blink;
+    bool blink = false;
 
 #if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
@@ -2518,7 +2518,6 @@ void osdUpdateAlarms(void)
 #endif
 #if defined(USE_DSHOT_TELEMETRY)
     {
-        blink = false;
         if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF) {
             for (uint32_t k = 0; !blink && (k < getMotorCount()); k++) {
                 blink = (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0 &&
