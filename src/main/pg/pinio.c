@@ -38,6 +38,20 @@
 #ifndef PINIO4_PIN
 #define PINIO4_PIN NONE
 #endif
+#if PINIO_COUNT > 4
+#ifndef PINIO5_PIN
+#define PINIO5_PIN NONE
+#endif
+#ifndef PINIO6_PIN
+#define PINIO6_PIN NONE
+#endif
+#ifndef PINIO7_PIN
+#define PINIO7_PIN NONE
+#endif
+#ifndef PINIO8_PIN
+#define PINIO8_PIN NONE
+#endif
+#endif
 
 #ifndef PINIO1_CONFIG
 #define PINIO1_CONFIG PINIO_CONFIG_MODE_OUT_PP
@@ -55,6 +69,22 @@
 #define PINIO4_CONFIG PINIO_CONFIG_MODE_OUT_PP
 #endif
 
+#ifndef PINIO5_CONFIG
+#define PINIO5_CONFIG PINIO_CONFIG_MODE_OUT_PP
+#endif
+
+#ifndef PINIO6_CONFIG
+#define PINIO6_CONFIG PINIO_CONFIG_MODE_OUT_PP
+#endif
+
+#ifndef PINIO7_CONFIG
+#define PINIO7_CONFIG PINIO_CONFIG_MODE_OUT_PP
+#endif
+
+#ifndef PINIO8_CONFIG
+#define PINIO8_CONFIG PINIO_CONFIG_MODE_OUT_PP
+#endif
+
 PG_REGISTER_WITH_RESET_FN(pinioConfig_t, pinioConfig, PG_PINIO_CONFIG, 0);
 
 void pgResetFn_pinioConfig(pinioConfig_t *config)
@@ -63,10 +93,20 @@ void pgResetFn_pinioConfig(pinioConfig_t *config)
     config->ioTag[1] = IO_TAG(PINIO2_PIN);
     config->ioTag[2] = IO_TAG(PINIO3_PIN);
     config->ioTag[3] = IO_TAG(PINIO4_PIN);
+#if PINIO_COUNT > 4
+    config->ioTag[4] = IO_TAG(PINIO5_PIN);
+    config->ioTag[5] = IO_TAG(PINIO6_PIN);
+    config->ioTag[6] = IO_TAG(PINIO7_PIN);
+    config->ioTag[7] = IO_TAG(PINIO8_PIN);
+#endif
 
     config->config[0] = PINIO1_CONFIG;
     config->config[1] = PINIO2_CONFIG;
     config->config[2] = PINIO3_CONFIG;
     config->config[3] = PINIO4_CONFIG;
+    config->config[4] = PINIO5_CONFIG;
+    config->config[5] = PINIO6_CONFIG;
+    config->config[6] = PINIO7_CONFIG;
+    config->config[7] = PINIO8_CONFIG;
 }
 #endif
