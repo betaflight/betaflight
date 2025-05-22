@@ -690,12 +690,24 @@ static void osdElementLidarDist(osdElementParms_t *element)
     int16_t dist = rangefinderGetLatestAltitude();
 
     if (dist > 0) {
-        tfp_sprintf(element->buff, "RF:%3d", dist); //This is currently only for HD OSD text output, as the sonar glyph is currently missing from the HD OSD fonts.  
-    } else {                                        //*For analog OSD, you can specify the sonar glyph "SYM_LIDAR_DIST" linked in \src\main\drivers\osd_symbols.h
-        tfp_sprintf(element->buff, "RF:---");       //*For example like this: "tfp_sprintf(element->buff, "%c%3d", SYM_LIDAR_DIST, dist);"
-    }                                               //*if you use a castom GUI
+
+#ifdef USE_OSD_HD
+        tfp_sprintf(element->buff, "RF:%3d", dist);
+#elif defined (USE_OSD_SD)
+        tfp_sprintf(element->buff, "%c%3d", SYM_LIDAR_DIST, dist);
+#endif
+
+    } else {
+
+#ifdef USE_OSD_HD
+        tfp_sprintf(element->buff, "RF:---");
+#elif defined (USE_OSD_SD)
+        tfp_sprintf(element->buff, "%c---", SYM_LIDAR_DIST);
+#endif
+    }
 }
 #endif
+
 #ifdef USE_OSD_ADJUSTMENTS
 static void osdElementAdjustmentRange(osdElementParms_t *element)
 {
