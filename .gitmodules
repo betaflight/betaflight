@@ -5,4 +5,4 @@
 	ignore = dirty
 [submodule "lib/main/pico-sdk"]
 	path = lib/main/pico-sdk
-	url = https://github.com/raspberrypi/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
