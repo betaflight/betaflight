@@ -57,8 +57,11 @@ CFLAGS_DISABLED         :=
 FORKNAME      = betaflight
 
 # Working directories
+# ROOT_DIR is the full path to the directory containing this Makefile
 ROOT_DIR        := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+# ROOT is the relative path to the directory containing this Makefile
 ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+
 PLATFORM_DIR	:= $(ROOT)/src/platform
 SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
@@ -432,7 +435,7 @@ $(TARGET_HEX): $(TARGET_ELF)
 
 $(TARGET_UF2): $(TARGET_ELF)
 	@echo "Creating UF2 $(TARGET_UF2)" "$(STDOUT)"
-	$(V1) $(PICOTOOL) uf2 convert $< $@
+	$(V1) $(PICOTOOL) uf2 convert $< $@ || { echo "Failed to convert ELF to UF2 format"; exit 1; }
 
 $(TARGET_DFU): $(TARGET_HEX)
 	@echo "Creating DFU $(TARGET_DFU)" "$(STDOUT)"
@@ -693,7 +696,7 @@ version:
 
 submodules:
 	@echo "Updating submodules"
-	$(V1) git submodule update --init --recursive
+	$(V1) git submodule update --init --recursive || { echo "Failed to update submodules"; exit 1; }
 	@echo "Submodules updated"
 
 ## help              : print this help message and exit
