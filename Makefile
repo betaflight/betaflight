@@ -91,14 +91,15 @@ MAKE_PARALLEL 		     = $(if $(filter -j%, $(MAKEFLAGS)),$(EMPTY),-j$(DEFAULT_PAR
 # pre-build sanity checks
 include $(MAKE_SCRIPT_DIR)/checks.mk
 
-# list of targets that  are executed on host (using exe as goal)
-EXE_TARGETS      := SITL
-UF2_TARGETS      := RP2350
-
 # basic target list
 PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
 BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
 
+# list of targets that are executed on host - using exe as goal recipe
+EXE_TARGETS      := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exe)))))
+# list of targets using uf2 as goal recipe
+UF2_TARGETS      := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.uf2)))))
+# list of targets using hex as goal recipe (default)
 HEX_TARGETS      := $(filter-out $(EXE_TARGETS) $(UF2_TARGETS),$(BASE_TARGETS))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
