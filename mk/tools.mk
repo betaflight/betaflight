@@ -331,3 +331,43 @@ breakpad_clean:
 	$(V1) [ ! -d "$(BREAKPAD_DIR)" ] || $(RM) -rf $(BREAKPAD_DIR)
 	@echo " CLEAN        $(BREAKPAD_DL_FILE)"
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
+
+# Raspberry Pi Pico tools
+PICOTOOL_REPO   := https://github.com/raspberrypi/picotool.git
+PICOTOOL_DL_DIR := $(DL_DIR)/picotool
+PICOTOOL_BUILD_DIR := $(PICOTOOL_DL_DIR)/build
+PICOTOOL_DIR    := $(TOOLS_DIR)/picotool
+PICO_SDK_PATH   := $(ROOT_DIR)/lib/main/pico-sdk
+PICOTOOL        := $(PICOTOOL_DIR)/picotool
+
+ifeq ($(filter uf2,$(MAKECMDGOALS)), uf2)
+    ifeq (,$(wildcard $(PICOTOOL)))
+        PICOTOOL_VERSION := $(shell picotool version)
+        ifneq ($(PICOTOOL_VERSION),)
+            PICOTOOL := picotool
+        else
+            $(error **ERROR** picotool not in the PATH or setup in tools. Run 'make picotool_install' to install automatically in the tools folder)
+        endif
+    endif
+endif
+
+.PHONY: picotool_install
+picotool_install: | $(DL_DIR) $(TOOLS_DIR)
+picotool_install: picotool_clean
+	@echo "\n CLONE     $(PICOTOOL_REPO)"
+	$(V1) git clone --depth 1 $(PICOTOOL_REPO) "$(PICOTOOL_DL_DIR)"
+	@echo "\n BUILD      $(PICOTOOL_BUILD_DIR)"
+	$(V1) [ -d "$(PICOTOOL_DIR)" ] || mkdir -p $(PICOTOOL_DIR)
+	$(V1) [ -d "$(PICOTOOL_BUILD_DIR)" ] || mkdir -p $(PICOTOOL_BUILD_DIR)
+	$(V1) cmake -S $(PICOTOOL_DL_DIR) -B $(PICOTOOL_BUILD_DIR) -D PICO_SDK_PATH=$(PICO_SDK_PATH)
+	$(V1) $(MAKE) -C $(PICOTOOL_BUILD_DIR)
+	$(V1) cp $(PICOTOOL_BUILD_DIR)/picotool $(PICOTOOL_DIR)/picotool
+	@echo "\n VERSION:"
+	$(V1) $(PICOTOOL_DIR)/picotool version
+
+.PHONY: picotool_clean
+picotool_clean:
+	@echo " CLEAN        $(PICOTOOL_DIR)"
+	$(V1) [ ! -d "$(PICOTOOL_DIR)" ] || $(RM) -rf $(PICOTOOL_DIR)
+	@echo " CLEAN        $(PICOTOOL_DL_DIR)"
+	$(V1) [ ! -d "$(PICOTOOL_DL_DIR)" ] || $(RM) -rf $(PICOTOOL_DL_DIR)
