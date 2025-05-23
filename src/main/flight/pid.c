@@ -124,7 +124,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -267,6 +267,17 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+#ifdef USE_WING
+        .ad_mode = AD_OFF,
+        .ad_lift_zero = 150,
+        .ad_lift_slope = 80,
+        .ad_drag_parasitic = 25,
+        .ad_drag_induced = 60,
+        .plane_mass = 300,
+        .wing_load = 5600,
+        .air_density = 1225,
+        .stall_aoa_pos = 12,
+#endif
     );
 }
 
@@ -324,6 +335,43 @@ void pidResetIterm(void)
 }
 
 #ifdef USE_WING
+static void computeAngleOfAttackEstimate(void)
+{
+#ifdef USE_ACC
+    aerodynamicsProperty_t *planeProperty = &pidRuntime.planeDynamics;
+    const float speedThreshold = 2.0f;    //gps speed thresold
+    const float stallAngleOfAttackPad = 2.0f;
+    float speed = 0.0f;
+    float loadZ = 0.0f;
+    float liftActualC = 0.0f;
+    float airSpeedPressure = 0.0f;
+    float angleOfAttack = 0.0f;
+    float isStallWarning = false;
+    if (sensors(SENSOR_ACC)) {
+        speed = pidRuntime.tpaSpeed.speed;   //speed m/s  use estimators speed. TODO: add mode to use GPS speed for using in unwind conditions,  tuning and debug
+        if (speed > speedThreshold) {
+            airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
+            loadZ = acc.accADC.z * acc.dev.acc_1G_rec;
+            liftActualC = loadZ * planeProperty->wingLoad * G_ACCELERATION / airSpeedPressure;
+            liftActualC = constrainf(liftActualC, -2.0f, 2.0f); //limit lift force coef value for small speed to prevent unreal AoA and drag force
+            angleOfAttack = (liftActualC - planeProperty->liftZeroC) / planeProperty->liftSlopeC;
+            isStallWarning = angleOfAttack > planeProperty->stallAngleOfAttack - stallAngleOfAttackPad; // TODO: add cli input of stallAngleOfAttackPad and do OSD blink symbols warning
+        }
+    }
+
+    planeProperty->angleOfAttack = angleOfAttack;
+    planeProperty->liftActualC = liftActualC;
+    planeProperty->isStallWarning = isStallWarning;
+
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 0, lrintf(speed * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 1, lrintf(loadZ * 100.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 2, lrintf(angleOfAttack * 10.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 3, lrintf(-attitude.values.pitch * 10.0f));  // log opposite pitch value, because it is equivalent to angle of attack in horizon flight
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 4, lrintf(liftActualC * 1000.0f));
+    DEBUG_SET(DEBUG_AOA_ESTIMATOR, 5, lrintf(airSpeedPressure));
+#endif
+}
+
 static float calcWingThrottle(void)
 {
     float batteryThrottleFactor = 1.0f;
@@ -335,15 +383,50 @@ static float calcWingThrottle(void)
     return getMotorOutputRms() * batteryThrottleFactor;
 }
 
+static float calcAccelerationByEngineThrust(float throttle)
+{
+    const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
+    const float thrustAccel = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
+    return thrustAccel;
+}
+
+//Compute flight path angle by using angle of attack value and IMU orientation
+static float calcPlaneSinPathAngle(void)
+{
+    vector3_t direction;
+    const float angleOfAttackRadians = DEGREES_TO_RADIANS(pidRuntime.planeDynamics.angleOfAttack);
+//  the velocity unit vector in body frame reference system
+    direction.x = cos_approx(angleOfAttackRadians);
+    direction.y = 0.0f;
+    direction.z = -sin_approx(angleOfAttackRadians);
+
+//  the unit velocity vector in earth frame reference system
+    applyRotationMatrix(&direction, &rMat);
+
+    return direction.z;     //sin path angle, >0 - up, <0 down
+}
+
 static float calcWingAcceleration(float throttle, float pitchAngleRadians)
 {
     const tpaSpeedParams_t *tpa = &pidRuntime.tpaSpeed;
+    const aerodynamicsProperty_t *planeProperty = &pidRuntime.planeDynamics;
+    float thrustAccel = calcAccelerationByEngineThrust(throttle);
+    float dragAccel = 0.0f;
+    float gravityAccel = 0.0f;
+    
+    if (planeProperty->mode == AD_TPA) {
+        const float speed = tpa->speed;   //[m/s]  use estimate from last step
+        const float airSpeedPressure = planeProperty->airDensity * sq(speed) / 2.0f;
+        const float dragC = planeProperty->dragParasiticC + planeProperty->dragInducedC * sq(planeProperty->liftActualC);
+        dragAccel = dragC * airSpeedPressure / planeProperty->wingLoad;
+        gravityAccel = G_ACCELERATION * calcPlaneSinPathAngle();   
+        thrustAccel *= cos_approx(DEGREES_TO_RADIANS(planeProperty->angleOfAttack));   //aproximally, because we do not know the real engine force direction 
+    } else {
+        dragAccel = tpa->speed * tpa->speed * tpa->dragMassRatio;
+        gravityAccel = -G_ACCELERATION * sin_approx(pitchAngleRadians); // add negative sign for RHS dynamics equition
+    }
 
-    const float thrust = (throttle * throttle - throttle * tpa->speed * tpa->inversePropMaxSpeed) * tpa->twr * G_ACCELERATION;
-    const float drag = tpa->speed * tpa->speed * tpa->dragMassRatio;
-    const float gravity = G_ACCELERATION * sin_approx(pitchAngleRadians);
-
-    return thrust - drag + gravity;
+    return thrustAccel - dragAccel - gravityAccel; //the standard speed accel equition in rhs frame system
 }
 
 static float calcWingTpaArgument(void)
@@ -1237,8 +1320,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // ToDo: check if this can be reconstructed offline for rotating filter and if so, remove the debug
     // fit (0...2*pi) into int16_t (-32768 to 32767)
     DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
-
 #endif // USE_CHIRP
+
+#ifdef USE_WING
+    if (pidProfile->ad_mode != AD_OFF) {
+        computeAngleOfAttackEstimate();
+    }
+#endif
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1526,7 +1614,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
 
 #ifdef USE_WING
-    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control 
+    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control
     // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
     bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
 #endif // USE_WING
