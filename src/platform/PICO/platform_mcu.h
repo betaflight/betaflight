@@ -30,6 +30,7 @@
 #include "hardware/flash.h"
 
 #define NVIC_PriorityGroup_2         0x500
+#define PLATFORM_NO_LIBC             0
 
 #if defined(RP2350A) || defined(RP2350B)
 

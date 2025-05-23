@@ -24,7 +24,7 @@ ifeq ($(DEBUG_HARDFAULTS),PICO)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
-SDK_DIR         = $(LIB_MAIN_DIR)/pico-sdk
+SDK_DIR         = $(LIB_MAIN_DIR)/pico-sdk/src
 
 #CMSIS
 CMSIS_DIR      := $(SDK_DIR)/rp2_common/cmsis/stub/CMSIS
@@ -79,6 +79,7 @@ PICO_LIB_SRC = \
             rp2_common/pico_float/float_math.c \
             rp2_common/hardware_divider/divider.c \
             rp2_common/hardware_vreg/vreg.c \
+            rp2_common/hardware_xip_cache/xip_cache.c \
             rp2_common/pico_standard_binary_info/standard_binary_info.c \
             rp2_common/pico_clib_interface/newlib_interface.c \
             rp2_common/pico_malloc/malloc.c \
@@ -118,7 +119,7 @@ endif
 
 #CMSIS
 VPATH       := $(VPATH):$(CMSIS_DIR)/Core/Include:$(CMSIS_DIR)/Device/$(TARGET_MCU_LIB_UPPER)/Include
-CMSIS_SRC   := 
+CMSIS_SRC   :=
 
 INCLUDE_DIRS += \
             $(TARGET_PLATFORM_DIR) \
@@ -218,6 +219,7 @@ SYS_INCLUDE_DIRS = \
             $(SDK_DIR)/rp2_common/hardware_gpio/include \
             $(SDK_DIR)/rp2_common/pico_malloc/include \
             $(SDK_DIR)/rp2_common/hardware_timer/include \
+            $(SDK_DIR)/rp2_common/hardware_xip_cache/include \
             $(CMSIS_DIR)/Core/Include \
             $(CMSIS_DIR)/Device/$(TARGET_MCU_LIB_UPPER)/Include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/pico_platform/include \

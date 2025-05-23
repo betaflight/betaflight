@@ -39,6 +39,10 @@
 
 */
 
+#ifndef PLATFORM_NO_LIBC
+#define PLATFORM_NO_LIBC 1
+#endif
+
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
 #define DEFAULT_AUX_CHANNEL_COUNT       MAX_AUX_CHANNEL_COUNT
 #else
