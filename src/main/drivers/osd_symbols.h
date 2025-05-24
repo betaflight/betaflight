@@ -39,7 +39,6 @@
 #define SYM_ALTITUDE                0x7F
 #define SYM_TOTAL_DISTANCE          0x71
 #define SYM_OVER_HOME               0x05
-#define SYM_LIDAR_DIST              0xA2
 
 // RSSI
 #define SYM_RSSI                    0x01

@@ -691,19 +691,11 @@ static void osdElementLidarDist(osdElementParms_t *element)
 
     if (dist > 0) {
 
-#ifdef USE_OSD_HD
         tfp_sprintf(element->buff, "RF:%3d", dist);
-#elif defined (USE_OSD_SD)
-        tfp_sprintf(element->buff, "%c%3d", SYM_LIDAR_DIST, dist);
-#endif
 
     } else {
 
-#ifdef USE_OSD_HD
         tfp_sprintf(element->buff, "RF:---");
-#elif defined (USE_OSD_SD)
-        tfp_sprintf(element->buff, "%c---", SYM_LIDAR_DIST);
-#endif
     }
 }
 #endif
