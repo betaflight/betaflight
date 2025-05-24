@@ -50,6 +50,8 @@
 
     Add the mapping for the element ID to the background drawing function to the
     osdElementBackgroundFunction array.
+    
+    You should also add a corresponding entry to the file: cms_menu_osd.c
 
     Accelerometer reqirement:
     -------------------------
@@ -170,6 +172,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/rangefinder.h"
 
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc
@@ -320,7 +323,6 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
     }
 }
 #endif
-
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
     static const struct {
@@ -681,6 +683,22 @@ char osdGetTemperatureSymbolForSelectedUnit(void)
 // *************************
 // Element drawing functions
 // *************************
+
+#ifdef USE_RANGEFINDER
+static void osdElementLidarDist(osdElementParms_t *element)
+{
+    int16_t dist = rangefinderGetLatestAltitude();
+
+    if (dist > 0) {
+
+        tfp_sprintf(element->buff, "RF:%3d", dist);
+
+    } else {
+
+        tfp_sprintf(element->buff, "RF:---");
+    }
+}
+#endif
 
 #ifdef USE_OSD_ADJUSTMENTS
 static void osdElementAdjustmentRange(osdElementParms_t *element)
@@ -1918,6 +1936,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
 #endif
+#ifdef USE_RANGEFINDER
+    OSD_LIDAR_DIST,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -2061,6 +2082,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_WARNINGS]            = osdElementSys,
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
+#endif
+#ifdef USE_RANGEFINDER
+    [OSD_LIDAR_DIST]              = osdElementLidarDist,
 #endif
 };
 
