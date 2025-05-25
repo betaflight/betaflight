@@ -44,6 +44,15 @@ ifeq ($(TARGET),)
 $(error No TARGET identified. Is the $(CONFIG_HEADER_FILE) valid for $(CONFIG)?)
 endif
 
+ifneq ($(filter $(TARGET),$(EXE_TARGETS)),)
+	OUTPUT_TYPE := exe
+else ifneq ($(filter $(subst _rev,,$@),$(UF2_TARGETS)),)
+	OUTPUT_TYPE := uf2
+else
+	OUTPUT_TYPE := hex
+endif
+
+
 EXST_ADJUST_VMA := $(shell sed -E -n "/^[[:space:]]*\#[[:space:]]*define[[:space:]]+FC_VMA_ADDRESS[[:space:]]+((0[xX])?[[:xdigit:]]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifneq ($(EXST_ADJUST_VMA),)
 EXST = yes
@@ -57,7 +66,9 @@ endif #config
 .PHONY: configs
 configs:
 ifeq ($(shell realpath $(CONFIG_DIR)),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
-	git submodule update --init --remote -- $(CONFIGS_SUBMODULE_DIR)
+	@echo "Updating config submodule: $(CONFIGS_SUBMODULE_DIR)"
+	$(V0) git submodule update --init -- $(CONFIGS_SUBMODULE_DIR) || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
+	@echo "Submodule update succeeded."
 else
 ifeq ($(wildcard $(CONFIG_DIR)),)
 	@echo "Hydrating clone for configs: $(CONFIG_DIR)"
@@ -69,9 +80,9 @@ endif
 
 $(BASE_CONFIGS):
 	@echo "Building target config $@"
-	$(V0) $(MAKE) $(MAKE_PARALLEL) hex CONFIG=$@
+	$(V0) $(MAKE) $(MAKE_PARALLEL) $(OUTPUT_TYPE) CONFIG=$@
 	@echo "Building target config $@ succeeded."
 
 ## <CONFIG>_rev    : build configured target and add revision to filename
 $(addsuffix _rev,$(BASE_CONFIGS)):
-	$(V0) $(MAKE) $(MAKE_PARALLEL) hex CONFIG=$(subst _rev,,$@) REV=yes
+	$(V0) $(MAKE) $(MAKE_PARALLEL) $(OUTPUT_TYPE) CONFIG=$(subst _rev,,$@) REV=yes
