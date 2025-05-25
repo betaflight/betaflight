@@ -43,16 +43,16 @@
 #define GYRO_1_EXTI_PIN NONE
 #endif
 
+#ifndef GYRO_1_CLKIN_PIN
+#define GYRO_1_CLKIN_PIN NONE
+#endif
+
 #ifndef GYRO_2_CS_PIN
 #define GYRO_2_CS_PIN NONE
 #endif
 
 #ifndef GYRO_2_EXTI_PIN
 #define GYRO_2_EXTI_PIN NONE
-#endif
-
-#ifndef GYRO_1_CLKIN_PIN
-#define GYRO_1_CLKIN_PIN NONE
 #endif
 
 #ifndef GYRO_2_CLKIN_PIN
@@ -420,8 +420,14 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[0].index = 0;
     // All multi-gyro boards use SPI based gyros.
 #ifdef USE_SPI_GYRO
+
+#define GYRO_RESET(index, num) \
+    gyroResetSpiDeviceConfig(&devconf[index], GYRO_##num##_SPI_INSTANCE, \
+        IO_TAG(GYRO_##num##_CS_PIN), IO_TAG(GYRO_##num##_EXTI_PIN), \
+        IO_TAG(GYRO_##num##_CLKIN_PIN), GYRO_##num##_ALIGN, GYRO_##num##_CUSTOM_ALIGN)
+
 #ifdef GYRO_1_SPI_INSTANCE
-    gyroResetSpiDeviceConfig(&devconf[0], GYRO_1_SPI_INSTANCE, IO_TAG(GYRO_1_CS_PIN), IO_TAG(GYRO_1_EXTI_PIN), IO_TAG(GYRO_1_CLKIN_PIN), GYRO_1_ALIGN, GYRO_1_CUSTOM_ALIGN);
+    GYRO_RESET(0, 1);
 #else
     devconf[0].busType = BUS_TYPE_NONE;
 #endif
@@ -430,7 +436,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[1].index = 1;
 #ifdef GYRO_2_SPI_INSTANCE
     // TODO: CLKIN gyro 2 on separate pin is not supported yet. need to implement it
-    gyroResetSpiDeviceConfig(&devconf[1], GYRO_2_SPI_INSTANCE, IO_TAG(GYRO_2_CS_PIN), IO_TAG(GYRO_2_EXTI_PIN), IO_TAG(GYRO_2_CLKIN_PIN), GYRO_2_ALIGN, GYRO_2_CUSTOM_ALIGN);
+    GYRO_RESET(1, 2);
 #else
     devconf[1].busType = BUS_TYPE_NONE;
 #endif
@@ -440,7 +446,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[2].index = 2;
 #ifdef GYRO_3_SPI_INSTANCE
     // TODO: CLKIN gyro 3 on separate pin is not supported yet. need to implement it
-    gyroResetSpiDeviceConfig(&devconf[2], GYRO_3_SPI_INSTANCE, IO_TAG(GYRO_3_CS_PIN), IO_TAG(GYRO_3_EXTI_PIN), IO_TAG(GYRO_3_CLKIN_PIN), GYRO_3_ALIGN, GYRO_3_CUSTOM_ALIGN);
+    GYRO_RESET(2, 3);
 #else
     devconf[2].busType = BUS_TYPE_NONE;
 #endif
@@ -450,7 +456,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[3].index = 3;
 #ifdef GYRO_4_SPI_INSTANCE
     // TODO: CLKIN gyro 4 on separate pin is not supported yet. need to implement it
-    gyroResetSpiDeviceConfig(&devconf[3], GYRO_4_SPI_INSTANCE, IO_TAG(GYRO_4_CS_PIN), IO_TAG(GYRO_4_EXTI_PIN), IO_TAG(GYRO_4_CLKIN_PIN), GYRO_4_ALIGN, GYRO_4_CUSTOM_ALIGN);
+    GYRO_RESET(3, 4);
 #else
     devconf[3].busType = BUS_TYPE_NONE;
 #endif
@@ -460,7 +466,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[4].index = 4;
 #ifdef GYRO_5_SPI_INSTANCE
     // TODO: CLKIN gyro 5 on separate pin is not supported yet. need to implement it
-    gyroResetSpiDeviceConfig(&devconf[4], GYRO_5_SPI_INSTANCE, IO_TAG(GYRO_5_CS_PIN), IO_TAG(GYRO_5_EXTI_PIN), IO_TAG(GYRO_5_CLKIN_PIN), GYRO_5_ALIGN, GYRO_5_CUSTOM_ALIGN);
+    GYRO_RESET(4, 5);
 #else
     devconf[4].busType = BUS_TYPE_NONE;
 #endif
@@ -470,7 +476,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[5].index = 5;
 #ifdef GYRO_6_SPI_INSTANCE
     // TODO: CLKIN gyro 6 on separate pin is not supported yet. need to implement it
-    gyroResetSpiDeviceConfig(&devconf[5], GYRO_6_SPI_INSTANCE, IO_TAG(GYRO_6_CS_PIN), IO_TAG(GYRO_6_EXTI_PIN), IO_TAG(GYRO_6_CLKIN_PIN), GYRO_6_ALIGN, GYRO_6_CUSTOM_ALIGN);
+    GYRO_RESET(5, 6);
 #else
     devconf[5].busType = BUS_TYPE_NONE;
 #endif
@@ -480,7 +486,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[6].index = 6;
 #ifdef GYRO_7_SPI_INSTANCE
     // TODO: CLKIN gyro 7 on separate pin is not supported yet. need to implement it
-    gyroResetSpiDeviceConfig(&devconf[6], GYRO_7_SPI_INSTANCE, IO_TAG(GYRO_7_CS_PIN), IO_TAG(GYRO_7_EXTI_PIN), IO_TAG(GYRO_7_CLKIN_PIN), GYRO_7_ALIGN, GYRO_7_CUSTOM_ALIGN);
+    GYRO_RESET(6, 7);
 #else
     devconf[6].busType = BUS_TYPE_NONE;
 #endif
@@ -490,7 +496,7 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     devconf[7].index = 7;
 #ifdef GYRO_8_SPI_INSTANCE
     // TODO: CLKIN gyro 8 on separate pin is not supported yet. need to implement it
-    gyroResetSpiDeviceConfig(&devconf[7], GYRO_8_SPI_INSTANCE, IO_TAG(GYRO_8_CS_PIN), IO_TAG(GYRO_8_EXTI_PIN), IO_TAG(GYRO_8_CLKIN_PIN), GYRO_8_ALIGN, GYRO_8_CUSTOM_ALIGN);
+    GYRO_RESET(7, 8);
 #else
     devconf[7].busType = BUS_TYPE_NONE;
 #endif

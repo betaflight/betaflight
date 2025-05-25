@@ -1839,98 +1839,21 @@ case MSP_NAME:
 #endif
 
         // Added in MSP API 1.48
-#if GYRO_COUNT > 2
-        sbufWriteU8(dst, gyroDeviceConfig(2)->alignment);
-#else
-        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
-#endif
-#if GYRO_COUNT > 3
-        sbufWriteU8(dst, gyroDeviceConfig(3)->alignment);
-#endif
-#if GYRO_COUNT > 4
-        sbufWriteU8(dst, gyroDeviceConfig(4)->alignment);
-#else
-        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
-#endif
-#if GYRO_COUNT > 5
-        sbufWriteU8(dst, gyroDeviceConfig(5)->alignment);
-#else
-        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
-#endif
-#if GYRO_COUNT > 6
-        sbufWriteU8(dst, gyroDeviceConfig(6)->alignment);
-#else
-        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
-#endif
-#if GYRO_COUNT > 7
-        sbufWriteU8(dst, gyroDeviceConfig(7)->alignment);
-#else
-        sbufWriteU8(dst, ALIGN_DEFAULT); // was gyro
-#endif
+        for (int i = 0; i < 8; i++) {
+            sbufWriteU8(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->alignment : ALIGN_DEFAULT);
+        }
 
-#if GYRO_COUNT > 1
-        sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(1)->customAlignment.yaw);
-#else
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-#endif
-#if GYRO_COUNT > 2
-        sbufWriteU16(dst, gyroDeviceConfig(2)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(2)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(2)->customAlignment.yaw);
-#else
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-#endif
-#if GYRO_COUNT > 3
-        sbufWriteU16(dst, gyroDeviceConfig(3)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(3)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(3)->customAlignment.yaw);
-#else
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-#endif
-#if GYRO_COUNT > 4
-        sbufWriteU16(dst, gyroDeviceConfig(4)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(4)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(4)->customAlignment.yaw);
-#else
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-#endif
-#if GYRO_COUNT > 5
-        sbufWriteU16(dst, gyroDeviceConfig(5)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(5)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(5)->customAlignment.yaw);
-#else
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-#endif
-#if GYRO_COUNT > 6
-        sbufWriteU16(dst, gyroDeviceConfig(6)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(6)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(6)->customAlignment.yaw);
-#else
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-#endif
-#if GYRO_COUNT > 7
-        sbufWriteU16(dst, gyroDeviceConfig(7)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(7)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(7)->customAlignment.yaw);
-#else
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, 0);
-#endif
+        for (int i = 0; i < 8; i++) {
+            if (i < GYRO_COUNT) {
+                sbufWriteU16(dst, gyroDeviceConfig(i)->customAlignment.roll);
+                sbufWriteU16(dst, gyroDeviceConfig(i)->customAlignment.pitch);
+                sbufWriteU16(dst, gyroDeviceConfig(i)->customAlignment.yaw);
+            } else {
+                sbufWriteU16(dst, 0);
+                sbufWriteU16(dst, 0);
+                sbufWriteU16(dst, 0);
+            }
+        }
         break;
     }
 
@@ -3114,100 +3037,25 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
 
         if (sbufBytesRemaining(src) >= 48) {
-#if GYRO_COUNT > 2
-            gyroDeviceConfigMutable(2)->alignment = sbufReadU8(src);
-#else
-            sbufReadU8(src);  // unused gyro_3_sensor_align
-#endif
-#if GYRO_COUNT > 3
-            gyroDeviceConfigMutable(3)->alignment = sbufReadU8(src);
-#else
-            sbufReadU8(src);  // unused gyro_4_sensor_align
-#endif
-#if GYRO_COUNT > 4
-            gyroDeviceConfigMutable(4)->alignment = sbufReadU8(src);
-#else
-            sbufReadU8(src);  // unused gyro_5_sensor_align
-#endif
-#if GYRO_COUNT > 5
-            gyroDeviceConfigMutable(5)->alignment = sbufReadU8(src);
-#else
-            sbufReadU8(src);  // unused gyro_6_sensor_align
-#endif
-#if GYRO_COUNT > 6
-            gyroDeviceConfigMutable(6)->alignment = sbufReadU8(src);
-#else
-            sbufReadU8(src);  // unused gyro_7_sensor_align
-#endif
-#if GYRO_COUNT > 7
-            gyroDeviceConfigMutable(7)->alignment = sbufReadU8(src);
-#else
-            sbufReadU8(src);  // unused gyro_8_sensor_align
-#endif
+            for (int i = 0; i < 8; i++) {
+                if (i < GYRO_COUNT) {
+                    gyroDeviceConfigMutable(i)->alignment = sbufReadU8(src);
+                } else {
+                    sbufReadU8(src);
+                }
+            }
 
-#if GYRO_COUNT > 1
-            gyroDeviceConfigMutable(1)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(1)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(1)->customAlignment.yaw = sbufReadU16(src);
-#else
-            sbufReadU16(src);
-            sbufReadU16(src);
-            sbufReadU16(src);
-#endif
-#if GYRO_COUNT > 2
-            gyroDeviceConfigMutable(2)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(2)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(2)->customAlignment.yaw = sbufReadU16(src);
-#else
-            sbufReadU16(src);
-            sbufReadU16(src);
-            sbufReadU16(src);
-#endif
-#if GYRO_COUNT > 3
-            gyroDeviceConfigMutable(3)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(3)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(3)->customAlignment.yaw = sbufReadU16(src);
-#else
-            sbufReadU16(src);
-            sbufReadU16(src);
-            sbufReadU16(src);
-#endif
-#if GYRO_COUNT > 4
-            gyroDeviceConfigMutable(4)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(4)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(4)->customAlignment.yaw = sbufReadU16(src);
-#else
-            sbufReadU16(src);
-            sbufReadU16(src);
-            sbufReadU16(src);
-#endif
-#if GYRO_COUNT > 5
-            gyroDeviceConfigMutable(5)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(5)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(5)->customAlignment.yaw = sbufReadU16(src);
-#else
-            sbufReadU16(src);
-            sbufReadU16(src);
-            sbufReadU16(src);
-#endif
-#if GYRO_COUNT > 6
-            gyroDeviceConfigMutable(6)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(6)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(6)->customAlignment.yaw = sbufReadU16(src);
-#else
-            sbufReadU16(src);
-            sbufReadU16(src);
-            sbufReadU16(src);
-#endif
-#if GYRO_COUNT > 7
-            gyroDeviceConfigMutable(7)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(7)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(7)->customAlignment.yaw = sbufReadU16(src);
-#else
-            sbufReadU16(src);
-            sbufReadU16(src);
-            sbufReadU16(src);
-#endif
+            for (int i = 0; i < 8; i++) {
+                if (i < GYRO_COUNT) {
+                    gyroDeviceConfigMutable(i)->customAlignment.roll = sbufReadU16(src);
+                    gyroDeviceConfigMutable(i)->customAlignment.pitch = sbufReadU16(src);
+                    gyroDeviceConfigMutable(i)->customAlignment.yaw = sbufReadU16(src);
+                } else {
+                    sbufReadU16(src);
+                    sbufReadU16(src);
+                    sbufReadU16(src);
+                }
+            }
         }
         break;
     }
