@@ -83,54 +83,6 @@
 #define GYRO_4_CLKIN_PIN NONE
 #endif
 
-#ifndef GYRO_5_CS_PIN
-#define GYRO_5_CS_PIN NONE
-#endif
-
-#ifndef GYRO_5_EXTI_PIN
-#define GYRO_5_EXTI_PIN NONE
-#endif
-
-#ifndef GYRO_5_CLKIN_PIN
-#define GYRO_5_CLKIN_PIN NONE
-#endif
-
-#ifndef GYRO_6_CS_PIN
-#define GYRO_6_CS_PIN NONE
-#endif
-
-#ifndef GYRO_6_EXTI_PIN
-#define GYRO_6_EXTI_PIN NONE
-#endif
-
-#ifndef GYRO_6_CLKIN_PIN
-#define GYRO_6_CLKIN_PIN NONE
-#endif
-
-#ifndef GYRO_7_CS_PIN
-#define GYRO_7_CS_PIN NONE
-#endif
-
-#ifndef GYRO_7_EXTI_PIN
-#define GYRO_7_EXTI_PIN NONE
-#endif
-
-#ifndef GYRO_7_CLKIN_PIN
-#define GYRO_7_CLKIN_PIN NONE
-#endif
-
-#ifndef GYRO_8_CS_PIN
-#define GYRO_8_CS_PIN NONE
-#endif
-
-#ifndef GYRO_8_EXTI_PIN
-#define GYRO_8_EXTI_PIN NONE
-#endif
-
-#ifndef GYRO_8_CLKIN_PIN
-#define GYRO_8_CLKIN_PIN NONE
-#endif
-
 #ifdef MPU_ADDRESS
 #define GYRO_I2C_ADDRESS MPU_ADDRESS
 #else
@@ -208,74 +160,6 @@
 #endif
 #endif // GYRO_4_ALIGN_ROLL || GYRO_4_ALIGN_PITCH || GYRO_4_ALIGN_YAW
 
-#if defined(GYRO_5_ALIGN_ROLL) || defined(GYRO_5_ALIGN_PITCH) || defined(GYRO_5_ALIGN_YAW)
-#ifndef GYRO_5_ALIGN_ROLL
-#define GYRO_5_ALIGN_ROLL 0
-#endif
-#ifndef GYRO_5_ALIGN_PITCH
-#define GYRO_5_ALIGN_PITCH 0
-#endif
-#ifndef GYRO_5_ALIGN_YAW
-#define GYRO_5_ALIGN_YAW 0
-#endif
-#ifndef GYRO_5_CUSTOM_ALIGN
-#define GYRO_5_CUSTOM_ALIGN     SENSOR_ALIGNMENT( GYRO_5_ALIGN_ROLL / 10, GYRO_5_ALIGN_PITCH / 10, GYRO_5_ALIGN_YAW / 10 )
-#else
-#error "GYRO_5_ALIGN_x and GYRO_5_CUSTOM_ALIGN are mutually exclusive"
-#endif
-#endif // GYRO_5_ALIGN_ROLL || GYRO_5_ALIGN_PITCH || GYRO_5_ALIGN_YAW
-
-#if defined(GYRO_6_ALIGN_ROLL) || defined(GYRO_6_ALIGN_PITCH) || defined(GYRO_6_ALIGN_YAW)
-#ifndef GYRO_6_ALIGN_ROLL
-#define GYRO_6_ALIGN_ROLL 0
-#endif
-#ifndef GYRO_6_ALIGN_PITCH
-#define GYRO_6_ALIGN_PITCH 0
-#endif
-#ifndef GYRO_6_ALIGN_YAW
-#define GYRO_6_ALIGN_YAW 0
-#endif
-#ifndef GYRO_6_CUSTOM_ALIGN
-#define GYRO_6_CUSTOM_ALIGN     SENSOR_ALIGNMENT( GYRO_6_ALIGN_ROLL / 10, GYRO_6_ALIGN_PITCH / 10, GYRO_6_ALIGN_YAW / 10 )
-#else
-#error "GYRO_6_ALIGN_x and GYRO_6_CUSTOM_ALIGN are mutually exclusive"
-#endif
-#endif // GYRO_6_ALIGN_ROLL || GYRO_6_ALIGN_PITCH || GYRO_6_ALIGN_YAW
-
-#if defined(GYRO_7_ALIGN_ROLL) || defined(GYRO_7_ALIGN_PITCH) || defined(GYRO_7_ALIGN_YAW)
-#ifndef GYRO_7_ALIGN_ROLL
-#define GYRO_7_ALIGN_ROLL 0
-#endif
-#ifndef GYRO_7_ALIGN_PITCH
-#define GYRO_7_ALIGN_PITCH 0
-#endif
-#ifndef GYRO_7_ALIGN_YAW
-#define GYRO_7_ALIGN_YAW 0
-#endif
-#ifndef GYRO_7_CUSTOM_ALIGN
-#define GYRO_7_CUSTOM_ALIGN     SENSOR_ALIGNMENT( GYRO_7_ALIGN_ROLL / 10, GYRO_7_ALIGN_PITCH / 10, GYRO_7_ALIGN_YAW / 10 )
-#else
-#error "GYRO_7_ALIGN_x and GYRO_7_CUSTOM_ALIGN are mutually exclusive"
-#endif
-#endif // GYRO_7_ALIGN_ROLL || GYRO_7_ALIGN_PITCH || GYRO_7_ALIGN_YAW
-
-#if defined(GYRO_8_ALIGN_ROLL) || defined(GYRO_8_ALIGN_PITCH) || defined(GYRO_8_ALIGN_YAW)
-#ifndef GYRO_8_ALIGN_ROLL
-#define GYRO_8_ALIGN_ROLL 0
-#endif
-#ifndef GYRO_8_ALIGN_PITCH
-#define GYRO_8_ALIGN_PITCH 0
-#endif
-#ifndef GYRO_8_ALIGN_YAW
-#define GYRO_8_ALIGN_YAW 0
-#endif
-#ifndef GYRO_8_CUSTOM_ALIGN
-#define GYRO_8_CUSTOM_ALIGN     SENSOR_ALIGNMENT( GYRO_8_ALIGN_ROLL / 10, GYRO_8_ALIGN_PITCH / 10, GYRO_8_ALIGN_YAW / 10 )
-#else
-#error "GYRO_8_ALIGN_x and GYRO_8_CUSTOM_ALIGN are mutually exclusive"
-#endif
-#endif // GYRO_8_ALIGN_ROLL || GYRO_8_ALIGN_PITCH || GYRO_8_ALIGN_YAW
-
 #ifndef GYRO_1_ALIGN
 #ifdef GYRO_1_CUSTOM_ALIGN
 #define GYRO_1_ALIGN            ALIGN_CUSTOM
@@ -331,62 +215,6 @@ STATIC_ASSERT(GYRO_3_ALIGN == ALIGN_CUSTOM, "GYRO_3_ALIGN and GYRO_3_CUSTOM_ALIG
 #else
 STATIC_ASSERT(GYRO_4_ALIGN == ALIGN_CUSTOM, "GYRO_4_ALIGN and GYRO_4_CUSTOM_ALIGN mixed");
 #endif // GYRO_4_CUSTOM_ALIGN
-
-#ifndef GYRO_5_ALIGN
-#ifdef GYRO_5_CUSTOM_ALIGN
-#define GYRO_5_ALIGN            ALIGN_CUSTOM
-#else
-#define GYRO_5_ALIGN            CW0_DEG
-#endif
-#endif // GYRO_5_ALIGN
-
-#ifndef GYRO_5_CUSTOM_ALIGN
-#define GYRO_5_CUSTOM_ALIGN     SENSOR_ALIGNMENT_FROM_STD(GYRO_5_ALIGN)
-#else
-STATIC_ASSERT(GYRO_5_ALIGN == ALIGN_CUSTOM, "GYRO_5_ALIGN and GYRO_5_CUSTOM_ALIGN mixed");
-#endif // GYRO_5_CUSTOM_ALIGN
-
-#ifndef GYRO_6_ALIGN
-#ifdef GYRO_6_CUSTOM_ALIGN
-#define GYRO_6_ALIGN            ALIGN_CUSTOM
-#else
-#define GYRO_6_ALIGN            CW0_DEG
-#endif
-#endif // GYRO_6_ALIGN
-
-#ifndef GYRO_6_CUSTOM_ALIGN
-#define GYRO_6_CUSTOM_ALIGN     SENSOR_ALIGNMENT_FROM_STD(GYRO_6_ALIGN)
-#else
-STATIC_ASSERT(GYRO_6_ALIGN == ALIGN_CUSTOM, "GYRO_6_ALIGN and GYRO_6_CUSTOM_ALIGN mixed");
-#endif // GYRO_6_CUSTOM_ALIGN
-
-#ifndef GYRO_7_ALIGN
-#ifdef GYRO_7_CUSTOM_ALIGN
-#define GYRO_7_ALIGN            ALIGN_CUSTOM
-#else
-#define GYRO_7_ALIGN            CW0_DEG
-#endif
-#endif // GYRO_7_ALIGN
-
-#ifndef GYRO_7_CUSTOM_ALIGN
-#define GYRO_7_CUSTOM_ALIGN     SENSOR_ALIGNMENT_FROM_STD(GYRO_7_ALIGN)
-#else
-STATIC_ASSERT(GYRO_7_ALIGN == ALIGN_CUSTOM, "GYRO_7_ALIGN and GYRO_7_CUSTOM_ALIGN mixed");
-#endif // GYRO_7_CUSTOM_ALIGN
-
-#ifndef GYRO_8_ALIGN
-#ifdef GYRO_8_CUSTOM_ALIGN
-#define GYRO_8_ALIGN            ALIGN_CUSTOM
-#else
-#define GYRO_8_ALIGN            CW0_DEG
-#endif
-#endif // GYRO_8_ALIGN
-
-#ifndef GYRO_8_CUSTOM_ALIGN
-#define GYRO_8_CUSTOM_ALIGN     SENSOR_ALIGNMENT_FROM_STD(GYRO_8_ALIGN)
-#else
-STATIC_ASSERT(GYRO_8_ALIGN == ALIGN_CUSTOM, "GYRO_8_ALIGN and GYRO_8_CUSTOM_ALIGN mixed");
-#endif // GYRO_8_CUSTOM_ALIGN
 
 #if defined(USE_SPI_GYRO) && (defined(GYRO_1_SPI_INSTANCE) || defined(GYRO_2_SPI_INSTANCE))
 static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *instance, ioTag_t csnTag, ioTag_t extiTag, ioTag_t clkInTag, uint8_t alignment, sensorAlignment_t customAlignment)
@@ -463,45 +291,11 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
 #endif // GYRO_COUNT 4
 
 #if GYRO_COUNT > 4
-    devconf[4].index = 4;
-#ifdef GYRO_5_SPI_INSTANCE
-    // TODO: CLKIN gyro 5 on separate pin is not supported yet. need to implement it
-    GYRO_RESET(4, 5);
-#else
-    devconf[4].busType = BUS_TYPE_NONE;
+    // reset all gyro greater than gyro 5
+    for (int i = 4; i < 8; i++) {
+        devconf[i].busType = BUS_TYPE_NONE;
+    }
 #endif
-#endif // GYRO_COUNT 5
-
-#if GYRO_COUNT > 5
-    devconf[5].index = 5;
-#ifdef GYRO_6_SPI_INSTANCE
-    // TODO: CLKIN gyro 6 on separate pin is not supported yet. need to implement it
-    GYRO_RESET(5, 6);
-#else
-    devconf[5].busType = BUS_TYPE_NONE;
-#endif
-#endif // GYRO_COUNT 6
-
-#if GYRO_COUNT > 6
-    devconf[6].index = 6;
-#ifdef GYRO_7_SPI_INSTANCE
-    // TODO: CLKIN gyro 7 on separate pin is not supported yet. need to implement it
-    GYRO_RESET(6, 7);
-#else
-    devconf[6].busType = BUS_TYPE_NONE;
-#endif
-#endif // GYRO_COUNT 7
-
-#if GYRO_COUNT > 7
-    devconf[7].index = 7;
-#ifdef GYRO_8_SPI_INSTANCE
-    // TODO: CLKIN gyro 8 on separate pin is not supported yet. need to implement it
-    GYRO_RESET(7, 8);
-#else
-    devconf[7].busType = BUS_TYPE_NONE;
-#endif
-#endif // GYRO_COUNT 8
-
 #endif // USE_SPI_GYRO
 
     // I2C gyros appear as a sole gyro in single gyro boards.
