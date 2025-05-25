@@ -41,11 +41,21 @@
 // get ioRec by index
 #define DEFIO_REC_INDEXED(idx) (ioRecs + (idx))
 
+#ifdef GPIO_SINGLE_PORT
+// Single port with potentially up to 128 pins. Only gpioid==0 is supported.
+#define DEFIO_PIN_BITMASK   0x7f
+#define DEFIO_PORT_BITSHIFT 7
+#else
+#define DEFIO_PIN_BITMASK   0x0f
+#define DEFIO_PORT_BITSHIFT 4
+#endif
+
 // ioTag_t accessor macros
-#define DEFIO_TAG_MAKE(gpioid, pin) ((ioTag_t)((((gpioid) + 1) << 4) | (pin)))
+#define DEFIO_TAG_MAKE(gpioid, pin) ((ioTag_t)((((gpioid) + 1) << DEFIO_PORT_BITSHIFT) | (pin)))
 #define DEFIO_TAG_ISEMPTY(tag) (!(tag))
-#define DEFIO_TAG_GPIOID(tag) (((tag) >> 4) - 1)
-#define DEFIO_TAG_PIN(tag) ((tag) & 0x0f)
+#define DEFIO_TAG_GPIOID(tag) (((tag) >> DEFIO_PORT_BITSHIFT) - 1)
+#define DEFIO_TAG_PIN(tag) ((tag) & DEFIO_PIN_BITMASK)
+
 
 // TARGET must define used pins
 #include "target.h"
