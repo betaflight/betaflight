@@ -414,6 +414,7 @@ CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS += $(TARGET_UF2)
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
@@ -550,22 +551,25 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
+.PHONY: $(HEX_TARGETS)
 $(HEX_TARGETS):
 	$(V0) @echo "Building hex target $@" && \
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
+.PHONY: $(UF2_TARGETS)
 $(UF2_TARGETS):
 	$(V0) @echo "Building uf2 target $@" && \
 	$(MAKE) uf2 TARGET=$@ && \
 	echo "Building $@ succeeded."
 
+.PHONY: $(EXE_TARGETS)
 $(EXE_TARGETS):
 	$(V0) @echo "Building executable target $@" && \
 	$(MAKE) exe TARGET=$@ && \
 	echo "Building $@ succeeded."
 
-TARGETS_CLEAN = $(addsuffix _clean,$(HEX_TARGETS) $(UF2_TARGETS) $(EXE_TARGETS))
+TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
 CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
@@ -641,6 +645,7 @@ endif
 TARGETS_ZIP = $(addsuffix _zip,$(HEX_TARGETS))
 
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
+.PHONY: $(TARGETS_ZIP)
 $(TARGETS_ZIP):
 	$(V0) $(MAKE) hex TARGET=$(subst _zip,,$@)
 	$(V0) $(MAKE) zip TARGET=$(subst _zip,,$@)
@@ -664,23 +669,28 @@ uf2:
 .PHONY: exe
 exe: $(TARGET_EXE)
 
-TARGETS_REVISION = $(addsuffix _rev,$(HEX_TARGETS))
+TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
+.PHONY: $(TARGETS_REVISION)
 $(TARGETS_REVISION):
-	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
-
-EXE_TARGETS_REVISION = $(addsuffix _rev,$(EXE_TARGETS))
-## <EXE_TARGET>_rev : build executable target and add revision to filename
-$(EXE_TARGETS_REVISION):
+ifneq ($(filter $(subst _rev,,$@),$(EXE_TARGETS)),)
 	$(V0) $(MAKE) exe REV=yes TARGET=$(subst _rev,,$@)
+else ifneq ($(filter $(subst _rev,,$@),$(UF2_TARGETS)),)
+	$(V0) $(MAKE) uf2 REV=yes TARGET=$(subst _rev,,$@)
+else
+	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
+endif
 
+.PHONY: all_rev
 all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
+.PHONY: unbrick_$(TARGET)
 unbrick_$(TARGET): $(TARGET_HEX)
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 ## unbrick           : unbrick flight controller
+.PHONY: unbrick
 unbrick: unbrick_$(TARGET)
 
 ## cppcheck          : run static analysis on C source code
@@ -697,12 +707,6 @@ $(DIRECTORIES):
 ## version           : print firmware version
 version:
 	@echo $(FC_VER)
-
-.PHONY: submodules
-submodules:
-	@echo "Updating submodules"
-	$(V1) git submodule update --init --recursive || { echo "Failed to update submodules"; exit 1; }
-	@echo "Submodules updated"
 
 ## help              : print this help message and exit
 help: Makefile mk/tools.mk
