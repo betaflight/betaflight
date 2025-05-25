@@ -58,7 +58,7 @@ FORKNAME      = betaflight
 
 # Working directories
 # ROOT_DIR is the full path to the directory containing this Makefile
-ROOT_DIR        := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ROOT_DIR        := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 # ROOT is the relative path to the directory containing this Makefile
 ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
@@ -235,7 +235,7 @@ endif # TARGET specified
 # openocd specific includes
 include $(MAKE_SCRIPT_DIR)/openocd.mk
 
-ifeq ($(CONFIG)$(TARGET),)
+ifeq ($(and $(CONFIG),$(TARGET)),)
 .DEFAULT_GOAL := all
 else ifneq ($(filter $(TARGET),$(EXE_TARGETS)),)
 .DEFAULT_GOAL := exe
