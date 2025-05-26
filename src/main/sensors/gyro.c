@@ -424,9 +424,11 @@ FAST_CODE void gyroUpdate(void)
         }
     }
 
-    gyro.gyroADC[X] = adcSum[X] / active;
-    gyro.gyroADC[Y] = adcSum[Y] / active;
-    gyro.gyroADC[Z] = adcSum[Z] / active;
+    if (active != 0) {
+        gyro.gyroADC[X] = adcSum[X] / active;
+        gyro.gyroADC[Y] = adcSum[Y] / active;
+        gyro.gyroADC[Z] = adcSum[Z] / active;
+    }
 
     if (gyro.downsampleFilterEnabled) {
         // using gyro lowpass 2 filter for downsampling
