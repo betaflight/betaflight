@@ -558,18 +558,8 @@ void tryArm(void)
             }
 #endif
             // choose crashflip outcome on arming
-            // disarm can arise in processRx() if the crashflip switch is reversed while in crashflip mode
-            // if we were unsuccessful, or cannot determin success, arming will be blocked and we can't get here
-            // hence we only get here with crashFlipModeActive if the switch was reversed and result successful
-            if (crashFlipModeActive) {
-                // flip was successful, continue into normal flight without need to disarm/rearm
-                // note: preceding disarm will have set motors to normal rotation direction
-                crashFlipModeActive = false;
-            } else {
-                // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
-                // otherwise consider only the switch position
-                crashFlipModeActive = (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
-            }
+            // consider only the switch position
+            crashFlipModeActive = IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
 
             setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
         }
