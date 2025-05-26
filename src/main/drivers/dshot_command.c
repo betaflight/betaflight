@@ -153,7 +153,7 @@ bool dshotStreamingCommandsAreEnabled(void)
     bool goodMotorDetectDelay;
 
     if (firstCommand) {
-        goodMotorDetectDelay = motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS;
+        goodMotorDetectDelay = motorGetMotorEnableTimeMs() && (cmpTimeMs(millis(), motorGetMotorEnableTimeMs()) > DSHOT_PROTOCOL_DETECTION_DELAY_MS);
 
         if (goodMotorDetectDelay) {
             firstCommand = false;
