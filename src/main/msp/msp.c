@@ -1816,17 +1816,17 @@ case MSP_NAME:
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectionFlags());
-        sbufWriteU8(dst, 0); // deprecated gyro_to_use
-        sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
-#if GYRO_COUNT > 1
-        sbufWriteU8(dst, gyroDeviceConfig(1)->alignment);
-#else
-        sbufWriteU8(dst, ALIGN_DEFAULT);
-#endif
-        // Added in MSP API 1.47
-        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.roll);
-        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.pitch);
-        sbufWriteU16(dst, gyroDeviceConfig(0)->customAlignment.yaw);
+        sbufWriteU8(dst, gyroConfig()->gyro_enabled_bitmask); // deprecates gyro_to_use
+        // Added support for more then two IMUs in MSP API 1.47
+        for (int i = 0; i < 8; i++) {
+            sbufWriteU8(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->alignment : ALIGN_DEFAULT);
+        }
+
+        for (int i = 0; i < 8; i++) {
+            sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.roll : 0);
+            sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.pitch : 0);
+            sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.yaw : 0);
+        }
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
@@ -1837,23 +1837,6 @@ case MSP_NAME:
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
 #endif
-
-        // Added in MSP API 1.48
-        for (int i = 0; i < 8; i++) {
-            sbufWriteU8(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->alignment : ALIGN_DEFAULT);
-        }
-
-        for (int i = 0; i < 8; i++) {
-            if (i < GYRO_COUNT) {
-                sbufWriteU16(dst, gyroDeviceConfig(i)->customAlignment.roll);
-                sbufWriteU16(dst, gyroDeviceConfig(i)->customAlignment.pitch);
-                sbufWriteU16(dst, gyroDeviceConfig(i)->customAlignment.yaw);
-            } else {
-                sbufWriteU16(dst, 0);
-                sbufWriteU16(dst, 0);
-                sbufWriteU16(dst, 0);
-            }
-        }
         break;
     }
 
@@ -2995,8 +2978,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT: {
-        // maintain backwards compatibility for API < 1.41
-        const uint8_t gyroAlignment = sbufReadU8(src);
+        sbufReadU8(src);
         sbufReadU8(src);  // discard deprecated acc_align
 #if defined(USE_MAG)
         compassConfigMutable()->mag_alignment = sbufReadU8(src);
@@ -3004,26 +2986,30 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         sbufReadU8(src);
 #endif
 
-        if (sbufBytesRemaining(src) >= 3) {
-            // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
-            sbufReadU8(src);  // deprecated gyro_to_use
-#if GYRO_COUNT > 1
-            gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
-            gyroDeviceConfigMutable(1)->alignment = sbufReadU8(src);
-#else
-            gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
-            sbufReadU8(src);  // unused gyro_2_sensor_align
-#endif
-        } else {
-            // maintain backwards compatibility for API < 1.41
-            gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
-        }
+        gyroConfigMutable()->gyro_enabled_bitmask = sbufReadU8(src);
         // Added in API 1.47
-        if (sbufBytesRemaining(src) >= 6) {
-            gyroDeviceConfigMutable(0)->customAlignment.roll = sbufReadU16(src);
-            gyroDeviceConfigMutable(0)->customAlignment.pitch = sbufReadU16(src);
-            gyroDeviceConfigMutable(0)->customAlignment.yaw = sbufReadU16(src);
+        if (sbufBytesRemaining(src) >= 56) {
+            for (int i = 0; i < 8; i++) {
+                if (i < GYRO_COUNT) {
+                    gyroDeviceConfigMutable(i)->alignment = sbufReadU8(src);
+                } else {
+                    sbufReadU8(src); // skip unused gyro device id byte
+                }
+            }
+
+            for (int i = 0; i < 8; i++) {
+                if (i < GYRO_COUNT) {
+                    gyroDeviceConfigMutable(i)->customAlignment.roll = sbufReadU16(src);
+                    gyroDeviceConfigMutable(i)->customAlignment.pitch = sbufReadU16(src);
+                    gyroDeviceConfigMutable(i)->customAlignment.yaw = sbufReadU16(src);
+                } else {
+                    sbufReadU16(src); // skip unused custom alignment roll
+                    sbufReadU16(src); // skip unused custom alignment pitch
+                    sbufReadU16(src); // skip unused custom alignment yaw
+                }
+            }
         }
+
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
             compassConfigMutable()->mag_customAlignment.roll = sbufReadU16(src);
@@ -3036,27 +3022,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         }
 
-        if (sbufBytesRemaining(src) >= 48) {
-            for (int i = 0; i < 8; i++) {
-                if (i < GYRO_COUNT) {
-                    gyroDeviceConfigMutable(i)->alignment = sbufReadU8(src);
-                } else {
-                    sbufReadU8(src);
-                }
-            }
-
-            for (int i = 0; i < 8; i++) {
-                if (i < GYRO_COUNT) {
-                    gyroDeviceConfigMutable(i)->customAlignment.roll = sbufReadU16(src);
-                    gyroDeviceConfigMutable(i)->customAlignment.pitch = sbufReadU16(src);
-                    gyroDeviceConfigMutable(i)->customAlignment.yaw = sbufReadU16(src);
-                } else {
-                    sbufReadU16(src);
-                    sbufReadU16(src);
-                    sbufReadU16(src);
-                }
-            }
-        }
         break;
     }
 
