@@ -359,6 +359,12 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
+ifneq ($(filter fwo hex uf2 bin elf zip, $(MAKECMDGOALS)),)
+    ifeq ($(TARGET),)
+        $(error "You must specify a target to build.")
+    endif
+endif
+
 TARGET_NAME := $(TARGET)
 
 ifneq ($(CONFIG),)
@@ -622,11 +628,10 @@ TARGETS_ZIP = $(addsuffix _zip,$(BASE_TARGETS))
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
 .PHONY: $(TARGETS_ZIP)
 $(TARGETS_ZIP):
-	$(V0) $(MAKE) hex TARGET=$(subst _zip,,$@)
-	$(V0) $(MAKE) zip TARGET=$(subst _zip,,$@)
+	$(V0) $(MAKE) $(MAKE_PARALLEL) zip TARGET=$(subst _zip,,$@)
 
 .PHONY: zip
-zip:
+zip: $(TARGET_HEX)
 	$(V0) zip $(TARGET_ZIP) $(TARGET_HEX)
 
 .PHONY: binary
