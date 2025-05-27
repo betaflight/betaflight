@@ -46,8 +46,7 @@
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"
 
--// Datasheet: https://invensense.tdk.com/wp-content/uploads/2020/04/ds-000347_icm-42688-p-datasheet.pdf
-+// Datasheet: https://invensense.tdk.com/wp-content/uploads/2023/09/DS-000451-ICM-40609-D-Datasheet-v1.2.pdf
+// Datasheet: https://invensense.tdk.com/wp-content/uploads/2023/09/DS-000451-ICM-40609-D-Datasheet-v1.2.pdf
 
 #define ICM40609_WHO_AM_I_REG               0x75
 
