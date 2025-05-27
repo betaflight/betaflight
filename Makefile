@@ -579,7 +579,7 @@ preview: $(PREVIEW_TARGETS) test
 ## all_configs       : Build all configs
 all_configs: $(BASE_CONFIGS)
 
-TARGETS_FLASH = $(addsuffix _flash,$(HEX_TARGETS))
+TARGETS_FLASH = $(addsuffix _flash,$(BASE_TARGETS))
 
 ## <TARGET>_flash    : build and flash a target
 $(TARGETS_FLASH):
@@ -617,7 +617,7 @@ openocd-gdb: $(TARGET_ELF)
 	$(V0) $(OPENOCD_COMMAND) & $(CROSS_GDB) $(TARGET_ELF) -ex "target remote localhost:3333" -ex "load"
 endif
 
-TARGETS_ZIP = $(addsuffix _zip,$(HEX_TARGETS))
+TARGETS_ZIP = $(addsuffix _zip,$(BASE_TARGETS))
 
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
 .PHONY: $(TARGETS_ZIP)
