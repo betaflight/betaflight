@@ -341,59 +341,81 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
 {
     // in auto mode, calculate the RC smoothing cutoff from the smoothed Rx link frequency
     const uint16_t oldSetpointCutoff = smoothingData->setpointCutoffFrequency;
+    const uint16_t oldThrottleCutoff = smoothingData->throttleCutoffFrequency;
     const uint16_t oldFeedforwardCutoff = smoothingData->feedforwardCutoffFrequency;
     const uint16_t minCutoffHz = 15; // don't let any RC smoothing filter cutoff go below 15Hz
-    if (smoothingData->setpointCutoffSetting == 0) {
+
+    const bool autoSetpointSmoothing = smoothingData->setpointCutoffSetting == 0;
+    const bool autoThrottleSmoothing = smoothingData->throttleCutoffSetting == 0;
+    const bool autoFeedforwardSmoothing = smoothingData->throttleCutoffSetting == 0;
+    const bool autoSetpointAndFeedforward = autoSetpointSmoothing && autoFeedforwardSmoothing;
+
+    if (autoSetpointAndFeedforward) {
+        // if both are using auto smoothing, both will have the same cutoff
         smoothingData->setpointCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint));
+        smoothingData->feedforwardCutoffFrequency = smoothingData->setpointCutoffFrequency;
+    } else {
+        if (autoSetpointSmoothing) {
+            smoothingData->setpointCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint));
+        }
+
+        if (autoFeedforwardSmoothing) {
+            smoothingData->feedforwardCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint));
+        }
     }
-    if (smoothingData->throttleCutoffSetting == 0) {
+
+    if (autoThrottleSmoothing) {
         smoothingData->throttleCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorThrottle));
     }
 
-    if (smoothingData->feedforwardCutoffSetting == 0) {
-        smoothingData->feedforwardCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorFeedforward));
+    const float dT = targetPidLooptime * 1e-6f;
+    const float setpointCutoffFrequency = smoothingData->setpointCutoffFrequency;
+    const float feedforwardCutoffFrequency = smoothingData->feedforwardCutoffFrequency;
+    const float throttleCutoffFrequency = smoothingData->throttleCutoffFrequency;
+
+    if (!smoothingData->filterInitialized) {
+        for (int i = FD_ROLL; i < FD_YAW; i++) {
+            pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(setpointCutoffFrequency, dT));
+            pt3FilterInit(&smoothingData->filterRcDeflection[i], pt3FilterGain(setpointCutoffFrequency, dT));
+            pt3FilterInit(&smoothingData->filterFeedforward[i], pt3FilterGain(feedforwardCutoffFrequency, dT));
+        }
+        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[3], pt3FilterGain(throttleCutoffFrequency, dT));
     }
 
-    const float dT = targetPidLooptime * 1e-6f;
-    if ((smoothingData->setpointCutoffFrequency != oldSetpointCutoff) || !smoothingData->filterInitialized) {
-        // note that cutoff frequencies are integers, filter cutoffs won't re-calculate until there is > 1hz variation from previous cutoff
-        // initialize or update the setpoint cutoff based filters
-        const float setpointCutoffFrequency = smoothingData->setpointCutoffFrequency;
-        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-            if (i < THROTTLE) {
-                if (!smoothingData->filterInitialized) {
-                    pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(setpointCutoffFrequency, dT));
-                } else {
-                    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3FilterGain(setpointCutoffFrequency, dT));
-                }
-            } else {
-                const float throttleCutoffFrequency = smoothingData->throttleCutoffFrequency;
-                if (!smoothingData->filterInitialized) {
-                    pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(throttleCutoffFrequency, dT));
-                } else {
-                    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3FilterGain(throttleCutoffFrequency, dT));
-                }
+    // note that cutoff frequencies are integers, filter cutoffs won't re-calculate until there is > 1hz variation from previous cutoff
+    if (autoSetpointAndFeedforward && (smoothingData->setpointCutoffFrequency != oldSetpointCutoff)) {
+        // Update the RC Setpoint/Deflection filter and FeedForward Filter
+        // all cutoffs will be the same, we can optimize :)
+        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
+        const float pt3K = smoothingData->filterSetpoint[0].k;
+        for (int i = FD_ROLL; i < FD_YAW; i++) {
+            smoothingData->filterSetpoint[i].k = pt3K;
+            smoothingData->filterRcDeflection[i].k = pt3K;
+            smoothingData->filterFeedforward[i].k = pt3K;
+        }
+    } else {
+        if (smoothingData->setpointCutoffFrequency != oldSetpointCutoff) {
+            pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
+            const float pt3K = smoothingData->filterSetpoint[0].k;
+            for (int i = FD_ROLL; i < FD_YAW; i++) {
+                smoothingData->filterSetpoint[i].k = pt3K;
+                smoothingData->filterRcDeflection[i].k = pt3K;
             }
         }
-        // initialize or update the RC Deflection filter
-        for (int i = FD_ROLL; i < FD_YAW; i++) {
-            if (!smoothingData->filterInitialized) {
-                pt3FilterInit(&smoothingData->filterRcDeflection[i], pt3FilterGain(setpointCutoffFrequency, dT));
-            } else {
-                pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3FilterGain(setpointCutoffFrequency, dT));
+
+        // Update the Feedforward filter
+        if (smoothingData->feedforwardCutoffFrequency != oldFeedforwardCutoff) {
+            pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[0], pt3FilterGain(setpointCutoffFrequency, dT));
+            const float pt3K = smoothingData->filterSetpoint[0].k;
+            for (int i = FD_ROLL; i <= FD_YAW; i++) {
+                smoothingData->filterFeedforward[i].k = pt3K;
             }
         }
     }
-    // initialize or update the Feedforward filter
-    if ((smoothingData->feedforwardCutoffFrequency != oldFeedforwardCutoff) || !smoothingData->filterInitialized) {
-       for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            const float feedforwardCutoffFrequency = smoothingData->feedforwardCutoffFrequency;
-            if (!smoothingData->filterInitialized) {
-                pt3FilterInit(&smoothingData->filterFeedforward[i], pt3FilterGain(feedforwardCutoffFrequency, dT));
-            } else {
-                pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3FilterGain(feedforwardCutoffFrequency, dT));
-            }
-        }
+
+    // Update the throttle filter
+    if (smoothingData->throttleCutoffFrequency != oldThrottleCutoff) {
+        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[3], pt3FilterGain(throttleCutoffFrequency, dT));
     }
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 1, smoothingData->setpointCutoffFrequency);
@@ -426,7 +448,6 @@ static FAST_CODE void processRcSmoothingFilter(void)
         rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
 
         rcSmoothingData.autoSmoothnessFactorSetpoint = 1.5f / (1.0f + (rxConfig()->rc_smoothing_auto_factor_rpy / 10.0f));
-        rcSmoothingData.autoSmoothnessFactorFeedforward = 1.5f / (1.0f + (rxConfig()->rc_smoothing_auto_factor_rpy / 10.0f));
         rcSmoothingData.autoSmoothnessFactorThrottle = 1.5f / (1.0f + (rxConfig()->rc_smoothing_auto_factor_throttle / 10.0f));
 
         rcSmoothingData.setpointCutoffSetting = rxConfig()->rc_smoothing_setpoint_cutoff;
