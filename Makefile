@@ -15,7 +15,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build
+# The target or config to build
 TARGET    ?=
 CONFIG    ?=
 
@@ -423,10 +423,6 @@ $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
-$(TARGET_UF2): $(TARGET_ELF)
-	@echo "Creating UF2 $(TARGET_UF2)" "$(STDOUT)"
-	$(V1) $(PICOTOOL) uf2 convert $< $@ || { echo "Failed to convert ELF to UF2 format"; exit 1; }
-
 $(TARGET_DFU): $(TARGET_HEX)
 	@echo "Creating DFU $(TARGET_DFU)" "$(STDOUT)"
 	$(V1) $(PYTHON) $(DFUSE-PACK) -i $< $@
@@ -483,8 +479,12 @@ $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
+$(TARGET_UF2): $(TARGET_ELF)
+	@echo "Creating UF2 $(TARGET_UF2)" "$(STDOUT)"
+	$(V1) $(PICOTOOL) uf2 convert $< $@ || { echo "Failed to convert ELF to UF2 format"; exit 1; }
+
 $(TARGET_EXE): $(TARGET_ELF)
-	@echo Copy $< to $@ "$(STDOUT)"
+	@echo "Creating exe - Copy $< to $@" "$(STDOUT)"
 	$(V1) cp $< $@
 
 # Compile
