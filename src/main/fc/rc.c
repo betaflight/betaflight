@@ -347,7 +347,7 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
 
     const bool autoSetpointSmoothing = smoothingData->setpointCutoffSetting == 0;
     const bool autoThrottleSmoothing = smoothingData->throttleCutoffSetting == 0;
-    const bool autoFeedforwardSmoothing = smoothingData->throttleCutoffSetting == 0;
+    const bool autoFeedforwardSmoothing = smoothingData->feedforwardCutoffSetting == 0;
     const bool autoSetpointAndFeedforward = autoSetpointSmoothing && autoFeedforwardSmoothing;
 
     if (autoSetpointAndFeedforward) {
@@ -374,10 +374,12 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     const float throttleCutoffFrequency = smoothingData->throttleCutoffFrequency;
 
     if (!smoothingData->filterInitialized) {
-        for (int i = FD_ROLL; i < FD_YAW; i++) {
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
             pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(setpointCutoffFrequency, dT));
-            pt3FilterInit(&smoothingData->filterRcDeflection[i], pt3FilterGain(setpointCutoffFrequency, dT));
             pt3FilterInit(&smoothingData->filterFeedforward[i], pt3FilterGain(feedforwardCutoffFrequency, dT));
+        }
+        for (int i = FD_ROLL; i < FD_YAW; i++) {
+           pt3FilterInit(&smoothingData->filterRcDeflection[i], pt3FilterGain(setpointCutoffFrequency, dT));
         }
         pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[3], pt3FilterGain(throttleCutoffFrequency, dT));
     }
@@ -388,7 +390,7 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         // all cutoffs will be the same, we can optimize :)
         pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
         const float pt3K = smoothingData->filterSetpoint[0].k;
-        for (int i = FD_ROLL; i < FD_YAW; i++) {
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
             smoothingData->filterSetpoint[i].k = pt3K;
             smoothingData->filterRcDeflection[i].k = pt3K;
             smoothingData->filterFeedforward[i].k = pt3K;
@@ -397,8 +399,10 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         if (smoothingData->setpointCutoffFrequency != oldSetpointCutoff) {
             pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
             const float pt3K = smoothingData->filterSetpoint[0].k;
-            for (int i = FD_ROLL; i < FD_YAW; i++) {
+            for (int i = FD_ROLL; i <= FD_YAW; i++) {
                 smoothingData->filterSetpoint[i].k = pt3K;
+            }
+            for (int i = FD_ROLL; i < FD_YAW; i++) {
                 smoothingData->filterRcDeflection[i].k = pt3K;
             }
         }
