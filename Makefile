@@ -15,7 +15,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, see BASE_TARGETS/EXE_TARGETS below
+# The target to build
 TARGET    ?=
 CONFIG    ?=
 
@@ -98,13 +98,6 @@ include $(MAKE_SCRIPT_DIR)/checks.mk
 PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
 BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
 
-# list of targets that are executed on host - using exe as goal recipe
-EXE_TARGETS      := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exe)))))
-# list of targets using uf2 as goal recipe
-UF2_TARGETS      := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.uf2)))))
-# list of targets using hex as goal recipe (default)
-HEX_TARGETS      := $(filter-out $(EXE_TARGETS) $(UF2_TARGETS),$(BASE_TARGETS))
-
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
 DL_DIR     := $(ROOT)/downloads
@@ -150,7 +143,8 @@ TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
 LINKER_DIR          := $(TARGET_PLATFORM_DIR)/link
 
 ifneq ($(TARGET),)
-include $(TARGET_PLATFORM_DIR)/target/$(TARGET)/target.mk
+TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
+include $(TARGET_DIR)/target.mk
 endif
 
 REVISION := norevision
@@ -229,21 +223,16 @@ ifneq ($(HSE_VALUE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
-TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
 endif # TARGET specified
+
+ifeq ($(or $(CONFIG),$(TARGET)),)
+.DEFAULT_GOAL := all
+else
+.DEFAULT_GOAL := fwo
+endif
 
 # openocd specific includes
 include $(MAKE_SCRIPT_DIR)/openocd.mk
-
-ifeq ($(and $(CONFIG),$(TARGET)),)
-.DEFAULT_GOAL := all
-else ifneq ($(filter $(TARGET),$(EXE_TARGETS)),)
-.DEFAULT_GOAL := exe
-else ifneq ($(filter $(TARGET),$(UF2_TARGETS)),)
-.DEFAULT_GOAL := uf2
-else
-.DEFAULT_GOAL := hex
-endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
@@ -551,23 +540,9 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
-.PHONY: $(HEX_TARGETS)
-$(HEX_TARGETS):
-	$(V0) @echo "Building hex target $@" && \
-	$(MAKE) hex TARGET=$@ && \
-	echo "Building $@ succeeded."
-
-.PHONY: $(UF2_TARGETS)
-$(UF2_TARGETS):
-	$(V0) @echo "Building uf2 target $@" && \
-	$(MAKE) uf2 TARGET=$@ && \
-	echo "Building $@ succeeded."
-
-.PHONY: $(EXE_TARGETS)
-$(EXE_TARGETS):
-	$(V0) @echo "Building executable target $@" && \
-	$(MAKE) exe TARGET=$@ && \
-	echo "Building $@ succeeded."
+.PHONY: $(BASE_TARGETS)
+$(BASE_TARGETS):
+	$(MAKE) fwo TARGET=$@
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
@@ -669,20 +644,24 @@ uf2:
 .PHONY: exe
 exe: $(TARGET_EXE)
 
-TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
+.PHONY: fwo
+fwo:
+ifneq ($(wildcard $(TARGET_DIR)/.exe),)
+	$(V0) $(MAKE) exe
+else ifneq ($(wildcard $(TARGET_DIR)/.uf2),)
+	$(V0) $(MAKE) uf2
+else
+	$(V0) $(MAKE) hex
+endif
+
+TARGETS_REVISION = $(addsuffix _rev, $(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
 .PHONY: $(TARGETS_REVISION)
 $(TARGETS_REVISION):
-ifneq ($(filter $(subst _rev,,$@),$(EXE_TARGETS)),)
-	$(V0) $(MAKE) exe REV=yes TARGET=$(subst _rev,,$@)
-else ifneq ($(filter $(subst _rev,,$@),$(UF2_TARGETS)),)
-	$(V0) $(MAKE) uf2 REV=yes TARGET=$(subst _rev,,$@)
-else
-	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
-endif
+	$(V0) $(MAKE) fwo REV=yes TARGET=$(subst _rev,,$@)
 
 .PHONY: all_rev
-all_rev: $(addsuffix _rev,$(CI_TARGETS))
+all_rev: $(addsuffix _rev, $(CI_TARGETS))
 
 .PHONY: unbrick_$(TARGET)
 unbrick_$(TARGET): $(TARGET_HEX)
@@ -731,8 +710,6 @@ help: Makefile mk/tools.mk
 targets:
 	@echo "Platforms:           $(PLATFORMS)"
 	@echo "Valid targets:       $(BASE_TARGETS)"
-	@echo "Executable targets:  $(EXE_TARGETS)"
-	@echo "UF2 targets:         $(UF2_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
 	@echo "CI common targets:   $(CI_COMMON_TARGETS)"
