@@ -149,7 +149,20 @@ static bool allMotorsAreIdle(void)
 
 bool dshotStreamingCommandsAreEnabled(void)
 {
-    return motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS;
+    static bool firstCommand = true;
+    bool goodMotorDetectDelay;
+
+    if (firstCommand) {
+        goodMotorDetectDelay = motorGetMotorEnableTimeMs() && (cmpTimeMs(millis(), motorGetMotorEnableTimeMs()) > DSHOT_PROTOCOL_DETECTION_DELAY_MS);
+
+        if (goodMotorDetectDelay) {
+            firstCommand = false;
+        }
+    } else {
+        goodMotorDetectDelay = true;
+    }
+
+    return motorIsEnabled() && goodMotorDetectDelay;
 }
 
 static bool dshotCommandsAreEnabled(dshotCommandType_e commandType)
