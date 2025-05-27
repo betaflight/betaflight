@@ -428,7 +428,7 @@ static void setGyroAccPowerMode(const extDevice_t *dev, bool enable)
 static void icm40609GetAafParams(uint16_t targetHz, ICM40609_AafProfile* res)
 {
     uint16_t i = 0;
-    while (i < ICM40609_AAF_PROFILE_COUNT && targetHz <= aafProfiles[i].hz) {
+    while (i < ICM40609_AAF_PROFILE_COUNT && targetHz >  aafProfiles[i].hz) {
          i++;
     }
     if (i < ICM40609_AAF_PROFILE_COUNT) {  
