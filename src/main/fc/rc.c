@@ -391,19 +391,21 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
         const float pt3K = smoothingData->filterSetpoint[0].k;
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            smoothingData->filterSetpoint[i].k = pt3K;
-            smoothingData->filterRcDeflection[i].k = pt3K;
-            smoothingData->filterFeedforward[i].k = pt3K;
+            pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K);
+            pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K);
+        }
+        for (int i = FD_ROLL; i < FD_YAW; i++) {
+            pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
         }
     } else {
         if (smoothingData->setpointCutoffFrequency != oldSetpointCutoff) {
             pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
             const float pt3K = smoothingData->filterSetpoint[0].k;
             for (int i = FD_ROLL; i <= FD_YAW; i++) {
-                smoothingData->filterSetpoint[i].k = pt3K;
+                pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K);
             }
             for (int i = FD_ROLL; i < FD_YAW; i++) {
-                smoothingData->filterRcDeflection[i].k = pt3K;
+                pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
             }
         }
 
@@ -412,7 +414,7 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
             pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[0], pt3FilterGain(setpointCutoffFrequency, dT));
             const float pt3K = smoothingData->filterSetpoint[0].k;
             for (int i = FD_ROLL; i <= FD_YAW; i++) {
-                smoothingData->filterFeedforward[i].k = pt3K;
+                pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K);
             }
         }
     }
