@@ -41,14 +41,17 @@
 // get ioRec by index
 #define DEFIO_REC_INDEXED(idx) (ioRecs + (idx))
 
-#ifdef GPIO_SINGLE_PORT
-// Single port with potentially up to 128 pins. Only gpioid==0 is supported.
-#define DEFIO_PIN_BITMASK   0x7f
-#define DEFIO_PORT_BITSHIFT 7
-#else
-#define DEFIO_PIN_BITMASK   0x0f
-#define DEFIO_PORT_BITSHIFT 4
+// split ioTag bits between pin and port
+// port is encoded as +1 to avoid collision with 0x0 (false as bool)
+#ifndef DEFIO_PORT_PINS 
+// pins per port
+#define DEFIO_PORT_PINS 16
 #endif
+
+STATIC_ASSERT((DEFIO_PORT_PINS & (DEFIO_PORT_PINS - 1)) == 0, "DEFIO_PORT_PINS must be power of 2");
+
+#define DEFIO_PORT_BITSHIFT LOG2(DEFIO_PORT_PINS)
+#define DEFIO_PIN_BITMASK   ((1 << DEFIO_PORT_BITSHIFT ) - 1)
 
 // ioTag_t accessor macros
 #define DEFIO_TAG_MAKE(gpioid, pin) ((ioTag_t)((((gpioid) + 1) << DEFIO_PORT_BITSHIFT) | (pin)))
