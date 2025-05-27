@@ -612,8 +612,13 @@ bool gyroInit(void)
     gyro.gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
-        if ((!gyrosToScan || (gyrosToScan & GYRO_MASK(i)) || gyro.gyroEnabledBitmask) && gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
-            gyroDetectionFlags |= GYRO_MASK(i);
+        // Only attempt to detect a gyro if it's enabled or we're doing an auto-scan
+        if ((!gyrosToScan || (gyrosToScan & GYRO_MASK(i)) || (gyro.gyroEnabledBitmask & GYRO_MASK(i)))) {
+            if (gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
+                // If we detected a gyro, make sure it's in the enabled bitmask
+                // This ensures that during first boot, all detected gyros are enabled
+                gyroDetectionFlags |= GYRO_MASK(i);
+            }
         }
     }
 
@@ -664,13 +669,17 @@ bool gyroInit(void)
     static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][GYRO_BUF_SIZE];
 
     for (int i = 0; i < GYRO_COUNT; i++) {
-        if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
+        if (gyroDetectionFlags & GYRO_MASK(i)) {  // Only initialize detected gyros
             // SPI DMA buffer required per device
             gyro.gyroSensor[i].gyroDev.dev.txBuf = gyroBuf[i];
             gyro.gyroSensor[i].gyroDev.dev.rxBuf = &gyroBuf[i][GYRO_BUF_SIZE / 2];
 
             gyroInitSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i));
-            gyro.gyroHasOverflowProtection = gyro.gyroHasOverflowProtection && gyro.gyroSensor[i].gyroDev.gyroHasOverflowProtection;
+
+            gyro.gyroHasOverflowProtection = gyro.gyroHasOverflowProtection
+                                             && gyro.gyroSensor[i].gyroDev.gyroHasOverflowProtection;
+            
+            // Each detected gyro contributes to the sensor type
             detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor[i].gyroDev.gyroHardware;
         }
     }
@@ -681,8 +690,14 @@ bool gyroInit(void)
 
     // Use the first enabled gyro for our scale and raw sensor dev
     int firstGyro = firstEnabledGyro();
-    gyro.scale = gyro.gyroSensor[firstGyro].gyroDev.scale;
-    gyro.rawSensorDev = &gyro.gyroSensor[firstGyro].gyroDev;
+    if (firstGyro >= 0) {
+        gyro.scale = gyro.gyroSensor[firstGyro].gyroDev.scale;
+        gyro.rawSensorDev = &gyro.gyroSensor[firstGyro].gyroDev;
+    } else {
+        // no gyros enabled
+        gyro.scale = 1.0f;
+        gyro.rawSensorDev = NULL;
+    }
 
     if (gyro.rawSensorDev) {
         gyro.sampleRateHz = gyro.rawSensorDev->gyroSampleRateHz;
@@ -745,5 +760,11 @@ uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
 
 int firstEnabledGyro(void)
 {
-    return llog2(gyro.gyroEnabledBitmask & -gyro.gyroEnabledBitmask);
+    for (int i = 0; i < GYRO_COUNT; i++) {
+        if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
+            return i;
+        }
+    }
+
+    return -1;
 }
