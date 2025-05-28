@@ -32,7 +32,7 @@
 #define NVIC_PRIO_RX_INT_EXTI              NVIC_BUILD_PRIORITY(3, 0x0f)
 #define NVIC_PRIO_RX_BUSY_EXTI             NVIC_BUILD_PRIORITY(3, 0x0f)
 
-#define NVIC_PRIO_MPU_INT_EXTI             NVIC_BUILD_PRIORITY(0x0f, 0x0f)
+#define NVIC_PRIO_MPU_INT_EXTI             NVIC_BUILD_PRIORITY(0, 0)  // This must be high priority as it drives the scheduler timing
 #define NVIC_PRIO_MAG_INT_EXTI             NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_WS2811_DMA               NVIC_BUILD_PRIORITY(1, 2)  // TODO - is there some reason to use high priority?
 #define NVIC_PRIO_SERIALUART_TXDMA         NVIC_BUILD_PRIORITY(1, 1)  // Highest of all SERIALUARTx_TXDMA

@@ -305,6 +305,7 @@ EXTRA_WARNING_FLAGS := -Wold-style-definition
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
+              $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
               -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion \
@@ -331,6 +332,7 @@ ASFLAGS     = $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
               -x assembler-with-cpp \
               $(addprefix -I,$(INCLUDE_DIRS)) \
+              $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               -MMD -MP
 
 ifeq ($(LD_FLAGS),)
@@ -359,6 +361,7 @@ endif
 CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   --std=c99 --inline-suppr --quiet --force \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
+                  $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
 TARGET_NAME := $(TARGET)

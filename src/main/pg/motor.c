@@ -75,7 +75,6 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->mincommand = 1000;
     motorConfig->kv = 1960;
 
-#ifdef USE_TIMER
 #ifdef MOTOR1_PIN
     motorConfig->dev.ioTags[0] = IO_TAG(MOTOR1_PIN);
 #endif
@@ -99,7 +98,6 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #endif
 #ifdef MOTOR8_PIN
     motorConfig->dev.ioTags[7] = IO_TAG(MOTOR8_PIN);
-#endif
 #endif
 
     motorConfig->motorPoleCount = 14;   // Most brushless motors that we use are 14 poles

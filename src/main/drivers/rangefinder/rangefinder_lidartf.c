@@ -37,6 +37,7 @@
 #define TF_DEVTYPE_NONE 0
 #define TF_DEVTYPE_MINI 1
 #define TF_DEVTYPE_02   2
+#define TF_DEVTYPE_NOVA 3
 
 static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 
@@ -81,6 +82,25 @@ static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 //
 #define TF_02_FRAME_SIG 4
 
+//
+// Benewake TFnova frame format
+// Byte Off Description
+// 1    -   SYNC
+// 2    -   SYNC
+// 3    0   Measured distance (LSB)
+// 4    1   Measured distance (MSB)
+// 5    2   Signal strength (LSB)
+// 6    3   Signal strength (MSB)
+// 7    4   Temp (Chip Temperature, degrees Celsius)
+// 8    5   Confidence (Confidence level 0-100)
+// 9    -   Checksum (Unsigned 8-bit sum of bytes 0~7)
+//
+// Credibility
+// 1. If Confidence level < 90, unreliable
+// 2. If distance is 14m (1400cm), then OoR.
+//
+#define TF_NOVA_FRAME_CONFIDENCE 5
+
 // Maximum ratings
 
 #define TF_MINI_RANGE_MIN 40
@@ -88,6 +108,9 @@ static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 
 #define TF_02_RANGE_MIN 40
 #define TF_02_RANGE_MAX 2200
+
+#define TF_NOVA_RANGE_MIN 10
+#define TF_NOVA_RANGE_MAX 1400
 
 #define TF_DETECTION_CONE_DECIDEGREES 900
 
@@ -104,14 +127,10 @@ static tfFrameState_e tfFrameState;
 static uint8_t tfFrame[TF_FRAME_LENGTH];
 static uint8_t tfReceivePosition;
 
-// TFmini
+// TFmini and TF02
 // Command for 100Hz sampling (10msec interval)
 // At 100Hz scheduling, skew will cause 10msec delay at the most.
-static uint8_t tfCmdTFmini[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
-
-// TF02
-// Same as TFmini for now..
-static uint8_t tfCmdTF02[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
+static const uint8_t tfCmd[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
 
 static int32_t lidarTFValue;
 static uint16_t lidarTFerrors = 0;
@@ -120,11 +139,12 @@ static void lidarTFSendCommand(void)
 {
     switch (tfDevtype) {
     case TF_DEVTYPE_MINI:
-        serialWriteBuf(tfSerialPort, tfCmdTFmini, sizeof(tfCmdTFmini));
-        break;
     case TF_DEVTYPE_02:
-        serialWriteBuf(tfSerialPort, tfCmdTF02, sizeof(tfCmdTF02));
+        serialWriteBuf(tfSerialPort, tfCmd, sizeof(tfCmd));
         break;
+    default:
+        break;
+
     }
 }
 
@@ -173,7 +193,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
         case TF_FRAME_STATE_WAIT_CKSUM:
             {
                 uint8_t cksum = TF_FRAME_SYNC_BYTE + TF_FRAME_SYNC_BYTE;
-                for (int i = 0 ; i < TF_FRAME_LENGTH ; i++) {
+                for (int i = 0; i < TF_FRAME_LENGTH; i++) {
                     cksum += tfFrame[i];
                 }
 
@@ -192,7 +212,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
                         if (distance >= TF_MINI_RANGE_MIN && distance < TF_MINI_RANGE_MAX) {
                             lidarTFValue = distance;
                             if (tfFrame[TF_MINI_FRAME_INTEGRAL_TIME] == 7) {
-                                // When integral time is long (7), measured distance tends to be longer by 12~13.
+                                 // When integral time is long (7), measured distance tends to be longer by 12~13.
                                 lidarTFValue -= 13;
                             }
                         } else {
@@ -202,6 +222,14 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
 
                     case TF_DEVTYPE_02:
                         if (distance >= TF_02_RANGE_MIN && distance < TF_02_RANGE_MAX && tfFrame[TF_02_FRAME_SIG] >= 7) {
+                            lidarTFValue = distance;
+                        } else {
+                            lidarTFValue = -1;
+                        }
+                        break;
+
+                    case TF_DEVTYPE_NOVA:
+                        if (distance >= TF_NOVA_RANGE_MIN && distance <= TF_NOVA_RANGE_MAX && tfFrame[TF_NOVA_FRAME_CONFIDENCE] >= 90) {
                             lidarTFValue = distance;
                         } else {
                             lidarTFValue = -1;
@@ -256,7 +284,21 @@ static bool lidarTFDetect(rangefinderDev_t *dev, uint8_t devtype)
     tfDevtype = devtype;
 
     dev->delayMs = 10;
-    dev->maxRangeCm = (devtype == TF_DEVTYPE_MINI) ? TF_MINI_RANGE_MAX : TF_02_RANGE_MAX;
+    switch (devtype) {
+    case TF_DEVTYPE_MINI:
+        dev->maxRangeCm = TF_MINI_RANGE_MAX;
+        break;
+    case TF_DEVTYPE_02:
+        dev->maxRangeCm = TF_02_RANGE_MAX;
+        break;
+    case TF_DEVTYPE_NOVA:
+        dev->maxRangeCm = TF_NOVA_RANGE_MAX;
+        break;
+    default:
+        dev->maxRangeCm = 0;
+        break;
+    }
+
     dev->detectionConeDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = TF_DETECTION_CONE_DECIDEGREES;
 
@@ -276,4 +318,10 @@ bool lidarTF02Detect(rangefinderDev_t *dev)
 {
     return lidarTFDetect(dev, TF_DEVTYPE_02);
 }
+
+bool lidarTFNovaDetect(rangefinderDev_t *dev)
+{
+    return lidarTFDetect(dev, TF_DEVTYPE_NOVA);
+}
+
 #endif
