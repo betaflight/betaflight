@@ -21,16 +21,17 @@
 
 #pragma once
 
-#ifdef PICO_STDIO_TEST
-void _bprintf(const char * format, ...);
+#ifdef PICO_TRACE
+//void _bprintf(const char * format, ...);
 //#define bprintf(fmt,...) _bprintf(fmt, ## __VA_ARGS__)
-#define bprintf(fmt,...) do {stdio_printf(fmt, ## __VA_ARGS__); stdio_printf("\n"); } while (0)
+//#define bprintf(fmt,...) do {stdio_printf(fmt, ## __VA_ARGS__); stdio_printf("\n"); } while (0)
+#include "pico_trace.h"
+#define bprintf tprintf
 //int __wrap_printf(const char * fmt, ...);
 //#define bprintf __wrap_printf
 #else
 #define bprintf(fmt,...)
 #endif
-
 
 #ifndef RP2350B
 #define RP2350B
@@ -69,7 +70,7 @@ void _bprintf(const char * format, ...);
 #undef USE_TIMER
 #undef USE_I2C
 #undef USE_RCC
-#undef USE_CLI
+
 #undef USE_RX_PWM
 #undef USE_RX_PPM
 #undef USE_RX_SPI
@@ -96,9 +97,21 @@ void _bprintf(const char * format, ...);
 #undef USE_OSD
 #undef USE_SPEKTRUM
 #undef USE_SPEKTRUM_BIND
-#undef USE_MSP
+
+// #undef USE_CLI
+#undef USE_SERIAL_PASSTHROUGH
+
+// #undef USE_MSP
 #undef USE_MSP_UART
 #undef USE_MSP_DISPLAYPORT
+
+#undef USE_DMA
+#undef USE_DMA_SPEC
+
+#undef USE_DSHOT_TELEMETRY
+
+#undef USE_PWM_OUTPUT
+
 #undef USE_GPS
 #undef USE_GPS_UBLOX
 #undef USE_GPS_MTK
@@ -134,7 +147,6 @@ void _bprintf(const char * format, ...);
 #undef USE_OSD_SD
 #undef USE_OSD_HD
 #undef USE_OSD_QUICK_MENU
-#undef USE_GPS
 #undef USE_POSITION_HOLD
 
 //#define FLASH_PAGE_SIZE                     0x1
@@ -147,28 +159,36 @@ void _bprintf(const char * format, ...);
 /* to be moved to a config file once target if working
    defaults as per Laurel board for now */
 
-#define LED0_PIN             P6
-#define LED1_PIN             P7
+#define LED0_PIN             PA6
+#define LED1_PIN             PA7
 
-#define SPI0_SCK_PIN         P2
-#define SPI0_SDI_PIN         P4
-#define SPI0_SDO_PIN         P3
+#define SPI0_SCK_PIN         PA2
+#define SPI0_SDI_PIN         PA4
+#define SPI0_SDO_PIN         PA3
 
-#define SPI1_SCK_PIN         P26
-#define SPI1_SDI_PIN         P24
-#define SPI1_SDO_PIN         P27
+#define SPI1_SCK_PIN         PA26
+#define SPI1_SDI_PIN         PA24
+#define SPI1_SDO_PIN         PA27
 
-#define SDCARD_CS_PIN        P25
-#define FLASH_CS_PIN         P25
-#define MAX7456_SPI_CS_PIN   P17
+#define SDCARD_CS_PIN        PA25
+#define FLASH_CS_PIN         PA25
+#define MAX7456_SPI_CS_PIN   PA17
 
-#define GYRO_1_CS_PIN        P1
+#define GYRO_1_CS_PIN        PA1
 #define GYRO_2_CS_PIN        NONE
 
-#define MOTOR1_PIN           P28
-#define MOTOR2_PIN           P29
-#define MOTOR3_PIN           P30
-#define MOTOR4_PIN           P31
+#if 0 // def TEST_DSHOT_ETC
+// testing motor1 and motor2 pins -> GPIO_SPARE1, GPIO_SPARE2
+#define MOTOR1_PIN           PA32
+#define MOTOR2_PIN           PA33
+#define MOTOR3_PIN           PA30
+#define MOTOR4_PIN           PA31
+#else
+#define MOTOR1_PIN           PA28
+#define MOTOR2_PIN           PA29
+#define MOTOR3_PIN           PA30
+#define MOTOR4_PIN           PA31
+#endif
 
 #define MAX7456_SPI_INSTANCE SPI1
 #define SDCARD_SPI_INSTANCE  SPI1
@@ -178,64 +198,76 @@ void _bprintf(const char * format, ...);
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC
 #define USE_ACC_SPI_ICM42688P
+
+#ifdef GYRO_ONLY_ICM42688
+#undef USE_ACCGYRO_LSM6DSV16X
+#undef USE_GYRO_SPI_ICM20689
+#undef USE_GYRO_SPI_MPU6000
+#undef USE_GYRO_SPI_MPU6500
+#undef USE_GYRO_SPI_MPU9250
+#undef USE_ACCGYRO_LSM6DSO
+#undef USE_ACCGYRO_BMI160
+#undef USE_ACCGYRO_BMI270
+#endif
+     
 //#define USE_FLASH
 //#define USE_FLASH_W25Q128FV
 //#define USE_MAX7456
 
 /*
 
-SPI0_CS         P1
-SPI0_SCLK       P2
-SPI0_COPI       P3
-SPI0_CIPO       P4
-BUZZER          P5
-LED0            P6
-LED1            P7
-UART1_TX        P8
-UART1_RX        P9
-I2C1_SDA        P10
-I2C1_SCL        P11
-UART0_TX        P12
-UART0_RX        P13
+SPI0_CS         PA1
+SPI0_SCLK       PA2
+SPI0_COPI       PA3
+SPI0_CIPO       PA4
+BUZZER          PA5
+LED0            PA6
+LED1            PA7
+UART1_TX        PA8
+UART1_RX        PA9
+I2C1_SDA        PA10
+I2C1_SCL        PA11
+UART0_TX        PA12
+UART0_RX        PA13
 
-OSD_CS          P17
+OSD_CS          PA17
 
-UART2_TX        P20
-UART2_RX        P21
+UART2_TX        PA20
+UART2_RX        PA21
 
-GYRO_INT        P22
+GYRO_INT        PA22
 
-GYRO_CLK        P23
+GYRO_CLK        PA23
 
-SPI1_CIPO       P24
-SPI1_CS         P25
-SPI1_SCLK       P26
-SPI1_COPI       P27
+SPI1_CIPO       PA24
+SPI1_CS         PA25
+SPI1_SCLK       PA26
+SPI1_COPI       PA27
 
-MOTOR1          P28
-MOTOR2          P29
-MOTOR3          P30
-MOTOR4          P31
+MOTOR1          PA28
+MOTOR2          PA29
+MOTOR3          PA30
+MOTOR4          PA31
 
-SPARE1          P32
-SPARE2          P33
+SPARE1          PA32
+SPARE2          PA33
 
-UART3_TX        P34
-UART3_RX        P35
+UART3_TX        PA34
+UART3_RX        PA35
 
-DVTX_SBUS_RX    P36
-TELEM_RX        P37
-LED_STRIP       P38
-RGB_LED         P39
+DVTX_SBUS_RX    PA36
+TELEM_RX        PA37
+LED_STRIP       PA38
+RGB_LED         PA39
 
-VBAT_SENSE      P40
-CURR_SENSE      P41
-ADC_SPARE       P42
+VBAT_SENSE      PA40
+CURR_SENSE      PA41
+ADC_SPARE       PA42
 
-I2C0_SDA        P44
-I2C0_SCL        P45
+I2C0_SDA        PA44
+I2C0_SCL        PA45
 
-SPARE3          P47
+SPARE3          PA47
 
 */
 
