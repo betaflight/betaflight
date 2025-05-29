@@ -17,6 +17,8 @@ typedef struct nelrsConfig_s {
     uint32_t midFrequencyHigh;
     uint32_t endFrequencyHigh;
     uint8_t numChannelsHigh;
+    bool thermalCamEnabled;
+    bool illuminatorEnabled;
 } nelrsConfig_t;
 
 PG_DECLARE(nelrsConfig_t, nelrsConfig);

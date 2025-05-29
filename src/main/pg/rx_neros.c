@@ -40,6 +40,8 @@ PG_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig,
     .startFrequencyHigh = 9035,
     .midFrequencyHigh = 9150,
     .endFrequencyHigh = 9269,
-    .numChannelsHigh = 40
+    .numChannelsHigh = 40,
+    .thermalCamEnabled = false,
+    .illuminatorEnabled = false,
 );
 

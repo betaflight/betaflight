@@ -75,6 +75,7 @@
 #include "drivers/pinio.h"
 #include "drivers/pwm_output.h"
 
+#include "pg/rx_neros.h"
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
@@ -324,6 +325,10 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 
 static void illuminatorInit(void) {
 
+    if (!nelrsConfigMutable()->illuminatorEnabled) {
+        return;
+    }
+
     ioTag_t illuminatorTag = PB0_TAG;
     illuminatorControlRuntime.io = IOGetByTag(illuminatorTag);
 
@@ -367,7 +372,7 @@ static void ilumminator_generate_output(void) {
 
 static void detectIlluminator(void) {
 
-    if (!illuminatorControlRuntime.is_init) {
+    if (!illuminatorControlRuntime.is_init || !nelrsConfigMutable()->illuminatorEnabled) {
         return;
     }
 
@@ -408,6 +413,11 @@ static void detectIlluminator(void) {
 }
 
 static void cameraCtrlInit(void) {
+
+    if (!nelrsConfigMutable()->thermalCamEnabled) {
+        return;
+    }
+
     ioTag_t CameraCtrlTag = PC3_TAG;
     cameraControl.io = IOGetByTag(CameraCtrlTag);
 
@@ -419,6 +429,10 @@ static void cameraCtrlInit(void) {
 }
 
 static void detectCamera(void) {
+
+    if (!nelrsConfigMutable()->thermalCamEnabled) {
+        return;
+    }
 
     float rx_aux2 = rcData[AUX2];
     
