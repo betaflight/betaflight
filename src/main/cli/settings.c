@@ -161,6 +161,9 @@ const char * const lookupTableAccHardware[] = {
     "LSM6DSO",
     "LSM6DSV16X",
     "IIM42653",
+    "ICM45605",
+    "ICM45686",
+    "ICM40609D",
     "VIRTUAL"
 };
 
@@ -185,6 +188,9 @@ const char * const lookupTableGyroHardware[] = {
     "LSM6DSO",
     "LSM6DSV16X",
     "IIM42653",
+    "ICM45605",
+    "ICM45686",
+    "ICM40609D",
     "VIRTUAL"
 };
 
@@ -202,7 +208,7 @@ const char * const lookupTableMagHardware[] = {
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
 const char * const lookupTableRangefinderHardware[] = {
-    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P"
+    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P", "TFNOVA"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_OPTICALFLOW)
@@ -1671,6 +1677,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_CRAFTNAME_MSGS
     { "osd_craftname_msgs",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_craftname_msgs) },
 #endif //USE_CRAFTNAME_MSGS
+#ifdef USE_RANGEFINDER
+    { "osd_lidar_dist_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_LIDAR_DIST]) },
+#endif //USE_RANGEFINDER
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
