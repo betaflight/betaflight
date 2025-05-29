@@ -424,12 +424,12 @@ static void detectCamera(void) {
     
     // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
     if ( ((rx_aux2 > 1040) && (rx_aux2 < 1100)) || ((rx_aux2 > 1400) && (rx_aux2 < 1450)) || ((rx_aux2 > 1750) && (rx_aux2 < 1800)) ) {
-        IOLo(cameraControl.io);
-        cameraControl.cam_enabled = CAM1;
-    }
-    if ( rx_aux2 < 1030 || ((rx_aux2 > 1300) && (rx_aux2 < 1400)) || ((rx_aux2 > 1650) && (rx_aux2 < 1750)) ) {
         IOHi(cameraControl.io);
         cameraControl.cam_enabled = CAM2;
+    }
+    if ( rx_aux2 < 1030 || ((rx_aux2 > 1300) && (rx_aux2 < 1400)) || ((rx_aux2 > 1650) && (rx_aux2 < 1750)) ) {
+        IOLo(cameraControl.io);
+        cameraControl.cam_enabled = CAM1;
     }
 
 }
