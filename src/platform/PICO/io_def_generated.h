@@ -32,9 +32,6 @@
 #error "Unsupported target MCU type for PICO"
 #endif
 
-#define DEFIO_PIN_BITMASK   0x7f
-#define DEFIO_PORT_BITSHIFT 7
-
 #undef DEFIO_TAG_MAKE
 #define DEFIO_TAG_MAKE(pin) ((ioTag_t)(((1) << DEFIO_PORT_BITSHIFT) | (pin)))
 

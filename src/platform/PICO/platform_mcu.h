@@ -31,6 +31,7 @@
 
 #define NVIC_PriorityGroup_2         0x500
 #define PLATFORM_NO_LIBC             0
+#define DEFIO_PORT_PINS              64
 
 #if defined(RP2350A) || defined(RP2350B)
 
