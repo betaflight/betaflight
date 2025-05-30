@@ -199,7 +199,7 @@ static bool initExternalClock(const extDevice_t *dev)
         }
     }
 
-    if (cfg == -1) {
+    if (cfg < 0) {
         // Could not find a valid sensor
         return false;
     }
