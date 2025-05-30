@@ -2988,7 +2988,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         gyroConfigMutable()->gyro_enabled_bitmask = sbufReadU8(src);
         // Added in API 1.47
-        if (sbufBytesRemaining(src) >= 56) {
+        if (sbufBytesRemaining(src) >= 8 * 7) {
             for (int i = 0; i < 8; i++) {
                 if (i < GYRO_COUNT) {
                     gyroDeviceConfigMutable(i)->alignment = sbufReadU8(src);
