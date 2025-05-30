@@ -243,7 +243,7 @@
 #define ICM40609_ACCEL_DATA_X1_UI           0x1F
 #define ICM40609_GYRO_DATA_X1_UI            0x25
 
-#define ICM40609_RESET_REG                  0x4C
+#define ICM40609_RESET_REG                  0x11
 #define ICM40609_SOFT_RESET_VAL             0x01
 
 #ifndef ICM40609_LOCK
