@@ -156,7 +156,6 @@ static void lidarTFConfig(rangefinderDev_t *dev, const lidarTFInfo_t* inf)
         break;
     default:
         break;
-
     }
 }
 
@@ -212,7 +211,7 @@ static int tfProcessFrame(const uint8_t* frame, int len)
 static void lidarTFUpdate(rangefinderDev_t *dev)
 {
     static timeMs_t lastFrameReceivedMs = 0;
-     static timeMs_t lastReconfMs = 0;
+    static timeMs_t lastReconfMs = 0;
     const timeMs_t timeNowMs = millis();
 
     if (tfSerialPort == NULL || devInfo == NULL) {
@@ -285,7 +284,7 @@ bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
 {
     const lidarTFInfo_t* inf = findInfo(rfType);
     if (!inf) {
-        return false; // this type is not TF
+        return false; // supplied rfType is not TF
     }
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);

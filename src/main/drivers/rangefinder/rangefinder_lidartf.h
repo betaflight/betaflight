@@ -23,6 +23,4 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "sensors/rangefinder.h"
 
-#include "common/time.h"
-
 bool lidarTFDetect(rangefinderDev_t *dev, rangefinderType_e rfType);
