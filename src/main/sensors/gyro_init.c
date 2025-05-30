@@ -714,7 +714,7 @@ bool gyroInit(void)
     return true;
 }
 
-uint8_t getgyroDetectedFlags(void)
+uint8_t getGyroDetectedFlags(void)
 {
     return gyroDetectedFlags;
 }
