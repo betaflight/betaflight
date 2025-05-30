@@ -569,7 +569,7 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     static float prevSetpoint[3];                   // equals raw unless extrapolated forward
     static float prevSetpointSpeed[3];              // for setpointDelta calculation
     static float prevSetpointSpeedDelta[3];         // for duplicate extrapolation
-    static bool isPrevPacketDuplicate[3];             // to identify multiple identical packets
+    static bool isPrevPacketDuplicate[3];           // to identify multiple identical packets
 
     const float rcCommandDelta = rcCommand[axis] - prevRcCommand[axis];
     prevRcCommand[axis] = rcCommand[axis];
@@ -648,14 +648,15 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
     // smooth the setpointSpeed value
-    setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
+    const float pt1_k = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / rxRate);
+    setpointSpeed = prevSetpointSpeed[axis] + pt1_k * (setpointSpeed - prevSetpointSpeed[axis]);
 
     // calculate setpointDelta from smoothed setpoint speed
     setpointSpeedDelta = setpointSpeed - prevSetpointSpeed[axis];
     prevSetpointSpeed[axis] = setpointSpeed;
 
     // smooth the setpointDelta element (effectively a second order filter since incoming setpoint was already smoothed)
-    setpointSpeedDelta = prevSetpointSpeedDelta[axis] + pid->feedforwardSmoothFactor * (setpointSpeedDelta - prevSetpointSpeedDelta[axis]);
+    setpointSpeedDelta = prevSetpointSpeedDelta[axis] + pt1_k * (setpointSpeedDelta - prevSetpointSpeedDelta[axis]);
     prevSetpointSpeedDelta[axis] = setpointSpeedDelta;
 
     // apply gain factor to delta and adjust for rxRate
