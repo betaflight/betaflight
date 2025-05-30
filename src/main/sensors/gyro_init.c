@@ -683,9 +683,6 @@ bool gyroInit(void)
 
             gyro.gyroHasOverflowProtection = gyro.gyroHasOverflowProtection
                                              && gyro.gyroSensor[i].gyroDev.gyroHasOverflowProtection;
-            
-            // Use detected gyro of the first sensor
-            detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor[i].gyroDev.gyroHardware;
         }
     }
 
