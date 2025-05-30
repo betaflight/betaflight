@@ -156,6 +156,9 @@ static void lidarTFConfig(rangefinderDev_t *dev, const lidarTFInfo_t* inf)
         break;
     default:
         break;
+    default:
+        break;
+
     }
 }
 

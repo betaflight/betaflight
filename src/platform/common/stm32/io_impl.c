@@ -76,3 +76,36 @@ int IO_GPIOPortIdx(IO_t io)
     }
     return (((size_t)IO_GPIO(io) - GPIOA_BASE) >> 10);
 }
+
+#if defined(STM32F4) || defined(APM32F4)
+int IO_EXTI_PortSourceGPIO(IO_t io)
+{
+    return IO_GPIOPortIdx(io);
+}
+#endif
+
+int IO_GPIO_PortSource(IO_t io)
+{
+    return IO_GPIOPortIdx(io);
+}
+
+// zero based pin index
+int IO_GPIOPinIdx(IO_t io)
+{
+    if (!io) {
+        return -1;
+    }
+    return 31 - __builtin_clz(IO_Pin(io));
+}
+
+#if defined(STM32F4) || defined(APM32F4)
+int IO_EXTI_PinSource(IO_t io)
+{
+    return IO_GPIOPinIdx(io);
+}
+#endif
+
+int IO_GPIO_PinSource(IO_t io)
+{
+    return IO_GPIOPinIdx(io);
+}

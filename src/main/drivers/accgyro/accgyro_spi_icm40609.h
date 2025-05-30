@@ -21,15 +21,12 @@
 
 #pragma once
 
-#if defined(USE_BLACKBOX_VIRTUAL) && !defined(SIMULATOR_BUILD)
-#error "USE_BLACKBOX_VIRTUAL valid for SITL build only"
-#endif
+#include "drivers/bus.h"
+ 
+void icm40609AccInit(accDev_t *acc);
+void icm40609GyroInit(gyroDev_t *gyro);
 
-bool blackboxVirtualOpen(void);
-void blackboxVirtualPutChar(uint8_t value);
-void blackboxVirtualWrite(const uint8_t *buffer, uint32_t len);
-bool blackboxVirtualFlush(void);
-bool blackboxVirtualBeginLog(void);
-bool blackboxVirtualEndLog(void);
-void blackboxVirtualClose(void);
-int32_t blackboxVirtualLogFileNumber(void);
+uint8_t icm40609SpiDetect(const extDevice_t *dev);
+
+bool icm40609SpiAccDetect(accDev_t *acc);
+bool icm40609SpiGyroDetect(gyroDev_t *gyro);
