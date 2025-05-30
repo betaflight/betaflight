@@ -61,7 +61,7 @@
 #define ICM426XX_CLKIN_FREQ                         32000
 
 // Soft Reset
-#define ICM426XX_RA_DEVICE_CONFIG                   (0x17)
+#define ICM426XX_RA_DEVICE_CONFIG                   0x17
 #define DEVICE_CONFIG_SOFT_RESET_BIT                (1 << 0) // Soft reset bit
 
 #define ICM426XX_RA_REG_BANK_SEL                    0x76
