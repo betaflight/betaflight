@@ -264,6 +264,7 @@ static void icm426xxSoftReset(const extDevice_t *dev)
 
 uint8_t icm426xxSpiDetect(const extDevice_t *dev)
 {
+    delay(1);                          // power-on time
     icm426xxSoftReset(dev);
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
 
