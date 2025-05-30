@@ -51,7 +51,7 @@
 
 #define GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ 200
 
-#define GYRO_MASK(x) (BIT(x))
+#define GYRO_MASK(x) BIT(x)
 
 typedef union gyroLowpassFilter_u {
     pt1Filter_t pt1FilterState;

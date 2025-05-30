@@ -78,7 +78,7 @@
 // gyro types are supported with SPI DMA.
 #define GYRO_BUF_SIZE 32
 
-static uint8_t gyroDetectionFlags = 0;
+static uint8_t gyroDetectedFlags = 0;
 
 static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
 {
@@ -605,35 +605,40 @@ bool gyroInit(void)
         break;
     }
 
-    gyroDetectionFlags = 0;
+    gyroDetectedFlags = 0;
     uint8_t gyrosToScan = gyroConfig()->gyrosDetected;
+    // scan all gyros if gyrosDetected is zero
+    if (gyrosToScan == 0) {
+        gyrosToScan = 0xff;
+    }
+    // always scan gyro_enabled_bitmask
+    gyrosToScan |= gyroConfig()->gyro_enabled_bitmask;
 
-    gyro.gyroEnabledBitmask = gyroConfig()->gyro_enabled_bitmask;
     gyro.gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
         // Only attempt to detect a gyro if it's enabled or we're doing an auto-scan
-        if ((!gyrosToScan || (gyrosToScan & GYRO_MASK(i)) || (gyro.gyroEnabledBitmask & GYRO_MASK(i)))) {
+        if (gyrosToScan & GYRO_MASK(i)) {
             if (gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
                 // If we detected a gyro, make sure it's in the enabled bitmask
                 // This ensures that during first boot, all detected gyros are enabled
-                gyroDetectionFlags |= GYRO_MASK(i);
+                gyroDetectedFlags |= GYRO_MASK(i);
             }
         }
     }
 
-    if (gyroDetectionFlags == 0) {
+    if (gyroDetectedFlags == 0) {
         return false;
     }
 
     bool eepromWriteRequired = false;
     if (!gyrosToScan) {
-        gyroConfigMutable()->gyrosDetected = gyroDetectionFlags;
+        gyroConfigMutable()->gyrosDetected = gyroDetectedFlags;
         eepromWriteRequired = true;
     }
 
     // check if all enabled sensors are detected
-    gyro.gyroEnabledBitmask = gyroDetectionFlags & gyroConfig()->gyro_enabled_bitmask;
+    gyro.gyroEnabledBitmask = gyroDetectedFlags & gyroConfig()->gyro_enabled_bitmask;
 
     if (gyroConfigMutable()->gyro_enabled_bitmask != gyro.gyroEnabledBitmask) {
         gyroConfigMutable()->gyro_enabled_bitmask = gyro.gyroEnabledBitmask;
@@ -642,44 +647,44 @@ bool gyroInit(void)
 
     // Only allow using multiple gyros simultaneously if they are the same hardware type.
     // Or allow using if they have the same sample rate and scale.
-    bool gyro_hardware_identical = true;
+    bool gyro_hardware_compatible = true;
     uint16_t gyro_sample_rate = 0;
     float gyro_scale = 0.0f;
     bool firstFound = false;
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
-            if (!firstFound ) {
+            if (!firstFound) {
                 firstFound = true;
                 gyro_sample_rate = gyro.gyroSensor[i].gyroDev.gyroSampleRateHz;
                 gyro_scale = gyro.gyroSensor[i].gyroDev.scale;
             } else if ((gyro_sample_rate != gyro.gyroSensor[i].gyroDev.gyroSampleRateHz) ||
                        (gyro_scale != gyro.gyroSensor[i].gyroDev.scale)) {
-                gyro_hardware_identical = false;
+                gyro_hardware_compatible = false;
             }
         }
     }
 
-    if (!gyro_hardware_identical) {
-        // If the user enabled multiple IMU and they are not the same type, then reset to using only the first IMU.
+    if (!gyro_hardware_compatible) {
+        // If the user enabled multiple IMU and they are not compatible types, then reset to using only the first IMU.
         gyro.gyroEnabledBitmask = gyro.gyroEnabledBitmask & -gyro.gyroEnabledBitmask;
         gyroConfigMutable()->gyro_enabled_bitmask = gyro.gyroEnabledBitmask;
         eepromWriteRequired = true;
     }
 
-    static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][GYRO_BUF_SIZE];
+    static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][GYRO_BUF_SIZE / 2][2];
 
     for (int i = 0; i < GYRO_COUNT; i++) {
-        if (gyroDetectionFlags & GYRO_MASK(i)) {  // Only initialize detected gyros
+        if (gyroDetectedFlags & GYRO_MASK(i)) {  // Only initialize detected gyros
             // SPI DMA buffer required per device
-            gyro.gyroSensor[i].gyroDev.dev.txBuf = gyroBuf[i];
-            gyro.gyroSensor[i].gyroDev.dev.rxBuf = &gyroBuf[i][GYRO_BUF_SIZE / 2];
+            gyro.gyroSensor[i].gyroDev.dev.txBuf = gyroBuf[i][0];
+            gyro.gyroSensor[i].gyroDev.dev.rxBuf = gyroBuf[i][1];
 
             gyroInitSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i));
 
             gyro.gyroHasOverflowProtection = gyro.gyroHasOverflowProtection
                                              && gyro.gyroSensor[i].gyroDev.gyroHasOverflowProtection;
             
-            // Each detected gyro contributes to the sensor type
+            // Use detected gyro of the first sensor
             detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor[i].gyroDev.gyroHardware;
         }
     }
@@ -691,10 +696,12 @@ bool gyroInit(void)
     // Use the first enabled gyro for our scale and raw sensor dev
     int firstGyro = firstEnabledGyro();
     if (firstGyro >= 0) {
+        detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor[firstGyro].gyroDev.gyroHardware;
         gyro.scale = gyro.gyroSensor[firstGyro].gyroDev.scale;
         gyro.rawSensorDev = &gyro.gyroSensor[firstGyro].gyroDev;
     } else {
         // no gyros enabled
+        detectedSensors[SENSOR_INDEX_GYRO] = GYRO_NONE;
         gyro.scale = 1.0f;
         gyro.rawSensorDev = NULL;
     }
@@ -710,9 +717,9 @@ bool gyroInit(void)
     return true;
 }
 
-uint8_t getGyroDetectionFlags(void)
+uint8_t getgyroDetectedFlags(void)
 {
-    return gyroDetectionFlags;
+    return gyroDetectedFlags;
 }
 
 void gyroSetTargetLooptime(uint8_t pidDenom)
@@ -760,11 +767,10 @@ uint8_t gyroReadRegister(uint8_t whichSensor, uint8_t reg)
 
 int firstEnabledGyro(void)
 {
-    for (int i = 0; i < GYRO_COUNT; i++) {
-        if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
-            return i;
-        }
+    if (gyro.gyroEnabledBitmask != 0) {
+        return llog2(gyro.gyroEnabledBitmask & -gyro.gyroEnabledBitmask);
+    } else {
+        // no gyro is enabled
+        return -1;
     }
-
-    return -1;
 }
