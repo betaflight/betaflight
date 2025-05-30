@@ -1815,7 +1815,7 @@ case MSP_NAME:
 #endif
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
-        sbufWriteU8(dst, getGyroDetectionFlags());
+        sbufWriteU8(dst, getGyroDetectedFlags());
         sbufWriteU8(dst, gyroConfig()->gyro_enabled_bitmask); // deprecates gyro_to_use
         // Added support for more then two IMUs in MSP API 1.47
         for (int i = 0; i < 8; i++) {
@@ -1823,9 +1823,9 @@ case MSP_NAME:
         }
 
         for (int i = 0; i < 8; i++) {
-            sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.roll : 0);
-            sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.pitch : 0);
-            sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.yaw : 0);
+            for (unsigned j; j < ARRAYLEN(gyroDeviceConfig(i)->customAlignment.raw); j++) {
+                sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.raw[j] : 0);
+            }
         }
 
 #ifdef USE_MAG
@@ -2990,18 +2990,21 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         // Added in API 1.47
         if (sbufBytesRemaining(src) >= 8 * 7) {
             for (int i = 0; i < 8; i++) {
+                const uint8_t alignment = sbufReadU8(src);
                 if (i < GYRO_COUNT) {
-                    gyroDeviceConfigMutable(i)->alignment = sbufReadU8(src);
-                } else {
-                    sbufReadU8(src); // skip unused gyro device id byte
+                    gyroDeviceConfigMutable(i)->alignment = alignment;
                 }
             }
 
             for (int i = 0; i < 8; i++) {
                 if (i < GYRO_COUNT) {
-                    gyroDeviceConfigMutable(i)->customAlignment.roll = sbufReadU16(src);
-                    gyroDeviceConfigMutable(i)->customAlignment.pitch = sbufReadU16(src);
-                    gyroDeviceConfigMutable(i)->customAlignment.yaw = sbufReadU16(src);
+                     sensorAlignment_t customAlignment;
+                     for (unsigned j = 0; j < ARRAYLEN(customAlignment.raw); j++) {
+                        customAlignment.raw[j] = (int16_t)sbufReadU16(src);
+                     }
+                     if (i < GYRO_COUNT) {
+                        gyroDeviceConfigMutable(i)->customAlignment = customAlignment;
+                     }
                 } else {
                     sbufReadU16(src); // skip unused custom alignment roll
                     sbufReadU16(src); // skip unused custom alignment pitch

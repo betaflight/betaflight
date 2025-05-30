@@ -28,7 +28,7 @@ void gyroPreInit(void);
 bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config);
-uint8_t getGyroDetectionFlags(void);
+uint8_t getGyroDetectedFlags(void);
 gyroDev_t *gyroActiveDev(void);
 struct mpuDetectionResult_s;
 const struct mpuDetectionResult_s *gyroMpuDetectionResult(void);
