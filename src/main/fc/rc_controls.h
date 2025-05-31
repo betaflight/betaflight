@@ -104,7 +104,6 @@ typedef struct rcSmoothingFilter_s {
     uint8_t debugAxis;
 
     float autoSmoothnessFactorSetpoint;
-    float autoSmoothnessFactorFeedforward;
     float autoSmoothnessFactorThrottle;
 } rcSmoothingFilter_t;
 
