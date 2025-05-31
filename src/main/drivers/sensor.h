@@ -23,6 +23,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifndef GYRO_COUNT // this is just to make tests pass
+#define GYRO_COUNT 1
+#endif
+
 typedef bool (*sensorInterruptFuncPtr)(void);
 struct magDev_s;
 typedef bool (*sensorMagInitFuncPtr)(struct magDev_s *magdev);

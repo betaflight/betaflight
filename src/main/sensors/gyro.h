@@ -51,22 +51,14 @@
 
 #define GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ 200
 
+#define GYRO_MASK(x) BIT(x)
+
 typedef union gyroLowpassFilter_u {
     pt1Filter_t pt1FilterState;
     biquadFilter_t biquadFilterState;
     pt2Filter_t pt2FilterState;
     pt3Filter_t pt3FilterState;
 } gyroLowpassFilter_t;
-
-typedef enum gyroDetectionFlags_e {
-    GYRO_NONE_MASK = 0,
-    GYRO_1_MASK = BIT(0),
-#if defined(USE_MULTI_GYRO)
-    GYRO_2_MASK = BIT(1),
-    GYRO_ALL_MASK = (GYRO_1_MASK | GYRO_2_MASK),
-    GYRO_IDENTICAL_MASK = BIT(7), // All gyros are of the same hardware type
-#endif
-} gyroDetectionFlags_t;
 
 typedef struct gyroCalibration_s {
     float sum[XYZ_AXIS_COUNT];
@@ -90,10 +82,7 @@ typedef struct gyro_s {
     float sampleSum[XYZ_AXIS_COUNT];   // summed samples used for downsampling
     bool downsampleFilterEnabled;      // if true then downsample using gyro lowpass 2, otherwise use averaging
 
-    gyroSensor_t gyroSensor1;
-#ifdef USE_MULTI_GYRO
-    gyroSensor_t gyroSensor2;
-#endif
+    gyroSensor_t gyroSensor[GYRO_COUNT];
 
     gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
 
@@ -113,7 +102,7 @@ typedef struct gyro_s {
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
     uint16_t accSampleRateHz;
-    uint8_t gyroToUse;
+    uint8_t gyroEnabledBitmask;
     uint8_t gyroDebugMode;
     bool gyroHasOverflowProtection;
     bool useDualGyroDebugging;
@@ -155,10 +144,6 @@ typedef enum {
     YAW_SPIN_RECOVERY_AUTO
 } yawSpinRecoveryMode_e;
 
-#define GYRO_CONFIG_USE_GYRO_1      0
-#define GYRO_CONFIG_USE_GYRO_2      1
-#define GYRO_CONFIG_USE_GYRO_BOTH   2
-
 enum {
     FILTER_LPF1 = 0,
     FILTER_LPF2
@@ -168,7 +153,6 @@ typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t gyro_hardware_lpf;                // gyro DLPF setting
     uint8_t gyro_high_fsr;
-    uint8_t gyro_to_use;
 
     uint16_t gyro_lpf1_static_hz;
     uint16_t gyro_lpf2_static_hz;
@@ -194,10 +178,12 @@ typedef struct gyroConfig_s {
 
     uint8_t gyro_filter_debug_axis;
 
-    uint8_t gyrosDetected; // What gyros should detection be attempted for on startup. Automatically set on first startup.
+    uint8_t gyrosDetected; // What gyros should be shown as part of the cli status command.
     uint8_t gyro_lpf1_dyn_expo; // set the curve for dynamic gyro lowpass filter
     uint8_t simplified_gyro_filter;
     uint8_t simplified_gyro_filter_multiplier;
+
+    uint8_t gyro_enabled_bitmask;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
