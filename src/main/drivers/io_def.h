@@ -43,7 +43,7 @@
 
 // split ioTag bits between pin and port
 // port is encoded as +1 to avoid collision with 0x0 (false as bool)
-#ifndef DEFIO_PORT_PINS 
+#ifndef DEFIO_PORT_PINS
 // pins per port
 #define DEFIO_PORT_PINS 16
 #endif
