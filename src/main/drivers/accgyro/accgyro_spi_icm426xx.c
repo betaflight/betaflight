@@ -60,6 +60,10 @@
 
 #define ICM426XX_CLKIN_FREQ                         32000
 
+// Soft Reset
+#define ICM426XX_RA_DEVICE_CONFIG                   0x17
+#define DEVICE_CONFIG_SOFT_RESET_BIT                (1 << 0) // Soft reset bit
+
 #define ICM426XX_RA_REG_BANK_SEL                    0x76
 #define ICM426XX_BANK_SELECT0                       0x00
 #define ICM426XX_BANK_SELECT1                       0x01
@@ -249,8 +253,19 @@ static void icm426xxEnableExternalClock(const extDevice_t *dev)
 }
 #endif
 
+static void icm426xxSoftReset(const extDevice_t *dev)
+{
+    setUserBank(dev, ICM426XX_BANK_SELECT0);
+
+    spiWriteReg(dev, ICM426XX_RA_DEVICE_CONFIG, DEVICE_CONFIG_SOFT_RESET_BIT);
+
+    delay(1);
+}
+
 uint8_t icm426xxSpiDetect(const extDevice_t *dev)
 {
+    delay(1);                          // power-on time
+    icm426xxSoftReset(dev);
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
 
 #if defined(USE_GYRO_CLKIN)
@@ -260,7 +275,7 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     do {
-        delay(150);
+        delay(1);
         const uint8_t whoAmI = spiReadRegMsk(dev, MPU_RA_WHO_AM_I);
         switch (whoAmI) {
         case ICM42605_WHO_AM_I_CONST:

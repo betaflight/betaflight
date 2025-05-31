@@ -15,7 +15,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, see BASE_TARGETS/EXE_TARGETS below
+# The target or config to build
 TARGET    ?=
 CONFIG    ?=
 
@@ -58,7 +58,7 @@ FORKNAME      = betaflight
 
 # Working directories
 # ROOT_DIR is the full path to the directory containing this Makefile
-ROOT_DIR        := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ROOT_DIR        := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 # ROOT is the relative path to the directory containing this Makefile
 ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
@@ -98,13 +98,6 @@ include $(MAKE_SCRIPT_DIR)/checks.mk
 PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/*))))
 BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
 
-# list of targets that are executed on host - using exe as goal recipe
-EXE_TARGETS      := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exe)))))
-# list of targets using uf2 as goal recipe
-UF2_TARGETS      := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.uf2)))))
-# list of targets using hex as goal recipe (default)
-HEX_TARGETS      := $(filter-out $(EXE_TARGETS) $(UF2_TARGETS),$(BASE_TARGETS))
-
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
 DL_DIR     := $(ROOT)/downloads
@@ -134,7 +127,7 @@ FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk 
 
 FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
-# import config handling
+# import config handling (must occur after the hydration of hex, exe and uf2 targets)
 include $(MAKE_SCRIPT_DIR)/config.mk
 
 # default xtal value
@@ -150,7 +143,8 @@ TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
 LINKER_DIR          := $(TARGET_PLATFORM_DIR)/link
 
 ifneq ($(TARGET),)
-include $(TARGET_PLATFORM_DIR)/target/$(TARGET)/target.mk
+TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
+include $(TARGET_DIR)/target.mk
 endif
 
 REVISION := norevision
@@ -229,21 +223,16 @@ ifneq ($(HSE_VALUE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
-TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
 endif # TARGET specified
+
+ifeq ($(or $(CONFIG),$(TARGET)),)
+.DEFAULT_GOAL := all
+else
+.DEFAULT_GOAL := fwo
+endif
 
 # openocd specific includes
 include $(MAKE_SCRIPT_DIR)/openocd.mk
-
-ifeq ($(CONFIG)$(TARGET),)
-.DEFAULT_GOAL := all
-else ifneq ($(filter $(TARGET),$(EXE_TARGETS)),)
-.DEFAULT_GOAL := exe
-else ifneq ($(filter $(TARGET),$(UF2_TARGETS)),)
-.DEFAULT_GOAL := uf2
-else
-.DEFAULT_GOAL := hex
-endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
@@ -370,6 +359,12 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
+ifneq ($(filter fwo hex uf2 bin elf zip, $(MAKECMDGOALS)),)
+    ifeq ($(TARGET),)
+        $(error "You must specify a target to build.")
+    endif
+endif
+
 TARGET_NAME := $(TARGET)
 
 ifneq ($(CONFIG),)
@@ -414,6 +409,7 @@ CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS += $(TARGET_UF2)
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
@@ -432,10 +428,6 @@ $(TARGET_BIN): $(TARGET_ELF)
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
-
-$(TARGET_UF2): $(TARGET_ELF)
-	@echo "Creating UF2 $(TARGET_UF2)" "$(STDOUT)"
-	$(V1) $(PICOTOOL) uf2 convert $< $@ || { echo "Failed to convert ELF to UF2 format"; exit 1; }
 
 $(TARGET_DFU): $(TARGET_HEX)
 	@echo "Creating DFU $(TARGET_DFU)" "$(STDOUT)"
@@ -493,8 +485,12 @@ $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
+$(TARGET_UF2): $(TARGET_ELF)
+	@echo "Creating UF2 $(TARGET_UF2)" "$(STDOUT)"
+	$(V1) $(PICOTOOL) uf2 convert $< $@ || { echo "Failed to convert ELF to UF2 format"; exit 1; }
+
 $(TARGET_EXE): $(TARGET_ELF)
-	@echo Copy $< to $@ "$(STDOUT)"
+	@echo "Creating exe - copying $< to $@" "$(STDOUT)"
 	$(V1) cp $< $@
 
 # Compile
@@ -550,22 +546,11 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
-$(HEX_TARGETS):
-	$(V0) @echo "Building hex target $@" && \
-	$(MAKE) hex TARGET=$@ && \
-	echo "Building $@ succeeded."
+.PHONY: $(BASE_TARGETS)
+$(BASE_TARGETS):
+	$(MAKE) fwo TARGET=$@
 
-$(UF2_TARGETS):
-	$(V0) @echo "Building uf2 target $@" && \
-	$(MAKE) uf2 TARGET=$@ && \
-	echo "Building $@ succeeded."
-
-$(EXE_TARGETS):
-	$(V0) @echo "Building executable target $@" && \
-	$(MAKE) exe TARGET=$@ && \
-	echo "Building $@ succeeded."
-
-TARGETS_CLEAN = $(addsuffix _clean,$(HEX_TARGETS) $(UF2_TARGETS) $(EXE_TARGETS))
+TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
 CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
@@ -600,7 +585,7 @@ preview: $(PREVIEW_TARGETS) test
 ## all_configs       : Build all configs
 all_configs: $(BASE_CONFIGS)
 
-TARGETS_FLASH = $(addsuffix _flash,$(HEX_TARGETS))
+TARGETS_FLASH = $(addsuffix _flash,$(BASE_TARGETS))
 
 ## <TARGET>_flash    : build and flash a target
 $(TARGETS_FLASH):
@@ -638,49 +623,59 @@ openocd-gdb: $(TARGET_ELF)
 	$(V0) $(OPENOCD_COMMAND) & $(CROSS_GDB) $(TARGET_ELF) -ex "target remote localhost:3333" -ex "load"
 endif
 
-TARGETS_ZIP = $(addsuffix _zip,$(HEX_TARGETS))
+TARGETS_ZIP = $(addsuffix _zip,$(BASE_TARGETS))
 
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
+.PHONY: $(TARGETS_ZIP)
 $(TARGETS_ZIP):
-	$(V0) $(MAKE) hex TARGET=$(subst _zip,,$@)
-	$(V0) $(MAKE) zip TARGET=$(subst _zip,,$@)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) zip TARGET=$(subst _zip,,$@)
 
 .PHONY: zip
-zip:
-	$(V0) zip $(TARGET_ZIP) $(TARGET_HEX)
+zip: $(TARGET_HEX)
+	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
 .PHONY: binary
 binary:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
 hex:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
 uf2:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
 exe: $(TARGET_EXE)
 
-TARGETS_REVISION = $(addsuffix _rev,$(HEX_TARGETS))
+# FWO (Firmware Output) is the default output for building the firmware
+.PHONY: fwo
+fwo:
+ifeq ($(DEFAULT_OUTPUT),exe)
+	$(V1) $(MAKE) exe
+else ifeq ($(DEFAULT_OUTPUT),uf2)
+	$(V1) $(MAKE) uf2
+else
+	$(V1) $(MAKE) hex
+endif
+
+TARGETS_REVISION = $(addsuffix _rev, $(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
+.PHONY: $(TARGETS_REVISION)
 $(TARGETS_REVISION):
-	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
+	$(V1) $(MAKE) fwo REV=yes TARGET=$(subst _rev,,$@)
 
-EXE_TARGETS_REVISION = $(addsuffix _rev,$(EXE_TARGETS))
-## <EXE_TARGET>_rev : build executable target and add revision to filename
-$(EXE_TARGETS_REVISION):
-	$(V0) $(MAKE) exe REV=yes TARGET=$(subst _rev,,$@)
+.PHONY: all_rev
+all_rev: $(addsuffix _rev, $(CI_TARGETS))
 
-all_rev: $(addsuffix _rev,$(CI_TARGETS))
-
+.PHONY: unbrick_$(TARGET)
 unbrick_$(TARGET): $(TARGET_HEX)
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 ## unbrick           : unbrick flight controller
+.PHONY: unbrick
 unbrick: unbrick_$(TARGET)
 
 ## cppcheck          : run static analysis on C source code
@@ -697,12 +692,6 @@ $(DIRECTORIES):
 ## version           : print firmware version
 version:
 	@echo $(FC_VER)
-
-.PHONY: submodules
-submodules:
-	@echo "Updating submodules"
-	$(V1) git submodule update --init --recursive || { echo "Failed to update submodules"; exit 1; }
-	@echo "Submodules updated"
 
 ## help              : print this help message and exit
 help: Makefile mk/tools.mk
@@ -727,8 +716,6 @@ help: Makefile mk/tools.mk
 targets:
 	@echo "Platforms:           $(PLATFORMS)"
 	@echo "Valid targets:       $(BASE_TARGETS)"
-	@echo "Executable targets:  $(EXE_TARGETS)"
-	@echo "UF2 targets:         $(UF2_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
 	@echo "CI common targets:   $(CI_COMMON_TARGETS)"

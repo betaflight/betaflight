@@ -340,21 +340,27 @@ PICOTOOL_DIR    := $(TOOLS_DIR)/picotool
 PICO_SDK_PATH   ?= $(ROOT_DIR)/lib/main/pico-sdk
 PICOTOOL        ?= $(PICOTOOL_DIR)/picotool
 
-ifeq ($(filter picotool_install,$(MAKECMDGOALS)), picotool_install)
-    ifneq ($(wildcard $(PICO_SDK_PATH)/CMakeLists.txt),$(PICO_SDK_PATH)/CMakeLists.txt)
-        $(error "PICO_SDK_PATH ($(PICO_SDK_PATH)) does not point to a valid Pico SDK. Please 'make submodules' to hydrate the Pico SDK.")
+ifneq ($(filter picotool_install uf2,$(MAKECMDGOALS)),)
+    ifeq ($(wildcard $(PICO_SDK_PATH)/CMakeLists.txt),)
+        $(error "PICO_SDK_PATH ($(PICO_SDK_PATH)) does not point to a valid Pico SDK. Please 'make pico_sdk' to hydrate the Pico SDK.")
     endif
 endif
 
-ifeq ($(filter uf2,$(MAKECMDGOALS)), uf2)
+ifneq ($(filter uf2,$(MAKECMDGOALS)),)
     ifeq (,$(wildcard $(PICOTOOL)))
         ifeq (,$(shell which picotool 2>/dev/null))
-            $(error "picotool not in the PATH or setup in tools. Run 'make picotool_install' to install in the tools folder.")
+            $(error "picotool not in the PATH or configured. Run 'make picotool_install' to install in the tools folder.")
         else
             PICOTOOL := picotool
         endif
     endif
 endif
+
+.PHONY: pico_sdk
+pico_sdk:
+	@echo "Updating pico-sdk"
+	$(V1) git submodule update --init --recursive -- lib/main/pico-sdk || { echo "Failed to update pico-sdk"; exit 1; }
+	@echo "pico-sdk updated"
 
 .PHONY: picotool_install
 picotool_install: | $(DL_DIR) $(TOOLS_DIR)

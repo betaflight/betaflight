@@ -1,3 +1,7 @@
+# SITL Makefile for the simulator platform
+
+# Default output is an exe file
+DEFAULT_OUTPUT := exe
 
 INCLUDE_DIRS := \
         $(INCLUDE_DIRS) \
