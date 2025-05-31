@@ -490,7 +490,7 @@ $(TARGET_UF2): $(TARGET_ELF)
 	$(V1) $(PICOTOOL) uf2 convert $< $@ || { echo "Failed to convert ELF to UF2 format"; exit 1; }
 
 $(TARGET_EXE): $(TARGET_ELF)
-	@echo "Creating exe - Copy $< to $@" "$(STDOUT)"
+	@echo "Creating exe - copying $< to $@" "$(STDOUT)"
 	$(V1) cp $< $@
 
 # Compile
@@ -628,42 +628,43 @@ TARGETS_ZIP = $(addsuffix _zip,$(BASE_TARGETS))
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
 .PHONY: $(TARGETS_ZIP)
 $(TARGETS_ZIP):
-	$(V0) $(MAKE) $(MAKE_PARALLEL) zip TARGET=$(subst _zip,,$@)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) zip TARGET=$(subst _zip,,$@)
 
 .PHONY: zip
 zip: $(TARGET_HEX)
-	$(V0) zip $(TARGET_ZIP) $(TARGET_HEX)
+	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
 .PHONY: binary
 binary:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
 hex:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
 uf2:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
 exe: $(TARGET_EXE)
 
+# FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
 fwo:
-ifneq ($(wildcard $(TARGET_DIR)/.exe),)
-	$(V0) $(MAKE) exe
-else ifneq ($(wildcard $(TARGET_DIR)/.uf2),)
-	$(V0) $(MAKE) uf2
+ifeq ($(DEFAULT_OUTPUT),exe)
+	$(V1) $(MAKE) exe
+else ifeq ($(DEFAULT_OUTPUT),uf2)
+	$(V1) $(MAKE) uf2
 else
-	$(V0) $(MAKE) hex
+	$(V1) $(MAKE) hex
 endif
 
 TARGETS_REVISION = $(addsuffix _rev, $(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
 .PHONY: $(TARGETS_REVISION)
 $(TARGETS_REVISION):
-	$(V0) $(MAKE) fwo REV=yes TARGET=$(subst _rev,,$@)
+	$(V1) $(MAKE) fwo REV=yes TARGET=$(subst _rev,,$@)
 
 .PHONY: all_rev
 all_rev: $(addsuffix _rev, $(CI_TARGETS))
