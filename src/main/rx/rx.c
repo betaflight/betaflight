@@ -376,19 +376,19 @@ static void detectIlluminator(void) {
         return;
     }
 
-    float rx_aux8 = rcData[AUX8];
+    float rx_aux2 = rcData[AUX2];
     
     illuminator_status_t prev_illuminator_status = illuminatorControlRuntime.illuminator_status;
     
     // Get the illuminator state based on handset stick position.
     // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
-    if (rx_aux8 < 1200.0f) {
-        illuminatorControlRuntime.illuminator_status = LED_IR;
-    }
-    else if ( (rx_aux8 > 1200.0f && rx_aux8 < 1300.0f) || (rx_aux8 > 1900.0f && rx_aux8 < 2000.0f) ) {
+    if (rx_aux2 < 1100.0f) {
         illuminatorControlRuntime.illuminator_status = LED_OFF;
     }
-    else if ( (rx_aux8 > 1300.0f && rx_aux8 < 1500.0f) || (rx_aux8 > 2000.0f) ) {
+    else if ( rx_aux2 > 1300.0f && rx_aux2 < 1450.0f ) {
+        illuminatorControlRuntime.illuminator_status = LED_IR;
+    }
+    else if (rx_aux2 > 1650.0f && rx_aux2 < 1800.0f) {
         illuminatorControlRuntime.illuminator_status = LED_OVERT;
     }
 
@@ -437,11 +437,12 @@ static void detectCamera(void) {
     float rx_aux2 = rcData[AUX2];
     
     // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
-    if ( ((rx_aux2 > 1040.0f) && (rx_aux2 < 1100.0f)) || ((rx_aux2 > 1400.0f) && (rx_aux2 < 1450.0f)) || ((rx_aux2 > 1750.0f) && (rx_aux2 < 1800.0f)) ) {
+    if ( (rx_aux2 > 1040.0f && rx_aux2 < 1080.0f) || (rx_aux2 > 1400.0f && rx_aux2 < 1450.0f)
+     || (rx_aux2 > 1750.0f && rx_aux2 < 1800.0f)) {
         IOHi(cameraControl.io);
         cameraControl.cam_enabled = CAM2;
     }
-    if ( rx_aux2 < 1030.0f || ((rx_aux2 > 1300.0f) && (rx_aux2 < 1400.0f)) || ((rx_aux2 > 1650.0f) && (rx_aux2 < 1750.0f)) ) {
+    else {
         IOLo(cameraControl.io);
         cameraControl.cam_enabled = CAM1;
     }
