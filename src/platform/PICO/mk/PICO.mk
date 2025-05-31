@@ -4,6 +4,8 @@
 # The top level Makefile adds $(MCU_COMMON_SRC) and $(DEVICE_STDPERIPH_SRC) to SRC collection.
 #
 
+DEFAULT_OUTPUT := uf2
+
 PICO_TRACE = 1
 
 PICO_LIB_OPTIMISATION      := -O2 -fuse-linker-plugin -ffast-math -fmerge-all-constants
