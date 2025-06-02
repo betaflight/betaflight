@@ -34,16 +34,11 @@
 #include "hardware/clocks.h"
 #include "pico/unique_id.h"
 
-int main(int argc, char * argv[]);
-
-void Reset_Handler(void);
-void Default_Handler(void);
-
-// cycles per microsecond
-static uint32_t usTicks = 0;
+///////////////////////////////////////////////////
 
 // SystemInit and SystemCoreClock variables/functions,
 // as per pico-sdk rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c
+
 uint32_t SystemCoreClock; /* System Clock Frequency (Core Clock)*/
 
 void SystemCoreClockUpdate (void)
@@ -56,61 +51,7 @@ void __attribute__((constructor)) SystemInit (void)
     SystemCoreClockUpdate();
 }
 
-
-/////////////////////////////////////////////////
-
-// TODO: check: don't define functions here provided by pico-sdk crt0
-// crt0.S defines the vector table in the .vectors section, with
-// initial stack pointer at __StackTop (defined in linker script),
-// and with reset handler pointing to code inside crt0.S
-#if 0
-
-void (* const vector_table[])() __attribute__((section(".vectors"))) = {
-    (void (*)())0x20000000, // Initial Stack Pointer
-    Reset_Handler,           // Interrupt Handler for reset
-    Default_Handler,         // Default handler for other interrupts
-};
-
-void Default_Handler(void)
-{
-    while (1); // Infinite loop on default handler
-}
-
-void Reset_Handler(void)
-{
-    // Initialize data segments
-    extern uint32_t _sdata, _edata, _sidata;
-    uint32_t *src = &_sidata;
-    uint32_t *dst = &_sdata;
-
-    while (dst < &_edata) {
-        *dst++ = *src++;
-    }
-
-    // Clear bss segment
-    extern uint32_t _sbss, _ebss;
-    dst = &_sbss;
-
-    while (dst < &_ebss) {
-        *dst++ = 0;
-    }
-
-    usTicks = clock_get_hz(clk_sys) / 1000000;
-
-    // Call main function
-    main(0, 0);
-}
-
-
-void __unhandled_user_irq(void)
-{
-    // TODO
-}
-
-#endif
-
-/////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////
 
 void systemReset(void)
 {
@@ -119,9 +60,35 @@ void systemReset(void)
 
 uint32_t systemUniqueId[3] = { 0 };
 
+// cycles per microsecond
+static uint32_t usTicks = 0;
+static float usTicksInv = 0.0f;
+
+#define PICO_DWT_CTRL   ((uint32_t *)(PPB_BASE + M33_DWT_CTRL_OFFSET))
+#define PICO_DWT_CYCCNT ((uint32_t *)(PPB_BASE + M33_DWT_CYCCNT_OFFSET))
+#define PICO_DEMCR      ((uint32_t *)(PPB_BASE + M33_DEMCR_OFFSET))
+
+void cycleCounterInit(void)
+{
+    // TODO check clock_get_hz(clk_sys) is the clock for CPU cycles
+    usTicks = SystemCoreClock / 1000000;
+    usTicksInv = 1e6f / SystemCoreClock;
+
+    // Global DWT enable
+    *PICO_DEMCR |= M33_DEMCR_TRCENA_BITS;
+
+    // Reset and enable cycle counter
+    *PICO_DWT_CYCCNT = 0;
+    *PICO_DWT_CTRL |= M33_DWT_CTRL_CYCCNTENA_BITS;
+}
+
 void systemInit(void)
 {
     //TODO: implement
+
+    SystemInit();
+
+    cycleCounterInit();
 
     // load the unique id into a local array
     pico_unique_board_id_t id;
@@ -138,11 +105,10 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 // Return system uptime in milliseconds (rollover in 49 days)
 uint32_t millis(void)
 {
-    //TODO: correction required?
-    return time_us_32() / 1000;
+    return (uint32_t)(time_us_64() / 1000);
 }
 
-// Return system uptime in micros
+// Return system uptime in micros (rollover in 71 mins)
 uint32_t micros(void)
 {
     return time_us_32();
@@ -153,38 +119,46 @@ uint32_t microsISR(void)
     return micros();
 }
 
-#define PICO_NON_BUSY_SLEEP
 void delayMicroseconds(uint32_t us)
 {
-#ifdef PICO_NON_BUSY_SLEEP
     sleep_us(us);
-#else
-    uint32_t now = micros();
-    while (micros() - now < us);
-#endif
 }
 
 void delay(uint32_t ms)
 {
-#ifdef PICO_NON_BUSY_SLEEP
     sleep_ms(ms);
-#else
-    while (ms--) {
-        delayMicroseconds(1000);
-    }
-#endif
 }
 
 uint32_t getCycleCounter(void)
 {
-    return time_us_32();
+    return *PICO_DWT_CYCCNT;
+}
+
+// Conversion routines copied from platform/common/stm32/system.c
+int32_t clockCyclesToMicros(int32_t clockCycles)
+{
+    return clockCycles / usTicks;
+}
+
+float clockCyclesToMicrosf(int32_t clockCycles)
+{
+    return clockCycles * usTicksInv;
+}
+
+// Note that this conversion is signed as this is used for periods rather than absolute timestamps
+int32_t clockCyclesTo10thMicros(int32_t clockCycles)
+{
+    return 10 * clockCycles / (int32_t)usTicks;
+}
+
+// Note that this conversion is signed as this is used for periods rather than absolute timestamps
+int32_t clockCyclesTo100thMicros(int32_t clockCycles)
+{
+    return 100 * clockCycles / (int32_t)usTicks;
 }
 
 uint32_t clockMicrosToCycles(uint32_t micros)
 {
-    if (!usTicks) {
-        usTicks = clock_get_hz(clk_sys) / 1000000;
-    }
     return micros * usTicks;
 }
 
@@ -231,7 +205,6 @@ void failureMode(failureMode_e mode)
     systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
 #endif
 }
-
 
 static void unusedPinInit(IO_t io)
 {
