@@ -95,6 +95,8 @@ uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb);
 extern bool useDshotTelemetry;
 extern uint8_t dshotMotorCount;
 
+bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
+
 #ifdef USE_DSHOT_TELEMETRY
 
 typedef struct dshotTelemetryMotorState_s {
@@ -113,7 +115,6 @@ typedef struct dshotTelemetryState_s {
     dshotRawValueState_t rawValueState;
 } dshotTelemetryState_t;
 
-#ifdef USE_DSHOT_TELEMETRY
 extern uint32_t readDoneCount;
 
 FAST_DATA_ZERO_INIT extern uint32_t inputStampUs;
@@ -124,10 +125,6 @@ typedef struct dshotTelemetryCycleCounters_s {
 } dshotTelemetryCycleCounters_t;
 
 FAST_DATA_ZERO_INIT extern dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
-
-#endif
-
-bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig);
 
 extern dshotTelemetryState_t dshotTelemetryState;
 
