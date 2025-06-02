@@ -109,6 +109,7 @@
 #undef USE_DMA_SPEC
 
 #undef USE_DSHOT_TELEMETRY
+#undef USE_ESC_SENSOR
 
 #undef USE_PWM_OUTPUT
 
