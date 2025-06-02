@@ -248,7 +248,7 @@ SECTIONS
         *(.scratch_y.*)
         . = ALIGN(4);
         __scratch_y_end__ = .;
-    } > SCRATCH_Y AT > FLASH
+    } > SCRATCH_Y AT > FLASH =0xa5a5a5a5 /* BF: want to fill with STACK_FILL_CHAR to allow stack check - this doesn't seem to do it */
     __scratch_y_source__ = LOADADDR(.scratch_y);
 
     /* .stack*_dummy section doesn't contains any symbols. It is only
@@ -305,6 +305,14 @@ SECTIONS
     __StackOneBottom = __StackOneTop - SIZEOF(.stack1_dummy);
     __StackBottom = __StackTop - SIZEOF(.stack_dummy);
     PROVIDE(__stack = __StackTop);
+
+    /* BetaFlight:
+     *     &_estack == Highest address of the user mode stack
+     *     &_Min_Stack_Size = "required" (guaranteed) amount of stack
+     * We have all of SCRATCH_Y available  uncontested for stack, length 4k = 0x1000
+     */
+    _estack = __StackTop;
+    _Min_Stack_Size = 0x1000;
 
     /* picolibc and LLVM */
     PROVIDE (__heap_start = __end__);
