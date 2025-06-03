@@ -419,3 +419,18 @@ extern uint8_t _dmaram_end__;
 
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
+
+#if defined(STM32F4)
+#define I2C_TRAIT_STATE 1
+#endif
+
+#if defined(STM32F4) || defined(STM32H7) || defined(STM32G4)
+#define I2C_TRAIT_AF_PIN 1
+#endif
+
+
+#if defined(STM32F4)
+#define I2CDEV_COUNT 3
+#else
+#define I2CDEV_COUNT 4
+#endif

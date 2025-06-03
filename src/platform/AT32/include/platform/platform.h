@@ -148,6 +148,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_TRAIT_AF_PIN  1
 #define UART_TRAIT_PINSWAP 1
 #define SERIAL_TRAIT_PIN_CONFIG 1
+#define I2C_TRAIT_AF_PIN 1
+#define I2CDEV_COUNT       4
 
 #define UARTHARDWARE_MAX_PINS 5
 
