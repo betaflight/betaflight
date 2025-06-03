@@ -3510,15 +3510,15 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
 
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-    	rcMapIdx = rxConfig->rcmap[i];
-    	if (rcMapIdx != RCMAP_UNMAPPED_INDEX) {
+        rcMapIdx = rxConfig->rcmap[i];
+        if (rcMapIdx != RCMAP_UNMAPPED_INDEX) {
             buf[rxConfig->rcmap[i]] = rcChannelLetters[i];
-    	}
+        }
         if (defaultRxConfig) {
-        	defaultRcMapIdx = defaultRxConfig->rcmap[i];
-        	if (defaultRcMapIdx != RCMAP_UNMAPPED_INDEX) {
-        		bufDefault[defaultRcMapIdx] = rcChannelLetters[i];
-			}
+            defaultRcMapIdx = defaultRxConfig->rcmap[i];
+            if (defaultRcMapIdx != RCMAP_UNMAPPED_INDEX) {
+                bufDefault[defaultRcMapIdx] = rcChannelLetters[i];
+            }
             equalsDefault = equalsDefault && (defaultRcMapIdx == rcMapIdx);
         }
     }
@@ -3544,16 +3544,15 @@ static void cliMap(const char *cmdName, char *cmdline)
 
         for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
             if (i < len) {
-                buf[i] = toupper((unsigned char)cmdline[i]);
+                buf[i] = toupper((unsigned char) cmdline[i]);
+            } else {
+                buf[i] = (unsigned char) RCMAP_UNMAPPED_INDEX;
             }
-            else {
-                buf[i] = (unsigned char)RCMAP_UNMAPPED_INDEX;
-        	}
         }
         buf[i] = '\0';
 
         for (i = 0; i < len; i++) {
-            buf[i] = toupper((unsigned char)cmdline[i]);
+            buf[i] = toupper((unsigned char) cmdline[i]);
 
             if (strchr(rcChannelLetters, buf[i]) && !strchr(buf + i + 1, buf[i]))
                 continue;
@@ -3574,7 +3573,7 @@ static void cliMap(const char *cmdName, char *cmdline)
         mapIdx = rxConfig()->rcmap[i];
         if (mapIdx == RCMAP_UNMAPPED_INDEX) {
             continue;
-		}
+        }
         if (mapIdx >= RX_MAPPABLE_CHANNEL_COUNT) {
             continue;  // Skip invalid indices
         }
