@@ -658,7 +658,7 @@ STATIC_UNIT_TESTED float applyRxChannelRangeConfiguraton(float sample, const rxC
 
 static void readRxChannelsApplyRanges(void)
 {
-	uint8_t unmappedCount = 0;
+    uint8_t unmappedCount = 0;
     for (int channel = 0; channel < rxChannelCount; channel++) {
 
         const uint8_t rawChannel = channel < RX_MAPPABLE_CHANNEL_COUNT ? rxConfig()->rcmap[channel] : channel;
@@ -672,16 +672,16 @@ static void readRxChannelsApplyRanges(void)
 #endif
         {
             if (rawChannel == RCMAP_UNMAPPED_INDEX) {
-            	sample = rxConfig()->midrc;
-            	unmappedCount++;
+                sample = rxConfig()->midrc;
+                unmappedCount++;
             }
             else {
-            	if (channel < RX_MAPPABLE_CHANNEL_COUNT) {
+                if (channel < RX_MAPPABLE_CHANNEL_COUNT) {
                     sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, rawChannel);
-            	}
-            	else {
+                }
+                else {
                     sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, rawChannel - unmappedCount);
-            	}
+                }
             }
         }
 

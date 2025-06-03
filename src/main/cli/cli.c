@@ -3540,14 +3540,14 @@ static void cliMap(const char *cmdName, char *cmdline)
     char buf[RX_MAPPABLE_CHANNEL_COUNT + 1];
 
     uint32_t len = strlen(cmdline);
-    if (len <= RX_MAPPABLE_CHANNEL_COUNT && len > NON_AUX_CHANNEL_COUNT) {
+    if (len <= RX_MAPPABLE_CHANNEL_COUNT && len >= NON_AUX_CHANNEL_COUNT) {
 
         for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-        	if (i < len) {
+            if (i < len) {
                 buf[i] = toupper((unsigned char)cmdline[i]);
-        	}
-        	else {
-                buf[i] = RCMAP_UNMAPPED_INDEX;
+            }
+            else {
+                buf[i] = (unsigned char)RCMAP_UNMAPPED_INDEX;
         	}
         }
         buf[i] = '\0';
@@ -3571,10 +3571,13 @@ static void cliMap(const char *cmdName, char *cmdline)
         buf[i] = '\0';
     }
     for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-    	mapIdx = rxConfig()->rcmap[i];
-    	if (mapIdx == RCMAP_UNMAPPED_INDEX) {
-    		continue;
-    	}
+        mapIdx = rxConfig()->rcmap[i];
+        if (mapIdx == RCMAP_UNMAPPED_INDEX) {
+            continue;
+		}
+        if (mapIdx >= RX_MAPPABLE_CHANNEL_COUNT) {
+            continue;  // Skip invalid indices
+        }
         buf[mapIdx] = rcChannelLetters[i];
     }
 
