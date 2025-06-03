@@ -85,7 +85,7 @@ typedef struct i2cDevice_s {
 #if I2C_TRAIT_STATE
     i2cState_t state;
 #endif
-#if defined(USE_HAL_DRIVER) || defined(AT32F4)
+#if I2C_TRAIT_HANDLE
     I2C_HandleTypeDef handle;
 #endif
 } i2cDevice_t;

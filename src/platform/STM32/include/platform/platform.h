@@ -428,6 +428,9 @@ extern uint8_t _dmaram_end__;
 #define I2C_TRAIT_AF_PIN 1
 #endif
 
+#if defined(USE_HAL_DRIVER)
+#define I2C_TRAIT_HANDLE 1
+#endif
 
 #if defined(STM32F4)
 #define I2CDEV_COUNT 3
