@@ -342,26 +342,13 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     // in auto mode, calculate the RC smoothing cutoff from the smoothed Rx link frequency
     const uint16_t oldSetpointCutoff = smoothingData->setpointCutoffFrequency;
     const uint16_t oldThrottleCutoff = smoothingData->throttleCutoffFrequency;
-    const uint16_t oldFeedforwardCutoff = smoothingData->feedforwardCutoffFrequency;
     const uint16_t minCutoffHz = 15; // don't let any RC smoothing filter cutoff go below 15Hz
 
     const bool autoSetpointSmoothing = smoothingData->setpointCutoffSetting == 0;
     const bool autoThrottleSmoothing = smoothingData->throttleCutoffSetting == 0;
-    const bool autoFeedforwardSmoothing = smoothingData->feedforwardCutoffSetting == 0;
-    const bool autoSetpointAndFeedforward = autoSetpointSmoothing && autoFeedforwardSmoothing;
 
-    if (autoSetpointAndFeedforward) {
-        // if both are using auto smoothing, both will have the same cutoff
+    if (autoSetpointSmoothing) {
         smoothingData->setpointCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint));
-        smoothingData->feedforwardCutoffFrequency = smoothingData->setpointCutoffFrequency;
-    } else {
-        if (autoSetpointSmoothing) {
-            smoothingData->setpointCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint));
-        }
-
-        if (autoFeedforwardSmoothing) {
-            smoothingData->feedforwardCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint));
-        }
     }
 
     if (autoThrottleSmoothing) {
@@ -370,13 +357,12 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
 
     const float dT = targetPidLooptime * 1e-6f;
     const float setpointCutoffFrequency = smoothingData->setpointCutoffFrequency;
-    const float feedforwardCutoffFrequency = smoothingData->feedforwardCutoffFrequency;
     const float throttleCutoffFrequency = smoothingData->throttleCutoffFrequency;
 
     if (!smoothingData->filterInitialized) {
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(setpointCutoffFrequency, dT));
-            pt3FilterInit(&smoothingData->filterFeedforward[i], pt3FilterGain(feedforwardCutoffFrequency, dT));
+            pt3FilterInit(&smoothingData->filterFeedforward[i], pt3FilterGain(setpointCutoffFrequency, dT));
         }
         for (int i = FD_ROLL; i < FD_YAW; i++) {
            pt3FilterInit(&smoothingData->filterRcDeflection[i], pt3FilterGain(setpointCutoffFrequency, dT));
@@ -385,7 +371,7 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     }
 
     // note that cutoff frequencies are integers, filter cutoffs won't re-calculate until there is > 1hz variation from previous cutoff
-    if (autoSetpointAndFeedforward && (smoothingData->setpointCutoffFrequency != oldSetpointCutoff)) {
+    if (smoothingData->setpointCutoffFrequency != oldSetpointCutoff) {
         // Update the RC Setpoint/Deflection filter and FeedForward Filter
         // all cutoffs will be the same, we can optimize :)
         pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
@@ -397,26 +383,6 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         for (int i = FD_ROLL; i < FD_YAW; i++) {
             pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
         }
-    } else {
-        if (smoothingData->setpointCutoffFrequency != oldSetpointCutoff) {
-            pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
-            const float pt3K = smoothingData->filterSetpoint[0].k;
-            for (int i = FD_ROLL; i <= FD_YAW; i++) {
-                pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K);
-            }
-            for (int i = FD_ROLL; i < FD_YAW; i++) {
-                pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
-            }
-        }
-
-        // Update the Feedforward filter
-        if (smoothingData->feedforwardCutoffFrequency != oldFeedforwardCutoff) {
-            pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[0], pt3FilterGain(setpointCutoffFrequency, dT));
-            const float pt3K = smoothingData->filterSetpoint[0].k;
-            for (int i = FD_ROLL; i <= FD_YAW; i++) {
-                pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K);
-            }
-        }
     }
 
     // Update the throttle filter
@@ -425,15 +391,15 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     }
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 1, smoothingData->setpointCutoffFrequency);
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->feedforwardCutoffFrequency);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, 0);
 }
 
-// Determine if we need to caclulate filter cutoffs. If not then we can avoid
+// Determine if we need to calculate filter cutoffs. If not then we can avoid
 // examining the rx frame times completely
 FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
 {
     // if any rc smoothing cutoff is 0 (auto) then we need to calculate cutoffs
-    if ((rcSmoothingData.setpointCutoffSetting == 0) || (rcSmoothingData.feedforwardCutoffSetting == 0) || (rcSmoothingData.throttleCutoffSetting == 0)) {
+    if ((rcSmoothingData.setpointCutoffSetting == 0) || (rcSmoothingData.throttleCutoffSetting == 0)) {
         return true;
     }
     return false;
@@ -458,10 +424,8 @@ static FAST_CODE void processRcSmoothingFilter(void)
 
         rcSmoothingData.setpointCutoffSetting = rxConfig()->rc_smoothing_setpoint_cutoff;
         rcSmoothingData.throttleCutoffSetting = rxConfig()->rc_smoothing_throttle_cutoff;
-        rcSmoothingData.feedforwardCutoffSetting = rxConfig()->rc_smoothing_feedforward_cutoff;
 
         rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting;
-        rcSmoothingData.feedforwardCutoffFrequency = rcSmoothingData.feedforwardCutoffSetting;
         rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
 
         if (rxConfig()->rc_smoothing_mode) {
