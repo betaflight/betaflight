@@ -93,11 +93,9 @@ typedef struct rcSmoothingFilter_s {
 
     uint8_t setpointCutoffSetting;
     uint8_t throttleCutoffSetting;
-    uint8_t feedforwardCutoffSetting;
 
     uint16_t setpointCutoffFrequency;
     uint16_t throttleCutoffFrequency;
-    uint16_t feedforwardCutoffFrequency;
 
     float smoothedRxRateHz;
     uint8_t sampleCount;
