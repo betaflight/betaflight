@@ -3505,13 +3505,21 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
     char buf[16];
     char bufDefault[16];
     uint32_t i;
+    uint8_t rcMapIdx;
+    uint8_t defaultRcMapIdx;
 
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-        buf[rxConfig->rcmap[i]] = rcChannelLetters[i];
+    	rcMapIdx = rxConfig->rcmap[i];
+    	if (rcMapIdx != RCMAP_UNMAPPED_INDEX) {
+            buf[rxConfig->rcmap[i]] = rcChannelLetters[i];
+    	}
         if (defaultRxConfig) {
-            bufDefault[defaultRxConfig->rcmap[i]] = rcChannelLetters[i];
-            equalsDefault = equalsDefault && (rxConfig->rcmap[i] == defaultRxConfig->rcmap[i]);
+        	defaultRcMapIdx = defaultRxConfig->rcmap[i];
+        	if (defaultRcMapIdx != RCMAP_UNMAPPED_INDEX) {
+        		bufDefault[defaultRcMapIdx] = rcChannelLetters[i];
+			}
+            equalsDefault = equalsDefault && (defaultRcMapIdx == rcMapIdx);
         }
     }
     buf[i] = '\0';
@@ -3528,17 +3536,23 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
 static void cliMap(const char *cmdName, char *cmdline)
 {
     uint32_t i;
+    uint8_t mapIdx;
     char buf[RX_MAPPABLE_CHANNEL_COUNT + 1];
 
     uint32_t len = strlen(cmdline);
-    if (len == RX_MAPPABLE_CHANNEL_COUNT) {
+    if (len <= RX_MAPPABLE_CHANNEL_COUNT && len > NON_AUX_CHANNEL_COUNT) {
 
         for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-            buf[i] = toupper((unsigned char)cmdline[i]);
+        	if (i < len) {
+                buf[i] = toupper((unsigned char)cmdline[i]);
+        	}
+        	else {
+                buf[i] = RCMAP_UNMAPPED_INDEX;
+        	}
         }
         buf[i] = '\0';
 
-        for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
+        for (i = 0; i < len; i++) {
             buf[i] = toupper((unsigned char)cmdline[i]);
 
             if (strchr(rcChannelLetters, buf[i]) && !strchr(buf + i + 1, buf[i]))
@@ -3554,7 +3568,14 @@ static void cliMap(const char *cmdName, char *cmdline)
     }
 
     for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-        buf[rxConfig()->rcmap[i]] = rcChannelLetters[i];
+        buf[i] = '\0';
+    }
+    for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
+    	mapIdx = rxConfig()->rcmap[i];
+    	if (mapIdx == RCMAP_UNMAPPED_INDEX) {
+    		continue;
+    	}
+        buf[mapIdx] = rcChannelLetters[i];
     }
 
     buf[i] = '\0';
