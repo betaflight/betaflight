@@ -48,7 +48,9 @@ typedef struct i2cHardware_s {
     I2C_TypeDef *reg;
     i2cPinDef_t sclPins[I2C_PIN_SEL_MAX];
     i2cPinDef_t sdaPins[I2C_PIN_SEL_MAX];
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;
+#endif
     uint8_t ev_irq;
     uint8_t er_irq;
 } i2cHardware_t;
