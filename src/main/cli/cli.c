@@ -3537,6 +3537,7 @@ static void cliMap(const char *cmdName, char *cmdline)
 {
     uint32_t i;
     uint8_t mapIdx;
+    // Working buffer (+1 for the null terminator). Re-used later when we render the map back to the user.                     */
     char buf[RX_MAPPABLE_CHANNEL_COUNT + 1];
 
     uint32_t len = strlen(cmdline);
@@ -3566,13 +3567,14 @@ static void cliMap(const char *cmdName, char *cmdline)
         return;
     }
 
-    for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-        buf[i] = '\0';
-    }
+    // Reset buffer, so we can rebuild it from rcmap[]
+    memset(buf, 0, sizeof(buf));
+
+    // Translate the numerical rcmap[] back into channel letters. Skip unmapped or invalid indices for robustness
     for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
         mapIdx = rxConfig()->rcmap[i];
         if (mapIdx == RCMAP_UNMAPPED_INDEX) {
-            continue;
+            continue; // Skip unmapped indices
         }
         if (mapIdx >= RX_MAPPABLE_CHANNEL_COUNT) {
             continue;  // Skip invalid indices

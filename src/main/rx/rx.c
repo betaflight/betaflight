@@ -809,9 +809,9 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 void parseRcChannels(const char *input, rxConfig_t *rxConfig)
 {
     // Initialize all rc map values to 255 (indicating unmapped)
-	for (uint8_t i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-	rxConfig->rcmap[i] = RCMAP_UNMAPPED_INDEX;
-	}
+    for (uint8_t i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
+        rxConfig->rcmap[i] = RCMAP_UNMAPPED_INDEX;
+    }
     for (const char *c = input; *c; c++) {
         const char *s = strchr(rcChannelLetters, *c);
         if (s && (s < rcChannelLetters + RX_MAPPABLE_CHANNEL_COUNT)) {
