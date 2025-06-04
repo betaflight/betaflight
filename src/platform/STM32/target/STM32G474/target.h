@@ -21,11 +21,11 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "H743"
+#define TARGET_BOARD_IDENTIFIER "G474"
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight STM32H743"
+#define USBD_PRODUCT_STRING     "Betaflight STM32G474"
 #endif
 
 #define USE_I2C_DEVICE_1
@@ -40,17 +40,12 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define USE_UART6
-#define USE_UART7
-#define USE_UART8
 #define USE_LPUART1
 
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
 #define USE_SPI_DEVICE_4
-#define USE_SPI_DEVICE_5
-#define USE_SPI_DEVICE_6
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
@@ -58,19 +53,13 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
-#define TARGET_IO_PORTG 0xffff
-#define TARGET_IO_PORTH 0xffff
-#define TARGET_IO_PORTI 0xffff
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
 #define USE_BEEPER
 
-#ifdef USE_SDCARD
-#define USE_SDCARD_SPI
-#define USE_SDCARD_SDIO
-#endif
+#undef USE_SDCARD
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
@@ -81,11 +70,9 @@
 #define USE_ESCSERIAL
 
 #define USE_ADC
+
 #define USE_EXTI
+
+#define USE_PID_DENOM_CHECK
+
 #define USE_TIMER_UP_CONFIG
-
-#define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
-
-#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
-#define USE_LED_STRIP_CACHE_MGMT
-#endif
