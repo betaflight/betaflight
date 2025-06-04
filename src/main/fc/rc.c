@@ -339,7 +339,6 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterTau(rcSmoothingFilter_t *smoo
 {
     const float cen_tau = smoothingData->setpointTauCenter;
     const float end_tau = smoothingData->setpointTauEnd;
-    const float throttle_tau = smoothingData->throttleTau;
 
     const float dT = targetPidLooptime * 1e-6f;
 
@@ -430,9 +429,13 @@ static FAST_CODE void processRcSmoothingFilter(void)
         rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting;
         rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
 
-        rcSmoothingData.setpointTauCenter = rxConfig()->rc_smoothing_setpoint_tau_center / 10.0f;
-        rcSmoothingData.setpointTauEnd = rxConfig()->rc_smoothing_setpoint_tau_end / 10.0f;
-        rcSmoothingData.throttleTau = rxConfig()->rc_smoothing_throttle_tau / 10.0f;
+        const float cen_tau = rxConfig()->rc_smoothing_setpoint_tau_center;
+        const float end_tau = rxConfig()->rc_smoothing_setpoint_tau_end;
+        const float throttle_tau = rxConfig()->rc_smoothing_throttle_tau;
+        // unit is 10th of a millisecond, sort of
+        rcSmoothingData.setpointTauCenter = cen_tau / 10000.0f + cen_tau * cen_tau / 1250000.0f;
+        rcSmoothingData.setpointTauEnd = end_tau / 10000.0f + end_tau * end_tau / 1250000.0f;
+        rcSmoothingData.throttleTau = throttle_tau / 10000.0f + throttle_tau * throttle_tau / 1250000.0f;
 
         if (rxConfig()->rc_smoothing_mode) {
             calculateCutoffs = rcSmoothingAutoCalculate();
@@ -443,7 +446,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
 
                     rcSmoothingSetFilterTau(&rcSmoothingData);
                     const float pt3K = pt3FilterGainFromDelay(rcSmoothingData.throttleTau, dT);
-                    pt3FilterUpdateCutoff(rcSmoothingData->filterSetpoint[3], pt3K);
+                    pt3FilterUpdateCutoff(&rcSmoothingData.filterSetpoint[3], pt3K);
                 } else {
                     rcSmoothingSetFilterCutoffs(&rcSmoothingData);
                 }

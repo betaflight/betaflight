@@ -113,6 +113,10 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .sbus_baud_fast = false,
         .msp_override_channels_mask = 0,
         .crsf_use_negotiated_baud = false,
+        .rc_smoothing_use_tau = false,
+        .rc_smoothing_setpoint_tau_center = 50,
+        .rc_smoothing_setpoint_tau_end = 15,
+        .rc_smoothing_throttle_tau = 20,
     );
 
 #ifdef RX_CHANNELS_TAER
