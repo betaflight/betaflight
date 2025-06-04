@@ -674,14 +674,10 @@ static void readRxChannelsApplyRanges(void)
             if (rawChannel == RCMAP_UNMAPPED_INDEX) {
                 sample = rxConfig()->midrc;
                 unmappedCount++;
-            }
-            else {
-                if (channel < RX_MAPPABLE_CHANNEL_COUNT) {
-                    sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, rawChannel);
-                }
-                else {
-                    sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, rawChannel - unmappedCount);
-                }
+            } else {
+                sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, channel < RX_MAPPABLE_CHANNEL_COUNT
+                    ? rawChannel
+                    : rawChannel - unmappedCount);
             }
         }
 
