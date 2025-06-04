@@ -216,9 +216,11 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 
     if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
         bool isBitbangActive = false;
 #ifdef USE_DSHOT_BITBANG
         isBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
+#endif
 #endif
         // Fake command in queue. Blocking commands are launched from cli, and no inline commands are running
         for (uint8_t i = 0; i < motorDeviceCount(); i++) {

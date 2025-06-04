@@ -255,6 +255,7 @@ static void mspEscPassthroughFn(serialPort_t *serialPort)
 }
 #endif
 
+#ifdef USE_SERIAL_PASSTHROUGH
 static serialPort_t *mspFindPassthroughSerialPort(void)
 {
     serialPortUsage_t *portUsage = NULL;
@@ -284,6 +285,7 @@ static void mspSerialPassthroughFn(serialPort_t *serialPort)
         serialPassthrough(passthroughPort, serialPort, NULL, NULL);
     }
 }
+#endif
 
 static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
@@ -297,6 +299,7 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
     }
 
     switch (mspPassthroughMode) {
+#ifdef USE_SERIAL_PASSTHROUGH
     case MSP_PASSTHROUGH_SERIAL_ID:
     case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
         if (mspFindPassthroughSerialPort()) {
@@ -308,6 +311,9 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
             sbufWriteU8(dst, 0);
         }
         break;
+#else
+    UNUSED(mspPostProcessFn);
+#endif
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     case MSP_PASSTHROUGH_ESC_4WAY:
         // get channel number
