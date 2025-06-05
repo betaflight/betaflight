@@ -90,6 +90,8 @@ typedef struct rcSmoothingFilter_s {
     pt3Filter_t filterSetpoint[4];
     pt3Filter_t filterRcDeflection[RP_AXIS_COUNT];
     pt3Filter_t filterFeedforward[3];
+    pt1Filter_t filterSetpointSpeed[3];
+    pt1Filter_t filterSetpointDelta[3];
 
     uint8_t setpointCutoffSetting;
     uint8_t throttleCutoffSetting;

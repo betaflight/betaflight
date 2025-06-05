@@ -340,58 +340,38 @@ bool getRxRateValid(void)
 static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
 {
     // in auto mode, calculate the RC smoothing cutoff from the smoothed Rx link frequency
-    const uint16_t oldSetpointCutoff = smoothingData->setpointCutoffFrequency;
-    const uint16_t oldThrottleCutoff = smoothingData->throttleCutoffFrequency;
-    const uint16_t minCutoffHz = 15; // don't let any RC smoothing filter cutoff go below 15Hz
+    const float minCutoffHz = 15.0f; // don't let any RC smoothing filter cutoff go below 15Hz
 
     const bool autoSetpointSmoothing = smoothingData->setpointCutoffSetting == 0;
     const bool autoThrottleSmoothing = smoothingData->throttleCutoffSetting == 0;
 
+    float setpointCutoffFrequency = smoothingData->setpointCutoffFrequency;
+    float throttleCutoffFrequency = smoothingData->throttleCutoffFrequency;
     if (autoSetpointSmoothing) {
-        smoothingData->setpointCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint));
+        setpointCutoffFrequency = MAX(minCutoffHz, smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint);
     }
 
     if (autoThrottleSmoothing) {
-        smoothingData->throttleCutoffFrequency = MAX(minCutoffHz, (uint16_t)(smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorThrottle));
+        throttleCutoffFrequency = MAX(minCutoffHz, smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorThrottle);
     }
 
     const float dT = targetPidLooptime * 1e-6f;
-    const float setpointCutoffFrequency = smoothingData->setpointCutoffFrequency;
-    const float throttleCutoffFrequency = smoothingData->throttleCutoffFrequency;
 
-    if (!smoothingData->filterInitialized) {
-        for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(setpointCutoffFrequency, dT));
-            pt3FilterInit(&smoothingData->filterFeedforward[i], pt3FilterGain(setpointCutoffFrequency, dT));
-        }
-        for (int i = FD_ROLL; i < FD_YAW; i++) {
-           pt3FilterInit(&smoothingData->filterRcDeflection[i], pt3FilterGain(setpointCutoffFrequency, dT));
-        }
-        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[3], pt3FilterGain(throttleCutoffFrequency, dT));
+    // Update the RC Setpoint/Deflection filter and FeedForward Filter
+    // all cutoffs will be the same, we can optimize :)
+    const float pt3K = pt3FilterGain(setpointCutoffFrequency, dT);
+    for (int i = FD_ROLL; i <= FD_YAW; i++) {
+        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K);
+        pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K);
+    }
+    for (int i = FD_ROLL; i <= FD_PITCH; i++) {
+        pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
     }
 
-    // note that cutoff frequencies are integers, filter cutoffs won't re-calculate until there is > 1hz variation from previous cutoff
-    if (smoothingData->setpointCutoffFrequency != oldSetpointCutoff) {
-        // Update the RC Setpoint/Deflection filter and FeedForward Filter
-        // all cutoffs will be the same, we can optimize :)
-        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[0], pt3FilterGain(setpointCutoffFrequency, dT));
-        const float pt3K = smoothingData->filterSetpoint[0].k;
-        for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K);
-            pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K);
-        }
-        for (int i = FD_ROLL; i < FD_YAW; i++) {
-            pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
-        }
-    }
-
-    // Update the throttle filter
-    if (smoothingData->throttleCutoffFrequency != oldThrottleCutoff) {
-        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[3], pt3FilterGain(throttleCutoffFrequency, dT));
-    }
+    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[3], pt3FilterGain(throttleCutoffFrequency, dT));
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 1, smoothingData->setpointCutoffFrequency);
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, 0);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->throttleCutoffFrequency);
 }
 
 // Determine if we need to calculate filter cutoffs. If not then we can avoid
@@ -531,8 +511,6 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     static float prevRcCommand[3];                  // for rcCommandDelta test
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
     static float prevSetpoint[3];                   // equals raw unless extrapolated forward
-    static float prevSetpointSpeed[3];              // for setpointDelta calculation
-    static float prevSetpointSpeedDelta[3];         // for duplicate extrapolation
     static bool isPrevPacketDuplicate[3];           // to identify multiple identical packets
 
     const float rcCommandDelta = rcCommand[axis] - prevRcCommand[axis];
@@ -569,7 +547,9 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
                 if (fabsf(setpoint) < 0.90f * maxRcRate[axis]) {
                     // this is a single packet duplicate, and we assume that it is of approximately normal duration
                     // hence no multiplication of prevSetpointSpeedDelta by rxInterval / prevRxInterval
-                    setpointSpeed = prevSetpointSpeed[axis] + prevSetpointSpeedDelta[axis];
+                    float prevSetpointSpeed = rcSmoothingData.filterSetpointSpeed[axis].state;
+                    float prevSetpointDelta = rcSmoothingData.filterSetpointDelta[axis].state;
+                    setpointSpeed = prevSetpointSpeed + prevSetpointDelta;
                     // pretend that there was stick movement also, to hold the same jitter value
                     rcCommandDeltaAbs = prevRcCommandDeltaAbs[axis];
                 }
@@ -579,7 +559,7 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
                 setpointSpeed = 0.0f;
                 // zero the acceleration by setting previous speed to zero
                 // feedforward will smoothly decay and be attenuated by the jitter reduction value for zero rcCommandDelta
-                prevSetpointSpeed[axis] = 0.0f; // zero acceleration later on
+                rcSmoothingData.filterSetpointSpeed[axis].state = 0.0f; // zero acceleration later on
             }
             isPrevPacketDuplicate[axis] = isDuplicate;
         }
@@ -612,16 +592,18 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
     // smooth the setpointSpeed value
-    const float pt1_k = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / rxRate);
-    setpointSpeed = prevSetpointSpeed[axis] + pt1_k * (setpointSpeed - prevSetpointSpeed[axis]);
+    const float pt1K = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / rxRate);
+    pt1FilterUpdateCutoff(&rcSmoothingData.filterSetpointSpeed[axis], pt1K);
+    // grab the previous output from the filter
+    float prevSetpointSpeed = rcSmoothingData.filterSetpointSpeed[axis].state;
+    setpointSpeed = pt1FilterApply(&rcSmoothingData.filterSetpointSpeed[axis], setpointSpeed);
 
     // calculate setpointDelta from smoothed setpoint speed
-    setpointSpeedDelta = setpointSpeed - prevSetpointSpeed[axis];
-    prevSetpointSpeed[axis] = setpointSpeed;
+    setpointSpeedDelta = setpointSpeed - prevSetpointSpeed;
 
     // smooth the setpointDelta element (effectively a second order filter since incoming setpoint was already smoothed)
-    setpointSpeedDelta = prevSetpointSpeedDelta[axis] + pt1_k * (setpointSpeedDelta - prevSetpointSpeedDelta[axis]);
-    prevSetpointSpeedDelta[axis] = setpointSpeedDelta;
+    pt1FilterUpdateCutoff(&rcSmoothingData.filterSetpointDelta[axis], pt1K);
+    setpointSpeedDelta = pt1FilterApply(&rcSmoothingData.filterSetpointDelta[axis], setpointSpeedDelta);
 
     // apply gain factor to delta and adjust for rxRate
     const float feedforwardBoost = setpointSpeedDelta * rxRate * pid->feedforwardBoostFactor;
