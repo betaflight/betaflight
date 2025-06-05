@@ -349,10 +349,12 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     float throttleCutoffFrequency = smoothingData->throttleCutoffFrequency;
     if (autoSetpointSmoothing) {
         setpointCutoffFrequency = MAX(minCutoffHz, smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint);
+        smoothingData->setpointCutoffFrequency = setpointCutoffFrequency; // update for logging
     }
 
     if (autoThrottleSmoothing) {
         throttleCutoffFrequency = MAX(minCutoffHz, smoothingData->smoothedRxRateHz * smoothingData->autoSmoothnessFactorThrottle);
+        smoothingData->throttleCutoffFrequency = throttleCutoffFrequency; // update for logging
     }
 
     const float dT = targetPidLooptime * 1e-6f;
