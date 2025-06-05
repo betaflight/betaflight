@@ -1034,7 +1034,7 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     // NEROS Change:
     // The number of configs is determined by the second parameter in {&tmpPidProfileIndex, N, pidProfileNamePtrs}.
     // N corresponds to N + 1 parameters being displayed on the screen.
-    {"ARCHER CONFIG",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, 2, pidProfileNamePtrs}},
+    {"ARCHER CONFIG",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, 1, pidProfileNamePtrs}},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},
 #ifdef USE_SIMPLIFIED_TUNING
     {"SIMPLIFIED TUNING",   OME_Submenu, cmsMenuChange,                 &cmsx_menuSimplifiedTuning},
