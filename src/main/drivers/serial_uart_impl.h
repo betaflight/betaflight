@@ -37,7 +37,6 @@
 #include "platform/rcc_types.h"
 #endif
 
-
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
 #endif
