@@ -36,4 +36,4 @@
 
 #define I2CDEV_COUNT        0
 
-#define ADC_TypeDef       void*   // Dummy definition for ADC_TypeDef
+typedef void* ADC_TypeDef; // Dummy definition for ADC_TypeDef
