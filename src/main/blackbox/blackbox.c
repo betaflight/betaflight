@@ -1040,14 +1040,14 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
         blackboxWriteUnsignedVB(currentTimeUs - blackboxHistory[1]->time);
     }
 
-    blackboxWriteUnsignedVB(gpsSol.numSat);
+    blackboxWriteUnsignedVB((int8_t)getExternalTemperature());
     blackboxWriteSignedVB(gpsSol.llh.lat - gpsHistory.GPS_home[GPS_LATITUDE]);
     blackboxWriteSignedVB(gpsSol.llh.lon - gpsHistory.GPS_home[GPS_LONGITUDE]);
     blackboxWriteUnsignedVB(gpsSol.llh.altCm / 10); // was originally designed to transport meters in int16, but +-3276.7m is a good compromise
     blackboxWriteUnsignedVB(gpsSol.groundSpeed);
     blackboxWriteUnsignedVB(gpsSol.groundCourse);
 
-    gpsHistory.GPS_numSat = gpsSol.numSat;
+    gpsHistory.GPS_numSat = (int8_t)getExternalTemperature();
     gpsHistory.GPS_coord[GPS_LATITUDE] = gpsSol.llh.lat;
     gpsHistory.GPS_coord[GPS_LONGITUDE] = gpsSol.llh.lon;
 }
@@ -1668,7 +1668,16 @@ STATIC_UNIT_TESTED bool blackboxShouldLogIFrame(void)
  */
 #ifdef USE_GPS
 STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
-{
+{   
+    // This will help call writeGPSFrame() once and if there is a change in
+    // ESC temperature, it will automatically get called.
+    static bool init = false;
+
+    if (init == false) {
+        init = true;
+        return true;
+    }
+
     if ((GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
         || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0)) && isFieldEnabled(FIELD_SELECT(GPS))) {
         return true;
