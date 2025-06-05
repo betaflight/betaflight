@@ -246,6 +246,9 @@ SPARE3          P47
 #define SPIDEV_COUNT 2
 #define MAX_SPI_PIN_SEL 4
 
+#define I2CDEV_COUNT 2
+#define MAX_I2C_PIN_SEL 4
+
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 
