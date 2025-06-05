@@ -57,6 +57,8 @@ float pt1FilterGainFromDelay(float delay, float dT)
         return 1.0f; // gain = 1 means no filtering
     }
 
+    // cutoffHz = 1.0f / (2.0f * M_PIf * delay)
+
     return dT / (dT + delay);
 }
 
@@ -91,6 +93,8 @@ float pt2FilterGainFromDelay(float delay, float dT)
     if (delay <= 0) {
         return 1.0f; // gain = 1 means no filtering
     }
+
+    // cutoffHz = 1.0f / (2.0f * M_PIf * delay * CUTOFF_CORRECTION_PT2)
 
     return dT / (dT + delay * CUTOFF_CORRECTION_PT2);
 }
@@ -128,6 +132,8 @@ float pt3FilterGainFromDelay(float delay, float dT)
     if (delay <= 0) {
         return 1.0f; // gain = 1 means no filtering
     }
+
+    // cutoffHz = 1.0f / (2.0f * M_PIf * delay * CUTOFF_CORRECTION_PT3)
 
     return dT / (dT + delay * CUTOFF_CORRECTION_PT3);
 }
