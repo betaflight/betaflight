@@ -269,10 +269,12 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
         }
         handleUsartTxDma(s);
     }
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
     {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
     }
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
     {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
