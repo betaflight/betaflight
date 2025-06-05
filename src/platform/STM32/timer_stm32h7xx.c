@@ -29,7 +29,7 @@
 #include "timer_def.h"
 
 #include "stm32h7xx.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {

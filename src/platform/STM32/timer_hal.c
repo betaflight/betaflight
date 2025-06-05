@@ -36,7 +36,7 @@
 #include "drivers/io.h"
 #include "drivers/dma.h"
 
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "drivers/timer.h"
 #include "drivers/timer_impl.h"

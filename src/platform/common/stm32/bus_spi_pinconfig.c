@@ -33,7 +33,7 @@
 #include "drivers/dma.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "pg/bus_spi.h"
 

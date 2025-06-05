@@ -42,7 +42,6 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
-#include "drivers/rcc.h"
 #include "drivers/serial.h"
 #include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"

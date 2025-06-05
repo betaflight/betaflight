@@ -23,7 +23,10 @@
 #include "platform.h"
 
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
+
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc_types.h"
+#endif
 
 #define I2C_TIMEOUT_US          10000
 #define I2C_TIMEOUT_SYS_TICKS   (I2C_TIMEOUT_US / 1000)

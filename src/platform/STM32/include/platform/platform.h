@@ -441,3 +441,10 @@ extern uint8_t _dmaram_end__;
 #else
 #define I2CDEV_COUNT 4
 #endif
+
+// QUAD SPI
+#if defined(STM32H7)
+#define QUADSPI_TRAIT_AF_PIN 1
+#define QUADSPI_TRAIT_HANDLE 1
+#define MAX_QUADSPI_PIN_SEL 3
+#endif
