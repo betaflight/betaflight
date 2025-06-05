@@ -395,7 +395,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         }
 #endif
         dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
-    } while(false);
+    } while (false);
 
     DDL_TMR_OC_Init(timer, channel, &OCINIT);
     DDL_TMR_OC_EnablePreload(timer, channel);
