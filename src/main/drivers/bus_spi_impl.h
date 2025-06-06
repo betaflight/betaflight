@@ -67,7 +67,8 @@ typedef struct SPIDevice_s {
     uint8_t sckAF;
     uint8_t misoAF;
     uint8_t mosiAF;
-#else
+#endif
+#if SPI_TRAIT_AF_PORT
     uint8_t af;
 #endif
 #if SPI_TRAIT_HANDLE
