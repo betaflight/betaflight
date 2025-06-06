@@ -42,7 +42,7 @@
 #include "drivers/nvic.h"
 #include "drivers/inverter.h"
 #include "drivers/dma.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"

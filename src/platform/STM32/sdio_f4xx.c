@@ -44,7 +44,7 @@
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/dma.h"
 #include "drivers/light_led.h"
 

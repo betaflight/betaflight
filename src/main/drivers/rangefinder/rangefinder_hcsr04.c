@@ -30,7 +30,6 @@
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
 #include "drivers/time.h"
 
 #include "drivers/rangefinder/rangefinder.h"
