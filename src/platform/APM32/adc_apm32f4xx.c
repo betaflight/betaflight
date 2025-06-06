@@ -270,8 +270,7 @@ void adcInit(const adcConfig_t *config)
         adcInitDevice(&adcInternal, 2);
         DDL_ADC_Enable(adcInternal.ADCx);
         adcInitInternalInjected(&adcInternal);
-    }
-    else {
+    } else {
         // Initialize for injected conversion
         adcInitInternalInjected(&adc);
     }

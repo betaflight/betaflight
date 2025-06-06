@@ -121,10 +121,11 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCM_CSTS_SWRSTFLG)
+    if (cachedRccCsrValue & RCM_CSTS_SWRSTFLG) {
         return true;
-    else
+    } else {
         return false;
+    }
 }
 
 void systemInit(void)

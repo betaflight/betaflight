@@ -450,14 +450,15 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 
     bbGpioSetup(&bbMotors[motorIndex]);
 
+    do {
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_INVERTED);
-    } else
-#endif
-    {
-        bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_NONINVERTED);
+        break;
     }
+#endif
+        bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_NONINVERTED);
+    } while (false);
 
     bbSwitchToOutput(bbPort);
 
@@ -577,14 +578,15 @@ static void bbWriteInt(uint8_t motorIndex, uint16_t value)
 
     bbPort_t *bbPort = bbmotor->bbPort;
 
+    do {
 #ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        bbOutputDataSet(bbPort->portOutputBuffer, bbmotor->pinIndex, packet, DSHOT_BITBANG_INVERTED);
-    } else
+        if (useDshotTelemetry) {
+            bbOutputDataSet(bbPort->portOutputBuffer, bbmotor->pinIndex, packet, DSHOT_BITBANG_INVERTED);
+            break;
+        }
 #endif
-    {
         bbOutputDataSet(bbPort->portOutputBuffer, bbmotor->pinIndex, packet, DSHOT_BITBANG_NONINVERTED);
-    }
+    } while (false);
 }
 
 static void bbWrite(uint8_t motorIndex, float value)
@@ -614,11 +616,8 @@ static void bbUpdateComplete(void)
                 bbPort->inputActive = false;
                 bbSwitchToOutput(bbPort);
             }
-        } else
-#endif
-        {
-            // Nothing to do
         }
+#endif
 
         bbDMA_Cmd(bbPort, ENABLE);
     }

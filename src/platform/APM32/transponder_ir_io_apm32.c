@@ -165,6 +165,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         /* Configuration Error */
         return;
     }
+
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         if (DAL_TMREx_PWMN_Start(&TmrHandle, timerChannel) != DAL_OK) {
             /* Starting PWM generation Error */
