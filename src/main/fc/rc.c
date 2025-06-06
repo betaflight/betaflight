@@ -370,7 +370,7 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
     }
 
-    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[3], pt3FilterGain(throttleCutoffFrequency, dT));
+    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3FilterGain(throttleCutoffFrequency, dT));
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 1, smoothingData->setpointCutoffFrequency);
     DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->throttleCutoffFrequency);
