@@ -382,7 +382,7 @@ static void detectIlluminator(void) {
     
     // Get the illuminator state based on handset stick position.
     // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
-    if (rx_aux2 < 1250.0f) {
+    if (rx_aux2 < 1250.0f || (rx_aux2 > 1498.0f && rx_aux2 < 1502.0f)) {
         illuminatorControlRuntime.illuminator_status = LED_OFF;
     }
     else if ( rx_aux2 > 1375.0f && rx_aux2 < 1675.0f ) {
