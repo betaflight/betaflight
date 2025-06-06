@@ -56,17 +56,12 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     bbPort->gpioModeInput |= (DDL_GPIO_MODE_INPUT << (pinIndex * 2));
     bbPort->gpioModeOutput |= (DDL_GPIO_MODE_OUTPUT << (pinIndex * 2));
 
-    do {
+    bool inverted = false;
 #ifdef USE_DSHOT_TELEMETRY
-        if (useDshotTelemetry) {
-            bbPort->gpioIdleBSRR |= (1 << pinIndex);     // BS (lower half)
-            IOWrite(bbMotor->io, 1);
-            break;
-        }
+    inverted = true;
 #endif
-        bbPort->gpioIdleBSRR |= (1 << (pinIndex + 16));  // BR (higher half)
-        IOWrite(bbMotor->io, 0);
-    } while (false);
+    bbPort->gpioIdleBSRR |= (1 << pinIndex) + (inverted ? 0 : 16); // write BITSET or BITRESET half of BSRR
+    IOWrite(bbMotor->io, inverted);
 }
 
 void bbTimerChannelInit(bbPort_t *bbPort)
