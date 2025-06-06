@@ -342,13 +342,13 @@ static FAST_CODE_NOINLINE void rcSmoothingUpdateFilterTau(rcSmoothingFilter_t *s
 
     const float dT = targetPidLooptime * 1e-6f;
 
-    for (int i = FD_ROLL; i <= FD_YAW; i++) {
-        const float tau = (1.0f - rcDeflectionAbs[i]) * cen_tau + rcDeflectionAbs[i] * end_tau;
+    for (unsigned int i = FD_ROLL; i <= FD_YAW; i++) {
+        const float tau = lerp(rcDeflectionAbs[i], cen_tau, end_tau);
         const float pt3K = pt3FilterGainFromDelay(tau, dT);
 
         pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K);
         pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K);
-        if (i < FD_YAW) {
+        if (i < ARRAYLEN(smoothingData->filterRcDeflection)) {
             pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
         }
     }

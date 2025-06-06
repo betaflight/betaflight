@@ -164,3 +164,7 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
+
+static inline float lerp(float t, float a, float b) {
+    return a + t * (b - a);
+}
