@@ -61,6 +61,9 @@ typedef struct controlRateConfig_s {
     char profileName[MAX_RATE_PROFILE_NAME_LENGTH + 1]; // Descriptive name for rate profile
     uint8_t quickRatesRcExpo;               // Sets expo on rc command for quick rates
     uint8_t thrHover8;
+    uint8_t rc_smoothing_setpoint_tau_center;  // center stick tau for rc smoothing
+    uint8_t rc_smoothing_setpoint_tau_end;     // end stick tau for rc smoothing
+    uint8_t rc_smoothing_throttle_tau;         // throttle tau for rc smoothing
 } controlRateConfig_t;
 
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);

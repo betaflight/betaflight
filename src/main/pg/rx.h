@@ -64,9 +64,6 @@ typedef struct rxConfig_s {
     uint8_t msp_override_failsafe;             // if false then extra RC link is always required in msp_override mode, true - allows control via msp_override without extra RC link (autonomous use case)
     uint8_t crsf_use_negotiated_baud;          // Use negotiated baud rate for CRSF V3
     uint8_t rc_smoothing_use_tau;              // if set to 1 it will use the tau values for filtering
-    uint8_t rc_smoothing_setpoint_tau_center;  // center stick tau for rc smoothing
-    uint8_t rc_smoothing_setpoint_tau_end;     // end stick tau for rc smoothing
-    uint8_t rc_smoothing_throttle_tau;         // throttle tau for rc smoothing
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
