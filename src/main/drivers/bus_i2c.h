@@ -23,7 +23,6 @@
 #include "platform.h"
 
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
 
 #ifndef I2C_DEVICE
 #define I2C_DEVICE I2CINVALID

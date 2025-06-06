@@ -22,7 +22,6 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rcc.h"
 
 #include "common/utils.h"
 

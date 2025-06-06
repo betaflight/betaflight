@@ -41,7 +41,7 @@
 #include "common/utils.h"
 #include "drivers/inverter.h"
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "drivers/dma.h"
 

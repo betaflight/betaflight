@@ -20,6 +20,12 @@
 
 #pragma once
 
+#include "platform.h"
+
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc_types.h"
+#endif
+
 #define SPI_TIMEOUT_US  10000
 
 #define BUS_SPI_FREE   0x0
@@ -40,9 +46,11 @@ typedef struct spiHardware_s {
 #if SPI_TRAIT_AF_PORT
     uint8_t af;
 #endif
+
 #if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;
 #endif
+
 #ifdef USE_DMA
     uint8_t dmaIrqHandler;
 #endif
@@ -59,7 +67,8 @@ typedef struct SPIDevice_s {
     uint8_t sckAF;
     uint8_t misoAF;
     uint8_t mosiAF;
-#else
+#endif
+#if SPI_TRAIT_AF_PORT
     uint8_t af;
 #endif
 #if SPI_TRAIT_HANDLE

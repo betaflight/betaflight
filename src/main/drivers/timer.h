@@ -25,7 +25,11 @@
 
 #include "drivers/dma.h"
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
+
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc_types.h"
+#endif
+
 #include "drivers/resource.h"
 
 #ifdef USE_TIMER
@@ -69,7 +73,9 @@ typedef struct timerOvrHandlerRec_s {
 
 typedef struct timerDef_s {
     TIM_TypeDef *TIMx;
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;
+#endif
     uint8_t inputIrq;
 } timerDef_t;
 
@@ -180,7 +186,9 @@ uint32_t timerClock(const TIM_TypeDef *tim);
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);  // TODO - just for migration
 void timerReconfigureTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);
 
+#if PLATFORM_TRAIT_RCC
 rccPeriphTag_t timerRCC(const TIM_TypeDef *tim);
+#endif
 uint8_t timerInputIrq(const TIM_TypeDef *tim);
 
 #if defined(USE_TIMER_MGMT)
