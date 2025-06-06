@@ -255,6 +255,7 @@ static void mspEscPassthroughFn(serialPort_t *serialPort)
 }
 #endif
 
+#ifdef USE_SERIAL_PASSTHROUGH
 static serialPort_t *mspFindPassthroughSerialPort(void)
 {
     serialPortUsage_t *portUsage = NULL;
