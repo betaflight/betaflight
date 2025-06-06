@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42653)
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
 
 #include "common/axis.h"
 #include "common/utils.h"
@@ -284,6 +284,9 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
         case ICM42688P_WHO_AM_I_CONST:
             icmDetected = ICM_42688P_SPI;
             break;
+        case IIM42652_WHO_AM_I_CONST:
+            icmDetected = IIM_42652_SPI;
+            break;
         case IIM42653_WHO_AM_I_CONST:
             icmDetected = IIM_42653_SPI;
             break;
@@ -306,6 +309,7 @@ void icm426xxAccInit(accDev_t *acc)
 {
     switch (acc->mpuDetectionResult.sensor) {
     case IIM_42653_SPI:
+    case IIM_42652_SPI:
         acc->acc_1G = 512 * 2; // Accel scale 32g (1024 LSB/g)
         break;
     default:
@@ -319,6 +323,7 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_42605_SPI:
     case ICM_42688P_SPI:
+    case IIM_42652_SPI:
     case IIM_42653_SPI:
         break;
     default:
@@ -427,6 +432,7 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
     case ICM_42688P_SPI:
         gyro->scale = GYRO_SCALE_2000DPS;
         break;
+    case IIM_42652_SPI:
     case IIM_42653_SPI:
         gyro->scale = GYRO_SCALE_4000DPS;
         break;
@@ -444,6 +450,8 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
 {
     switch (gyroModel){
     case ICM_42605_SPI:
+    case IIM_42652_SPI:
+    case IIM_42653_SPI:
         switch (config) {
         case GYRO_HARDWARE_LPF_NORMAL:
             return aafLUT42605[AAF_CONFIG_258HZ];
@@ -456,7 +464,6 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
         }
 
     case ICM_42688P_SPI:
-    case IIM_42653_SPI:
     default:
         switch (config) {
         case GYRO_HARDWARE_LPF_NORMAL:
@@ -475,4 +482,4 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
     }
 }
 
-#endif // USE_GYRO_SPI_ICM42605 || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42653
+#endif // USE_GYRO_SPI_ICM42605 || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42652 || USE_ACCGYRO_IIM42653
