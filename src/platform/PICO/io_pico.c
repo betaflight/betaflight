@@ -27,8 +27,12 @@
 #include "common/utils.h"
 #include "hardware/gpio.h"
 
-// initialize all ioRec_t structures from ROM
-// currently only bitmask is used, this may change in future
+#if DEFIO_PORT_USED_COUNT > 1
+#error PICO code currently based on a single io port
+#endif
+
+// Initialize all ioRec_t structures.
+// PICO (single port) doesn't use the gpio field.
 void IOInitGlobal(void)
 {
     ioRec_t *ioRec = ioRecs;
@@ -37,6 +41,15 @@ void IOInitGlobal(void)
         ioRec->pin = pin;
         ioRec++;
     }
+
+#ifdef PICO_TRACE
+#ifdef PICO_DEFAULT_UART_TX_PIN
+    ioRecs[PICO_DEFAULT_UART_TX_PIN].owner = OWNER_SYSTEM;
+#endif
+#ifdef PICO_DEFAULT_UART_RX_PIN
+    ioRecs[PICO_DEFAULT_UART_RX_PIN].owner = OWNER_SYSTEM;
+#endif
+#endif
 }
 
 uint32_t IO_EXTI_Line(IO_t io)
@@ -105,7 +118,9 @@ SPI_IO_CS_HIGH_CFG (as defined)
     }
 
     uint16_t ioPin = IO_Pin(io);
-    gpio_init(ioPin);
+    if (gpio_get_function(ioPin) == GPIO_FUNC_NULL) {
+        gpio_init(ioPin);
+    }
     gpio_set_dir(ioPin, (cfg & 0x01)); // 0 = in, 1 = out
 }
 
@@ -123,4 +138,31 @@ IO_t IOGetByTag(ioTag_t tag)
     }
 
     return &ioRecs[pinIdx];
+}
+
+int IO_GPIOPortIdx(IO_t io)
+{
+    if (!io) {
+        return -1;
+    }
+    return 0; // Single port
+}
+
+int IO_GPIO_PortSource(IO_t io)
+{
+    return IO_GPIOPortIdx(io);
+}
+
+// zero based pin index
+int IO_GPIOPinIdx(IO_t io)
+{
+    if (!io) {
+        return -1;
+    }
+    return IO_Pin(io);
+}
+
+int IO_GPIO_PinSource(IO_t io)
+{
+    return IO_GPIOPinIdx(io);
 }

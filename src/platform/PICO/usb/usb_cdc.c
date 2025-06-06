@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+// TODO replace with stdio_usb from pico-sdk, with a few wrappers
+
 #include "platform.h"
 
 #include "tusb_config.h"
