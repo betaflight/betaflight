@@ -38,7 +38,7 @@
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define I2C_TypeDef          I2C0_Type
-#define I2C_INST(i2c) ((i2c_inst_t *)(i2c))
+#define I2C_INST(i2c)        ((i2c_inst_t *)(i2c))
 
 #define GPIO_TypeDef         io_bank0_hw_t
 //#define GPIO_InitTypeDef
@@ -66,7 +66,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 // which are defined in pico-sdk as SPI0_Type*.
 // SPI_INST converts to the correct type for use in pico-sdk functions.
 #define SPI_TypeDef          SPI0_Type
-#define SPI_INST(spi) ((spi_inst_t *)(spi))
+#define SPI_INST(spi)        ((spi_inst_t *)(spi))
 
 #endif
 
@@ -76,7 +76,16 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define FAST_IRQ_HANDLER
 
 #define DEFAULT_CPU_OVERCLOCK           0
-#define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
+
+#ifdef TEST_SLOW_SCHEDULE
+// (testing) allow time for more / all tasks
+// 1000 // 50000 // 125 // 125us = 8kHz
+#define TASK_GYROPID_DESIRED_PERIOD     30000
+#else
+// 125us = 8kHz
+#define TASK_GYROPID_DESIRED_PERIOD     125
+#endif
+
 #define SCHEDULER_DELAY_LIMIT           10
 
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
@@ -95,7 +104,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define SPI_IO_AF_SCK_CFG_HIGH  0
 #define SPI_IO_AF_SCK_CFG_LOW   0
 #define SPI_IO_AF_SDI_CFG       0
-#define SPI_IO_CS_CFG           0
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_OUT, 0, 0) // todo pullup/down etc.
 
 
 #define SERIAL_UART_FIRST_INDEX     0
