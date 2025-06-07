@@ -376,10 +376,13 @@ MCU_COMMON_SRC = \
             drivers/inverter.c \
             drivers/bus_spi.c \
             drivers/bus_spi_config.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_i2c_utils.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
             drivers/usb_io.c \
             drivers/dshot.c \
+            PICO/dma_pico.c \
             PICO/dshot_pico.c \
             PICO/pwm_pico.c \
             PICO/stdio_pico_stub.c \
@@ -387,6 +390,7 @@ MCU_COMMON_SRC = \
             PICO/system.c \
             PICO/io_pico.c \
             PICO/bus_spi_pico.c \
+            PICO/bus_i2c_pico.c \
             PICO/serial_uart_pico.c \
             PICO/exti_pico.c \
             PICO/config_flash.c \

@@ -19,13 +19,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
- #pragma once
+#pragma once
 
- #include "platform.h"
+#include "platform.h"
 
 typedef enum {
     DMA_NONE = 0,
-    DMA_CH1_HANDLER = 1,
+    DMA_CH0_HANDLER = 1,
+    DMA_CH1_HANDLER,
     DMA_CH2_HANDLER,
     DMA_CH3_HANDLER,
     DMA_CH4_HANDLER,
@@ -36,14 +37,31 @@ typedef enum {
     DMA_CH9_HANDLER,
     DMA_CH10_HANDLER,
     DMA_CH11_HANDLER,
-    DMA_CH12_HANDLER,
 #ifdef RP2350
+    DMA_CH12_HANDLER,
     DMA_CH13_HANDLER,
     DMA_CH14_HANDLER,
     DMA_CH15_HANDLER,
-    DMA_CH16_HANDLER,
-    DMA_LAST_HANDLER = DMA_CH16_HANDLER
+    DMA_LAST_HANDLER = DMA_CH15_HANDLER
 #else
-    DMA_LAST_HANDLER = DMA_CH12_HANDLER
+    DMA_LAST_HANDLER = DMA_CH11_HANDLER
 #endif
 } dmaIdentifier_e;
+
+#define DMA_DEVICE_NO(x)    (0)
+#define DMA_DEVICE_INDEX(x) ((x)-1)
+#define DMA_OUTPUT_INDEX    0
+#define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
+#define DMA_INPUT_STRING    "DMA%d_CH%d"
+
+#define DEFINE_DMA_CHANNEL(c) { \
+    .dma = NULL, \
+    .ref = NULL, \
+    .channel = c-1, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = 0, \
+    .irqN = 0, \
+    .userParam = 0, \
+    .owner.owner = 0, \
+    .owner.resourceIndex = 0 \
+    }
