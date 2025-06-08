@@ -86,7 +86,7 @@ PICO_LIB_SRC = \
             rp2_common/pico_malloc/malloc.c \
             rp2_common/pico_stdlib/stdlib.c
 
-TINY_USB_SRC_DIR = tinyUSB/src
+TINY_USB_SRC_DIR = $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
 TINYUSB_SRC := \
             $(TINY_USB_SRC_DIR)/tusb.c \
             $(TINY_USB_SRC_DIR)/class/cdc/cdc_device.c \
@@ -226,7 +226,7 @@ SYS_INCLUDE_DIRS = \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/pico_platform/include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_regs/include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_structs/include \
-            $(LIB_MAIN_DIR)/tinyUSB/src
+            $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
 
 SYS_INCLUDE_DIRS += \
             $(SDK_DIR)/rp2350/boot_stage2/include
