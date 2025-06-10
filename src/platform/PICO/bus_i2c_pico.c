@@ -46,15 +46,15 @@ i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
 const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_0
-    {
+{
         .device = I2CDEV_0,
-        .reg = I2C0,
+        .reg = i2c0,
     },
 #endif
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = i2c1,
     },
 #endif
 };
@@ -72,10 +72,6 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
         i2cDevice_t *pDev = &i2cDevice[device];
 
         memset(pDev, 0, sizeof(*pDev));
-
-        bprintf("i2cHWconf dev %d, conf has tags scl 0x%x, sda 0x%x",
-                index, i2cConfig[device].ioTagScl, i2cConfig[device].ioTagSda);
-
         IO_t confSclIO = IOGetByTag(i2cConfig[device].ioTagScl);
         IO_t confSdaIO = IOGetByTag(i2cConfig[device].ioTagSda);
         uint16_t confSclPin = IO_Pin(confSclIO);
@@ -126,7 +122,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
         return false;
     }
 
-    i2c_inst_t *port = I2C_INST(&i2cHardware[device].reg);
+    i2c_inst_t *port = I2C_INST(i2cHardware[device].reg);
 
     if (!port) {
         return false;
@@ -138,7 +134,8 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
 
     uint8_t buf[I2C_TX_BUFFER_LENGTH] = { reg_, 0 };
     memcpy(&buf[1], data, len_);
-    int status = i2c_write_timeout_us(port, addr_ << 1, buf, len_ + 1, true, I2C_TIMEOUT_US);
+    bool nostop = false;
+    int status = i2c_write_timeout_us(port, addr_, buf, len_ + 1, nostop, I2C_TIMEOUT_US);
 
     if (status < 0) {
         return i2cHandleHardwareFailure(device);
@@ -153,18 +150,20 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         return false;
     }
 
-    i2c_inst_t *port = I2C_INST(&i2cHardware[device].reg);
+    i2c_inst_t *port = I2C_INST(i2cHardware[device].reg);
 
     if (!port) {
         return false;
     }
 
-    int status = i2c_write_timeout_us(port, addr_ << 1, &reg_, 1, true, I2C_TIMEOUT_US);
+    bool nostop = true;
+    int status = i2c_write_timeout_us(port, addr_, &reg_, 1, nostop, I2C_TIMEOUT_US);
     if (status < 0) {
         return i2cHandleHardwareFailure(device);
     }
 
-    status = i2c_read_timeout_us(port, addr_ << 1, buf, len, true, I2C_TIMEOUT_US);
+    nostop = false;
+    status = i2c_read_timeout_us(port, addr_, buf, len, nostop, I2C_TIMEOUT_US);
     if (status < 0) {
         return i2cHandleHardwareFailure(device);
     }
@@ -175,6 +174,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     // TODO: Implement genuine non-blocking read using DMA or similar mechanism
+    // ( I2C0_IRQ, I2C1_IRQ ...)
     return i2cRead(device, addr_, reg_, len, buf);
 }
 
@@ -184,7 +184,7 @@ bool i2cBusy(I2CDevice device, bool *error)
         return false;
     }
 
-    i2c_inst_t *port = I2C_INST(&i2cHardware[device].reg);
+    i2c_inst_t *port = I2C_INST(i2cHardware[device].reg);
 
     if (!port) {
         return false;
@@ -194,11 +194,14 @@ bool i2cBusy(I2CDevice device, bool *error)
         *error = 0;
     }
 
+    // TODO check: If we are using DMA (for a sequence of transfers?), then we will need to
+    // protect against that being in progress
+
     // Read the IC_STATUS register
     uint32_t status_reg = port->hw->status;
 
-    // The bit for MST_ACTIVITY is (1 << 5).
-    return (status_reg & (1 << 5)) != 0;
+    // The bit for (combined master/slave) ACTIVITY is (1 << 0).
+    return (status_reg & (1 << 0)) != 0;
 }
 
 void i2cInit(I2CDevice device)
@@ -210,22 +213,30 @@ void i2cInit(I2CDevice device)
     i2cDevice_t *pDev = &i2cDevice[device];
 
     const i2cHardware_t *hardware = pDev->hardware;
+
     const IO_t scl = pDev->scl;
     const IO_t sda = pDev->sda;
+    const uint8_t sclPin = IO_Pin(scl);
+    const uint8_t sdaPin = IO_Pin(sda);
 
-    if (!hardware || IOGetOwner(scl) || IOGetOwner(sda)) {
+    if (!hardware || !scl || !sda) {
         return;
     }
 
-    i2c_init(I2C_INST(hardware->reg), pDev->clockSpeed);
+    // Set owners
+    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
+
+    // Initialise device
+    i2c_init(I2C_INST(hardware->reg), 1000 * pDev->clockSpeed);
 
     // Set up GPIO pins for I2C
-    gpio_set_function(IO_Pin(sda), GPIO_FUNC_I2C);
-    gpio_set_function(IO_Pin(scl), GPIO_FUNC_I2C);
+    gpio_set_function(sdaPin, GPIO_FUNC_I2C);
+    gpio_set_function(sclPin, GPIO_FUNC_I2C);
 
     // Enable internal pull-up resistors
-    gpio_pull_up(IO_Pin(sda));
-    gpio_pull_up(IO_Pin(scl));
+    gpio_pull_up(sdaPin);
+    gpio_pull_up(sclPin);
 }
 
-#endif
+#endif // #if defined(USE_I2C) && !defined(SOFT_I2C)

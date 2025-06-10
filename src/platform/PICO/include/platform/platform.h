@@ -25,6 +25,7 @@
 
 #include "pico.h"
 #include "pico/stdlib.h"
+#include "hardware/i2c.h"
 #include "hardware/spi.h"
 #include "hardware/dma.h"
 #include "hardware/flash.h"
@@ -37,8 +38,8 @@
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
-#define I2C_TypeDef          I2C0_Type
-#define I2C_INST(i2c)        ((i2c_inst_t *)(i2c))
+#define I2C_TypeDef          i2c_inst_t
+#define I2C_INST(i2c)        (i2c)
 
 #define GPIO_TypeDef         io_bank0_hw_t
 //#define GPIO_InitTypeDef
