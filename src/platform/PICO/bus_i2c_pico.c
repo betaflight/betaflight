@@ -27,6 +27,8 @@
 
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
+#include "pg/bus_i2c.h"
+
 #include "hardware/i2c.h"
 #include "hardware/dma.h"
 #include "hardware/irq.h"
@@ -47,39 +49,58 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_0,
         .reg = I2C0,
-        .sclPins = {
-            { DEFIO_TAG_E(PA1) },
-            { DEFIO_TAG_E(PA5) },
-            { DEFIO_TAG_E(PA9) },
-            { DEFIO_TAG_E(PA13) },
-        },
-        .sdaPins = {
-            { DEFIO_TAG_E(PA0) },
-            { DEFIO_TAG_E(PA4) },
-            { DEFIO_TAG_E(PA8) },
-            { DEFIO_TAG_E(PA12) },
-        },
     },
 #endif
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = {
-            { DEFIO_TAG_E(PA3) },
-            { DEFIO_TAG_E(PA7) },
-            { DEFIO_TAG_E(PA11) },
-            { DEFIO_TAG_E(PA15) },
-        },
-        .sdaPins = {
-            { DEFIO_TAG_E(PA2) },
-            { DEFIO_TAG_E(PA6) },
-            { DEFIO_TAG_E(PA10) },
-            { DEFIO_TAG_E(PA14) },
-        }
     },
 #endif
 };
+
+void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
+{
+    for (int index = 0 ; index < I2CDEV_COUNT ; index++) {
+        const i2cHardware_t *hardware = &i2cHardware[index];
+
+        if (!hardware->reg) {
+            continue;
+        }
+
+        I2CDevice device = hardware->device;
+        i2cDevice_t *pDev = &i2cDevice[device];
+
+        memset(pDev, 0, sizeof(*pDev));
+
+        bprintf("i2cHWconf dev %d, conf has tags scl 0x%x, sda 0x%x",
+                index, i2cConfig[device].ioTagScl, i2cConfig[device].ioTagSda);
+
+        IO_t confSclIO = IOGetByTag(i2cConfig[device].ioTagScl);
+        IO_t confSdaIO = IOGetByTag(i2cConfig[device].ioTagSda);
+        uint16_t confSclPin = IO_Pin(confSclIO);
+        uint16_t confSdaPin = IO_Pin(confSdaIO);
+
+#ifdef RP2350B
+        uint16_t numPins = 48;
+#else
+        uint16_t numPins = 30;
+#endif
+
+        // I2C0 on pins 0,1 mod 4, I2C1 on pins 2,3 mod 4
+        // SDA on pins 0 mod 2, SCL on pins 1 mod 2
+        uint16_t pinOffset = device == I2CDEV_0 ? 0 : 2;
+        if (confSdaPin < numPins && confSclPin < numPins &&
+            (confSdaPin % 4) == pinOffset && (confSclPin % 4) == (pinOffset + 1)) {
+            pDev->scl = confSclIO;
+            pDev->sda = confSdaIO;
+            pDev->hardware = hardware;
+            pDev->reg = hardware->reg;
+            pDev->pullUp = i2cConfig[device].pullUp;
+            pDev->clockSpeed = i2cConfig[device].clockSpeed;
+        }
+    }
+}
 
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
