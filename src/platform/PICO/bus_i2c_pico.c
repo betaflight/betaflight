@@ -74,8 +74,8 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
         memset(pDev, 0, sizeof(*pDev));
         IO_t confSclIO = IOGetByTag(i2cConfig[device].ioTagScl);
         IO_t confSdaIO = IOGetByTag(i2cConfig[device].ioTagSda);
-        uint16_t confSclPin = IO_Pin(confSclIO);
-        uint16_t confSdaPin = IO_Pin(confSdaIO);
+        int confSclPin = IO_GPIOPinIdx(confSclIO);
+        int confSdaPin = IO_GPIOPinIdx(confSdaIO);
 
 #ifdef RP2350B
         uint16_t numPins = 48;
@@ -85,8 +85,9 @@ void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
 
         // I2C0 on pins 0,1 mod 4, I2C1 on pins 2,3 mod 4
         // SDA on pins 0 mod 2, SCL on pins 1 mod 2
-        uint16_t pinOffset = device == I2CDEV_0 ? 0 : 2;
-        if (confSdaPin < numPins && confSclPin < numPins &&
+        int pinOffset = device == I2CDEV_0 ? 0 : 2;
+        if (confSdaPin >= 0 && confSclPin >= 0 &&
+            confSdaPin < numPins && confSclPin < numPins &&
             (confSdaPin % 4) == pinOffset && (confSclPin % 4) == (pinOffset + 1)) {
             pDev->scl = confSclIO;
             pDev->sda = confSdaIO;
