@@ -347,8 +347,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
             IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->sckAF);
             DDL_SPI_SetClockPhase(instance, DDL_SPI_PHASE_1EDGE);
             DDL_SPI_SetClockPolarity(instance, DDL_SPI_POLARITY_LOW);
-        }
-        else {
+        } else {
             IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->sckAF);
             DDL_SPI_SetClockPhase(instance, DDL_SPI_PHASE_2EDGE);
             DDL_SPI_SetClockPolarity(instance, DDL_SPI_POLARITY_HIGH);
