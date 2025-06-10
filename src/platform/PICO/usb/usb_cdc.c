@@ -24,6 +24,13 @@
 #include "platform.h"
 
 #include "tusb_config.h"
+
+/*
+  Make sure the tinyUSB common header includes don't
+  bring in the poisoned sprintf, snprintf etc.
+*/
+#define _STDIO_H_
+
 #include "tusb.h"
 #include "usb_cdc.h"
 

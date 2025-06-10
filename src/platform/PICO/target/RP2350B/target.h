@@ -53,6 +53,10 @@
 #define USE_SPI_DEVICE_0
 #define USE_SPI_DEVICE_1
 
+#define USE_I2C
+#define USE_I2C_DEVICE_0
+#define USE_I2C_DEVICE_1
+
 // one of these ...
 // #define USE_SPI_DMA_ENABLE_EARLY
 #define USE_SPI_DMA_ENABLE_LATE
@@ -68,7 +72,6 @@
 #undef USE_SDCARD
 
 #undef USE_TIMER
-#undef USE_I2C
 #undef USE_RCC
 
 #undef USE_RX_PWM
@@ -105,7 +108,7 @@
 #undef USE_MSP_UART
 #undef USE_MSP_DISPLAYPORT
 
-#undef USE_DMA
+//#undef USE_DMA
 #undef USE_DMA_SPEC
 
 #undef USE_DSHOT_TELEMETRY
@@ -210,7 +213,7 @@
 #undef USE_ACCGYRO_BMI160
 #undef USE_ACCGYRO_BMI270
 #endif
-     
+   
 //#define USE_FLASH
 //#define USE_FLASH_W25Q128FV
 //#define USE_MAX7456
@@ -275,8 +278,13 @@ SPARE3          PA47
 #define SPIDEV_COUNT 2
 #define MAX_SPI_PIN_SEL 6
 
+#define I2CDEV_COUNT 2
+#define MAX_I2C_PIN_SEL 6
+
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 
 #define UARTHARDWARE_MAX_PINS 12
 #define UART_TRAIT_AF_PORT 1
+
+#define I2CDEV_COUNT 2

@@ -22,7 +22,6 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
 
 #include "pg/pg.h"
 
