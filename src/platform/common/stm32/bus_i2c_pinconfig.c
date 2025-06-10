@@ -39,7 +39,7 @@
 
 #include "pg/bus_i2c.h"
 
-void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
+void i2cPinConfigure(const i2cConfig_t *i2cConfig)
 {
     for (int index = 0 ; index < I2CDEV_COUNT ; index++) {
         const i2cHardware_t *hardware = &i2cHardware[index];
