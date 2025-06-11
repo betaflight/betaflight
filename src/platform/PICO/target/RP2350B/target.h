@@ -119,7 +119,6 @@
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_MULTI_GYRO
-#undef USE_BARO
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_MAX7456
@@ -199,6 +198,29 @@
 #define PICO_BEC_5V_ENABLE_PIN PA14
 // Enable 9V if/when we need it (for DVTX?)
 // #define PICO_BEC_9V_ENABLE_PIN PA15
+
+//#undef USE_BARO
+#define USE_BARO_DPS310
+#undef USE_BARO_MS5611
+#undef USE_BARO_SPI_MS5611
+#undef USE_BARO_BMP280
+#undef USE_BARO_SPI_BMP280
+#undef USE_BARO_BMP388
+#undef USE_BARO_SPI_BMP388
+#undef USE_BARO_LPS
+#undef USE_BARO_SPI_LPS
+#undef USE_BARO_QMP6988
+#undef USE_BARO_SPI_QMP6988
+#undef USE_BARO_SPI_DPS310
+#undef USE_BARO_BMP085
+#undef USE_BARO_2SMBP_02B
+#undef USE_BARO_SPI_2SMBP_02B
+#undef USE_BARO_LPS22DF
+#undef USE_BARO_SPI_LPS22DF
+
+#define BARO_I2C_INSTANCE    I2CDEV_0
+#define I2C0_SDA_PIN         PA44
+#define I2C0_SCL_PIN         PA45
 
 // PA20, PA21 on laurel are set aside for jumper to connect to Radio RX on UART2 (software PIO uart)
 // but let's assign them for h/w UART1 for now [UART1 TX at 20 and RX at 21 are available on RP2350]
@@ -323,7 +345,6 @@ SPARE3          PA47
 #define MAX_SPI_PIN_SEL 6
 
 #define I2CDEV_COUNT 2
-#define MAX_I2C_PIN_SEL 6
 
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
