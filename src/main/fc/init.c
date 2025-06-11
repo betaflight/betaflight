@@ -624,7 +624,7 @@ void init(void)
 #endif
 
 #ifdef USE_I2C
-    i2cHardwareConfigure(i2cConfig(0));
+    i2cPinConfigure(i2cConfig(0));
 
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.

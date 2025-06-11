@@ -340,7 +340,9 @@ TMR_HandleTypeDef* timerFindTimerHandle(TMR_TypeDef *tim)
 void timerReconfigureTimeBase(TMR_TypeDef *tim, uint16_t period, uint32_t hz)
 {
     TMR_HandleTypeDef* handle = timerFindTimerHandle(tim);
-    if (handle == NULL) return;
+    if (handle == NULL) {
+        return;
+    }
 
     handle->Init.Period = (period - 1) & 0xffff; // AKA TIMx_ARR
     handle->Init.Prescaler = (timerClock(tim) / hz) - 1;
@@ -351,7 +353,9 @@ void timerReconfigureTimeBase(TMR_TypeDef *tim, uint16_t period, uint32_t hz)
 void configTimeBase(TMR_TypeDef *tim, uint16_t period, uint32_t hz)
 {
     TMR_HandleTypeDef* handle = timerFindTimerHandle(tim);
-    if (handle == NULL) return;
+    if (handle == NULL) {
+        return;
+    }
 
     if (handle->Instance == tim) {
         // already configured
@@ -368,8 +372,7 @@ void configTimeBase(TMR_TypeDef *tim, uint16_t period, uint32_t hz)
     handle->Init.RepetitionCounter = 0x0000;
 
     DAL_TMR_Base_Init(handle);
-    if (tim == TMR1 || tim == TMR2 || tim == TMR3 || tim == TMR4 || tim == TMR5 || tim == TMR8 || tim == TMR9)
-    {
+    if (tim == TMR1 || tim == TMR2 || tim == TMR3 || tim == TMR4 || tim == TMR5 || tim == TMR8 || tim == TMR9) {
         TMR_ClockConfigTypeDef sClockSourceConfig;
         memset(&sClockSourceConfig, 0, sizeof(sClockSourceConfig));
         sClockSourceConfig.ClockSource = TMR_CLOCKSOURCE_INTERNAL;
@@ -402,7 +405,6 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
     switch (irq) {
-
     case TMR1_CC_IRQn:
         timerNVICConfigure(TMR1_UP_TMR10_IRQn);
         break;
@@ -421,13 +423,16 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
         return;
     }
     unsigned channel = timHw - TIMER_HARDWARE;
-    if (channel >= TIMER_CHANNEL_COUNT)
+    if (channel >= TIMER_CHANNEL_COUNT) {
         return;
+    }
 
     timerChannelInfo[channel].type = type;
     unsigned timer = lookupTimerIndex(timHw->tim);
-    if (timer >= USED_TIMER_COUNT)
+    if (timer >= USED_TIMER_COUNT) {
         return;
+    }
+
     if (irqPriority < timerInfo[timer].priority) {
         // it would be better to set priority in the end, but current startup sequence is not ready
         configTimeBase(usedTimers[timer], 0, 1);
@@ -476,10 +481,11 @@ static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, const TMR_TypeDef *
         *chain = NULL;
     }
     // enable or disable IRQ
-    if (cfg->overflowCallbackActive)
+    if (cfg->overflowCallbackActive) {
         __DAL_TMR_ENABLE_IT(&timerHandle[timerIndex].Handle, TMR_IT_UPDATE);
-    else
+    } else {
         __DAL_TMR_DISABLE_IT(&timerHandle[timerIndex].Handle, TMR_IT_UPDATE);
+    }
 }
 
 // config edge and overflow callback for channel. Try to avoid overflowCallback, it is a bit expensive
@@ -490,14 +496,17 @@ void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *e
         return;
     }
     uint8_t channelIndex = lookupChannelIndex(timHw->channel);
-    if (edgeCallback == NULL)   // disable irq before changing callback to NULL
+    if (edgeCallback == NULL) {   // disable irq before changing callback to NULL
         __DAL_TMR_DISABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel));
+    }
+
     // setup callback info
     timerConfig[timerIndex].edgeCallback[channelIndex] = edgeCallback;
     timerConfig[timerIndex].overflowCallback[channelIndex] = overflowCallback;
     // enable channel IRQ
-    if (edgeCallback)
+    if (edgeCallback) {
         __DAL_TMR_ENABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel));
+    }
 
     timerChConfig_UpdateOverflow(&timerConfig[timerIndex], timHw->tim);
 }
@@ -525,10 +534,13 @@ void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_
     uint16_t chHi = timHw->channel | TMR_CHANNEL_2;    // upper channel
     uint8_t channelIndex = lookupChannelIndex(chLo);   // get index of lower channel
 
-    if (edgeCallbackLo == NULL)   // disable irq before changing setting callback to NULL
+    if (edgeCallbackLo == NULL) {  // disable irq before changing setting callback to NULL
         __DAL_TMR_DISABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(chLo));
-    if (edgeCallbackHi == NULL)   // disable irq before changing setting callback to NULL
+    }
+
+    if (edgeCallbackHi == NULL) {   // disable irq before changing setting callback to NULL
         __DAL_TMR_DISABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(chHi));
+    }
 
     // setup callback info
     timerConfig[timerIndex].edgeCallback[channelIndex] = edgeCallbackLo;
@@ -541,6 +553,7 @@ void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_
         __DAL_TMR_CLEAR_FLAG(&timerHandle[timerIndex].Handle, TIM_IT_CCx(chLo));
         __DAL_TMR_ENABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(chLo));
     }
+
     if (edgeCallbackHi) {
         __DAL_TMR_CLEAR_FLAG(&timerHandle[timerIndex].Handle, TIM_IT_CCx(chHi));
         __DAL_TMR_ENABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(chHi));
@@ -561,10 +574,11 @@ void timerChITConfigDualLo(const timerHardware_t *timHw, FunctionalState newStat
         return;
     }
 
-    if (newState)
+    if (newState) {
         __DAL_TMR_ENABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel & ~TMR_CHANNEL_2));
-    else
+    } else {
         __DAL_TMR_DISABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel & ~TMR_CHANNEL_2));
+    }
 }
 
 //// enable or disable IRQ
@@ -580,10 +594,11 @@ void timerChITConfig(const timerHardware_t *timHw, FunctionalState newState)
         return;
     }
 
-    if (newState)
+    if (newState) {
         __DAL_TMR_ENABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel));
-    else
+    } else {
         __DAL_TMR_DISABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel));
+    }
 }
 
 // clear Compare/Capture flag for channel
@@ -623,9 +638,11 @@ static unsigned getFilter(unsigned ticks)
         16*5, 16*6, 16*8,
         32*5, 32*6, 32*8
     };
-    for (unsigned i = 1; i < ARRAYLEN(ftab); i++)
-        if (ftab[i] > ticks)
+    for (unsigned i = 1; i < ARRAYLEN(ftab); i++) {
+        if (ftab[i] > ticks) {
             return i - 1;
+        }
+    }
     return 0x0f;
 }
 
@@ -633,8 +650,9 @@ static unsigned getFilter(unsigned ticks)
 void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     unsigned timer = lookupTimerIndex(timHw->tim);
-    if (timer >= USED_TIMER_COUNT)
+    if (timer >= USED_TIMER_COUNT) {
         return;
+    }
 
     TMR_IC_InitTypeDef TIM_ICInitStructure;
 
@@ -650,8 +668,9 @@ void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned
 void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     unsigned timer = lookupTimerIndex(timHw->tim);
-    if (timer >= USED_TIMER_COUNT)
+    if (timer >= USED_TIMER_COUNT) {
         return;
+    }
 
     TMR_IC_InitTypeDef TIM_ICInitStructure;
     bool directRising = (timHw->channel & TMR_CHANNEL_2) ? !polarityRising : polarityRising;
@@ -695,8 +714,9 @@ volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh)
 {
     unsigned timer = lookupTimerIndex(timHw->tim);
-    if (timer >= USED_TIMER_COUNT)
+    if (timer >= USED_TIMER_COUNT) {
         return;
+    }
 
     TMR_OC_InitTypeDef TIM_OCInitStructure;
 
@@ -1000,7 +1020,9 @@ void timerInit(void)
 void timerStart(TMR_TypeDef *tim)
 {
     TMR_HandleTypeDef* handle = timerFindTimerHandle(tim);
-    if (handle == NULL) return;
+    if (handle == NULL) {
+        return;
+    }
 
     __DAL_TMR_ENABLE(handle);
 }
@@ -1135,13 +1157,16 @@ DAL_StatusTypeDef DMA_SetCurrDataCounter(TMR_HandleTypeDef *htim, uint32_t Chann
 {
     if ((htim->State == DAL_TMR_STATE_BUSY)) {
         return DAL_BUSY;
-    } else if ((htim->State == DAL_TMR_STATE_READY)) {
-        if (((uint32_t) pData == 0) && (Length > 0)) {
-            return DAL_ERROR;
-        } else {
-            htim->State = DAL_TMR_STATE_BUSY;
+    } else {
+        if ((htim->State == DAL_TMR_STATE_READY)) {
+            if (((uint32_t) pData == 0) && (Length > 0)) {
+                return DAL_ERROR;
+            } else {
+                htim->State = DAL_TMR_STATE_BUSY;
+            }
         }
     }
+
     switch (Channel) {
     case TMR_CHANNEL_1: {
         /* Set the DMA Period elapsed callback */

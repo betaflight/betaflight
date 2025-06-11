@@ -114,8 +114,9 @@
     && !defined(USE_ACC_SPI_MPU6000) \
     && !defined(USE_ACC_SPI_MPU6500) \
     && !defined(USE_ACC_SPI_MPU9250) \
-    && !defined(USE_VIRTUAL_ACC) \
-    && !defined(USE_ACCGYRO_IIM42653)
+    && !defined(USE_ACCGYRO_IIM42652) \
+    && !defined(USE_ACCGYRO_IIM42653) \
+    && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif
 
@@ -137,8 +138,9 @@
     && !defined(USE_GYRO_SPI_MPU6000) \
     && !defined(USE_GYRO_SPI_MPU6500) \
     && !defined(USE_GYRO_SPI_MPU9250) \
-    && !defined(USE_VIRTUAL_GYRO) \
-    && !defined(USE_ACCGYRO_IIM42653)
+    && !defined(USE_ACCGYRO_IIM42652) \
+    && !defined(USE_ACCGYRO_IIM42653) \
+    && !defined(USE_VIRTUAL_GYRO)
 #error At least one USE_GYRO device definition required
 #endif
 
@@ -476,11 +478,11 @@
 #define USE_GYRO_SPI_MPU6500
 #endif
 
-// Generate USE_SPI_GYRO or USE_I2C_GYRO
+// Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
     || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_IIM42653) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_ICM40609D)
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_IIM42652)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
@@ -602,7 +604,7 @@
 #endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_SRF10) || defined(USE_RANGEFINDER_HCSR04_I2C) || defined(USE_RANGEFINDER_VL53L0X) || defined(USE_RANGEFINDER_UIB) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT)
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT)
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif

@@ -6,7 +6,7 @@ MCU_COMMON_SRC += \
             common/stm32/config_flash.c \
             common/stm32/bus_spi_pinconfig.c \
             drivers/bus_spi_config.c \
-            common/stm32/bus_i2c_config.c \
+            common/stm32/bus_i2c_pinconfig.c \
             common/stm32/bus_spi_hw.c \
             common/stm32/io_impl.c \
             common/stm32/serial_uart_hw.c \
@@ -17,7 +17,7 @@ MCU_COMMON_SRC += \
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_spi_config.c \
-            common/stm32/bus_i2c_config.c \
+            common/stm32/bus_i2c_pinconfig.c \
             common/stm32/config_flash.c \
             common/stm32/bus_spi_pinconfig.c
 

@@ -31,10 +31,12 @@ __STATIC_INLINE void DDL_EX_TMR_DisableIT(TMR_TypeDef *TMRx, uint32_t Sources)
 {
     CLEAR_BIT(TMRx->DIEN, Sources);
 }
+
 __STATIC_INLINE void DDL_EX_TMR_EnableIT(TMR_TypeDef *TMRx, uint32_t Sources)
 {
     SET_BIT(TMRx->DIEN, Sources);
 }
+
 __STATIC_INLINE uint32_t DDL_EX_DMA_Stream_to_Stream(DMA_Stream_TypeDef *DMAx_Streamy)
 {
     STATIC_ASSERT(DMA1_Stream0_BASE - DMA1_BASE == sizeof(DMA_TypeDef), DMA_TypeDef_has_padding);
@@ -45,11 +47,13 @@ __STATIC_INLINE uint32_t DDL_EX_DMA_Stream_to_Stream(DMA_Stream_TypeDef *DMAx_St
 
     return (((uint32_t) DMAx_Streamy & 0XFF) - firstStreamOffset) / streamSize;
 }
+
 __STATIC_INLINE DMA_TypeDef *DDL_EX_DMA_Stream_to_DMA(DMA_Stream_TypeDef *DMAx_Streamy)
 {
     // clear stream address
     return (DMA_TypeDef *) (((uint32_t) DMAx_Streamy) & ((uint32_t) ~0XFF));
 }
+
 __STATIC_INLINE uint32_t DDL_EX_DMA_DeInit(DMA_Stream_TypeDef *DMAx_Streamy)
 {
     DMA_TypeDef *DMA = DDL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
@@ -57,6 +61,7 @@ __STATIC_INLINE uint32_t DDL_EX_DMA_DeInit(DMA_Stream_TypeDef *DMAx_Streamy)
 
     return DDL_DMA_DeInit(DMA, Stream);
 }
+
 __STATIC_INLINE uint32_t DDL_EX_DMA_Init(DMA_Stream_TypeDef *DMAx_Streamy, DDL_DMA_InitTypeDef *DMA_InitStruct)
 {
     DMA_TypeDef *DMA = DDL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
@@ -64,6 +69,7 @@ __STATIC_INLINE uint32_t DDL_EX_DMA_Init(DMA_Stream_TypeDef *DMAx_Streamy, DDL_D
 
     return DDL_DMA_Init(DMA, Stream, DMA_InitStruct);
 }
+
 __STATIC_INLINE void DDL_EX_DMA_SetDataLength(DMA_Stream_TypeDef* DMAx_Streamy, uint32_t NbData)
 {
     MODIFY_REG(DMAx_Streamy->NDATA, DMA_NDATAx, NbData);
@@ -81,6 +87,7 @@ __STATIC_INLINE void DDL_EX_DMA_EnableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
     SET_BIT(DMAx_Streamy->SCFG, DMA_SCFGx_EN);
 }
+
 __STATIC_INLINE void DDL_EX_DMA_DisableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
     CLEAR_BIT(DMAx_Streamy->SCFG, DMA_SCFGx_EN);
