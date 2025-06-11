@@ -339,8 +339,10 @@ PICO_LIB_SRC += \
             rp2_common/pico_stdio_uart/stdio_uart.c
 endif
 
+# TODO review
+# rp2_common/pico_stdio_usb/stdio_usb.c \
+
 PICO_STDIO_USB_SRC = \
-            rp2_common/pico_stdio_usb/stdio_usb.c \
             rp2_common/pico_stdio_usb/reset_interface.c \
             rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c \
             rp2_common/pico_bit_ops/bit_ops_aeabi.S \
@@ -381,19 +383,19 @@ MCU_COMMON_SRC = \
             drivers/serial_uart_pinconfig.c \
             drivers/usb_io.c \
             drivers/dshot.c \
+            PICO/bus_i2c_pico.c \
+            PICO/bus_spi_pico.c \
+            PICO/config_flash.c \
+            PICO/debug_pico.c \
             PICO/dma_pico.c \
             PICO/dshot_pico.c \
-            PICO/pwm_pico.c \
-            PICO/stdio_pico_stub.c \
-            PICO/debug_pico.c \
-            PICO/system.c \
-            PICO/io_pico.c \
-            PICO/bus_spi_pico.c \
-            PICO/bus_i2c_pico.c \
-            PICO/serial_uart_pico.c \
             PICO/exti_pico.c \
-            PICO/config_flash.c \
+            PICO/io_pico.c \
+            PICO/persistent.c \
+            PICO/pwm_pico.c \
+            PICO/serial_uart_pico.c \
             PICO/serial_usb_vcp_pico.c \
+            PICO/system.c \
             PICO/usb/usb_cdc.c
 
 DEVICE_STDPERIPH_SRC := \

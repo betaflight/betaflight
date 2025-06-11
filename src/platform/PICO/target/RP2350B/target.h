@@ -163,6 +163,10 @@
 /* to be moved to a config file once target if working
    defaults as per Laurel board for now */
 
+// TODO review
+#define TEST_DSHOT_ETC
+#define GYRO_ONLY_ICM42688
+
 #define LED0_PIN             PA6
 #define LED1_PIN             PA7
 
@@ -181,18 +185,10 @@
 #define GYRO_1_CS_PIN        PA1
 #define GYRO_2_CS_PIN        NONE
 
-#if 0 // def TEST_DSHOT_ETC
-// testing motor1 and motor2 pins -> GPIO_SPARE1, GPIO_SPARE2
-#define MOTOR1_PIN           PA32
-#define MOTOR2_PIN           PA33
-#define MOTOR3_PIN           PA30
-#define MOTOR4_PIN           PA31
-#else
 #define MOTOR1_PIN           PA28
 #define MOTOR2_PIN           PA29
 #define MOTOR3_PIN           PA30
 #define MOTOR4_PIN           PA31
-#endif
 
 #define MAX7456_SPI_INSTANCE SPI1
 #define SDCARD_SPI_INSTANCE  SPI1

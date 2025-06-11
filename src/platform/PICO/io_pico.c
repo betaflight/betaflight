@@ -50,6 +50,25 @@ void IOInitGlobal(void)
     ioRecs[PICO_DEFAULT_UART_RX_PIN].owner = OWNER_SYSTEM;
 #endif
 #endif
+
+    // Some boards (e.g. Laurel) require a pin to be held low in order to generate a 5V / 9V
+    // power supply from the main battery.
+    // (TODO: should we manage a list of pins that we want to send low or high?)
+#ifdef PICO_BEC_5V_ENABLE_PIN
+    const int pin5 = IO_PINBYTAG(IO_TAG(PICO_BEC_5V_ENABLE_PIN));
+    gpio_init(pin5);
+    gpio_set_dir(pin5, 1);
+    gpio_put(pin5, 0);
+    ioRecs[pin5].owner = OWNER_SYSTEM;
+#endif
+
+#ifdef PICO_BEC_9V_ENABLE_PIN
+    const int pin9 = IO_PINBYTAG(IO_TAG(PICO_BEC_9V_ENABLE_PIN));
+    gpio_init(pin9);
+    gpio_set_dir(pin9, 1);
+    gpio_put(pin9, 0);
+    ioRecs[pin9].owner = OWNER_SYSTEM;
+#endif
 }
 
 uint32_t IO_EXTI_Line(IO_t io)
