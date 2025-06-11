@@ -103,8 +103,14 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
         - CORE 0 uses DMA_IRQ_0
         - CORE 1 uses DMA_IRQ_1
 
+        If we specify a core to be used for interrupts we will use the corresponding DMA IRQ.
     */
+#ifdef DMA_IRQ_CORE_NUM
+    uint8_t core = DMA_IRQ_CORE_NUM;
+#else
+    // Get the current core number
     uint8_t core = get_core_num();
+#endif
 
     if (core) {
         // Core 1 uses DMA IRQ1

@@ -64,6 +64,11 @@
 // #define USE_SPI_DMA_ENABLE_EARLY
 #define USE_SPI_DMA_ENABLE_LATE
 
+/* DMA Settings */
+//#undef USE_DMA
+#define DMA_IRQ_CORE_NUM 1 // Use core 1 for DMA IRQs
+#undef USE_DMA_SPEC // not yet required - possibly won't be used at all
+
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 
@@ -76,7 +81,7 @@
 
 #undef USE_TIMER
 #undef USE_RCC
-#undef USE_CLI
+
 #undef USE_RX_PWM
 #undef USE_RX_PPM
 #undef USE_RX_SPI
@@ -86,6 +91,7 @@
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_MULTI_GYRO
 #undef USE_BARO
+#undef USE_SERIAL_PASSTHROUGH
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_CRSF
@@ -103,7 +109,7 @@
 #undef USE_OSD
 #undef USE_SPEKTRUM
 #undef USE_SPEKTRUM_BIND
-#undef USE_MSP
+
 #undef USE_MSP_UART
 #undef USE_MSP_DISPLAYPORT
 #undef USE_GPS
