@@ -45,6 +45,7 @@
 #define USBD_PRODUCT_STRING     "Betaflight RP2350B"
 #endif
 
+
 #define USE_IO
 #define USE_UART0
 #define USE_UART1
@@ -74,10 +75,46 @@
 #undef USE_TIMER
 #undef USE_RCC
 
+//////////////////////////
+// Radio RX
+// TODO tidy up, introduce more possible options
+#undef USE_RX_SPI
+
 #undef USE_RX_PWM
 #undef USE_RX_PPM
-#undef USE_RX_SPI
 #undef USE_RX_CC2500
+#undef USE_RX_EXPRESSLRS // <-- not this one, it's for SPI
+#undef USE_RX_SX1280 // no, it's for SPI
+
+//#undef USE_CRSF <-- this one
+
+// #undef USE_SERIALRX_CRSF // <-- this one
+#undef USE_SERIALRX_GHST
+#undef USE_SERIALRX_IBUS
+#undef USE_SERIALRX_JETIEXBUS
+#undef USE_SERIALRX_SBUS
+#undef USE_SERIALRX_SPEKTRUM
+#undef USE_SERIALRX_SUMD
+#undef USE_SERIALRX_SUMH
+#undef USE_SERIALRX_XBUS
+#undef USE_SERIALRX_FPORT
+
+// TODO persistent objects -> crsfRxUpdateBaudRate -> crsf, telemetry
+//#undef USE_TELEMETRY_CRSF
+//#undef USE_TELEMETRY
+#undef USE_TELEMETRY_GHST
+#undef USE_TELEMETRY_FRSKY_HUB
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_IBUS
+#undef USE_TELEMETRY_IBUS_EXTENDED
+#undef USE_TELEMETRY_JETIEXBUS
+#undef USE_TELEMETRY_LTM
+#undef USE_TELEMETRY_MAVLINK
+#undef USE_TELEMETRY_SMARTPORT
+#undef USE_TELEMETRY_SRXL
+
+//////////////////////
+
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
@@ -85,18 +122,13 @@
 #undef USE_BARO
 
 #undef USE_RANGEFINDER_HCSR04
-#undef USE_CRSF
-#undef USE_TELEMETRY_CRSF
-#undef USE_RX_EXPRESSLRS
 #undef USE_MAX7456
 #undef USE_MAG
 #undef USE_MAG_HMC5883
 #undef USE_MAG_SPI_HMC5883
 #undef USE_VTX_RTC6705
 #undef USE_VTX_RTC6705_SOFTSPI
-#undef USE_RX_SX1280
 #undef USE_SRXL
-#undef USE_TELEMETRY
 #undef USE_OSD
 #undef USE_SPEKTRUM
 #undef USE_SPEKTRUM_BIND
@@ -160,12 +192,20 @@
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE   FLASH_PAGE_SIZE
 #define FLASH_CONFIG_BUFFER_TYPE            uint8_t
 
-/* to be moved to a config file once target if working
-   defaults as per Laurel board for now */
+// to be moved to a config file once target if working
+//   defaults as per Laurel board for now
 
-// TODO review
-#define TEST_DSHOT_ETC
-#define GYRO_ONLY_ICM42688
+// Laurel to enable secondary voltage supplies from main battery
+#define PICO_BEC_5V_ENABLE_PIN PA14
+// Enable 9V if/when we need it (for DVTX?)
+// #define PICO_BEC_9V_ENABLE_PIN PA15
+
+// PA20, PA21 on laurel are set aside for jumper to connect to Radio RX on UART2 (software PIO uart)
+// but let's assign them for h/w UART1 for now [UART1 TX at 20 and RX at 21 are available on RP2350]
+#define UART1_TX_PIN         PA20
+#define UART1_RX_PIN         PA21
+// [target.mk] Switch PICO_DEFAULT_UART to 0 and change PICO_DEFAULT_UART_TX,RX_PINs to 34, 35
+// which are available to UART0, and appear on spare UART connector J10
 
 #define LED0_PIN             PA6
 #define LED1_PIN             PA7
@@ -185,10 +225,18 @@
 #define GYRO_1_CS_PIN        PA1
 #define GYRO_2_CS_PIN        NONE
 
+#if 0 // def TEST_DSHOT_ETC
+// testing motor1 and motor2 pins -> GPIO_SPARE1, GPIO_SPARE2
+#define MOTOR1_PIN           PA32
+#define MOTOR2_PIN           PA33
+#define MOTOR3_PIN           PA30
+#define MOTOR4_PIN           PA31
+#else
 #define MOTOR1_PIN           PA28
 #define MOTOR2_PIN           PA29
 #define MOTOR3_PIN           PA30
 #define MOTOR4_PIN           PA31
+#endif
 
 #define MAX7456_SPI_INSTANCE SPI1
 #define SDCARD_SPI_INSTANCE  SPI1
@@ -199,7 +247,7 @@
 #define USE_ACC
 #define USE_ACC_SPI_ICM42688P
 
-#ifdef GYRO_ONLY_ICM42688
+#if 1 // TODO review
 #undef USE_ACCGYRO_LSM6DSV16X
 #undef USE_GYRO_SPI_ICM20689
 #undef USE_GYRO_SPI_MPU6000
