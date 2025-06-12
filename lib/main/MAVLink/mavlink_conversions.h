@@ -9,8 +9,8 @@
 #endif
 #include <math.h>
 
-#define MAVLINK_PI_2 (1.570796f)
 #define MAVLINK_PI (3.14159265358979323846f)
+#define MAVLINK_PI_2 (MAVLINK_PI/2.0f)
 #define MAVLINK_ONE_THOUSANDTH (0.001f)
 
 /**
