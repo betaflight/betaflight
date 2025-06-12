@@ -105,7 +105,7 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 // Decay the estimated max task duration by 1/(1 << LED_EXEC_TIME_SHIFT) on every invocation
 #define LED_EXEC_TIME_SHIFT             7
 
-#define PROFILE_COLOR_UPDATE_INTERVAL_US 1e6  // normally updates when color changes but this is a 1 second forced update
+#define PROFILE_COLOR_UPDATE_INTERVAL_US 1e6f  // normally updates when color changes but this is a 1 second forced update
 
 #define VISUAL_BEEPER_COLOR COLOR_WHITE
 

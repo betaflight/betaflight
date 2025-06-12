@@ -44,7 +44,7 @@
 
 #include "rc_modes.h"
 
-#define STICKY_MODE_BOOT_DELAY_US 5e6
+#define STICKY_MODE_BOOT_DELAY_US 5e6f
 
 boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
 static boxBitmask_t stickyModesEverDisabled;
