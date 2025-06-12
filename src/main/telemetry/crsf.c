@@ -288,37 +288,37 @@ void crsfFrameHeartbeat(sbuf_t *dst)
     sbufWriteU16BigEndian(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
 }
 
-
-void crsfFrameBindPhrase(sbuf_t *dst,bool rxSelect)
-{   
-    char* bindPhrase = nelrsConfigMutable()->bindPhraseHigh;
+void crsfFrameBindPhrase(sbuf_t *dst, bool rxSelect)
+{
+    char* bindPhrase        = nelrsConfigMutable()->bindPhraseHigh;
     uint32_t startFrequency = nelrsConfigMutable()->startFrequencyHigh;
-    uint32_t midFrequency = nelrsConfigMutable()->midFrequencyHigh;
-    uint32_t endFrequency = nelrsConfigMutable()->endFrequencyHigh;
-    uint8_t numChannels = nelrsConfigMutable()->numChannelsHigh;
+    uint32_t midFrequency   = nelrsConfigMutable()->midFrequencyHigh;
+    uint32_t endFrequency   = nelrsConfigMutable()->endFrequencyHigh;
+    uint8_t numChannels     = nelrsConfigMutable()->numChannelsHigh;
     if(rxSelect == true){
-        bindPhrase = nelrsConfigMutable()->bindPhraseLow;
+        bindPhrase     = nelrsConfigMutable()->bindPhraseLow;
         startFrequency = nelrsConfigMutable()->startFrequencyLow;
-        midFrequency = nelrsConfigMutable()->midFrequencyLow;
-        endFrequency = nelrsConfigMutable()->endFrequencyLow;
-        numChannels = nelrsConfigMutable()->numChannelsLow;
+        midFrequency   = nelrsConfigMutable()->midFrequencyLow;
+        endFrequency   = nelrsConfigMutable()->endFrequencyLow;
+        numChannels    = nelrsConfigMutable()->numChannelsLow;
     }
-    
-    uint8_t buff[6] = {0};
-    md5String(bindPhrase, buff);
+    bool useCrypto = nelrsConfigMutable()->cryptoEnable;
 
+    uint8_t uidBuffer[6] = {0};
+    md5String(bindPhrase, uidBuffer);
     sbufWriteU8(dst, CRSF_FRAME_BIND_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BIND);
-    sbufWriteU8(dst,buff[0]);
-    sbufWriteU8(dst,buff[1]);
-    sbufWriteU8(dst,buff[2]);
-    sbufWriteU8(dst,buff[3]);
-    sbufWriteU8(dst,buff[4]);
-    sbufWriteU8(dst,buff[5]);
+    sbufWriteU8(dst, uidBuffer[0]);
+    sbufWriteU8(dst, uidBuffer[1]);
+    sbufWriteU8(dst, uidBuffer[2]);
+    sbufWriteU8(dst, uidBuffer[3]);
+    sbufWriteU8(dst, uidBuffer[4]);
+    sbufWriteU8(dst, uidBuffer[5]);
     sbufWriteU16BigEndian(dst, startFrequency);
     sbufWriteU16BigEndian(dst, midFrequency);
     sbufWriteU16BigEndian(dst, endFrequency);
     sbufWriteU8(dst, numChannels);
+    sbufWriteU8(dst, (uint8_t)useCrypto);
 }
 
 typedef enum {
@@ -523,7 +523,7 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
     } else {
-        
+
     }
 }
 #endif

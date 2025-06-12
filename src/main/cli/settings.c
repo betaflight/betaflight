@@ -1675,6 +1675,7 @@ const clivalue_t valueTable[] = {
     { "elrs_mid_frequency_high",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, midFrequencyHigh) },
     { "elrs_end_frequency_high",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, endFrequencyHigh) },
     { "elrs_num_channels_high",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, numChannelsHigh) },
+    { "elrs_use_encryption",         VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, cryptoEnable) },
     { "camera_2_enable",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, thermalCamEnabled) },
     { "illuminator_enable",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, illuminatorEnabled) },
 #endif

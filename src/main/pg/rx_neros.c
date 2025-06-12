@@ -43,5 +43,6 @@ PG_RESET_TEMPLATE(nelrsConfig_t, nelrsConfig,
     .numChannelsHigh = 40,
     .thermalCamEnabled = false,
     .illuminatorEnabled = false,
+    .cryptoEnable = false,
 );
 
