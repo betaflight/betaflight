@@ -35,6 +35,50 @@
 #include "drivers/sensor.h"
 #include "sensors/gyro.h"
 
+// backwards compatibility for older targets
+#ifdef DEFAULT_GYRO_TO_USE
+  #ifndef DEFAULT_GYRO_ENABLED
+    #if DEFAULT_GYRO_TO_USE == GYRO_CONFIG_USE_GYRO_1
+      #define DEFAULT_GYRO_ENABLED GYRO_MASK(0)
+    #elif DEFAULT_GYRO_TO_USE == GYRO_CONFIG_USE_GYRO_2
+      #define DEFAULT_GYRO_ENABLED GYRO_MASK(1)
+    #elif DEFAULT_GYRO_TO_USE == GYRO_CONFIG_USE_GYRO_BOTH
+      #define DEFAULT_GYRO_ENABLED (GYRO_MASK(0) | GYRO_MASK(1))
+    #endif
+  #endif
+#elif !defined(DEFAULT_GYRO_ENABLED)
+  // assume one gyro
+  #define DEFAULT_GYRO_ENABLED GYRO_MASK(0)
+#endif
+
+#ifndef GYRO_COUNT
+  #ifdef GYRO_1_CS_PIN
+    #define GYRO_1_DEFINED 1
+  #else
+    #define GYRO_1_DEFINED 0
+  #endif
+
+  #ifdef GYRO_2_CS_PIN
+    #define GYRO_2_DEFINED 1
+  #else
+    #define GYRO_2_DEFINED 0
+  #endif
+
+  #ifdef GYRO_3_CS_PIN
+    #define GYRO_3_DEFINED 1
+  #else
+    #define GYRO_3_DEFINED 0
+  #endif
+
+  #ifdef GYRO_4_CS_PIN
+    #define GYRO_4_DEFINED 1
+  #else
+    #define GYRO_4_DEFINED 0
+  #endif
+
+  #define GYRO_COUNT (GYRO_1_DEFINED + GYRO_2_DEFINED + GYRO_3_DEFINED + GYRO_4_DEFINED)
+#endif
+
 #ifndef GYRO_1_CS_PIN
 #define GYRO_1_CS_PIN NONE
 #endif

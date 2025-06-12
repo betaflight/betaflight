@@ -698,6 +698,3 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
-#ifndef GYRO_COUNT
-#define GYRO_COUNT 1
-#endif
