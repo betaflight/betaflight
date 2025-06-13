@@ -52,8 +52,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
 //    .vtxChannelActivationConditions = { 0 },
-    .halfDuplex = true,
-    .useVTXSync = true
+    .halfDuplex = true
 );
 
 static uint8_t locked = 0;
@@ -75,9 +74,9 @@ void vtxControlInputPoll(void)
 
 static void vtxUpdateBandAndChannel(uint8_t bandStep, uint8_t channelStep)
 {
-    // if (ARMING_FLAG(ARMED)) {
-    //     locked = 1;
-    // }
+    if (ARMING_FLAG(ARMED)) {
+        locked = 1;
+    }
 
     if (!locked && vtxCommonDevice()) {
         vtxSettingsConfigMutable()->band += bandStep;
@@ -105,22 +104,18 @@ void vtxDecrementChannel(void)
     vtxUpdateBandAndChannel(0, -1);
 }
 
-uint8_t numPowerRules = 5;
 void vtxUpdateActivatedChannel(void)
 {
-    // if (ARMING_FLAG(ARMED)) {
-    //     locked = 1;
-    // }
+    if (ARMING_FLAG(ARMED)) {
+        locked = 1;
+    }
 
     if (vtxCommonDevice()) {
         static uint8_t lastIndex = -1;
 
         for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
             const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
-            //Added logic to disable non-power rules when VTX sync is disabled
-            if((index >= numPowerRules) && (vtxConfig()->useVTXSync == false)) {
-                break;
-            }
+
             if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)
                 && index != lastIndex) {
                 lastIndex = index;

@@ -135,7 +135,6 @@
 #include "drivers/osd_symbols.h"
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
-#include "drivers/pinio.h"
 
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
@@ -331,26 +330,6 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
 }
 
 #ifdef USE_GPS
-
-#ifdef USE_MGRS
-
-#define MGRS_BUF_LEN 18
-
-static void osdFormatMgrs(char *buff) {
-    
-    if (getGpsMgrsString(5, buff) == 0 && STATE(GPS_FIX_EVER)) {
-        buff[MGRS_BUF_LEN] = '\0';
-    }
-    else {
-        memset(buff, SYM_HYPHEN, MGRS_BUF_LEN);
-        buff[MGRS_BUF_LEN] = '\0';
-    }
-    
-
-}
-
-#else
-
 static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
 {
     int32_t gpsValue = 0;
@@ -417,8 +396,6 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
         break;
     }
 }
-#endif // USE_MGRS
-
 #endif // USE_GPS
 
 void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
@@ -712,7 +689,7 @@ static void osdElementAltitude(osdElementParms_t *element)
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
     const float angle = ((element->item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll) / 10.0f;
-    osdPrintFloat(element->buff, (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL, fabsf(angle), ((angle < 0) ? "-%u" : " %u"), 0, true, SYM_NONE);
+    osdPrintFloat(element->buff, (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL, fabsf(angle), ((angle < 0) ? "-%02u" : " %02u"), 1, true, SYM_NONE);
 }
 #endif
 
@@ -926,13 +903,7 @@ static void osdElementCurrentDraw(osdElementParms_t *element)
 
 static void osdElementDebug(osdElementParms_t *element)
 {
-    if(slctRx == 0){
-        tfp_sprintf(element->buff, "HI BAND");
-    }
-    else {
-        tfp_sprintf(element->buff, "LO BAND");
-    }
-    
+    tfp_sprintf(element->buff, "BAND %d", slctRx+1);
 }
 
 static void osdElementDisarmed(osdElementParms_t *element)
@@ -993,12 +964,13 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
 #endif
 
 
+
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
 
 #if defined(USE_N1_TEMP_SENSOR)
 {   
-    tfp_sprintf(element->buff, "V%c%u%c",SYM_TEMPERATURE,vtxCombinedTemp,SYM_C);
+    tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdTempValue), osdGetTemperatureSymbolForSelectedUnit());
 
 }
 #else
@@ -1055,15 +1027,12 @@ static void osdElementReadyMode(osdElementParms_t *element)
 }
 
 
-//Overloading this to show 3V3 output status
+#ifdef USE_ACC
 static void osdElementGForce(osdElementParms_t *element)
 {
-    if(pinioGet(3) == true){
-    tfp_sprintf(element->buff, "3V3 HI");
-    } else {
-        tfp_sprintf(element->buff, "3V3 LO");
-    }
+    osdPrintFloat(element->buff, SYM_NONE, osdGForce, "", 1, true, 'G');
 }
+#endif // USE_ACC
 
 #ifdef USE_GPS
 static void osdElementGpsFlightDistance(osdElementParms_t *element)
@@ -1076,28 +1045,19 @@ static void osdElementGpsFlightDistance(osdElementParms_t *element)
     }
 }
 
+//GLEB ADDITION. TAKING OVER THIS METHOD TO ESTIMATE RANGE
 static void osdElementGpsHomeDirection(osdElementParms_t *element)
-{
-    if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        if (GPS_distanceToHome > 0) {
-            int direction = GPS_directionToHome;
-#ifdef USE_GPS_LAP_TIMER
-            // Override the "home" point to the start/finish location if the lap timer is running
-            if (gpsLapTimerData.timerRunning) {
-                direction = lrintf(gpsLapTimerData.dirToPoint * 0.1f); // Convert from centidegree to degree and round to nearest
-            }
-#endif
-            element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(direction - attitude.values.yaw));
-        } else {
-            element->buff[0] = SYM_OVER_HOME;
-        }
-
-    } else {
-        // We use this symbol when we don't have a FIX
-        element->buff[0] = SYM_HYPHEN;
+{  
+    if(ARMING_FLAG(ARMED) && STATE(GPS_FIX) && GPS_distanceFlownInCm > 1000){
+        int32_t batteryUsed = getMAhDrawn();
+        int32_t batteryLeft = batteryConfig()->batteryCapacity - batteryUsed;
+        float efficiency = GPS_distanceFlownInCm / ((float)batteryUsed+0.000001);
+        float estimatedRangeLeft = (float)batteryLeft * efficiency;
+        osdPrintFloat(element->buff, SYM_NONE, constrainf(estimatedRangeLeft/100000.0, 0, 200), "%2u", 2, false, SYM_KM);
+    } else{
+        tfp_sprintf(element->buff, "NO ESTIMATE");
     }
-
-    element->buff[1] = 0;
+    
 }
 
 static void osdElementGpsHomeDistance(osdElementParms_t *element)
@@ -1112,21 +1072,6 @@ static void osdElementGpsHomeDistance(osdElementParms_t *element)
     }
 }
 
-#ifdef USE_MGRS
-
-static void osdElementGpsMgrs(osdElementParms_t *element) {
-
-    osdFormatMgrs(element->buff);
-    if (STATE(GPS_FIX_EVER) && !STATE(GPS_FIX)) {
-        SET_BLINK(element->item); // blink if we had a fix but have since lost it
-    } else {
-        CLR_BLINK(element->item);
-    }
-
-}
-
-#else 
-
 static void osdElementGpsCoordinate(osdElementParms_t *element)
 {
     const gpsCoordinateType_e coordinateType = (element->item == OSD_GPS_LON) ? GPS_LONGITUDE : GPS_LATITUDE;
@@ -1137,9 +1082,6 @@ static void osdElementGpsCoordinate(osdElementParms_t *element)
         CLR_BLINK(element->item);
     }
 }
-
-
-#endif
 
 static void osdElementGpsSats(osdElementParms_t *element)
 {
@@ -1399,6 +1341,12 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
     element->buff[i] = '\0';
 }
 
+// static void osdElementNumericalHeading(osdElementParms_t *element)
+// {
+//     if(threeOutput){tfp_sprintf(element->buff, "3V3 HIGH");}
+//     else{tfp_sprintf(element->buff, "3V3 LOW");}
+// }
+
 static void osdElementNumericalHeading(osdElementParms_t *element)
 {
     const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
@@ -1503,37 +1451,22 @@ static void osdElementRcChannels(osdElementParms_t *element)
     element->drawElement = false;  // element already drawn
 }
 
-// static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
-// {
-//     const int mAhDrawn = getMAhDrawn();
-
-//     if (mAhDrawn >= osdConfig()->cap_alarm) {
-//         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
-//     }
-
-//     if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
-//         tfp_sprintf(element->buff, "--:--");
-//     } else if (mAhDrawn > osdConfig()->cap_alarm) {
-//         tfp_sprintf(element->buff, "00:00");
-//     } else {
-//         const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
-//         osdFormatTime(element->buff, OSD_TIMER_PREC_SECOND, remaining_time);
-//     }
-// }
-
-//GLEB ADDITION. TAKING OVER THIS METHOD TO ESTIMATE RANGE INSTEAD OF TIME
 static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
-{  
-    if(ARMING_FLAG(ARMED) && STATE(GPS_FIX) && GPS_distanceFlownInCm > 1000){
-        int32_t batteryUsed = getMAhDrawn();
-        int32_t batteryLeft = batteryConfig()->batteryCapacity - batteryUsed;
-        float efficiency = GPS_distanceFlownInCm / ((float)batteryUsed+0.000001);
-        float estimatedRangeLeft = (float)batteryLeft * efficiency;
-        osdPrintFloat(element->buff, SYM_NONE, constrainf(estimatedRangeLeft/100000.0, 0, 200), "%2u", 2, false, SYM_KM);
-    } else{
-        tfp_sprintf(element->buff, "NO ESTIMATE");
+{
+    const int mAhDrawn = getMAhDrawn();
+
+    if (mAhDrawn >= osdConfig()->cap_alarm) {
+        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
-    
+
+    if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
+        tfp_sprintf(element->buff, "--:--");
+    } else if (mAhDrawn > osdConfig()->cap_alarm) {
+        tfp_sprintf(element->buff, "00:00");
+    } else {
+        const int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)osdFlyTime) / mAhDrawn);
+        osdFormatTime(element->buff, OSD_TIMER_PREC_SECOND, remaining_time);
+    }
 }
 
 static void osdElementRssi(osdElementParms_t *element)
@@ -1656,6 +1589,13 @@ static void osdElementVtxChannel(osdElementParms_t *element)
     }
     const char *vtxPowerLabel = vtxCommonLookupPowerName(vtxDevice, vtxPower);
 
+    char vtxStatusIndicator = '\0';
+    if (IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
+        vtxStatusIndicator = 'D';
+    } else if (vtxStatus & VTX_STATUS_PIT_MODE) {
+        vtxStatusIndicator = 'P';
+    }
+
 switch (element->type) {
     case OSD_ELEMENT_TYPE_2:
             tfp_sprintf(element->buff, "%s", vtxPowerLabel);
@@ -1664,8 +1604,9 @@ switch (element->type) {
     default:
         if (vtxStatus & VTX_STATUS_LOCKED) {
             tfp_sprintf(element->buff, "-:-:-:L");
-        } 
-         else {
+        } else if (vtxStatusIndicator) {
+            tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
+        } else {
             tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
         }
         break;
@@ -1673,15 +1614,9 @@ switch (element->type) {
 }
 #endif // USE_VTX_COMMON
 
-// static void osdElementAuxValue(osdElementParms_t *element)
-// {
-//     tfp_sprintf(element->buff, "%c%d", osdConfig()->aux_symbol, osdAuxValue);
-// }
-
-//OVERWRITEN TO DISPLAY STATUS MESSAGES INSTED OF AUX VALUE
 static void osdElementAuxValue(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, statusStrings[currentStatusMessageIdx]);
+    tfp_sprintf(element->buff, "%c%d", osdConfig()->aux_symbol, osdAuxValue);
 }
 
 static void osdElementWarnings(osdElementParms_t *element)
@@ -1726,10 +1661,14 @@ static void osdElementWarnings(osdElementParms_t *element)
 #endif // USE_CRAFTNAME_MSGS
 }
 
+#ifdef USE_MSP_DISPLAYPORT
 static void osdElementSys(osdElementParms_t *element)
 {
-UNUSED(element);
+    UNUSED(element);
+
+    // Nothing to render for a system element
 }
+#endif
 
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
@@ -1869,13 +1808,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
     [OSD_READY_MODE]              = osdElementReadyMode,
 #ifdef USE_GPS
-
-#ifdef USE_MGRS
-    [OSD_GPS_LON]                 = osdElementGpsMgrs,
-#else
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
-#endif
 #endif
     [OSD_DEBUG]                   = osdElementDebug,
 #ifdef USE_ACC

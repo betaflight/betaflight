@@ -59,7 +59,6 @@
 #include "telemetry/srxl.h"
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
-#include "telemetry/md5.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 5);
 

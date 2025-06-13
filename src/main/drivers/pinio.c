@@ -82,8 +82,4 @@ void pinioSet(int index, bool on)
         pinioRuntime[index].state = newState;
     }
 }
-
-bool pinioGet(int index){
-    return pinioRuntime[index].state;
-}
 #endif

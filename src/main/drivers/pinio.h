@@ -23,7 +23,7 @@
 #include <stdbool.h>
 
 #ifndef PINIO_COUNT
-#define PINIO_COUNT 8
+#define PINIO_COUNT 4
 #endif
 
 #define PINIO_CONFIG_OUT_INVERTED 0x80
@@ -34,4 +34,3 @@ struct pinioConfig_s;
 
 void pinioInit(const struct pinioConfig_s *pinioConfig);
 void pinioSet(int index, bool on);
-bool pinioGet(int index);

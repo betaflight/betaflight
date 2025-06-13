@@ -57,9 +57,6 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#ifdef USE_NEROS_RX
-#include "pg/rx_neros.h"
-#endif
 
 #include "rx/crsf.h"
 #include "rx/crsf_protocol.h"
@@ -71,9 +68,6 @@
 #include "telemetry/msp_shared.h"
 
 #include "crsf.h"
-#include "drivers/pinio.h"
-
-#include "telemetry/md5.h"
 
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
@@ -288,39 +282,6 @@ void crsfFrameHeartbeat(sbuf_t *dst)
     sbufWriteU16BigEndian(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
 }
 
-void crsfFrameBindPhrase(sbuf_t *dst, bool rxSelect)
-{
-    char* bindPhrase        = nelrsConfigMutable()->bindPhraseHigh;
-    uint32_t startFrequency = nelrsConfigMutable()->startFrequencyHigh;
-    uint32_t midFrequency   = nelrsConfigMutable()->midFrequencyHigh;
-    uint32_t endFrequency   = nelrsConfigMutable()->endFrequencyHigh;
-    uint8_t numChannels     = nelrsConfigMutable()->numChannelsHigh;
-    if(rxSelect == true){
-        bindPhrase     = nelrsConfigMutable()->bindPhraseLow;
-        startFrequency = nelrsConfigMutable()->startFrequencyLow;
-        midFrequency   = nelrsConfigMutable()->midFrequencyLow;
-        endFrequency   = nelrsConfigMutable()->endFrequencyLow;
-        numChannels    = nelrsConfigMutable()->numChannelsLow;
-    }
-    bool useCrypto = nelrsConfigMutable()->cryptoEnable;
-
-    uint8_t uidBuffer[6] = {0};
-    md5String(bindPhrase, uidBuffer);
-    sbufWriteU8(dst, CRSF_FRAME_BIND_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-    sbufWriteU8(dst, CRSF_FRAMETYPE_BIND);
-    sbufWriteU8(dst, uidBuffer[0]);
-    sbufWriteU8(dst, uidBuffer[1]);
-    sbufWriteU8(dst, uidBuffer[2]);
-    sbufWriteU8(dst, uidBuffer[3]);
-    sbufWriteU8(dst, uidBuffer[4]);
-    sbufWriteU8(dst, uidBuffer[5]);
-    sbufWriteU16BigEndian(dst, startFrequency);
-    sbufWriteU16BigEndian(dst, midFrequency);
-    sbufWriteU16BigEndian(dst, endFrequency);
-    sbufWriteU8(dst, numChannels);
-    sbufWriteU8(dst, (uint8_t)useCrypto);
-}
-
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
     CRSF_ACTIVE_ANTENNA2 = 1
@@ -491,7 +452,6 @@ void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
-
 void speedNegotiationProcess(timeUs_t currentTimeUs)
 {
     if (crsfSpeed.hasPendingReply) {
@@ -522,46 +482,6 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
         crsfRxSendTelemetryData(); // prevent overwriting previous data
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
-    } else {
-
-    }
-}
-#endif
-
-#if defined(USE_NEROS_RX)
-//TODO: Pulling extern for switchPinio was giving undefined reference, re-factor where this is defined
-const uint8_t switchPin = 2;
-int bindPhrasesSent = 0;
-void crsfSendRXBindPhrases(void){
-    sbuf_t crsfPayloadBuf;
-    sbuf_t *dst = &crsfPayloadBuf;
-
-    if(bindPhrasesSent == 2){
-        pinioSet(switchPin,false);
-        crsfInitializeFrame(dst);
-        crsfFrameBindPhrase(dst,false);
-        crsfRxSendTelemetryData();
-        crsfFinalize(dst);
-        crsfRxSendTelemetryData();
-    }
-    else if (bindPhrasesSent == 4){
-        pinioSet(switchPin,true);
-        crsfInitializeFrame(dst);
-        crsfFrameBindPhrase(dst,true);
-        crsfRxSendTelemetryData();
-        crsfFinalize(dst);
-        crsfRxSendTelemetryData();
-    }
-    else if(bindPhrasesSent == 6){
-        pinioSet(switchPin,false);
-    }
-}
-
-void bindPhraseProcess(uint32_t currentTime) {
-    UNUSED(currentTime);
-    if(bindPhrasesSent < 7){
-        crsfSendRXBindPhrases();
-        bindPhrasesSent+=1;
     }
 }
 #endif
@@ -709,25 +629,22 @@ static void processCrsf(void)
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
-    /**
-     * @note disabling to test GPS update rates on ATAK
-     */
-    // if (currentSchedule & BIT(CRSF_FRAME_ATTITUDE_INDEX)) {
-    //     crsfInitializeFrame(dst);
-    //     crsfFrameAttitude(dst);
-    //     crsfFinalize(dst);
-    // }
-    // if (currentSchedule & BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
-    //     crsfInitializeFrame(dst);
-    //     crsfFrameBatterySensor(dst);
-    //     crsfFinalize(dst);
-    // }
+    if (currentSchedule & BIT(CRSF_FRAME_ATTITUDE_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameAttitude(dst);
+        crsfFinalize(dst);
+    }
+    if (currentSchedule & BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameBatterySensor(dst);
+        crsfFinalize(dst);
+    }
 
-    // if (currentSchedule & BIT(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
-    //     crsfInitializeFrame(dst);
-    //     crsfFrameFlightMode(dst);
-    //     crsfFinalize(dst);
-    // }
+    if (currentSchedule & BIT(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameFlightMode(dst);
+        crsfFinalize(dst);
+    }
 #ifdef USE_GPS
     if (currentSchedule & BIT(CRSF_FRAME_GPS_INDEX)) {
         crsfInitializeFrame(dst);
@@ -768,16 +685,16 @@ void initCrsfTelemetry(void)
 #endif
 
     int index = 0;
-    // if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
-    //     crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
-    // }
-    // if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
-    //     || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
-    //     crsfSchedule[index++] = BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX);
-    // }
-    // if (telemetryIsSensorEnabled(SENSOR_MODE)) {
-    //     crsfSchedule[index++] = BIT(CRSF_FRAME_FLIGHT_MODE_INDEX);
-    // }
+    if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
+        crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
+    }
+    if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
+        || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
+        crsfSchedule[index++] = BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX);
+    }
+    if (telemetryIsSensorEnabled(SENSOR_MODE)) {
+        crsfSchedule[index++] = BIT(CRSF_FRAME_FLIGHT_MODE_INDEX);
+    }
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)
        && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {

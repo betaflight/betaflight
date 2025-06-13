@@ -107,7 +107,6 @@
 #include "pg/rcdevice.h"
 #include "pg/stats.h"
 #include "pg/board.h"
-#include "pg/rx_neros.h"
 
 #include "rx/a7105_flysky.h"
 #include "rx/cc2500_frsky_common.h"
@@ -129,6 +128,7 @@
 #include "telemetry/frsky_hub.h"
 #include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
+
 #include "settings.h"
 
 
@@ -1663,23 +1663,6 @@ const clivalue_t valueTable[] = {
     { "expresslrs_switch_mode", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SWITCH_MODE }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, switchMode) },
     { "expresslrs_model_id",    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, modelId) },
 #endif
-#ifdef USE_NEROS_RX
-    { "use_vtx_sync",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, useVTXSync) },
-    { "elrs_bind_phrase_low",       VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1,  MAX_PHRASE_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseLow) },
-    { "elrs_bind_phrase_high",      VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1,  MAX_PHRASE_LENGTH, STRING_FLAGS_NONE }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, bindPhraseHigh) },
-    { "elrs_start_frequency_low",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, startFrequencyLow) },
-    { "elrs_mid_frequency_low",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, midFrequencyLow) },
-    { "elrs_end_frequency_low",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, endFrequencyLow) },
-    { "elrs_num_channels_low",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, numChannelsLow) },
-    { "elrs_start_frequency_high",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, startFrequencyHigh) },
-    { "elrs_mid_frequency_high",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, midFrequencyHigh) },
-    { "elrs_end_frequency_high",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 7000,10300 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, endFrequencyHigh) },
-    { "elrs_num_channels_high",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, numChannelsHigh) },
-    { "elrs_use_encryption",         VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, cryptoEnable) },
-    { "camera_2_enable",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, thermalCamEnabled) },
-    { "illuminator_enable",      VAR_UINT8  | MASTER_VALUE , .config.minmaxUnsigned = { 0, 1 }, PG_NELRS_CONFIG, offsetof(nelrsConfig_t, illuminatorEnabled) },
-#endif
-
 
     { "scheduler_relax_rx",  VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, rxRelaxDeterminism) },
     { "scheduler_relax_osd", VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, osdRelaxDeterminism) },

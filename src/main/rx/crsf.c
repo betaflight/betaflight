@@ -196,16 +196,10 @@ typedef struct crsfPayloadLinkstatistics_s {
     int8_t uplink_SNR;
     uint8_t active_antenna;
     uint8_t rf_Mode;
-    uint8_t tlm_Ratio;
     uint8_t uplink_TX_Power;
     uint8_t downlink_RSSI;
     uint8_t downlink_Link_quality;
     int8_t downlink_SNR;
-    uint16_t freq_low;
-    uint16_t freq_high;
-    uint8_t num_channels;
-    uint8_t uid[6];
-    uint8_t bind_phrase[12];
 } crsfLinkStatistics_t;
 
 #if defined(USE_CRSF_V3)
@@ -660,6 +654,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         linkQualitySource = LQ_SOURCE_RX_PROTOCOL_CRSF;
     }
 #endif
+
     return serialPort != NULL;
 }
 

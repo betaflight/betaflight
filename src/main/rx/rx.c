@@ -73,9 +73,7 @@
 #include "rx/msp_override.h"
 
 #include "drivers/pinio.h"
-#include "drivers/pwm_output.h"
 
-#include "pg/rx_neros.h"
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
@@ -131,36 +129,6 @@ static float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // last received raw val
 float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];           // scaled, modified, checked and constrained values
 uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-typedef enum {
-    LED_OFF,
-    LED_IR,
-    LED_OVERT,
-} illuminator_status_t;
-
-typedef struct {
-    bool enabled;
-    IO_t io;
-    timerChannel_t channel;
-    uint32_t period;
-    uint8_t inverted;
-    timerHardware_t *timerHardware;
-    illuminator_status_t illuminator_status;
-    bool is_init;
-} illuminatorControlRuntime_t;
-
-typedef enum {
-    CAM1,
-    CAM2,
-} camera_status_t;
-
-typedef struct {
-    IO_t io;
-    camera_status_t cam_enabled;
-} cameraControlRuntime_t;
-
-static cameraControlRuntime_t cameraControl;
-static illuminatorControlRuntime_t illuminatorControlRuntime;
-
 #define MAX_INVALID_PULSE_TIME_MS 300                   // hold time in milliseconds after bad channel or Rx link loss
 // will not be actioned until the nearest multiple of 100ms
 #define PPM_AND_PWM_SAMPLE_COUNT 3
@@ -169,20 +137,6 @@ static illuminatorControlRuntime_t illuminatorControlRuntime;
 #define DELAY_100_MS (100 * 1000)                       // 100ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
-
-// The tag is calculated as follows:
-// Port A = 1, B = 2, C= 3 ...
-// tag = (port << 4) | pin
-#define PB0_TAG 0x20
-#define PC3_TAG 0x33
-
-// ILLUMINATOR PWM MACROS
-#define ONE_M_HZ 1000000
-#define ILLUMINATOR_OFF_PERIOD 900
-#define ILLUMINATOR_IR_LED_MIN_PERIOD 1100
-#define ILLUMINATOR_IR_LED_PERIOD 1500
-#define ILLUMINATOR_OVERT_LED_MIN_PERIOD 1700
-#define ILLUMINATOR_OVERT_LED_PERIOD 2100
 
 rxRuntimeState_t rxRuntimeState;
 static uint8_t rcSampleIndex = 0;
@@ -322,138 +276,8 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 }
 #endif
 
-
-static void illuminatorInit(void) {
-
-    if (!nelrsConfigMutable()->illuminatorEnabled) {
-        return;
-    }
-
-    ioTag_t illuminatorTag = PB0_TAG;
-    illuminatorControlRuntime.io = IOGetByTag(illuminatorTag);
-
-    IOInit(illuminatorControlRuntime.io, OWNER_ILLUMINATOR, 0);
-    illuminatorControlRuntime.inverted = 0;
-    illuminatorControlRuntime.timerHardware = (timerHardware_t *)timerAllocate(illuminatorTag, OWNER_ILLUMINATOR, 0);
-
-    if (illuminatorControlRuntime.timerHardware != NULL) {
-        IOConfigGPIOAF(illuminatorControlRuntime.io, IOCFG_AF_PP, illuminatorControlRuntime.timerHardware->alternateFunction);
-        // Period is 2x ILLUMINATOR_OVERT_LED_PERIOD
-        pwmOutConfig(&illuminatorControlRuntime.channel, illuminatorControlRuntime.timerHardware, ONE_M_HZ, ILLUMINATOR_OVERT_LED_PERIOD * 2, 0, illuminatorControlRuntime.inverted);
-        
-        illuminatorControlRuntime.period = ILLUMINATOR_OFF_PERIOD;
-        *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period;
-        illuminatorControlRuntime.enabled = true;
-        illuminatorControlRuntime.illuminator_status = LED_OFF;
-        illuminatorControlRuntime.is_init = true;
-    }
-    else {
-        illuminatorControlRuntime.is_init = false;
-    }
-
-}
-
-static void ilumminator_generate_output(void) {
-
-    // The datasheet recommends starting at a lower brightness before scaling to the maximum
-    // brightness.
-    if (illuminatorControlRuntime.illuminator_status == LED_IR) {
-        // Gradually scale to max brightness.
-        utils_step_towards(&illuminatorControlRuntime.period, ILLUMINATOR_IR_LED_PERIOD, 20);
-    }
-    else if (illuminatorControlRuntime.illuminator_status == LED_OVERT) {
-        // Gradually scale to max brightness.
-        utils_step_towards(&illuminatorControlRuntime.period, ILLUMINATOR_OVERT_LED_PERIOD, 20);
-    }
-
-    *illuminatorControlRuntime.channel.ccr = illuminatorControlRuntime.period;
-    illuminatorControlRuntime.enabled = true;
-}
-
-static void detectIlluminator(void) {
-
-    if (!illuminatorControlRuntime.is_init || !nelrsConfigMutable()->illuminatorEnabled) {
-        return;
-    }
-
-    float rx_aux2 = rcData[AUX2];
-    
-    illuminator_status_t prev_illuminator_status = illuminatorControlRuntime.illuminator_status;
-    
-    // Get the illuminator state based on handset stick position.
-    // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
-    if (rx_aux2 < 1250.0f || (rx_aux2 > 1498.0f && rx_aux2 < 1502.0f)) {
-        illuminatorControlRuntime.illuminator_status = LED_OFF;
-    }
-    else if ( rx_aux2 > 1375.0f && rx_aux2 < 1675.0f ) {
-        illuminatorControlRuntime.illuminator_status = LED_IR;
-    }
-    else if (rx_aux2 > 1800.0f) {
-        illuminatorControlRuntime.illuminator_status = LED_OVERT;
-    }
-
-    // Modify PWM config only if there is a change in user input.
-    if (prev_illuminator_status != illuminatorControlRuntime.illuminator_status) {
-
-        if (illuminatorControlRuntime.illuminator_status == LED_OFF) {
-            illuminatorControlRuntime.period = ILLUMINATOR_OFF_PERIOD;
-        }
-        else if (illuminatorControlRuntime.illuminator_status == LED_IR) {
-            illuminatorControlRuntime.period = ILLUMINATOR_IR_LED_MIN_PERIOD;
-        }
-        else if (illuminatorControlRuntime.illuminator_status == LED_OVERT) {
-            illuminatorControlRuntime.period = ILLUMINATOR_OVERT_LED_MIN_PERIOD;
-        }
-
-    }
-
-    // Generate illuminator output.
-    ilumminator_generate_output();
-
-}
-
-static void cameraCtrlInit(void) {
-
-    if (!nelrsConfigMutable()->thermalCamEnabled) {
-        return;
-    }
-
-    ioTag_t CameraCtrlTag = PC3_TAG;
-    cameraControl.io = IOGetByTag(CameraCtrlTag);
-
-    IOInit(cameraControl.io, OWNER_CAMERA_CONTROL, 0);
-    IOConfigGPIO(cameraControl.io, IOCFG_OUT_PP);
-    // Enable camera 1 on boot.
-    IOLo(cameraControl.io);
-    cameraControl.cam_enabled = CAM1;
-}
-
-static void detectCamera(void) {
-
-    if (!nelrsConfigMutable()->thermalCamEnabled) {
-        return;
-    }
-
-    float rx_aux2 = rcData[AUX2];
-    
-    // https://www.notion.so/neros-tech/CRSF-channel-multiplexing-to-support-illuminator-and-thermal-camera-1f1215434dbc80adb7bedf3b76a587ca
-    if ( (rx_aux2 > 1200.0f && rx_aux2 < 1250.0f) || (rx_aux2 > 1625.0f && rx_aux2 < 1675.0f)
-     || (rx_aux2 > 1975.0f)) {
-        IOHi(cameraControl.io);
-        cameraControl.cam_enabled = CAM2;
-    }
-    else {
-        IOLo(cameraControl.io);
-        cameraControl.cam_enabled = CAM1;
-    }
-
-}
-
 void rxInit(void)
 {
-    cameraCtrlInit();
-    illuminatorInit();
-
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeState.rxProvider = RX_PROVIDER_PARALLEL_PWM;
     } else if (featureIsEnabled(FEATURE_RX_PPM)) {
@@ -846,12 +670,14 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
+bool threeOutput=false;
 bool slctRx = 0;
 uint32_t startTimeMs = 0;
 uint32_t lastSwitchMs = 0;
 uint8_t bandOneLQ = 100;
 uint8_t bandTwoLQ = 100;
-
+bool bandOneBelowThresh = false;
+bool bandTwoBelowThresh = false;
 void detectAndApplySignalLossBehaviour(void)
 {
     //GLEB ADDITION. Set a start time first time that this method is called
@@ -939,6 +765,7 @@ void detectAndApplySignalLossBehaviour(void)
     }
 
     const uint8_t switchPinio = 2;
+    const uint8_t threeVThreeChannel= 9;
     const uint8_t switchChannel = 11;
     const int16_t midValue = 1500;
 
@@ -996,6 +823,16 @@ void detectAndApplySignalLossBehaviour(void)
         pinioSet(switchPinio, slctRx);
     }
 
+    //set threeOutput according to if we want to output 3v3 or not
+    if(rxFlightChannelsValid && (rcData[threeVThreeChannel]>midValue))
+    {
+        threeOutput=true;
+    }
+    else 
+    {
+        threeOutput=false;
+    }
+
     if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();
         //  --> start the timer to exit stage 2 failsafe 100ms after losing all packets or the BOXFAILSAFE switch is actioned
@@ -1030,8 +867,6 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
     readRxChannelsApplyRanges();            // returns rcRaw
     detectAndApplySignalLossBehaviour();    // returns rcData
-    detectIlluminator();
-    detectCamera();
 
     rcSampleIndex++;
 
