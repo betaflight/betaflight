@@ -629,6 +629,9 @@ void init(void)
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.
 
+#ifdef USE_I2C_DEVICE_0
+    i2cInit(I2CDEV_0);
+#endif
 #ifdef USE_I2C_DEVICE_1
     i2cInit(I2CDEV_1);
 #endif
