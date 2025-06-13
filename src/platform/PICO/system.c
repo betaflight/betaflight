@@ -65,7 +65,7 @@ static uint32_t usTicks = 0;
 static float usTicksInv = 0.0f;
 
 #define PICO_DWT_CTRL   ((uint32_t *)(PPB_BASE + M33_DWT_CTRL_OFFSET))
-#define PICO_DWT_CYCCNT ((uint32_t *)(PPB_BASE + M33_DWT_CYCCNT_OFFSET))
+#define PICO_DWT_CYCCNT ((volatile uint32_t *)(PPB_BASE + M33_DWT_CYCCNT_OFFSET))
 #define PICO_DEMCR      ((uint32_t *)(PPB_BASE + M33_DEMCR_OFFSET))
 
 void cycleCounterInit(void)
