@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifndef GYRO_COUNT // this is just to make tests pass
+#ifdef UNIT_TEST
 #define GYRO_COUNT 1
 #endif
 

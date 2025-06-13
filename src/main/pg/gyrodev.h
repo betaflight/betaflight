@@ -25,7 +25,10 @@
 #include "pg/pg.h"
 #include "common/sensor_alignment.h"
 #include "drivers/io_types.h"
+
+#ifdef UNIT_TEST
 #include "drivers/sensor.h"
+#endif
 
 #define MAX_GYRODEV_COUNT GYRO_COUNT
 #define MAX_ACCDEV_COUNT GYRO_COUNT
