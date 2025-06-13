@@ -479,7 +479,7 @@ bool icm456xxAccReadSPI(accDev_t *acc)
             spiWait(&acc->gyro->dev);
 
         } else 
-#else
+#endif
         {
            // Interrupts are present, but no DMA. Non-DMA read
            uint8_t raw[ICM456XX_DATA_LENGTH];
@@ -493,7 +493,6 @@ bool icm456xxAccReadSPI(accDev_t *acc)
            acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
            
         }
-#endif
         break;
     }
 
