@@ -7,6 +7,11 @@
 # PICO_TRACE = 1
 DEFAULT_OUTPUT := uf2
 
+# Run from SRAM. To disable, set environment variable RUN_FROM_RAM=0
+ifeq ($(RUN_FROM_RAM),)
+RUN_FROM_RAM = 1
+endif
+
 PICO_LIB_OPTIMISATION      := -O2 -fuse-linker-plugin -ffast-math -fmerge-all-constants
 
 # This file PICO.mk is $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
@@ -233,6 +238,7 @@ SYS_INCLUDE_DIRS += \
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse
+ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
 
 # Automatically treating constants as single-precision breaks pico-sdk (-Werror=double-promotion)
 # We should go through BF code and explicitly declare constants as single rather than double as required,
@@ -313,7 +319,6 @@ DEVICE_FLAGS    += \
             -DLIB_PICO_UTIL=1 \
             -DPICO_32BIT=1 \
             -DPICO_BUILD=1 \
-            -DPICO_COPY_TO_RAM=0 \
             -DPICO_CXX_ENABLE_EXCEPTIONS=0 \
             -DPICO_NO_FLASH=0 \
             -DPICO_NO_HARDWARE=0 \
@@ -321,7 +326,12 @@ DEVICE_FLAGS    += \
             -DPICO_RP2350=1 \
             -DPICO_USE_BLOCKED_RAM=0
 
-LD_SCRIPT       = $(LINKER_DIR)/pico_rp2350.ld
+ifeq ($(RUN_FROM_RAM),1)
+LD_SCRIPT       = $(LINKER_DIR)/pico_rp2350_RunFromRAM.ld
+else
+LD_SCRIPT       = $(LINKER_DIR)/pico_rp2350_RunFromFLASH.ld
+endif
+
 STARTUP_SRC     = PICO/startup/bs2_default_padded_checksummed.S
 
 # Override the OPTIMISE_SPEED compiler setting to save flash space on these 512KB targets.
