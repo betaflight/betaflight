@@ -30,6 +30,7 @@
 
 #define _STRTO_ENDPTR 1
 
+#if PLATFORM_NO_LIBC
 static unsigned long _strto_l(const char * str, char ** endptr, int base, int sflag)
 {
     unsigned long number, cutoff;
@@ -127,6 +128,7 @@ unsigned long strtoul(const char * str, char ** endptr, int base)
 {
     return _strto_l(str, endptr, base, 0);
 }
+#endif
 
 int atoi(const char *str)
 {

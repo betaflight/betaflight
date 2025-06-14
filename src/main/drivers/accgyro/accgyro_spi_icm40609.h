@@ -21,15 +21,12 @@
 
 #pragma once
 
-#define IOCFG_OUT_PP        0
-#define IOCFG_OUT_OD        0
-#define IOCFG_AF_PP         0
-#define IOCFG_AF_OD         0
-#define IOCFG_IPD           0
-#define IOCFG_IPU           0
-#define IOCFG_IN_FLOATING   0
+#include "drivers/bus.h"
+ 
+void icm40609AccInit(accDev_t *acc);
+void icm40609GyroInit(gyroDev_t *gyro);
 
-#define SPIDEV_COUNT        0
+uint8_t icm40609SpiDetect(const extDevice_t *dev);
 
-// no serial pins are defined for the simulator
-#define SERIAL_TRAIT_PIN_CONFIG 0
+bool icm40609SpiAccDetect(accDev_t *acc);
+bool icm40609SpiGyroDetect(gyroDev_t *gyro);

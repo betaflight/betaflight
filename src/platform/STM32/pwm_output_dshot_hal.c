@@ -40,7 +40,7 @@
 #include "drivers/motor.h"
 #include "drivers/pwm_output.h"
 #include "pwm_output_dshot_shared.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/system.h"

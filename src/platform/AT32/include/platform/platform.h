@@ -57,8 +57,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define U_ID_1 (*(uint32_t*)0x1ffff7ec)
 #define U_ID_2 (*(uint32_t*)0x1ffff7f0)
 
-#define USE_PIN_AF
-
 #ifndef AT32F4
 #define AT32F4
 #endif
@@ -144,12 +142,15 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 
-#define PLATFORM_TRAIT_RCC 1
-#define UART_TRAIT_AF_PIN  1
-#define UART_TRAIT_PINSWAP 1
+#define PLATFORM_TRAIT_RCC      1
+#define UART_TRAIT_AF_PIN       1
+#define UART_TRAIT_PINSWAP      1
 #define SERIAL_TRAIT_PIN_CONFIG 1
-
-#define UARTHARDWARE_MAX_PINS 5
+#define I2C_TRAIT_AF_PIN        1
+#define I2CDEV_COUNT            4
+#define I2C_TRAIT_HANDLE        1
+#define SPI_TRAIT_AF_PIN        1
+#define UARTHARDWARE_MAX_PINS   5
 
 #define UART_REG_RXD(base) ((base)->dt)
 #define UART_REG_TXD(base) ((base)->dt)

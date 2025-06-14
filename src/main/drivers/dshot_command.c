@@ -149,7 +149,20 @@ static bool allMotorsAreIdle(void)
 
 bool dshotStreamingCommandsAreEnabled(void)
 {
-    return motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS;
+    static bool firstCommand = true;
+    bool goodMotorDetectDelay;
+
+    if (firstCommand) {
+        goodMotorDetectDelay = motorGetMotorEnableTimeMs() && (cmpTimeMs(millis(), motorGetMotorEnableTimeMs()) > DSHOT_PROTOCOL_DETECTION_DELAY_MS);
+
+        if (goodMotorDetectDelay) {
+            firstCommand = false;
+        }
+    } else {
+        goodMotorDetectDelay = true;
+    }
+
+    return motorIsEnabled() && goodMotorDetectDelay;
 }
 
 static bool dshotCommandsAreEnabled(dshotCommandType_e commandType)
@@ -203,9 +216,11 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 
     if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
         bool isBitbangActive = false;
 #ifdef USE_DSHOT_BITBANG
         isBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
+#endif
 #endif
         // Fake command in queue. Blocking commands are launched from cli, and no inline commands are running
         for (uint8_t i = 0; i < motorDeviceCount(); i++) {

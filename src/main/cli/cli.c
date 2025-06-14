@@ -224,7 +224,8 @@ static const char * const mixerNames[] = {
     "FLYING_WING", "Y4", "HEX6X", "OCTOX8", "OCTOFLATP", "OCTOFLATX",
     "AIRPLANE", "HELI_120_CCPM", "HELI_90_DEG", "VTAIL4",
     "HEX6H", "PPM_TO_SERVO", "DUALCOPTER", "SINGLECOPTER",
-    "ATAIL4", "CUSTOM", "CUSTOMAIRPLANE", "CUSTOMTRI", "QUADX1234", NULL
+    "ATAIL4", "CUSTOM", "CUSTOMAIRPLANE", "CUSTOMTRI", "QUADX1234",
+    "OCTOX8P", NULL
 };
 #endif
 
@@ -5000,9 +5001,9 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
         if (rcSmoothingAutoCalculate()) {
             cliPrint("# Detected Rx frequency: ");
             if (getRxRateValid()) {
-	            cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
+                cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
             } else {
-            	cliPrintLine("NO SIGNAL");
+                cliPrintLine("NO SIGNAL");
             }
         }
         cliPrintf("# Active setpoint and FF cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);

@@ -20,10 +20,14 @@
 
 #pragma once
 
+#include "platform.h"
 #include "drivers/adc.h"
 #include "drivers/dma.h"
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
+
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc_types.h"
+#endif
 
 #if defined(STM32F4) || defined(STM32F7)
 #define ADC_TAG_MAP_COUNT 16
@@ -73,8 +77,8 @@ typedef struct adcTagMap_s {
 #define ADC_DEVICES_345 ((1 << ADCDEV_3)|(1 << ADCDEV_4)|(1 << ADCDEV_5))
 
 typedef struct adcDevice_s {
-#if !defined(SIMULATOR_BUILD)
     ADC_TypeDef* ADCx;
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rccADC;
 #endif
 #if !defined(USE_DMA_SPEC)

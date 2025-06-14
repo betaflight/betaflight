@@ -33,7 +33,7 @@
 #include "build/build_config.h"
 
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/inverter.h"
 #include "drivers/serial.h"
 #include "drivers/serial_impl.h"

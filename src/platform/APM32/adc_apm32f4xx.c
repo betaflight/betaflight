@@ -32,7 +32,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/dma.h"
 #include "drivers/sensor.h"
 #include "drivers/adc.h"
@@ -270,8 +270,7 @@ void adcInit(const adcConfig_t *config)
         adcInitDevice(&adcInternal, 2);
         DDL_ADC_Enable(adcInternal.ADCx);
         adcInitInternalInjected(&adcInternal);
-    }
-    else {
+    } else {
         // Initialize for injected conversion
         adcInitInternalInjected(&adc);
     }

@@ -39,7 +39,8 @@
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
-#define USE_PIN_AF
+#define SPI_TRAIT_AF_PIN 1
+#define I2C_TRAIT_AF_PIN 1
 
 #ifndef STM32G4
 #define STM32G4
@@ -64,7 +65,8 @@
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
-#define USE_PIN_AF
+#define SPI_TRAIT_AF_PIN 1
+#define I2C_TRAIT_AF_PIN 1
 
 #ifndef STM32H7
 #define STM32H7
@@ -89,7 +91,7 @@
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
-#define USE_PIN_AF
+#define SPI_TRAIT_AF_PIN 1
 
 #ifndef STM32F7
 #define STM32F7
@@ -103,6 +105,11 @@
 #define U_ID_0 (*(uint32_t*)0x1fff7a10)
 #define U_ID_1 (*(uint32_t*)0x1fff7a14)
 #define U_ID_2 (*(uint32_t*)0x1fff7a18)
+
+#define SPI_TRAIT_AF_PORT 1
+
+#define I2C_TRAIT_STATE 1
+#define I2C_TRAIT_AF_PIN 1
 
 #ifndef STM32F4
 #define STM32F4
@@ -419,3 +426,25 @@ extern uint8_t _dmaram_end__;
 
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
+
+#if defined(USE_HAL_DRIVER)
+#define I2C_TRAIT_HANDLE 1
+
+#if defined(HAL_SPI_MODULE_ENABLED)
+#define SPI_TRAIT_HANDLE 1
+#endif
+
+#endif
+
+#if defined(STM32F4)
+#define I2CDEV_COUNT 3
+#else
+#define I2CDEV_COUNT 4
+#endif
+
+// QUAD SPI
+#if defined(STM32H7)
+#define QUADSPI_TRAIT_AF_PIN 1
+#define QUADSPI_TRAIT_HANDLE 1
+#define MAX_QUADSPI_PIN_SEL 3
+#endif

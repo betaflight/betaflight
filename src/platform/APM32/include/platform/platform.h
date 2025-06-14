@@ -104,8 +104,6 @@
 #define U_ID_1 (*(uint32_t*)0x1fff7a14)
 #define U_ID_2 (*(uint32_t*)0x1fff7a18)
 
-#define USE_PIN_AF
-
 #ifndef APM32F4
 #define APM32F4
 #endif
@@ -193,6 +191,11 @@
 #define PLATFORM_TRAIT_RCC 1
 #define UART_TRAIT_AF_PORT 1
 #define SERIAL_TRAIT_PIN_CONFIG 1
+#define I2C_TRAIT_AF_PIN 1
+#define I2CDEV_COUNT 3
+#define I2C_TRAIT_HANDLE 1
+
+#define SPI_TRAIT_AF_PIN 1
 
 #define UARTHARDWARE_MAX_PINS 4
 

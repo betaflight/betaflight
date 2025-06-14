@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "rcc_types.h"
+#include "platform/rcc_types.h"
 
 enum rcc_reg {
     RCC_EMPTY = 0,   // make sure that default value (0) does not enable anything
