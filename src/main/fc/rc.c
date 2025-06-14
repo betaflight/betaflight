@@ -262,12 +262,12 @@ static float applyQuickRates(const int axis, float rcCommandf, const float rcCom
 
 static float applyPlainEnglishRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
-    rcCommandf *= plainEnglishRates.MaxRotationSpeed * 
+    rcCommandf *= MaxQuadcopterRotationSpeed *
         (
-            plainEnglishRates.CenterStickPrecision * 
+            MyStickFeel.CenterStickPrecision *
             powf(rcCommandfAbs, 20.f * 
-            powf(plainEnglishRates.OuterStickTransition, 2.f)) + 
-            (1.f - plainEnglishRates.CenterStickPrecision)
+            powf(MyStickFeel.OuterStickTransition, 2.f)) +
+            (1.f - MyStickFeel.CenterStickPrecision)
         );   
     return rcCommandf;
 }
