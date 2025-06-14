@@ -958,6 +958,9 @@ void initRcProcessing(void)
     case RATES_TYPE_QUICK:
         applyRates = applyQuickRates;
         break;
+    case RATES_TYPE_PLAINENGLISH:
+        applyRates = applyPlainEnglishRates;
+        break;
     }
 
 #ifdef USE_FEEDFORWARD
