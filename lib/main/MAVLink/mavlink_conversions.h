@@ -9,8 +9,7 @@
 #endif
 #include <math.h>
 
-#define MAVLINK_PI_2 (M_PIf/2.0f)
-#define MAVLINK_ONE_THOUSANDTH (0.001f)
+#define MAVLINK_EPS (0.001f)
 
 /**
  * @file mavlink_conversions.h
@@ -69,12 +68,12 @@ MAVLINK_HELPER void mavlink_dcm_to_euler(const float dcm[3][3], float* roll, flo
     float phi, theta, psi;
     theta = asinf(-dcm[2][0]);
 
-    if (fabsf(theta - MAVLINK_PI_2) < MAVLINK_ONE_THOUSANDTH) {
+    if (fabsf(theta - M_PIf / 2.0f) < MAVLINK_EPS) {
         phi = 0.0f;
         psi = (atan2f(dcm[1][2] - dcm[0][1],
                 dcm[0][2] + dcm[1][1]) + phi);
 
-    } else if (fabsf(theta + MAVLINK_PI_2) < MAVLINK_ONE_THOUSANDTH) {
+    } else if (fabsf(theta + M_PIf / 2.0f) < MAVLINK_EPS) {
         phi = 0.0f;
         psi = atan2f(dcm[1][2] - dcm[0][1],
                   dcm[0][2] + dcm[1][1] - phi);

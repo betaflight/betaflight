@@ -46,12 +46,12 @@ static double normalize_longitude(double lon_degrees);
 static double adjust_latitude(double lat_degrees, size_t length);
 
 void OLC_GetCenter(const OLC_CodeArea* area, OLC_LatLon* center) {
-  center->lat = area->lo.lat + (area->hi.lat - area->lo.lat) / 2.0f;
+  center->lat = area->lo.lat + (area->hi.lat - area->lo.lat) / 2.0;
   if (center->lat > kLatMaxDegrees) {
     center->lat = kLatMaxDegrees;
   }
 
-  center->lon = area->lo.lon + (area->hi.lon - area->lo.lon) / 2.0f;
+  center->lon = area->lo.lon + (area->hi.lon - area->lo.lon) / 2.0;
   if (center->lon > kLonMaxDegrees) {
     center->lon = kLonMaxDegrees;
   }
@@ -104,8 +104,8 @@ int OLC_Encode(const OLC_LatLon* location, size_t length, char* code,
 
   // Multiply values by their precision and convert to positive without any
   // floating point operations.
-  long long int lat_val = kLatMaxDegrees * 2.5e7f;
-  long long int lng_val = kLonMaxDegrees * 8.192e6f;
+  long long int lat_val = kLatMaxDegrees * 2.5e7;
+  long long int lng_val = kLonMaxDegrees * 8.192e6;
   lat_val += latitude * 2.5e7f;
   lng_val += longitude * 8.192e6f;
 

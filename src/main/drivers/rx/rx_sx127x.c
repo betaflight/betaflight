@@ -358,7 +358,7 @@ uint32_t sx127xGetCurrBandwidthNormalisedShifted(const sx127xBandwidth_e bw)
 
 void sx127xSetPPMoffsetReg(const int32_t offset, const uint32_t freq)
 {
-    int8_t offsetPPM = (offset * 1e6f / freq) * 95 / 100;
+    int8_t offsetPPM = (offset * 1e6 / freq) * 95 / 100;
     sx127xWriteRegister(SX127x_PPMOFFSET, (uint8_t) offsetPPM);
 }
 

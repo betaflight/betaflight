@@ -82,7 +82,7 @@ static bool rc_received = false;
 static bool fdm_received = false;
 
 static struct timespec start_time;
-static double simRate = 1.0l;
+static double simRate = 1.0;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
@@ -114,9 +114,9 @@ int lockMainPID(void)
     return pthread_mutex_trylock(&mainLoopLock);
 }
 
-#define RAD2DEG (180.0l / 3.14159265358979323846l)
-#define ACC_SCALE (256 / 9.80665l)
-#define GYRO_SCALE (16.4l)
+#define RAD2DEG (180.0 / M_PI)
+#define ACC_SCALE (256 / 9.80665)
+#define GYRO_SCALE (16.4)
 
 static void sendMotorUpdate(void)
 {
@@ -133,7 +133,7 @@ static void updateState(const fdm_packet* pkt)
     clock_gettime(CLOCK_MONOTONIC, &now_ts);
 
     const uint64_t realtime_now = micros64_real();
-    if (realtime_now > last_realtime + 500*1e3l) { // 500ms timeout
+    if (realtime_now > last_realtime + 500*1e3) { // 500ms timeout
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
         sendMotorUpdate();
@@ -209,11 +209,11 @@ static void updateState(const fdm_packet* pkt)
     imuUpdateAttitude(micros());
 #endif
 
-    if (deltaSim < 0.02l && deltaSim > 0) { // simulator should run faster than 50Hz
+    if (deltaSim < 0.02 && deltaSim > 0) { // simulator should run faster than 50Hz
 //        simRate = simRate * 0.5 + (1e6 * deltaSim / (realtime_now - last_realtime)) * 0.5;
         struct timespec out_ts;
         timeval_sub(&out_ts, &now_ts, &last_ts);
-        simRate = deltaSim / (out_ts.tv_sec + 1e-9l*out_ts.tv_nsec);
+        simRate = deltaSim / (out_ts.tv_sec + 1e-9*out_ts.tv_nsec);
     }
 //    printf("simRate = %lf, millis64 = %lu, millis64_real = %lu, deltaSim = %lf\n", simRate, millis64(), millis64_real(), deltaSim*1e6);
 
@@ -314,7 +314,7 @@ void systemInit(void)
     clock_gettime(CLOCK_MONOTONIC, &start_time);
     printf("[system]Init...\n");
 
-    SystemCoreClock = 500 * 1e6l; // virtual 500MHz
+    SystemCoreClock = 500 * 1e6; // virtual 500MHz
 
     if (pthread_mutex_init(&updateLock, NULL) != 0) {
         printf("Create updateLock error!\n");
@@ -399,21 +399,21 @@ uint64_t nanos64_real(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (ts.tv_sec*1e9l + ts.tv_nsec) - (start_time.tv_sec*1e9l + start_time.tv_nsec);
+    return (ts.tv_sec*1e9 + ts.tv_nsec) - (start_time.tv_sec*1e9 + start_time.tv_nsec);
 }
 
 uint64_t micros64_real(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return 1.0e6l*((ts.tv_sec + (ts.tv_nsec*1.0e-9l)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9l)));
+    return 1.0e6*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
 uint64_t millis64_real(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return 1.0e3l*((ts.tv_sec + (ts.tv_nsec*1.0e-9l)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9l)));
+    return 1.0e3*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
 uint64_t micros64(void)
@@ -425,8 +425,7 @@ uint64_t micros64(void)
     out += (now - last) * simRate;
     last = now;
 
-    return out*1e-3l;
-//    return micros64_real();
+    return out / 1000;
 }
 
 uint64_t millis64(void)
@@ -438,8 +437,7 @@ uint64_t millis64(void)
     out += (now - last) * simRate;
     last = now;
 
-    return out*1e-6l;
-//    return millis64_real();
+    return out / (1000 * 1000);
 }
 
 uint32_t micros(void)
@@ -594,9 +592,9 @@ static void pwmCompleteMotorUpdate(void)
     // send to simulator
     // for gazebo8 ArduCopterPlugin remap, normal range = [0.0, 1.0], 3D rang = [-1.0, 1.0]
 
-    double outScale = 1000.0l;
+    double outScale = 1000.0;
     if (featureIsEnabled(FEATURE_3D)) {
-        outScale = 500.0l;
+        outScale = 500.0;
     }
 
     pwmPkt.motor_speed[3] = motorsPwm[0] / outScale;

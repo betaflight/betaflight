@@ -376,7 +376,7 @@ bool compassInit(void)
     if (magDev.magOdrHz) {
         // For Mags that send data at a fixed ODR, we wait some quiet period after a read before checking for new data
         // allow two re-check intervals, plus a margin for clock variations in mag vs FC
-        uint16_t odrInterval = 1e6f / magDev.magOdrHz;
+        uint16_t odrInterval = (1000 * 1000) / magDev.magOdrHz;
         compassReadIntervalUs =  odrInterval - (2 * COMPASS_RECHECK_INTERVAL_US) - (odrInterval / 20);
     } else {
         // Mags which have no specified ODR will be pinged at the compass task rate

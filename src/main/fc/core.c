@@ -600,7 +600,7 @@ void tryArm(void)
         resetMaxFFT();
 #endif
 
-        disarmAt = currentTimeUs + armingConfig()->auto_disarm_delay * 1e6f;   // start disarm timeout, will be extended when throttle is nonzero
+        disarmAt = currentTimeUs + armingConfig()->auto_disarm_delay * 1000 * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
         lastArmingDisabledReason = 0;
 
@@ -1019,7 +1019,7 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
-    if (ARMING_FLAG(ARMED) 
+    if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
         // and either the alt_hold switch is activated, or are in failsafe landing mode
@@ -1040,7 +1040,7 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #ifdef USE_POSITION_HOLD
     // only if armed; can coexist with altitude hold
-    if (ARMING_FLAG(ARMED) 
+    if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
         // and either the alt_hold switch is activated, or are in failsafe landing mode
@@ -1254,7 +1254,7 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 }
 
 #ifdef USE_TELEMETRY
-#define GYRO_TEMP_READ_DELAY_US 3e6f    // Only read the gyro temp every 3 seconds
+#define GYRO_TEMP_READ_DELAY_US (3 * 1000 * 1000)    // Only read the gyro temp every 3 seconds
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
 {
     static timeUs_t lastGyroTempTimeUs = 0;

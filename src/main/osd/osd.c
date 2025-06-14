@@ -1196,7 +1196,7 @@ static timeDelta_t osdShowArmed(void)
         uint8_t midRow = osdDisplayPort->rows / 2;
         uint8_t midCol = osdDisplayPort->cols / 2;
         osdDrawLogo(midCol - (OSD_LOGO_COLS) / 2, midRow - 5, osdConfig()->arming_logo);
-        ret = osdConfig()->logo_on_arming_duration * 1e5f;
+        ret = osdConfig()->logo_on_arming_duration * 100 * 1000; // convert to microseconds
     } else {
         ret = (REFRESH_1S / 2);
     }

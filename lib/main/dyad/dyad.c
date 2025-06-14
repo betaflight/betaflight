@@ -724,7 +724,7 @@ void dyad_update(void) {
     #pragma warning(disable: 4244)
   #endif
   tv.tv_sec = dyad_updateTimeout;
-  tv.tv_usec = (dyad_updateTimeout - tv.tv_sec) * 1e6l;
+  tv.tv_usec = (dyad_updateTimeout - tv.tv_sec) * 1e6;
   #ifdef _MSC_VER
     #pragma warning(pop)
   #endif
@@ -838,11 +838,11 @@ double dyad_getTime(void) {
 #ifdef _WIN32
   FILETIME ft;
   GetSystemTimeAsFileTime(&ft);
-  return (ft.dwHighDateTime * 4294967296.0l / 1e7l) + ft.dwLowDateTime / 1e7l;
+  return (ft.dwHighDateTime * 4294967296.0 / 1e7) + ft.dwLowDateTime / 1e7;
 #else
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  return tv.tv_sec + tv.tv_usec / 1e6l;
+  return tv.tv_sec + tv.tv_usec / 1e6;
 #endif
 }
 
