@@ -106,8 +106,8 @@ int OLC_Encode(const OLC_LatLon* location, size_t length, char* code,
   // floating point operations.
   long long int lat_val = kLatMaxDegrees * 2.5e7;
   long long int lng_val = kLonMaxDegrees * 8.192e6;
-  lat_val += latitude * 2.5e7;
-  lng_val += longitude * 8.192e6;
+  lat_val += latitude * 2.5e7f;
+  lng_val += longitude * 8.192e6f;
 
   size_t pos = kMaximumDigitCount;
   // Compute the grid part of the code if necessary.
@@ -202,7 +202,7 @@ int OLC_Shorten(const char* code, size_t size, const OLC_LatLon* reference,
 
   // Yes, magic numbers... sob.
   int start = 0;
-  const double safety_factor = 0.3;
+  const double safety_factor = 0.3f;
   const int removal_lengths[3] = {8, 6, 4};
   for (int j = 0; j < sizeof(removal_lengths) / sizeof(removal_lengths[0]);
        ++j) {
@@ -255,10 +255,10 @@ int OLC_RecoverNearest(const char* short_code, size_t size,
   }
 
   // The resolution (height and width) of the padded area in degrees.
-  double resolution = pow_neg(kEncodingBase, 2.0 - (padding_length / 2.0));
+  double resolution = pow_neg(kEncodingBase, 2.0f - (padding_length / 2.0f));
 
   // Distance from the center to an edge (in degrees).
-  double half_res = resolution / 2.0;
+  double half_res = resolution / 2.0f;
 
   // Use the reference location to pad the supplied short code and decode it.
   OLC_LatLon latlon = {lat, lon};

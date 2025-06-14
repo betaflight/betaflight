@@ -242,7 +242,7 @@ void batteryUpdatePresence(void)
         batteryCriticalVoltage = 0;
         batteryWarningHysteresisVoltage = 0;
         batteryCriticalHysteresisVoltage = 0;
-        wattHoursDrawn = 0.0;
+        wattHoursDrawn = 0.0f;
     }
 }
 

@@ -52,7 +52,7 @@
 #define ELRS_MODELMATCH_MASK 0x3F
 
 #define FREQ_HZ_TO_REG_VAL_900(freq) ((uint32_t)(freq / SX127x_FREQ_STEP))
-#define FREQ_HZ_TO_REG_VAL_24(freq) ((uint32_t)(freq / SX1280_FREQ_STEP))
+#define FREQ_HZ_TO_REG_VAL_24(freq)  ((uint32_t)(freq / SX1280_FREQ_STEP))
 
 #define ELRS_RATE_MAX_24  6
 #define ELRS_RATE_MAX_900 4

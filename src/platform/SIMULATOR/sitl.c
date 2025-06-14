@@ -425,8 +425,7 @@ uint64_t micros64(void)
     out += (now - last) * simRate;
     last = now;
 
-    return out*1e-3;
-//    return micros64_real();
+    return out / 1000;
 }
 
 uint64_t millis64(void)
@@ -438,8 +437,7 @@ uint64_t millis64(void)
     out += (now - last) * simRate;
     last = now;
 
-    return out*1e-6;
-//    return millis64_real();
+    return out / (1000 * 1000);
 }
 
 uint32_t micros(void)

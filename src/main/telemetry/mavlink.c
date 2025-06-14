@@ -413,7 +413,7 @@ static void mavlinkSendHUDAndHeartbeat(void)
     }
 #endif
 
-    mavAltitude = getEstimatedAltitudeCm() / 100.0;
+    mavAltitude = getEstimatedAltitudeCm() / 100.0f;
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
         // airspeed Current airspeed in m/s

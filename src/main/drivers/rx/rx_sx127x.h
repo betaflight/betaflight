@@ -292,7 +292,7 @@ typedef enum {
 
 #define SX127x_MAX_POWER 0x0F //17dBm
 
-#define SX127x_FREQ_STEP 61.03515625
+#define SX127x_FREQ_STEP (61.03515625) // 61.03515625 Hz, used for frequency calculations
 
 #define SX127x_FREQ_CORRECTION_MAX ((int32_t)(100000 / SX127x_FREQ_STEP))
 #define SX127x_FREQ_CORRECTION_MIN ((int32_t)(-100000 / SX127x_FREQ_STEP))

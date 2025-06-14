@@ -305,25 +305,25 @@ uint32_t sx127xGetCurrBandwidth(const sx127xBandwidth_e bw)
 {
     switch (bw) {
     case SX127x_BW_7_80_KHZ:
-        return 7.8E3;
+        return 7.8E3f;
     case SX127x_BW_10_40_KHZ:
-        return 10.4E3;
+        return 10.4E3f;
     case SX127x_BW_15_60_KHZ:
-        return 15.6E3;
+        return 15.6E3f;
     case SX127x_BW_20_80_KHZ:
-        return 20.8E3;
+        return 20.8E3f;
     case SX127x_BW_31_25_KHZ:
-        return 31.25E3;
+        return 31.25E3f;
     case SX127x_BW_41_70_KHZ:
-        return 41.7E3;
+        return 41.7E3f;
     case SX127x_BW_62_50_KHZ:
-        return 62.5E3;
+        return 62.5E3f;
     case SX127x_BW_125_00_KHZ:
-        return 125E3;
+        return 125E3f;
     case SX127x_BW_250_00_KHZ:
-        return 250E3;
+        return 250E3f;
     case SX127x_BW_500_00_KHZ:
-        return 500E3;
+        return 500E3f;
     }
     return -1;
 }

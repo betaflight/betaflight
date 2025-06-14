@@ -243,22 +243,22 @@ bool qmp6988Detect(baroDev_t *baro)
     else
         Coe_a0_ = temp2;
 
-    qmp6988_cal.Coe_a0=(float)Coe_a0_/16.0;
-    qmp6988_cal.Coe_a1=(-6.30E-03)+(4.30E-04)*(float)Coe_a1_/32767.0;
-    qmp6988_cal.Coe_a2=(-1.9E-11)+(1.2E-10)*(float)Coe_a2_/32767.0;
+    qmp6988_cal.Coe_a0 = (float)Coe_a0_/16.0f;
+    qmp6988_cal.Coe_a1 = (-6.30E-03f)+(4.30E-04f)*(float)Coe_a1_/32767.0f;
+    qmp6988_cal.Coe_a2 = (-1.9E-11f)+(1.2E-10f)*(float)Coe_a2_/32767.0f;
 
-    qmp6988_cal.Coe_b00 = Coe_b00_/16.0;
-    qmp6988_cal.Coe_bt1 = (1.00E-01)+(9.10E-02)*(float)Coe_bt1_/32767.0;
-    qmp6988_cal.Coe_bt2= (1.20E-08)+(1.20E-06)*(float)Coe_bt2_/32767.0;
+    qmp6988_cal.Coe_b00 = Coe_b00_/16.0f;
+    qmp6988_cal.Coe_bt1 = (1.00E-01f)+(9.10E-02f)*(float)Coe_bt1_/32767.0f;
+    qmp6988_cal.Coe_bt2 = (1.20E-08f)+(1.20E-06f)*(float)Coe_bt2_/32767.0f;
 
-    qmp6988_cal.Coe_bp1 = (3.30E-02)+(1.90E-02)*(float)Coe_bp1_/32767.0;
-    qmp6988_cal.Coe_b11= (2.10E-07)+(1.40E-07)*(float)Coe_b11_/32767.0;
+    qmp6988_cal.Coe_bp1 = (3.30E-02f)+(1.90E-02f)*(float)Coe_bp1_/32767.0f;
+    qmp6988_cal.Coe_b11 = (2.10E-07f)+(1.40E-07f)*(float)Coe_b11_/32767.0f;
 
-    qmp6988_cal.Coe_bp2 = (-6.30E-10)+(3.50E-10)*(float)Coe_bp2_/32767.0;
-    qmp6988_cal.Coe_b12= (2.90E-13)+(7.60E-13)*(float)Coe_b12_/32767.0;
+    qmp6988_cal.Coe_bp2 = (-6.30E-10f)+(3.50E-10f)*(float)Coe_bp2_/32767.0f;
+    qmp6988_cal.Coe_b12 = (2.90E-13f)+(7.60E-13f)*(float)Coe_b12_/32767.0f;
 
-    qmp6988_cal.Coe_b21 = (2.10E-15)+(1.20E-14)*(float)Coe_b21_/32767.0;
-    qmp6988_cal.Coe_bp3= (1.30E-16)+(7.90E-17)*(float)Coe_bp3_/32767.0;
+    qmp6988_cal.Coe_b21 = (2.10E-15f)+(1.20E-14f)*(float)Coe_b21_/32767.0f;
+    qmp6988_cal.Coe_bp3 = (1.30E-16f)+(7.90E-17f)*(float)Coe_bp3_/32767.0f;
 
     // Set power mode and sample times
     busWriteRegister(dev, QMP6988_CTRL_MEAS_REG, QMP6988_PWR_SAMPLE_MODE);

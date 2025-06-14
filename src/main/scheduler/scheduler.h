@@ -52,8 +52,8 @@
 
 #define TASK_AGE_EXPEDITE_RX            schedulerConfig()->rxRelaxDeterminism  // Make RX tasks more schedulable if it's failed to be scheduled this many times
 #define TASK_AGE_EXPEDITE_OSD           schedulerConfig()->osdRelaxDeterminism  // Make OSD tasks more schedulable if it's failed to be scheduled this many times
-#define TASK_AGE_EXPEDITE_COUNT         1   // Make aged tasks more schedulable
-#define TASK_AGE_EXPEDITE_SCALE         0.9 // By scaling their expected execution time
+#define TASK_AGE_EXPEDITE_COUNT         1    // Make aged tasks more schedulable
+#define TASK_AGE_EXPEDITE_SCALE         0.9f // By scaling their expected execution time
 
 // Gyro interrupt counts over which to measure loop time and skew
 #define GYRO_RATE_COUNT 25000
