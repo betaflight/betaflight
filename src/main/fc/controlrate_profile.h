@@ -80,7 +80,7 @@ struct StickFeel {
     //float CenterDeadZone;
     //float OuterDeadZone;
 
-    stickFeel() {
+    StickFeel() {
         CenterStickPrecision = 0.5f;
         OuterStickTransition = 0.33f;
         //CenterDeadZone = 0.05f;
