@@ -74,14 +74,24 @@ void changeControlRateProfile(uint8_t controlRateProfileIndex);
 
 void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex);
 
-typedef struct plainEnglishRates {
+struct StickFeel {
 	float CenterStickPrecision;
 	float OuterStickTransition;
-	float MaxRotationSpeed;
+    //float CenterDeadZone;
+    //float OuterDeadZone;
 
-	FEasyRates() {
-		CenterStickPrecision = 0.5f;
-		OuterStickTransition = 0.33f;
-		MaxRotationSpeed = 650.f;
-	};
-} plainEnglishRates;
+    stickFeel() {
+        CenterStickPrecision = 0.5f;
+        OuterStickTransition = 0.33f;
+        //CenterDeadZone = 0.05f;
+        //OuterDeadZone = 0.05f;
+    };
+};
+
+const StickFeel MyStickFeel;
+/*
+    example, if you set this value to 360, and you tilt the stick all the way, 
+    then the Quadcopter will rotate 360 degrees each second that the stick is fully tilted.
+    the quadcopter itself spins 360 degrees per second if you set this to 360.f
+*/
+const float MaxQuadcopterRotationSpeed = 650.f;
