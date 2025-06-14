@@ -30,8 +30,9 @@
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 
-#include "hardware/timer.h"
 #include "hardware/clocks.h"
+#include "hardware/timer.h"
+#include "hardware/watchdog.h"
 #include "pico/unique_id.h"
 
 ///////////////////////////////////////////////////
@@ -55,7 +56,15 @@ void __attribute__((constructor)) SystemInit (void)
 
 void systemReset(void)
 {
-    //TODO: implement
+    bprintf("*** PICO systemReset ***");
+    //TODO: check
+#if 1
+    watchdog_reboot(0, 0, 0);
+#else
+    // this might be fine
+    __disable_irq();
+    NVIC_SystemReset();
+#endif
 }
 
 uint32_t systemUniqueId[3] = { 0 };

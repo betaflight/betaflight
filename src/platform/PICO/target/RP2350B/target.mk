@@ -17,9 +17,9 @@ DEVICE_FLAGS    += \
 # or run some pico-examples programs.
 # These ones are suitable for a Laurel board, with UART1 for stdio.
 DEVICE_FLAGS    += \
-                   -DPICO_DEFAULT_UART=1 \
-                   -DPICO_DEFAULT_UART_TX_PIN=8 \
-                   -DPICO_DEFAULT_UART_RX_PIN=9 \
+                   -DPICO_DEFAULT_UART=0 \
+                   -DPICO_DEFAULT_UART_TX_PIN=34 \
+                   -DPICO_DEFAULT_UART_RX_PIN=35 \
                    -DPICO_DEFAULT_LED_PIN=6 \
                    -DPICO_DEFAULT_I2C=0 \
                    -DPICO_DEFAULT_I2C_SDA_PIN=44 \

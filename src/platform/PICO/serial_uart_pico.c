@@ -132,12 +132,16 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 void uartIrqHandler(uartPort_t *s)
 {
-    if ((uart_get_hw(s->USARTx)->imsc & UART_UARTIMSC_RXIM_BITS) != 0) {
+////    bprintf("uartIrqHandler");
+    if ((uart_get_hw(s->USARTx)->imsc & (UART_UARTIMSC_RXIM_BITS | UART_UARTIMSC_RTIM_BITS)) != 0) {
+        //bprintf("uartIrqHandler RX");
         while (uart_is_readable(s->USARTx)) {
             const uint8_t ch = uart_getc(s->USARTx);
+            //bprintf("uartIrqHandler RX %x", ch);
             if (s->port.rxCallback) {
                 s->port.rxCallback(ch, s->port.rxCallbackData);
             } else {
+                bprintf("RX %x -> buffer",ch);
                 s->port.rxBuffer[s->port.rxBufferHead] = ch;
                 s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
             }
@@ -145,12 +149,19 @@ void uartIrqHandler(uartPort_t *s)
     }
 
     if ((uart_get_hw(s->USARTx)->imsc & UART_UARTIMSC_TXIM_BITS) != 0) {
+///        bprintf("uartIrqHandler TX");
+#ifdef PICO_TRACE
+        int c = s->port.txBufferTail - s->port.txBufferHead;
+#endif
         while (uart_is_writable(s->USARTx)) {
             if (s->port.txBufferTail != s->port.txBufferHead) {
+                ///bprintf("uartIrqHandler TX put %x", s->port.txBuffer[s->port.txBufferTail]);
                 uart_putc(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
                 s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
             } else {
-                uart_set_irqs_enabled(s->USARTx, true, false);
+                // TODO check, RX enabled based on mode?
+                bprintf("uart done put %d, disabling tx interrupt",c);
+                uart_set_irqs_enabled(s->USARTx, s->port.mode & MODE_RX, false);
                 break;
             }
         }
@@ -176,51 +187,64 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     const uartHardware_t *hardware = uartdev->hardware;
 
     s->port.vTable = uartVTable;
-
-    s->port.baudRate = baudRate;
-
+    s->port.baudRate = baudRate; // TODO set by caller?
     s->port.rxBuffer = hardware->rxBuffer;
     s->port.txBuffer = hardware->txBuffer;
     s->port.rxBufferSize = hardware->rxBufferSize;
     s->port.txBufferSize = hardware->txBufferSize;
 
     s->USARTx = hardware->reg;
+    bprintf("====== setting USARTx to reg == %p", s->USARTx);
 
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+    uint32_t txPin = IO_Pin(txIO);
+    uint32_t rxPin = IO_Pin(rxIO);
+    bprintf("serialUART retrieved recs tx,rx with pins %d, %d", txPin, rxPin);
 
     const serialPortIdentifier_e identifier = s->port.identifier;
 
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
 
-    IOInit(txIO, ownerTxRx, ownerIndex);
-    IOInit(rxIO, ownerTxRx, ownerIndex);
+    if (txIO) {
+        IOInit(txIO, ownerTxRx, ownerIndex);
+        bprintf("gpio set function UART on tx pin %d", txPin);
+        gpio_set_function(txPin, GPIO_FUNC_UART);
+    }
 
+    if (rxIO) {
+        IOInit(rxIO, ownerTxRx + 1, ownerIndex);
+        gpio_set_function(rxPin, GPIO_FUNC_UART);
+        gpio_set_pulls(rxPin, true, false); // Pull up
+    }
+
+    if (!txIO && !rxIO) {
+        bprintf("serialUART no pins mapped for device %p", s->USARTx);
+        return NULL;
+    }
+
+    bprintf("serialUART uart init %p baudrate %d", hardware->reg, baudRate);
     uart_init(hardware->reg, baudRate);
 
-    if ((mode & MODE_TX) && txIO) {
-        IOInit(txIO, ownerTxRx, ownerIndex);
-        gpio_set_function(IO_Pin(txIO), GPIO_FUNC_UART);
-    }
-
-    if ((mode & MODE_RX) && rxIO) {
-        IOInit(rxIO, ownerTxRx + 1, ownerIndex);
-        gpio_set_function(IO_Pin(rxIO), GPIO_FUNC_UART);
-    }
-
+    // TODO implement - use options here...
     uart_set_hw_flow(hardware->reg, false, false);
     uart_set_format(hardware->reg, 8, 1, UART_PARITY_NONE);
-    uart_set_fifo_enabled(hardware->reg, false);
+    
+// TODO want fifos?
+////    uart_set_fifo_enabled(hardware->reg, false);
+    uart_set_fifo_enabled(hardware->reg, true);
 
     irq_set_exclusive_handler(hardware->irqn, hardware->irqn == UART0_IRQ ? on_uart0 : on_uart1);
     irq_set_enabled(hardware->irqn, true);
-    if ((mode & MODE_RX) && rxIO) {
-        uart_set_irqs_enabled(hardware->reg, true, false);
-    }
+
+    // Don't enable any uart irq yet, wait until a call to uartReconfigure...
+    // (with current code in serial_uart.c, this prevents irq callback before rxCallback has been set)
+    UNUSED(mode); // TODO review serial_uart.c uartOpen()
 
     return s;
 }
+
 
 // called from platform-specific uartReconfigure
 void uartConfigureExternalPinInversion(uartPort_t *uartPort)
@@ -229,31 +253,31 @@ void uartConfigureExternalPinInversion(uartPort_t *uartPort)
     UNUSED(uartPort);
 #else
     const bool inverted = uartPort->port.options & SERIAL_INVERTED;
+    // TODO support INVERTER, not using enableInverter(= pin based)
     enableInverter(uartPort->port.identifier, inverted);
 #endif
 }
 
-void uartTryStartTx(uartPort_t *s)
-{
-    if (s->port.txBufferTail == s->port.txBufferHead) {
-        return;
-    }
-    uart_set_irqs_enabled(s->USARTx, uart_get_hw(s->USARTx)->imsc & UART_UARTIMSC_RXIM_BITS, true);
-}
-
-void uartReconfigure(uartPort_t *s)
-{
-    uart_deinit(s->USARTx);
-    uart_init(s->USARTx, s->port.baudRate);
-    uart_set_format(s->USARTx, 8, 1, UART_PARITY_NONE);
-    uart_set_fifo_enabled(s->USARTx, false);
-    uartConfigureExternalPinInversion(s);
-}
-
 void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
-    UNUSED(uartPort);
-    //TODO: Implement
+//    bprintf("uartEnableTxInterrupt");
+    if (uartPort->port.txBufferTail == uartPort->port.txBufferHead) {
+        return;
+    }
+
+    // uart0TxBuffer has size 1024
+
+#if 0
+    bprintf("uartEnableTxInterrupt %d (head:0x%x, tail:0x%x)",
+            uartPort->port.txBufferHead - uartPort->port.txBufferTail,
+            uartPort->port.txBufferHead,
+            uartPort->port.txBufferTail);
+    bprintf("going to set interrupts for uart %p", uartPort->USARTx);
+#endif
+
+    // TODO Check: rx mask based on mode rather than RX interrupt pending?
+    //    uart_set_irqs_enabled(s->USARTx, uart_get_hw(s->USARTx)->imsc & UART_UARTIMSC_RXIM_BITS, true);
+    uart_set_irqs_enabled(uartPort->USARTx, uartPort->port.mode & MODE_RX, true);
 }
 
 #ifdef USE_DMA
@@ -263,5 +287,54 @@ void uartTryStartTxDMA(uartPort_t *s)
     //TODO: Implement
 }
 #endif
+
+void uartReconfigure(uartPort_t *s)
+{
+    uart_inst_t *uartInstance = s->USARTx;
+    bprintf("uartReconfigure for port %p with USARTX %p", s, uartInstance);
+    int achievedBaudrate = uart_init(uartInstance, s->port.baudRate);
+#ifdef PICO_TRACE
+    bprintf("uartReconfigure h/w %p, requested baudRate %d, achieving %d", uartInstance, s->port.baudRate, achievedBaudrate);
+#else
+    UNUSED(achievedBaudrate);
+#endif
+    uart_set_format(uartInstance, 8, 1, UART_PARITY_NONE);
+
+    // TODO fifo or not to fifo?
+    //    uart_set_fifo_enabled(s->USARTx, false);
+    uart_set_fifo_enabled(uartInstance, true);
+    uartConfigureExternalPinInversion(s);
+    uart_set_hw_flow(uartInstance, false, false);
+
+// TODO would like to verify rx pin has been setup?
+//    if ((s->mode & MODE_RX) && rxIO) {
+    if (s->port.mode & MODE_RX) {
+        bprintf("serialUART setting RX irq");
+        uart_set_irqs_enabled(uartInstance, true, false);
+    }
+
+    bprintf("uartReconfigure note port.mode = 0x%x", s->port.mode);
+    // TODO should we care about MODE_TX ?
+
+#if 0
+    uint32_t uartFr = uart_get_hw(uartInstance)->fr;
+    bprintf("uartReconfigure flag register 0x%x",uartFr);
+    bprintf("uartReconfigure extra call to on_uart1");
+    on_uart1();
+    bprintf("put some in...");
+    uart_putc(uartInstance, 'A');
+    uart_putc(uartInstance, 'B');
+    uart_putc(uartInstance, 'C');
+    uartFr = uart_get_hw(uartInstance)->fr;
+    bprintf("uartReconfigure flag register 0x%x",uartFr);
+    bprintf("wait a mo");
+    extern void delayMicroseconds(uint32_t);
+    delayMicroseconds(123456);
+    uartFr = uart_get_hw(uartInstance)->fr;
+    bprintf("uartReconfigure flag register 0x%x",uartFr);
+    bprintf("uartReconfigure extra special call to on_uart1");
+    on_uart1();
+#endif
+}
 
 #endif /* USE_UART */
