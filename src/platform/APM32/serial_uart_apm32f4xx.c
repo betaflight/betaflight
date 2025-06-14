@@ -36,7 +36,7 @@
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -269,10 +269,12 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
         }
         handleUsartTxDma(s);
     }
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
     {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
     }
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
     {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);

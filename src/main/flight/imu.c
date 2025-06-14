@@ -625,7 +625,7 @@ static void updateGpsHeadingUsable(float groundspeedGain, float imuCourseError, 
         gpsHeadingConfidence += fmaxf(groundspeedGain - fabsf(imuCourseError), 0.0f) * dt;
         // recenter at 2.5s time constant
         // TODO: intent is to match IMU time constant, approximately, but I don't exactly know how to do that
-        gpsHeadingConfidence -= 0.4 * dt * gpsHeadingConfidence; 
+        gpsHeadingConfidence -= 0.4f * dt * gpsHeadingConfidence;
         // if we accumulate enough 'points' over time, the IMU probably is OK
         // will need to reaccumulate after a disarm (will be retained partly for very brief disarms)
         canUseGPSHeading = gpsHeadingConfidence > 2.0f;

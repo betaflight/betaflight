@@ -43,7 +43,7 @@
 
 
 #define PID_PROFILE_COUNT 4
-#define CONTROL_RATE_PROFILE_COUNT  4
+#define CONTROL_RATE_PROFILE_COUNT 4
 #define USE_MAG
 #define USE_BARO
 #define USE_GPS
@@ -124,6 +124,8 @@ typedef struct
 } ADC_TypeDef;
 
 #define SPIDEV_COUNT 0
+#define I2CDEV_COUNT 0
+
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 #define NVIC_PriorityGroup_2 0x500

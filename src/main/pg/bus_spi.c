@@ -31,6 +31,14 @@
 
 #include "bus_spi.h"
 
+#ifdef USE_SPI_DEVICE_0
+#ifndef SPI0_SCK_PIN
+#define SPI0_SCK_PIN    NONE
+#define SPI0_SDI_PIN    NONE
+#define SPI0_SDO_PIN    NONE
+#endif
+#endif
+
 #ifndef SPI1_SCK_PIN
 #define SPI1_SCK_PIN    NONE
 #define SPI1_SDI_PIN    NONE
@@ -77,6 +85,9 @@ typedef struct spiDefaultConfig_s {
 } spiDefaultConfig_t;
 
 const spiDefaultConfig_t spiDefaultConfig[] = {
+#ifdef USE_SPI_DEVICE_0
+    { SPIDEV_0, IO_TAG(SPI0_SCK_PIN), IO_TAG(SPI0_SDI_PIN ), IO_TAG(SPI0_SDO_PIN ), SPI0_TX_DMA_OPT, SPI0_RX_DMA_OPT },
+#endif
 #ifdef USE_SPI_DEVICE_1
     { SPIDEV_1, IO_TAG(SPI1_SCK_PIN), IO_TAG(SPI1_SDI_PIN ), IO_TAG(SPI1_SDO_PIN ), SPI1_TX_DMA_OPT, SPI1_RX_DMA_OPT },
 #endif

@@ -15,7 +15,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, see BASE_TARGETS below
+# The target or config to build
 TARGET    ?=
 CONFIG    ?=
 
@@ -47,6 +47,9 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+# Disabled build flags
+CFLAGS_DISABLED         :=
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -54,7 +57,11 @@ FLASH_SIZE ?=
 FORKNAME      = betaflight
 
 # Working directories
+# ROOT_DIR is the full path to the directory containing this Makefile
+ROOT_DIR        := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+# ROOT is the relative path to the directory containing this Makefile
 ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+
 PLATFORM_DIR	:= $(ROOT)/src/platform
 SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
@@ -120,7 +127,7 @@ FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk 
 
 FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
-# import config handling
+# import config handling (must occur after the hydration of hex, exe and uf2 targets)
 include $(MAKE_SCRIPT_DIR)/config.mk
 
 # default xtal value
@@ -128,7 +135,7 @@ HSE_VALUE       ?= 8000000
 
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
 CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF
-CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS)) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS))
+CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS)))
 PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
 
 TARGET_PLATFORM     := $(notdir $(patsubst %/,%,$(subst target/$(TARGET)/,, $(dir $(wildcard $(PLATFORM_DIR)/*/target/$(TARGET)/target.mk)))))
@@ -136,7 +143,8 @@ TARGET_PLATFORM_DIR := $(PLATFORM_DIR)/$(TARGET_PLATFORM)
 LINKER_DIR          := $(TARGET_PLATFORM_DIR)/link
 
 ifneq ($(TARGET),)
-include $(TARGET_PLATFORM_DIR)/target/$(TARGET)/target.mk
+TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
+include $(TARGET_DIR)/target.mk
 endif
 
 REVISION := norevision
@@ -215,21 +223,16 @@ ifneq ($(HSE_VALUE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
-TARGET_DIR     = $(TARGET_PLATFORM_DIR)/target/$(TARGET)
 endif # TARGET specified
+
+ifeq ($(or $(CONFIG),$(TARGET)),)
+.DEFAULT_GOAL := all
+else
+.DEFAULT_GOAL := fwo
+endif
 
 # openocd specific includes
 include $(MAKE_SCRIPT_DIR)/openocd.mk
-
-ifeq ($(CONFIG),)
-ifeq ($(TARGET),)
-.DEFAULT_GOAL := all
-else
-.DEFAULT_GOAL := hex
-endif
-else
-.DEFAULT_GOAL := hex
-endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
@@ -281,6 +284,12 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 CC_NO_OPTIMISATION      :=
 
+CC_DEBUG_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_DEBUG_OPTIMISATION))
+CC_DEFAULT_OPTIMISATION := $(filter-out $(CFLAGS_DISABLED), $(CC_DEFAULT_OPTIMISATION))
+CC_SPEED_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_SPEED_OPTIMISATION))
+CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATION))
+CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION))
+
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
@@ -291,6 +300,7 @@ EXTRA_WARNING_FLAGS := -Wold-style-definition
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
+              $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
               -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion \
@@ -311,10 +321,13 @@ CFLAGS     += $(ARCH_FLAGS) \
               -MMD -MP \
               $(EXTRA_FLAGS)
 
+CFLAGS     := $(filter-out $(CFLAGS_DISABLED), $(CFLAGS))
+
 ASFLAGS     = $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
               -x assembler-with-cpp \
               $(addprefix -I,$(INCLUDE_DIRS)) \
+              $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               -MMD -MP
 
 ifeq ($(LD_FLAGS),)
@@ -343,7 +356,14 @@ endif
 CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   --std=c99 --inline-suppr --quiet --force \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
+                  $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
+
+ifneq ($(filter fwo hex uf2 bin elf zip, $(MAKECMDGOALS)),)
+    ifeq ($(TARGET),)
+        $(error "You must specify a target to build.")
+    endif
+endif
 
 TARGET_NAME := $(TARGET)
 
@@ -359,20 +379,22 @@ TARGET_FULLNAME = $(FORKNAME)_$(FC_VER)_$(TARGET_NAME)
 #
 # Things we will build
 #
-TARGET_BIN      = $(BIN_DIR)/$(TARGET_FULLNAME).bin
-TARGET_HEX      = $(BIN_DIR)/$(TARGET_FULLNAME).hex
-TARGET_DFU      = $(BIN_DIR)/$(TARGET_FULLNAME).dfu
-TARGET_ZIP      = $(BIN_DIR)/$(TARGET_FULLNAME).zip
-TARGET_OBJ_DIR  = $(OBJECT_DIR)/$(TARGET_NAME)
-TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).elf
-TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_EXST.elf
-TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_UNPATCHED.bin
-TARGET_LST      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).lst
-TARGET_OBJS     = $(addsuffix .o,$(addprefix $(TARGET_OBJ_DIR)/,$(basename $(SRC))))
-TARGET_DEPS     = $(addsuffix .d,$(addprefix $(TARGET_OBJ_DIR)/,$(basename $(SRC))))
-TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).map
+TARGET_BIN      := $(BIN_DIR)/$(TARGET_FULLNAME).bin
+TARGET_HEX      := $(BIN_DIR)/$(TARGET_FULLNAME).hex
+TARGET_UF2      := $(BIN_DIR)/$(TARGET_FULLNAME).uf2
+TARGET_EXE      := $(BIN_DIR)/$(TARGET_FULLNAME)
+TARGET_DFU      := $(BIN_DIR)/$(TARGET_FULLNAME).dfu
+TARGET_ZIP      := $(BIN_DIR)/$(TARGET_FULLNAME).zip
+TARGET_OBJ_DIR  := $(OBJECT_DIR)/$(TARGET_NAME)
+TARGET_ELF      := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).elf
+TARGET_EXST_ELF := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_EXST.elf
+TARGET_UNPATCHED_BIN := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_UNPATCHED.bin
+TARGET_LST      := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).lst
+TARGET_OBJS     := $(addsuffix .o,$(addprefix $(TARGET_OBJ_DIR)/,$(basename $(SRC))))
+TARGET_DEPS     := $(addsuffix .d,$(addprefix $(TARGET_OBJ_DIR)/,$(basename $(SRC))))
+TARGET_MAP      := $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).map
 
-TARGET_EXST_HASH_SECTION_FILE = $(TARGET_OBJ_DIR)/exst_hash_section.bin
+TARGET_EXST_HASH_SECTION_FILE := $(TARGET_OBJ_DIR)/exst_hash_section.bin
 
 ifeq ($(DEBUG_MIXED),yes)
 TARGET_EF_HASH      := $(shell echo -n -- "$(EXTRA_FLAGS)" "$(OPTIONS)" "$(DEVICE_FLAGS)" "$(TARGET_FLAGS)"  | openssl dgst -md5 -r | awk '{print $$1;}')
@@ -387,6 +409,7 @@ CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS += $(TARGET_UF2)
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
@@ -462,6 +485,14 @@ $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
+$(TARGET_UF2): $(TARGET_ELF)
+	@echo "Creating UF2 $(TARGET_UF2)" "$(STDOUT)"
+	$(V1) $(PICOTOOL) uf2 convert $< $@ || { echo "Failed to convert ELF to UF2 format"; exit 1; }
+
+$(TARGET_EXE): $(TARGET_ELF)
+	@echo "Creating exe - copying $< to $@" "$(STDOUT)"
+	$(V1) cp $< $@
+
 # Compile
 
 ## compile_file takes two arguments: (1) optimisation description string and (2) optimisation compiler flag
@@ -512,14 +543,12 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
+.PHONY: $(BASE_TARGETS)
 $(BASE_TARGETS):
-	$(V0) @echo "Building target $@" && \
-	$(MAKE) hex TARGET=$@ && \
-	echo "Building $@ succeeded."
+	$(MAKE) fwo TARGET=$@
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
@@ -597,31 +626,56 @@ endif
 TARGETS_ZIP = $(addsuffix _zip,$(BASE_TARGETS))
 
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
+.PHONY: $(TARGETS_ZIP)
 $(TARGETS_ZIP):
-	$(V0) $(MAKE) hex TARGET=$(subst _zip,,$@)
-	$(V0) $(MAKE) zip TARGET=$(subst _zip,,$@)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) zip TARGET=$(subst _zip,,$@)
 
-zip:
-	$(V0) zip $(TARGET_ZIP) $(TARGET_HEX)
+.PHONY: zip
+zip: $(TARGET_HEX)
+	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
+.PHONY: binary
 binary:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
+.PHONY: hex
 hex:
-	$(V0) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
-TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
+.PHONY: uf2
+uf2:
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
+
+.PHONY: exe
+exe: $(TARGET_EXE)
+
+# FWO (Firmware Output) is the default output for building the firmware
+.PHONY: fwo
+fwo:
+ifeq ($(DEFAULT_OUTPUT),exe)
+	$(V1) $(MAKE) exe
+else ifeq ($(DEFAULT_OUTPUT),uf2)
+	$(V1) $(MAKE) uf2
+else
+	$(V1) $(MAKE) hex
+endif
+
+TARGETS_REVISION = $(addsuffix _rev, $(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
+.PHONY: $(TARGETS_REVISION)
 $(TARGETS_REVISION):
-	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
+	$(V1) $(MAKE) fwo REV=yes TARGET=$(subst _rev,,$@)
 
-all_rev: $(addsuffix _rev,$(CI_TARGETS))
+.PHONY: all_rev
+all_rev: $(addsuffix _rev, $(CI_TARGETS))
 
+.PHONY: unbrick_$(TARGET)
 unbrick_$(TARGET): $(TARGET_HEX)
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
 	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 ## unbrick           : unbrick flight controller
+.PHONY: unbrick
 unbrick: unbrick_$(TARGET)
 
 ## cppcheck          : run static analysis on C source code

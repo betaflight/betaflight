@@ -58,6 +58,7 @@
 #define USE_LED_STRIP_STATUS_MODE
 #define USE_SERVOS
 #define USE_TRANSPONDER
+#define USE_VIRTUAL_LED
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

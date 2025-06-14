@@ -255,6 +255,7 @@ static void mspEscPassthroughFn(serialPort_t *serialPort)
 }
 #endif
 
+#ifdef USE_SERIAL_PASSTHROUGH
 static serialPort_t *mspFindPassthroughSerialPort(void)
 {
     serialPortUsage_t *portUsage = NULL;
@@ -284,9 +285,13 @@ static void mspSerialPassthroughFn(serialPort_t *serialPort)
         serialPassthrough(passthroughPort, serialPort, NULL, NULL);
     }
 }
+#endif
 
 static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
+#ifndef USE_SERIAL_PASSTHROUGH
+    UNUSED(mspPostProcessFn);
+#endif
     const unsigned int dataSize = sbufBytesRemaining(src);
     if (dataSize == 0) {
         // Legacy format
@@ -297,6 +302,7 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
     }
 
     switch (mspPassthroughMode) {
+#ifdef USE_SERIAL_PASSTHROUGH
     case MSP_PASSTHROUGH_SERIAL_ID:
     case MSP_PASSTHROUGH_SERIAL_FUNCTION_ID:
         if (mspFindPassthroughSerialPort()) {
@@ -308,6 +314,7 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
             sbufWriteU8(dst, 0);
         }
         break;
+#endif
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     case MSP_PASSTHROUGH_ESC_4WAY:
         // get channel number
@@ -343,16 +350,13 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
     }
 }
 
-// TODO: Remove the pragma once this is called from unconditional code
-#pragma GCC diagnostic ignored "-Wunused-function"
-static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
+MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
 {
     if (*parm != value) {
         setRebootRequired();
     }
     *parm = value;
 }
-#pragma GCC diagnostic pop
 
 static void mspRebootFn(serialPort_t *serialPort)
 {
@@ -1092,7 +1096,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5);
+        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_RANGEFINDER) << 4 | sensors(SENSOR_GYRO) << 5 | sensors(SENSOR_OPTICALFLOW) << 6);
         sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
         sbufWriteU8(dst, getCurrentPidProfileIndex());
         sbufWriteU16(dst, constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
@@ -1128,6 +1132,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 #else
         sbufWriteU16(dst, 0);
 #endif
+        sbufWriteU8(dst, CONTROL_RATE_PROFILE_COUNT);
         break;
     }
 
@@ -1371,7 +1376,10 @@ case MSP_NAME:
 
         // added in 1.43
         sbufWriteU8(dst, currentControlRateProfile->rates_type);
-
+        
+        // added in 1.47
+        sbufWriteU8(dst, currentControlRateProfile->thrHover8);
+        
         break;
 
     case MSP_PID:
@@ -1529,9 +1537,9 @@ case MSP_NAME:
         sbufWriteU16(dst, gpsRescueConfig()->returnAltitudeM);
         sbufWriteU16(dst, gpsRescueConfig()->descentDistanceM);
         sbufWriteU16(dst, gpsRescueConfig()->groundSpeedCmS);
-        sbufWriteU16(dst, apConfig()->throttle_min);
-        sbufWriteU16(dst, apConfig()->throttle_max);
-        sbufWriteU16(dst, apConfig()->hover_throttle);
+        sbufWriteU16(dst, autopilotConfig()->throttleMin);
+        sbufWriteU16(dst, autopilotConfig()->throttleMax);
+        sbufWriteU16(dst, autopilotConfig()->hoverThrottle);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
         sbufWriteU8(dst,  gpsRescueConfig()->minSats);
 
@@ -1547,9 +1555,9 @@ case MSP_NAME:
         break;
 
     case MSP_GPS_RESCUE_PIDS:
-        sbufWriteU16(dst, apConfig()->altitude_P);
-        sbufWriteU16(dst, apConfig()->altitude_I);
-        sbufWriteU16(dst, apConfig()->altitude_D);
+        sbufWriteU16(dst, autopilotConfig()->altitudeP);
+        sbufWriteU16(dst, autopilotConfig()->altitudeI);
+        sbufWriteU16(dst, autopilotConfig()->altitudeD);
         // altitude_F not implemented yet
         sbufWriteU16(dst, gpsRescueConfig()->velP);
         sbufWriteU16(dst, gpsRescueConfig()->velI);
@@ -1796,7 +1804,7 @@ case MSP_NAME:
         sbufWriteU8(dst, rcControlsConfig()->deadband);
         sbufWriteU8(dst, rcControlsConfig()->yaw_deadband);
 #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
-        sbufWriteU8(dst, posHoldConfig()->pos_hold_deadband);
+        sbufWriteU8(dst, posHoldConfig()->deadband);
 #else
         sbufWriteU8(dst, 0);
 #endif
@@ -2131,7 +2139,7 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
 #endif
-#ifdef USE_OPTICAL_FLOW
+#ifdef USE_OPTICALFLOW
         sbufWriteU8(dst, detectedSensors[SENSOR_INDEX_OPTICALFLOW]);
 #else
         sbufWriteU8(dst, SENSOR_NOT_AVAILABLE);
@@ -2850,6 +2858,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 currentControlRateProfile->rates_type = sbufReadU8(src);
             }
 
+            // version 1.47
+            if (sbufBytesRemaining(src) >= 1) {
+                currentControlRateProfile->thrHover8 = sbufReadU8(src);
+            }
+
             initRcProcessing();
         } else {
             return MSP_RESULT_ERROR;
@@ -2900,9 +2913,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->returnAltitudeM = sbufReadU16(src);
         gpsRescueConfigMutable()->descentDistanceM = sbufReadU16(src);
         gpsRescueConfigMutable()->groundSpeedCmS = sbufReadU16(src);
-        apConfigMutable()->throttle_min = sbufReadU16(src);
-        apConfigMutable()->throttle_max = sbufReadU16(src);
-        apConfigMutable()->hover_throttle = sbufReadU16(src);
+        autopilotConfigMutable()->throttleMin = sbufReadU16(src);
+        autopilotConfigMutable()->throttleMax = sbufReadU16(src);
+        autopilotConfigMutable()->hoverThrottle = sbufReadU16(src);
         gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
         gpsRescueConfigMutable()->minSats = sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 6) {
@@ -2923,9 +2936,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
-        apConfigMutable()->altitude_P = sbufReadU16(src);
-        apConfigMutable()->altitude_I = sbufReadU16(src);
-        apConfigMutable()->altitude_D = sbufReadU16(src);
+        autopilotConfigMutable()->altitudeP = sbufReadU16(src);
+        autopilotConfigMutable()->altitudeI = sbufReadU16(src);
+        autopilotConfigMutable()->altitudeD = sbufReadU16(src);
         // altitude_F not included in msp yet
         gpsRescueConfigMutable()->velP = sbufReadU16(src);
         gpsRescueConfigMutable()->velI = sbufReadU16(src);
@@ -2989,7 +3002,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         rcControlsConfigMutable()->deadband = sbufReadU8(src);
         rcControlsConfigMutable()->yaw_deadband = sbufReadU8(src);
 #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
-        posHoldConfigMutable()->pos_hold_deadband = sbufReadU8(src);
+        posHoldConfigMutable()->deadband = sbufReadU8(src);
 #else
         sbufReadU8(src);
 #endif
@@ -3350,18 +3363,23 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         sbufReadU8(src);
 #endif
 
+        if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_RANGEFINDER
-        rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
+            rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
 #else
-        sbufReadU8(src);
+            sbufReadU8(src);
 #endif
+        }
 
+        if (sbufBytesRemaining(src) >= 1) {
 #ifdef USE_OPTICALFLOW
-        opticalflowConfigMutable()->opticalflow_hardware = sbufReadU8(src);
+            opticalflowConfigMutable()->opticalflow_hardware = sbufReadU8(src);
 #else
-        sbufReadU8(src);
+            sbufReadU8(src);
 #endif
+        }
         break;
+
 #ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
@@ -4147,7 +4165,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             }
 
             const unsigned textLength = MIN(textSpace, sbufReadU8(src));
-            memset(textVar, 0, strlen(textVar));
+            textVar[textLength] = '\0';
             sbufReadData(src, textVar, textLength);
 
 #ifdef USE_OSD

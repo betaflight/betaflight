@@ -77,20 +77,15 @@ static bool lis2mdlInit(magDev_t *mag)
 
 static bool lis2mdlRead(magDev_t *mag, int16_t *magData)
 {
-    uint8_t status = 0;
-    uint8_t buf[6];
+    static uint8_t buf[6];
+    static bool pendingRead = true;
 
     extDevice_t *dev = &mag->dev;
 
-    if (!busReadRegisterBuffer(dev, LIS2MDL_ADDR_STATUS_REG, &status, sizeof(status))) {
-        return false;
-    }
-
-    if (!(status & LIS2MDL_STATUS_REG_READY)) {
-        return false;
-    }
-
-    if (!busReadRegisterBuffer(dev, LIS2MDL_ADDR_OUTX_L_REG, (uint8_t *)&buf, sizeof(buf))) {
+    if (pendingRead) {
+        if (busReadRegisterBufferStart(dev, LIS2MDL_ADDR_OUTX_L_REG, (uint8_t *)buf, sizeof(buf))) {
+            pendingRead = false;
+        }
         return false;
     }
 
@@ -106,6 +101,8 @@ static bool lis2mdlRead(magDev_t *mag, int16_t *magData)
     magData[X] = -x;
     magData[Y] = y;
     magData[Z] = z;
+
+    pendingRead = true;
 
     return true;
 }

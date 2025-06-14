@@ -224,7 +224,8 @@ static const char * const mixerNames[] = {
     "FLYING_WING", "Y4", "HEX6X", "OCTOX8", "OCTOFLATP", "OCTOFLATX",
     "AIRPLANE", "HELI_120_CCPM", "HELI_90_DEG", "VTAIL4",
     "HEX6H", "PPM_TO_SERVO", "DUALCOPTER", "SINGLECOPTER",
-    "ATAIL4", "CUSTOM", "CUSTOMAIRPLANE", "CUSTOMTRI", "QUADX1234", NULL
+    "ATAIL4", "CUSTOM", "CUSTOMAIRPLANE", "CUSTOMTRI", "QUADX1234",
+    "OCTOX8P", NULL
 };
 #endif
 
@@ -1627,7 +1628,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 
     cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
 
-    if ((ports[1].id == SERIAL_PORT_USB_VCP)) {
+    if (ports[1].id == SERIAL_PORT_USB_VCP) {
         do {
             if (port1ResetOnDtr) {
                 serialSetCtrlLineStateCb(ports[1].port, cbCtrlLine_reset, NULL);
@@ -5000,9 +5001,9 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
         if (rcSmoothingAutoCalculate()) {
             cliPrint("# Detected Rx frequency: ");
             if (getRxRateValid()) {
-	            cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
+                cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
             } else {
-            	cliPrintLine("NO SIGNAL");
+                cliPrintLine("NO SIGNAL");
             }
         }
         cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
@@ -5096,7 +5097,9 @@ const cliResourceValue_t resourceTable[] = {
     DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),
     DEFW( OWNER_I2C_SDA,       PG_I2C_CONFIG, i2cConfig_t, ioTagSda, I2CDEV_COUNT ),
 #endif
-    DEFA( OWNER_LED,           PG_STATUS_LED_CONFIG, statusLedConfig_t, ioTags[0], STATUS_LED_NUMBER ),
+#if !defined(USE_VIRTUAL_LED)
+    DEFA( OWNER_LED,           PG_STATUS_LED_CONFIG, statusLedConfig_t, ioTags[0], STATUS_LED_COUNT ),
+#endif
 #ifdef USE_SPEKTRUM_BIND
     DEFS( OWNER_RX_BIND,       PG_RX_CONFIG, rxConfig_t, spektrum_bind_pin_override_ioTag ),
     DEFS( OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, rxConfig_t, spektrum_bind_plug_ioTag ),
@@ -6587,7 +6590,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
 #if defined(USE_FLASH_TOOLS) && defined(USE_FLASHFS)
-    CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
+    CLI_COMMAND_DEF("flash_read", NULL, "<address> <length>", cliFlashRead),
     CLI_COMMAND_DEF("flash_scan", "scan flash device for errors", NULL, cliFlashVerify),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
@@ -6896,7 +6899,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         setPrintfSerialPort(cliPort);
     }
 
-    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufBlockingShim, serialPort);
     cliErrorWriter = cliWriter = &cliWriterDesc;
 
     if (interactive) {

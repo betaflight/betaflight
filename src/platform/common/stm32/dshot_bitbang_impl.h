@@ -285,3 +285,4 @@ int  bbDMA_Count(bbPort_t *bbPort);
 
 void bbDshotRequestTelemetry(unsigned motorIndex);
 bool bbDshotIsMotorIdle(unsigned motorIndex);
+IO_t bbGetMotorIO(unsigned index);

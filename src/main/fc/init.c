@@ -485,7 +485,7 @@ void init(void)
 
 #if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     // F4 has non-8MHz boards
-    // G4 for Betaflight allow 24 or 27MHz oscillator
+    // G4 for Betaflight allow 8, 16, 24, 26 or 27MHz oscillator
     systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
 #endif
 
@@ -624,11 +624,14 @@ void init(void)
 #endif
 
 #ifdef USE_I2C
-    i2cHardwareConfigure(i2cConfig(0));
+    i2cPinConfigure(i2cConfig(0));
 
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.
 
+#ifdef USE_I2C_DEVICE_0
+    i2cInit(I2CDEV_0);
+#endif
 #ifdef USE_I2C_DEVICE_1
     i2cInit(I2CDEV_1);
 #endif

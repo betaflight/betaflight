@@ -28,7 +28,7 @@
 
 #if defined(USE_PWM_OUTPUT) && defined(USE_MOTOR)
 
-FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT pwmOutputPort_t pwmMotors[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT uint8_t pwmMotorCount;
 
 void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
@@ -53,12 +53,12 @@ IO_t pwmGetMotorIO(unsigned index)
     if (index >= pwmMotorCount) {
         return IO_NONE;
     }
-    return motors[index].io;
+    return pwmMotors[index].io;
 }
 
 bool pwmIsMotorEnabled(unsigned index)
 {
-    return motors[index].enabled;
+    return pwmMotors[index].enabled;
 }
 
 bool pwmEnableMotors(void)

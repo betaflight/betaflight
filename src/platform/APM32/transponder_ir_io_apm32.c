@@ -31,7 +31,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/timer.h"
 #include "drivers/transponder_ir_arcitimer.h"
 #include "drivers/transponder_ir_erlt.h"
@@ -165,6 +165,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         /* Configuration Error */
         return;
     }
+
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         if (DAL_TMREx_PWMN_Start(&TmrHandle, timerChannel) != DAL_OK) {
             /* Starting PWM generation Error */

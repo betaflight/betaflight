@@ -117,6 +117,7 @@ CMSIS_SRC       :=
 INCLUDE_DIRS    := \
             $(INCLUDE_DIRS) \
             $(TARGET_PLATFORM_DIR) \
+            $(TARGET_PLATFORM_DIR)/include \
             $(TARGET_PLATFORM_DIR)/startup \
             $(STDPERIPH_DIR)/Inc \
             $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
@@ -132,6 +133,7 @@ CMSIS_SRC       := \
 INCLUDE_DIRS    := \
             $(INCLUDE_DIRS) \
             $(TARGET_PLATFORM_DIR) \
+            $(TARGET_PLATFORM_DIR)/include \
             $(TARGET_PLATFORM_DIR)/startup \
             $(STDPERIPH_DIR)/inc \
             $(LIB_MAIN_DIR)/$(USBOTG_DIR)/inc \

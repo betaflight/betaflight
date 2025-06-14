@@ -29,7 +29,8 @@ typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_NONE = 0,
     BLACKBOX_DEVICE_FLASH = 1,
     BLACKBOX_DEVICE_SDCARD = 2,
-    BLACKBOX_DEVICE_SERIAL = 3
+    BLACKBOX_DEVICE_SERIAL = 3,
+    BLACKBOX_DEVICE_VIRTUAL = 4,
 } BlackboxDevice_e;
 
 typedef enum BlackboxMode {

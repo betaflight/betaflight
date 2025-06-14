@@ -44,7 +44,7 @@
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/dma.h"
 #include "drivers/light_led.h"
 
@@ -1359,7 +1359,7 @@ SD_Error_t SD_GetCardStatus(SD_CardStatus_t* pCardStatus)
 static SD_Error_t SD_PowerON(void)
 {
     SD_Error_t ErrorState;
-    uint32_t   Response;
+    uint32_t   Response = 0; // Avoid (invalid) maybe-unitialized compiler error.
     uint32_t   Count;
     uint32_t   ValidVoltage;
     uint32_t   SD_Type;

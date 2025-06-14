@@ -111,8 +111,9 @@ DEVICE_STDPERIPH_SRC := \
 VPATH := $(VPATH):$(LIB_MAIN_DIR)/APM32F4/Libraries/Device/Geehy/APM32F4xx
 
 INCLUDE_DIRS += \
-        $(TARGET_PLATFORM_DIR)/startup \
         $(TARGET_PLATFORM_DIR) \
+        $(TARGET_PLATFORM_DIR)/include \
+        $(TARGET_PLATFORM_DIR)/startup \
         $(PLATFORM_DIR)/common/stm32 \
         $(STDPERIPH_DIR)/Include \
         $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
@@ -178,8 +179,8 @@ MCU_COMMON_SRC = \
         APM32/dma_apm32f4xx.c \
         APM32/serial_uart_apm32f4xx.c \
         drivers/adc.c \
-        drivers/bus_i2c_config.c \
         drivers/bus_spi_config.c \
+        common/stm32/bus_i2c_pinconfig.c \
         common/stm32/bus_spi_hw.c \
         common/stm32/bus_spi_pinconfig.c \
         common/stm32/serial_uart_hw.c \
@@ -216,8 +217,8 @@ SPEED_OPTIMISED_SRC += \
 SIZE_OPTIMISED_SRC += \
         APM32/usb/vcp/serial_usb_vcp.c \
         drivers/inverter.c \
-        drivers/bus_i2c_config.c \
         drivers/bus_spi_config.c \
+        common/stm32/bus_i2c_pinconfig.c \
         common/stm32/bus_spi_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \

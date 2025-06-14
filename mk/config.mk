@@ -34,17 +34,17 @@ CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
 
-HSE_VALUE_MHZ := $(shell sed -E -n "/^\s*#\s*define\s+SYSTEM_HSE_MHZ\s+([0-9]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
+HSE_VALUE_MHZ := $(shell sed -E -n "/^[[:space:]]*\#[[:space:]]*define[[:space:]]+SYSTEM_HSE_MHZ[[:space:]]+([0-9]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifneq ($(HSE_VALUE_MHZ),)
 HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
 endif
 
-TARGET        := $(shell sed -E -n "/^\s*#\s*define\s+FC_TARGET_MCU\s+(\w+).*/s//\1/p" $(CONFIG_HEADER_FILE))
+TARGET        := $(shell sed -E -n "/^[[:space:]]*\#[[:space:]]*define[[:space:]]+FC_TARGET_MCU[[:space:]]+([[:alnum:]_]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifeq ($(TARGET),)
 $(error No TARGET identified. Is the $(CONFIG_HEADER_FILE) valid for $(CONFIG)?)
 endif
 
-EXST_ADJUST_VMA := $(shell sed -E -n "/^\s*#\s*define\s+FC_VMA_ADDRESS\s+((0[xX])?[[:xdigit:]]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
+EXST_ADJUST_VMA := $(shell sed -E -n "/^[[:space:]]*\#[[:space:]]*define[[:space:]]+FC_VMA_ADDRESS[[:space:]]+((0[xX])?[[:xdigit:]]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
 ifneq ($(EXST_ADJUST_VMA),)
 EXST = yes
 endif
@@ -57,21 +57,23 @@ endif #config
 .PHONY: configs
 configs:
 ifeq ($(shell realpath $(CONFIG_DIR)),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
-	git submodule update --init --remote -- $(CONFIGS_SUBMODULE_DIR)
+	@echo "Updating config submodule: $(CONFIGS_SUBMODULE_DIR)"
+	$(V1) git submodule update --init -- $(CONFIGS_SUBMODULE_DIR) || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
+	@echo "Submodule update succeeded."
 else
 ifeq ($(wildcard $(CONFIG_DIR)),)
 	@echo "Hydrating clone for configs: $(CONFIG_DIR)"
-	$(V0) git clone $(CONFIGS_REPO_URL) $(CONFIG_DIR)
+	$(V1) git clone $(CONFIGS_REPO_URL) $(CONFIG_DIR)
 else
-	$(V0) git -C $(CONFIG_DIR) pull origin
+	$(V1) git -C $(CONFIG_DIR) pull origin
 endif
 endif
 
 $(BASE_CONFIGS):
 	@echo "Building target config $@"
-	$(V0) $(MAKE) $(MAKE_PARALLEL) hex CONFIG=$@
+	$(V0) $(MAKE) fwo CONFIG=$@
 	@echo "Building target config $@ succeeded."
 
 ## <CONFIG>_rev    : build configured target and add revision to filename
 $(addsuffix _rev,$(BASE_CONFIGS)):
-	$(V0) $(MAKE) $(MAKE_PARALLEL) hex CONFIG=$(subst _rev,,$@) REV=yes
+	$(V0) $(MAKE) fwo CONFIG=$(subst _rev,,$@) REV=yes

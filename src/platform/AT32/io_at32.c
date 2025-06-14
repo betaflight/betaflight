@@ -23,7 +23,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "common/utils.h"
 
@@ -122,16 +122,6 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
         return;
     }
 
-    const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
-    RCC_ClockCmd(rcc, ENABLE);
-
-    gpio_init_type init = {
-        .gpio_pins = IO_Pin(io),
-        .gpio_mode = (cfg >> 0) & 0x03,
-        .gpio_drive_strength = (cfg >> 2) & 0x03,
-        .gpio_out_type = (cfg >> 4) & 0x01,
-        .gpio_pull = (cfg >> 5) & 0x03,
-    };
-    gpio_init(IO_GPIO(io), &init);
+    IOConfigGPIO(io, cfg);
     gpio_pin_mux_config(IO_GPIO(io), IO_GPIO_PinSource(io), af);
 }
