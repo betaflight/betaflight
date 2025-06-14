@@ -73,3 +73,15 @@ void loadControlRateProfile(void);
 void changeControlRateProfile(uint8_t controlRateProfileIndex);
 
 void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex);
+
+typedef struct plainEnglishRates {
+	float CenterStickPrecision;
+	float OuterStickTransition;
+	float MaxRotationSpeed;
+
+	FEasyRates() {
+		CenterStickPrecision = 0.5f;
+		OuterStickTransition = 0.33f;
+		MaxRotationSpeed = 650.f;
+	};
+} plainEnglishRates;
