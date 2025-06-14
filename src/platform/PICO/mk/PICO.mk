@@ -237,7 +237,7 @@ SYS_INCLUDE_DIRS += \
             $(SDK_DIR)/rp2350/boot_stage2/include
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp
 ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
 
 # Automatically treating constants as single-precision breaks pico-sdk (-Werror=double-promotion)
