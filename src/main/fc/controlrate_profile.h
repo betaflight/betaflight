@@ -30,6 +30,7 @@ typedef enum {
     RATES_TYPE_KISS,
     RATES_TYPE_ACTUAL,
     RATES_TYPE_QUICK,
+    RATES_TYPE_PLAINENGLISH,
     RATES_TYPE_COUNT    // must be the final entry
 } ratesType_e;
 
