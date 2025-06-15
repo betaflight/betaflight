@@ -270,6 +270,7 @@ void voltageMeterESCInit(void)
 
 void voltageMeterESCRefresh(void)
 {
+#ifdef USE_DSHOT_TELEMETRY
     // Just check motor 0 EDT data validity
     if (useDshotTelemetry &&
         ((dshotTelemetryState.motorState[0].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) &&
@@ -281,6 +282,7 @@ void voltageMeterESCRefresh(void)
             voltageMeterESCState.voltageUnfiltered = 25 * accumulatedVoltage / getMotorCount();
             voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
     } else
+#endif
 #ifdef USE_ESC_SENSOR
     {
         escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
@@ -294,12 +296,14 @@ void voltageMeterESCRefresh(void)
 
 void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
 {
+#ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry &&
         ((dshotTelemetryState.motorState[motorNumber].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) &&
         (dshotTelemetryState.motorState[motorNumber].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] > 0)) {
             voltageMeter->unfiltered = 25 * dshotTelemetryState.motorState[motorNumber].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE];
             voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
     } else
+#endif
 #ifdef USE_ESC_SENSOR
     {
         escSensorData_t *escData = getEscSensorData(motorNumber);
