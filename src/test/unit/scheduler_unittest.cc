@@ -22,6 +22,7 @@ extern "C" {
     #include "platform.h"
     #include "scheduler/scheduler.h"
     #include "scheduler_stubs.h"
+    #include "flight/altitude.h"
 }
 
 #include "unittest_macros.h"
