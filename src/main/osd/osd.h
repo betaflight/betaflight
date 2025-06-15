@@ -29,7 +29,7 @@
 
 #include "sensors/esc_sensor.h"
 
-#define OSD_NUM_TIMER_TYPES 4
+#define OSD_NUM_TIMER_TYPES 5
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
@@ -190,6 +190,11 @@ typedef enum {
     OSD_GPS_LAP_TIME_PREVIOUS,
     OSD_GPS_LAP_TIME_BEST3,
     OSD_DEBUG2,
+    OSD_CUSTOM_MSG0,
+    OSD_CUSTOM_MSG1,
+    OSD_CUSTOM_MSG2,
+    OSD_CUSTOM_MSG3,
+    OSD_LIDAR_DIST,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -253,6 +258,7 @@ typedef enum {
     OSD_TIMER_SRC_TOTAL_ARMED,
     OSD_TIMER_SRC_LAST_ARMED,
     OSD_TIMER_SRC_ON_OR_ARMED,
+    OSD_TIMER_SRC_LAUNCH_TIME,
     OSD_TIMER_SRC_COUNT
 } osd_timer_source_e;
 
@@ -388,6 +394,8 @@ typedef struct statistic_s {
 
 extern timeUs_t resumeRefreshAt;
 extern timeUs_t osdFlyTime;
+extern timeUs_t osdLaunchTime;
+
 #if defined(USE_ACC)
 extern float osdGForce;
 #endif

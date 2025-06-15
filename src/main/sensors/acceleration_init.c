@@ -35,37 +35,27 @@
 #include "config/feature.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "drivers/accgyro/accgyro_mpu3050.h"
+#include "drivers/accgyro/accgyro_virtual.h"
+
 #include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
+
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
+
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
+#include "drivers/accgyro/accgyro_spi_icm456xx.h"
+#include "drivers/accgyro/accgyro_spi_icm40609.h"
+
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
+#include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
-#include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
-
-#ifdef USE_ACC_ADXL345
-#include "drivers/accgyro/legacy/accgyro_adxl345.h"
-#endif
-
-#ifdef USE_ACC_BMA280
-#include "drivers/accgyro/legacy/accgyro_bma280.h"
-#endif
-
-#ifdef USE_ACC_LSM303DLHC
-#include "drivers/accgyro/legacy/accgyro_lsm303dlhc.h"
-#endif
-
-#ifdef USE_ACC_MMA8452
-#include "drivers/accgyro/legacy/accgyro_mma845x.h"
-#endif
 
 #include "config/config.h"
 
@@ -84,18 +74,6 @@
 #include "sensors/gyro_init.h"
 
 #include "acceleration_init.h"
-
-#if !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) \
-    && !defined(USE_ACC_MMA8452) && !defined(USE_ACC_LSM303DLHC) \
-    && !defined(USE_ACC_MPU6000) && !defined(USE_ACC_MPU6050) && !defined(USE_ACC_MPU6500) \
-    && !defined(USE_ACC_SPI_MPU6000) && !defined(USE_ACC_SPI_MPU6500) && !defined(USE_ACC_SPI_MPU9250) \
-    && !defined(USE_ACC_SPI_ICM20602) && !defined(USE_ACC_SPI_ICM20649) && !defined(USE_ACC_SPI_ICM20689) \
-    && !defined(USE_ACCGYRO_BMI160) && !defined(USE_ACCGYRO_BMI270) \
-    && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) \
-    && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_LSM6DSV16X) \
-    && !defined(USE_VIRTUAL_ACC)
-#error At least one USE_ACC device definition required
-#endif
 
 #define CALIBRATING_ACC_CYCLES              400
 
@@ -123,7 +101,7 @@ bool accHasBeenCalibrated(void)
 #endif
 }
 
-void accResetRollAndPitchTrims(void)
+LOCAL_UNUSED_FUNCTION static void accResetRollAndPitchTrims(void)
 {
     resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);
 }
@@ -136,7 +114,7 @@ static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
     accZero->values.calibrationCompleted = 0;
 }
 
-void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
+static void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
         .acc_lpf_hz = 25, // ATTITUDE/IMU runs at 100Hz (acro) or 500Hz (level modes) so we need to set 50 Hz (or lower) to avoid aliasing
@@ -154,13 +132,9 @@ extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
 
-bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
+static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware = ACC_NONE;
-
-#ifdef USE_ACC_ADXL345
-    drv_adxl345_config_t acc_params;
-#endif
 
 retry:
 
@@ -168,48 +142,10 @@ retry:
     case ACC_DEFAULT:
         FALLTHROUGH;
 
-#ifdef USE_ACC_ADXL345
-    case ACC_ADXL345: // ADXL345
-        acc_params.useFifo = false;
-        acc_params.dataRate = 800; // unused currently
-        if (adxl345Detect(&acc_params, dev)) {
-            accHardware = ACC_ADXL345;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_LSM303DLHC
-    case ACC_LSM303DLHC:
-        if (lsm303dlhcAccDetect(dev)) {
-            accHardware = ACC_LSM303DLHC;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
 #ifdef USE_ACC_MPU6050
     case ACC_MPU6050: // MPU6050
         if (mpu6050AccDetect(dev)) {
             accHardware = ACC_MPU6050;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_MMA8452
-    case ACC_MMA8452: // MMA8452
-        if (mma8452Detect(dev)) {
-            accHardware = ACC_MMA8452;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_BMA280
-    case ACC_BMA280: // BMA280
-        if (bma280Detect(dev)) {
-            accHardware = ACC_BMA280;
             break;
         }
         FALLTHROUGH;
@@ -233,11 +169,11 @@ retry:
         FALLTHROUGH;
 #endif
 
+#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
     case ACC_MPU6500:
     case ACC_ICM20601:
     case ACC_ICM20602:
     case ACC_ICM20608G:
-#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500SpiAccDetect(dev)) {
 #else
@@ -261,8 +197,8 @@ retry:
             }
             break;
         }
-#endif
         FALLTHROUGH;
+#endif
 
 #ifdef USE_ACC_SPI_ICM20649
     case ACC_ICM20649:
@@ -282,9 +218,11 @@ retry:
         FALLTHROUGH;
 #endif
 
-#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P)
+#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
     case ACC_ICM42605:
     case ACC_ICM42688P:
+    case ACC_IIM42652:
+    case ACC_IIM42653:
         if (icm426xxSpiAccDetect(dev)) {
             switch (dev->mpuDetectionResult.sensor) {
             case ICM_42605_SPI:
@@ -292,6 +230,32 @@ retry:
                 break;
             case ICM_42688P_SPI:
                 accHardware = ACC_ICM42688P;
+                break;
+            case IIM_42652_SPI:
+                accHardware = ACC_IIM42652;
+                break;
+            case IIM_42653_SPI:
+                accHardware = ACC_IIM42653;
+                break;
+            default:
+                accHardware = ACC_NONE;
+                break;
+            }
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
+    case ACC_ICM45686:
+    case ACC_ICM45605:
+        if (icm456xxSpiAccDetect(dev)) {
+            switch (dev->mpuDetectionResult.sensor) {
+            case ICM_45686_SPI:
+                accHardware = ACC_ICM45686;
+                break;
+            case ICM_45605_SPI:
+                accHardware = ACC_ICM45605;
                 break;
             default:
                 accHardware = ACC_NONE;
@@ -338,6 +302,15 @@ retry:
         FALLTHROUGH;
 #endif
 
+#ifdef USE_ACCGYRO_ICM40609D
+    case ACC_ICM40609D:
+        if (icm40609SpiAccDetect(dev)) {
+            accHardware = ACC_ICM40609D;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
 #ifdef USE_VIRTUAL_ACC
     case ACC_VIRTUAL:
         if (virtualAccDetect(dev)) {
@@ -349,6 +322,7 @@ retry:
 
     default:
     case ACC_NONE: // disable ACC
+        UNUSED(dev);
         accHardware = ACC_NONE;
         break;
     }
@@ -438,7 +412,7 @@ static bool isOnFirstAccelerationCalibrationCycle(void)
     return accelerationRuntime.calibratingA == CALIBRATING_ACC_CYCLES;
 }
 
-void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+void performAccelerometerCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
 

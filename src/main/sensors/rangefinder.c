@@ -109,20 +109,13 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #endif
             break;
 
+#if defined(USE_RANGEFINDER_TF)
         case RANGEFINDER_TFMINI:
-#if defined(USE_RANGEFINDER_TF)
-            if (lidarTFminiDetect(dev)) {
-                rangefinderHardware = RANGEFINDER_TFMINI;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
-            }
-#endif
-            break;
-
         case RANGEFINDER_TF02:
-#if defined(USE_RANGEFINDER_TF)
-            if (lidarTF02Detect(dev)) {
-                rangefinderHardware = RANGEFINDER_TF02;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_TF_TASK_PERIOD_MS));
+        case RANGEFINDER_TFNOVA:
+            if (lidarTFDetect(dev, rangefinderHardwareToUse)) {
+                rangefinderHardware = rangefinderHardwareToUse;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
             }
 #endif
             break;
@@ -243,7 +236,7 @@ void rangefinderUpdate(void)
     }
 }
 
-bool isSurfaceAltitudeValid(void)
+static bool isSurfaceAltitudeValid(void)
 {
 
     /*

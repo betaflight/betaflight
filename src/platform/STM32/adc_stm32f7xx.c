@@ -30,7 +30,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/sensor.h"
 
 #include "drivers/adc.h"
@@ -95,7 +95,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA7, ADC_DEVICES_12,  ADC_CHANNEL_7  },
 };
 
-void adcInitDevice(adcDevice_t *adcdev, int channelCount)
+static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
     adcdev->ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
     adcdev->ADCHandle.Init.ContinuousConvMode    = ENABLE;
@@ -130,7 +130,7 @@ static adcDevice_t adc;
 static adcDevice_t adcInternal;
 static ADC_HandleTypeDef *adcInternalHandle;
 
-void adcInitInternalInjected(adcDevice_t *adcdev)
+static void adcInitInternalInjected(adcDevice_t *adcdev)
 {
     adcInternalHandle = &adcdev->ADCHandle;
 

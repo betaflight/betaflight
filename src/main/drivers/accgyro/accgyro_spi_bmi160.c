@@ -267,7 +267,8 @@ extiCallbackRec_t bmi160IntCallbackRec;
 
 // Called in ISR context
 // Gyro read has just completed
-busStatus_e bmi160Intcallback(uint32_t arg)
+#ifdef USE_DMA
+static busStatus_e bmi160Intcallback(uint32_t arg)
 {
     gyroDev_t *gyro = (gyroDev_t *)arg;
     int32_t gyroDmaDuration = cmpTimeCycles(getCycleCounter(), gyro->gyroLastEXTI);
@@ -280,8 +281,9 @@ busStatus_e bmi160Intcallback(uint32_t arg)
 
     return BUS_READY;
 }
+#endif
 
-void bmi160ExtiHandler(extiCallbackRec_t *cb)
+static void bmi160ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     extDevice_t *dev = &gyro->dev;
@@ -380,6 +382,7 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
         gyro->gyroDmaMaxDuration = 5;
         // Using DMA for gyro access upsets the scheduler on the F4
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
+#ifdef USE_DMA
             if (spiUseDMA(dev)) {
                 dev->callbackArg = (uint32_t)gyro;
                 dev->txBuf[1] = BMI160_REG_GYR_DATA_X_LSB | 0x80;
@@ -389,7 +392,9 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
                 gyro->segments[0].u.buffers.rxData = &dev->rxBuf[1];
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
-            } else {
+            } else
+#endif
+            {
                 // Interrupts are present, but no DMA
                 gyro->gyroModeSPI = GYRO_EXTI_INT;
             }
@@ -437,7 +442,7 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
     return true;
 }
 
-void bmi160SpiGyroInit(gyroDev_t *gyro)
+static void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
 
@@ -447,7 +452,7 @@ void bmi160SpiGyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(dev, spiCalculateDivider(BMI160_MAX_SPI_CLK_HZ));
 }
 
-void bmi160SpiAccInit(accDev_t *acc)
+static void bmi160SpiAccInit(accDev_t *acc)
 {
     acc->acc_1G = 512 * 8;
 }

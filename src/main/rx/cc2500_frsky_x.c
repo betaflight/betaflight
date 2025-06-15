@@ -34,7 +34,6 @@
 
 #include "drivers/adc.h"
 #include "drivers/io.h"
-#include "drivers/io_def.h"
 #include "drivers/io_types.h"
 #include "drivers/resource.h"
 #include "drivers/rx/rx_cc2500.h"
@@ -299,7 +298,7 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
     }
 }
 
-bool isValidPacket(const uint8_t *packet)
+static bool isValidPacket(const uint8_t *packet)
 {
     bool useBindTxId2 = false;
 

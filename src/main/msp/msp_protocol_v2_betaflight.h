@@ -29,6 +29,8 @@
 #define MSP2_GET_LED_STRIP_CONFIG_VALUES    0x3008
 #define MSP2_SET_LED_STRIP_CONFIG_VALUES    0x3009
 #define MSP2_SENSOR_CONFIG_ACTIVE           0x300A
+#define MSP2_SENSOR_OPTICALFLOW             0x300B
+#define MSP2_MCU_INFO                       0x300C
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
@@ -37,3 +39,6 @@
 #define MSP2TEXT_RATE_PROFILE_NAME               4
 #define MSP2TEXT_BUILDKEY                        5
 #define MSP2TEXT_RELEASENAME                     6
+#define MSP2TEXT_CUSTOM_MSG_0                    7  // CUSTOM_MSG_MAX_NUM  entries are allocated
+#define CUSTOM_MSG_MAX_NUM                       4
+// next new variable type must be >= MSP2TEXT_CUSTOM_MSG_0 + CUSTOM_MSG_MAX_NUM (11)

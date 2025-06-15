@@ -1,7 +1,9 @@
 PG_SRC = \
             pg/adc.c \
-            pg/alt_hold.c \
-            pg/autopilot.c \
+            pg/alt_hold_multirotor.c \
+            pg/alt_hold_wing.c \
+            pg/autopilot_multirotor.c \
+            pg/autopilot_wing.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \
@@ -15,17 +17,20 @@ PG_SRC = \
             pg/gimbal.c \
             pg/gps.c \
             pg/gps_lap_timer.c \
-            pg/gps_rescue.c \
+            pg/gps_rescue_multirotor.c \
+            pg/gps_rescue_wing.c \
             pg/gyrodev.c \
             pg/max7456.c \
             pg/mco.c \
             pg/motor.c \
             pg/msp.c \
             pg/pg.c \
+            pg/pilot.c \
             pg/piniobox.c \
             pg/pinio.c \
             pg/pin_pull_up_down.c \
-            pg/pos_hold.c \
+            pg/pos_hold_multirotor.c \
+            pg/pos_hold_wing.c \
             pg/rcdevice.c \
             pg/rpm_filter.c \
             pg/rx.c \
@@ -51,8 +56,8 @@ COMMON_SRC = \
             build/debug_pin.c \
             build/version.c \
             main.c \
-            $(PG_SRC) \
             common/bitarray.c \
+            common/chirp.c \
             common/colorconversion.c \
             common/crc.c \
             common/encoding.c \
@@ -84,7 +89,6 @@ COMMON_SRC = \
             cli/settings.c \
             config/config.c \
             drivers/dshot.c \
-            drivers/dshot_dpwm.c \
             drivers/dshot_command.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -99,15 +103,16 @@ COMMON_SRC = \
             drivers/display_canvas.c \
             drivers/dma_common.c \
             drivers/io.c \
+            drivers/io_preinit.c \
             drivers/light_led.c \
             drivers/mco.c \
             drivers/motor.c \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \
+            drivers/pwm_output.c \
             drivers/resource.c \
             drivers/serial.c \
             drivers/serial_impl.c \
-            drivers/serial_uart_hw.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/timer_common.c \
@@ -153,13 +158,16 @@ COMMON_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            flight/alt_hold.c \
-            flight/autopilot.c \
+            flight/alt_hold_multirotor.c \
+            flight/alt_hold_wing.c \
+            flight/autopilot_multirotor.c \
+            flight/autopilot_wing.c \
             flight/kalman_filter_1d.c \
             flight/altitude.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \
-            flight/gps_rescue.c \
+            flight/gps_rescue_multirotor.c \
+            flight/gps_rescue_wing.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_init.c \
@@ -167,7 +175,8 @@ COMMON_SRC = \
             flight/pid.c \
             flight/pid_init.c \
             flight/position.c \
-            flight/pos_hold.c \
+            flight/pos_hold_multirotor.c \
+            flight/pos_hold_wing.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
@@ -211,7 +220,8 @@ COMMON_SRC = \
             cms/cms_menu_blackbox.c \
             cms/cms_menu_failsafe.c \
             cms/cms_menu_firmware.c \
-            cms/cms_menu_gps_rescue.c \
+            cms/cms_menu_gps_rescue_multirotor.c \
+            cms/cms_menu_gps_rescue_wing.c \
             cms/cms_menu_gps_lap_timer.c \
             cms/cms_menu_imu.c \
             cms/cms_menu_ledstrip.c \
@@ -254,6 +264,7 @@ COMMON_SRC = \
             osd/osd_warnings.c \
             sensors/barometer.c \
             sensors/rangefinder.c \
+            sensors/opticalflow.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
             telemetry/ghst.c \
@@ -281,7 +292,6 @@ ifneq ($(SIMULATOR_BUILD),yes)
 COMMON_SRC += \
             drivers/bus_spi.c \
             drivers/serial_uart.c \
-            drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_mpu.c \
@@ -290,6 +300,8 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_icm20649.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
+            drivers/accgyro/accgyro_spi_icm456xx.c \
+            drivers/accgyro/accgyro_spi_icm40609.c \
             drivers/accgyro/accgyro_spi_l3gd20.c \
             drivers/accgyro/accgyro_spi_lsm6dso.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c \
@@ -322,24 +334,6 @@ COMMON_SRC += \
             drivers/max7456.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_rtc6705_soft_spi.c
-
-ifneq ($(GYRO_DEFINE),)
-
-LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
-ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
-
-LEGACY_SRC := \
-            drivers/accgyro/legacy/accgyro_adxl345.c \
-            drivers/accgyro/legacy/accgyro_bma280.c \
-            drivers/accgyro/legacy/accgyro_l3g4200d.c \
-            drivers/accgyro/legacy/accgyro_lsm303dlhc.c \
-            drivers/accgyro/legacy/accgyro_mma845x.c
-
-COMMON_SRC += $(LEGACY_SRC)
-SPEED_OPTIMISED_SRC += $(LEGACY_SRC)
-
-endif
-endif
 
 RX_SRC = \
             drivers/rx/expresslrs_driver.c \
@@ -380,9 +374,8 @@ SDCARD_SRC += \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c
 
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
+INCLUDE_DIRS += $(FATFS_DIR)
+VPATH        := $(VPATH):$(FATFS_DIR)
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC += \
@@ -416,29 +409,26 @@ SPEED_OPTIMISED_SRC += \
             drivers/bus_spi.c \
             drivers/serial_uart.c \
             drivers/accgyro/accgyro_mpu.c \
-            drivers/accgyro/accgyro_mpu3050.c \
             drivers/accgyro/accgyro_spi_bmi160.c \
             drivers/accgyro/accgyro_spi_bmi270.c \
             drivers/accgyro/accgyro_spi_lsm6dso.c
 
 endif
 
-COMMON_DEVICE_SRC = \
-            $(CMSIS_SRC) \
-            $(DEVICE_STDPERIPH_SRC)
+COMMON_DEVICE_SRC = $(CMSIS_SRC) $(DEVICE_STDPERIPH_SRC)
 
-COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC) $(RX_SRC)
+COMMON_SRC += $(CONFIG_SRC) $(PG_SRC) $(COMMON_DEVICE_SRC) $(RX_SRC)
 
 ifeq ($(EXST),yes)
-TARGET_FLAGS := -DUSE_EXST $(TARGET_FLAGS)
+TARGET_FLAGS += -DUSE_EXST
 endif
 
 ifeq ($(RAM_BASED),yes)
-TARGET_FLAGS := -DUSE_EXST -DCONFIG_IN_RAM -DRAMBASED $(TARGET_FLAGS)
+TARGET_FLAGS += -DUSE_EXST -DCONFIG_IN_RAM -DRAMBASED
 endif
 
 ifeq ($(SIMULATOR_BUILD),yes)
-TARGET_FLAGS := -DSIMULATOR_BUILD $(TARGET_FLAGS)
+TARGET_FLAGS += -DSIMULATOR_BUILD
 endif
 
 SPEED_OPTIMISED_SRC += \
@@ -513,7 +503,8 @@ SIZE_OPTIMISED_SRC += \
             cms/cms_menu_blackbox.c \
             cms/cms_menu_failsafe.c \
             cms/cms_menu_firmware.c \
-            cms/cms_menu_gps_rescue.c \
+            cms/cms_menu_gps_rescue_multirotor.c \
+            cms/cms_menu_gps_rescue_wing.c \
             cms/cms_menu_gps_lap_timer.c \
             cms/cms_menu_imu.c \
             cms/cms_menu_ledstrip.c \

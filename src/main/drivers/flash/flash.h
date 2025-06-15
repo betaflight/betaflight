@@ -57,7 +57,7 @@ typedef enum {
     FLASH_CF_SYSTEM_IS_MEMORY_MAPPED  = (1 << 0),
 } flashConfigurationFlags_e;
 
-void flashPreInit(const flashConfig_t *flashConfig);
+void flashPreinit(const flashConfig_t *flashConfig);
 bool flashInit(const flashConfig_t *flashConfig);
 
 bool flashIsReady(void);

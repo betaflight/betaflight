@@ -113,7 +113,7 @@
 #define OSPI_SIOO_INST_EVERY_CMD         ((uint32_t)0x00000000U)
 #define OSPI_SIOO_INST_ONLY_FIRST_CMD    ((uint32_t)OCTOSPI_CCR_SIOO)
 
-MMFLASH_CODE_NOINLINE static void Error_Handler(void) {
+static MMFLASH_CODE_NOINLINE void Error_Handler(void) {
     while (1) {
         NOOP;
     }
@@ -303,7 +303,7 @@ MMFLASH_CODE_NOINLINE static ErrorStatus octoSpiConfigureCommand(OCTOSPI_TypeDef
     return status;
 }
 
-MMFLASH_CODE_NOINLINE ErrorStatus octoSpiCommand(OCTOSPI_TypeDef *instance, OSPI_Command_t *cmd)
+static MMFLASH_CODE_NOINLINE ErrorStatus octoSpiCommand(OCTOSPI_TypeDef *instance, OSPI_Command_t *cmd)
 {
     octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
 
@@ -325,7 +325,7 @@ MMFLASH_CODE_NOINLINE ErrorStatus octoSpiCommand(OCTOSPI_TypeDef *instance, OSPI
  *
  * Call optoSpiCommand first to configure the transaction stages.
  */
-MMFLASH_CODE_NOINLINE ErrorStatus octoSpiTransmit(OCTOSPI_TypeDef *instance, uint8_t *data)
+static MMFLASH_CODE_NOINLINE ErrorStatus octoSpiTransmit(OCTOSPI_TypeDef *instance, uint8_t *data)
 {
     if (data == NULL) {
         return ERROR;
@@ -357,7 +357,7 @@ MMFLASH_CODE_NOINLINE ErrorStatus octoSpiTransmit(OCTOSPI_TypeDef *instance, uin
  *
  * Call optoSpiCommand first to configure the transaction stages.
  */
-MMFLASH_CODE_NOINLINE ErrorStatus octoSpiReceive(OCTOSPI_TypeDef *instance, uint8_t *data)
+static MMFLASH_CODE_NOINLINE ErrorStatus octoSpiReceive(OCTOSPI_TypeDef *instance, uint8_t *data)
 {
     if (data == NULL) {
         return ERROR;
@@ -415,7 +415,7 @@ typedef struct
 
 octoSpiMemoryMappedModeConfigurationRegisterBackup_t ospiMMMCRBackups[OCTOSPI_INTERFACE_COUNT];
 
-void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
+static void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
     OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
@@ -435,7 +435,7 @@ void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
     ospiMMMCRBackup->ABR = instance->ABR;
 }
 
-MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
+static MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
     OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
@@ -516,7 +516,7 @@ MMFLASH_CODE_NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instan
     octoSpiRestoreMemoryMappedModeConfiguration(instance);
 }
 
-MMFLASH_CODE_NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
+static MMFLASH_CODE_NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
     OCTOSPI_TypeDef *instance = octoSpi->dev;
 

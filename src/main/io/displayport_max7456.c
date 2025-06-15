@@ -185,7 +185,7 @@ static bool checkReady(displayPort_t *displayPort, bool rescan)
     return true;
 }
 
-void setBackgroundType(displayPort_t *displayPort, displayPortBackground_e backgroundType)
+static void setBackgroundType(displayPort_t *displayPort, displayPortBackground_e backgroundType)
 {
     UNUSED(displayPort);
     max7456SetBackgroundType(backgroundType);

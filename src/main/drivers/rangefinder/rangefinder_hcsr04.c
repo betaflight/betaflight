@@ -30,7 +30,6 @@
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
 #include "drivers/time.h"
 
 #include "drivers/rangefinder/rangefinder.h"
@@ -61,7 +60,7 @@ static IO_t echoIO;
 static IO_t triggerIO;
 
 #if !defined(UNIT_TEST)
-void hcsr04_extiHandler(extiCallbackRec_t* cb)
+static void hcsr04_extiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
 
@@ -81,7 +80,7 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
 }
 #endif
 
-void hcsr04_init(rangefinderDev_t *dev)
+static void hcsr04_init(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 }
@@ -93,7 +92,7 @@ void hcsr04_init(rangefinderDev_t *dev)
  * Called periodically by the scheduler
  * Measurement reading is done asynchronously, using interrupt
  */
-void hcsr04_start_reading(void)
+static  void hcsr04_start_reading(void)
 {
 #if !defined(UNIT_TEST)
     IOHi(triggerIO);
@@ -102,7 +101,7 @@ void hcsr04_start_reading(void)
 #endif
 }
 
-void hcsr04_update(rangefinderDev_t *dev)
+static void hcsr04_update(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 
@@ -136,7 +135,7 @@ void hcsr04_update(rangefinderDev_t *dev)
 /**
  * Get the distance that was measured by the last pulse, in centimeters.
  */
-int32_t hcsr04_get_distance(rangefinderDev_t *dev)
+static int32_t hcsr04_get_distance(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 

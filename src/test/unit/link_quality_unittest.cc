@@ -61,6 +61,7 @@ extern "C" {
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/pilot.h"
     #include "pg/rx.h"
 
     #include "rx/rx.h"

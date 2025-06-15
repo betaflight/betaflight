@@ -148,6 +148,10 @@ serialPort_t serialTestInstance;
 serialPortConfig_t serialTestInstanceConfig = {
     .functionMask = 0,
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
+    .msp_baudrateIndex = 5,
+    .gps_baudrateIndex = 5,
+    .blackbox_baudrateIndex = 5,
+    .telemetry_baudrateIndex = 5
 };
 
 static serialPortConfig_t *findSerialPortConfig_stub_retval;

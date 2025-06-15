@@ -198,7 +198,7 @@ static bool bmp388ReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_
     }
 }
 
-void bmp388_extiHandler(extiCallbackRec_t* cb)
+static void bmp388_extiHandler(extiCallbackRec_t* cb)
 {
 #ifdef DEBUG
     static uint32_t bmp388ExtiCallbackCounter = 0;
@@ -212,7 +212,7 @@ void bmp388_extiHandler(extiCallbackRec_t* cb)
     bmp388ReadRegisterBuffer(&baro->dev, BMP388_INT_STATUS_REG, &intStatus, 1);
 }
 
-void bmp388BusInit(const extDevice_t *dev)
+static void bmp388BusInit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_BMP388
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -226,18 +226,18 @@ void bmp388BusInit(const extDevice_t *dev)
 #endif
 }
 
-void bmp388BusDeinit(const extDevice_t *dev)
+static void bmp388BusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_BMP388
     if (dev->bus->busType == BUS_TYPE_SPI) {
-        spiPreinitByIO(dev->busType_u.spi.csnPin);
+        ioPreinitByIO(dev->busType_u.spi.csnPin, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     }
 #else
     UNUSED(dev);
 #endif
 }
 
-bool bmp388BeginForcedMeasurement(const extDevice_t *dev)
+static bool bmp388BeginForcedMeasurement(const extDevice_t *dev)
 {
     // enable pressure measurement, temperature measurement, set power mode and start sampling
     uint8_t mode = BMP388_MODE_FORCED << 4 | 1 << 1 | 1 << 0;

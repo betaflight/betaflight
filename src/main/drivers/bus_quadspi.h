@@ -23,7 +23,6 @@
 #pragma once
 
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

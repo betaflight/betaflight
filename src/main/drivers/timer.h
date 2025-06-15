@@ -25,7 +25,11 @@
 
 #include "drivers/dma.h"
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
+
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc_types.h"
+#endif
+
 #include "drivers/resource.h"
 
 #ifdef USE_TIMER
@@ -69,7 +73,9 @@ typedef struct timerOvrHandlerRec_s {
 
 typedef struct timerDef_s {
     TIM_TypeDef *TIMx;
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;
+#endif
     uint8_t inputIrq;
 } timerDef_t;
 
@@ -180,7 +186,9 @@ uint32_t timerClock(const TIM_TypeDef *tim);
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);  // TODO - just for migration
 void timerReconfigureTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);
 
+#if PLATFORM_TRAIT_RCC
 rccPeriphTag_t timerRCC(const TIM_TypeDef *tim);
+#endif
 uint8_t timerInputIrq(const TIM_TypeDef *tim);
 
 #if defined(USE_TIMER_MGMT)
@@ -216,3 +224,12 @@ uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_
 int8_t timerGetNumberByIndex(uint8_t index);
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
 uint8_t timerLookupChannelIndex(const uint16_t channel);
+
+// TODO: replace TIM_TypeDef with alternate
+void timerReset(TIM_TypeDef *timer);
+void timerSetPeriod(TIM_TypeDef *timer, uint32_t period);
+uint32_t timerGetPeriod(TIM_TypeDef *timer);
+void timerSetCounter(TIM_TypeDef *timer, uint32_t counter);
+void timerDisable(TIM_TypeDef *timer);
+void timerEnable(TIM_TypeDef *timer);
+void timerEnableInterrupt(TIM_TypeDef *timer);

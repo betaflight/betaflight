@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -54,12 +55,13 @@
 #include "usbd_int.h"
 #include "msc_class.h"
 #include "msc_desc.h"
+#include "msc_diskio.h"
 
 #include "drivers/usb_io.h"
 
 extern otg_core_type otg_core_struct;
 
-void msc_usb_gpio_config(void)
+static void msc_usb_gpio_config(void)
 {
     gpio_init_type gpio_init_struct;
 
@@ -94,7 +96,7 @@ void msc_usb_gpio_config(void)
 
 }
 
-void msc_usb_clock48m_select(usb_clk48_s clk_s)
+static void msc_usb_clock48m_select(usb_clk48_s clk_s)
 {
     if(clk_s == USB_CLK_HICK) {
         crm_usb_clock_source_select(CRM_USB_CLOCK_SOURCE_HICK);
@@ -179,6 +181,35 @@ uint8_t mscStart(void)
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
 
+    switch (blackboxConfig()->device) {
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        switch (sdcardConfig()->mode) {
+#ifdef USE_SDCARD_SDIO
+        case SDCARD_MODE_SDIO:
+            USBD_STORAGE_fops = &USBD_MSC_MICRO_SDIO_fops;
+            break;
+#endif
+#ifdef USE_SDCARD_SPI
+        case SDCARD_MODE_SPI:
+            USBD_STORAGE_fops = &USBD_MSC_MICRO_SD_SPI_fops;
+            break;
+#endif
+        default:
+            return 1;
+        }
+        break;
+#endif
+
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        USBD_STORAGE_fops = &USBD_MSC_EMFAT_fops;
+        break;
+#endif
+    default:
+        return 1;
+    }
+
     msc_usb_gpio_config();
     crm_periph_clock_enable(OTG_CLOCK, TRUE);
     msc_usb_clock48m_select(USB_CLK_HEXT);
@@ -199,7 +230,7 @@ uint8_t mscStart(void)
 
 int8_t msc_disk_capacity(uint8_t lun, uint32_t *block_num, uint32_t *block_size)
 {
-    return USBD_MSC_EMFAT_fops.GetCapacity(lun, block_num, block_size);
+    return USBD_STORAGE_fops->GetCapacity(lun, block_num, block_size);
 }
 
 int8_t msc_disk_read(
@@ -208,7 +239,7 @@ int8_t msc_disk_read(
     uint8_t *buf,       // Pointer to the buffer to save data
     uint16_t blk_len)   // number of blocks to be read
 {
-    return USBD_MSC_EMFAT_fops.Read(lun, buf, blk_addr, blk_len);
+    return USBD_STORAGE_fops->Read(lun, buf, blk_addr, blk_len);
 }
 
 int8_t msc_disk_write(uint8_t lun,
@@ -228,7 +259,7 @@ uint8_t *get_inquiry(uint8_t lun)
 {
     UNUSED(lun);
 
-    return (uint8_t *)USBD_MSC_EMFAT_fops.pInquiry;
+    return (uint8_t *)USBD_STORAGE_fops->pInquiry;
 }
 
 uint8_t msc_get_readonly(uint8_t lun)

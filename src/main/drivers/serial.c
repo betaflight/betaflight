@@ -76,7 +76,10 @@ uint8_t serialRead(serialPort_t *instance)
 
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
-    instance->vTable->serialSetBaudRate(instance, baudRate);
+    //vTable->serialSetBaudRate is NULL for SIMULATOR_BUILD, because the TCP port is used
+    if (instance->vTable->serialSetBaudRate != NULL) {
+        instance->vTable->serialSetBaudRate(instance, baudRate);
+    }
 }
 
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
@@ -126,8 +129,20 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
     serialEndWrite(instance);
 }
 
+void serialWriteBufBlocking(serialPort_t *instance, const uint8_t *data, int count)
+{
+    while (serialTxBytesFree(instance) < (uint32_t)count) /* NOP */;
+    serialWriteBuf(instance, data, count);
+}
+
 void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);
 }
+
+void serialWriteBufBlockingShim(void *instance, const uint8_t *data, int count)
+{
+    serialWriteBufBlocking(instance, data, count);
+}
+
 

@@ -30,13 +30,9 @@
 #include "drivers/io.h"
 #include "drivers/motor.h"
 #include "drivers/time.h"
-#include "drivers/timer.h"
 
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
-#include "drivers/pwm_output.h"
-
-#include "dshot_command.h"
+#include "drivers/dshot_command.h"
 
 #define DSHOT_PROTOCOL_DETECTION_DELAY_MS 3000
 #define DSHOT_INITIAL_DELAY_US 10000
@@ -143,8 +139,7 @@ static dshotCommandControl_t* addCommand(void)
 static bool allMotorsAreIdle(void)
 {
     for (unsigned i = 0; i < motorDeviceCount(); i++) {
-        const motorDmaOutput_t *motor = getMotorDmaOutput(i);
-        if (motor->protocolControl.value) {
+        if (!motorIsMotorIdle(i)) {
             return false;
         }
     }
@@ -154,7 +149,20 @@ static bool allMotorsAreIdle(void)
 
 bool dshotStreamingCommandsAreEnabled(void)
 {
-    return motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS;
+    static bool firstCommand = true;
+    bool goodMotorDetectDelay;
+
+    if (firstCommand) {
+        goodMotorDetectDelay = motorGetMotorEnableTimeMs() && (cmpTimeMs(millis(), motorGetMotorEnableTimeMs()) > DSHOT_PROTOCOL_DETECTION_DELAY_MS);
+
+        if (goodMotorDetectDelay) {
+            firstCommand = false;
+        }
+    } else {
+        goodMotorDetectDelay = true;
+    }
+
+    return motorIsEnabled() && goodMotorDetectDelay;
 }
 
 static bool dshotCommandsAreEnabled(dshotCommandType_e commandType)
@@ -182,7 +190,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 
     uint8_t repeats = 1;
     timeUs_t delayAfterCommandUs = DSHOT_COMMAND_DELAY_US;
-    motorVTable_t *vTable = motorGetVTable();
+    const motorVTable_t *vTable = motorGetVTable();
 
     switch (command) {
     case DSHOT_CMD_SPIN_DIRECTION_1:
@@ -208,9 +216,11 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 
     if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
         bool isBitbangActive = false;
 #ifdef USE_DSHOT_BITBANG
         isBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
+#endif
 #endif
         // Fake command in queue. Blocking commands are launched from cli, and no inline commands are running
         for (uint8_t i = 0; i < motorDeviceCount(); i++) {
@@ -232,8 +242,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
             }
 
             for (uint8_t i = 0; i < motorDeviceCount(); i++) {
-                motorDmaOutput_t *const motor = getMotorDmaOutput(i);
-                motor->protocolControl.requestTelemetry = true;
+                vTable->requestTelemetry(i);
                 vTable->writeInt(i, (i == index || index == ALL_MOTORS) ? command : DSHOT_CMD_MOTOR_STOP);
             }
 
@@ -280,7 +289,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 }
 
-uint8_t dshotCommandGetCurrent(uint8_t index)
+uint8_t dshotCommandGetCurrent(unsigned index)
 {
     return commandQueue[commandQueueTail].command[index];
 }
@@ -290,7 +299,7 @@ uint8_t dshotCommandGetCurrent(uint8_t index)
 // allows the motor output to be sent, "false" means delay until next loop. So take
 // the example of a dshot command that needs to repeat 10 times at 1ms intervals.
 // If we have a 8KHz PID loop we'll end up sending the dshot command every 8th motor output.
-FAST_CODE_NOINLINE bool dshotCommandOutputIsEnabled(uint8_t motorCount)
+FAST_CODE_NOINLINE bool dshotCommandOutputIsEnabled(unsigned motorCount)
 {
     UNUSED(motorCount);
 

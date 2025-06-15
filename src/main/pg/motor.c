@@ -25,7 +25,7 @@
 
 #ifdef USE_MOTOR
 
-#include "drivers/pwm_output.h"
+#include "drivers/motor_types.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -51,34 +51,30 @@ PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
-#ifdef BRUSHED_MOTORS
+#if defined(USE_BRUSHED_MOTORS)
     motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-    motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
-    motorConfig->dev.useUnsyncedPwm = true;
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_BRUSHED;
+    motorConfig->dev.useContinuousUpdate = true;
+    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
 #else
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-#ifndef USE_DSHOT
-    if (motorConfig->dev.motorPwmProtocol == PWM_TYPE_STANDARD) {
-        motorConfig->dev.useUnsyncedPwm = true;
-    }
-    motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
-#elif defined(DEFAULT_MOTOR_DSHOT_SPEED)
-    motorConfig->dev.motorPwmProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
+    motorConfig->motorIdle = 550;
+#if !defined(USE_DSHOT) && defined(USE_PWM_OUTPUT)
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_PWM;
+    motorConfig->dev.useContinuousUpdate = true;
+#elif defined(USE_DSHOT) && defined(DEFAULT_MOTOR_DSHOT_SPEED)
+    motorConfig->dev.motorProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
+#elif defined(USE_DSHOT)
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DSHOT600;
 #else
-    motorConfig->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
-#endif // USE_DSHOT
-#endif // BRUSHED_MOTORS
+    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;
+#endif // protocol selection
+#endif // brushed motors
 
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
-#ifdef BRUSHED_MOTORS
-    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
-#else
-    motorConfig->motorIdle = 550;
-#endif // BRUSHED_MOTORS
     motorConfig->kv = 1960;
 
-#ifdef USE_TIMER
 #ifdef MOTOR1_PIN
     motorConfig->dev.ioTags[0] = IO_TAG(MOTOR1_PIN);
 #endif
@@ -102,7 +98,6 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #endif
 #ifdef MOTOR8_PIN
     motorConfig->dev.ioTags[7] = IO_TAG(MOTOR8_PIN);
-#endif
 #endif
 
     motorConfig->motorPoleCount = 14;   // Most brushless motors that we use are 14 poles

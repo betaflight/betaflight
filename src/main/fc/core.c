@@ -197,7 +197,7 @@ static bool isCalibrating(void)
 }
 
 #ifdef USE_LAUNCH_CONTROL
-bool canUseLaunchControl(void)
+static bool canUseLaunchControl(void)
 {
     if (!isFixedWing()
         && !isUsingSticksForArming()     // require switch arming for safety
@@ -212,7 +212,7 @@ bool canUseLaunchControl(void)
 #endif
 
 #ifdef USE_DSHOT
-void setMotorSpinDirection(uint8_t spinDirection)
+static void setMotorSpinDirection(uint8_t spinDirection)
 {
     if (isMotorProtocolDshot() && !featureIsEnabled(FEATURE_3D)) {
         dshotCommandWrite(ALL_MOTORS, getMotorCount(), spinDirection, DSHOT_CMD_TYPE_INLINE);
@@ -557,27 +557,11 @@ void tryArm(void)
                 }
             }
 #endif
-
             // choose crashflip outcome on arming
-            // disarm can arise in processRx() if the crashflip switch is reversed while in crashflip mode
-            // if we were unsuccessful, or cannot determin success, arming will be blocked and we can't get here
-            // hence we only get here with crashFlipModeActive if the switch was reversed and result successful
-            if (crashFlipModeActive) {
-                // flip was successful, continue into normal flight without need to disarm/rearm
-                // note: preceding disarm will have set motors to normal rotation direction
-                crashFlipModeActive = false;
-            } else {
-                // when arming and not in crashflip mode, block entry to crashflip if delayed by the dshot beeper,
-                // otherwise consider only the switch position
-                crashFlipModeActive = (tryingToArm == ARMING_DELAYED_CRASHFLIP) ? false : IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
-#ifdef USE_DSHOT
-                // previous disarm will have set direction to normal
-                // at this point we only need to reverse the motors if crashflipMode is active
-                if (crashFlipModeActive) {
-                    setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_REVERSED);
-                }
-#endif
-            }
+            // consider only the switch position
+            crashFlipModeActive = IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
+
+            setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
         }
 #endif // USE_DSHOT
 
@@ -1089,6 +1073,16 @@ void processRxModes(timeUs_t currentTimeUs)
         }
     } else {
         DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+#endif
+
+#ifdef USE_CHIRP
+    if (IS_RC_MODE_ACTIVE(BOXCHIRP) && !FLIGHT_MODE(FAILSAFE_MODE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(CHIRP_MODE)) {
+            ENABLE_FLIGHT_MODE(CHIRP_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(CHIRP_MODE);
     }
 #endif
 

@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -33,23 +34,23 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
+#include "dshot_dpwm.h"
 #include "drivers/dshot_command.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/motor.h"
 #include "drivers/pwm_output.h"
-#include "drivers/pwm_output_dshot_shared.h"
-#include "drivers/rcc.h"
+#include "pwm_output_dshot_shared.h"
+#include "platform/rcc.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/system.h"
 
 #ifdef USE_DSHOT_TELEMETRY
 
-void dshotEnableChannels(uint8_t motorCount)
+void dshotEnableChannels(unsigned motorCount)
 {
-    for (int i = 0; i < motorCount; i++) {
+    for (unsigned i = 0; i < motorCount; i++) {
         if (dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL) {
             DDL_TMR_CC_EnableChannel(dmaMotors[i].timerHardware->tim, dmaMotors[i].llChannel << 4);
         } else {
@@ -127,23 +128,24 @@ FAST_CODE static void pwmDshotSetDirectionInput(
 FAST_CODE void pwmCompleteDshotMotorUpdate(void)
 {
     /* If there is a dshot command loaded up, time it correctly with motor update*/
-    if (!dshotCommandQueueEmpty() && !dshotCommandOutputIsEnabled(dshotPwmDevice.count)) {
+    if (!dshotCommandQueueEmpty() && !dshotCommandOutputIsEnabled(dshotMotorCount)) {
         return;
     }
 
     for (int i = 0; i < dmaMotorTimerCount; i++) {
+        do {
 #ifdef USE_DSHOT_DMAR
-        if (useBurstDshot) {
-            xDDL_EX_DMA_SetDataLength(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
-            xDDL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
+            if (useBurstDshot) {
+                xDDL_EX_DMA_SetDataLength(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
+                xDDL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
-            /* configure the DMA Burst Mode */
-            DDL_TMR_ConfigDMABurst(dmaMotorTimers[i].timer, DDL_TMR_DMABURST_BASEADDR_CC1, DDL_TMR_DMABURST_LENGTH_4TRANSFERS);
-            /* Enable the TIM DMA Request */
-            DDL_TMR_EnableDMAReq_UPDATE(dmaMotorTimers[i].timer);
-        } else
+                /* configure the DMA Burst Mode */
+                DDL_TMR_ConfigDMABurst(dmaMotorTimers[i].timer, DDL_TMR_DMABURST_BASEADDR_CC1, DDL_TMR_DMABURST_LENGTH_4TRANSFERS);
+                /* Enable the TIM DMA Request */
+                DDL_TMR_EnableDMAReq_UPDATE(dmaMotorTimers[i].timer);
+                break;
+            }
 #endif
-        {
             DDL_TMR_DisableARRPreload(dmaMotorTimers[i].timer);
             dmaMotorTimers[i].timer->AUTORLD = dmaMotorTimers[i].outputPeriod;
 
@@ -152,7 +154,7 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
             /* Enable channel DMA requests */
             DDL_EX_TMR_EnableIT(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources);
             dmaMotorTimers[i].timerDmaSources = 0;
-        }
+        } while (false);
     }
 }
 
@@ -163,16 +165,17 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 #ifdef USE_DSHOT_TELEMETRY
         dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
 #endif
+        do {
 #ifdef USE_DSHOT_DMAR
-        if (useBurstDshot) {
-            xDDL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
-            DDL_TMR_DisableDMAReq_UPDATE(motor->timerHardware->tim);
-        } else
+            if (useBurstDshot) {
+                xDDL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
+                DDL_TMR_DisableDMAReq_UPDATE(motor->timerHardware->tim);
+                break;
+            }
 #endif
-        {
             xDDL_EX_DMA_DisableResource(motor->dmaRef);
             DDL_EX_TMR_DisableIT(motor->timerHardware->tim, motor->timerDmaSource);
-        }
+        } while (false);
 
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
@@ -187,7 +190,7 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output)
 {
 #ifdef USE_DSHOT_TELEMETRY
 #define OCINIT motor->ocInitStruct
@@ -227,21 +230,22 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
 
     bool dmaIsConfigured = false;
+    do {
 #ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        const resourceOwner_t *owner = dmaGetOwner(dmaIdentifier);
-        if (owner->owner == OWNER_TIMUP && owner->resourceIndex == timerGetTIMNumber(timerHardware->tim)) {
-            dmaIsConfigured = true;
-        } else if (!dmaAllocate(dmaIdentifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim))) {
-            return false;
+        if (useBurstDshot) {
+            const resourceOwner_t *owner = dmaGetOwner(dmaIdentifier);
+            if (owner->owner == OWNER_TIMUP && owner->resourceIndex == timerGetTIMNumber(timerHardware->tim)) {
+                dmaIsConfigured = true;
+            } else if (!dmaAllocate(dmaIdentifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim))) {
+                return false;
+            }
+            break;
         }
-    } else
 #endif
-    {
         if (!dmaAllocate(dmaIdentifier, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex))) {
             return false;
         }
-    }
+    } while (false);
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->dmaRef = dmaRef;
@@ -275,7 +279,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DDL_TMR_DisableCounter(timer);
 
         init.Prescaler = (uint16_t)(lrintf((float) timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
-        init.Autoreload = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH) - 1;
+        init.Autoreload = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH) - 1;
         init.ClockDivision = DDL_TMR_CLOCKDIVISION_DIV1;
         init.RepetitionCounter = 0;
         init.CounterMode = DDL_TMR_COUNTERMODE_UP;
@@ -311,18 +315,19 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
     motor->llChannel = channel;
 
+    do {
 #ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        motor->timer->dmaBurstRef = dmaRef;
+        if (useBurstDshot) {
+            motor->timer->dmaBurstRef = dmaRef;
 #ifdef USE_DSHOT_TELEMETRY
-        motor->dmaRef = dmaRef;
+            motor->dmaRef = dmaRef;
 #endif
-    } else
+            break;
+        }
 #endif
-    {
         motor->timerDmaSource = timerDmaSource(timerHardware->channel);
         motor->timer->timerDmaSources &= ~motor->timerDmaSource;
-    }
+    } while (false);
 
     if (!dmaIsConfigured) {
         xDDL_EX_DMA_DisableResource(dmaRef);
@@ -332,30 +337,31 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 
     DDL_DMA_StructInit(&DMAINIT);
+    do {
 #ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
+        if (useBurstDshot) {
+            motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
 
-        DMAINIT.Channel = dmaChannel;
-        DMAINIT.MemoryOrM2MDstAddress = (uint32_t)motor->timer->dmaBurstBuffer;
-        DMAINIT.FIFOThreshold = DDL_DMA_FIFOTHRESHOLD_FULL;
-        DMAINIT.PeriphOrM2MSrcAddress = (uint32_t)&timerHardware->tim->DMAR;
-    } else
+            DMAINIT.Channel = dmaChannel;
+            DMAINIT.MemoryOrM2MDstAddress = (uint32_t)motor->timer->dmaBurstBuffer;
+            DMAINIT.FIFOThreshold = DDL_DMA_FIFOTHRESHOLD_FULL;
+            DMAINIT.PeriphOrM2MSrcAddress = (uint32_t)&timerHardware->tim->DMAR;
+            break;
+        }
 #endif
-    {
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
 
         DMAINIT.Channel = dmaChannel;
         DMAINIT.MemoryOrM2MDstAddress = (uint32_t)motor->dmaBuffer;
         DMAINIT.FIFOThreshold = DDL_DMA_FIFOTHRESHOLD_1_4;
         DMAINIT.PeriphOrM2MSrcAddress = (uint32_t)timerChCCR(timerHardware);
-    }
+    } while (false);
 
     DMAINIT.Direction = DDL_DMA_DIRECTION_MEMORY_TO_PERIPH;
     DMAINIT.FIFOMode = DDL_DMA_FIFOMODE_ENABLE;
     DMAINIT.MemBurst = DDL_DMA_MBURST_SINGLE;
     DMAINIT.PeriphBurst = DDL_DMA_PBURST_SINGLE;
-    DMAINIT.NbData = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
+    DMAINIT.NbData = pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
     DMAINIT.PeriphOrM2MSrcIncMode = DDL_DMA_PERIPH_NOINCREMENT;
     DMAINIT.MemoryOrM2MDstIncMode = DDL_DMA_MEMORY_INCREMENT;
     DMAINIT.PeriphOrM2MSrcDataSize = DDL_DMA_PDATAALIGN_WORD;
@@ -373,22 +379,23 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_TELEMETRY
     motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
         ( 16 * MOTOR_BITLENGTH) / getDshotHz(pwmProtocolType);
-    motor->timer->outputPeriod = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
+    motor->timer->outputPeriod = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
     pwmDshotSetDirectionOutput(motor);
 #else
     pwmDshotSetDirectionOutput(motor, &OCINIT, &DMAINIT);
 #endif
 
+    do {
 #ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        if (!dmaIsConfigured) {
-            dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
+        if (useBurstDshot) {
+            if (!dmaIsConfigured) {
+                dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
+            }
+            break;
         }
-    } else
 #endif
-    {
         dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
-    }
+    } while (false);
 
     DDL_TMR_OC_Init(timer, channel, &OCINIT);
     DDL_TMR_OC_EnablePreload(timer, channel);

@@ -31,7 +31,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
 
@@ -42,7 +42,7 @@ static IO_t ws2811IO = IO_NONE;
 static TIM_HandleTypeDef TimHandle;
 static uint16_t timerChannel = 0;
 
-FAST_IRQ_HANDLER void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+static FAST_IRQ_HANDLER void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
     TIM_DMACmd(&TimHandle, timerChannel, DISABLE);

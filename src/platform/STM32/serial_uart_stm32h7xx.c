@@ -33,7 +33,7 @@
 #include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -207,14 +207,17 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA11), GPIO_AF6_UART4 },
             { DEFIO_TAG_E(PB8),  GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PD0),  GPIO_AF8_UART4 }
+            { DEFIO_TAG_E(PD0),  GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PH14), GPIO_AF8_UART4 },
+
         },
         .txPins = {
             { DEFIO_TAG_E(PA0),  GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PA12), GPIO_AF6_UART4 },
             { DEFIO_TAG_E(PB9),  GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PD1),  GPIO_AF8_UART4 }
+            { DEFIO_TAG_E(PD1),  GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PH13), GPIO_AF8_UART4 },
         },
         .rcc = RCC_APB1L(UART4),
         .irqn = UART4_IRQn,

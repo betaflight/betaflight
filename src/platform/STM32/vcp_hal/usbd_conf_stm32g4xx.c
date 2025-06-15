@@ -714,7 +714,7 @@ void USBD_LL_Delay(uint32_t Delay)
   * @param  size: Size of allocated memory
   * @retval None
   */
-void *USBD_static_malloc(uint32_t size)
+LOCAL_UNUSED_FUNCTION static void *USBD_static_malloc(uint32_t size)
 {
   UNUSED(size);
 
@@ -727,7 +727,7 @@ void *USBD_static_malloc(uint32_t size)
   * @param  p: Pointer to allocated  memory address
   * @retval None
   */
-void USBD_static_free(void *p)
+LOCAL_UNUSED_FUNCTION static void USBD_static_free(void *p)
 {
   UNUSED(p);
 }

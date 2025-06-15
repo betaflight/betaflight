@@ -23,6 +23,7 @@
   */
 #include "msc_bot_scsi.h"
 #include "msc_diskio.h"
+#include "usbd_msc_mem.h"
 
 /** @addtogroup AT32F435_437_middlewares_usbd_class
   * @{
@@ -111,6 +112,8 @@ void bot_scsi_init(void *udev)
   pmsc->csw_struct.dCSWDataResidue = 0;
   pmsc->csw_struct.dCSWSignature = 0;
   pmsc->csw_struct.dCSWTag = CSW_BCSWSTATUS_PASS;
+
+  USBD_STORAGE_fops->Init(0);
 
   usbd_flush_tx_fifo(pudev, USBD_MSC_BULK_IN_EPT&0x7F);
 

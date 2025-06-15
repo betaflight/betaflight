@@ -61,8 +61,10 @@ VCP_INCLUDES = \
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(TARGET_PLATFORM_DIR)/startup \
                    $(TARGET_PLATFORM_DIR) \
+                   $(TARGET_PLATFORM_DIR)/include \
+                   $(TARGET_PLATFORM_DIR)/startup \
+                   $(PLATFORM_DIR)/common/stm32 \
                    $(STDPERIPH_DIR)/inc \
                    $(CMSIS_DIR)/cm4/core_support \
                    $(CMSIS_DIR)/cm4 \
@@ -81,6 +83,8 @@ DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 
 
 MCU_COMMON_SRC = \
             common/stm32/system.c \
+            common/stm32/io_impl.c \
+            common/stm32/config_flash.c \
             AT32/startup/at32f435_437_clock.c \
             AT32/startup/system_at32f435_437.c \
             AT32/adc_at32f43x.c \
@@ -110,31 +114,39 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
-            drivers/pwm_output_dshot_shared.c \
+            common/stm32/pwm_output_dshot_shared.c \
+            common/stm32/dshot_dpwm.c \
+            common/stm32/dshot_bitbang_shared.c \
             $(MIDDLEWARES_DIR)/i2c_application_library/i2c_application.c \
             drivers/bus_i2c_timing.c \
             drivers/usb_msc_common.c \
             drivers/adc.c \
-            drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
+            common/stm32/bus_i2c_pinconfig.c \
+            common/stm32/bus_spi_pinconfig.c \
+            common/stm32/bus_spi_hw.c \
+            common/stm32/serial_uart_hw.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
+            msc/emfat_file.c \
+            msc/usbd_storage_sd_spi.c
 
 SPEED_OPTIMISED_SRC += \
+            common/stm32/dshot_bitbang_shared.c \
+            common/stm32/pwm_output_dshot_shared.c \
+            common/stm32/bus_spi_hw.c \
             common/stm32/system.c
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             drivers/inverter.c \
-            drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
+            common/stm32/bus_i2c_pinconfig.c \
+            common/stm32/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c

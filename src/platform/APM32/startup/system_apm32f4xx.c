@@ -343,7 +343,7 @@ void DAL_ErrorHandler(void)
     }
 }
 
-void AssertFailedHandler(uint8_t *file, uint32_t line)
+LOCAL_UNUSED_FUNCTION static void AssertFailedHandler(uint8_t *file, uint32_t line)
 {
     /* When the function is needed, this function
        could be implemented in the user file

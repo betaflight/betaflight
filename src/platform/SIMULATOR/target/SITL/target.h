@@ -95,11 +95,18 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_MSP
 #define DEFAULT_FEATURES        (FEATURE_GPS | FEATURE_TELEMETRY)
 
+#ifdef USE_GPS
+#define USE_VIRTUAL_GPS
+#endif
+
 #define USE_PARAMETER_GROUPS
 
 #ifndef USE_PWM_OUTPUT
 #define USE_PWM_OUTPUT
 #endif
+
+#define USE_BLACKBOX
+#define USE_BLACKBOX_VIRTUAL
 
 #undef USE_STACK_CHECK // I think SITL don't need this
 #undef USE_DASHBOARD
@@ -236,22 +243,13 @@ typedef struct
     void* test;
 } I2C_TypeDef;
 
-typedef enum
-{
-  FLASH_BUSY = 1,
-  FLASH_ERROR_PG,
-  FLASH_ERROR_WRP,
-  FLASH_COMPLETE,
-  FLASH_TIMEOUT
-} FLASH_Status;
-
 typedef struct {
     double timestamp;                   // in seconds
     double imu_angular_velocity_rpy[3]; // rad/s -> range: +/- 8192; +/- 2000 deg/se
     double imu_linear_acceleration_xyz[3];    // m/s/s NED, body frame -> sim 1G = 9.80665, FC 1G = 256
     double imu_orientation_quat[4];     //w, x, y, z
-    double velocity_xyz[3];             // m/s, earth frame
-    double position_xyz[3];             // meters, NED from origin
+    double velocity_xyz[3];             // m/s, earth frame. ENU (Ve, Vn, Vup) for virtual GPS mode (USE_VIRTUAL_GPS)!
+    double position_xyz[3];             // meters, NED from origin. Longitude, Latitude, Altitude (ENU) for virtual GPS mode (USE_VIRTUAL_GPS)!
     double pressure;
 } fdm_packet;
 
@@ -268,11 +266,6 @@ typedef struct {
     uint16_t motorCount; // Count of motor in the PWM output.
     float pwm_output_raw[SIMULATOR_MAX_PWM_CHANNELS];   // Raw PWM from 1100 to 1900
 } servo_packet_raw;
-
-void FLASH_Unlock(void);
-void FLASH_Lock(void);
-FLASH_Status FLASH_ErasePage(uintptr_t Page_Address);
-FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t Data);
 
 uint64_t nanos64_real(void);
 uint64_t micros64_real(void);

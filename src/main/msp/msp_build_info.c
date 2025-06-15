@@ -35,7 +35,7 @@
 
 #include "msp/msp_build_info.h"
 
-void sbufWriteBuildInfoFlags(sbuf_t *dst) 
+void sbufWriteBuildInfoFlags(sbuf_t *dst)
 {
     static const uint16_t options[] = {
 #ifdef USE_SERIALRX_CRSF

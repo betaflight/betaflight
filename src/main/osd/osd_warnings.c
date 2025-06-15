@@ -115,12 +115,10 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_DSHOT
     if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
-        int armingDelayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - currentTimeUs) / 1e5;
-        if (armingDelayTime < 0) {
-            armingDelayTime = 0;
-        }
-        if (armingDelayTime >= (DSHOT_BEACON_GUARD_DELAY_US / 1e5 - 5)) {
-            tfp_sprintf(warningText, " BEACON ON"); // Display this message for the first 0.5 seconds
+        const int beaconGuard = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
+        const int armingDelayTime = MAX(DSHOT_BEACON_GUARD_DELAY_US - beaconGuard, 0) / 100000;  // time remaining until BEACON_GUARD_DELAY, in tenths of second
+        if (beaconGuard < 500 * 1000) {   // first 0.5s since beacon
+            tfp_sprintf(warningText, " BEACON ON");
         } else {
             tfp_sprintf(warningText, "ARM IN %d.%d", armingDelayTime / 10, armingDelayTime % 10);
         }
@@ -139,7 +137,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_CRASHFLIP) && IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
         if (isCrashFlipModeActive()) { // if was armed in crashflip mode
             tfp_sprintf(warningText, CRASHFLIP_WARNING);
-            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             return;
         } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crashflip mode is activated (not allowed / can't happen)
             tfp_sprintf(warningText, "CRASHFLIP SW");
@@ -336,11 +334,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         warningText[dshotEscErrorLength++] = 'C';
 
         for (uint8_t k = 0; k < getMotorCount(); k++) {
-            // Skip if no extended telemetry at all
-            if ((dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) == 0) {
-                continue;
-            }
-
             // Remember text index before writing warnings
             dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
 
@@ -354,12 +347,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                     && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) <= osdConfig()->esc_rpm_alarm) {
                 warningText[dshotEscErrorLength++] = 'R';
             }
-            if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
+
+            // Skip if no extended telemetry available
+            bool edt = (dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+            
+            if (edt && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
                     && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0
                     && dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm) {
                 warningText[dshotEscErrorLength++] = 'T';
             }
-            if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
+            if (edt && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
                     && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0
                     && dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] >= osdConfig()->esc_current_alarm) {
                 warningText[dshotEscErrorLength++] = 'C';
@@ -420,7 +417,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_BATTERY_NOT_FULL) && !(ARMING_FLAG(ARMED) || ARMING_FLAG(WAS_EVER_ARMED)) && (getBatteryState() == BATTERY_OK)
           && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
         tfp_sprintf(warningText, "BATT < FULL");
-        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         return;
     }
 
@@ -431,6 +428,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         osdSetVisualBeeperState(false);
         return;
     }
+
+#ifdef USE_CHIRP
+    // Visual info that chirp excitation is finished
+    if (pidChirpIsFinished()) {
+        tfp_sprintf(warningText, "CHIRP EXC FINISHED");
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        *blinking = true;
+        return;
+    }
+#endif // USE_CHIRP
 
 }
 

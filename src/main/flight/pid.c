@@ -36,7 +36,6 @@
 #include "config/config_reset.h"
 #include "config/simplified_tuning.h"
 
-#include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
 
@@ -260,6 +259,14 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_speed_pitch_offset = 0,
         .yaw_type = YAW_TYPE_RUDDER,
         .angle_pitch_offset = 0,
+        .chirp_lag_freq_hz = 3,
+        .chirp_lead_freq_hz = 30,
+        .chirp_amplitude_roll = 230,
+        .chirp_amplitude_pitch = 230,
+        .chirp_amplitude_yaw = 180,
+        .chirp_frequency_start_deci_hz = 2,
+        .chirp_frequency_end_deci_hz = 6000,
+        .chirp_time_seconds = 20,
     );
 }
 
@@ -409,7 +416,7 @@ static float wingAdjustSetpoint(float currentPidSetpoint, int axis)
 #endif // USE_WING
 }
 
-float getTpaFactorClassic(float tpaArgument)
+static float getTpaFactorClassic(float tpaArgument)
 {
     static bool isTpaLowFaded = false;
     bool isThrottlePastTpaLowBreakpoint = (tpaArgument >= pidRuntime.tpaLowBreakpoint || pidRuntime.tpaLowBreakpoint <= 0.01f);
@@ -570,7 +577,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
 #endif
-#ifdef USE_POSITION_HOLD
+#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         angleFeedforward = 0.0f; // otherwise the lag of the PT3 carries recent stick inputs into the hold
         if (isAutopilotInControl()) {
@@ -579,7 +586,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
         }
         // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
-        angleLimit = fminf(0.5f * apConfig()->max_angle, angleLimit);
+        angleLimit = fminf(0.5f * autopilotConfig()->maxAngle, angleLimit);
     }
 #endif
 
@@ -1127,7 +1134,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 || FLIGHT_MODE(ALT_HOLD_MODE) // todo - check if this is needed
 #endif
 #ifdef USE_POSITION_HOLD
-                || FLIGHT_MODE(POS_HOLD_MODE) 
+                || FLIGHT_MODE(POS_HOLD_MODE)
 #endif
                 ;
     levelMode_e levelMode;
@@ -1200,8 +1207,48 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         disarmOnImpact();
     }
 
+#ifdef USE_CHIRP
+
+    static int chirpAxis = 0;
+    static bool shouldChirpAxisToggle = false;
+
+    float chirp = 0.0f;
+    float sinarg = 0.0f;
+    if (FLIGHT_MODE(CHIRP_MODE)) {
+        shouldChirpAxisToggle = true;  // advance chirp axis on next !CHIRP_MODE
+        // update chirp signal
+        if (chirpUpdate(&pidRuntime.chirp)) {
+            chirp = pidRuntime.chirp.exc;
+            sinarg = pidRuntime.chirp.sinarg;
+        }
+    } else {
+        if (shouldChirpAxisToggle) {
+            // toggle chirp signal logic and increment to next axis for next run
+            shouldChirpAxisToggle = false;
+            chirpAxis = (++chirpAxis > FD_YAW) ? 0 : chirpAxis;
+            // reset chirp signal generator
+            chirpReset(&pidRuntime.chirp);
+        }
+    }
+
+    // input / excitation shaping
+    float chirpFiltered  = phaseCompApply(&pidRuntime.chirpFilter, chirp);
+
+    // ToDo: check if this can be reconstructed offline for rotating filter and if so, remove the debug
+    // fit (0...2*pi) into int16_t (-32768 to 32767)
+    DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
+
+#endif // USE_CHIRP
+
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+
+#ifdef USE_CHIRP
+        float currentChirp = 0.0f;
+        if(axis == chirpAxis){
+            currentChirp = pidRuntime.chirpAmplitude[axis] * chirpFiltered;
+        }
+#endif // USE_CHIRP
 
         float currentPidSetpoint = getSetpointRate(axis);
         if (pidRuntime.maxVelocity[axis]) {
@@ -1263,6 +1310,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
+#ifdef USE_CHIRP
+        currentPidSetpoint += currentChirp;
+#endif // USE_CHIRP
         float errorRate = currentPidSetpoint - gyroRate; // r - y
 #if defined(USE_ACC)
         handleCrashRecovery(
@@ -1328,7 +1378,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         float pidSetpointDelta = 0;
 
-#ifdef USE_FEEDFORWARD
+#if defined(USE_FEEDFORWARD) && defined(USE_ACC)
         if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
             // this axis is fully under self-levelling control
             // it will already have stick based feedforward applied in the input to their angle setpoint
@@ -1475,9 +1525,19 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
     }
 
+#ifdef USE_WING
+    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control 
+    // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
+    bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
+#endif // USE_WING
     // Disable PID control if at zero throttle or if gyro overflow detected
     // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
-    if (!pidRuntime.pidStabilisationEnabled || gyroOverflowDetected()) {
+    if (!pidRuntime.pidStabilisationEnabled
+        || gyroOverflowDetected()
+#ifdef USE_WING
+        || isFixedWingAndPassthru
+#endif
+        ) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             pidData[axis].P = 0;
             pidData[axis].I = 0;
@@ -1586,3 +1646,10 @@ float pidGetPidFrequency(void)
 {
     return pidRuntime.pidFrequency;
 }
+
+#ifdef USE_CHIRP
+bool  pidChirpIsFinished(void)
+{
+    return pidRuntime.chirp.isFinished;
+}
+#endif

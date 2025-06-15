@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   comment-pr:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Add comment about cloud build
         uses: thollander/actions-comment-pull-request@v2

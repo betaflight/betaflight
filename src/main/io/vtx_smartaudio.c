@@ -854,7 +854,7 @@ static void vtxSAProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 #ifdef USE_VTX_COMMON
 // Interface to common VTX API
 
-vtxDevType_e vtxSAGetDeviceType(const vtxDevice_t *vtxDevice)
+static vtxDevType_e vtxSAGetDeviceType(const vtxDevice_t *vtxDevice)
 {
     UNUSED(vtxDevice);
     return VTXDEV_SMARTAUDIO;

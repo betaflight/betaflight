@@ -31,7 +31,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/resource.h"
 #include "drivers/dma.h"
 
@@ -199,7 +199,7 @@ static void handleError(void)
 // Temperature sensor has minimum sample time of 9us.
 // With prescaler = 4 at 200MHz (AHB1), fADC = 50MHz (tcycle = 0.02us), 9us = 450cycles < 810
 
-void adcInitDevice(adcDevice_t *adcdev, int channelCount)
+static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
     ADC_HandleTypeDef *hadc = &adcdev->ADCHandle; // For clarity
 
@@ -232,7 +232,7 @@ void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     }
 }
 
-int adcFindTagMapEntry(ioTag_t tag)
+static int adcFindTagMapEntry(ioTag_t tag)
 {
     for (int i = 0; i < ADC_TAG_MAP_COUNT; i++) {
         if (adcTagMap[i].tag == tag) {
@@ -242,7 +242,7 @@ int adcFindTagMapEntry(ioTag_t tag)
     return -1;
 }
 
-void adcInitCalibrationValues(void)
+static void adcInitCalibrationValues(void)
 {
     adcVREFINTCAL = *(uint16_t *)VREFINT_CAL_ADDR;
     adcTSCAL1 = *TEMPSENSOR_CAL1_ADDR;
@@ -504,7 +504,7 @@ void adcInternalStartConversion(void)
     return;
 }
 
-uint16_t adcInternalRead(int channel)
+static uint16_t adcInternalRead(int channel)
 {
     int dmaIndex = adcOperatingConfig[channel].dmaIndex;
 

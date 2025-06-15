@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "bus_i2c_timing.h"
+
 /*
  * Compute SCLDEL, SDADEL, SCLH and SCLL for TIMINGR register according to reference manuals.
  */

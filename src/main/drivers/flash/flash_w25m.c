@@ -171,7 +171,7 @@ bool w25m_identify(flashDevice_t *fdevice, uint32_t jedecID)
     return true;
 }
 
-void w25m_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
+static void w25m_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 {
     for (int dieNumber = 0 ; dieNumber < dieCount ; dieNumber++) {
         w25m_dieSelect(fdevice->io.handle.dev, dieNumber);
@@ -179,7 +179,7 @@ void w25m_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
     }
 }
 
-void w25m_eraseSector(flashDevice_t *fdevice, uint32_t address)
+static void w25m_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
     int dieNumber = address / dieSize;
 
@@ -188,7 +188,7 @@ void w25m_eraseSector(flashDevice_t *fdevice, uint32_t address)
     dieDevice[dieNumber].vTable->eraseSector(&dieDevice[dieNumber], address % dieSize);
 }
 
-void w25m_eraseCompletely(flashDevice_t *fdevice)
+static void w25m_eraseCompletely(flashDevice_t *fdevice)
 {
     for (int dieNumber = 0 ; dieNumber < dieCount ; dieNumber++) {
         w25m_dieSelect(fdevice->io.handle.dev, dieNumber);
@@ -199,7 +199,7 @@ void w25m_eraseCompletely(flashDevice_t *fdevice)
 static uint32_t currentWriteAddress;
 static int currentWriteDie;
 
-void w25m_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25m_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
 {
     currentWriteDie = address / dieSize;
     w25m_dieSelect(fdevice->io.handle.dev, currentWriteDie);
@@ -207,21 +207,21 @@ void w25m_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*call
     dieDevice[currentWriteDie].vTable->pageProgramBegin(&dieDevice[currentWriteDie], address, callback);
 }
 
-uint32_t w25m_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t w25m_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     UNUSED(fdevice);
 
     return dieDevice[currentWriteDie].vTable->pageProgramContinue(&dieDevice[currentWriteDie], buffers, bufferSizes, bufferCount);
 }
 
-void w25m_pageProgramFinish(flashDevice_t *fdevice)
+static void w25m_pageProgramFinish(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 
     dieDevice[currentWriteDie].vTable->pageProgramFinish(&dieDevice[currentWriteDie]);
 }
 
-void w25m_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void w25m_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
 {
     w25m_pageProgramBegin(fdevice, address, callback);
 
@@ -230,7 +230,7 @@ void w25m_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *d
     w25m_pageProgramFinish(fdevice);
 }
 
-int w25m_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
+static int w25m_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
 {
     int rlen; // remaining length
     int tlen; // transfer length for a round
@@ -258,7 +258,7 @@ int w25m_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, ui
     return length;
 }
 
-const flashGeometry_t* w25m_getGeometry(flashDevice_t *fdevice)
+static const flashGeometry_t* w25m_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }

@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -34,7 +35,7 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_bitbang_impl.h"
+#include "dshot_bitbang_impl.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/nvic.h"
@@ -55,23 +56,12 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     bbPort->gpioModeInput |= (DDL_GPIO_MODE_INPUT << (pinIndex * 2));
     bbPort->gpioModeOutput |= (DDL_GPIO_MODE_OUTPUT << (pinIndex * 2));
 
+    bool inverted = false;
 #ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        bbPort->gpioIdleBSRR |= (1 << pinIndex);         // BS (lower half)
-    } else
+    inverted = true;
 #endif
-    {
-        bbPort->gpioIdleBSRR |= (1 << (pinIndex + 16));  // BR (higher half)
-    }
-
-#ifdef USE_DSHOT_TELEMETRY
-    if (useDshotTelemetry) {
-        IOWrite(bbMotor->io, 1);
-    } else
-#endif
-    {
-        IOWrite(bbMotor->io, 0);
-    }
+    bbPort->gpioIdleBSRR |= (1 << pinIndex) + (inverted ? 0 : 16); // write BITSET or BITRESET half of BSRR
+    IOWrite(bbMotor->io, inverted);
 }
 
 void bbTimerChannelInit(bbPort_t *bbPort)
@@ -113,7 +103,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 }
 
 #ifdef USE_DMA_REGISTER_CACHE
-void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
+static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 {
     ((DMA_ARCH_TYPE *)dmaResource)->SCFG = dmaRegCache->SCFG;
     ((DMA_ARCH_TYPE *)dmaResource)->FCTRL = dmaRegCache->FCTRL;

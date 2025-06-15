@@ -3,7 +3,7 @@
 # Written by Antonio Galea - 2010/11/18
 # Distributed under Gnu LGPL 3.0
 # see http://www.gnu.org/licenses/lgpl-3.0.txt
-# 
+#
 # based on a modified version of this script from https://sourceforge.net/p/dfu-util/tickets/35/#357c
 # with the patch supplied in https://sourceforge.net/p/dfu-util/tickets/35/#a2b6
 

@@ -35,11 +35,10 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
-#include "drivers/dshot_bitbang_impl.h"
+#include "dshot_bitbang_impl.h"
 #include "drivers/dshot_command.h"
 #include "drivers/motor.h"
 #include "drivers/nvic.h"
-#include "drivers/pwm_output.h" // XXX for pwmOutputPort_t motors[]; should go away with refactoring
 #include "drivers/time.h"
 #include "drivers/timer.h"
 
@@ -108,7 +107,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
 #ifdef USE_DMA_REGISTER_CACHE
 
-void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
+static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 {
     ((DMA_Stream_TypeDef *)dmaResource)->CR = dmaRegCache->CR;
     ((DMA_Stream_TypeDef *)dmaResource)->FCR = dmaRegCache->FCR;

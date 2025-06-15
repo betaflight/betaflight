@@ -131,7 +131,7 @@ static void resetDisplay(void)
     dashboardPresent = ug2864hsweg01InitI2C(dev);
 }
 
-void LCDprint(uint8_t i)
+static void LCDprint(uint8_t i)
 {
    i2c_OLED_send_char(dev, i);
 }
@@ -628,7 +628,7 @@ static const pageEntry_t pages[PAGE_COUNT] = {
 #endif
 };
 
-void dashboardSetPage(pageId_e pageId)
+static void dashboardSetPage(pageId_e pageId)
 {
     for (int i = 0; i < PAGE_COUNT; i++) {
         const pageEntry_t *candidatePage = &pages[i];

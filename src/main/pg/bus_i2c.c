@@ -39,6 +39,14 @@
 
 #include "pg/bus_i2c.h"
 
+PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CONFIG, 1);
+
+#ifndef I2C0_SCL_PIN
+#define I2C0_SCL_PIN NONE
+#endif
+#ifndef I2C0_SDA_PIN
+#define I2C0_SDA_PIN NONE
+#endif
 #ifndef I2C1_SCL_PIN
 #define I2C1_SCL_PIN NONE
 #endif
@@ -72,6 +80,9 @@ typedef struct i2cDefaultConfig_s {
 } i2cDefaultConfig_t;
 
 static const i2cDefaultConfig_t i2cDefaultConfig[] = {
+#ifdef USE_I2C_DEVICE_0
+    { I2CDEV_0, IO_TAG(I2C0_SCL_PIN), IO_TAG(I2C0_SDA_PIN), I2C0_PULLUP, I2C0_CLOCKSPEED },
+#endif
 #ifdef USE_I2C_DEVICE_1
     { I2CDEV_1, IO_TAG(I2C1_SCL_PIN), IO_TAG(I2C1_SDA_PIN), I2C1_PULLUP, I2C1_CLOCKSPEED },
 #endif
@@ -99,7 +110,5 @@ void pgResetFn_i2cConfig(i2cConfig_t *i2cConfig)
         i2cConfig[device].clockSpeed = defconf->clockSpeed;
     }
 }
-
-PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CONFIG, 1);
 
 #endif // defined(USE_I2C) && !defined(USE_SOFT_I2C)

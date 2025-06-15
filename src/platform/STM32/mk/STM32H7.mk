@@ -91,6 +91,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32H7x
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
+                   $(TARGET_PLATFORM_DIR)/include \
                    $(TARGET_PLATFORM_DIR)/startup \
                    $(STDPERIPH_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
@@ -263,11 +264,9 @@ VCP_SRC = \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            common/stm32/system.c \
             drivers/bus_i2c_timing.c \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/adc_stm32h7xx.c \
             STM32/audio_stm32h7xx.c \
             STM32/bus_i2c_hal_init.c \
@@ -286,7 +285,6 @@ MCU_COMMON_SRC = \
             STM32/memprot_hal.c \
             STM32/memprot_stm32h7xx.c \
             STM32/persistent.c \
-            STM32/pwm_output.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_h7xx.c \
@@ -298,9 +296,6 @@ MCU_COMMON_SRC = \
             STM32/transponder_ir_io_hal.c \
             STM32/camera_control_stm32.c \
             drivers/adc.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
@@ -317,19 +312,17 @@ MSC_SRC = \
             msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c \
             STM32/exti.c
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \
             STM32/serial_usb_vcp.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+
+include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

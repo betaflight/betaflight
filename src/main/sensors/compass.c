@@ -150,15 +150,19 @@ void compassPreInit(void)
 {
 #ifdef USE_SPI
     if (compassConfig()->mag_busType == BUS_TYPE_SPI) {
-        spiPreinitRegister(compassConfig()->mag_spi_csn, IOCFG_IPU, 1);
+        ioPreinitByTag(compassConfig()->mag_spi_csn, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
     }
 #endif
 }
 
 #if !defined(SIMULATOR_BUILD)
-bool compassDetect(magDev_t *magDev, uint8_t *alignment)
+static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 {
-    *alignment = ALIGN_DEFAULT;  // may be overridden if target specifies MAG_*_ALIGN
+#ifdef MAG_ALIGN
+    *alignment = MAG_ALIGN;
+#else
+    *alignment = ALIGN_DEFAULT;
+#endif
 
     magSensor_e magHardware = MAG_NONE;
 
@@ -221,9 +225,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (hmc5883lDetect(magDev)) {
-#ifdef MAG_HMC5883_ALIGN
-            *alignment = MAG_HMC5883_ALIGN;
-#endif
             magHardware = MAG_HMC5883;
             break;
         }
@@ -237,9 +238,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (lis2mdlDetect(magDev)) {
-#ifdef MAG_LIS3MDL_ALIGN
-            *alignment = MAG_LIS2MDL_ALIGN;
-#endif
             magHardware = MAG_LIS2MDL;
             break;
         }
@@ -253,9 +251,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (lis3mdlDetect(magDev)) {
-#ifdef MAG_LIS3MDL_ALIGN
-            *alignment = MAG_LIS3MDL_ALIGN;
-#endif
             magHardware = MAG_LIS3MDL;
             break;
         }
@@ -269,9 +264,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (ak8975Detect(magDev)) {
-#ifdef MAG_AK8975_ALIGN
-            *alignment = MAG_AK8975_ALIGN;
-#endif
             magHardware = MAG_AK8975;
             break;
         }
@@ -290,9 +282,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (ak8963Detect(magDev)) {
-#ifdef MAG_AK8963_ALIGN
-            *alignment = MAG_AK8963_ALIGN;
-#endif
             magHardware = MAG_AK8963;
             break;
         }
@@ -306,9 +295,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (qmc5883lDetect(magDev)) {
-#ifdef MAG_QMC5883L_ALIGN
-            *alignment = MAG_QMC5883L_ALIGN;
-#endif
             magHardware = MAG_QMC5883;
             break;
         }
@@ -322,9 +308,6 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
         }
 
         if (ist8310Detect(magDev)) {
-#ifdef MAG_IST8310_ALIGN
-            *alignment = MAG_IST8310_ALIGN;
-#endif
             magHardware = MAG_IST8310;
             break;
         }
@@ -357,7 +340,7 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
     return true;
 }
 #else
-bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
+static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 {
     UNUSED(dev);
     UNUSED(alignment);

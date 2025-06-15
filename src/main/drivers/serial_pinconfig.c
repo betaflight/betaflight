@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if defined(USE_UART) || defined(USE_LPUART) || defined(USE_SOFTSERIAL)
+#if SERIAL_TRAIT_PIN_CONFIG
 
 #include "build/build_config.h"
 
@@ -40,6 +40,9 @@ typedef struct serialDefaultPin_s {
 } serialDefaultPin_t;
 
 static const serialDefaultPin_t serialDefaultPin[] = {
+#ifdef USE_UART0
+    { SERIAL_PORT_UART0, IO_TAG(UART0_RX_PIN), IO_TAG(UART0_TX_PIN), IO_TAG(INVERTER_PIN_UART0) },
+#endif
 #ifdef USE_UART1
     { SERIAL_PORT_USART1, IO_TAG(UART1_RX_PIN), IO_TAG(UART1_TX_PIN), IO_TAG(INVERTER_PIN_UART1) },
 #endif

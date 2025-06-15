@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
@@ -34,11 +33,21 @@
 
 #include "common/utils.h"
 
+#include "drivers/time.h"
+
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
 #include "sensors/rangefinder.h"
 
-static bool hasNewData = false;
-static int32_t sensorData = RANGEFINDER_NO_NEW_DATA;
+#include "drivers/opticalflow/opticalflow.h"
+
+#define MT_OPTICALFLOW_MIN_RANGE 80  // mm
+#define MT_OPFLOW_MIN_QUALITY_THRESHOLD 30
+
+static opticalflowData_t opticalflowSensorData = {0};
+
+static bool hasRFNewData = false;
+static mtRangefinderData_t rfSensorData = {RANGEFINDER_NO_NEW_DATA, 0};
+static const MTRangefinderConfig * deviceConf = NULL;
 
 // Initialize the table with values for each rangefinder type
 static const MTRangefinderConfig rangefinderConfigs[] = {
@@ -63,40 +72,41 @@ static void mtRangefinderUpdate(rangefinderDev_t * dev) {
 
 static int32_t mtRangefinderGetDistance(rangefinderDev_t * dev) {
     UNUSED(dev);
-    if (hasNewData) {
-        hasNewData = false;
-        return (sensorData >= 0.0f) ? sensorData : RANGEFINDER_OUT_OF_RANGE;
+    if (hasRFNewData) {
+        hasRFNewData = false;
+        return (rfSensorData.distanceMm >= 0) ? (rfSensorData.distanceMm / 10) : RANGEFINDER_OUT_OF_RANGE;
     } else {
         return RANGEFINDER_NO_NEW_DATA;
     }
 }
 
 bool mtRangefinderDetect(rangefinderDev_t * dev, rangefinderType_e mtRangefinderToUse) {
-    const MTRangefinderConfig* deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
+    deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
     if (!deviceConf) {
         return false;
     }
+
     dev->delayMs    = deviceConf->delayMs;
     dev->maxRangeCm = deviceConf->maxRangeCm;
 
     dev->detectionConeDeciDegrees = RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = RANGEFINDER_MT_DETECTION_CONE_DECIDEGREES;
 
-    dev->init = &mtRangefinderInit;
+    dev->init   = &mtRangefinderInit;
     dev->update = &mtRangefinderUpdate;
-    dev->read = &mtRangefinderGetDistance;
-
+    dev->read   = &mtRangefinderGetDistance;
     return true;
 }
 
 void mtRangefinderReceiveNewData(const uint8_t * bufferPtr) {
     const mspSensorRangefinderLidarMtDataMessage_t * pkt = (const mspSensorRangefinderLidarMtDataMessage_t *)bufferPtr;
 
-    sensorData = pkt->distanceMm / 10;
-    hasNewData = true;
+    rfSensorData.distanceMm = pkt->distanceMm;
+    rfSensorData.timestampUs = micros();
+    hasRFNewData = true;
 }
 
-const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse){
+const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangefinderToUse) {
     for (const MTRangefinderConfig* cfg =  rangefinderConfigs; cfg < ARRAYEND(rangefinderConfigs); cfg++) {
         if (cfg->deviceType == mtRangefinderToUse) {
             return cfg;
@@ -105,4 +115,60 @@ const MTRangefinderConfig* getMTRangefinderDeviceConf(rangefinderType_e mtRangef
     return NULL;
 }
 
+static const mtRangefinderData_t * getMTRangefinderData(void) {
+    return &rfSensorData;
+}
+
+typedef struct __attribute__((packed)) {
+    uint8_t quality;    // [0;255]
+    int32_t motionX;
+    int32_t motionY;
+} mtOpticalflowDataMessage_t;
+
+static void mtOpticalflowInit(opticalflowDev_t * dev) {
+    UNUSED(dev);
+}
+
+static void mtOpticalflowUpdate(opticalflowDev_t * dev) {
+    UNUSED(dev);
+}
+
+static void mtOpticalflowGetData(opticalflowDev_t * dev, opticalflowData_t * result) {
+    UNUSED(dev);
+    *result = opticalflowSensorData;
+}
+
+bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinderToUse) {
+    deviceConf = getMTRangefinderDeviceConf(mtRangefinderToUse);
+    if (!deviceConf) {
+        return false;
+    }
+
+    dev->delayMs = deviceConf->delayMs;
+    dev->minRangeCm = MT_OPTICALFLOW_MIN_RANGE;
+    dev->minQualityThreshold = MT_OPFLOW_MIN_QUALITY_THRESHOLD;
+
+    dev->init   = &mtOpticalflowInit;
+    dev->update = &mtOpticalflowUpdate;
+    dev->read   = &mtOpticalflowGetData;
+    
+    return true;
+}
+
+void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr) {
+    const mtRangefinderData_t * latestRangefinderData = getMTRangefinderData();
+    
+    const mtOpticalflowDataMessage_t * pkt = (const mtOpticalflowDataMessage_t *)bufferPtr;
+    
+    opticalflowSensorData.timeStampUs = micros();
+    opticalflowSensorData.flowRate.x  = (float)pkt->motionX / 1000.0f; 
+    opticalflowSensorData.flowRate.y  = (float)pkt->motionY / 1000.0f;
+    opticalflowSensorData.quality     = pkt->quality * 100 / 255;
+    
+    if (latestRangefinderData->distanceMm < MT_OPTICALFLOW_MIN_RANGE) {
+        opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
+    } else if (cmp32(micros(), latestRangefinderData->timestampUs) > (5000 * deviceConf->delayMs)) {   // 5 updates missing
+        opticalflowSensorData.quality = OPTICALFLOW_HARDWARE_FAILURE;
+    }
+}
 #endif // USE_RANGEFINDER_MT

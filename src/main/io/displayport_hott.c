@@ -30,6 +30,8 @@
 #include "cms/cms.h"
 #include "telemetry/hott.h"
 
+#include "displayport_hott.h"
+
 displayPort_t hottDisplayPort;
 
 static bool hottDrawScreen(displayPort_t *displayPort)

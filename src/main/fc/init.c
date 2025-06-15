@@ -64,7 +64,6 @@
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
 #include "drivers/pin_pull_up_down.h"
-#include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
@@ -211,6 +210,9 @@ static void configureSPIBusses(void)
 #ifdef USE_SPI
     spiPreinit();
 
+#ifdef USE_SPI_DEVICE_0
+    spiInit(SPIDEV_0);
+#endif
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
@@ -275,13 +277,13 @@ void init(void)
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-    detectHardwareRevision();
-#endif
-
 #if defined(USE_TARGET_CONFIG)
     // Call once before the config is loaded for any target specific configuration required to support loading the config
     targetConfiguration();
+#endif
+
+#if defined(USE_CONFIG_TARGET_PREINIT)
+    configTargetPreInit();
 #endif
 
     enum {
@@ -483,7 +485,7 @@ void init(void)
 
 #if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
     // F4 has non-8MHz boards
-    // G4 for Betaflight allow 24 or 27MHz oscillator
+    // G4 for Betaflight allow 8, 16, 24, 26 or 27MHz oscillator
     systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
 #endif
 
@@ -519,53 +521,33 @@ void init(void)
     uartPinConfigure(serialPinConfig());
 #endif
 
-#if defined(AVOID_UART1_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART1
-#elif defined(AVOID_UART2_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART2
-#elif defined(AVOID_UART3_FOR_PWM_PPM)
-# define SERIALPORT_TO_AVOID SERIAL_PORT_USART3
-#endif
-    {
-        serialPortIdentifier_e serialPortToAvoid = SERIAL_PORT_NONE;
-#if defined(SERIALPORT_TO_AVOID)
-        if (featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
-            serialPortToAvoid = SERIALPORT_TO_AVOID;
-        }
-#endif
-        serialInit(featureIsEnabled(FEATURE_SOFTSERIAL), serialPortToAvoid);
-    }
+    serialInit(featureIsEnabled(FEATURE_SOFTSERIAL));
 
     mixerInit(mixerConfig()->mixerMode);
 
-    uint16_t idlePulse = motorConfig()->mincommand;
-    if (featureIsEnabled(FEATURE_3D)) {
-        idlePulse = flight3DConfig()->neutral3d;
-    }
-    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
-        idlePulse = 0; // brushed motors
-    }
 #ifdef USE_MOTOR
     /* Motors needs to be initialized soon as posible because hardware initialization
      * may send spurious pulses to esc's causing their early initialization. Also ppm
      * receiver may share timer with motors so motors MUST be initialized here. */
-    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
+    motorDevInit(getMotorCount());
+    // TODO: add check here that motors actually initialised correctly
     systemState |= SYSTEM_STATE_MOTORS_READY;
-#else
-    UNUSED(idlePulse);
 #endif
 
-    if (0) {}
+    do {
 #if defined(USE_RX_PPM)
-    else if (featureIsEnabled(FEATURE_RX_PPM)) {
-        ppmRxInit(ppmConfig());
-    }
+        if (featureIsEnabled(FEATURE_RX_PPM)) {
+            ppmRxInit(ppmConfig());
+            break;
+        }
 #endif
 #if defined(USE_RX_PWM)
-    else if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(pwmConfig());
-    }
+        if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+            pwmRxInit(pwmConfig());
+            break;
+        }
 #endif
+    } while (false);
 
 #ifdef USE_BEEPER
     beeperInit(beeperDevConfig());
@@ -642,11 +624,14 @@ void init(void)
 #endif
 
 #ifdef USE_I2C
-    i2cHardwareConfigure(i2cConfig(0));
+    i2cPinConfigure(i2cConfig(0));
 
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.
 
+#ifdef USE_I2C_DEVICE_0
+    i2cInit(I2CDEV_0);
+#endif
 #ifdef USE_I2C_DEVICE_1
     i2cInit(I2CDEV_1);
 #endif

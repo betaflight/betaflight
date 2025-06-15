@@ -204,7 +204,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },
 };
 
-int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
+static int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
     const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
 

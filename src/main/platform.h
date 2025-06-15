@@ -33,7 +33,7 @@
 #include "target/common_pre.h"
 
 // MCU specific platform from platform/X
-#include "platform_mcu.h"
+#include "platform/platform.h"
 
 #include "target.h"
 #include "target/common_post.h"

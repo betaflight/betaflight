@@ -682,7 +682,7 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
-void detectAndApplySignalLossBehaviour(void)
+static void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
     const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);

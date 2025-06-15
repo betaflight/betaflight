@@ -29,5 +29,5 @@
 
 bool vtxTrampInit(void);
 
-uint16_t vtxTrampGetCurrentActualPower();
-uint16_t vtxTrampGetCurrentTemp();
+uint16_t vtxTrampGetCurrentActualPower(void);
+uint16_t vtxTrampGetCurrentTemp(void);

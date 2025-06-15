@@ -36,7 +36,7 @@
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/light_led.h"
-
+#include "drivers/motor.h"
 #include "flight/mixer.h"
 
 #include "io/beeper.h"
@@ -143,23 +143,23 @@ inline void setEscOutput(uint8_t selEsc)
 
 uint8_t esc4wayInit(void)
 {
-    // StopPwmAllMotors();
-    // XXX Review effect of motor refactor
-    //pwmDisableMotors();
-    escCount = 0;
+    motorShutdown();
+    uint8_t escIndex = 0;
+
     memset(&escHardware, 0, sizeof(escHardware));
-    pwmOutputPort_t *pwmMotors = pwmGetMotors();
     for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        if (pwmMotors[i].enabled) {
-            if (pwmMotors[i].io != IO_NONE) {
-                escHardware[escCount].io = pwmMotors[i].io;
-                setEscInput(escCount);
-                setEscHi(escCount);
-                escCount++;
+        if (motorIsMotorEnabled(i)) {
+            const IO_t io = motorGetIo(i);
+            if (io != IO_NONE) {
+                escHardware[escIndex].io = io;
+                setEscInput(escIndex);
+                setEscHi(escIndex);
+                escIndex++;
             }
         }
     }
     motorDisable();
+    escCount = escIndex;
     return escCount;
 }
 
@@ -318,7 +318,7 @@ void esc4wayRelease(void)
   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE. */
-uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data)
+static uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data)
 {
         int i;
 

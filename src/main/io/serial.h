@@ -77,13 +77,31 @@ typedef enum {
     BAUD_COUNT
 } baudRate_e;
 
-extern const uint32_t baudRates[];
+extern const uint32_t baudRates[BAUD_COUNT];
 
 // serial port identifiers are now fixed, these values are used by MSP commands.
 typedef enum {
     SERIAL_PORT_ALL = -2,
     SERIAL_PORT_NONE = -1,
-    SERIAL_PORT_USART1 = 0,
+    SERIAL_PORT_LEGACY_START_IDENTIFIER = 0,
+    SERIAL_PORT_START_IDENTIFIER = 20,
+    SERIAL_PORT_USB_VCP = 20,
+
+    SERIAL_PORT_SOFTSERIAL_FIRST = 30,
+    SERIAL_PORT_SOFTSERIAL1 = SERIAL_PORT_SOFTSERIAL_FIRST,
+    SERIAL_PORT_SOFTSERIAL2,
+
+    SERIAL_PORT_LPUART_FIRST = 40,
+    SERIAL_PORT_LPUART1 = SERIAL_PORT_LPUART_FIRST,
+
+#if SERIAL_UART_FIRST_INDEX == 0
+    SERIAL_PORT_UART_FIRST = 50,
+    SERIAL_PORT_UART0 = SERIAL_PORT_UART_FIRST,
+    SERIAL_PORT_USART1,
+#else
+    SERIAL_PORT_UART_FIRST = 51,
+    SERIAL_PORT_USART1 = SERIAL_PORT_UART_FIRST,
+#endif
     SERIAL_PORT_UART1 = SERIAL_PORT_USART1,
     SERIAL_PORT_USART2,
     SERIAL_PORT_UART2 = SERIAL_PORT_USART2,
@@ -101,12 +119,6 @@ typedef enum {
     SERIAL_PORT_USART10,
     SERIAL_PORT_UART10 = SERIAL_PORT_USART10,
 
-    SERIAL_PORT_USB_VCP = 20,
-
-    SERIAL_PORT_SOFTSERIAL1 = 30,
-    SERIAL_PORT_SOFTSERIAL2,
-
-    SERIAL_PORT_LPUART1 = 40,
 } serialPortIdentifier_e;
 
 // use value from target serial port normalization
@@ -159,7 +171,7 @@ typedef void serialConsumer(uint8_t);
 //
 // configuration
 //
-void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
+void serialInit(bool softserialEnabled);
 void serialRemovePort(serialPortIdentifier_e identifier);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
 bool isSerialConfigValid(serialConfig_t *serialConfig);
@@ -172,7 +184,6 @@ const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function);
 bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 
-void pgResetFn_serialConfig(serialConfig_t *serialConfig); //!!TODO remove need for this
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);
 serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *candidate));

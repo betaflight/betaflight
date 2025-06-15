@@ -125,7 +125,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .imu_dcm_ki = 0,         // 0.003 * 10000
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
-    .mag_declination = 0
+    .mag_declination = 0,
 );
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
@@ -603,8 +603,14 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(canUseGPSHeading);
     UNUSED(imuCalcKpGain);
     UNUSED(imuCalcMagErr);
-
     UNUSED(currentTimeUs);
+
+#if defined(USE_GPS)
+    UNUSED(imuComputeQuaternionFromRPY);
+    UNUSED(imuDebug_GPS_RESCUE_HEADING);
+    UNUSED(imuCalcCourseErr);
+    UNUSED(imuCalcGroundspeedGain);
+#endif
 }
 #else
 
@@ -619,7 +625,7 @@ static void updateGpsHeadingUsable(float groundspeedGain, float imuCourseError, 
         gpsHeadingConfidence += fmaxf(groundspeedGain - fabsf(imuCourseError), 0.0f) * dt;
         // recenter at 2.5s time constant
         // TODO: intent is to match IMU time constant, approximately, but I don't exactly know how to do that
-        gpsHeadingConfidence -= 0.4 * dt * gpsHeadingConfidence; 
+        gpsHeadingConfidence -= 0.4f * dt * gpsHeadingConfidence;
         // if we accumulate enough 'points' over time, the IMU probably is OK
         // will need to reaccumulate after a disarm (will be retained partly for very brief disarms)
         canUseGPSHeading = gpsHeadingConfidence > 2.0f;
@@ -848,7 +854,7 @@ bool imuQuaternionHeadfreeOffsetSet(void)
     }
 }
 
-void imuQuaternionMultiplication(quaternion_t *q1, quaternion_t *q2, quaternion_t *result)
+static void imuQuaternionMultiplication(quaternion_t *q1, quaternion_t *q2, quaternion_t *result)
 {
     const float A = (q1->w + q1->x) * (q2->w + q2->x);
     const float B = (q1->z - q1->y) * (q2->y - q2->z);

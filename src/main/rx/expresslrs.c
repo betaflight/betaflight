@@ -520,7 +520,7 @@ void expressLrsOnTimerTockISR(void)
 
 static uint16_t lostConnectionCounter = 0;
 
-void lostConnection(void)
+static void lostConnection(void)
 {
     lostConnectionCounter++;
 

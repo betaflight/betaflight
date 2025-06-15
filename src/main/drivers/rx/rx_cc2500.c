@@ -48,12 +48,12 @@ void cc2500ReadFifo(uint8_t *dpbuffer, uint8_t len)
     rxSpiReadCommandMulti(CC2500_3F_RXFIFO | CC2500_READ_BURST, NOP, dpbuffer, len);
 }
 
-void cc2500WriteCommand(uint8_t command, uint8_t data)
+static void cc2500WriteCommand(uint8_t command, uint8_t data)
 {
     rxSpiWriteCommand(command, data);
 }
 
-void cc2500WriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length)
+static void cc2500WriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length)
 {
     rxSpiWriteCommandMulti(command, data, length);
 }

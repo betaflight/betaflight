@@ -1375,7 +1375,7 @@ void cmsSetExternKey(cms_key_e extKey)
         externKey = extKey;
 }
 
-uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, cms_key_e key, int repeatCount)
+static uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, cms_key_e key, int repeatCount)
 {
     uint16_t ret = 0;
 

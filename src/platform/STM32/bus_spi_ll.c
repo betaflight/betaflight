@@ -34,7 +34,7 @@
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
@@ -76,13 +76,16 @@ static LL_SPI_InitTypeDef defaultInit =
 
 static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor)
 {
-#if !defined(STM32H7)
-    // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
-
+#if defined(STM32F7)
+    /* On F7 we run SPI2 and SPI3 (on the APB1 bus) at a division of PCLK1 which is
+     * half that of HCLK driving the APB2 bus and SPI1. So we need to reduce the
+     * division factors for SPI2/3 by a corresponding factor of 2.
+     */
     if (instance == SPI2 || instance == SPI3) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
 #else
+    // On the G4 and H7 processors the SPI busses are all derived from the same base frequency
     UNUSED(instance);
 #endif
 
@@ -146,45 +149,45 @@ void spiInitDevice(SPIDevice device)
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
-    LL_DMA_InitTypeDef *initTx = bus->initTx;
+    LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
-    LL_DMA_StructInit(initTx);
+    LL_DMA_StructInit(dmaInitTx);
 #if defined(STM32G4) || defined(STM32H7)
-    initTx->PeriphRequest = bus->dmaTx->channel;
+    dmaInitTx->PeriphRequest = bus->dmaTx->channel;
 #else
-    initTx->Channel = bus->dmaTx->channel;
+    dmaInitTx->Channel = bus->dmaTx->channel;
 #endif
-    initTx->Mode = LL_DMA_MODE_NORMAL;
-    initTx->Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+    dmaInitTx->Mode = LL_DMA_MODE_NORMAL;
+    dmaInitTx->Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
 #if defined(STM32H7)
-    initTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->TXDR;
+    dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->TXDR;
 #else
-    initTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DR;
+    dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DR;
 #endif
-    initTx->Priority = LL_DMA_PRIORITY_LOW;
-    initTx->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
-    initTx->PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
-    initTx->MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+    dmaInitTx->Priority = LL_DMA_PRIORITY_LOW;
+    dmaInitTx->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
+    dmaInitTx->PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
+    dmaInitTx->MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
 
     if (bus->dmaRx) {
-        LL_DMA_InitTypeDef *initRx = bus->initRx;
+        LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
 
-        LL_DMA_StructInit(initRx);
+        LL_DMA_StructInit(dmaInitRx);
 #if defined(STM32G4) || defined(STM32H7)
-        initRx->PeriphRequest = bus->dmaRx->channel;
+        dmaInitRx->PeriphRequest = bus->dmaRx->channel;
 #else
-        initRx->Channel = bus->dmaRx->channel;
+        dmaInitRx->Channel = bus->dmaRx->channel;
 #endif
-        initRx->Mode = LL_DMA_MODE_NORMAL;
-        initRx->Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+        dmaInitRx->Mode = LL_DMA_MODE_NORMAL;
+        dmaInitRx->Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
 #if defined(STM32H7)
-        initRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->RXDR;
+        dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->RXDR;
 #else
-        initRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DR;
+        dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DR;
 #endif
-        initRx->Priority = LL_DMA_PRIORITY_LOW;
-        initRx->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
-        initRx->PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
+        dmaInitRx->Priority = LL_DMA_PRIORITY_LOW;
+        dmaInitRx->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
+        dmaInitRx->PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
     }
 }
 
@@ -203,7 +206,7 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 }
 
-FAST_CODE static bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+FAST_CODE bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
 #if defined(STM32H7)
     LL_SPI_SetTransferSize(instance, len);
@@ -285,7 +288,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     int len = segment->len;
 
     uint8_t *txData = segment->u.buffers.txData;
-    LL_DMA_InitTypeDef *initTx = bus->initTx;
+    LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
     if (txData) {
 #ifdef __DCACHE_PRESENT
@@ -301,19 +304,19 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
                     (((uint32_t)txData & CACHE_LINE_MASK) + len - 1 + CACHE_LINE_SIZE) & ~CACHE_LINE_MASK);
         }
 #endif // __DCACHE_PRESENT
-        initTx->MemoryOrM2MDstAddress = (uint32_t)txData;
-        initTx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
+        dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)txData;
+        dmaInitTx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
     } else {
-        initTx->MemoryOrM2MDstAddress = (uint32_t)&dummyTxByte;
-        initTx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_NOINCREMENT;
+        dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)&dummyTxByte;
+        dmaInitTx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_NOINCREMENT;
     }
-    initTx->NbData = len;
+    dmaInitTx->NbData = len;
 
 #if !defined(STM32G4) && !defined(STM32H7)
     if (dev->bus->dmaRx) {
 #endif
         uint8_t *rxData = segment->u.buffers.rxData;
-        LL_DMA_InitTypeDef *initRx = bus->initRx;
+        LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
 
         if (rxData) {
             /* Flush the D cache for the start and end of the receive buffer as
@@ -333,13 +336,13 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
                         (((uint32_t)rxData & CACHE_LINE_MASK) + len - 1 + CACHE_LINE_SIZE) & ~CACHE_LINE_MASK);
             }
 #endif // __DCACHE_PRESENT
-        initRx->MemoryOrM2MDstAddress = (uint32_t)rxData;
-        initRx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
+        dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)rxData;
+        dmaInitRx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
     } else {
-        initRx->MemoryOrM2MDstAddress = (uint32_t)&dummyRxByte;
-        initRx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_NOINCREMENT;
+        dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)&dummyRxByte;
+        dmaInitRx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_NOINCREMENT;
     }
-    initRx->NbData = len;
+    dmaInitRx->NbData = len;
 #if !defined(STM32G4) && !defined(STM32H7)
     }
 #endif
@@ -373,8 +376,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
         LL_DMA_EnableIT_TC(dmaRx->dma, dmaRx->stream);
 
         // Update channels
-        LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->initTx);
-        LL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->initRx);
+        LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
+        LL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->dmaInitRx);
 
         // Enable channels
         LL_DMA_EnableChannel(dmaTx->dma, dmaTx->stream);
@@ -395,8 +398,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
         LL_EX_DMA_EnableIT_TC(streamRegsRx);
 
         // Update streams
-        LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->initTx);
-        LL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->initRx);
+        LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
+        LL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->dmaInitRx);
 
         /* Note from AN4031
          *
@@ -436,7 +439,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         LL_EX_DMA_EnableIT_TC(streamRegsTx);
 
         // Update streams
-        LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->initTx);
+        LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
 
         /* Note from AN4031
          *
@@ -615,74 +618,9 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
     if (bus->useDMA && dmaSafe && ((segmentCount > 1) ||
                                    (xferLen >= SPI_DMA_THRESHOLD) ||
                                    !bus->curSegment[segmentCount].negateCS)) {
-        // Intialise the init structures for the first transfer
-        spiInternalInitStream(dev, false);
-
-        // Assert Chip Select
-        IOLo(dev->busType_u.spi.csnPin);
-
-        // Start the transfers
-        spiInternalStartDMA(dev);
+        spiProcessSegmentsDMA(dev);
     } else {
-        busSegment_t *lastSegment = NULL;
-        bool segmentComplete;
-
-        // Manually work through the segment list performing a transfer for each
-        while (bus->curSegment->len) {
-            if (!lastSegment || lastSegment->negateCS) {
-                // Assert Chip Select if necessary - it's costly so only do so if necessary
-                IOLo(dev->busType_u.spi.csnPin);
-            }
-
-            spiInternalReadWriteBufPolled(
-                    bus->busType_u.spi.instance,
-                    bus->curSegment->u.buffers.txData,
-                    bus->curSegment->u.buffers.rxData,
-                    bus->curSegment->len);
-
-            if (bus->curSegment->negateCS) {
-                // Negate Chip Select
-                IOHi(dev->busType_u.spi.csnPin);
-            }
-
-            segmentComplete = true;
-            if (bus->curSegment->callback) {
-                switch(bus->curSegment->callback(dev->callbackArg)) {
-                case BUS_BUSY:
-                    // Repeat the last DMA segment
-                    segmentComplete = false;
-                    break;
-
-                case BUS_ABORT:
-                    bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
-                    segmentComplete = false;
-                    return;
-
-                case BUS_READY:
-                default:
-                    // Advance to the next DMA segment
-                    break;
-                }
-            }
-            if (segmentComplete) {
-                lastSegment = (busSegment_t *)bus->curSegment;
-                bus->curSegment++;
-            }
-        }
-
-        // If a following transaction has been linked, start it
-        if (bus->curSegment->u.link.dev) {
-            busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
-            const extDevice_t *nextDev = endSegment->u.link.dev;
-            busSegment_t *nextSegments = (busSegment_t *)endSegment->u.link.segments;
-            bus->curSegment = nextSegments;
-            endSegment->u.link.dev = NULL;
-            endSegment->u.link.segments = NULL;
-            spiSequenceStart(nextDev);
-        } else {
-            // The end of the segment list has been reached, so mark transactions as complete
-            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
-        }
+        spiProcessSegmentsPolled(dev);
     }
 }
 #endif

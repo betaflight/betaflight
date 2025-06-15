@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -53,7 +54,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/resource.h"
 #include "drivers/dma.h"
 
@@ -129,7 +130,7 @@ static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_CHANNEL_COUNT];
  * @param channelCount how many channels to repeat over
  *
 */
-void adcInitDevice(const adc_type *dev, const int channelCount)
+static void adcInitDevice(const adc_type *dev, const int channelCount)
 {
     adc_base_config_type adc_base_struct;
 
@@ -149,7 +150,7 @@ void adcInitDevice(const adc_type *dev, const int channelCount)
  * @param tag the ioTag to search for
  * @return the index in adcTagMap corresponding to the given ioTag or -1 if not found
 */
-int adcFindTagMapEntry(const ioTag_t tag)
+static int adcFindTagMapEntry(const ioTag_t tag)
 {
     for (int i = 0; i < ADC_TAG_MAP_COUNT; i++) {
         if (adcTagMap[i].tag == tag) {
@@ -173,7 +174,7 @@ int adcFindTagMapEntry(const ioTag_t tag)
  * the datasheet when defining those values, so here we have to convert to what's expected in
  * adcInternalComputeTemperature.
 */
-void setScalingFactors(void)
+static void setScalingFactors(void)
 {
     // The expected reading for 1.2V internal reference if external vref+ was 3.3V
     adcVREFINTCAL = VREFINT_EXPECTED;
@@ -447,7 +448,7 @@ void adcInternalStartConversion(void)
 /**
  * Reads a given channel from the DMA buffer
 */
-uint16_t adcInternalRead(int channel)
+static uint16_t adcInternalRead(int channel)
 {
     const int dmaIndex = adcOperatingConfig[channel].dmaIndex;
     return adcConversionBuffer[dmaIndex];

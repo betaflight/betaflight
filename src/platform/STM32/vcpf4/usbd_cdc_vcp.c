@@ -101,7 +101,7 @@ static uint16_t VCP_DeInit(void)
     return USBD_OK;
 }
 
-void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
+static void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
 {
    plc2->bitrate    = plc1->bitrate;
    plc2->format     = plc1->format;

@@ -70,6 +70,9 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     SERIAL_PORT_USB_VCP,
 #endif
+#ifdef USE_UART0
+    SERIAL_PORT_UART0,
+#endif
 #ifdef USE_UART1
     SERIAL_PORT_USART1,
 #endif
@@ -115,6 +118,9 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     "VCP",
 #endif
+#ifdef USE_UART0
+    "UART0",
+#endif
 #ifdef USE_UART1
     "UART1",
 #endif
@@ -156,17 +162,24 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #endif
 };
 
-const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
-        400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
+const uint32_t baudRates[BAUD_COUNT] = {
+    0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
+    400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000
+}; // see baudRate_e
 
 static serialPortConfig_t* findInPortConfigs_identifier(const serialPortConfig_t cfgs[], size_t count, serialPortIdentifier_e identifier)
 {
+    if (identifier == SERIAL_PORT_NONE || identifier == SERIAL_PORT_ALL) {
+        return NULL;
+    }
+
     for (unsigned i = 0; i < count; i++) {
         if (cfgs[i].identifier == identifier) {
             // drop const on return - wrapper function will add it back if necessary
             return (serialPortConfig_t*)&cfgs[i];
         }
     }
+
     return NULL;
 }
 
@@ -325,7 +338,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
     return NULL;
 }
 
-serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
+static serialPortUsage_t *findSerialPortUsageByPort(const serialPort_t *serialPort)
 {
     for (serialPortUsage_t* usage = serialPortUsageList; usage < ARRAYEND(serialPortUsageList); usage++) {
         if (usage->serialPort == serialPort) {
@@ -559,41 +572,26 @@ void closeSerialPort(serialPort_t *serialPort)
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
+void serialInit(bool softserialEnabled)
 {
-#if !defined(USE_SOFTSERIAL)
-    UNUSED(softserialEnabled);
-#endif
-
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
 
-        if (serialPortToDisable != SERIAL_PORT_NONE
-            && serialPortUsageList[index].identifier == serialPortToDisable) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                continue;  // this index is deleted
+#if SERIAL_TRAIT_PIN_CONFIG
+        const int resourceIndex = serialResourceIndex(serialPortUsageList[index].identifier);
+        if (resourceIndex >= 0 && !(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
+            // resource exists but no pin is assigned
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            continue;
         }
-        {
-#if !defined(SIMULATOR_BUILD)  // no serialPinConfig on SITL
-            const int resourceIndex = serialResourceIndex(serialPortUsageList[index].identifier);
-            if (resourceIndex >= 0   // resource exists
-                && !(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                continue;
-            }
 #endif
-        }
-        if (serialType(serialPortUsageList[index].identifier) == SERIALTYPE_SOFTSERIAL) {
-            if (true
-#ifdef USE_SOFTSERIAL
-                && !softserialEnabled
-#endif
-                ) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                continue;
-            }
+
+        if (serialType(serialPortUsageList[index].identifier) == SERIALTYPE_SOFTSERIAL && !softserialEnabled) {
+            // soft serial is not enabled, or not built into the firmware
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            continue;
         }
     }
 }

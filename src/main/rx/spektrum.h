@@ -50,6 +50,6 @@ extern uint8_t rssi_channel; // Stores the RX RSSI channel.
 void spektrumBind(rxConfig_t *rxConfig);
 bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);
 
-bool srxlTelemetryBufferEmpty();
+bool srxlTelemetryBufferEmpty(void);
 void srxlRxWriteTelemetryData(const void *data, int len);
 bool srxlRxIsActive(void);

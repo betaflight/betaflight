@@ -31,7 +31,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/dma.h"
 #include "drivers/sensor.h"
 #include "drivers/adc.h"
@@ -126,7 +126,7 @@ const adcTagMap_t adcTagMap[] = {
 #define TS_CAL1_ADDR      0x1FFF7A2C
 #define TS_CAL2_ADDR      0x1FFF7A2E
 
-void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
+static void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 {
     ADC_InitTypeDef ADC_InitStructure;
 
@@ -150,7 +150,7 @@ void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 }
 
 #ifdef USE_ADC_INTERNAL
-void adcInitInternalInjected(const adcConfig_t *config)
+static void adcInitInternalInjected(const adcConfig_t *config)
 {
     ADC_TempSensorVrefintCmd(ENABLE);
     ADC_InjectedDiscModeCmd(ADC1, DISABLE);

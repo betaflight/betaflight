@@ -1,0 +1,10 @@
+[submodule "config"]
+	path = src/config
+	url = https://github.com/betaflight/config.git
+	branch = master
+	ignore = dirty
+[submodule "lib/main/pico-sdk"]
+	path = lib/main/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+	branch = master
+	ignore = dirty

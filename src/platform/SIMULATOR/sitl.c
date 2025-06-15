@@ -30,13 +30,18 @@
 
 #include "common/maths.h"
 
+#include "build/debug.h"
+
+#include "drivers/adc_impl.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
-#include "drivers/motor.h"
+#include "drivers/motor_impl.h"
 #include "drivers/serial.h"
 #include "drivers/serial_tcp.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/pwm_output.h"
+#include "drivers/pwm_output_impl.h"
 #include "drivers/light_led.h"
 
 #include "drivers/timer.h"
@@ -48,12 +53,20 @@
 
 #include "config/feature.h"
 #include "config/config.h"
+#include "config/config_streamer.h"
+#include "config/config_streamer_impl.h"
+#include "config/config_eeprom_impl.h"
+
 #include "scheduler/scheduler.h"
 
 #include "pg/rx.h"
 #include "pg/motor.h"
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
+
+#include "io/gps.h"
+#include "io/gps_virtual.h"
 
 #include "dyad.h"
 #include "udplink.h"
@@ -105,12 +118,12 @@ int lockMainPID(void)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
 
-void sendMotorUpdate(void)
+static void sendMotorUpdate(void)
 {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
 
-void updateState(const fdm_packet* pkt)
+static void updateState(const fdm_packet* pkt)
 {
     static double last_timestamp = 0; // in seconds
     static uint64_t last_realtime = 0; // in uS
@@ -176,6 +189,19 @@ void updateState(const fdm_packet* pkt)
 #else
     imuSetAttitudeQuat(pkt->imu_orientation_quat[0], pkt->imu_orientation_quat[1], pkt->imu_orientation_quat[2], pkt->imu_orientation_quat[3]);
 #endif
+#endif
+
+#if defined(USE_VIRTUAL_GPS)
+    const double longitude = pkt->position_xyz[0];
+    const double latitude = pkt->position_xyz[1];
+    const double altitude = pkt->position_xyz[2];
+    const double speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
+    const double speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
+    double course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
+    if (course < 0.0) {
+        course += 360.0;
+    }
+    setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
 #endif
 
 #if defined(SIMULATOR_IMU_SYNC)
@@ -445,12 +471,13 @@ uint32_t clockMicrosToCycles(uint32_t micros)
 {
     return micros;
 }
+
 uint32_t getCycleCounter(void)
 {
     return (uint32_t) (micros64() & 0xFFFFFFFF);
 }
 
-void microsleep(uint32_t usec)
+static void microsleep(uint32_t usec)
 {
     struct timespec ts;
     ts.tv_sec = 0;
@@ -501,7 +528,6 @@ int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y)
 }
 
 // PWM part
-pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 
 // real value to send
@@ -518,11 +544,9 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
     }
 }
 
-static motorDevice_t motorPwmDevice; // Forward
-
 pwmOutputPort_t *pwmGetMotors(void)
 {
-    return motors;
+    return pwmMotors;
 }
 
 static float pwmConvertFromExternal(uint16_t externalValue)
@@ -537,14 +561,7 @@ static uint16_t pwmConvertToExternal(float motorValue)
 
 static void pwmDisableMotors(void)
 {
-    motorPwmDevice.enabled = false;
-}
-
-static bool pwmEnableMotors(void)
-{
-    motorPwmDevice.enabled = true;
-
-    return true;
+    // NOOP
 }
 
 static void pwmWriteMotor(uint8_t index, float value)
@@ -569,12 +586,7 @@ static void pwmWriteMotorInt(uint8_t index, uint16_t value)
 
 static void pwmShutdownPulsesForAllMotors(void)
 {
-    motorPwmDevice.enabled = false;
-}
-
-bool pwmIsMotorEnabled(uint8_t index)
-{
-    return motors[index].enabled;
+    // NOOP
 }
 
 static void pwmCompleteMotorUpdate(void)
@@ -608,40 +620,44 @@ void pwmWriteServo(uint8_t index, float value)
     }
 }
 
-static motorDevice_t motorPwmDevice = {
-    .vTable = {
-        .postInit = motorPostInitNull,
-        .convertExternalToMotor = pwmConvertFromExternal,
-        .convertMotorToExternal = pwmConvertToExternal,
-        .enable = pwmEnableMotors,
-        .disable = pwmDisableMotors,
-        .isMotorEnabled = pwmIsMotorEnabled,
-        .decodeTelemetry = motorDecodeTelemetryNull,
-        .write = pwmWriteMotor,
-        .writeInt = pwmWriteMotorInt,
-        .updateComplete = pwmCompleteMotorUpdate,
-        .shutdown = pwmShutdownPulsesForAllMotors,
-    }
+static const motorVTable_t vTable = {
+    .postInit = motorPostInitNull,
+    .convertExternalToMotor = pwmConvertFromExternal,
+    .convertMotorToExternal = pwmConvertToExternal,
+    .enable = pwmEnableMotors,
+    .disable = pwmDisableMotors,
+    .isMotorEnabled = pwmIsMotorEnabled,
+    .decodeTelemetry = motorDecodeTelemetryNull,
+    .write = pwmWriteMotor,
+    .writeInt = pwmWriteMotorInt,
+    .updateComplete = pwmCompleteMotorUpdate,
+    .shutdown = pwmShutdownPulsesForAllMotors,
+    .requestTelemetry = NULL,
+    .isMotorIdle = NULL,
+    .getMotorIO = NULL,
 };
 
-motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
+bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig, uint16_t _idlePulse)
 {
     UNUSED(motorConfig);
-    UNUSED(useUnsyncedPwm);
 
-    printf("Initialized motor count %d\n", motorCount);
-    pwmRawPkt.motorCount = motorCount;
+    if (!device) {
+        return false;
+    }
+
+    pwmMotorCount = device->count;
+    device->vTable = &vTable;
+    
+    printf("Initialized motor count %d\n", pwmMotorCount);
+    pwmRawPkt.motorCount = pwmMotorCount;
 
     idlePulse = _idlePulse;
 
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        motors[motorIndex].enabled = true;
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < pwmMotorCount; motorIndex++) {
+        pwmMotors[motorIndex].enabled = true;
     }
-    motorPwmDevice.count = motorCount; // Never used, but seemingly a right thing to set it anyways.
-    motorPwmDevice.initialized = true;
-    motorPwmDevice.enabled = false;
 
-    return &motorPwmDevice;
+    return true;
 }
 
 // ADC part
@@ -658,18 +674,18 @@ char _Min_Stack_Size;
 // virtual EEPROM
 static FILE *eepromFd = NULL;
 
-void FLASH_Unlock(void)
+bool loadEEPROMFromFile(void)
 {
     if (eepromFd != NULL) {
         fprintf(stderr, "[FLASH_Unlock] eepromFd != NULL\n");
-        return;
+        return false;
     }
 
     // open or create
-    eepromFd = fopen(EEPROM_FILENAME,"r+");
+    eepromFd = fopen(EEPROM_FILENAME, "r+");
     if (eepromFd != NULL) {
         // obtain file size:
-        fseek(eepromFd , 0 , SEEK_END);
+        fseek(eepromFd, 0, SEEK_END);
         size_t lSize = ftell(eepromFd);
         rewind(eepromFd);
 
@@ -678,21 +694,29 @@ void FLASH_Unlock(void)
             printf("[FLASH_Unlock] loaded '%s', size = %ld / %ld\n", EEPROM_FILENAME, lSize, sizeof(eepromData));
         } else {
             fprintf(stderr, "[FLASH_Unlock] failed to load '%s'\n", EEPROM_FILENAME);
-            return;
+            return false;
         }
     } else {
         printf("[FLASH_Unlock] created '%s', size = %ld\n", EEPROM_FILENAME, sizeof(eepromData));
         if ((eepromFd = fopen(EEPROM_FILENAME, "w+")) == NULL) {
             fprintf(stderr, "[FLASH_Unlock] failed to create '%s'\n", EEPROM_FILENAME);
-            return;
+            return false;
         }
+
         if (fwrite(eepromData, sizeof(eepromData), 1, eepromFd) != 1) {
             fprintf(stderr, "[FLASH_Unlock] write failed: %s\n", strerror(errno));
+            return false;
         }
     }
+    return true;
 }
 
-void FLASH_Lock(void)
+void configUnlock(void)
+{
+    loadEEPROMFromFile();
+}
+
+void configLock(void)
 {
     // flush & close
     if (eepromFd != NULL) {
@@ -706,22 +730,17 @@ void FLASH_Lock(void)
     }
 }
 
-FLASH_Status FLASH_ErasePage(uintptr_t Page_Address)
+configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer)
 {
-    UNUSED(Page_Address);
-//    printf("[FLASH_ErasePage]%x\n", Page_Address);
-    return FLASH_COMPLETE;
-}
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t), "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
 
-FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t value)
-{
-    if ((addr >= (uintptr_t)eepromData) && (addr < (uintptr_t)ARRAYEND(eepromData))) {
-        *((uint32_t*)addr) = value;
-        printf("[FLASH_ProgramWord]%p = %08x\n", (void*)addr, *((uint32_t*)addr));
+    if ((address >= (uintptr_t)eepromData) && (address + sizeof(uint32_t) <= (uintptr_t)ARRAYEND(eepromData))) {
+        memcpy((void*)address, buffer, sizeof(config_streamer_buffer_type_t));
+        printf("[FLASH_ProgramWord]%p = %08x\n", (void*)address, *((uint32_t*)address));
     } else {
-            printf("[FLASH_ProgramWord]%p out of range!\n", (void*)addr);
+        printf("[FLASH_ProgramWord]%p out of range!\n", (void*)address);
     }
-    return FLASH_COMPLETE;
+    return CONFIG_RESULT_SUCCESS;
 }
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
@@ -755,4 +774,21 @@ void IOHi(IO_t io)
 void IOLo(IO_t io)
 {
     UNUSED(io);
+}
+
+void IOInitGlobal(void)
+{
+    // NOOP
+}
+
+IO_t IOGetByTag(ioTag_t tag)
+{
+    UNUSED(tag);
+    return NULL;
+}
+
+const mcuTypeInfo_t *getMcuTypeInfo(void)
+{
+    static const mcuTypeInfo_t info = { .id = MCU_TYPE_SIMULATOR, .name = "SIMULATOR" };
+    return &info;
 }

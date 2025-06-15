@@ -124,7 +124,7 @@ uint8_t globalResult = 0;
 
 // if 50ms with not activity, go to default baudrate and to step 1
 
-bool srxl2ProcessHandshake(const Srxl2Header* header)
+static bool srxl2ProcessHandshake(const Srxl2Header* header)
 {
     const Srxl2HandshakeSubHeader* handshake = (Srxl2HandshakeSubHeader*)(header + 1);
     if (handshake->destinationDeviceId == Broadcast) {
@@ -164,7 +164,7 @@ bool srxl2ProcessHandshake(const Srxl2Header* header)
     return true;
 }
 
-void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, rxRuntimeState_t *rxRuntimeState)
+static void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, rxRuntimeState_t *rxRuntimeState)
 {
     globalResult = RX_FRAME_COMPLETE;
 
@@ -191,7 +191,7 @@ void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, rxRuntim
      DEBUG_PRINTF("channel data: %d %d %x\r\n", channelData_header->rssi, channelData_header->frameLosses, channelData_header->channelMask.u32);
 }
 
-bool srxl2ProcessControlData(const Srxl2Header* header, rxRuntimeState_t *rxRuntimeState)
+static bool srxl2ProcessControlData(const Srxl2Header* header, rxRuntimeState_t *rxRuntimeState)
 {
     const Srxl2ControlDataSubHeader* controlData = (Srxl2ControlDataSubHeader*)(header + 1);
     const uint8_t ownId = (FlightController << 4) | unitId;
@@ -237,7 +237,7 @@ bool srxl2ProcessControlData(const Srxl2Header* header, rxRuntimeState_t *rxRunt
     return true;
 }
 
-bool srxl2ProcessPacket(const Srxl2Header* header, rxRuntimeState_t *rxRuntimeState)
+static bool srxl2ProcessPacket(const Srxl2Header* header, rxRuntimeState_t *rxRuntimeState)
 {
     switch (header->packetType) {
     case Handshake:
@@ -253,7 +253,7 @@ bool srxl2ProcessPacket(const Srxl2Header* header, rxRuntimeState_t *rxRuntimeSt
 }
 
 // @note assumes packet is fully there
-void srxl2Process(rxRuntimeState_t *rxRuntimeState)
+static void srxl2Process(rxRuntimeState_t *rxRuntimeState)
 {
     if (processBufferPtr->packet.header.id != SRXL2_ID || processBufferPtr->len != processBufferPtr->packet.header.length) {
         DEBUG_PRINTF("invalid header id: %x, or length: %x received vs %x expected \r\n", processBufferPtr->packet.header.id, processBufferPtr->len, processBufferPtr->packet.header.length);

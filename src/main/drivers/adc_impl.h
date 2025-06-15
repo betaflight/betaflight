@@ -20,10 +20,14 @@
 
 #pragma once
 
+#include "platform.h"
 #include "drivers/adc.h"
 #include "drivers/dma.h"
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
+
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc_types.h"
+#endif
 
 #if defined(STM32F4) || defined(STM32F7)
 #define ADC_TAG_MAP_COUNT 16
@@ -74,7 +78,9 @@ typedef struct adcTagMap_s {
 
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rccADC;
+#endif
 #if !defined(USE_DMA_SPEC)
     dmaResource_t* dmaResource;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
@@ -104,7 +110,9 @@ extern adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);
+#if !defined(SIMULATOR_BUILD)
 ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
+#endif
 bool adcVerifyPin(ioTag_t tag, ADCDevice device);
 
 // Marshall values in DMA instance/channel based order to adcChannel based order.

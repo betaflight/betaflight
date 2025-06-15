@@ -32,7 +32,10 @@
 #include "drivers/bus_quadspi_impl.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
-#include "drivers/rcc.h"
+
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc.h"
+#endif
 
 #include "pg/bus_quadspi.h"
 
@@ -264,7 +267,9 @@ void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)
 
         if (haveResources) {
             pDev->dev = hw->reg;
+#if PLATFORM_TRAIT_RCC
             pDev->rcc = hw->rcc;
+#endif
         }
     }
 }

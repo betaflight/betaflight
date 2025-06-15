@@ -87,6 +87,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32H5x
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
+                   $(TARGET_PLATFORM_DIR)/include \
                    $(TARGET_PLATFORM_DIR)/startup \
                    $(STDPERIPH_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
@@ -112,20 +113,16 @@ DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h563_2m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32h563xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
-
 # end H563xx
-
+else
+$(error Unknown MCU for STM32H5 target)
+endif
 
 ifneq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT    := -Os
 OPTIMISE_SPEED      := -Os
 OPTIMISE_SIZE       := -Os
-
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
-endif
-
-else
-$(error Unknown MCU for STM32H5 target)
 endif
 
 ifeq ($(LD_SCRIPT),)
@@ -148,11 +145,9 @@ VCP_SRC =
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            common/stm32/system.c \
             drivers/bus_i2c_timing.c \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/pwm_output_dshot_shared.c \
             STM32/bus_i2c_hal_init.c \
             STM32/bus_i2c_hal.c \
             STM32/bus_spi_ll.c \
@@ -165,7 +160,6 @@ MCU_COMMON_SRC = \
             STM32/io_stm32.c \
             STM32/light_ws2811strip_hal.c \
             STM32/persistent.c \
-            STM32/pwm_output.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/serial_uart_hal.c \
@@ -174,9 +168,6 @@ MCU_COMMON_SRC = \
             STM32/camera_control_stm32.c \
             STM32/system_stm32h5xx.c \
             drivers/adc.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c \
@@ -202,19 +193,17 @@ MSC_SRC =
             msc/usbd_storage_sdio.c
 
 SPEED_OPTIMISED_SRC += \
-            common/stm32/system.c \
             STM32/exti.c
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \
             STM32/serial_usb_vcp.c \
-            drivers/bus_i2c_config.c \
-            drivers/bus_spi_config.c \
-            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_pinconfig.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+
+include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "drivers/pwm_output.h"
-
 #define ESCSERIAL_BUFFER_SIZE 1024
 
 typedef enum {

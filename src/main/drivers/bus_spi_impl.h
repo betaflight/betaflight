@@ -20,25 +20,19 @@
 
 #pragma once
 
-#define SPI_TIMEOUT_US  10000
+#include "platform.h"
 
-#if defined(STM32F4) || defined(STM32G4)
-#define MAX_SPI_PIN_SEL 2
-#elif defined(STM32F7) || defined(AT32F4)
-#define MAX_SPI_PIN_SEL 4
-#elif defined(STM32H7)
-#define MAX_SPI_PIN_SEL 5
-#elif defined(APM32F4)
-#define MAX_SPI_PIN_SEL 2
-#else
-#error Unknown MCU family
+#if PLATFORM_TRAIT_RCC
+#include "platform/rcc_types.h"
 #endif
+
+#define SPI_TIMEOUT_US  10000
 
 #define BUS_SPI_FREE   0x0
 
 typedef struct spiPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4) || defined(APM32F4)
+#if SPI_TRAIT_AF_PIN //TODO: move to GPIO
     uint8_t af;
 #endif
 } spiPinDef_t;
@@ -49,33 +43,40 @@ typedef struct spiHardware_s {
     spiPinDef_t sckPins[MAX_SPI_PIN_SEL];
     spiPinDef_t misoPins[MAX_SPI_PIN_SEL];
     spiPinDef_t mosiPins[MAX_SPI_PIN_SEL];
-#ifndef STM32F7
+#if SPI_TRAIT_AF_PORT
     uint8_t af;
 #endif
+
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;
+#endif
+
 #ifdef USE_DMA
     uint8_t dmaIrqHandler;
 #endif
 } spiHardware_t;
 
-extern const spiHardware_t spiHardware[];
+extern const spiHardware_t spiHardware[SPIDEV_COUNT];
 
 typedef struct SPIDevice_s {
     SPI_TypeDef *dev;
     ioTag_t sck;
     ioTag_t miso;
     ioTag_t mosi;
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4) || defined(APM32F4)
+#if SPI_TRAIT_AF_PIN
     uint8_t sckAF;
     uint8_t misoAF;
     uint8_t mosiAF;
-#else
+#endif
+#if SPI_TRAIT_AF_PORT
     uint8_t af;
 #endif
-#if defined(HAL_SPI_MODULE_ENABLED)
+#if SPI_TRAIT_HANDLE
     SPI_HandleTypeDef hspi;
 #endif
+#if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;
+#endif
     volatile uint16_t errorCount;
     bool leadingEdge;
 #ifdef USE_DMA
@@ -91,5 +92,5 @@ void spiInternalStartDMA(const extDevice_t *dev);
 void spiInternalStopDMA (const extDevice_t *dev);
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor);
 void spiInternalResetDescriptors(busDevice_t *bus);
+bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len);
 void spiSequenceStart(const extDevice_t *dev);
-

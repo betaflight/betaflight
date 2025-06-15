@@ -53,6 +53,7 @@ extern "C" {
     #include "pg/pg_ids.h"
     #include "pg/beeper.h"
     #include "pg/gps.h"
+    #include "pg/pilot.h"
     #include "pg/rx.h"
     #include "rx/rx.h"
     #include "scheduler/scheduler.h"
@@ -62,7 +63,7 @@ extern "C" {
     void cliSet(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
-    
+
     const clivalue_t valueTable[] = {
         { .name = "array_unit_test",   .type = VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config = { .array = { .length = 3}},                     .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
         { .name = "str_unit_test",     .type = VAR_UINT8 | MODE_STRING | MASTER_VALUE, .config = { .string = { 0, 16, 0 }},                      .pgn = PG_RESERVED_FOR_TESTING_1, .offset = 0 },
@@ -131,7 +132,7 @@ TEST(CLIUnittest, TestCliSetArray)
 
 TEST(CLIUnittest, TestCliSetStringNoFlags)
 {
-    char *str = (char *)"str_unit_test    =   SAMPLE"; 
+    char *str = (char *)"str_unit_test    =   SAMPLE";
     cliSet("", str);
 
     const uint16_t index = cliGetSettingIndex(str, 13);
@@ -159,8 +160,8 @@ TEST(CLIUnittest, TestCliSetStringNoFlags)
 
 TEST(CLIUnittest, TestCliSetStringWriteOnce)
 {
-    char *str1 = (char *)"wos_unit_test    =   SAMPLE"; 
-    char *str2 = (char *)"wos_unit_test    =   ELPMAS"; 
+    char *str1 = (char *)"wos_unit_test    =   SAMPLE";
+    char *str2 = (char *)"wos_unit_test    =   ELPMAS";
     cliSet("", str1);
 
     const uint16_t index = cliGetSettingIndex(str1, 13);
@@ -341,7 +342,7 @@ void schedulerResetTaskMaxExecutionTime(taskId_e) {}
 void schedulerResetCheckFunctionMaxExecutionTime(void) {}
 
 const char * const targetName = "UNITTEST";
-const char* const buildDate = "Jan 01 2017";
+const char * const buildDate = "Jan 01 2017";
 const char * const buildTime = "00:00:00";
 const char * const shortGitRevision = "MASTER";
 
@@ -369,6 +370,19 @@ void generateLedConfig(ledConfig_t *, char *, size_t) {}
 void serialSetCtrlLineStateDtrPin(serialPort_t *, ioTag_t ) {}
 void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
 
+serialPortIdentifier_e findSerialPortByName(const char* portName, int (*cmp)(const char *portName, const char *candidate))
+{
+    UNUSED(portName);
+    UNUSED(cmp);
+    return SERIAL_PORT_NONE;
+}
+
+const char* serialName(serialPortIdentifier_e identifier, const char* notFound)
+{
+    UNUSED(identifier);
+    return notFound;
+}
+
 //void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 void rescheduleTask(taskId_e, timeDelta_t){}
 void schedulerSetNextStateTime(timeDelta_t ){}
@@ -387,6 +401,7 @@ bool isModeActivationConditionConfigured(const modeActivationCondition_t *, cons
 void delay(uint32_t) {}
 displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
 mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
+const char *getMcuTypeName(void) { return targetName; }
 uint16_t getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }

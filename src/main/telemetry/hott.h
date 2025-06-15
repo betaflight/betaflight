@@ -499,9 +499,9 @@ void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
 
 #if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
-bool hottTextmodeIsAlive();
-void hottTextmodeGrab();
-void hottTextmodeExit();
+bool hottTextmodeIsAlive(void);
+void hottTextmodeGrab(void);
+void hottTextmodeExit(void);
 void hottTextmodeWriteChar(uint8_t column, uint8_t row, char c);
 #endif
 

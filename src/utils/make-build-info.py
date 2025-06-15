@@ -33,7 +33,7 @@ SOURCE_FILE_TEMPLATE = """{license_header}
 
 #include "msp/msp_build_info.h"
 
-void sbufWriteBuildInfoFlags(sbuf_t *dst) 
+void sbufWriteBuildInfoFlags(sbuf_t *dst)
 {
     static const uint16_t options[] = {
 {build_options}

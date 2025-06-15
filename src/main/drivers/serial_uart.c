@@ -42,7 +42,6 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
-#include "drivers/rcc.h"
 #include "drivers/serial.h"
 #include "drivers/serial_impl.h"
 #include "drivers/serial_uart.h"
@@ -50,19 +49,7 @@
 
 #include "pg/serial_uart.h"
 
-#if defined(STM32H7)
-#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
-#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
-#elif defined(STM32G4)
-#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM_W          // SRAM MPU NOT_BUFFERABLE
-#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM_R          // SRAM MPU NOT CACHABLE
-#elif defined(STM32F7)
-#define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#elif defined(STM32F4) || defined(AT32F4) || defined(APM32F4)
-#define UART_TX_BUFFER_ATTRIBUTE                    // NONE
-#define UART_RX_BUFFER_ATTRIBUTE                    // NONE
-#else
+#if !defined(UART_TX_BUFFER_ATTRIBUTE) || !defined(UART_RX_BUFFER_ATTRIBUTE)
 #error Undefined UART_{TX,RX}_BUFFER_ATTRIBUTE for this MCU
 #endif
 
@@ -70,6 +57,10 @@
     UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T);                \
     UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s \
 /**/
+
+#ifdef USE_UART0
+UART_BUFFERS(0);
+#endif
 
 #ifdef USE_UART1
 UART_BUFFERS(1);
@@ -136,6 +127,9 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     // table is for UART only to save space (LPUART is handled separately)
 #define _R(id, dev) [id] = (dev) + 1
     static const uartDeviceIdx_e uartMap[] = {
+#ifdef USE_UART0
+        _R(SERIAL_PORT_UART0, UARTDEV_0),
+#endif
 #ifdef USE_UART1
         _R(SERIAL_PORT_USART1, UARTDEV_1),
 #endif
@@ -174,7 +168,7 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     }
 #else
     {
-        const int idx = identifier - SERIAL_PORT_USART1;
+        const int idx = identifier - SERIAL_PORT_UART_FIRST;
         if (idx >= 0 && idx < SERIAL_UART_MAX) {
             if (BIT(idx) & SERIAL_UART_MASK) {
                 // return number of enabled UART ports smaller than idx
@@ -370,13 +364,7 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
     } else
 #endif
     {
-#if defined(USE_HAL_DRIVER)
-        __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
-#elif defined(USE_ATBSP_DRIVER)
-        usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
-#else
-        USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
-#endif
+        uartEnableTxInterrupt(uartPort);
     }
 }
 
@@ -435,13 +423,7 @@ static void uartEndWrite(serialPort_t *instance)
     } else
 #endif
     {
-#if defined(USE_HAL_DRIVER)
-        __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
-#elif defined(USE_ATBSP_DRIVER)
-        usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
-#else
-        USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
-#endif
+        uartEnableTxInterrupt(uartPort);
     }
 }
 
@@ -461,98 +443,6 @@ const struct serialPortVTable uartVTable[] = {
         .endWrite = uartEndWrite,
     }
 };
-
-// TODO - move to serial_uart_hw.c
-#ifdef USE_DMA
-void uartConfigureDma(uartDevice_t *uartdev)
-{
-    uartPort_t *uartPort = &(uartdev->port);
-    const uartHardware_t *hardware = uartdev->hardware;
-
-#ifdef USE_DMA_SPEC
-    const serialPortIdentifier_e uartPortIdentifier = hardware->identifier;
-    const uartDeviceIdx_e uartDeviceIdx = uartDeviceIdxFromIdentifier(uartPortIdentifier);
-    if (uartDeviceIdx == UARTDEV_INVALID) {
-        return;
-    }
-    const int resourceIdx = serialResourceIndex(uartPortIdentifier);
-    const int ownerIndex = serialOwnerIndex(uartPortIdentifier);
-    const resourceOwner_e ownerTxRx = serialOwnerTxRx(uartPortIdentifier); // rx is always +1
-
-    const dmaChannelSpec_t *dmaChannelSpec;
-    const serialUartConfig_t *cfg = serialUartConfig(resourceIdx);
-    if (!cfg) {
-        return;
-    }
-    if (cfg->txDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, uartDeviceIdx, cfg->txDmaopt);
-        if (dmaChannelSpec) {
-            uartPort->txDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
-            uartPort->txDMAChannel = dmaChannelSpec->channel;
-#elif defined(AT32F4)
-            uartPort->txDMAMuxId = dmaChannelSpec->dmaMuxId;
-#endif
-        }
-    }
-
-    if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
-        if (dmaChannelSpec) {
-            uartPort->rxDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
-            uartPort->rxDMAChannel = dmaChannelSpec->channel;
-#elif defined(AT32F4)
-            uartPort->rxDMAMuxId = dmaChannelSpec->dmaMuxId;
-#endif
-        }
-    }
-#else /* USE_DMA_SPEC */
-    // Non USE_DMA_SPEC does not support configurable ON/OFF of UART DMA
-
-    if (hardware->rxDMAResource) {
-        uartPort->rxDMAResource = hardware->rxDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
-        uartPort->rxDMAChannel = hardware->rxDMAChannel;
-#elif defined(AT32F4)
-        uartPort->rxDMAMuxId = hardware->rxDMAMuxId;
-#endif
-    }
-
-    if (hardware->txDMAResource) {
-        uartPort->txDMAResource = hardware->txDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
-        uartPort->txDMAChannel = hardware->txDMAChannel;
-#elif defined(AT32F4)
-        uartPort->txDMAMuxId = hardware->txDMAMuxId;
-#endif
-    }
-#endif /* USE_DMA_SPEC */
-
-    if (uartPort->txDMAResource) {
-        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
-        if (dmaAllocate(identifier, ownerTxRx, ownerIndex)) {
-            dmaEnable(identifier);
-#if defined(AT32F4)
-            dmaMuxEnable(identifier, uartPort->txDMAMuxId);
-#endif
-            dmaSetHandler(identifier, uartDmaIrqHandler, hardware->txPriority, (uint32_t)uartdev);
-            uartPort->txDMAPeripheralBaseAddr = (uint32_t)&UART_REG_TXD(hardware->reg);
-        }
-    }
-
-    if (uartPort->rxDMAResource) {
-        const dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
-        if (dmaAllocate(identifier, ownerTxRx + 1, ownerIndex)) {
-            dmaEnable(identifier);
-#if defined(AT32F4)
-            dmaMuxEnable(identifier, uartPort->rxDMAMuxId);
-#endif
-            uartPort->rxDMAPeripheralBaseAddr = (uint32_t)&UART_REG_RXD(hardware->reg);
-        }
-    }
-}
-#endif
 
 #define UART_IRQHandler(type, number, dev)                      \
     FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
@@ -599,7 +489,7 @@ UART_IRQHandler(UART, 9, UARTDEV_9)  // UART9 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART10
-UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_LPUART1
