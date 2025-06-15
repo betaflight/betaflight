@@ -73,9 +73,10 @@ uint32_t systemUniqueId[3] = { 0 };
 static uint32_t usTicks = 0;
 static float usTicksInv = 0.0f;
 
-#define PICO_DWT_CTRL   ((uint32_t *)(PPB_BASE + M33_DWT_CTRL_OFFSET))
-#define PICO_DWT_CYCCNT ((uint32_t *)(PPB_BASE + M33_DWT_CYCCNT_OFFSET))
-#define PICO_DEMCR      ((uint32_t *)(PPB_BASE + M33_DEMCR_OFFSET))
+// These are defined in pico-sdk headers as volatile uint32_t types
+#define PICO_DWT_CTRL   m33_hw->dwt_ctrl
+#define PICO_DWT_CYCCNT m33_hw->dwt_cyccnt
+#define PICO_DEMCR      m33_hw->demcr
 
 void cycleCounterInit(void)
 {
@@ -84,11 +85,11 @@ void cycleCounterInit(void)
     usTicksInv = 1e6f / SystemCoreClock;
 
     // Global DWT enable
-    *PICO_DEMCR |= M33_DEMCR_TRCENA_BITS;
+    PICO_DEMCR |= M33_DEMCR_TRCENA_BITS;
 
     // Reset and enable cycle counter
-    *PICO_DWT_CYCCNT = 0;
-    *PICO_DWT_CTRL |= M33_DWT_CTRL_CYCCNTENA_BITS;
+    PICO_DWT_CYCCNT = 0;
+    PICO_DWT_CTRL |= M33_DWT_CTRL_CYCCNTENA_BITS;
 }
 
 void systemInit(void)
@@ -140,7 +141,7 @@ void delay(uint32_t ms)
 
 uint32_t getCycleCounter(void)
 {
-    return *PICO_DWT_CYCCNT;
+    return PICO_DWT_CYCCNT;
 }
 
 // Conversion routines copied from platform/common/stm32/system.c
