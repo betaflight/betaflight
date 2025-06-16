@@ -632,7 +632,7 @@ bool gyroInit(void)
     }
 
     bool eepromWriteRequired = false;
-    if (!gyrosToScan) {
+    if (gyrosToScan) {
         gyroConfigMutable()->gyrosDetected = gyroDetectedFlags;
         eepromWriteRequired = true;
     }
