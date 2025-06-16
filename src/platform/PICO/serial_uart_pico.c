@@ -38,6 +38,7 @@
 
 #include "hardware/uart.h"
 #include "hardware/irq.h"
+#include "platform/multicore.h"
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART0
@@ -168,12 +169,12 @@ void uartIrqHandler(uartPort_t *s)
     }
 }
 
-static void on_uart0(void)
+void on_uart0(void)
 {
     uartIrqHandler(&uartDevice[UARTDEV_0].port);
 }
 
-static void on_uart1(void)
+void on_uart1(void)
 {
     uartIrqHandler(&uartDevice[UARTDEV_1].port);
 }
@@ -230,14 +231,22 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     // TODO implement - use options here...
     uart_set_hw_flow(hardware->reg, false, false);
     uart_set_format(hardware->reg, 8, 1, UART_PARITY_NONE);
-    
+
 // TODO want fifos?
 ////    uart_set_fifo_enabled(hardware->reg, false);
     uart_set_fifo_enabled(hardware->reg, true);
 
+#ifdef USE_MULTICORE
+    // Set up the IRQ handler for this UART
+    if (hardware->irqn == UART0_IRQ) {
+        multicoreExecuteBlocking(MULTICORE_CMD_UART0_IRQ_ENABLE);
+    } else if (hardware->irqn == UART1_IRQ) {
+        multicoreExecuteBlocking(MULTICORE_CMD_UART1_IRQ_ENABLE);
+    }
+#else
     irq_set_exclusive_handler(hardware->irqn, hardware->irqn == UART0_IRQ ? on_uart0 : on_uart1);
     irq_set_enabled(hardware->irqn, true);
-
+#endif
     // Don't enable any uart irq yet, wait until a call to uartReconfigure...
     // (with current code in serial_uart.c, this prevents irq callback before rxCallback has been set)
     UNUSED(mode); // TODO review serial_uart.c uartOpen()
