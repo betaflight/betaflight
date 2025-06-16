@@ -685,7 +685,7 @@ void init(void)
     // Now reset the targetLooptime as it's possible for the validation to change the pid_process_denom
     gyroSetTargetLooptime(pidConfig()->pid_process_denom);
 
-#if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
+#if defined(USE_DSHOT_TELEMETRY) && defined(USE_ESC_SENSOR)
     // Initialize the motor frequency filter now that we have a target looptime
     initDshotTelemetry(gyro.targetLooptime);
 #endif

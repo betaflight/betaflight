@@ -118,6 +118,11 @@ int lockMainPID(void)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
 
+float erpmToRpm(uint32_t erpm)
+{
+    return (float) erpm;
+}
+
 static void sendMotorUpdate(void)
 {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));

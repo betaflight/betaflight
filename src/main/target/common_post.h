@@ -216,10 +216,6 @@
 #define USE_VTX_RTC6705
 #endif
 
-#ifndef USE_DSHOT
-#undef USE_ESC_SENSOR
-#endif
-
 #ifndef USE_ESC_SENSOR
 #undef USE_ESC_SENSOR_TELEMETRY
 #endif
