@@ -671,7 +671,7 @@ bool gyroInit(void)
         eepromWriteRequired = true;
     }
 
-    static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][GYRO_BUF_SIZE / 2][2];
+    static DMA_DATA uint8_t gyroBuf[GYRO_COUNT][2][GYRO_BUF_SIZE / 2];
 
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyroDetectedFlags & GYRO_MASK(i)) {  // Only initialize detected gyros
