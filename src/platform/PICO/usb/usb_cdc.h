@@ -29,7 +29,7 @@
 void cdc_usb_write_flush(void);
 int cdc_usb_write(const uint8_t *buf, unsigned length);
 int cdc_usb_read(uint8_t *buf, unsigned length);
-bool cdc_usb_init(void);
+void cdc_usb_init(void);
 bool cdc_usb_deinit(void);
 bool cdc_usb_configured(void);
 bool cdc_usb_connected(void);

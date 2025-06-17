@@ -31,24 +31,20 @@ void core1_main(void)
     // This function is called on the second core
     // Implement the multicore functionality here
     while (true) {
-        uint32_t value = multicore_fifo_pop_blocking();
-        multicoreCommand_e command = (multicoreCommand_e)(value & MULTICORE_CMD_MASK);
+
+        uint32_t command = multicore_fifo_pop_blocking();
 
         uint32_t result = 0;
 
         // Handle the command received from the first core
         switch (command) {
-        case MULTICORE_CMD_UART0_IRQ_ENABLE:
-            irq_set_exclusive_handler(UART0_IRQ, on_uart0);
-            irq_set_enabled(UART0_IRQ, true);
-            break;
-        case MULTICORE_CMD_UART1_IRQ_ENABLE:
-            irq_set_exclusive_handler(UART1_IRQ, on_uart1);
-            irq_set_enabled(UART1_IRQ, true);
-            break;
-        case MULTICORE_CMD_CDC_INIT:
-            // Initialize the USB CDC interface
-            cdc_usb_init();
+        case MULTICORE_CMD_FUNC:
+            core1_func_void_t funcVoid = (core1_func_void_t)multicore_fifo_pop_blocking();
+            funcVoid();
+            continue;
+        case MULTICORE_CMD_UINT:
+            core1_func_uint_t funcUint = (core1_func_uint_t)multicore_fifo_pop_blocking();
+            result = funcUint();
             break;
         case MULTICORE_CMD_STOP:
             // Handle stop command
@@ -56,15 +52,11 @@ void core1_main(void)
             return; // Exit the core1_main function
         default:
             // Handle unknown command
-            break;
+            continue; // Skip to the next iteration
         }
 
-        // Respond back to the first core
         // For blocking commands, we can return a value
-        if (value & MULTICORE_BLOCKING) {
-            // For blocking commands, we can return a value
-            multicore_fifo_push_blocking(result);
-        }
+        multicore_fifo_push_blocking(result);
 
         // Yield to allow other core to run
         tight_loop_contents();
@@ -76,18 +68,30 @@ void multicoreStart(void)
     // Start the multicore program
     multicore_launch_core1(core1_main);
 }
-
-uint32_t multicoreExecuteBlocking(multicoreCommand_e command)
-{
-    // Send a command to the second core but wait for a response
-    multicore_fifo_push_blocking(MULTICORE_BLOCKING | command);
-    return multicore_fifo_pop_blocking();
-}
-
-void multicoreExecute(multicoreCommand_e command)
-{
-    // Send a command to the second core
-    multicore_fifo_push_blocking(command);
-}
-
 #endif // USE_MULTICORE
+
+
+uint32_t multicoreExecuteBlocking(core1_func_uint_t command)
+{
+#ifdef USE_MULTICORE
+    // Send a command to the second core but wait for a response
+    multicore_fifo_push_blocking((uint32_t)command);
+    return multicore_fifo_pop_blocking();
+#else
+    // If multicore is not used, execute the command directly
+    command();
+    return 0; // Return 0 as a default response
+#endif // USE_MULTICORE
+}
+
+void multicoreExecute(core1_func_void_t command)
+{
+#ifdef USE_MULTICORE
+    // Send a command to the second core
+    multicore_fifo_push_blocking((uint32_t)command);
+#else
+    // If multicore is not used, execute the command directly
+    command();
+#endif // USE_MULTICORE
+}
+

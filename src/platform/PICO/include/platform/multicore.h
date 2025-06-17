@@ -23,21 +23,16 @@
 
 #include "pico/multicore.h"
 
-#define MULTICORE_CMD_MASK   0x00FFFFFF // Mask to extract command values
-#define MULTICORE_FLAGS_MASK 0xFF000000 // Mask to extract flags bits
-
-typedef enum {
+typedef enum multicoreCommand_e {
     MULTICORE_CMD_NONE = 0,
-    MULTICORE_CMD_UART0_IRQ_ENABLE,
-    MULTICORE_CMD_UART1_IRQ_ENABLE,
-    MULTICORE_CMD_CDC_INIT, // Initialize the USB CDC interface
-    // Add more commands as needed
-    MULTICORE_CMD_STOP,
+    MULTICORE_CMD_FUNC,
+    MULTICORE_CMD_UINT,
+    MULTICORE_CMD_STOP, // Command to stop the second core
 } multicoreCommand_e;
 
-typedef enum {
-    MULTICORE_BLOCKING = (1 << 31), // Use this bit to indicate blocking commands
-} multicoreFlags_e;
+// Define function types for clarity
+typedef void (*core1_func_void_t)(void);
+typedef uint32_t (*core1_func_uint_t)(void);
 
-void multicoreExecute(multicoreCommand_e command);
-uint32_t multicoreExecuteBlocking(multicoreCommand_e command);
+void multicoreExecute(core1_func_void_t command);
+uint32_t multicoreExecuteBlocking(core1_func_uint_t command);
