@@ -31,7 +31,7 @@
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"

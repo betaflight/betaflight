@@ -24,6 +24,9 @@
 #define DEBUG_MODE DEBUG_NONE
 #endif
 
+#ifndef I2C0_CLOCKSPEED
+#define I2C0_CLOCKSPEED 800
+#endif
 #ifndef I2C1_CLOCKSPEED
 #define I2C1_CLOCKSPEED 800
 #endif
@@ -40,11 +43,13 @@
 // Default values for internal pullup
 
 #if defined(USE_I2C_PULLUP)
+#define I2C0_PULLUP true
 #define I2C1_PULLUP true
 #define I2C2_PULLUP true
 #define I2C3_PULLUP true
 #define I2C4_PULLUP true
 #else
+#define I2C0_PULLUP false
 #define I2C1_PULLUP false
 #define I2C2_PULLUP false
 #define I2C3_PULLUP false

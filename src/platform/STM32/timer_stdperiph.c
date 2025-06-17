@@ -34,11 +34,12 @@
 #include "drivers/nvic.h"
 
 #include "drivers/io.h"
-#include "drivers/rcc.h"
 #include "drivers/system.h"
 
 #include "drivers/timer.h"
 #include "drivers/timer_impl.h"
+
+#include "platform/rcc.h"
 
 #define TIM_N(n) (1 << (n))
 

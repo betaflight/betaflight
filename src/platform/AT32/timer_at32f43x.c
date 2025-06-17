@@ -28,7 +28,7 @@
 #include "timer_def.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 #include "drivers/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {

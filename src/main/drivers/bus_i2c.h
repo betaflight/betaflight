@@ -23,7 +23,6 @@
 #include "platform.h"
 
 #include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
 
 #ifndef I2C_DEVICE
 #define I2C_DEVICE I2CINVALID
@@ -31,19 +30,17 @@
 
 typedef enum I2CDevice {
     I2CINVALID = -1,
-    I2CDEV_1   = 0,
+    I2CDEV_FIRST = 0,
+#if defined(USE_I2C_DEVICE_0)
+    I2CDEV_0   = I2CDEV_FIRST,
+    I2CDEV_1,
+#else
+    I2CDEV_1   = I2CDEV_FIRST,
+#endif
     I2CDEV_2,
     I2CDEV_3,
     I2CDEV_4,
 } I2CDevice;
-
-#if defined(STM32F4) || defined(APM32F4)
-#define I2CDEV_COUNT 3
-#elif defined(STM32F7)
-#define I2CDEV_COUNT 4
-#else
-#define I2CDEV_COUNT 4
-#endif
 
 // Macros to convert between CLI bus number and I2CDevice.
 #define I2C_CFG_TO_DEV(x)   ((x) - 1)
@@ -54,7 +51,7 @@ typedef enum I2CDevice {
 #define I2C_ADDR7_MAX       119
 
 struct i2cConfig_s;
-void i2cHardwareConfigure(const struct i2cConfig_s *i2cConfig);
+void i2cPinConfigure(const struct i2cConfig_s *i2cConfig);
 void i2cInit(I2CDevice device);
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);

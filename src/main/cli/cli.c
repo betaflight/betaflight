@@ -1628,7 +1628,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 
     cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
 
-    if ((ports[1].id == SERIAL_PORT_USB_VCP)) {
+    if (ports[1].id == SERIAL_PORT_USB_VCP) {
         do {
             if (port1ResetOnDtr) {
                 serialSetCtrlLineStateCb(ports[1].port, cbCtrlLine_reset, NULL);

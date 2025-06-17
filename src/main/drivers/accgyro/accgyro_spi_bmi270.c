@@ -278,6 +278,7 @@ extiCallbackRec_t bmi270IntCallbackRec;
  */
 // Called in ISR context
 // Gyro read has just completed
+#ifdef USE_DMA
 static busStatus_e bmi270Intcallback(uint32_t arg)
 {
     gyroDev_t *gyro = (gyroDev_t *)arg;
@@ -291,6 +292,7 @@ static busStatus_e bmi270Intcallback(uint32_t arg)
 
     return BUS_READY;
 }
+#endif
 
 static void bmi270ExtiHandler(extiCallbackRec_t *cb)
 {

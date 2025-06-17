@@ -33,3 +33,7 @@
 
 // no serial pins are defined for the simulator
 #define SERIAL_TRAIT_PIN_CONFIG 0
+
+#define I2CDEV_COUNT        0
+
+typedef void* ADC_TypeDef; // Dummy definition for ADC_TypeDef

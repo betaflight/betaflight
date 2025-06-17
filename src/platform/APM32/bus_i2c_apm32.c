@@ -31,7 +31,7 @@
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
-#include "drivers/rcc.h"
+#include "platform/rcc.h"
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
@@ -76,7 +76,7 @@ static volatile uint16_t i2cErrorCount = 0;
 
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
-    (void)device;
+    UNUSED(device);
     i2cErrorCount++;
     // reinit peripheral + clock out garbage
     //i2cInit(device);
@@ -103,13 +103,15 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
     HAL_StatusTypeDef status;
 
-    if (reg_ == 0xFF)
+    if (reg_ == 0xFF) {
         status = DAL_I2C_Master_Transmit(pHandle ,addr_ << 1, &data, 1, I2C_TIMEOUT_SYS_TICKS);
-    else
+    } else {
         status = DAL_I2C_Mem_Write(pHandle ,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT, &data, 1, I2C_TIMEOUT_SYS_TICKS);
+    }
 
-    if (status != DAL_OK)
+    if (status != DAL_OK) {
         return i2cHandleHardwareFailure(device);
+    }
 
     return true;
 }
@@ -135,8 +137,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
         return false;
     }
 
-    if (status != DAL_OK)
-    {
+    if (status != DAL_OK) {
         return i2cHandleHardwareFailure(device);
     }
 
@@ -158,10 +159,11 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 
     DAL_StatusTypeDef status;
 
-    if (reg_ == 0xFF)
+    if (reg_ == 0xFF) {
         status = DAL_I2C_Master_Receive(pHandle ,addr_ << 1, buf, len, I2C_TIMEOUT_SYS_TICKS);
-    else
+    } else {
         status = DAL_I2C_Mem_Read(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_TIMEOUT_SYS_TICKS);
+    }
 
     if (status != DAL_OK) {
         return i2cHandleHardwareFailure(device);
@@ -206,8 +208,7 @@ bool i2cBusy(I2CDevice device, bool *error)
         *error = pHandle->ErrorCode;
     }
 
-    if (pHandle->State == DAL_I2C_STATE_READY)
-    {
+    if (pHandle->State == DAL_I2C_STATE_READY) {
         if (__DAL_I2C_GET_FLAG(pHandle, I2C_FLAG_BUSY) == SET)
         {
             return true;
@@ -218,5 +219,4 @@ bool i2cBusy(I2CDevice device, bool *error)
 
     return true;
 }
-
 #endif
