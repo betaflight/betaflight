@@ -3512,7 +3512,7 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
     for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
         rcMapIdx = rxConfig->rcmap[i];
         if (rcMapIdx != RCMAP_UNMAPPED_INDEX) {
-            buf[rxConfig->rcmap[i]] = rcChannelLetters[i];
+            buf[rcMapIdx] = rcChannelLetters[i];
         }
         if (defaultRxConfig) {
             defaultRcMapIdx = defaultRxConfig->rcmap[i];
