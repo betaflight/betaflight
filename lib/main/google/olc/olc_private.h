@@ -38,9 +38,9 @@ static const size_t kSeparatorPosition = 8;
 static const size_t kPairPrecisionInverse = 8000;
 // Inverse (1/) of the precision of the final grid digits in degrees.
 // Latitude is kEncodingBase^3 * kGridRows^kGridCodeLength
-static const size_t kGridLatPrecisionInverse = 2.5e7;
+static const size_t kGridLatPrecisionInverse = 2.5e7f;
 // Longitude is kEncodingBase^3 * kGridColumns^kGridCodeLength
-static const size_t kGridLonPrecisionInverse = 8.192e6;
+static const size_t kGridLonPrecisionInverse = 8.192e6f;
 // Latitude bounds are -kLatMaxDegrees degrees and +kLatMaxDegrees degrees
 // which we transpose to 0 and 180 degrees.
 static const double kLatMaxDegrees = OLC_kLatMaxDegrees;

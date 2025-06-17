@@ -150,7 +150,7 @@ DEVICE_FLAGS += -DUSE_STDPERIPH_DRIVER
 endif
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 ifeq ($(TARGET_MCU),STM32F411xE)
 DEVICE_FLAGS    += -DSTM32F411xE -finline-limit=20
