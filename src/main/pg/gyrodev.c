@@ -35,7 +35,6 @@
 #include "drivers/sensor.h"
 #include "sensors/gyro.h"
 
-// done with backwards compatibility for older config.h files
 #ifdef SIMULATOR_BUILD
 #define GYRO_COUNT 1
 #endif

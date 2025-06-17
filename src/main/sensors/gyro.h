@@ -51,11 +51,6 @@
 
 #define GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ 200
 
-// the below 3 lines are purely to keep config.h files backwards compatible :(
-#define GYRO_CONFIG_USE_GYRO_1      0
-#define GYRO_CONFIG_USE_GYRO_2      1
-#define GYRO_CONFIG_USE_GYRO_BOTH   2
-
 #define GYRO_MASK(x) BIT(x)
 
 typedef union gyroLowpassFilter_u {

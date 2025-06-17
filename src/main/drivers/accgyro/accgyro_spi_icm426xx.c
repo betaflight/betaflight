@@ -190,14 +190,19 @@ static void setUserBank(const extDevice_t *dev, const uint8_t user_bank)
 #if defined(USE_GYRO_CLKIN)
 static pwmOutputPort_t pwmGyroClk = {0};
 
+static int findByExtDevice(const extDevice_t *dev) {
+   for (int i = 0; i < GYRO_COUNT; i++) {
+        if (&gyro.gyroSensor[i].gyroDev.dev == dev) {
+            return i;
+        }
+   }
+   return -1;
+}
+
+
 static bool initExternalClock(const extDevice_t *dev)
 {
-    int cfg = -1;
-    for (int i = 0; i < GYRO_COUNT; i++) {
-        if (&gyro.gyroSensor[i].gyroDev.dev == dev) {
-            cfg = i;
-        }
-    }
+    const int cfg = findByExtDevice(dev);
 
     if (cfg < 0) {
         // Could not find a valid sensor

@@ -632,7 +632,7 @@ bool gyroInit(void)
     }
 
     bool eepromWriteRequired = false;
-    if (gyrosToScan) {
+    if (gyrosToScan != gyroConfigMutable()->gyrosDetected) {
         gyroConfigMutable()->gyrosDetected = gyroDetectedFlags;
         eepromWriteRequired = true;
     }
@@ -652,7 +652,7 @@ bool gyroInit(void)
     float gyro_scale = 0.0f;
     bool firstFound = false;
     for (int i = 0; i < GYRO_COUNT; i++) {
-        if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
+        if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
             if (!firstFound) {
                 firstFound = true;
                 gyro_sample_rate = gyro.gyroSensor[i].gyroDev.gyroSampleRateHz;
