@@ -130,7 +130,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_lpf1_dyn_expo = 5;
     gyroConfig->simplified_gyro_filter = true;
     gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
-    gyroConfig->gyro_enabled_bitmask = 0;
+    gyroConfig->gyro_enabled_bitmask = DEFAULT_GYRO_ENABLED;
 }
 
 static bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
