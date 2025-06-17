@@ -21,8 +21,6 @@
 
 #include "platform.h"
 #include "platform/multicore.h"
-#include "usb/usb_cdc.h"
-#include "platform/uart.h"
 
 #ifdef USE_MULTICORE
 
