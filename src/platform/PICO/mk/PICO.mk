@@ -57,6 +57,7 @@ PICO_LIB_SRC = \
             rp2_common/hardware_flash/flash.c \
             rp2_common/pico_unique_id/unique_id.c \
             rp2_common/pico_platform_panic/panic.c \
+            rp2_common/pico_multicore/multicore.c \
             common/pico_sync/mutex.c \
             common/pico_time/time.c \
             common/pico_sync/lock_core.c \
@@ -406,7 +407,8 @@ MCU_COMMON_SRC = \
             PICO/serial_uart_pico.c \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
-            PICO/usb/usb_cdc.c
+            PICO/usb/usb_cdc.c \
+            PICO/multicore.c
 
 DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \

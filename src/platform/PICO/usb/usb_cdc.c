@@ -197,13 +197,13 @@ int cdc_usb_read(uint8_t *buf, unsigned length)
     return rc;
 }
 
-bool cdc_usb_init(void)
+void cdc_usb_init(void)
 {
     if (get_core_num() != alarm_pool_core_num(alarm_pool_get_default())) {
         // included an assertion here rather than just returning false, as this is likely
         // a coding bug, rather than anything else.
         assert(false);
-        return false;
+        return;
     }
 
     // initialize TinyUSB, as user hasn't explicitly linked it
@@ -229,7 +229,6 @@ bool cdc_usb_init(void)
     }
 
     configured = rc;
-    return rc;
 }
 
 bool cdc_usb_deinit(void)

@@ -30,6 +30,8 @@
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 
+#include "platform/multicore.h"
+
 #include "hardware/clocks.h"
 #include "hardware/timer.h"
 #include "hardware/watchdog.h"
@@ -104,6 +106,10 @@ void systemInit(void)
     pico_unique_board_id_t id;
     pico_get_unique_board_id(&id);
     memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
+
+#ifdef USE_MULTICORE
+    multicoreStart();
+#endif // USE_MULTICORE
 }
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
