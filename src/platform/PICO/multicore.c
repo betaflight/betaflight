@@ -33,8 +33,8 @@ typedef struct {
 } core_message_t;
 
 // Define the queue
-queue_t core0_queue;
-queue_t core1_queue;
+static queue_t core0_queue;
+static queue_t core1_queue;
 
 static void core1_main(void)
 {
