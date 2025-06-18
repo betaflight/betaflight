@@ -206,8 +206,6 @@ MCU_COMMON_SRC = \
             STM32/camera_control_stm32.c \
             drivers/adc.c \
             drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart_pinconfig.c \
             STM32/startup/system_stm32f4xx.c
 
 SPEED_OPTIMISED_SRC += \
@@ -217,8 +215,7 @@ SPEED_OPTIMISED_SRC += \
 SIZE_OPTIMISED_SRC += \
             STM32/serial_usb_vcp.c \
             drivers/inverter.c \
-            drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c
+            drivers/serial_escserial.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
