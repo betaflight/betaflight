@@ -23,7 +23,6 @@
 #include "platform/multicore.h"
 #include "pico/multicore.h"
 #include "pico/util/queue.h"
-#include "platform/debug.h"
 
 #ifdef USE_MULTICORE
 
