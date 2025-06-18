@@ -250,9 +250,9 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
     // Set up the IRQ handler for this UART
     if (hardware->irqn == UART0_IRQ) {
-        multicoreExecuteBlocking(uart0_irq_init);
+        multicoreExecuteBlocking(&uart0_irq_init);
     } else if (hardware->irqn == UART1_IRQ) {
-        multicoreExecuteBlocking(uart1_irq_init);
+        multicoreExecuteBlocking(&uart1_irq_init);
     }
 
     // Don't enable any uart irq yet, wait until a call to uartReconfigure...

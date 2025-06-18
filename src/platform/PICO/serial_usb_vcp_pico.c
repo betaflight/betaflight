@@ -190,7 +190,7 @@ serialPort_t *usbVcpOpen(void)
 {
     // initialise the USB CDC interface
     // potentially this could be done in a multicore task
-    //multicoreExecuteBlocking(cdc_usb_init);
+    //multicoreExecuteBlocking(&cdc_usb_init);
     cdc_usb_init();
 
     vcpPort_t *s = &vcpPort;

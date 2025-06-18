@@ -31,9 +31,9 @@ typedef enum multicoreCommand_e {
 } multicoreCommand_e;
 
 // Define function types for clarity
-typedef void (*core1_func_t)(void);
+typedef void core1_func_t(void);
 
 void multicoreStart(void);
 void multicoreStop(void);
-void multicoreExecute(core1_func_t command);
-void multicoreExecuteBlocking(core1_func_t command);
+void multicoreExecute(core1_func_t *func);
+void multicoreExecuteBlocking(core1_func_t *func);

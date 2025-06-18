@@ -29,7 +29,7 @@
 // Define a structure for the message we'll pass through the queue
 typedef struct {
     multicoreCommand_e command;
-    core1_func_t func;
+    core1_func_t *func;
 } core_message_t;
 
 // Define the queue
@@ -38,38 +38,33 @@ queue_t core1_queue;
 
 static void core1_main(void)
 {
-    // This function is called on the second core
-    // Implement the multicore functionality here
+    // This loop is run on the second core
     while (true) {
 
         core_message_t msg;
-        // Block until a message is available in the queue
         queue_remove_blocking(&core1_queue, &msg);
 
-        // Handle the command received from the first core
         switch (msg.command) {
         case MULTICORE_CMD_FUNC:
-            if (msg.func != NULL) {
-                // Call the function passed from core0
+            if (msg.func) {
                 msg.func();
             }
             break;
         case MULTICORE_CMD_FUNC_BLOCKING:
-            if (msg.func != NULL) {
-                // Call the function passed from core0 and wait for completion
+            if (msg.func) {
                 msg.func();
-                // Send the result back to core0
+
+                // Send the result back to core0 (it will be blocking until this is done)
                 bool result = true;
                 queue_add_blocking(&core0_queue, &result);
             }
             break;
         case MULTICORE_CMD_STOP:
-            // Handle stop command
             multicore_reset_core1();
             return; // Exit the core1_main function
         default:
-            // Handle unknown command
-            break; // Skip to the next iteration
+            // unknown command or none
+            break;
         }
 
         // Yield to allow other core to run
@@ -79,8 +74,10 @@ static void core1_main(void)
 
 void multicoreStart(void)
 {
-    queue_init(&core1_queue, sizeof(core_message_t), 4); // Initialize the queue with a size of 4
-    queue_init(&core0_queue, sizeof(bool), 1); // Initialize the queue with a size of 4
+     // Initialize the queue with a size of 4 (to be determined based on expected load)
+    queue_init(&core1_queue, sizeof(core_message_t), 4);
+    // Initialize the queue with a size of 1 (only needed for blocking results)
+    queue_init(&core0_queue, sizeof(bool), 1);
 
     // Start core 1
     multicore_launch_core1(core1_main);
@@ -89,7 +86,7 @@ void multicoreStart(void)
 void multicoreStop(void)
 {
    core_message_t msg;
-    msg.command = MULTICORE_CMD_STOP; // Set the command type
+    msg.command = MULTICORE_CMD_STOP;
     msg.func = NULL;
 
     queue_add_blocking(&core1_queue, &msg);
@@ -97,37 +94,38 @@ void multicoreStop(void)
 #endif // USE_MULTICORE
 
 
-void multicoreExecuteBlocking(core1_func_t command)
+void multicoreExecuteBlocking(core1_func_t *func)
 {
 #ifdef USE_MULTICORE
     core_message_t msg;
-    msg.command = MULTICORE_CMD_FUNC_BLOCKING; // Set the command type
-    msg.func = command; // Assign the function to run
+    msg.command = MULTICORE_CMD_FUNC_BLOCKING;
+    msg.func = func;
 
     bool result;
 
     queue_add_blocking(&core1_queue, &msg);
-    queue_remove_blocking(&core0_queue, &result); // Wait for the command to complete
+    // Wait for the command to complete
+    queue_remove_blocking(&core0_queue, &result);
 #else
     // If multicore is not used, execute the command directly
-    if (command) {
-        command();
+    if (func) {
+        func();
     }
 #endif // USE_MULTICORE
 }
 
-void multicoreExecute(core1_func_t command)
+void multicoreExecute(core1_func_t *func)
 {
 #ifdef USE_MULTICORE
     core_message_t msg;
-    msg.command = MULTICORE_CMD_FUNC; // Set the command type
-    msg.func = command; // Assign the function to run
+    msg.command = MULTICORE_CMD_FUNC;
+    msg.func = func;
 
     queue_add_blocking(&core1_queue, &msg);
 #else
     // If multicore is not used, execute the command directly
-    if (command) {
-        command();
+    if (func) {
+        func();
     }
 #endif // USE_MULTICORE
 }
