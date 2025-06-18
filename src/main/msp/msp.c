@@ -26,7 +26,6 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include "common/time.h"
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
@@ -1082,21 +1081,25 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 }
 
 #ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+
+#define DISARM_DELAY_MULTIPLIER_US 100000
+
 static void mspDisplayportDelayDisarm(mspDescriptor_t srcDesc, boxBitmask_t *flightModeFlags)
 {
-    static mspDescriptor_t displayPortMspDescriptor = -1;
+    static mspDescriptor_t displayPortMspDescriptor;
     static bool displayPortMspArmState = false;
+    static bool descriptorInitialized = false;
 
-    if (displayPortMspDescriptor == -1) {
-        mspDescriptor_t tmp = getMspSerialPortDescriptor(displayPortMspGetSerial());
-        displayPortMspDescriptor = (tmp != -1) ? tmp : -2;
+    if (!descriptorInitialized) {
+        descriptorInitialized = true;
+        displayPortMspDescriptor = getMspSerialPortDescriptor(displayPortMspGetSerial());
     }
 
     if (displayPortMspDescriptor == srcDesc) {
         bool currentState = bitArrayGet(flightModeFlags, BOXARM);
         if (displayPortMspArmState) {
             if (!currentState) {
-                if (cmpTimeUs(micros(), getLastDisarmTimeUs()) < 100000 * displayPortProfileMsp()->useDisarmDelay) {
+                if (cmpTimeUs(micros(), getLastDisarmTimeUs()) < DISARM_DELAY_MULTIPLIER_US * displayPortProfileMsp()->useDisarmDelay) {
                     bitArraySet(flightModeFlags, BOXARM);
                 } else {
                     displayPortMspArmState = false;
