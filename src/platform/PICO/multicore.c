@@ -74,8 +74,9 @@ static void core1_main(void)
 
 void multicoreStart(void)
 {
-     // Initialize the queue with a size of 4 (to be determined based on expected load)
+    // Initialize the queue with a size of 4 (to be determined based on expected load)
     queue_init(&core1_queue, sizeof(core_message_t), 4);
+
     // Initialize the queue with a size of 1 (only needed for blocking results)
     queue_init(&core0_queue, sizeof(bool), 1);
 
@@ -85,7 +86,7 @@ void multicoreStart(void)
 
 void multicoreStop(void)
 {
-   core_message_t msg;
+    core_message_t msg;
     msg.command = MULTICORE_CMD_STOP;
     msg.func = NULL;
 
