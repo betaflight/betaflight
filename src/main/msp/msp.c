@@ -26,6 +26,7 @@
 #include <limits.h>
 #include <ctype.h>
 
+#include "common/time.h"
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
@@ -157,6 +158,10 @@
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
+#endif
+
+#ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+#include "io/displayport_msp.h"
 #endif
 
 #include "msp.h"
@@ -1076,6 +1081,34 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
+#ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+static void mspDisplayportDelayDisarm(mspDescriptor_t srcDesc, boxBitmask_t *flightModeFlags)
+{
+    static mspDescriptor_t displayPortMspDescriptor = -1;
+    static bool displayPortMspArmState = false;
+
+    if (displayPortMspDescriptor == -1) {
+        mspDescriptor_t tmp = getMspSerialPortDescriptor(displayPortMspGetSerial());
+        displayPortMspDescriptor = (tmp != -1) ? tmp : -2;
+    }
+
+    if (displayPortMspDescriptor == srcDesc) {
+        bool currentState = bitArrayGet(flightModeFlags, BOXARM);
+        if (displayPortMspArmState) {
+            if (!currentState) {
+                if (cmpTimeUs(micros(), getLastDisarmTimeUs()) < 100000 * displayPortProfileMsp()->useDisarmDelay) {
+                    bitArraySet(flightModeFlags, BOXARM);
+                } else {
+                    displayPortMspArmState = false;
+                }
+            }
+        } else {
+            displayPortMspArmState = currentState;
+        }
+    }
+}
+#endif
+
 static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
@@ -1089,6 +1122,9 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
     case MSP_STATUS: {
         boxBitmask_t flightModeFlags;
         const int flagBits = packFlightModeFlags(&flightModeFlags);
+#ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+        mspDisplayportDelayDisarm(srcDesc, &flightModeFlags);
+#endif
 
         sbufWriteU16(dst, getTaskDeltaTimeUs(TASK_PID));
 #ifdef USE_I2C
