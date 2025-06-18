@@ -21,40 +21,57 @@
 
 #include "platform.h"
 #include "platform/multicore.h"
+#include "pico/multicore.h"
+#include "pico/util/queue.h"
+#include "platform/debug.h"
 
 #ifdef USE_MULTICORE
 
-void core1_main(void)
+// Define a structure for the message we'll pass through the queue
+typedef struct {
+    multicoreCommand_e command;
+    core1_func_t func;
+} core_message_t;
+
+// Define the queue
+queue_t core0_queue;
+queue_t core1_queue;
+
+static void core1_main(void)
 {
     // This function is called on the second core
     // Implement the multicore functionality here
     while (true) {
 
-        uint32_t command = multicore_fifo_pop_blocking();
-
-        uint32_t result = 0;
+        core_message_t msg;
+        // Block until a message is available in the queue
+        queue_remove_blocking(&core1_queue, &msg);
 
         // Handle the command received from the first core
-        switch (command) {
+        switch (msg.command) {
         case MULTICORE_CMD_FUNC:
-            core1_func_void_t funcVoid = (core1_func_void_t)multicore_fifo_pop_blocking();
-            funcVoid();
-            continue;
-        case MULTICORE_CMD_UINT:
-            core1_func_uint_t funcUint = (core1_func_uint_t)multicore_fifo_pop_blocking();
-            result = funcUint();
+            if (msg.func != NULL) {
+                // Call the function passed from core0
+                msg.func();
+            }
+            break;
+        case MULTICORE_CMD_FUNC_BLOCKING:
+            if (msg.func != NULL) {
+                // Call the function passed from core0 and wait for completion
+                msg.func();
+                // Send the result back to core0
+                bool result = true;
+                queue_add_blocking(&core0_queue, &result);
+            }
             break;
         case MULTICORE_CMD_STOP:
             // Handle stop command
             multicore_reset_core1();
-            return; // Exit the core1_main function
+            break; // Exit the core1_main function
         default:
             // Handle unknown command
-            continue; // Skip to the next iteration
+            break; // Skip to the next iteration
         }
-
-        // For blocking commands, we can return a value
-        multicore_fifo_push_blocking(result);
 
         // Yield to allow other core to run
         tight_loop_contents();
@@ -63,30 +80,49 @@ void core1_main(void)
 
 void multicoreStart(void)
 {
-    // Start the multicore program
+    queue_init(&core1_queue, sizeof(core_message_t), 4); // Initialize the queue with a size of 4
+    queue_init(&core0_queue, sizeof(bool), 1); // Initialize the queue with a size of 4
+
+    // Start core 1
     multicore_launch_core1(core1_main);
 }
+
+void multicoreStop(void)
+{
+   core_message_t msg;
+    msg.command = MULTICORE_CMD_STOP; // Set the command type
+    msg.func = NULL;
+
+    queue_add_blocking(&core1_queue, &msg);
+ }
 #endif // USE_MULTICORE
 
 
-uint32_t multicoreExecuteBlocking(core1_func_uint_t command)
+void multicoreExecuteBlocking(core1_func_t command)
 {
 #ifdef USE_MULTICORE
-    // Send a command to the second core but wait for a response
-    multicore_fifo_push_blocking((uint32_t)command);
-    return multicore_fifo_pop_blocking();
+    core_message_t msg;
+    msg.command = MULTICORE_CMD_FUNC_BLOCKING; // Set the command type
+    msg.func = command; // Assign the function to run
+
+    bool result;
+
+    queue_add_blocking(&core1_queue, &msg);
+    queue_remove_blocking(&core0_queue, &result); // Wait for the command to complete
 #else
     // If multicore is not used, execute the command directly
     command();
-    return 0; // Return 0 as a default response
 #endif // USE_MULTICORE
 }
 
-void multicoreExecute(core1_func_void_t command)
+void multicoreExecute(core1_func_t command)
 {
 #ifdef USE_MULTICORE
-    // Send a command to the second core
-    multicore_fifo_push_blocking((uint32_t)command);
+    core_message_t msg;
+    msg.command = MULTICORE_CMD_FUNC; // Set the command type
+    msg.func = command; // Assign the function to run
+
+    queue_add_blocking(&core1_queue, &msg);
 #else
     // If multicore is not used, execute the command directly
     command();

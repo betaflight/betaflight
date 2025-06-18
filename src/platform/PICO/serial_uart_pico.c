@@ -179,18 +179,16 @@ static void on_uart1(void)
     uartIrqHandler(&uartDevice[UARTDEV_1].port);
 }
 
-static uint32_t uart0_irq_init(void)
+static void uart0_irq_init(void)
 {
     irq_set_exclusive_handler(UART0_IRQ, on_uart0);
     irq_set_enabled(UART0_IRQ, true);
-    return 1;
 }
 
-static uint32_t uart1_irq_init(void)
+static void uart1_irq_init(void)
 {
     irq_set_exclusive_handler(UART1_IRQ, on_uart1);
     irq_set_enabled(UART1_IRQ, true);
-    return 1;
 }
 
 uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode, portOptions_e options)

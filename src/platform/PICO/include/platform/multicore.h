@@ -26,13 +26,14 @@
 typedef enum multicoreCommand_e {
     MULTICORE_CMD_NONE = 0,
     MULTICORE_CMD_FUNC,
-    MULTICORE_CMD_UINT,
+    MULTICORE_CMD_FUNC_BLOCKING, // Command to execute a function on the second core and wait for completion
     MULTICORE_CMD_STOP, // Command to stop the second core
 } multicoreCommand_e;
 
 // Define function types for clarity
-typedef void (*core1_func_void_t)(void);
-typedef uint32_t (*core1_func_uint_t)(void);
+typedef void (*core1_func_t)(void);
 
-void multicoreExecute(core1_func_void_t command);
-uint32_t multicoreExecuteBlocking(core1_func_uint_t command);
+void multicoreStart(void);
+void multicoreStop(void);
+void multicoreExecute(core1_func_t command);
+void multicoreExecuteBlocking(core1_func_t command);

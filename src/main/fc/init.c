@@ -88,7 +88,6 @@
 #include "fc/dispatch.h"
 #include "fc/gps_lap_timer.h"
 #include "fc/init.h"
-#include "fc/multicore.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "fc/stats.h"
@@ -514,10 +513,6 @@ void init(void)
     timerInit();  // timer must be initialized before any channel is allocated
 #endif
 
-#ifdef USE_MULTICORE
-    multicoreStart();
-#endif // USE_MULTICORE
-
 #ifdef BUS_SWITCH_PIN
     busSwitchInit();
 #endif
@@ -745,6 +740,7 @@ void init(void)
         delay(50);
 #endif
     }
+
     LED0_OFF;
     LED1_OFF;
 
