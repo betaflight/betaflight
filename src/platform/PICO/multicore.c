@@ -66,7 +66,7 @@ static void core1_main(void)
         case MULTICORE_CMD_STOP:
             // Handle stop command
             multicore_reset_core1();
-            break; // Exit the core1_main function
+            return; // Exit the core1_main function
         default:
             // Handle unknown command
             break; // Skip to the next iteration
@@ -110,7 +110,9 @@ void multicoreExecuteBlocking(core1_func_t command)
     queue_remove_blocking(&core0_queue, &result); // Wait for the command to complete
 #else
     // If multicore is not used, execute the command directly
-    command();
+    if (command) {
+        command();
+    }
 #endif // USE_MULTICORE
 }
 
@@ -124,7 +126,9 @@ void multicoreExecute(core1_func_t command)
     queue_add_blocking(&core1_queue, &msg);
 #else
     // If multicore is not used, execute the command directly
-    command();
+    if (command) {
+        command();
+    }
 #endif // USE_MULTICORE
 }
 
