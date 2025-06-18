@@ -67,7 +67,6 @@ static void core1_main(void)
             break;
         }
 
-        // Yield to allow other core to run
         tight_loop_contents();
     }
 }
