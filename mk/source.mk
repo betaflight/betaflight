@@ -464,7 +464,6 @@ SPEED_OPTIMISED_SRC += \
             rx/sumd.c \
             rx/xbus.c \
             rx/fport.c \
-            rx/frsky_crc.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
