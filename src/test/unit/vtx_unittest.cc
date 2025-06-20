@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*test change from git*/
+
 #include <stdint.h>
 
 extern "C" {
