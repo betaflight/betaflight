@@ -372,7 +372,6 @@
 
 #define USE_AIRMODE_LPF
 #define USE_GYRO_DLPF_EXPERIMENTAL
-#define USE_MULTI_GYRO
 #define USE_SENSOR_NAMES
 #define USE_UNCOMMON_MIXERS
 #define USE_SIGNATURE
@@ -493,4 +492,67 @@
 
 #if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
 #error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#endif
+
+// backwards compatibility for older config.h targets
+#ifndef GYRO_CONFIG_USE_GYRO_1
+#define GYRO_CONFIG_USE_GYRO_1 0
+#endif
+
+#ifndef GYRO_CONFIG_USE_GYRO_2
+#define GYRO_CONFIG_USE_GYRO_2 1
+#endif
+
+#ifndef GYRO_CONFIG_USE_GYRO_BOTH
+#define GYRO_CONFIG_USE_GYRO_BOTH 2
+#endif
+
+#ifdef DEFAULT_GYRO_TO_USE
+  #ifndef DEFAULT_GYRO_ENABLED
+    #if DEFAULT_GYRO_TO_USE == GYRO_CONFIG_USE_GYRO_1
+      #define DEFAULT_GYRO_ENABLED GYRO_MASK(0)
+    #elif DEFAULT_GYRO_TO_USE == GYRO_CONFIG_USE_GYRO_2
+      #define DEFAULT_GYRO_ENABLED GYRO_MASK(1)
+    #elif DEFAULT_GYRO_TO_USE == GYRO_CONFIG_USE_GYRO_BOTH
+      #define DEFAULT_GYRO_ENABLED (GYRO_MASK(0) | GYRO_MASK(1))
+    #endif
+  #endif
+#elif !defined(DEFAULT_GYRO_ENABLED)
+  // assume one gyro
+  #define DEFAULT_GYRO_ENABLED GYRO_MASK(0)
+#endif
+
+#ifndef GYRO_COUNT
+  #ifdef GYRO_1_CS_PIN
+    #define GYRO_1_DEFINED 1
+  #else
+    #define GYRO_1_DEFINED 0
+  #endif
+
+  #ifdef GYRO_2_CS_PIN
+    #define GYRO_2_DEFINED 1
+  #else
+    #define GYRO_2_DEFINED 0
+  #endif
+
+  #ifdef GYRO_3_CS_PIN
+    #define GYRO_3_DEFINED 1
+  #else
+    #define GYRO_3_DEFINED 0
+  #endif
+
+  #ifdef GYRO_4_CS_PIN
+    #define GYRO_4_DEFINED 1
+  #else
+    #define GYRO_4_DEFINED 0
+  #endif
+
+  #define GYRO_COUNT_RAW (GYRO_1_DEFINED + GYRO_2_DEFINED + GYRO_3_DEFINED + GYRO_4_DEFINED)
+
+  // Ensure GYRO_COUNT is at least 1
+  #if GYRO_COUNT_RAW > 0
+    #define GYRO_COUNT GYRO_COUNT_RAW
+  #else
+    #define GYRO_COUNT 1
+  #endif
 #endif

@@ -703,3 +703,4 @@ extern struct linker_symbol __config_end;
 #define USE_PIN_PULL_UP_DOWN
 #endif
 #endif // USE_PINIO
+
