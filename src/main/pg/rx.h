@@ -51,7 +51,6 @@ typedef struct rxConfig_s {
     int8_t rssi_offset;                        // offset applied to the RSSI value before it is returned
     uint8_t rc_smoothing_mode;                 // Whether filter based rc smoothing is on or off
     uint8_t rc_smoothing_setpoint_cutoff;      // Filter cutoff frequency for the setpoint filter (0 = auto)
-    uint8_t rc_smoothing_feedforward_cutoff;   // Filter cutoff frequency for the feedforward filter (0 = auto)
     uint8_t rc_smoothing_throttle_cutoff;      // Filter cutoff frequency for the setpoint filter (0 = auto)
     uint8_t rc_smoothing_debug_axis;           // Axis to log as debug values when debug_mode = RC_SMOOTHING
     uint8_t rc_smoothing_auto_factor_rpy;      // Used to adjust the "smoothness" determined by the auto cutoff calculations
@@ -64,6 +63,7 @@ typedef struct rxConfig_s {
     uint32_t msp_override_channels_mask;       // Channels to override when the MSP override mode is enabled
     uint8_t msp_override_failsafe;             // if false then extra RC link is always required in msp_override mode, true - allows control via msp_override without extra RC link (autonomous use case)
     uint8_t crsf_use_negotiated_baud;          // Use negotiated baud rate for CRSF V3
+    uint8_t rc_smoothing_use_tau;              // if set to 1 it will use the tau values for filtering
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
