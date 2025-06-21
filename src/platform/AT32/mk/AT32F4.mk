@@ -78,7 +78,7 @@ else
 LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xg.ld
 endif
 
-ARCH_FLAGS      = -std=c99  -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
+ARCH_FLAGS      = -std=c99 -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
 DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 -DUSE_OTG_HOST_MODE
 
 MCU_COMMON_SRC = \
@@ -126,9 +126,9 @@ MCU_COMMON_SRC = \
             common/stm32/bus_spi_pinconfig.c \
             common/stm32/bus_spi_hw.c \
             common/stm32/serial_uart_hw.c \
+            common/stm32/serial_uart_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
-            drivers/serial_uart_pinconfig.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
@@ -147,6 +147,6 @@ SIZE_OPTIMISED_SRC += \
             drivers/bus_spi_config.c \
             common/stm32/bus_i2c_pinconfig.c \
             common/stm32/bus_spi_pinconfig.c \
+            common/stm32/serial_uart_pinconfig.c \
             drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart_pinconfig.c
+            drivers/serial_pinconfig.c

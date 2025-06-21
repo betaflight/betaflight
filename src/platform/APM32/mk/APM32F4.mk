@@ -127,7 +127,7 @@ INCLUDE_DIRS += \
         $(SRC_DIR)/msc
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 DEVICE_FLAGS    = -DUSE_DAL_DRIVER -DHSE_VALUE=$(HSE_VALUE) -DAPM32
 
@@ -184,9 +184,9 @@ MCU_COMMON_SRC = \
         common/stm32/bus_spi_hw.c \
         common/stm32/bus_spi_pinconfig.c \
         common/stm32/serial_uart_hw.c \
+        common/stm32/serial_uart_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \
-        drivers/serial_uart_pinconfig.c \
         APM32/system_apm32f4xx.c
 
 VCP_SRC = \
@@ -220,9 +220,9 @@ SIZE_OPTIMISED_SRC += \
         drivers/bus_spi_config.c \
         common/stm32/bus_i2c_pinconfig.c \
         common/stm32/bus_spi_pinconfig.c \
+        common/stm32/serial_uart_pinconfig.c \
         drivers/serial_escserial.c \
-        drivers/serial_pinconfig.c \
-        drivers/serial_uart_pinconfig.c
+        drivers/serial_pinconfig.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4 -DUSE_FULL_DDL_DRIVER

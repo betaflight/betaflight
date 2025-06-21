@@ -799,7 +799,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
         char *symbol[2] = {"U", "D"}; // character buffer
         int direction;
 
-        if(attitude.values.pitch>0.0){ //nose down
+        if (attitude.values.pitch > 0.0f){ //nose down
             thetaB = -earthUpinBodyFrame[2]; // get pitch w/re to nadir (use small angle approx for sine)
             psiB = -earthUpinBodyFrame[1]; // calculate the yaw w/re to nadir (use small angle approx for sine)
             direction = DOWN;
@@ -1589,7 +1589,7 @@ static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
+    if (mAhDrawn <= 0.1f * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
         tfp_sprintf(element->buff, "--:--");
     } else if (mAhDrawn > osdConfig()->cap_alarm) {
         tfp_sprintf(element->buff, "00:00");

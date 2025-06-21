@@ -97,7 +97,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
@@ -170,8 +170,6 @@ MCU_COMMON_SRC = \
             STM32/camera_control_stm32.c \
             drivers/adc.c \
             drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart_pinconfig.c \
             STM32/startup/system_stm32f7xx.c
 
 MSC_SRC = \
@@ -195,9 +193,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \
             STM32/serial_usb_vcp.c \
-            drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart_pinconfig.c
+            drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7

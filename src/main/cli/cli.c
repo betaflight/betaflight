@@ -5307,7 +5307,7 @@ static bool strToPin(char *ptr, ioTag_t *tag)
 
             char *end;
             const long pin = strtol(ptr, &end, 10);
-            if (end != ptr && pin >= 0 && pin < 16) {
+            if (end != ptr && pin >= 0 && pin < DEFIO_PORT_PINS) {
                 *tag = DEFIO_TAG_MAKE(port, pin);
 
                 return true;

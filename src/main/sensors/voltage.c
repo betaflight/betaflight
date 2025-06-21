@@ -190,6 +190,7 @@ void voltageMeterADCRefresh(void)
 #endif
 #else
         UNUSED(voltageAdcToVoltage);
+        UNUSED(voltageMeterAdcChannelMap);
 
         state->voltageDisplayFiltered = 0;
         state->voltageUnfiltered = 0;
