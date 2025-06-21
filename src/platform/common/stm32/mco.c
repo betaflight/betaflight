@@ -69,15 +69,19 @@ void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
 
     IO_t io;
 
-#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
     // Only configure MCO2 with PLLI2SCLK as source for now.
     // Other MCO1 and other sources can easily be added.
 
     switch(device) {
     case MCODEV_1: // MCO1 on PA8
-        return; // Not supported (yet)
-
+#if defined(STM32G4)
+        io = IOGetByTag(DEFIO_TAG_E(PA8));
+        IOInit(io, OWNER_MCO, 1);
+        HAL_RCC_MCOConfig(RCC_MCO, mcoSources[config->source], mcoDividers[config->divider]);
+#endif
+        break;
     case MCODEV_2: // MCO2 on PC9
+#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
         io = IOGetByTag(DEFIO_TAG_E(PC9));
         IOInit(io, OWNER_MCO, 2);
 #if defined(STM32F7)
@@ -91,15 +95,19 @@ void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
         RCC_MCO2Config(RCC_MCO2Source_PLLI2SCLK, RCC_MCO2Div_4);
         IOConfigGPIOAF(io, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL), GPIO_AF_MCO);
 #endif
+#endif
         break;
     }
+}
+
+void mcoInit(void)
+{
+#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
+    // F4 and F7 support MCO on PA8 and MCO2 on PC9, but only MCO2 is supported for now
+    mcoConfigure(MCODEV_2, mcoConfig(MCODEV_2));
 #elif defined(STM32G4)
     // G4 only supports one MCO on PA8
-    UNUSED(device);
-
-    io = IOGetByTag(DEFIO_TAG_E(PA8));
-    IOInit(io, OWNER_MCO, 1);
-    HAL_RCC_MCOConfig(RCC_MCO, mcoSources[config->source], mcoDividers[config->divider]);
+    mcoConfigure(MCODEV_1, mcoConfig(MCODEV_1));
 #else
 #error Unsupported MCU
 #endif

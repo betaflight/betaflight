@@ -32,4 +32,5 @@ typedef enum {
 #define MCO_DIVIDER_COUNT  5
 #endif
 
+void mcoInit(void);
 void mcoConfigure(MCODevice_e device, const mcoConfig_t *config);
