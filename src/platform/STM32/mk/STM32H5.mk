@@ -169,8 +169,6 @@ MCU_COMMON_SRC = \
             STM32/system_stm32h5xx.c \
             drivers/adc.c \
             drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart_pinconfig.c \
             STM32/startup/system_stm32h5xx.c
 
 #            memprot_hal.c \
@@ -199,9 +197,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \
             STM32/serial_usb_vcp.c \
-            drivers/serial_escserial.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart_pinconfig.c
+            drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
