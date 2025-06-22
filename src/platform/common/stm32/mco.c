@@ -97,6 +97,9 @@ static void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
 #endif
 #endif
         break;
+    default:
+        // No MCO configured
+        return;
     }
 }
 
