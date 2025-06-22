@@ -195,19 +195,19 @@ Configure how the SPI serialises and deserialises data on the wire
 
 Parameters
 
-spi	
+spi
 SPI instance specifier, either spi0 or spi1
 
-data_bits	
+data_bits
 Number of data bits per transfer. Valid values 4..16.
 
-cpol	
+cpol
 SSPCLKOUT polarity, applicable to Motorola SPI frame format only.
 
-cpha	
+cpha
 SSPCLKOUT phase, applicable to Motorola SPI frame format only
 
-order	
+order
 Must be SPI_MSB_FIRST, no other values supported on the PL022
 
 
