@@ -458,3 +458,8 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32F4) || defined(STM32G4)
 #define PLATFORM_TRAIT_CONFIG_HSE 1
 #endif
+
+#if defined(STM32G4)
+#define MCO_SOURCE_COUNT   8
+#define MCO_DIVIDER_COUNT  5
+#endif

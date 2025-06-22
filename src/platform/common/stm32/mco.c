@@ -61,7 +61,7 @@ const uint32_t mcoDividers[MCO_DIVIDER_COUNT] = {
 };
 #endif
 
-void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
+static void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
 {
     if (!config->enabled) {
         return;
