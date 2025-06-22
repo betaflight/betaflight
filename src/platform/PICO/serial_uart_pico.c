@@ -337,4 +337,10 @@ void uartReconfigure(uartPort_t *s)
 #endif
 }
 
+void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
+{
+    UNUSED(pSerialPinConfig);
+
+    // Nothing to do currently for PICO
+}
 #endif /* USE_UART */
