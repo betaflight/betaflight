@@ -463,3 +463,11 @@ extern uint8_t _dmaram_end__;
 #define MCO_SOURCE_COUNT   8
 #define MCO_DIVIDER_COUNT  5
 #endif
+
+#if defined(STM32H7) || defined(STM32G4)
+#define DMA_CHANREQ_STRING "Request"
+#endif
+
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#define DMA_STCH_STRING    "Stream"
+#endif
