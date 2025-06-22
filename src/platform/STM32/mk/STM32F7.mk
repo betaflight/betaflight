@@ -106,7 +106,7 @@ ifeq ($(TARGET_MCU),STM32F765xx)
 DEVICE_FLAGS   += -DSTM32F765xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f765.ld
 STARTUP_SRC     = STM32/startup/startup_stm32f765xx.s
-MCU_FLASH_SIZE	:= 2048
+MCU_FLASH_SIZE  := 2048
 else ifeq ($(TARGET_MCU),STM32F745xx)
 DEVICE_FLAGS   += -DSTM32F745xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
