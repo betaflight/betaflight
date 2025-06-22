@@ -196,7 +196,6 @@ SPEED_OPTIMISED_SRC += \
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_hal_init.c \
-            STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
