@@ -150,6 +150,7 @@ MCU_COMMON_SRC = \
         common/stm32/system.c \
         common/stm32/io_impl.c \
         common/stm32/config_flash.c \
+        common/stm32/mco.c \
         APM32/startup/system_apm32f4xx.c \
         drivers/inverter.c \
         drivers/dshot_bitbang_decode.c \

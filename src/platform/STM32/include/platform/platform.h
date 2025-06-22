@@ -130,6 +130,7 @@
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
 #define USE_MCO
+#define USE_MCO_DEVICE2
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
@@ -152,6 +153,7 @@
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
 #define USE_MCO
+#define USE_MCO_DEVICE2
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
@@ -188,6 +190,7 @@
 #define USE_USB_MSC
 #define USE_USB_CDC_HID
 #define USE_MCO
+#define USE_MCO_DEVICE1
 #define USE_DMA_SPEC
 #define USE_LATE_TASK_STATISTICS
 #endif
@@ -447,4 +450,16 @@ extern uint8_t _dmaram_end__;
 #define QUADSPI_TRAIT_AF_PIN 1
 #define QUADSPI_TRAIT_HANDLE 1
 #define MAX_QUADSPI_PIN_SEL 3
+#define PLATFORM_TRAIT_SDIO_INIT 1
+#endif
+
+// F4 has non-8MHz boards
+// G4 for Betaflight allow 8, 16, 24, 26 or 27MHz oscillator
+#if defined(STM32F4) || defined(STM32G4)
+#define PLATFORM_TRAIT_CONFIG_HSE 1
+#endif
+
+#if defined(STM32G4)
+#define MCO_SOURCE_COUNT   8
+#define MCO_DIVIDER_COUNT  5
 #endif
