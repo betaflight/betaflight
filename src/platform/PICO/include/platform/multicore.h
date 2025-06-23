@@ -21,18 +21,19 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "pico/multicore.h"
 
-#include "platform.h"
+typedef enum multicoreCommand_e {
+    MULTICORE_CMD_NONE = 0,
+    MULTICORE_CMD_FUNC,
+    MULTICORE_CMD_FUNC_BLOCKING, // Command to execute a function on the second core and wait for completion
+    MULTICORE_CMD_STOP, // Command to stop the second core
+} multicoreCommand_e;
 
-void cdc_usb_write_flush(void);
-int cdc_usb_write(const uint8_t *buf, unsigned length);
-int cdc_usb_read(uint8_t *buf, unsigned length);
-void cdc_usb_init(void);
-bool cdc_usb_deinit(void);
-bool cdc_usb_configured(void);
-bool cdc_usb_connected(void);
-bool cdc_usb_bytes_available(void);
-uint32_t cdc_usb_baud_rate(void);
-uint32_t cdc_usb_tx_bytes_free(void);
+// Define function types for clarity
+typedef void core1_func_t(void);
+
+void multicoreStart(void);
+void multicoreStop(void);
+void multicoreExecute(core1_func_t *func);
+void multicoreExecuteBlocking(core1_func_t *func);
