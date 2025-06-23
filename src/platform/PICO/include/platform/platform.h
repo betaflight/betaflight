@@ -61,7 +61,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 //#define SystemCoreClock
 //#define EXTI_TypeDef
 //#define EXTI_InitTypeDef
-//#define IRQn_Type           void*
 
 // We have to use SPI0_Type (or void) because config will pass in SPI0, SPI1,
 // which are defined in pico-sdk as SPI0_Type*.

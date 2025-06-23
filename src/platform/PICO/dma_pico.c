@@ -34,9 +34,6 @@
 #include "hardware/dma.h"
 #include "hardware/irq.h"
 
-volatile bool dma_irq0_handler_registered = false;
-volatile bool dma_irq1_handler_registered = false;
-
 dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
     DEFINE_DMA_CHANNEL(DMA_CH0_HANDLER),
     DEFINE_DMA_CHANNEL(DMA_CH1_HANDLER),
@@ -101,9 +98,9 @@ dmaIdentifier_e dmaGetFreeIdentifier(void)
     return DMA_CHANNEL_TO_IDENTIFIER(channel);
 }
 
-void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
+void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority)
 {
-    if (identifier < DMA_CH0_HANDLER || identifier > DMA_LAST_HANDLER) {
+    if (identifier < DMA_FIRST_HANDLER || identifier > DMA_LAST_HANDLER) {
         return; // Invalid identifier
     }
 
@@ -129,26 +126,28 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
     const uint32_t channel = dmaDescriptors[index].channel;
+    static bool dma_irqN_handler_registered[2];
+
+    if (!dma_irqN_handler_registered[core]) {
+        // Register the DMA IRQ handler if needed
+        dmaDescriptors[index].irqN = core ? DMA_IRQ_1_IRQn : DMA_IRQ_0_IRQn;
+        irq_handler_t irq_handler = core ? dma_irq1_handler : dma_irq0_handler;
+
+
+        irq_set_exclusive_handler(dmaDescriptors[index].irqN, irq_handler);
+        irq_set_enabled(dmaDescriptors[index].irqN, true);
+
+        dma_irqN_handler_registered[core] = true;
+    }
+
     if (core) {
-        // Core 1 uses DMA IRQ1
-        if (!dma_irq1_handler_registered) {
-            irq_set_exclusive_handler(DMA_IRQ_1, dma_irq1_handler);
-            irq_set_enabled(DMA_IRQ_1, true);
-            dma_channel_set_irq1_enabled(channel, true);
-            dma_irq1_handler_registered = true;
-        }
+        dma_channel_set_irq1_enabled(channel, true);
     } else {
-        // Core 0 uses DMA IRQ0
-        if (!dma_irq0_handler_registered) {
-            irq_set_exclusive_handler(DMA_IRQ_0, dma_irq0_handler);
-            irq_set_enabled(DMA_IRQ_0, true);
-            dma_channel_set_irq0_enabled(channel, true);
-            dma_irq0_handler_registered = true;
-        }
+        dma_channel_set_irq0_enabled(channel, true);
     }
 
     dmaDescriptors[index].irqHandlerCallback = callback;
-    dmaDescriptors[index].userParam = userParam;
+    dmaDescriptors[index].userParam = 0;
 }
 
 #endif
