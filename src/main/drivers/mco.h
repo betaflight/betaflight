@@ -27,9 +27,4 @@ typedef enum {
     MCODEV_2,
 } MCODevice_e;
 
-#ifdef STM32G4
-#define MCO_SOURCE_COUNT   8
-#define MCO_DIVIDER_COUNT  5
-#endif
-
-void mcoConfigure(MCODevice_e device, const mcoConfig_t *config);
+void mcoInit(void);

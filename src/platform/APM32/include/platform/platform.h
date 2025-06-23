@@ -117,6 +117,7 @@
 #define USE_USB_MSC
 #define USE_PERSISTENT_MSC_RTC
 #define USE_MCO
+#define USE_MCO_DEVICE2
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
@@ -127,6 +128,7 @@
 #define SCHEDULER_DELAY_LIMIT           10
 
 #define DEFAULT_CPU_OVERCLOCK 0
+#define PLATFORM_TRAIT_CONFIG_HSE 1
 
 #define FAST_IRQ_HANDLER
 
@@ -207,4 +209,6 @@
 #define USB_DP_PIN PA12
 
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
+
+#define DMA_STCH_STRING    "Stream"
 #endif

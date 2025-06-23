@@ -162,3 +162,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define FLASH_CONFIG_BUFFER_TYPE      uint32_t
 
 #define USB_DP_PIN PA12
+
+#if defined(AT32F435)
+#define DMA_CHANREQ_STRING "Request"
+#endif
