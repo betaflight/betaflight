@@ -293,10 +293,10 @@ static void validateAndFixConfig(void)
 #if defined(USE_MAG)
     buildAlignmentFromStandardAlignment(&compassConfigMutable()->mag_customAlignment, compassConfig()->mag_alignment);
 #endif
-    buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(0)->customAlignment, gyroDeviceConfig(0)->alignment);
-#if defined(USE_MULTI_GYRO)
-    buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(1)->customAlignment, gyroDeviceConfig(1)->alignment);
-#endif
+
+    for (int i = 0; i < GYRO_COUNT; i++) {
+        buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(i)->customAlignment, gyroDeviceConfig(i)->alignment);
+    }
 
 #ifdef USE_ACC
     if (accelerometerConfig()->accZero.values.roll != 0 ||

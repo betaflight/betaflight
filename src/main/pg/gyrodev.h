@@ -26,13 +26,8 @@
 #include "common/sensor_alignment.h"
 #include "drivers/io_types.h"
 
-#ifdef USE_MULTI_GYRO
-#define MAX_GYRODEV_COUNT 2
-#define MAX_ACCDEV_COUNT 2
-#else
-#define MAX_GYRODEV_COUNT 1
-#define MAX_ACCDEV_COUNT 1
-#endif
+#define MAX_GYRODEV_COUNT GYRO_COUNT
+#define MAX_ACCDEV_COUNT GYRO_COUNT
 
 typedef struct gyroDeviceConfig_s {
     int8_t index;
