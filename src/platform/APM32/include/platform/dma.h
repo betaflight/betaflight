@@ -57,8 +57,6 @@ typedef enum {
 #define DMA_OUTPUT_INDEX    0
 #define DMA_OUTPUT_STRING   "DMA%d Stream %d:"
 
-#define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
-
 #define DEFINE_DMA_CHANNEL(d, s, f) { \
     .dma = d, \
     .ref = (dmaResource_t *)d ## _Stream ## s, \

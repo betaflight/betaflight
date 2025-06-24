@@ -23,8 +23,6 @@
 
 #include "platform.h"
 
-#define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
-
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
 #endif

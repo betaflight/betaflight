@@ -23,7 +23,6 @@
 
  typedef enum {
     DMA_NONE = 0,
+    DMA_FIRST_HANDLER = DMA_NONE,
     DMA_LAST_HANDLER = DMA_NONE
 } dmaIdentifier_e;
-
-#define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)

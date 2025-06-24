@@ -53,8 +53,6 @@ typedef enum {
 #define DMA_DEVICE_NO(x)    ((((x)-1) / 7) + 1)
 #define DMA_DEVICE_INDEX(x) ((((x)-1) % 7) + 1)
 
-#define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
-
 uint32_t dmaGetChannel(const uint8_t channel);
 
 #define DMA_OUTPUT_INDEX    0
