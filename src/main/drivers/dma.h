@@ -58,8 +58,6 @@ typedef struct dmaChannelDescriptor_s {
 #endif
 } dmaChannelDescriptor_t;
 
-#define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
-
 void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
 
 dmaIdentifier_e dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);

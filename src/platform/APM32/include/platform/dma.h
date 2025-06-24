@@ -32,7 +32,8 @@
 
 typedef enum {
     DMA_NONE = 0,
-    DMA1_ST0_HANDLER = 1,
+    DMA_FIRST_HANDLER = 1,
+    DMA1_ST0_HANDLER = DMA_FIRST_HANDLER,
     DMA1_ST1_HANDLER,
     DMA1_ST2_HANDLER,
     DMA1_ST3_HANDLER,
@@ -55,7 +56,8 @@ typedef enum {
 #define DMA_DEVICE_INDEX(x) ((((x)-1) % 8))
 #define DMA_OUTPUT_INDEX    0
 #define DMA_OUTPUT_STRING   "DMA%d Stream %d:"
-#define DMA_INPUT_STRING    "DMA%d_ST%d"
+
+#define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
 
 #define DEFINE_DMA_CHANNEL(d, s, f) { \
     .dma = d, \
