@@ -68,8 +68,8 @@ typedef enum {
     .owner.resourceIndex = 0 \
     }
 
-#define DMA_IDENTIFIER_TO_CHANNEL(identifier) ((identifier) - 1)
-#define DMA_CHANNEL_TO_IDENTIFIER(channel) ((dmaIdentifier_e)((channel) + 1))
+#define DMA_IDENTIFIER_TO_CHANNEL(identifier) ((identifier) - DMA_FIRST_HANDLER)
+#define DMA_CHANNEL_TO_IDENTIFIER(channel) ((dmaIdentifier_e)((channel) + DMA_FIRST_HANDLER))
 #define DMA_CHANNEL_TO_INDEX(channel) (channel)
 
 dmaIdentifier_e dmaGetFreeIdentifier(void);
