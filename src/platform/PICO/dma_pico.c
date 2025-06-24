@@ -58,13 +58,12 @@ dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
 #endif
 };
 
-#define DMA_CHANNEL_TO_INDEX(channel) ((channel) + 1)
-
 void dma_irq_handler(bool isIrq1)
 {
     uint32_t status = isIrq1 ? dma_hw->ints1 : dma_hw->ints0; // Read the status register once
 
     // Iterate through all possible DMA channels that have triggered an interrupt
+    // channel equates to index in the dmaDescriptors array
     for (uint8_t channel = 0; channel < DMA_LAST_HANDLER; channel++) {
         if (status & (1u << channel)) {
             uint8_t index = DMA_CHANNEL_TO_INDEX(channel);
@@ -92,8 +91,21 @@ void dma_irq1_handler(void)
     dma_irq_handler(true);
 }
 
+dmaIdentifier_e dmaGetFreeIdentifier(void)
+{
+    const int channel = dma_claim_unused_channel(true);
+    if (channel == DMA_INVALID) {
+        return DMA_INVALID; // No free channel available
+    }
+    return DMA_CHANNEL_TO_IDENTIFIER(channel);
+}
+
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
 {
+    if (identifier < DMA_CH0_HANDLER || identifier > DMA_LAST_HANDLER) {
+        return; // Invalid identifier
+    }
+
     UNUSED(priority);
     /*
         Assign the interrupt handler for the DMA channel based on the core
@@ -114,7 +126,8 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     const uint8_t core = 0;
 #endif
 
-    const uint32_t channel = dmaDescriptors[identifier].channel;
+    const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
+    const uint32_t channel = dmaDescriptors[index].channel;
     if (core) {
         // Core 1 uses DMA IRQ1
         if (!dma_irq1_handler_registered) {
@@ -133,8 +146,8 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
         }
     }
 
-    dmaDescriptors[identifier].irqHandlerCallback = callback;
-    dmaDescriptors[identifier].userParam = userParam;
+    dmaDescriptors[index].irqHandlerCallback = callback;
+    dmaDescriptors[index].userParam = userParam;
 }
 
 #endif

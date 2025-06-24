@@ -24,6 +24,7 @@
 #include "platform.h"
 
 typedef enum {
+    DMA_INVALID = -1,
     DMA_NONE = 0,
     DMA_CH0_HANDLER = 1,
     DMA_CH1_HANDLER,
@@ -65,3 +66,9 @@ typedef enum {
     .owner.owner = 0, \
     .owner.resourceIndex = 0 \
     }
+
+#define DMA_IDENTIFIER_TO_CHANNEL(identifier) ((identifier) - 1)
+#define DMA_CHANNEL_TO_IDENTIFIER(channel) ((dmaIdentifier_e)((channel) + 1))
+#define DMA_CHANNEL_TO_INDEX(channel) (channel)
+
+dmaIdentifier_e dmaGetFreeIdentifier(void);
