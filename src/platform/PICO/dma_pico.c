@@ -105,18 +105,22 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
         If we specify a core to be used for interrupts we will use the corresponding DMA IRQ.
     */
-#ifdef DMA_IRQ_CORE_NUM
-    uint8_t core = DMA_IRQ_CORE_NUM;
-#else
+#if defined(USE_MULTICORE) && defined(DMA_IRQ_CORE_NUM)
+    const uint8_t core = DMA_IRQ_CORE_NUM;
+#elif defined(USE_MULTICORE)
     // Get the current core number
-    uint8_t core = get_core_num();
+    const uint8_t core = get_core_num();
+#else
+    const uint8_t core = 0;
 #endif
 
+    const uint32_t channel = dmaDescriptors[identifier].channel;
     if (core) {
         // Core 1 uses DMA IRQ1
         if (!dma_irq1_handler_registered) {
             irq_set_exclusive_handler(DMA_IRQ_1, dma_irq1_handler);
             irq_set_enabled(DMA_IRQ_1, true);
+            dma_channel_set_irq1_enabled(channel, true);
             dma_irq1_handler_registered = true;
         }
     } else {
@@ -124,6 +128,7 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
         if (!dma_irq0_handler_registered) {
             irq_set_exclusive_handler(DMA_IRQ_0, dma_irq0_handler);
             irq_set_enabled(DMA_IRQ_0, true);
+            dma_channel_set_irq0_enabled(channel, true);
             dma_irq0_handler_registered = true;
         }
     }
