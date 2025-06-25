@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/io_types.h"
+
 #ifdef USE_BEEPER
 #define BEEP_TOGGLE              systemBeepToggle()
 #define BEEP_OFF                 systemBeep(false)
