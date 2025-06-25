@@ -46,6 +46,7 @@
 
 typedef struct rpmFilter_s {
 
+    int activeHarmonicsCount;
     float weights[RPM_FILTER_HARMONICS_MAX];
     float minHz;
     float maxHz;
@@ -64,13 +65,12 @@ FAST_DATA_ZERO_INIT static rpmFilter_t rpmFilter;
 FAST_DATA_ZERO_INIT static int notchUpdatesPerIteration;
 FAST_DATA_ZERO_INIT static int motorIndex;
 FAST_DATA_ZERO_INIT static int harmonicIndex;
-FAST_DATA_ZERO_INIT static int activeHarmonicsCount;
 
 void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
 {
     motorIndex = 0;
     harmonicIndex = 0;
-    activeHarmonicsCount = 0; // disable RPM Filtering
+    rpmFilter.activeHarmonicsCount = 0; // disable RPM Filtering
 
     // if bidirectional DShot is not available
     if (!useDshotTelemetry) {
@@ -80,7 +80,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     for (int n = 0; n < RPM_FILTER_HARMONICS_MAX; n++) {
         rpmFilter.weights[n] = constrainf(config->rpm_filter_weights[n] / 100.0f, 0.0f, 1.0f);
         if (rpmFilter.weights[n] > 0.0f) {
-            activeHarmonicsCount++;
+            rpmFilter.activeHarmonicsCount++;
         }
     }
 
@@ -105,7 +105,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     }
 
     const float loopIterationsPerUpdate = RPM_FILTER_DURATION_S / (looptimeUs * 1e-6f);
-    const float numNotchesPerAxis = getMotorCount() * activeHarmonicsCount;
+    const float numNotchesPerAxis = getMotorCount() * rpmFilter.activeHarmonicsCount;
     notchUpdatesPerIteration = ceilf(numNotchesPerAxis / loopIterationsPerUpdate); // round to ceiling
 }
 
@@ -187,7 +187,7 @@ FAST_CODE float rpmFilterApply(const int axis, float value)
 
 bool isRpmFilterEnabled(void)
 {
-    return activeHarmonicsCount > 0;
+    return rpmFilter.activeHarmonicsCount > 0;
 }
 
 #endif // USE_RPM_FILTER
