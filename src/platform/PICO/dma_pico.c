@@ -93,9 +93,10 @@ void dma_irq1_handler(void)
 
 dmaIdentifier_e dmaGetFreeIdentifier(void)
 {
-    const int channel = dma_claim_unused_channel(true);
-    if (channel == DMA_INVALID) {
-        return DMA_INVALID; // No free channel available
+    const int channel = dma_claim_unused_channel(false);
+    // NOTE: dma_claim_unused_channel returns -1 if no channel is available
+    if (channel == -1) {
+        return DMA_NONE; // No free channel available
     }
     return DMA_CHANNEL_TO_IDENTIFIER(channel);
 }
