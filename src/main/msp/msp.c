@@ -1911,7 +1911,6 @@ case MSP_NAME:
         sbufWriteU16(dst, 0);
 #endif
 #if defined(USE_RPM_FILTER)
-        sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_harmonics);
         sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_min_hz);
 #else
         sbufWriteU8(dst, 0);
@@ -3121,7 +3120,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
 #if defined(USE_RPM_FILTER)
-            rpmFilterConfigMutable()->rpm_filter_harmonics = sbufReadU8(src);
             rpmFilterConfigMutable()->rpm_filter_min_hz = sbufReadU8(src);
 #else
             sbufReadU8(src);
