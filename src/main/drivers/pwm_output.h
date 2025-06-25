@@ -64,8 +64,6 @@ typedef struct servoDevConfig_s {
 
 void servoDevInit(const servoDevConfig_t *servoDevConfig);
 
-void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
-
 void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion);
 
 void pwmWriteServo(uint8_t index, float value);

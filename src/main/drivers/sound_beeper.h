@@ -34,3 +34,8 @@ void systemBeep(bool on);
 void systemBeepToggle(void);
 struct beeperDevConfig_s;
 void beeperInit(const struct beeperDevConfig_s *beeperDevConfig);
+
+// platform implementation
+void pwmWriteBeeper(bool on);
+void pwmToggleBeeper(void);
+void beeperPwmInit(const ioTag_t tag, uint16_t frequency);
