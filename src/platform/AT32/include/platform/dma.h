@@ -32,7 +32,8 @@
 
 typedef enum {
     DMA_NONE = 0,
-    DMA1_CH1_HANDLER = 1,
+    DMA_FIRST_HANDLER = 1,
+    DMA1_CH1_HANDLER = DMA_FIRST_HANDLER,
     DMA1_CH2_HANDLER,
     DMA1_CH3_HANDLER,
     DMA1_CH4_HANDLER,
@@ -56,7 +57,6 @@ uint32_t dmaGetChannel(const uint8_t channel);
 
 #define DMA_OUTPUT_INDEX    0
 #define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
-#define DMA_INPUT_STRING    "DMA%d_CH%d"
 
 #define DEFINE_DMA_CHANNEL(d, c, f) { \
     .dma = d, \

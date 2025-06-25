@@ -95,9 +95,6 @@ typedef enum {
 #ifdef USE_LED_STRIP
     TABLE_RGB_GRB,
 #endif
-#ifdef USE_MULTI_GYRO
-    TABLE_GYRO,
-#endif
     TABLE_THROTTLE_LIMIT_TYPE,
 #if defined(USE_VIDEO_SYSTEM)
     TABLE_VIDEO_SYSTEM,

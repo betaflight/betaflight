@@ -3675,18 +3675,12 @@ static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-#ifdef USE_MULTI_GYRO
-    if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        cliPrintLinef("\r\n# Gyro 1");
-        cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
+    for (int i = 0; i < GYRO_COUNT; i++) {
+        if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
+            cliPrintLinef("\r\n# Gyro %d", i + 1);
+            cliPrintGyroRegisters(i);  // assuming this takes a 0-based gyro index
+        }
     }
-    if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        cliPrintLinef("\r\n# Gyro 2");
-        cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_2);
-    }
-#else
-    cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
-#endif
 }
 #endif
 
@@ -5329,7 +5323,7 @@ static void showDma(void)
     cliPrintLine("Currently active DMA:");
     cliRepeat('-', 20);
 #endif
-    for (int i = 1; i <= DMA_LAST_HANDLER; i++) {
+    for (int i = DMA_FIRST_HANDLER; i <= DMA_LAST_HANDLER; i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
         cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
