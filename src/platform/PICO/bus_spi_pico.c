@@ -283,7 +283,6 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     spiIrqHandler(dev);
 }
 
-
 extern dmaChannelDescriptor_t dmaDescriptors[];
 
 void spiInitBusDMA(void)
