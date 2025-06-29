@@ -45,7 +45,7 @@
 #define USBD_PRODUCT_STRING     "Betaflight RP2350B"
 #endif
 
-#define USE_MULTICORE
+//#define USE_MULTICORE
 #define USE_IO
 #define USE_UART0
 #define USE_UART1
