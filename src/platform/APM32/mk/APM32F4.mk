@@ -154,6 +154,7 @@ MCU_COMMON_SRC = \
         APM32/startup/system_apm32f4xx.c \
         drivers/inverter.c \
         drivers/dshot_bitbang_decode.c \
+        common/stm32/pwm_output_beeper.c \
         common/stm32/pwm_output_dshot_shared.c \
         common/stm32/dshot_dpwm.c \
         common/stm32/dshot_bitbang_shared.c \
@@ -221,6 +222,7 @@ SIZE_OPTIMISED_SRC += \
         drivers/bus_spi_config.c \
         common/stm32/bus_i2c_pinconfig.c \
         common/stm32/bus_spi_pinconfig.c \
+        common/stm32/pwm_output_beeper.c \
         common/stm32/serial_uart_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c
