@@ -356,7 +356,7 @@ void spiInitBusDMA(void)
         bus->dmaRx->channel = channel_rx;
 
         // The transaction concludes when the data has been received which will be after transmission is complete
-        dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), spiRxIrqHandler, NVIC_PRIO_SPI_DMA);
+        dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
         // We got the required resources, so we can use DMA on this bus
         bus->useDMA = true;
