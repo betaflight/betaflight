@@ -32,7 +32,7 @@ static uint16_t freqBeep = 0;
 
 void pwmWriteBeeper(bool on)
 {
-    if (!beeperPwm.io) {
+    if (!beeperPwm.io || freqBeep == 0) {
         return;
     }
 
