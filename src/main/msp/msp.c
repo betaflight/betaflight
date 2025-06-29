@@ -1911,9 +1911,15 @@ case MSP_NAME:
         sbufWriteU16(dst, 0);
 #endif
 #if defined(USE_RPM_FILTER)
+        for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+            // Added in MSP API 1.46
+            sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_weights[i]);
+        }
         sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_min_hz);
 #else
-        sbufWriteU8(dst, 0);
+        for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+                sbufWriteU8(dst, 0);
+        }
         sbufWriteU8(dst, 0);
 #endif
 #if defined(USE_DYN_NOTCH_FILTER)
@@ -3106,7 +3112,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 8) {
+        if (sbufBytesRemaining(src) >= 10) {
             // Added in MSP API 1.42
 #if defined(USE_DYN_NOTCH_FILTER)
             sbufReadU8(src); // DEPRECATED 1.43: dyn_notch_range
@@ -3120,9 +3126,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
 #if defined(USE_RPM_FILTER)
+            for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+                // Added in MSP API 1.46
+                rpmFilterConfigMutable()->rpm_filter_weights[i] = sbufReadU8(src);
+            }
             rpmFilterConfigMutable()->rpm_filter_min_hz = sbufReadU8(src);
 #else
-            sbufReadU8(src);
+            for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+                sbufReadU8(src);
+            }
             sbufReadU8(src);
 #endif
         }
