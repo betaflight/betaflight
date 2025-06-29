@@ -280,46 +280,9 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 
     spiInternalStopDMA(dev);
 
-#ifdef __DCACHE_PRESENT
-#ifdef STM32H7
-    if (bus->curSegment->u.buffers.rxData &&
-        ((bus->curSegment->u.buffers.rxData < &_dmaram_start__) || (bus->curSegment->u.buffers.rxData >= &_dmaram_end__))) {
-#else
-    if (bus->curSegment->u.buffers.rxData) {
-#endif
-         // Invalidate the D cache covering the area into which data has been read
-        SCB_InvalidateDCache_by_Addr(
-            (uint32_t *)((uint32_t)bus->curSegment->u.buffers.rxData & ~CACHE_LINE_MASK),
-            (((uint32_t)bus->curSegment->u.buffers.rxData & CACHE_LINE_MASK) +
-              bus->curSegment->len - 1 + CACHE_LINE_SIZE) & ~CACHE_LINE_MASK);
-    }
-#endif // __DCACHE_PRESENT
-
     spiIrqHandler(dev);
 }
 
-#if 0
-// Interrupt handler for SPI transmit DMA completion
-FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
-{
-    const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
-
-    if (!dev) {
-        return;
-    }
-
-    busDevice_t *bus = dev->bus;
-
-    spiInternalStopDMA(dev);
-
-    if (bus->curSegment->negateCS) {
-        // Negate Chip Select
-        IOHi(dev->busType_u.spi.csnPin);
-    }
-
-    spiIrqHandler(dev);
-}
-#endif
 
 extern dmaChannelDescriptor_t dmaDescriptors[];
 
