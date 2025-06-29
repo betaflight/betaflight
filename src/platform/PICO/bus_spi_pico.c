@@ -347,6 +347,10 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 #else
     UNUSED(preInit);
 
+    busDevice_t *bus = dev->bus;
+
+    volatile busSegment_t *segment = bus->curSegment;
+
     const spiDevice_t *spi = &spiDevice[spiDeviceByInstance(dev->bus->busType_u.spi.instance)];
     dma_channel_config config = dma_channel_get_default_config(dev->bus->dmaTx->channel);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
@@ -354,7 +358,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     channel_config_set_write_increment(&config, false);
     channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), true));
 
-    dma_channel_configure(dev->bus->dmaTx->channel, &config, &spi_get_hw(SPI_INST(spi->dev))->dr, dev->txBuf, 0, false);
+    dma_channel_configure(dev->bus->dmaTx->channel, &config, &spi_get_hw(SPI_INST(spi->dev))->dr, segment->u.buffers.txData, 0, false);
 
     config = dma_channel_get_default_config(dev->bus->dmaRx->channel);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
@@ -362,7 +366,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     channel_config_set_write_increment(&config, true);
     channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), false));
 
-    dma_channel_configure(dev->bus->dmaRx->channel, &config, dev->rxBuf, &spi_get_hw(SPI_INST(spi->dev))->dr, 0, false);
+    dma_channel_configure(dev->bus->dmaRx->channel, &config, segment->u.buffers.rxData, &spi_get_hw(SPI_INST(spi->dev))->dr, 0, false);
 #endif
 }
 
