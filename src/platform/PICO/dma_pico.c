@@ -98,7 +98,7 @@ dmaIdentifier_e dmaGetFreeIdentifier(void)
     return DMA_CHANNEL_TO_IDENTIFIER(channel);
 }
 
-void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority)
+void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
 {
     if (identifier < DMA_FIRST_HANDLER || identifier > DMA_LAST_HANDLER) {
         return; // Invalid identifier
@@ -147,7 +147,7 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     }
 
     dmaDescriptors[index].irqHandlerCallback = callback;
-    dmaDescriptors[index].userParam = 0;
+    dmaDescriptors[index].userParam = userParam;
 }
 
 #endif

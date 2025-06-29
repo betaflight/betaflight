@@ -64,7 +64,7 @@ void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
 
 dmaIdentifier_e dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
 void dmaEnable(dmaIdentifier_e identifier);
-void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority);
+void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 
 dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel);
 const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier);
