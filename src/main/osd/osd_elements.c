@@ -371,7 +371,7 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
                 OLC_LatLon location;
                 location.lat = (double)gpsSol.llh.lat / GPS_DEGREES_DIVIDER;
                 location.lon = (double)gpsSol.llh.lon / GPS_DEGREES_DIVIDER;
-                OLC_Encode(&location, PLUS_CODE_DIGITS, buff, OSD_ELEMENT_BUFFER_LENGTH - 3);
+                OLC_Encode(&location, PLUS_CODE_DIGITS, buff);
             } else {
                 memset(buff, SYM_HYPHEN, PLUS_CODE_DIGITS + 1);
                 buff[8] = '+';
