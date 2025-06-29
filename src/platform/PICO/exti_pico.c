@@ -80,6 +80,9 @@ void EXTIInit(void)
 
     // Register the shared handler for GPIO interrupts
     gpio_set_irq_callback(EXTI_IRQHandler);
+
+    // Enable the interrupt
+    irq_set_enabled(IO_IRQ_BANK0, true);
 }
 
 void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
@@ -89,10 +92,10 @@ void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
 
 void EXTIEnable(IO_t io)
 {
-    gpio_set_irq_enabled(IO_Pin(io), 0, true);
+    gpio_set_irq_enabled(IO_Pin(io), extiEventMask[IO_Pin(io)], true);
 }
 
 void EXTIDisable(IO_t io)
 {
-    gpio_set_irq_enabled(IO_Pin(io), extiEventMask[IO_Pin(io)], false);
+    gpio_set_irq_enabled(IO_Pin(io), 0, false);
 }
