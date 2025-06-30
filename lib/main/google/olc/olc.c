@@ -44,12 +44,12 @@ static double normalize_longitude(double lon_degrees);
 static double adjust_latitude(double lat_degrees, size_t length);
 
 void OLC_GetCenter(const OLC_CodeArea* area, OLC_LatLon* center) {
-  center->lat = area->lo.lat + (area->hi.lat - area->lo.lat) / (double)2.0;
+  center->lat = area->lo.lat + (area->hi.lat - area->lo.lat) / 2.0;
   if (center->lat > kLatMaxDegrees) {
     center->lat = kLatMaxDegrees;
   }
 
-  center->lon = area->lo.lon + (area->hi.lon - area->lo.lon) / (double)2.0;
+  center->lon = area->lo.lon + (area->hi.lon - area->lo.lon) / 2.0;
   if (center->lon > kLonMaxDegrees) {
     center->lon = kLonMaxDegrees;
   }
@@ -101,10 +101,10 @@ int OLC_Encode(const OLC_LatLon* location, size_t length, char* code) {
 
   // Multiply values by their precision and convert to positive without any
   // floating point operations.
-  long long int lat_val = kLatMaxDegrees * (double)2.5e7;
-  long long int lng_val = kLonMaxDegrees * (double)8.192e6;
-  lat_val += latitude * (double)2.5e7;
-  lng_val += longitude * (double)8.192e6;
+  long long int lat_val = kLatMaxDegrees * 2.5e7;
+  long long int lng_val = kLonMaxDegrees * 8.192e6;
+  lat_val += latitude * 2.5e7;
+  lng_val += longitude * 8.192e6;
 
   size_t pos = kMaximumDigitCount;
   // Compute the grid part of the code if necessary.
@@ -255,7 +255,7 @@ int OLC_RecoverNearest(const char* short_code, size_t size,
   double resolution = pow_neg(kEncodingBase, 2.0 - (padding_length / 2.0));
 
   // Distance from the center to an edge (in degrees).
-  double half_res = resolution / (double)2.0;
+  double half_res = resolution / 2.0;
 
   // Use the reference location to pad the supplied short code and decode it.
   OLC_LatLon latlon = {lat, lon};
@@ -503,8 +503,8 @@ static int decode(CodeInfo* info, OLC_CodeArea* decoded) {
     normal_lng += get_alphabet_position(clean_code[i + 1]) * pv;
   }
   // Convert the place value to a float in degrees.
-  double lat_precision = (double)pv / kPairPrecisionInverse;
-  double lng_precision = (double)pv / kPairPrecisionInverse;
+  double lat_precision = pv / kPairPrecisionInverse;
+  double lng_precision = pv / kPairPrecisionInverse;
   // Process any extra precision digits.
   if (strlen(clean_code) > kPairCodeLength) {
     // How many digits do we have to process?
@@ -523,15 +523,15 @@ static int decode(CodeInfo* info, OLC_CodeArea* decoded) {
       extra_lng += col * col_pv;
     }
     // Adjust the precisions from the integer values to degrees.
-    lat_precision = (double)row_pv / kGridLatPrecisionInverse;
-    lng_precision = (double)col_pv / kGridLonPrecisionInverse;
+    lat_precision = row_pv / kGridLatPrecisionInverse;
+    lng_precision = col_pv / kGridLonPrecisionInverse;
   }
   // Merge the values from the normal and extra precision parts of the code.
   // Everything is ints so they all need to be cast to floats.
-  double lat = (double)normal_lat / kPairPrecisionInverse +
-               (double)extra_lat / kGridLatPrecisionInverse;
-  double lng = (double)normal_lng / kPairPrecisionInverse +
-               (double)extra_lng / kGridLonPrecisionInverse;
+  double lat = normal_lat / kPairPrecisionInverse +
+               extra_lat / kGridLatPrecisionInverse;
+  double lng = normal_lng / kPairPrecisionInverse +
+               extra_lng / kGridLonPrecisionInverse;
   decoded->lo.lat = lat;
   decoded->lo.lon = lng;
   decoded->hi.lat = lat + lat_precision;
