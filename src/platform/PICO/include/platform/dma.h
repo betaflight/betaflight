@@ -39,7 +39,7 @@ typedef enum {
     DMA_CH9_HANDLER,
     DMA_CH10_HANDLER,
     DMA_CH11_HANDLER,
-#ifdef RP2350
+#if defined(RP2350A) || defined(RP2350B)
     DMA_CH12_HANDLER,
     DMA_CH13_HANDLER,
     DMA_CH14_HANDLER,

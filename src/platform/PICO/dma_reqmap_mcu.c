@@ -49,7 +49,7 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
     DMA(10),
     DMA(11),
     DMA(12),
-#ifdef RP2350
+#if defined(RP2350A) || defined(RP2350B)
     DMA(13),
     DMA(14),
     DMA(15),
