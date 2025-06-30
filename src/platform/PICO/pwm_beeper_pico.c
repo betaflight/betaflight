@@ -51,8 +51,9 @@ void pwmToggleBeeper(void)
 
 void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
+    // frequency should be non-zero when calling beeperPwmInit.
     IO_t beeperIO = IOGetByTag(tag);
-    if (beeperIO) {
+    if (beeperIO && frequency) {
         beeperGPIO = IO_GPIOPinIdx(beeperIO);
         IOInit(beeperIO, OWNER_BEEPER, 0);
 
