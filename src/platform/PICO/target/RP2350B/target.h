@@ -53,6 +53,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_0
 #define USE_SPI_DEVICE_1
+#define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_I2C
 #define USE_I2C_DEVICE_0

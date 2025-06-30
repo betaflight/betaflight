@@ -33,7 +33,7 @@
 #include "platform.h"
 
 #ifdef USE_SPI
-#define TESTING_NO_DMA 1
+//#define TESTING_NO_DMA 1
 
 #include "common/maths.h"
 #include "drivers/bus.h"
@@ -43,6 +43,7 @@
 #include "drivers/io.h"
 #include "drivers/io_def.h"
 #include "drivers/io_impl.h"
+#include "drivers/nvic.h"
 
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
@@ -125,6 +126,8 @@ const spiHardware_t spiHardware[] = {
         },
     },
 };
+
+extern busDevice_t spiBusDevice[SPIDEV_COUNT];
 
 void spiPinConfigure(const struct spiPinConfig_s *pConfig)
 {
@@ -242,11 +245,84 @@ void spiInitDevice(SPIDevice device)
     gpio_set_function(IO_PINBYTAG(spi->sck), GPIO_FUNC_SPI);
 }
 
+void spiInternalStopDMA (const extDevice_t *dev)
+{
+    dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
+    dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
+
+    if (dmaRx && dma_channel_is_busy(dmaRx->channel)) {
+        // Abort active DMA -  this should never happen
+        dma_channel_abort(dmaRx->channel);
+    }
+
+    if (dmaTx && dma_channel_is_busy(dmaTx->channel)) {
+        // Abort active DMA -  this should never happen as Tx should complete before Rx
+        dma_channel_abort(dmaTx->channel);
+    }
+}
+
+
+// Interrupt handler for SPI receive DMA completion
+FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
+{
+    const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
+
+    if (!dev) {
+        return;
+    }
+
+    busDevice_t *bus = dev->bus;
+
+    if (bus->curSegment->negateCS) {
+        // Negate Chip Select
+        IOHi(dev->busType_u.spi.csnPin);
+    }
+
+    spiInternalStopDMA(dev);
+
+    spiIrqHandler(dev);
+}
+
+extern dmaChannelDescriptor_t dmaDescriptors[];
+
 void spiInitBusDMA(void)
 {
-  //TODO: implement
-  // if required to set up mappings of peripherals to DMA instances?
-  // can just start off with dma_claim_unused_channel in spiInternalInitStream?
+    for (uint32_t device = 0; device < SPIDEV_COUNT; device++) {
+        busDevice_t *bus = &spiBusDevice[device];
+        int32_t channel_tx;
+        int32_t channel_rx;
+
+        if (bus->busType != BUS_TYPE_SPI) {
+            // This bus is not in use
+            continue;
+        }
+
+        channel_tx = dma_claim_unused_channel(true);
+        if (channel_tx == -1) {
+            // no more available channels so give up
+            return;
+        }
+
+        channel_rx = dma_claim_unused_channel(true);
+        if (channel_rx == -1) {
+            // no more available channels so give up, first releasing the one
+            // channel we did claim
+            dma_channel_unclaim(channel_tx);
+            return;
+        }
+
+        bus->dmaTx = &dmaDescriptors[DMA_CHANNEL_TO_INDEX(channel_tx)];
+        bus->dmaTx->channel = channel_tx;
+
+        bus->dmaRx = &dmaDescriptors[DMA_CHANNEL_TO_INDEX(channel_rx)];
+        bus->dmaRx->channel = channel_rx;
+
+        // The transaction concludes when the data has been received which will be after transmission is complete
+        dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
+
+        // We got the required resources, so we can use DMA on this bus
+        bus->useDMA = true;
+    }
 }
 
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
@@ -271,26 +347,26 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 #else
     UNUSED(preInit);
 
-    int dma_tx = dma_claim_unused_channel(true);
-    int dma_rx = dma_claim_unused_channel(true);
+    busDevice_t *bus = dev->bus;
 
-    dev->bus->dmaTx->channel = dma_tx;
-    dev->bus->dmaRx->channel = dma_rx;
-    dev->bus->dmaTx->irqHandlerCallback = NULL;
-    dev->bus->dmaRx->irqHandlerCallback = spiInternalResetStream; // TODO: implement - correct callback
+    volatile busSegment_t *segment = bus->curSegment;
 
     const spiDevice_t *spi = &spiDevice[spiDeviceByInstance(dev->bus->busType_u.spi.instance)];
-    dma_channel_config config = dma_channel_get_default_config(dma_tx);
+    dma_channel_config config = dma_channel_get_default_config(dev->bus->dmaTx->channel);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
+    channel_config_set_read_increment(&config, true);
+    channel_config_set_write_increment(&config, false);
     channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), true));
 
-    dma_channel_configure(dma_tx, &config, &spi_get_hw(SPI_INST(spi->dev))->dr, dev->txBuf, 0, false);
+    dma_channel_configure(dev->bus->dmaTx->channel, &config, &spi_get_hw(SPI_INST(spi->dev))->dr, segment->u.buffers.txData, 0, false);
 
-    config = dma_channel_get_default_config(dma_rx);
+    config = dma_channel_get_default_config(dev->bus->dmaRx->channel);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
+    channel_config_set_read_increment(&config, false);
+    channel_config_set_write_increment(&config, true);
     channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), false));
 
-    dma_channel_configure(dma_rx, &config, dev->rxBuf, &spi_get_hw(SPI_INST(spi->dev))->dr, 0, false);
+    dma_channel_configure(dev->bus->dmaRx->channel, &config, segment->u.buffers.rxData, &spi_get_hw(SPI_INST(spi->dev))->dr, 0, false);
 #endif
 }
 
@@ -300,12 +376,13 @@ void spiInternalStartDMA(const extDevice_t *dev)
 #ifndef USE_DMA
     UNUSED(dev);
 #else
+    dev->bus->dmaRx->userParam = (uint32_t)dev;
+
     // TODO check correct, was len + 1 now len
     dma_channel_set_trans_count(dev->bus->dmaTx->channel, dev->bus->curSegment->len, false);
     dma_channel_set_trans_count(dev->bus->dmaRx->channel, dev->bus->curSegment->len, false);
 
-    dma_channel_start(dev->bus->dmaTx->channel);
-    dma_channel_start(dev->bus->dmaRx->channel);
+    dma_start_channel_mask((1 << dev->bus->dmaTx->channel) | (1 << dev->bus->dmaRx->channel));
 #endif
 }
     

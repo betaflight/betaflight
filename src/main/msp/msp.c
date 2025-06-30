@@ -1830,7 +1830,7 @@ case MSP_NAME:
         }
 
         for (int i = 0; i < 8; i++) {
-            for (unsigned j; j < ARRAYLEN(gyroDeviceConfig(i)->customAlignment.raw); j++) {
+            for (unsigned j = 0; j < ARRAYLEN(gyroDeviceConfig(i)->customAlignment.raw); j++) {
                 sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.raw[j] : 0);
             }
         }
