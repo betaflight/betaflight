@@ -151,6 +151,19 @@ FAST_DATA_ZERO_INIT static float erpmToHz;
 FAST_DATA_ZERO_INIT static float dshotRpmAverage;
 FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 
+// Lookup table for extended telemetry type decoding (index = telemetryType >> 8)
+// Only contains extended telemetry types, eRPM is handled by conditional logic
+static const dshotTelemetryType_t extendedTelemetryLookup[8] = {
+    DSHOT_TELEMETRY_TYPE_TEMPERATURE, // 0x0200 >> 8 = 2
+    DSHOT_TELEMETRY_TYPE_VOLTAGE,     // 0x0400 >> 8 = 4
+    DSHOT_TELEMETRY_TYPE_CURRENT,     // 0x0600 >> 8 = 6
+    DSHOT_TELEMETRY_TYPE_DEBUG1,      // 0x0800 >> 8 = 8
+    DSHOT_TELEMETRY_TYPE_DEBUG2,      // 0x0A00 >> 8 = 10
+    DSHOT_TELEMETRY_TYPE_DEBUG3,      // 0x0C00 >> 8 = 12
+    DSHOT_TELEMETRY_TYPE_STATE_EVENTS,// 0x0E00 >> 8 = 14
+    DSHOT_TELEMETRY_TYPE_eRPM,        // Invalid/fallback
+};
+
 void initDshotTelemetry(const timeUs_t looptimeUs)
 {
     // if bidirectional DShot is not available
@@ -193,93 +206,32 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
-    const unsigned motorCount = dshotMotorCount;
 
-    if (dshotTelemetryState.motorState[motorIndex].telemetryTypes == DSHOT_NORMAL_TELEMETRY_MASK) {   /* Check DSHOT_TELEMETRY_TYPE_eRPM mask */
-        // Decode eRPM telemetry
+    // https://github.com/bird-sanctuary/extended-dshot-telemetry   
+    // Extract telemetry type field and check for eRPM conditions in one operation
+    uint16_t telemetryType = value & 0x0f00;
+    bool isErpm = (value & 0x0100) || (telemetryType == 0);
+    
+    if (isErpm) {
+        // Decode as eRPM
         *pDecoded = dshot_decode_eRPM_telemetry_value(value);
-
+        *pType = DSHOT_TELEMETRY_TYPE_eRPM;
+        
         // Update debug buffer
-        if (motorIndex < motorCount && motorIndex < DEBUG16_VALUE_COUNT) {
+        if (motorIndex < dshotMotorCount && motorIndex < DEBUG16_VALUE_COUNT) {
             DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
         }
-
-        // Set telemetry type
-        *pType = DSHOT_TELEMETRY_TYPE_eRPM;
     } else {
-        // Decode Extended DSHOT telemetry
-        switch (value & 0x0f00) {
-
-        case 0x0200:
-            // Temperature range (in degree Celsius, just like Blheli_32 and KISS)
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_TEMPERATURE;
-            break;
-
-        case 0x0400:
-            // Voltage range (0-63,75V step 0,25V)
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_VOLTAGE;
-            break;
-
-        case 0x0600:
-            // Current range (0-255A step 1A)
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_CURRENT;
-            break;
-
-        case 0x0800:
-            // Debug 1 value
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_DEBUG1;
-            break;
-
-        case 0x0A00:
-            // Debug 2 value
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_DEBUG2;
-            break;
-
-        case 0x0C00:
-            // Debug 3 value
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_DEBUG3;
-            break;
-
-        case 0x0E00:
-            // State / events
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
-            break;
-
-        default:
-            // Decode as eRPM
-            *pDecoded = dshot_decode_eRPM_telemetry_value(value);
-
-            // Update debug buffer
-            if (motorIndex < motorCount && motorIndex < DEBUG16_VALUE_COUNT) {
-                DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
-            }
-
-            // Set telemetry type
+        // Use lookup table for extended telemetry types
+        uint8_t typeIndex = (telemetryType >> 8) / 2 - 1;
+        if (typeIndex < 7) {
+            *pType = extendedTelemetryLookup[typeIndex];
+        } else {
+            // Fallback for invalid types
             *pType = DSHOT_TELEMETRY_TYPE_eRPM;
-            break;
-
         }
+        // Extract data field
+        *pDecoded = value & 0x00ff;
     }
 }
 
