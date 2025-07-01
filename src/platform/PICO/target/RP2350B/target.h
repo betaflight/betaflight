@@ -53,7 +53,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_0
 #define USE_SPI_DEVICE_1
-#define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_I2C
 #define USE_I2C_DEVICE_0
@@ -248,7 +247,10 @@
 #define MAX7456_SPI_CS_PIN   PA17
 
 #define GYRO_1_CS_PIN        PA1
+#define GYRO_1_EXTI_PIN      PA22
+
 #define GYRO_2_CS_PIN        NONE
+
 
 #if 0 // def TEST_DSHOT_ETC
 // testing motor1 and motor2 pins -> GPIO_SPARE1, GPIO_SPARE2
