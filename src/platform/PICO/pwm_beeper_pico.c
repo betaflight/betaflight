@@ -30,14 +30,14 @@
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
 
-static bool beeperInit;
+static bool beeperConfigured;
 static bool beeperEnabled;
 static int beeperGPIO;
 static uint pwmSlice;
 
 void pwmWriteBeeper(bool on)
 {
-    if (beeperInit) {
+    if (beeperConfigured) {
         gpio_set_outover(beeperGPIO, on ? GPIO_OVERRIDE_NORMAL : GPIO_OVERRIDE_LOW);
         pwm_set_enabled(pwmSlice, on);
         beeperEnabled = on;
@@ -58,9 +58,15 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
         IOInit(beeperIO, OWNER_BEEPER, 0);
 
         // f = sysclk / div / wrap
-        uint32_t clock_divide = 64; // gives a decent range of frequencies (down to 36Hz) for RP2350 at 150MHz
-        float wrap_f = ((float)SystemCoreClock) / frequency / clock_divide;
-        uint16_t wrap = (uint16_t)(wrap_f > 65535 ? 65535 : wrap_f);
+        // max clock divide is just under 256. Divide of 128 allows down to ~20Hz or so (at 150MHz).
+        uint32_t clock_divide;
+        for (clock_divide = 1; clock_divide < 256; clock_divide *= 2) {
+            if (SystemCoreClock / frequency / clock_divide < 0xffff) {
+                break;
+            }
+        }
+
+        uint16_t wrap = MIN(0xffff, SystemCoreClock / frequency / clock_divide);
         pwm_config cfg = pwm_get_default_config();
         pwm_config_set_clkdiv_int(&cfg, clock_divide);
         pwm_config_set_wrap(&cfg, wrap);
@@ -69,9 +75,7 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
         gpio_set_function(beeperGPIO, GPIO_FUNC_PWM);
         pwm_set_gpio_level(beeperGPIO, wrap >> 1); // 50% square wave
         beeperEnabled = false;
-        beeperInit = true;
-    } else {
-        beeperInit = false;
+        beeperConfigured = true;
     }
 }
 
