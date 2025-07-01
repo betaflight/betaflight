@@ -97,6 +97,7 @@
 #define USE_BARO_LPS22DF
 #define USE_BARO_SPI_LPS22DF
 #define USE_BARO_LPS22H
+#define USE_BARO_SPI_LPS22H
 #endif
 
 #if !defined(USE_GYRO) && !defined(USE_ACC)

@@ -50,8 +50,8 @@
  */
 
 // Macros to encode/decode multi-bit values
-#define LSM6DSV_ENCODE_BITS(val, mask, shift)   ((val << shift) & mask)
-#define LSM6DSV_DECODE_BITS(val, mask, shift)   ((val & mask) >> shift)
+#define LPS22H_ENCODE_BITS(val, mask, shift)   ((val << shift) & mask)
+#define LPS22H_DECODE_BITS(val, mask, shift)   ((val & mask) >> shift)
 
 // RESERVED - 00-0A
 
@@ -204,7 +204,7 @@ bool lps22hDetect(baroDev_t *baro)
 
     // Reset the device
     busWriteRegister(dev, LPS22H_CTRL_REG2, LPS22H_CTRL_REG2_SWRESET);
-    busWriteRegister(dev, LPS22H_CTRL_REG1, LSM6DSV_ENCODE_BITS(
+    busWriteRegister(dev, LPS22H_CTRL_REG1, LPS22H_ENCODE_BITS(
     LPS22H_CTRL_REG1_ODR_POWER_DOWN, LPS22H_CTRL_REG1_ODR_MASK, LPS22H_CTRL_REG1_ODR_SHIFT
     ));
 
@@ -275,7 +275,15 @@ static bool lps22hGetUP(baroDev_t *baro)
     }
 
     lps22h_up = (int32_t)(sensor_data[0] | sensor_data[1] << 8 | sensor_data[2] << 16);
+    // Sign extend 24-bit to 32-bit
+    if (lps22h_up & 0x800000) {
+        lps22h_up |= 0xFF000000; // Extend sign bit
+    }
+    
     lps22h_ut = (int32_t)(sensor_data[3] | sensor_data[4] << 8);
+    if (lps22h_ut & 0x8000) {
+        lps22h_ut |= 0xFFFF0000; // Sign extend 16-bit to 32-bit
+    }
 
     return true;
 }
