@@ -34,7 +34,7 @@
 #define PLATFORM_NO_LIBC             0
 #define DEFIO_PORT_PINS              64
 
-#if defined(RP2350A) || defined(RP2350B)
+#ifdef RP2350
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
