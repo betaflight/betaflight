@@ -201,6 +201,10 @@
 // Enable 9V if/when we need it (for DVTX?)
 // #define PICO_BEC_9V_ENABLE_PIN PA15
 
+#define USE_BEEPER
+#define BEEPER_PWM_HZ        1971
+#define BEEPER_PIN           PA5
+
 //#undef USE_BARO
 #define USE_BARO_DPS310
 #undef USE_BARO_MS5611
