@@ -48,8 +48,8 @@ void FAST_CODE run(void)
 {
     while (true) {
         scheduler();
-#if RUN_LOOP_DELAY_MS
-        delayMicroseconds_real(RUN_LOOP_DELAY_MS); // max rate 20kHz
+#if RUN_LOOP_DELAY_US
+        delayMicroseconds_real(RUN_LOOP_DELAY_US); // max rate 20kHz
 #endif
     }
 }
