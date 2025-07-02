@@ -36,7 +36,7 @@
 
 #define I2CDEV_COUNT        0
 
-#define RUN_LOOP_DELAY_MS 50 // max 20khz run loop frequency
+#define RUN_LOOP_DELAY_US 50 // max 20khz run loop frequency
 #define USE_MAIN_ARGS
 #define GYRO_COUNT 1 // 1 Gyro
 
