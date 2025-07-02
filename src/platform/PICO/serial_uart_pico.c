@@ -354,10 +354,54 @@ void uartReconfigure(uartPort_t *s)
 #endif
 }
 
+// revert basic uartPinConfigure for PICO prior to updates for PIO UARTs
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 {
-    UNUSED(pSerialPinConfig);
+    bprintf("* uartPinConfigure");
+    for (const uartHardware_t* hardware = uartHardware; hardware < ARRAYEND(uartHardware); hardware++) {
+        const serialPortIdentifier_e identifier = hardware->identifier;
+        uartDevice_t* uartdev = uartDeviceFromIdentifier(identifier);
+        const int resourceIndex = serialResourceIndex(identifier);
+        if (uartdev == NULL || resourceIndex < 0) {
+            // malformed uartHardware
+            bprintf("* uartPinConfigure %p malformed, uartdev %p, resourceIndex %d",hardware, uartdev, resourceIndex);
+            continue;
+        }
+        const ioTag_t cfgRx = pSerialPinConfig->ioTagRx[resourceIndex];
+        const ioTag_t cfgTx = pSerialPinConfig->ioTagTx[resourceIndex];
+        bprintf("* uartPinConfigure hw = %p dev = %p,  tags rx 0x%x, tx 0x%x", hardware, uartdev, cfgRx, cfgTx);
 
-    // Nothing to do currently for PICO
+#if UART_TRAIT_PINSWAP
+        bool swap = false;
+#endif
+        for (unsigned pindex = 0; pindex < UARTHARDWARE_MAX_PINS; pindex++) {
+            if (cfgRx && cfgRx == hardware->rxPins[pindex].pin) {
+                uartdev->rx = hardware->rxPins[pindex];
+            }
+
+            if (cfgTx && cfgTx == hardware->txPins[pindex].pin) {
+                uartdev->tx = hardware->txPins[pindex];
+            }
+#if UART_TRAIT_PINSWAP
+            // Check for swapped pins
+            if (cfgTx && cfgTx == hardware->rxPins[pindex].pin) {
+                uartdev->tx = hardware->rxPins[pindex];
+                swap = true;
+            }
+
+            if (cfgRx && cfgRx == hardware->txPins[pindex].pin) {
+                uartdev->rx = hardware->txPins[pindex];
+                swap = true;
+            }
+#endif
+        }
+        if (uartdev->rx.pin || uartdev->tx.pin ) {
+            uartdev->hardware = hardware;
+#if UART_TRAIT_PINSWAP
+            uartdev->pinSwap = swap;
+#endif
+        }
+    }
 }
+
 #endif /* USE_UART */
