@@ -58,15 +58,16 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
         IOInit(beeperIO, OWNER_BEEPER, 0);
 
         // f = sysclk / div / wrap
-        // max clock divide is just under 256. Divide of 128 allows down to ~20Hz or so (at 150MHz).
-        uint32_t clock_divide;
-        for (clock_divide = 1; clock_divide < 256; clock_divide *= 2) {
-            if (SystemCoreClock / frequency / clock_divide < 0xffff) {
-                break;
-            }
+        // Max clock divide is just under 256.
+        uint16_t wrap;
+        uint32_t clock_divide =  (SystemCoreClock / frequency + 0xfffe) / 0xffff; // round up
+        if (clock_divide > 255) {
+            clock_divide  = 255;
+            wrap = 0xffff;
+        } else {
+            wrap = SystemCoreClock / frequency / clock_divide;
         }
 
-        uint16_t wrap = MIN(0xffff, SystemCoreClock / frequency / clock_divide);
         pwm_config cfg = pwm_get_default_config();
         pwm_config_set_clkdiv_int(&cfg, clock_divide);
         pwm_config_set_wrap(&cfg, wrap);
