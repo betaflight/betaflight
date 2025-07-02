@@ -302,12 +302,19 @@ void spiInitBusDMA(void)
             // no more available channels so give up
             return;
         }
-
         channel_rx = dma_claim_unused_channel(true);
         if (channel_rx == -1) {
             // no more available channels so give up, first releasing the one
             // channel we did claim
             dma_channel_unclaim(channel_tx);
+            return;
+        }
+
+        if (!dmaAllocate(DMA_CHANNEL_TO_IDENTIFIER(channel_tx), OWNER_SPI_SDO, device + 1) ||
+            !dmaAllocate(DMA_CHANNEL_TO_IDENTIFIER(channel_rx), OWNER_SPI_SDI, device + 1)) {
+            // This should never happen if all allocated channels are claimed
+            dma_channel_unclaim(channel_tx);
+            dma_channel_unclaim(channel_rx);
             return;
         }
 
