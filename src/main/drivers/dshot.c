@@ -151,17 +151,25 @@ FAST_DATA_ZERO_INIT static float erpmToHz;
 FAST_DATA_ZERO_INIT static float dshotRpmAverage;
 FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 
-// Lookup table for extended telemetry type decoding (index = telemetryType >> 8)
+// Lookup table for extended telemetry type decoding
 // Only contains extended telemetry types, eRPM is handled by conditional logic
-static const dshotTelemetryType_t extendedTelemetryLookup[8] = {
-    DSHOT_TELEMETRY_TYPE_TEMPERATURE, // 0x0200 >> 8 = 2
-    DSHOT_TELEMETRY_TYPE_VOLTAGE,     // 0x0400 >> 8 = 4
-    DSHOT_TELEMETRY_TYPE_CURRENT,     // 0x0600 >> 8 = 6
-    DSHOT_TELEMETRY_TYPE_DEBUG1,      // 0x0800 >> 8 = 8
-    DSHOT_TELEMETRY_TYPE_DEBUG2,      // 0x0A00 >> 8 = 10
-    DSHOT_TELEMETRY_TYPE_DEBUG3,      // 0x0C00 >> 8 = 12
-    DSHOT_TELEMETRY_TYPE_STATE_EVENTS,// 0x0E00 >> 8 = 14
-    DSHOT_TELEMETRY_TYPE_eRPM,        // Invalid/fallback
+static const dshotTelemetryType_t extendedTelemetryLookup[9] = {
+    DSHOT_TELEMETRY_TYPE_eRPM,
+    // Temperature range (in degree Celsius, just like Blheli_32 and KISS)
+    DSHOT_TELEMETRY_TYPE_TEMPERATURE,
+    // Voltage range (0-63,75V step 0,25V)
+    DSHOT_TELEMETRY_TYPE_VOLTAGE,
+    // Current range (0-255A step 1A)
+    DSHOT_TELEMETRY_TYPE_CURRENT,
+    // Debug 1 value
+    DSHOT_TELEMETRY_TYPE_DEBUG1,
+    // Debug 2 value
+    DSHOT_TELEMETRY_TYPE_DEBUG2,
+    // Debug 3 value
+    DSHOT_TELEMETRY_TYPE_DEBUG3,
+    // State / events
+    DSHOT_TELEMETRY_TYPE_STATE_EVENTS,
+    DSHOT_TELEMETRY_TYPE_eRPM,  // Invalid/fallback
 };
 
 void initDshotTelemetry(const timeUs_t looptimeUs)
@@ -209,11 +217,10 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
     // https://github.com/bird-sanctuary/extended-dshot-telemetry   
     // Extract telemetry type field and check for eRPM conditions in one operation
-    uint16_t telemetryType = value & 0x0f00;
-    bool isErpm = (value & 0x0100) || (telemetryType == 0);
+    unsigned telemetryType = (value & 0x0f00) >> 8;  // 3 bits type + telemetry marker
+    bool isErpm = (telemetryType & 0x01) || (telemetryType == 0);
     
     if (isErpm) {
-        // Decode as eRPM
         *pDecoded = dshot_decode_eRPM_telemetry_value(value);
         *pType = DSHOT_TELEMETRY_TYPE_eRPM;
         
@@ -223,8 +230,8 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
         }
     } else {
         // Use lookup table for extended telemetry types
-        uint8_t typeIndex = (telemetryType >> 8) / 2 - 1;
-        if (typeIndex < 7) {
+        unsigned typeIndex = telemetryType >> 1;  // drop tag bit containing zero
+        if (typeIndex < ARRAYLEN(extendedTelemetryLookup)) {
             *pType = extendedTelemetryLookup[typeIndex];
         } else {
             // Fallback for invalid types
