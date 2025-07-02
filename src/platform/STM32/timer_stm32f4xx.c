@@ -200,7 +200,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     0
     1
     2       TIM4_CH1                            TIM4_CH2                                        TIM4_CH3
-    3                   TIM2_CH3                                        TIM2_CH1    TIM2_CH1    TIM2_CH4
+    3                   TIM2_CH3                                        TIM2_CH1    TIM2_CH2    TIM2_CH4
                                                                                     TIM2_CH4
     4
     5                               TIM3_CH4                TIM3_CH1    TIM3_CH2                TIM3_CH3
@@ -218,8 +218,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     3
     4
     5
-    6       TIM1_CH1    TIM1_CH2    TIM1_CH1                TIM1_CH4                TIM1_CH3
-    7                   TIM8_CH1    TIM8_CH2    TIM8_CH3                                        TIM8_CH4
+    6                   TIM1_CH1    TIM1_CH2    TIM1_CH1    TIM1_CH4                TIM1_CH3
+    7                               TIM8_CH1    TIM8_CH2    TIM8_CH3                TIM8_CH4
 */
 
 uint32_t timerClock(const TIM_TypeDef *tim)
