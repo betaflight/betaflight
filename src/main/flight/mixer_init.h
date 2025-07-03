@@ -53,6 +53,33 @@ typedef struct mixerRuntime_s {
     float vbatFull;
     float vbatRangeToCompensate;
 #endif
+    float govenorExpectedThrottleLimit;
+    float govenorAccelerationLimit;
+    float govenorDecelerationLimit;
+    float govenorKFactor;
+    float prevAverageRPM;
+    float govenorPreviousSmoothedRPMError;
+    float minRPMDelayK;
+    float afterburnerRPM;
+    bool afterburnerReset;
+    bool afterburnerHoldToBoost;
+    float afterburnerDuration;
+    float afterburnerTankPercent;
+    bool afterburnerInitiated;
+    uint8_t afterburnerTanksRemaining;
+    bool rpmLinearization;
+    float RPMLimit;
+    int motorPoleCount;
+    bool govenorEnabled;
+    float govenorI;
+    float govenorPGain;
+    float govenorIGain;
+    float govenorDGain;
+    float govenorPreviousSmoothedRPM;
+    float govenorPreviousRPMLimit;
+    float govenorDelayK;
+    float govenorLearningThrottleK;
+    bool govenor_init;
 } mixerRuntime_t;
 
 extern mixerRuntime_t mixerRuntime;
