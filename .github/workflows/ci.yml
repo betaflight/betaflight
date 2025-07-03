@@ -86,7 +86,7 @@ jobs:
           path: |
             obj/*.hex
             obj/*.uf2
-            obj/*${{ matrix.target }}
+            obj/*_${{ matrix.target }}*
           retention-days: 60
 
   test:
