@@ -213,7 +213,7 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
-    bool isEdtEnabled = (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0 ? true : false;
+   bool isEdtEnabled = (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
 
     // https://github.com/bird-sanctuary/extended-dshot-telemetry   
     // Extract telemetry type field and check for eRPM conditions in one operation
