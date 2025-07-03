@@ -153,7 +153,7 @@ FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
 
 // Lookup table for extended telemetry type decoding
 // Only contains extended telemetry types, eRPM is handled by conditional logic
-static const dshotTelemetryType_t extendedTelemetryLookup[9] = {
+static const dshotTelemetryType_t extendedTelemetryLookup[8] = {
     DSHOT_TELEMETRY_TYPE_eRPM,
     // Temperature range (in degree Celsius, just like Blheli_32 and KISS)
     DSHOT_TELEMETRY_TYPE_TEMPERATURE,
@@ -169,7 +169,6 @@ static const dshotTelemetryType_t extendedTelemetryLookup[9] = {
     DSHOT_TELEMETRY_TYPE_DEBUG3,
     // State / events
     DSHOT_TELEMETRY_TYPE_STATE_EVENTS,
-    DSHOT_TELEMETRY_TYPE_eRPM,  // Invalid/fallback
 };
 
 void initDshotTelemetry(const timeUs_t looptimeUs)
@@ -214,11 +213,12 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
+    bool isEdtEnabled = (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0 ? true : false;
 
     // https://github.com/bird-sanctuary/extended-dshot-telemetry   
     // Extract telemetry type field and check for eRPM conditions in one operation
     unsigned telemetryType = (value & 0x0f00) >> 8;  // 3 bits type + telemetry marker
-    bool isErpm = (telemetryType & 0x01) || (telemetryType == 0);
+    bool isErpm = !isEdtEnabled || (telemetryType & 0x01) || (telemetryType == 0);
     
     if (isErpm) {
         *pDecoded = dshot_decode_eRPM_telemetry_value(value);
@@ -233,9 +233,6 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
         unsigned typeIndex = telemetryType >> 1;  // drop tag bit containing zero
         if (typeIndex < ARRAYLEN(extendedTelemetryLookup)) {
             *pType = extendedTelemetryLookup[typeIndex];
-        } else {
-            // Fallback for invalid types
-            *pType = DSHOT_TELEMETRY_TYPE_eRPM;
         }
         // Extract data field
         *pDecoded = value & 0x00ff;
