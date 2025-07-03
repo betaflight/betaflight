@@ -83,7 +83,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: obj/*.hex
+          path: |
+            obj/*.hex
+            obj/*.uf2
+            obj/*${{ matrix.target }}
           retention-days: 60
 
   test:
