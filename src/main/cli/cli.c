@@ -5425,7 +5425,18 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
     int uiIndex;
 
     if (entry->presenceMask) {
+#if defined(STM32H7) || defined(STM32G4)
+        if (entry->peripheral == DMA_PERIPH_TIMUP) {
+            if (!(BIT(index + 1) & entry->presenceMask)) {
+                return;
+            }
+            uiIndex = index + 1;
+        } else {
+            uiIndex = timerGetNumberByIndex(index);
+        }
+#else
         uiIndex = timerGetNumberByIndex(index);
+#endif
     } else {
         uiIndex = DMA_OPT_UI_INDEX(index);
     }
