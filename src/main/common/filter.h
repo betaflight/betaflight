@@ -38,6 +38,7 @@ typedef enum {
     FILTER_LPF,    // 2nd order Butterworth section
     FILTER_NOTCH,
     FILTER_BPF,
+    FILTER_HPF,
 } biquadFilterType_e;
 
 typedef struct pt1Filter_s {
@@ -116,8 +117,10 @@ void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k);
 float pt3FilterApply(pt3Filter_t *filter, float input);
 
 float filterGetNotchQ(float centerFreq, float cutoffFreq);
+float filterGetBandQ(float lowerFreq, float higherFreq);
 
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
+void biquadFilterInitHPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
 void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
 void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
