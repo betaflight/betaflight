@@ -22,6 +22,13 @@
 
 #include "version.h"
 
+#ifndef FC_VERSION_STRING_PRINTED
+#define FC_VERSION_STRING_PRINTED
+
+#pragma message "FC_VERSION_STRING: " FC_VERSION_STRING
+
+#endif
+
 const char * const targetName = __TARGET__;
 const char * const shortGitRevision = __REVISION__;
 #if defined(__CONFIG_REVISION__)

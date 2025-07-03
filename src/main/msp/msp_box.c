@@ -102,6 +102,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXBEEPERMUTE, .boxName = "BEEPER MUTE", .permanentId = 52},
     { .boxId = BOXREADY, .boxName = "READY", .permanentId = 53},
     { .boxId = BOXLAPTIMERRESET, .boxName = "LAP TIMER RESET", .permanentId = 54},
+    { .boxId = BOXLEDNOBLINK, .boxName = "LED NO BLINK", .permanentId = 101},
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -338,6 +339,7 @@ void initActiveBoxIds(void)
 
     BME(BOXSTICKCOMMANDDISABLE);
     BME(BOXREADY);
+    BME(BOXLEDNOBLINK);
 
 #if defined(USE_GPS_LAP_TIMER)
     BME(BOXLAPTIMERRESET);

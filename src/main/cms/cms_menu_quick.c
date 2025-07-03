@@ -29,9 +29,11 @@
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
+#include "cms/cms_menu_extra_led.h"
 #include "cms/cms_menu_main.h"
 #include "cms/cms_menu_vtx_common.h"
 #include "cms/cms_menu_rpm_limit.h"
+
 #include "common/printf.h"
 #include "config/config.h"
 
@@ -48,6 +50,8 @@
 #include "cli/settings.h"
 
 #include "cms_menu_quick.h"
+
+#include "cms/cms_menu_spec.h"
 
 static controlRateConfig_t rateProfile;
 static uint8_t rateProfileIndex;
@@ -87,23 +91,29 @@ static const void *cmsx_RateProfileWriteback(displayPort_t *pDisp, const OSD_Ent
     return NULL;
 }
 
+
+static const char * const osdTableThrottleLimitType[] = {
+    "OFF", "SCALE", "CLIP"
+};
+
+
 static const OSD_Entry menuMainEntries[] =
 {
-    { "-- QUICK --",  OME_Label, NULL, NULL },
-
 #if defined(USE_RPM_LIMIT)
     { "RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit },
 #endif
-    { "THR LIM TYPE",  OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType } },
-    { "THR LIM %",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1 } },
-    { "MTR OUT LIM %", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1 } },
-    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1 } },
+    { "LEDS EXTRA", OME_Submenu, cmsMenuChange, &cmsx_menuExtraLed },
+    { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
+    { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
+    { "MTR OUT LIM %",OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1} },
+    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1} },
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
-    { "MAIN",            OME_Submenu,  NULL, &cmsx_menuMain },
+    { "SPECS", OME_Submenu, cmsMenuChange, &cmsx_menuSpec },
+    { "MAIN",     OME_Submenu,  NULL, &cmsx_menuMain},
     { "EXIT",            OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT},
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
     {NULL, OME_END, NULL, NULL},

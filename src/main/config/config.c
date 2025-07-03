@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "platform.h"
 
@@ -94,6 +95,8 @@
 
 #include "drivers/dshot.h"
 
+#include "osd/osd_elements.h"
+
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 
 static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
@@ -111,6 +114,15 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 2);
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .craftName = { 0 },
     .pilotName = { 0 },
+    .extra100Throttle = "KAACK",
+    .extraFcHotWarning = "THIS IS HOT",
+    .extraTurtleModeWarning = "SORRY",
+    .extraLowBatteryWarning = "AINT LEAVING",
+    .extraArmedWarning = "LETS GO",
+    .extraLandNowWarning = ">> LAND NOW <<",
+    .extraPrearm1 = "SCULLY",
+    .extraPrearm2 = "ONE",
+    .extraPrearm3 = "LOVE",
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
@@ -208,6 +220,19 @@ static void validateAndFixRatesSettings(void)
             controlRateProfilesMutable(profileIndex)->rcExpo[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcExpo[axis], 0, ratesSettingLimits[ratesType].expo_limit);
         }
     }
+}
+
+void makeStringsUpperCase(void)
+{
+    toUpperCase(pilotConfigMutable()->extra100Throttle, pilotConfig()->extra100Throttle, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraFcHotWarning, pilotConfig()->extraFcHotWarning, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraTurtleModeWarning, pilotConfig()->extraTurtleModeWarning, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraLowBatteryWarning, pilotConfig()->extraLowBatteryWarning, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraArmedWarning, pilotConfig()->extraArmedWarning, MAX_NAME_LENGTH);
+
+    toUpperCase(pilotConfigMutable()->extraPrearm1, pilotConfig()->extraPrearm1, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraPrearm2, pilotConfig()->extraPrearm2, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraPrearm3, pilotConfig()->extraPrearm3, MAX_NAME_LENGTH);
 }
 
 static void validateAndFixConfig(void)
@@ -567,6 +592,21 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
              osdConfigMutable()->timers[i] = osdTimerDefault[i];
          }
      }
+
+     featureEnableImmediate(FEATURE_OSD);
+
+     if (!VISIBLE(osdElementConfig()->item_pos[OSD_SPEC_LOGO])) {
+        uint16_t profileFlags = 0;
+        for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
+            profileFlags |= OSD_PROFILE_FLAG(i);
+        }
+
+        if (osdConfig()->canvas_cols < 40) {
+            osdElementConfigMutable()->item_pos[OSD_SPEC_LOGO] = OSD_POS(1, 2) | profileFlags;
+        } else {
+            osdElementConfigMutable()->item_pos[OSD_SPEC_LOGO] = OSD_POS(3, 2) | profileFlags;
+        }
+     }
 #endif
 
 #if defined(USE_VTX_COMMON) && defined(USE_VTX_TABLE)
@@ -602,6 +642,7 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
 #endif
 
     validateAndfixMotorOutputReordering(motorConfigMutable()->dev.motorOutputReordering, MAX_SUPPORTED_MOTORS);
+    makeStringsUpperCase();
 
     // validate that the minimum battery cell voltage is less than the maximum cell voltage
     // reset to defaults if not

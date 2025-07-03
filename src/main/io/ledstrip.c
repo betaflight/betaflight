@@ -149,6 +149,10 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_brightness = 100;
     ledStripConfig->ledstrip_rainbow_delta = 0;
     ledStripConfig->ledstrip_rainbow_freq = 120;
+    ledStripConfig->extra_ledstrip_blinkmask = 0x3333; // 0b1000000000000101;
+    ledStripConfig->extra_ledstrip_color = COLOR_BLACK;
+    ledStripConfig->extra_ledstrip_color2 = COLOR_BLACK;
+    ledStripConfig->extra_ledstrip_color2_brightness = 0;
 #ifndef UNIT_TEST
 #ifdef LED_STRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
@@ -494,6 +498,17 @@ static const struct {
     {0,             LED_MODE_ORIENTATION},
 };
 
+static hsvColor_t getCurrentLedColor(int ledIndex)
+{
+    const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
+    hsvColor_t color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
+    if (COLOR_BLACK != ledStripConfig()->extra_ledstrip_color) {
+        color = hsv[ledStripConfig()->extra_ledstrip_color];
+}
+
+    return color;
+}
+
 static void applyLedFixedLayers(void)
 {
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
@@ -505,7 +520,7 @@ static void applyLedFixedLayers(void)
 
         switch (fn) {
         case LED_FUNCTION_COLOR:
-            color = ledStripStatusModeConfig()->colors[ledGetColor(ledConfig)];
+            color = getCurrentLedColor(ledIndex);
 
             hsvColor_t nextColor = ledStripStatusModeConfig()->colors[(ledGetColor(ledConfig) + 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
             hsvColor_t previousColor = ledStripStatusModeConfig()->colors[(ledGetColor(ledConfig) - 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
@@ -1014,8 +1029,14 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
 // blink twice, then wait ; either always or just when landing
 static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
 {
-    const uint16_t blinkPattern = 0x8005; // 0b1000000000000101;
+    uint16_t blinkPattern = ledStripConfig()->extra_ledstrip_blinkmask;
+    if (IS_RC_MODE_ACTIVE(BOXLEDNOBLINK)) {
+
+        blinkPattern = 0xFFFF;
+    }
+
     static uint16_t blinkMask;
+
 
     if (updateNow) {
         blinkMask = blinkMask >> 1;
@@ -1031,7 +1052,12 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
             const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
 
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_BLINK)) {
-                setLedHsv(i, getSC(LED_SCOLOR_BLINKBACKGROUND));
+                hsvColor_t currentColor = getCurrentLedColor(i);
+                if (COLOR_BLACK != ledStripConfig()->extra_ledstrip_color2) {
+                    currentColor = hsv[ledStripConfig()->extra_ledstrip_color2];
+                }
+                currentColor.v = ledStripConfig()->extra_ledstrip_color2_brightness;
+                setLedHsv(i, &currentColor); //getSC(LED_SCOLOR_BLINKBACKGROUND)
             }
         }
     }

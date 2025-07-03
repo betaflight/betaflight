@@ -270,20 +270,20 @@ void processRcStickPositions(void)
     switch (rcSticks) {
     case THR_LO + YAW_LO + PIT_CE + ROL_LO:
         // ROLL left -> PID profile 1
-        changePidProfile(0);
+        //changePidProfile(0);
         return;
     case THR_LO + YAW_LO + PIT_HI + ROL_CE:
         // PITCH up -> PID profile 2
-        changePidProfile(1);
+        //changePidProfile(1);
         return;
     case THR_LO + YAW_LO + PIT_CE + ROL_HI:
         // ROLL right -> PID profile 3
-        changePidProfile(2);
+        //changePidProfile(2);
         return;
     }
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_HI) {
-        saveConfigAndNotify();
+        //saveConfigAndNotify();
     }
 
 #ifdef USE_ACC
@@ -350,16 +350,16 @@ void processRcStickPositions(void)
         // in ACRO mode, so use sticks to change RATE profile
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
-            changeControlRateProfile(0);
+            //changeControlRateProfile(0);
             return;
         case THR_HI + YAW_CE + PIT_LO + ROL_CE:
-            changeControlRateProfile(1);
+            //changeControlRateProfile(1);
             return;
         case THR_HI + YAW_CE + PIT_CE + ROL_HI:
-            changeControlRateProfile(2);
+            //changeControlRateProfile(2);
             return;
         case THR_HI + YAW_CE + PIT_CE + ROL_LO:
-            changeControlRateProfile(3);
+            //changeControlRateProfile(3);
             return;
         }
     }
@@ -376,16 +376,16 @@ void processRcStickPositions(void)
 
 #ifdef USE_VTX_CONTROL
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
-        vtxIncrementBand();
+        //vtxIncrementBand();
     }
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_LO) {
-        vtxDecrementBand();
+        //vtxDecrementBand();
     }
     if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_HI) {
-        vtxIncrementChannel();
+        //vtxIncrementChannel();
     }
     if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_LO) {
-        vtxDecrementChannel();
+        //vtxDecrementChannel();
     }
 #endif
 

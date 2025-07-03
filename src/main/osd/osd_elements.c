@@ -128,6 +128,7 @@
 #include "common/utils.h"
 #include "common/unit.h"
 #include "common/filter.h"
+#include "common/spec.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -853,7 +854,7 @@ static void osdBackgroundCameraFrame(osdElementParms_t *element)
     }
 }
 
-static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
+void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
 {
     unsigned int i;
     for (i = 0; i < maxSrcLength && src[i]; i++) {
@@ -1642,7 +1643,15 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
 static void osdElementThrottlePosition(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
+    const uint8_t throttleValue = calculateThrottlePercent();
+    if (strlen(pilotConfig()->extra100Throttle) == 0 || throttleValue < 100)
+    {
+        tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
+    }
+    else
+    {
+        tfp_sprintf(element->buff, pilotConfig()->extra100Throttle);
+    }
 }
 
 static void osdElementTimer(osdElementParms_t *element)
@@ -1711,6 +1720,41 @@ static void osdElementAuxValue(osdElementParms_t *element)
 {
     tfp_sprintf(element->buff, "%c%d", osdConfig()->aux_symbol, osdAuxValue);
 }
+
+static void osdElementSpecLogo(osdElementParms_t *element)
+{
+    static int state = -1; // for rendering logo line by line
+    static int animationState = 0; // for rendering different logo states
+    static timeMs_t lastLogoAnimationUpdateMs = 0;
+    static SpecType specType = SPEC_COUNT;
+
+    switch (state) {
+        case -1:
+            specType = getCurrentSpec();
+            break;
+        default:
+            if (specType != SPEC_COUNT) {
+                osdDisplayWrite(element, element->elemPosX, element->elemPosY + state, DISPLAYPORT_SEVERITY_NORMAL, specArray[specType].logo[animationState][state]);
+            }
+    }
+
+    state ++;
+
+    if (state >= LOGO_HEIGHT) { // rendered the whole logo
+        if (millis() - lastLogoAnimationUpdateMs > 1000) // update logo animation ever second
+        {
+            lastLogoAnimationUpdateMs = millis();
+            animationState = (animationState + 1) % LOGO_GROUPS; // increment animation state and make sure its < LOGO_GROUPS
+        }
+        
+        state = -1;
+    } else {
+        element->rendered = false;
+    }
+
+    element->drawElement = false;  // element already drawn
+}
+
 
 static void osdElementWarnings(osdElementParms_t *element)
 {
@@ -1864,6 +1908,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
 #endif
+    OSD_SPEC_LOGO,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -2003,6 +2048,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
 #endif
+    [OSD_SPEC_LOGO]               = osdElementSpecLogo,
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2242,9 +2288,10 @@ bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort)
 }
 
 #ifdef USE_SPEC_PREARM_SCREEN
-bool osdDrawSpec(displayPort_t *osdDisplayPort)
+
+bool osdDrawSpecReal(displayPort_t *osdDisplayPort)
 {
-    static enum {RPM, POLES, MIXER, THR, MOTOR, BAT, VER} specState = RPM;
+    static enum {RPM, POLES, MIXER, THR, MOTOR, BAT, VER, SPEC_NAME} specState = RPM;
     static int currentRow;
 
     const uint8_t midRow = osdDisplayPort->rows / 2;
@@ -2322,13 +2369,72 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
         len = strlen(FC_VERSION_STRING);
         displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, FC_VERSION_STRING);
 
+        specState = SPEC_NAME;
+        break;
+
+    case SPEC_NAME: {
+        SpecType specType = getCurrentSpec();
+
+        if (specType != SPEC_COUNT) {
+            len = strlen(specArray[specType].name);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, specArray[specType].name);
+        }
+
         specState = RPM;
 
         return true;
+        }
     }
 
     return false;
 }
+
+bool osdDrawPrearmStrings(displayPort_t *osdDisplayPort)
+{
+    const uint8_t midRow = osdDisplayPort->rows / 2;
+    const uint8_t midCol = osdDisplayPort->cols / 2;
+
+    char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
+
+    int len = 0;
+
+    static int currentRow;
+    static int state = 0;
+
+    switch (state) {
+        default:
+        case 0:
+            state++;
+            currentRow = midRow - 2;
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm1);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+            break;
+        case 1:
+            state++;            
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm2);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+            break;
+        case 2:
+            state = 0;
+            len = tfp_sprintf(buff, "%s", pilotConfig()->extraPrearm3);
+            displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
+            return true;
+    }
+
+    return false;
+}
+
+bool osdDrawSpec(displayPort_t *osdDisplayPort)
+{
+    const uint8_t throttleValue = calculateThrottlePercent();
+    if (throttleValue > 80) {
+        return osdDrawPrearmStrings(osdDisplayPort);
+    } else {
+        return osdDrawSpecReal(osdDisplayPort);
+    }
+
+}
+
 #endif // USE_SPEC_PREARM_SCREEN
 
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
