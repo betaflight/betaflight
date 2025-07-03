@@ -33,7 +33,6 @@ jobs:
         run: make arm_sdk_install
 
       - name: Hydrate the PICO sdk
-        description: Hydration is required to build the PICO tool
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make pico_sdk
 
@@ -42,7 +41,6 @@ jobs:
         run: make picotool_install
 
       - name: Hydrate configuration
-        description: Load the configuration sub-module as it is needed to ensure the build target list is successful
         id: get-config
         run: make configs
 
