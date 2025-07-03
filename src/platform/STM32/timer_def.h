@@ -1156,7 +1156,7 @@
 
 #define FULL_TIMER_CHANNEL_COUNT 93 // XXX Need review
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) | TIM_N(20) )
-#define HARDWARE_TIMER_DEFINITION_COUNT 12
+#define HARDWARE_TIMER_DEFINITION_COUNT 20
 #define TIMUP_TIMERS ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7) | BIT(8) | BIT(15) | BIT(16) | BIT(17) | BIT(20))
 
 #endif
