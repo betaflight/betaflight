@@ -19,7 +19,10 @@ jobs:
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Cache build toolchain
         uses: actions/cache@v4
@@ -31,10 +34,6 @@ jobs:
       - name: Download and install toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make arm_sdk_install
-
-      - name: Hydrate the PICO sdk
-        if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make pico_sdk
 
       - name: Build pico tool and install
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -58,6 +57,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Fetch toolchain from cache
         uses: actions/cache@v4
