@@ -50,7 +50,22 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = DEFAULT_MIXER,
     .yaw_motors_reversed = false,
     .crashflip_motor_percent = 0,
-    .crashflip_expo = 35,
+    .crashflip_expo = 0,
+    .govenor = true,
+    .govenor_p = 20.0f,
+    .govenor_i = 17.0f,
+    .govenor_d = 3.0f,
+    .govenor_rpm_linearization = true,
+    .govenor_idle_rpm = 60,
+    .govenor_acceleration_limit = 60,
+    .govenor_deceleration_limit = 60,
+    .govenor_k_factor = 3000,
+    .govenor_rpm_limit = 305.0f,
+    .govenor_rpm_afterburner = 45,
+    .govenor_rpm_afterburner_duration = 5,
+    .govenor_rpm_afterburner_reset = false,
+    .govenor_rpm_afterburner_hold_to_use = false,
+    .govenor_rpm_afterburner_tank_count = 1,
     .mixer_type = MIXER_LEGACY,
 );
 
@@ -310,6 +325,43 @@ void mixerInitProfile(void)
         mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE; // Override value set by initEscEndpoints to allow zero motor drive
     }
 #endif
+mixerRuntime.govenorExpectedThrottleLimit = 1.0f;
+
+//Street League spec settings
+
+//Locked rpm settings
+mixerRuntime.govenorEnabled = true;
+mixerRuntime.rpmLinearization = true;
+mixerRuntime.motorPoleCount = 12;
+mixerRuntime.afterburnerReset = false;
+mixerRuntime.afterburnerHoldToBoost = false;
+
+//Unlocked rpm settings
+// mixerRuntime.govenorEnabled = mixerConfig()->govenor;
+// mixerRuntime.rpmLinearization = mixerConfig()->govenor_rpm_linearization;
+// mixerRuntime.motorPoleCount = motorConfig()->motorPoleCount;
+// mixerRuntime.afterburnerReset = mixerConfig()->govenor_rpm_afterburner_reset;
+// mixerRuntime.afterburnerHoldToBoost = mixerConfig()->govenor_rpm_afterburner_hold_to_use;
+
+
+mixerRuntime.govenorPGain = mixerConfig()->govenor_p * 0.0000015f;
+mixerRuntime.govenorIGain = mixerConfig()->govenor_i * 0.0001f * pidGetDT();
+mixerRuntime.govenorDGain = mixerConfig()->govenor_d * 0.00000003f * pidGetPidFrequency();
+mixerRuntime.govenorAccelerationLimit = mixerConfig()->govenor_acceleration_limit * 1000.0f * pidGetDT();
+mixerRuntime.govenorDecelerationLimit = mixerConfig()->govenor_deceleration_limit * 1000.0f * pidGetDT();
+mixerRuntime.govenorKFactor = mixerConfig()->govenor_k_factor;
+mixerRuntime.afterburnerRPM = mixerConfig()->govenor_rpm_afterburner;
+mixerRuntime.afterburnerDuration = mixerConfig()->govenor_rpm_afterburner_duration;
+mixerRuntime.afterburnerTanksRemaining = mixerConfig()->govenor_rpm_afterburner_tank_count;
+mixerRuntime.RPMLimit = mixerConfig()->govenor_rpm_limit;
+
+mixerRuntime.govenorI = 0;
+mixerRuntime.afterburnerTankPercent = 100.0f;
+mixerRuntime.afterburnerInitiated = false;
+mixerRuntime.govenorPreviousSmoothedRPMError = 0;
+mixerRuntime.govenorDelayK = mixerRuntime.govenorKFactor * pidGetDT() / 20.0f;
+mixerRuntime.govenorLearningThrottleK = 0.5 / (pidGetPidFrequency() * mixerConfig()->govenorThrottleLimitLearningTimeMS / 1000); // 0.5 = value ^ (4000 * time)       0.99^(4000*(20/1000))
+mixerRuntime.govenor_init = false;
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     mixerRuntime.vbatSagCompensationFactor = 0.0f;
@@ -346,7 +398,7 @@ void loadLaunchControlMixer(void)
 static void mixerConfigureOutput(void)
 {
     mixerRuntime.motorCount = 0;
-
+    
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -410,6 +462,7 @@ void mixerInit(mixerMode_e mixerMode)
     mixerRuntime.feature3dEnabled = featureIsEnabled(FEATURE_3D);
 
     initEscEndpoints();
+
 #ifdef USE_SERVOS
     if (mixerIsTricopter()) {
         mixerTricopterInit();
@@ -445,9 +498,11 @@ bool mixerModeIsFixedWing(mixerMode_e mixerMode)
     case MIXER_AIRPLANE:
     case MIXER_CUSTOM_AIRPLANE:
         return true;
+
         break;
     default:
         return false;
+
         break;
     }
 }
