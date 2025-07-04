@@ -5758,7 +5758,9 @@ static void cliDma(const char *cmdName, char* cmdline)
 #if defined(USE_DMA_SPEC)
     cliDmaopt(cmdName, cmdline);
 #else
-    cliShowParseError(cmdName);
+    UNUSED(cmdName);
+    // the only option is show, so make that the default behaviour
+    showDma();
 #endif
 }
 #endif

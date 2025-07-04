@@ -25,7 +25,7 @@
 #include "drivers/dma.h"
 #include "drivers/timer.h"
 
-#ifdef USE_DMA
+#ifdef USE_DMA_SPEC
 #include "dma_reqmap_mcu.h"
 #endif
 
