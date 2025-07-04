@@ -77,6 +77,6 @@
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
 
 // ITCM is in short supply for this target.
-// For this target, functions decorated FAST_CODE_PREF will not be put into ITCM RAM; 
+// For this target, functions decorated FAST_CODE_PREF will not be put into ITCM RAM;
 // on other targets, the same function *will* go into ITCM RAM
 #define FAST_CODE_PREF

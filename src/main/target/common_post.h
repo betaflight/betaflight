@@ -49,41 +49,45 @@
 #define DEFAULT_AUX_CHANNEL_COUNT       6
 #endif
 
-#ifdef USE_ITCM_RAM
-#if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
-#define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
-#else
-#define FAST_CODE                   __attribute__((section(".tcm_code")))
-#endif
-#ifndef FAST_CODE_PREF
-#define FAST_CODE_PREF              FAST_CODE
-// If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
-// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM
-// but if FAST_CODE_PREF is not defined for the target, FAST_CODE_PREF is an alias to FAST_CODE, and
-// functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
-#endif
-
-#define FAST_CODE_NOINLINE          NOINLINE
-
-#else
+#ifndef FAST_CODE
 #define FAST_CODE
-#define FAST_CODE_PREF
-#define FAST_CODE_NOINLINE
-#endif // USE_ITCM_RAM
+#endif
 
-#ifdef USE_CCM_CODE
-#define CCM_CODE                    __attribute__((section(".ccm_code")))
-#else
+#ifndef FAST_CODE_PREF
+#define FAST_CODE_PREF  FAST_CODE
+#endif
+
+#ifndef FAST_CODE_NOINLINE
+#define FAST_CODE_NOINLINE
+#endif
+
+#ifndef CCM_CODE
 #define CCM_CODE
 #endif
 
-#ifdef USE_FAST_DATA
-#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
-#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
-#else
-#define FAST_DATA_ZERO_INIT
+#ifndef FAST_DATA
 #define FAST_DATA
-#endif // USE_FAST_DATA
+#endif
+
+#ifndef FAST_DATA_ZERO_INIT
+#define FAST_DATA_ZERO_INIT
+#endif
+
+#ifndef MMFLASH_CODE
+#define MMFLASH_CODE
+#endif
+
+#ifndef MMFLASH_CODE_NOINLINE
+#define MMFLASH_CODE_NOINLINE
+#endif
+
+#ifndef MMFLASH_DATA
+#define MMFLASH_DATA
+#endif
+
+#ifndef MMFLASH_DATA_ZERO_INIT
+#define MMFLASH_DATA_ZERO_INIT
+#endif
 
 /*
     BEGIN HARDWARE INCLUSIONS
@@ -628,33 +632,6 @@ extern uint8_t eepromData[EEPROM_SIZE];
 struct linker_symbol;
 extern struct linker_symbol __config_start;   // configured via linker script when building binaries.
 extern struct linker_symbol __config_end;
-#endif
-
-#if defined(USE_EXST) && !defined(RAMBASED)
-#define USE_FLASH_BOOT_LOADER
-#endif
-
-#if defined(USE_FLASH_MEMORY_MAPPED)
-#if !defined(USE_RAM_CODE)
-#define USE_RAM_CODE
-#endif
-
-#define MMFLASH_CODE RAM_CODE
-#define MMFLASH_CODE_NOINLINE RAM_CODE NOINLINE
-
-#define MMFLASH_DATA FAST_DATA
-#define MMFLASH_DATA_ZERO_INIT FAST_DATA_ZERO_INIT
-#else
-#define MMFLASH_CODE
-#define MMFLASH_CODE_NOINLINE
-#define MMFLASH_DATA
-#define MMFLASH_DATA_ZERO_INIT
-#endif
-
-#ifdef USE_RAM_CODE
-// RAM_CODE for methods that need to be in RAM, but don't need to be in the fastest type of memory.
-// Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
-#define RAM_CODE                   __attribute__((section(".ram_code")))
 #endif
 
 #ifndef USE_ITERM_RELAX
