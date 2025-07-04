@@ -79,6 +79,6 @@ void pgResetFn_timerUpConfig(timerUpConfig_t *config)
     cfg[TIMER_INDEX(20)].dmaopt = TIMUP20_DMA_OPT;
 #endif
 
-   memcpy(config, cfg, HARDWARE_TIMER_DEFINITION_COUNT);
+   memcpy(config, cfg, sizeof(cfg));
 }
 #endif
