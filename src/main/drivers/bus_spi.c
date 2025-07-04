@@ -490,13 +490,23 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
 FAST_CODE void spiProcessSegmentsDMA(const extDevice_t *dev)
 {
     // Intialise the init structures for the first transfer
-    spiInternalInitStream(dev, false);
+    spiInternalInitStream(dev, dev->bus->curSegment);
 
     // Assert Chip Select
     IOLo(dev->busType_u.spi.csnPin);
 
     // Start the transfers
     spiInternalStartDMA(dev);
+}
+
+static void spiPreInitStream(const extDevice_t *dev)
+{
+    // Prepare the init structure for the next segment to reduce inter-segment interval
+    // (if it's a "buffers" segment, not a "link" segment).
+    busSegment_t *segment = (busSegment_t *)dev->bus->curSegment + 1;
+    if (segment->len > 0) {
+        spiInternalInitStream(dev, segment);
+    }
 }
 
 // Interrupt handler common code for SPI receive DMA completion.
@@ -512,7 +522,7 @@ FAST_IRQ_HANDLER void spiIrqHandler(const extDevice_t *dev)
             // Repeat the last DMA segment
             bus->curSegment--;
             // Reinitialise the cached init values as segment is not progressing
-            spiInternalInitStream(dev, true);
+            spiPreInitStream(dev);
             break;
 
         case BUS_ABORT:
@@ -557,7 +567,7 @@ FAST_IRQ_HANDLER void spiIrqHandler(const extDevice_t *dev)
 
         // After the completion of the first segment setup the init structure for the subsequent segment
         if (bus->initSegment) {
-            spiInternalInitStream(dev, false);
+            spiInternalInitStream(dev, bus->curSegment);
             bus->initSegment = false;
         }
 
@@ -570,7 +580,7 @@ FAST_IRQ_HANDLER void spiIrqHandler(const extDevice_t *dev)
         spiInternalStartDMA(dev);
 
         // Prepare the init structures ready for the next segment to reduce inter-segment time
-        spiInternalInitStream(dev, true);
+        spiPreInitStream(dev);
     }
 }
 
