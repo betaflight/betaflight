@@ -29,49 +29,56 @@
 
 #include "timerup.h"
 
+#define TIM_N(n) (1 << (n))
+#define TIMER_INDEX(i) BITCOUNT((TIM_N(i) - 1) & USED_TIMERS)
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(timerUpConfig_t, HARDWARE_TIMER_DEFINITION_COUNT, timerUpConfig, PG_TIMER_UP_CONFIG, 0);
 
 void pgResetFn_timerUpConfig(timerUpConfig_t *config)
 {
-    for (unsigned timno = 0; timno < HARDWARE_TIMER_DEFINITION_COUNT; timno++) {
-        config[timno].dmaopt = DMA_OPT_UNUSED;
+    timerUpConfig_t cfg[HARDWARE_TIMER_DEFINITION_COUNT];
+    
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        cfg[i].dmaopt = DMA_OPT_UNUSED;
     }
 
-#if defined(TIMUP1_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 0) && (TIMUP_TIMERS & BIT(1))
-    config[0].dmaopt = TIMUP1_DMA_OPT;
+#if defined(TIMUP1_DMA_OPT) && (TIMUP_TIMERS & BIT(1))
+    cfg[TIMER_INDEX(1)].dmaopt = TIMUP1_DMA_OPT;
 #endif
-#if defined(TIMUP2_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 1) && (TIMUP_TIMERS & BIT(2))
-    config[1].dmaopt = TIMUP2_DMA_OPT;
+#if defined(TIMUP2_DMA_OPT) && (TIMUP_TIMERS & BIT(2))
+    cfg[TIMER_INDEX(2)].dmaopt = TIMUP2_DMA_OPT;
 #endif
-#if defined(TIMUP3_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 2) && (TIMUP_TIMERS & BIT(3))
-    config[2].dmaopt = TIMUP3_DMA_OPT;
+#if defined(TIMUP3_DMA_OPT) && (TIMUP_TIMERS & BIT(3))
+    cfg[TIMER_INDEX(3)].dmaopt = TIMUP3_DMA_OPT;
 #endif
-#if defined(TIMUP4_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 3) && (TIMUP_TIMERS & BIT(4))
-    config[3].dmaopt = TIMUP4_DMA_OPT;
+#if defined(TIMUP4_DMA_OPT) && (TIMUP_TIMERS & BIT(4))
+    cfg[TIMER_INDEX(4)].dmaopt = TIMUP4_DMA_OPT;
 #endif
-#if defined(TIMUP5_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 4) && (TIMUP_TIMERS & BIT(5))
-    config[4].dmaopt = TIMUP5_DMA_OPT;
+#if defined(TIMUP5_DMA_OPT) && (TIMUP_TIMERS & BIT(5))
+    cfg[TIMER_INDEX(5)].dmaopt = TIMUP5_DMA_OPT;
 #endif
-#if defined(TIMUP6_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 5) && (TIMUP_TIMERS & BIT(6))
-    config[5].dmaopt = TIMUP6_DMA_OPT;
+#if defined(TIMUP6_DMA_OPT) && (TIMUP_TIMERS & BIT(6))
+    cfg[TIMER_INDEX(6)].dmaopt = TIMUP6_DMA_OPT;
 #endif
-#if defined(TIMUP7_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 6) && (TIMUP_TIMERS & BIT(7))
-    config[6].dmaopt = TIMUP7_DMA_OPT;
+#if defined(TIMUP7_DMA_OPT) && (TIMUP_TIMERS & BIT(7))
+    cfg[TIMER_INDEX(7)].dmaopt = TIMUP7_DMA_OPT;
 #endif
-#if defined(TIMUP8_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 7) && (TIMUP_TIMERS & BIT(8))
-    config[7].dmaopt = TIMUP8_DMA_OPT;
+#if defined(TIMUP8_DMA_OPT) && (TIMUP_TIMERS & BIT(8))
+    cfg[TIMER_INDEX(8)].dmaopt = TIMUP8_DMA_OPT;
 #endif
-#if defined(TIMUP15_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 14) && (TIMUP_TIMERS & BIT(15))
-    config[14].dmaopt = TIMUP15_DMA_OPT;
+#if defined(TIMUP15_DMA_OPT) && (TIMUP_TIMERS & BIT(15))
+    cfg[TIMER_INDEX(15)].dmaopt = TIMUP15_DMA_OPT;
 #endif
-#if defined(TIMUP16_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 15) && (TIMUP_TIMERS & BIT(16))
-    config[15].dmaopt = TIMUP16_DMA_OPT;
+#if defined(TIMUP16_DMA_OPT) && (TIMUP_TIMERS & BIT(16))
+    cfg[TIMER_INDEX(16)].dmaopt = TIMUP16_DMA_OPT;
 #endif
-#if defined(TIMUP17_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 16) && (TIMUP_TIMERS & BIT(17))
-    config[16].dmaopt = TIMUP17_DMA_OPT;
+#if defined(TIMUP17_DMA_OPT) && (TIMUP_TIMERS & BIT(17))
+    cfg[TIMER_INDEX(17)].dmaopt = TIMUP17_DMA_OPT;
 #endif
-#if defined(TIMUP20_DMA_OPT) && (HARDWARE_TIMER_DEFINITION_COUNT > 19) && (TIMUP_TIMERS & BIT(20))
-    config[19].dmaopt = TIMUP20_DMA_OPT;
+#if defined(TIMUP20_DMA_OPT) && (TIMUP_TIMERS & BIT(20))
+    cfg[TIMER_INDEX(20)].dmaopt = TIMUP20_DMA_OPT;
 #endif
+
+   memcpy(config, cfg, HARDWARE_TIMER_DEFINITION_COUNT);
 }
 #endif
