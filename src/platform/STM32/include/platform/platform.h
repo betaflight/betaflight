@@ -496,13 +496,6 @@ extern uint8_t _dmaram_end__;
 #define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
 #endif // USE_FAST_DATA
 
-// noting this is not used anywhere except perhaps for debugging
-#ifdef USE_RAM_CODE
-// RAM_CODE for methods that need to be in RAM, but don't need to be in the fastest type of memory.
-// Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
-#define RAM_CODE                   __attribute__((section(".ram_code")))
-#endif
-
 #if defined(USE_EXST) && !defined(RAMBASED)
 #define USE_FLASH_BOOT_LOADER
 #endif
@@ -517,4 +510,10 @@ extern uint8_t _dmaram_end__;
 
 #define MMFLASH_DATA FAST_DATA
 #define MMFLASH_DATA_ZERO_INIT FAST_DATA_ZERO_INIT
+#endif
+
+#ifdef USE_RAM_CODE
+// RAM_CODE for methods that need to be in RAM, but don't need to be in the fastest type of memory.
+// Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
+#define RAM_CODE                   __attribute__((section(".ram_code")))
 #endif
