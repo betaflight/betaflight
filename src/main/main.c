@@ -31,7 +31,7 @@ void run(void);
 
 int main(int argc, char * argv[])
 {
-#ifdef SIMULATOR_BUILD
+#ifdef USE_MAIN_ARGS
     targetParseArgs(argc, argv);
 #else
     UNUSED(argc);
@@ -48,8 +48,8 @@ void FAST_CODE run(void)
 {
     while (true) {
         scheduler();
-#ifdef SIMULATOR_BUILD
-        delayMicroseconds_real(50); // max rate 20kHz
+#if defined(RUN_LOOP_DELAY_US) && RUN_LOOP_DELAY_US > 0
+        delayMicroseconds_real(RUN_LOOP_DELAY_US);
 #endif
     }
 }

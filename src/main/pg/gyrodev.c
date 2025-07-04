@@ -35,10 +35,6 @@
 #include "drivers/sensor.h"
 #include "sensors/gyro.h"
 
-#ifdef SIMULATOR_BUILD
-#define GYRO_COUNT 1
-#endif
-
 #ifndef GYRO_1_CS_PIN
 #define GYRO_1_CS_PIN NONE
 #endif
