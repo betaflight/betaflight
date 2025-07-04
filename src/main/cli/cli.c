@@ -5426,6 +5426,8 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
 
     if (entry->presenceMask) {
         uiIndex = timerGetNumberByIndex(index);
+        if (!(BIT(uiIndex) & entry->presenceMask))
+            return;
     } else {
         uiIndex = DMA_OPT_UI_INDEX(index);
     }
