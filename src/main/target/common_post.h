@@ -54,7 +54,7 @@
 #endif
 
 #ifndef FAST_CODE_PREF
-#define FAST_CODE_PREF
+#define FAST_CODE_PREF  FAST_CODE
 #endif
 
 #ifndef FAST_CODE_NOINLINE
