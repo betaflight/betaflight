@@ -43,7 +43,9 @@ void initBoardInformation(void)
     boardInformationSet = boardConfig()->boardInformationSet;
     if (boardInformationSet) {
         strncpy(manufacturerId, boardConfig()->manufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
+        manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
         strncpy(boardName, boardConfig()->boardName, MAX_BOARD_NAME_LENGTH + 1);
+        boardName[MAX_BOARD_NAME_LENGTH] = 0;
     }
 #endif
 
@@ -87,6 +89,7 @@ bool setManufacturerId(const char *newManufacturerId)
 #if !defined(BOARD_NAME)
     if (!boardInformationSet || strlen(manufacturerId) == 0) {
         strncpy(manufacturerId, newManufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
+        manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
 
         boardInformationWasUpdated = true;
 
@@ -105,6 +108,7 @@ bool setBoardName(const char *newBoardName)
 #if !defined(BOARD_NAME)
     if (!boardInformationSet || strlen(boardName) == 0) {
         strncpy(boardName, newBoardName, MAX_BOARD_NAME_LENGTH + 1);
+        boardName[MAX_BOARD_NAME_LENGTH] = 0;
 
         boardInformationWasUpdated = true;
 

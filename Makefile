@@ -48,7 +48,7 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 FLASH_SIZE ?=
 
 # Disabled build flags
-CFLAGS_DISABLED         :=
+CFLAGS_DISABLED         ?=
 
 ###############################################################################
 # Things that need to be maintained as the source changes
@@ -348,6 +348,8 @@ LD_FLAGS     = -lm \
               -T$(LD_SCRIPT) \
                $(EXTRA_LD_FLAGS)
 endif
+
+LTO_FLAGS               := $(filter-out $(CFLAGS_DISABLED), $(LTO_FLAGS))
 
 ###############################################################################
 # No user-serviceable parts below
