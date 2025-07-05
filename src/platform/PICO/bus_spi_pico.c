@@ -160,18 +160,6 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
     }
 }
 
-/*
-  static spi_inst_t *getSpiInstanceByDevice(SPI_TypeDef *spi)
-{
-    if (spi == SPI0) {
-        return spi0;
-    } else if (spi == SPI1) {
-        return spi1;
-    }
-    return NULL;
-}
-*/
-
 static void spiSetClockFromSpeed(spi_inst_t *spi, uint16_t speed)
 {
     uint32_t freq = spiCalculateClock(speed);
@@ -219,14 +207,6 @@ Must be SPI_MSB_FIRST, no other values supported on the PL022
 
 void spiInitDevice(SPIDevice device)
 {
-  // maybe here set getSpiInstanceByDevice(spi->dev) SPI device with
-  // settings like
-  // STM does
-  //SetRXFIFOThreshold ...QF (1/4 full presumably)
-  //         Init -> full duplex, master, 8biut, baudrate, MSBfirst, no CRC,
-  //                  Clock = PolarityHigh, Phase_2Edge
-
-  
     const spiDevice_t *spi = &spiDevice[device];
 
     if (!spi->dev) {
