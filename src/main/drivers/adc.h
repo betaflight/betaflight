@@ -25,8 +25,14 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
+#if defined(USE_ADC_DEVICE_0)
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC0
+#endif
+#else
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
+#endif
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
@@ -45,7 +51,14 @@
 
 typedef enum ADCDevice {
     ADCINVALID = -1,
+#if defined(USE_ADC_DEVICE_0)
+    ADCDEV_0   = 0,
+#if defined(ADC1)
+    ADCDEV_1,
+#endif
+#else
     ADCDEV_1   = 0,
+#endif
 #if defined(ADC2)
     ADCDEV_2,
 #endif
@@ -114,5 +127,9 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 #endif
 
 #if !defined(SIMULATOR_BUILD)
+#if defined(USE_GDBSP_DRIVER)
+ADCDevice adcDeviceByInstance(const uint32_t instance);
+#else
 ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
+#endif
 #endif
