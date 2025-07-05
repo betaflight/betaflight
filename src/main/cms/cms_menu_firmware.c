@@ -196,7 +196,9 @@ static const void *cmsx_FirmwareInit(displayPort_t *pDisp)
     UNUSED(pDisp);
 
     strncpy(manufacturerId, getManufacturerId(), MAX_MANUFACTURER_ID_LENGTH + 1);
+    manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
     strncpy(boardName, getBoardName(), MAX_BOARD_NAME_LENGTH + 1);
+    boardName[MAX_BOARD_NAME_LENGTH] = 0;
 
     return NULL;
 }
