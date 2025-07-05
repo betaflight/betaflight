@@ -63,21 +63,23 @@ void dma_irq_handler(bool isIrq1)
     // channel equates to index in the dmaDescriptors array
     for (uint8_t channel = 0; channel < DMA_LAST_HANDLER; channel++) {
         if (status & (1u << channel)) {
-            uint8_t index = DMA_CHANNEL_TO_INDEX(channel);
-            // Call the handler if it is set
-            if (dmaDescriptors[index].irqHandlerCallback) {
-                dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);
-            }
-
-            // Acknowledge the interrupt for this channel
+            // Acknowledge the interrupt for this channel as it is edge, not
+            // level triggered and the callback may trigger another DMA
             if (isIrq1) {
                 dma_channel_acknowledge_irq1(channel);
             } else {
                 dma_channel_acknowledge_irq0(channel);
             }
+
+            uint8_t index = DMA_CHANNEL_TO_INDEX(channel);
+            // Call the handler if it is set
+            if (dmaDescriptors[index].irqHandlerCallback) {
+                dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);
+            }
         }
     }
 }
+
 void dma_irq0_handler(void)
 {
     dma_irq_handler(false);
