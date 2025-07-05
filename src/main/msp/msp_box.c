@@ -101,7 +101,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXBEEPERMUTE, .boxName = "BEEPER MUTE", .permanentId = 52},
     { .boxId = BOXREADY, .boxName = "READY", .permanentId = 53},
     { .boxId = BOXLAPTIMERRESET, .boxName = "LAP TIMER RESET", .permanentId = 54},
-    { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55}
+    { .boxId = BOXCHIRP, .boxName = "CHIRP", .permanentId = 55},
+    { .boxId = BOXAIRPLANEFCS, .boxName = "AIRPLANE FCS", .permanentId = 56},
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
