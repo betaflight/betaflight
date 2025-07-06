@@ -33,8 +33,8 @@
 
 typedef struct boardConfig_s {
     uint8_t signature[SIGNATURE_LENGTH];
-    char manufacturerId[MAX_MANUFACTURER_ID_LENGTH];
-    char boardName[MAX_BOARD_NAME_LENGTH];
+    char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
+    char boardName[MAX_BOARD_NAME_LENGTH + 1];
     uint8_t boardInformationSet;
     uint8_t signatureSet;
 } boardConfig_t;
