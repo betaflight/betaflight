@@ -188,8 +188,8 @@ static CMS_Menu cmsx_menuCalibration = {
 // Info
 
 #if defined(USE_BOARD_INFO)
-static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
-static char boardName[MAX_BOARD_NAME_LENGTH + 1];
+static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH];
+static char boardName[MAX_BOARD_NAME_LENGTH];
 
 static const void *cmsx_FirmwareInit(displayPort_t *pDisp)
 {

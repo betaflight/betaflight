@@ -29,8 +29,8 @@
 
 #if !defined(BOARD_NAME)
 static bool boardInformationSet = false;
-static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
-static char boardName[MAX_BOARD_NAME_LENGTH + 1];
+static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH];
+static char boardName[MAX_BOARD_NAME_LENGTH];
 static bool boardInformationWasUpdated = false;
 #endif
 
@@ -42,10 +42,8 @@ void initBoardInformation(void)
 #if !defined(BOARD_NAME)
     boardInformationSet = boardConfig()->boardInformationSet;
     if (boardInformationSet) {
-        strncpy(manufacturerId, boardConfig()->manufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
-        manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
-        strncpy(boardName, boardConfig()->boardName, MAX_BOARD_NAME_LENGTH + 1);
-        boardName[MAX_BOARD_NAME_LENGTH] = 0;
+        strncpy(manufacturerId, boardConfig()->manufacturerId, MAX_MANUFACTURER_ID_LENGTH);
+        strncpy(boardName, boardConfig()->boardName, MAX_BOARD_NAME_LENGTH);
     }
 #endif
 
@@ -88,8 +86,7 @@ bool setManufacturerId(const char *newManufacturerId)
 {
 #if !defined(BOARD_NAME)
     if (!boardInformationSet || strlen(manufacturerId) == 0) {
-        strncpy(manufacturerId, newManufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
-        manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
+        strncpy(manufacturerId, newManufacturerId, MAX_MANUFACTURER_ID_LENGTH);
 
         boardInformationWasUpdated = true;
 
@@ -107,8 +104,7 @@ bool setBoardName(const char *newBoardName)
 {
 #if !defined(BOARD_NAME)
     if (!boardInformationSet || strlen(boardName) == 0) {
-        strncpy(boardName, newBoardName, MAX_BOARD_NAME_LENGTH + 1);
-        boardName[MAX_BOARD_NAME_LENGTH] = 0;
+        strncpy(boardName, newBoardName, MAX_BOARD_NAME_LENGTH);
 
         boardInformationWasUpdated = true;
 
@@ -126,8 +122,8 @@ bool persistBoardInformation(void)
 {
 #if !defined(BOARD_NAME)
     if (boardInformationWasUpdated) {
-        strncpy(boardConfigMutable()->manufacturerId, manufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
-        strncpy(boardConfigMutable()->boardName, boardName, MAX_BOARD_NAME_LENGTH + 1);
+        strncpy(boardConfigMutable()->manufacturerId, manufacturerId, MAX_MANUFACTURER_ID_LENGTH);
+        strncpy(boardConfigMutable()->boardName, boardName, MAX_BOARD_NAME_LENGTH);
         boardConfigMutable()->boardInformationSet = true;
 
         initBoardInformation();
