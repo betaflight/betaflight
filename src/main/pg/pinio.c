@@ -104,9 +104,11 @@ void pgResetFn_pinioConfig(pinioConfig_t *config)
     config->config[1] = PINIO2_CONFIG;
     config->config[2] = PINIO3_CONFIG;
     config->config[3] = PINIO4_CONFIG;
+#if PINIO_COUNT > 4
     config->config[4] = PINIO5_CONFIG;
     config->config[5] = PINIO6_CONFIG;
     config->config[6] = PINIO7_CONFIG;
     config->config[7] = PINIO8_CONFIG;
+#endif
 }
 #endif
