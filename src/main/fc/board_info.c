@@ -29,8 +29,8 @@
 
 #if !defined(BOARD_NAME)
 static bool boardInformationSet = false;
-static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH];
-static char boardName[MAX_BOARD_NAME_LENGTH];
+static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
+static char boardName[MAX_BOARD_NAME_LENGTH + 1];
 static bool boardInformationWasUpdated = false;
 #endif
 
