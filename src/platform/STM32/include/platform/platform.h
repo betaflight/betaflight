@@ -474,8 +474,7 @@ extern uint8_t _dmaram_end__;
 #define PLATFORM_TRAIT_ADC_CHANNEL_32BIT 1
 
 #if defined(STM32H7)
-#define PLATFORM_TRAIT_ADC_CURRENT_DEVICE 1
-#define PLATFORM_TRAIT_ADC_RSSI_DEVICE 1
+#define PLATFORM_TRAIT_ADC_DEVICE 1
 #endif
 #endif
 
