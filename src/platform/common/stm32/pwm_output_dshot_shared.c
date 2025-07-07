@@ -243,6 +243,8 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
             LL_EX_TIM_DisableIT(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #elif defined(AT32F435)
             tmr_dma_request_enable(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
+#elif defined(USE_GDBSP_DRIVER)
+            timer_dma_disable((uint32_t)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #else
             TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif

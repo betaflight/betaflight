@@ -55,12 +55,25 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
     return 0;
 }
 
+#if defined(USE_GDBSP_DRIVER)
+ADCDevice adcDeviceByInstance(const uint32_t instance)
+{
+    if (instance == ADC0) {
+        return ADCDEV_0;
+    }
+
+#if defined(ADC1)
+    if (instance == ADC1) {
+        return ADCDEV_1;
+    }
+#endif
+#else
 ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance)
 {
     if (instance == ADC1) {
         return ADCDEV_1;
     }
-
+#endif
 #if defined(ADC2)
     if (instance == ADC2) {
         return ADCDEV_2;

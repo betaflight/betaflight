@@ -70,7 +70,11 @@ bool spiInit(SPIDevice device);
 // Called after all devices are initialised to enable SPI DMA where streams are available.
 void spiInitBusDMA(void);
 
+#if defined(USE_GDBSP_DRIVER)
+SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance_t);
+#else
 SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance);
+#endif
 SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
 // BusDevice API

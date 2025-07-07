@@ -70,6 +70,9 @@
 #define STATIC_ASSERT(condition, name) static_assert((condition), #name)
 #endif
 
+#if defined(USE_GDBSP_DRIVER)
+#undef BIT
+#endif
 #define BIT(x) (1 << (x))
 
 /*

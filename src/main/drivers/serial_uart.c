@@ -452,6 +452,56 @@ const struct serialPortVTable uartVTable[] = {
     }                                                           \
 /**/
 
+#ifdef USE_GDBSP_DRIVER
+
+UART_IRQHandler(USART, 0, UARTDEV_0)  // USART0 Rx/Tx IRQ Handler
+
+#ifdef USE_UART1
+UART_IRQHandler(USART, 1, UARTDEV_1)  // USART1 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART2
+UART_IRQHandler(USART, 2, UARTDEV_2)  // USART2 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART3
+UART_IRQHandler(UART, 3, UARTDEV_3)   // UART3 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART4
+UART_IRQHandler(UART, 4, UARTDEV_4)   // UART4 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART5
+UART_IRQHandler(USART, 5, UARTDEV_5)  // USART5 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART6
+UART_IRQHandler(UART, 6, UARTDEV_6)  // UART6 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART7
+UART_IRQHandler(UART, 7, UARTDEV_7)  // UART7 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART8
+UART_IRQHandler(UART, 8, UARTDEV_8)  // UART8 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART9
+UART_IRQHandler(UART, 9, UARTDEV_9)  // UART9 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART10
+UART_IRQHandler(USART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_LPUART1
+UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
+#endif
+
+#else // USE_GDBSP_DRIVER
+
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
 #endif
@@ -495,5 +545,7 @@ UART_IRQHandler(USART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 #ifdef USE_LPUART1
 UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
 #endif
+
+#endif // USE_GDBSP_DRIVER
 
 #endif // USE_UART

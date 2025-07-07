@@ -51,6 +51,12 @@
 #endif
 #elif defined(APM32F4)
 #define ADC_TAG_MAP_COUNT 16
+#elif defined(GD32F4)
+#ifdef USE_ADC_INTERNAL
+#define ADC_TAG_MAP_COUNT 19
+#else
+#define ADC_TAG_MAP_COUNT 16
+#endif
 #else
 #define ADC_TAG_MAP_COUNT 10
 #endif
@@ -66,6 +72,18 @@ typedef struct adcTagMap_s {
 
 // Encoding for adcTagMap_t.devices
 
+#if defined(USE_ADC_DEVICE_0)
+
+#define ADC_DEVICES_0   (1 << ADCDEV_0)
+#define ADC_DEVICES_1   (1 << ADCDEV_1)
+#define ADC_DEVICES_2   (1 << ADCDEV_2)
+#define ADC_DEVICES_3   (1 << ADCDEV_3)
+#define ADC_DEVICES_4   (1 << ADCDEV_4)
+#define ADC_DEVICES_01  ((1 << ADCDEV_0)|(1 << ADCDEV_1))
+#define ADC_DEVICES_23  ((1 << ADCDEV_2)|(1 << ADCDEV_3))
+#define ADC_DEVICES_012 ((1 << ADCDEV_0)|(1 << ADCDEV_1)|(1 << ADCDEV_2))
+#define ADC_DEVICES_234 ((1 << ADCDEV_2)|(1 << ADCDEV_3)|(1 << ADCDEV_4))
+#else
 #define ADC_DEVICES_1   (1 << ADCDEV_1)
 #define ADC_DEVICES_2   (1 << ADCDEV_2)
 #define ADC_DEVICES_3   (1 << ADCDEV_3)
@@ -75,6 +93,7 @@ typedef struct adcTagMap_s {
 #define ADC_DEVICES_34  ((1 << ADCDEV_3)|(1 << ADCDEV_4))
 #define ADC_DEVICES_123 ((1 << ADCDEV_1)|(1 << ADCDEV_2)|(1 << ADCDEV_3))
 #define ADC_DEVICES_345 ((1 << ADCDEV_3)|(1 << ADCDEV_4)|(1 << ADCDEV_5))
+#endif
 
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
@@ -83,7 +102,7 @@ typedef struct adcDevice_s {
 #endif
 #if !defined(USE_DMA_SPEC)
     dmaResource_t* dmaResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4) || defined(GD32F4)
     uint32_t channel;
 #endif
 #endif // !defined(USE_DMA_SPEC)
@@ -111,7 +130,11 @@ extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);
 #if !defined(SIMULATOR_BUILD)
+#if defined(USE_GDBSP_DRIVER)
+ADCDevice adcDeviceByInstance(const uint32_t instance);
+#else
 ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
+#endif
 #endif
 bool adcVerifyPin(ioTag_t tag, ADCDevice device);
 
@@ -163,4 +186,13 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL1_TEMP               (25U)
 #define TEMPSENSOR_CAL1_V                  (1.27f)
 #define TEMPSENSOR_SLOPE                   (-4.13f) //  mV/C
+#endif
+
+#ifdef GD32F4
+#define VREFINT_EXPECTED                   (1489U)  // 1.2/3.3*4095
+#define VREFINT_CAL_VREF                   (3300U)
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               ((int32_t) 25)
+#define TEMPSENSOR_CAL1_V                  (1.40f)
+#define TEMPSENSOR_SLOPE                   (-4.4f) //  mV/C
 #endif
