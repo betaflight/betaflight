@@ -708,7 +708,6 @@ static void system_clock_168m_8m_hxtal(void)
     while(0U == (RCU_CTL & RCU_CTL_PLLSTB)){
     }
 
-#if 1 
     /* Enable the high-drive to extend the clock frequency to 168 Mhz */
     PMU_CTL |= PMU_CTL_HDEN;
     while(0U == (PMU_CS & PMU_CS_HDRF)){
@@ -718,10 +717,6 @@ static void system_clock_168m_8m_hxtal(void)
     PMU_CTL |= PMU_CTL_HDS;
     while(0U == (PMU_CS & PMU_CS_HDSRF)){
     }
-
-#else
-    FMC_WS = 0x00000705;
-#endif
 
     reg_temp = RCU_CFG0;
     /* select PLL as system clock */
@@ -785,7 +780,6 @@ static void system_clock_168m_25m_hxtal(void)
     while(0U == (RCU_CTL & RCU_CTL_PLLSTB)){
     }
     
-#if 1 
     /* Enable the high-drive to extend the clock frequency to 168 Mhz */
     PMU_CTL |= PMU_CTL_HDEN;
     while(0U == (PMU_CS & PMU_CS_HDRF)){
@@ -795,10 +789,6 @@ static void system_clock_168m_25m_hxtal(void)
     PMU_CTL |= PMU_CTL_HDS;
     while(0U == (PMU_CS & PMU_CS_HDSRF)){
     }
-
-#else
-    FMC_WS = 0x00000705;
-#endif
 
     reg_temp = RCU_CFG0;
     /* select PLL as system clock */

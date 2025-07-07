@@ -91,6 +91,7 @@
 #ifdef USE_SDCARD
 #ifndef USE_SDCARD_SDIO
 #define USE_SDCARD_SPI
+#else
 #define USE_SDCARD_SDIO
 #endif
 #endif

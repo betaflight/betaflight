@@ -152,10 +152,10 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     case RCC_AHB3:
         rcu_ahb3_periph_rst_config(mask, NewState);
         break;
-    case RCC_APB2:
+    case RCC_APB1:
         rcu_apb1_periph_rst_config(mask, NewState);
         break;
-    case RCC_APB1:
+    case RCC_APB2:
         rcu_apb2_periph_rst_config(mask, NewState);
         break;
     }

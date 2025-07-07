@@ -345,7 +345,7 @@ void i2c_ev_handler(I2CDevice device)
         // Read SR1,2 to clear ADDR
         __DMB();                                                                                // memory fence to control hardware
         if (state->bytes == 1 && state->reading && ev_state->subaddress_sent) {                 // we are receiving 1 byte
-            i2c_ack_config(I2C0, I2C_ACK_DISABLE);                                              // turn off ACK
+            i2c_ack_config(I2Cx, I2C_ACK_DISABLE);                                              // turn off ACK
             __DMB();
             I2C_STAT1(I2Cx);                                                                    // clear ADDR after ACK is turned off
             i2c_stop_on_bus(I2Cx);                                                              // program the stop

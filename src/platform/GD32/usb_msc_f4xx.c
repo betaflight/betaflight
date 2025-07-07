@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "platform.h"
-#define USE_USB_MSC
+
 #if defined(USE_USB_MSC)
 
 #include "build/build_config.h"
@@ -109,12 +109,10 @@ uint8_t mscStart(void)
     usbd_mem_fops = &usbd_internal_storage_fops;
     usb_gpio_config();
     usb_rcu_config();
-    //(void)(usbd_mem_fops);
+
     usbd_init(&USB_OTG_dev, USB_CORE_ENUM_FS, &bf_msc_desc, &bf_msc_class);
     usb_intr_config();
-    //(void)(usbd_mem_fops);
-    usbd_init(&USB_OTG_dev, USB_CORE_ENUM_FS, &bf_msc_desc, &bf_msc_class);
-    usb_intr_config();
+
     // NVIC configuration for SYSTick
     NVIC_DisableIRQ(SysTick_IRQn);
     NVIC_SetPriority(SysTick_IRQn, NVIC_BUILD_PRIORITY(0, 0));

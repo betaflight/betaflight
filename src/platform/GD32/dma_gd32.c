@@ -272,7 +272,7 @@ uint16_t gd32_dma_transnum_get(uint32_t dma_chan_base)
     return number;
 }
 
-FlagStatus gd32_dma_flags_get(uint32_t dma_chan_base, uint32_t flag)
+FlagStatus gd32_dma_flag_get(uint32_t dma_chan_base, uint32_t flag)
 {
     uint32_t dma_periph ;
     int channel;

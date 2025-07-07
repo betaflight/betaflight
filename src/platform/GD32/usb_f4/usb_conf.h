@@ -132,7 +132,7 @@ OF SUCH DAMAGE.
 /* __packed keyword used to decrease the data type alignment to 1-byte */
 #if defined (__GNUC__)       /* GNU Compiler */
     #ifndef __packed
-        #define __packed __unaligned
+        #define __packed __attribute__((packed))
     #endif
 #elif defined (__TASKING__)    /* TASKING Compiler */
     #define __packed __unaligned

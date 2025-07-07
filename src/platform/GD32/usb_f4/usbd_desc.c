@@ -1,5 +1,5 @@
 /*!
-    \file    cdc_acm_core.c
+    \file    usbd_desc.c
     \brief   CDC ACM driver
 
     \version 2024-12-20, V3.3.1, firmware for GD32F4xx

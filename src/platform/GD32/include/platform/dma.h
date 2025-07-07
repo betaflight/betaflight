@@ -96,7 +96,7 @@ extern void gd32_dma_channel_state_config(uint32_t dma_chan_base, ControlStatus 
 extern void gd32_dma_int_config(uint32_t dma_chan_base, uint32_t source, ControlStatus new_state);
 extern void gd32_dma_transnum_config(uint32_t dma_chan_base, uint32_t number);
 extern uint16_t gd32_dma_transnum_get(uint32_t dma_chan_base);
-extern FlagStatus gd32_dma_flags_get(uint32_t dma_chan_base, uint32_t flag);
+extern FlagStatus gd32_dma_flag_get(uint32_t dma_chan_base, uint32_t flag);
 extern void gd32_dma_chbase_parse(uint32_t dma_chan_base, uint32_t *dma_periph, int *dma_channel);
 extern void gd32_dma_memory_addr_config(uint32_t dma_chan_base, uint32_t address, uint8_t memory_flag);
 
@@ -106,8 +106,8 @@ extern void gd32_dma_memory_addr_config(uint32_t dma_chan_base, uint32_t address
 #define xDMA_ITConfig(dmaResource, flags, newState) gd32_dma_int_config((uint32_t)(dmaResource), flags, newState)
 #define xDMA_GetCurrDataCounter(dmaResource) gd32_dma_transnum_get((uint32_t)(dmaResource))
 #define xDMA_SetCurrDataCounter(dmaResource, count) gd32_dma_transnum_config((uint32_t)(dmaResource), count)
-#define xDMA_GetFlagStatus(dmaResource, flags) gd32_dma_flags_get((uint32_t)(dmaResource), flags)
-#define xDMA_ClearFlag(dmaResource, flags) gd32_dma_flags_clear((uint32_t)(dmaResource), flags)
+#define xDMA_GetFlagStatus(dmaResource, flags) gd32_dma_flag_get((uint32_t)(dmaResource), flags)
+#define xDMA_ClearFlag(dmaResource, flags) gd32_dma_flag_clear((uint32_t)(dmaResource), flags)
 #define xDMA_MemoryTargetConfig(dmaResource, address, target) gd32_dma_memory_addr_config((uint32_t)(dmaResource), address, target)
 
 extern uint32_t dma_enable_status_get(uint32_t dma_chan_base);
