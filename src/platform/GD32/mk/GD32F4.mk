@@ -122,12 +122,6 @@ LD_SCRIPT       = $(LINKER_DIR)/gd32_flash_f407_425.ld
 STARTUP_SRC     = GD32/startup/startup_gd32f407_427.s
 MCU_FLASH_SIZE  := 1024
 
-else ifeq ($(TARGET_MCU),GD32F425xx)
-DEVICE_FLAGS    += -DGD32F425
-LD_SCRIPT       = $(LINKER_DIR)/gd32f405_425xg_flash.ld
-STARTUP_SRC     = GD32/startup/startup_gd32f405_425.S
-MCU_FLASH_SIZE  := 1024
-
 else ifeq ($(TARGET_MCU),GD32F460xg)
 DEVICE_FLAGS    += -DGD32F460
 LD_SCRIPT       = $(LINKER_DIR)/gd32f460xg_flash.ld

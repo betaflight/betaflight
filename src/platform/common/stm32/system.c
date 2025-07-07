@@ -368,8 +368,6 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
         { .id = MCU_TYPE_APM32F405, .name = "APM32F405" },
 #elif defined(APM32F407)
         { .id = MCU_TYPE_APM32F407, .name = "APM32F407" },
-#elif defined(GD32F425)
-        { .id = MCU_TYPE_GD32F425, .name = "GD32F425" },
 #elif defined(GD32F460)
         { .id = MCU_TYPE_GD32F460, .name = "GD32F460" },
 #else
