@@ -29,9 +29,6 @@
 
 #include "timerup.h"
 
-#define TIM_N(n) (1 << (n))
-#define TIMER_INDEX(i) BITCOUNT((TIM_N(i) - 1) & USED_TIMERS)
-
 PG_REGISTER_ARRAY_WITH_RESET_FN(timerUpConfig_t, HARDWARE_TIMER_DEFINITION_COUNT, timerUpConfig, PG_TIMER_UP_CONFIG, 0);
 
 void pgResetFn_timerUpConfig(timerUpConfig_t *config)

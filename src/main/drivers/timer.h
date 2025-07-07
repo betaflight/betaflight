@@ -48,6 +48,8 @@
 #endif
 
 #define TIM_CH_TO_SELCHANNEL(ch)  ((ch - 1) * 2)
+#define TIM_N(n) (1 << (n))
+#define TIMER_INDEX(i) BITCOUNT((TIM_N(i) - 1) & USED_TIMERS)
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
