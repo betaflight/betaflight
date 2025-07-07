@@ -162,6 +162,5 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL_VREFANALOG          (3300U)
 #define TEMPSENSOR_CAL1_TEMP               (25U)
 #define TEMPSENSOR_CAL1_V                  (1.27f)
-//  mV/C
-#define TEMPSENSOR_SLOPE                   (-4.13f)
+#define TEMPSENSOR_SLOPE                   (-4.13f /* mV/C */)
 #endif

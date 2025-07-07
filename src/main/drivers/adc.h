@@ -59,10 +59,10 @@ typedef enum {
 #if PLATFORM_TRAIT_ADC_INTERNAL
     // On H7 and G4, internal sensors are treated in the similar fashion as regular ADC inputs
     ADC_CHANNEL_INTERNAL_FIRST_ID = 4,
-    ADC_TEMPSENSOR = 4,
-    ADC_VREFINT = 5,
-#if PLATFORM_TRAIT_ADC_INTERNAL_VBAT4
-    ADC_VBAT4 = 6,
+    ADC_TEMPSENSOR = ADC_CHANNEL_INTERNAL_FIRST_ID,
+    ADC_VREFINT,
+#if ADC_INTERNAL_VBAT4_ENABLED
+    ADC_VBAT4,
 #endif
 #endif
     ADC_CHANNEL_COUNT
@@ -73,11 +73,7 @@ typedef struct adcOperatingConfig_s {
 #if PLATFORM_TRAIT_ADC_DEVICE
     ADCDevice adcDevice;        // ADCDEV_x for this input
 #endif
-#if PLATFORM_TRAIT_ADC_CHANNEL_32BIT
     uint32_t adcChannel;        // Channel number for this input. Note that H7 and G4 HAL requires this to be 32-bit encoded number.
-#else
-    uint8_t adcChannel;         // ADCy_INxx channel number for this input (XXX May be consolidated with uint32_t case)
-#endif
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
     bool enabled;
     uint8_t sampleTime;

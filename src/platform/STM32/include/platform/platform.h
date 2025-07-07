@@ -468,14 +468,9 @@ extern uint8_t _dmaram_end__;
 #define DMA_CHANREQ_STRING "Request"
 
 #define PLATFORM_TRAIT_ADC_INTERNAL 1
-#define PLATFORM_TRAIT_ADC_INTERNAL_VBAT4 1
-
+#define ADC_INTERNAL_VBAT4_ENABLED 1
+/* H7 and G4 we need to specify the ADC device for each channel */
 #define PLATFORM_TRAIT_ADC_DEVICE 1
-#define PLATFORM_TRAIT_ADC_CHANNEL_32BIT 1
-
-#if defined(STM32H7)
-#define PLATFORM_TRAIT_ADC_DEVICE 1
-#endif
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
