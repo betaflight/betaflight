@@ -61,7 +61,7 @@
 #include "drivers/sensor.h"
 
 #include "drivers/adc.h"
-#include "drivers/adc_impl.h"
+#include "platform/adc_impl.h"
 
 #include "pg/adc.h"
 
@@ -163,14 +163,14 @@ static int adcFindTagMapEntry(const ioTag_t tag)
 /**
  * Setup the scaling offsets and factors used in adc.c
  * @see src/main/drivers/adc.c
- * @see src/main/drivers/adc_impl.h
+ * @see src/platform/common/stm32/platform/adc_impl.h
  *
  * There are a number of global calibration/scaling factors used in src/main/drivers/adc.c that need to
  * be set to appropriate values if we want to re-use existing code, e.g. adcInternalComputeTemperature
  * (the alternative would be to duplicate the code into ST and AT specific versions).
  * This is made a little confusing since the implementation based on ST datasheets approaches the calculation with
  * different formula and express the scaling factors in different units compared to the AT datasheets.
- * The constants are defined in src/main/drivers/adc_impl.h. It seems clearest to use the units from
+ * The constants are defined in src/platform/common/stm32/platform/adc_impl.h. It seems clearest to use the units from
  * the datasheet when defining those values, so here we have to convert to what's expected in
  * adcInternalComputeTemperature.
 */

@@ -150,6 +150,18 @@
 
 #if defined(APM32F4)
 
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA2_Stream4
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA2_Stream3
+#endif
+
+#ifndef ADC3_DMA_STREAM
+#define ADC3_DMA_STREAM DMA2_Stream0
+#endif
+
 //speed is packed inside modebits 5 and 2,
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
@@ -211,4 +223,5 @@
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 
 #define DMA_STCH_STRING    "Stream"
+
 #endif
