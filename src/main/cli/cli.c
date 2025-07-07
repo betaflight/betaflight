@@ -4738,7 +4738,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
     }
 #ifdef USE_SPI
     if (!gyroActiveDev()) {
-        cliPrintf(" none!");
+        cliPrintf(" not active");
     } else {
         if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
             cliPrintf(" locked");
