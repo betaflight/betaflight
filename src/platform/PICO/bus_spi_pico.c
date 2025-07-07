@@ -228,7 +228,7 @@ void spiInitDevice(SPIDevice device)
     gpio_set_function(IO_PINBYTAG(spi->mosi), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->sck), GPIO_FUNC_SPI);
     bprintf("spi initialised device %p [sck %d mosi %d miso %d]",
-            spi->dev, IO_PINBYTAG(spi->sck), IO_PINBYTAG(spi->moso), IO_PINBYTAG(spi->misi));
+            spi->dev, IO_PINBYTAG(spi->sck), IO_PINBYTAG(spi->mosi), IO_PINBYTAG(spi->miso));
 }
 
 void spiInternalStopDMA (const extDevice_t *dev)
