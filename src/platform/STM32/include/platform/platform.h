@@ -479,9 +479,9 @@ extern uint8_t _dmaram_end__;
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
 // If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
-// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM
-// but if FAST_CODE_PREF is not defined for the target, FAST_CODE_PREF is an alias to FAST_CODE, and
-// functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
+// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM but if FAST_CODE_PREF is not
+// defined for the target, FAST_CODE_PREF will become an alias to FAST_CODE (in the common post
+// header file), and functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
 
 #define FAST_CODE_NOINLINE          NOINLINE
 #endif // USE_ITCM_RAM
