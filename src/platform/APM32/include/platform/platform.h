@@ -225,3 +225,8 @@
 #define DMA_STCH_STRING    "Stream"
 
 #endif
+
+#ifdef USE_FAST_DATA
+#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
+#endif // USE_FAST_DATA

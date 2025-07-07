@@ -42,9 +42,9 @@ void initBoardInformation(void)
 #if !defined(BOARD_NAME)
     boardInformationSet = boardConfig()->boardInformationSet;
     if (boardInformationSet) {
-        strncpy(manufacturerId, boardConfig()->manufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
+        strncpy(manufacturerId, boardConfig()->manufacturerId, MAX_MANUFACTURER_ID_LENGTH);
         manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
-        strncpy(boardName, boardConfig()->boardName, MAX_BOARD_NAME_LENGTH + 1);
+        strncpy(boardName, boardConfig()->boardName, MAX_BOARD_NAME_LENGTH);
         boardName[MAX_BOARD_NAME_LENGTH] = 0;
     }
 #endif
@@ -88,7 +88,7 @@ bool setManufacturerId(const char *newManufacturerId)
 {
 #if !defined(BOARD_NAME)
     if (!boardInformationSet || strlen(manufacturerId) == 0) {
-        strncpy(manufacturerId, newManufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
+        strncpy(manufacturerId, newManufacturerId, MAX_MANUFACTURER_ID_LENGTH);
         manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
 
         boardInformationWasUpdated = true;
@@ -107,7 +107,7 @@ bool setBoardName(const char *newBoardName)
 {
 #if !defined(BOARD_NAME)
     if (!boardInformationSet || strlen(boardName) == 0) {
-        strncpy(boardName, newBoardName, MAX_BOARD_NAME_LENGTH + 1);
+        strncpy(boardName, newBoardName, MAX_BOARD_NAME_LENGTH);
         boardName[MAX_BOARD_NAME_LENGTH] = 0;
 
         boardInformationWasUpdated = true;
@@ -126,8 +126,10 @@ bool persistBoardInformation(void)
 {
 #if !defined(BOARD_NAME)
     if (boardInformationWasUpdated) {
-        strncpy(boardConfigMutable()->manufacturerId, manufacturerId, MAX_MANUFACTURER_ID_LENGTH + 1);
-        strncpy(boardConfigMutable()->boardName, boardName, MAX_BOARD_NAME_LENGTH + 1);
+        strncpy(boardConfigMutable()->manufacturerId, manufacturerId, MAX_MANUFACTURER_ID_LENGTH);
+        boardConfigMutable()->manufacturerId[MAX_MANUFACTURER_ID_LENGTH] = 0;
+        strncpy(boardConfigMutable()->boardName, boardName, MAX_BOARD_NAME_LENGTH);
+        boardConfigMutable()->boardName[MAX_BOARD_NAME_LENGTH] = 0;
         boardConfigMutable()->boardInformationSet = true;
 
         initBoardInformation();
