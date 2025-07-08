@@ -4737,14 +4737,18 @@ static void cliStatus(const char *cmdName, char *cmdline)
         }
     }
 #ifdef USE_SPI
-    if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
-        cliPrintf(" locked");
-    }
-    if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        cliPrintf(" dma");
-    }
-    if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
-        cliPrintf(" shared");
+    if (!gyroActiveDev()) {
+        cliPrintf(" not active");
+    } else {
+        if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
+            cliPrintf(" locked");
+        }
+        if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
+            cliPrintf(" dma");
+        }
+        if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
+            cliPrintf(" shared");
+        }
     }
 #endif
     cliPrintLinefeed();
