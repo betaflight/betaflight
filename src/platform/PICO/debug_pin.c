@@ -62,9 +62,10 @@ void dbgPinInit(void)
 void dbgPinHi(int index)
 {
 #ifdef USE_DEBUG_PIN
-    if ((unsigned)index >= ARRAYLEN(dbgPinIOs)) {
+    if ((unsigned)index >= ARRAYLEN(dbgPinIOs) || !dbgPinIOs[index]) {
         return;
     }
+
     IOHi(dbgPinIOs[index]);
 #else
     UNUSED(index);
@@ -74,9 +75,10 @@ void dbgPinHi(int index)
 void dbgPinLo(int index)
 {
 #ifdef USE_DEBUG_PIN
-    if ((unsigned)index >= ARRAYLEN(dbgPinIOs)) {
+    if ((unsigned)index >= ARRAYLEN(dbgPinIOs) || !dbgPinIOs[index]) {
         return;
     }
+
     IOLo(dbgPinIOs[index]);
 #else
     UNUSED(index);
