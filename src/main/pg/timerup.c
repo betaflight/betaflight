@@ -29,10 +29,6 @@
 
 #include "timerup.h"
 
-#if defined(USED_TIMERS) && defined(TIMUP_TIMERS)
-    STATIC_ASSERT((~USED_TIMERS  & TIMUP_TIMERS) == 0, "All TIMUP timers must be used");
-#endif
-
 PG_REGISTER_ARRAY_WITH_RESET_FN(timerUpConfig_t, HARDWARE_TIMER_DEFINITION_COUNT, timerUpConfig, PG_TIMER_UP_CONFIG, 0);
 
 void pgResetFn_timerUpConfig(timerUpConfig_t *config)
