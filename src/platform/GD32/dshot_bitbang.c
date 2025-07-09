@@ -287,7 +287,9 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
     bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
 
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_TAE)) {
-        while (1) {};
+        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_TAE);    // Clear Transfer Error flag
+        bbDMA_Cmd(bbPort, DISABLE);
+        bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, DISABLE);
     }
 
     DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);

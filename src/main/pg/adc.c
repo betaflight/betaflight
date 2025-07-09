@@ -41,12 +41,8 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
     adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
 #if defined(USE_ADC_DEVICE_0)
     adcConfig->dmaopt[ADCDEV_0] = ADC0_DMA_OPT;
-#if defined(ADC1)
-    adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
 #endif
-#else
     adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
-#endif
 // These conditionals need to match the ones used in 'src/main/drivers/adc.h'.
 #if defined(ADC2)
     adcConfig->dmaopt[ADCDEV_2] = ADC2_DMA_OPT;

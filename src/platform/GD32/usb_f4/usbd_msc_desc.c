@@ -1,6 +1,6 @@
 /*!
-    \file    usbd_msc_core.c
-    \brief   USB MSC device class core functions
+    \file    usbd_msc_desc.c
+    \brief   USB MSC device class descriptor functions
 
     \version 2024-12-20, V3.3.1, firmware for GD32F4xx
 */
@@ -223,7 +223,7 @@ static __ALIGN_BEGIN const usb_desc_str manufacturer_string __ALIGN_END = {
 };
 
 /* USB product string */
-static __ALIGN_BEGIN const usb_desc_str product_string __ALIGN_END = {
+static __ALIGN_BEGIN usb_desc_str product_string __ALIGN_END = {
     .header =
     {
         .bLength         = USB_STRING_LEN(34U),
@@ -266,6 +266,7 @@ usb_desc bf_msc_desc = {
 };
 
 static __ALIGN_BEGIN uint8_t usbd_msc_maxlun __ALIGN_END = 0U ;
+static __ALIGN_BEGIN usbd_msc_handler msc_handler __ALIGN_END;
 
 /*!
     \brief      usbd string get
@@ -312,8 +313,6 @@ void usbd_msc_desc_string_update(void)
 static uint8_t bf_msc_core_init(usb_dev *udev, uint8_t config_index)
 {
     (void)(config_index);
-    
-    static __ALIGN_BEGIN usbd_msc_handler msc_handler __ALIGN_END;
 
     memset((void *)&msc_handler, 0U, sizeof(usbd_msc_handler));
 

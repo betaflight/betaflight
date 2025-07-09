@@ -92,31 +92,31 @@ typedef struct
 #define READ_REG(REG)         ((REG))
 #define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
 
-#define I2C_TypeDef                void
-#define I2C_HandleTypeDef          void
-#define GPIO_TypeDef               void
-#define GPIO_InitTypeDef           void
-#define TIM_TypeDef                void
-#define DMA_TypeDef                void
-#define DMA_Stream_TypeDef         void
-
+typedef struct I2C_TypeDef         I2C_TypeDef;
+typedef struct I2C_HandleTypeDef   I2C_HandleTypeDef;
+typedef struct GPIO_TypeDef        GPIO_TypeDef;
+typedef struct GPIO_InitTypeDef    GPIO_InitTypeDef;
+typedef struct TIM_TypeDef         TIM_TypeDef;
+typedef struct DMA_TypeDef         DMA_TypeDef;
+typedef struct DMA_Stream_TypeDef  DMA_Stream_TypeDef;
+typedef struct DMA_Channel_TypeDef DMA_Channel_TypeDef;
+typedef struct SPI_TypeDef         SPI_TypeDef;
+typedef struct ADC_TypeDef         ADC_TypeDef;
+typedef struct USART_TypeDef       USART_TypeDef;
+typedef struct TIM_Cmd             TIM_Cmd;
+typedef struct TIM_CtrlPWMOutputs  TIM_CtrlPWMOutputs;
+typedef struct TIM_TimeBaseInit    TIM_TimeBaseInit;
+typedef struct TIM_ARRPreloadConfig TIM_ARRPreloadConfig;
+typedef struct EXTI_TypeDef         EXTI_TypeDef;
+typedef struct EXTI_InitTypeDef     EXTI_InitTypeDef;
 #define DMA_InitTypeDef            dma_general_config_struct
-
-#define DMA_Channel_TypeDef        void
-#define SPI_TypeDef                void
-#define ADC_TypeDef                void
-#define USART_TypeDef              void
 #define TIM_OCInitTypeDef          timer_oc_parameter_struct
 #define TIM_ICInitTypeDef          timer_ic_parameter_struct
 #define TIM_OCStructInit           timer_channel_output_struct_para_init
-#define TIM_Cmd                    void
-#define TIM_CtrlPWMOutputs         void
-#define TIM_TimeBaseInit           void
 #define TIM_TimeBaseInitTypeDef    timer_parameter_struct
-#define TIM_ARRPreloadConfig       void
-#define EXTI_TypeDef               void
-#define EXTI_InitTypeDef           void
-#define USART_TypeDef              void
+
+#define TIM_ICPolarity_Falling      TIMER_IC_POLARITY_FALLING
+#define TIM_ICPolarity_Rising       TIMER_IC_POLARITY_RISING
 
 #define Bit_RESET                  0
 
@@ -139,6 +139,7 @@ typedef struct
 
 extern void timerOCModeConfig(void *tim, uint8_t channel, uint16_t ocmode);
 extern void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8_t state);
+extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 
 #define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
 #define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
@@ -193,7 +194,7 @@ extern void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8
 
 #define IO_CONFIG(mode, speed, otype, pupd) ((mode) | ((speed) << 2) | ((otype) << 4) | ((pupd) << 5))
 
-#define IOCFG_OUT_PP         IO_CONFIG(GPIO_MODE_OUTPUT, 0, GPIO_OTYPE_PP, GPIO_PUPD_NONE)  // TODO
+#define IOCFG_OUT_PP         IO_CONFIG(GPIO_MODE_OUTPUT, 0, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
 #define IOCFG_OUT_PP_UP      IO_CONFIG(GPIO_MODE_OUTPUT, 0, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP)
 #define IOCFG_OUT_PP_25      IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_25MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
 #define IOCFG_OUT_OD         IO_CONFIG(GPIO_MODE_OUTPUT, 0, GPIO_OTYPE_OD, GPIO_PUPD_NONE)
@@ -258,3 +259,19 @@ extern void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8
 
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
+
+// Select UART prefix according to UART_DEV
+#define _UART_GET_PREFIX(dev) _UART_GET_PREFIX_##dev
+
+#define _UART_GET_PREFIX_UARTDEV_0 USART
+#define _UART_GET_PREFIX_UARTDEV_1 USART
+#define _UART_GET_PREFIX_UARTDEV_2 USART
+#define _UART_GET_PREFIX_UARTDEV_3 UART
+#define _UART_GET_PREFIX_UARTDEV_4 UART
+#define _UART_GET_PREFIX_UARTDEV_5 USART
+#define _UART_GET_PREFIX_UARTDEV_6 UART
+#define _UART_GET_PREFIX_UARTDEV_7 UART
+#define _UART_GET_PREFIX_UARTDEV_8 UART
+#define _UART_GET_PREFIX_UARTDEV_9 UART
+#define _UART_GET_PREFIX_UARTDEV_10 USART
+#define _UART_GET_PREFIX_UARTDEV_LP1 LPUART

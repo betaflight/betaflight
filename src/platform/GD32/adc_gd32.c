@@ -43,7 +43,7 @@
 
 const adcDevice_t adcHardware[] = {
     {
-        .ADCx = (void *)ADC0,
+        .ADCx = (ADC_TypeDef *)ADC0,
         .rccADC = RCC_APB2(ADC0),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC0_DMA_STREAM,
@@ -51,7 +51,7 @@ const adcDevice_t adcHardware[] = {
 #endif
     },
     {
-        .ADCx = (void *)ADC1,
+        .ADCx = (ADC_TypeDef *)ADC1,
         .rccADC = RCC_APB2(ADC1),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC1_DMA_STREAM,
@@ -59,7 +59,7 @@ const adcDevice_t adcHardware[] = {
 #endif
     },
     {
-        .ADCx = (void *)ADC2,
+        .ADCx = (ADC_TypeDef *)ADC2,
         .rccADC = RCC_APB2(ADC2),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC2_DMA_STREAM,
@@ -182,7 +182,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     if (config->rssi.enabled) {
-        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;          //RSSI_ADC_CHANNEL;
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;           //RSSI_ADC_CHANNEL;
     }
 
     if (config->external1.enabled) {
@@ -230,9 +230,9 @@ void adcInit(const adcConfig_t *config)
     adc_sync_delay_config(ADC_SYNC_DELAY_5CYCLE);
 
 #ifdef USE_ADC_INTERNAL
-    // If device is not ADC1 or there's no active channel, then initialize ADC1 separately
-    if (device != ADCDEV_1 || !adcActive) {
-        RCC_ClockCmd(adcHardware[ADCDEV_1].rccADC, ENABLE);
+    // If device is not ADC0 or there's no active channel, then initialize ADC0 separately
+    if (device != ADCDEV_0 || !adcActive) {
+        RCC_ClockCmd(adcHardware[ADCDEV_0].rccADC, ENABLE);
         adcInitDevice(ADC0, 2);
         adc_enable(ADC0);
     }
@@ -282,15 +282,15 @@ void adcInit(const adcConfig_t *config)
 
     dma_single_data_parameter_struct dma_init_struct;
     dma_single_data_para_struct_init(&dma_init_struct);
-    dma_init_struct.periph_addr = (uint32_t)(&ADC_RDATA((uint32_t)(adc.ADCx))); // (uint32_t)(&ADC_RDATA(ADC0))， ADC0即(uint32_t)(adc.ADCx)
+    dma_init_struct.periph_addr = (uint32_t)(&ADC_RDATA((uint32_t)(adc.ADCx)));
 
     uint32_t temp_dma_periph;
     int temp_dma_channel;
-    gd32_dma_chbase_parse((uint32_t)dmaSpec->ref, &temp_dma_periph, &temp_dma_channel);
-
 #ifdef USE_DMA_SPEC
+    gd32_dma_chbase_parse((uint32_t)dmaSpec->ref, &temp_dma_periph, &temp_dma_channel);
     dma_channel_subperipheral_select(temp_dma_periph, temp_dma_channel, dmaSpec->channel);
 #else
+    gd32_dma_chbase_parse((uint32_t)adc.dmaResource, &temp_dma_periph, &temp_dma_channel);
     dma_channel_subperipheral_select(temp_dma_periph, temp_dma_channel, adc.channel);
 #endif
 
@@ -302,7 +302,6 @@ void adcInit(const adcConfig_t *config)
     dma_init_struct.direction = DMA_PERIPH_TO_MEMORY;
     dma_init_struct.number = configuredAdcChannels;
     dma_init_struct.priority = DMA_PRIORITY_HIGH;
-
 
 #ifdef USE_DMA_SPEC
     gd32_dma_init((uint32_t)dmaSpec->ref, &dma_init_struct);

@@ -101,6 +101,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
+    if (transponder->timer_hz == 0 || transponder->timer_carrier_hz == 0) {
+        return;
+    }
     uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, transponder->timer_hz);
     uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, transponder->timer_carrier_hz);
 

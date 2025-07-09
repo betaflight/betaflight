@@ -1,5 +1,5 @@
 /*!
-    \file  cdc_hid_wrapper.c
+    \file  usb_cdc_hid.c
     \brief this file calls to the separate CDC and HID class layer handlers
 
     \version 2018-06-01, V1.0.0, application for GD32 USBD

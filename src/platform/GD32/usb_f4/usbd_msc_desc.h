@@ -1,6 +1,6 @@
 /*!
-    \file    usbd_msc_core.h
-    \brief   the header file of USB MSC device class core functions
+    \file    usbd_msc_desc.h
+    \brief   the header file of USB MSC device class descriptor functions
 
     \version 2024-12-20, V3.3.1, firmware for GD32F4xx
 */
@@ -32,8 +32,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 OF SUCH DAMAGE.
 */
 
-#ifndef __USB_DESC_H
-#define __USB_DESC_H
+#ifndef USB_MSC_DESC_H
+#define USB_MSC_DESC_H
 
 #include "usbd_msc_core.h"
 
@@ -45,5 +45,5 @@ OF SUCH DAMAGE.
 extern usb_desc bf_msc_desc;
 extern usb_class_core bf_msc_class;
 
-#endif /* __USBD_DESC_H */
+#endif /* USB_MSC_DESC_H */
 

@@ -303,8 +303,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
-    uint8_t pupMode = 0;
-    pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP;    
+    uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP;    
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -356,7 +355,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->icInitStruct.icpolarity  = TIMER_IC_POLARITY_BOTH_EDGE;
     motor->icInitStruct.icprescaler = TIMER_IC_PSC_DIV1;
     motor->icInitStruct.icfilter    = 2;
-    timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);  // ic结构体中没有channel
+    timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);
 #endif
 
 #ifdef USE_DSHOT_DMAR

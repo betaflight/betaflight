@@ -51,7 +51,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_0
     {
         .device = I2CDEV_0,
-        .reg = (void *)I2C0,
+        .reg = (I2C_TypeDef *)I2C0,
         .sclPins = {
             I2CPINDEF(PB6, GPIO_AF_4),
             I2CPINDEF(PB8, GPIO_AF_4),
@@ -68,7 +68,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
  #ifdef USE_I2C_DEVICE_1
      {
          .device = I2CDEV_1,
-         .reg = (void *)I2C1,
+         .reg = (I2C_TypeDef *)I2C1,
          .sclPins = {
              I2CPINDEF(PB10, GPIO_AF_4),
              I2CPINDEF(PF1,  GPIO_AF_4),
@@ -85,7 +85,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
  #ifdef USE_I2C_DEVICE_2
      {
          .device = I2CDEV_2,
-         .reg = (void *)I2C2,
+         .reg = (I2C_TypeDef *)I2C2,
          .sclPins = {
              I2CPINDEF(PA8, GPIO_AF_4),
          },

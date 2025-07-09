@@ -648,8 +648,6 @@ static void system_clock_168m_irc16m(void)
     while(0U == (PMU_CS & PMU_CS_HDSRF)){
     } 
 
-    FMC_WS = 0x00000705;
-
     reg_temp = RCU_CFG0;
     /* select PLL as system clock */
     reg_temp &= ~RCU_CFG0_SCS;

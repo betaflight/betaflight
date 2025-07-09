@@ -44,7 +44,7 @@ void audioGenerateWhiteNoise(void)
 
     timer_deinit(TIMER5);
     timer_parameter_struct timer_initpara;
-    timer_initpara.prescaler         = 0; // 如果需要计数频率为50Mhz，这里可以4-1=3，进行分频。
+    timer_initpara.prescaler         = 0;
     timer_initpara.alignedmode       = TIMER_COUNTER_EDGE;
     timer_initpara.counterdirection  = TIMER_COUNTER_UP;
     timer_initpara.period            = 0xFF;

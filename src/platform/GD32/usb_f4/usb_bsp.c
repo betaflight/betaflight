@@ -208,7 +208,8 @@ void usb_udelay(const uint32_t usec)
 {
     uint32_t count = 0;
 
-    const uint32_t utime = (120 * usec / 7);
+    const uint32_t ticks_per_us = SystemCoreClock / 1000000U;
+    const uint32_t utime = (ticks_per_us * usec / 7);
     do {
         if ( ++count > utime )
         {

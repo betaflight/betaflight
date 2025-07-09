@@ -25,12 +25,10 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
+#ifndef ADC_INSTANCE
 #if defined(USE_ADC_DEVICE_0)
-#ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC0
-#endif
 #else
-#ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
 #endif
 #endif

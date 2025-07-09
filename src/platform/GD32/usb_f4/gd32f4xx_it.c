@@ -128,7 +128,7 @@ void USBFS_WKUP_IRQHandler(void)
 */
 void USBHS_WKUP_IRQHandler(void)
 {
-    if(cdc_acm.bp.low_power) {
+    if(USB_OTG_dev.bp.low_power) {
         resume_mcu_clk();
 
 #ifdef USE_EMBEDDED_PHY

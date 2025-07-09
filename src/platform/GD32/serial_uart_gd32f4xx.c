@@ -46,7 +46,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART0
     {
         .identifier = SERIAL_PORT_UART0,
-        .reg = (void *)USART0,
+        .reg = (USART_TypeDef *)USART0,
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART0_RX_DMA
@@ -72,7 +72,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
         .identifier = SERIAL_PORT_USART1,
-        .reg = (void *)USART1,
+        .reg = (USART_TypeDef *)USART1,
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART1_RX_DMA
@@ -98,7 +98,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART2
     {
         .identifier = SERIAL_PORT_USART2,
-        .reg = (void *)USART2,
+        .reg = (USART_TypeDef *)USART2,
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART2_RX_DMA
@@ -124,7 +124,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART3
     {
         .identifier = SERIAL_PORT_UART3,
-        .reg = (void *)UART3,
+        .reg = (USART_TypeDef *)UART3,
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART3_RX_DMA
@@ -150,7 +150,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART4
     {
         .identifier = SERIAL_PORT_UART4,
-        .reg = (void *)UART4,
+        .reg = (USART_TypeDef *)UART4,
         .rxDMAChannel = DMA_SUBPERI4,
         .txDMAChannel = DMA_SUBPERI4,
 #ifdef USE_UART4_RX_DMA
@@ -176,7 +176,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART5
     {
         .identifier = SERIAL_PORT_UART5,
-        .reg = (void *)USART5,
+        .reg = (USART_TypeDef *)USART5,
         .rxDMAChannel = DMA_SUBPERI5,
         .txDMAChannel = DMA_SUBPERI5,
 #ifdef USE_UART5_RX_DMA

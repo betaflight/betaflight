@@ -36,6 +36,9 @@ OF SUCH DAMAGE.
 
 #include "platform.h"
 #include "build/version.h"
+#include "build/atomic.h"
+
+#include "drivers/nvic.h"
 
 #include "pg/pg.h"
 #include "pg/usb.h"
@@ -45,7 +48,7 @@ OF SUCH DAMAGE.
 
 volatile uint32_t APP_Rx_ptr_in  = 0;
 volatile uint32_t APP_Rx_ptr_out = 0;
-uint32_t APP_Rx_length  = 0;
+volatile uint32_t APP_Rx_length  = 0;
 
 uint8_t  USB_Tx_State = USB_CDC_IDLE;
 __ALIGN_BEGIN uint8_t USB_Rx_Buffer   [USB_CDC_DATA_PACKET_SIZE] __ALIGN_END ;
@@ -525,8 +528,10 @@ static uint8_t bf_cdc_acm_in(usb_dev *udev, uint8_t ep_num)
             usbd_ep_send(udev, CDC_DATA_IN_EP, (uint8_t*)&APP_Rx_Buffer[APP_Rx_ptr_out], USB_Tx_length);
 
             // Advance the out pointer
-            APP_Rx_ptr_out = (APP_Rx_ptr_out + USB_Tx_length) % APP_RX_DATA_SIZE;
-            APP_Rx_length -= USB_Tx_length;
+            ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
+                APP_Rx_ptr_out = (APP_Rx_ptr_out + USB_Tx_length) % APP_RX_DATA_SIZE;
+                APP_Rx_length -= USB_Tx_length;
+            }
 
             return USBD_OK;
         }

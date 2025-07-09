@@ -97,6 +97,7 @@ extern void gd32_dma_int_config(uint32_t dma_chan_base, uint32_t source, Control
 extern void gd32_dma_transnum_config(uint32_t dma_chan_base, uint32_t number);
 extern uint16_t gd32_dma_transnum_get(uint32_t dma_chan_base);
 extern FlagStatus gd32_dma_flag_get(uint32_t dma_chan_base, uint32_t flag);
+extern void gd32_dma_flag_clear(uint32_t dma_chan_base, uint32_t flag);
 extern void gd32_dma_chbase_parse(uint32_t dma_chan_base, uint32_t *dma_periph, int *dma_channel);
 extern void gd32_dma_memory_addr_config(uint32_t dma_chan_base, uint32_t address, uint8_t memory_flag);
 

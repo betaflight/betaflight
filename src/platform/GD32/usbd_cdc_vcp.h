@@ -19,8 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __USBD_CDC_VCP_H
-#define __USBD_CDC_VCP_H
+#ifndef USBD_CDC_VCP_H
+#define USBD_CDC_VCP_H
 
 #include "gd32f4xx.h"
 
@@ -78,4 +78,4 @@ typedef struct _CDC_IF_PROP
 }
 CDC_IF_Prop_TypeDef;
 
-#endif /* __USBD_CDC_VCP_H */
+#endif /* USBD_CDC_VCP_H */

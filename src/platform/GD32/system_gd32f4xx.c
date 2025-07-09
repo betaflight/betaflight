@@ -103,7 +103,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_SPI1);
     rcu_periph_clock_enable(RCU_SPI2);
     rcu_periph_clock_enable(RCU_USART1);
-    rcu_periph_clock_enable(RCU_USART1);
+    rcu_periph_clock_enable(RCU_USART2);
     rcu_periph_clock_enable(RCU_UART3);
     rcu_periph_clock_enable(RCU_UART4);
     rcu_periph_clock_enable(RCU_I2C0);

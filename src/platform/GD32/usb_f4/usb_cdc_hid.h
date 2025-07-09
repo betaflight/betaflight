@@ -1,5 +1,5 @@
 /*!
-    \file  cdc_hid_wrapper.h
+    \file  usb_cdc_hid.h
     \brief the header file of cdc hid wrapper driver
 
     \version 2018-06-01, V1.0.0, application for GD32 USBD
@@ -34,8 +34,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 OF SUCH DAMAGE.
 */
 
-#ifndef __USB_HID_CORE_H_
-#define __USB_HID_CORE_H_
+#ifndef USB_CDC_HID_H
+#define USB_CDC_HID_H
 
 #include "usbd_desc.h"
 #include "standard_hid_core.h"
@@ -80,4 +80,4 @@ typedef struct
 extern usb_desc bf_cdc_hid_desc;
 extern usb_class_core bf_usbd_cdc_hid_cb;
 
-#endif  /* __CDC_HID_WRAPPER_H */
+#endif  /* USB_CDC_HID_H */

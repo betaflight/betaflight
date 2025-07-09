@@ -77,8 +77,6 @@ void uartReconfigure(uartPort_t *uartPort)
         usart_halfduplex_disable((uint32_t)uartPort->USARTx);
     }
 
-    usart_enable((uint32_t)uartPort->USARTx);
-
     if (uartPort->port.mode & MODE_RX) {
 #ifdef USE_DMA
         if (uartPort->rxDMAResource) {

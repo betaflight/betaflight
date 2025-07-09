@@ -165,6 +165,12 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     }
 }
 
+uint32_t timerPrescaler(const TIM_TypeDef *tim)
+{
+    uint32_t timer = (uint32_t)tim;
+    return TIMER_PSC(timer) + 1;
+}
+
 void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8_t state)
 {
     switch(channel) {

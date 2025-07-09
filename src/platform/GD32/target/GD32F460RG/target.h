@@ -40,12 +40,6 @@
 #define I2C1_CLOCKSPEED 400
 #define I2C2_CLOCKSPEED 400
 
-#if defined(USE_I2C_PULLUP)
-#define I2C0_PULLUP true
-#else
-#define I2C0_PULLUP false
-#endif
-
 #define USE_VCP
 
 #define USE_SOFTSERIAL
@@ -108,8 +102,6 @@
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC0
 #endif
-
-#define USE_SPI_DEVICE_0
 
 #define USE_EXTI
 

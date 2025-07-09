@@ -301,8 +301,6 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
         pwmInputPort->state = 1;
 #if defined(USE_HAL_DRIVER)
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_FALLING);
-#elif defined(USE_GDBSP_DRIVER)
-        pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIMER_IC_POLARITY_FALLING);
 #else
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
 #endif
@@ -317,8 +315,6 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
         pwmInputPort->state = 0;
 #if defined(USE_HAL_DRIVER)
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_RISING);
-#elif defined(USE_GDBSP_DRIVER)
-        pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIMER_IC_POLARITY_RISING);
 #else
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 #endif
@@ -418,8 +414,6 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
 #if defined(USE_HAL_DRIVER)
         pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
-#elif defined(USE_GDBSP_DRIVER) 
-        pwmICConfig(timer->tim, timer->channel, TIMER_IC_POLARITY_RISING);
 #else
         pwmICConfig(timer->tim, timer->channel, TIM_ICPolarity_Rising);
 #endif
@@ -430,33 +424,21 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 #define FIRST_PWM_PORT 0
 
 #ifdef USE_PWM_OUTPUT
+static void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
+{
+    pwmOutputPort_t *motors = pwmGetMotors();
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
+        if (!motors[motorIndex].enabled || motors[motorIndex].channel.tim != pwmTimer) {
+            continue;
+        }
 #if defined(USE_GDBSP_DRIVER)
-static void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
-{
-    pwmOutputPort_t *motors = pwmGetMotors();
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
-        if (!motors[motorIndex].enabled || motors[motorIndex].channel.tim != pwmTimer) {
-            continue;
-        }
-
-        ppmCountDivisor = timerClock(pwmTimer) / (TIMER_PSC((uint32_t)pwmTimer) + 1);
-        return;
-    }
-}
+        ppmCountDivisor = timerClock(pwmTimer) / timerPrescaler(pwmTimer);
 #else
-static void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
-{
-    pwmOutputPort_t *motors = pwmGetMotors();
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
-        if (!motors[motorIndex].enabled || motors[motorIndex].channel.tim != pwmTimer) {
-            continue;
-        }
-
         ppmCountDivisor = timerClock(pwmTimer) / (pwmTimer->PSC + 1);
+#endif
         return;
     }
 }
-#endif
 #endif
 
 void ppmRxInit(const ppmConfig_t *ppmConfig)
@@ -489,8 +471,6 @@ void ppmRxInit(const ppmConfig_t *ppmConfig)
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
-#elif defined(USE_GDBSP_DRIVER)  
-    pwmICConfig(timer->tim, timer->channel, TIMER_IC_POLARITY_RISING);
 #else
     pwmICConfig(timer->tim, timer->channel, TIM_ICPolarity_Rising);
 #endif

@@ -127,13 +127,7 @@ static uint32_t dma_int_ftf_flag_get(uint32_t dma_chan_base)
     uint32_t dma_periph;
     int channel;
 
-    if(DMA1 > dma_chan_base) {
-        dma_periph = DMA0;
-    } else {
-        dma_periph = DMA1;
-    }
-
-    channel = gd32_dma_channel_get(dma_chan_base, dma_periph);
+    gd32_dma_chbase_parse(dma_chan_base, &dma_periph, &channel);
 
     status = dma_interrupt_flag_get(dma_periph, channel ,DMA_INT_FLAG_FTF);
 
@@ -146,13 +140,7 @@ uint32_t dma_enable_status_get(uint32_t dma_chan_base)
     uint32_t status;
     int channel;
 
-    if(DMA1 > dma_chan_base) {
-        dma_periph = DMA0;
-    } else {
-        dma_periph = DMA1;
-    }
-
-    channel = gd32_dma_channel_get(dma_chan_base, dma_periph);
+    gd32_dma_chbase_parse(dma_chan_base, &dma_periph, &channel);
 
     status = (DMA_CHCTL(dma_periph, channel) & DMA_CHXCTL_CHEN);
 
@@ -175,13 +163,13 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
 void gd32_dma_chbase_parse(uint32_t dma_chan_base, uint32_t *dma_periph, int *dma_channel)
 {
-    if(DMA1 > dma_chan_base) {
+    if (DMA1 > dma_chan_base) {
         *dma_periph = DMA0;
     } else {
         *dma_periph = DMA1;
     }
 
-    *dma_channel = (int)(dma_chan_base - (*dma_periph) - 0x10)/0x18;
+    *dma_channel = gd32_dma_channel_get(dma_chan_base, *dma_periph);
 }
 
 void gd32_dma_init(uint32_t dma_chan_base, dma_single_data_parameter_struct *init_struct)
@@ -262,14 +250,12 @@ void gd32_dma_transnum_config(uint32_t dma_chan_base, uint32_t number)
 
 uint16_t gd32_dma_transnum_get(uint32_t dma_chan_base)
 {
-    uint32_t dma_periph ;
-    uint16_t number;
+    uint32_t dma_periph;
     int channel;
 
     gd32_dma_chbase_parse(dma_chan_base, &dma_periph, &channel);
 
-    number = (uint16_t)dma_transfer_number_get(dma_periph, channel);
-    return number;
+    return (uint16_t)dma_transfer_number_get(dma_periph, channel);
 }
 
 FlagStatus gd32_dma_flag_get(uint32_t dma_chan_base, uint32_t flag)

@@ -70,10 +70,10 @@
 #define STATIC_ASSERT(condition, name) static_assert((condition), #name)
 #endif
 
-#if defined(USE_GDBSP_DRIVER)
+#ifdef BIT
 #undef BIT
-#endif
 #define BIT(x) (1 << (x))
+#endif
 
 /*
 http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html

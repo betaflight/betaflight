@@ -31,8 +31,8 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
 OF SUCH DAMAGE.
 */
-#ifndef __USBD_DESC_H
-#define __USBD_DESC_H
+#ifndef USBD_DESC_H
+#define USBD_DESC_H
 
 #include "usbd_enum.h"
 #include "usb_cdc.h"
@@ -50,7 +50,7 @@ extern usb_desc bf_cdc_desc;
 extern usb_class_core bf_cdc_class;
 extern volatile uint32_t APP_Rx_ptr_in;
 extern volatile uint32_t APP_Rx_ptr_out;
-extern uint32_t APP_Rx_length;
+extern volatile uint32_t APP_Rx_length;
 
 /* function declarations */
 /* check CDC ACM is ready for data transfer */
@@ -60,4 +60,4 @@ void bf_cdc_acm_data_send(usb_dev *udev);
 /* receive CDC ACM data */
 void bf_cdc_acm_data_receive(usb_dev *udev);
 
-#endif /* __USBD_DESC_H */
+#endif /* USBD_DESC_H */
