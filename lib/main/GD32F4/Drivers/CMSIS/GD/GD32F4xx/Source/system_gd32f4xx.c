@@ -735,9 +735,9 @@ static void system_clock_168m_25m_hxtal(void)
     /* HXTAL is stable */
     /* AHB = SYSCLK */
     RCU_CFG0 |= RCU_AHB_CKSYS_DIV1;
-    /* APB2 = AHB */
+    /* APB2 = AHB/2 */
     RCU_CFG0 |= RCU_APB2_CKAHB_DIV2;
-    /* APB1 = AHB */
+    /* APB1 = AHB/4 */
     RCU_CFG0 |= RCU_APB1_CKAHB_DIV4;
 
     /* Configure the main PLL, PSC = 25, PLL_N = 336, PLL_P = 2, PLL_Q = 7 */ 

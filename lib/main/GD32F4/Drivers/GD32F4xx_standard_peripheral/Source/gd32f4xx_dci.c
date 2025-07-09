@@ -51,7 +51,7 @@ void dci_deinit(void)
     \param[in]  dci_struct: DCI parameter initialization structure
                 members of the structure and the member values are shown as below:
                 capture_mode    : DCI_CAPTURE_MODE_CONTINUOUS, DCI_CAPTURE_MODE_SNAPSHOT
-                colck_polarity  : DCI_CK_POLARITY_FALLING, DCI_CK_POLARITY_RISING
+                clock_polarity  : DCI_CK_POLARITY_FALLING, DCI_CK_POLARITY_RISING
                 hsync_polarity  : DCI_HSYNC_POLARITY_LOW, DCI_HSYNC_POLARITY_HIGH
                 vsync_polarity  : DCI_VSYNC_POLARITY_LOW, DCI_VSYNC_POLARITY_HIGH
                 frame_rate      : DCI_FRAME_RATE_ALL, DCI_FRAME_RATE_1_2, DCI_FRAME_RATE_1_4

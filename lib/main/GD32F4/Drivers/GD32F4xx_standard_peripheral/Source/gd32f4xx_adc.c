@@ -265,7 +265,7 @@ void adc_resolution_config(uint32_t adc_periph, uint32_t resolution)
     \arg          ADC_OVERSAMPLING_SHIFT_1B: 1-bit oversampling shift
     \arg          ADC_OVERSAMPLING_SHIFT_2B: 2-bit oversampling shift
     \arg          ADC_OVERSAMPLING_SHIFT_3B: 3-bit oversampling shift
-    \arg          ADC_OVERSAMPLING_SHIFT_4B: 3-bit oversampling shift
+    \arg          ADC_OVERSAMPLING_SHIFT_4B: 4-bit oversampling shift
     \arg          ADC_OVERSAMPLING_SHIFT_5B: 5-bit oversampling shift
     \arg          ADC_OVERSAMPLING_SHIFT_6B: 6-bit oversampling shift
     \arg          ADC_OVERSAMPLING_SHIFT_7B: 7-bit oversampling shift

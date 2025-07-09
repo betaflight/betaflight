@@ -112,19 +112,19 @@ extern "C" {
 #define DMA_INTF_SDEIF                    BIT(2)                        /*!< single data mode exception flag */
 #define DMA_INTF_TAEIF                    BIT(3)                        /*!< transfer access error flag */
 #define DMA_INTF_HTFIF                    BIT(4)                        /*!< half transfer finish flag */
-#define DMA_INTF_FTFIF                    BIT(5)                        /*!< full transger finish flag */
+#define DMA_INTF_FTFIF                    BIT(5)                        /*!< full transfer finish flag */
 
 /* DMA_INTC */
 #define DMA_INTC_FEEIFC                   BIT(0)                        /*!< clear FIFO error and exception flag */
 #define DMA_INTC_SDEIFC                   BIT(2)                        /*!< clear single data mode exception flag */
 #define DMA_INTC_TAEIFC                   BIT(3)                        /*!< clear single data mode exception flag */
 #define DMA_INTC_HTFIFC                   BIT(4)                        /*!< clear half transfer finish flag */
-#define DMA_INTC_FTFIFC                   BIT(5)                        /*!< clear full transger finish flag */
+#define DMA_INTC_FTFIFC                   BIT(5)                        /*!< clear full transfer finish flag */
 
 /* DMA_CHxCTL,x=0..7 */
 #define DMA_CHXCTL_CHEN                   BIT(0)                        /*!< channel x enable */
 #define DMA_CHXCTL_SDEIE                  BIT(1)                        /*!< enable bit for channel x single data mode exception interrupt */
-#define DMA_CHXCTL_TAEIE                  BIT(2)                        /*!< enable bit for channel x tranfer access error interrupt */
+#define DMA_CHXCTL_TAEIE                  BIT(2)                        /*!< enable bit for channel x transfer access error interrupt */
 #define DMA_CHXCTL_HTFIE                  BIT(3)                        /*!< enable bit for channel x half transfer finish interrupt */
 #define DMA_CHXCTL_FTFIE                  BIT(4)                        /*!< enable bit for channel x full transfer finish interrupt */
 #define DMA_CHXCTL_TFCS                   BIT(5)                        /*!< transfer flow controller select */
@@ -347,7 +347,7 @@ typedef struct
 /* DMA_CHxCTL register */
 /* interrupt enable bits */
 #define DMA_INT_SDE                       DMA_CHXCTL_SDEIE                          /*!< enable bit for channel x single data mode exception interrupt */
-#define DMA_INT_TAE                       DMA_CHXCTL_TAEIE                          /*!< enable bit for channel x tranfer access error interrupt */
+#define DMA_INT_TAE                       DMA_CHXCTL_TAEIE                          /*!< enable bit for channel x transfer access error interrupt */
 #define DMA_INT_HTF                       DMA_CHXCTL_HTFIE                          /*!< enable bit for channel x half transfer finish interrupt */
 #define DMA_INT_FTF                       DMA_CHXCTL_FTFIE                          /*!< enable bit for channel x full transfer finish interrupt */    
 #define DMA_INT_FEE                       DMA_CHXFCTL_FEEIE                         /*!< FIFO exception interrupt enable */

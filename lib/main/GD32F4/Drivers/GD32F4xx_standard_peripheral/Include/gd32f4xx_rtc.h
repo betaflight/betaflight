@@ -1,5 +1,5 @@
 /*!
-    \file    gd32f4xx_rtc.c
+    \file    gd32f4xx_rtc.h
     \brief   definitions for the RTC
 
     \version 2024-12-20, V3.3.1, firmware for GD32F4xx
