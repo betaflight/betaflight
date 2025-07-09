@@ -5415,6 +5415,22 @@ static void optToString(int optval, char *buf)
     }
 }
 
+static int getDmaOptUiIndex(dmaoptEntry_t *entry, int index)
+{
+    if (entry->presenceMask) {
+        return timerGetNumberByIndex(index);
+    }
+    return DMA_OPT_UI_INDEX(index);
+}
+
+static int transDmaoptIndex(dmaoptEntry_t *entry, int index)
+{
+    if (entry->presenceMask) {
+        return timerGetNumberByIndex(index) - 1;
+    }
+    return index;
+}
+
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -5438,7 +5454,7 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             "dma %s %d %d",
             entry->device, uiIndex, dmaopt);
 
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, dmaopt);
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, transDmaoptIndex(entry, index), dmaopt);
         dmaCode_t dmaCode = 0;
         if (dmaChannelSpec) {
             dmaCode = dmaChannelSpec->code;
@@ -5640,8 +5656,21 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
     const timerHardware_t *timer = NULL;
     pch = strtok_r(NULL, " ", &saveptr);
     if (entry) {
+        bool isIndexValid = true;
         index = pch ? (atoi(pch) - 1) : -1;
-        if (index < 0 || index >= entry->maxIndex || (entry->presenceMask != MASK_IGNORED && !(entry->presenceMask & BIT(index + 1)))) {
+        if (entry->presenceMask) {
+            if (!(entry->presenceMask & TIM_N(index + 1))) {
+                isIndexValid = false;
+            } else {
+                index = TIMER_INDEX(index + 1);
+            }
+        } else {
+            if (index < 0 || index >= entry->maxIndex) {
+                isIndexValid = false;
+            }
+        }
+
+        if (!isIndexValid) {
             cliPrintErrorLinef(cmdName, "BAD INDEX: '%s'", pch ? pch : "");
             return;
         }
@@ -5687,7 +5716,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
         // Show possible opts
         const dmaChannelSpec_t *dmaChannelSpec;
         if (entry) {
-            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, opt)); opt++) {
+            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, transDmaoptIndex(entry, index), opt)); opt++) {
                 cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         } else {
@@ -5705,8 +5734,8 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             optval = atoi(pch);
 
             if (entry) {
-                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, index, optval)) {
-                    cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, DMA_OPT_UI_INDEX(index), pch);
+                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, transDmaoptIndex(entry, index), optval)) {
+                    cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptUiIndex(entry, index), pch);
 
                     return;
                 }
@@ -5729,7 +5758,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             if (entry) {
                 *optaddr = optval;
 
-                cliPrintLinef("# dma %s %d: changed from %s to %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString, optvalString);
+                cliPrintLinef("# dma %s %d: changed from %s to %s", entry->device, getDmaOptUiIndex(entry, index), orgvalString, optvalString);
             } else {
 #if defined(USE_TIMER_MGMT)
                 timerIoConfig->dmaopt = optval;
@@ -5739,7 +5768,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             }
         } else {
             if (entry) {
-                cliPrintLinef("# dma %s %d: no change: %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString);
+                cliPrintLinef("# dma %s %d: no change: %s", entry->device, getDmaOptUiIndex(entry, index), orgvalString);
             } else {
                 cliPrintLinef("# dma %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),orgvalString);
             }
