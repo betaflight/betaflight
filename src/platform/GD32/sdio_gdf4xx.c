@@ -1530,8 +1530,6 @@ void SDIO_DMA_ST6_IRQHandler(dmaChannelDescriptor_t *dma)
 {
     UNUSED(dma);
 
-    dma_channel_enum channel_flag_offset = channelx;
-
     // Transfer Error Interrupt management
     if((DMA_INTF1(DMA1) & DMA_FLAG_ADD(DMA_INT_FLAG_TAE, (DMA_CH6-DMA_CH4))) != 0) {
         if((DMA_CHCTL(DMA1, DMA_CH6)& DMA_CHXCTL_TAEIE) != 0) {

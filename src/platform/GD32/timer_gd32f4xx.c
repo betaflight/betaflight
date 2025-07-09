@@ -173,6 +173,10 @@ uint32_t timerPrescaler(const TIM_TypeDef *tim)
 
 void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8_t state)
 {
+    if (timer == NULL) {
+        return;
+    }
+
     switch(channel) {
     case TIMER_CH_0:
         if(state) {

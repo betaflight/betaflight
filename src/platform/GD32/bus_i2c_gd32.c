@@ -293,6 +293,7 @@ static void i2c_er_handler(I2CDevice device)
     uint32_t I2Cx = (uint32_t )(i2cDevice[device].hardware->reg);
 
     i2cState_t *state = &i2cDevice[device].state;
+    timeUs_t timeoutStartUs = 0;
 
     // Read the I2C status register
     volatile uint32_t SR1Register = I2C_STAT0(I2Cx);
@@ -306,13 +307,28 @@ static void i2c_er_handler(I2CDevice device)
         i2c_interrupt_disable(I2Cx, I2C_INT_BUF);                                                // disable the RBNE/TBE interrupt - prevent the ISR tailchaining onto the ERR
         if (!(SR1Register & I2C_STAT0_LOSTARB) && !(I2C_CTL0(I2Cx) & I2C_CTL0_STOP)) {
             if (I2C_CTL0(I2Cx) & I2C_CTL0_START) {                                               // We are currently trying to send a start, this is very bad as start, stop will hang the peripheral
-                while (I2C_CTL0(I2Cx) & I2C_CTL0_START) {; }                                     // wait for any start to finish sending
+                timeoutStartUs = microsISR();
+                while (I2C_CTL0(I2Cx) & I2C_CTL0_START) {                                        // wait for any start to finish sending
+                    if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                        break;
+                    }
+                }
                 i2c_stop_on_bus(I2Cx);                                                           // send stop to finalise bus transaction
-                while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {; }                                      // wait for stop to finish sending
+                timeoutStartUs = microsISR();
+                while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {                                         // wait for stop to finish sending
+                    if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                        break;
+                    }
+                }
                 i2cInit(device);                                                                 // reset and configure the hardware
             } else {
                 i2c_stop_on_bus(I2Cx);                                                           // stop to free up the bus
-                while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {; }
+                timeoutStartUs = microsISR();
+                while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {                                         // wait for stop to finish sending
+                    if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                        break;
+                    }
+                }
                 i2c_interrupt_disable(I2Cx, I2C_INT_ERR);                                        // Disable EV and ERR interrupts while bus inactive
                 i2c_interrupt_disable(I2Cx, I2C_INT_EV); 
             }
@@ -328,6 +344,8 @@ void i2c_ev_handler(I2CDevice device)
 
     i2cEvState_t *ev_state = &i2c_ev_state[device];
     i2cState_t *state = &i2cDevice[device].state;
+
+    timeUs_t timeoutStartUs = 0;
 
     uint8_t SReg_1 = I2C_STAT0(I2Cx);                                                           // read the status register here
 
@@ -349,7 +367,12 @@ void i2c_ev_handler(I2CDevice device)
             __DMB();
             I2C_STAT1(I2Cx);                                                                    // clear ADDR after ACK is turned off
             i2c_stop_on_bus(I2Cx);                                                              // program the stop
-            while(I2C_CTL0(I2Cx) & I2C_CTL0_STOP){;}
+            timeoutStartUs = microsISR();
+            while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {                                            // wait for stop to finish sending
+                if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                    break;
+                }
+            }
 
             ev_state->final_stop = 1;
             i2c_interrupt_enable(I2Cx, I2C_INT_BUF);
@@ -372,7 +395,12 @@ void i2c_ev_handler(I2CDevice device)
                 i2c_ack_config(I2Cx, I2C_ACK_DISABLE);                                          // turn off ACK
                 state->read_p[ev_state->index++] = (uint8_t)I2C_DATA(I2Cx);                     // read data N-2
                 i2c_stop_on_bus(I2Cx);                                                          // program the Stop
-                while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {; }
+                timeoutStartUs = microsISR();
+                while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {                                        // wait for stop to finish sending
+                    if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                        break;
+                    }
+                }
 
                 ev_state->final_stop = 1;                                                       // required to fix hardware
                 state->read_p[ev_state->index++] = (uint8_t)I2C_DATA(I2Cx);                     // read data N - 1
@@ -380,7 +408,12 @@ void i2c_ev_handler(I2CDevice device)
             } else {
                 if (ev_state->final_stop) {
                     i2c_stop_on_bus(I2Cx);                                                      // program the Stop
-                    while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {; }
+                    timeoutStartUs = microsISR();
+                    while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {                                    // wait for stop to finish sending
+                        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                            break;
+                        }
+                    }
                 } else {
                     i2c_start_on_bus(I2Cx);                                                     // program a rep start
                 }
@@ -393,7 +426,12 @@ void i2c_ev_handler(I2CDevice device)
             if (ev_state->subaddress_sent || (state->writing)) {
                 if (ev_state->final_stop) {
                     i2c_stop_on_bus(I2Cx);                                                      // program the Stop
-                    while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {; }
+                    timeoutStartUs = microsISR();
+                    while (I2C_CTL0(I2Cx) & I2C_CTL0_STOP) {                                         // wait for stop to finish sending
+                        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                            break;
+                        }
+                    }
                 } else {
                     i2c_start_on_bus(I2Cx);                                                     // program a rep start
                 }
@@ -405,7 +443,12 @@ void i2c_ev_handler(I2CDevice device)
             }
         }
         // we must wait for the start to clear, otherwise we get constant BTC
-        while (I2C_CTL0(I2Cx) & I2C_CTL0_START) {; }
+        timeUs_t timeoutStartUs = microsISR();
+        while (I2C_CTL0(I2Cx) & I2C_CTL0_START) {                                        // wait for any start to finish sending
+            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                break;
+            }
+        }
     } else if (SReg_1 & I2C_STAT0_RBNE) {                                                       // Byte received
         state->read_p[ev_state->index++] = (uint8_t)I2C_DATA(I2Cx);
         if (state->bytes == (ev_state->index + 3))

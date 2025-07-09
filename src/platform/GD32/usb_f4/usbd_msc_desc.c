@@ -154,7 +154,7 @@ __ALIGN_BEGIN const usb_desc_config_set bf_other_speed_msc_config_desc __ALIGN_E
         .wTotalLength        = USB_MSC_CONFIG_DESC_SIZE,
         .bNumInterfaces      = 0x01U,
         .bConfigurationValue = 0x01U,
-        .iConfiguration      = 0x00U,
+        .iConfiguration      = 0x04U,
         .bmAttributes        = 0xC0U,
         .bMaxPower           = 0x32U
     },
