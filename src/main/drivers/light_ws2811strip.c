@@ -28,7 +28,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 #include "common/maths.h"
@@ -50,27 +49,10 @@
 
 #include "scheduler/scheduler.h"
 
-#ifdef USE_LED_STRIP_CACHE_MGMT
-// WS2811_DMA_BUFFER_SIZE is multiples of uint32_t
-// Number of bytes required for buffer
-#define WS2811_DMA_BUF_BYTES              (WS2811_DMA_BUFFER_SIZE * sizeof(uint32_t))
-// Number of bytes required to cache align buffer
-#define WS2811_DMA_BUF_CACHE_ALIGN_BYTES  ((WS2811_DMA_BUF_BYTES + 0x20) & ~0x1f)
-// Size of array to create a cache aligned buffer
-#define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
-DMA_RW_AXI __attribute__((aligned(32))) uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
-#else
-DMA_DATA_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#endif
-
-static ioTag_t ledStripIoTag;
 static bool ws2811Initialised = false;
 volatile bool ws2811LedDataTransferInProgress = false;
 static unsigned usedLedCount = 0;
 static bool needsFullRefresh = true;
-
-uint16_t BIT_COMPARE_1 = 0;
-uint16_t BIT_COMPARE_0 = 0;
 
 static hsvColor_t ledColorBuffer[WS2811_DATA_BUFFER_SIZE];
 
@@ -119,17 +101,10 @@ void setUsedLedCount(unsigned ledCount)
     needsFullRefresh = true;
 }
 
-void ws2811LedStripInit(ioTag_t ioTag)
-{
-    memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
-
-    ledStripIoTag = ioTag;
-}
-
 void ws2811LedStripEnable(void)
 {
     if (!ws2811Initialised) {
-        if (!ws2811LedStripHardwareInit(ledStripIoTag)) {
+        if (!ws2811LedStripHardwareInit()) {
             return;
         }
 
@@ -140,7 +115,7 @@ void ws2811LedStripEnable(void)
 
         // RGB or GRB ordering doesn't matter for black, use 4-channel LED configuraton to make sure all channels are zero
         // Multiple calls may be required as normally broken into multiple parts
-        while (!ws2811UpdateStrip(LED_GRBW, 100));
+        while (!ws2811UpdateStrip(100));
     }
 }
 
@@ -149,44 +124,11 @@ bool isWS2811LedStripReady(void)
     return ws2811Initialised && !ws2811LedDataTransferInProgress;
 }
 
-STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color, unsigned ledIndex)
-{
-    uint32_t bits_per_led;
-    uint32_t packed_colour;
-
-    switch (ledFormat) {
-        case LED_RGB: // WS2811 drivers use RGB format
-            packed_colour = (color->rgb.r << 16) | (color->rgb.g << 8) | (color->rgb.b);
-            bits_per_led = 24;
-            break;
-
-        case LED_GRBW: // SK6812 drivers use this
-        {
-            /* reconstruct white channel from RGB, making the intensity a bit nonlinear, but thats fine for this use case */
-            uint8_t white = MIN(MIN(color->rgb.r, color->rgb.g), color->rgb.b);
-            packed_colour = (color->rgb.g << 24) | (color->rgb.r << 16) | (color->rgb.b << 8) | (white);
-            bits_per_led = 32;
-            break;
-        }
-
-        case LED_GRB: // WS2812 drivers use GRB format
-        default:
-            packed_colour = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
-            bits_per_led = 24;
-        break;
-    }
-
-    unsigned dmaBufferOffset = 0;
-    for (int index = bits_per_led - 1; index >= 0; index--) {
-        ledStripDMABuffer[ledIndex * bits_per_led + dmaBufferOffset++] = (packed_colour & (1U << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
-    }
-}
-
 /*
  * This method is non-blocking unless an existing LED update is in progress.
  * it does not wait until all the LEDs have been updated, that happens in the background.
  */
-bool ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
+bool ws2811UpdateStrip(uint8_t brightness)
 {
     static uint8_t ledIndex = 0;
     timeUs_t startTime = micros();
@@ -207,7 +149,7 @@ bool ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
 
         rgbColor24bpp_t *rgb24 = hsvToRgb24(&scaledLed);
 
-        updateLEDDMABuffer(ledFormat, rgb24, ledIndex++);
+        ws2811LedStripUpdateTransferBuffer(rgb24, ledIndex++);
 
         if (cmpTimeUs(micros(), startTime) > LED_TARGET_UPDATE_US) {
             return false;
@@ -216,12 +158,8 @@ bool ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
     ledIndex = 0;
     needsFullRefresh = false;
 
-#ifdef USE_LED_STRIP_CACHE_MGMT
-    SCB_CleanDCache_by_Addr(ledStripDMABuffer, WS2811_DMA_BUF_CACHE_ALIGN_BYTES);
-#endif
-
     ws2811LedDataTransferInProgress = true;
-    ws2811LedStripDMAEnable();
+    ws2811LedStripStartTransfer();
 
     return true;
 }

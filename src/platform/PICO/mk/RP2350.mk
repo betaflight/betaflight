@@ -409,7 +409,8 @@ MCU_COMMON_SRC = \
             PICO/system.c \
             PICO/usb/usb_cdc.c \
             PICO/multicore.c \
-            PICO/debug_pin.c
+            PICO/debug_pin.c \
+            PICO/light_ws2811strip_pico.c
 
 DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \
