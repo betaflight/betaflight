@@ -5440,15 +5440,8 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
         return timerGetIndexByNumber(dispNum);
     }
 
-    return dispNum > entry->maxIndex ? -1 : dispNum - 1;
-}
-
-static int dmaOptIndexToPeripheralMappingIndex(dmaoptEntry_t *entry, int index)
-{
-    if (entry->peripheral == DMA_PERIPH_TIMUP) {
-        return timerGetNumberByIndex(index) - 1; // TIM1 = 0, TIM20 = 19
-    }
-    return index;
+    const int index = dispNum - 1;
+    return (index < 0 ||  index >= entry->maxIndex) ? -1 : index;
 }
 
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
@@ -5468,7 +5461,7 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
             "dma %s %d %d",
             entry->device, uiIndex, dmaopt);
 
-        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptIndexToPeripheralMappingIndex(entry, index), dmaopt);
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, dmaopt);
         dmaCode_t dmaCode = 0;
         if (dmaChannelSpec) {
             dmaCode = dmaChannelSpec->code;
@@ -5717,7 +5710,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
         // Show possible opts
         const dmaChannelSpec_t *dmaChannelSpec;
         if (entry) {
-            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptIndexToPeripheralMappingIndex(entry, index), opt)); opt++) {
+            for (int opt = 0; (dmaChannelSpec = dmaGetChannelSpecByPeripheral(entry->peripheral, index, opt)); opt++) {
                 cliPrintLinef("# %d: " DMASPEC_FORMAT_STRING, opt, DMA_CODE_CONTROLLER(dmaChannelSpec->code), DMA_CODE_STREAM(dmaChannelSpec->code), DMA_CODE_CHANNEL(dmaChannelSpec->code));
             }
         } else {
@@ -5735,7 +5728,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             optval = atoi(pch);
 
             if (entry) {
-                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, dmaOptIndexToPeripheralMappingIndex(entry, index), optval)) {
+                if (!dmaGetChannelSpecByPeripheral(entry->peripheral, index, optval)) {
                     cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptDisplayNumber(entry, index), pch);
 
                     return;
