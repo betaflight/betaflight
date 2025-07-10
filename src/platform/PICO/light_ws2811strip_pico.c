@@ -28,10 +28,12 @@
 #ifdef USE_LED_STRIP
 
 #include "common/color.h"
+#include "common/maths.h"
 
 #include "drivers/dma.h"
 #include "platform/dma.h"
 #include "drivers/io.h"
+#include "drivers/time.h"
 #include "drivers/light_ws2811strip.h"
 #include "hardware/clocks.h"
 #include "hardware/pio.h"
@@ -45,17 +47,20 @@
 #define WS2812_T3 4
 
 #define WS2812_BYTES_PER_LED 4 // Number of bytes per WS2812 LED (RGB)
-
+#define WS2811_LED_STRIP_BUFFER_SIZE (WS2811_LED_STRIP_LENGTH * WS2812_BYTES_PER_LED)
 
 static IO_t ledStripIO = IO_NONE;
 static ioTag_t ledStripIoTag = IO_TAG_NONE;
 static ledStripFormatRGB_e ledStripFormat = LED_GRB; // Default format is RGB
+static uint8_t frameSize = 3; // Default format is RGB, so 3 is the size of the frame (RGB)
 
 // DMA channel
 static uint8_t dma_chan;
 
 // Buffer to hold the LED color data
-static uint8_t led_data[WS2811_LED_STRIP_LENGTH][WS2812_BYTES_PER_LED];
+static uint8_t led_data[WS2811_LED_STRIP_BUFFER_SIZE];
+static uint8_t ledStripPendingTransferCount = 0;
+static timeUs_t ledStripCompletedTime = 0;
 
 static const uint16_t ws2812_program_instructions[] = {
             //     .wrap_target
@@ -88,10 +93,10 @@ static inline void ws2812_program_init(PIO pio, uint sm, uint offset, uint pin, 
     pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
     pio_sm_config c = ws2812_program_get_default_config(offset);
     sm_config_set_sideset_pins(&c, pin);
-    sm_config_set_out_shift(&c, false, true, rgbw ? 32 : 24);
+    sm_config_set_out_shift(&c, false, true, rgbw ? 32 : 24); // when should we pull from the fifo
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
     int cycles_per_bit = WS2812_T1 + WS2812_T2 + WS2812_T3;
-    int div = clock_get_hz(clk_sys) / (freq * cycles_per_bit);
+    float div = clock_get_hz(clk_sys) / (freq * cycles_per_bit);
     sm_config_set_clkdiv(&c, div);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
@@ -101,11 +106,13 @@ static FAST_IRQ_HANDLER void ws2811LedStripDmaHandler(dmaChannelDescriptor_t* de
 {
     UNUSED(descriptor);
     ws2811LedDataTransferInProgress = false;
+    ledStripCompletedTime = micros();
 }
 
 void ws2811LedStripInit(ioTag_t ioTag, ledStripFormatRGB_e ledFormat)
 {
     ledStripFormat = ledFormat; // Store the format globally
+    frameSize = (ledStripFormat == LED_GRBW) ? 4 : 3; // 4 bytes for GRBW, 3 bytes for RGB/GRB
     memset(led_data, 0, sizeof(led_data));
     ledStripIoTag = ioTag;
 }
@@ -141,7 +148,7 @@ bool ws2811LedStripHardwareInit(void)
 
     dma_chan = DMA_IDENTIFIER_TO_CHANNEL(dma_id);
     dma_channel_config c = dma_channel_get_default_config(dma_chan);
-    channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
     channel_config_set_read_increment(&c, true);
     channel_config_set_write_increment(&c, false);
     channel_config_set_dreq(&c, pio_get_dreq(pio, sm, true));
@@ -149,10 +156,10 @@ bool ws2811LedStripHardwareInit(void)
     dma_channel_configure(
         dma_chan,
         &c,
-        &pio->txf[sm],            // Write address (PIO TX FIFO)
-        NULL,                     // Read address (set later)
-        WS2811_LED_STRIP_LENGTH,  // Number of transfers
-        false                     // Don't start immediately
+        &pio->txf[sm],                 // Write address (PIO TX FIFO)
+        NULL,                          // Read address (set later)
+        WS2811_LED_STRIP_BUFFER_SIZE,  // Number of transfers
+        false                          // Don't start immediately
     );
 
     // --- Interrupt Configuration ---
@@ -170,10 +177,17 @@ void ws2811LedStripStartTransfer(void)
         return; // Not initialized
     }
 
+    // guard to ensure we don't start a transfer before a reset period has elapsed.
+    if (ABS(cmpTimeUs(ledStripCompletedTime, micros())) < 50) {
+        ws2811LedDataTransferInProgress = false;
+        return; // Not initialized
+    }
+
     // Set the read address to the led_data buffer
     dma_channel_set_read_addr(dma_chan, led_data, false);
     // Start the DMA transfer
-    dma_channel_set_trans_count(dma_chan, WS2811_LED_STRIP_LENGTH, true);
+    dma_channel_set_trans_count(dma_chan, ledStripPendingTransferCount, true);
+    ledStripPendingTransferCount = 0;
 }
 
 void ws2811LedStripUpdateTransferBuffer(rgbColor24bpp_t *color, unsigned ledIndex)
@@ -182,29 +196,33 @@ void ws2811LedStripUpdateTransferBuffer(rgbColor24bpp_t *color, unsigned ledInde
         return; // Index out of bounds
     }
 
+    // FIFO buffer for PIO is 32 bits wide, but we use 24 bits for RGB or 32 bits for GRBW
+    // the PIO pulls data from the buffer bit by bit.
+    const uint8_t bufferIndex = ledIndex * frameSize; // RGB or GRBW format
     switch(ledStripFormat) {
     case LED_RGB: // WS2811 drivers use RGB format
-        led_data[ledIndex][0] = color->rgb.r;
-        led_data[ledIndex][1] = color->rgb.g;
-        led_data[ledIndex][2] = color->rgb.b;
+        led_data[bufferIndex] = color->rgb.r;
+        led_data[bufferIndex + 1] = color->rgb.g;
+        led_data[bufferIndex + 2] = color->rgb.b;
         break;
 
-    case LED_GRBW: // SK6812 drivers use this
+    case LED_GRBW: // SK6812 drivers use GRBW format
         // Reconstruct white channel from RGB, making the intensity a bit nonlinear, but that's fine for this use case
         {
             uint8_t white = MIN(MIN(color->rgb.r, color->rgb.g), color->rgb.b);
-            led_data[ledIndex][0] = color->rgb.g; // Green
-            led_data[ledIndex][1] = color->rgb.r; // Red
-            led_data[ledIndex][2] = color->rgb.b; // Blue
-            led_data[ledIndex][3] = white; // White
+            led_data[bufferIndex] = color->rgb.g; // Green
+            led_data[bufferIndex + 1] = color->rgb.r; // Red
+            led_data[bufferIndex + 2] = color->rgb.b; // Blue
+            led_data[bufferIndex + 3] = white; // White
         }
         break;
     case LED_GRB: // WS2812 drivers use GRB format
     default:
-        led_data[ledIndex][0] = color->rgb.g;
-        led_data[ledIndex][1] = color->rgb.r;
-        led_data[ledIndex][2] = color->rgb.b;
+        led_data[bufferIndex] = color->rgb.g;
+        led_data[bufferIndex + 1] = color->rgb.r;
+        led_data[bufferIndex + 2] = color->rgb.b;
         break;
     }
+    ledStripPendingTransferCount = bufferIndex + frameSize; // Update the count of bytes to transfer
 }
 #endif
