@@ -28,7 +28,7 @@
 
 #include "common/color.h"
 #include "drivers/light_ws2811strip.h"
-#include "platform/light_ws2811strip.h"
+#include "platform/light_ws2811strip_stm32.h"
 
 uint16_t BIT_COMPARE_1 = 0;
 uint16_t BIT_COMPARE_0 = 0;
