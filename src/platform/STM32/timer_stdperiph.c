@@ -274,6 +274,11 @@ int8_t timerGetNumberByIndex(uint8_t index)
     }
 }
 
+int8_t timerGetIndexByNumber(uint8_t number)
+{
+    return TIM_N(number) & USED_TIMERS ? popcount((TIM_N(number) - 1) & USED_TIMERS) : -1;
+}
+
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
 {
     const uint8_t index = lookupTimerIndex(tim);
