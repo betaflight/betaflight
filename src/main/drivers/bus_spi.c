@@ -503,9 +503,9 @@ static void spiPreInitStream(const extDevice_t *dev)
 {
     // Prepare the init structure for the next segment to reduce inter-segment interval
     // (if it's a "buffers" segment, not a "link" segment).
-    busSegment_t *segment = (busSegment_t *)dev->bus->curSegment + 1;
-    if (segment->len > 0) {
-        spiInternalInitStream(dev, segment);
+    busSegment_t *nextSegment = (busSegment_t *)dev->bus->curSegment + 1;
+    if (nextSegment->len > 0) {
+        spiInternalInitStream(dev, nextSegment);
     }
 }
 

@@ -357,8 +357,8 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
     // To keep everything uniform (always both TX and RX channels active, callback always on RX completion), if there is
     // no TX or RX buffer to read from / write to, treat as a single dummy byte with no increment.
     // (cf. same idea on other platform implementations)
-    bool isTX = segment->u.buffers.txData;
-    bool isRX = segment->u.buffers.rxData;
+    bool isTX = segment->u.buffers.txData != NULL;
+    bool isRX = segment->u.buffers.rxData != NULL;
 
     dma_channel_config config = dma_channel_get_default_config(bus->dmaTx->channel);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
