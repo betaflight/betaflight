@@ -247,7 +247,7 @@
 #define SPI1_SDO_PIN         PA27
 
 #define SDCARD_CS_PIN        PA25
-#define FLASH_CS_PIN         PA25
+
 #define MAX7456_SPI_CS_PIN   PA17
 
 #define GYRO_1_CS_PIN        PA1
