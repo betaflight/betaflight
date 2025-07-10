@@ -275,3 +275,42 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define _UART_GET_PREFIX_UARTDEV_9 UART
 #define _UART_GET_PREFIX_UARTDEV_10 USART
 #define _UART_GET_PREFIX_UARTDEV_LP1 LPUART
+
+// #if defined(GD32F4)
+// We need to redefine ADC0, ADC1, etc.,
+// in the GD firmware library to be compatible with
+// such as the ADC_TypeDef * type in BF.
+#define GD_ADC0    ((ADC_TypeDef*)ADC_BASE)
+#define GD_ADC1    ((ADC_TypeDef*)(ADC_BASE + 0x100))
+#define GD_ADC2    ((ADC_TypeDef*)(ADC_BASE + 0x200))
+#undef ADC0
+#define ADC0       ((ADC_TypeDef*)GD_ADC0)
+#undef ADC1
+#define ADC1       ((ADC_TypeDef*)GD_ADC1)
+#undef ADC2
+#define ADC2       ((ADC_TypeDef*)GD_ADC2)
+
+#define GD_SPI0    ((SPI_TypeDef*)(SPI_BASE + 0x0000F800U))
+#define GD_SPI1    ((SPI_TypeDef*)SPI_BASE)
+#define GD_SPI2    ((SPI_TypeDef*)(SPI_BASE + 0x00000400U))
+#define GD_SPI3    ((SPI_TypeDef*)(SPI_BASE + 0x0000FC00U))
+#define GD_SPI4    ((SPI_TypeDef*)(SPI_BASE + 0x00011800U))
+#define GD_SPI5    ((SPI_TypeDef*)(SPI_BASE + 0x00011C00U))
+#undef SPI0
+#define SPI0       ((SPI_TypeDef*)GD_SPI0)
+#undef SPI1
+#define SPI1       ((SPI_TypeDef*)GD_SPI1)
+#undef SPI2
+#define SPI2       ((SPI_TypeDef*)GD_SPI2)
+#undef SPI3
+#define SPI3       ((SPI_TypeDef*)GD_SPI3)
+#undef SPI4
+#define SPI4       ((SPI_TypeDef*)GD_SPI4)
+#undef SPI5
+#define SPI5       ((SPI_TypeDef*)GD_SPI5)
+
+
+// We also need to convert the pointer to the uint32_t
+// type required by the GD firmware library.
+#define PERIPH_INT(periph)    ((uint32_t)periph)
+// #endif

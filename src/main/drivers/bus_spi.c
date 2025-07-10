@@ -45,14 +45,8 @@ static uint8_t spiRegisteredDeviceCount = 0;
 spiDevice_t spiDevice[SPIDEV_COUNT];
 busDevice_t spiBusDevice[SPIDEV_COUNT];
 
-#if defined(USE_GDBSP_DRIVER)
-SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance_t)
-{
-    uint32_t instance = (uint32_t) instance_t;
-#else
 SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance)
 {
-#endif
 #ifdef USE_SPI_DEVICE_0
     if (instance == SPI0) {
         return SPIDEV_0;

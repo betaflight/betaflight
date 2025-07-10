@@ -66,7 +66,7 @@ bool IORead(IO_t io)
         return false;
     }
 
-    return (GPIO_ISTAT((uint32_t)IO_GPIO(io)) & IO_Pin(io));
+    return (GPIO_ISTAT(PERIPH_INT(IO_GPIO(io))) & IO_Pin(io));
 }
 
 void IOWrite(IO_t io, bool hi)
@@ -76,9 +76,9 @@ void IOWrite(IO_t io, bool hi)
     }
 
     if (hi) {
-        GPIO_BOP((uint32_t)IO_GPIO(io)) = IO_Pin(io);
+        GPIO_BOP(PERIPH_INT(IO_GPIO(io))) = IO_Pin(io);
     } else {
-        GPIO_BC((uint32_t)IO_GPIO(io)) = IO_Pin(io);
+        GPIO_BC(PERIPH_INT(IO_GPIO(io))) = IO_Pin(io);
     }
 }
 
@@ -88,7 +88,7 @@ void IOHi(IO_t io)
         return;
     }
 
-    GPIO_BOP((uint32_t)IO_GPIO(io)) = IO_Pin(io);
+    GPIO_BOP(PERIPH_INT(IO_GPIO(io))) = IO_Pin(io);
 }
 
 void IOLo(IO_t io)
@@ -97,7 +97,7 @@ void IOLo(IO_t io)
         return;
     }
 #if defined(GD32F4)
-    GPIO_BC((uint32_t)IO_GPIO(io)) = IO_Pin(io);
+    GPIO_BC(PERIPH_INT(IO_GPIO(io))) = IO_Pin(io);
 #endif
 }
 
@@ -110,7 +110,7 @@ void IOToggle(IO_t io)
     uint32_t mask = IO_Pin(io);
     // For GD32F4,use toggle register to toggle GPIO pin status
 #if defined(GD32F4)
-    GPIO_TG((uint32_t)IO_GPIO(io)) = mask;
+    GPIO_TG(PERIPH_INT(IO_GPIO(io))) = mask;
 #endif
 }
 
@@ -125,8 +125,8 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
     const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
     RCC_ClockCmd(rcc, ENABLE);
 
-    gpio_mode_set((uint32_t)IO_GPIO(io), ((cfg >> 0) & 0x03), ((cfg >> 5) & 0x03), IO_Pin(io));
-    gpio_output_options_set((uint32_t)IO_GPIO(io), ((cfg >> 4) & 0x01), ((cfg >> 2) & 0x03), IO_Pin(io));
+    gpio_mode_set(PERIPH_INT(IO_GPIO(io)), ((cfg >> 0) & 0x03), ((cfg >> 5) & 0x03), IO_Pin(io));
+    gpio_output_options_set(PERIPH_INT(IO_GPIO(io)), ((cfg >> 4) & 0x01), ((cfg >> 2) & 0x03), IO_Pin(io));
 }
 
 void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
@@ -138,9 +138,9 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
     const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
     RCC_ClockCmd(rcc, ENABLE);
 
-    gpio_af_set((uint32_t)IO_GPIO(io), af, IO_Pin(io));
-    gpio_mode_set((uint32_t)IO_GPIO(io), ((cfg >> 0) & 0x03), ((cfg >> 5) & 0x03), IO_Pin(io));
-    gpio_output_options_set((uint32_t)IO_GPIO(io), ((cfg >> 4) & 0x01), ((cfg >> 2) & 0x03), IO_Pin(io));
+    gpio_af_set(PERIPH_INT(IO_GPIO(io)), af, IO_Pin(io));
+    gpio_mode_set(PERIPH_INT(IO_GPIO(io)), ((cfg >> 0) & 0x03), ((cfg >> 5) & 0x03), IO_Pin(io));
+    gpio_output_options_set(PERIPH_INT(IO_GPIO(io)), ((cfg >> 4) & 0x01), ((cfg >> 2) & 0x03), IO_Pin(io));
 }
 
 #else

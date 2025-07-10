@@ -54,7 +54,7 @@ static spi_parameter_struct defaultInit = {
 static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor)
 {
     // SPI1 and SPI2 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
-    if ((uint32_t)instance == SPI1 || (uint32_t)instance == SPI2) {
+    if (instance == SPI1 || instance == SPI2) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
 
@@ -66,8 +66,9 @@ static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor
 static void spiSetDivisorBRreg(SPI_TypeDef *instance, uint16_t divisor)
 {
 #define BR_BITS ((BIT(5) | BIT(4) | BIT(3)))
-    const uint32_t tempRegister = (SPI_CTL0((uint32_t)instance) & ~BR_BITS);
-    SPI_CTL0((uint32_t)instance) = (tempRegister | (spiDivisorToBRbits(instance, divisor) & BR_BITS));
+    uint32_t spi_periph = PERIPH_INT(instance);
+    const uint32_t tempRegister = (SPI_CTL0(spi_periph) & ~BR_BITS);
+    SPI_CTL0(spi_periph) = (tempRegister | (spiDivisorToBRbits(instance, divisor) & BR_BITS));
 #undef BR_BITS
 }
 
@@ -91,14 +92,15 @@ void spiInitDevice(SPIDevice device)
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_SDI_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 
+    uint32_t spi_periph = PERIPH_INT(spi->dev);
     // Init SPI hardware
-    spi_i2s_deinit((uint32_t)spi->dev);
+    spi_i2s_deinit(spi_periph);
 
-    spi_dma_disable((uint32_t)spi->dev, SPI_DMA_TRANSMIT);
-    spi_dma_disable((uint32_t)spi->dev, SPI_DMA_RECEIVE);
-    spi_init((uint32_t)spi->dev, &defaultInit);
-    spi_crc_off((uint32_t)spi->dev);
-    spi_enable((uint32_t)spi->dev);
+    spi_dma_disable(spi_periph, SPI_DMA_TRANSMIT);
+    spi_dma_disable(spi_periph, SPI_DMA_RECEIVE);
+    spi_init(spi_periph, &defaultInit);
+    spi_crc_off(spi_periph);
+    spi_enable(spi_periph);
 }
 
 void spiInternalResetDescriptors(busDevice_t *bus)
@@ -108,10 +110,11 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     dmaGenerInitTx->sub_periph = bus->dmaTx->channel;
     dma_single_data_parameter_struct *dmaInitTx = &dmaGenerInitTx->config.init_struct_s;
 
+    uint32_t spi_periph = PERIPH_INT(bus->busType_u.spi.instance);
     dma_single_data_para_struct_init(dmaInitTx);
     dmaInitTx->direction = DMA_MEMORY_TO_PERIPH;
     dmaInitTx->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
-    dmaInitTx->periph_addr = (uint32_t)&SPI_DATA((uint32_t)(bus->busType_u.spi.instance));
+    dmaInitTx->periph_addr = (uint32_t)&SPI_DATA(spi_periph);
     dmaInitTx->priority = DMA_PRIORITY_LOW;
     dmaInitTx->periph_inc = DMA_PERIPH_INCREASE_DISABLE;
     dmaInitTx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
@@ -125,7 +128,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         dma_single_data_para_struct_init(dmaInitRx);
         dmaInitRx->direction = DMA_PERIPH_TO_MEMORY;
         dmaInitRx->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
-        dmaInitRx->periph_addr = (uint32_t)&SPI_DATA((uint32_t)(bus->busType_u.spi.instance));
+        dmaInitRx->periph_addr = (uint32_t)&SPI_DATA(spi_periph);
         dmaInitRx->priority = DMA_PRIORITY_LOW;
         dmaInitRx->periph_inc = DMA_PERIPH_INCREASE_DISABLE;
         dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
@@ -146,14 +149,15 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
     uint8_t b;
+    uint32_t spi_periph = PERIPH_INT(instance);
 
     while (len--) {
         b = txData ? *(txData++) : 0xFF;
-        while (spi_i2s_flag_get((uint32_t)instance, I2S_FLAG_TBE) == RESET);
-        spi_i2s_data_transmit((uint32_t)instance, b);
+        while (spi_i2s_flag_get(spi_periph, I2S_FLAG_TBE) == RESET);
+        spi_i2s_data_transmit(spi_periph, b);
 
-        while (spi_i2s_flag_get((uint32_t)instance, I2S_FLAG_RBNE) == RESET);
-        b = spi_i2s_data_receive((uint32_t)instance);
+        while (spi_i2s_flag_get(spi_periph, I2S_FLAG_RBNE) == RESET);
+        b = spi_i2s_data_receive(spi_periph);
         if (rxData) {
             *(rxData++) = b;
         }
@@ -227,9 +231,11 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 
 void spiInternalStartDMA(const extDevice_t *dev)
 {
+    uint32_t spi_periph = PERIPH_INT(dev->bus->busType_u.spi.instance);
     dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
     DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
+
     if (dmaRx) {
         DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
 
@@ -264,8 +270,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
         dma_channel_enable((uint32_t)(dmaRx->dma), dmaRx->stream);
 
         /* Enable the SPI DMA Tx & Rx requests */
-        spi_dma_enable((uint32_t)(dev->bus->busType_u.spi.instance), SPI_DMA_TRANSMIT);
-        spi_dma_enable((uint32_t)(dev->bus->busType_u.spi.instance), SPI_DMA_RECEIVE);
+        spi_dma_enable(spi_periph, SPI_DMA_TRANSMIT);
+        spi_dma_enable(spi_periph, SPI_DMA_RECEIVE);
     } else {
         // Use the correct callback argument
         dmaTx->userParam = (uint32_t)dev;
@@ -285,7 +291,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         dma_channel_enable((uint32_t)(dmaTx->dma), dmaTx->stream);
 
         /* Enable the SPI DMA Tx request */
-        spi_dma_enable((uint32_t)(dev->bus->busType_u.spi.instance), SPI_DMA_TRANSMIT);
+        spi_dma_enable(spi_periph, SPI_DMA_TRANSMIT);
     }
 }
 
@@ -293,7 +299,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 {
     dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
-    SPI_TypeDef *instance = dev->bus->busType_u.spi.instance;
+    uint32_t spi_periph = PERIPH_INT(dev->bus->busType_u.spi.instance);
     DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
 
     if (dmaRx) {
@@ -303,21 +309,21 @@ void spiInternalStopDMA (const extDevice_t *dev)
         REG32(streamRegsTx) = 0U;
         REG32(streamRegsRx) = 0U;
 
-        spi_dma_disable((uint32_t)instance, SPI_DMA_TRANSMIT);
-        spi_dma_disable((uint32_t)instance, SPI_DMA_RECEIVE);
+        spi_dma_disable(spi_periph, SPI_DMA_TRANSMIT);
+        spi_dma_disable(spi_periph, SPI_DMA_RECEIVE);
     } else {
         // Ensure the current transmission is complete
-        while (spi_i2s_flag_get((uint32_t)instance, I2S_FLAG_TRANS));
+        while (spi_i2s_flag_get(spi_periph, I2S_FLAG_TRANS));
 
         // Drain the RX buffer
-        while (spi_i2s_flag_get((uint32_t)instance, I2S_FLAG_RBNE)) {
-            SPI_DATA((uint32_t)instance);
+        while (spi_i2s_flag_get(spi_periph, I2S_FLAG_RBNE)) {
+            SPI_DATA(spi_periph);
         }
 
         // Disable stream
         REG32(streamRegsTx) = 0U;
 
-        spi_dma_disable((uint32_t)instance, SPI_DMA_TRANSMIT);
+        spi_dma_disable(spi_periph, SPI_DMA_TRANSMIT);
     }
 }
 
@@ -325,14 +331,14 @@ void spiInternalStopDMA (const extDevice_t *dev)
 void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-    SPI_TypeDef *instance = bus->busType_u.spi.instance;
     bool dmaSafe = dev->useDMA;
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
+    uint32_t spi_periph = PERIPH_INT(bus->busType_u.spi.instance);
 
     dev->bus->initSegment = true;
 
-    spi_disable((uint32_t)instance);
+    spi_disable(spi_periph);
 
     // Switch bus speed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
@@ -342,19 +348,19 @@ void spiSequenceStart(const extDevice_t *dev)
 
     if (dev->busType_u.spi.leadingEdge != bus->busType_u.spi.leadingEdge) {
         // Switch SPI clock polarity/phase
-        SPI_CTL0((uint32_t)instance) &= ~(SPI_CTL0_CKPL | SPI_CTL0_CKPH);
+        SPI_CTL0(spi_periph) &= ~(SPI_CTL0_CKPL | SPI_CTL0_CKPH);
 
         // Apply setting
         if (dev->busType_u.spi.leadingEdge) {
-            SPI_CTL0((uint32_t)instance) |= SPI_CK_PL_LOW_PH_1EDGE;
+            SPI_CTL0(spi_periph) |= SPI_CK_PL_LOW_PH_1EDGE;
         } else
         {
-            SPI_CTL0((uint32_t)instance) |= SPI_CK_PL_HIGH_PH_2EDGE;
+            SPI_CTL0(spi_periph) |= SPI_CK_PL_HIGH_PH_2EDGE;
         }
         bus->busType_u.spi.leadingEdge = dev->busType_u.spi.leadingEdge;
     }
 
-    spi_enable((uint32_t)instance);
+    spi_enable(spi_periph);
 
     // Check that any there are no attempts to DMA to/from CCD SRAM
     for (busSegment_t *checkSegment = (busSegment_t *)bus->curSegment; checkSegment->len; checkSegment++) {

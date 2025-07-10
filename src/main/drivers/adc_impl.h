@@ -130,11 +130,7 @@ extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);
 #if !defined(SIMULATOR_BUILD)
-#if defined(USE_GDBSP_DRIVER)
-ADCDevice adcDeviceByInstance(const uint32_t instance);
-#else
 ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
-#endif
 #endif
 bool adcVerifyPin(ioTag_t tag, ADCDevice device);
 

@@ -117,12 +117,13 @@ static void adcInitDevice(uint32_t adc_periph, int channelCount)
 
 static void adcInitInternalInjected(const adcConfig_t *config)
 {
+    uint32_t adc_periph = PERIPH_INT(ADC0);
     adc_channel_16_to_18(ADC_TEMP_VREF_CHANNEL_SWITCH, ENABLE);
-    adc_discontinuous_mode_config(ADC0, ADC_CHANNEL_DISCON_DISABLE, 0);
-    adc_channel_length_config(ADC0, ADC_INSERTED_CHANNEL, 2);
+    adc_discontinuous_mode_config(adc_periph, ADC_CHANNEL_DISCON_DISABLE, 0);
+    adc_channel_length_config(adc_periph, ADC_INSERTED_CHANNEL, 2);
 
-    adc_inserted_channel_config(ADC0, 1, ADC_CHANNEL_17, ADC_SAMPLETIME_480); // ADC_Channel_Vrefint
-    adc_inserted_channel_config(ADC0, 0, ADC_CHANNEL_16, ADC_SAMPLETIME_480); // ADC_Channel_TempSensor
+    adc_inserted_channel_config(adc_periph, 1, ADC_CHANNEL_17, ADC_SAMPLETIME_480); // ADC_Channel_Vrefint
+    adc_inserted_channel_config(adc_periph, 0, ADC_CHANNEL_16, ADC_SAMPLETIME_480); // ADC_Channel_TempSensor
 
     adcVREFINTCAL = config->vrefIntCalibration ? config->vrefIntCalibration : VREFINT_EXPECTED;
     adcTSCAL1 = config->tempSensorCalibration1 ? config->tempSensorCalibration1 : ((TEMPSENSOR_CAL1_V * 4095.0f) / 3.3f);
@@ -143,7 +144,7 @@ static bool adcInternalConversionInProgress = false;
 bool adcInternalIsBusy(void)
 {
     if (adcInternalConversionInProgress) {
-        if (adc_flag_get(ADC0, ADC_FLAG_EOIC) != RESET) {
+        if (adc_flag_get(PERIPH_INT(ADC0), ADC_FLAG_EOIC) != RESET) {
             adcInternalConversionInProgress = false;
         }
     }
@@ -153,20 +154,21 @@ bool adcInternalIsBusy(void)
 
 void adcInternalStartConversion(void)
 {
-    adc_flag_clear(ADC0, ADC_FLAG_EOIC);
-    adc_software_trigger_enable(ADC0, ADC_INSERTED_CHANNEL);
+    uint32_t adc_periph = PERIPH_INT(ADC0);
+    adc_flag_clear(adc_periph, ADC_FLAG_EOIC);
+    adc_software_trigger_enable(adc_periph, ADC_INSERTED_CHANNEL);
 
     adcInternalConversionInProgress = true;
 }
 
 uint16_t adcInternalReadVrefint(void)
 {
-    return adc_inserted_data_read(ADC0, ADC_INSERTED_CHANNEL_1);
+    return adc_inserted_data_read(PERIPH_INT(ADC0), ADC_INSERTED_CHANNEL_1);
 }
 
 uint16_t adcInternalReadTempsensor(void)
 {
-    return adc_inserted_data_read(ADC0, ADC_INSERTED_CHANNEL_0);
+    return adc_inserted_data_read(PERIPH_INT(ADC0), ADC_INSERTED_CHANNEL_0);
 }
 #endif
 
@@ -230,11 +232,12 @@ void adcInit(const adcConfig_t *config)
     adc_sync_delay_config(ADC_SYNC_DELAY_5CYCLE);
 
 #ifdef USE_ADC_INTERNAL
+    uint32_t adc_periph = PERIPH_INT(ADC0);
     // If device is not ADC0 or there's no active channel, then initialize ADC0 separately
     if (device != ADCDEV_0 || !adcActive) {
         RCC_ClockCmd(adcHardware[ADCDEV_0].rccADC, ENABLE);
-        adcInitDevice(ADC0, 2);
-        adc_enable(ADC0);
+        adcInitDevice(adc_periph, 2);
+        adc_enable(adc_periph);
     }
 
     // Initialize for injected conversion

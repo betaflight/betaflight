@@ -125,9 +125,5 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 #endif
 
 #if !defined(SIMULATOR_BUILD)
-#if defined(USE_GDBSP_DRIVER)
-ADCDevice adcDeviceByInstance(const uint32_t instance);
-#else
 ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
-#endif
 #endif
