@@ -5418,29 +5418,29 @@ static void optToString(int optval, char *buf)
 static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
 {
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
-        int uiIndex = timerGetNumberByIndex(index);
-        if (!(TIM_N(uiIndex) & entry->presenceMask)) {
+        const int dispNum = timerGetNumberByIndex(index);
+        if (!(TIM_N(dispNum) & entry->presenceMask)) {
             return -1;
         }
-        return uiIndex;
+        return dispNum;
     }
     return DMA_OPT_UI_INDEX(index);
 }
 
-static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int index)
+static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
 {
-    if (index <= 0) {
+    if (dispNum < 0) {
         return -1;
     }
 
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
-        if (!(entry->presenceMask & TIM_N(index))) {
+        if (!(entry->presenceMask & TIM_N(dispNum))) {
             return -1;
         }
-        return timerGetIndexByNumber(index);
+        return timerGetIndexByNumber(dispNum);
     }
 
-    return index > entry->maxIndex ? -1 : index - 1;
+    return dispNum > entry->maxIndex ? -1 : dispNum - 1;
 }
 
 static int dmaOptIndexToPeripheralMappingIndex(dmaoptEntry_t *entry, int index)

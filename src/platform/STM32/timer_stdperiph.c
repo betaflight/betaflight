@@ -276,12 +276,7 @@ int8_t timerGetNumberByIndex(uint8_t index)
 
 int8_t timerGetIndexByNumber(uint8_t number)
 {
-    for (int i = 0; i < USED_TIMER_COUNT; i++) {
-        if (timerNumbers[i] == number) {
-            return i;
-        }
-    }
-    return -1;
+    return TIM_N(number) & USED_TIMERS ? popcount((TIM_N(number) - 1) & USED_TIMERS) : -1;
 }
 
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
