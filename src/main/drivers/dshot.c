@@ -150,6 +150,7 @@ FAST_DATA_ZERO_INIT static float minMotorFrequencyHz;
 FAST_DATA_ZERO_INIT static float erpmToHz;
 FAST_DATA_ZERO_INIT static float dshotRpmAverage;
 FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT static dshotEdtAlwaysDecode_e edtAlwaysDecode;
 
 // Lookup table for extended telemetry type decoding
 // Only contains extended telemetry types, eRPM is handled by conditional logic
@@ -180,6 +181,7 @@ void initDshotTelemetry(const timeUs_t looptimeUs)
 
     // erpmToHz is used by bidir dshot and ESC telemetry
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
+    edtAlwaysDecode = motorConfig()->dev.useDshotEdtAlwaysDecode == DSHOT_EDT_ALWAYS_DECODE_ON;
 
 #ifdef USE_RPM_FILTER
     if (motorConfig()->dev.useDshotTelemetry) {
@@ -214,6 +216,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
     bool isEdtEnabled = (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+    isEdtEnabled |= edtAlwaysDecode;
 
     // https://github.com/bird-sanctuary/extended-dshot-telemetry   
     // Extract telemetry type field and check for eRPM conditions in one operation

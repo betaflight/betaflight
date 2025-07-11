@@ -47,7 +47,11 @@
 #define DEFAULT_DSHOT_TELEMETRY DSHOT_TELEMETRY_OFF
 #endif
 
-PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
+#if !defined(DEFAULT_DSHOT_EDT_ALWAYS_DECODE)
+#define DEFAULT_DSHOT_EDT_ALWAYS_DECODE DSHOT_EDT_ALWAYS_DECODE_OFF
+#endif
+
+PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 4);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
@@ -112,6 +116,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
 #ifdef USE_DSHOT_TELEMETRY
     motorConfig->dev.useDshotTelemetry = DEFAULT_DSHOT_TELEMETRY;
+    motorConfig->dev.useDshotEdtAlwaysDecode = DEFAULT_DSHOT_EDT_ALWAYS_DECODE;
 #endif
 
 #ifdef USE_DSHOT_BITBANG
