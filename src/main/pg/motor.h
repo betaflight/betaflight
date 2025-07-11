@@ -57,11 +57,6 @@ typedef enum {
     DSHOT_TELEMETRY_ON,
 } dshotTelemetry_e;
 
-typedef enum {
-    DSHOT_EDT_ALWAYS_DECODE_OFF,
-    DSHOT_EDT_ALWAYS_DECODE_ON,
-} dshotEdtAlwaysDecode_e;
-
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;               // The update rate of motor outputs (50-498Hz)
     uint8_t  motorProtocol;              // Pwm Protocol
