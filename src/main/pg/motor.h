@@ -57,6 +57,12 @@ typedef enum {
     DSHOT_TELEMETRY_ON,
 } dshotTelemetry_e;
 
+typedef enum {
+    DSHOT_EDT_OFF = 0,
+    DSHOT_EDT_ON = 1,
+    DSHOT_EDT_FORCE = 2,
+} dshotEdt_e;
+
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;               // The update rate of motor outputs (50-498Hz)
     uint8_t  motorProtocol;              // Pwm Protocol
@@ -65,7 +71,6 @@ typedef struct motorDevConfig_s {
     uint8_t  useBurstDshot;
     uint8_t  useDshotTelemetry;
     uint8_t  useDshotEdt;
-    uint8_t  useDshotEdtAlwaysDecode;
     ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
     uint8_t  motorTransportProtocol;
     uint8_t  useDshotBitbang;
