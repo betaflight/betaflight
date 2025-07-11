@@ -181,7 +181,7 @@ void initDshotTelemetry(const timeUs_t looptimeUs)
 
     // erpmToHz is used by bidir dshot and ESC telemetry
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
-    edtAlwaysDecode = motorConfig()->dev.useDshotEdtAlwaysDecode == DSHOT_EDT_ALWAYS_DECODE_ON;
+    edtAlwaysDecode = motorConfig()->dev.useDshotEdtAlwaysDecode;
 
 #ifdef USE_RPM_FILTER
     if (motorConfig()->dev.useDshotTelemetry) {
@@ -216,7 +216,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
     bool isEdtEnabled = (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
-    isEdtEnabled |= edtAlwaysDecode;
+    isEdtEnabled = isEdtEnabled || (edtAlwaysDecode == DSHOT_EDT_ALWAYS_DECODE_ON);
 
     // https://github.com/bird-sanctuary/extended-dshot-telemetry   
     // Extract telemetry type field and check for eRPM conditions in one operation
