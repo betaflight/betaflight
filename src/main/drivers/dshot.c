@@ -181,7 +181,7 @@ void initDshotTelemetry(const timeUs_t looptimeUs)
 
     // erpmToHz is used by bidir dshot and ESC telemetry
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
-    edtAlwaysDecode = (motorConfig()->dev.useDshotEdt == DSHOT_EDT_FORCE);
+    edtAlwaysDecode = motorConfig()->dev.useDshotEdt == DSHOT_EDT_FORCE;
 
 #ifdef USE_RPM_FILTER
     if (motorConfig()->dev.useDshotTelemetry) {
