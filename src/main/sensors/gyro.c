@@ -131,12 +131,11 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->simplified_gyro_filter = true;
     gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
     gyroConfig->gyro_enabled_bitmask = DEFAULT_GYRO_ENABLED;
-    
-    // Initialize debug gyro selection to default: gyros 0,1,2,3
-    gyroConfig->debug_gyro_selection[0] = 0;
-    gyroConfig->debug_gyro_selection[1] = 1;
-    gyroConfig->debug_gyro_selection[2] = 2;
-    gyroConfig->debug_gyro_selection[3] = 3;
+
+    // Initialize debug gyro selection to default: available gyros only
+    for (unsigned int i = 0; i < ARRAYLEN(gyroConfig->debug_gyro_selection); i++) {
+        gyroConfig->debug_gyro_selection[i] = (i < GYRO_COUNT) ? i : 0;
+    }
 }
 
 static bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
@@ -484,7 +483,7 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
         int debugIndex = 0;
 
         // Iterate through the user-selected gyros for debugging
-        for (int selectionIndex = 0; selectionIndex < ARRAYLEN(gyroConfig()->debug_gyro_selection); selectionIndex++) {
+        for (unsigned int selectionIndex = 0; selectionIndex < ARRAYLEN(gyroConfig()->debug_gyro_selection); selectionIndex++) {
             const uint8_t gyroIndex = gyroConfig()->debug_gyro_selection[selectionIndex];
 
             // Check if the selected gyro index is valid and enabled
