@@ -53,7 +53,6 @@ PG_SRC = \
 COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
-            build/debug_pin.c \
             build/version.c \
             main.c \
             common/bitarray.c \

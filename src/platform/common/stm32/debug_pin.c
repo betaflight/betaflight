@@ -20,9 +20,13 @@
 
 #include "platform.h"
 
-#include "debug_pin.h"
+#include "build/debug_pin.h"
 
 #ifdef USE_DEBUG_PIN
+
+#ifndef DEBUG_PIN_COUNT
+#define DEBUG_PIN_COUNT 0
+#endif
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
