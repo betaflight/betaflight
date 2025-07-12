@@ -484,9 +484,9 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
         int debugIndex = 0;
 
         // Iterate through the user-selected gyros for debugging
-        for (int selectionIndex = 0; selectionIndex < 4; selectionIndex++) {
+        for (int selectionIndex = 0; selectionIndex < ARRAYLEN(gyroConfig()->debug_gyro_selection); selectionIndex++) {
             const uint8_t gyroIndex = gyroConfig()->debug_gyro_selection[selectionIndex];
-            
+
             // Check if the selected gyro index is valid and enabled
             if (gyroIndex < GYRO_COUNT && (gyro.gyroEnabledBitmask & GYRO_MASK(gyroIndex))) {
                 DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[gyroIndex].gyroDev.gyroADCRaw[X]);
