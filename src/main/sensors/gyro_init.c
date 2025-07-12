@@ -591,7 +591,7 @@ bool gyroInit(void)
 #endif
 
     gyro.gyroDebugMode = DEBUG_NONE;
-    gyro.useDualGyroDebugging = false;
+    gyro.useMultiGyroDebugging = false;
     gyro.gyroHasOverflowProtection = true;
 
     switch (debugMode) {
@@ -603,10 +603,10 @@ bool gyroInit(void)
     case DEBUG_GYRO_SAMPLE:
         gyro.gyroDebugMode = debugMode;
         break;
-    case DEBUG_DUAL_GYRO_DIFF:
-    case DEBUG_DUAL_GYRO_RAW:
-    case DEBUG_DUAL_GYRO_SCALED:
-        gyro.useDualGyroDebugging = true;
+    case DEBUG_MULTI_GYRO_DIFF:
+    case DEBUG_MULTI_GYRO_RAW:
+    case DEBUG_MULTI_GYRO_SCALED:
+        gyro.useMultiGyroDebugging = true;
         break;
     }
 
