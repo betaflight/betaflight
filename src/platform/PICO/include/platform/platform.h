@@ -45,9 +45,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 //#define GPIO_InitTypeDef
 #define TIM_TypeDef          void*
 //#define TIM_OCInitTypeDef
+
 #define DMA_TypeDef          void*
-#define DMA_InitTypeDef      void*
-//#define DMA_Channel_TypeDef
+#define DMA_InitTypeDef      dma_channel_config
 
 #define ADC_TypeDef          void*
 #define USART_TypeDef        uart_inst_t
