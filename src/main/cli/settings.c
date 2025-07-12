@@ -801,6 +801,7 @@ const clivalue_t valueTable[] = {
     { "gyro_lpf1_dyn_expo",         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf1_dyn_expo) },
 #endif
     { "gyro_filter_debug_axis",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_FILTER_DEBUG }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_filter_debug_axis) },
+    { "debug_gyro_selection",       VAR_UINT8  | MASTER_VALUE | MODE_ARRAY, .config.array.length = 4, PG_GYRO_CONFIG, offsetof(gyroConfig_t, debug_gyro_selection) },
 
 // PG_ACCELEROMETER_CONFIG
 #if defined(USE_ACC)

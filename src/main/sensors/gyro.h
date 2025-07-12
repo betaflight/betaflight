@@ -184,6 +184,7 @@ typedef struct gyroConfig_s {
     uint8_t simplified_gyro_filter_multiplier;
 
     uint8_t gyro_enabled_bitmask;
+    uint8_t debug_gyro_selection[4]; // Select which 4 gyros to debug (default: 0,1,2,3)
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

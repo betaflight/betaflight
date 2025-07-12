@@ -95,7 +95,7 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyro.gyroSensor[0].gyroDev;
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
 
-PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 9);
+PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 10);
 
 #ifndef DEFAULT_GYRO_ENABLED
 // enable the first gyro if none are enabled
@@ -131,6 +131,12 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->simplified_gyro_filter = true;
     gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
     gyroConfig->gyro_enabled_bitmask = DEFAULT_GYRO_ENABLED;
+    
+    // Initialize debug gyro selection to default: gyros 0,1,2,3
+    gyroConfig->debug_gyro_selection[0] = 0;
+    gyroConfig->debug_gyro_selection[1] = 1;
+    gyroConfig->debug_gyro_selection[2] = 2;
+    gyroConfig->debug_gyro_selection[3] = 3;
 }
 
 static bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
@@ -477,20 +483,24 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
     if (gyro.useMultiGyroDebugging) {
         int debugIndex = 0;
 
-        for (int i = 0; i < GYRO_COUNT; i++) {
-            if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
-                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[X]);
-                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[Y]);
-                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale));
-                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale));
+        // Iterate through the user-selected gyros for debugging
+        for (int selectionIndex = 0; selectionIndex < 4; selectionIndex++) {
+            const uint8_t gyroIndex = gyroConfig()->debug_gyro_selection[selectionIndex];
+            
+            // Check if the selected gyro index is valid and enabled
+            if (gyroIndex < GYRO_COUNT && (gyro.gyroEnabledBitmask & GYRO_MASK(gyroIndex))) {
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[gyroIndex].gyroDev.gyroADCRaw[X]);
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[gyroIndex].gyroDev.gyroADCRaw[Y]);
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[gyroIndex].gyroDev.gyroADC.x * gyro.gyroSensor[gyroIndex].gyroDev.scale));
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[gyroIndex].gyroDev.gyroADC.y * gyro.gyroSensor[gyroIndex].gyroDev.scale));
                 // grab the difference between each gyro and the fused gyro output, gyro.gyroADCf (it hasn't had filters applied yet)
-                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[0]));
-                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[1]));
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[gyroIndex].gyroDev.gyroADC.x * gyro.gyroSensor[gyroIndex].gyroDev.scale) - gyro.gyroADCf[0]));
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[gyroIndex].gyroDev.gyroADC.y * gyro.gyroSensor[gyroIndex].gyroDev.scale) - gyro.gyroADCf[1]));
 
                 debugIndex += 2;
                 if (debugIndex >= 8) {
                     break;
-                    // only iterate over the first 4 enabled gyros, debug can't hold more
+                    // only iterate over the first 4 selected gyros, debug can't hold more
                 }
             }
         }
