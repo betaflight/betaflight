@@ -94,6 +94,7 @@ static pt1Filter_t frameErrFilter;
 static pt1Filter_t rssiFilter;
 #ifdef USE_RX_RSSI_DBM
 static pt1Filter_t rssiDbmFilter;
+static pt1Filter_t rssiDbmInactiveFilter;
 #endif //USE_RX_RSSI_DBM
 #ifdef USE_RX_RSNR
 static pt1Filter_t rsnrFilter;
@@ -389,6 +390,7 @@ void rxInit(void)
 
 #ifdef USE_RX_RSSI_DBM
     pt1FilterInit(&rssiDbmFilter, k);
+    pt1FilterInit(&rssiDbmInactiveFilter, k);
 #endif //USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
@@ -911,8 +913,8 @@ void updateRSSI(timeUs_t currentTimeUs)
                 rssiDbm = pt1FilterApply(&rssiDbmFilter, rssiDbmRaw);
             }
             if (rssiDbmInactive != rssiDbmRawInactive) {
-                pt1FilterUpdateCutoff(&rssiDbmFilter, k2);
-                rssiDbmInactive = pt1FilterApply(&rssiDbmFilter, rssiDbmRawInactive);
+                pt1FilterUpdateCutoff(&rssiDbmInactiveFilter, k2);
+                rssiDbmInactive = pt1FilterApply(&rssiDbmInactiveFilter, rssiDbmRawInactive);
             }
 #endif //USE_RX_RSSI_DBM
 
@@ -953,7 +955,7 @@ int16_t getRssiDbm(void)
 
 int16_t getRssiDbmInactive(void)
 {
-    return rssiDbmRawInactive;
+    return rssiDbmInactive;
 }
 
 void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
