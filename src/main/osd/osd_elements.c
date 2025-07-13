@@ -1598,11 +1598,11 @@ static void osdElementRssiDbm(osdElementParms_t *element)
     const int16_t osdRssiDbmInactive = getRssiDbmInactive();
     static bool diversity = false;
 
+    if (fmax(osdRssiDbm, osdRssiDbmInactive) < osdConfig()->rssi_dbm_alarm) {
+         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+    } else
     if (fmin(osdRssiDbm, osdRssiDbmInactive) < osdConfig()->rssi_dbm_alarm) {
         element->attr = DISPLAYPORT_SEVERITY_WARNING;
-    } else
-    if (fmax(osdRssiDbm, osdRssiDbmInactive) < osdConfig()->rssi_dbm_alarm) {
-        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
     if (antenna || diversity) {
