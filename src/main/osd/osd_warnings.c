@@ -185,7 +185,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         osdWarnGetState(OSD_WARNING_RSSI_DBM) &&
         (
             (!diversity && getRssiDbm() < osdConfig()->rssi_dbm_alarm) ||
-            (diversity && fmax(getRssiDbm(), getRssiDbmInactive()) < osdConfig()->rssi_dbm_alarm)
+            (diversity && MAX(getRssiDbm(), getRssiDbmInactive()) < osdConfig()->rssi_dbm_alarm)
         )
     ) {
         tfp_sprintf(warningText, "RSSI DBM");
