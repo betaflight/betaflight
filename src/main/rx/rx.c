@@ -83,6 +83,7 @@ static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,0]
 static int16_t rssiDbmInactive = CRSF_RSSI_MIN;    // range: [-130,0]
 static int16_t rssiDbmRaw = CRSF_RSSI_MIN; // range: [-130,0]
 static int16_t rssiDbmRawInactive = CRSF_RSSI_MIN; // range: [-130,0]
+static bool diversity = false;
 #endif //USE_RX_RSSI_DBM
 #ifdef USE_RX_RSNR
 static int16_t rsnr = CRSF_SNR_MIN;        // range: [-30,20]
@@ -958,6 +959,11 @@ int16_t getRssiDbmInactive(void)
     return rssiDbmInactive;
 }
 
+bool getIsDiversity(void)
+{
+    return diversity;
+}
+
 void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
 {
     if (source != rssiSource) {
@@ -972,7 +978,7 @@ void setRssiDbmInactive(int16_t rssiDbmValue, rssiSource_e source)
     if (source != rssiSource) {
         return;
     }
-
+    diversity = true;
     rssiDbmRawInactive = rssiDbmValue;
 }
 

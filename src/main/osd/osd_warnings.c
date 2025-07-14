@@ -71,6 +71,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 {
     const batteryState_e batteryState = getBatteryState();
     const timeUs_t currentTimeUs = micros();
+    const bool diversity = getIsDiversity();
 
     static timeUs_t armingDisabledUpdateTimeUs;
     static armingDisableFlags_e armingDisabledDisplayFlag = 0;
@@ -180,7 +181,13 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 #ifdef USE_RX_RSSI_DBM
     // rssi dbm
-    if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() < osdConfig()->rssi_dbm_alarm)) {
+    if (
+        osdWarnGetState(OSD_WARNING_RSSI_DBM) &&
+        (
+            (!diversity && getRssiDbm() < osdConfig()->rssi_dbm_alarm) ||
+            (diversity && fmax(getRssiDbm(), getRssiDbmInactive()) < osdConfig()->rssi_dbm_alarm)
+        )
+    ) {
         tfp_sprintf(warningText, "RSSI DBM");
         *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
