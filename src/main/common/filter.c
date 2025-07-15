@@ -28,7 +28,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#define BIQUAD_Q invSqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
+#define BIQUAD_Q invSqrt_approx(2.0f)     /* quality factor - 2nd order butterworth*/
 
 // PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
 #define CUTOFF_CORRECTION_PT2 1.553773974f

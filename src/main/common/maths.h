@@ -103,7 +103,6 @@ void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
-float DEGREES_TO_RADIANS(int16_t degrees);
 
 int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float destTo);
