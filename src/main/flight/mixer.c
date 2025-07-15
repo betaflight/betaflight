@@ -300,7 +300,7 @@ static bool applyCrashFlipModeToMotors(void)
     float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
     float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
 
-    float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
+    float stickDeflectionLength = sqrt_approx(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
 
     if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
         // If yaw is the dominant, disable pitch and roll
@@ -312,8 +312,8 @@ static bool applyCrashFlipModeToMotors(void)
         signYaw = 0;
     }
 
-    const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
-    const float cosThreshold = sqrtf(3.0f) / 2.0f; // cos(30 deg)
+    const float cosPhi = (stickDeflectionLength > 0) ? (invSqrt_approx(2.0f) * (stickDeflectionPitchAbs + stickDeflectionRollAbs) / stickDeflectionLength) : 0;
+    const float cosThreshold = sqrt_approx(3.0f) / 2.0f; // cos(30 deg)
 
     if (cosPhi < cosThreshold) {
         // Enforce either roll or pitch exclusively, if not on diagonal
@@ -494,7 +494,7 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
             }
         }
     }
-    motorOutputRms = sqrtf(motorSumSquares / mixerRuntime.motorCount);
+    motorOutputRms = sqrt_approx(motorSumSquares / mixerRuntime.motorCount);
 #endif // USE_WING
 
     DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);

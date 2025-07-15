@@ -199,10 +199,6 @@ void imuInit(void)
 }
 
 #if defined(USE_ACC)
-static float invSqrt(float x)
-{
-    return 1.0f / sqrtf(x);
-}
 
 // g[xyz] - gyro reading, in rad/s
 // useAcc, a[xyz] - accelerometer reading, direction only, normalized internally
@@ -218,7 +214,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
 
     // Calculate general spin rate (rad/s)
-    const float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
+    const float spin_rate = sqrt_approx(sq(gx) + sq(gy) + sq(gz));
 
     float ex = 0, ey = 0, ez = 0;
 
@@ -235,7 +231,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     float recipAccNorm = sq(ax) + sq(ay) + sq(az);
     if (useAcc && recipAccNorm > 0.01f) {
         // Normalise accelerometer measurement; useAcc is true when all smoothed acc axes are within 20% of 1G
-        recipAccNorm = invSqrt(recipAccNorm);
+        recipAccNorm = invSqrt_approx(recipAccNorm);
 
         ax *= recipAccNorm;
         ay *= recipAccNorm;
@@ -284,7 +280,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     q.z += (+buffer.w * gz + buffer.x * gy - buffer.y * gx);
 
     // Normalise quaternion
-    float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
+    float recipNorm = invSqrt_approx(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
     q.w *= recipNorm;
     q.x *= recipNorm;
     q.y *= recipNorm;
@@ -525,7 +521,7 @@ STATIC_UNIT_TESTED float imuCalcMagErr(void)
         vector3_t mag_ef;
         matrixVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north
         // Normalise magnetometer measurement
-        vector3Scale(&mag_ef, &mag_ef, 1.0f / sqrtf(magNormSquared));
+        vector3Scale(&mag_ef, &mag_ef, invSqrt_approx(magNormSquared));
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles

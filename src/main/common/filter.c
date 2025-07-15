@@ -28,7 +28,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
+#define BIQUAD_Q invSqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
 
 // PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
 #define CUTOFF_CORRECTION_PT2 1.553773974f
@@ -285,7 +285,7 @@ FAST_CODE void phaseCompUpdate(phaseComp_t *filter, const float centerFreqHz, co
     const float omega = 2.0f * M_PIf * centerFreqHz * looptimeUs * 1e-6f;
     const float sn = sin_approx(centerPhaseDeg * RAD);
     const float gain = (1 + sn) / (1 - sn);
-    const float alpha = (12 - sq(omega)) / (6 * omega * sqrtf(gain));  // approximate prewarping (series expansion)
+    const float alpha = (12 - sq(omega)) / (6 * omega * sqrt_approx(gain));  // approximate prewarping (series expansion)
 
     filter->b0 = 1 + alpha * gain;
     filter->b1 = 2 - filter->b0;
