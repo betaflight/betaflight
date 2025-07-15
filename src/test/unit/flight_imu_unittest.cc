@@ -85,7 +85,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-const float sqrt2over2 = sqrt_approx(2) / 2.0f;
+const float sqrt2over2 = sqrtf(2) / 2.0f;
 
 void quaternion_from_axis_angle(quaternion_t* q, float angle, float x, float y, float z) {
     vector3_t a = {{x, y, z}};

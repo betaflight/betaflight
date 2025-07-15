@@ -33,6 +33,8 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/io.h"

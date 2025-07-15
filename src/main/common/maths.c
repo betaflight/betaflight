@@ -117,7 +117,7 @@ float atan2_approx(float y, float x)
 float acos_approx(float x)
 {
     float xa = fabsf(x);
-    float result = sqrt_approx(1.0f - xa) * (1.5707288f + xa * (-0.2121144f + xa * (0.0742610f + (-0.0187293f * xa))));
+    float result = sqrtf(1.0f - xa) * (1.5707288f + xa * (-0.2121144f + xa * (0.0742610f + (-0.0187293f * xa))));
     if (x < 0.0f)
         return M_PIf - result;
     else

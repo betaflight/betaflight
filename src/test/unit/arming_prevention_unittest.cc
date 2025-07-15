@@ -1116,7 +1116,6 @@ extern "C" {
     bool usbVcpIsConnected(void) { return false; }
     void pidSetAntiGravityState(bool) {}
     void osdSuppressStats(bool) {}
-    float scaleRangef(float, float, float, float, float) { return 0.0f; }
     bool crashRecoveryModeActive(void) { return false; }
     int32_t getEstimatedAltitudeCm(void) { return 0; }
     bool gpsIsHealthy(void) { return false; }
@@ -1138,10 +1137,6 @@ extern "C" {
 
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
-
-    float sin_approx(float) {return 0.0f;}
-    float cos_approx(float) {return 1.0f;}
-    float atan2_approx(float, float) {return 0.0f;}
 
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
