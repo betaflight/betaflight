@@ -125,7 +125,28 @@ float asin_approx(float x)
     return (M_PIf * 0.5f) - acos_approx(x);
 }
 
-#endif
+// http://rrrola.wz.cz/inv_sqrt.html
+// Quake III fast inverse square root approximation with enhanced precision (x2.7)
+// invSqrt_approx maximum relative error = 0.065% across all orders of magnitude
+float invSqrt_approx(float x)
+{
+    union {
+        float f;
+        uint32_t i;
+    } value = { .f = x };
+
+    value.i  = 0x5f1fff77u - (value.i >> 1);
+    value.f *= 0.703974056f * (2.38919526f - x * sq(value.f));
+
+    return value.f;
+}
+
+float sqrt_approx(float x)
+{
+    return x * invSqrt_approx(x);
+}
+
+#endif // defined(FAST_MATH) || defined(VERY_FAST_MATH)
 
 int gcd(int num, int denom)
 {

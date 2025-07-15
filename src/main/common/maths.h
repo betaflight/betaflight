@@ -123,6 +123,8 @@ float atan2_approx(float y, float x);
 float acos_approx(float x);
 float asin_approx(float x);
 #define tan_approx(x)       (sin_approx(x) / cos_approx(x))
+float invSqrt_approx(float x);
+float sqrt_approx(float x);
 float exp_approx(float val);
 float log_approx(float val);
 float pow_approx(float a, float b);
@@ -132,6 +134,8 @@ float pow_approx(float a, float b);
 #define atan2_approx(y,x)   atan2f(y,x)
 #define acos_approx(x)      acosf(x)
 #define tan_approx(x)       tanf(x)
+#define invSqrt_approx(x)   (1.0f / sqrtf(x))
+#define sqrt_approx(x)      sqrtf(x)
 #define exp_approx(x)       expf(x)
 #define log_approx(x)       logf(x)
 #define pow_approx(a, b)    powf(b, a)
