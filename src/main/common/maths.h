@@ -36,15 +36,16 @@
 #define M_PIf       3.14159265358979323846f
 #define M_EULERf    2.71828182845904523536f
 
-#define RAD    (M_PIf / 180.0f)
-#define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
-#define DECIDEGREES_TO_DEGREES(angle) ((angle) / 10)
-#define DECIDEGREES_TO_RADIANS(angle) ((angle) / 10.0f * 0.0174532925f)
-#define DEGREES_TO_RADIANS(angle) ((angle) * RAD)
-#define RADIANS_TO_DEGREES(angle) ((angle) / RAD)
+#define RAD                             (M_PIf / 180.0f)
+#define DEGREES_TO_DECIDEGREES(angle)   ((angle) * 10)
+#define DECIDEGREES_TO_DEGREES(angle)   ((angle) / 10)
+#define DEGREES_TO_RADIANS(angle)       ((angle) * RAD)
+#define RADIANS_TO_DEGREES(angle)       ((angle) / RAD)
+#define DECIDEGREES_TO_RADIANS(angle)   (DEGREES_TO_RADIANS(angle) / 10.0f)
+#define RADIANS_TO_DECIDEGREES(angle)   (RADIANS_TO_DEGREES(angle) * 10.0f)
 
-#define CM_S_TO_KM_H(centimetersPerSecond) ((centimetersPerSecond) * 36 / 1000)
-#define CM_S_TO_MPH(centimetersPerSecond) ((centimetersPerSecond) * 10000 / 5080 / 88)
+#define CMS_TO_KMH(centimetersPerSecond) ((centimetersPerSecond) * 36 / 1000)
+#define CMS_TO_MPH(centimetersPerSecond) ((centimetersPerSecond) * 10000 / 5080 / 88)
 
 #ifndef MIN
 #define MIN(a,b) \
@@ -63,14 +64,15 @@
 #define ABS(x) \
   __extension__ ({ __typeof__ (x) _x = (x); \
   _x > 0 ? _x : -_x; })
+
 #define SIGN(x) \
   __extension__ ({ __typeof__ (x) _x = (x); \
   (_x > 0) - (_x < 0); })
 
 #define Q12 (1 << 12)
 
-#define HZ_TO_INTERVAL(x) (1.0f / (x))
-#define HZ_TO_INTERVAL_US(x) (1000000 / (x))
+#define HZ_TO_INTERVAL(x)       (1.0f / (x))
+#define HZ_TO_INTERVAL_US(x)    (1000000 / (x))
 
 typedef int32_t fix12_t;
 
@@ -101,7 +103,7 @@ void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
-float degreesToRadians(int16_t degrees);
+float DEGREES_TO_RADIANS(int16_t degrees);
 
 int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float destTo);
@@ -117,6 +119,7 @@ float quickMedianFilter7f(const float * v);
 float quickMedianFilter9f(const float * v);
 
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+
 float sin_approx(float x);
 float cos_approx(float x);
 float atan2_approx(float y, float x);
@@ -128,7 +131,9 @@ float sqrt_approx(float x);
 float exp_approx(float val);
 float log_approx(float val);
 float pow_approx(float a, float b);
+
 #else
+
 #define sin_approx(x)       sinf(x)
 #define cos_approx(x)       cosf(x)
 #define atan2_approx(y,x)   atan2f(y,x)
@@ -139,7 +144,8 @@ float pow_approx(float a, float b);
 #define exp_approx(x)       expf(x)
 #define log_approx(x)       logf(x)
 #define pow_approx(a, b)    powf(b, a)
-#endif
+
+#endif // defined(FAST_MATH) || defined(VERY_FAST_MATH)
 
 void arraySubInt32(int32_t *dest, const int32_t *array1, const int32_t *array2, int count);
 

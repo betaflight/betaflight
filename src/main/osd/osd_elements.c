@@ -638,9 +638,9 @@ int32_t osdGetSpeedToSelectedUnit(int32_t value)
     switch (osdConfig()->units) {
     case UNIT_IMPERIAL:
     case UNIT_BRITISH:
-        return CM_S_TO_MPH(value);
+        return CMS_TO_MPH(value);
     default:
-        return CM_S_TO_KM_H(value);
+        return CMS_TO_KMH(value);
     }
 }
 

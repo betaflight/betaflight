@@ -179,7 +179,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     north_ef.x = cos_approx(imuMagneticDeclinationRad);
     north_ef.y = -sin_approx(imuMagneticDeclinationRad);
 
-    smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
+    smallAngleCosZ = cos_approx(DEGREES_TO_RADIANS(imuConfig()->small_angle));
 
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 
