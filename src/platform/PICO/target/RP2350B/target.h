@@ -121,14 +121,12 @@
 #undef USE_MULTI_GYRO
 
 #undef USE_RANGEFINDER_HCSR04
-#undef USE_MAX7456
 #undef USE_MAG
 #undef USE_MAG_HMC5883
 #undef USE_MAG_SPI_HMC5883
 #undef USE_VTX_RTC6705
 #undef USE_VTX_RTC6705_SOFTSPI
 #undef USE_SRXL
-#undef USE_OSD
 #undef USE_SPEKTRUM
 #undef USE_SPEKTRUM_BIND
 
@@ -180,9 +178,6 @@
 
 #undef USE_SERVOS
 #undef USE_LED_STRIP
-#undef USE_OSD
-#undef USE_OSD_SD
-#undef USE_OSD_HD
 #undef USE_OSD_QUICK_MENU
 #undef USE_POSITION_HOLD
 
@@ -291,7 +286,6 @@
    
 //#define USE_FLASH
 //#define USE_FLASH_W25Q128FV
-//#define USE_MAX7456
 
 /*
 
