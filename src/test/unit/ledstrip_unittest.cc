@@ -311,12 +311,13 @@ batteryState_e getBatteryState(void)
     return BATTERY_OK;
 }
 
-void ws2811LedStripInit(ioTag_t ioTag)
+void ws2811LedStripInit(ioTag_t ioTag, ledStripFormatRGB_e ledFormat)
 {
     UNUSED(ioTag);
+    UNUSED(ledFormat);
 }
 
-bool ws2811UpdateStrip(ledStripFormatRGB_e, uint8_t) {return true;}
+bool ws2811UpdateStrip(uint8_t) {return true;}
 
 void setLedValue(uint16_t index, const uint8_t value)
 {

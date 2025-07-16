@@ -1361,7 +1361,7 @@ void ledStripDisable(void)
         setStripColor(&HSV(BLACK));
 
         // Multiple calls may be required as normally broken into multiple parts
-        while (!ws2811UpdateStrip((ledStripFormatRGB_e)ledStripConfig()->ledstrip_grb_rgb, ledStripConfig()->ledstrip_brightness));
+        while (!ws2811UpdateStrip(ledStripConfig()->ledstrip_brightness));
     }
 }
 
@@ -1375,7 +1375,7 @@ void ledStripInit(void)
     reevaluateLedConfig();
 #endif
 
-    ws2811LedStripInit(ledStripConfig()->ioTag);
+    ws2811LedStripInit(ledStripConfig()->ioTag, (ledStripFormatRGB_e)ledStripConfig()->ledstrip_grb_rgb);
 }
 
 static uint8_t selectVisualBeeperColor(uint8_t colorIndex, bool *colorIndexIsCustom)
@@ -1543,7 +1543,7 @@ void ledStripUpdate(timeUs_t currentTimeUs)
         } else {
             static bool multipassUpdate = false;
             // Profile is applied, so now update the LEDs
-            if (ws2811UpdateStrip((ledStripFormatRGB_e) ledStripConfig()->ledstrip_grb_rgb, ledStripConfig()->ledstrip_brightness)) {
+            if (ws2811UpdateStrip(ledStripConfig()->ledstrip_brightness)) {
                 // Final pass updating the DMA buffer is always short
                 if (multipassUpdate) {
                     schedulerIgnoreTaskExecTime();
