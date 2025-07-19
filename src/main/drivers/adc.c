@@ -57,6 +57,12 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
 
 ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance)
 {
+#if defined(USE_ADC_DEVICE_0)
+    if (instance == ADC0) {
+        return ADCDEV_0;
+    }
+#endif
+
     if (instance == ADC1) {
         return ADCDEV_1;
     }
