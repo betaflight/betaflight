@@ -31,6 +31,7 @@
 #include "maths.h"
 
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+
 #if defined(VERY_FAST_MATH)
 
 // http://lolengine.net/blog/2011/12/21/better-function-approximations
@@ -43,12 +44,15 @@
 #define sinPolyCoef5  8.312366210e-3f
 #define sinPolyCoef7 -1.849218155e-4f
 #define sinPolyCoef9  0
+
 #else
+
 #define sinPolyCoef3 -1.666665710e-1f                                          // Double: -1.666665709650470145824129400050267289858e-1
 #define sinPolyCoef5  8.333017292e-3f                                          // Double:  8.333017291562218127986291618761571373087e-3
 #define sinPolyCoef7 -1.980661520e-4f                                          // Double: -1.980661520135080504411629636078917643846e-4
 #define sinPolyCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
-#endif
+
+#endif // defined(VERY_FAST_MATH)
 
 float sin_approx(float x)
 {
@@ -81,7 +85,7 @@ float cos_approx(float x)
 
 // Initial implementation by Crashpilot1000 (https://github.com/Crashpilot1000/HarakiriWebstore1/blob/396715f73c6fcf859e0db0f34e12fe44bace6483/src/mw.c#L1292)
 // Polynomial coefficients by Andor (http://www.dsprelated.com/showthread/comp.dsp/21872-1.php) optimized by Ledvinap to save one multiplication
-// Max absolute error 0,000027 degree
+// Max absolute error 0.000027 degree
 // atan2_approx maximum absolute error = 7.152557e-07 rads (4.098114e-05 degree)
 float atan2_approx(float y, float x)
 {
@@ -125,7 +129,28 @@ float asin_approx(float x)
     return (M_PIf * 0.5f) - acos_approx(x);
 }
 
-#endif
+// http://rrrola.wz.cz/inv_sqrt.html
+// Quake III fast inverse square root approximation with enhanced precision (x2.7)
+// invSqrt_approx maximum relative error = 0.065% across all orders of magnitude
+float invSqrt_approx(float x)
+{
+    union {
+        float f;
+        uint32_t i;
+    } value = { .f = x };
+
+    value.i  = 0x5f1fff77u - (value.i >> 1);
+    value.f *= 0.703974056f * (2.38919526f - x * sq(value.f));
+
+    return value.f;
+}
+
+float sqrt_approx(float x)
+{
+    return x * invSqrt_approx(x);
+}
+
+#endif // defined(FAST_MATH) || defined(VERY_FAST_MATH)
 
 int gcd(int num, int denom)
 {
@@ -180,12 +205,7 @@ float devVariance(stdev_t *dev)
 
 float devStandardDeviation(stdev_t *dev)
 {
-    return sqrtf(devVariance(dev));
-}
-
-float degreesToRadians(int16_t degrees)
-{
-    return degrees * RAD;
+    return sqrt_approx(devVariance(dev));
 }
 
 int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo)

@@ -82,7 +82,7 @@ float vector2NormSq(const vector2_t *v)
 
 float vector2Norm(const vector2_t *v)
 {
-    return sqrtf(vector2NormSq(v));
+    return sqrt_approx(vector2NormSq(v));
 }
 
 vector2_t *vector2Normalize(vector2_t *result, const vector2_t *v)
@@ -90,7 +90,7 @@ vector2_t *vector2Normalize(vector2_t *result, const vector2_t *v)
     const float normSq = vector2NormSq(v);
 
     if (normSq > 0.0f) {
-        return vector2Scale(result, v, 1.0f / sqrtf(normSq));
+        return vector2Scale(result, v, invSqrt_approx(normSq));
     } else {
         return vector2Zero(result);
     }
@@ -173,7 +173,7 @@ float vector3NormSq(const vector3_t *v)
 
 float vector3Norm(const vector3_t *v)
 {
-    return sqrtf(vector3NormSq(v));
+    return sqrt_approx(vector3NormSq(v));
 }
 
 vector3_t *vector3Normalize(vector3_t *result, const vector3_t *v)
@@ -181,7 +181,7 @@ vector3_t *vector3Normalize(vector3_t *result, const vector3_t *v)
     const float normSq = vector3NormSq(v);
 
     if (normSq > 0) {  // Hopefully sqrt(nonzero) is quite large
-        return vector3Scale(result, v, 1.0f / sqrtf(normSq));
+        return vector3Scale(result, v, invSqrt_approx(normSq));
     } else {
         return vector3Zero(result);
     }
