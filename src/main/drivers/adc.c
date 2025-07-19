@@ -29,7 +29,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "drivers/adc_impl.h"
+#include "platform/adc_impl.h"
 #include "drivers/io.h"
 
 #include "pg/adc.h"
@@ -40,11 +40,7 @@
 
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 
-#if defined(STM32F7)
 volatile FAST_DATA_ZERO_INIT uint16_t adcValues[ADC_CHANNEL_COUNT];
-#else
-volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
-#endif
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
