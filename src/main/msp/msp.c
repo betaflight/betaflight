@@ -1096,17 +1096,18 @@ static void mspDisplayportDelayDisarm(mspDescriptor_t srcDesc, boxBitmask_t *fli
     }
 
     if (displayPortMspDescriptor == srcDesc) {
-        bool currentState = bitArrayGet(flightModeFlags, BOXARM);
+        bool currentArmState = bitArrayGet(flightModeFlags, BOXARM);
         if (displayPortMspArmState) {
-            if (!currentState) {
+            if (!currentArmState) {
                 if (cmpTimeUs(micros(), getLastDisarmTimeUs()) < DISARM_DELAY_MULTIPLIER_US * displayPortProfileMsp()->useDisarmDelay) {
+                    // Override the arm state reported on displayport MSP to indicate still armed
                     bitArraySet(flightModeFlags, BOXARM);
                 } else {
                     displayPortMspArmState = false;
                 }
             }
         } else {
-            displayPortMspArmState = currentState;
+            displayPortMspArmState = currentArmState;
         }
     }
 }
