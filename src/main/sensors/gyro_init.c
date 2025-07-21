@@ -664,13 +664,7 @@ bool gyroInit(void)
     // If no gyros are enabled but some are detected, enable at least the first detected gyro
     // This prevents lockups when configuration is inconsistent
     if (gyro.gyroEnabledBitmask == 0 && gyroDetectedFlags != 0) {
-        // Find the first detected gyro and enable it
-        for (int i = 0; i < GYRO_COUNT; i++) {
-            if (gyroDetectedFlags & GYRO_MASK(i)) {
-                gyro.gyroEnabledBitmask = GYRO_MASK(i);
-                break;
-            }
-        }
+        gyro.gyroEnabledBitmask = gyroDetectedFlags & -gyroDetectedFlags;
     }
 
     if (gyroConfigMutable()->gyro_enabled_bitmask != gyro.gyroEnabledBitmask) {
