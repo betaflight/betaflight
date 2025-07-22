@@ -663,8 +663,10 @@ bool gyroInit(void)
 
     // If no gyros are enabled but some are detected, enable at least the first detected gyro
     // This prevents lockups when configuration is inconsistent
-    // use lowest set bit from detected flags
-    gyro.gyroEnabledBitmask = gyroDetectedFlags & -gyroDetectedFlags;
+    if (gyro.gyroEnabledBitmask == 0 && gyroDetectedFlags != 0) {
+        gyro.gyroEnabledBitmask = gyroDetectedFlags & -gyroDetectedFlags;
+    }
+
     if (gyroConfigMutable()->gyro_enabled_bitmask != gyro.gyroEnabledBitmask) {
         gyroConfigMutable()->gyro_enabled_bitmask = gyro.gyroEnabledBitmask;
         eepromWriteRequired = true;
