@@ -29,6 +29,10 @@
 
 #if defined(USE_TIMER_MGMT) && defined(USE_TIMER_UP_CONFIG)
 
+#if defined(USED_TIMERS) && defined(TIMUP_TIMERS)
+    STATIC_ASSERT((~USED_TIMERS  & TIMUP_TIMERS) == 0, "All TIMUP timers must be used");
+#endif
+
 typedef struct timerUpConfig_s {
     int8_t dmaopt;
 } timerUpConfig_t;

@@ -1628,7 +1628,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 
     cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
 
-    if ((ports[1].id == SERIAL_PORT_USB_VCP)) {
+    if (ports[1].id == SERIAL_PORT_USB_VCP) {
         do {
             if (port1ResetOnDtr) {
                 serialSetCtrlLineStateCb(ports[1].port, cbCtrlLine_reset, NULL);
@@ -3675,18 +3675,12 @@ static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-#ifdef USE_MULTI_GYRO
-    if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_1) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        cliPrintLinef("\r\n# Gyro 1");
-        cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
+    for (int i = 0; i < GYRO_COUNT; i++) {
+        if (gyroConfig()->gyro_enabled_bitmask & GYRO_MASK(i)) {
+            cliPrintLinef("\r\n# Gyro %d", i + 1);
+            cliPrintGyroRegisters(i);  // assuming this takes a 0-based gyro index
+        }
     }
-    if ((gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) || (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_BOTH)) {
-        cliPrintLinef("\r\n# Gyro 2");
-        cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_2);
-    }
-#else
-    cliPrintGyroRegisters(GYRO_CONFIG_USE_GYRO_1);
-#endif
 }
 #endif
 
@@ -4680,7 +4674,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     cliPrintf("MCU %s Clock=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
 
-#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
+#if PLATFORM_TRAIT_CONFIG_HSE
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
     int sysclkSource = SystemSYSCLKSource();
 
@@ -4743,14 +4737,18 @@ static void cliStatus(const char *cmdName, char *cmdline)
         }
     }
 #ifdef USE_SPI
-    if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
-        cliPrintf(" locked");
-    }
-    if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        cliPrintf(" dma");
-    }
-    if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
-        cliPrintf(" shared");
+    if (!gyroActiveDev()) {
+        cliPrintf(" not active");
+    } else {
+        if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
+            cliPrintf(" locked");
+        }
+        if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
+            cliPrintf(" dma");
+        }
+        if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
+            cliPrintf(" shared");
+        }
     }
 #endif
     cliPrintLinefeed();
@@ -5301,7 +5299,7 @@ static bool strToPin(char *ptr, ioTag_t *tag)
 
             char *end;
             const long pin = strtol(ptr, &end, 10);
-            if (end != ptr && pin >= 0 && pin < 16) {
+            if (end != ptr && pin >= 0 && pin < DEFIO_PORT_PINS) {
                 *tag = DEFIO_TAG_MAKE(port, pin);
 
                 return true;
@@ -5323,7 +5321,7 @@ static void showDma(void)
     cliPrintLine("Currently active DMA:");
     cliRepeat('-', 20);
 #endif
-    for (int i = 1; i <= DMA_LAST_HANDLER; i++) {
+    for (int i = DMA_FIRST_HANDLER; i <= DMA_LAST_HANDLER; i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
         cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
@@ -5396,15 +5394,11 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
-#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
-#define DMA_CHANREQ_STRING "Request"
-#else
+#if !defined(DMA_CHANREQ_STRING)
 #define DMA_CHANREQ_STRING "Channel"
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(APM32F4)
-#define DMA_STCH_STRING    "Stream"
-#else
+#if !defined(DMA_STCH_STRING)
 #define DMA_STCH_STRING    "Channel"
 #endif
 
@@ -5419,6 +5413,35 @@ static void optToString(int optval, char *buf)
     }
 }
 
+static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
+{
+    if (entry->peripheral == DMA_PERIPH_TIMUP) {
+        const int dispNum = timerGetNumberByIndex(index);
+        if (!(TIM_N(dispNum) & entry->presenceMask)) {
+            return -1;
+        }
+        return dispNum;
+    }
+    return DMA_OPT_UI_INDEX(index);
+}
+
+static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
+{
+    if (dispNum < 0) {
+        return -1;
+    }
+
+    if (entry->peripheral == DMA_PERIPH_TIMUP) {
+        if (!(entry->presenceMask & TIM_N(dispNum))) {
+            return -1;
+        }
+        return timerGetIndexByNumber(dispNum);
+    }
+
+    const int index = dispNum - 1;
+    return (index < 0 ||  index >= entry->maxIndex) ? -1 : index;
+}
+
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -5426,12 +5449,9 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
     // Note that using timerGetNumberByIndex is not a generic solution,
     // but we are lucky that TIMUP is the only peripheral with non-contiguous numbering.
 
-    int uiIndex;
-
-    if (entry->presenceMask) {
-        uiIndex = timerGetNumberByIndex(index);
-    } else {
-        uiIndex = DMA_OPT_UI_INDEX(index);
+    int uiIndex = getDmaOptDisplayNumber(entry, index);
+    if (uiIndex == -1) {
+        return;
     }
 
     if (dmaopt != DMA_OPT_UNUSED) {
@@ -5641,8 +5661,8 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
     const timerHardware_t *timer = NULL;
     pch = strtok_r(NULL, " ", &saveptr);
     if (entry) {
-        index = pch ? (atoi(pch) - 1) : -1;
-        if (index < 0 || index >= entry->maxIndex || (entry->presenceMask != MASK_IGNORED && !(entry->presenceMask & BIT(index + 1)))) {
+        index = displayNumberToDmaOptIndex(entry, pch ? atoi(pch) : -1);
+        if (index == -1) {
             cliPrintErrorLinef(cmdName, "BAD INDEX: '%s'", pch ? pch : "");
             return;
         }
@@ -5707,7 +5727,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
 
             if (entry) {
                 if (!dmaGetChannelSpecByPeripheral(entry->peripheral, index, optval)) {
-                    cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, DMA_OPT_UI_INDEX(index), pch);
+                    cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptDisplayNumber(entry, index), pch);
 
                     return;
                 }
@@ -5730,7 +5750,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             if (entry) {
                 *optaddr = optval;
 
-                cliPrintLinef("# dma %s %d: changed from %s to %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString, optvalString);
+                cliPrintLinef("# dma %s %d: changed from %s to %s", entry->device, getDmaOptDisplayNumber(entry, index), orgvalString, optvalString);
             } else {
 #if defined(USE_TIMER_MGMT)
                 timerIoConfig->dmaopt = optval;
@@ -5740,7 +5760,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             }
         } else {
             if (entry) {
-                cliPrintLinef("# dma %s %d: no change: %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString);
+                cliPrintLinef("# dma %s %d: no change: %s", entry->device, getDmaOptDisplayNumber(entry, index), orgvalString);
             } else {
                 cliPrintLinef("# dma %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),orgvalString);
             }
@@ -5762,7 +5782,9 @@ static void cliDma(const char *cmdName, char* cmdline)
 #if defined(USE_DMA_SPEC)
     cliDmaopt(cmdName, cmdline);
 #else
-    cliShowParseError(cmdName);
+    UNUSED(cmdName);
+    // the only option is show, so make that the default behaviour
+    showDma();
 #endif
 }
 #endif

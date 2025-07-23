@@ -35,6 +35,7 @@
 #include "drivers/time.h"
 
 #include "displayport_crsf.h"
+#include "fc/runtime_config.h"
 
 #define CRSF_DISPLAY_PORT_OPEN_DELAY_MS     400
 #define CRSF_DISPLAY_PORT_CLEAR_DELAY_MS    45
@@ -155,6 +156,11 @@ crsfDisplayPortScreen_t *crsfDisplayPortScreen(void)
 
 void crsfDisplayPortMenuOpen(void)
 {
+    if (ARMING_FLAG(ARMED)) {
+        // when armed, make it impossible to open the menu (it wouldn't be possible to disarm)
+        return;
+    }
+
     if (cmsInMenu) {
         return;
     }

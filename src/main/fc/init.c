@@ -483,9 +483,7 @@ void init(void)
     }
 #endif
 
-#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
-    // F4 has non-8MHz boards
-    // G4 for Betaflight allow 8, 16, 24, 26 or 27MHz oscillator
+#if PLATFORM_TRAIT_CONFIG_HSE
     systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
 #endif
 
@@ -495,18 +493,7 @@ void init(void)
 
     // Configure MCO output after config is stable
 #ifdef USE_MCO
-    // Note that mcoConfigure must be augmented with an additional argument to
-    // indicate which device instance to configure when MCO and MCO2 are both supported
-
-#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
-    // F4 and F7 support MCO on PA8 and MCO2 on PC9, but only MCO2 is supported for now
-    mcoConfigure(MCODEV_2, mcoConfig(MCODEV_2));
-#elif defined(STM32G4)
-    // G4 only supports one MCO on PA8
-    mcoConfigure(MCODEV_1, mcoConfig(MCODEV_1));
-#else
-#error Unsupported MCU
-#endif
+    mcoInit();
 #endif // USE_MCO
 
 #ifdef USE_TIMER
@@ -574,7 +561,7 @@ void init(void)
         initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
     }
 
-#if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && defined(STM32H7)
+#if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && PLATFORM_TRAIT_SDIO_INIT
     sdioPinConfigure();
     SDIO_GPIO_Init();
 #endif
@@ -740,6 +727,7 @@ void init(void)
         delay(50);
 #endif
     }
+
     LED0_OFF;
     LED1_OFF;
 

@@ -64,6 +64,9 @@ typedef enum {
 #endif
     TABLE_DEBUG,
     TABLE_MOTOR_PWM_PROTOCOL,
+#ifdef USE_DSHOT_TELEMETRY
+    TABLE_DSHOT_EDT,
+#endif
     TABLE_GYRO_LPF_TYPE,
     TABLE_DTERM_LPF_TYPE,
     TABLE_FAILSAFE,
@@ -94,9 +97,6 @@ typedef enum {
 #endif
 #ifdef USE_LED_STRIP
     TABLE_RGB_GRB,
-#endif
-#ifdef USE_MULTI_GYRO
-    TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,
 #if defined(USE_VIDEO_SYSTEM)

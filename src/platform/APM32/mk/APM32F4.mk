@@ -127,7 +127,7 @@ INCLUDE_DIRS += \
         $(SRC_DIR)/msc
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 DEVICE_FLAGS    = -DUSE_DAL_DRIVER -DHSE_VALUE=$(HSE_VALUE) -DAPM32
 
@@ -150,9 +150,11 @@ MCU_COMMON_SRC = \
         common/stm32/system.c \
         common/stm32/io_impl.c \
         common/stm32/config_flash.c \
+        common/stm32/mco.c \
         APM32/startup/system_apm32f4xx.c \
         drivers/inverter.c \
         drivers/dshot_bitbang_decode.c \
+        common/stm32/pwm_output_beeper.c \
         common/stm32/pwm_output_dshot_shared.c \
         common/stm32/dshot_dpwm.c \
         common/stm32/dshot_bitbang_shared.c \
@@ -184,10 +186,11 @@ MCU_COMMON_SRC = \
         common/stm32/bus_spi_hw.c \
         common/stm32/bus_spi_pinconfig.c \
         common/stm32/serial_uart_hw.c \
+        common/stm32/serial_uart_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \
-        drivers/serial_uart_pinconfig.c \
-        APM32/system_apm32f4xx.c
+        APM32/system_apm32f4xx.c \
+        common/stm32/debug_pin.c
 
 VCP_SRC = \
         APM32/usb/vcp/usbd_cdc_descriptor.c \
@@ -220,9 +223,10 @@ SIZE_OPTIMISED_SRC += \
         drivers/bus_spi_config.c \
         common/stm32/bus_i2c_pinconfig.c \
         common/stm32/bus_spi_pinconfig.c \
+        common/stm32/pwm_output_beeper.c \
+        common/stm32/serial_uart_pinconfig.c \
         drivers/serial_escserial.c \
-        drivers/serial_pinconfig.c \
-        drivers/serial_uart_pinconfig.c
+        drivers/serial_pinconfig.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4 -DUSE_FULL_DDL_DRIVER

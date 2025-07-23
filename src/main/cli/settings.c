@@ -223,6 +223,12 @@ const char * const lookupTableOffOn[] = {
     "OFF", "ON"
 };
 
+#ifdef USE_DSHOT_TELEMETRY
+static const char * const lookupTableDshotEdt[] = {
+    "OFF", "ON", "FORCE"
+};
+#endif
+
 static const char * const lookupTableCrashRecovery[] = {
     "OFF", "ON" ,"BEEP", "DISARM"
 };
@@ -243,12 +249,6 @@ static const char * const lookupTableAlignment[] = {
     "CW270FLIP",
     "CUSTOM",
 };
-
-#ifdef USE_MULTI_GYRO
-static const char * const lookupTableGyro[] = {
-    "FIRST", "SECOND", "BOTH"
-};
-#endif
 
 #ifdef USE_GPS
 static const char * const lookupTableGpsProvider[] = {
@@ -649,6 +649,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
     LOOKUP_TABLE_ENTRY(debugModeNames),
     LOOKUP_TABLE_ENTRY(lookupTablePwmProtocol),
+#ifdef USE_DSHOT_TELEMETRY
+    LOOKUP_TABLE_ENTRY(lookupTableDshotEdt),
+#endif
     LOOKUP_TABLE_ENTRY(lookupTableLowpassType),
     LOOKUP_TABLE_ENTRY(lookupTableDtermLowpassType),
     LOOKUP_TABLE_ENTRY(lookupTableFailsafe),
@@ -679,9 +682,6 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupLedStripFormatRGB),
-#endif
-#ifdef USE_MULTI_GYRO
-    LOOKUP_TABLE_ENTRY(lookupTableGyro),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableThrottleLimitType),
 #if defined(USE_VIDEO_SYSTEM)
@@ -774,9 +774,30 @@ const clivalue_t valueTable[] = {
     { "yaw_spin_threshold",         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { YAW_SPIN_RECOVERY_THRESHOLD_MIN,  YAW_SPIN_RECOVERY_THRESHOLD_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, yaw_spin_threshold) },
 #endif
 
-#ifdef USE_MULTI_GYRO
-    { PARAM_NAME_GYRO_TO_USE,       VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
+#if GYRO_COUNT > 1
+    { PARAM_NAME_GYRO_ENABLE_MASK,  VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, (1 << GYRO_COUNT) - 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+    { "gyro_1_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 0, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+    { "gyro_2_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 1, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
 #endif
+#if GYRO_COUNT > 2
+    { "gyro_3_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 2, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+#endif
+#if GYRO_COUNT > 3
+    { "gyro_4_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 3, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+#endif
+#if GYRO_COUNT > 4
+    { "gyro_5_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 4, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+#endif
+#if GYRO_COUNT > 5
+    { "gyro_6_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 5, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+#endif
+#if GYRO_COUNT > 6
+    { "gyro_7_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 6, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+#endif
+#if GYRO_COUNT > 7
+    { "gyro_8_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 7, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
+#endif // GYRO_COUNT
+
 #if defined(USE_DYN_NOTCH_FILTER)
     { PARAM_NAME_DYN_NOTCH_COUNT,   VAR_UINT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, DYN_NOTCH_COUNT_MAX }, PG_DYN_NOTCH_CONFIG, offsetof(dynNotchConfig_t, dyn_notch_count) },
     { PARAM_NAME_DYN_NOTCH_Q,       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_DYN_NOTCH_CONFIG, offsetof(dynNotchConfig_t, dyn_notch_q) },
@@ -943,7 +964,7 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_DSHOT_TELEMETRY
     { PARAM_NAME_DSHOT_BIDIR,       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, dev.useDshotTelemetry) },
-    { "dshot_edt",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, dev.useDshotEdt) },
+    { "dshot_edt",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DSHOT_EDT }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, dev.useDshotEdt) },
 #endif
 #ifdef USE_DSHOT_BITBANG
     { "dshot_bitbang",               VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON_AUTO }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, dev.useDshotBitbang) },
@@ -1688,7 +1709,7 @@ const clivalue_t valueTable[] = {
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
-#if defined(STM32F4) || defined(STM32G4) || defined(APM32F4)
+#if PLATFORM_TRAIT_CONFIG_HSE
     { "system_hse_mhz",             VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, hseMhz) },
 #endif
     { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, task_statistics) },
@@ -1829,23 +1850,43 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_GYRO_DEVICE_CONFIG
-    { "gyro_1_bustype", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, busType) },
-    { "gyro_1_spibus",  VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, SPIDEV_COUNT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, spiBus) },
-    { "gyro_1_i2cBus",  VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2CDEV_COUNT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, i2cBus) },
-    { "gyro_1_i2c_address", VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, i2cAddress) },
-    { "gyro_1_sensor_align", VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, alignment) },
-    { "gyro_1_align_roll", VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, customAlignment.roll) },
-    { "gyro_1_align_pitch", VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, customAlignment.pitch) },
-    { "gyro_1_align_yaw", VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 0, customAlignment.yaw) },
-#ifdef USE_MULTI_GYRO
-    { "gyro_2_bustype", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, busType) },
-    { "gyro_2_spibus",  VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, SPIDEV_COUNT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, spiBus) },
-    { "gyro_2_i2cBus",  VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2CDEV_COUNT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, i2cBus) },
-    { "gyro_2_i2c_address", VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, i2cAddress) },
-    { "gyro_2_sensor_align", VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, alignment) },
-    { "gyro_2_align_roll", VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, customAlignment.roll) },
-    { "gyro_2_align_pitch", VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, customAlignment.pitch) },
-    { "gyro_2_align_yaw", VAR_INT16  | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, customAlignment.yaw) },
+#define GYRO_DEVICE_RECORDS(N, IDX)                                                \
+    /* bustype  */                                                                 \
+    { "gyro_" STR(N) "_bustype",       VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, busType) },\
+    /* spibus   */                                                                 \
+    { "gyro_" STR(N) "_spibus",        VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, SPIDEV_COUNT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, spiBus) },\
+    /* i2cBus   */                                                                 \
+    { "gyro_" STR(N) "_i2cBus",        VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2CDEV_COUNT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, i2cBus) },\
+    /* i2c addr */                                                                 \
+    { "gyro_" STR(N) "_i2c_address",   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, i2cAddress) },\
+    /* align lookup */                                                             \
+    { "gyro_" STR(N) "_sensor_align", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, alignment) },\
+    /* custom roll/pitch/yaw */                                                    \
+    { "gyro_" STR(N) "_align_roll",   VAR_INT16 | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, customAlignment.roll) },\
+    { "gyro_" STR(N) "_align_pitch",  VAR_INT16 | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, customAlignment.pitch) },\
+    { "gyro_" STR(N) "_align_yaw",    VAR_INT16 | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, customAlignment.yaw) }\
+
+    GYRO_DEVICE_RECORDS(1, 0),
+#if GYRO_COUNT > 1
+    GYRO_DEVICE_RECORDS(2, 1),
+#endif
+#if GYRO_COUNT > 2
+    GYRO_DEVICE_RECORDS(3, 2),
+#endif
+#if GYRO_COUNT > 3
+    GYRO_DEVICE_RECORDS(4, 3),
+#endif
+#if GYRO_COUNT > 4
+    GYRO_DEVICE_RECORDS(5, 4),
+#endif
+#if GYRO_COUNT > 5
+    GYRO_DEVICE_RECORDS(6, 5),
+#endif
+#if GYRO_COUNT > 6
+    GYRO_DEVICE_RECORDS(7, 6),
+#endif
+#if GYRO_COUNT > 7
+    GYRO_DEVICE_RECORDS(8, 7),
 #endif
 #ifdef I2C_FULL_RECONFIGURABILITY
 #ifdef USE_I2C_DEVICE_0
@@ -1870,11 +1911,12 @@ const clivalue_t valueTable[] = {
 #endif
 #endif
 #ifdef USE_MCO
-#ifdef STM32G4
+#if defined(USE_MCO_DEVICE1)
+// TODO: remove pin specific names
     { "mco_on_pa8",     VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MCO_CONFIG, PG_ARRAY_ELEMENT_OFFSET(mcoConfig_t, 0, enabled) },
     { "mco_source",     VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, MCO_SOURCE_COUNT - 1 }, PG_MCO_CONFIG, PG_ARRAY_ELEMENT_OFFSET(mcoConfig_t, 0, source) },
     { "mco_divider",    VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, MCO_DIVIDER_COUNT - 1 }, PG_MCO_CONFIG, PG_ARRAY_ELEMENT_OFFSET(mcoConfig_t, 0, divider) },
-#else
+#elif defined(USE_MCO_DEVICE2)
     { "mco2_on_pc9",    VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MCO_CONFIG, PG_ARRAY_ELEMENT_OFFSET(mcoConfig_t, 1, enabled) },
 #endif
 #endif

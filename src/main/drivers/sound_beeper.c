@@ -34,48 +34,6 @@
 static IO_t beeperIO = DEFIO_IO(NONE);
 static bool beeperInverted = false;
 static uint16_t beeperFrequency = 0;
-
-#ifdef USE_PWM_OUTPUT
-static pwmOutputPort_t beeperPwm;
-static uint16_t freqBeep = 0;
-
-static void pwmWriteBeeper(bool on)
-{
-    if (!beeperPwm.io) {
-        return;
-    }
-
-    if (on) {
-        *beeperPwm.channel.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
-        beeperPwm.enabled = true;
-    } else {
-        *beeperPwm.channel.ccr = 0;
-        beeperPwm.enabled = false;
-    }
-}
-
-static void pwmToggleBeeper(void)
-{
-    pwmWriteBeeper(!beeperPwm.enabled);
-}
-
-static void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
-{
-    const timerHardware_t *timer = timerAllocate(tag, OWNER_BEEPER, 0);
-    IO_t beeperIO = IOGetByTag(tag);
-
-    if (beeperIO && timer) {
-        beeperPwm.io = beeperIO;
-        IOInit(beeperPwm.io, OWNER_BEEPER, 0);
-        IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
-        freqBeep = frequency;
-        pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
-
-        *beeperPwm.channel.ccr = 0;
-        beeperPwm.enabled = false;
-    }
-}
-#endif
 #endif
 
 void systemBeep(bool onoff)

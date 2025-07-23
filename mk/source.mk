@@ -53,7 +53,6 @@ PG_SRC = \
 COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
-            build/debug_pin.c \
             build/version.c \
             main.c \
             common/bitarray.c \
@@ -87,7 +86,6 @@ COMMON_SRC = \
             config/simplified_tuning.c \
             cli/cli.c \
             cli/settings.c \
-            config/config.c \
             drivers/dshot.c \
             drivers/dshot_command.c \
             drivers/buf_writer.c \
@@ -105,7 +103,6 @@ COMMON_SRC = \
             drivers/io.c \
             drivers/io_preinit.c \
             drivers/light_led.c \
-            drivers/mco.c \
             drivers/motor.c \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \
@@ -308,7 +305,6 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/accgyro/accgyro_virtual.c \
-            drivers/accgyro/gyro_sync.c \
             BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
             drivers/barometer/barometer_2smpb_02b.c \
             drivers/barometer/barometer_bmp085.c \
@@ -466,7 +462,6 @@ SPEED_OPTIMISED_SRC += \
             rx/sumd.c \
             rx/xbus.c \
             rx/fport.c \
-            rx/frsky_crc.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \

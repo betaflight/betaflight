@@ -667,7 +667,7 @@ FAST_CODE void scheduler(void)
                         minGyroPeriod = gyroCyclesNow;
                     }
                     // Crude detection of missed cycles caused by configurator traffic
-                    if ((gyroCyclesNow > maxGyroPeriod) && (gyroCyclesNow < (1.5 * minGyroPeriod))) {
+                    if ((gyroCyclesNow > maxGyroPeriod) && (gyroCyclesNow < minGyroPeriod + minGyroPeriod / 2)) {  // 1.5 * minGyroPeriod
                         maxGyroPeriod = gyroCyclesNow;
                     }
                 }
