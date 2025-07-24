@@ -61,8 +61,8 @@
 
 #define QMC5883L_OSR_512 (0x00 << 6)
 #define QMC5883L_OSR_256 (0x01 << 6)
-#define QMC5883L_OSR_128 (0x10 << 6)
-#define QMC5883L_OSR_64  (0x11 << 6)
+#define QMC5883L_OSR_128 (0x02 << 6)
+#define QMC5883L_OSR_64  (0x03 << 6)
 
 #define QMC5883L_RST 0x80
 
