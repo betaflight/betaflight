@@ -935,7 +935,7 @@
 
 // TIMx_CHy request table
 
-// This is not defined in stm32g7xx_hal_timer.h
+// This is not defined in stm32g4xx_hal_timer.h
 #define DMA_REQUEST_NONE 255
 
 #define DEF_TIM_DMA_REQ__BTCH_TIM1_CH1    DMA_REQUEST_TIM1_CH1
