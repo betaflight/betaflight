@@ -166,6 +166,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     REQMAP_TIM(TIM4, CH1),
     REQMAP_TIM(TIM4, CH2),
     REQMAP_TIM(TIM4, CH3),
+    REQMAP_TIM(TIM4, CH4),
     REQMAP_TIM(TIM5, CH1),
     REQMAP_TIM(TIM5, CH2),
     REQMAP_TIM(TIM5, CH3),
