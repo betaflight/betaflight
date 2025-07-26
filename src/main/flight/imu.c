@@ -129,6 +129,11 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .att_use_quicksilver = 1,
 );
 
+static float invSqrt(float x)
+{
+    return 1.0f / sqrtf(x);
+}
+
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
 {
     quatProd->ww = quat->w * quat->w;
@@ -163,6 +168,54 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat.m[1][0] = -2.0f * (qP.xy - -qP.wz);
     rMat.m[2][0] = -2.0f * (qP.xz + -qP.wy);
 #endif
+}
+
+void imuQuaternionFromRotationMatrix(void)
+{
+    // The trace of the rotation matrix (sum of diagonal elements)
+    float trace = rMat.m[0][0] + rMat.m[1][1] + rMat.m[2][2];
+
+    // Check the trace to determine the best calculation path for numerical stability
+    if (trace > 0.0f) {
+        // Case 1: Trace is positive, most common and numerically stable
+        float S = sqrtf(trace + 1.0f) * 2.0f; // S = 4*qw
+        float invertS = 1.0f / S;
+        q.w = 0.25f * S;
+        q.x = (rMat.m[2][1] - rMat.m[1][2]) * invertS;
+        q.y = (rMat.m[0][2] - rMat.m[2][0]) * invertS;
+        q.z = (rMat.m[1][0] - rMat.m[0][1]) * invertS;
+    } else if ((rMat.m[0][0] > rMat.m[1][1]) && (rMat.m[0][0] > rMat.m[2][2])) {
+        // Case 2: m[0][0] is the largest diagonal element
+        float S = sqrtf(1.0f + rMat.m[0][0] - rMat.m[1][1] - rMat.m[2][2]) * 2.0f; // S = 4*qx
+        float invertS = 1.0f / S;
+        q.w = (rMat.m[2][1] - rMat.m[1][2]) * invertS;
+        q.x = 0.25f * S;
+        q.y = (rMat.m[0][1] + rMat.m[1][0]) * invertS;
+        q.z = (rMat.m[0][2] + rMat.m[2][0]) * invertS;
+    } else if (rMat.m[1][1] > rMat.m[2][2]) {
+        // Case 3: m[1][1] is the largest diagonal element
+        float S = sqrtf(1.0f + rMat.m[1][1] - rMat.m[0][0] - rMat.m[2][2]) * 2.0f; // S = 4*qy
+        float invertS = 1.0f / S;
+        q.w = (rMat.m[0][2] - rMat.m[2][0]) * invertS;
+        q.x = (rMat.m[0][1] + rMat.m[1][0]) * invertS;
+        q.y = 0.25f * S;
+        q.z = (rMat.m[1][2] + rMat.m[2][1]) * invertS;
+    } else {
+        // Case 4: m[2][2] is the largest diagonal element (or all are negative/equal)
+        float S = sqrtf(1.0f + rMat.m[2][2] - rMat.m[0][0] - rMat.m[1][1]) * 2.0f; // S = 4*qz
+        float invertS = 1.0f / S;
+        q.w = (rMat.m[1][0] - rMat.m[0][1]) * invertS;
+        q.x = (rMat.m[0][2] + rMat.m[2][0]) * invertS;
+        q.y = (rMat.m[1][2] + rMat.m[2][1]) * invertS;
+        q.z = 0.25f * S;
+    }
+
+    // Ensure the quaternion is normalized (this is good practice even if formulas usually produce unit quats)
+    float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
+    q.w *= recipNorm;
+    q.x *= recipNorm;
+    q.y *= recipNorm;
+    q.z *= recipNorm;
 }
 
 static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
@@ -200,11 +253,6 @@ void imuInit(void)
 }
 
 #if defined(USE_ACC)
-static float invSqrt(float x)
-{
-    return 1.0f / sqrtf(x);
-}
-
 // g[xyz] - gyro reading, in rad/s
 // useAcc, a[xyz] - accelerometer reading, direction only, normalized internally
 // headingErrMag - heading error (in earth frame) derived from magnetometter, rad/s around Z axis (* dcmKpGain)
@@ -255,9 +303,6 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
         gx = -gx - gyro_dot_grav * rMat.m[Z][X];
         gy = -gy - gyro_dot_grav * rMat.m[Z][Y];
         gz = -gz - gyro_dot_grav * rMat.m[Z][Z];
-//        gx = 0.0f;
-//        gy = 0.0f;
-//        gz = 0.0f;
 
         // rotate the gravity vector by the gyro
         rMat.m[Z][0] =  rMat.m[Z][X] - rMat.m[Z][Y] * gyroRot[Z] + rMat.m[Z][Z] * gyroRot[Y];
@@ -278,13 +323,13 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
             rMat.m[Z][0] = rMat.m[Z][0] * fusionK + ax * (1 - fusionK);
             rMat.m[Z][1] = rMat.m[Z][1] * fusionK + ay * (1 - fusionK);
             rMat.m[Z][2] = rMat.m[Z][2] * fusionK + az * (1 - fusionK);
+        }
 
-            // heal the acc vector after this fusion
-            float recipGravNorm = invSqrt(sq(rMat.m[Z][0]) + sq(rMat.m[Z][1]) + sq(rMat.m[Z][2]));
+        // heal the acc vector after this fusion
+        float recipGravNorm = invSqrt(sq(rMat.m[Z][0]) + sq(rMat.m[Z][1]) + sq(rMat.m[Z][2]));
 
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
-                rMat.m[Z][axis] *= recipGravNorm;
-            }
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
+            rMat.m[Z][axis] *= recipGravNorm;
         }
     } else if (useAcc) {
         // Error is sum of cross product between estimated direction and measured direction of gravity
@@ -329,14 +374,38 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
         // Apply small-angle rotation to rows 0 and 1 only
         // (Skip row 2 since QuickSilver already updated rMat.m[Z])
 
-        rMat.m[0][0] = rMat_temp[0][0] - rMat_temp[0][1] * gz + rMat_temp[0][2] * gy;
-        rMat.m[0][1] = rMat_temp[0][0] * gz + rMat_temp[0][1] - rMat_temp[0][2] * gx;
-        rMat.m[0][2] = -rMat_temp[0][0] * gy + rMat_temp[0][1] * gx + rMat_temp[0][2];
+        rMat.m[X][0] = rMat_temp[0][0] - rMat_temp[0][1] * gz + rMat_temp[0][2] * gy;
+        rMat.m[X][1] = rMat_temp[0][0] * gz + rMat_temp[0][1] - rMat_temp[0][2] * gx;
+        rMat.m[X][2] = -rMat_temp[0][0] * gy + rMat_temp[0][1] * gx + rMat_temp[0][2];
 
-        rMat.m[1][0] = rMat_temp[1][0] - rMat_temp[1][1] * gz + rMat_temp[1][2] * gy;
-        rMat.m[1][1] = rMat_temp[1][0] * gz + rMat_temp[1][1] - rMat_temp[1][2] * gx;
-        rMat.m[1][2] = -rMat_temp[1][0] * gy + rMat_temp[1][1] * gx + rMat_temp[1][2];
-        // TODO reconvert this back into a quaternion as other code uses quaternions
+        // After updating rMat.m[X]
+        // Ensure orthogonality and normalize
+        // Derive rMat.m[0] and rMat.m[1] from rMat.m[2] and each other
+
+        // Assuming rMat.m[Z] (row 2) is the most accurate after QuickSilver fusion
+        // Make rMat.m[X] (row 0) orthogonal to rMat.m[Z]
+        float dot_product_XZ = rMat.m[X][0] * rMat.m[Z][0] + rMat.m[X][1] * rMat.m[Z][1] + rMat.m[X][2] * rMat.m[Z][2];
+        for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
+            rMat.m[X][i] -= dot_product_XZ * rMat.m[Z][i];
+        }
+        // Normalize rMat.m[X]
+        float recipNormX = invSqrt(sq(rMat.m[X][0]) + sq(rMat.m[X][1]) + sq(rMat.m[X][2]));
+        for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
+            rMat.m[X][i] *= recipNormX;
+        }
+
+        // Re-derive rMat.m[Y] (row 1) as the cross product of rMat.m[Z] and rMat.m[X]
+        rMat.m[Y][0] = rMat.m[Z][1] * rMat.m[X][2] - rMat.m[Z][2] * rMat.m[X][1];
+        rMat.m[Y][1] = rMat.m[Z][2] * rMat.m[X][0] - rMat.m[Z][0] * rMat.m[X][2];
+        rMat.m[Y][2] = rMat.m[Z][0] * rMat.m[X][1] - rMat.m[Z][1] * rMat.m[X][0];
+
+        // Normalize rMat.m[Y] (though cross product of two orthonormal vectors should be orthonormal)
+        float recipNormY = invSqrt(sq(rMat.m[Y][0]) + sq(rMat.m[Y][1]) + sq(rMat.m[Y][2]));
+        for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
+            rMat.m[Y][i] *= recipNormY;
+        }
+
+        imuQuaternionFromRotationMatrix();
     } else {
         // Integrate rate of change of quaternion
         gx *= (0.5f * dt);
