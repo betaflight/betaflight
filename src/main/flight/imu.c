@@ -360,9 +360,9 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     gz += dcmKpGain * ez + integralFBz;
 
     if (imuConfig()->att_use_quicksilver) {
-        gx *= dt;  // Remove the 0.5f since that's quaternion-specific
-        gy *= dt;
-        gz *= dt;
+        gx *= 0.5f * dt;
+        gy *= 0.5f * dt;
+        gz *= 0.5f * dt;
 
         // Store the current rotation matrix (only need rows 0 and 1)
         float rMat_temp[2][3];
