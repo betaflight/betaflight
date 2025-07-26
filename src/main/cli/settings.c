@@ -1177,7 +1177,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_MAG
     { PARAM_NAME_IMU_MAG_DECLINATION, VAR_INT16 | MASTER_VALUE, .config.minmax = { -IMU_MAG_DECLINATION_MAX, IMU_MAG_DECLINATION_MAX }, PG_IMU_CONFIG, offsetof(imuConfig_t, mag_declination) },
 #endif
-    { "att_use_quicksilver", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_IMU_CONFIG, offsetof(imuConfig_t, att_use_quicksilver) },
+    { "att_use_quicksilver",          VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0,     2 }, PG_IMU_CONFIG, offsetof(imuConfig_t, att_use_quicksilver) },
 
 // PG_ARMING_CONFIG
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, AUTO_DISARM_DELAY_MAX }, PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay) },
