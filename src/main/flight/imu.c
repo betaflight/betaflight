@@ -112,10 +112,6 @@ quaternion_t offset = QUATERNION_INITIALIZE;
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 quaternion_t imuAttitudeQuaternion = QUATERNION_INITIALIZE;
 
-// QS attitude filters
-pt1Filter_t accFilterPass1[XYZ_AXIS_COUNT];
-pt1Filter_t accFilterPass2[XYZ_AXIS_COUNT];
-
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 
 #ifdef USE_RACE_PRO
@@ -130,7 +126,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
     .mag_declination = 0,
-    .att_use_quicksilver = 0,
+    .att_use_quicksilver = 1,
 );
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
@@ -189,11 +185,6 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 
     throttleAngleValue = throttle_correction_value;
-
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        pt1FilterInit(&accFilterPass1[axis], pt1FilterGain(10.0f, 1.0f / 250.0f));
-        pt1FilterInit(&accFilterPass2[axis], pt1FilterGain(10.0f, 1.0f / 250.0f));
-    }
 }
 
 void imuInit(void)
@@ -240,63 +231,47 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     DEBUG_SET(DEBUG_ATTITUDE, 3, (headingErrCog * 100));
     DEBUG_SET(DEBUG_ATTITUDE, 7, lrintf(dcmKpGain * 100.0f));
 
+    if (useAcc) {
+            float recipAccNorm = sq(ax) + sq(ay) + sq(az);
+            // Normalise accelerometer measurement; useAcc is true when all smoothed acc axes are within 20% of 1G
+            recipAccNorm = invSqrt(recipAccNorm);
+
+            ax *= recipAccNorm;
+            ay *= recipAccNorm;
+            az *= recipAccNorm;
+    }
+
     if (imuConfig()->att_use_quicksilver) {
         // rMat.m[Z] is the gravity vector, which is what the QS method is calculating.
 
         // rotate the vector via the gyro
-        float gyroRot[XYZ_AXIS_COUNT] = {-gy * dt, gx * dt, gz * dt};
+        float gyroRot[XYZ_AXIS_COUNT] = {-gx * dt, -gy * dt, -gz * dt};
 
         // grab just the heading portion of the gyro
         // this will be used later
         // the mahony filter will just handle the heading
         // QS portion handles the pitch/roll attitudes
         float gyro_dot_grav = gx * rMat.m[Z][X] + gy * rMat.m[Z][Y] + gz * rMat.m[Z][Z];
-        gx = gx - gyro_dot_grav * rMat.m[Z][X];
-        gy = gy - gyro_dot_grav * rMat.m[Z][Y];
-        gz = gz - gyro_dot_grav * rMat.m[Z][Z];
-
+        gx = -gx - gyro_dot_grav * rMat.m[Z][X];
+        gy = -gy - gyro_dot_grav * rMat.m[Z][Y];
+        gz = -gz - gyro_dot_grav * rMat.m[Z][Z];
+//        gx = 0.0f;
+//        gy = 0.0f;
+//        gz = 0.0f;
 
         // rotate the gravity vector by the gyro
         rMat.m[Z][0] =  rMat.m[Z][X] - rMat.m[Z][Y] * gyroRot[Z] + rMat.m[Z][Z] * gyroRot[Y];
         rMat.m[Z][1] =  rMat.m[Z][X] * gyroRot[Z] + rMat.m[Z][Y] - rMat.m[Z][Z] * gyroRot[X];
         rMat.m[Z][2] = -rMat.m[Z][X] * gyroRot[Y] + rMat.m[Z][Y] * gyroRot[X] + rMat.m[Z][Z];
 
-        ax *= acc.dev.acc_1G_rec;
-        ay *= acc.dev.acc_1G_rec;
-        az *= acc.dev.acc_1G_rec;
-
-        float pt1_k = pt1FilterGain(10.0f, dt);
-
-        pt1FilterUpdateCutoff(&accFilterPass1[0], pt1_k);
-        ax = pt1FilterApply(&accFilterPass1[0], ax);
-        pt1FilterUpdateCutoff(&accFilterPass1[1], pt1_k);
-        ay = pt1FilterApply(&accFilterPass1[1], ay);
-        pt1FilterUpdateCutoff(&accFilterPass1[2], pt1_k);
-        az = pt1FilterApply(&accFilterPass1[2], az);
-
-        pt1FilterUpdateCutoff(&accFilterPass2[0], pt1_k);
-        ax = pt1FilterApply(&accFilterPass2[0], ax);
-        pt1FilterUpdateCutoff(&accFilterPass2[1], pt1_k);
-        ay = pt1FilterApply(&accFilterPass2[1], ay);
-        pt1FilterUpdateCutoff(&accFilterPass2[2], pt1_k);
-        az = pt1FilterApply(&accFilterPass2[2], az);
-
-        float accMagSq = sq(ax) + sq(ay) + sq(az);
-        if ((0.7f * 0.7f < accMagSq) && (accMagSq < 1.3f * 1.3f)) {
-            // Normalize accelerometer vector
-            float recipAccNorm = invSqrt(accMagSq);
-            ax *= recipAccNorm;
-            ay *= recipAccNorm;
-            az *= recipAccNorm;
-
-
+        if (useAcc) {
             float fusionK = 1.0f;
             if (ARMING_FLAG(ARMED)) {
                 // special QuickSilver equation
-                float filterTime = 0.6f;
+                float filterTime = 6.0f;
                 fusionK = constrainf(1.0f - (6.0f * dt) / (3.0f * dt + filterTime), 0.0f, 1.0f);
             } else {
-                float filterTime = 0.15f;
+                float filterTime = 6.0f;
                 fusionK = constrainf(1.0f - (6.0f * dt) / (3.0f * dt + filterTime), 0.0f, 1.0f);
             }
 
@@ -312,14 +287,6 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
             }
         }
     } else if (useAcc) {
-        float recipAccNorm = sq(ax) + sq(ay) + sq(az);
-        // Normalise accelerometer measurement; useAcc is true when all smoothed acc axes are within 20% of 1G
-        recipAccNorm = invSqrt(recipAccNorm);
-
-        ax *= recipAccNorm;
-        ay *= recipAccNorm;
-        az *= recipAccNorm;
-
         // Error is sum of cross product between estimated direction and measured direction of gravity
         ex += (ay * rMat.m[2][2] - az * rMat.m[2][1]);
         ey += (az * rMat.m[2][0] - ax * rMat.m[2][2]);
@@ -369,33 +336,33 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
         rMat.m[1][0] = rMat_temp[1][0] - rMat_temp[1][1] * gz + rMat_temp[1][2] * gy;
         rMat.m[1][1] = rMat_temp[1][0] * gz + rMat_temp[1][1] - rMat_temp[1][2] * gx;
         rMat.m[1][2] = -rMat_temp[1][0] * gy + rMat_temp[1][1] * gx + rMat_temp[1][2];
+        // TODO reconvert this back into a quaternion as other code uses quaternions
     } else {
+        // Integrate rate of change of quaternion
+        gx *= (0.5f * dt);
+        gy *= (0.5f * dt);
+        gz *= (0.5f * dt);
 
-    // Integrate rate of change of quaternion
-    gx *= (0.5f * dt);
-    gy *= (0.5f * dt);
-    gz *= (0.5f * dt);
+        quaternion_t buffer;
+        buffer.w = q.w;
+        buffer.x = q.x;
+        buffer.y = q.y;
+        buffer.z = q.z;
 
-    quaternion_t buffer;
-    buffer.w = q.w;
-    buffer.x = q.x;
-    buffer.y = q.y;
-    buffer.z = q.z;
+        q.w += (-buffer.x * gx - buffer.y * gy - buffer.z * gz);
+        q.x += (+buffer.w * gx + buffer.y * gz - buffer.z * gy);
+        q.y += (+buffer.w * gy - buffer.x * gz + buffer.z * gx);
+        q.z += (+buffer.w * gz + buffer.x * gy - buffer.y * gx);
 
-    q.w += (-buffer.x * gx - buffer.y * gy - buffer.z * gz);
-    q.x += (+buffer.w * gx + buffer.y * gz - buffer.z * gy);
-    q.y += (+buffer.w * gy - buffer.x * gz + buffer.z * gx);
-    q.z += (+buffer.w * gz + buffer.x * gy - buffer.y * gx);
+        // Normalise quaternion
+        float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
+        q.w *= recipNorm;
+        q.x *= recipNorm;
+        q.y *= recipNorm;
+        q.z *= recipNorm;
 
-    // Normalise quaternion
-    float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
-    q.w *= recipNorm;
-    q.x *= recipNorm;
-    q.y *= recipNorm;
-    q.z *= recipNorm;
-
-    // Pre-compute rotation matrix from quaternion
-    imuComputeRotationMatrix();
+        // Pre-compute rotation matrix from quaternion
+        imuComputeRotationMatrix();
     }
 
     attitudeIsEstablished = true;
@@ -426,8 +393,11 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 
 static bool imuIsAccelerometerHealthy(void)
 {
-    // Accept accel readings only in range 0.9g - 1.1g
-    return (0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
+    if (imuConfig()->att_use_quicksilver) {
+        return (0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
+    } else {
+        return (0.7f < acc.accMagnitude) && (acc.accMagnitude < 1.3f);
+    }
 }
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, i.e., the default value
