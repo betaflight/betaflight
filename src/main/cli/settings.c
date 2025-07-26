@@ -1164,8 +1164,9 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_IMU_SMALL_ANGLE,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,   180 }, PG_IMU_CONFIG, offsetof(imuConfig_t, small_angle) },
     { PARAM_NAME_IMU_PROCESS_DENOM,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1,     4 }, PG_IMU_CONFIG, offsetof(imuConfig_t, imu_process_denom) },
 #ifdef USE_MAG
-    { PARAM_NAME_IMU_MAG_DECLINATION, VAR_INT16 | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_IMU_CONFIG, offsetof(imuConfig_t, mag_declination) },
+    { PARAM_NAME_IMU_MAG_DECLINATION, VAR_INT16 | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_IMU_CONFIG, offsetof(imuConfig_t, att_use_quicksilver) },
 #endif
+    { "att_use_quicksilver", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_IMU_CONFIG, offsetof(imuConfig_t, att_use_quicksilver) },
 
 // PG_ARMING_CONFIG
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 60 }, PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay) },

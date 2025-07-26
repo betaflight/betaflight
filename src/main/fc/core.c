@@ -1115,7 +1115,7 @@ void processRxModes(timeUs_t currentTimeUs)
         rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / (float)imuConfig()->imu_process_denom));
     } else {
         LED1_OFF;
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
+        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(250));
     }
 
     if (!IS_RC_MODE_ACTIVE(BOXPREARM) && ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
