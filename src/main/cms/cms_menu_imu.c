@@ -51,6 +51,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "flight/imu.h"
 
 #include "pg/pg.h"
 
@@ -549,6 +550,7 @@ static uint16_t cmsx_tpa_breakpoint;
 static int8_t cmsx_tpa_low_rate;
 static uint16_t cmsx_tpa_low_breakpoint;
 static uint8_t cmsx_tpa_low_always;
+static uint8_t cmsx_att_use_quicksilver;
 
 static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 {
@@ -605,6 +607,8 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     cmsx_tpa_low_breakpoint = pidProfile->tpa_low_breakpoint;
     cmsx_tpa_low_always = pidProfile->tpa_low_always;
     cmsx_landing_disarm_threshold = pidProfile->landing_disarm_threshold;
+    cmsx_att_use_quicksilver = imuConfig()->att_use_quicksilver;
+
     return NULL;
 }
 
@@ -663,6 +667,7 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->tpa_low_breakpoint = cmsx_tpa_low_breakpoint;
     pidProfile->tpa_low_always = cmsx_tpa_low_always;
     pidProfile->landing_disarm_threshold = cmsx_landing_disarm_threshold;
+    imuConfigMutable()->att_use_quicksilver = cmsx_att_use_quicksilver;
 
     initEscEndpoints();
     return NULL;
@@ -724,6 +729,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "TPA LOW BRKPT", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_low_breakpoint, 1000, 2000, 10} },
     { "TPA LOW ALWYS", OME_Bool,   NULL, &cmsx_tpa_low_always },
     { "EZDISARM THR",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_landing_disarm_threshold, 0, 150, 1} },
+    { "ATT USE QS",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_att_use_quicksilver, 0, 2, 1} },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

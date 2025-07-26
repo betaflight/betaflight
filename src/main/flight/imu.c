@@ -126,7 +126,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
     .mag_declination = 0,
-    .att_use_quicksilver = 1,
+    .att_use_quicksilver = 2,
 );
 
 static float invSqrt(float x)
@@ -463,7 +463,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 
 static bool imuIsAccelerometerHealthy(void)
 {
-    if (imuConfig()->att_use_quicksilver) {
+    if (imuConfig()->att_use_quicksilver == 1) {
         return (0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
     } else {
         return (0.7f < acc.accMagnitude) && (acc.accMagnitude < 1.3f);
