@@ -312,11 +312,12 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
         if (useAcc) {
             float fusionK = 1.0f;
             if (ARMING_FLAG(ARMED)) {
-                // special QuickSilver equation
+                // special k value QuickSilver equation
                 float filterTime = 6.0f;
                 fusionK = constrainf(1.0f - (6.0f * dt) / (3.0f * dt + filterTime), 0.0f, 1.0f);
             } else {
-                float filterTime = 6.0f;
+                // filter faster while disarmed
+                float filterTime = 0.15f;
                 fusionK = constrainf(1.0f - (6.0f * dt) / (3.0f * dt + filterTime), 0.0f, 1.0f);
             }
 
