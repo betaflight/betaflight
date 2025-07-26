@@ -428,6 +428,10 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType} },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
 
+    { "TAU CEN",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rc_smoothing_setpoint_tau_center,           0,  255,  1} },
+    { "TAU END",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rc_smoothing_setpoint_tau_end,          0,  255,  1} },
+    { "TAU THROTTLE",OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rc_smoothing_throttle_tau,         0,  255,  1} },
+
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
 };
