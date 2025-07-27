@@ -79,6 +79,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 float getSinPitchAngle(void);
 float getCosTiltAngle(void);
+float *getGravityVector(void);
 void getQuaternion(quaternion_t * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 

@@ -68,6 +68,7 @@ typedef enum {
     LEVEL_MODE_OFF = 0,
     LEVEL_MODE_R,
     LEVEL_MODE_RP,
+    LEVEL_MODE_QS,
 } levelMode_e;
 
 const char pidNames[] =
@@ -267,6 +268,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+        .angle_smoothing_cut = 100,
+        .qs_level_mode = 1,
     );
 }
 
@@ -606,7 +609,6 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     pidRuntime.angleTarget[axis] = angleTarget;  // set target for alternate axis to current axis, for use in preceding calculation
 
     // smooth final angle rate output to clean up attitude signal steps (500hz), GPS steps (10 or 100hz), RC steps etc
-    // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
     angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
 
     if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | POS_HOLD_MODE)) {
@@ -1108,6 +1110,146 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 #endif // USE_WING
 }
 
+// finds the 3d cross product between the attitude_setpoint and the measured gravity_vector
+void attitudeError(float *attitude_setpoint, float *gravity_vector, float *error) {
+    float temp_error[XYZ_AXIS_COUNT];
+    temp_error[0] = gravity_vector[FD_YAW] * attitude_setpoint[FD_PITCH] - gravity_vector[FD_PITCH] * attitude_setpoint[FD_YAW];
+    temp_error[1] = -gravity_vector[FD_YAW] * attitude_setpoint[FD_ROLL] + gravity_vector[FD_ROLL] * attitude_setpoint[FD_YAW];
+    temp_error[2] = gravity_vector[FD_PITCH] * attitude_setpoint[FD_ROLL] - gravity_vector[FD_ROLL] * attitude_setpoint[FD_PITCH];
+
+    float dot_product = gravity_vector[FD_ROLL] * attitude_setpoint[FD_ROLL] + gravity_vector[FD_PITCH] * attitude_setpoint[FD_PITCH] + gravity_vector[FD_YAW] * attitude_setpoint[FD_YAW];
+
+    // if the dot product is negative our error is greater than 90 degrees
+    // increase correction on the more wrong axis and correct to upside down on the other
+    // aka if pitch was 130 deg and roll was 5, rather than flipping over on roll axis, make roll 0 deg and push hard on pitch
+    if (dot_product < 0.0f) {
+        float x = fabsf(temp_error[0]);
+        float y = fabsf(temp_error[1]);
+
+        if (x > y) {
+            float sign_x = signf(temp_error[0]);
+            error[0] = 2.0f * sign_x - temp_error[0];
+            error[1] = -temp_error[1];
+            error[2] = temp_error[2];
+        } else {
+            float sign_y = signf(temp_error[1]);
+            error[0] = -temp_error[0];
+            error[1] = 2.0f * sign_y - temp_error[1];
+            error[2] = temp_error[2];
+        }
+    } else {
+        error[0] = temp_error[0];
+        error[1] = temp_error[1];
+        error[2] = temp_error[2];
+  }
+}
+
+// attitude pid controller ported from QS and modified by QuickFlash
+FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, float *currentPidSetpoint, float horizonLevelStrength)
+{
+    float *originalPidSetpoint = currentPidSetpoint;
+
+    // We now use Acro Rates, transformed into the range +/- angle limit in radians, to provide setpoints
+    float angleLimit = DEGREES_TO_RADIANS(pidProfile->angle_limit);
+
+    float roll_angle_rad = 0.0f;
+    float pitch_angle_rad = 0.0f;
+
+    #ifdef USE_WING
+        pitch_angle_rad += DECIDEGREES_TO_RADIANS((float)pidProfile->angle_pitch_offset);
+    #endif // USE_WING
+
+    #ifdef USE_GPS_RESCUE
+        roll_angle_rad += DEGREES_TO_RADIANS(gpsRescueAngle[FD_ROLL] / 100.0f); // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
+        pitch_angle_rad += DEGREES_TO_RADIANS(gpsRescueAngle[FD_PITCH] / 100.0f); // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
+    #endif
+    #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
+        if (FLIGHT_MODE(POS_HOLD_MODE)) {
+            if (isAutopilotInControl()) {
+                // sticks are not deflected
+                roll_angle_rad = DEGREES_TO_RADIANS(autopilotAngle[FD_ROLL]); // autopilotAngle in degrees
+                pitch_angle_rad = DEGREES_TO_RADIANS(autopilotAngle[FD_PITCH]);
+                angleLimit = DEGREES_TO_RADIANS(85.0f); // allow autopilot to use whatever angle it needs to stop
+            } else {
+                // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
+                angleLimit = DEGREES_TO_RADIANS(fminf(0.5f * autopilotConfig()->maxAngle, angleLimit));
+            }
+        }
+    #endif
+
+    roll_angle_rad += DEGREES_TO_RADIANS(angleLimit * currentPidSetpoint[FD_ROLL] / getMaxRcRate(FD_ROLL));
+    pitch_angle_rad += DEGREES_TO_RADIANS(angleLimit * currentPidSetpoint[FD_PITCH] / getMaxRcRate(FD_PITCH));
+
+    roll_angle_rad = constrainf(roll_angle_rad, -angleLimit, angleLimit);
+    pitch_angle_rad = constrainf(pitch_angle_rad, -angleLimit, angleLimit);
+
+    float vector_roll = sin_approx(roll_angle_rad);
+    float vector_pitch = sin_approx(pitch_angle_rad);
+
+    float vector_z = cos_approx(roll_angle_rad) * cos_approx(pitch_angle_rad);
+
+    float magnitude = vector_roll * vector_roll + vector_pitch * vector_pitch;
+    float scaler = 1.0f;
+    if (magnitude != 0.0f) {
+        scaler = 1.0f / sqrtf(magnitude / (1.0f - vector_z * vector_z));
+    }
+
+    float vector_x = -vector_pitch * scaler;
+    float vector_y = vector_roll * scaler;
+
+    float attitude_setpoint[XYZ_AXIS_COUNT];
+    attitude_setpoint[FD_ROLL] = vector_x;
+    attitude_setpoint[FD_PITCH] = vector_y;
+    attitude_setpoint[FD_YAW] = vector_z;
+
+    float error_vector[XYZ_AXIS_COUNT];
+    float *gravity_vector = getGravityVector();
+    attitudeError(attitude_setpoint, gravity_vector, error_vector);
+
+    float yaw_setpoint = currentPidSetpoint[FD_YAW];
+
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        float error = error_vector[axis];
+
+        float pterm = pidRuntime.angleGain * error;
+
+//        // TODO calculate Dterm which is the derivative of error (faster) or the negative derivative of gyro (smoother) times a scaler
+//        float derivative = error_vector[axis] - previous_error_or_measurement[axis];
+//        // only keep one previous_error_or_measurement, remove the one you are not using
+//        pid->previous_error_or_measurement[axis] = gravity_vector[axis];
+//        pid->previous_error_or_measurement[axis] = error;
+//
+//        float dterm = pid->kd * derivative;
+
+        // pidsum is the addition of all the pid terms
+//        float pidsum = pterm + dterm;
+        float pidsum = pterm;
+        currentPidSetpoint[axis] = pidsum; // attitude pid pidsum becomes the setpoint into to the rate pid controller
+    }
+
+    // smooth final angle rate output to clean up attitude signal steps (500hz), GPS steps (10 or 100hz), RC steps etc
+    // don't smooth the addition from the yaw setpoint, this does not need filtering
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        currentPidSetpoint[axis] = pt3FilterApply(&pidRuntime.attitudeFilter[axis], currentPidSetpoint[axis]);
+    }
+
+    // this is how we add yaw rotation
+    currentPidSetpoint[FD_ROLL] += gravity_vector[FD_ROLL] * yaw_setpoint;
+    currentPidSetpoint[FD_PITCH] += gravity_vector[FD_PITCH] * yaw_setpoint;
+    currentPidSetpoint[FD_YAW] += gravity_vector[FD_YAW] * yaw_setpoint;
+
+    if (!(FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | POS_HOLD_MODE))) {
+        // can only be HORIZON mode - crossfade Angle rate and Acro rate
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            currentPidSetpoint[axis] = originalPidSetpoint[axis] * (1.0f - horizonLevelStrength) + currentPidSetpoint[axis] * horizonLevelStrength;
+        }
+    }
+
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        currentPidSetpoint[axis] = RADIANS_TO_DEGREES(currentPidSetpoint[axis]);
+    }
+}
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
@@ -1139,7 +1281,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 ;
     levelMode_e levelMode;
     if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
-        if (pidRuntime.levelRaceMode && !isExternalAngleModeRequest) {
+        if (pidProfile->qs_level_mode) {
+            levelMode = LEVEL_MODE_QS;
+        } else if (pidRuntime.levelRaceMode && !isExternalAngleModeRequest) {
             levelMode = LEVEL_MODE_R;
         } else {
             levelMode = LEVEL_MODE_RP;
@@ -1240,6 +1384,22 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #endif // USE_CHIRP
 
+    float currentPidSetpoints[XYZ_AXIS_COUNT] = { getSetpointRate(FD_ROLL), getSetpointRate(FD_PITCH), getSetpointRate(FD_YAW) };
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        if (pidRuntime.maxVelocity[axis]) {
+            currentPidSetpoints[axis] = accelerationLimit(axis, currentPidSetpoints[axis]);
+        }
+    }
+
+    // attitude QS PID controller
+    if (levelMode == LEVEL_MODE_QS) {
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            pidRuntime.axisInAngleMode[axis] = true;
+        }
+        // this will do all the modification of setpoint
+        pidQuickSilverAttitude(pidProfile, currentPidSetpoints, horizonLevelStrength);
+    }
+
     // ----------PID controller----------
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
@@ -1249,33 +1409,32 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             currentChirp = pidRuntime.chirpAmplitude[axis] * chirpFiltered;
         }
 #endif // USE_CHIRP
+        float currentPidSetpoint = currentPidSetpoints[axis];
 
-        float currentPidSetpoint = getSetpointRate(axis);
-        if (pidRuntime.maxVelocity[axis]) {
-            currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
-        }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
 #if defined(USE_ACC)
-        pidRuntime.axisInAngleMode[axis] = false;
-        if (axis < FD_YAW) {
-            if (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && axis == FD_ROLL)) {
-                pidRuntime.axisInAngleMode[axis] = true;
-                currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength);
-            }
-        } else { // yaw axis only
-            if (levelMode == LEVEL_MODE_RP) {
-                // if earth referencing is requested, attenuate yaw axis setpoint when pitched or rolled
-                // and send yawSetpoint to Angle code to modulate pitch and roll
-                // code cost is 107 cycles when earthRef enabled, 20 otherwise, nearly all in cos_approx
-                const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
-                if (earthRefGain) {
-                    pidRuntime.angleYawSetpoint = currentPidSetpoint;
-                    float maxAngleTargetAbs = earthRefGain * fmaxf( fabsf(pidRuntime.angleTarget[FD_ROLL]), fabsf(pidRuntime.angleTarget[FD_PITCH]) );
-                    maxAngleTargetAbs *= (FLIGHT_MODE(HORIZON_MODE)) ? horizonLevelStrength : 1.0f;
-                    // reduce compensation whenever Horizon uses less levelling
-                    currentPidSetpoint *= cos_approx(DEGREES_TO_RADIANS(maxAngleTargetAbs));
-                    DEBUG_SET(DEBUG_ANGLE_TARGET, 2, currentPidSetpoint); // yaw setpoint after attenuation
+        if (levelMode != LEVEL_MODE_QS) {
+            pidRuntime.axisInAngleMode[axis] = false;
+            if (axis < FD_YAW) {
+                if (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && axis == FD_ROLL)) {
+                    pidRuntime.axisInAngleMode[axis] = true;
+                    currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength);
+                }
+            } else { // yaw axis only
+                if (levelMode == LEVEL_MODE_RP) {
+                    // if earth referencing is requested, attenuate yaw axis setpoint when pitched or rolled
+                    // and send yawSetpoint to Angle code to modulate pitch and roll
+                    // code cost is 107 cycles when earthRef enabled, 20 otherwise, nearly all in cos_approx
+                    const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE) ? 1.0f : pidRuntime.angleEarthRef;
+                    if (earthRefGain) {
+                        pidRuntime.angleYawSetpoint = currentPidSetpoint;
+                        float maxAngleTargetAbs = earthRefGain * fmaxf( fabsf(pidRuntime.angleTarget[FD_ROLL]), fabsf(pidRuntime.angleTarget[FD_PITCH]) );
+                        maxAngleTargetAbs *= (FLIGHT_MODE(HORIZON_MODE)) ? horizonLevelStrength : 1.0f;
+                        // reduce compensation whenever Horizon uses less levelling
+                        currentPidSetpoint *= cos_approx(DEGREES_TO_RADIANS(maxAngleTargetAbs));
+                        DEBUG_SET(DEBUG_ANGLE_TARGET, 2, currentPidSetpoint); // yaw setpoint after attenuation
+                    }
                 }
             }
         }

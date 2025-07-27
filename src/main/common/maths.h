@@ -171,3 +171,13 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
+
+// returns a 1.0 for positive numbers and a -1.0 for negative numbers
+static inline float signf(float input)
+{
+    if (input > 0.0f) {
+        return 1.0f;
+    } else {
+        return -1.0f;
+    }
+}

@@ -177,6 +177,8 @@
 #define PARAM_NAME_AP_POSITION_CUTOFF "ap_position_cutoff"
 #define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
 
+#define PARAM_NAME_QS_LEVEL_MODE "qs_level_mode"
+#define PARAM_NAME_ANGLE_SMOOTHING_CUT "angle_smoothing_cut"
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"
