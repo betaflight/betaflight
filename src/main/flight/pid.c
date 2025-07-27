@@ -1148,6 +1148,7 @@ void attitudeError(float *attitude_setpoint, float *gravity_vector, float *error
 FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, float *currentPidSetpoint, float horizonLevelStrength)
 {
     float *originalPidSetpoint = currentPidSetpoint;
+    float yaw_setpoint = currentPidSetpoint[FD_YAW];
 
     // We now use Acro Rates, transformed into the range +/- angle limit in radians, to provide setpoints
     float angleLimit = DEGREES_TO_RADIANS(pidProfile->angle_limit);
@@ -1206,8 +1207,6 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     float *gravity_vector = getGravityVector();
     attitudeError(attitude_setpoint, gravity_vector, error_vector);
 
-    float yaw_setpoint = currentPidSetpoint[FD_YAW];
-
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         float error = error_vector[axis];
 
@@ -1233,6 +1232,11 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
         currentPidSetpoint[axis] = pt3FilterApply(&pidRuntime.attitudeFilter[axis], currentPidSetpoint[axis]);
     }
 
+    // scale to degrees, but do not scale the yaw rotation as that is already in degrees
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        currentPidSetpoint[axis] = RADIANS_TO_DEGREES(currentPidSetpoint[axis]);
+    }
+
     // this is how we add yaw rotation
     currentPidSetpoint[FD_ROLL] += gravity_vector[FD_ROLL] * yaw_setpoint;
     currentPidSetpoint[FD_PITCH] += gravity_vector[FD_PITCH] * yaw_setpoint;
@@ -1243,10 +1247,6 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             currentPidSetpoint[axis] = originalPidSetpoint[axis] * (1.0f - horizonLevelStrength) + currentPidSetpoint[axis] * horizonLevelStrength;
         }
-    }
-
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        currentPidSetpoint[axis] = RADIANS_TO_DEGREES(currentPidSetpoint[axis]);
     }
 }
 
