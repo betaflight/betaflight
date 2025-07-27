@@ -1178,8 +1178,8 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
         }
     #endif
 
-    roll_angle_rad += DEGREES_TO_RADIANS(angleLimit * currentPidSetpoint[FD_ROLL] / getMaxRcRate(FD_ROLL));
-    pitch_angle_rad += DEGREES_TO_RADIANS(angleLimit * currentPidSetpoint[FD_PITCH] / getMaxRcRate(FD_PITCH));
+    roll_angle_rad += angleLimit * (currentPidSetpoint[FD_ROLL] / getMaxRcRate(FD_ROLL));
+    pitch_angle_rad += angleLimit * (currentPidSetpoint[FD_PITCH] / getMaxRcRate(FD_PITCH));
 
     roll_angle_rad = constrainf(roll_angle_rad, -angleLimit, angleLimit);
     pitch_angle_rad = constrainf(pitch_angle_rad, -angleLimit, angleLimit);
