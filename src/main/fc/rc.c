@@ -337,12 +337,12 @@ bool getRxRateValid(void)
 
 static FAST_CODE_NOINLINE void rcSmoothingUpdateFilterTau(rcSmoothingFilter_t *smoothingData)
 {
-    const float cen_tau = smoothingData->setpointTauCenter;
-    const float end_tau = smoothingData->setpointTauEnd;
-
     const float dT = targetPidLooptime * 1e-6f;
 
     for (unsigned int i = FD_ROLL; i <= FD_YAW; i++) {
+        const float cen_tau = smoothingData->setpointTauCenter[i];
+        const float end_tau = smoothingData->setpointTauEnd[i];
+
         const float tau = lerp(rcDeflectionAbs[i], cen_tau, end_tau);
         const float pt3K = pt3FilterGainFromDelay(tau, dT);
 
@@ -968,17 +968,19 @@ void initRcProcessing(void)
 #endif
 
     if (rxConfig()->rc_smoothing_use_tau) {
-        const float cen_tau = currentControlRateProfile->rc_smoothing_setpoint_tau_center;
-        const float end_tau = currentControlRateProfile->rc_smoothing_setpoint_tau_end;
+        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+            const float cen_tau = currentControlRateProfile->rc_smoothing_setpoint_tau_center[i];
+            const float end_tau = currentControlRateProfile->rc_smoothing_setpoint_tau_end[i];
+            // unit is 10th of a millisecond, sort of
+            rcSmoothingData.setpointTauCenter[i] = cen_tau / 10000.0f + cen_tau * cen_tau / 1250000.0f;
+            rcSmoothingData.setpointTauEnd[i] = end_tau / 10000.0f + end_tau * end_tau / 1250000.0f;
+        }
+        rcSmoothingUpdateFilterTau(&rcSmoothingData);
+
         const float throttle_tau = currentControlRateProfile->rc_smoothing_throttle_tau;
-        // unit is 10th of a millisecond, sort of
-        rcSmoothingData.setpointTauCenter = cen_tau / 10000.0f + cen_tau * cen_tau / 1250000.0f;
-        rcSmoothingData.setpointTauEnd = end_tau / 10000.0f + end_tau * end_tau / 1250000.0f;
         const float throttleTau = throttle_tau / 10000.0f + throttle_tau * throttle_tau / 1250000.0f;
 
         const float dT = targetPidLooptime * 1e-6f;
-
-        rcSmoothingUpdateFilterTau(&rcSmoothingData);
 
         pt3FilterUpdateCutoff(&rcSmoothingData.filterSetpoint[THROTTLE], pt3FilterGainFromDelay(throttleTau, dT));
     }

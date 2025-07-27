@@ -1108,9 +1108,13 @@ const clivalue_t valueTable[] = {
     { "roll_rate_limit",            VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rate_limit[FD_ROLL]) },
     { "pitch_rate_limit",           VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rate_limit[FD_PITCH]) },
     { "yaw_rate_limit",             VAR_UINT16 | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { CONTROL_RATE_CONFIG_RATE_LIMIT_MIN, CONTROL_RATE_CONFIG_RATE_LIMIT_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rate_limit[FD_YAW]) },
-    { PARAM_NAME_RC_SMOOTHING_SETPOINT_TAU_CENTER,VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_center) },
-    { PARAM_NAME_RC_SMOOTHING_SETPOINT_TAU_END,   VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_end) },
-    { PARAM_NAME_RC_SMOOTHING_THROTTLE_TAU,       VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_throttle_tau) },
+    { PARAM_NAME_RC_SMOOTHING_ROLL_TAU_CENTER,  VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_center[FD_ROLL]) },
+    { PARAM_NAME_RC_SMOOTHING_ROLL_TAU_END,     VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_end[FD_ROLL]) },
+    { PARAM_NAME_RC_SMOOTHING_PITCH_TAU_CENTER, VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_center[FD_PITCH]) },
+    { PARAM_NAME_RC_SMOOTHING_PITCH_TAU_END,    VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_end[FD_PITCH]) },
+    { PARAM_NAME_RC_SMOOTHING_YAW_TAU_CENTER,   VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_center[FD_YAW]) },
+    { PARAM_NAME_RC_SMOOTHING_YAW_TAU_END,      VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_setpoint_tau_end[FD_YAW]) },
+    { PARAM_NAME_RC_SMOOTHING_THROTTLE_TAU,     VAR_UINT8  | PROFILE_RATE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rc_smoothing_throttle_tau) },
 
 // PG_SERIAL_CONFIG
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 48, 126 }, PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character) },

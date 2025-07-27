@@ -272,8 +272,8 @@ protected:
         .profileName = "default",
         .quickRatesRcExpo = 0,
         .thrHover8 = 0,
-        .rc_smoothing_setpoint_tau_center = 0,
-        .rc_smoothing_setpoint_tau_end = 0,
+        .rc_smoothing_setpoint_tau_center = {0, 0, 0},
+        .rc_smoothing_setpoint_tau_end = {0, 0, 0},
         .rc_smoothing_throttle_tau = 0,
     };
 
@@ -382,8 +382,8 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
         .profileName = "default",
         .quickRatesRcExpo = 0,
         .thrHover8 = 0,
-        .rc_smoothing_setpoint_tau_center = 0,
-        .rc_smoothing_setpoint_tau_end = 0,
+        .rc_smoothing_setpoint_tau_center = {0, 0, 0},
+        .rc_smoothing_setpoint_tau_end = {0, 0, 0},
         .rc_smoothing_throttle_tau = 0,
     };
 
