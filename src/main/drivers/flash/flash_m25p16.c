@@ -235,7 +235,6 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     geometry->totalSize = geometry->sectorSize * geometry->sectors;
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
-    fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         fdevice->vTable = &m25p16_vTable;
