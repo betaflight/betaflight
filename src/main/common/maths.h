@@ -201,3 +201,13 @@ static inline float wrapDeg180f(float deg)
     }
     return deg - 180.0f;
 }
+
+// returns a 1.0 for positive numbers and a -1.0 for negative numbers
+static inline float signf(float input)
+{
+    if (input > 0.0f) {
+        return 1.0f;
+    } else {
+        return -1.0f;
+    }
+}

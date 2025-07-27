@@ -1097,6 +1097,11 @@ float getCosTiltAngle(void)
     return rMat.m[NWU_U][Z];
 }
 
+float *getGravityVector(void)
+{
+    return rMat.m[2];
+}
+
 void getQuaternion(quaternion_t *quat)
 {
    quat->w = q.w;
