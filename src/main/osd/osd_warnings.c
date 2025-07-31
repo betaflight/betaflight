@@ -301,7 +301,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                        && motor[i] > mixerRuntime.disarmMotorOutput
                        && erpmToRpm(escData->rpm) <= osdConfig()->esc_rpm_alarm) {
                 *p++ = 'R';
-                escWarning = true;;
+                escWarning = true;
             } else {   // no error, display motor number
                 *p++ = '0' + (i + 1) % 10; // 123..9012..
             }
