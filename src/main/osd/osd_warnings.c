@@ -49,6 +49,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_init.h"
 #include "flight/pid.h"
 #include "flight/pos_hold.h"
 
@@ -64,6 +65,9 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+
+// External motor array for accessing current motor outputs
+extern float motor[];
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
@@ -294,6 +298,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 *p++ = 'T';
                 escWarning = true;
             } else if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
+                       && motor[i] > mixerRuntime.disarmMotorOutput
                        && erpmToRpm(escData->rpm) <= osdConfig()->esc_rpm_alarm) {
                 *p++ = 'R';
                 escWarning = true;;
@@ -343,6 +348,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
             // Add esc warnings
             if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
+                    && motor[k] > mixerRuntime.disarmMotorOutput
                     && isDshotMotorTelemetryActive(k)
                     && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) <= osdConfig()->esc_rpm_alarm) {
                 warningText[dshotEscErrorLength++] = 'R';
