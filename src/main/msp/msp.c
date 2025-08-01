@@ -1605,7 +1605,7 @@ case MSP_NAME:
 #if defined(USE_RC_SMOOTHING_FILTER)
         sbufWriteU8(dst, 0); // not required in API 1.44, was rxConfig()->rc_smoothing_type
         sbufWriteU8(dst, rxConfig()->rc_smoothing_setpoint_cutoff);
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_feedforward_cutoff);
+        sbufWriteU8(dst, 0); // was rxConfig()->rc_smoothing_feedforward_cutoff, now always combined with rc_smoothing_setpoint_cutoff
         sbufWriteU8(dst, 0); // not required in API 1.44, was rxConfig()->rc_smoothing_input_type
         sbufWriteU8(dst, 0); // not required in API 1.44, was rxConfig()->rc_smoothing_derivative_type
 #else
@@ -3798,7 +3798,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #if defined(USE_RC_SMOOTHING_FILTER)
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_type
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_setpoint_cutoff, sbufReadU8(src));
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_feedforward_cutoff, sbufReadU8(src));
+            sbufReadU8(src); // was rc_smoothing_feedforward_cutoff
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_input_type
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_derivative_type
 #else
