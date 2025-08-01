@@ -36,7 +36,7 @@
 #include "drivers/dma.h"
 #include "drivers/sensor.h"
 #include "drivers/adc.h"
-#include "drivers/adc_impl.h"
+#include "platform/adc_impl.h"
 
 #include "pg/adc.h"
 
