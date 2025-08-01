@@ -39,7 +39,7 @@
 
 #ifdef USE_QUADSPI
 
-#if !(defined(STM32H7) || defined(PICO))
+#if !(defined(STM32H7) || defined(STM32G4) || defined(PICO))
 #error Quad SPI unsupported on this MCU/platform
 #endif
 

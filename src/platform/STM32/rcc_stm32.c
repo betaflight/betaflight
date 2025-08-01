@@ -109,6 +109,10 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL_RCC_CLK(APB1, 2, mask, NewState);
         break;
 
+    case RCC_AHB3:
+        __HAL_RCC_CLK(AHB3, NOSUFFIX, mask, NewState);
+        break;
+
 #endif
     }
 #elif defined(USE_ATBSP_DRIVER)
