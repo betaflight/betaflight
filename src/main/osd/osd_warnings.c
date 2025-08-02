@@ -322,8 +322,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
         char* p = warningText;
-        strcpy(p, "ESC");
-        p += strlen("ESC");
+        *p++ = 'E';
+        *p++ = 'S';
+        *p++ = 'C';
 
         bool escWarning = false;
         for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
@@ -342,9 +343,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             *p++ = alarmChar;
         }
 
-        *p++ = 0;  // terminate string
+        *p = 0;  // terminate string
         if (escWarning) {
-            const int msgLen = strlen(warningText);
+            const int msgLen = p - warningText;  // Calculate length from pointer difference
             const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;           // intended minimum width
             if (msgLen < minMsgLen - 1) {
                 // message is short, center it within minMsgLen
