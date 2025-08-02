@@ -217,6 +217,11 @@ void spiInitDevice(SPIDevice device)
         return;
     }
 
+    // Pre-charge MISO high. SD card then drives this line correctly
+    gpio_set_function(IO_PINBYTAG(spi->miso), GPIO_FUNC_NULL);
+    IOConfigGPIO(IOGetByTag(spi->miso), IOCFG_OUT_PP);
+    IOHi(IOGetByTag(spi->miso));
+
     // Set owners
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK,  RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_SDI, RESOURCE_INDEX(device));
@@ -338,7 +343,12 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
         uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
         bytesProcessed = spi_read_blocking(SPI_INST(instance), repeated_tx_data, rxData, len);
     } else {
-        bprintf("\n*** unexpected spiInternalReadWriteBufPolled with no tx, rx");
+        // Just force dummy cycles
+        uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
+        uint8_t dropped_rx_data;
+        for (int i = 0; i < len; i++) {
+            bytesProcessed += spi_read_blocking(SPI_INST(instance), repeated_tx_data, &dropped_rx_data, 1);
+        }
     }
 
     return bytesProcessed == len;

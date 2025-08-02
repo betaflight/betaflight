@@ -70,7 +70,6 @@
 #undef USE_TRANSPONDER
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
-#undef USE_SDCARD
 
 #undef USE_TIMER
 #undef USE_RCC
