@@ -68,6 +68,11 @@
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
+// ESC alarm character constants
+#define ESC_ALARM_CURRENT   'C'
+#define ESC_ALARM_TEMP      'T'
+#define ESC_ALARM_RPM       'R'
+
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // Common function to check ESC alarms and return appropriate character
 static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmValid, bool tempValid, bool currentValid)
@@ -81,21 +86,21 @@ static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t t
     if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
         && currentValid
         && current >= osdConfig()->esc_current_alarm) {
-        return 'C';
+        return ESC_ALARM_CURRENT;
     }
     
     // Check temperature alarm
     if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
         && tempValid
         && temperature >= osdConfig()->esc_temp_alarm) {
-        return 'T';
+        return ESC_ALARM_TEMP;
     }
     
     // Check RPM alarm
     if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
         && rpmValid
         && rpm <= osdConfig()->esc_rpm_alarm) {
-        return 'R';
+        return ESC_ALARM_RPM;
     }
     
     // No alarm, display motor number
@@ -320,8 +325,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         bool escWarning = false;
         for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
-            char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, true, true, true);
-            if (alarmChar == 'C' || alarmChar == 'T' || alarmChar == 'R') {
+            
+            // Check data validity - ESC sensor data is valid when values are reasonable
+            bool rpmValid = escData->rpm > 0;
+            bool tempValid = escData->temperature > 0;
+            bool currentValid = escData->current >= 0;  // Current can be 0, so >= 0 is valid
+            
+            char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, rpmValid, tempValid, currentValid);
+            if (alarmChar == ESC_ALARM_CURRENT || alarmChar == ESC_ALARM_TEMP || alarmChar == ESC_ALARM_RPM) {
                 escWarning = true;
             }
             *p++ = alarmChar;
@@ -385,7 +396,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 }
                 
                 char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, tempValid, currentValid);
-                if (alarmChar == 'C' || alarmChar == 'T' || alarmChar == 'R') {
+                if (alarmChar == ESC_ALARM_CURRENT || alarmChar == ESC_ALARM_TEMP || alarmChar == ESC_ALARM_RPM) {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
             }
