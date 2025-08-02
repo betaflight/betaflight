@@ -390,17 +390,17 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 
                 uint16_t temperature = 0;
                 uint16_t current = 0;
+                bool tempValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
+                bool currentValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
                 
-                if (edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
+                if (tempValid) {
                     temperature = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
                 }
-                if (edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
+                if (currentValid) {
                     current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
                 }
                 
-                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, 
-                    edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0,
-                    edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0);
+                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, tempValid, currentValid);
                 if (IS_ESC_ALARM(alarmChar)) {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
