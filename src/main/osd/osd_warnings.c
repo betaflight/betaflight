@@ -78,7 +78,7 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // Common function to check ESC alarms and return appropriate character
-static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmValid, bool tempValid, bool currentValid)
+static char checkEscAlarmConditions(uint8_t motorIndex, bool rpmValid, bool tempValid, bool currentValid)
 {
     // Only check alarms if motor is spinning
     if (motorIndex >= getMotorCount() || motor[motorIndex] <= mixerRuntime.disarmMotorOutput) {
@@ -86,23 +86,17 @@ static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t t
     }
     
     // Check current alarm
-    if (currentValid
-        && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
-        && current >= osdConfig()->esc_current_alarm) {
+    if (currentValid && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF) {
         return ESC_ALARM_CURRENT;
     }
     
     // Check temperature alarm
-    if (tempValid
-        && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
-        && temperature >= osdConfig()->esc_temp_alarm) {
+    if (tempValid && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF) {
         return ESC_ALARM_TEMP;
     }
     
     // Check RPM alarm
-    if (rpmValid
-        && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
-        && rpm <= osdConfig()->esc_rpm_alarm) {
+    if (rpmValid && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF) {
         return ESC_ALARM_RPM;
     }
     
@@ -335,8 +329,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 continue;
             }
             
-            char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, 
-                                                   escData->rpm > 0, escData->temperature > 0, escData->current >= 0);
+            char alarmChar = checkEscAlarmConditions(i, escData->rpm > 0, escData->temperature > 0, escData->current >= 0);
             if (IS_ESC_ALARM(alarmChar)) {
                 escWarning = true;
             }
@@ -388,20 +381,11 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 // Check if extended telemetry is available
                 bool edt = (dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
                 
-                uint16_t temperature = 0;
-                uint16_t current = 0;
                 bool rpmValid = rpm > 0;  // RPM is valid when greater than 0
                 bool tempValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
                 bool currentValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
                 
-                if (tempValid) {
-                    temperature = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
-                }
-                if (currentValid) {
-                    current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
-                }
-                
-                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, rpmValid, tempValid, currentValid);
+                char alarmChar = checkEscAlarmConditions(k, rpmValid, tempValid, currentValid);
                 if (IS_ESC_ALARM(alarmChar)) {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
