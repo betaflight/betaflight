@@ -24,7 +24,7 @@
  *
  * Generator    : `src/utils/make-build-info.py`
  * Source       : https://build.betaflight.com/api/options/4.6.0
- * Input hash   : 5da6ff60951a04dc9a29ea0758aae1df
+ * Input hash   : f612c38bb1cde0c284a8e23af1eb2049
  */
 
 #include <stdint.h>
@@ -109,6 +109,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #endif
 #ifdef USE_CAMERA_CONTROL
         BUILD_OPTION_CAMERA_CONTROL,
+#endif
+#ifdef USE_CHIRP
+        BUILD_OPTION_CHIRP,
 #endif
 #ifdef USE_DASHBOARD
         BUILD_OPTION_DASHBOARD,
