@@ -380,18 +380,12 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 // Check if extended telemetry is available
                 bool edt = (dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
 
-                uint16_t temperature = 0;
-                uint16_t current = 0;
                 bool rpmAvailable = rpm > 0;  // RPM is available when greater than 0
                 bool tempAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
                 bool currentAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
 
-                if (tempAvailable) {
-                    temperature = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
-                }
-                if (currentAvailable) {
-                    current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
-                }
+                uint16_t temperature = tempAvailable ? dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
+                uint16_t current = currentAvailable ? dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
                 char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, rpmAvailable, tempAvailable, currentAvailable);
 
