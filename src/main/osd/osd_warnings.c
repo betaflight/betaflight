@@ -390,6 +390,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 
                 uint16_t temperature = 0;
                 uint16_t current = 0;
+                bool rpmValid = rpm > 0;  // RPM is valid when greater than 0
                 bool tempValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
                 bool currentValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
                 
@@ -400,7 +401,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                     current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
                 }
                 
-                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, tempValid, currentValid);
+                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, rpmValid, tempValid, currentValid);
                 if (IS_ESC_ALARM(alarmChar)) {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
