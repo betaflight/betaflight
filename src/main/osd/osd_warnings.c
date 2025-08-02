@@ -80,24 +80,21 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 // Common function to check ESC alarms and return appropriate character
 static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmValid, bool tempValid, bool currentValid)
 {
-    // Only check alarms if motor is spinning
-    if (motorIndex >= getMotorCount() || motor[motorIndex] <= mixerRuntime.disarmMotorOutput) {
-        return '0' + (motorIndex + 1) % 10;
-    }
-    
-    // Check current alarm
+    // Check current alarm (regardless of motor spinning state)
     if (currentValid && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= osdConfig()->esc_current_alarm) {
         return ESC_ALARM_CURRENT;
     }
     
-    // Check temperature alarm
+    // Check temperature alarm (regardless of motor spinning state)
     if (tempValid && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= osdConfig()->esc_temp_alarm) {
         return ESC_ALARM_TEMP;
     }
     
-    // Check RPM alarm
-    if (rpmValid && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= osdConfig()->esc_rpm_alarm) {
-        return ESC_ALARM_RPM;
+    // Check RPM alarm (only when motor is spinning)
+    if (motorIndex < getMotorCount() && motor[motorIndex] > mixerRuntime.disarmMotorOutput) {
+        if (rpmValid && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= osdConfig()->esc_rpm_alarm) {
+            return ESC_ALARM_RPM;
+        }
     }
     
     // No alarm, display motor number
