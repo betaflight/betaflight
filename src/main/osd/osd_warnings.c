@@ -68,113 +68,38 @@
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
-// Structure to hold ESC alarm data for unified processing
-typedef struct {
-    uint16_t rpm;
-    uint16_t temperature;
-    uint16_t current;
-    bool rpmValid;
-    bool tempValid;
-    bool currentValid;
-} escAlarmData_t;
-
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
-// Helper function to check if a motor is spinning
-static bool isMotorSpinning(uint8_t motorIndex)
-{
-    if (motorIndex >= getMotorCount()) {
-        return false;
-    }
-    return motor[motorIndex] > mixerRuntime.disarmMotorOutput;
-}
-#endif
-
-#ifdef USE_ESC_SENSOR
-// Get ESC alarm data from ESC sensor
-static escAlarmData_t getEscSensorAlarmData(uint8_t motorIndex)
-{
-    escAlarmData_t data = {0};
-    escSensorData_t *escData = getEscSensorData(motorIndex);
-    
-    data.rpm = erpmToRpm(escData->rpm);
-    data.temperature = escData->temperature;
-    data.current = escData->current;
-    data.rpmValid = true;
-    data.tempValid = true;
-    data.currentValid = true;
-    
-    return data;
-}
-#endif
-
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-// Get ESC alarm data from DShot telemetry
-static escAlarmData_t getDshotAlarmData(uint8_t motorIndex)
-{
-    escAlarmData_t data = {0};
-    
-    if (!isDshotMotorTelemetryActive(motorIndex)) {
-        return data;
-    }
-    
-    // Calculate RPM from eRPM
-    data.rpm = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount;
-    data.rpmValid = true;
-    
-    // Check if extended telemetry is available
-    bool edt = (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
-    
-    if (edt && (dshotTelemetryState.motorState[motorIndex].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
-        data.temperature = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
-        data.tempValid = true;
-    }
-    
-    if (edt && (dshotTelemetryState.motorState[motorIndex].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
-        data.current = dshotTelemetryState.motorState[motorIndex].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
-        data.currentValid = true;
-    }
-    
-    return data;
-}
-#endif
-
-#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
-// Unified function to check ESC alarms and build warning characters
-static bool checkEscAlarms(uint8_t motorIndex, escAlarmData_t data, char *alarmChar)
+// Common function to check ESC alarms and return appropriate character
+static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmValid, bool tempValid, bool currentValid)
 {
     // Only check alarms if motor is spinning
-    if (!isMotorSpinning(motorIndex)) {
-        *alarmChar = '0' + (motorIndex + 1) % 10;
-        return false;
+    if (motorIndex >= getMotorCount() || motor[motorIndex] <= mixerRuntime.disarmMotorOutput) {
+        return '0' + (motorIndex + 1) % 10;
     }
     
     // Check current alarm
     if (osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
-        && data.currentValid
-        && data.current >= osdConfig()->esc_current_alarm) {
-        *alarmChar = 'C';
-        return true;
+        && currentValid
+        && current >= osdConfig()->esc_current_alarm) {
+        return 'C';
     }
     
     // Check temperature alarm
     if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
-        && data.tempValid
-        && data.temperature >= osdConfig()->esc_temp_alarm) {
-        *alarmChar = 'T';
-        return true;
+        && tempValid
+        && temperature >= osdConfig()->esc_temp_alarm) {
+        return 'T';
     }
     
     // Check RPM alarm
     if (osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
-        && data.rpmValid
-        && data.rpm <= osdConfig()->esc_rpm_alarm) {
-        *alarmChar = 'R';
-        return true;
+        && rpmValid
+        && rpm <= osdConfig()->esc_rpm_alarm) {
+        return 'R';
     }
     
     // No alarm, display motor number
-    *alarmChar = '0' + (motorIndex + 1) % 10;
-    return false;
+    return '0' + (motorIndex + 1) % 10;
 }
 #endif
 
@@ -394,9 +319,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
         bool escWarning = false;
         for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
-            escAlarmData_t alarmData = getEscSensorAlarmData(i);
-            char alarmChar;
-            if (checkEscAlarms(i, alarmData, &alarmChar)) {
+            escSensorData_t *escData = getEscSensorData(i);
+            char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, true, true, true);
+            if (alarmChar == 'C' || alarmChar == 'T' || alarmChar == 'R') {
                 escWarning = true;
             }
             *p++ = alarmChar;
@@ -439,12 +364,28 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             warningText[dshotEscErrorLength++] = ' ';
             warningText[dshotEscErrorLength++] = '0' + k + 1;
 
-            // Check for alarms using unified function
-            escAlarmData_t alarmData = getDshotAlarmData(k);
-            char alarmChar;
-            if (checkEscAlarms(k, alarmData, &alarmChar)) {
-                // Add alarm character if there's an alarm
-                if (alarmChar != ('0' + k + 1)) {
+            // Check for alarms using simplified function
+            if (isDshotMotorTelemetryActive(k)) {
+                // Calculate RPM from eRPM
+                uint16_t rpm = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount;
+                
+                // Check if extended telemetry is available
+                bool edt = (dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+                
+                uint16_t temperature = 0;
+                uint16_t current = 0;
+                bool tempValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
+                bool currentValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
+                
+                if (tempValid) {
+                    temperature = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
+                }
+                if (currentValid) {
+                    current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
+                }
+                
+                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, tempValid, currentValid);
+                if (alarmChar == 'C' || alarmChar == 'T' || alarmChar == 'R') {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
             }
