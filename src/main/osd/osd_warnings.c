@@ -328,6 +328,11 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         bool escWarning = false;
         for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
+            if (!escData) {
+                // ESC sensor data not available, show motor number only
+                *p++ = '0' + (i + 1) % 10;
+                continue;
+            }
             
             char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, 
                                                    escData->rpm > 0, escData->temperature > 0, escData->current >= 0);
