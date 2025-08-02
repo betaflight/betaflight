@@ -326,12 +326,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
             
-            // Check data validity - ESC sensor data is valid when values are reasonable
-            bool rpmValid = escData->rpm > 0;
-            bool tempValid = escData->temperature > 0;
-            bool currentValid = escData->current >= 0;  // Current can be 0, so >= 0 is valid
-            
-            char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, rpmValid, tempValid, currentValid);
+            char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, 
+                                                   escData->rpm > 0, escData->temperature > 0, escData->current >= 0);
             if (alarmChar == ESC_ALARM_CURRENT || alarmChar == ESC_ALARM_TEMP || alarmChar == ESC_ALARM_RPM) {
                 escWarning = true;
             }
@@ -385,17 +381,17 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 
                 uint16_t temperature = 0;
                 uint16_t current = 0;
-                bool tempValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
-                bool currentValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
                 
-                if (tempValid) {
+                if (edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
                     temperature = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
                 }
-                if (currentValid) {
+                if (edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
                     current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
                 }
                 
-                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, tempValid, currentValid);
+                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, 
+                    edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0,
+                    edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0);
                 if (alarmChar == ESC_ALARM_CURRENT || alarmChar == ESC_ALARM_TEMP || alarmChar == ESC_ALARM_RPM) {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
