@@ -73,6 +73,9 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #define ESC_ALARM_TEMP      'T'
 #define ESC_ALARM_RPM       'R'
 
+// Check if character represents an alarm condition
+#define IS_ESC_ALARM(c) ((c) == ESC_ALARM_CURRENT || (c) == ESC_ALARM_TEMP || (c) == ESC_ALARM_RPM)
+
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // Common function to check ESC alarms and return appropriate character
 static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmValid, bool tempValid, bool currentValid)
@@ -328,7 +331,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             
             char alarmChar = checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, 
                                                    escData->rpm > 0, escData->temperature > 0, escData->current >= 0);
-            if (alarmChar == ESC_ALARM_CURRENT || alarmChar == ESC_ALARM_TEMP || alarmChar == ESC_ALARM_RPM) {
+            if (IS_ESC_ALARM(alarmChar)) {
                 escWarning = true;
             }
             *p++ = alarmChar;
@@ -392,7 +395,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, true, 
                     edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0,
                     edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0);
-                if (alarmChar == ESC_ALARM_CURRENT || alarmChar == ESC_ALARM_TEMP || alarmChar == ESC_ALARM_RPM) {
+                if (IS_ESC_ALARM(alarmChar)) {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
             }
