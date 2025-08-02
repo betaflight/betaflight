@@ -84,19 +84,19 @@ static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t t
     if (currentAvailable && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= osdConfig()->esc_current_alarm) {
         return ESC_ALARM_CURRENT;
     }
-    
+
     // Check temperature alarm (regardless of motor spinning state)
     if (tempAvailable && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= osdConfig()->esc_temp_alarm) {
         return ESC_ALARM_TEMP;
     }
-    
+
     // Check RPM alarm (only when motor is spinning)
     if (motorIndex < getMotorCount() && motor[motorIndex] > mixerRuntime.disarmMotorOutput) {
         if (rpmAvailable && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= osdConfig()->esc_rpm_alarm) {
             return ESC_ALARM_RPM;
         }
     }
-    
+
     // No alarm, display motor number
     return '0' + (motorIndex + 1) % 10;
 }
@@ -320,7 +320,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         bool escWarning = false;
         for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
-            
+
             char alarmChar = checkEscAlarmConditions(i, 
                 escData ? erpmToRpm(escData->rpm) : 0, 
                 escData ? escData->temperature : 0, 
@@ -328,13 +328,13 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 escData && escData->rpm > 0, 
                 escData && escData->temperature > 0, 
                 escData && escData->current >= 0);
-            if (IS_ESC_ALARM(alarmChar)) {
-                escWarning = true;
-            }
+
+            escWarning |= IS_ESC_ALARM(alarmChar);
             *p++ = alarmChar;
         }
 
         *p = 0;  // terminate string
+
         if (escWarning) {
             const int msgLen = p - warningText;  // Calculate length from pointer difference
             const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;           // intended minimum width
@@ -358,6 +358,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // Show esc error
     if (motorConfig()->dev.useDshotTelemetry && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
         uint32_t dshotEscErrorLength = 0;
+        bool escWarning = false;
 
         // Write 'ESC'
         warningText[dshotEscErrorLength++] = 'E';
@@ -375,27 +376,27 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             if (isDshotMotorTelemetryActive(k)) {
                 // Calculate RPM from eRPM
                 uint16_t rpm = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount;
-                
+
                 // Check if extended telemetry is available
                 bool edt = (dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
-                
+
                 uint16_t temperature = 0;
                 uint16_t current = 0;
                 bool rpmAvailable = rpm > 0;  // RPM is available when greater than 0
                 bool tempAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
                 bool currentAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
-                
+
                 if (tempAvailable) {
                     temperature = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
                 }
                 if (currentAvailable) {
                     current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
                 }
-                
+
                 char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, rpmAvailable, tempAvailable, currentAvailable);
-                if (IS_ESC_ALARM(alarmChar)) {
-                    warningText[dshotEscErrorLength++] = alarmChar;
-                }
+
+                escWarning |= IS_ESC_ALARM(alarmChar);
+                warningText[dshotEscErrorLength++] = alarmChar;
             }
 
             // If no esc warning data undo esc nr (esc telemetry data types depends on the esc hw/sw)
@@ -403,13 +404,15 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
         }
 
+        warningText[dshotEscErrorLength] = 0;  // terminate string
+
         // If warning exists then notify, otherwise clear warning message
-        if (dshotEscErrorLength > 3) {
-            warningText[dshotEscErrorLength] = 0;        // End string
+        if (escWarning) {
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
             return;
         } else {
+            // no warning, erase generated message and continue
             warningText[0] = 0;
         }
     }
