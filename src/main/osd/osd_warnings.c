@@ -78,21 +78,21 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // Common function to check ESC alarms and return appropriate character
-static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmValid, bool tempValid, bool currentValid)
+static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmAvailable, bool tempAvailable, bool currentAvailable)
 {
     // Check current alarm (regardless of motor spinning state)
-    if (currentValid && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= osdConfig()->esc_current_alarm) {
+    if (currentAvailable && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= osdConfig()->esc_current_alarm) {
         return ESC_ALARM_CURRENT;
     }
     
     // Check temperature alarm (regardless of motor spinning state)
-    if (tempValid && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= osdConfig()->esc_temp_alarm) {
+    if (tempAvailable && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= osdConfig()->esc_temp_alarm) {
         return ESC_ALARM_TEMP;
     }
     
     // Check RPM alarm (only when motor is spinning)
     if (motorIndex < getMotorCount() && motor[motorIndex] > mixerRuntime.disarmMotorOutput) {
-        if (rpmValid && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= osdConfig()->esc_rpm_alarm) {
+        if (rpmAvailable && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= osdConfig()->esc_rpm_alarm) {
             return ESC_ALARM_RPM;
         }
     }
@@ -380,18 +380,18 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 
                 uint16_t temperature = 0;
                 uint16_t current = 0;
-                bool rpmValid = rpm > 0;  // RPM is valid when greater than 0
-                bool tempValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
-                bool currentValid = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
+                bool rpmAvailable = rpm > 0;  // RPM is available when greater than 0
+                bool tempAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
+                bool currentAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
                 
-                if (tempValid) {
+                if (tempAvailable) {
                     temperature = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
                 }
-                if (currentValid) {
+                if (currentAvailable) {
                     current = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
                 }
                 
-                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, rpmValid, tempValid, currentValid);
+                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, rpmAvailable, tempAvailable, currentAvailable);
                 if (IS_ESC_ALARM(alarmChar)) {
                     warningText[dshotEscErrorLength++] = alarmChar;
                 }
