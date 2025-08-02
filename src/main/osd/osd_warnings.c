@@ -78,6 +78,7 @@ typedef struct {
     bool currentValid;
 } escAlarmData_t;
 
+#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // Helper function to check if a motor is spinning
 static bool isMotorSpinning(uint8_t motorIndex)
 {
@@ -86,7 +87,9 @@ static bool isMotorSpinning(uint8_t motorIndex)
     }
     return motor[motorIndex] > mixerRuntime.disarmMotorOutput;
 }
+#endif
 
+#ifdef USE_ESC_SENSOR
 // Get ESC alarm data from ESC sensor
 static escAlarmData_t getEscSensorAlarmData(uint8_t motorIndex)
 {
@@ -102,6 +105,7 @@ static escAlarmData_t getEscSensorAlarmData(uint8_t motorIndex)
     
     return data;
 }
+#endif
 
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
 // Get ESC alarm data from DShot telemetry
@@ -134,6 +138,7 @@ static escAlarmData_t getDshotAlarmData(uint8_t motorIndex)
 }
 #endif
 
+#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // Unified function to check ESC alarms and build warning characters
 static bool checkEscAlarms(uint8_t motorIndex, escAlarmData_t data, char *alarmChar)
 {
@@ -171,6 +176,7 @@ static bool checkEscAlarms(uint8_t motorIndex, escAlarmData_t data, char *alarmC
     *alarmChar = '0' + (motorIndex + 1) % 10;
     return false;
 }
+#endif
 
 void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 {
