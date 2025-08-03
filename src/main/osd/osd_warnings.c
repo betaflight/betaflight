@@ -320,7 +320,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *p++ = 'C';
 
         bool escWarning = false;
-        for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
+        const unsigned motorCount = getMotorCount();
+        for (unsigned i = 0; i < motorCount && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
 
             char alarmChar = checkEscAlarmConditions(i,
@@ -369,8 +370,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
         // Cache motor pole count before loop
         const uint8_t motorPoleCount = motorConfig()->motorPoleCount;
+        const uint8_t motorCount = getMotorCount();
 
-        for (uint8_t k = 0; k < getMotorCount(); k++) {
+        for (uint8_t k = 0; k < motorCount; k++) {
             uint8_t dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
 
             // Write ESC nr
