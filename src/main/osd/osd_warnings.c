@@ -399,6 +399,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             warningText[dshotEscErrorLength++] = ' ';
             warningText[dshotEscErrorLength++] = '0' + k + 1;
 
+            bool hasAlarm = false;  // Track if any alarm was detected for this motor
+
             if (isDshotMotorTelemetryActive(k)) {
                 // Cache motor state for efficient access
                 const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[k];
@@ -424,7 +426,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                     alarmChars);
 
                 // Check if any alarms were found
-                bool hasAlarm = false;
                 for (uint8_t j = 0; j < alarmCount; j++) {
                     if (IS_ESC_ALARM(alarmChars[j])) {
                         hasAlarm = true;
@@ -439,8 +440,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 }
             }
 
-            // If no esc warning data undo esc nr (esc telemetry data types depends on the esc hw/sw)
-            if (dshotEscErrorLengthMotorBegin + ESC_MOTOR_PREFIX_LENGTH == dshotEscErrorLength) {
+            // If no alarm was detected (only motor number returned), undo the motor prefix
+            if (!hasAlarm) {
                 dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
             }
         }
