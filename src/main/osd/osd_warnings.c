@@ -73,6 +73,9 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #define ESC_ALARM_TEMP      'T'
 #define ESC_ALARM_RPM       'R'
 
+// ESC motor prefix length (space + motor number digit)
+#define ESC_MOTOR_PREFIX_LENGTH 2
+
 // Check if character represents an alarm condition
 #define IS_ESC_ALARM(c) ((c) == ESC_ALARM_CURRENT || (c) == ESC_ALARM_TEMP || (c) == ESC_ALARM_RPM)
 
@@ -401,7 +404,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             }
 
             // If no esc warning data undo esc nr (esc telemetry data types depends on the esc hw/sw)
-            if (dshotEscErrorLengthMotorBegin + 2 == dshotEscErrorLength) {
+            if (dshotEscErrorLengthMotorBegin + ESC_MOTOR_PREFIX_LENGTH == dshotEscErrorLength) {
                 dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
             }
         }
