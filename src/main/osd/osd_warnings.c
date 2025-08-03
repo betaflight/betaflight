@@ -370,8 +370,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         warningText[dshotEscErrorLength++] = 'S';
         warningText[dshotEscErrorLength++] = 'C';
 
-        // Cache motor pole count before loop
-        const uint8_t motorPoleCount = motorConfig()->motorPoleCount;
+        // Cache motor count before loop  
         const uint8_t motorCount = getMotorCount();
 
         for (uint8_t k = 0; k < motorCount; k++) {
@@ -385,8 +384,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 // Cache motor state for efficient access
                 const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[k];
                 
-                // Calculate RPM from eRPM with cached pole count
-                uint16_t rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 200 / motorPoleCount;
+                // Calculate RPM from eRPM using consistent conversion function
+                uint16_t rpm = lrintf(erpmToRpm(motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]));
 
                 // Direct bit checking for extended telemetry
                 bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
