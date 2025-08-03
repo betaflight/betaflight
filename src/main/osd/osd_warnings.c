@@ -80,29 +80,34 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #define IS_ESC_ALARM(c) ((c) == ESC_ALARM_CURRENT || (c) == ESC_ALARM_TEMP || (c) == ESC_ALARM_RPM)
 
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
-static char checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmAvailable, bool tempAvailable, bool currentAvailable)
+static uint8_t checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmAvailable, bool tempAvailable, bool currentAvailable, char* buffer)
 {
     const osdConfig_t *config = osdConfig();
+    uint8_t alarmCount = 0;
     
     // Check current alarm (regardless of motor spinning state)
     if (currentAvailable && config->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= config->esc_current_alarm) {
-        return ESC_ALARM_CURRENT;
+        buffer[alarmCount++] = ESC_ALARM_CURRENT;
     }
 
     // Check temperature alarm (regardless of motor spinning state)
     if (tempAvailable && config->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= config->esc_temp_alarm) {
-        return ESC_ALARM_TEMP;
+        buffer[alarmCount++] = ESC_ALARM_TEMP;
     }
 
     // Check RPM alarm (only when motor is spinning)
     if (motorIndex < getMotorCount() && motor[motorIndex] > mixerRuntime.disarmMotorOutput) {
         if (rpmAvailable && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
-            return ESC_ALARM_RPM;
+            buffer[alarmCount++] = ESC_ALARM_RPM;
         }
     }
 
-    // No alarm, display motor number
-    return '0' + (motorIndex + 1) % 10;
+    // If no alarms, display motor number
+    if (alarmCount == 0) {
+        buffer[alarmCount++] = '0' + (motorIndex + 1) % 10;
+    }
+
+    return alarmCount;
 }
 #endif
 
@@ -326,16 +331,30 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         for (unsigned i = 0; i < motorCount && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
 
-            char alarmChar = checkEscAlarmConditions(i,
+            char alarmChars[4]; // Buffer for multiple alarm characters (C, T, R + motor number)
+            uint8_t alarmCount = checkEscAlarmConditions(i,
                 erpmToRpm(escData->rpm), 
                 escData->temperature, 
                 escData->current, 
                 escData->rpm > 0, 
                 escData->temperature > 0, 
-                escData->current >= 0);
+                escData->current >= 0,
+                alarmChars);
 
-            escWarning |= IS_ESC_ALARM(alarmChar);
-            *p++ = alarmChar;
+            // Check if any alarms were found
+            bool hasAlarm = false;
+            for (uint8_t j = 0; j < alarmCount; j++) {
+                if (IS_ESC_ALARM(alarmChars[j])) {
+                    hasAlarm = true;
+                    break;
+                }
+            }
+            escWarning |= hasAlarm;
+
+            // Add all alarm characters to warning text
+            for (uint8_t j = 0; j < alarmCount && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; j++) {
+                *p++ = alarmChars[j];
+            }
         }
 
         *p = 0;  // terminate string
@@ -397,13 +416,27 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 uint16_t current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
                     motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
-                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, 
+                char alarmChars[4]; // Buffer for multiple alarm characters (C, T, R + motor number)
+                uint8_t alarmCount = checkEscAlarmConditions(k, rpm, temperature, current, 
                     rpm > 0, 
                     temperature > 0, 
-                    current > 0);
+                    current > 0,
+                    alarmChars);
 
-                escWarning |= IS_ESC_ALARM(alarmChar);
-                warningText[dshotEscErrorLength++] = alarmChar;
+                // Check if any alarms were found
+                bool hasAlarm = false;
+                for (uint8_t j = 0; j < alarmCount; j++) {
+                    if (IS_ESC_ALARM(alarmChars[j])) {
+                        hasAlarm = true;
+                        break;
+                    }
+                }
+                escWarning |= hasAlarm;
+
+                // Add all alarm characters to warning text
+                for (uint8_t j = 0; j < alarmCount; j++) {
+                    warningText[dshotEscErrorLength++] = alarmChars[j];
+                }
             }
 
             // If no esc warning data undo esc nr (esc telemetry data types depends on the esc hw/sw)
