@@ -320,13 +320,13 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         for (unsigned i = 0; i < getMotorCount() && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
 
-            char alarmChar = checkEscAlarmConditions(i, 
-                escData ? erpmToRpm(escData->rpm) : 0, 
-                escData ? escData->temperature : 0, 
-                escData ? escData->current : 0, 
-                escData && escData->rpm > 0, 
-                escData && escData->temperature > 0, 
-                escData && escData->current >= 0);
+            char alarmChar = checkEscAlarmConditions(i,
+                erpmToRpm(escData->rpm), 
+                escData->temperature, 
+                escData->current, 
+                escData->rpm > 0, 
+                escData->temperature > 0, 
+                escData->current >= 0);
 
             escWarning |= IS_ESC_ALARM(alarmChar);
             *p++ = alarmChar;
