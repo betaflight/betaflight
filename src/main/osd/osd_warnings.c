@@ -364,6 +364,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         warningText[dshotEscErrorLength++] = 'S';
         warningText[dshotEscErrorLength++] = 'C';
 
+        // Cache motor pole count before loop
+        const uint8_t motorPoleCount = motorConfig()->motorPoleCount;
+
         for (uint8_t k = 0; k < getMotorCount(); k++) {
             uint8_t dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
 
@@ -372,19 +375,26 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             warningText[dshotEscErrorLength++] = '0' + k + 1;
 
             if (isDshotMotorTelemetryActive(k)) {
-                // Calculate RPM from eRPM
-                uint16_t rpm = dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount;
+                // Cache motor state for efficient access
+                const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[k];
+                
+                // Calculate RPM from eRPM with cached pole count
+                uint16_t rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 200 / motorPoleCount;
 
-                // Check if extended telemetry is available
-                bool edt = (dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+                // Direct bit checking for extended telemetry
+                bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+                
+                // Optimize telemetry availability and data extraction
+                uint16_t temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 
+                    motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
 
-                bool tempAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0;
-                bool currentAvailable = edt && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0;
+                uint16_t current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
+                    motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
-                uint16_t temperature = tempAvailable ? dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
-                uint16_t current = currentAvailable ? dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
-
-                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, rpm > 0, tempAvailable, currentAvailable);
+                char alarmChar = checkEscAlarmConditions(k, rpm, temperature, current, 
+                    rpm > 0, 
+                    temperature > 0, 
+                    current > 0);
 
                 escWarning |= IS_ESC_ALARM(alarmChar);
                 warningText[dshotEscErrorLength++] = alarmChar;
