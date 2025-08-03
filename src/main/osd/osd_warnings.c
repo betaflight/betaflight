@@ -82,7 +82,13 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 static uint8_t checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmAvailable, bool tempAvailable, bool currentAvailable, char* buffer)
 {
+    // NULL check for buffer parameter
+    if (!buffer) {
+        return 0;
+    }
+
     const osdConfig_t *config = osdConfig();
+    const uint8_t motorCount = getMotorCount();  // Cache motor count
     uint8_t alarmCount = 0;
     
     // Check current alarm (regardless of motor spinning state)
@@ -96,15 +102,23 @@ static uint8_t checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_
     }
 
     // Check RPM alarm (only when motor is spinning)
-    if (motorIndex < getMotorCount() && motor[motorIndex] > mixerRuntime.disarmMotorOutput) {
+    if (motorIndex < motorCount && motor[motorIndex] > mixerRuntime.disarmMotorOutput) {
         if (rpmAvailable && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
             buffer[alarmCount++] = ESC_ALARM_RPM;
         }
     }
 
-    // If no alarms, display motor number
+    // If no alarms, display motor number (handle multi-digit motors properly)
     if (alarmCount == 0) {
-        buffer[alarmCount++] = '0' + (motorIndex + 1) % 10;
+        uint8_t motorNum = motorIndex + 1;
+        if (motorNum >= 10) {
+            // For motors 10+, use two characters (e.g., motor 10 -> "10", motor 11 -> "11")
+            buffer[alarmCount++] = '0' + (motorNum / 10);      // tens digit
+            buffer[alarmCount++] = '0' + (motorNum % 10);      // ones digit
+        } else {
+            // For motors 1-9, use single character
+            buffer[alarmCount++] = '0' + motorNum;
+        }
     }
 
     return alarmCount;
@@ -331,7 +345,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         for (unsigned i = 0; i < motorCount && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
             escSensorData_t *escData = getEscSensorData(i);
 
-            char alarmChars[4]; // Buffer for multiple alarm characters (C, T, R + motor number)
+            char alarmChars[6]; // Buffer for multiple alarm characters (C, T, R + up to 2-digit motor number)
             uint8_t alarmCount = checkEscAlarmConditions(i,
                 erpmToRpm(escData->rpm), 
                 escData->temperature, 
@@ -418,7 +432,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 uint16_t current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
                     motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
-                char alarmChars[4]; // Buffer for multiple alarm characters (C, T, R + motor number)
+                char alarmChars[6]; // Buffer for multiple alarm characters (C, T, R + up to 2-digit motor number)
                 uint8_t alarmCount = checkEscAlarmConditions(k, rpm, temperature, current, 
                     rpm > 0, 
                     temperature > 0, 
