@@ -373,7 +373,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         // Cache motor count before loop  
         const uint8_t motorCount = getMotorCount();
 
-        for (uint8_t k = 0; k < motorCount; k++) {
+        for (unsigned k = 0; k < motorCount; k++) {
             uint8_t dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
 
             // Write ESC nr
