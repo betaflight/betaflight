@@ -404,7 +404,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[k];
                 
                 // Calculate RPM from eRPM using consistent conversion function
-                uint16_t rpm = lrintf(erpmToRpm(motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]));
+                uint16_t rpm = erpmToRpm(motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]);
 
                 // Direct bit checking for extended telemetry
                 bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
