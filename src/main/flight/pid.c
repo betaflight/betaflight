@@ -229,7 +229,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_mode = TPA_MODE_D,
         .tpa_rate = 65,
         .tpa_breakpoint = 1350,
-        .angle_feedforward_smoothing_ms = 80,
+        .angle_feedforward_smoothing_ms = 25,
         .angle_earth_ref = 100,
         .horizon_delay_ms = 500, // 500ms time constant on any increase in horizon strength
         .tpa_low_rate = 20,
@@ -1258,6 +1258,9 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     float ff_output[XYZ_AXIS_COUNT];
     calculateAttitudeFeedforward(attitude_setpoint, ff_output);
     // TODO add some filtering to this later
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        ff_output[axis] = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], ff_output[axis]);
+    }
 
     float error_vector[XYZ_AXIS_COUNT];
     float *gravity_vector = getGravityVector();
@@ -1279,7 +1282,7 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
 
         // pidsum is the addition of all the pid terms
 //        float pidsum = pterm + dterm;
-        float pidsum = pterm;
+        float pidsum = pterm + ff_output[axis];
         newSetpoint[axis] = pidsum; // attitude pid pidsum becomes the setpoint into to the rate pid controller
     }
 

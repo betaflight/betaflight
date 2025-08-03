@@ -298,7 +298,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_ACC
-    const float angleCutoffHz = 1000.0f / (2.0f * M_PIf * pidProfile->angle_feedforward_smoothing_ms); // default of 80ms -> 2.0Hz, 160ms -> 1.0Hz, approximately
     if (pidProfile->horizon_delay_ms) {
         const float horizonSmoothingHz = 1e3f / (2.0f * M_PIf * pidProfile->horizon_delay_ms); // default of 500ms means 0.318Hz
         const float kHorizon = pt1FilterGain(horizonSmoothingHz, pidRuntime.dT);
@@ -306,13 +305,24 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     const float attitudeK = pt3FilterGain(pidProfile->angle_smoothing_cut, pidRuntime.dT);
-    const float angleFfK = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], attitudeK);
-        if (axis != FD_YAW) {
-            pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], angleFfK);
+    }
+
+    float angleFfK = 1.0f;
+    if (pidProfile->angle_feedforward_smoothing_ms > 0) {
+        if (pidProfile->qs_level_mode) {
+            // 10ths of a ms scaling
+            angleFfK = pt3FilterGainFromDelay(pidProfile->angle_feedforward_smoothing_ms / 10000.0f, pidRuntime.dT);
+        } else {
+            // ms scaling
+            angleFfK = pt3FilterGainFromDelay(pidProfile->angle_feedforward_smoothing_ms / 1000.0f, pidRuntime.dT);
         }
     }
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], angleFfK);
+    }
+
     pidRuntime.angleYawSetpoint = 0.0f;
 #endif
 
