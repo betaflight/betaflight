@@ -188,10 +188,10 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
             memset(warningText, ' ', offset);
         }
         return true;
-    } else {
-        warningText[0] = '\0';
-        return false;
     }
+
+    warningText[0] = '\0';
+    return false;
 }
 #endif
 
