@@ -157,24 +157,21 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
     for (unsigned i = 0; i < getMotorCount(); i++) {
         escSensorData_t *escData = NULL;
         escSensorData_t escDataBuffer;
-        bool hasValidData = false;
 
         // Get sensor data based on type
         if (isDshot) {
             if (getDshotSensorData(i, &escDataBuffer) == 0) {
                 escData = &escDataBuffer;
-                hasValidData = true;
             }
         } else {
             escSensorData_t *escDataPtr = getEscSensorData(i);
             if (escDataPtr) {
                 escDataBuffer = *escDataPtr;
                 escData = &escDataBuffer;
-                hasValidData = true;
             }
         }
 
-        if (hasValidData) {
+        if (escData) {
             char alarmChars[4]; // Buffer for alarm characters (C, T, R)
             if (checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars)) {
                 escWarning = true;
