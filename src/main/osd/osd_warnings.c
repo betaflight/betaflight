@@ -218,40 +218,6 @@ static int checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t te
 
     return hasAlarm ? 1 : 0;
 }
-{
-    const osdConfig_t *config = osdConfig();
-    uint8_t alarmPos = 0;
-    bool hasAlarm = false;
-    
-    // Check RPM alarm (only when motor is spinning)
-    if (isMotorSpinning(motorIndex)) {
-        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
-            buffer[alarmPos++] = ESC_ALARM_RPM;
-            hasAlarm = true;
-        }
-    }
-
-    // Check current alarm (regardless of motor spinning state)
-    if (current && config->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= config->esc_current_alarm) {
-        buffer[alarmPos++] = ESC_ALARM_CURRENT;
-        hasAlarm = true;
-    }
-
-    // Check temperature alarm (regardless of motor spinning state)
-    if (temperature && config->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= config->esc_temp_alarm) {
-        buffer[alarmPos++] = ESC_ALARM_TEMP;
-        hasAlarm = true;
-    }
-
-    // If no alarms, display motor number (handle multi-digit motors properly)
-    if (!hasAlarm) {
-        alarmPos += tfp_sprintf(buffer + alarmPos, "%d", motorIndex + 1);
-    } else {
-        buffer[alarmPos] = '\0';
-    }
-
-    return hasAlarm ? 1 : 0;
-}
 #endif
 
 void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
