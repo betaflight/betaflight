@@ -83,6 +83,15 @@ static inline bool isMotorSpinning(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
 }
 
+int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
+    // Get the DShot telemetry data for the specified motor
+    dest->rpm = getMotorRPM(motorIndex);
+    dest->temperature = getMotorTemperature(motorIndex);
+    dest->current = getMotorCurrent(motorIndex);
+
+    return 0;
+}
+
 static int checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, char* buffer)
 {
     const osdConfig_t *config = osdConfig();
@@ -345,6 +354,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                     strcpy(warningText + escErrorLength, alarmChars);
                     escErrorLength += strlen(alarmChars);
                 }
+            } else {
+                // If no alarm, just add the ESC number
+                escErrorLength += tfp_sprintf(warningText + escErrorLength, "0%d", (i + 1) % 10); // 123..9012
             }
         }
 
