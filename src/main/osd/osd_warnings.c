@@ -170,7 +170,6 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
             escSensorData_t *escDataPtr = getEscSensorData(i);
             if (escDataPtr) {
                 escDataBuffer = *escDataPtr;
-                escDataBuffer.rpm = erpmToRpm(escDataBuffer.rpm); // Convert eRPM to RPM for ESC sensor
                 escData = &escDataBuffer;
                 hasValidData = true;
             }
