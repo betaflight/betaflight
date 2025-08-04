@@ -330,13 +330,10 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_ESC_SENSOR
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        unsigned escErrorLength = 0;
-        
-        // Write 'ESC' prefix
-        escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
-
+        unsigned escErrorLength = tfp_sprintf(warningText, "ESC");
         bool escWarning = false;
-        for (unsigned i = 0; i < getMotorCount() && escErrorLength < OSD_WARNINGS_MAX_SIZE; i++) `{`
+
+        for (unsigned i = 0; i < getMotorCount() && escErrorLength < OSD_WARNINGS_MAX_SIZE; i++) {
             escSensorData_t *escData = getEscSensorData(i);
 
             char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
