@@ -433,8 +433,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         if (buildEscWarningMessage(warningText, false)) {
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
+            return;
         }
-        return;
     }
 #endif // USE_ESC_SENSOR
 
