@@ -82,12 +82,6 @@ static inline bool isMotorSpinning(uint8_t motorIndex) {
 int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
     // Check if DShot telemetry is active for this motor
     if (!isDshotMotorTelemetryActive(motorIndex)) {
-        dest->rpm = 0;
-        dest->temperature = 0;
-        dest->current = 0;
-        dest->voltage = 0;
-        dest->consumption = 0;
-        dest->dataAge = ESC_DATA_INVALID;
         return -1;
     }
 
