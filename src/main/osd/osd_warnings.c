@@ -339,7 +339,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         for (unsigned i = 0; i < getMotorCount() && escErrorLength < OSD_WARNINGS_MAX_SIZE - 6; i++) {
             escSensorData_t *escData = getEscSensorData(i);
 
-            char alarmChars[6]; // Buffer for multiple alarm characters (C, T, R + up to 2-digit motor number)
+            char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
 
             if (checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, alarmChars)) {
                 escWarning = true;
@@ -402,7 +402,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 uint16_t current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
                     motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
-                char alarmChars[6]; // Buffer for multiple alarm characters (C, T, R + up to 2-digit motor number)
+                char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
                 if (checkEscAlarmConditions(i, rpm, temperature, current, alarmChars)) {
                     escWarning = true;
 
