@@ -336,7 +336,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
 
         bool escWarning = false;
-        for (unsigned i = 0; i < getMotorCount() && escErrorLength < OSD_WARNINGS_MAX_SIZE - 6; i++) {
+        for (unsigned i = 0; i < getMotorCount() && escErrorLength < OSD_WARNINGS_MAX_SIZE; i++) `{`
             escSensorData_t *escData = getEscSensorData(i);
 
             char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
