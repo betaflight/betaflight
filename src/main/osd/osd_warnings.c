@@ -167,26 +167,19 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
 
         if (escData) {
             char alarmChars[4]; // Buffer for alarm characters (C, T, R)
-            if (checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars)) {
-                escWarning = true;
-
-                // Show alarm characters instead of motor number
-                if (escErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
-                    strcat(warningText + escErrorLength, alarmChars);
-                    escErrorLength += strlen(alarmChars);
-                }
-            } else {
-                // Show motor number when no alarms
-                escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d", i + 1);
-            }
+            bool hasAlarm = checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars);
+            
+            // Always show motor number, conditionally add alarm characters
+            escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d%s", i + 1, hasAlarm ? alarmChars : "");
+            escWarning |= hasAlarm;
         }
     }
 
-    // Apply message formatting if we have warnings
+    // Return result based on whether warnings were found
     if (escWarning) {
         warningText[escErrorLength] = '\0';
         
-        // Center message if it's short (ESC sensor style)
+        // Center message if it's short for better visual presentation
         const int msgLen = strlen(warningText);
         const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;
         if (msgLen < minMsgLen - 1) {
