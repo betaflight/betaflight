@@ -120,7 +120,104 @@ int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
     return 0;
 }
 
+// Generic ESC warning function for both ESC sensor and DShot telemetry
+static bool buildEscWarningMessage(char *warningText, bool isDshot) {
+    uint8_t escErrorLength = 0;
+    bool escWarning = false;
+
+    // Write 'ESC' prefix
+    escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
+
+    for (unsigned i = 0; i < getMotorCount(); i++) {
+        uint8_t escErrorLengthMotorBegin = escErrorLength;
+        escSensorData_t escData;
+        bool hasValidData = false;
+
+        // Get sensor data based on type
+        if (isDshot) {
+            hasValidData = (getDshotSensorData(i, &escData) == 0);
+        } else {
+            escSensorData_t *escDataPtr = getEscSensorData(i);
+            if (escDataPtr) {
+                escData = *escDataPtr;
+                escData.rpm = erpmToRpm(escData.rpm); // Convert eRPM to RPM for ESC sensor
+                hasValidData = true;
+            }
+        }
+
+        if (hasValidData) {
+            // Write ESC nr with proper multi-digit support
+            escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d", i + 1);
+
+            char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number
+            if (checkEscAlarmConditions(i, escData.rpm, escData.temperature, escData.current, alarmChars)) {
+                escWarning = true;
+
+                if (escErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
+                    strcat(warningText + escErrorLength, alarmChars);
+                    escErrorLength += strlen(alarmChars);
+                }
+            } else {
+                // If no alarm, rollback to before motor number (DShot style)
+                escErrorLength = escErrorLengthMotorBegin;
+            }
+        }
+    }
+
+    // Apply message formatting if we have warnings
+    if (escWarning) {
+        warningText[escErrorLength] = '\0';
+        
+        // Center message if it's short (ESC sensor style)
+        const int msgLen = strlen(warningText);
+        const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;
+        if (msgLen < minMsgLen - 1) {
+            const int offset = (minMsgLen - msgLen) / 2;
+            memmove(warningText + offset, warningText, msgLen + 1);
+            memset(warningText, ' ', offset);
+        }
+        return true;
+    } else {
+        warningText[0] = '\0';
+        return false;
+    }
+}
+
 static int checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, char* buffer)
+{
+    const osdConfig_t *config = osdConfig();
+    uint8_t alarmPos = 0;
+    bool hasAlarm = false;
+    
+    // Check RPM alarm (only when motor is spinning)
+    if (isMotorSpinning(motorIndex)) {
+        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
+            buffer[alarmPos++] = ESC_ALARM_RPM;
+            hasAlarm = true;
+        }
+    }
+
+    // Check current alarm (regardless of motor spinning state)
+    if (current && config->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= config->esc_current_alarm) {
+        buffer[alarmPos++] = ESC_ALARM_CURRENT;
+        hasAlarm = true;
+    }
+
+    // Check temperature alarm (regardless of motor spinning state)
+    if (temperature && config->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= config->esc_temp_alarm) {
+        buffer[alarmPos++] = ESC_ALARM_TEMP;
+        hasAlarm = true;
+    }
+
+    // If no alarms, display motor number (handle multi-digit motors properly)
+    if (!hasAlarm) {
+        alarmPos += tfp_sprintf(buffer + alarmPos, "%d", motorIndex + 1);
+    } else {
+        buffer[alarmPos] = '\0';
+    }
+
+    return hasAlarm ? 1 : 0;
+}
 {
     const osdConfig_t *config = osdConfig();
     uint8_t alarmPos = 0;
@@ -367,88 +464,22 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_ESC_SENSOR
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        unsigned escErrorLength = tfp_sprintf(warningText, "ESC");
-        bool escWarning = false;
-
-        for (unsigned i = 0; i < getMotorCount() && escErrorLength < OSD_WARNINGS_MAX_SIZE; i++) {
-            escSensorData_t *escData = getEscSensorData(i);
-
-            char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
-
-            if (checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, alarmChars)) {
-                escWarning = true;
-                // Add alarm string to warning text using strcat
-                if (escErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
-                    strcpy(warningText + escErrorLength, alarmChars);
-                    escErrorLength += strlen(alarmChars);
-                }
-            } else {
-                // If no alarm, just add the ESC number
-                escErrorLength += tfp_sprintf(warningText + escErrorLength, "0%d", (i + 1) % 10); // 123..9012
-            }
-        }
-
-        warningText[escErrorLength] = 0;  // terminate string
-
-        if (escWarning) {
-            const int msgLen = strlen(warningText);
-            const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;           // intended minimum width
-            if (msgLen < minMsgLen - 1) {
-                // message is short, center it within minMsgLen
-                const int offset = (minMsgLen - msgLen) / 2;
-                memmove(warningText + offset, warningText, msgLen + 1);  // copy including '\0'
-                memset(warningText, ' ', offset);                        // left padding with spaces
-            }
+        if (buildEscWarningMessage(warningText, false)) {
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
-        } else {
-            // no warning, erase generated message and continue
-            warningText[0] = '\0';
         }
+        return;
     }
 #endif // USE_ESC_SENSOR
 
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
     // Show esc error
     if (motorConfig()->dev.useDshotTelemetry && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        uint8_t dshotEscErrorLength = 0;
-        bool escWarning = false;
-
-        // Write 'ESC' prefix
-        dshotEscErrorLength += tfp_sprintf(warningText + dshotEscErrorLength, "ESC");
-
-        for (unsigned i = 0; i < getMotorCount(); i++) {
-            uint8_t dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
-
-            // Write ESC nr with proper multi-digit support using tfp_sprintf
-            dshotEscErrorLength += tfp_sprintf(warningText + dshotEscErrorLength, " %d", i + 1);
-
-            if (isDshotMotorTelemetryActive(i)) {
-                escSensorData_t escData;
-                if (getDshotSensorData(i, &escData) == 0) {
-                    char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
-                    if (checkEscAlarmConditions(i, escData.rpm, escData.temperature, escData.current, alarmChars)) {
-                        escWarning = true;
-
-                        if (dshotEscErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
-                            strcat(warningText + dshotEscErrorLength, alarmChars);
-                            dshotEscErrorLength += strlen(alarmChars);
-                        }
-                    }
-                } else {
-                    dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
-                }
-            }
-        }
-
-        // If warning exists then notify, otherwise clear warning message
-        if (escWarning) {
-            warningText[dshotEscErrorLength] = 0;  // terminate string
+        if (buildEscWarningMessage(warningText, true)) {
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
-        } else {
-            warningText[0] = 0;
         }
+        return;
     }
 #endif
 
