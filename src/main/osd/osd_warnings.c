@@ -141,12 +141,7 @@ static int checkEscAlarmConditions(uint8_t motorIndex, int32_t rpm, int32_t temp
         hasAlarm = true;
     }
 
-    // If no alarms, display motor number (handle multi-digit motors properly)
-    if (!hasAlarm) {
-        alarmPos += tfp_sprintf(buffer + alarmPos, "%d", motorIndex + 1);
-    } else {
-        buffer[alarmPos] = '\0';
-    }
+    buffer[alarmPos] = '\0';
 
     return hasAlarm ? 1 : 0;
 }
@@ -161,36 +156,47 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
 
     for (unsigned i = 0; i < getMotorCount(); i++) {
         uint8_t escErrorLengthMotorBegin = escErrorLength;
-        escSensorData_t escData;
+        escSensorData_t *escData = NULL;
+        escSensorData_t escDataBuffer;
         bool hasValidData = false;
 
         // Get sensor data based on type
         if (isDshot) {
-            hasValidData = (getDshotSensorData(i, &escData) == 0);
+            if (getDshotSensorData(i, &escDataBuffer) == 0) {
+                escData = &escDataBuffer;
+                hasValidData = true;
+            }
         } else {
             escSensorData_t *escDataPtr = getEscSensorData(i);
             if (escDataPtr) {
-                escData = *escDataPtr;
-                escData.rpm = erpmToRpm(escData.rpm); // Convert eRPM to RPM for ESC sensor
+                escDataBuffer = *escDataPtr;
+                escDataBuffer.rpm = erpmToRpm(escDataBuffer.rpm); // Convert eRPM to RPM for ESC sensor
+                escData = &escDataBuffer;
                 hasValidData = true;
             }
         }
 
         if (hasValidData) {
-            // Write ESC nr with proper multi-digit support
-            escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d", i + 1);
-
-            char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number
-            if (checkEscAlarmConditions(i, escData.rpm, escData.temperature, escData.current, alarmChars)) {
+            char alarmChars[4]; // Buffer for alarm characters (C, T, R)
+            if (checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars)) {
                 escWarning = true;
+
+                // Write ESC nr with proper multi-digit support
+                escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d", i + 1);
 
                 if (escErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
                     strcat(warningText + escErrorLength, alarmChars);
                     escErrorLength += strlen(alarmChars);
                 }
             } else {
-                // If no alarm, rollback to before motor number (DShot style)
-                escErrorLength = escErrorLengthMotorBegin;
+                // If no alarm, add motor number only for DShot telemetry style
+                if (isDshot) {
+                    escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d", i + 1);
+                }
+                // For ESC sensor style, rollback to before motor attempt
+                else {
+                    escErrorLength = escErrorLengthMotorBegin;
+                }
             }
         }
     }
@@ -439,8 +445,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         if (buildEscWarningMessage(warningText, true)) {
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
+            return;
         }
-        return;
     }
 #endif
 
