@@ -90,18 +90,16 @@ int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
     // Calculate RPM from eRPM using consistent conversion function
     dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
 
-    // Check for extended telemetry once
-    const uint32_t telemetryTypes = motorState->telemetryTypes;
-    const bool edt = (telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+    const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
 
     // Extract telemetry data if available
-    dest->temperature = edt && (telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 
+    dest->temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 
         motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
 
-    dest->current = edt && (telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
+    dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
         motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
-    dest->voltage = edt && (telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 
+    dest->voltage = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 
         motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] : 0;
 
     dest->consumption = 0; // DShot doesn't typically provide consumption data
