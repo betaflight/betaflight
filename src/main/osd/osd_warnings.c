@@ -75,7 +75,7 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #define ESC_ALARM_TEMP      'T'
 #define ESC_ALARM_RPM       'R'
 
-static inline bool isMotorSpinning(uint8_t motorIndex) {
+static inline bool isMotorActive(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
 }
 
@@ -114,9 +114,9 @@ static int checkEscAlarmConditions(uint8_t motorIndex, int32_t rpm, int32_t temp
     const osdConfig_t *config = osdConfig();
     uint8_t alarmPos = 0;
     bool hasAlarm = false;
-    
-    // Check RPM alarm (only when motor is spinning)
-    if (isMotorSpinning(motorIndex)) {
+
+    // Check RPM alarm (only when motor is active)
+    if (isMotorActive(motorIndex)) {
         if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(rpm) <= config->esc_rpm_alarm) {
             buffer[alarmPos++] = ESC_ALARM_RPM;
             hasAlarm = true;
