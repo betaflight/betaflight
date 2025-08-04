@@ -88,7 +88,7 @@ int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
     const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
     
     // Calculate RPM from eRPM using consistent conversion function
-    dest->rpm = erpmToRpm(motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]);
+    dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
 
     // Direct bit checking for extended telemetry
     bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
@@ -117,7 +117,7 @@ static int checkEscAlarmConditions(uint8_t motorIndex, int32_t rpm, int32_t temp
     
     // Check RPM alarm (only when motor is spinning)
     if (isMotorSpinning(motorIndex)) {
-        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
+        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(rpm) <= config->esc_rpm_alarm) {
             buffer[alarmPos++] = ESC_ALARM_RPM;
             hasAlarm = true;
         }
