@@ -117,7 +117,7 @@ static int checkEscAlarmConditions(uint8_t motorIndex, int32_t rpm, int32_t temp
 
     // Check RPM alarm (only when motor is active)
     if (isMotorActive(motorIndex)) {
-        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(rpm) <= config->esc_rpm_alarm) {
+        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
             buffer[alarmPos++] = ESC_ALARM_RPM;
             hasAlarm = true;
         }
@@ -161,6 +161,8 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
             escSensorData_t *escDataPtr = getEscSensorData(i);
             if (escDataPtr) {
                 escDataBuffer = *escDataPtr;
+                // Convert eRPM to RPM for ESC sensor data (as in original code)
+                escDataBuffer.rpm = erpmToRpm(escDataBuffer.rpm);
                 escData = &escDataBuffer;
             }
         }
