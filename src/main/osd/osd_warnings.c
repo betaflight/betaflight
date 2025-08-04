@@ -91,9 +91,9 @@ int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
     dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
 
     // Check for extended telemetry once
-    const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
     const uint32_t telemetryTypes = motorState->telemetryTypes;
-    
+    const bool edt = (telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+
     // Extract telemetry data if available
     dest->temperature = edt && (telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 
         motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
