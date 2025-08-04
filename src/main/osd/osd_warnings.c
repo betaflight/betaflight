@@ -345,7 +345,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                 escWarning = true;
                 // Add alarm string to warning text using strcat
                 if (escErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
-                    strcat(warningText + escErrorLength, alarmChars);
+                    strcpy(warningText + escErrorLength, alarmChars);
                     escErrorLength += strlen(alarmChars);
                 }
             }
