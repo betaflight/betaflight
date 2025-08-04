@@ -64,6 +64,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
@@ -84,10 +85,37 @@ static inline bool isMotorSpinning(uint8_t motorIndex) {
 }
 
 int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
-    // Get the DShot telemetry data for the specified motor
-    dest->rpm = getMotorRPM(motorIndex);
-    dest->temperature = getMotorTemperature(motorIndex);
-    dest->current = getMotorCurrent(motorIndex);
+    // Check if DShot telemetry is active for this motor
+    if (!isDshotMotorTelemetryActive(motorIndex)) {
+        dest->rpm = 0;
+        dest->temperature = 0;
+        dest->current = 0;
+        dest->voltage = 0;
+        dest->consumption = 0;
+        dest->dataAge = ESC_DATA_INVALID;
+        return -1;
+    }
+
+    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
+    
+    // Calculate RPM from eRPM using consistent conversion function
+    dest->rpm = erpmToRpm(motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]);
+
+    // Direct bit checking for extended telemetry
+    bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+    
+    // Extract telemetry data if available
+    dest->temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
+
+    dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
+
+    dest->voltage = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] : 0;
+
+    dest->consumption = 0; // DShot doesn't typically provide consumption data
+    dest->dataAge = 0; // Data is fresh
 
     return 0;
 }
@@ -396,28 +424,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             dshotEscErrorLength += tfp_sprintf(warningText + dshotEscErrorLength, " %d", i + 1);
 
             if (isDshotMotorTelemetryActive(i)) {
-                const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[i];
-                
-                // Calculate RPM from eRPM using consistent conversion function
-                uint16_t rpm = erpmToRpm(motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]);
+                escSensorData_t escData;
+                if (getDshotSensorData(i, &escData) == 0) {
+                    char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
+                    if (checkEscAlarmConditions(i, escData.rpm, escData.temperature, escData.current, alarmChars)) {
+                        escWarning = true;
 
-                // Direct bit checking for extended telemetry
-                bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
-                
-                // Optimize telemetry availability and data extraction
-                uint16_t temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 
-                    motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
-
-                uint16_t current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
-                    motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
-
-                char alarmChars[4]; // Buffer for alarm characters (C, T, R) OR motor number (up to 2 digits)
-                if (checkEscAlarmConditions(i, rpm, temperature, current, alarmChars)) {
-                    escWarning = true;
-
-                    if (dshotEscErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
-                        strcat(warningText + dshotEscErrorLength, alarmChars);
-                        dshotEscErrorLength += strlen(alarmChars);
+                        if (dshotEscErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
+                            strcat(warningText + dshotEscErrorLength, alarmChars);
+                            dshotEscErrorLength += strlen(alarmChars);
+                        }
                     }
                 } else {
                     dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
