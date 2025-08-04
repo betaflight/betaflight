@@ -68,60 +68,55 @@
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
+#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // ESC alarm character constants
 #define ESC_ALARM_CURRENT   'C'
 #define ESC_ALARM_TEMP      'T'
 #define ESC_ALARM_RPM       'R'
 
-// ESC motor prefix length (space + motor number digit)
-#define ESC_MOTOR_PREFIX_LENGTH 2
-
 // Check if character represents an alarm condition
-#define IS_ESC_ALARM(c) ((c) == ESC_ALARM_CURRENT || (c) == ESC_ALARM_TEMP || (c) == ESC_ALARM_RPM)
+static inline bool isEscAlarm(char c) {
+    return (c == ESC_ALARM_CURRENT || c == ESC_ALARM_TEMP || c == ESC_ALARM_RPM);
+}
 
-#if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
-static uint8_t checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, bool rpmAvailable, bool tempAvailable, bool currentAvailable, char* buffer)
+static inline bool isMotorSpinning(uint8_t motorIndex) {
+    return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
+}
+
+static int checkEscAlarmConditions(uint8_t motorIndex, uint16_t rpm, uint16_t temperature, uint16_t current, char* buffer)
 {
-    // NULL check for buffer parameter
-    if (!buffer) {
-        return 0;
+    const osdConfig_t *config = osdConfig();
+    uint8_t alarmPos = 0;
+    bool hasAlarm = false;
+    
+    // Check RPM alarm (only when motor is spinning)
+    if (isMotorSpinning(motorIndex)) {
+        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
+            buffer[alarmPos++] = ESC_ALARM_RPM;
+            hasAlarm = true;
+        }
     }
 
-    const osdConfig_t *config = osdConfig();
-    const uint8_t motorCount = getMotorCount();  // Cache motor count
-    uint8_t alarmCount = 0;
-    
     // Check current alarm (regardless of motor spinning state)
-    if (currentAvailable && config->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= config->esc_current_alarm) {
-        buffer[alarmCount++] = ESC_ALARM_CURRENT;
+    if (current && config->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= config->esc_current_alarm) {
+        buffer[alarmPos++] = ESC_ALARM_CURRENT;
+        hasAlarm = true;
     }
 
     // Check temperature alarm (regardless of motor spinning state)
-    if (tempAvailable && config->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= config->esc_temp_alarm) {
-        buffer[alarmCount++] = ESC_ALARM_TEMP;
-    }
-
-    // Check RPM alarm (only when motor is spinning)
-    if (motorIndex < motorCount && motor[motorIndex] > mixerRuntime.disarmMotorOutput) {
-        if (rpmAvailable && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
-            buffer[alarmCount++] = ESC_ALARM_RPM;
-        }
+    if (temperature && config->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= config->esc_temp_alarm) {
+        buffer[alarmPos++] = ESC_ALARM_TEMP;
+        hasAlarm = true;
     }
 
     // If no alarms, display motor number (handle multi-digit motors properly)
-    if (alarmCount == 0) {
-        uint8_t motorNum = motorIndex + 1;
-        if (motorNum >= 10) {
-            // For motors 10+, use two characters (e.g., motor 10 -> "10", motor 11 -> "11")
-            buffer[alarmCount++] = '0' + (motorNum / 10);      // tens digit
-            buffer[alarmCount++] = '0' + (motorNum % 10);      // ones digit
-        } else {
-            // For motors 1-9, use single character
-            buffer[alarmCount++] = '0' + motorNum;
-        }
+    if (!hasAlarm) {
+        alarmPos += tfp_sprintf(buffer + alarmPos, "%d", motorIndex + 1);
+    } else {
+        buffer[alarmPos] = '\0';
     }
 
-    return alarmCount;
+    return hasAlarm ? 1 : 0;
 }
 #endif
 
@@ -335,46 +330,31 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_ESC_SENSOR
     // Show warning if we lose motor output, the ESC is overheating or excessive current draw
     if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdWarnGetState(OSD_WARNING_ESC_FAIL) && ARMING_FLAG(ARMED)) {
-        char* p = warningText;
-        *p++ = 'E';
-        *p++ = 'S';
-        *p++ = 'C';
+        uint8_t escErrorLength = 0;
+        
+        // Write 'ESC' prefix
+        escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
 
         bool escWarning = false;
-        const unsigned motorCount = getMotorCount();
-        for (unsigned i = 0; i < motorCount && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; i++) {
+        for (unsigned i = 0; i < getMotorCount() && escErrorLength < OSD_WARNINGS_MAX_SIZE - 6; i++) {
             escSensorData_t *escData = getEscSensorData(i);
 
             char alarmChars[6]; // Buffer for multiple alarm characters (C, T, R + up to 2-digit motor number)
-            uint8_t alarmCount = checkEscAlarmConditions(i,
-                erpmToRpm(escData->rpm), 
-                escData->temperature, 
-                escData->current, 
-                escData->rpm > 0, 
-                escData->temperature > 0, 
-                escData->current >= 0,
-                alarmChars);
 
-            // Check if any alarms were found
-            bool hasAlarm = false;
-            for (uint8_t j = 0; j < alarmCount; j++) {
-                if (IS_ESC_ALARM(alarmChars[j])) {
-                    hasAlarm = true;
-                    break;
+            if (checkEscAlarmConditions(i, erpmToRpm(escData->rpm), escData->temperature, escData->current, alarmChars)) {
+                escWarning = true;
+                // Add alarm string to warning text using strcat
+                if (escErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
+                    strcat(warningText + escErrorLength, alarmChars);
+                    escErrorLength += strlen(alarmChars);
                 }
-            }
-            escWarning |= hasAlarm;
-
-            // Add all alarm characters to warning text
-            for (uint8_t j = 0; j < alarmCount && p < warningText + OSD_WARNINGS_MAX_SIZE - 1; j++) {
-                *p++ = alarmChars[j];
             }
         }
 
-        *p = 0;  // terminate string
+        warningText[escErrorLength] = 0;  // terminate string
 
         if (escWarning) {
-            const int msgLen = p - warningText;  // Calculate length from pointer difference
+            const int msgLen = strlen(warningText);
             const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;           // intended minimum width
             if (msgLen < minMsgLen - 1) {
                 // message is short, center it within minMsgLen
@@ -384,7 +364,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             }
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
-            return;
         } else {
             // no warning, erase generated message and continue
             warningText[0] = '\0';
@@ -398,26 +377,17 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         uint8_t dshotEscErrorLength = 0;
         bool escWarning = false;
 
-        // Write 'ESC'
-        warningText[dshotEscErrorLength++] = 'E';
-        warningText[dshotEscErrorLength++] = 'S';
-        warningText[dshotEscErrorLength++] = 'C';
+        // Write 'ESC' prefix
+        dshotEscErrorLength += tfp_sprintf(warningText + dshotEscErrorLength, "ESC");
 
-        // Cache motor count before loop  
-        const uint8_t motorCount = getMotorCount();
-
-        for (unsigned k = 0; k < motorCount; k++) {
+        for (unsigned i = 0; i < getMotorCount(); i++) {
             uint8_t dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
 
-            // Write ESC nr
-            warningText[dshotEscErrorLength++] = ' ';
-            warningText[dshotEscErrorLength++] = '0' + k + 1;
+            // Write ESC nr with proper multi-digit support using tfp_sprintf
+            dshotEscErrorLength += tfp_sprintf(warningText + dshotEscErrorLength, " %d", i + 1);
 
-            bool hasAlarm = false;  // Track if any alarm was detected for this motor
-
-            if (isDshotMotorTelemetryActive(k)) {
-                // Cache motor state for efficient access
-                const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[k];
+            if (isDshotMotorTelemetryActive(i)) {
+                const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[i];
                 
                 // Calculate RPM from eRPM using consistent conversion function
                 uint16_t rpm = erpmToRpm(motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]);
@@ -433,30 +403,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
                     motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
                 char alarmChars[6]; // Buffer for multiple alarm characters (C, T, R + up to 2-digit motor number)
-                uint8_t alarmCount = checkEscAlarmConditions(k, rpm, temperature, current, 
-                    rpm > 0, 
-                    temperature > 0, 
-                    current > 0,
-                    alarmChars);
+                if (checkEscAlarmConditions(i, rpm, temperature, current, alarmChars)) {
+                    escWarning = true;
 
-                // Check if any alarms were found
-                for (uint8_t j = 0; j < alarmCount; j++) {
-                    if (IS_ESC_ALARM(alarmChars[j])) {
-                        hasAlarm = true;
-                        break;
+                    if (dshotEscErrorLength + strlen(alarmChars) < OSD_WARNINGS_MAX_SIZE - 1) {
+                        strcat(warningText + dshotEscErrorLength, alarmChars);
+                        dshotEscErrorLength += strlen(alarmChars);
                     }
+                } else {
+                    dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
                 }
-                escWarning |= hasAlarm;
-
-                // Add all alarm characters to warning text
-                for (uint8_t j = 0; j < alarmCount; j++) {
-                    warningText[dshotEscErrorLength++] = alarmChars[j];
-                }
-            }
-
-            // If no alarm was detected (only motor number returned), undo the motor prefix
-            if (!hasAlarm) {
-                dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
             }
         }
 
