@@ -144,10 +144,9 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
 
     for (unsigned i = 0; i < getMotorCount(); i++) {
         escSensorData_t *escData = NULL;
-
+        escSensorData_t escDataBuffer;
         // Get sensor data based on type
         if (isDshot) {
-            escSensorData_t escDataBuffer;
             if (getDshotSensorData(i, &escDataBuffer) == 0) {
                 escData = &escDataBuffer;
             }
