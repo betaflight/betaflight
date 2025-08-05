@@ -1162,9 +1162,9 @@ void calculateAttitudeFeedforward(float *attitude_setpoint, float *ff_output)
     if (pidRuntime.angleFeedforwardGain > 0) {
         // Calculate cross product: axis = cross(g_sp_prev, g_sp_now)
         float axis[XYZ_AXIS_COUNT];
-        axis[FD_ROLL] = g_sp_prev[FD_PITCH] * attitude_setpoint[FD_YAW] - g_sp_prev[FD_YAW] * attitude_setpoint[FD_PITCH];
-        axis[FD_PITCH] = g_sp_prev[FD_YAW] * attitude_setpoint[FD_ROLL] - g_sp_prev[FD_ROLL] * attitude_setpoint[FD_YAW];
-        axis[FD_YAW] = g_sp_prev[FD_ROLL] * attitude_setpoint[FD_PITCH] - g_sp_prev[FD_PITCH] * attitude_setpoint[FD_ROLL];
+        axis[FD_ROLL] = -g_sp_prev[FD_PITCH] * attitude_setpoint[FD_YAW] + g_sp_prev[FD_YAW] * attitude_setpoint[FD_PITCH];
+        axis[FD_PITCH] = -g_sp_prev[FD_YAW] * attitude_setpoint[FD_ROLL] + g_sp_prev[FD_ROLL] * attitude_setpoint[FD_YAW];
+        axis[FD_YAW] = -g_sp_prev[FD_ROLL] * attitude_setpoint[FD_PITCH] + g_sp_prev[FD_PITCH] * attitude_setpoint[FD_ROLL];
 
         // Calculate angle between vectors
         float dot_product = g_sp_prev[FD_ROLL] * attitude_setpoint[FD_ROLL] +
@@ -1182,18 +1182,15 @@ void calculateAttitudeFeedforward(float *attitude_setpoint, float *ff_output)
             float angular_velocity_magnitude = angle * pidRuntime.pidFrequency;
             float ff_gain = MIN(pidRuntime.angleFeedforwardGain, 1.0f);
             float inv_magnitude = 1.0f / axis_magnitude;
-
-            // Calculate feedforward output
             for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
                 ff_output[i] = (axis[i] * inv_magnitude) * angular_velocity_magnitude * ff_gain;
             }
         }
-
-        // Store current setpoint for next iteration
-        g_sp_prev[FD_ROLL] = attitude_setpoint[FD_ROLL];
-        g_sp_prev[FD_PITCH] = attitude_setpoint[FD_PITCH];
-        g_sp_prev[FD_YAW] = attitude_setpoint[FD_YAW];
     }
+
+    g_sp_prev[FD_ROLL] = attitude_setpoint[FD_ROLL];
+    g_sp_prev[FD_PITCH] = attitude_setpoint[FD_PITCH];
+    g_sp_prev[FD_YAW] = attitude_setpoint[FD_YAW];
 }
 
 // attitude pid controller ported from QS and modified by QuickFlash
