@@ -87,7 +87,6 @@ int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
 
     const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
     
-    // Calculate RPM from eRPM using consistent conversion function
     dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
 
     const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
@@ -112,36 +111,32 @@ static int checkEscAlarmConditions(uint8_t motorIndex, int32_t rpm, int32_t temp
 {
     const osdConfig_t *config = osdConfig();
     uint8_t alarmPos = 0;
-    bool hasAlarm = false;
 
     // Check RPM alarm (only when motor is active)
     if (isMotorActive(motorIndex)) {
-        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && rpm <= config->esc_rpm_alarm) {
+        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(rpm) <= config->esc_rpm_alarm) {
             buffer[alarmPos++] = ESC_ALARM_RPM;
-            hasAlarm = true;
         }
     }
 
     // Check current alarm (regardless of motor spinning state)
     if (current && config->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= config->esc_current_alarm) {
         buffer[alarmPos++] = ESC_ALARM_CURRENT;
-        hasAlarm = true;
     }
 
     // Check temperature alarm (regardless of motor spinning state)
     if (temperature && config->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= config->esc_temp_alarm) {
         buffer[alarmPos++] = ESC_ALARM_TEMP;
-        hasAlarm = true;
     }
 
     buffer[alarmPos] = '\0';
 
-    return hasAlarm ? 1 : 0;
+    return (alarmPos == 0) ? 0 : 1;
 }
 
 // Generic ESC warning function for both ESC sensor and DShot telemetry
 static bool buildEscWarningMessage(char *warningText, bool isDshot) {
-    uint8_t escErrorLength = 0;
+    unsigned escErrorLength = 0;
     bool escWarning = false;
 
     // Write 'ESC' prefix
@@ -157,28 +152,20 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
                 escData = &escDataBuffer;
             }
         } else {
-            escSensorData_t *escDataPtr = getEscSensorData(i);
-            if (escDataPtr) {
-                escDataBuffer = *escDataPtr;
-                escDataBuffer.rpm = erpmToRpm(escDataBuffer.rpm);
-                escData = &escDataBuffer;
-            }
+            escData = getEscSensorData(i);
         }
 
         if (escData) {
-            char alarmChars[4]; // Buffer for alarm characters (C, T, R)
+            char alarmChars[4]; // Buffer for alarm characters (C, T, R + '\0')
             bool hasAlarm = checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars);
             
             // Always show motor number, conditionally add alarm characters
-            escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d%s", i + 1, hasAlarm ? alarmChars : "");
+            escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d%s", i + 1, alarmChars);
             escWarning |= hasAlarm;
         }
     }
 
-    // Return result based on whether warnings were found
     if (escWarning) {
-        warningText[escErrorLength] = '\0';
-        
         // Center message if it's short for better visual presentation
         const int msgLen = strlen(warningText);
         const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;
