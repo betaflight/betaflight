@@ -56,6 +56,10 @@
 static IO_t vtxPowerPin     = IO_NONE;
 #endif
 
+#ifdef RTC6705_DYNAMIC_POWER_CTRL
+static IO_t exPowerPin[VTX_DYNAMIC_CTRL_PIN_COUNT]   = {IO_NONE, IO_NONE};
+#endif
+
 static extDevice_t *dev = NULL;
 
 #define DISABLE_RTC6705()   IOHi(dev->busType_u.spi.csnPin)
@@ -108,6 +112,17 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 
         IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
     }
+
+#ifdef RTC6705_DYNAMIC_POWER_CTRL
+    for (uint8_t i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
+        exPowerPin[i] = IOGetByTag(vtxIOConfig->exPowerTag[i]);
+        if (exPowerPin[i]) {
+            IOInit(exPowerPin[i], OWNER_VTX_POWER, i + 1);
+            IOLo(exPowerPin[i]);
+            IOConfigGPIO(exPowerPin[i], IOCFG_OUT_PP);
+        }
+    }
+#endif
 
     // RTC6705 when using SOFT SPI driver doesn't use an SPI device, so don't attempt to initialise an spiInstance.
     SPI_TypeDef *spiInstance = spiInstanceByDevice(SPI_CFG_TO_DEV(vtxIOConfig->spiDevice));
@@ -178,9 +193,40 @@ void rtc6705SetFrequency(uint16_t frequency)
     rtc6705Transfer(val_hex);
 }
 
+#ifdef RTC6705_DYNAMIC_POWER_CTRL
+void rtc6705DynamicPowerControl(uint8_t power)
+{
+    power &= 0x03; // mask lsb 2 bits, vtx power value should be 0~3
+
+    for (uint8_t i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
+        if (power & (0x01 << i)) {
+            IOHi(exPowerPin[i]);
+        } else {
+            IOLo(exPowerPin[i]);
+        }
+    }
+}
+#endif
+
 void rtc6705SetRFPower(uint8_t rf_power)
 {
+#if defined(RTC6705_EXPAND_POWER_CTRL) || defined(RTC6705_DYNAMIC_POWER_CTRL)
+    rf_power = constrain(rf_power, 0, VTX_RTC6705_POWER_COUNT);
+#else
     rf_power = constrain(rf_power, 1, 2);
+#endif
+
+#if defined(RTC6705_EXPAND_POWER_CTRL)
+    if (rf_power > 0) {
+        rtc6705Enable();
+        rf_power = (rf_power > 1) ? (1) : (2);
+    } else {
+        rtc6705Disable();
+    }
+#elif defined(RTC6705_DYNAMIC_POWER_CTRL)
+    rtc6705DynamicPowerControl(rf_power);
+#endif
+
 #if defined(USE_VTX_RTC6705_SOFTSPI)
     if (!dev) {
         rtc6705SoftSpiSetRFPower(rf_power);
