@@ -252,6 +252,10 @@ void gyroInitFilters(void)
 
     gyroInitFilterNotch1(gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
     gyroInitFilterNotch2(gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
+    
+    // Initialize gyro drift compensation
+    initGyroDriftCompensation();
+    
 #ifdef USE_DYN_LPF
     dynLpfFilterInit();
 #endif

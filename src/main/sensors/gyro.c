@@ -59,6 +59,9 @@
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 
+#include "fc/rc.h"
+#include "flight/mixer.h"
+
 #if ((TARGET_FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500)))
 #define USE_GYRO_SLEW_LIMITER
 #endif
@@ -80,6 +83,13 @@ static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 static FAST_DATA_ZERO_INIT float gyroFilteredDownsampled[XYZ_AXIS_COUNT];
 
 static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
+
+// Gyro drift compensation state
+static FAST_DATA_ZERO_INIT float gyroDriftEstimate[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT pt1Filter_t gyroDriftLpf[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT timeUs_t lastDriftUpdateUs;
+static FAST_DATA_ZERO_INIT bool driftCompensationInitialized;
+static FAST_DATA_ZERO_INIT float gyroADCUncomp[XYZ_AXIS_COUNT]; // fused, pre-bias-compensation
 
 FAST_DATA uint8_t activePidLoopDenom = 1;
 
@@ -131,6 +141,68 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->simplified_gyro_filter = true;
     gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
     gyroConfig->gyro_enabled_bitmask = DEFAULT_GYRO_ENABLED;
+}
+
+// Initialize gyro drift compensation filters
+void initGyroDriftCompensation(void)
+{
+    // Always initialize the automatic drift estimator
+    const float driftLpfCutHz = 0.1f; // very slow adaptation (~1.6s time constant per pole)
+    const float gain = pt1FilterGain(driftLpfCutHz, gyro.targetLooptime * 1e-6f);
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        pt1FilterInit(&gyroDriftLpf[axis], gain);
+        gyroDriftEstimate[axis] = 0.0f;
+    }
+
+    lastDriftUpdateUs = 0;
+    driftCompensationInitialized = true;
+}
+
+// Update gyro drift compensation - automatic, with strict gating for safe learning
+static void updateGyroDriftCompensation(timeUs_t currentTimeUs)
+{
+    if (!driftCompensationInitialized) {
+        return;
+    }
+
+    // Determine learning window based on conditions
+    // Always allow learning when disarmed and very still
+    const float maxGyroDisarmed = 0.5f;   // deg/s
+    const float maxGyroArmed    = 1.0f;   // deg/s
+    const float maxStickDeflect = 0.05f;  // 5% deflection
+    const float maxThrottle     = 0.20f;  // 20% rc throttle
+
+    bool allowUpdate = false;
+    float maxGyroAbs = 0.0f;
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        maxGyroAbs = fmaxf(maxGyroAbs, fabsf(gyroADCUncomp[axis]));
+    }
+
+    if (!ARMING_FLAG(ARMED)) {
+        allowUpdate = (maxGyroAbs <= maxGyroDisarmed);
+    } else {
+        // Opportunistic in-flight learning only when pilot is hands-off and craft is calm
+        const float maxStick = fmaxf(fmaxf(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH)), getRcDeflectionAbs(FD_YAW));
+        const float rcThr = mixerGetRcThrottle();
+        allowUpdate = (maxStick < maxStickDeflect) && (rcThr < maxThrottle) && (maxGyroAbs <= maxGyroArmed);
+    }
+
+    // Decide whether to update estimate this call
+    const uint32_t minUpdateIntervalUs = 500000; // 0.5 seconds
+    // bias update is slow and gated; no debug side-effects needed
+
+    if (!allowUpdate) {
+        // Not learning this cycle
+    } else if ((currentTimeUs - lastDriftUpdateUs) >= minUpdateIntervalUs) {
+        // Update bias estimate using very slow low-pass of the measured angular rates
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            const float driftSample = gyroADCUncomp[axis]; // deg/s, uncompensated
+            gyroDriftEstimate[axis] = pt1FilterApply(&gyroDriftLpf[axis], driftSample);
+            // Clamp to a safe bias range to avoid false large corrections
+            gyroDriftEstimate[axis] = constrainf(gyroDriftEstimate[axis], -2.0f, 2.0f); // deg/s
+        }
+        lastDriftUpdateUs = currentTimeUs;
+    }
 }
 
 static bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
@@ -428,6 +500,18 @@ FAST_CODE void gyroUpdate(void)
         gyro.gyroADC[X] = adcSum[X] / active;
         gyro.gyroADC[Y] = adcSum[Y] / active;
         gyro.gyroADC[Z] = adcSum[Z] / active;
+
+        // Snapshot uncompensated fused gyro (deg/s) for bias estimation and gating
+        gyroADCUncomp[X] = gyro.gyroADC[X];
+        gyroADCUncomp[Y] = gyro.gyroADC[Y];
+        gyroADCUncomp[Z] = gyro.gyroADC[Z];
+
+        // Always apply drift compensation; learning remains gated to safe windows
+        if (driftCompensationInitialized) {
+            gyro.gyroADC[X] -= gyroDriftEstimate[X];
+            gyro.gyroADC[Y] -= gyroDriftEstimate[Y];
+            gyro.gyroADC[Z] -= gyroDriftEstimate[Z];
+        }
     }
 
     if (gyro.downsampleFilterEnabled) {
@@ -462,6 +546,16 @@ FAST_CODE void gyroUpdate(void)
 
 FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
 {
+    // Store current values for drift compensation before filtering
+    if (driftCompensationInitialized) {
+        gyro.gyroADCf[X] = gyro.gyroADC[X];
+        gyro.gyroADCf[Y] = gyro.gyroADC[Y];
+        gyro.gyroADCf[Z] = gyro.gyroADC[Z];
+
+        // Update drift compensation estimates
+        updateGyroDriftCompensation(currentTimeUs);
+    }
+
     if (gyro.gyroDebugMode == DEBUG_NONE) {
         filterGyro();
     } else {
