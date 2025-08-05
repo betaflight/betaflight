@@ -144,10 +144,10 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
 
     for (unsigned i = 0; i < getMotorCount(); i++) {
         escSensorData_t *escData = NULL;
-        escSensorData_t escDataBuffer;
 
         // Get sensor data based on type
         if (isDshot) {
+            escSensorData_t escDataBuffer;
             if (getDshotSensorData(i, &escDataBuffer) == 0) {
                 escData = &escDataBuffer;
             }
@@ -157,11 +157,11 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
 
         if (escData) {
             char alarmChars[4]; // Buffer for alarm characters (C, T, R + '\0')
-            bool hasAlarm = checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars);
-            
-            // Always show motor number, conditionally add alarm characters
-            escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d%s", i + 1, alarmChars);
-            escWarning |= hasAlarm;
+            // Only show motor if it has alarms (problems only approach)
+            if (checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars)) {
+                escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d%s", i + 1, alarmChars);
+                escWarning = true;
+            }
         }
     }
 
