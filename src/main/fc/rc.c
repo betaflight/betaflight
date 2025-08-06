@@ -397,7 +397,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
     if (!initialized) {
         initialized = true;
         rcSmoothingData.filterInitialized = false;
-        rcSmoothingData.smoothedRxRateHz = 0.0f;
+        rcSmoothingData.smoothedRxRateHz = 100.0f; // Start with a value so that we can initialize filters with non-0 cutoffs
         rcSmoothingData.sampleCount = 0;
         rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
 
@@ -411,12 +411,10 @@ static FAST_CODE void processRcSmoothingFilter(void)
         rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
 
         if (rxConfig()->rc_smoothing_mode) {
+            // calculateCutoffs is handle here so that rc_smoothing_mode overwrites other settings
             calculateCutoffs = rcSmoothingAutoCalculate();
-            // if we don't need to calculate cutoffs dynamically then the filters can be initialized now
-            if (!calculateCutoffs) {
-                rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-                rcSmoothingData.filterInitialized = true;
-            }
+            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+            rcSmoothingData.filterInitialized = true;
         }
     }
 
@@ -449,7 +447,6 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         } else {
                             rcSmoothingData.smoothedRxRateHz = smoothedRxRateHz;
                             rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-                            rcSmoothingData.filterInitialized = true;
                             rcSmoothingData.sampleCount = 3;
                             sampleState = 2;
                         }
