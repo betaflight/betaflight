@@ -197,7 +197,7 @@ void rtc6705SetFrequency(uint16_t frequency)
 #ifdef RTC6705_DYNAMIC_POWER_CTRL
 void rtc6705DynamicPowerControl(uint8_t power)
 {
-    power &= 0x03; // mask lsb 2 bits, vtx power value should be 0~3
+    power &= (1 << VTX_DYNAMIC_CTRL_PIN_COUNT) - 1; // mask lsb 2 bits, vtx power value should be 0~3
 
     for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
         IOWrite(exPowerPin[i], power & (0x01 << i));
