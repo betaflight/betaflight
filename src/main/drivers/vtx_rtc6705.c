@@ -207,11 +207,7 @@ void rtc6705DynamicPowerControl(uint8_t power)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
-#if defined(RTC6705_EXPAND_POWER_CTRL) || defined(RTC6705_DYNAMIC_POWER_CTRL)
-    rf_power = constrain(rf_power, 0, VTX_RTC6705_POWER_COUNT);
-#else
-    rf_power = constrain(rf_power, 1, 2);
-#endif
+    rf_power = constrain(rf_power, 1, VTX_RTC6705_POWER_COUNT);
 
 #if defined(RTC6705_EXPAND_POWER_CTRL)
     if (rf_power > 0) {
