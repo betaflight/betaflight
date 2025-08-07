@@ -57,7 +57,7 @@ static IO_t vtxPowerPin     = IO_NONE;
 #endif
 
 #ifdef RTC6705_DYNAMIC_POWER_CTRL
-static IO_t exPowerPin[VTX_DYNAMIC_CTRL_PIN_COUNT]   = {IO_NONE, IO_NONE};
+static IO_t exPowerPin[VTX_DYNAMIC_CTRL_PIN_COUNT]   = {0};
 #endif
 
 static extDevice_t *dev = NULL;
