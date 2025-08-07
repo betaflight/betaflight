@@ -199,12 +199,8 @@ void rtc6705DynamicPowerControl(uint8_t power)
 {
     power &= 0x03; // mask lsb 2 bits, vtx power value should be 0~3
 
-    for (uint8_t i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
-        if (power & (0x01 << i)) {
-            IOHi(exPowerPin[i]);
-        } else {
-            IOLo(exPowerPin[i]);
-        }
+    for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
+        IOWrite(exPowerPin[i], power & (0x01 << i));
     }
 }
 #endif
