@@ -114,7 +114,7 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
     }
 
 #ifdef RTC6705_DYNAMIC_POWER_CTRL
-    for (uint8_t i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
+    for (unsigned i = 0; i < VTX_DYNAMIC_CTRL_PIN_COUNT; i++) {
         exPowerPin[i] = IOGetByTag(vtxIOConfig->exPowerTag[i]);
         if (exPowerPin[i]) {
             IOInit(exPowerPin[i], OWNER_VTX_POWER, i + 1);
