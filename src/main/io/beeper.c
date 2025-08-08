@@ -33,8 +33,10 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/usb_io.h"
 
 #include "flight/mixer.h"
+#include "flight/failsafe.h"
 
 #include "config/config.h"
 #include "fc/core.h"
@@ -418,25 +420,31 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
-    // Beeper routine doesn't need to update if there aren't any sounds ongoing
-    if (currentBeeperEntry == NULL) {
-        return;
-    }
-
-    if (beeperNextToggleTime && cmp32(beeperNextToggleTime, currentTimeUs) > 0) {
-        schedulerIgnoreTaskExecTime();
-        return;
-    }
-
+    // Drive ESC beacons whenever the RX link is lost and USB is disconnected
 #ifdef USE_DSHOT
-    if (!areMotorsRunning()
-        && (DSHOT_BEACON_ALLOWED_MODES & BEEPER_GET_FLAG(currentBeeperEntry->mode))
-        && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(currentBeeperEntry->mode)) ) {
-        const timeDelta_t dShotBeaconInterval = (currentBeeperEntry->mode == BEEPER_RX_SET)
-            ? DSHOT_BEACON_MODE_INTERVAL_US
-            : DSHOT_BEACON_RXLOSS_INTERVAL_US;
+    const timeDelta_t dShotBeaconInterval = DSHOT_BEACON_MODE_INTERVAL_US;
+
+    bool dshotBeaconRequested = false;
+
+    if (!areMotorsRunning()) {
+        // Failsafe-triggered beacon when the RX link is lost and USB is disconnected
+        if (!failsafeIsReceivingRxData()
+            && !usbCableIsInserted()
+            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
+            dshotBeaconRequested = true;
+        }
+
+        // User-triggered beacon when the RX link is active and the AUX switch is engaged
+        if (failsafeIsReceivingRxData()
+            && IS_RC_MODE_ACTIVE(BOXBEEPERON)
+            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)) ) {
+            dshotBeaconRequested = true;
+        }
+    }
+
+    if (dshotBeaconRequested) {
         if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
-            && !isTryingToArm() ) {
+            && !isTryingToArm()) {
             if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
                 // at least 500ms between DShot beacons to allow time for the sound to fully complete
                 // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
@@ -447,8 +455,20 @@ void beeperUpdate(timeUs_t currentTimeUs)
             // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
             lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
         }
+    } else {
+        lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
     }
 #endif
+
+    // Beeper routine doesn't need to update if there aren't any sounds ongoing
+    if (currentBeeperEntry == NULL) {
+        return;
+    }
+
+    if (beeperNextToggleTime && cmp32(beeperNextToggleTime, currentTimeUs) > 0) {
+        schedulerIgnoreTaskExecTime();
+        return;
+    }
 
     bool visualBeep = false;
     switch (beeperSequenceAdvance(currentTimeUs)) {
