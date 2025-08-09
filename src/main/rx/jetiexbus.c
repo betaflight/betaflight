@@ -38,6 +38,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -47,6 +48,7 @@
 #include "build/debug.h"
 
 #include "common/utils.h"
+#include "common/maths.h"
 
 #include "drivers/time.h"
 
@@ -73,13 +75,15 @@
 
 serialPort_t *jetiExBusPort;
 
-uint32_t jetiTimeStampRequest = 0;
+volatile uint32_t jetiTimeStampRequest = 0;
+
+volatile bool jetiExBusCanTx = false;
 
 static uint8_t jetiExBusFramePosition;
 static uint8_t jetiExBusFrameLength;
 
-static uint8_t jetiExBusFrameState = EXBUS_STATE_ZERO;
-uint8_t jetiExBusRequestState = EXBUS_STATE_ZERO;
+static volatile uint8_t jetiExBusFrameState = EXBUS_STATE_ZERO;
+volatile uint8_t jetiExBusRequestState = EXBUS_STATE_ZERO;
 
 // Use max values for ram areas
 static uint8_t jetiExBusChannelFrame[EXBUS_MAX_CHANNEL_FRAME_SIZE];
@@ -106,16 +110,18 @@ static void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
 {
     uint16_t value;
     uint8_t frameAddr;
+    uint8_t channelDataLen = exBusFrame[EXBUS_HEADER_LEN - 1];
+    uint8_t receivedChannelCount = MIN((channelDataLen) / 2, JETIEXBUS_CHANNEL_COUNT);
 
     // Decode header
     switch (((uint16_t)exBusFrame[EXBUS_HEADER_SYNC] << 8) | ((uint16_t)exBusFrame[EXBUS_HEADER_REQ])) {
 
     case EXBUS_CHANNELDATA_DATA_REQUEST:                   // not yet specified
     case EXBUS_CHANNELDATA:
-        for (uint8_t i = 0; i < JETIEXBUS_CHANNEL_COUNT; i++) {
-            frameAddr = EXBUS_HEADER_LEN + i * 2;
+        for (uint8_t i = 0; i < receivedChannelCount; i++) {
+            frameAddr = EXBUS_HEADER_LEN + (i * 2);
             value = ((uint16_t)exBusFrame[frameAddr + 1]) << 8;
-            value += (uint16_t)exBusFrame[frameAddr];
+            value |= (uint16_t)exBusFrame[frameAddr];
             // Convert to internal format
             jetiExBusChannelData[i] = value >> 3;
         }
@@ -141,7 +147,7 @@ static void jetiExBusFrameReset(void)
 */
 
 // Receive ISR callback
-static void jetiExBusDataReceive(uint16_t c, void *data)
+FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
 {
     UNUSED(data);
 
@@ -178,6 +184,14 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
         }
     }
 
+    if (jetiExBusFramePosition == 1) {
+        if (c == 0x01) {
+            jetiExBusCanTx = true;
+        } else {
+            jetiExBusCanTx = false;
+        }
+    }
+
     if (jetiExBusFramePosition == jetiExBusFrameMaxSize) {
         // frame overrun
         jetiExBusFrameReset();
@@ -193,7 +207,6 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
 
     // Check the header for the message length
     if (jetiExBusFramePosition == EXBUS_HEADER_LEN) {
-
         if ((jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS) && (jetiExBusFrame[EXBUS_HEADER_MSG_LEN] <= EXBUS_MAX_CHANNEL_FRAME_SIZE)) {
             jetiExBusFrameLength = jetiExBusFrame[EXBUS_HEADER_MSG_LEN];
             return;
@@ -212,9 +225,12 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
 
     // Done?
     if (jetiExBusFrameLength == jetiExBusFramePosition) {
-        if (jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS)
+        if (jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS) {
             jetiExBusFrameState = EXBUS_STATE_RECEIVED;
+            jetiExBusRequestState = EXBUS_STATE_ZERO;
+        }
         if (jetiExBusRequestState == EXBUS_STATE_IN_PROGRESS) {
+            jetiExBusFrameState = EXBUS_STATE_ZERO;
             jetiExBusRequestState = EXBUS_STATE_RECEIVED;
             jetiTimeStampRequest = now;
         }
@@ -257,6 +273,8 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = JETIEXBUS_CHANNEL_COUNT;
     rxRuntimeState->rcReadRawFn = jetiExBusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = jetiExBusFrameStatus;
+
+    memset(jetiExBusChannelData, 0, sizeof(uint16_t) * JETIEXBUS_CHANNEL_COUNT);
 
     jetiExBusFrameReset();
 
