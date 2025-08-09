@@ -78,7 +78,7 @@ serialPort_t *jetiExBusPort;
 volatile uint32_t jetiTimeStampRequest = 0;
 volatile uint32_t jetiTimeStampChannel = 0;
 
-volatile bool jetiExBusCanTx = false;
+static volatile bool jetiExBusCanTx = false;
 
 static uint8_t jetiExBusFramePosition;
 static uint8_t jetiExBusFrameLength;
@@ -104,7 +104,7 @@ uint16_t jetiExBusCalcCRC16(const uint8_t *pt, uint8_t msgLen)
                       ^ (uint8_t)(data >> 4)
                       ^ ((uint16_t)data << 3));
     }
-    return(crc16_data);
+    return crc16_data;
 }
 
 static void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
@@ -241,6 +241,16 @@ FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
     }
 }
 
+bool jetiExBusCanTransmit(void)
+{
+    return jetiExBusCanTx;
+}
+
+void jetiExBusDisableTx(void)
+{
+    jetiExBusCanTx = false;
+}
+
 // Check if it is time to read a frame from the data...
 static uint8_t jetiExBusFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
@@ -276,7 +286,7 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcReadRawFn = jetiExBusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = jetiExBusFrameStatus;
 
-    memset(jetiExBusChannelData, 0, sizeof(uint16_t) * JETIEXBUS_CHANNEL_COUNT);
+    memset(jetiExBusChannelData, 0, sizeof jetiExBusChannelData);
 
     jetiExBusFrameReset();
 

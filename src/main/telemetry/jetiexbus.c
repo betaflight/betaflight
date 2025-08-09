@@ -64,11 +64,15 @@
 #define EXTEL_SYNC_LEN      1
 #define EXTEL_CRC_LEN       1
 #define EXTEL_HEADER_LEN    6
+#ifndef EXTEL_MAX_LEN
 #define EXTEL_MAX_LEN       26
+#endif
 #define EXTEL_OVERHEAD      (EXTEL_SYNC_LEN + EXTEL_HEADER_LEN + EXTEL_CRC_LEN)
 #define EXTEL_MAX_PAYLOAD   (EXTEL_MAX_LEN - EXTEL_OVERHEAD)
-#define EXBUS_MAX_REQUEST_BUFFER_SIZE   (EXBUS_OVERHEAD + EXTEL_MAX_LEN)
+// EXBUS_MAX_REQUEST_BUFFER_SIZE is defined in telemetry/jetiexbus.h (shared)
 STATIC_ASSERT(EXBUS_MAX_REQUEST_FRAME_SIZE >= EXBUS_MAX_REQUEST_BUFFER_SIZE, exbus_request_buffer_must_fit_in_frame);
+// Ensure the producer buffer fits in our telemetry frame size
+STATIC_ASSERT(EXBUS_MAX_REQUEST_BUFFER_SIZE <= JETI_EXBUS_TELEMETRY_FRAME_LEN, exbus_request_buffer_exceeds_telemetry_frame);
 
 enum exTelHeader_e {
     EXTEL_HEADER_SYNC = 0,
@@ -549,7 +553,7 @@ void NOINLINE handleJetiExBusTelemetry(void)
     static uint8_t item = 0;
     uint32_t timeDiff;
 
-    if (!jetiExBusCanTx) {
+    if (!jetiExBusCanTransmit()) {
         return;
     }
 
@@ -619,7 +623,7 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
     }
 
     serialWriteBuf(jetiExBusPort, jetiExBusTelemetryFrame, jetiExBusTelemetryFrame[EXBUS_HEADER_MSG_LEN]);
-    jetiExBusCanTx = false;
+    jetiExBusDisableTx();
 
     return item;
 }
