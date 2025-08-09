@@ -466,10 +466,32 @@ extern uint8_t _dmaram_end__;
 
 #if defined(STM32H7) || defined(STM32G4)
 #define DMA_CHANREQ_STRING "Request"
+
+#define PLATFORM_TRAIT_ADC_INTERNAL 1
+#define ADC_INTERNAL_VBAT4_ENABLED 1
+/* H7 and G4 we need to specify the ADC device for each channel */
+#define PLATFORM_TRAIT_ADC_DEVICE 1
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 #define DMA_STCH_STRING    "Stream"
+#endif
+
+#if defined(STM32F4) || defined(STM32F7)
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA2_Stream4
+// ST0 or ST4
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA2_Stream3
+// ST2 or ST3
+#endif
+
+#ifndef ADC3_DMA_STREAM
+#define ADC3_DMA_STREAM DMA2_Stream0
+// ST0 or ST1
+#endif
 #endif
 
 #ifdef USE_ITCM_RAM
