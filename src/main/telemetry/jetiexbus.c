@@ -426,6 +426,11 @@ static int32_t getSensorValue(uint8_t sensor)
     break;
 #endif
 
+    case EX_TRIP_DISTANCE:
+        // Placeholder until a proper trip distance source exists
+        return 0;
+    break;
+
 #if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
     case EX_RPM: {
         // Average RPM across all motors if ESC telemetry available; units: rpm/10 to fit in 22b range nicely
@@ -448,7 +453,6 @@ static int32_t getSensorValue(uint8_t sensor)
     }
 #endif
 
-#if defined(DEBUG)
     case EX_DEBUG0: return debug[0];
     case EX_DEBUG1: return debug[1];
     case EX_DEBUG2: return debug[2];
@@ -457,7 +461,6 @@ static int32_t getSensorValue(uint8_t sensor)
     case EX_DEBUG5: return debug[5];
     case EX_DEBUG6: return debug[6];
     case EX_DEBUG7: return debug[7];
-#endif
 
     default:
         return -1;
