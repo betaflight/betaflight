@@ -141,6 +141,7 @@ SPI_IO_CS_HIGH_CFG (as defined)
         gpio_init(ioPin);
     }
     gpio_set_dir(ioPin, (cfg & 0x01)); // 0 = in, 1 = out
+    gpio_set_pulls(ioPin, (cfg >> 5) & GPIO_PULLUP, (cfg >> 5) & GPIO_PULLDOWN);
 }
 
 IO_t IOGetByTag(ioTag_t tag)
