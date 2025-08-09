@@ -107,6 +107,7 @@ static uint8_t checkFlashNextByte(void)
 // Called from blackboxSetState() to start/stop writing of pseudo-random data to FLASH
 void checkFlashStart(void)
 {
+    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 0, 1);
     checkFlashSeedPRBS = 0xdeadbeef;
     checkFlashPtr = tailAddress;
     checkFlashLen = 0;
@@ -118,7 +119,7 @@ void checkFlashStop(void)
     checkFlashSeedPRBS = 0xdeadbeef;
     checkFlashErrors = 0;
 
-    debug[6] = checkFlashLen / flashGeometry->pageSize;
+    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 6, checkFlashLen / flashGeometry->pageSize);
 
     // Verify the data written since flashfsSeekAbs() last called
     while (checkFlashLen) {
@@ -140,7 +141,7 @@ void checkFlashStop(void)
         checkFlashLen -= checkLen;
     }
 
-    debug[7] = checkFlashErrors;
+    DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 7, checkFlashErrors);
 
     checkFlashActive = false;
 }
@@ -469,9 +470,13 @@ void flashfsSeekAbs(uint32_t offset)
 void flashfsWriteByte(uint8_t byte)
 {
 #ifdef USE_FLASH_TEST_PRBS
+    if (debugMode == DEBUG_FLASH_TEST_PRBS) {
+        debug[1]++;
+    }
     if (checkFlashActive) {
         byte = checkFlashNextByte();
         checkFlashLen++;
+        DEBUG_SET(DEBUG_FLASH_TEST_PRBS, 2, checkFlashLen);
     }
 #endif
 
