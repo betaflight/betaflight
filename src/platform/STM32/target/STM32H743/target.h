@@ -52,6 +52,8 @@
 #define USE_SPI_DEVICE_5
 #define USE_SPI_DEVICE_6
 
+#define QUADSPIDEV_COUNT 1
+
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff

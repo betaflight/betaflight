@@ -384,7 +384,7 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
 #ifdef USE_DMA
             if (spiUseDMA(dev)) {
-                dev->callbackArg = (uint32_t)gyro;
+                dev->callbackArg = (uintptr_t)gyro;
                 dev->txBuf[1] = BMI160_REG_GYR_DATA_X_LSB | 0x80;
                 gyro->segments[0].len = 13;
                 gyro->segments[0].callback = bmi160Intcallback;

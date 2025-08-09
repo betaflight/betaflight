@@ -291,7 +291,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
     }
 
     // Set the callback argument when calling back to this driver for DMA completion
-    dev->callbackArg = (uint32_t)&flashDevice;
+    dev->callbackArg = (uintptr_t)&flashDevice;
 
     IOInit(dev->busType_u.spi.csnPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(dev->busType_u.spi.csnPin, SPI_IO_CS_CFG);

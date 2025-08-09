@@ -25,14 +25,12 @@
 #include "platform.h"
 #include "common/time.h"
 
-#if !(defined(PICO))
 #ifdef USE_HAL_DRIVER
 #include "usbd_msc.h"
 #else
 #include "usbd_msc_mem.h"
-#ifndef AT32F435
+#if !defined(AT32F435) && !defined(PICO)
 #include "usbd_msc_core.h"
-#endif
 #endif
 #endif
 

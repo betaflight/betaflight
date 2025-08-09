@@ -226,7 +226,7 @@ bool sx1280Init(IO_t resetPin, IO_t busyPin)
 
     // Record the dev pointer for callbacks
     extDevice_t *dev = rxSpiGetDevice();
-    dev->callbackArg = (uint32_t)dev;
+    dev->callbackArg = (uintptr_t)dev;
 
     sx1280SetMode(SX1280_MODE_STDBY_RC);
     sx1280WriteCommand(SX1280_RADIO_SET_AUTOFS, 0x01);

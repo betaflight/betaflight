@@ -56,6 +56,8 @@
 #define USE_SPI_DMA_ENABLE_LATE
 #define MAX_SPI_PIN_SEL 6
 
+#define QUADSPIDEV_COUNT 1
+
 #define USE_I2C
 #define I2CDEV_COUNT 2
 #define USE_I2C_DEVICE_0
@@ -65,17 +67,11 @@
 
 #define USE_VCP
 
-// Enable MSC with SD card SPI backend for RP2350B target
 #define USE_USB_MSC
-#define USE_SDCARD
-#define USE_SDCARD_SPI
 
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 #undef USE_TRANSPONDER
-#undef USE_FLASH
-#undef USE_FLASH_CHIP
-
 #undef USE_TIMER
 #undef USE_RCC
 
@@ -158,9 +154,9 @@
 #undef USE_FLASH_W25M
 #undef USE_FLASH_W25M512
 #undef USE_FLASH_W25M02G
-#undef USE_FLASH_W25Q128FV
+//#undef USE_FLASH_W25Q128FV
 #undef USE_FLASH_PY25Q128HA
-#undef USE_FLASH_W25Q64FV
+//#undef USE_FLASH_W25Q64FV
 
 #undef USE_RPM_LIMIT
 
