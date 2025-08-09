@@ -217,11 +217,6 @@ void spiInitDevice(SPIDevice device)
         return;
     }
 
-    // Pre-charge MISO high. SD card then drives this line correctly
-    gpio_set_function(IO_PINBYTAG(spi->miso), GPIO_FUNC_NULL);
-    IOConfigGPIO(IOGetByTag(spi->miso), IOCFG_OUT_PP);
-    IOHi(IOGetByTag(spi->miso));
-
     // Set owners
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK,  RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_SDI, RESOURCE_INDEX(device));
@@ -232,6 +227,7 @@ void spiInitDevice(SPIDevice device)
     gpio_set_function(IO_PINBYTAG(spi->miso), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->mosi), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->sck), GPIO_FUNC_SPI);
+    gpio_set_pulls(IO_PINBYTAG(spi->miso), true, false); // Pullup MISO
     bprintf("spi initialised device %p [sck %d mosi %d miso %d]",
             spi->dev, IO_PINBYTAG(spi->sck), IO_PINBYTAG(spi->mosi), IO_PINBYTAG(spi->miso));
 }
