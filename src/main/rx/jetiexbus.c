@@ -76,6 +76,7 @@
 serialPort_t *jetiExBusPort;
 
 volatile uint32_t jetiTimeStampRequest = 0;
+volatile uint32_t jetiTimeStampChannel = 0;
 
 volatile bool jetiExBusCanTx = false;
 
@@ -228,6 +229,7 @@ FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
         if (jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS) {
             jetiExBusFrameState = EXBUS_STATE_RECEIVED;
             jetiExBusRequestState = EXBUS_STATE_ZERO;
+            jetiTimeStampChannel = now;
         }
         if (jetiExBusRequestState == EXBUS_STATE_IN_PROGRESS) {
             jetiExBusFrameState = EXBUS_STATE_ZERO;
@@ -250,7 +252,7 @@ static uint8_t jetiExBusFrameStatus(rxRuntimeState_t *rxRuntimeState)
         if (jetiExBusCalcCRC16(jetiExBusChannelFrame, jetiExBusChannelFrame[EXBUS_HEADER_MSG_LEN]) == 0) {
             jetiExBusDecodeChannelFrame(jetiExBusChannelFrame);
             frameStatus = RX_FRAME_COMPLETE;
-            rxRuntimeState->lastRcFrameTimeUs = jetiTimeStampRequest;
+            rxRuntimeState->lastRcFrameTimeUs = jetiTimeStampChannel;
         }
         jetiExBusFrameState = EXBUS_STATE_ZERO;
     }
