@@ -654,10 +654,10 @@ static busStatus_e w25n_callbackWriteComplete(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
-    fdevice->currentWriteAddress += fdevice->callbackArg;
+    fdevice->currentWriteAddress += fdevice->bytesWritten;
     // Call transfer completion callback
     if (fdevice->callback) {
-        fdevice->callback(fdevice->callbackArg);
+        fdevice->callback(fdevice->bytesWritten);
     }
 
     return BUS_READY;
@@ -758,7 +758,7 @@ static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const *
         programSegment++;
     }
 
-    fdevice->callbackArg = bufferSizes[0];
+    fdevice->bytesWritten = bufferSizes[0];
 
     spiSequence(fdevice->io.handle.dev, programSegment);
 
@@ -768,7 +768,7 @@ static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const *
         spiWait(fdevice->io.handle.dev);
     }
 
-    return fdevice->callbackArg;
+    return fdevice->bytesWritten;
 }
 
 static void w25n_pageProgramFinish(flashDevice_t *fdevice)
@@ -1029,11 +1029,10 @@ static busStatus_e w25n_readBBLUTCallback(uint32_t arg)
 
 LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 {
-    cb_context_t cb_context;
-    uint8_t in[4];
+    UNUSED(bblut);
+    UNUSED(lutsize);
 
-    cb_context.fdevice = fdevice;
-    fdevice->callbackArg = (uint32_t)&cb_context;
+    uint8_t in[4];
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
@@ -1042,10 +1041,6 @@ LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t
 
         cmd[0] = W25N_INSTRUCTION_READ_BBM_LUT;
         cmd[1] = 0;
-
-        cb_context.bblut = &bblut[0];
-        cb_context.lutsize = lutsize;
-        cb_context.lutindex = 0;
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},

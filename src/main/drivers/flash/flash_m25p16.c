@@ -304,11 +304,11 @@ static busStatus_e m25p16_callbackWriteComplete(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
-    fdevice->currentWriteAddress += fdevice->callbackArg;
+    fdevice->currentWriteAddress += fdevice->bytesWritten;
 
     // Call transfer completion callback
     if (fdevice->callback) {
-        fdevice->callback(fdevice->callbackArg);
+        fdevice->callback(fdevice->bytesWritten);
     }
 
     return BUS_READY;
@@ -438,7 +438,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     // Patch the data segments
     segments[DATA1].u.buffers.txData = (uint8_t *)buffers[0];
     segments[DATA1].len = bufferSizes[0];
-    fdevice->callbackArg = bufferSizes[0];
+    fdevice->bytesWritten = bufferSizes[0];
 
     /* As the DATA2 segment may be used as the terminating segment, the rxData and txData may be overwritten
      * with a link to the following transaction (u.link.dev and u.link.segments respectively) so ensure that
@@ -458,7 +458,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
         segments[DATA1].callback = NULL;
         segments[DATA2].u.buffers.txData = (uint8_t *)buffers[1];
         segments[DATA2].len = bufferSizes[1];
-        fdevice->callbackArg += bufferSizes[1];
+        fdevice->bytesWritten += bufferSizes[1];
         segments[DATA2].negateCS = true;
         segments[DATA2].callback = m25p16_callbackWriteComplete;
     } else {
@@ -472,7 +472,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
         spiWait(fdevice->io.handle.dev);
     }
 
-    return fdevice->callbackArg;
+    return fdevice->bytesWritten;
 }
 
 static void m25p16_pageProgramFinish(flashDevice_t *fdevice)

@@ -68,6 +68,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define SPI_TypeDef          SPI0_Type
 #define SPI_INST(spi)        ((spi_inst_t *)(spi))
 
+#define QUADSPI_TypeDef      void
+#define MAX_QUADSPI_PIN_SEL  1
+
 #endif
 
 #define DMA_DATA_ZERO_INIT

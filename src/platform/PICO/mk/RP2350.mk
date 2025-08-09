@@ -396,6 +396,7 @@ MCU_COMMON_SRC = \
             PICO/adc_pico.c \
             PICO/bus_i2c_pico.c \
             PICO/bus_spi_pico.c \
+            PICO/bus_quadspi_pico.c \
             PICO/config_flash.c \
             PICO/debug_pico.c \
             PICO/dma_pico.c \
@@ -417,7 +418,11 @@ MCU_COMMON_SRC = \
 
 # USB MSC support sources (TinyUSB backend on PICO)
 MSC_SRC = \
-            drivers/usb_msc_common.c
+            drivers/usb_msc_common.c \
+            msc/usbd_storage.c \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c
 
 DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \
