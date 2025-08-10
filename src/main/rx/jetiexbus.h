@@ -50,7 +50,6 @@ enum {
 // These are shared between ISR and main contexts; volatile ensures proper access.
 extern volatile uint8_t jetiExBusRequestState;
 extern volatile uint32_t jetiTimeStampRequest;
-extern volatile uint32_t jetiTimeStampChannel; // timestamp of last completed channel frame
 extern uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 struct serialPort_s;
 extern struct serialPort_s *jetiExBusPort;
