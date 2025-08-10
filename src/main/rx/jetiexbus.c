@@ -112,7 +112,7 @@ static void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
     uint16_t value;
     uint8_t frameAddr;
     uint8_t channelDataLen = exBusFrame[EXBUS_HEADER_SUBLEN];
-    uint8_t receivedChannelCount = MIN((channelDataLen) / 2, JETIEXBUS_CHANNEL_COUNT);
+    uint8_t receivedChannelCount = MIN(channelDataLen / 2, JETIEXBUS_CHANNEL_COUNT);
 
     // Decode header
     switch (((uint16_t)exBusFrame[EXBUS_HEADER_SYNC] << 8) | ((uint16_t)exBusFrame[EXBUS_HEADER_REQ])) {
