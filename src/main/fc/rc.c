@@ -374,6 +374,7 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 1, smoothingData->setpointCutoffFrequency);
     DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->throttleCutoffFrequency);
+    DEBUG_SET(DEBUG_RX_TIMING, 5, smoothingData->setpointCutoffFrequency);
 }
 
 // Determine if we need to calculate filter cutoffs. If not then we can avoid
