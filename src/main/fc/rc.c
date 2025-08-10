@@ -323,9 +323,14 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
     DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));
 }
 
+// currently only used in the CLI
 uint16_t getCurrentRxRateHz(void)
 {
+#ifdef USE_RC_SMOOTHING_FILTER
+    return rcSmoothingData.smoothedRxRateHz;
+#else
     return currentRxRateHz;
+#endif
 }
 
 bool getRxRateValid(void)
@@ -432,7 +437,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
 
                     if (abs(currentRxIntervalUs - previousRxIntervalUs) < (previousRxIntervalUs - (previousRxIntervalUs / 8))) {
                         // exclude large steps, eg after dropouts or telemetry
-                        // by using interval here, we catch a dropout/telemetry where the inteval increases by 100%, but accept
+                        // by using interval here, we catch a dropout/telemetry where the interval increases by 100%, but accept
                         // the return to normal value, which is only 50% different from the 100% interval of a single drop, and 66% of a return after a double drop.
                         static float prevSmoothedRxRateHz;
                         // smooth the current Rx link frequency estimates
