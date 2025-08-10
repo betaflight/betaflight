@@ -185,12 +185,8 @@ FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
         }
     }
 
-    if (jetiExBusFramePosition == 1) {
-        if (c == 0x01) {
-            jetiExBusCanTx = true;
-        } else {
-            jetiExBusCanTx = false;
-        }
+     if (jetiExBusFramePosition == EXBUS_HEADER_REQ) {
+            jetiExBusCanTx = c == 0x01;
     }
 
     if (jetiExBusFramePosition == jetiExBusFrameMaxSize) {
