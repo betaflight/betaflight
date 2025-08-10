@@ -25,7 +25,9 @@
 #include "drivers/io_types.h"
 
 #define WS2811_LED_STRIP_LENGTH    LED_STRIP_MAX_LENGTH
+#ifndef WS2811_CARRIER_HZ
 #define WS2811_CARRIER_HZ          800000
+#endif
 
 #if defined(USE_WS2811_SINGLE_COLOUR)
 #define WS2811_DATA_BUFFER_SIZE    1
@@ -47,7 +49,7 @@ void ws2811LedStripEnable(void);
 
 bool ws2811LedStripHardwareInit(void);
 void ws2811LedStripStartTransfer(void);
-void ws2811LedStripUpdateTransferBuffer(rgbColor24bpp_t *color, unsigned ledIndex);
+void ws2811LedStripUpdateTransferBuffer(const rgbColor24bpp_t *color, unsigned ledIndex);
 
 bool ws2811UpdateStrip(uint8_t brightness);
 

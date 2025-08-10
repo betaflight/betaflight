@@ -148,8 +148,14 @@ bool ws2811LedStripHardwareInit(void)
     if (pinIndex >= 32) {
         pio_set_gpio_base(pio, 16);
     }
+    if (!pio_can_add_program(pio, &ws2812_program)) {
+        return false;
+    }
     int offset = pio_add_program(pio, &ws2812_program);
     int pio_sm = pio_claim_unused_sm(pio, false);
+    if (pio_sm < 0) {
+        return false;
+    }
 
     ws2812_program_init(pio, pio_sm, offset, pinIndex, WS2811_CARRIER_HZ, ledStripFormat == LED_GRBW);
     pio_sm_set_enabled(pio, pio_sm, true);
@@ -178,7 +184,9 @@ bool ws2811LedStripHardwareInit(void)
 
     // --- Interrupt Configuration ---
     dmaSetHandler(dma_id, ws2811LedStripDmaHandler, NVIC_PRIO_WS2811_DMA, 0);
-    dmaAllocate(dma_id, OWNER_LED_STRIP, 0);
+    if (!dmaAllocate(dma_id, OWNER_LED_STRIP, 0)) {
+        return false;
+    }
 
     IOInit(io, OWNER_LED_STRIP, 0);
     IOConfigGPIO(io, IOCFG_OUT_PP);
@@ -206,7 +214,7 @@ void ws2811LedStripStartTransfer(void)
     dma_channel_start(dma_chan);
 }
 
-void ws2811LedStripUpdateTransferBuffer(rgbColor24bpp_t *color, unsigned ledIndex)
+void ws2811LedStripUpdateTransferBuffer(const rgbColor24bpp_t *color, unsigned ledIndex)
 {
     if (ledIndex >= WS2811_LED_STRIP_LENGTH) {
         return; // Index out of bounds

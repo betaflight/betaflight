@@ -56,7 +56,7 @@ void ws2811LedStripInit(ioTag_t ioTag, ledStripFormatRGB_e ledFormat)
     ledStripIoTag = ioTag;
 }
 
-void ws2811LedStripUpdateTransferBuffer(rgbColor24bpp_t *color, unsigned ledIndex)
+void ws2811LedStripUpdateTransferBuffer(const rgbColor24bpp_t *color, unsigned ledIndex)
 {
     uint32_t bits_per_led;
     uint32_t packed_colour;
