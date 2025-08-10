@@ -447,10 +447,10 @@ static int32_t getSensorValue(uint8_t sensor)
             const escSensorData_t *esc = getEscSensorData(i);
             if (esc && esc->dataAge < ESC_DATA_INVALID) {
                 // esc->rpm is in 0.01 eRPM; convert to mechanical RPM and scale /10
-                rpmSum10 += lrintf(erpmToRpm((uint32_t)esc->rpm) / 10.0f);
+                rpmSum10 += esc->rpm;
             }
         }
-        return rpmSum10 / count;
+        return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f) / count;
     }
 #endif
 

@@ -189,6 +189,15 @@ FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
             jetiExBusCanTx = c == 0x01;
     }
 
+    if (jetiExBusFramePosition == jetiExBusFrameMaxSize) {
+        // frame overrun
+        jetiExBusFrameReset();
+        jetiExBusFrameState = EXBUS_STATE_ZERO;
+        jetiExBusRequestState = EXBUS_STATE_ZERO;
+
+        return;
+    }
+
     // Store in frame copy
     jetiExBusFrame[jetiExBusFramePosition] = (uint8_t)c;
     jetiExBusFramePosition++;
