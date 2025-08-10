@@ -450,9 +450,6 @@ static int32_t getSensorValue(uint8_t sensor)
                 rpmSum10 += lrintf(erpmToRpm((uint32_t)esc->rpm) / 10.0f);
             }
         }
-        if (rpmSum10 == 0) {
-            return 0;
-        }
         return rpmSum10 / count;
     }
 #endif
