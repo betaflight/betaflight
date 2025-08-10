@@ -121,7 +121,7 @@ static void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
     case EXBUS_CHANNELDATA:
         for (uint8_t i = 0; i < receivedChannelCount; i++) {
             frameAddr = EXBUS_HEADER_LEN + (i * 2);
-            value = ((uint16_t)exBusFrame[frameAddr + 1]) << 8;
+            value =  exBusFrame[frameAddr] | (exBusFrame[frameAddr + 1] << 8);
             value |= (uint16_t)exBusFrame[frameAddr];
             // Convert to internal format
             jetiExBusChannelData[i] = value >> 3;
