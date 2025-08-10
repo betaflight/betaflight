@@ -54,7 +54,7 @@
 
 #include "rc.h"
 
-#define RX_INTERVAL_MIN_US     950 // 0.950ms to fit 1kHz without an issue
+#define RX_INTERVAL_MIN_US     800 // 0.950ms to fit 1kHz without an issue
 #define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
@@ -109,6 +109,7 @@ float getFeedforward(int axis)
 #ifdef USE_RC_SMOOTHING_FILTER
 static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 static float rcDeflectionSmoothed[3];
+static float rxRateSamples[3] = { 100.0f, 100.0f, 100.0f };
 #endif // USE_RC_SMOOTHING_FILTER
 
 float getSetpointRate(int axis)
@@ -439,6 +440,9 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         // exclude large steps, eg after dropouts or telemetry
                         // by using interval here, we catch a dropout/telemetry where the interval increases by 100%, but accept
                         // the return to normal value, which is only 50% different from the 100% interval of a single drop, and 66% of a return after a double drop.
+                        rxRateSamples[rcSmoothingData.sampleCount] = currentRxRateHz;
+                        currentRxRateHz = quickMedianFilter3f(rxRateSamples);
+
                         static float prevSmoothedRxRateHz;
                         // smooth the current Rx link frequency estimates
                         const float kF = 0.1f; // first order kind of lowpass smoothing filter coefficient
@@ -446,14 +450,14 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         const float smoothedRxRateHz = prevSmoothedRxRateHz + kF * (currentRxRateHz - prevSmoothedRxRateHz);
                         prevSmoothedRxRateHz = smoothedRxRateHz;
 
-                        // recalculate cutoffs every 3 acceptable samples
+                        // recalculate cutoffs every 2 acceptable samples
                         if (rcSmoothingData.sampleCount) {
                             rcSmoothingData.sampleCount --;
                             sampleState = 1;
                         } else {
                             rcSmoothingData.smoothedRxRateHz = smoothedRxRateHz;
                             rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-                            rcSmoothingData.sampleCount = 3;
+                            rcSmoothingData.sampleCount = 2;
                             sampleState = 2;
                         }
                     }
@@ -597,7 +601,11 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
     // smooth the setpointSpeed value
-    const float pt1K = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / rxRate);
+    float filterCutoffRxRate = rxRate;
+#ifdef USE_RC_SMOOTHING_FILTER
+    filterCutoffRxRate = rcSmoothingData.smoothedRxRateHz;
+#endif
+    const float pt1K = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / filterCutoffRxRate);
     pt1FilterUpdateCutoff(&rcSmoothingData.filterSetpointSpeed[axis], pt1K);
     // grab the previous output from the filter
     float prevSetpointSpeed = rcSmoothingData.filterSetpointSpeed[axis].state;
