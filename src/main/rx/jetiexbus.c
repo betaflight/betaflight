@@ -204,7 +204,10 @@ FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
 
     // Check the header for the message length
     if (jetiExBusFramePosition == EXBUS_HEADER_LEN) {
-        if ((jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS) && (jetiExBusFrame[EXBUS_HEADER_MSG_LEN] <= EXBUS_MAX_CHANNEL_FRAME_SIZE)) {
+        if ((jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS)
+            && jetiExBusFrame[EXBUS_HEADER_MSG_LEN] >= EXBUS_HEADER_LEN + EXBUS_CRC_LEN
+            && (jetiExBusFrame[EXBUS_HEADER_MSG_LEN] <= EXBUS_MAX_CHANNEL_FRAME_SIZE)    
+        ) {
             jetiExBusFrameLength = jetiExBusFrame[EXBUS_HEADER_MSG_LEN];
             return;
         }
@@ -221,7 +224,7 @@ FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
     }
 
     // Done?
-    if (jetiExBusFrameLength == jetiExBusFramePosition) {
+    if (jetiExBusFrameLength >= jetiExBusFramePosition) {
         if (jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS) {
             jetiExBusFrameState = EXBUS_STATE_RECEIVED;
             jetiExBusRequestState = EXBUS_STATE_ZERO;
