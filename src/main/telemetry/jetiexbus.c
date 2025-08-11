@@ -577,7 +577,6 @@ void NOINLINE handleJetiExBusTelemetry(void)
             return;
         }
     }
-    jetiExBusRequestState = EXBUS_STATE_ZERO;
 }
 
 uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
