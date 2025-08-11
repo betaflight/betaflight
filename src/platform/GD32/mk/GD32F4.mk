@@ -208,7 +208,8 @@ MCU_COMMON_SRC += \
             common/stm32/pwm_output_dshot_shared.c \
             common/stm32/serial_uart_hw.c \
             common/stm32/serial_uart_pinconfig.c \
-            common/stm32/system.c
+            common/stm32/system.c \
+            common/stm32/debug_pin.c
 
 SPEED_OPTIMISED_SRC += \
             common/stm32/system.c \

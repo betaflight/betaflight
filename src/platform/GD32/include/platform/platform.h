@@ -309,7 +309,6 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #undef SPI5
 #define SPI5       ((SPI_TypeDef*)GD_SPI5)
 
-
 // We also need to convert the pointer to the uint32_t
 // type required by the GD firmware library.
 #define PERIPH_INT(periph)    ((uint32_t)periph)
