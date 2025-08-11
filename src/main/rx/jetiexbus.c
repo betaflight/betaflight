@@ -121,8 +121,7 @@ static void jetiExBusDecodeChannelFrame(uint8_t *exBusFrame)
     case EXBUS_CHANNELDATA:
         for (uint8_t i = 0; i < receivedChannelCount; i++) {
             frameAddr = EXBUS_HEADER_LEN + (i * 2);
-            value =  exBusFrame[frameAddr] | (exBusFrame[frameAddr + 1] << 8);
-            value |= (uint16_t)exBusFrame[frameAddr];
+            value = ((uint16_t)exBusFrame[frameAddr + 1] << 8) | (uint16_t)exBusFrame[frameAddr];
             // Convert to internal format
             jetiExBusChannelData[i] = value >> 3;
         }
@@ -227,7 +226,7 @@ FAST_CODE NOINLINE static void jetiExBusDataReceive(uint16_t c, void *data)
     }
 
     // Done?
-    if (jetiExBusFrameLength >= jetiExBusFramePosition) {
+    if (jetiExBusFramePosition >= jetiExBusFrameLength) {
         if (jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS) {
             jetiExBusFrameState = EXBUS_STATE_RECEIVED;
             jetiExBusRequestState = EXBUS_STATE_ZERO;
