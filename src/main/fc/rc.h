@@ -29,6 +29,18 @@
 #define RC_SMOOTHING_AUTO_FACTOR_MAX 250
 #endif
 
+typedef struct feedforwardData_s {
+    float prevRcCommand[3];
+    float prevRcCommandDeltaAbs[3];
+    float prevSetpoint[3];
+    float prevSetpointSpeed[3];
+    float prevSetpointSpeedDelta[3];
+    bool isPrevPacketDuplicate[3];
+    float prevRxInterval[3];       // add this here per axis
+    pt1Filter_t filterSetpointSpeed[3];
+    pt1Filter_t filterSetpointDelta[3];
+} feedforwardData_t;
+
 void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);

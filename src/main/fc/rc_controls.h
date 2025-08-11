@@ -100,8 +100,8 @@ typedef struct rcSmoothingFilter_s {
     uint16_t throttleCutoffFrequency;
 
     float smoothedRxRateHz;
-    uint8_t sampleCount;
     uint8_t debugAxis;
+    bool calculateCutoffs;
 
     float autoSmoothnessFactorSetpoint;
     float autoSmoothnessFactorThrottle;
