@@ -210,7 +210,7 @@ const char * const lookupTableMagHardware[] = {
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
 const char * const lookupTableRangefinderHardware[] = {
-    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P", "TFNOVA"
+    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P", "TFNOVA", "LIDARLITE"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_OPTICALFLOW)

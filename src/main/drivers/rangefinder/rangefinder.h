@@ -22,6 +22,8 @@
 
 #include "common/time.h"
 #include "drivers/io_types.h"
+#include "drivers/bus.h"
+
 
 #define RANGEFINDER_OUT_OF_RANGE        (-1)
 #define RANGEFINDER_HARDWARE_FAILURE    (-2)
@@ -40,6 +42,7 @@ typedef int32_t (*rangefinderOpReadFuncPtr)(struct rangefinderDev_s * dev);
 typedef struct rangefinderDev_s {
     timeMs_t delayMs;
     int16_t maxRangeCm;
+    extDevice_t dev; // For Garmin LIDAR Lite
 
     // these are full detection cone angles, maximum tilt is half of this
     int16_t detectionConeDeciDegrees; // detection cone angle as in device spec
