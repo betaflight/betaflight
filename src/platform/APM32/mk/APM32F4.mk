@@ -189,7 +189,8 @@ MCU_COMMON_SRC = \
         common/stm32/serial_uart_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \
-        APM32/system_apm32f4xx.c
+        APM32/system_apm32f4xx.c \
+        common/stm32/debug_pin.c
 
 VCP_SRC = \
         APM32/usb/vcp/usbd_cdc_descriptor.c \

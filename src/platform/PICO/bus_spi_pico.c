@@ -156,6 +156,8 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
         if (pDev->sck && pDev->miso && pDev->mosi) {
             pDev->dev = hw->reg;
             pDev->leadingEdge = false;
+            bprintf("spiPinConfigure got dev %p sck %d mosi %d miso %d",
+                    pDev->dev, pDev->sck, pDev->mosi, pDev->miso);
         }
     }
 }
@@ -163,6 +165,7 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
 static void spiSetClockFromSpeed(spi_inst_t *spi, uint16_t speed)
 {
     uint32_t freq = spiCalculateClock(speed);
+    bprintf("spiSetClockFromSpeed %p %d -> %d",spi, speed, freq);
     spi_set_baudrate(spi, freq);
 }
 
@@ -207,6 +210,7 @@ Must be SPI_MSB_FIRST, no other values supported on the PL022
 
 void spiInitDevice(SPIDevice device)
 {
+    bprintf("pico spiInitDevice %d",device);
     const spiDevice_t *spi = &spiDevice[device];
 
     if (!spi->dev) {
@@ -223,6 +227,9 @@ void spiInitDevice(SPIDevice device)
     gpio_set_function(IO_PINBYTAG(spi->miso), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->mosi), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->sck), GPIO_FUNC_SPI);
+    gpio_set_pulls(IO_PINBYTAG(spi->miso), true, false); // Pullup MISO
+    bprintf("spi initialised device %p [sck %d mosi %d miso %d]",
+            spi->dev, IO_PINBYTAG(spi->sck), IO_PINBYTAG(spi->mosi), IO_PINBYTAG(spi->miso));
 }
 
 void spiInternalStopDMA (const extDevice_t *dev)
@@ -232,15 +239,16 @@ void spiInternalStopDMA (const extDevice_t *dev)
 
     if (dmaRx && dma_channel_is_busy(dmaRx->channel)) {
         // Abort active DMA -  this should never happen
+        bprintf("\n *** pico spiInternalStopDMA RX busy\n");
         dma_channel_abort(dmaRx->channel);
     }
 
     if (dmaTx && dma_channel_is_busy(dmaTx->channel)) {
         // Abort active DMA -  this should never happen as Tx should complete before Rx
+        bprintf("\n *** pico spiInternalStopDMA TX busy\n");
         dma_channel_abort(dmaTx->channel);
     }
 }
-
 
 // Interrupt handler for SPI receive DMA completion
 FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
@@ -321,39 +329,57 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
     // TODO optimise with 16-bit transfers as per stm bus_spi_ll code
-    int bytesProcessed = spi_write_read_blocking(SPI_INST(instance), txData, rxData, len);
+    int bytesProcessed = 0;
+    if (txData && rxData) {
+        bytesProcessed = spi_write_read_blocking(SPI_INST(instance), txData, rxData, len);
+    } else if (txData) {
+        bytesProcessed = spi_write_blocking(SPI_INST(instance), txData, len);
+    } else if (rxData) {
+        // NB tx data: "Generally this can be 0, but some devices require a specific value here, e.g. SD cards expect 0xff" (pico-sdk spi.c).
+        uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
+        bytesProcessed = spi_read_blocking(SPI_INST(instance), repeated_tx_data, rxData, len);
+    } else {
+        // Just force dummy cycles
+        uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
+        uint8_t dropped_rx_data;
+        for (int i = 0; i < len; i++) {
+            bytesProcessed += spi_read_blocking(SPI_INST(instance), repeated_tx_data, &dropped_rx_data, 1);
+        }
+    }
+
     return bytesProcessed == len;
 }
 
-// Initialise DMA before first segment transfer
-void spiInternalInitStream(const extDevice_t *dev, bool preInit)
+void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment)
 {
 #ifndef USE_DMA
     UNUSED(dev);
-    UNUSED(preInit);
+    UNUSED(segment);
 #else
-    UNUSED(preInit);
-
     busDevice_t *bus = dev->bus;
+    spi_inst_t *spi = SPI_INST(bus->busType_u.spi.instance);
 
-    volatile busSegment_t *segment = bus->curSegment;
+    // Prepare config, store in dmaInitTx/Rx, to be used in the following spiInternalStartDMA.
+    // To keep everything uniform (always both TX and RX channels active, callback always on RX completion), if there is
+    // no TX or RX buffer to read from / write to, treat as a single dummy byte with no increment.
+    // (cf. same idea on other platform implementations)
+    bool isTX = segment->u.buffers.txData != NULL;
+    bool isRX = segment->u.buffers.rxData != NULL;
 
-    const spiDevice_t *spi = &spiDevice[spiDeviceByInstance(dev->bus->busType_u.spi.instance)];
-    dma_channel_config config = dma_channel_get_default_config(dev->bus->dmaTx->channel);
+    dma_channel_config config = dma_channel_get_default_config(bus->dmaTx->channel);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
-    channel_config_set_read_increment(&config, true);
+    channel_config_set_read_increment(&config, isTX);
     channel_config_set_write_increment(&config, false);
-    channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), true));
+    channel_config_set_dreq(&config, spi_get_dreq(spi, true));
+    *(bus->dmaInitTx) = config;
 
-    dma_channel_configure(dev->bus->dmaTx->channel, &config, &spi_get_hw(SPI_INST(spi->dev))->dr, segment->u.buffers.txData, 0, false);
-
-    config = dma_channel_get_default_config(dev->bus->dmaRx->channel);
+    config = dma_channel_get_default_config(bus->dmaRx->channel);
     channel_config_set_transfer_data_size(&config, DMA_SIZE_8);
     channel_config_set_read_increment(&config, false);
-    channel_config_set_write_increment(&config, true);
-    channel_config_set_dreq(&config, spi_get_dreq(SPI_INST(spi->dev), false));
+    channel_config_set_write_increment(&config, isRX);
+    channel_config_set_dreq(&config, spi_get_dreq(spi, false));
+    *(bus->dmaInitRx) = config;
 
-    dma_channel_configure(dev->bus->dmaRx->channel, &config, segment->u.buffers.rxData, &spi_get_hw(SPI_INST(spi->dev))->dr, 0, false);
 #endif
 }
 
@@ -363,22 +389,31 @@ void spiInternalStartDMA(const extDevice_t *dev)
 #ifndef USE_DMA
     UNUSED(dev);
 #else
-    dev->bus->dmaRx->userParam = (uint32_t)dev;
+    static uint8_t dummyTxByte = 0xff;
+    static uint8_t dummyRxByte;
 
-    // TODO check correct, was len + 1 now len
-    dma_channel_set_trans_count(dev->bus->dmaTx->channel, dev->bus->curSegment->len, false);
-    dma_channel_set_trans_count(dev->bus->dmaRx->channel, dev->bus->curSegment->len, false);
+    busDevice_t *bus = dev->bus;
+    spi_inst_t *spi = SPI_INST(bus->busType_u.spi.instance);
+    bus->dmaRx->userParam = (uint32_t)dev;
+    volatile busSegment_t *segment = bus->curSegment;
+    int xferLen = segment->len;
 
-    dma_start_channel_mask((1 << dev->bus->dmaTx->channel) | (1 << dev->bus->dmaRx->channel));
+    const uint8_t *txBuffer = segment->u.buffers.txData;
+    uint8_t *rxBuffer = segment->u.buffers.rxData;
+
+    // Configure channels using the config that was created in spiInternalInitStream
+    io_rw_32 *dr_ptr = &spi_get_hw(spi)->dr;
+    dma_channel_configure(bus->dmaTx->channel, bus->dmaInitTx, dr_ptr, txBuffer ? txBuffer : &dummyTxByte, xferLen, false);
+    dma_channel_configure(bus->dmaRx->channel, bus->dmaInitRx, rxBuffer ? rxBuffer : &dummyRxByte, dr_ptr, xferLen, false);
+
+    uint32_t channelMask = (1 << bus->dmaTx->channel) | (1 << bus->dmaRx->channel);
+    dma_start_channel_mask(channelMask);
 #endif
 }
     
 // DMA transfer setup and start
 void spiSequenceStart(const extDevice_t *dev)
 {
-    //TODO: implementation for PICO
-  // base on STM32/bus_spi_ll.c
-  
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = bus->busType_u.spi.instance;
     spiDevice_t *spi = &spiDevice[spiDeviceByInstance(instance)];
@@ -388,10 +423,7 @@ void spiSequenceStart(const extDevice_t *dev)
 #endif
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
-
-    // 
     bus->initSegment = true;
-
     
     // Switch bus speed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {

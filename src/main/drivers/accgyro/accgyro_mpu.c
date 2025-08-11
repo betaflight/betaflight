@@ -491,6 +491,12 @@ bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 
 void mpuGyroInit(gyroDev_t *gyro)
 {
+    // Initialise both segments of gyro->segments.
+    // Gyro code only sets the first segment. The second segment stays as
+    // an end segment with negateCS false, which enforces DMA whenever possible.
+    busSegment_t nullSegment = {.u.link = {NULL, NULL}, 0, false, NULL};
+    gyro->segments[0] = nullSegment;
+    gyro->segments[1] = nullSegment;
     gyro->accDataReg = MPU_RA_ACCEL_XOUT_H;
     gyro->gyroDataReg = MPU_RA_GYRO_XOUT_H;
     mpuIntExtiInit(gyro);

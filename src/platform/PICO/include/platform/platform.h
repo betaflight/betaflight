@@ -45,9 +45,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 //#define GPIO_InitTypeDef
 #define TIM_TypeDef          void*
 //#define TIM_OCInitTypeDef
+
 #define DMA_TypeDef          void*
-#define DMA_InitTypeDef      void*
-//#define DMA_Channel_TypeDef
+#define DMA_InitTypeDef      dma_channel_config
 
 #define ADC_TypeDef          void*
 #define USART_TypeDef        uart_inst_t
@@ -88,6 +88,11 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define SCHEDULER_DELAY_LIMIT           10
 
+// There is no library definition for pupd, so define one here
+#define GPIO_PULLUP     1
+#define GPIO_PULLDOWN   2
+
+// speed will either GPIO_SLEW_RATE_SLOW or GPIO_SLEW_RATE_FAST
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
 // TODO update these and IOConfigGPIO
@@ -104,7 +109,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define SPI_IO_AF_SCK_CFG_HIGH  0
 #define SPI_IO_AF_SCK_CFG_LOW   0
 #define SPI_IO_AF_SDI_CFG       0
-#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_OUT, 0, 0) // todo pullup/down etc.
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_OUT, 0, 0)
+#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_IN, 0, GPIO_PULLUP)
 
 
 #define SERIAL_UART_FIRST_INDEX     0

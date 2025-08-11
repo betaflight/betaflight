@@ -408,7 +408,8 @@ MCU_COMMON_SRC = \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
             PICO/usb/usb_cdc.c \
-            PICO/multicore.c
+            PICO/multicore.c \
+            PICO/debug_pin.c
 
 DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \
