@@ -52,11 +52,7 @@
 #elif defined(APM32F4)
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(GD32F4)
-#ifdef USE_ADC_INTERNAL
-#define ADC_TAG_MAP_COUNT 19
-#else
 #define ADC_TAG_MAP_COUNT 16
-#endif
 #else
 #define ADC_TAG_MAP_COUNT 10
 #endif
