@@ -458,13 +458,8 @@ static int32_t getSensorValue(uint8_t sensor)
         if (validCount == 0) {
             return 0;
         }
-#if defined(USE_DSHOT)
-            // Use erpmToRpm for DSHOT builds
-            return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f / validCount);
-#else
-            // Fallback: esc->rpm is 0.01 eRPM, convert to mechanical RPM (divide by 10)
-            return (rpmSum10 / 10) / validCount;
-#endif
+
+        return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f / validCount);
     }
 #endif // end of USE_DSHOT || USE_ESC_SENSOR
 
