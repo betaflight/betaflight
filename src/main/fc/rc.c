@@ -327,7 +327,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
 }
 
 // currently only used in the CLI
-uint16_t getCurrentRxRateHz(void)
+float getCurrentRxRateHz(void)
 {
     return smoothedRxRateHz;
 }
@@ -530,11 +530,7 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     feedforwardData.isPrevPacketDuplicate[axis] = isDuplicate;
 
     // Jitter attenuation factor calculation
-    // Normalize by scaling with the time interval (250Hz = 4ms = 0.004s baseline)
-    // Now the same setting achieves similar attenuation at all link speeds
-    const float timeNormalization = rxInterval * 250.0f; // 250 * 0.004 = 1
-    const float normalizedRcCommandDelta = (rcCommandDeltaAbs + feedforwardData.prevRcCommandDeltaAbs[axis]) * 0.5f * timeNormalization;
-    float jitterAttenuator = (normalizedRcCommandDelta + 1.0f) * pid->feedforwardJitterFactorInv;
+    float jitterAttenuator = ((rcCommandDeltaAbs + feedforwardData.prevRcCommandDeltaAbs[axis]) * 0.5f + 1.0f) * pid->feedforwardJitterFactorInv;
     jitterAttenuator = MIN(jitterAttenuator, 1.0f);
     feedforwardData.prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
@@ -613,7 +609,7 @@ bool shouldUpdateSmoothing(void)
     const timeMs_t currentTimeMs = millis();
     const bool ready = (currentTimeMs > 1000) && (targetPidLooptime > 0);
 
-    if (ready && isRxReceivingSignal()) {
+    if (ready && isRxReceivingSignal() && isRxRateValid) {
         // Compare current rate to last stable smoothed rate for smoothing
         float deltaRateHz = fabsf(currentRxRateHz - lastStableSmoothedRxRateHz);
         bool isOutlier = deltaRateHz > (lastStableSmoothedRxRateHz / 8);

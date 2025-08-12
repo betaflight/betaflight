@@ -59,5 +59,5 @@ float getMaxRcRate(int axis);
 float getFeedforward(int axis);
 
 void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal);
-uint16_t getCurrentRxRateHz(void);
+float getCurrentRxRateHz(void);
 bool getRxRateValid(void);
