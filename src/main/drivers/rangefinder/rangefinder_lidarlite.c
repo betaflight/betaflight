@@ -21,13 +21,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
-
 #if defined(USE_RANGEFINDER_LIDARLITE)
 
 #include "drivers/bus.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_i2c_busdev.h"
 #include "drivers/time.h"
 
 #include "drivers/rangefinder/rangefinder.h"
@@ -49,10 +45,10 @@
 #define LIDARLITE_COMMAND_RESET 0x00
 #define LIDARLITE_COMMAND_MEASURE 0x03
 #define LIDARLITE_COMMAND_MEASURE_CORRECTION 0x04
-#define LIDARLITE_INVALID_BUSY_FLAG 0x1
-#define LIDARLITE_INVALID_SIGNAL_FLAG (0x1 << 3)
+#define LIDARLITE_INVALID_BUSY_FLAG 0x01
+#define LIDARLITE_INVALID_SIGNAL_FLAG (0x01 << 1)
 
-static int num_measurements = 0;
+// static int num_measurements = 0;
 static int32_t lastCalculatedDistance = RANGEFINDER_NO_NEW_DATA;
 
 static void lidarLiteInit(rangefinderDev_t *rangefinder_dev)
@@ -65,12 +61,7 @@ static void lidarLiteUpdate(rangefinderDev_t *rangefinder_dev)
 {
     extDevice_t *dev = &rangefinder_dev->dev;
 
-    if (num_measurements == 0) {
-        busWriteRegister(dev, LIDARLITE_ACQ_COMMAND, LIDARLITE_COMMAND_MEASURE_CORRECTION);
-    } else {
-        busWriteRegister(dev, LIDARLITE_ACQ_COMMAND, LIDARLITE_COMMAND_MEASURE);
-    }
-    num_measurements = (num_measurements + 1) % 100;
+    busWriteRegister(dev, LIDARLITE_ACQ_COMMAND, LIDARLITE_COMMAND_MEASURE_CORRECTION);
 
     uint8_t status;
     do {
@@ -108,7 +99,6 @@ bool lidarLiteDetect(rangefinderDev_t *rangefinder_dev, rangefinderType_e rfType
 
     extDevice_t *dev = &rangefinder_dev->dev;
     dev->busType_u.i2c.address = LIDARLITE_RANGEFINDER_I2C_ADDRESS;
-    dev->bus->busType = BUS_TYPE_I2C;
 
     bool ack = busWriteRegister(dev, LIDARLITE_ACQ_COMMAND, LIDARLITE_COMMAND_RESET);
     if (!ack) {

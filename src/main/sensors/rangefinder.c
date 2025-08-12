@@ -87,7 +87,8 @@ void pgResetFn_rangefinderConfig(rangefinderConfig_t *rangefinderConfig)
 {
     rangefinderConfig->rangefinder_hardware = RANGEFINDER_NONE;
 
-    #if defined(USE_RANGEFINDER_LIDARLITE)
+#if defined(USE_RANGEFINDER_LIDARLITE)
+    rangefinderConfig->rangefinder_hardware = RANGEFINDER_LIDARLITE;
     rangefinderConfig->rangefinder_busType = BUS_TYPE_I2C;
     // Add LIDAR to the same I2C bus as the external compass
     rangefinderConfig->rangefinder_i2c_device = I2C_DEV_TO_CFG(RANGEFINDER_I2C_INSTANCE);
@@ -104,8 +105,6 @@ static bool rangefinderDetect(rangefinderDev_t *rangefinder_dev, uint8_t rangefi
 {
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
     requestedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderHardwareToUse;
-
-    rangefinder_dev->dev.bus->busType = BUS_TYPE_NONE;
 
 #if defined(USE_I2C)
     if (rangefinderConfig()->rangefinder_busType == BUS_TYPE_I2C) {
