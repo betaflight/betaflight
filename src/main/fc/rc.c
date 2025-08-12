@@ -414,8 +414,8 @@ static FAST_CODE void processRcSmoothingFilter(void)
         rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
 
         if (rxConfig()->rc_smoothing_mode) {
-            // calculateCutoffs is handle here so that rc_smoothing_mode overwrites other settings
-            rcSmoothingData.calculateCutoffs = rcSmoothingAutoCalculate();
+            // shouldRecalculateCutoffs is handle here so that rc_smoothing_mode overwrites other settings
+            rcSmoothingData.shouldRecalculateCutoffs = rcSmoothingAutoCalculate();
             rcSmoothingSetFilterCutoffs(&rcSmoothingData);
             rcSmoothingData.filterInitialized = true;
         }
@@ -531,7 +531,8 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
 
     // Jitter attenuation factor calculation
     // Normalize by scaling with the time interval (250Hz = 4ms = 0.004s baseline)
-    const float timeNormalization = rxInterval / 0.004f; // 0.004s = 1/250Hz
+    // Now the same setting achieves similar attenuation at all link speeds
+    const float timeNormalization = rxInterval * 250.0f; // 250 * 0.004 = 1
     const float normalizedRcCommandDelta = (rcCommandDeltaAbs + feedforwardData.prevRcCommandDeltaAbs[axis]) * 0.5f * timeNormalization;
     float jitterAttenuator = (normalizedRcCommandDelta + 1.0f) * pid->feedforwardJitterFactorInv;
     jitterAttenuator = MIN(jitterAttenuator, 1.0f);
@@ -623,9 +624,6 @@ bool shouldUpdateSmoothing(void)
            if (outlierCount >= 3) {
               smoothedRxRateHz = currentRxRateHz;
               lastStableSmoothedRxRateHz = currentRxRateHz;
-#ifdef USE_RC_SMOOTHING_FILTER
-              rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-#endif
               outlierCount = 0;
               validCount = 0;
               // don't update cutoffs yet, wait for three smoothed samples close to the new rate, 6 in all
@@ -640,9 +638,6 @@ bool shouldUpdateSmoothing(void)
            if (validCount >= 3) {
               // After three non-outlier packets, update the baseline value and the cutoffs
               lastStableSmoothedRxRateHz = smoothedRxRateHz;
-#ifdef USE_RC_SMOOTHING_FILTER
-              rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-#endif
               validCount = 0;
               return true;
            }
@@ -669,7 +664,7 @@ FAST_CODE void processRcCommand(void)
             updateFeedforwardFilters(&pidRuntime);
 #endif
 #ifdef USE_RC_SMOOTHING_FILTER
-            if (rcSmoothingData.calculateCutoffs) {
+            if (rcSmoothingData.shouldRecalculateCutoffs) {
                 // for auto calculated filters, calculate the link interval and update the RC smoothing filters at regular intervals
                 // this is more efficient than monitoring for significant changes and making comparisons to decide whether to update the filter
                 rcSmoothingSetFilterCutoffs(&rcSmoothingData);

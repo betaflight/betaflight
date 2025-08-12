@@ -30,15 +30,15 @@
 #endif
 
 typedef struct feedforwardData_s {
-    float prevRcCommand[3];
-    float prevRcCommandDeltaAbs[3];
-    float prevSetpoint[3];
-    float prevSetpointSpeed[3];
-    float prevSetpointSpeedDelta[3];
-    bool isPrevPacketDuplicate[3];
-    float prevRxInterval[3];       // add this here per axis
-    pt1Filter_t filterSetpointSpeed[3];
-    pt1Filter_t filterSetpointDelta[3];
+    float prevRcCommand[XYZ_AXIS_COUNT];
+    float prevRcCommandDeltaAbs[XYZ_AXIS_COUNT];
+    float prevSetpoint[XYZ_AXIS_COUNT];
+    float prevSetpointSpeed[XYZ_AXIS_COUNT];
+    float prevSetpointSpeedDelta[XYZ_AXIS_COUNT];
+    bool isPrevPacketDuplicate[XYZ_AXIS_COUNT];
+    float prevRxInterval[XYZ_AXIS_COUNT];
+    pt1Filter_t filterSetpointSpeed[XYZ_AXIS_COUNT];
+    pt1Filter_t filterSetpointDelta[XYZ_AXIS_COUNT];
 } feedforwardData_t;
 
 void processRcCommand(void);
