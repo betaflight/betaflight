@@ -176,7 +176,7 @@ const adcTagMap_t adcTagMap[] = {
 
 // An array to convert rank number to encoded rank code for HAL.
 // Note that the table only list possible values, as rank for any single conversion
-// will not exceed maximum number of input sources (ADC_CHANNEL_COUNT).
+// will not exceed maximum number of input sources (ADC_SOURCE_COUNT).
 static uint32_t adcRegularRank[] = {
     0,                     // ranks is counted by 1-origin; dodge zero.
     ADC_REGULAR_RANK_1,
@@ -254,7 +254,7 @@ static void adcInitCalibrationValues(void)
 // Need this separate from the main adcValue[] array, because channels are numbered
 // by ADC instance order that is different from ADC_xxx numbering.
 
-volatile DMA_RAM_R uint16_t adcConversionBuffer[ADC_CHANNEL_COUNT] __attribute__((aligned(32)));
+volatile DMA_RAM_R uint16_t adcConversionBuffer[ADC_SOURCE_COUNT] __attribute__((aligned(32)));
 
 void adcInit(const adcConfig_t *config)
 {
@@ -281,7 +281,7 @@ void adcInit(const adcConfig_t *config)
     adcInitCalibrationValues();
 #endif
 
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         int map;
         int dev;
 
@@ -380,7 +380,7 @@ void adcInit(const adcConfig_t *config)
 
         int rank = 1;
 
-        for (int adcChan = 0; adcChan < ADC_CHANNEL_COUNT; adcChan++) {
+        for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++) {
 
             if (!adcOperatingConfig[adcChan].enabled) {
                 continue;
@@ -485,7 +485,7 @@ void adcGetChannelValues(void)
     // Transfer values in conversion buffer into adcValues[]
     // Cache coherency should be maintained by MPU facility
 
-    for (int i = 0; i < ADC_CHANNEL_INTERNAL_FIRST_ID; i++) {
+    for (int i = 0; i < ADC_SOURCE_INTERNAL_FIRST_ID; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }

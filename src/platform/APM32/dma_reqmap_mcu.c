@@ -32,7 +32,7 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
-
+#include "platform/adc_impl.h"
 #include "pg/timerio.h"
 
 typedef struct dmaPeripheralMapping_s {

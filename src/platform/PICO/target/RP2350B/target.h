@@ -282,7 +282,9 @@
 #undef USE_ACCGYRO_BMI160
 #undef USE_ACCGYRO_BMI270
 #endif
-   
+
+#define USE_ADC
+
 //#define USE_FLASH
 //#define USE_FLASH_W25Q128FV
 

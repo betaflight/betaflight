@@ -469,13 +469,13 @@ extern uint8_t _dmaram_end__;
 
 #define PLATFORM_TRAIT_ADC_INTERNAL 1
 #define ADC_INTERNAL_VBAT4_ENABLED 1
-/* H7 and G4 we need to specify the ADC device for each channel */
-#define PLATFORM_TRAIT_ADC_DEVICE 1
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 #define DMA_STCH_STRING    "Stream"
 #endif
+
+#define PLATFORM_TRAIT_ADC_DEVICE 1
 
 #if defined(STM32F4) || defined(STM32F7)
 #ifndef ADC1_DMA_STREAM

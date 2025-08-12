@@ -228,7 +228,7 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
-    ADCDevice device = ADC_CFG_TO_DEV(config->device);
+    adcDevice_e device = ADC_CFG_TO_DEV(config->device);
 
     if (device == ADCINVALID) {
         return;
@@ -237,7 +237,7 @@ void adcInit(const adcConfig_t *config)
     adcDevice_t adc = adcHardware[device];
 
     bool adcActive = false;
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
             continue;
         }
@@ -287,7 +287,7 @@ void adcInit(const adcConfig_t *config)
     adcInitDevice(adc.ADCx, configuredAdcChannels);
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (i = 0; i < ADC_SOURCE_COUNT; i++) {
         if (!adcOperatingConfig[i].enabled) {
             continue;
         }

@@ -1,0 +1,199 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+
+#include "platform.h"
+
+#ifdef USE_ADC
+
+#include "build/debug.h"
+
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/sensor.h"
+#include "drivers/adc.h"
+
+#include "pg/adc.h"
+
+#include "hardware/adc.h"
+
+#if defined(RP2350A)
+#define PICO_ADC_CHANNEL_COUNT          5
+#define PICO_ADC_INTERNAL_TEMP_CHANNEL  4
+#elif defined(RP2350B)
+#define PICO_ADC_CHANNEL_COUNT          9
+#define PICO_ADC_INTERNAL_TEMP_CHANNEL  8
+#else
+#error "Internal ADC channels not defined"
+#endif
+
+typedef struct adcOperatingConfig_s {
+    ioTag_t tag;
+    uint8_t channel; // hardware channel number for this input.
+    bool enabled;
+} adcOperatingConfig_t;
+
+static adcOperatingConfig_t adcOperatingConfig[ADC_SOURCE_COUNT];
+static volatile uint16_t adcValues[PICO_ADC_CHANNEL_COUNT];
+
+static int adcChannelByPin(const int pin)
+{
+#ifdef RP2350A
+    if (pin >= 26 && pin <= 29) {
+        return pin - 26;
+    }
+#elif defined(RP2350B)
+    if (pin >= 40 && pin <= 47) {
+        return pin - 40;
+    }
+#else
+    UNUSED(pin);
+#endif
+    return -1;
+}
+
+uint8_t adcChannelByTag(ioTag_t ioTag)
+{
+    const int pin = DEFIO_TAG_PIN(ioTag);
+    return adcChannelByPin(pin);
+}
+
+void adc_irq_handler(void)
+{
+    // Read all available samples from the FIFO
+    while (!adc_fifo_is_empty()) {
+        uint16_t result = adc_fifo_get();
+        // The ADC hardware tells us which channel the sample is from.
+        uint8_t channel = result >> 12;  // Extract channel from top 4 bits
+        uint16_t value = result & 0xFFF; // Mask out the channel bits to get the 12-bit value
+
+        adcValues[channel] = value;
+    }
+    // The ADC IRQ is cleared automatically when the FIFO is read.
+}
+
+void adcInit(const adcConfig_t *config)
+{
+    adc_init();
+
+    // Set channels (ioTags) for enabled ADC inputs
+    if (config->vbat.enabled) {
+        adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
+    }
+
+    if (config->rssi.enabled) {
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;
+    }
+
+    if (config->external1.enabled) {
+        adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag;
+    }
+
+    if (config->current.enabled) {
+        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;
+    }
+
+    uint mask = 0;
+
+    // loop over all possible channels and build the adcOperatingConfig to represent
+    // the set of enabled channels
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
+        adcOperatingConfig[i].enabled = false;
+        do {
+#ifdef USE_ADC_INTERNAL
+            if (i >= ADC_SOURCE_INTERNAL_FIRST_ID) {
+                if (i == ADC_TEMPSENSOR) {
+                    adcOperatingConfig[i].channel = PICO_ADC_INTERNAL_TEMP_CHANNEL;
+                    adcOperatingConfig[i].enabled = true;
+                }
+                break;
+            }
+#endif
+            if (!adcOperatingConfig[i].tag) {
+                break;
+            }
+
+            const int pin = DEFIO_TAG_PIN(adcOperatingConfig[i].tag);
+            const int channel = adcChannelByPin(pin);
+            if (channel >= 0) {
+                adcOperatingConfig[i].channel = channel;
+                adc_gpio_init(pin);
+                adcOperatingConfig[i].enabled = true;
+            }
+        } while (false);
+
+        if (!adcOperatingConfig[i].enabled) {
+            continue;
+        }
+
+        if (mask == 0) {
+            // select the first channel for input
+            adc_select_input(adcOperatingConfig[i].channel);
+        }
+        mask |= (1 << adcOperatingConfig[i].channel);
+    }
+
+    adc_set_round_robin(mask);
+    adc_fifo_setup(
+        true,               // Write each completed conversion to the sample FIFO
+        false,              // Disable DMA data request (DREQ)
+        BITCOUNT(mask),     // IRQ asserted when at least 1 sample is present (not used here)
+        false,              // We won't see the ERR bit because of 12-bit reads; disable
+        false               // Don't shift each sample to 8 bits when pushing to FIFO
+    );
+    adc_set_clkdiv(48000/10); // 10 samples per second (CLK is 48mhz for ADC)
+
+    // --- Interrupt Setup ---
+    // Configure and enable the ADC IRQ
+    irq_set_exclusive_handler(ADC_IRQ_FIFO, adc_irq_handler);
+    adc_irq_set_enabled(true);
+    irq_set_enabled(ADC_IRQ_FIFO, true);
+
+    adc_run(true);
+}
+
+uint16_t adcGetValue(adcSource_e source)
+{
+    const int channel = adcOperatingConfig[source].channel;
+    if (channel == -1) {
+        return 0;
+    }
+    return adcValues[channel];
+}
+
+#ifdef USE_ADC_INTERNAL
+
+bool adcInternalIsBusy(void)
+{
+    return false;
+}
+
+void adcInternalStartConversion(void)
+{
+    //NOOP
+}
+
+#endif // USE_ADC_INTERNAL
+#endif // USE_ADC
