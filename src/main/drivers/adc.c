@@ -40,11 +40,7 @@
 
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 
-#ifdef ITCM_RAM_OPTIMISATION
-volatile FAST_DATA_ZERO_INIT uint16_t adcValues[ADC_CHANNEL_COUNT];
-#else
-volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
-#endif
+volatile DMA_DATA_ZERO_INIT uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
