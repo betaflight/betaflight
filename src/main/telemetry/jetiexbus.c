@@ -294,6 +294,13 @@ void initJetiExBusTelemetry(void)
 
     enableGpsTelemetry(featureIsEnabled(FEATURE_GPS));
 
+        // Enable RPM telemetry when ESC telemetry is available
+    #if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
+        if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+            bitArraySet(&exSensorEnabled, EX_RPM);
+        }
+    #endif
+
     if (debugMode != DEBUG_NONE) {
         bitArraySet(&exSensorEnabled, EX_DEBUG0);
         bitArraySet(&exSensorEnabled, EX_DEBUG1);
