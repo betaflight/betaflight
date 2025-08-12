@@ -71,7 +71,7 @@ static applyRatesFn *applyRates;
 static uint16_t currentRxIntervalUs;  // packet interval in microseconds, constrained to above range
 static uint16_t previousRxIntervalUs; // previous packet interval in microseconds
 static float currentRxRateHz;         // packet interval in Hz, constrained as above
-static float smoothedRxRateHz;
+static float smoothedRxRateHz = 100.0f;
 
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
