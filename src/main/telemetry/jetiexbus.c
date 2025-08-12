@@ -442,7 +442,7 @@ static int32_t getSensorValue(uint8_t sensor)
         return 0;
     break;
 
-    #if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
+#if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
     case EX_RPM: {
         // Average RPM across all motors with valid ESC telemetry; units: rpm/10 to fit in 22b range
         int32_t rpmSum10 = 0;
@@ -458,15 +458,15 @@ static int32_t getSensorValue(uint8_t sensor)
         if (validCount == 0) {
             return 0;
         }
-        #if defined(USE_DSHOT)
+#if defined(USE_DSHOT)
             // Use erpmToRpm for DSHOT builds
             return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f / validCount);
-        #else
+#else
             // Fallback: esc->rpm is 0.01 eRPM, convert to mechanical RPM (divide by 10)
             return (rpmSum10 / 10) / validCount;
-        #endif
+#endif
     }
-    #endif
+#endif // end of USE_DSHOT || USE_ESC_SENSOR
 
     case EX_DEBUG0: return debug[0];
     case EX_DEBUG1: return debug[1];
