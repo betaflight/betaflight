@@ -419,6 +419,9 @@ static FAST_CODE void processRcSmoothingFilter(void)
             rcSmoothingSetFilterCutoffs(&rcSmoothingData);
             rcSmoothingData.filterInitialized = true;
         }
+#ifdef USE_FEEDFORWARD
+        updateFeedforwardFilters
+#endif
     }
 
     if (isRxDataNew) {
