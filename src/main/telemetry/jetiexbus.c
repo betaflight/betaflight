@@ -450,7 +450,7 @@ static int32_t getSensorValue(uint8_t sensor)
                 rpmSum10 += esc->rpm;
             }
         }
-        return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f) / count;
+        return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f / count);
     }
 #endif
 
@@ -619,7 +619,7 @@ uint8_t sendJetiExBusTelemetry(uint8_t packetID, uint8_t item)
     }
 
     serialWriteBuf(jetiExBusPort, jetiExBusTelemetryFrame, jetiExBusTelemetryFrame[EXBUS_HEADER_MSG_LEN]);
-    jetiExBusDisableTx();
+    jetiExBusTxDone();
 
     return item;
 }

@@ -247,7 +247,7 @@ bool jetiExBusCanTransmit(void)
     return jetiExBusCanTx;
 }
 
-void jetiExBusDisableTx(void)
+void jetiExBusTxDone(void)
 {
     jetiExBusCanTx = false;
 }

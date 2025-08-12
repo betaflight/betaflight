@@ -57,7 +57,7 @@ extern struct serialPort_s *jetiExBusPort;
 // TX gating accessors: written by ISR when a request permits TX and cleared
 // by telemetry after sending a response. Kept encapsulated to reduce coupling.
 bool jetiExBusCanTransmit(void);
-void jetiExBusDisableTx(void);
+void jetiExBusTxDone(void);
 
 uint16_t jetiExBusCalcCRC16(const uint8_t *pt, uint8_t msgLen);
 bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);
