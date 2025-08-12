@@ -442,24 +442,31 @@ static int32_t getSensorValue(uint8_t sensor)
         return 0;
     break;
 
-#if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
+    #if defined(USE_DSHOT) || defined(USE_ESC_SENSOR)
     case EX_RPM: {
-        // Average RPM across all motors if ESC telemetry available; units: rpm/10 to fit in 22b range nicely
+        // Average RPM across all motors with valid ESC telemetry; units: rpm/10 to fit in 22b range
         int32_t rpmSum10 = 0;
+        uint8_t validCount = 0;
         uint8_t count = getMotorCount();
-        if (count == 0) {
-            return 0;
-        }
         for (uint8_t i = 0; i < count; i++) {
             const escSensorData_t *esc = getEscSensorData(i);
             if (esc && esc->dataAge < ESC_DATA_INVALID) {
-                // esc->rpm is in 0.01 eRPM; convert to mechanical RPM and scale /10
                 rpmSum10 += esc->rpm;
+                validCount++;
             }
         }
-        return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f / count);
+        if (validCount == 0) {
+            return 0;
+        }
+        #if defined(USE_DSHOT)
+            // Use erpmToRpm for DSHOT builds
+            return lrintf(erpmToRpm((uint32_t)rpmSum10) / 10.0f / validCount);
+        #else
+            // Fallback: esc->rpm is 0.01 eRPM, convert to mechanical RPM (divide by 10)
+            return (rpmSum10 / 10) / validCount;
+        #endif
     }
-#endif
+    #endif
 
     case EX_DEBUG0: return debug[0];
     case EX_DEBUG1: return debug[1];
