@@ -37,6 +37,8 @@
 #include "pg/adc.h"
 
 #include "hardware/adc.h"
+#include "hardware/irq.h"
+
 #include "common/utils.h"   // popcount, llog2
 #include "common/maths.h"   // MAX/MIN macros
 
