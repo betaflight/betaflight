@@ -109,23 +109,22 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
 
 static bool checkEscAlarmConditions(escSensorData_t *data, uint8_t motorIndex, char *buffer)
 {
-    const osdConfig_t *config = osdConfig();
     uint8_t alarmPos = 0;
 
     // Check RPM alarm (only when motor is active)
     if (isMotorActive(motorIndex)) {
-        if (rpm && config->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(rpm) <= config->esc_rpm_alarm) {
+        if (data->rpm && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(data->rpm) <= osdConfig()->esc_rpm_alarm) {
             buffer[alarmPos++] = ESC_ALARM_RPM;
         }
     }
 
     // Check current alarm (regardless of motor spinning state)
-    if (current && config->esc_current_alarm != ESC_CURRENT_ALARM_OFF && current >= config->esc_current_alarm) {
+    if (data->current && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF && data->current >= osdConfig()->esc_current_alarm) {
         buffer[alarmPos++] = ESC_ALARM_CURRENT;
     }
 
     // Check temperature alarm (regardless of motor spinning state)
-    if (temperature && config->esc_temp_alarm != ESC_TEMP_ALARM_OFF && temperature >= config->esc_temp_alarm) {
+    if (data->consumption && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && data->consumption >= osdConfig()->esc_temp_alarm) {
         buffer[alarmPos++] = ESC_ALARM_TEMP;
     }
 
@@ -157,7 +156,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
         if (escData) {
             char alarmChars[4]; // Buffer for alarm characters (C, T, R + '\0')
             // Only show motor if it has alarms (problems only approach)
-            if (checkEscAlarmConditions(i, escData->rpm, escData->temperature, escData->current, alarmChars)) {
+            if (checkEscAlarmConditions(escData, i, alarmChars)) {
                 escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d%s", i + 1, alarmChars);
                 escWarning = true;
             }
