@@ -263,6 +263,15 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
 
+// Camera control PWM availability per STM32 family
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
+#endif
+
+#if defined(STM32F4)
+#define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
+#endif
+
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 
 // speed is packed between modebits 4 and 1,

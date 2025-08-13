@@ -136,6 +136,7 @@ MCU_COMMON_SRC = \
             msc/emfat.c \
             msc/emfat_file.c \
             msc/usbd_storage_sd_spi.c \
+            common/stm32/ledstrip_ws2811_stm32.c \
             common/stm32/debug_pin.c \
             common/stm32/adc_impl.c
 

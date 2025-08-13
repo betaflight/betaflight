@@ -73,10 +73,14 @@
 
 #define USE_VCP
 
+// Enable MSC with SD card SPI backend for RP2350B target
+#define USE_USB_MSC
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+
 #undef USE_TRANSPONDER
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
-#undef USE_SDCARD
 
 #undef USE_TIMER
 #undef USE_RCC
@@ -141,7 +145,6 @@
 #undef USE_RPM_LIMIT
 
 #undef USE_SERVOS
-#undef USE_LED_STRIP
 #undef USE_OSD
 #undef USE_OSD_SD
 #undef USE_OSD_HD
@@ -159,8 +162,8 @@
 /* to be moved to a config file once target if working
    defaults as per Laurel board for now */
 
-#define LED0_PIN             PA25
-#undef LED1_PIN
+#define LED0_PIN             PA6
+#define LED1_PIN             PA7
 #undef LED2_PIN
 
 // These pin selections are currently fairly arbitrary for RP2350A

@@ -67,6 +67,11 @@
 
 #define USE_VCP
 
+// Enable MSC with SD card SPI backend for RP2350B target
+#define USE_USB_MSC
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+
 #undef USE_TRANSPONDER
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
@@ -176,7 +181,7 @@
 #undef USE_RPM_LIMIT
 
 #undef USE_SERVOS
-#undef USE_LED_STRIP
+
 #undef USE_OSD_QUICK_MENU
 #undef USE_POSITION_HOLD
 
