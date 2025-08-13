@@ -31,7 +31,6 @@
 #include "build/debug.h"
 
 #include "drivers/io.h"
-#include "drivers/io_impl.h"
 #include "drivers/sensor.h"
 #include "drivers/adc.h"
 
@@ -155,22 +154,32 @@ void adcInit(const adcConfig_t *config)
         mask |= (1 << adcOperatingConfig[i].channel);
     }
 
+    const uint8_t sources = BITCOUNT(mask);
+    if (sources == 0) {
+        /* don't enable the interrupt */
+        return;
+    }
+
     adc_set_round_robin(mask);
     adc_fifo_setup(
         true,               // Write each completed conversion to the sample FIFO
         false,              // Disable DMA data request (DREQ)
-        BITCOUNT(mask),     // IRQ asserted when at least 1 sample is present (not used here)
+        MAX(1, sources),    // IRQ asserted when at least 1 sample is present
         false,              // We won't see the ERR bit because of 12-bit reads; disable
         false               // Don't shift each sample to 8 bits when pushing to FIFO
     );
-    adc_set_clkdiv(48000/10); // 10 samples per second (CLK is 48mhz for ADC)
+    /*
+        Sampling requires 96 cycles per sample
+        Sample as slow as possible
+    */
+    adc_set_clkdiv((65535.f + 255.f/256.f));
 
     // --- Interrupt Setup ---
-    // Configure and enable the ADC IRQ
     irq_set_exclusive_handler(ADC_IRQ_FIFO, adc_irq_handler);
     adc_irq_set_enabled(true);
     irq_set_enabled(ADC_IRQ_FIFO, true);
 
+    /* start the ADC in free running mode */
     adc_run(true);
 }
 

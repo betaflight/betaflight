@@ -132,4 +132,4 @@ extern uint32_t systemUniqueId[3];
 #define xDMA_GetCurrDataCounter(dma_resource) (((dma_channel_hw_t *)(dma_resource))->transfer_count)
 
 #define USE_LATE_TASK_STATISTICS
-
+#define DEFAULT_VOLTAGE_METER_SCALE   100
