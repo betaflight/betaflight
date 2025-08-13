@@ -23,6 +23,10 @@
 
 #include "drivers/adc.h"
 #include "platform/adc_impl.h"
+#ifdef DEBUG_ADC_CHANNELS
+#include "build/debug.h"
+#include "common/maths.h"
+#endif
 
 // Verify a pin designated by tag has connection to an ADC instance designated by device
 bool adcVerifyPin(ioTag_t tag, adcDevice_e device)
@@ -31,7 +35,7 @@ bool adcVerifyPin(ioTag_t tag, adcDevice_e device)
         return false;
     }
 
-    for (int map = 0 ; map < ARRAYLEN(adcTagMap) ; map++) {
+    for (unsigned map = 0 ; map < ARRAYLEN(adcTagMap) ; map++) {
         if ((adcTagMap[map].tag == tag) && (adcTagMap[map].devices & (1 << device))) {
             return true;
         }
@@ -93,6 +97,8 @@ uint16_t adcGetValue(adcSource_e source)
         }
     }
 #endif
-
+    if ((unsigned)source >= ADC_SOURCE_COUNT || !adcOperatingConfig[source].enabled) {
+        return 0;
+    }
     return adcValues[adcOperatingConfig[source].dmaIndex];
 }

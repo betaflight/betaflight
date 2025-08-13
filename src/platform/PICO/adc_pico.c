@@ -37,6 +37,8 @@
 #include "pg/adc.h"
 
 #include "hardware/adc.h"
+#include "common/utils.h"   // popcount, llog2
+#include "common/maths.h"   // MAX/MIN macros
 
 #if defined(RP2350A)
 #define PICO_ADC_CHANNEL_COUNT          5
@@ -73,12 +75,6 @@ static int adcChannelByPin(const int pin)
     return -1;
 }
 
-uint8_t adcChannelByTag(ioTag_t ioTag)
-{
-    const int pin = DEFIO_TAG_PIN(ioTag);
-    return adcChannelByPin(pin);
-}
-
 void adc_irq_handler(void)
 {
     // Read all available samples from the FIFO
@@ -87,8 +83,9 @@ void adc_irq_handler(void)
         // The ADC hardware tells us which channel the sample is from.
         uint8_t channel = result >> 12;  // Extract channel from top 4 bits
         uint16_t value = result & 0xFFF; // Mask out the channel bits to get the 12-bit value
-
-        adcValues[channel] = value;
+        if (channel < PICO_ADC_CHANNEL_COUNT) {
+            adcValues[channel] = value;
+        }
     }
     // The ADC IRQ is cleared automatically when the FIFO is read.
 }
@@ -126,6 +123,7 @@ void adcInit(const adcConfig_t *config)
                 if (i == ADC_TEMPSENSOR) {
                     adcOperatingConfig[i].channel = PICO_ADC_INTERNAL_TEMP_CHANNEL;
                     adcOperatingConfig[i].enabled = true;
+                    adc_set_temp_sensor_enabled(true);
                 }
                 break;
             }
