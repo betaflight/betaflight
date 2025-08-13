@@ -31,7 +31,7 @@ bool adcVerifyPin(ioTag_t tag, adcDevice_e device)
         return false;
     }
 
-    for (int map = 0 ; map < ADC_TAG_MAP_COUNT ; map++) {
+    for (int map = 0 ; map < ARRAYLEN(adcTagMap) ; map++) {
         if ((adcTagMap[map].tag == tag) && (adcTagMap[map].devices & (1 << device))) {
             return true;
         }
@@ -87,18 +87,12 @@ uint16_t adcGetValue(adcSource_e source)
     adcGetChannelValues();
 
 #ifdef DEBUG_ADC_CHANNELS
-    if (adcOperatingConfig[0].enabled) {
-        debug[0] = adcValues[adcOperatingConfig[0].dmaIndex];
-    }
-    if (adcOperatingConfig[1].enabled) {
-        debug[1] = adcValues[adcOperatingConfig[1].dmaIndex];
-    }
-    if (adcOperatingConfig[2].enabled) {
-        debug[2] = adcValues[adcOperatingConfig[2].dmaIndex];
-    }
-    if (adcOperatingConfig[3].enabled) {
-        debug[3] = adcValues[adcOperatingConfig[3].dmaIndex];
+    for (int i = 0 ; i < MIN(4, ARRAYLEN(adcOperatingConfig)) ; i++) {
+        if (adcOperatingConfig[i].enabled) {
+            debug[i] = adcValues[adcOperatingConfig[i].dmaIndex];
+        }
     }
 #endif
+
     return adcValues[adcOperatingConfig[source].dmaIndex];
 }

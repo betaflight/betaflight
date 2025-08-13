@@ -147,18 +147,17 @@ void adcInit(const adcConfig_t *config)
             continue;
         }
 
-        if (mask == 0) {
-            // select the first channel for input
-            adc_select_input(adcOperatingConfig[i].channel);
-        }
         mask |= (1 << adcOperatingConfig[i].channel);
     }
 
-    const uint8_t sources = BITCOUNT(mask);
+    const unsigned sources = popcount(mask);
     if (sources == 0) {
         /* don't enable the interrupt */
         return;
     }
+
+    const int firstEnabled = llog2(mask & -mask);
+    adc_select_input(firstEnabled);
 
     adc_set_round_robin(mask);
     adc_fifo_setup(
@@ -172,7 +171,7 @@ void adcInit(const adcConfig_t *config)
         Sampling requires 96 cycles per sample
         Sample as slow as possible
     */
-    adc_set_clkdiv((65535.f + 255.f/256.f));
+    adc_set_clkdiv(65535.f + 255.f / 256.f);
 
     // --- Interrupt Setup ---
     irq_set_exclusive_handler(ADC_IRQ_FIFO, adc_irq_handler);
@@ -185,7 +184,7 @@ void adcInit(const adcConfig_t *config)
 
 uint16_t adcGetValue(adcSource_e source)
 {
-    if (!adcOperatingConfig[source].enabled) {
+    if ((unsigned)source >= ARRAYLEN(adcOperatingConfig) || !adcOperatingConfig[source].enabled) {
         return 0;
     }
     const uint8_t channel = adcOperatingConfig[source].channel;
