@@ -147,7 +147,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
         escSensorData_t escDataBuffer;
         // Get sensor data based on type
         if (isDshot) {
-            if (getDshotSensorData(i, &escDataBuffer) == 0) {
+            if (getDshotSensorData(&escDataBuffer, i)) {
                 escData = &escDataBuffer;
             }
         } else {
