@@ -131,7 +131,7 @@ static bool checkEscAlarmConditions(escSensorData_t *data, uint8_t motorIndex, c
 
     buffer[alarmPos] = '\0';
 
-    return (alarmPos == 0) ? 0 : 1;
+    return alarmPos;
 }
 
 // Generic ESC warning function for both ESC sensor and DShot telemetry
