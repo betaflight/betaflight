@@ -80,7 +80,7 @@ adcDevice_e adcDeviceByInstance(const ADC_TypeDef *instance)
 }
 
 adcOperatingConfig_t adcOperatingConfig[ADC_SOURCE_COUNT];
-volatile FAST_DATA_ZERO_INIT uint16_t adcValues[ADC_SOURCE_COUNT];
+volatile DMA_DATA_ZERO_INIT uint16_t adcValues[ADC_SOURCE_COUNT];
 
 uint16_t adcGetValue(adcSource_e source)
 {

@@ -131,7 +131,7 @@ typedef struct adcOperatingConfig_s {
 } adcOperatingConfig_t;
 
 extern adcOperatingConfig_t adcOperatingConfig[ADC_SOURCE_COUNT];
-extern volatile FAST_DATA_ZERO_INIT uint16_t adcValues[ADC_SOURCE_COUNT];
+extern volatile DMA_DATA_ZERO_INIT uint16_t adcValues[ADC_SOURCE_COUNT];
 
 #define ADC_CFG_TO_DEV(x) ((x) - 1)
 #define ADC_DEV_TO_CFG(x) ((x) + 1)
