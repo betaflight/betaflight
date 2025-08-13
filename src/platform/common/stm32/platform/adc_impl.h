@@ -142,9 +142,7 @@ extern const adcDevice_t adcHardware[];
 extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);
-#if !defined(SIMULATOR_BUILD)
 adcDevice_e adcDeviceByInstance(const ADC_TypeDef *instance);
-#endif
 bool adcVerifyPin(ioTag_t tag, adcDevice_e device);
 
 // Marshall values in DMA instance/channel based order to adcChannel based order.
