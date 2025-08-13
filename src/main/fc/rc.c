@@ -381,6 +381,17 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     DEBUG_SET(DEBUG_RX_TIMING, 5, smoothingData->setpointCutoffFrequency);
 }
 
+#ifdef USE_FEEDFORWARD
+static FAST_CODE_NOINLINE void updateFeedforwardFilters(const pidRuntime_t *pid) {
+    float pt1K = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / smoothedRxRateHz);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        pt1FilterUpdateCutoff(&feedforwardData.filterSetpointSpeed[axis], pt1K);
+        pt1FilterUpdateCutoff(&feedforwardData.filterSetpointDelta[axis], pt1K);
+    }
+    DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 6, lrintf(pt1K * 1000.0f));
+}
+#endif
+
 // Determine if we need to calculate filter cutoffs. If not then we can avoid
 // examining the rx frame times completely
 FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
@@ -420,7 +431,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
             rcSmoothingData.filterInitialized = true;
         }
 #ifdef USE_FEEDFORWARD
-        updateFeedforwardFilters
+        updateFeedforwardFilters(&pidRuntime);
 #endif
     }
 
@@ -464,15 +475,6 @@ static FAST_CODE void processRcSmoothingFilter(void)
 #endif // USE_RC_SMOOTHING_FILTER
 
 #ifdef USE_FEEDFORWARD
-static FAST_CODE_NOINLINE void updateFeedforwardFilters(const pidRuntime_t *pid) {
-    float pt1K = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / smoothedRxRateHz);
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        pt1FilterUpdateCutoff(&feedforwardData.filterSetpointSpeed[axis], pt1K);
-        pt1FilterUpdateCutoff(&feedforwardData.filterSetpointDelta[axis], pt1K);
-    }
-    DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 6, lrintf(pt1K * 1000.0f));
-}
-
 static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, flight_dynamics_index_t axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
@@ -609,8 +611,7 @@ bool shouldUpdateSmoothing(void)
     static const float smoothingFactor = 0.1f;  // Low pass smoothing factor to smooth valid RxRate values
     static float lastStableSmoothedRxRateHz = 0.0f;  // stable value to compare currentRxRate against
 
-    const timeMs_t currentTimeMs = millis();
-    const bool ready = (currentTimeMs > 1000) && (targetPidLooptime > 0);
+    const bool ready = (targetPidLooptime > 0);
 
     if (ready && isRxReceivingSignal() && isRxRateValid) {
         // Compare current rate to last stable smoothed rate for smoothing
