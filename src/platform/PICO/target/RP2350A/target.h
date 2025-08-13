@@ -145,7 +145,6 @@
 #undef USE_RPM_LIMIT
 
 #undef USE_SERVOS
-#undef USE_LED_STRIP
 #undef USE_OSD
 #undef USE_OSD_SD
 #undef USE_OSD_HD

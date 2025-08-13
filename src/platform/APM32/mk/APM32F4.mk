@@ -190,6 +190,7 @@ MCU_COMMON_SRC = \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \
         APM32/system_apm32f4xx.c \
+        common/stm32/ledstrip_ws2811_stm32.c \
         common/stm32/debug_pin.c
 
 VCP_SRC = \

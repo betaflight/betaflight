@@ -410,7 +410,8 @@ MCU_COMMON_SRC = \
             PICO/usb/usb_descriptors.c \
             PICO/usb/usb_msc_pico.c \
             PICO/multicore.c \
-            PICO/debug_pin.c
+            PICO/debug_pin.c \
+            PICO/light_ws2811strip_pico.c
 
 # USB MSC support sources (TinyUSB backend on PICO)
 MSC_SRC = \
