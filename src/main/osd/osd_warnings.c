@@ -107,7 +107,7 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
     return true;
 }
 
-static int checkEscAlarmConditions(uint8_t motorIndex, int32_t rpm, int32_t temperature, int32_t current, char* buffer)
+static bool checkEscAlarmConditions(escSensorData_t *data, uint8_t motorIndex, char *buffer)
 {
     const osdConfig_t *config = osdConfig();
     uint8_t alarmPos = 0;
