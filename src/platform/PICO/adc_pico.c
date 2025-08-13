@@ -176,10 +176,10 @@ void adcInit(const adcConfig_t *config)
 
 uint16_t adcGetValue(adcSource_e source)
 {
-    const int channel = adcOperatingConfig[source].channel;
-    if (channel == -1) {
+    if (!adcOperatingConfig[source].enabled) {
         return 0;
     }
+    const uint8_t channel = adcOperatingConfig[source].channel;
     return adcValues[channel];
 }
 
