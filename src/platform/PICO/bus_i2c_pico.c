@@ -430,12 +430,13 @@ void i2cInit(I2CDevice device)
 
     const IO_t scl = pDev->scl;
     const IO_t sda = pDev->sda;
-    const uint8_t sclPin = IO_Pin(scl);
-    const uint8_t sdaPin = IO_Pin(sda);
 
     if (!hardware || !scl || !sda) {
         return;
     }
+
+    const uint8_t sclPin = IO_Pin(scl);
+    const uint8_t sdaPin = IO_Pin(sda);
 
     // Set owners
     IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
