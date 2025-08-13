@@ -104,7 +104,7 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
     dest->consumption = 0; // DShot doesn't typically provide consumption data
     dest->dataAge = 0; // Data is fresh
 
-    return 0;
+    return true;
 }
 
 static int checkEscAlarmConditions(uint8_t motorIndex, int32_t rpm, int32_t temperature, int32_t current, char* buffer)
