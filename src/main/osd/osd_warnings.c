@@ -79,10 +79,10 @@ static inline bool isMotorActive(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
 }
 
-int getDshotSensorData(int motorIndex, escSensorData_t* dest) {
+bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
     // Check if DShot telemetry is active for this motor
     if (!isDshotMotorTelemetryActive(motorIndex)) {
-        return -1;
+        return false;
     }
 
     const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
