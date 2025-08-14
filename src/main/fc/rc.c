@@ -579,14 +579,14 @@ bool shouldUpdateSmoothing(void)
     static int validCount = 0;
     static int outlierCount = 0;
     static const float smoothingFactor = 0.1f;       // Low pass smoothing factor to smooth valid RxRate values
-    static bool prevOutlierSign = true;              // direction of the previous outlier
+    static int8_t prevOutlierSign = 0;               // -1 for negative, +1 for positive
 
     if (isRxReceivingSignal() && isRxRateValid) {
         float deltaRateHz = currentRxRateHz - smoothedRxRateHz;
         bool isOutlier = fabsf(deltaRateHz) > (smoothedRxRateHz * 0.2f);
 
         if (isOutlier) {
-            bool currentSign = SIGN(deltaRateHz);
+            const int8_t currentSign = (deltaRateHz < 0.0f) ? -1 : 1;
             if (outlierCount == 0) {
                 prevOutlierSign = currentSign;
                 outlierCount++;
