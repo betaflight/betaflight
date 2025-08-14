@@ -36,8 +36,6 @@
 
 #ifdef RP2350
 
-#define PLATFORM_TRAIT_ADC_INTERNAL 1
-
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define I2C_TypeDef          i2c_inst_t

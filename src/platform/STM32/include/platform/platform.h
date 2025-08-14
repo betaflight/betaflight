@@ -476,7 +476,6 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32H7) || defined(STM32G4)
 #define DMA_CHANREQ_STRING "Request"
 
-#define PLATFORM_TRAIT_ADC_INTERNAL 1
 #define ADC_INTERNAL_VBAT4_ENABLED 1
 #endif
 
