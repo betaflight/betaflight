@@ -169,3 +169,10 @@ void writeEEPROM(void) {}
 float getRcDeflectionAbs(int) { return 0.0f; }
 float mixerGetRcThrottle(void) { return 0.0f; }
 }
+
+// Stub for Mahony I-term getter used in gyro.c
+extern "C" {
+float imuGetMahonyIntegralFB(void) {
+    return 0.0f;
+}
+}
