@@ -549,7 +549,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardTransition = pidProfile->feedforward_transition / 100.0f;
     pidRuntime.feedforwardTransitionInv = (pidProfile->feedforward_transition == 0) ? 0.0f : 100.0f / pidProfile->feedforward_transition;
     pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
-    pidRuntime.feedforwardSmoothFactor = 1.0f - (0.01f * pidProfile->feedforward_smooth_factor);
+    // feedforward_smooth_factor effect previously would change based on packet looprate
+    // normalizing to 250hz packet rate as that is the most commonly used ELRS packet rate
+    float scaledSmoothFactor = 0.01f * pidProfile->feedforward_smooth_factor;
+    float rxDt = 1.0f / 250.0f;
+    float feedforwardSmoothingTau = (rxDt * scaledSmoothFactor) / (1.0f - scaledSmoothFactor);
+    pidRuntime.feedforwardSmoothFactor = feedforwardSmoothingTau;
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
     pidRuntime.feedforwardJitterFactorInv = 1.0f / (1.0f + pidProfile->feedforward_jitter_factor);
     pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;

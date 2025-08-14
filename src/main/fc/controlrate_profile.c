@@ -63,6 +63,9 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .profileName = { 0 },
             .quickRatesRcExpo = 0,
             .thrHover8 = 50,
+            .rc_smoothing_setpoint_tau_center = { 50, 50, 50 },
+            .rc_smoothing_setpoint_tau_end = { 15, 15, 15 },
+            .rc_smoothing_throttle_tau = 20,
         );
     }
 }

@@ -104,7 +104,6 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
         .rc_smoothing_mode = 1,
         .rc_smoothing_setpoint_cutoff = 0,
-        .rc_smoothing_feedforward_cutoff = 0,
         .rc_smoothing_throttle_cutoff = 0,
         .rc_smoothing_debug_axis = ROLL,
         .rc_smoothing_auto_factor_rpy = 30,
@@ -114,6 +113,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .sbus_baud_fast = false,
         .msp_override_channels_mask = 0,
         .crsf_use_negotiated_baud = false,
+        .rc_smoothing_use_tau = false,
     );
 
 #ifdef RX_CHANNELS_TAER
