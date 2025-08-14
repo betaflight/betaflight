@@ -42,6 +42,8 @@
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
+#include "drivers/rangefinder/rangefinder_lidarlite.h"
+#include "drivers/bus_i2c_busdev.h"
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
@@ -70,11 +72,7 @@ rangefinder_t rangefinder;
 #define RANGEFINDER_DYNAMIC_THRESHOLD           600     //Used to determine max. usable rangefinder disatance
 #define RANGEFINDER_DYNAMIC_FACTOR              75
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
-
-PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
-    .rangefinder_hardware = RANGEFINDER_NONE,
-);
+PG_REGISTER_WITH_RESET_FN(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 4);
 
 #ifdef USE_RANGEFINDER_HCSR04
 PG_REGISTER_WITH_RESET_TEMPLATE(sonarConfig_t, sonarConfig, PG_SONAR_CONFIG, 1);
@@ -85,23 +83,44 @@ PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
 );
 #endif
 
+void pgResetFn_rangefinderConfig(rangefinderConfig_t *rangefinderConfig)
+{
+    rangefinderConfig->rangefinder_hardware = RANGEFINDER_NONE;
+
+#if defined(USE_RANGEFINDER_LIDARLITE)
+    rangefinderConfig->rangefinder_hardware = RANGEFINDER_LIDARLITE;
+    rangefinderConfig->rangefinder_busType = BUS_TYPE_I2C;
+    // Add LIDAR to the same I2C bus as the external compass
+    rangefinderConfig->rangefinder_i2c_device = I2C_DEV_TO_CFG(RANGEFINDER_I2C_INSTANCE);
+#else
+    rangefinderConfig->rangefinder_busType = BUS_TYPE_NONE;
+    rangefinderConfig->rangefinder_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
+#endif
+}
+
 /*
  * Detect which rangefinder is present
  */
-static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwareToUse)
+static bool rangefinderDetect(rangefinderDev_t *rangefinder_dev, uint8_t rangefinderHardwareToUse)
 {
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
     requestedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderHardwareToUse;
 
+#if defined(USE_I2C)
+    if (rangefinderConfig()->rangefinder_busType == BUS_TYPE_I2C) {
+        i2cBusSetInstance(&rangefinder_dev->dev, rangefinderConfig()->rangefinder_i2c_device);
+    }
+#endif
+
 #if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF)
-    UNUSED(dev);
+    UNUSED(rangefinder_dev);
 #endif
 
     switch (rangefinderHardwareToUse) {
         case RANGEFINDER_HCSR04:
 #ifdef USE_RANGEFINDER_HCSR04
             {
-                if (hcsr04Detect(dev, sonarConfig())) {   // FIXME: Do actual detection if HC-SR04 is plugged in
+                if (hcsr04Detect(rangefinder_dev, sonarConfig())) {   // FIXME: Do actual detection if HC-SR04 is plugged in
                     rangefinderHardware = RANGEFINDER_HCSR04;
                     rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
                 }
@@ -113,9 +132,9 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
         case RANGEFINDER_TFMINI:
         case RANGEFINDER_TF02:
         case RANGEFINDER_TFNOVA:
-            if (lidarTFDetect(dev, rangefinderHardwareToUse)) {
+            if (lidarTFDetect(rangefinder_dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(rangefinder_dev->delayMs));
             }
 #endif
             break;
@@ -125,9 +144,18 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
         case RANGEFINDER_MTF02:
         case RANGEFINDER_MTF01P:
         case RANGEFINDER_MTF02P:
-            if (mtRangefinderDetect(dev, rangefinderHardwareToUse)) {
+            if (mtRangefinderDetect(rangefinder_dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(rangefinder_dev->delayMs));
+            }
+            break;
+#endif
+
+#if defined(USE_RANGEFINDER_LIDARLITE)
+        case RANGEFINDER_LIDARLITE:
+            if (lidarLiteDetect(rangefinder_dev, rangefinderHardwareToUse)) {
+                rangefinderHardware = rangefinderHardwareToUse;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(rangefinder_dev->delayMs));
             }
             break;
 #endif
@@ -353,5 +381,5 @@ bool rangefinderIsHealthy(void)
 {
     return (millis() - rangefinder.lastValidResponseTimeMs) < RANGEFINDER_HARDWARE_TIMEOUT_MS;
 }
-#endif
 
+#endif

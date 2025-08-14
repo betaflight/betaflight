@@ -36,10 +36,13 @@ typedef enum {
     RANGEFINDER_MTF01P      = 6,
     RANGEFINDER_MTF02P      = 7,
     RANGEFINDER_TFNOVA      = 8,
+    RANGEFINDER_LIDARLITE   = 9,
 } rangefinderType_e;
 
 typedef struct rangefinderConfig_s {
     uint8_t rangefinder_hardware;
+    uint8_t rangefinder_busType;
+    uint8_t rangefinder_i2c_device;
 } rangefinderConfig_t;
 
 PG_DECLARE(rangefinderConfig_t, rangefinderConfig);
