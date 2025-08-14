@@ -210,7 +210,7 @@ void adcInit(const adcConfig_t *config)
     uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
-    memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
+    memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
     if (config->vbat.enabled) {
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;

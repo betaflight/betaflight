@@ -42,6 +42,12 @@
 #include "common/utils.h"   // popcount, llog2
 #include "common/maths.h"   // MAX/MIN macros
 
+#if defined(RP2350)
+#define PICO_ADC_FIFO_SIZE 8
+#else
+#error "ADC FIFO Size not defined"
+#endif
+
 #if defined(RP2350A)
 #define PICO_ADC_CHANNEL_COUNT          5
 #define PICO_ADC_INTERNAL_TEMP_CHANNEL  4
@@ -95,6 +101,8 @@ void adc_irq_handler(void)
 void adcInit(const adcConfig_t *config)
 {
     adc_init();
+
+    memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
     // Set channels (ioTags) for enabled ADC inputs
     if (config->vbat.enabled) {
@@ -163,7 +171,7 @@ void adcInit(const adcConfig_t *config)
     adc_fifo_setup(
         true,               // Write each completed conversion to the sample FIFO
         false,              // Disable DMA data request (DREQ)
-        MAX(1, sources),    // IRQ asserted when at least 1 sample is present
+        MIN(MAX(1, sources), PICO_ADC_FIFO_SIZE), // IRQ asserted when at least 1 sample is present, clamp at FIFO size
         false,              // We won't see the ERR bit because of 12-bit reads; disable
         false               // Don't shift each sample to 8 bits when pushing to FIFO
     );
