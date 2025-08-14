@@ -114,8 +114,8 @@ PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 9);
 
 void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
 {
-    gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
-    gyroConfig->gyroMovementCalibrationThreshold = 48;
+    gyroConfig->gyroCalibrationDuration = 160;        // 1.6 seconds (matches bias estimator time constant)
+    gyroConfig->gyroMovementCalibrationThreshold = 24; // Stricter movement threshold
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
     gyroConfig->gyro_lpf1_type = FILTER_PT1;
     gyroConfig->gyro_lpf1_static_hz = GYRO_LPF1_DYN_MIN_HZ_DEFAULT;
@@ -167,24 +167,27 @@ static void updateGyroDriftCompensation(timeUs_t currentTimeUs)
 
     // Determine learning window based on conditions
     // Always allow learning when disarmed and very still
-    const float maxGyroDisarmed = 0.5f;   // deg/s
-    const float maxGyroArmed    = 1.0f;   // deg/s
-    const float maxStickDeflect = 0.05f;  // 5% deflection
-    const float maxThrottle     = 0.20f;  // 20% rc throttle
+    const float maxGyroDisarmed = 0.3f;   // deg/s (stricter)
+    const float maxGyroArmed    = 0.6f;   // deg/s (stricter)
+    const float maxStickDeflect = 0.03f;  // 3% deflection
+    const float maxThrottle     = 0.10f;  // 10% rc throttle
 
-    bool allowUpdate = false;
-    float maxGyroAbs = 0.0f;
+    bool allowUpdate = true;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        maxGyroAbs = fmaxf(maxGyroAbs, fabsf(gyroADCUncomp[axis]));
-    }
-
-    if (!ARMING_FLAG(ARMED)) {
-        allowUpdate = (maxGyroAbs <= maxGyroDisarmed);
-    } else {
-        // Opportunistic in-flight learning only when pilot is hands-off and craft is calm
-        const float maxStick = fmaxf(fmaxf(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH)), getRcDeflectionAbs(FD_YAW));
-        const float rcThr = mixerGetRcThrottle();
-        allowUpdate = (maxStick < maxStickDeflect) && (rcThr < maxThrottle) && (maxGyroAbs <= maxGyroArmed);
+        float absGyro = fabsf(gyroADCUncomp[axis]);
+        if (!ARMING_FLAG(ARMED)) {
+            if (absGyro > maxGyroDisarmed) {
+                allowUpdate = false;
+                break;
+            }
+        } else {
+            const float maxStick = fmaxf(fmaxf(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH)), getRcDeflectionAbs(FD_YAW));
+            const float rcThr = mixerGetRcThrottle();
+            if ((maxStick >= maxStickDeflect) || (rcThr >= maxThrottle) || (absGyro > maxGyroArmed)) {
+                allowUpdate = false;
+                break;
+            }
+        }
     }
 
     // Decide whether to update estimate this call
@@ -273,7 +276,7 @@ bool isFirstArmingGyroCalibrationRunning(void)
 
 STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t gyroMovementCalibrationThreshold)
 {
-    bool calFailed = false;
+    bool allAxesBelowThreshold = true;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // Reset g[axis] at start of calibration
@@ -300,23 +303,24 @@ STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor
 
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && stddev > gyroMovementCalibrationThreshold) {
-                calFailed = true;
-            } else {
-                // please take care with exotic boardalignment !!
-                gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
-                if (axis == Z) {
-                  gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
-                }
+                allAxesBelowThreshold = false;
             }
         }
     }
 
-    if (calFailed) {
+    if (!allAxesBelowThreshold) {
         gyroSetCalibrationCycles(gyroSensor);
         return;
     }
 
+    // Only set gyroZero if all axes are below threshold
     if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
+            if (axis == Z) {
+                gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
+            }
+        }
         schedulerResetTaskStatistics(TASK_SELF); // so calibration cycles do not pollute tasks statistics
         if (!firstArmingCalibrationWasStarted || (getArmingDisableFlags() & ~ARMING_DISABLED_CALIBRATING) == 0) {
             beeper(BEEPER_GYRO_CALIBRATED);
