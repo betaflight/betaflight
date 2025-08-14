@@ -86,11 +86,11 @@ typedef enum {
 extern float rcCommand[4];
 
 typedef struct rcSmoothingFilter_s {
-    pt3Filter_t filterSetpoint[4];
+    pt3Filter_t filterSetpoint[PRIMARY_CHANNEL_COUNT];
     pt3Filter_t filterRcDeflection[RP_AXIS_COUNT];
-    pt3Filter_t filterFeedforward[3];
-    pt1Filter_t filterSetpointSpeed[3];
-    pt1Filter_t filterSetpointDelta[3];
+    pt3Filter_t filterFeedforward[XYZ_AXIS_COUNT];
+    pt1Filter_t filterSetpointSpeed[XYZ_AXIS_COUNT];
+    pt1Filter_t filterSetpointDelta[XYZ_AXIS_COUNT];
 
     uint8_t setpointCutoffSetting;
     uint8_t throttleCutoffSetting;
