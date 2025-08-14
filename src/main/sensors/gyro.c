@@ -512,9 +512,11 @@ FAST_CODE void gyroUpdate(void)
         if (driftCompensationInitialized) {
             float mahonyIterm[XYZ_AXIS_COUNT];
             imuGetMahonyIntegralFB(mahonyIterm);
-            gyro.gyroADC[X] -= (gyroDriftEstimate[X] + mahonyIterm[X]);
-            gyro.gyroADC[Y] -= (gyroDriftEstimate[Y] + mahonyIterm[Y]);
-            gyro.gyroADC[Z] -= (gyroDriftEstimate[Z] + mahonyIterm[Z]);
+            // Convert Mahony I-term from rad/s to deg/s before subtraction
+            gyro.gyroADC[X] -= (gyroDriftEstimate[X] + RADIANS_TO_DEGREES(mahonyIterm[X]));
+            gyro.gyroADC[Y] -= (gyroDriftEstimate[Y] + RADIANS_TO_DEGREES(mahonyIterm[Y]));
+            gyro.gyroADC[Z] -= (gyroDriftEstimate[Z] + RADIANS_TO_DEGREES(mahonyIterm[Z]));
+            // Note: gyro.gyroADC is in deg/s, Mahony I-term is in rad/s
         }
     }
 
