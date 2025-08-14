@@ -376,8 +376,8 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
 
     pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3FilterGain(throttleCutoffFrequency, dT));
 
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, smoothingData->setpointCutoffFrequency);
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 4, smoothingData->throttleCutoffFrequency);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->setpointCutoffFrequency);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, smoothingData->throttleCutoffFrequency);
     DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(smoothedRxRateHz));  // Rx Rate to use when updating cutoffs
 }
 
@@ -389,7 +389,7 @@ static FAST_CODE_NOINLINE void updateFeedforwardFilters(const pidRuntime_t *pid)
         pt1FilterUpdateCutoff(&feedforwardData.filterSetpointDelta[axis], pt1K);
     }
     DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 6, lrintf(pt1K * 1000.0f));
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 6, lrintf(pt1K * 1000.0f));
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 4, lrintf(pt1K * 1000.0f));
     DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 7, lrintf(smoothedRxRateHz));
 }
 #endif
