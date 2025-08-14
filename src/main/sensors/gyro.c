@@ -49,6 +49,7 @@
 #include "flight/dyn_notch_filter.h"
 #endif
 #include "flight/rpm_filter.h"
+#include "flight/imu.h"
 
 #include "io/beeper.h"
 #include "io/statusindicator.h"
@@ -512,9 +513,11 @@ FAST_CODE void gyroUpdate(void)
 
         // Always apply drift compensation; learning remains gated to safe windows
         if (driftCompensationInitialized) {
-            gyro.gyroADC[X] -= gyroDriftEstimate[X];
-            gyro.gyroADC[Y] -= gyroDriftEstimate[Y];
-            gyro.gyroADC[Z] -= gyroDriftEstimate[Z];
+            float mahonyIterm[XYZ_AXIS_COUNT];
+            imuGetMahonyIntegralFB(mahonyIterm);
+            gyro.gyroADC[X] -= (gyroDriftEstimate[X] + mahonyIterm[X]);
+            gyro.gyroADC[Y] -= (gyroDriftEstimate[Y] + mahonyIterm[Y]);
+            gyro.gyroADC[Z] -= (gyroDriftEstimate[Z] + mahonyIterm[Z]);
         }
     }
 
