@@ -156,17 +156,16 @@ TEST(SensorGyro, Update)
 // STUBS
 
 extern "C" {
-
-uint32_t micros(void) {return 0;}
-void beeper(beeperMode_e) {}
-uint8_t detectedSensors[] = { GYRO_NONE, ACC_NONE };
-timeDelta_t getGyroUpdateRate(void) {return gyro.targetLooptime;}
-void sensorsSet(uint32_t) {}
-void schedulerResetTaskStatistics(taskId_e) {}
-int getArmingDisableFlags(void) {return 0;}
-void writeEEPROM(void) {}
-// Stubs for RC deflection and throttle used by gyro drift estimator gating
-float getRcDeflectionAbs(int) { return 0.0f; }
-float mixerGetRcThrottle(void) { return 0.0f; }
-float imuGetMahonyIntegralFB(void) { return 0.0f; }
+    uint32_t micros(void) {return 0;}
+    void beeper(beeperMode_e) {}
+    uint8_t detectedSensors[] = { GYRO_NONE, ACC_NONE };
+    timeDelta_t getGyroUpdateRate(void) {return gyro.targetLooptime;}
+    void sensorsSet(uint32_t) {}
+    void schedulerResetTaskStatistics(taskId_e) {}
+    int getArmingDisableFlags(void) {return 0;}
+    void writeEEPROM(void) {}
+    // Stubs for RC deflection and throttle used by gyro drift estimator gating
+    float getRcDeflectionAbs(int) { return 0.0f; }
+    float mixerGetRcThrottle(void) { return 0.0f; }
+    float imuGetMahonyIntegralFB(void) { return 0.0f; }
 }
