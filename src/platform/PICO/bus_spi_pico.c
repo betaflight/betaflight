@@ -227,6 +227,7 @@ void spiInitDevice(SPIDevice device)
     gpio_set_function(IO_PINBYTAG(spi->miso), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->mosi), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->sck), GPIO_FUNC_SPI);
+    gpio_set_pulls(IO_PINBYTAG(spi->miso), true, false); // Pullup MISO
     bprintf("spi initialised device %p [sck %d mosi %d miso %d]",
             spi->dev, IO_PINBYTAG(spi->sck), IO_PINBYTAG(spi->mosi), IO_PINBYTAG(spi->miso));
 }
@@ -338,7 +339,12 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
         uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
         bytesProcessed = spi_read_blocking(SPI_INST(instance), repeated_tx_data, rxData, len);
     } else {
-        bprintf("\n*** unexpected spiInternalReadWriteBufPolled with no tx, rx");
+        // Just force dummy cycles
+        uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
+        uint8_t dropped_rx_data;
+        for (int i = 0; i < len; i++) {
+            bytesProcessed += spi_read_blocking(SPI_INST(instance), repeated_tx_data, &dropped_rx_data, 1);
+        }
     }
 
     return bytesProcessed == len;

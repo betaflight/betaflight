@@ -408,7 +408,7 @@ static void validateAndFixConfig(void)
     if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
         // enable some compiled-in features by default
         uint32_t autoFeatures =
-            FEATURE_OSD | FEATURE_LED_STRIP;
+            FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP;
 #if defined(USE_SOFTSERIAL)
         // enable softserial if at least one pin is configured
         for (unsigned i = RESOURCE_SOFTSERIAL_OFFSET; i < RESOURCE_SOFTSERIAL_OFFSET + RESOURCE_SOFTSERIAL_COUNT; i++) {

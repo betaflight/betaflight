@@ -206,7 +206,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dyn_idle_max_increase = 150,
         .feedforward_averaging = FEEDFORWARD_AVERAGING_OFF,
         .feedforward_max_rate_limit = 90,
-        .feedforward_smooth_factor = 25,
+        .feedforward_smooth_factor = 65,
         .feedforward_jitter_factor = 7,
         .feedforward_boost = 15,
         .dterm_lpf1_dyn_expo = 5,

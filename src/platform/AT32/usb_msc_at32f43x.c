@@ -228,6 +228,11 @@ uint8_t mscStart(void)
     return 0;
 }
 
+void mscTask(void)
+{
+    // Nothing to do here
+}
+
 int8_t msc_disk_capacity(uint8_t lun, uint32_t *block_num, uint32_t *block_size)
 {
     return USBD_STORAGE_fops->GetCapacity(lun, block_num, block_size);

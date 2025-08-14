@@ -22,6 +22,8 @@
 
 #pragma once
 
+// PICO/TinyUSB path does not use the legacy ST/AT32 USB MSC headers
+#ifndef PICO
 #ifdef USE_HAL_DRIVER
 #include "usbd_msc.h"
 #else
@@ -56,3 +58,4 @@ extern USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SD_SPI_fops;
 extern USBD_STORAGE_cb_TypeDef USBD_MSC_EMFAT_fops;
 #endif
 #endif // USE_HAL_DRIVER
+#endif // !PICO

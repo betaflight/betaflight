@@ -29,7 +29,6 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/adc.h"
-#include "drivers/adc_impl.h"
 #include "drivers/io.h"
 
 #include "pg/adc.h"
@@ -57,7 +56,7 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #ifdef ADC_VBAT_PIN
     adcConfig->vbat.enabled = true;
     adcConfig->vbat.ioTag = IO_TAG(ADC_VBAT_PIN);
-#if defined(STM32H7)
+#if PLATFORM_TRAIT_ADC_DEVICE
 #ifdef ADC_VBAT_INSTANCE
     adcConfig->vbat.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_VBAT_INSTANCE));
 #else
@@ -69,7 +68,7 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #ifdef ADC_EXTERNAL1_PIN
     adcConfig->external1.enabled = true;
     adcConfig->external1.ioTag = IO_TAG(ADC_EXTERNAL1_PIN);
-#if defined(STM32H7)
+#if PLATFORM_TRAIT_ADC_DEVICE
 #ifdef ADC_EXTERNAL1_INSTANCE
     adcConfig->external1.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_EXTERNAL1_INSTANCE));
 #else
@@ -81,7 +80,7 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #ifdef ADC_CURR_PIN
     adcConfig->current.enabled = true;
     adcConfig->current.ioTag = IO_TAG(ADC_CURR_PIN);
-#if defined(STM32H7)
+#if PLATFORM_TRAIT_ADC_DEVICE
 #ifdef ADC_CURR_INSTANCE
     adcConfig->current.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_CURR_INSTANCE));
 #else
@@ -93,7 +92,7 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #ifdef ADC_RSSI_PIN
     adcConfig->rssi.enabled = true;
     adcConfig->rssi.ioTag = IO_TAG(ADC_RSSI_PIN);
-#if defined(STM32H7)
+#if PLATFORM_TRAIT_ADC_DEVICE
 #ifdef ADC_RSSI_INSTANCE
     adcConfig->rssi.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_RSSI_INSTANCE));
 #else
