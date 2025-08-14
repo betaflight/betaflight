@@ -165,7 +165,6 @@ static void updateGyroDriftCompensation(timeUs_t currentTimeUs)
     if (!driftCompensationInitialized) {
         return;
     }
-
     // Determine learning window based on conditions
     // Always allow learning when disarmed and very still
     const float maxGyroDisarmed = 0.3f;   // deg/s (stricter)
@@ -185,15 +184,16 @@ static void updateGyroDriftCompensation(timeUs_t currentTimeUs)
             if ((maxStick >= maxStickDeflect) || (rcThr >= maxThrottle) || (absGyro > maxGyroArmed)) { allowUpdate = false; break; }
         }
     }
-
     // Decide whether to update estimate this call
     const uint32_t minUpdateIntervalUs = 500000; // 0.5 seconds
     // bias update is slow and gated; no debug side-effects needed
     if (!allowUpdate) {
         // Not learning this cycle
-    } else if ((currentTimeUs - lastDriftUpdateUs) >= minUpdateIntervalUs) {
+    } else if (cmpTimeUs(currentTimeUs, lastDriftUpdateUs) >= (int32_t)minUpdateIntervalUs) {
         // Update bias estimate using a very slow PT1 with actual dt
-        const float dtSec = (lastDriftUpdateUs == 0) ? (minUpdateIntervalUs * 1e-6f) : ((currentTimeUs - lastDriftUpdateUs) * 1e-6f);
+        const float dtSec = (lastDriftUpdateUs == 0)
+            ? (minUpdateIntervalUs * 1e-6f)
+            : (cmpTimeUs(currentTimeUs, lastDriftUpdateUs) * 1e-6f);
         const float driftLpfCutHz = 0.1f;
         const float k = pt1FilterGain(driftLpfCutHz, dtSec);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
