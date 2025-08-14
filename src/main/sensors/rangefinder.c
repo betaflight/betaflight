@@ -120,7 +120,7 @@ static bool rangefinderDetect(rangefinderDev_t *rangefinder_dev, uint8_t rangefi
         case RANGEFINDER_HCSR04:
 #ifdef USE_RANGEFINDER_HCSR04
             {
-                if (hcsr04Detect(dev, sonarConfig())) {   // FIXME: Do actual detection if HC-SR04 is plugged in
+                if (hcsr04Detect(rangefinder_dev, sonarConfig())) {   // FIXME: Do actual detection if HC-SR04 is plugged in
                     rangefinderHardware = RANGEFINDER_HCSR04;
                     rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
                 }
@@ -132,9 +132,9 @@ static bool rangefinderDetect(rangefinderDev_t *rangefinder_dev, uint8_t rangefi
         case RANGEFINDER_TFMINI:
         case RANGEFINDER_TF02:
         case RANGEFINDER_TFNOVA:
-            if (lidarTFDetect(dev, rangefinderHardwareToUse)) {
+            if (lidarTFDetect(rangefinder_dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(rangefinder_dev->delayMs));
             }
 #endif
             break;
@@ -144,9 +144,9 @@ static bool rangefinderDetect(rangefinderDev_t *rangefinder_dev, uint8_t rangefi
         case RANGEFINDER_MTF02:
         case RANGEFINDER_MTF01P:
         case RANGEFINDER_MTF02P:
-            if (mtRangefinderDetect(dev, rangefinderHardwareToUse)) {
+            if (mtRangefinderDetect(rangefinder_dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(rangefinder_dev->delayMs));
             }
             break;
 #endif
