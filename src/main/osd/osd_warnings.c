@@ -386,16 +386,6 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 
-#ifdef USE_RC_SMOOTHING_FILTER
-    // Show warning if rc smoothing hasn't initialized the filters
-    if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete() && rxConfig()->rc_smoothing_mode) {
-        tfp_sprintf(warningText, "RCSMOOTHING");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-        *blinking = true;
-        return;
-    }
-#endif // USE_RC_SMOOTHING_FILTER
-
     // Show warning if mah consumed is over the configured limit
     if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && osdConfig()->cap_alarm > 0 && getMAhDrawn() >= osdConfig()->cap_alarm) {
         tfp_sprintf(warningText, "OVER CAP");

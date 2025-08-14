@@ -86,7 +86,6 @@ typedef enum {
 extern float rcCommand[4];
 
 typedef struct rcSmoothingFilter_s {
-    bool filterInitialized;
     pt3Filter_t filterSetpoint[4];
     pt3Filter_t filterRcDeflection[RP_AXIS_COUNT];
     pt3Filter_t filterFeedforward[3];

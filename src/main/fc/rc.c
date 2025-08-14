@@ -300,7 +300,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
             delta = cmpTimeUs(rxTime, lastRxTimeUs);
         }
         lastRxTimeUs = rxTime;
-        DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);   // output value in tenths of ms
+        DEBUG_SET(DEBUG_RX_TIMING, 1, rxTime / 100);  // packet time stamp in tenths of ms
     } else {
         if (lastRxTimeUs) {
             // no packet received, use current time for delta
@@ -308,22 +308,22 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
         }
     }
 
-    // temporary debugs
-    DEBUG_SET(DEBUG_RX_TIMING, 4, MIN(delta / 10, INT16_MAX));   // time between frames based on rxFrameCheck
-#ifdef USE_RX_LINK_QUALITY_INFO
-    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());    // raw link quality value
-#endif
-    DEBUG_SET(DEBUG_RX_TIMING, 7, isRxReceivingSignal());        // flag to initiate RXLOSS signal and Stage 1 values
-
     // constrain to a frequency range no lower than about 15Hz and up to about 1000Hz
     // these intervals and rates will be used for RCSmoothing, Feedforward, etc.
     currentRxIntervalUs = constrain(delta, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
     currentRxRateHz = 1e6f / currentRxIntervalUs;
     isRxRateValid = delta == currentRxIntervalUs; // delta is not constrained, therefore not outside limits
 
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(delta / 10, INT16_MAX));   // output value in hundredths of ms
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(delta / 10, INT16_MAX));   // packet interval in hundredths of ms
     DEBUG_SET(DEBUG_RX_TIMING, 2, isRxRateValid);
-    DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));
+    DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));  // constrained packet interval, tenths of ms
+    DEBUG_SET(DEBUG_RX_TIMING, 4, lrintf(currentRxRateHz));
+    // temporary debugs
+#ifdef USE_RX_LINK_QUALITY_INFO
+    DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());    // raw link quality value
+#endif
+    DEBUG_SET(DEBUG_RX_TIMING, 7, isRxReceivingSignal());        // flag to initiate RXLOSS signal and Stage 1 values
+	DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(currentRxRateHz));
 }
 
 // currently only used in the CLI
@@ -376,9 +376,9 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
 
     pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3FilterGain(throttleCutoffFrequency, dT));
 
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 1, smoothingData->setpointCutoffFrequency);
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->throttleCutoffFrequency);
-    DEBUG_SET(DEBUG_RX_TIMING, 5, smoothingData->setpointCutoffFrequency);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 3, smoothingData->setpointCutoffFrequency);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 4, smoothingData->throttleCutoffFrequency);
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(smoothedRxRateHz));  // Rx Rate to use when updating cutoffs
 }
 
 #ifdef USE_FEEDFORWARD
@@ -389,6 +389,8 @@ static FAST_CODE_NOINLINE void updateFeedforwardFilters(const pidRuntime_t *pid)
         pt1FilterUpdateCutoff(&feedforwardData.filterSetpointDelta[axis], pt1K);
     }
     DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 6, lrintf(pt1K * 1000.0f));
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 6, lrintf(pt1K * 1000.0f));
+    DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 7, lrintf(smoothedRxRateHz));
 }
 #endif
 
@@ -406,34 +408,6 @@ FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
 static FAST_CODE void processRcSmoothingFilter(void)
 {
     static FAST_DATA_ZERO_INIT float rxDataToSmooth[4];
-    static FAST_DATA_ZERO_INIT bool initialized;
-
-    // first call initialization
-    if (!initialized) {
-        initialized = true;
-        rcSmoothingData.filterInitialized = false;
-        smoothedRxRateHz = 100.0f; // Start with a value so that we can initialize filters with non-0 cutoffs
-        rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
-
-        rcSmoothingData.autoSmoothnessFactorSetpoint = 1.5f / (1.0f + (rxConfig()->rc_smoothing_auto_factor_rpy / 10.0f));
-        rcSmoothingData.autoSmoothnessFactorThrottle = 1.5f / (1.0f + (rxConfig()->rc_smoothing_auto_factor_throttle / 10.0f));
-
-        rcSmoothingData.setpointCutoffSetting = rxConfig()->rc_smoothing_setpoint_cutoff;
-        rcSmoothingData.throttleCutoffSetting = rxConfig()->rc_smoothing_throttle_cutoff;
-
-        rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting;
-        rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
-
-        if (rxConfig()->rc_smoothing_mode) {
-            // shouldRecalculateCutoffs is handle here so that rc_smoothing_mode overwrites other settings
-            rcSmoothingData.shouldRecalculateCutoffs = rcSmoothingAutoCalculate();
-            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-            rcSmoothingData.filterInitialized = true;
-        }
-#ifdef USE_FEEDFORWARD
-        updateFeedforwardFilters(&pidRuntime);
-#endif
-    }
 
     if (isRxDataNew) {
         // Get new values to be smoothed
@@ -447,24 +421,17 @@ static FAST_CODE void processRcSmoothingFilter(void)
         }
     }
 
-    DEBUG_SET(DEBUG_RC_SMOOTHING, 0, smoothedRxRateHz);
-
     // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
     for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
         float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
-        if (rcSmoothingData.filterInitialized) {
-            *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
-        } else {
-            // If filter isn't initialized yet, as in smoothing off, use the actual unsmoothed rx channel data
-            *dst = rxDataToSmooth[i];
-        }
+        *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
     }
 
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         // Feedforward smoothing
         feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
         // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
-        const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE) && rcSmoothingData.filterInitialized;
+        const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
         if (smoothRcDeflection && axis < FD_YAW) {
             rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
         } else {
@@ -569,7 +536,8 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
         pt1FilterUpdateCutoff(&feedforwardYawHoldLpf, gain);
         const float setpointLpfYaw = pt1FilterApply(&feedforwardYawHoldLpf, setpoint);
         const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
-
+		DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));         // basic yaw ff without hold
+		DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHold * 0.01f));  // with yaw ff hold element
         feedforward += feedforwardYawHold;
     }
 
@@ -586,13 +554,15 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
         DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDelta * 10.0f));
         DEBUG_SET(DEBUG_FEEDFORWARD, 4, lrintf(jitterAttenuator * 100.0f));
         DEBUG_SET(DEBUG_FEEDFORWARD, 5, (int16_t)(feedforwardData.isPrevPacketDuplicate[axis]));
+        // 6 and 7 used for feedforward yaw hold logging
 
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f));
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis]));
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint));
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforward * 0.01f));
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f)); // jitter attenuation factor in percent
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis]));           // max Setpoint rate (badly named)
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint));                  // setpoint used for FF, unsmoothed
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforward * 0.01f));       // un-smoothed final feedforward
         DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 4, lrintf(setpointSpeedUnsmoothed * 0.01f));
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 5, lrintf(setpointSpeed * 0.01f));
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 5, lrintf(setpointSpeed * 0.01f));      // compare to 4 to check ff smoothing
+        // 6 for feedforward pt1K, 7 for smoothedRxRateHz
     }
 
     // Final smoothing if configured
@@ -611,9 +581,7 @@ bool shouldUpdateSmoothing(void)
     static const float smoothingFactor = 0.1f;  // Low pass smoothing factor to smooth valid RxRate values
     static float lastStableSmoothedRxRateHz = 0.0f;  // stable value to compare currentRxRate against
 
-    const bool ready = (targetPidLooptime > 0);
-
-    if (ready && isRxReceivingSignal() && isRxRateValid) {
+    if (isRxReceivingSignal() && isRxRateValid) {
         // Compare current rate to last stable smoothed rate for smoothing
         float deltaRateHz = fabsf(currentRxRateHz - lastStableSmoothedRxRateHz);
         bool isOutlier = deltaRateHz > (lastStableSmoothedRxRateHz / 8);
@@ -621,6 +589,7 @@ bool shouldUpdateSmoothing(void)
         if (isOutlier) {
            outlierCount++;
            // respond only after three sequential outliers; probably a true link rate change
+           DEBUG_SET(DEBUG_RC_SMOOTHING, 6, outlierCount);
            if (outlierCount >= 3) {
               smoothedRxRateHz = currentRxRateHz;
               lastStableSmoothedRxRateHz = currentRxRateHz;
@@ -630,9 +599,9 @@ bool shouldUpdateSmoothing(void)
            }
         } else {
            // First-order smoothing toward new value
-           smoothedRxRateHz +=
-              smoothingFactor * (currentRxRateHz - smoothedRxRateHz);
+           smoothedRxRateHz += smoothingFactor * (currentRxRateHz - smoothedRxRateHz);
            validCount++;
+           DEBUG_SET(DEBUG_RC_SMOOTHING, 7, validCount);
            outlierCount = 0;
 
            if (validCount >= 3) {
@@ -643,7 +612,7 @@ bool shouldUpdateSmoothing(void)
            }
         }
     } else {
-        // Signal lost or not ready — reset state
+        // Signal lost — reset state
         validCount = 0;
         outlierCount = 0;
         lastStableSmoothedRxRateHz = 0.0f;
@@ -668,9 +637,9 @@ FAST_CODE void processRcCommand(void)
                 // for auto calculated filters, calculate the link interval and update the RC smoothing filters at regular intervals
                 // this is more efficient than monitoring for significant changes and making comparisons to decide whether to update the filter
                 rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-                DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, smoothedRxRateHz); // only changes curing these conditions
             }
 #endif
+
         }
 #ifdef USE_RC_SMOOTHING_FILTER
         DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 0, currentRxIntervalUs / 10);
@@ -714,6 +683,11 @@ FAST_CODE void processRcCommand(void)
 #ifdef USE_FEEDFORWARD
             calculateFeedforward(&pidRuntime, axis);
 #endif // USE_FEEDFORWARD
+
+		// log the smoothed Rx Rate from non-outliers, this will not show the steps every three valid packets
+		DEBUG_SET(DEBUG_RX_TIMING, 5, lrintf(smoothedRxRateHz));
+		DEBUG_SET(DEBUG_RC_SMOOTHING, 5, lrintf(smoothedRxRateHz)); // all smoothed values
+		DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, smoothedRxRateHz);
 
         }
         // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
@@ -917,7 +891,27 @@ void initRcProcessing(void)
         break;
     }
 
+#ifdef USE_RC_SMOOTHING_FILTER
+    rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
+
+    rcSmoothingData.autoSmoothnessFactorSetpoint = 1.5f / (1.0f + (rxConfig()->rc_smoothing_auto_factor_rpy / 10.0f));
+    rcSmoothingData.autoSmoothnessFactorThrottle = 1.5f / (1.0f + (rxConfig()->rc_smoothing_auto_factor_throttle / 10.0f));
+
+    rcSmoothingData.setpointCutoffSetting = rxConfig()->rc_smoothing_setpoint_cutoff;
+    rcSmoothingData.throttleCutoffSetting = rxConfig()->rc_smoothing_throttle_cutoff;
+
+    rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting;
+    rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
+
+    if (rxConfig()->rc_smoothing_mode) {
+        // shouldRecalculateCutoffs is handle here so that rc_smoothing_mode overwrites other settings
+        rcSmoothingData.shouldRecalculateCutoffs = rcSmoothingAutoCalculate();
+        rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+    }
+#endif
+
 #ifdef USE_FEEDFORWARD
+    updateFeedforwardFilters(&pidRuntime);
     feedforwardAveraging = pidRuntime.feedforwardAveraging;
     pt1FilterInit(&feedforwardYawHoldLpf, 0.0f);
 #endif // USE_FEEDFORWARD
@@ -944,10 +938,5 @@ void initRcProcessing(void)
 rcSmoothingFilter_t *getRcSmoothingData(void)
 {
     return &rcSmoothingData;
-}
-
-bool rcSmoothingInitializationComplete(void)
-{
-    return rcSmoothingData.filterInitialized;
 }
 #endif // USE_RC_SMOOTHING_FILTER
