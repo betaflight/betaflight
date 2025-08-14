@@ -4809,7 +4809,7 @@ if (buildKey) {
 
     const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
 
-    int rxRate = getRxRateValid() ? getCurrentRxRateHz() : 0;
+    int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
 
     const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
