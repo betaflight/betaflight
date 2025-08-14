@@ -113,7 +113,7 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;
     }
 
-    uint mask = 0;
+    uint32_t mask = 0u;
 
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
@@ -147,7 +147,7 @@ void adcInit(const adcConfig_t *config)
             continue;
         }
 
-        mask |= (1 << adcOperatingConfig[i].channel);
+        mask |= (1u << adcOperatingConfig[i].channel);
     }
 
     const unsigned sources = popcount(mask);
@@ -167,11 +167,15 @@ void adcInit(const adcConfig_t *config)
         false,              // We won't see the ERR bit because of 12-bit reads; disable
         false               // Don't shift each sample to 8 bits when pushing to FIFO
     );
+
     /*
         Sampling requires 96 cycles per sample
         Sample as slow as possible
     */
     adc_set_clkdiv(65535.f + 255.f / 256.f);
+
+    /* Empty the FIFO to avoid any spurious readings */
+    adc_fifo_drain();
 
     // --- Interrupt Setup ---
     irq_set_exclusive_handler(ADC_IRQ_FIFO, adc_irq_handler);
