@@ -45,7 +45,6 @@ typedef struct mixerRuntime_s {
     float dynIdleIGain;
     float dynIdleDGain;
     float dynIdleI;
-    float minRpsDelayK;
 #endif
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     float vbatSagCompensationFactor;
