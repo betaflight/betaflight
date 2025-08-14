@@ -578,46 +578,56 @@ bool shouldUpdateSmoothing(void)
 {
     static int validCount = 0;
     static int outlierCount = 0;
-    static const float smoothingFactor = 0.1f;  // Low pass smoothing factor to smooth valid RxRate values
-    static float lastStableSmoothedRxRateHz = 0.0f;  // stable value to compare currentRxRate against
+    static const float smoothingFactor = 0.1f;       // Low pass smoothing factor to smooth valid RxRate values
+    static bool prevOutlierSign = true;              // direction of the previous outlier
 
     if (isRxReceivingSignal() && isRxRateValid) {
-        // Compare current rate to last stable smoothed rate for smoothing
-        float deltaRateHz = fabsf(currentRxRateHz - lastStableSmoothedRxRateHz);
-        bool isOutlier = deltaRateHz > (lastStableSmoothedRxRateHz / 8);
+        float deltaRateHz = currentRxRateHz - smoothedRxRateHz;
+        bool isOutlier = fabsf(deltaRateHz) > (smoothedRxRateHz * 0.2f);
 
         if (isOutlier) {
-           outlierCount++;
-           // respond only after three sequential outliers; probably a true link rate change
-           DEBUG_SET(DEBUG_RC_SMOOTHING, 6, outlierCount);
-           if (outlierCount >= 3) {
-              smoothedRxRateHz = currentRxRateHz;
-              lastStableSmoothedRxRateHz = currentRxRateHz;
-              outlierCount = 0;
-              validCount = 0;
-              // don't update cutoffs yet, wait for three smoothed samples close to the new rate, 6 in all
-           }
+            bool currentSign = SIGN(deltaRateHz);
+            if (outlierCount == 0) {
+                prevOutlierSign = currentSign;
+                outlierCount++;
+            } else {
+                if (currentSign != prevOutlierSign) {
+                    // Reset outlier count if outlier sign reverses, as often happens at 1000Hz
+                    // with a true change, all new packet delta will have the same sign.
+                    outlierCount = 0;
+                    prevOutlierSign = currentSign;
+                } else {
+                    outlierCount++;
+                }
+            }
+            validCount = 0;
         } else {
-           // First-order smoothing toward new value
-           smoothedRxRateHz += smoothingFactor * (currentRxRateHz - smoothedRxRateHz);
-           validCount++;
-           DEBUG_SET(DEBUG_RC_SMOOTHING, 7, validCount);
-           outlierCount = 0;
+            // First-order smoothing toward new value for non-outliers
+            smoothedRxRateHz += smoothingFactor * (currentRxRateHz - smoothedRxRateHz);
+            validCount++;
+            outlierCount = 0;
+        }
 
-           if (validCount >= 3) {
-              // After three non-outlier packets, update the baseline value and the cutoffs
-              lastStableSmoothedRxRateHz = smoothedRxRateHz;
-              validCount = 0;
-              return true;
-           }
+        DEBUG_SET(DEBUG_RC_SMOOTHING, 6, outlierCount);
+        DEBUG_SET(DEBUG_RC_SMOOTHING, 7, validCount);
+
+        if (validCount >= 3) {
+            validCount = 0;
+            // indicate that filter cutoffs should be updated to smoothedRxRateHz
+            return true;
+        }
+        if (outlierCount >= 3) {
+            // Link rate likely changed — snap smoothing accumulator to current value
+            smoothedRxRateHz = currentRxRateHz;
+            outlierCount = 0;
         }
     } else {
-        // Signal lost — reset state
+        // Signal lost or invalid widths, reset counts, but hold last stable and smoothed values
         validCount = 0;
         outlierCount = 0;
-        lastStableSmoothedRxRateHz = 0.0f;
+        DEBUG_SET(DEBUG_RC_SMOOTHING, 6, outlierCount);
+        DEBUG_SET(DEBUG_RC_SMOOTHING, 7, validCount);
     }
-
     return false;
 }
 
