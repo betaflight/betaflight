@@ -35,7 +35,12 @@ bool adcVerifyPin(ioTag_t tag, adcDevice_e device)
         return false;
     }
 
-    for (unsigned map = 0 ; map < ARRAYLEN(adcTagMap) ; map++) {
+    /* Defensive guard: prevent negative/out-of-range device values causing undefined shifts */
+    if (device < ADCDEV_1 || device >= ADCDEV_COUNT) {
+        return false;
+    }
+
+    for (unsigned map = 0; map < ARRAYLEN(adcTagMap); map++) {
         if ((adcTagMap[map].tag == tag) && (adcTagMap[map].devices & (1 << device))) {
             return true;
         }
