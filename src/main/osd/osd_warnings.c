@@ -157,6 +157,12 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
             char alarmChars[4]; // Buffer for alarm characters (C, T, R + '\0')
             // Only show motor if it has alarms (problems only approach)
             if (checkEscAlarmConditions(escData, i, alarmChars)) {
+                // compute space needed: " " + digits(motor) + strlen(alarmChars)
+                const unsigned digits = (i + 1 >= 100) ? 3 : (i + 1 >= 10) ? 2 : 1;
+                const unsigned needed = 1 + digits + (unsigned)strlen(alarmChars);
+                if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {
+                    break; // no room to append safely
+                }
                 escErrorLength += tfp_sprintf(warningText + escErrorLength, " %d%s", i + 1, alarmChars);
                 escWarning = true;
             }
@@ -168,9 +174,15 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
         const int msgLen = strlen(warningText);
         const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;
         if (msgLen < minMsgLen - 1) {
-            const int offset = (minMsgLen - msgLen) / 2;
-            memmove(warningText + offset, warningText, msgLen + 1);
-            memset(warningText, ' ', offset);
+            const int capacity = OSD_WARNINGS_MAX_SIZE - 1; // leave room for '\0'
+            int offset = (minMsgLen - msgLen) / 2;
+            if (offset > capacity - msgLen) {
+                offset = capacity - msgLen; // clamp
+            }
+            if (offset > 0) {
+                memmove(warningText + offset, warningText, msgLen + 1);
+                memset(warningText, ' ', offset);
+            }
         }
         return true;
     }
