@@ -599,7 +599,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // minimise cross-axis wobble due to faster yaw responses than roll or pitch, and make co-ordinated yaw turns
     // by compensating for the effect of yaw on roll while pitched, and on pitch while rolled
     // earthRef code here takes about 76 cycles, if conditional on angleEarthRef it takes about 100.  sin_approx costs most of those cycles.
-    float sinAngle = sin_approx(DEGREES_TO_RADIANS(pidRuntime.angleTarget[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
+    float sinAngle = sin_approx_unchecked(DEGREES_TO_RADIANS(pidRuntime.angleTarget[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
     sinAngle *= (axis == FD_ROLL) ? -1.0f : 1.0f; // must be negative for Roll
     const float earthRefGain = FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE) ? 1.0f : pidRuntime.angleEarthRef;
     angleRate += pidRuntime.angleYawSetpoint * sinAngle * earthRefGain;
@@ -1192,9 +1192,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             DEBUG_SET(DEBUG_D_LPF, axis, lrintf(delta)); // debug d_lpf 2 and 3 used for pre-TPA D
         }
 
-        gyroRateDterm[axis] = pidRuntime.dtermNotchApplyFn((filter_t *) &pidRuntime.dtermNotch[axis], gyroRateDterm[axis]);
-        gyroRateDterm[axis] = pidRuntime.dtermLowpassApplyFn((filter_t *) &pidRuntime.dtermLowpass[axis], gyroRateDterm[axis]);
-        gyroRateDterm[axis] = pidRuntime.dtermLowpass2ApplyFn((filter_t *) &pidRuntime.dtermLowpass2[axis], gyroRateDterm[axis]);
+        gyroRateDterm[axis] = pidRuntime.dtermNotchApplyFn((filter_t *) &pidRuntime.dtermNotch, gyroRateDterm[axis], axis);
+        gyroRateDterm[axis] = pidRuntime.dtermLowpassApplyFn((filter_t *) &pidRuntime.dtermLowpass, gyroRateDterm[axis], axis);
+        gyroRateDterm[axis] = pidRuntime.dtermLowpass2ApplyFn((filter_t *) &pidRuntime.dtermLowpass2, gyroRateDterm[axis], axis);
     }
 
     rotateItermAndAxisError();
@@ -1417,13 +1417,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_D_MAX
             float dMaxMultiplier = 1.0f;
             if (pidRuntime.dMaxPercent[axis] > 1.0f) {
-                float dMaxGyroFactor = pt2FilterApply(&pidRuntime.dMaxRange[axis], delta);
+                float dMaxGyroFactor = pt2FilterVec3Apply(&pidRuntime.dMaxRange, delta, axis);
                 dMaxGyroFactor = fabsf(dMaxGyroFactor) * pidRuntime.dMaxGyroGain;
                 const float dMaxSetpointFactor = fabsf(pidSetpointDelta) * pidRuntime.dMaxSetpointGain;
                 const float dMaxBoost = fmaxf(dMaxGyroFactor, dMaxSetpointFactor);
                 // dMaxBoost starts at zero, and by 1.0 we get Dmax, but it can exceed 1.
                 dMaxMultiplier += (pidRuntime.dMaxPercent[axis] - 1.0f) * dMaxBoost;
-                dMaxMultiplier = pt2FilterApply(&pidRuntime.dMaxLowpass[axis], dMaxMultiplier);
+                dMaxMultiplier = pt2FilterVec3Apply(&pidRuntime.dMaxLowpass, dMaxMultiplier, axis);
                 // limit the gain to the fraction that DMax is greater than Min
                 dMaxMultiplier = MIN(dMaxMultiplier, pidRuntime.dMaxPercent[axis]);
                 if (axis == FD_ROLL) {
@@ -1596,24 +1596,16 @@ void dynLpfDTermUpdate(float throttle)
 
         switch (pidRuntime.dynLpfFilter) {
         case DYN_LPF_PT1:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
-            }
+            pt1FilterVec3UpdateCutoff(&pidRuntime.dtermLowpass.pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             break;
         case DYN_LPF_BIQUAD:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
-            }
+            biquadFilterVec3UpdateLPF(&pidRuntime.dtermLowpass.biquadFilter, cutoffFreq, pidRuntime.dT);
             break;
         case DYN_LPF_PT2:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt2FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt2Filter, pt2FilterGain(cutoffFreq, pidRuntime.dT));
-            }
+            pt2FilterVec3UpdateCutoff(&pidRuntime.dtermLowpass.pt2Filter, pt2FilterGain(cutoffFreq, pidRuntime.dT));
             break;
         case DYN_LPF_PT3:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt3FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(cutoffFreq, pidRuntime.dT));
-            }
+            pt3FilterVec3UpdateCutoff(&pidRuntime.dtermLowpass.pt3Filter, pt3FilterGain(cutoffFreq, pidRuntime.dT));
             break;
         }
     }

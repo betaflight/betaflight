@@ -359,10 +359,10 @@ typedef struct pidAxisData_s {
 } pidAxisData_t;
 
 typedef union dtermLowpass_u {
-    pt1Filter_t pt1Filter;
-    biquadFilter_t biquadFilter;
-    pt2Filter_t pt2Filter;
-    pt3Filter_t pt3Filter;
+    pt1FilterVec3_t pt1Filter;
+    biquadFilterVec3_t biquadFilter;
+    pt2FilterVec3_t pt2Filter;
+    pt3FilterVec3_t pt3Filter;
 } dtermLowpass_t;
 
 typedef struct pidCoefficient_s {
@@ -387,12 +387,12 @@ typedef struct pidRuntime_s {
     float pidFrequency;
     bool pidStabilisationEnabled;
     float previousPidSetpoint[XYZ_AXIS_COUNT];
-    filterApplyFnPtr dtermNotchApplyFn;
-    biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
-    filterApplyFnPtr dtermLowpassApplyFn;
-    dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
-    filterApplyFnPtr dtermLowpass2ApplyFn;
-    dtermLowpass_t dtermLowpass2[XYZ_AXIS_COUNT];
+    filterVec3ApplyFnPtr dtermNotchApplyFn;
+    biquadFilterVec3_t dtermNotch;
+    filterVec3ApplyFnPtr dtermLowpassApplyFn;
+    dtermLowpass_t dtermLowpass;
+    filterVec3ApplyFnPtr dtermLowpass2ApplyFn;
+    dtermLowpass_t dtermLowpass2;
     filterApplyFnPtr ptermYawLowpassApplyFn;
     pt1Filter_t ptermYawLowpass;
     bool antiGravityEnabled;
@@ -453,8 +453,8 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_D_MAX
-    pt2Filter_t dMaxRange[XYZ_AXIS_COUNT];
-    pt2Filter_t dMaxLowpass[XYZ_AXIS_COUNT];
+    pt2FilterVec3_t dMaxRange;
+    pt2FilterVec3_t dMaxLowpass;
     float dMaxPercent[XYZ_AXIS_COUNT];
     uint8_t dMax[XYZ_AXIS_COUNT];
     float dMaxGyroGain;

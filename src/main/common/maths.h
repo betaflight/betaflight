@@ -119,6 +119,8 @@ float quickMedianFilter9f(const float * v);
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);
+float cos_approx_unchecked(float x);
+float sin_approx_unchecked(float x);
 float atan2_approx(float y, float x);
 float acos_approx(float x);
 float asin_approx(float x);
