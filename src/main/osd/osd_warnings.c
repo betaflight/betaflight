@@ -139,7 +139,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
     bool escWarning = false;
 
     // Write 'ESC' prefix
-    escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC ");
+    escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
 
     for (unsigned i = 0; i < getMotorCount(); i++) {
         escSensorData_t *escData = NULL;
@@ -161,7 +161,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
                 const unsigned digits = (i + 1 >= 10) ? 2 : 1;
                 const unsigned needed = 1 + digits + (unsigned)strlen(alarmChars);
                 if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {
-                    tfp_sprintf(warningText, "FAULT OVERLOAD!");
+                    tfp_sprintf(warningText, " FAULT OVERLOAD!");
                     escWarning = true;
                     break;
                 }
