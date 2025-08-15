@@ -157,7 +157,11 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
                 const unsigned digits = (i + 1 >= 10) ? 2 : 1;
                 const unsigned needed = 1 + digits + (unsigned)strlen(alarmChars);
                 if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {
-                    tfp_sprintf(warningText, " FAULT OVERLOAD!");
+                    // Append '+' to indicate more warnings exist
+                    if (escErrorLength < OSD_WARNINGS_MAX_SIZE - 1) {
+                        warningText[escErrorLength++] = '+';
+                        warningText[escErrorLength] = '\0';
+                    }
                     escWarning = true;
                     break;
                 }
