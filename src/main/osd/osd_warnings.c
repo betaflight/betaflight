@@ -158,7 +158,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
             // Only show motor if it has alarms (problems only approach)
             if (checkEscAlarmConditions(escData, i, alarmChars)) {
                 // compute space needed: " " + digits(motor) + strlen(alarmChars)
-                const unsigned digits = (i + 1 >= 100) ? 3 : (i + 1 >= 10) ? 2 : 1;
+                const unsigned digits = (i + 1 >= 10) ? 2 : 1;
                 const unsigned needed = 1 + digits + (unsigned)strlen(alarmChars);
                 if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {
                     break; // no room to append safely
