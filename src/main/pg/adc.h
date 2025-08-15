@@ -23,10 +23,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "platform.h"
+
 #include "pg/pg.h"
 #include "drivers/adc.h"
 #include "drivers/io_types.h"
 #include "drivers/dma_reqmap.h"
+
+#ifdef USE_DMA_SPEC
+#include "platform/adc_impl.h"
+#endif
 
 typedef struct adcChannelConfig_t {
     bool enabled;
@@ -41,13 +47,18 @@ typedef struct adcConfig_s {
     adcChannelConfig_t rssi;
     adcChannelConfig_t current;
     adcChannelConfig_t external1;
+
+#if PLATFORM_TRAIT_ADC_DEVICE
     int8_t device; // ADCDevice
+#endif
 
     uint16_t vrefIntCalibration;
     uint16_t tempSensorCalibration1;
     uint16_t tempSensorCalibration2;
 
+#ifdef USE_DMA_SPEC
     int8_t dmaopt[ADCDEV_COUNT]; // One per ADCDEV_x
+#endif
 } adcConfig_t;
 
 PG_DECLARE(adcConfig_t, adcConfig);
