@@ -79,6 +79,7 @@ static inline bool isMotorActive(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
 }
 
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
 bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
     // Check if DShot telemetry is active for this motor
     if (!isDshotMotorTelemetryActive(motorIndex)) {
@@ -106,6 +107,7 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
 
     return true;
 }
+#endif
 
 static bool checkEscAlarmConditions(escSensorData_t *data, uint8_t motorIndex, char *buffer)
 {
