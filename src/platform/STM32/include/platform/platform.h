@@ -268,7 +268,7 @@ extern uint8_t _dmaram_end__;
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #endif
 
-#if defined(STM32F4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 #endif
 
