@@ -61,12 +61,7 @@
 #define USE_I2C_DEVICE_0
 #define USE_I2C_DEVICE_1
 
-// one of these ...
-// #define USE_SPI_DMA_ENABLE_EARLY
-#define USE_SPI_DMA_ENABLE_LATE
-
-#undef USE_SOFTSERIAL1
-#undef USE_SOFTSERIAL2
+#define USE_ADC
 
 #define USE_VCP
 
