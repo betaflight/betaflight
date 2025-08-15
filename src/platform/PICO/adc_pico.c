@@ -36,8 +36,9 @@
 
 #include "pg/adc.h"
 
+#include "pico/stdlib.h"
 #include "hardware/adc.h"
-#include "hardware/irq.h"
+#include "hardware/dma.h"
 
 #include "common/utils.h"   // popcount, llog2
 #include "common/maths.h"   // MAX/MIN macros
@@ -60,7 +61,8 @@
 
 typedef struct adcOperatingConfig_s {
     ioTag_t tag;
-    uint8_t channel; // hardware channel number for this input.
+    uint8_t channel;  // hardware channel number for this input.
+    uint8_t dmaIndex; // location in ADC values for this input.
     bool enabled;
 } adcOperatingConfig_t;
 
@@ -81,21 +83,6 @@ static int adcChannelByPin(const int pin)
     UNUSED(pin);
 #endif
     return -1;
-}
-
-void adc_irq_handler(void)
-{
-    // Read all available samples from the FIFO
-    while (!adc_fifo_is_empty()) {
-        uint16_t result = adc_fifo_get();
-        // The ADC hardware tells us which channel the sample is from.
-        uint8_t channel = result >> 12;  // Extract channel from top 4 bits
-        uint16_t value = result & 0xFFF; // Mask out the channel bits to get the 12-bit value
-        if (channel < PICO_ADC_CHANNEL_COUNT) {
-            adcValues[channel] = value;
-        }
-    }
-    // The ADC IRQ is cleared automatically when the FIFO is read.
 }
 
 void adcInit(const adcConfig_t *config)
@@ -125,6 +112,7 @@ void adcInit(const adcConfig_t *config)
 
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
+    uint8_t dmaIndex = 0;
     for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         adcOperatingConfig[i].enabled = false;
         do {
@@ -156,10 +144,12 @@ void adcInit(const adcConfig_t *config)
         }
 
         mask |= (1u << adcOperatingConfig[i].channel);
+        adcOperatingConfig[i].dmaIndex = dmaIndex;
+        dmaIndex++;
     }
 
-    const unsigned sources = popcount(mask);
-    if (sources == 0) {
+    const unsigned channelCount = popcount(mask);
+    if (channelCount == 0) {
         /* don't enable the interrupt */
         return;
     }
@@ -169,26 +159,54 @@ void adcInit(const adcConfig_t *config)
 
     adc_set_round_robin(mask);
     adc_fifo_setup(
-        true,               // Write each completed conversion to the sample FIFO
-        false,              // Disable DMA data request (DREQ)
-        MIN(MAX(1, sources), PICO_ADC_FIFO_SIZE), // IRQ asserted when at least 1 sample is present, clamp at FIFO size
-        false,              // We won't see the ERR bit because of 12-bit reads; disable
-        false               // Don't shift each sample to 8 bits when pushing to FIFO
+        true,  // Write each completed conversion to the sample FIFO
+        true,  // Enable DMA data request (DREQ)
+        1,     // Fire DREQ when FIFO has at least 1 sample
+        false, // We won't see the ERR bit because of 12-bit reads; disable
+        false  // Don't shift each sample to 8 bits when pushing to FIFO
     );
 
     /*
         Sampling requires 96 cycles per sample
-        Sample as slow as possible
+        clkdiv = (48,000,000 / (sample_rate * 96)) - 1
+
+        Sample rate required at 10hz for X channels = 10 x X
     */
-    adc_set_clkdiv(65535.f + 255.f / 256.f);
+    const float clkdiv = (48e6f / (channelCount * 10.f * 96.f)) - 1;
+    adc_set_clkdiv(clkdiv);
 
-    /* Empty the FIFO to avoid any spurious readings */
-    adc_fifo_drain();
+    const dmaIdentifier_e dma_id = dmaGetFreeIdentifier();
+    if (dma_id == DMA_NONE) {
+        return; // No free DMA channel available
+    }
 
-    // --- Interrupt Setup ---
-    irq_set_exclusive_handler(ADC_IRQ_FIFO, adc_irq_handler);
-    adc_irq_set_enabled(true);
-    irq_set_enabled(ADC_IRQ_FIFO, true);
+    if (!dmaAllocate(dma_id, OWNER_ADC, 0)) {
+        return;
+    }
+
+    // --- DMA Setup ---
+    uint dma_chan = dma_claim_unused_channel(true);
+    dma_channel_config cfg = dma_channel_get_default_config(dma_chan);
+
+    // Configure DMA to read from the ADC FIFO and write to our buffer.
+    channel_config_set_transfer_data_size(&cfg, DMA_SIZE_16);
+    channel_config_set_read_increment(&cfg, false); // Read from the same address (ADC FIFO)
+    channel_config_set_write_increment(&cfg, true); // Write to sequential addresses in our buffer
+    channel_config_set_dreq(&cfg, DREQ_ADC);
+    // Set ring buffer behavior: after writing the last element, wrap back to the start.
+    // The size is 2^X = Z half-words
+    // note ADC handles the reset, the ring is never triggered
+    const unsigned sizeBits = 32 - __builtin_clz(ARRAYLEN(adcValues) - 1);
+    channel_config_set_ring(&cfg, true, sizeBits);
+
+    dma_channel_configure(
+        dma_chan,
+        &cfg,
+        adcValues,         // Destination pointer
+        &adc_hw->fifo,     // Source pointer
+        -1,                // RP2350 has endless mode
+        true               // Start immediately
+    );
 
     /* start the ADC in free running mode */
     adc_run(true);
@@ -199,8 +217,8 @@ uint16_t adcGetValue(adcSource_e source)
     if ((unsigned)source >= ARRAYLEN(adcOperatingConfig) || !adcOperatingConfig[source].enabled) {
         return 0;
     }
-    const uint8_t channel = adcOperatingConfig[source].channel;
-    return adcValues[channel];
+    const uint8_t index = adcOperatingConfig[source].dmaIndex;
+    return adcValues[index];
 }
 
 #ifdef USE_ADC_INTERNAL
