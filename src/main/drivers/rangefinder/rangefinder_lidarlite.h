@@ -25,4 +25,4 @@
 #include "drivers/rangefinder/rangefinder.h"
 #include "sensors/rangefinder.h"
 
-bool lidarLiteDetect(rangefinderDev_t *dev, rangefinderType_e rfType);
+bool lidarLiteDetect(rangefinderDev_t *rangefinderDev, rangefinderType_e rfType);

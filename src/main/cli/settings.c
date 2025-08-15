@@ -1808,6 +1808,8 @@ const clivalue_t valueTable[] = {
 // PG_RANGEFINDER_CONFIG
 #ifdef USE_RANGEFINDER
     { "rangefinder_hardware", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
+    {"rangefinder_bustype", VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = {TABLE_BUS_TYPE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_busType) },
+    { "rangefinder_i2c_device",             VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2CDEV_COUNT }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_i2c_device) },
 #endif
 
 // PG_OPTICALFLOW_CONFIG
