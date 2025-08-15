@@ -233,9 +233,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             float minRps = getMinMotorFrequencyHz();
             DEBUG_SET(DEBUG_DYN_IDLE, 3, lrintf(minRps * 10.0f));
             float rpsError = mixerRuntime.dynIdleMinRps - minRps;
-            // PT1 type lowpass delay and smoothing for D
-            minRps = mixerRuntime.prevMinRps + mixerRuntime.minRpsDelayK * (minRps - mixerRuntime.prevMinRps);
-            float dynIdleD = (mixerRuntime.prevMinRps - minRps) * mixerRuntime.dynIdleDGain;
+            float dynIdleD = -mixerRuntime.dynIdleDGain * (minRps - mixerRuntime.prevMinRps);
             mixerRuntime.prevMinRps = minRps;
             float dynIdleP = rpsError * mixerRuntime.dynIdlePGain;
             rpsError = MAX(-0.1f, rpsError); //I rises fast, falls slowly
