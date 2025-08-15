@@ -114,7 +114,6 @@ void adcInit(const adcConfig_t *config)
     // the set of enabled channels
     uint8_t dmaIndex = 0;
     for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
-        adcOperatingConfig[i].enabled = false;
         do {
 #ifdef USE_ADC_INTERNAL
             if (i >= ADC_SOURCE_INTERNAL_FIRST_ID) {
@@ -185,8 +184,8 @@ void adcInit(const adcConfig_t *config)
     }
 
     // --- DMA Setup ---
-    uint dma_chan = dma_claim_unused_channel(true);
-    dma_channel_config cfg = dma_channel_get_default_config(dma_chan);
+    const uint dmaChannel = DMA_IDENTIFIER_TO_CHANNEL(dma_id);
+    dma_channel_config cfg = dma_channel_get_default_config(dmaChannel);
 
     // Configure DMA to read from the ADC FIFO and write to our buffer.
     channel_config_set_transfer_data_size(&cfg, DMA_SIZE_16);
@@ -200,7 +199,7 @@ void adcInit(const adcConfig_t *config)
     channel_config_set_ring(&cfg, true, sizeBits);
 
     dma_channel_configure(
-        dma_chan,
+        dmaChannel,
         &cfg,
         adcValues,         // Destination pointer
         &adc_hw->fifo,     // Source pointer
