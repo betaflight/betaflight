@@ -172,11 +172,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
         const int msgLen = strlen(warningText);
         const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;
         if (msgLen < minMsgLen - 1) {
-            const int capacity = OSD_WARNINGS_MAX_SIZE - 1; // leave room for '\0'
             int offset = (minMsgLen - msgLen) / 2;
-            if (offset > capacity - msgLen) {
-                offset = capacity - msgLen; // clamp
-            }
             if (offset > 0) {
                 memmove(warningText + offset, warningText, msgLen + 1);
                 memset(warningText, ' ', offset);
