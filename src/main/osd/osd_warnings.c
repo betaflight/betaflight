@@ -124,7 +124,7 @@ static bool checkEscAlarmConditions(escSensorData_t *data, uint8_t motorIndex, c
     }
 
     // Check temperature alarm (regardless of motor spinning state)
-    if (data->consumption && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && data->consumption >= osdConfig()->esc_temp_alarm) {
+    if (data->temperature && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && data->temperature >= osdConfig()->esc_temp_alarm) {
         buffer[alarmPos++] = ESC_ALARM_TEMP;
     }
 
