@@ -78,7 +78,7 @@ static void tpaSpeedBasicInit(const pidProfile_t *pidProfile)
     pidRuntime.tpaSpeed.twr = 1.0f / (gravityFactor * gravityFactor);
     const float massDragRatio = (2.0f / logf(3.0f)) * (2.0f / logf(3.0f)) * pidRuntime.tpaSpeed.twr * G_ACCELERATION * delaySec * delaySec;
     pidRuntime.tpaSpeed.dragMassRatio = 1.0f / massDragRatio;
-    pidRuntime.tpaSpeed.maxSpeed = sqrtf(massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
+    pidRuntime.tpaSpeed.maxSpeed = sqrt_approx(massDragRatio * pidRuntime.tpaSpeed.twr * G_ACCELERATION + G_ACCELERATION);
     pidRuntime.tpaSpeed.inversePropMaxSpeed = 0.0f;
 }
 
@@ -97,13 +97,13 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
         pidRuntime.tpaSpeed.inversePropMaxSpeed = 1.0f / propMaxSpeed;
     }
 
-    const float maxFallSpeed = sqrtf(mass * G_ACCELERATION / dragK);
+    const float maxFallSpeed = sqrt_approx(mass * G_ACCELERATION / dragK);
 
     const float a = dragK;
     const float b = mass * pidRuntime.tpaSpeed.twr * G_ACCELERATION * pidRuntime.tpaSpeed.inversePropMaxSpeed;
     const float c = -mass * (pidRuntime.tpaSpeed.twr + 1) * G_ACCELERATION;
 
-    const float maxDiveSpeed = (-b + sqrtf(b*b - 4.0f * a * c)) / (2.0f * a);
+    const float maxDiveSpeed = (-b + sqrt_approx(b*b - 4.0f * a * c)) / (2.0f * a);
 
     pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
     UNUSED(pidProfile);
@@ -319,7 +319,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 #ifdef USE_CHIRP
     const float alpha = pidRuntime.chirpLeadFreqHz / pidRuntime.chirpLagFreqHz;
-    const float centerFreqHz = pidRuntime.chirpLagFreqHz * sqrtf(alpha);
+    const float centerFreqHz = pidRuntime.chirpLagFreqHz * sqrt_approx(alpha);
     const float centerPhaseDeg = asinf( (1.0f - alpha) / (1.0f + alpha) ) / RAD;
     phaseCompInit(&pidRuntime.chirpFilter, centerFreqHz, centerPhaseDeg, targetPidLooptime);
     chirpInit(&pidRuntime.chirp, pidRuntime.chirpFrequencyStartHz, pidRuntime.chirpFrequencyEndHz, pidRuntime.chirpTimeSeconds, targetPidLooptime);
