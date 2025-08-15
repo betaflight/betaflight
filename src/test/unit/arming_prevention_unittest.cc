@@ -43,6 +43,7 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/position.h"
     #include "flight/servos.h"
+    #include "flight/altitude.h"
 
     #include "io/beeper.h"
     #include "io/gps.h"
