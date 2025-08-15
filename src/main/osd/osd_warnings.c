@@ -99,12 +99,6 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
     dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
         motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
-    dest->voltage = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 
-        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] : 0;
-
-    dest->consumption = 0; // DShot doesn't typically provide consumption data
-    dest->dataAge = 0; // Data is fresh
-
     return true;
 }
 #endif
