@@ -44,11 +44,12 @@ bool adcVerifyPin(ioTag_t tag, adcDevice_e device)
     return false;
 }
 
-uint8_t adcChannelByTag(ioTag_t ioTag)
+uint32_t adcChannelByTag(ioTag_t ioTag)
 {
-    for (uint8_t i = 0; i < ARRAYLEN(adcTagMap); i++) {
-        if (ioTag == adcTagMap[i].tag)
+    for (unsigned i = 0; i < ARRAYLEN(adcTagMap); i++) {
+        if (ioTag == adcTagMap[i].tag) {
             return adcTagMap[i].channel;
+        }
     }
     return 0;
 }
