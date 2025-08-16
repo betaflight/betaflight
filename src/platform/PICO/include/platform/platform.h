@@ -135,12 +135,3 @@ extern uint32_t systemUniqueId[3];
 // 100 = 1.00x (100%) scaling; override per target/board to match its VBAT divider
 #define DEFAULT_VOLTAGE_METER_SCALE   100
 #endif
-
-// TODO: identify correct values for RP2350 internal temp sensor, or move conversion into adc_pico.c.
-#if defined(USE_ADC_INTERNAL)
-#error "PICO: Internal temp/Vref calibration constants are not verified for RP2350. Provide correct values or implement conversion in adc_pico.c."
-// Placeholder values below only as guidance; do not ship with these.
-#define VREFINT_CAL_VREF                   ( 3300U)           /* Analog voltage reference (Vref+) value with which temperature sensor has been calibrated in production (tolerance: +-10 mV) (unit: mV). */
-#define TEMPSENSOR_CAL1_TEMP               (( int32_t)   30)  /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL1_ADDR (tolerance: +-5 DegC) (unit: DegC). */
-#define TEMPSENSOR_CAL_VREFANALOG          ( 3300U)           /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
-#endif

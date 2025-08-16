@@ -61,12 +61,7 @@
 #define USE_I2C_DEVICE_0
 #define USE_I2C_DEVICE_1
 
-// one of these ...
-// #define USE_SPI_DMA_ENABLE_EARLY
-#define USE_SPI_DMA_ENABLE_LATE
-
-#undef USE_SOFTSERIAL1
-#undef USE_SOFTSERIAL2
+#define USE_ADC
 
 #define USE_VCP
 
@@ -172,3 +167,10 @@
 #undef USE_SERVOS
 
 #undef USE_OSD_HD
+
+// TODO: identify correct values for RP2350 internal temp sensor, or move conversion into adc_pico.c.
+#if defined(USE_ADC_INTERNAL)
+#define VREFINT_CAL_VREF                   ( 3300U)           /* Analog voltage reference (Vref+) value with which temperature sensor has been calibrated in production (tolerance: +-10 mV) (unit: mV). */
+#define TEMPSENSOR_CAL1_TEMP               (( int32_t)   25)  /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL1_ADDR (tolerance: +-5 DegC) (unit: DegC). */
+#define TEMPSENSOR_CAL_VREFANALOG          VREFINT_CAL_VREF   /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
+#endif
