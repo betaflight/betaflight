@@ -149,7 +149,6 @@ void adcInit(const adcConfig_t *config)
 
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
-    uint8_t dmaIndex = 0;
     for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         do {
 #ifdef USE_ADC_INTERNAL
@@ -180,8 +179,15 @@ void adcInit(const adcConfig_t *config)
         }
 
         mask |= (1u << adcOperatingConfig[i].channel);
-        adcOperatingConfig[i].dmaIndex = dmaIndex;
-        dmaIndex++;
+    }
+
+    // Map each enabled source to its DMA slot by channel rank (ascending channel order).
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
+        if (!adcOperatingConfig[i].enabled) {
+            continue;
+        }
+        const uint8_t ch = adcOperatingConfig[i].channel;
+        adcOperatingConfig[i].dmaIndex = (uint8_t)popcount(mask & ((1u << ch) - 1u));
     }
 
     channelCount = popcount(mask);
