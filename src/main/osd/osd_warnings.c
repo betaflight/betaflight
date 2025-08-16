@@ -155,7 +155,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
             if (checkEscAlarmConditions(escData, i, alarmChars)) {
                 // compute space needed: " " + digits(motor) + strlen(alarmChars)
                 const unsigned digits = (i + 1 >= 10) ? 2 : 1;
-                const unsigned needed = 1 + digits + (unsigned)strlen(alarmChars);
+                const unsigned needed = 1 + digits + strlen(alarmChars);
                 if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {
                     // Append '+' to indicate more warnings exist
                     if (escErrorLength < OSD_WARNINGS_MAX_SIZE - 1) {
