@@ -306,7 +306,7 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 #define ESC_RPM_ALARM_OFF         -1
 #define ESC_TEMP_ALARM_OFF         0
 #define ESC_CURRENT_ALARM_OFF     -1
-#define ESC_VOLTAGE_ALARM_OFF     -1
+#define ESC_VOLTAGE_ALARM_OFF      0
 
 #define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
 
@@ -364,6 +364,7 @@ typedef struct osdConfig_s {
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
     displayPortSeverity_e arming_logo;        // font from which to display logo on arming
+    uint16_t esc_voltage_alarm;               // ESC voltage alarm in 0.01V, 0 means disabled
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
