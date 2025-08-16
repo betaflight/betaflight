@@ -264,10 +264,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     // Otherwise if the pidProfile->d_max_xxx parameters are ever added to
     // in-flight adjustments and transition from 0 to > 0 in flight the feature
     // won't work because the filter wasn't initialized.
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        pt2FilterVec3Init(&pidRuntime.dMaxRange, pt2FilterGain(D_MAX_RANGE_HZ, pidRuntime.dT));
-        pt2FilterVec3Init(&pidRuntime.dMaxLowpass, pt2FilterGain(D_MAX_LOWPASS_HZ, pidRuntime.dT));
-     }
+    pt2FilterVec3Init(&pidRuntime.dMaxRange, pt2FilterGain(D_MAX_RANGE_HZ, pidRuntime.dT));
+    pt2FilterVec3Init(&pidRuntime.dMaxLowpass, pt2FilterGain(D_MAX_LOWPASS_HZ, pidRuntime.dT));
 #endif
 
 #if defined(USE_AIRMODE_LPF)

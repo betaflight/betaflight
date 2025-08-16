@@ -77,7 +77,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const float dt)
 
     for (int motor = 0; motor < getMotorCount(); motor++) {
         for (int i = 0; i < rpmFilter.numHarmonics; i++) {
-            biquadFilterVec3InitNotch(&rpmFilter.notch[motor][i], rpmFilter.minHz * i, rpmFilter.dt, rpmFilter.q, 0.0f);
+            biquadFilterVec3InitNotch(&rpmFilter.notch[motor][i], constrainf(rpmFilter.minHz * (i+1), rpmFilter.maxHz), rpmFilter.dt, rpmFilter.q, 0.0f);
         }
     }
 
@@ -102,10 +102,11 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
         }
     }
 
+    const float dtCompensation = schedulerGetCycleTimeMultiplier();
+    const float correctedLooptime = rpmFilter.dt * dtCompensation;
+
     // update RPM notches
     for (int i = 0; i < notchUpdatesPerIteration; i++) {
-        const float dtCompensation = schedulerGetCycleTimeMultiplier();
-        const float correctedLooptime = rpmFilter.dt * dtCompensation;
 
         // Only bother updating notches which have an effect on filtered output
         if (rpmFilter.weights[harmonicIndex] > 0.0f) {
