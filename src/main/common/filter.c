@@ -42,6 +42,13 @@ float nullFilterApply(filter_t *filter, float input)
     return input;
 }
 
+float nullFilterVec3Apply(filter_t *filter, float input, int axis)
+{
+    UNUSED(filter);
+    UNUSED(axis);
+    return input;
+}
+
 // PT1 Low Pass filter
 
 FAST_CODE_NOINLINE float pt1FilterGain(float f_cut, float dT)
@@ -353,7 +360,7 @@ void biquadFilterVec3InitLPF(biquadFilterVec3_t *filter, float filterFreq, float
     memset(filter->y2, 0.0f, sizeof(filter->y2));
 }
 
-void biquadFilterInitVec3InitNotch(biquadFilterVec3_t *filter, float filterFreq, float dt, float Q, float weight)
+void biquadFilterVec3InitNotch(biquadFilterVec3_t *filter, float filterFreq, float dt, float Q, float weight)
 {
     biquadFilterVec3UpdateNotch(filter, filterFreq, dt, Q, weight);
 
