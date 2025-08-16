@@ -74,34 +74,12 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #define ESC_ALARM_CURRENT   'C'
 #define ESC_ALARM_TEMP      'T'
 #define ESC_ALARM_RPM       'R'
+// #define ESC_ALARM_VOLTAGE   'V'
+#define ESC_ALARM_CHARS_SIZE 4
 
 static inline bool isMotorActive(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
 }
-
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
-    // Check if DShot telemetry is active for this motor
-    if (!isDshotMotorTelemetryActive(motorIndex)) {
-        return false;
-    }
-
-    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
-    
-    dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
-
-    const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
-
-    // Extract telemetry data if available
-    dest->temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 
-        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
-
-    dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 
-        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
-
-    return true;
-}
-#endif
 
 static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIndex, char *buffer)
 {
@@ -150,7 +128,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
         }
 
         if (escData) {
-            char alarmChars[4]; // Buffer for alarm characters (C, T, R + '\0')
+            char alarmChars[ESC_ALARM_CHARS_SIZE];
             // Only show motor if it has alarms (problems only approach)
             if (checkEscAlarmConditions(escData, i, alarmChars)) {
                 // compute space needed: " " + digits(motor) + strlen(alarmChars)
