@@ -249,17 +249,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 #if defined(USE_ITERM_RELAX)
     if (pidRuntime.itermRelax) {
-        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            pt1FilterInit(&pidRuntime.windupLpf[i], pt1FilterGain(pidRuntime.itermRelaxCutoff, pidRuntime.dT));
-        }
+        pt1FilterVec3Init(&pidRuntime.windupLpf, pt1FilterGain(pidRuntime.itermRelaxCutoff, pidRuntime.dT));
     }
 #endif
 
 #if defined(USE_ABSOLUTE_CONTROL)
     if (pidRuntime.itermRelax) {
-        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            pt1FilterInit(&pidRuntime.acLpf[i], pt1FilterGain(pidRuntime.acCutoff, pidRuntime.dT));
-        }
+        pt1FilterVec3Init(&pidRuntime.acLpf, pt1FilterGain(pidRuntime.acCutoff, pidRuntime.dT));
     }
 #endif
 
@@ -294,8 +290,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
-        pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
     }
+    pt3FilterVec3Init(&pidRuntime.angleFeedforwardPt3, k2);
     pidRuntime.angleYawSetpoint = 0.0f;
 #endif
 

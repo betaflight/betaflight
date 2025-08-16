@@ -437,7 +437,7 @@ typedef struct pidRuntime_s {
     float landingDisarmThreshold;
 
 #ifdef USE_ITERM_RELAX
-    pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
+    pt1FilterVec3_t windupLpf;
     uint8_t itermRelax;
     uint8_t itermRelaxType;
     uint8_t itermRelaxCutoff;
@@ -448,7 +448,7 @@ typedef struct pidRuntime_s {
     float acGain;
     float acLimit;
     float acErrorLimit;
-    pt1Filter_t acLpf[XYZ_AXIS_COUNT];
+    pt1FilterVec3_t acLpf;
     float oldSetpointCorrection[XYZ_AXIS_COUNT];
 #endif
 
@@ -514,7 +514,7 @@ typedef struct pidRuntime_s {
     float feedforwardYawHoldGain;
     float feedforwardYawHoldTime;
     bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values
-    pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
+    pt3FilterVec3_t angleFeedforwardPt3;
 #endif
 
 #ifdef USE_ACC

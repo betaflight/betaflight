@@ -562,7 +562,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     angleFeedforward = angleLimit * getFeedforward(axis) * pidRuntime.angleFeedforwardGain * maxSetpointRateInv;
     //  angle feedforward must be heavily filtered, at the PID loop rate, with limited user control over time constant
     // it MUST be very delayed to avoid early overshoot and being too aggressive
-    angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
+    angleFeedforward = pt3FilterVec3Apply(&pidRuntime.angleFeedforwardPt3, angleFeedforward, axis);
 #endif
 
     float angleTarget = angleLimit * currentPidSetpoint * maxSetpointRateInv;
@@ -843,7 +843,7 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
 {
     if (pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR) {
-        const float setpointLpf = pt1FilterApply(&pidRuntime.acLpf[axis], *currentPidSetpoint);
+        const float setpointLpf = pt1FilterVec3Apply(&pidRuntime.acLpf, *currentPidSetpoint, axis);
         const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
         float acErrorRate = 0;
         const float gmaxac = setpointLpf + 2 * setpointHpf;
@@ -882,7 +882,7 @@ STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRat
 STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
 {
-    const float setpointLpf = pt1FilterApply(&pidRuntime.windupLpf[axis], *currentPidSetpoint);
+    const float setpointLpf = pt1FilterVec3Apply(&pidRuntime.windupLpf, *currentPidSetpoint, axis);
     const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
 
     if (pidRuntime.itermRelax) {

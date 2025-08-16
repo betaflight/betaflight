@@ -97,19 +97,20 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
         return;
     }
 
-    for (int motor = 0; motor < getMotorCount() && motor < DEBUG16_VALUE_COUNT; motor++) {
-        DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(getMotorFrequencyHz(motor)));
-    }
-
     if (!isRpmFilterEnabled()) {
         return;
     }
 
-    const float dtCompensation = schedulerGetCycleTimeMultiplier();
-    const float correctedLooptime = rpmFilter.dt * dtCompensation;
+    if (debugMode == DEBUG_RPM_FILTER) {
+        for (int motor = 0; motor < getMotorCount() && motor < DEBUG16_VALUE_COUNT; motor++) {
+            DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(getMotorFrequencyHz(motor)));
+        }
+    }
 
     // update RPM notches
     for (int i = 0; i < notchUpdatesPerIteration; i++) {
+        const float dtCompensation = schedulerGetCycleTimeMultiplier();
+        const float correctedLooptime = rpmFilter.dt * dtCompensation;
 
         // Only bother updating notches which have an effect on filtered output
         if (rpmFilter.weights[harmonicIndex] > 0.0f) {
