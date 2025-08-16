@@ -234,7 +234,7 @@ void adcInit(const adcConfig_t *config)
 
 uint16_t adcGetValue(adcSource_e source)
 {
-#ifdef ADC_USE_INTERNAL
+#ifdef USE_ADC_INTERNAL
     /* there is no internal VREF, so default */
     if (source == ADC_VREFINT) {
         return VREFINT_CAL_VREF;
