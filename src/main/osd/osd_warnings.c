@@ -103,7 +103,7 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
 }
 #endif
 
-static bool checkEscAlarmConditions(escSensorData_t *data, uint8_t motorIndex, char *buffer)
+static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIndex, char *buffer)
 {
     uint8_t alarmPos = 0;
 
