@@ -29,11 +29,11 @@
 typedef enum {
     ADC_NONE = -1,
     ADC_BATTERY = 0,
-    ADC_CURRENT = 1,
-    ADC_EXTERNAL1 = 2,
-    ADC_RSSI = 3,
+    ADC_CURRENT,
+    ADC_EXTERNAL1,
+    ADC_RSSI,
 #ifdef USE_ADC_INTERNAL
-    // On H7 and G4, internal sensors are treated in the similar fashion as regular ADC inputs
+    // For certain processors internal sensors are treated in the similar fashion as regular ADC inputs
     ADC_SOURCE_INTERNAL_FIRST_ID = 4,
     ADC_TEMPSENSOR = ADC_SOURCE_INTERNAL_FIRST_ID,
     ADC_VREFINT,

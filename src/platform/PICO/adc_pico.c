@@ -193,20 +193,22 @@ void adcInit(const adcConfig_t *config)
     // Write each completed conversion to the sample FIFO
     // Enable DMA data request (DREQ)
     // Fire DREQ when FIFO has at least 1 sample
-    // We won't see the ERR bit because of 12-bit reads; disable
+    // Ignore ERR bit, save masking the result (as it is 12 bit).
     // Don't shift each sample to 8 bits when pushing to FIFO
     adc_fifo_setup(true, true, 1, false, false);
 
     /*
-        Sampling requires 96 cycles per sample
-        clkdiv = (48,000,000 / (sample_rate * 96)) - 1
+        Conversion requires 96 cycles per sample, at ADC clock of 48MHz.
+        clkdiv divides ADC clock to generate next auto trigger event
+
+        clkdiv = (48,000,000 / (sample_rate)) - 1
 
         Sample rate required at 10hz for X channels = 10 x X
 
         65535.f + 255.f / 256.f for as slow as possible
+        0 for as fast as possible
     */
-    const float clkdiv = (48e6f / (channelCount * 10.f * 96.f)) - 1;
-    adc_set_clkdiv(clkdiv);
+    adc_set_clkdiv(0);
 
     const dmaIdentifier_e dma_id = dmaGetFreeIdentifier();
     if (dma_id == DMA_NONE || !dmaAllocate(dma_id, OWNER_ADC, 0)) {
