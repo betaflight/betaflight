@@ -74,8 +74,8 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #define ESC_ALARM_CURRENT   'C'
 #define ESC_ALARM_TEMP      'T'
 #define ESC_ALARM_RPM       'R'
-// #define ESC_ALARM_VOLTAGE   'V'
-#define ESC_ALARM_CHARS_SIZE 4
+#define ESC_ALARM_VOLTAGE   'V'
+#define ESC_ALARM_CHARS_SIZE 5 // ESC_ALARM_<chars> + '\0'
 
 static inline bool isMotorActive(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);

@@ -306,6 +306,7 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 #define ESC_RPM_ALARM_OFF         -1
 #define ESC_TEMP_ALARM_OFF         0
 #define ESC_CURRENT_ALARM_OFF     -1
+#define ESC_VOLTAGE_ALARM_OFF     -1
 
 #define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
 
