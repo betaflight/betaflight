@@ -64,7 +64,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
