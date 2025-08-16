@@ -79,6 +79,19 @@ float cos_approx(float x)
     return sin_approx(x + (0.5f * M_PIf));
 }
 
+float sin_approx_unchecked(float x)
+{
+    // Only valid if values are in the range -π to π
+    float x2 = x * x;
+    return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
+}
+
+float cos_approx_unchecked(float x)
+{
+    // Only valid if values are in the range -π to π
+    return sin_approx_unchecked(x + (0.5f * M_PIf));
+}
+
 // Initial implementation by Crashpilot1000 (https://github.com/Crashpilot1000/HarakiriWebstore1/blob/396715f73c6fcf859e0db0f34e12fe44bace6483/src/mw.c#L1292)
 // Polynomial coefficients by Andor (http://www.dsprelated.com/showthread/comp.dsp/21872-1.php) optimized by Ledvinap to save one multiplication
 // Max absolute error 0,000027 degree

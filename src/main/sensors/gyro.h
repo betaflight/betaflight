@@ -54,10 +54,10 @@
 #define GYRO_MASK(x) BIT(x)
 
 typedef union gyroLowpassFilter_u {
-    pt1Filter_t pt1FilterState;
-    biquadFilter_t biquadFilterState;
-    pt2Filter_t pt2FilterState;
-    pt3Filter_t pt3FilterState;
+    pt1FilterVec3_t pt1FilterState;
+    biquadFilterVec3_t biquadFilterState;
+    pt2FilterVec3_t pt2FilterState;
+    pt3FilterVec3_t pt3FilterState;
 } gyroLowpassFilter_t;
 
 typedef struct gyroCalibration_s {
@@ -87,19 +87,19 @@ typedef struct gyro_s {
     gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
 
     // lowpass gyro soft filter
-    filterApplyFnPtr lowpassFilterApplyFn;
-    gyroLowpassFilter_t lowpassFilter[XYZ_AXIS_COUNT];
+    filterVec3ApplyFnPtr lowpassFilterApplyFn;
+    gyroLowpassFilter_t lowpassFilter;
 
     // lowpass2 gyro soft filter
-    filterApplyFnPtr lowpass2FilterApplyFn;
-    gyroLowpassFilter_t lowpass2Filter[XYZ_AXIS_COUNT];
+    filterVec3ApplyFnPtr lowpass2FilterApplyFn;
+    gyroLowpassFilter_t lowpass2Filter;
 
     // notch filters
-    filterApplyFnPtr notchFilter1ApplyFn;
-    biquadFilter_t notchFilter1[XYZ_AXIS_COUNT];
+    filterVec3ApplyFnPtr notchFilter1ApplyFn;
+    biquadFilterVec3_t notchFilter1;
 
-    filterApplyFnPtr notchFilter2ApplyFn;
-    biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
+    filterVec3ApplyFnPtr notchFilter2ApplyFn;
+    biquadFilterVec3_t notchFilter2;
 
     uint16_t accSampleRateHz;
     uint8_t gyroEnabledBitmask;
@@ -118,7 +118,7 @@ typedef struct gyro_s {
 #ifdef USE_GYRO_OVERFLOW_CHECK
     uint8_t overflowAxisMask;
 #endif
-    pt1Filter_t imuGyroFilter[XYZ_AXIS_COUNT];
+    pt1FilterVec3_t imuGyroFilter;
 } gyro_t;
 
 extern gyro_t gyro;
