@@ -175,12 +175,10 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
         // Center message if it's short for better visual presentation
         const int msgLen = strlen(warningText);
         const int minMsgLen = OSD_WARNINGS_PREFFERED_SIZE;
-        if (msgLen < minMsgLen - 1) {
+        if (msgLen < minMsgLen - 1) {    // only if there is positive offset
             int offset = (minMsgLen - msgLen) / 2;
-            if (offset > 0) {
-                memmove(warningText + offset, warningText, msgLen + 1);
-                memset(warningText, ' ', offset);
-            }
+            memmove(warningText + offset, warningText, msgLen + 1);
+            memset(warningText, ' ', offset);
         }
         return true;
     }
