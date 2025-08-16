@@ -594,7 +594,7 @@ void dynLpfGyroUpdate(float throttle)
             pt1FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
             break;
         case DYN_LPF_BIQUAD:
-            biquadFilterVec3UpdateLPF(&gyro.lowpassFilter.biquadFilterState, cutoffFreq, gyro.targetLooptime);
+            biquadFilterVec3UpdateLPF(&gyro.lowpassFilter.biquadFilterState, cutoffFreq, gyroDt);
             break;
         case  DYN_LPF_PT2:
             pt2FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt2FilterState, pt2FilterGain(cutoffFreq, gyroDt));

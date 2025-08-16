@@ -217,7 +217,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFnPtr)biquadFilterVec3Apply;
                 biquadFilterVec3InitLPF(&pidRuntime.dtermLowpass2.biquadFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT);
             } else {
-                pidRuntime.dtermLowpassApplyFn = nullFilterVec3Apply;
+                pidRuntime.dtermLowpass2ApplyFn = nullFilterVec3Apply;
             }
             break;
         case FILTER_PT2:

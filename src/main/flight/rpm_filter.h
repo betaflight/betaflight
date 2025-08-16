@@ -23,7 +23,9 @@
 #include <stdbool.h>
 
 #include "common/time.h"
+#include "common/filter.h"
 
+#include "pg/motor.h"
 #include "pg/rpm_filter.h"
 
 #define RPM_FILTER_DURATION_S    0.001f  // Maximum duration allowed to update all RPM notches once

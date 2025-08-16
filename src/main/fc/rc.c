@@ -366,16 +366,14 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     // Update the RC Setpoint/Deflection filter and FeedForward Filter
     // all cutoffs will be the same, we can optimize :)
     const float pt3K = pt3FilterGain(setpointCutoffFrequency, dT);
-    for (int i = FD_ROLL; i <= FD_YAW; i++) {
-        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K);
-    }
+    pt3FilterVec3UpdateCutoff(&smoothingData->filterSetpoint, pt3K);
     pt3FilterVec3UpdateCutoff(&smoothingData->filterFeedforward, pt3K);
 
     for (int i = FD_ROLL; i <= FD_PITCH; i++) {
         pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
     }
 
-    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3FilterGain(throttleCutoffFrequency, dT));
+    pt3FilterUpdateCutoff(&smoothingData->filterThrottle, pt3FilterGain(throttleCutoffFrequency, dT));
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->setpointCutoffFrequency);
     DEBUG_SET(DEBUG_RC_SMOOTHING, 3, smoothingData->throttleCutoffFrequency);
@@ -421,12 +419,8 @@ static FAST_CODE void processRcSmoothingFilter(void)
     }
 
     // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
-    for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-        float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
-        *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
-    }
-
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        setpointRate[axis] = pt3FilterVec3Apply(&rcSmoothingData.filterSetpoint, rxDataToSmooth[axis], axis);
         // Feedforward smoothing
         feedforwardSmoothed[axis] = pt3FilterVec3Apply(&rcSmoothingData.filterFeedforward, feedforwardRaw[axis], axis);
         // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
@@ -437,6 +431,8 @@ static FAST_CODE void processRcSmoothingFilter(void)
             rcDeflectionSmoothed[axis] = rcDeflection[axis];
         }
     }
+
+    rcCommand[THROTTLE] = pt3FilterApply(&rcSmoothingData.filterThrottle, rxDataToSmooth[THROTTLE]);
 }
 #endif // USE_RC_SMOOTHING_FILTER
 

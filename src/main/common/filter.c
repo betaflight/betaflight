@@ -269,8 +269,8 @@ FAST_CODE void biquadFilterGainsLPF(biquadFilterGains_t *filter, float filterFre
      // 2nd order Butterworth (with Q=1/sqrt(2)) / Butterworth biquad section with Q
      // described in http://www.ti.com/lit/an/slaa447/slaa447.pdf
      filter->b1 = (1 - cs) * invA0;
-     filter->b0 = (filter->b1 * 0.5f) * invA0;
-     filter->b2 = (filter->b0) * invA0;
+     filter->b0 = (filter->b1 * 0.5f);
+     filter->b2 = (filter->b0);
      filter->a1 = (-2 * cs) * invA0;
      filter->a2 = (1 - alpha) * invA0;
 }

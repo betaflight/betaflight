@@ -26,15 +26,12 @@
 
 #include "build/debug.h"
 
-#include "common/filter.h"
 #include "common/maths.h"
 
 #include "drivers/dshot.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
-
-#include "pg/motor.h"
 
 #include "scheduler/scheduler.h"
 
@@ -78,11 +75,9 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const float dt)
         rpmFilter.weights[n] = constrainf(config->rpm_filter_weights[n] / 100.0f, 0.0f, 1.0f);
     }
 
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        for (int motor = 0; motor < getMotorCount(); motor++) {
-            for (int i = 0; i < rpmFilter.numHarmonics; i++) {
-                biquadFilterVec3InitNotch(&rpmFilter.notch[motor][i], rpmFilter.minHz * i, rpmFilter.dt, rpmFilter.q, 0.0f);
-            }
+    for (int motor = 0; motor < getMotorCount(); motor++) {
+        for (int i = 0; i < rpmFilter.numHarmonics; i++) {
+            biquadFilterVec3InitNotch(&rpmFilter.notch[motor][i], rpmFilter.minHz * i, rpmFilter.dt, rpmFilter.q, 0.0f);
         }
     }
 

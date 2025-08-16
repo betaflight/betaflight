@@ -143,7 +143,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, float d
     bool ret = false;
 
     // Establish some common constants
-    const uint32_t gyroFrequencyNyquist = 2 / dt;
+    const uint32_t gyroFrequencyNyquist = 0.5 / dt;
 
     // Dereference the pointer to null before checking valid cutoff and filter
     // type. It will be overridden for positive cases.
