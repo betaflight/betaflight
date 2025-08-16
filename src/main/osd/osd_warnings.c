@@ -75,7 +75,7 @@ const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 #define ESC_ALARM_TEMP      'T'
 #define ESC_ALARM_RPM       'R'
 #define ESC_ALARM_VOLTAGE   'V'
-#define ESC_ALARM_CHARS_SIZE 5 // ESC_ALARM_<chars> + '\0'
+#define ESC_ALARM_CHARS_SIZE 4 // ESC_ALARM_<chars> + '\0'
 
 static inline bool isMotorActive(uint8_t motorIndex) {
     return (motor[motorIndex] > mixerRuntime.disarmMotorOutput);
@@ -100,10 +100,6 @@ static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIn
     // Check temperature alarm (regardless of motor spinning state)
     if (data->temperature && osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && data->temperature >= osdConfig()->esc_temp_alarm) {
         buffer[alarmPos++] = ESC_ALARM_TEMP;
-    }
-
-    if (data->voltage && osdConfig()->esc_voltage_alarm != ESC_VOLTAGE_ALARM_OFF && data->voltage >= osdConfig()->esc_voltage_alarm) {
-        buffer[alarmPos++] = ESC_ALARM_VOLTAGE;
     }
 
     buffer[alarmPos] = '\0';
