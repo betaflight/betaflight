@@ -17,7 +17,6 @@
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "platform.h"
 
 #ifdef USE_DMA
@@ -26,23 +25,23 @@
 
 #include "dma.h"
 
-dmaIdentifier_e dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
+bool dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
 {
     if (dmaGetOwner(identifier)->owner != OWNER_FREE) {
-        return DMA_NONE;
+        return false;
     }
 
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
 
     // Prevent Wstringop-overflow warning
     if (index < 0 || index >= DMA_LAST_HANDLER) {
-        return DMA_NONE;
+        return false;
     }
 
     dmaDescriptors[index].owner.owner = owner;
     dmaDescriptors[index].owner.resourceIndex = resourceIndex;
 
-    return identifier;
+    return true;
 }
 
 const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier)
