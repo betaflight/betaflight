@@ -29,7 +29,7 @@ typedef struct octoSpiHardware_s {
     OCTOSPI_TypeDef *reg;
 } octoSpiHardware_t;
 
-typedef struct OCTOSPIDevice_s {
+typedef struct octoSpiDevice_s {
     OCTOSPI_TypeDef *dev;
 } octoSpiDevice_t;
 

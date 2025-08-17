@@ -63,8 +63,8 @@
 static void NRF24L01_InitGpio(void)
 {
     // CE as OUTPUT
-    const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
-    IOInit(DEFIO_IO(RX_CE_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    const spiDevice_e rxSpiDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
+    IOInit(DEFIO_IO(RX_CE_PIN), OWNER_RX_SPI_CS, rxSpiDevice + 1);
     IOConfigGPIO(DEFIO_IO(RX_CE_PIN), SPI_IO_CS_CFG);
     NRF24_CE_LO();
 }

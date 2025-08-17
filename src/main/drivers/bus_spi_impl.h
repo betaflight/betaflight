@@ -58,7 +58,7 @@ typedef struct spiHardware_s {
 
 extern const spiHardware_t spiHardware[SPIDEV_COUNT];
 
-typedef struct SPIDevice_s {
+typedef struct spiDevice_s {
     SPI_TypeDef *dev;
     ioTag_t sck;
     ioTag_t miso;

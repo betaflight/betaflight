@@ -60,7 +60,7 @@ typedef struct quadSpiHardware_s {
 
 extern const quadSpiHardware_t quadSpiHardware[];
 
-typedef struct QUADSPIDevice_s {
+typedef struct quadSpiDevice_s {
     QUADSPI_TypeDef *dev;
     ioTag_t clk;
     ioTag_t bk1IO0;

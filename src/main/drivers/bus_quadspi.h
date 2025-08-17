@@ -65,7 +65,7 @@ typedef enum {
 
 #define QUADSPIDEV_COUNT 1
 
-// Macros to convert between CLI bus number and SPIDevice.
+// Macros to convert between CLI bus number and spiDevice_e.
 #define QUADSPI_CFG_TO_DEV(x)   ((x) - 1)
 #define QUADSPI_DEV_TO_CFG(x)   ((x) + 1)
 
