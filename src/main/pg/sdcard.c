@@ -83,7 +83,7 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
 #ifdef USE_SDCARD_SPI
     // These settings do not work for Unified Targets
     // They are only left in place to support legacy targets
-    spiDevice_e spidevice = spiDeviceByInstance(SDCARD_SPI_INSTANCE);
+    const spiDevice_e spidevice = spiDeviceByInstance(SDCARD_SPI_INSTANCE);
     config->device = SPI_DEV_TO_CFG(spidevice);
     config->chipSelectTag = IO_TAG(SDCARD_SPI_CS_PIN);
 
