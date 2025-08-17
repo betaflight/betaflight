@@ -25,7 +25,7 @@
 const resourceOwner_t resourceOwnerInvalid = { .owner = OWNER_INVALID, .index = 0 };
 const resourceOwner_t resourceOwnerFree    = { .owner = OWNER_FREE,    .index = 0 };
 
-static const char * const ownerNames[OWNER_TOTAL_COUNT] = {
+static const char * const ownerNames[] = {
     "FREE",
     "PWM",
     "PPM",
@@ -121,9 +121,11 @@ static const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "GYRO_CLKIN",
 };
 
+STATIC_ASSERT(ARRAYLEN(ownerNames) == OWNER_TOTAL_COUNT, owner_names_array_count_not_equal_to_enum_total);
+
 const char *getOwnerName(resourceOwner_e owner)
 {
-    if (owner < 0 || owner >= OWNER_TOTAL_COUNT) {
+    if (owner < 0 || (unsigned)owner >= ARRAYLEN(ownerNames)) {
         return "INVALID";
     }
 
