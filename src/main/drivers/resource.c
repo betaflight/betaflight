@@ -25,7 +25,7 @@
 const resourceOwner_t resourceOwnerInvalid = { .owner = OWNER_INVALID, .index = 0 };
 const resourceOwner_t resourceOwnerFree    = { .owner = OWNER_FREE,    .index = 0 };
 
-static char * const ownerNames[OWNER_TOTAL_COUNT] = {
+static const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE",
     "PWM",
     "PPM",

@@ -28,6 +28,7 @@
 
 #ifdef USE_TIMER_MGMT
 #include "pg/timerio.h"
+#include "drivers/resource.h"
 
 static resourceOwner_t timerOwners[MAX_TIMER_PINMAP_COUNT];
 
