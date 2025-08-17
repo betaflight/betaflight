@@ -324,12 +324,12 @@ static void sendFakeLatLong(void)
 
 static void sendGPSLatLong(void)
 {
-    static uint8_t gpsFixOccured = 0;
+    static uint8_t gpsFixOccurred = 0;
     int32_t coord[2] = {0,0};
 
-    if (STATE(GPS_FIX) || gpsFixOccured == 1) {
+    if (STATE(GPS_FIX) || gpsFixOccurred == 1) {
         // If we have ever had a fix, send the last known lat/long
-        gpsFixOccured = 1;
+        gpsFixOccurred = 1;
         coord[GPS_LATITUDE] = gpsSol.llh.lat;
         coord[GPS_LONGITUDE] = gpsSol.llh.lon;
         sendLatLong(coord);
