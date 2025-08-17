@@ -138,7 +138,7 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
             continue;
         }
 
-        SPIDevice device = hw->device;
+        spiDevice_e device = hw->device;
         spiDevice_t *pDev = &spiDevice[device];
 
         for (int pindex = 0 ; pindex < MAX_SPI_PIN_SEL ; pindex++) {
@@ -206,9 +206,7 @@ Must be SPI_MSB_FIRST, no other values supported on the PL022
 
 
 */
-
-
-void spiInitDevice(SPIDevice device)
+void spiInitDevice(spiDevice_e device)
 {
     bprintf("pico spiInitDevice %d",device);
     const spiDevice_t *spi = &spiDevice[device];

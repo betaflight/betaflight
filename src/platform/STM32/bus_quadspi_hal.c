@@ -39,7 +39,7 @@
 
 static void Error_Handler(void) { while (1); }
 
-void quadSpiInitDevice(QUADSPIDevice device)
+void quadSpiInitDevice(quadSpiDevice_e device)
 {
     quadSpiDevice_t *quadSpi = &(quadSpiDevice[device]);
 
@@ -136,7 +136,7 @@ static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
  */
 LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if(quadSpiDevice[device].hquadSpi.State == HAL_QSPI_STATE_BUSY)
         return true;
     else
@@ -147,7 +147,7 @@ LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 
 static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 
     IO_t bk1CS = IOGetByTag(quadSpiDevice[device].bk1CS);
     IO_t bk2CS = IOGetByTag(quadSpiDevice[device].bk2CS);
@@ -176,7 +176,7 @@ static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
 
 static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 
     IO_t bk1CS = IOGetByTag(quadSpiDevice[device].bk1CS);
     IO_t bk2CS = IOGetByTag(quadSpiDevice[device].bk2CS);
@@ -205,7 +205,7 @@ static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
 
 bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -248,7 +248,7 @@ bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
 
 bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -286,7 +286,7 @@ bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t
 
 bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -324,7 +324,7 @@ bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
 
 bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -363,7 +363,7 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
 
 bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -401,7 +401,7 @@ bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruct
 }
 bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -441,7 +441,7 @@ bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
 
 bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -481,7 +481,7 @@ bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruc
 
 bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -516,7 +516,7 @@ bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instr
 
 bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -554,7 +554,7 @@ bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
 
 void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (HAL_QSPI_DeInit(&quadSpiDevice[device].hquadSpi) != HAL_OK)
     {
         Error_Handler();

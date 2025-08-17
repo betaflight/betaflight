@@ -417,7 +417,7 @@ octoSpiMemoryMappedModeConfigurationRegisterBackup_t ospiMMMCRBackups[OCTOSPI_IN
 
 static void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
-    OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
+    octoSpiDevice_e device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
         return;
     }
@@ -437,7 +437,7 @@ static void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance
 
 static MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
-    OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
+    octoSpiDevice_e device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
         return;
     }
@@ -822,7 +822,7 @@ MMFLASH_CODE_NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *i
     return status == SUCCESS;
 }
 
-void octoSpiInitDevice(OCTOSPIDevice device)
+void octoSpiInitDevice(octoSpiDevice_e device)
 {
     octoSpiDevice_t *octoSpi = &(octoSpiDevice[device]);
 

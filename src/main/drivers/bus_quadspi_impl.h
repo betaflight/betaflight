@@ -22,7 +22,10 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include "platform.h"
+#include "drivers/bus_quadspi.h"
 
 #if PLATFORM_TRAIT_RCC
 #include "platform/rcc_types.h"
@@ -36,7 +39,7 @@ typedef struct quadSpiPinDef_s {
 } quadSpiPinDef_t;
 
 typedef struct quadSpiHardware_s {
-    QUADSPIDevice device;
+    quadSpiDevice_e device;
     QUADSPI_TypeDef *reg;
     quadSpiPinDef_t clkPins[MAX_QUADSPI_PIN_SEL];
     quadSpiPinDef_t bk1IO0Pins[MAX_QUADSPI_PIN_SEL];
@@ -94,5 +97,5 @@ typedef struct QUADSPIDevice_s {
 
 extern quadSpiDevice_t quadSpiDevice[QUADSPIDEV_COUNT];
 
-void quadSpiInitDevice(QUADSPIDevice device);
+void quadSpiInitDevice(quadSpiDevice_e device);
 uint32_t quadSpiTimeoutUserCallback(QUADSPI_TypeDef *instance);

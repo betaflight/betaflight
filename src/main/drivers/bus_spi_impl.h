@@ -38,7 +38,7 @@ typedef struct spiPinDef_s {
 } spiPinDef_t;
 
 typedef struct spiHardware_s {
-    SPIDevice device;
+    spiDevice_e device;
     SPI_TypeDef *reg;
     spiPinDef_t sckPins[MAX_SPI_PIN_SEL];
     spiPinDef_t misoPins[MAX_SPI_PIN_SEL];
@@ -86,7 +86,7 @@ typedef struct SPIDevice_s {
 
 extern spiDevice_t spiDevice[SPIDEV_COUNT];
 
-void spiInitDevice(SPIDevice device);
+void spiInitDevice(spiDevice_e device);
 void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment);
 void spiInternalStartDMA(const extDevice_t *dev);
 void spiInternalStopDMA (const extDevice_t *dev);
