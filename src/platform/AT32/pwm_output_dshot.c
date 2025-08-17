@@ -190,7 +190,7 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 
     timerOCInit(timer, channel, pOcInit);
 
-    // On ST mcu this would be part of the ocInit struct, but on AT we have to do it seperately
+    // On ST mcu this would be part of the ocInit struct, but on AT we have to do it separately
     { // local scope for variables
         const bool useNChannel = false; // tmr_channel_value_set only supports the normal channels
         const tmr_channel_select_type atChannel = toCHSelectType(timerHardware->channel, useNChannel);
