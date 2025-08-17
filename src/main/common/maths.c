@@ -64,15 +64,8 @@ float sin_approx_unchecked(float x)
 
 float cos_approx_unchecked(float x)
 {
-    // Only valid if values are in the range -π/2 to π/2
-    const float C0 = 0.99999994f;
-    const float C2 = -0.49999905f;
-    const float C4 = 0.041663583f;
-    const float C6 = -0.0013853704f;
-    const float C8 = 0.000023153932f;
-
-    float x2 = x * x;
-    return C0 + x2 * (C2 + x2 * (C4 + x2 * (C6 + C8 * x2)));
+    // Only valid if values are in the range -π to 0
+    return sin_approx_unchecked(x + M_PIf * 0.5f);
 }
 
 float reduce_anglef(float x) {
