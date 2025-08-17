@@ -264,11 +264,11 @@ FAST_CODE void biquadFilterGainsLPF(biquadFilterGains_t *filter, float filterFre
 {
     // setup variables
     float omega = 2.0f * M_PIf * filterFreq * dt;
+    const float cs = cos_approx_unchecked(-omega); // this is a hack since the valid range of cos unchecked is -pi to 0
     if (omega > (M_PIf * 0.5f)) {
         omega = M_PIf - omega;
     }
     const float sn = sin_approx_unchecked(omega);
-    const float cs = cos_approx_unchecked(-omega); // this is a hack since the valid range of cos unchecked is -pi to 0
     const float alpha = sn / (2.0f * BUTTERWORTH_Q);
     const float invA0 = 1.0f / (1.0f + alpha);
 
@@ -285,11 +285,11 @@ FAST_CODE void biquadFilterGainsNotch(biquadFilterGains_t *filter, float filterF
 {
     // setup variables
     float omega = 2.0f * M_PIf * filterFreq * dt;
+    const float cs = cos_approx_unchecked(-omega); // this is a hack since the valid range of cos unchecked is -pi to 0
     if (omega > (M_PIf * 0.5f)) {
         omega = M_PIf - omega;
     }
     const float sn = sin_approx_unchecked(omega);
-    const float cs = cos_approx_unchecked(-omega); // this is a hack since the valid range of cos unchecked is -pi to 0
     const float alpha = sn / (2.0f * q);
     const float invA0 = 1.0f / (1.0f + alpha);
 
@@ -304,11 +304,11 @@ FAST_CODE void biquadFilterGainsNotchWeighted(biquadFilterGains_t *filter, float
 {
     // setup variables
     float omega = 2.0f * M_PIf * filterFreq * dt;
+    const float cs = cos_approx_unchecked(-omega); // this is a hack since the valid range of cos unchecked is -pi to 0
     if (omega > (M_PIf * 0.5f)) {
         omega = M_PIf - omega;
     }
     const float sn = sin_approx_unchecked(omega);
-    const float cs = cos_approx_unchecked(-omega); // this is a hack since the valid range of cos unchecked is -pi to 0
     const float alpha = sn / (2.0f * q);
     const float invA0 = 1.0f / (1.0f + alpha);
 
