@@ -73,7 +73,7 @@ typedef struct quadSpiDevice_s {
     ioTag_t bk2IO2;
     ioTag_t bk2IO3;
     ioTag_t bk2CS;
-#if defined(STM32H7)
+#if QUADSPI_TRAIT_AF_PIN
     uint8_t bk1IO0AF;
     uint8_t bk1IO1AF;
     uint8_t bk1IO2AF;

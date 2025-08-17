@@ -96,8 +96,8 @@ bool octoSpiInit(octoSpiDevice_e device)
     for (size_t hwindex = 0; hwindex < ARRAYLEN(octoSpiHardware); hwindex++) {
         const octoSpiHardware_t *hw = &octoSpiHardware[hwindex];
 
-        octoSpiDevice_e device = hw->device;
-        octoSpiDevice_t *pDev = &octoSpiDevice[device];
+        const octoSpiDevice_e hwDevice = hw->device;
+        octoSpiDevice_t *pDev = &octoSpiDevice[hwDevice];
 
         pDev->dev = hw->reg;
     }
