@@ -127,8 +127,7 @@ float pt2FilterGainFromDelay(float delay, float dT)
 
 void pt2FilterInit(pt2Filter_t *filter, float k)
 {
-    filter->state = 0.0f;
-    filter->state1 = 0.0f;
+    memset(filter->state, 0, sizeof(filter->state));
     filter->k = k;
 }
 
@@ -139,17 +138,16 @@ void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k)
 
 FAST_CODE float pt2FilterApply(pt2Filter_t *filter, float input)
 {
-    filter->state1 = filter->state1 + filter->k * (input - filter->state1);
-    filter->state = filter->state + filter->k * (filter->state1 - filter->state);
-    return filter->state;
+    filter->state[0] += filter->k * (input - filter->state[0]);            // stage 1
+    filter->state[1] += filter->k * (filter->state[0] - filter->state[1]); // stage 2
+    return filter->state[1];
 }
 
 // PT2 Vec3 Low Pass filter
 
 void pt2FilterVec3Init(pt2FilterVec3_t *filter, float k)
 {
-    memset(filter->state, 0.0f, sizeof(filter->state));
-    memset(filter->state1, 0.0f, sizeof(filter->state1));
+    memset(filter->state, 0, sizeof(filter->state));
     filter->k = k;
 }
 
@@ -160,9 +158,9 @@ void pt2FilterVec3UpdateCutoff(pt2FilterVec3_t *filter, float k)
 
 FAST_CODE float pt2FilterVec3Apply(pt2FilterVec3_t *filter, float input, int axis)
 {
-    filter->state1[axis] = filter->state1[axis] + filter->k * (input - filter->state1[axis]);
-    filter->state[axis] = filter->state[axis] + filter->k * (filter->state1[axis] - filter->state[axis]);
-    return filter->state[axis];
+    filter->state[0][axis] += filter->k * (input - filter->state[0][axis]);                  // stage 1
+    filter->state[1][axis] += filter->k * (filter->state[0][axis] - filter->state[1][axis]); // stage 2
+    return filter->state[1][axis];
 }
 
 // PT3 Low Pass filter
@@ -187,9 +185,7 @@ float pt3FilterGainFromDelay(float delay, float dT)
 
 void pt3FilterInit(pt3Filter_t *filter, float k)
 {
-    filter->state = 0.0f;
-    filter->state1 = 0.0f;
-    filter->state2 = 0.0f;
+    memset(filter->state, 0, sizeof(filter->state));
     filter->k = k;
 }
 
@@ -200,19 +196,17 @@ void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k)
 
 FAST_CODE float pt3FilterApply(pt3Filter_t *filter, float input)
 {
-    filter->state1 = filter->state1 + filter->k * (input - filter->state1);
-    filter->state2 = filter->state2 + filter->k * (filter->state1 - filter->state2);
-    filter->state = filter->state + filter->k * (filter->state2 - filter->state);
-    return filter->state;
+    filter->state[0] += filter->k * (input - filter->state[0]);            // stage 1
+    filter->state[1] += filter->k * (filter->state[0] - filter->state[1]); // stage 2
+    filter->state[2] += filter->k * (filter->state[1] - filter->state[2]); // stage 3
+    return filter->state[2];
 }
 
 // PT3 Vec3 Low Pass filter
 
 void pt3FilterVec3Init(pt3FilterVec3_t *filter, float k)
 {
-    memset(filter->state, 0.0f, sizeof(filter->state));
-    memset(filter->state1, 0.0f, sizeof(filter->state1));
-    memset(filter->state2, 0.0f, sizeof(filter->state2));
+    memset(filter->state, 0, sizeof(filter->state));
     filter->k = k;
 }
 
@@ -223,10 +217,10 @@ void pt3FilterVec3UpdateCutoff(pt3FilterVec3_t *filter, float k)
 
 FAST_CODE float pt3FilterVec3Apply(pt3FilterVec3_t *filter, float input, int axis)
 {
-    filter->state1[axis] = filter->state1[axis] + filter->k * (input - filter->state1[axis]);
-    filter->state2[axis] = filter->state2[axis] + filter->k * (filter->state1[axis] - filter->state2[axis]);
-    filter->state[axis] = filter->state[axis] + filter->k * (filter->state2[axis] - filter->state[axis]);
-    return filter->state[axis];
+    filter->state[0][axis] += filter->k * (input - filter->state[0][axis]);        // stage 1
+    filter->state[1][axis] += filter->k * (filter->state[0][axis] - filter->state[1][axis]); // stage 2
+    filter->state[2][axis] += filter->k * (filter->state[1][axis] - filter->state[2][axis]); // stage 3
+    return filter->state[2][axis];
 }
 
 // Biquad filter
@@ -248,9 +242,18 @@ void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, float dt)
     filter->y1 = filter->y2 = 0;
 }
 
-void biquadFilterInitNotch(biquadFilter_t *filter, float filterFreq, float dt, float Q, float weight)
+void biquadFilterInitNotch(biquadFilter_t *filter, float filterFreq, float dt, float Q)
 {
-    biquadFilterUpdateNotch(filter, filterFreq, dt, Q, weight);
+    biquadFilterUpdateNotch(filter, filterFreq, dt, Q);
+
+    // zero initial samples
+    filter->x1 = filter->x2 = 0;
+    filter->y1 = filter->y2 = 0;
+}
+
+void biquadFilterInitNotchWeighted(biquadFilter_t *filter, float filterFreq, float dt, float Q, float weight)
+{
+    biquadFilterUpdateNotchWeighted(filter, filterFreq, dt, Q, weight);
 
     // zero initial samples
     filter->x1 = filter->x2 = 0;
@@ -260,7 +263,10 @@ void biquadFilterInitNotch(biquadFilter_t *filter, float filterFreq, float dt, f
 FAST_CODE void biquadFilterGainsLPF(biquadFilterGains_t *filter, float filterFreq, float dt)
 {
     // setup variables
-    const float omega = 2.0f * M_PIf * filterFreq * dt;
+    float omega = 2.0f * M_PIf * filterFreq * dt;
+    if (omega > (M_PIf * 0.5f)) {
+        omega = M_PIf - omega;
+    }
     const float sn = sin_approx_unchecked(omega);
     const float cs = cos_approx_unchecked(omega);
     const float alpha = sn / (2.0f * BUTTERWORTH_Q);
@@ -275,7 +281,26 @@ FAST_CODE void biquadFilterGainsLPF(biquadFilterGains_t *filter, float filterFre
      filter->a2 = (1 - alpha) * invA0;
 }
 
-FAST_CODE void biquadFilterGainsNotch(biquadFilterGains_t *filter, float filterFreq, float dt, float q, float weight)
+FAST_CODE void biquadFilterGainsNotch(biquadFilterGains_t *filter, float filterFreq, float dt, float q)
+{
+    // setup variables
+    float omega = 2.0f * M_PIf * filterFreq * dt;
+    if (omega > (M_PIf * 0.5f)) {
+        omega = M_PIf - omega;
+    }
+    const float sn = sin_approx_unchecked(omega);
+    const float cs = cos_approx_unchecked(omega);
+    const float alpha = sn / (2.0f * q);
+    const float invA0 = 1.0f / (1.0f + alpha);
+
+    filter->b0 = invA0;
+    filter->b1 = (-2 * cs) * invA0;
+    filter->b2 = invA0;
+    filter->a1 = filter->b1;
+    filter->a2 = (1 - alpha) * invA0;
+}
+
+FAST_CODE void biquadFilterGainsNotchWeighted(biquadFilterGains_t *filter, float filterFreq, float dt, float q, float weight)
 {
     // setup variables
     const float omega = 2.0f * M_PIf * filterFreq * dt;
@@ -290,7 +315,12 @@ FAST_CODE void biquadFilterGainsNotch(biquadFilterGains_t *filter, float filterF
     filter->a1 = filter->b1;
     filter->a2 = (1 - alpha) * invA0;
 
-    filter->weight = weight;
+    // apply weight
+    float weightRecip = 1.0f - weight;
+
+    filter->b0 = weight * filter->b0 + weightRecip;
+    filter->b1 = weight * filter->b1 + weightRecip * filter->a1;
+    filter->b2 = weight * filter->b2 + weightRecip * filter->a2;
 }
 
 FAST_CODE void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, float dt)
@@ -298,9 +328,14 @@ FAST_CODE void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, f
     biquadFilterGainsLPF(&filter->gains, filterFreq, dt);
 }
 
-FAST_CODE void biquadFilterUpdateNotch(biquadFilter_t *filter, float filterFreq, float dt, float q, float weight)
+FAST_CODE void biquadFilterUpdateNotch(biquadFilter_t *filter, float filterFreq, float dt, float q)
 {
-    biquadFilterGainsNotch(&filter->gains, filterFreq, dt, q, weight);
+    biquadFilterGainsNotch(&filter->gains, filterFreq, dt, q);
+}
+
+FAST_CODE void biquadFilterUpdateNotchWeighted(biquadFilter_t *filter, float filterFreq, float dt, float q, float weight)
+{
+    biquadFilterGainsNotchWeighted(&filter->gains, filterFreq, dt, q, weight);
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
@@ -321,16 +356,6 @@ FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
     filter->y1 = result;
 
     return result;
-}
-
-/* Computes a biquadFilter_t filter in df1 and crossfades input with output */
-FAST_CODE float biquadFilterApplyDF1Weighted(biquadFilter_t* filter, float input)
-{
-    // compute result
-    const float result = biquadFilterApplyDF1(filter, input);
-
-    // crossfading of input and output to turn filter on/off gradually
-    return filter->gains.weight * result + (1 - filter->gains.weight) * input;
 }
 
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
@@ -360,9 +385,20 @@ void biquadFilterVec3InitLPF(biquadFilterVec3_t *filter, float filterFreq, float
     memset(filter->y2, 0.0f, sizeof(filter->y2));
 }
 
-void biquadFilterVec3InitNotch(biquadFilterVec3_t *filter, float filterFreq, float dt, float Q, float weight)
+void biquadFilterVec3InitNotch(biquadFilterVec3_t *filter, float filterFreq, float dt, float Q)
 {
-    biquadFilterVec3UpdateNotch(filter, filterFreq, dt, Q, weight);
+    biquadFilterVec3UpdateNotch(filter, filterFreq, dt, Q);
+
+    // zero initial samples
+    memset(filter->x1, 0.0f, sizeof(filter->x1));
+    memset(filter->x2, 0.0f, sizeof(filter->x2));
+    memset(filter->y1, 0.0f, sizeof(filter->y1));
+    memset(filter->y2, 0.0f, sizeof(filter->y2));
+}
+
+void biquadFilterVec3InitNotchWeighted(biquadFilterVec3_t *filter, float filterFreq, float dt, float Q, float weight)
+{
+    biquadFilterVec3UpdateNotchWeighted(filter, filterFreq, dt, Q, weight);
 
     // zero initial samples
     memset(filter->x1, 0.0f, sizeof(filter->x1));
@@ -376,9 +412,14 @@ FAST_CODE void biquadFilterVec3UpdateLPF(biquadFilterVec3_t *filter, float filte
     biquadFilterGainsLPF(&filter->gains, filterFreq, dt);
 }
 
-FAST_CODE void biquadFilterVec3UpdateNotch(biquadFilterVec3_t *filter, float filterFreq, float dt, float q, float weight)
+FAST_CODE void biquadFilterVec3UpdateNotch(biquadFilterVec3_t *filter, float filterFreq, float dt, float q)
 {
-    biquadFilterGainsNotch(&filter->gains, filterFreq, dt, q, weight);
+    biquadFilterGainsNotch(&filter->gains, filterFreq, dt, q);
+}
+
+FAST_CODE void biquadFilterVec3UpdateNotchWeighted(biquadFilterVec3_t *filter, float filterFreq, float dt, float q, float weight)
+{
+    biquadFilterGainsNotchWeighted(&filter->gains, filterFreq, dt, q, weight);
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
@@ -399,16 +440,6 @@ FAST_CODE float biquadFilterVec3ApplyDF1(biquadFilterVec3_t *filter, float input
     filter->y1[axis] = result;
 
     return result;
-}
-
-/* Computes a biquadFilter_t filter in df1 and crossfades input with output */
-FAST_CODE float biquadFilterVec3ApplyDF1Weighted(biquadFilterVec3_t* filter, float input, int axis)
-{
-    // compute result
-    const float result = biquadFilterVec3ApplyDF1(filter, input, axis);
-
-    // crossfading of input and output to turn filter on/off gradually
-    return filter->gains.weight * result + (1 - filter->gains.weight) * input;
 }
 
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */

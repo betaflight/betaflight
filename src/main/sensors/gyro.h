@@ -53,13 +53,6 @@
 
 #define GYRO_MASK(x) BIT(x)
 
-typedef union gyroLowpassFilter_u {
-    pt1FilterVec3_t pt1FilterState;
-    biquadFilterVec3_t biquadFilterState;
-    pt2FilterVec3_t pt2FilterState;
-    pt3FilterVec3_t pt3FilterState;
-} gyroLowpassFilter_t;
-
 typedef struct gyroCalibration_s {
     float sum[XYZ_AXIS_COUNT];
     stdev_t var[XYZ_AXIS_COUNT];
@@ -87,18 +80,18 @@ typedef struct gyro_s {
     gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
 
     // lowpass gyro soft filter
-    filterVec3ApplyFnPtr lowpassFilterApplyFn;
-    gyroLowpassFilter_t lowpassFilter;
+    filterVec3ApplyFn *lowpassFilterApplyFn;
+    lowpassFilterVec3_t lowpassFilter;
 
     // lowpass2 gyro soft filter
-    filterVec3ApplyFnPtr lowpass2FilterApplyFn;
-    gyroLowpassFilter_t lowpass2Filter;
+    filterVec3ApplyFn *lowpass2FilterApplyFn;
+    lowpassFilterVec3_t lowpass2Filter;
 
     // notch filters
-    filterVec3ApplyFnPtr notchFilter1ApplyFn;
+    filterVec3ApplyFn *notchFilter1ApplyFn;
     biquadFilterVec3_t notchFilter1;
 
-    filterVec3ApplyFnPtr notchFilter2ApplyFn;
+    filterVec3ApplyFn *notchFilter2ApplyFn;
     biquadFilterVec3_t notchFilter2;
 
     uint16_t accSampleRateHz;

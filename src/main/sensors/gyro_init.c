@@ -101,9 +101,9 @@ static void gyroInitFilterNotch1(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter1ApplyFn = (filterVec3ApplyFnPtr)biquadFilterVec3Apply;
+        gyro.notchFilter1ApplyFn = (filterVec3ApplyFn *)biquadFilterVec3Apply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterVec3InitNotch(&gyro.notchFilter1, notchHz, dt, notchQ, 1.0f);
+        biquadFilterVec3InitNotch(&gyro.notchFilter1, notchHz, dt, notchQ);
     }
 }
 
@@ -114,25 +114,25 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter2ApplyFn = (filterVec3ApplyFnPtr)biquadFilterVec3Apply;
+        gyro.notchFilter2ApplyFn = (filterVec3ApplyFn *)biquadFilterVec3Apply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterVec3InitNotch(&gyro.notchFilter2, notchHz, dt, notchQ, 1.0f);
+        biquadFilterVec3InitNotch(&gyro.notchFilter2, notchHz, dt, notchQ);
     }
 }
 
 static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, float dt)
 {
-    filterVec3ApplyFnPtr *lowpassFilterApplyFn;
-    gyroLowpassFilter_t *lowpassFilter = NULL;
+    filterVec3ApplyFn **lowpassFilterApplyFnPtr;
+    lowpassFilterVec3_t *lowpassFilter = NULL;
 
     switch (slot) {
     case FILTER_LPF1:
-        lowpassFilterApplyFn = &gyro.lowpassFilterApplyFn;
+        lowpassFilterApplyFnPtr = &gyro.lowpassFilterApplyFn;
         lowpassFilter = &gyro.lowpassFilter;
         break;
 
     case FILTER_LPF2:
-        lowpassFilterApplyFn = &gyro.lowpass2FilterApplyFn;
+        lowpassFilterApplyFnPtr = &gyro.lowpass2FilterApplyFn;
         lowpassFilter = &gyro.lowpass2Filter;
         break;
 
@@ -143,39 +143,39 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, float d
     bool ret = false;
 
     // Establish some common constants
-    const uint32_t gyroFrequencyNyquist = 0.5 / dt;
+    const uint32_t gyroFrequencyNyquist = 0.5f / dt;
 
     // Dereference the pointer to null before checking valid cutoff and filter
     // type. It will be overridden for positive cases.
-    *lowpassFilterApplyFn = nullFilterVec3Apply;
+    *lowpassFilterApplyFnPtr = nullFilterVec3Apply;
 
     // If lowpass cutoff has been specified
     if (lpfHz) {
         switch (type) {
         case FILTER_PT1:
-            *lowpassFilterApplyFn = (filterVec3ApplyFnPtr) pt1FilterVec3Apply;
-            pt1FilterVec3Init(&lowpassFilter->pt1FilterState, pt1FilterGain(lpfHz, dt));
+            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt1FilterVec3Apply;
+            pt1FilterVec3Init(&lowpassFilter->pt1Filter, pt1FilterGain(lpfHz, dt));
             ret = true;
             break;
         case FILTER_BIQUAD:
             if (lpfHz <= gyroFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-                *lowpassFilterApplyFn = (filterVec3ApplyFnPtr) biquadFilterVec3ApplyDF1;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterVec3ApplyDF1;
 #else
-                *lowpassFilterApplyFn = (filterVec3ApplyFnPtr) biquadFilterVec3Apply;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterVec3Apply;
 #endif
-                biquadFilterVec3InitLPF(&lowpassFilter->biquadFilterState, lpfHz, dt);
+                biquadFilterVec3InitLPF(&lowpassFilter->biquadFilter, lpfHz, dt);
                 ret = true;
             }
             break;
         case FILTER_PT2:
-            *lowpassFilterApplyFn = (filterVec3ApplyFnPtr) pt2FilterVec3Apply;
-            pt2FilterVec3Init(&lowpassFilter->pt2FilterState, pt2FilterGain(lpfHz, dt));
+            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt2FilterVec3Apply;
+            pt2FilterVec3Init(&lowpassFilter->pt2Filter, pt2FilterGain(lpfHz, dt));
             ret = true;
             break;
         case FILTER_PT3:
-            *lowpassFilterApplyFn = (filterVec3ApplyFnPtr) pt3FilterVec3Apply;
-            pt3FilterVec3Init(&lowpassFilter->pt3FilterState, pt3FilterGain(lpfHz, dt));
+            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt3FilterVec3Apply;
+            pt3FilterVec3Init(&lowpassFilter->pt3Filter, pt3FilterGain(lpfHz, dt));
             ret = true;
             break;
         }

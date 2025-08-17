@@ -50,18 +50,34 @@
 #define sinPolyCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
 #endif
 
-float sin_approx(float x)
+float sin_approx_unchecked(float x)
 {
-    // Wrap angle to 2π with range [-π π]
-    x = fmodf(x, 2.0f * M_PIf);
-    // TO DO: these 'while' functions are not put into ITCM ram with current compiler flags
-    // A simpler 'if' function works, but gets put into ITCM ram, the extra 4% overflows F7xx ITCM
-    // The while function is retained only to avoid ITCM overflow for now
-    // ideally we should use the most efficient method, since sin_approx is used a LOT
-    // if (x <= -M_PIf) x += 2.0f * M_PIf;
-    // if (x > M_PIf) x -= 2.0f * M_PIf;
-    while (x >  M_PIf) x -= (2.0f * M_PIf);   // always wrap input angle to -PI..PI
-    while (x < -M_PIf) x += (2.0f * M_PIf);
+    // Only valid if values are in the range -π/2 to π/2
+    const float C1 = 0.99999905f;
+    const float C3 = -0.16665554f;
+    const float C5 = 0.008311899f;
+    const float C7 = -0.0001848814f;
+
+    float x2 = x * x;
+    return x * (C1 + x2 * (C3 + x2 * (C5 + C7 * x2)));
+}
+
+float cos_approx_unchecked(float x)
+{
+    // Only valid if values are in the range -π/2 to π/2
+    const float C0 = 0.99999994f;
+    const float C2 = -0.49999905f;
+    const float C4 = 0.041663583f;
+    const float C6 = -0.0013853704f;
+    const float C8 = 0.000023153932f;
+
+    float x2 = x * x;
+    return C0 + x2 * (C2 + x2 * (C4 + x2 * (C6 + C8 * x2)));
+}
+
+float reduce_anglef(float x) {
+    const float invTwoPi = 1.0f / (2.0f * M_PIf);
+    x -= floorf((x * invTwoPi) + 0.5f) * (2.0f * M_PIf); // wrap from -π to π
 
     // Use axis symmetry around x = ±π/2 for polynomial outside of range [-π/2 π/2]
     if (x > M_PIf / 2) {
@@ -70,26 +86,17 @@ float sin_approx(float x)
         x = -M_PIf - x; // Reflect
     }
 
-    float x2 = x * x;
-    return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
+    return x;
 }
 
-float cos_approx(float x)
-{
-    return sin_approx(x + (0.5f * M_PIf));
+float sin_approx(float x) {
+    x = reduce_anglef(x);
+    return sin_approx_unchecked(x);
 }
 
-float sin_approx_unchecked(float x)
-{
-    // Only valid if values are in the range -π to π
-    float x2 = x * x;
-    return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
-}
-
-float cos_approx_unchecked(float x)
-{
-    // Only valid if values are in the range -π to π
-    return sin_approx_unchecked(x + (0.5f * M_PIf));
+float cos_approx(float x) {
+    x = reduce_anglef(x);
+    return cos_approx_unchecked(x);
 }
 
 // Initial implementation by Crashpilot1000 (https://github.com/Crashpilot1000/HarakiriWebstore1/blob/396715f73c6fcf859e0db0f34e12fe44bace6483/src/mw.c#L1292)

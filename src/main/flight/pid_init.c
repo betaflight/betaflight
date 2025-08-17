@@ -155,9 +155,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     if (dTermNotchHz != 0 && pidProfile->dterm_notch_cutoff != 0) {
-        pidRuntime.dtermNotchApplyFn = (filterVec3ApplyFnPtr)biquadFilterVec3Apply;
+        pidRuntime.dtermNotchApplyFn = (filterVec3ApplyFn *)biquadFilterVec3Apply;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
-        biquadFilterVec3InitNotch(&pidRuntime.dtermNotch, dTermNotchHz, pidRuntime.dT, notchQ, 1.0f);
+        biquadFilterVec3InitNotch(&pidRuntime.dtermNotch, dTermNotchHz, pidRuntime.dT, notchQ);
     } else {
         pidRuntime.dtermNotchApplyFn = nullFilterVec3Apply;
     }
@@ -174,15 +174,15 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (dterm_lpf1_init_hz > 0) {
         switch (pidProfile->dterm_lpf1_type) {
         case FILTER_PT1:
-            pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFnPtr)pt1FilterVec3Apply;
+            pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)pt1FilterVec3Apply;
             pt1FilterVec3Init(&pidRuntime.dtermLowpass.pt1Filter, pt1FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             break;
         case FILTER_BIQUAD:
             if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFnPtr)biquadFilterVec3ApplyDF1;
+                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)biquadFilterVec3ApplyDF1;
 #else
-                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFnPtr)biquadFilterVec3Apply;
+                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)biquadFilterVec3Apply;
 #endif
                 biquadFilterVec3InitLPF(&pidRuntime.dtermLowpass.biquadFilter, dterm_lpf1_init_hz, pidRuntime.dT);
             } else {
@@ -190,11 +190,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         case FILTER_PT2:
-            pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFnPtr)pt2FilterVec3Apply;
+            pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)pt2FilterVec3Apply;
              pt2FilterVec3Init(&pidRuntime.dtermLowpass.pt2Filter, pt2FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             break;
         case FILTER_PT3:
-            pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFnPtr)pt3FilterVec3Apply;
+            pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)pt3FilterVec3Apply;
              pt3FilterVec3Init(&pidRuntime.dtermLowpass.pt3Filter, pt3FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             break;
         default:
@@ -209,23 +209,23 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (pidProfile->dterm_lpf2_static_hz > 0) {
         switch (pidProfile->dterm_lpf2_type) {
         case FILTER_PT1:
-            pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFnPtr)pt1FilterVec3Apply;
+            pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFn *)pt1FilterVec3Apply;
             pt1FilterVec3Init(&pidRuntime.dtermLowpass2.pt1Filter, pt1FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             break;
         case FILTER_BIQUAD:
             if (pidProfile->dterm_lpf2_static_hz < pidFrequencyNyquist) {
-                pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFnPtr)biquadFilterVec3Apply;
+                pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFn *)biquadFilterVec3Apply;
                 biquadFilterVec3InitLPF(&pidRuntime.dtermLowpass2.biquadFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT);
             } else {
                 pidRuntime.dtermLowpass2ApplyFn = nullFilterVec3Apply;
             }
             break;
         case FILTER_PT2:
-            pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFnPtr)pt2FilterVec3Apply;
+            pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFn *)pt2FilterVec3Apply;
             pt2FilterVec3Init(&pidRuntime.dtermLowpass2.pt2Filter, pt2FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             break;
         case FILTER_PT3:
-            pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFnPtr)pt3FilterVec3Apply;
+            pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFn *)pt3FilterVec3Apply;
              pt3FilterVec3Init(&pidRuntime.dtermLowpass2.pt3Filter, pt3FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             break;
         default:
@@ -239,7 +239,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (pidProfile->yaw_lowpass_hz == 0) {
         pidRuntime.ptermYawLowpassApplyFn = nullFilterApply;
     } else {
-        pidRuntime.ptermYawLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
+        pidRuntime.ptermYawLowpassApplyFn = (filterApplyFn *)pt1FilterApply;
         pt1FilterInit(&pidRuntime.ptermYawLowpass, pt1FilterGain(pidProfile->yaw_lowpass_hz, pidRuntime.dT));
     }
 

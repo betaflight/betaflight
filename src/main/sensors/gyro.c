@@ -425,21 +425,21 @@ FAST_CODE void gyroUpdate(void)
     }
 
     if (active != 0) {
-        gyro.gyroADC[X] = adcSum[X] / active;
-        gyro.gyroADC[Y] = adcSum[Y] / active;
-        gyro.gyroADC[Z] = adcSum[Z] / active;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            gyro.gyroADC[axis] = adcSum[axis] / active;
+        }
     }
 
     if (gyro.downsampleFilterEnabled) {
         // using gyro lowpass 2 filter for downsampling
-        gyro.sampleSum[X] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter, gyro.gyroADC[X], X);
-        gyro.sampleSum[Y] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter, gyro.gyroADC[Y], Y);
-        gyro.sampleSum[Z] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter, gyro.gyroADC[Z], Z);
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            gyro.sampleSum[axis] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter, gyro.gyroADC[axis], axis);
+        }
     } else {
         // using simple averaging for downsampling
-        gyro.sampleSum[X] += gyro.gyroADC[X];
-        gyro.sampleSum[Y] += gyro.gyroADC[Y];
-        gyro.sampleSum[Z] += gyro.gyroADC[Z];
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            gyro.sampleSum[axis] += gyro.gyroADC[axis];
+        }
         gyro.sampleCount++;
     }
 }
@@ -591,16 +591,16 @@ void dynLpfGyroUpdate(float throttle)
         const float gyroDt = gyro.targetLooptime * 1e-6f;
         switch (gyro.dynLpfFilter) {
         case DYN_LPF_PT1:
-            pt1FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
+            pt1FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt1Filter, pt1FilterGain(cutoffFreq, gyroDt));
             break;
         case DYN_LPF_BIQUAD:
-            biquadFilterVec3UpdateLPF(&gyro.lowpassFilter.biquadFilterState, cutoffFreq, gyroDt);
+            biquadFilterVec3UpdateLPF(&gyro.lowpassFilter.biquadFilter, cutoffFreq, gyroDt);
             break;
         case  DYN_LPF_PT2:
-            pt2FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt2FilterState, pt2FilterGain(cutoffFreq, gyroDt));
+            pt2FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt2Filter, pt2FilterGain(cutoffFreq, gyroDt));
             break;
         case DYN_LPF_PT3:
-            pt3FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt3FilterState, pt3FilterGain(cutoffFreq, gyroDt));
+            pt3FilterVec3UpdateCutoff(&gyro.lowpassFilter.pt3Filter, pt3FilterGain(cutoffFreq, gyroDt));
             break;
         }
     }

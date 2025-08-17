@@ -358,13 +358,6 @@ typedef struct pidAxisData_s {
     float Sum;
 } pidAxisData_t;
 
-typedef union dtermLowpass_u {
-    pt1FilterVec3_t pt1Filter;
-    biquadFilterVec3_t biquadFilter;
-    pt2FilterVec3_t pt2Filter;
-    pt3FilterVec3_t pt3Filter;
-} dtermLowpass_t;
-
 typedef struct pidCoefficient_s {
     float Kp;
     float Ki;
@@ -387,13 +380,13 @@ typedef struct pidRuntime_s {
     float pidFrequency;
     bool pidStabilisationEnabled;
     float previousPidSetpoint[XYZ_AXIS_COUNT];
-    filterVec3ApplyFnPtr dtermNotchApplyFn;
+    filterVec3ApplyFn *dtermNotchApplyFn;
     biquadFilterVec3_t dtermNotch;
-    filterVec3ApplyFnPtr dtermLowpassApplyFn;
-    dtermLowpass_t dtermLowpass;
-    filterVec3ApplyFnPtr dtermLowpass2ApplyFn;
-    dtermLowpass_t dtermLowpass2;
-    filterApplyFnPtr ptermYawLowpassApplyFn;
+    filterVec3ApplyFn *dtermLowpassApplyFn;
+    lowpassFilterVec3_t dtermLowpass;
+    filterVec3ApplyFn *dtermLowpass2ApplyFn;
+    lowpassFilterVec3_t dtermLowpass2;
+    filterApplyFn *ptermYawLowpassApplyFn;
     pt1Filter_t ptermYawLowpass;
     bool antiGravityEnabled;
     pt2Filter_t antiGravityLpf;
