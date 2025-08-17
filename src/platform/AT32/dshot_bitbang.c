@@ -226,7 +226,7 @@ const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer)
         }
     }
 
-    return &freeOwner;
+    return &resourceOwnerFree;
 }
 
 // Return frequency of smallest change [state/sec]

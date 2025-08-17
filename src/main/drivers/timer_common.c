@@ -29,8 +29,6 @@
 #ifdef USE_TIMER_MGMT
 #include "pg/timerio.h"
 
-const resourceOwner_t freeOwner = { .owner = OWNER_FREE, .resourceIndex = 0 };
-
 static resourceOwner_t timerOwners[MAX_TIMER_PINMAP_COUNT];
 
 timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
@@ -106,7 +104,7 @@ const resourceOwner_t *timerGetOwner(const timerHardware_t *timer)
 #if defined(USE_DSHOT_BITBANG)
     return dshotBitbangTimerGetOwner(timer);
 #else
-    return &freeOwner;
+    return &resourceOwnerFree;
 #endif
 }
 

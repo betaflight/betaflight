@@ -22,7 +22,10 @@
 
 #include "resource.h"
 
-const char * const ownerNames[OWNER_TOTAL_COUNT] = {
+const resourceOwner_t resourceOwnerInvalid = { .owner = OWNER_INVALID, .resourceIndex = 0 };
+const resourceOwner_t resourceOwnerFree    = { .owner = OWNER_FREE,    .resourceIndex = 0 };
+
+static char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE",
     "PWM",
     "PPM",
@@ -117,3 +120,12 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     [OWNER_LPUART_RX] = "LPUART_RX",
     "GYRO_CLKIN",
 };
+
+char *getOwnerName(resourceOwner_e owner)
+{
+    if (owner == OWNER_INVALID || owner > OWNER_TOTAL_COUNT) {
+        return "INVALID";
+    }
+
+    return ownerNames[owner];
+}

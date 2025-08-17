@@ -27,14 +27,13 @@
 
 bool dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
 {
-    if (dmaGetOwner(identifier)->owner != OWNER_FREE) {
+    const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
+    // Prevent Wstringop-overflow warning
+    if (index < 0 || index >= DMA_LAST_HANDLER) {
         return false;
     }
 
-    const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
-
-    // Prevent Wstringop-overflow warning
-    if (index < 0 || index >= DMA_LAST_HANDLER) {
+    if (dmaDescriptors[index].owner.owner != OWNER_FREE) {
         return false;
     }
 
@@ -46,7 +45,11 @@ bool dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t reso
 
 const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier)
 {
-    return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].owner;
+    const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
+    if (index < 0 || index >= DMA_LAST_HANDLER) {
+        return &resourceOwnerInvalid;
+    }
+    return &dmaDescriptors[index].owner;
 }
 
 dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel)
