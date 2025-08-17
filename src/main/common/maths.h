@@ -115,7 +115,7 @@ float quickMedianFilter5f(const float * v);
 float quickMedianFilter7f(const float * v);
 float quickMedianFilter9f(const float * v);
 
-#if defined(FAST_MATH))
+#if defined(FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);
 float cos_approx_unchecked(float x);
