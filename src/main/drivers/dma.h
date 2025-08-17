@@ -52,8 +52,7 @@ typedef struct dmaChannelDescriptor_s {
     uint8_t                     flagsShift;
     IRQn_Type                   irqN;
     uint32_t                    userParam;
-    resourceOwner_t             owner;
-    uint8_t                     resourceIndex;
+    resourceOwner_t             resourceOwner;
     uint32_t                    completeFlag;
 #if PLATFORM_TRAIT_DMA_MUX_REQUIRED
     dmamux_channel_type         *dmamux;

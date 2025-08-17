@@ -120,7 +120,7 @@ typedef enum {
 
 typedef struct resourceOwner_s {
     resourceOwner_e owner;
-    uint8_t resourceIndex;
+    uint8_t index;
 } resourceOwner_t;
 
 extern const resourceOwner_t resourceOwnerInvalid;

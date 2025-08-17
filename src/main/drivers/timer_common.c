@@ -123,7 +123,7 @@ const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8
             }
 
             timerOwners[i].owner = owner;
-            timerOwners[i].resourceIndex = resourceIndex;
+            timerOwners[i].index = resourceIndex;
 
             return timer;
         }

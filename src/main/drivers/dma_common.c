@@ -33,12 +33,12 @@ bool dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t reso
         return false;
     }
 
-    if (dmaDescriptors[index].owner.owner != OWNER_FREE) {
+    if (dmaDescriptors[index].resourceOwner.owner != OWNER_FREE) {
         return false;
     }
 
-    dmaDescriptors[index].owner.owner = owner;
-    dmaDescriptors[index].owner.resourceIndex = resourceIndex;
+    dmaDescriptors[index].resourceOwner.owner = owner;
+    dmaDescriptors[index].resourceOwner.index = resourceIndex;
 
     return true;
 }
@@ -49,7 +49,7 @@ const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier)
     if (index < 0 || index >= DMA_LAST_HANDLER) {
         return &resourceOwnerInvalid;
     }
-    return &dmaDescriptors[index].owner;
+    return &dmaDescriptors[index].resourceOwner;
 }
 
 dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel)

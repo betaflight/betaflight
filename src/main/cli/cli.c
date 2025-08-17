@@ -5325,8 +5325,8 @@ static void showDma(void)
         const resourceOwner_t *owner = dmaGetOwner(i);
 
         cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
-        if (owner->resourceIndex > 0) {
-            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->resourceIndex);
+        if (owner->index > 0) {
+            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
         } else {
             cliPrintLinef(" %s", getOwnerName(owner->owner));
         }
@@ -5939,8 +5939,8 @@ static void showTimers(void)
                     cliPrintLinefeed();
                 }
 
-                if (timerOwner->resourceIndex > 0) {
-                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->resourceIndex);
+                if (timerOwner->index > 0) {
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->index);
                 } else {
                     cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner));
                 }
