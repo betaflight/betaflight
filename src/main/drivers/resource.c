@@ -123,7 +123,7 @@ static char * const ownerNames[OWNER_TOTAL_COUNT] = {
 
 char *getOwnerName(resourceOwner_e owner)
 {
-    if (owner == OWNER_INVALID || owner > OWNER_TOTAL_COUNT) {
+    if (owner < 0 || owner >= OWNER_TOTAL_COUNT) {
         return "INVALID";
     }
 
