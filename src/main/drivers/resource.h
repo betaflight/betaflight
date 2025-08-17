@@ -126,7 +126,7 @@ typedef struct resourceOwner_s {
 extern const resourceOwner_t resourceOwnerInvalid;
 extern const resourceOwner_t resourceOwnerFree;
 
-char *getOwnerName(resourceOwner_e owner);
+const char *getOwnerName(resourceOwner_e owner);
 
 #define RESOURCE_INDEX(x) (x + 1)
 // TODO(hertz@): only used by vtx_rtc6707_soft_spi and probably for display purposes

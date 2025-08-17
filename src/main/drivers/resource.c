@@ -121,7 +121,7 @@ static char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "GYRO_CLKIN",
 };
 
-char *getOwnerName(resourceOwner_e owner)
+const char *getOwnerName(resourceOwner_e owner)
 {
     if (owner < 0 || owner >= OWNER_TOTAL_COUNT) {
         return "INVALID";
