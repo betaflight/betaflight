@@ -456,8 +456,6 @@ extern uint8_t _dmaram_end__;
 
 // QUAD SPI
 #if defined(STM32H7)
-#define QUADSPI_TRAIT_AF_PIN 1
-#define QUADSPI_TRAIT_HANDLE 1
 #define MAX_QUADSPI_PIN_SEL 3
 #define PLATFORM_TRAIT_SDIO_INIT 1
 #endif

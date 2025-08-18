@@ -33,7 +33,7 @@
 
 typedef struct quadSpiPinDef_s {
     ioTag_t pin;
-#if QUADSPI_TRAIT_AF_PIN
+#if SPI_TRAIT_AF_PIN
     uint8_t af;
 #endif
 } quadSpiPinDef_t;
@@ -73,7 +73,7 @@ typedef struct quadSpiDevice_s {
     ioTag_t bk2IO2;
     ioTag_t bk2IO3;
     ioTag_t bk2CS;
-#if QUADSPI_TRAIT_AF_PIN
+#if SPI_TRAIT_AF_PIN
     uint8_t bk1IO0AF;
     uint8_t bk1IO1AF;
     uint8_t bk1IO2AF;
@@ -90,7 +90,7 @@ typedef struct quadSpiDevice_s {
     rccPeriphTag_t rcc;
 #endif
     volatile uint16_t errorCount;
-#if QUADSPI_TRAIT_HANDLE
+#if SPI_TRAIT_HANDLE
     QSPI_HandleTypeDef hquadSpi;
 #endif
 } quadSpiDevice_t;
