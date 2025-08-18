@@ -130,6 +130,8 @@ float pow_approx(float a, float b);
 #else
 #define sin_approx(x)       sinf(x)
 #define cos_approx(x)       cosf(x)
+#define sin_approx_unchecked(x) sinf(x)
+#define cos_approx_unchecked(x) cosf(x)
 #define atan2_approx(y,x)   atan2f(y,x)
 #define acos_approx(x)      acosf(x)
 #define tan_approx(x)       tanf(x)
