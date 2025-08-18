@@ -246,7 +246,7 @@ void gyroInitFilters(void)
 #ifdef USE_DYN_NOTCH_FILTER
     dynNotchInit(dynNotchConfig(), dt);
 #endif
-    pt1FilterVec3Init(&gyro.imuGyroFilter, pt1FilterGain(GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ, dt));
+    pt1FilterVec3Init(&gyro.imuGyroFilter, pt1FilterGain(GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ, gyro.targetLooptime * 1e-6f));
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)
