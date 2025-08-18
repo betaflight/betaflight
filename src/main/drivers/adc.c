@@ -38,11 +38,6 @@
 
 #ifdef USE_ADC_INTERNAL
 
-int32_t adcVREFINTCAL;      // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
-int32_t adcTSCAL1;
-int32_t adcTSCAL2;
-int32_t adcTSSlopeK;
-
 /**
  * Use a measurement of the fixed internal vref to calculate the external Vref+
  *
@@ -72,11 +67,4 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
     return ((((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - adcTSCAL1) * adcTSSlopeK) + 500) / 1000 + TEMPSENSOR_CAL1_TEMP;
 }
 #endif // USE_ADC_INTERNAL
-
-#else
-uint16_t adcGetChannel(uint8_t channel)
-{
-    UNUSED(channel);
-    return 0;
-}
 #endif

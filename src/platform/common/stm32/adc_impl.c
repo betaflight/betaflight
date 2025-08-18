@@ -28,6 +28,13 @@
 #include "common/maths.h"
 #endif
 
+#ifdef USE_ADC_INTERNAL
+int32_t adcVREFINTCAL;      // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
+int32_t adcTSCAL1;
+int32_t adcTSCAL2;
+int32_t adcTSSlopeK;
+#endif
+
 // Verify a pin designated by tag has connection to an ADC instance designated by device
 bool adcVerifyPin(ioTag_t tag, adcDevice_e device)
 {
