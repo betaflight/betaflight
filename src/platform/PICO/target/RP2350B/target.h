@@ -167,11 +167,3 @@
 #undef USE_SERVOS
 
 #undef USE_OSD_HD
-
-// TODO: identify correct values for RP2350 internal temp sensor, or move conversion into adc_pico.c.
-#if defined(USE_ADC_INTERNAL)
-#warning "PICO: Internal temp/Vref calibration constants are not verified for RP2350. Provide correct values or implement conversion in adc_pico.c."
-#define VREFINT_CAL_VREF                   ( 3300U)           /* Analog voltage reference (Vref+) value with which temperature sensor has been calibrated in production (tolerance: +-10 mV) (unit: mV). */
-#define TEMPSENSOR_CAL1_TEMP               (( int32_t)   27)  /* Internal temperature sensor reference temp, from datasheet */
-#define TEMPSENSOR_CAL_VREFANALOG          VREFINT_CAL_VREF   /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
-#endif
