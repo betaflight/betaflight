@@ -34,7 +34,7 @@ typedef enum {
     ADC_RSSI,
 #ifdef USE_ADC_INTERNAL
     // For certain processors internal sensors are treated in the similar fashion as regular ADC inputs
-    ADC_SOURCE_INTERNAL_FIRST_ID = 4,
+    ADC_SOURCE_INTERNAL_FIRST_ID,
     ADC_TEMPSENSOR = ADC_SOURCE_INTERNAL_FIRST_ID,
     ADC_VREFINT,
 #if ADC_INTERNAL_VBAT4_ENABLED
