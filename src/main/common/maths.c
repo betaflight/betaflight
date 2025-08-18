@@ -51,16 +51,19 @@ float cos_approx_unchecked(float x)
 }
 
 float reduce_anglef(float x) {
-    const float invTwoPi = 1.0f / (2.0f * M_PIf);
-    x -= floorf((x * invTwoPi) + 0.5f) * (2.0f * M_PIf); // wrap from -π to π
+    const float inv2pi = 1.0f / (2.0f * M_PIf);
 
-    // Use axis symmetry around x = ±π/2 for polynomial outside of range [-π/2 π/2]
+    float scaled = x * inv2pi + (x >= 0 ? 0.5f : -0.5f);
+    int cycles = (int)scaled;
+
+    x -= cycles * (2.0f * M_PIf);
+
+    // Reflection logic
     if (x > M_PIf / 2) {
-        x = M_PIf - x; // Reflect
+        x = M_PIf - x;
     } else if (x < -M_PIf / 2) {
-        x = -M_PIf - x; // Reflect
+        x = -M_PIf - x;
     }
-
     return x;
 }
 
