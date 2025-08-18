@@ -139,6 +139,13 @@ extern volatile DMA_DATA_ZERO_INIT uint16_t adcValues[ADC_SOURCE_COUNT];
 extern const adcDevice_t adcHardware[];
 extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
 
+#ifdef USE_ADC_INTERNAL
+extern int32_t adcVREFINTCAL; // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
+extern int32_t adcTSCAL1;
+extern int32_t adcTSCAL2;
+extern int32_t adcTSSlopeK;
+#endif
+
 uint32_t adcChannelByTag(ioTag_t ioTag);
 adcDevice_e adcDeviceByInstance(const ADC_TypeDef *instance);
 bool adcVerifyPin(ioTag_t tag, adcDevice_e device);

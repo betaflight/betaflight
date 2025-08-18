@@ -49,11 +49,6 @@ void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetValue(adcSource_e source);
 
 #ifdef USE_ADC_INTERNAL
-extern int32_t adcVREFINTCAL; // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
-extern int32_t adcTSCAL1;
-extern int32_t adcTSCAL2;
-extern int32_t adcTSSlopeK;
-
 bool adcInternalIsBusy(void);
 void adcInternalStartConversion(void);
 uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue);

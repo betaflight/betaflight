@@ -150,7 +150,7 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[i].dmaIndex = (uint8_t)popcount(mask & ((1u << ch) - 1u));
     }
 
-    uint8_t channelCount = popcount(mask);
+    const uint8_t channelCount = popcount(mask);
     if (channelCount == 0) {
         /* don't enable the adc/dma - exit immediately */
         return;
@@ -210,13 +210,22 @@ void adcInit(const adcConfig_t *config)
     /*
         Setup the ring  buffer, 2^X so need 1, 2 and 4 positions
 
-        channelCount - 1 results in:
+        channelCount results in:
         1 - 1 channel, no padding required
         2 - 2 channels, no padding required
         3 - 4 channels needed (due to ring buffer) so padding required if only 3 channels active
         4 - 4 channels available - no padding required.
+
+        size_bits is the number of bytes = (1 << sizebits)
+        1 channel  => size bits = 1 (2 byte ring required i.e. 1 << 1)
+        2 channels => size bits = 2 (4 byte ring required i.e. 1 << 2)
+        4 channels => size bits = 4 (8 byte ring required i.e. 1 << 4)
+
+        We will never have 3 channels as 6 bytes is unavailable in the ring buffer,
+        hence the padding with the internal temp sensor to prevent misalignment.
     */
-    channel_config_set_ring(&cfg, true, channelCount);
+    const uint16_t sizeBits = llog2(popcount(mask)) * sizeof(uint16_t);
+    channel_config_set_ring(&cfg, true, sizeBits);
 
     // Set the DMA into free running mode and start
     dma_channel_configure(dmaChannel, &cfg, adcValues, &adc_hw->fifo, -1, true);
