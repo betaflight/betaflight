@@ -96,10 +96,8 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
         return;
     }
 
-    if (debugMode == DEBUG_RPM_FILTER) {
-        for (int motor = 0; motor < getMotorCount() && motor < DEBUG16_VALUE_COUNT; motor++) {
-            DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(getMotorFrequencyHz(motor)));
-        }
+    for (int motor = 0; motor < getMotorCount() && motor < DEBUG16_VALUE_COUNT; motor++) {
+        DEBUG_SET(DEBUG_RPM_FILTER, motor, lrintf(getMotorFrequencyHz(motor)));
     }
 
     const float dtCompensation = schedulerGetCycleTimeMultiplier();
