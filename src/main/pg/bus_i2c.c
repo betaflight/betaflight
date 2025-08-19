@@ -73,7 +73,7 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CON
 #endif
 
 typedef struct i2cDefaultConfig_s {
-    I2CDevice device;
+    i2cDevice_e device;
     ioTag_t ioTagScl, ioTagSda;
     bool pullUp;
     uint16_t clockSpeed;

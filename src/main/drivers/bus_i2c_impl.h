@@ -47,7 +47,7 @@ typedef struct i2cPinDef_s {
 #endif
 
 typedef struct i2cHardware_s {
-    I2CDevice device;
+    i2cDevice_e device;
     I2C_TypeDef *reg;
     i2cPinDef_t sclPins[I2C_PIN_SEL_MAX];
     i2cPinDef_t sdaPins[I2C_PIN_SEL_MAX];

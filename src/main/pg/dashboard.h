@@ -19,7 +19,7 @@
  */
 
 typedef struct dashboardConfig_s {
-    I2CDevice device;
+    i2cDevice_e device;
     uint8_t   address;
 } dashboardConfig_t;
 
