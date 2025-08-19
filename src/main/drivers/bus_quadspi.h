@@ -56,16 +56,16 @@ typedef enum {
     QUADSPI_CLOCK_STANDARD       = 9,   // 20.00000 MHz
     QUADSPI_CLOCK_FAST           = 3,   // 50.00000 MHz
     QUADSPI_CLOCK_ULTRAFAST      = 1    //100.00000 MHz
-} QUADSPIClockDivider_e;
+} quadSpiClockDivider_e;
 
-typedef enum QUADSPIDevice {
+typedef enum {
     QUADSPIINVALID = -1,
     QUADSPIDEV_1   = 0,
-} QUADSPIDevice;
+} quadSpiDevice_e;
 
 #define QUADSPIDEV_COUNT 1
 
-// Macros to convert between CLI bus number and SPIDevice.
+// Macros to convert between CLI bus number and spiDevice_e.
 #define QUADSPI_CFG_TO_DEV(x)   ((x) - 1)
 #define QUADSPI_DEV_TO_CFG(x)   ((x) + 1)
 
@@ -102,7 +102,7 @@ typedef enum {
 
 void quadSpiPreInit(void);
 
-bool quadSpiInit(QUADSPIDevice device);
+bool quadSpiInit(quadSpiDevice_e device);
 void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor);
 
 bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
@@ -123,8 +123,8 @@ bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instr
 uint16_t quadSpiGetErrorCounter(QUADSPI_TypeDef *instance);
 void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance);
 
-QUADSPIDevice quadSpiDeviceByInstance(QUADSPI_TypeDef *instance);
-QUADSPI_TypeDef *quadSpiInstanceByDevice(QUADSPIDevice device);
+quadSpiDevice_e quadSpiDeviceByInstance(QUADSPI_TypeDef *instance);
+QUADSPI_TypeDef *quadSpiInstanceByDevice(quadSpiDevice_e device);
 
 //
 // Config
