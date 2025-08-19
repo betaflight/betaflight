@@ -185,7 +185,7 @@ FAST_CODE float pt3FilterGainFromDelay(float delay, float dT)
 
 void pt3FilterInitArray(void *filter, float k_value, int count)
 {
-    pt2Filter_t *f = (pt2Filter_t*)filter;
+    pt3Filter_t *f = (pt3Filter_t*)filter;
     f->k = k_value;
 
     // splitting the state as below suppresses compiler warnings
