@@ -90,7 +90,7 @@ typedef struct quadSpiDevice_s {
     rccPeriphTag_t rcc;
 #endif
     volatile uint16_t errorCount;
-#if SPI_TRAIT_HANDLE
+#if QSPI_TRAIT_HANDLE
     QSPI_HandleTypeDef hquadSpi;
 #endif
 } quadSpiDevice_t;

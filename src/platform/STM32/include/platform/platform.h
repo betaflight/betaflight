@@ -446,6 +446,9 @@ extern uint8_t _dmaram_end__;
 #define SPI_TRAIT_HANDLE 1
 #endif
 
+#if defined(HAL_QSPI_MODULE_ENABLED)
+#define QSPI_TRAIT_HANDLE 1
+#endif
 #endif
 
 #if defined(STM32F4)
