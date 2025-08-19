@@ -366,12 +366,10 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     // Update the RC Setpoint/Deflection filter and FeedForward Filter
     // all cutoffs will be the same, we can optimize :)
     const float pt3K = pt3FilterGain(setpointCutoffFrequency, dT);
-    pt3FilterVec3UpdateCutoff(&smoothingData->filterSetpoint, pt3K);
-    pt3FilterVec3UpdateCutoff(&smoothingData->filterFeedforward, pt3K);
+    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint, pt3K);
+    pt3FilterUpdateCutoff(&smoothingData->filterFeedforward, pt3K);
 
-    for (int i = FD_ROLL; i <= FD_PITCH; i++) {
-        pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K);
-    }
+    pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection, pt3K);
 
     pt3FilterUpdateCutoff(&smoothingData->filterThrottle, pt3FilterGain(throttleCutoffFrequency, dT));
 
@@ -383,8 +381,8 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
 #ifdef USE_FEEDFORWARD
 static FAST_CODE_NOINLINE void updateFeedforwardFilters(const pidRuntime_t *pid) {
     float pt1K = pt1FilterGainFromDelay(pid->feedforwardSmoothFactor, 1.0f / smoothedRxRateHz);
-    pt1FilterVec3UpdateCutoff(&feedforwardData.filterSetpointSpeed, pt1K);
-    pt1FilterVec3UpdateCutoff(&feedforwardData.filterSetpointDelta, pt1K);
+    pt1FilterUpdateCutoff(&feedforwardData.filterSetpointSpeed, pt1K);
+    pt1FilterUpdateCutoff(&feedforwardData.filterSetpointDelta, pt1K);
     DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 6, lrintf(pt1K * 1000.0f));
     DEBUG_SET(DEBUG_RC_SMOOTHING, 4, lrintf(pt1K * 1000.0f));
     DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 7, lrintf(smoothedRxRateHz));
@@ -420,13 +418,13 @@ static FAST_CODE void processRcSmoothingFilter(void)
 
     // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        setpointRate[axis] = pt3FilterVec3Apply(&rcSmoothingData.filterSetpoint, rxDataToSmooth[axis], axis);
+        setpointRate[axis] = pt3FilterApplyArray(&rcSmoothingData.filterSetpoint, rxDataToSmooth[axis], axis);
         // Feedforward smoothing
-        feedforwardSmoothed[axis] = pt3FilterVec3Apply(&rcSmoothingData.filterFeedforward, feedforwardRaw[axis], axis);
+        feedforwardSmoothed[axis] = pt3FilterApplyArray(&rcSmoothingData.filterFeedforward, feedforwardRaw[axis], axis);
         // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
         const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
         if (smoothRcDeflection && axis < FD_YAW) {
-            rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
+            rcDeflectionSmoothed[axis] = pt3FilterApplyArray(&rcSmoothingData.filterRcDeflection, rcDeflection[axis], axis);
         } else {
             rcDeflectionSmoothed[axis] = rcDeflection[axis];
         }
@@ -504,14 +502,14 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
     setpointSpeedUnsmoothed = setpointSpeed;
 
     // Smooth the setpointSpeed value
-    setpointSpeed = pt1FilterVec3Apply(&feedforwardData.filterSetpointSpeed, setpointSpeed, axis);
+    setpointSpeed = pt1FilterApplyArray(&feedforwardData.filterSetpointSpeed, setpointSpeed, axis);
 
     // Calculate setpointDelta from smoothed setpoint speed
     setpointSpeedDelta = setpointSpeed - feedforwardData.prevSetpointSpeed[axis];
     feedforwardData.prevSetpointSpeed[axis] = setpointSpeed;
 
     // Smooth the setpointDelta (2nd order smoothing)
-    setpointSpeedDelta = pt1FilterVec3Apply(&feedforwardData.filterSetpointDelta, setpointSpeedDelta, axis);
+    setpointSpeedDelta = pt1FilterApplyArray(&feedforwardData.filterSetpointDelta, setpointSpeedDelta, axis);
     feedforwardData.prevSetpointSpeedDelta[axis] = setpointSpeedDelta;
 
     // Calculate feedforward boost

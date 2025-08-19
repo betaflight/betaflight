@@ -511,7 +511,7 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_ACC
-    pt3Filter_t attitudeFilter[RP_AXIS_COUNT];  // Only for ROLL and PITCH
+    pt3FilterVec2_t attitudeFilter;  // Only for ROLL and PITCH
     pt1Filter_t horizonSmoothingPt1;
     uint16_t horizonDelayMs;
     float angleYawSetpoint;

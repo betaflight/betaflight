@@ -562,7 +562,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     angleFeedforward = angleLimit * getFeedforward(axis) * pidRuntime.angleFeedforwardGain * maxSetpointRateInv;
     //  angle feedforward must be heavily filtered, at the PID loop rate, with limited user control over time constant
     // it MUST be very delayed to avoid early overshoot and being too aggressive
-    angleFeedforward = pt3FilterVec3Apply(&pidRuntime.angleFeedforwardPt3, angleFeedforward, axis);
+    angleFeedforward = pt3FilterApplyArray(&pidRuntime.angleFeedforwardPt3, angleFeedforward, axis);
 #endif
 
     float angleTarget = angleLimit * currentPidSetpoint * maxSetpointRateInv;
@@ -607,7 +607,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
     // smooth final angle rate output to clean up attitude signal steps (500hz), GPS steps (10 or 100hz), RC steps etc
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
-    angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
+    angleRate = pt3FilterApplyArray(&pidRuntime.attitudeFilter, angleRate, axis);
 
     if (FLIGHT_MODE(ANGLE_MODE| GPS_RESCUE_MODE | POS_HOLD_MODE)) {
         currentPidSetpoint = angleRate;
@@ -843,7 +843,7 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate)
 {
     if (pidRuntime.acGain > 0 || debugMode == DEBUG_AC_ERROR) {
-        const float setpointLpf = pt1FilterVec3Apply(&pidRuntime.acLpf, *currentPidSetpoint, axis);
+        const float setpointLpf = pt1FilterApplyArray(&pidRuntime.acLpf, *currentPidSetpoint, axis);
         const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
         float acErrorRate = 0;
         const float gmaxac = setpointLpf + 2 * setpointHpf;
@@ -882,7 +882,7 @@ STATIC_UNIT_TESTED void applyAbsoluteControl(const int axis, const float gyroRat
 STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint)
 {
-    const float setpointLpf = pt1FilterVec3Apply(&pidRuntime.windupLpf, *currentPidSetpoint, axis);
+    const float setpointLpf = pt1FilterApplyArray(&pidRuntime.windupLpf, *currentPidSetpoint, axis);
     const float setpointHpf = fabsf(*currentPidSetpoint - setpointLpf);
 
     if (pidRuntime.itermRelax) {
@@ -931,15 +931,15 @@ void pidUpdateAirmodeLpf(float currentOffset)
     // During high frequency oscillation 2 * currentOffset averages to the offset required to avoid mirroring of the waveform
     pt1FilterApply(&pidRuntime.airmodeThrottleLpf1, offsetHpf);
     // Bring offset up immediately so the filter only applies to the decline
-    if (currentOffset * pidRuntime.airmodeThrottleLpf1.state >= 0 && fabsf(currentOffset) > pidRuntime.airmodeThrottleLpf1.state) {
-        pidRuntime.airmodeThrottleLpf1.state = currentOffset;
+    if (currentOffset * pidRuntime.airmodeThrottleLpf1.state[0] >= 0 && fabsf(currentOffset) > pidRuntime.airmodeThrottleLpf1.state[0]) {
+        pidRuntime.airmodeThrottleLpf1.state[0] = currentOffset;
     }
-    pidRuntime.airmodeThrottleLpf1.state = constrainf(pidRuntime.airmodeThrottleLpf1.state, -pidRuntime.airmodeThrottleOffsetLimit, pidRuntime.airmodeThrottleOffsetLimit);
+    pidRuntime.airmodeThrottleLpf1.state[0] = constrainf(pidRuntime.airmodeThrottleLpf1.state[0], -pidRuntime.airmodeThrottleOffsetLimit, pidRuntime.airmodeThrottleOffsetLimit);
 }
 
 float pidGetAirmodeThrottleOffset(void)
 {
-    return pidRuntime.airmodeThrottleLpf1.state;
+    return pidRuntime.airmodeThrottleLpf1.state[0];
 }
 #endif
 
@@ -1417,13 +1417,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_D_MAX
             float dMaxMultiplier = 1.0f;
             if (pidRuntime.dMaxPercent[axis] > 1.0f) {
-                float dMaxGyroFactor = pt2FilterVec3Apply(&pidRuntime.dMaxRange, delta, axis);
+                float dMaxGyroFactor = pt2FilterApplyArray(&pidRuntime.dMaxRange, delta, axis);
                 dMaxGyroFactor = fabsf(dMaxGyroFactor) * pidRuntime.dMaxGyroGain;
                 const float dMaxSetpointFactor = fabsf(pidSetpointDelta) * pidRuntime.dMaxSetpointGain;
                 const float dMaxBoost = fmaxf(dMaxGyroFactor, dMaxSetpointFactor);
                 // dMaxBoost starts at zero, and by 1.0 we get Dmax, but it can exceed 1.
                 dMaxMultiplier += (pidRuntime.dMaxPercent[axis] - 1.0f) * dMaxBoost;
-                dMaxMultiplier = pt2FilterVec3Apply(&pidRuntime.dMaxLowpass, dMaxMultiplier, axis);
+                dMaxMultiplier = pt2FilterApplyArray(&pidRuntime.dMaxLowpass, dMaxMultiplier, axis);
                 // limit the gain to the fraction that DMax is greater than Min
                 dMaxMultiplier = MIN(dMaxMultiplier, pidRuntime.dMaxPercent[axis]);
                 if (axis == FD_ROLL) {
@@ -1596,16 +1596,16 @@ void dynLpfDTermUpdate(float throttle)
 
         switch (pidRuntime.dynLpfFilter) {
         case DYN_LPF_PT1:
-            pt1FilterVec3UpdateCutoff(&pidRuntime.dtermLowpass.pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
+            pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass.pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             break;
         case DYN_LPF_BIQUAD:
-            biquadFilterVec3UpdateLPF(&pidRuntime.dtermLowpass.biquadFilter, cutoffFreq, pidRuntime.dT);
+            biquadFilterUpdateLPF(&pidRuntime.dtermLowpass.biquadFilter, cutoffFreq, pidRuntime.dT);
             break;
         case DYN_LPF_PT2:
-            pt2FilterVec3UpdateCutoff(&pidRuntime.dtermLowpass.pt2Filter, pt2FilterGain(cutoffFreq, pidRuntime.dT));
+            pt2FilterUpdateCutoff(&pidRuntime.dtermLowpass.pt2Filter, pt2FilterGain(cutoffFreq, pidRuntime.dT));
             break;
         case DYN_LPF_PT3:
-            pt3FilterVec3UpdateCutoff(&pidRuntime.dtermLowpass.pt3Filter, pt3FilterGain(cutoffFreq, pidRuntime.dT));
+            pt3FilterUpdateCutoff(&pidRuntime.dtermLowpass.pt3Filter, pt3FilterGain(cutoffFreq, pidRuntime.dT));
             break;
         }
     }

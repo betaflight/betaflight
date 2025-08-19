@@ -349,7 +349,7 @@ void accInitFilters(void)
     // the filter initialization is not defined (sample rate = 0)
     accelerationRuntime.accLpfCutHz = (acc.sampleRateHz) ? accelerometerConfig()->acc_lpf_hz : 0;
     if (accelerationRuntime.accLpfCutHz) {
-        pt2FilterVec3Init(&accelerationRuntime.accFilter, pt2FilterGain(accelerationRuntime.accLpfCutHz, HZ_TO_INTERVAL(acc.sampleRateHz)));
+        pt2FilterInitArray(&accelerationRuntime.accFilter, pt2FilterGain(accelerationRuntime.accLpfCutHz, HZ_TO_INTERVAL(acc.sampleRateHz)), XYZ_AXIS_COUNT);
     }
 }
 

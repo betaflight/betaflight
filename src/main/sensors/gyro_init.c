@@ -101,9 +101,9 @@ static void gyroInitFilterNotch1(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter1ApplyFn = (filterVec3ApplyFn *)biquadFilterVec3Apply;
+        gyro.notchFilter1ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterVec3InitNotch(&gyro.notchFilter1, notchHz, dt, notchQ);
+        biquadFilterInitArrayNotch(&gyro.notchFilter1, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
     }
 }
 
@@ -114,9 +114,9 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter2ApplyFn = (filterVec3ApplyFn *)biquadFilterVec3Apply;
+        gyro.notchFilter2ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterVec3InitNotch(&gyro.notchFilter2, notchHz, dt, notchQ);
+        biquadFilterInitArrayNotch(&gyro.notchFilter2, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
     }
 }
 
@@ -153,29 +153,29 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, float d
     if (lpfHz) {
         switch (type) {
         case FILTER_PT1:
-            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt1FilterVec3Apply;
-            pt1FilterVec3Init(&lowpassFilter->pt1Filter, pt1FilterGain(lpfHz, dt));
+            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt1FilterApplyArray;
+            pt1FilterInitArray(&lowpassFilter->pt1Filter, pt1FilterGain(lpfHz, dt), XYZ_AXIS_COUNT);
             ret = true;
             break;
         case FILTER_BIQUAD:
             if (lpfHz <= gyroFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterVec3ApplyDF1;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyArrayDF1;
 #else
-                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterVec3Apply;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyArray;
 #endif
-                biquadFilterVec3InitLPF(&lowpassFilter->biquadFilter, lpfHz, dt);
+                biquadFilterInitArrayLPF(&lowpassFilter->biquadFilter, lpfHz, dt, XYZ_AXIS_COUNT);
                 ret = true;
             }
             break;
         case FILTER_PT2:
-            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt2FilterVec3Apply;
-            pt2FilterVec3Init(&lowpassFilter->pt2Filter, pt2FilterGain(lpfHz, dt));
+            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt2FilterApplyArray;
+            pt2FilterInitArray(&lowpassFilter->pt2Filter, pt2FilterGain(lpfHz, dt), XYZ_AXIS_COUNT);
             ret = true;
             break;
         case FILTER_PT3:
-            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt3FilterVec3Apply;
-            pt3FilterVec3Init(&lowpassFilter->pt3Filter, pt3FilterGain(lpfHz, dt));
+            *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)pt3FilterApplyArray;
+            pt3FilterInitArray(&lowpassFilter->pt3Filter, pt3FilterGain(lpfHz, dt), XYZ_AXIS_COUNT);
             ret = true;
             break;
         }
@@ -246,7 +246,7 @@ void gyroInitFilters(void)
 #ifdef USE_DYN_NOTCH_FILTER
     dynNotchInit(dynNotchConfig(), dt);
 #endif
-    pt1FilterVec3Init(&gyro.imuGyroFilter, pt1FilterGain(GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ, gyro.sampleLooptime * 1e-6f));
+    pt1FilterInitArray(&gyro.imuGyroFilter, pt1FilterGain(GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ, gyro.sampleLooptime * 1e-6f), XYZ_AXIS_COUNT);
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)

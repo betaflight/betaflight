@@ -79,7 +79,7 @@ typedef struct autopilotState_s {
     bool sticksActive;
     float maxAngle;
     vector2_t pidSumBF;                 // pid output, updated on each GPS update, rotated to body frame
-    pt3Filter_t upsampleLpfBF[RP_AXIS_COUNT];    // upsampling filter
+    pt3FilterVec2_t upsampleLpfBF;    // upsampling filter
     efPidAxis_t efAxis[EF_AXIS_COUNT];
 } autopilotState_t;
 
@@ -108,9 +108,7 @@ static void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
 
 static void resetUpsampleFilters(void)
 {
-    for (unsigned i = 0; i < ARRAYLEN(ap.upsampleLpfBF); i++) {
-        pt3FilterInit(&ap.upsampleLpfBF[i], ap.upsampleLpfGain);
-    }
+    pt3FilterInitArray(&ap.upsampleLpfBF, ap.upsampleLpfGain, 2);
 }
 
 // get sanity distance based on speed
@@ -369,7 +367,7 @@ bool positionControl(void)
     // Final output to pid.c Angle Mode at 100Hz with PT3 upsampling
     for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
         // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
-        autopilotAngle[i] = pt3FilterApply(&ap.upsampleLpfBF[i], ap.pidSumBF.v[i]);
+        autopilotAngle[i] = pt3FilterApplyArray(&ap.upsampleLpfBF, ap.pidSumBF.v[i], i);
     }
 
     if (debugAxis < 2) {
