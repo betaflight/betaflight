@@ -18,6 +18,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
+#include <stdint.h>
+#include "pg/bus_i2c.h"
+
 typedef struct dashboardConfig_s {
     i2cDevice_e device;
     uint8_t   address;

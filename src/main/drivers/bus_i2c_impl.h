@@ -23,6 +23,7 @@
 #include "platform.h"
 
 #include "drivers/io_types.h"
+#include "drivers/bus_i2c.h"  // for i2cDevice_e
 
 #if PLATFORM_TRAIT_RCC
 #include "platform/rcc_types.h"

@@ -103,7 +103,7 @@ void pgResetFn_i2cConfig(i2cConfig_t *i2cConfig)
 
     for (size_t index = 0 ; index < ARRAYLEN(i2cDefaultConfig) ; index++) {
         const i2cDefaultConfig_t *defconf = &i2cDefaultConfig[index];
-        int device = defconf->device;
+        const i2cDevice_e device = defconf->device;
         i2cConfig[device].ioTagScl = defconf->ioTagScl;
         i2cConfig[device].ioTagSda = defconf->ioTagSda;
         i2cConfig[device].pullUp = defconf->pullUp;
