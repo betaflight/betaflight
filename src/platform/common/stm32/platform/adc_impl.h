@@ -129,8 +129,10 @@ extern int32_t adcTSSlopeK;
 #endif
 
 uint32_t adcChannelByTag(ioTag_t ioTag);
+#if PLATFORM_TRAIT_ADC_DEVICE
 adcDevice_e adcDeviceByInstance(const ADC_TypeDef *instance);
 bool adcVerifyPin(ioTag_t tag, adcDevice_e device);
+#endif
 
 // Marshall values in DMA instance/channel based order to adcChannel based order.
 // Required for multi DMA instance implementation
