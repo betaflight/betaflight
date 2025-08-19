@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "drivers/resource.h"
 
 #include "platform/dma.h"
@@ -50,8 +52,7 @@ typedef struct dmaChannelDescriptor_s {
     uint8_t                     flagsShift;
     IRQn_Type                   irqN;
     uint32_t                    userParam;
-    resourceOwner_t             owner;
-    uint8_t                     resourceIndex;
+    resourceOwner_t             resourceOwner;
     uint32_t                    completeFlag;
 #if PLATFORM_TRAIT_DMA_MUX_REQUIRED
     dmamux_channel_type         *dmamux;
@@ -62,7 +63,7 @@ typedef struct dmaChannelDescriptor_s {
 
 void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
 
-dmaIdentifier_e dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
+bool dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
 void dmaEnable(dmaIdentifier_e identifier);
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 

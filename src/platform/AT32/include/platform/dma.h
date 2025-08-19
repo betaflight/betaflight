@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include "platform.h"
 #include "drivers/resource.h"
 
@@ -65,8 +67,8 @@ uint32_t dmaGetChannel(const uint8_t channel);
     .flagsShift = f, \
     .irqN = d ## _Channel ## c ## _IRQn, \
     .userParam = 0, \
-    .owner.owner = 0, \
-    .owner.resourceIndex = 0 ,\
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 ,\
     .dmamux= (dmamux_channel_type *) d ## MUX_CHANNEL ##c \
     }
 

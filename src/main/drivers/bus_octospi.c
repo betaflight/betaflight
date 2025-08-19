@@ -60,7 +60,7 @@
 
 octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT] = { 0 };
 
-MMFLASH_CODE_NOINLINE OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE octoSpiDevice_e octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
 {
 #ifdef USE_OCTOSPI_DEVICE_1
     if (instance == OCTOSPI1) {
@@ -71,7 +71,7 @@ MMFLASH_CODE_NOINLINE OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *ins
     return OCTOSPIINVALID;
 }
 
-OCTOSPI_TypeDef *octoSpiInstanceByDevice(OCTOSPIDevice device)
+OCTOSPI_TypeDef *octoSpiInstanceByDevice(octoSpiDevice_e device)
 {
     if (device == OCTOSPIINVALID || device >= OCTOSPIDEV_COUNT) {
         return NULL;
@@ -91,13 +91,13 @@ const octoSpiHardware_t octoSpiHardware[] = {
 #endif
 };
 
-bool octoSpiInit(OCTOSPIDevice device)
+bool octoSpiInit(octoSpiDevice_e device)
 {
     for (size_t hwindex = 0; hwindex < ARRAYLEN(octoSpiHardware); hwindex++) {
         const octoSpiHardware_t *hw = &octoSpiHardware[hwindex];
 
-        OCTOSPIDevice device = hw->device;
-        octoSpiDevice_t *pDev = &octoSpiDevice[device];
+        const octoSpiDevice_e hwDevice = hw->device;
+        octoSpiDevice_t *pDev = &octoSpiDevice[hwDevice];
 
         pDev->dev = hw->reg;
     }

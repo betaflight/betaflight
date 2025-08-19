@@ -212,8 +212,8 @@ static bbPort_t *bbAllocateMotorPort(int portIndex)
     }
 
     bbPort->portIndex = portIndex;
-    bbPort->owner.owner = OWNER_DSHOT_BITBANG;
-    bbPort->owner.resourceIndex = RESOURCE_INDEX(portIndex);
+    bbPort->resourceOwner.owner = OWNER_DSHOT_BITBANG;
+    bbPort->resourceOwner.index = RESOURCE_INDEX(portIndex);
 
     ++usedMotorPorts;
 
@@ -224,7 +224,7 @@ const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t ti
 {
     for (int index = 0; index < usedMotorPorts; index++) {
         const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
-        if (bitbangTimer && timerGetTIMNumber(bitbangTimer->tim) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].owner.owner) {
+        if (bitbangTimer && timerGetTIMNumber(bitbangTimer->tim) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].resourceOwner.owner) {
             return bitbangTimer;
         }
     }
@@ -237,11 +237,11 @@ const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer)
     for (int index = 0; index < usedMotorPorts; index++) {
         const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
         if (bitbangTimer && bitbangTimer == timer) {
-            return &bbPorts[index].owner;
+            return &bbPorts[index].resourceOwner;
         }
     }
 
-    return &freeOwner;
+    return &resourceOwnerFree;
 }
 
 // Return frequency of smallest change [state/sec]
@@ -416,7 +416,7 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 #endif
         }
 
-        if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->owner.owner, bbPort->owner.resourceIndex)) {
+        if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->resourceOwner.owner, bbPort->resourceOwner.index)) {
             return false;
         }
 

@@ -30,7 +30,7 @@
 #include "bus_quadspi.h"
 
 typedef struct quadSpiDefaultConfig_s {
-    QUADSPIDevice device;
+    quadSpiDevice_e device;
     ioTag_t clk;
 
     // Note: Either or both CS pin may be used in DUAL_FLASH mode, any unused pins should be IO_NONE
