@@ -21,6 +21,18 @@ ifneq ($(PICO_TRACE),)
 include $(PICO_MK_DIR)/PICO_trace.mk
 endif
 
+ifneq ($(TEST_PIO_DEBUG),)
+# DSHOT bidir debugging
+# Hellbender: 8, 9 appear on J7 (GNSS/GPS connector, currently unused)
+# 18, 19 currently not connected, harmless to use
+DEVICE_FLAGS += \
+    -DDSHOT_DEBUG_PIO \
+    -DDSHOT_DEBUG_SIDE0=8 \
+    -DDSHOT_DEBUG_SIDE1=9 \
+    -DDSHOT_DEBUG_SIDE2=18 \
+    -DDSHOT_DEBUG_SIDE3=19
+endif
+
 RP2350_TARGETS = RP2350A RP2350B
 ifneq ($(filter $(TARGET_MCU), $(RP2350_TARGETS)),)
 RP2350_TARGET = $(TARGET_MCU)
@@ -241,11 +253,6 @@ SYS_INCLUDE_DIRS += \
 ARCH_FLAGS      = -fno-builtin-memcpy -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp
 ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
 
-# Automatically treating constants as single-precision breaks pico-sdk (-Werror=double-promotion)
-# We should go through BF code and explicitly declare constants as single rather than double as required,
-# rather than relying on this flag.
-# ARCH_FLAGS      += -fsingle-precision-constant
-
 PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_PRINTF=1 \
             -DLIB_PICO_PRINTF_PICO=1  \
@@ -397,6 +404,7 @@ MCU_COMMON_SRC = \
             PICO/config_flash.c \
             PICO/debug_pico.c \
             PICO/dma_pico.c \
+            PICO/dshot_bidir_pico.c \
             PICO/dshot_pico.c \
             PICO/exti_pico.c \
             PICO/io_pico.c \
