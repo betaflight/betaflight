@@ -23,6 +23,8 @@
 
 #include "drivers/adc.h"
 #include "platform/adc_impl.h"
+#include "pg/adc.h"
+
 #ifdef DEBUG_ADC_CHANNELS
 #include "build/debug.h"
 #include "common/maths.h"
@@ -66,6 +68,7 @@ uint32_t adcChannelByTag(ioTag_t ioTag)
     return 0;
 }
 
+#if PLATFORM_TRAIT_ADC_DEVICE
 adcDevice_e adcDeviceByInstance(const ADC_TypeDef *instance)
 {
     if (instance == ADC1) {
@@ -95,6 +98,7 @@ adcDevice_e adcDeviceByInstance(const ADC_TypeDef *instance)
 
     return ADCINVALID;
 }
+#endif
 
 adcOperatingConfig_t adcOperatingConfig[ADC_SOURCE_COUNT];
 volatile DMA_DATA_ZERO_INIT uint16_t adcValues[ADC_SOURCE_COUNT];
@@ -115,3 +119,46 @@ uint16_t adcGetValue(adcSource_e source)
     }
     return adcValues[adcOperatingConfig[source].dmaIndex];
 }
+
+#if PLATFORM_TRAIT_ADC_DEVICE
+void adcPlatformConfig(adcConfig_t *config)
+{
+    config->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
+#if defined(USE_DMA_SPEC)
+    config->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
+// These conditionals need to match the ones used in 'src/main/drivers/adc.h'.
+#if defined(ADC2)
+    config->dmaopt[ADCDEV_2] = ADC2_DMA_OPT;
+#endif
+#if defined(ADC3)
+    config->dmaopt[ADCDEV_3] = ADC3_DMA_OPT;
+#endif
+#if defined(ADC4)
+    config->dmaopt[ADCDEV_4] = ADC4_DMA_OPT;
+#endif
+#if defined(ADC5)
+    config->dmaopt[ADCDEV_5] = ADC5_DMA_OPT;
+#endif
+#endif
+#ifdef ADC_RSSI_INSTANCE
+    config->rssi.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_RSSI_INSTANCE));
+#else
+    config->rssi.device = config->device;
+#endif
+#ifdef ADC_CURR_INSTANCE
+    config->current.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_CURR_INSTANCE));
+#else
+    config->current.device = config->device;
+#endif
+#ifdef ADC_EXTERNAL1_INSTANCE
+    config->external1.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_EXTERNAL1_INSTANCE));
+#else
+    config->external1.device = config->device;
+#endif
+#ifdef ADC_VBAT_INSTANCE
+    config->vbat.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_VBAT_INSTANCE));
+#else
+    config->vbat.device = config->device;
+#endif
+}
+#endif

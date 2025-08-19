@@ -101,24 +101,6 @@ typedef struct adcDevice_s {
 #define ADC_INSTANCE                ADC1
 #endif
 
-typedef enum {
-    ADCINVALID = -1,
-    ADCDEV_1   = 0,
-#if defined(ADC2)
-    ADCDEV_2,
-#endif
-#if defined(ADC3)
-    ADCDEV_3,
-#endif
-#if defined(ADC4)
-    ADCDEV_4,
-#endif
-#if defined(ADC5)
-    ADCDEV_5,
-#endif
-    ADCDEV_COUNT
-} adcDevice_e;
-
 typedef struct adcOperatingConfig_s {
     uint32_t adcChannel;        // Channel number for this input. Note that H7 and G4 HAL requires this to be 32-bit encoded number.
     ioTag_t tag;

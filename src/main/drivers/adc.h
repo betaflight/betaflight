@@ -26,6 +26,26 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
+#if PLATFORM_TRAIT_ADC_DEVICE
+typedef enum {
+    ADCINVALID = -1,
+    ADCDEV_1   = 0,
+#if defined(ADC2)
+    ADCDEV_2,
+#endif
+#if defined(ADC3)
+    ADCDEV_3,
+#endif
+#if defined(ADC4)
+    ADCDEV_4,
+#endif
+#if defined(ADC5)
+    ADCDEV_5,
+#endif
+    ADCDEV_COUNT
+} adcDevice_e;
+#endif
+
 typedef enum {
     ADC_NONE = -1,
     ADC_BATTERY = 0,
@@ -47,6 +67,10 @@ typedef enum {
 struct adcConfig_s;
 void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetValue(adcSource_e source);
+
+#if PLATFORM_TRAIT_ADC_DEVICE
+void adcPlatformConfig(struct adcConfig_s *config);
+#endif
 
 #ifdef USE_ADC_INTERNAL
 bool adcInternalIsBusy(void);
