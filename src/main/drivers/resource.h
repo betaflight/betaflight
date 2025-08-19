@@ -21,6 +21,7 @@
 #pragma once
 
 typedef enum {
+    OWNER_INVALID = -1,
     OWNER_FREE = 0,
     OWNER_PWMINPUT,
     OWNER_PPMINPUT,
@@ -119,11 +120,18 @@ typedef enum {
 
 typedef struct resourceOwner_s {
     resourceOwner_e owner;
-    uint8_t resourceIndex;
+    uint8_t index;
 } resourceOwner_t;
 
-extern const char * const ownerNames[OWNER_TOTAL_COUNT];
+// Sentinels with global address identity; compare by pointer
+// (ptr == &resourceOwnerInvalid / &resourceOwnerFree) across modules.
+extern const resourceOwner_t resourceOwnerInvalid;
+extern const resourceOwner_t resourceOwnerFree;
+
+const char *getOwnerName(resourceOwner_e owner);
 
 #define RESOURCE_INDEX(x) (x + 1)
-// TODO(hertz@): only used by vtx_rtc6707_soft_spi and probably for display purposes
+
+// NOTE: Display-only legacy constant; currently used by vtx_rtc6707_soft_spi.
+// Avoid introducing new dependencies on this in generic resource code.
 #define RESOURCE_SOFT_OFFSET    10

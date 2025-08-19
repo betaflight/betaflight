@@ -5204,7 +5204,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
-        const char* owner = ownerNames[resourceTable[i].owner];
+        const char* owner = getOwnerName(resourceTable[i].owner);
         const pgRegistry_t* pg = pgFind(resourceTable[i].pgn);
         const void *currentConfig;
         const void *defaultConfig;
@@ -5243,7 +5243,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 
 static void printResourceOwner(uint8_t owner, uint8_t index)
 {
-    cliPrintf("%s", ownerNames[resourceTable[owner].owner]);
+    cliPrintf("%s", getOwnerName(resourceTable[owner].owner));
 
     if (resourceTable[owner].maxIndex > 0) {
         cliPrintf(" %d", RESOURCE_INDEX(index));
@@ -5325,10 +5325,10 @@ static void showDma(void)
         const resourceOwner_t *owner = dmaGetOwner(i);
 
         cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
-        if (owner->resourceIndex > 0) {
-            cliPrintLinef(" %s %d", ownerNames[owner->owner], owner->resourceIndex);
+        if (owner->index > 0) {
+            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
         } else {
-            cliPrintLinef(" %s", ownerNames[owner->owner]);
+            cliPrintLinef(" %s", getOwnerName(owner->owner));
         }
     }
 }
@@ -5939,10 +5939,10 @@ static void showTimers(void)
                     cliPrintLinefeed();
                 }
 
-                if (timerOwner->resourceIndex > 0) {
-                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner], timerOwner->resourceIndex);
+                if (timerOwner->index > 0) {
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->index);
                 } else {
-                    cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner]);
+                    cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner));
                 }
             }
         }
@@ -6100,7 +6100,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 #endif
         for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
-            owner = ownerNames[ioRecs[i].owner];
+            owner = getOwnerName(ioRecs[i].owner);
 
             cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
@@ -6129,7 +6129,7 @@ static void cliResource(const char *cmdName, char *cmdline)
             return;
         }
 
-        const char *resourceName = ownerNames[resourceTable[resourceIndex].owner];
+        const char *resourceName = getOwnerName(resourceTable[resourceIndex].owner);
         if (strcasecmp(pch, resourceName) == 0) {
             break;
         }
@@ -6184,7 +6184,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         if (tag) {
             tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
         }
-        cliPrintLinef("# resource %s %d %s", ownerNames[resourceTable[resourceIndex].owner], RESOURCE_INDEX(index), tag ? ioName : "NONE");
+        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), RESOURCE_INDEX(index), tag ? ioName : "NONE");
     }
 }
 #endif
