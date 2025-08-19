@@ -540,12 +540,12 @@ bool isMixerUsingServos(void)
     return useServo;
 }
 
-static biquadFilter_t servoFilter;
+static biquadFilterServoCount_t  servoFilter;
 
 void servosFilterInit(void)
 {
     if (servoConfig()->servo_lowpass_freq) {
-        biquadFilterInitArrayLPF(&servoFilter, servoConfig()->servo_lowpass_freq, targetPidLooptime, MAX_SUPPORTED_SERVOS);
+        biquadFilterInitArrayLPF(&servoFilter, servoConfig()->servo_lowpass_freq, targetPidLooptime * 1e-6f, MAX_SUPPORTED_SERVOS);
     }
 
 }
