@@ -38,7 +38,7 @@ static const char* prefix[]= {
 
 static const int plen = sizeof(prefix)/sizeof(prefix[0]);
 
-#ifndef PICO_TRACE_UART_INSTANCE
+#if !defined(PICO_TRACE_UART_INSTANCE) || !defined(PICO_TRACE_TX_GPIO) || !defined(PICO_TRACE_RX_GPIO)
 #error PICO_TRACE build requires defines for PICO_TRACE_UART_INSTANCE, PICO_TRACE_TX_GPIO, PICO_TRACE_RX_GPIO
 #endif
 
