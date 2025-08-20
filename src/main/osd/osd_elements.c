@@ -312,7 +312,6 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
 }
 #endif
 
-#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 {
     switch (osdConfig()->units) {
@@ -322,7 +321,7 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
         return tempInDegreesCelcius;
     }
 }
-#endif
+
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
     static const struct {
