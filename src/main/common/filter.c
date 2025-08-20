@@ -42,10 +42,10 @@ float nullFilterApply(filter_t *filter, float input)
     return input;
 }
 
-float nullFilterVec3Apply(filter_t *filter, float input, int axis)
+float nullFilterVec3Apply(filter_t *filter, coeffs_t *coeffs, float input, int element)
 {
     UNUSED(filter);
-    UNUSED(axis);
+    UNUSED(element);
     return input;
 }
 
@@ -239,7 +239,7 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq)
     return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
-FAST_CODE void biquadFilterGainsLPF(biquadFilterGains_t *filter, float filterFreq, float dt)
+FAST_CODE void biquadFilterCoeffsLPF(biquadFilterCoeffs_t *filter, float filterFreq, float dt)
 {
     // setup variables
     float omega = 2.0f * M_PIf * filterFreq * dt;
@@ -257,7 +257,7 @@ FAST_CODE void biquadFilterGainsLPF(biquadFilterGains_t *filter, float filterFre
      filter->a2 = (1 - alpha) * invA0;
 }
 
-FAST_CODE void biquadFilterGainsNotch(biquadFilterGains_t *filter, float filterFreq, float dt, float q)
+FAST_CODE void biquadFilterCoeffsNotch(biquadFilterCoeffs_t *filter, float filterFreq, float dt, float q)
 {
     // setup variables
     float omega = 2.0f * M_PIf * filterFreq * dt;
@@ -273,7 +273,7 @@ FAST_CODE void biquadFilterGainsNotch(biquadFilterGains_t *filter, float filterF
     filter->a2 = (1 - alpha) * invA0;
 }
 
-FAST_CODE void biquadFilterGainsNotchWeighted(biquadFilterGains_t *filter, float filterFreq, float dt, float q, float weight)
+FAST_CODE void biquadFilterCoeffsNotchWeighted(biquadFilterCoeffs_t *filter, float filterFreq, float dt, float q, float weight)
 {
     // setup variables
     float omega = 2.0f * M_PIf * filterFreq * dt;
@@ -296,152 +296,40 @@ FAST_CODE void biquadFilterGainsNotchWeighted(biquadFilterGains_t *filter, float
     filter->b2 = weight * filter->b2 + weightRecip * filter->a2;
 }
 
-void biquadFilterInitArrayLPF(void *filter, float filterFreq, float dt, int count)
+void biquadFilterInitState(biquadFilterState_t *state)
 {
-    biquadFilter_t *f = (biquadFilter_t*)filter;
-
-    biquadFilterGainsLPF(&f->gains, filterFreq, dt);
-
-    // Split state arrays to suppress compiler warnings
-    float *x1_state = &f->x1[0];
-    float *x2_state = &f->x2[0];
-    float *y1_state = &f->y1[0];
-    float *y2_state = &f->y2[0];
-
-    // Zero initial samples
-    for (int i = 0; i < count; i++) {
-        x1_state[i] = 0.0f;
-        x2_state[i] = 0.0f;
-        y1_state[i] = 0.0f;
-        y2_state[i] = 0.0f;
-    }
-}
-
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, float dt)
-{
-    biquadFilterInitArrayLPF(filter, filterFreq, dt, 1);
-}
-
-void biquadFilterUpdateLPF(void *filter, float filterFreq, float dt)
-{
-    biquadFilter_t *f = (biquadFilter_t*)filter;
-    biquadFilterGainsLPF(&f->gains, filterFreq, dt);
-}
-
-void biquadFilterInitArrayNotch(void *filter, float filterFreq, float dt, float Q, int count)
-{
-    biquadFilter_t *f = (biquadFilter_t*)filter;
-
-    biquadFilterGainsNotch(&f->gains, filterFreq, dt, Q);
-
-    // Split state arrays to suppress compiler warnings
-    float *x1_state = &f->x1[0];
-    float *x2_state = &f->x2[0];
-    float *y1_state = &f->y1[0];
-    float *y2_state = &f->y2[0];
-
-    // Zero initial samples
-    for (int i = 0; i < count; i++) {
-        x1_state[i] = 0.0f;
-        x2_state[i] = 0.0f;
-        y1_state[i] = 0.0f;
-        y2_state[i] = 0.0f;
-    }
-}
-
-void biquadFilterInitNotch(biquadFilter_t *filter, float filterFreq, float Q, float dt)
-{
-    biquadFilterInitArrayNotch(filter, filterFreq, dt, Q, 1);
-}
-
-void biquadFilterUpdateNotch(void *filter, float filterFreq, float dt, float Q)
-{
-    biquadFilter_t *f = (biquadFilter_t*)filter;
-    biquadFilterGainsNotch(&f->gains, filterFreq, dt, Q);
-}
-
-void biquadFilterInitArrayNotchWeighted(void *filter, float filterFreq, float dt, float Q, float weight, int count)
-{
-    biquadFilter_t *f = (biquadFilter_t*)filter;
-
-    biquadFilterGainsNotchWeighted(&f->gains, filterFreq, dt, Q, weight);
-
-    // Split state arrays to suppress compiler warnings
-    float *x1_state = &f->x1[0];
-    float *x2_state = &f->x2[0];
-    float *y1_state = &f->y1[0];
-    float *y2_state = &f->y2[0];
-
-    // Zero initial samples
-    for (int i = 0; i < count; i++) {
-        x1_state[i] = 0.0f;
-        x2_state[i] = 0.0f;
-        y1_state[i] = 0.0f;
-        y2_state[i] = 0.0f;
-    }
-}
-
-void biquadFilterInitNotchWeighted(biquadFilter_t *filter, float filterFreq, float dt, float Q, float weight)
-{
-    biquadFilterInitArrayNotchWeighted(filter, filterFreq, dt, Q, weight, 1);
-}
-
-void biquadFilterUpdateNotchWeighted(void *filter, float filterFreq, float dt, float Q, float weight)
-{
-    biquadFilter_t *f = (biquadFilter_t*)filter;
-    biquadFilterGainsNotchWeighted(&f->gains, filterFreq, dt, Q, weight);
+    state->x1 = 0.0f;
+    state->x2 = 0.0f;
+    state->y1 = 0.0f;
+    state->y2 = 0.0f;
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
-FAST_CODE float biquadFilterApplyArrayDF1(void *filter, float input, int element)
+FAST_CODE float biquadFilterApplyDF1(biquadFilterState_t *state, biquadFilterCoeffs_t coeffs, float input)
 {
-    biquadFilter_t *f = (biquadFilter_t*)filter;
-
-    float b0 = f->gains.b0; float b1 = f->gains.b1; float b2 = f->gains.b2;
-    float a1 = f->gains.a1; float a2 = f->gains.a2;
-
-    const float result = b0 * input + b1 * f->x1[element] + b2 * f->x2[element]
-                        - a1 * f->y1[element] - a2 * f->y2[element];
+    const float result = coeffs.b0 * input + coeffs.b1 * state->x1 + coeffs.b2 * state->x2
+                        - coeffs.a1 * state->y1 - coeffs.a2 * state->y2;
 
     /* shift x1 to x2, input to x1 */
-    f->x2[element] = f->x1[element];
-    f->x1[element] = input;
+    state->x2 = state->x1;
+    state->x1 = input;
 
     /* shift y1 to y2, result to y1 */
-    f->y2[element] = f->y1[element];
-    f->y1[element] = result;
+    state->y2 = state->y1;
+    state->y1 = result;
 
     return result;
-}
-
-FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
-{
-    return biquadFilterApplyArrayDF1(filter, input, 0);
 }
 
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
-FAST_CODE float biquadFilterApplyArray(void *filter, float input, int element)
+FAST_CODE float biquadFilterApply(biquadFilterState_t *state, biquadFilterCoeffs_t coeffs, float input)
 {
-    biquadFilter_t *f = (biquadFilter_t*)filter;
+    const float result = coeffs.b0 * input + state->x1;
 
-    float b0 = f->gains.b0; float b1 = f->gains.b1; float b2 = f->gains.b2;
-    float a1 = f->gains.a1; float a2 = f->gains.a2;
-
-    // suppress compiler warnings
-    float *x1_state = &f->x1[0];
-    float *x2_state = &f->x2[0];
-
-    const float result = b0 * input + x1_state[element];
-
-    x1_state[element] = b1 * input - a1 * result + x2_state[element];
-    x2_state[element] = b2 * input - a2 * result;
+    state->x1 = coeffs.b1 * input - coeffs.a1 * result + state->x2;
+    state->x2 = coeffs.b2 * input - coeffs.a2 * result;
 
     return result;
-}
-
-FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
-{
-    return biquadFilterApplyArray(filter, input, 0);
 }
 
 // Phase Compensator (Lead-Lag-Compensator)
