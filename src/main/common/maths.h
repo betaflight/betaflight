@@ -34,6 +34,7 @@
 // Use floating point M_PI instead explicitly.
 #define M_PIf       3.14159265358979323846f
 #define M_EULERf    2.71828182845904523536f
+#define INV_PIO2    (2.0f / M_PIf)
 
 #define RAD    (M_PIf / 180.0f)
 #define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
@@ -118,8 +119,7 @@ float quickMedianFilter9f(const float * v);
 #if defined(FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);
-float cos_approx_unchecked(float x);
-float sin_approx_unchecked(float x);
+void sincosf_approx(float x, float *out_s, float *out_c);
 float atan2_approx(float y, float x);
 float acos_approx(float x);
 float asin_approx(float x);
@@ -130,8 +130,6 @@ float pow_approx(float a, float b);
 #else
 #define sin_approx(x)       sinf(x)
 #define cos_approx(x)       cosf(x)
-#define sin_approx_unchecked(x) sinf(x)
-#define cos_approx_unchecked(x) cosf(x)
 #define atan2_approx(y,x)   atan2f(y,x)
 #define acos_approx(x)      acosf(x)
 #define tan_approx(x)       tanf(x)

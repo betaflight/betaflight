@@ -31,50 +31,93 @@
 #include "maths.h"
 
 #if defined(FAST_MATH)
-
-float sin_approx_unchecked(float x)
+static inline float sin_poly5_r(float r)
 {
-    // Only valid if values are in the range -π/2 to π/2
-    const float C1 = 0.99999905f;
-    const float C3 = -0.16665554f;
-    const float C5 = 0.008311899f;
-    const float C7 = -0.0001848814f;
-
-    float x2 = x * x;
-    return x * (C1 + x2 * (C3 + x2 * (C5 + C7 * x2)));
+    // Pre-scaled for u = r*(π/2)
+    const float c0 =  0x1.921f1cp0f; // 1.5707871913909912109375
+    const float c1 = -0x1.4a974p-1f; // -0.6456851959228515625
+    const float c2 =  0x1.3db294p-4f; // 7.756288349628448486328125e-2
+    float s = r * r;
+    return r * ((c2 * s + c1) * s + c0);
 }
 
-float cos_approx_unchecked(float x)
+static inline float cos_poly6_r(float r)
 {
-    // Only valid if values are in the range -π to 0
-    return sin_approx_unchecked(x + M_PIf * 0.5f);
+    const float d1 = -0x1.3bd39cp0f; // -1.2336976528167724609375
+    const float d2 =  0x1.03bp-2f; // 0.25360107421875
+    const float d3 = -0x1.4e5eecp-6f; // -2.04083733260631561279296875e-2
+    float s = r * r;
+    return ((d3 * s + d2) * s + d1) * s + 1.0f;
 }
 
-float reduce_anglef(float x) {
-    const float inv2pi = 1.0f / (2.0f * M_PIf);
-
-    float scaled = x * inv2pi + (x >= 0 ? 0.5f : -0.5f);
-    int cycles = (int)scaled;
-
-    x -= cycles * (2.0f * M_PIf);
-
-    // Reflection logic
-    if (x > M_PIf / 2) {
-        x = M_PIf - x;
-    } else if (x < -M_PIf / 2) {
-        x = -M_PIf - x;
+// ---- Quadrant mapping helpers ----
+// r ∈ [-0.5, 0.5], q is quadrant index (…,-1,0,1,2,3,4,…).
+static inline float sinf_quadrant_r(float r, int q)
+{
+    q &= 3;
+    if (q & 1) { // odd: use cos, sign handled below
+        float v = cos_poly6_r(r);
+        return (q & 2) ? -v : v;
+    } else {     // even: use sin
+        float v = sin_poly5_r(r);
+        return (q & 2) ? -v : v;
     }
-    return x;
 }
 
-float sin_approx(float x) {
-    x = reduce_anglef(x);
-    return sin_approx_unchecked(x);
+static inline float cosf_quadrant_r(float r, int q)
+{
+    q &= 3;
+    if (q & 1) { // odd: -sin, sign handled below
+        float v = -sin_poly5_r(r);
+        return (q & 2) ? -v : v;   // q=1 -> -sin, q=3 -> +sin
+    } else {     // even: cos
+        float v = cos_poly6_r(r);
+        return (q & 2) ? -v : v;   // q=2 -> -cos
+    }
 }
 
-float cos_approx(float x) {
-    x = reduce_anglef(x);
-    return cos_approx_unchecked(x);
+static inline void sincosf_quadrant_r(float r, int q, float *out_s, float *out_c)
+{
+    q &= 3;
+    float sb = sin_poly5_r(r);
+    float cb = cos_poly6_r(r);
+
+    // map to base values in registers
+    float s = (q & 1) ? cb  : sb;   // odd quadrants: use cos
+    float c = (q & 1) ? -sb : cb;   // odd quadrants: cos->sin mapping
+
+    // flip signs for quadrants 2 and 3
+    if (q & 2) { s = -s; c = -c; }
+
+    *out_s = s;
+    *out_c = c;
+}
+
+float sin_approx(float x)
+{
+    float t = x * INV_PIO2;     // in quadrant units
+    float qf = roundf(t);       // nearest quadrant as float
+    int   q  = (int)qf;
+    float r  = t - qf;          // remainder in [-0.5, 0.5]
+    return sinf_quadrant_r(r, q);
+}
+
+float cos_approx(float x)
+{
+    float t = x * INV_PIO2;
+    float qf = roundf(t);
+    int   q  = (int)qf;
+    float r  = t - qf;          // [-0.5, 0.5]
+    return cosf_quadrant_r(r, q);
+}
+
+void sincosf_approx(float x, float *out_s, float *out_c)
+{
+    float t = x * INV_PIO2;
+    float qf = roundf(t);
+    int   q  = (int)qf;
+    float r  = t - qf;          // [-0.5, 0.5]
+    sincosf_quadrant_r(r, q, out_s, out_c);
 }
 
 // Initial implementation by Crashpilot1000 (https://github.com/Crashpilot1000/HarakiriWebstore1/blob/396715f73c6fcf859e0db0f34e12fe44bace6483/src/mw.c#L1292)
