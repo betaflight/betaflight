@@ -312,7 +312,7 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
 }
 #endif
 
-#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
+#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 {
     switch (osdConfig()->units) {
@@ -668,7 +668,7 @@ MAYBE_UNUSED static char osdGetVarioToSelectedUnitSymbol(void)
     }
 }
 
-#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
+#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 char osdGetTemperatureSymbolForSelectedUnit(void)
 {
     switch (osdConfig()->units) {

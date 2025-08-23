@@ -123,7 +123,9 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
                 escData = &escDataBuffer;
             }
         } else {
+#ifdef USE_ESC_SENSOR
             escData = getEscSensorData(i);
+#endif
         }
 
         if (escData) {
