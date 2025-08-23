@@ -1700,7 +1700,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MOTOR_POLES, "%d",            motorConfig()->motorPoleCount);
 #endif
 #ifdef USE_RPM_FILTER
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RPM_FILTER_HARMONICS, "%d",     rpmFilterConfig()->rpm_filter_harmonics);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RPM_FILTER_WEIGHTS, "%d,%d,%d", rpmFilterConfig()->rpm_filter_weights[0],
                                                                               rpmFilterConfig()->rpm_filter_weights[1],
                                                                               rpmFilterConfig()->rpm_filter_weights[2]);
