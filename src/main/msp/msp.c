@@ -152,6 +152,7 @@
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
 
+#include "telemetry/motor_sensor.h"
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
 
@@ -1251,8 +1252,8 @@ case MSP_NAME:
 
 #ifdef USE_ESC_SENSOR
             if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-                escSensorData_t *escData = getEscSensorData(i);
-                if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
+                escSensorData_t *escData = getMotorSensorData(i, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                if (!rpmDataAvailable) {
                     rpm = lrintf(erpmToRpm(escData->rpm));
                     rpmDataAvailable = true;
                 }
@@ -1469,9 +1470,9 @@ case MSP_NAME:
         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
             sbufWriteU8(dst, getMotorCount());
             for (int i = 0; i < getMotorCount(); i++) {
-                const escSensorData_t *escData = getEscSensorData(i);
-                sbufWriteU8(dst, escData->temperature);
-                sbufWriteU16(dst, escData->rpm);
+                escSensorData_t *escData = getMotorSensorData(i, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                sbufWriteU8(dst, escData ? escData->temperature : 0);
+                sbufWriteU16(dst, escData ? escData->rpm : 0);
             }
         } else
 #endif

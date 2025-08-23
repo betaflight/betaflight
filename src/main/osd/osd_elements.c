@@ -174,6 +174,8 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 
+#include "telemetry/motor_sensor.h"
+
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc
 #include "olc.h"
@@ -285,7 +287,8 @@ static int getEscRpm(int i)
 #endif
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return lrintf(erpmToRpm(getEscSensorData(i)->rpm));
+        const escSensorData_t *escData = getMotorSensorData(i, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+        return escData && escData->dataAge < ESC_DATA_INVALID ? lrintf(erpmToRpm(escData->rpm)) : 0;
     }
 #endif
     return 0;
