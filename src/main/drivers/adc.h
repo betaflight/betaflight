@@ -68,10 +68,6 @@ struct adcConfig_s;
 void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetValue(adcSource_e source);
 
-#if PLATFORM_TRAIT_ADC_DEVICE
-void adcPlatformConfig(struct adcConfig_s *config);
-#endif
-
 #ifdef USE_ADC_INTERNAL
 bool adcInternalIsBusy(void);
 void adcInternalStartConversion(void);

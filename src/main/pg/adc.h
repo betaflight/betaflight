@@ -62,3 +62,7 @@ typedef struct adcConfig_s {
 } adcConfig_t;
 
 PG_DECLARE(adcConfig_t, adcConfig);
+
+#if PLATFORM_TRAIT_ADC_DEVICE
+void platform_pgResetFn_adcConfig(struct adcConfig_s *config);
+#endif

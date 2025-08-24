@@ -58,7 +58,7 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #endif
 
 #if PLATFORM_TRAIT_ADC_DEVICE
-    adcPlatformConfig(adcConfig);
+    platform_pgResetFn_adcConfig(adcConfig);
 #endif
 
     adcConfig->vrefIntCalibration = 0;

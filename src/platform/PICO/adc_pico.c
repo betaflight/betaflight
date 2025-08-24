@@ -46,13 +46,12 @@
 #include "common/maths.h"   // MAX/MIN macros
 
 #define PICO_ADC_MAX_CHANNELS           4
+#define PICO_ADC_FIFO_SIZE              8
 
 #if defined(RP2350A)
-#define PICO_ADC_FIFO_SIZE              8
 #define PICO_ADC_CHANNEL_COUNT          5
 #define PICO_ADC_INTERNAL_TEMP_CHANNEL  4
 #elif defined(RP2350B)
-#define PICO_ADC_FIFO_SIZE              8
 #define PICO_ADC_CHANNEL_COUNT          9
 #define PICO_ADC_INTERNAL_TEMP_CHANNEL  8
 #else
@@ -74,8 +73,10 @@ typedef struct adcOperatingConfig_s {
     bool enabled;
 } adcOperatingConfig_t;
 
-static adcOperatingConfig_t adcOperatingConfig[ADC_SOURCE_COUNT];
-static volatile uint16_t adcValues[PICO_ADC_CHANNEL_COUNT];
+static adcOperatingConfig_t adcOperatingConfig[PICO_ADC_MAX_CHANNELS];
+// NOTE the ring buffer is not using the last two positions, and wrapping to
+// a position up to two sizes before set write address. Hence the padding.
+static volatile uint16_t adcValues[PICO_ADC_MAX_CHANNELS * 2];
 
 static int adcChannelByPin(const int pin)
 {
@@ -122,35 +123,35 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;
     }
 
+    // positionOffset is on account of the ring buffer issues
+    const unsigned positionOffset = 2;
     uint32_t mask = 0u;
 
+    unsigned channelCount = 0;
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
-    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
+    for (unsigned i = 0; i < ARRAYLEN(adcOperatingConfig); i++) {
         if (!adcOperatingConfig[i].tag || i > PICO_ADC_MAX_CHANNELS) {
             continue;
         }
 
         const int pin = DEFIO_TAG_PIN(adcOperatingConfig[i].tag);
         const int channel = adcChannelByPin(pin);
-        if (channel >= 0) {
-            adcOperatingConfig[i].channel = channel;
-            adc_gpio_init(pin);
-            adcOperatingConfig[i].enabled = true;
-        }
-        mask |= (1u << channel);
-    }
 
-    // Map each enabled source to its DMA slot by channel rank (ascending channel order).
-    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
-        if (!adcOperatingConfig[i].enabled) {
+        if (channel < 0) {
             continue;
         }
-        const uint8_t ch = adcOperatingConfig[i].channel;
-        adcOperatingConfig[i].dmaIndex = (uint8_t)popcount(mask & ((1u << ch) - 1u));
+
+        adcOperatingConfig[i].channel = channel;
+        adcOperatingConfig[i].enabled = true;
+        // positionOffset on account of the ring buffer issues
+        adcOperatingConfig[i].dmaIndex = channelCount + positionOffset;
+
+        adc_gpio_init(pin);
+        mask |= (1u << channel);
+        channelCount++;
     }
 
-    const uint8_t channelCount = popcount(mask);
     if (channelCount == 0) {
         /* don't enable the adc/dma - exit immediately */
         return;
@@ -161,6 +162,7 @@ void adcInit(const adcConfig_t *config)
         // enable the internal temp sensor to add one more reading.
         adc_set_temp_sensor_enabled(true);
         mask |= (1u << PICO_ADC_INTERNAL_TEMP_CHANNEL);
+        channelCount++;
     }
 
     // empty the ADC fifo for safety
@@ -190,7 +192,7 @@ void adcInit(const adcConfig_t *config)
         65535.f + 255.f / 256.f for as slow as possible
         0 for as fast as possible
     */
-    adc_set_clkdiv(65535.f + 255.f / 256.f);
+    adc_set_clkdiv(65535);
 
     const dmaIdentifier_e dma_id = dmaGetFreeIdentifier();
     if (dma_id == DMA_NONE || !dmaAllocate(dma_id, OWNER_ADC, 0)) {
@@ -219,16 +221,20 @@ void adcInit(const adcConfig_t *config)
         size_bits is the number of bytes = (1 << sizebits)
         1 channel  => size bits = 1 (2 byte ring required i.e. 1 << 1)
         2 channels => size bits = 2 (4 byte ring required i.e. 1 << 2)
-        4 channels => size bits = 4 (8 byte ring required i.e. 1 << 4)
+        4 channels => size bits = 3 (8 byte ring required i.e. 1 << 3)
 
         We will never have 3 channels as 6 bytes is unavailable in the ring buffer,
         hence the padding with the internal temp sensor to prevent misalignment.
     */
-    const uint16_t sizeBits = llog2(popcount(mask)) * sizeof(uint16_t);
-    channel_config_set_ring(&cfg, true, sizeBits);
+
+    // NOTE fixing at 3 (8 bytes) - for consistency in timing (and the odd ring buffer behaviour)
+    // i.e. (forgoing "repeated" readings when less than 4 channels enabled).
+    channel_config_set_ring(&cfg, true, 3);
 
     // Set the DMA into free running mode and start
-    dma_channel_configure(dmaChannel, &cfg, adcValues, &adc_hw->fifo, -1, true);
+    // noting the start position due to ring buffer error where it wraps to the wrong address
+    // being an earlier address than the start of the array
+    dma_channel_configure(dmaChannel, &cfg, &adcValues[positionOffset], &adc_hw->fifo, -1, true);
 
     /* ADC start, in round robin - continuous */
     adc_run(true);

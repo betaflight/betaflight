@@ -121,7 +121,7 @@ uint16_t adcGetValue(adcSource_e source)
 }
 
 #if PLATFORM_TRAIT_ADC_DEVICE
-void adcPlatformConfig(adcConfig_t *config)
+void platform_pgResetFn_adcConfig(adcConfig_t *config)
 {
     config->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
 #if defined(USE_DMA_SPEC)
