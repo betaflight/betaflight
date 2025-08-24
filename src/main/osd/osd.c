@@ -100,6 +100,8 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
+#include "telemetry/motor_sensor.h"
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -606,7 +608,7 @@ static void osdResetStats(void)
 static int32_t getAverageEscRpm(void)
 {
 #ifdef USE_ESC_SENSOR
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+    if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdEscDataCombined) {
         return lrintf(erpmToRpm(osdEscDataCombined->rpm));
     }
 #endif
@@ -695,7 +697,7 @@ static void osdUpdateStats(void)
 #endif
 
 #if defined(USE_ESC_SENSOR)
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+    if (featureIsEnabled(FEATURE_ESC_SENSOR) && osdEscDataCombined) {
         value = osdEscDataCombined->temperature;
         if (stats.max_esc_temp < value) {
             stats.max_esc_temp = value;
@@ -1312,7 +1314,7 @@ static void osdProcessStats2(timeUs_t currentTimeUs)
     }
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        osdEscDataCombined = getEscSensorData(ESC_SENSOR_COMBINED);
+        osdEscDataCombined = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
     }
 #endif
 }
