@@ -76,7 +76,7 @@ typedef struct adcOperatingConfig_s {
 static adcOperatingConfig_t adcOperatingConfig[PICO_ADC_MAX_CHANNELS];
 // NOTE the ring buffer is not using the last two positions, and wrapping to
 // a position up to two sizes before set write address. Hence the padding.
-static volatile uint16_t adcValues[PICO_ADC_MAX_CHANNELS * 2];
+static volatile uint16_t adcValues[PICO_ADC_MAX_CHANNELS] __attribute__((aligned(PICO_ADC_MAX_CHANNELS * sizeof(uint16_t))));
 
 static int adcChannelByPin(const int pin)
 {
@@ -123,11 +123,8 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;
     }
 
-    // positionOffset is on account of the ring buffer issues
-    const unsigned positionOffset = 2;
     uint32_t mask = 0u;
 
-    unsigned channelCount = 0;
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
     for (unsigned i = 0; i < ARRAYLEN(adcOperatingConfig); i++) {
@@ -144,25 +141,22 @@ void adcInit(const adcConfig_t *config)
 
         adcOperatingConfig[i].channel = channel;
         adcOperatingConfig[i].enabled = true;
-        // positionOffset on account of the ring buffer issues
-        adcOperatingConfig[i].dmaIndex = channelCount + positionOffset;
+        // dmaIndex will be assigned later based on channel rank within 'mask' (which may differ from enum order)
 
         adc_gpio_init(pin);
         mask |= (1u << channel);
-        channelCount++;
     }
 
-    if (channelCount == 0) {
+    if (popcount(mask) == 0) {
         /* don't enable the adc/dma - exit immediately */
         return;
     }
 
-    if (channelCount == 3) {
+    if (popcount(mask) == 3) {
         // padding required due to DMA ring buffer supporting 2^X
         // enable the internal temp sensor to add one more reading.
         adc_set_temp_sensor_enabled(true);
         mask |= (1u << PICO_ADC_INTERNAL_TEMP_CHANNEL);
-        channelCount++;
     }
 
     // empty the ADC fifo for safety
@@ -171,8 +165,19 @@ void adcInit(const adcConfig_t *config)
     // set the round robin for ADC
     adc_set_round_robin(mask);
 
-    const int firstEnabled = llog2(mask & -mask);
-    adc_select_input(firstEnabled);
+    // select the first channel in the mask (it is ordered)
+    adc_select_input(llog2(mask & -mask));
+
+    // Map each enabled source to its DMA slot by channel rank (ascending channel order)
+    // Mask must be populated entirely to find the correct order.
+    for (unsigned i = 0; i < ARRAYLEN(adcOperatingConfig); i++) {
+        if (!adcOperatingConfig[i].enabled) {
+            continue;
+        }
+        const uint8_t channel = adcOperatingConfig[i].channel;
+        const unsigned rank = popcount(mask & ((1u << channel) - 1u)); // number of lower channels set
+        adcOperatingConfig[i].dmaIndex = (uint8_t)(rank);
+    }
 
     // Write each completed conversion to the sample FIFO
     // Enable DMA data request (DREQ)
@@ -227,14 +232,14 @@ void adcInit(const adcConfig_t *config)
         hence the padding with the internal temp sensor to prevent misalignment.
     */
 
-    // NOTE fixing at 3 (8 bytes) - for consistency in timing (and the odd ring buffer behaviour)
-    // i.e. (forgoing "repeated" readings when less than 4 channels enabled).
-    channel_config_set_ring(&cfg, true, 3);
+    // NOTE fixing at size_bits = 3 (8 bytes) - for consistency in timing
+    // i.e. ignoring "repeated" readings when less than 4 channels enabled
+    // and it gives equivalent sample rate - regardless of enabled channels.
+    channel_config_set_ring(&cfg, true, llog2(PICO_ADC_MAX_CHANNELS * sizeof(uint16_t)));
 
     // Set the DMA into free running mode and start
-    // noting the start position due to ring buffer error where it wraps to the wrong address
-    // being an earlier address than the start of the array
-    dma_channel_configure(dmaChannel, &cfg, &adcValues[positionOffset], &adc_hw->fifo, -1, true);
+    // -1 for transfer count is endless mode
+    dma_channel_configure(dmaChannel, &cfg, adcValues, &adc_hw->fifo, -1, true);
 
     /* ADC start, in round robin - continuous */
     adc_run(true);
