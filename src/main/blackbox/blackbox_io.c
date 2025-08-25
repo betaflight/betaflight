@@ -119,7 +119,13 @@ void blackboxWrite(uint8_t value)
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
+#if defined(STM32G4)
+        // On G4 MCUs, force synchronous writes to prevent corruption from digital OSD timing contention
+        flashfsWriteByte(value);
+        flashfsFlushAsync(true); // Force immediate flush
+#else
         flashfsWriteByte(value); // Write byte asynchronously
+#endif
         break;
 #endif
 #ifdef USE_SDCARD
@@ -180,8 +186,15 @@ int blackboxWriteString(const char *s)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
+#if defined(STM32G4)
+        // On G4 MCUs, force synchronous writes to prevent corruption from digital OSD timing contention
+        length = strlen(s);
+        flashfsWrite((const uint8_t*) s, length, true); // Write synchronously
+        flashfsFlushAsync(true); // Force immediate flush
+#else
         length = strlen(s);
         flashfsWrite((const uint8_t*) s, length, false); // Write asynchronously
+#endif
         break;
 #endif // USE_FLASHFS
 
