@@ -128,7 +128,7 @@ void adcInit(const adcConfig_t *config)
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
     for (unsigned i = 0; i < ARRAYLEN(adcOperatingConfig); i++) {
-        if (!adcOperatingConfig[i].tag || i > PICO_ADC_MAX_CHANNELS) {
+        if (!adcOperatingConfig[i].tag) {
             continue;
         }
 
