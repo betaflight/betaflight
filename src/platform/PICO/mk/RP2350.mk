@@ -392,6 +392,8 @@ MCU_COMMON_SRC = \
             drivers/serial_pinconfig.c \
             drivers/usb_io.c \
             drivers/dshot.c \
+            drivers/adc.c \
+            PICO/adc_pico.c \
             PICO/bus_i2c_pico.c \
             PICO/bus_spi_pico.c \
             PICO/config_flash.c \

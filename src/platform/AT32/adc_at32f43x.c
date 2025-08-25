@@ -119,7 +119,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PC5,  ADC_DEVICES_12,   ADC_CHANNEL_15,  15 },
 };
 
-static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_CHANNEL_COUNT];
+static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_SOURCE_COUNT];
 
 /**
  * Initialise the specified ADC to read multiple channels in repeat mode
@@ -253,7 +253,7 @@ void adcInit(const adcConfig_t *config)
 
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         int map;
         int dev;
 
@@ -390,7 +390,7 @@ void adcInit(const adcConfig_t *config)
         #endif //end of USE_DMA_SPEC
 
         // set each channel into the auto sequence for this ADC device
-        for (int adcChan = 0; adcChan < ADC_CHANNEL_COUNT; adcChan++)
+        for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++)
         {
             // only add enabled channels for the current dev (can be simplified if we drop the pretense at handling adc2 and 3)
             if (adcOperatingConfig[adcChan].enabled && adcOperatingConfig[adcChan].adcDevice == dev)
@@ -420,7 +420,7 @@ void adcInit(const adcConfig_t *config)
 */
 void adcGetChannelValues(void)
 {
-    for (int i = 0; i < ADC_CHANNEL_INTERNAL_FIRST_ID; i++) {
+    for (int i = 0; i < ADC_SOURCE_INTERNAL_FIRST_ID; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }

@@ -644,7 +644,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
 
     pwmMotorCount = device->count;
     device->vTable = &vTable;
-    
+
     printf("Initialized motor count %d\n", pwmMotorCount);
     pwmRawPkt.motorCount = pwmMotorCount;
 
@@ -655,13 +655,6 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
     }
 
     return true;
-}
-
-// ADC part
-uint16_t adcGetChannel(uint8_t channel)
-{
-    UNUSED(channel);
-    return 0;
 }
 
 // stack part
