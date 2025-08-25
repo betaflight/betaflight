@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_I2C) && !defined(SOFT_I2C)
+#if defined(USE_I2C) && !defined(USE_SOFT_I2C)
 
 #include "pg/bus_i2c.h"
 
@@ -486,4 +486,4 @@ void i2cInit(I2CDevice device)
     }
 }
 
-#endif // #if defined(USE_I2C) && !defined(SOFT_I2C)
+#endif // #if defined(USE_I2C) && !defined(USE_SOFT_I2C)
