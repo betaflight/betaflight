@@ -168,7 +168,7 @@ static uint8_t I2C_ReceiveByte(void)
     return byte;
 }
 
-void i2cInit(I2CDevice device)
+void i2cInit(i2cDevice_e device)
 {
     UNUSED(device);
 
@@ -179,7 +179,7 @@ void i2cInit(I2CDevice device)
     IOConfigGPIO(sda, IOCFG_OUT_OD);
 }
 
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
+bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
 {
     UNUSED(device);
 
@@ -207,7 +207,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, ui
     return true;
 }
 
-bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
+bool i2cWrite(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t data)
 {
     UNUSED(device);
 
@@ -228,7 +228,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
     return true;
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
+bool i2cRead(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
 {
     UNUSED(device);
 
