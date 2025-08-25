@@ -495,15 +495,12 @@ static void saSendFrame(uint8_t *buf, int len)
         bool prepend00;
         switch (serialType(smartAudioSerialPort->identifier)) {
         case SERIALTYPE_SOFTSERIAL:
-            prepend00 = vtxSettingsConfig()->softserialAlt;
-            break;
         case SERIALTYPE_UART:
         case SERIALTYPE_LPUART: // decide HW uarts by MCU type
-#ifdef AT32F4
-            prepend00 = false;
-#else
-            prepend00 = true;
-#endif
+            // AT32F4 has a bug in the UART peripheral that causes it to
+            // not send the first byte of a transmission if the first byte
+            // is 0x00. This is not a problem for other MCUs.
+            prepend00 = vtxSettingsConfig()->serialAlt;
             break;
         default:
             prepend00 = false;
