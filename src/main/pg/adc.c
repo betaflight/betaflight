@@ -38,6 +38,9 @@ PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
     adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
+#if defined(USE_ADC_DEVICE_0)
+    adcConfig->dmaopt[ADCDEV_0] = ADC0_DMA_OPT;
+#endif
     adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
 // These conditionals need to match the ones used in 'src/main/drivers/adc.h'.
 #if defined(ADC2)
