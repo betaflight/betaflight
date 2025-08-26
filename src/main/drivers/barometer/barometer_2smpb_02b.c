@@ -33,6 +33,8 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/io.h"
@@ -228,14 +230,14 @@ static bool b2smpbGetUP(baroDev_t *baro)
     dtp = getSigned24bitValue(&baroDataBuf[3]);
 
     tmp = baroState.calib.ba * baroState.calib.ba;
-    tr = (-1 * baroState.calib.ba - sqrtf(tmp - 4 * baroState.calib.aa * (baroState.calib.ca - dtp))) / (2 * baroState.calib.aa);
+    tr = (-1 * baroState.calib.ba - sqrt_approx(tmp - 4 * baroState.calib.aa * (baroState.calib.ca - dtp))) / (2 * baroState.calib.aa);
     baroState.temperature = tr / 256;
 
     // Calculate raw pressure
     dtp = getSigned24bitValue(&baroDataBuf[0]);
 
     tmp = baroState.calib.bp * baroState.calib.bp;
-    pl = (sqrtf(tmp - 4 * baroState.calib.ap * (baroState.calib.cp - dtp)) - baroState.calib.bp) / (2 * baroState.calib.ap);
+    pl = (sqrt_approx(tmp - 4 * baroState.calib.ap * (baroState.calib.cp - dtp)) - baroState.calib.bp) / (2 * baroState.calib.ap);
 
     // Calculate temperature compensated pressure
     tmp = tr * tr;

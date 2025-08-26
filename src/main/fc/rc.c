@@ -813,7 +813,7 @@ static float quadraticBezier(float x, float p0x, float p1x, float p2x, float p0y
     } else {
         float disc = b * b - 4.0f * a * c;
         if (disc >= 0.0f) { // Real roots exist
-            float sqrtD = sqrtf(disc);
+            float sqrtD = sqrt_approx(disc);
             float t1 = (-b + sqrtD) / (2.0f * a);
             float t2 = (-b - sqrtD) / (2.0f * a);
 
