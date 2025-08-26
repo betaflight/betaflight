@@ -78,7 +78,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
-void i2cInit(I2CDevice device)
+void i2cInit(i2cDevice_e device)
 {
     if (device == I2CINVALID) {
         return;

@@ -48,7 +48,7 @@ void i2cPinConfigure(const i2cConfig_t *i2cConfig)
             continue;
         }
 
-        I2CDevice device = hardware->device;
+        const i2cDevice_e device = hardware->device;
         i2cDevice_t *pDev = &i2cDevice[device];
 
         memset(pDev, 0, sizeof(*pDev));

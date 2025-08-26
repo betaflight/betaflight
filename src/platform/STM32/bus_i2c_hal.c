@@ -85,7 +85,7 @@ void I2C4_EV_IRQHandler(void)
 
 static volatile uint16_t i2cErrorCount = 0;
 
-static bool i2cHandleHardwareFailure(I2CDevice device)
+static bool i2cHandleHardwareFailure(i2cDevice_e device)
 {
     (void)device;
     i2cErrorCount++;
@@ -100,7 +100,7 @@ uint16_t i2cGetErrorCounter(void)
 }
 
 // Blocking write
-bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
+bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
@@ -126,7 +126,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 }
 
 // Non-blocking write
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
@@ -155,7 +155,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
 }
 
 // Blocking read
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
@@ -182,7 +182,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 }
 
 // Non-blocking read
-bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
@@ -209,7 +209,7 @@ bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, u
     return true;
 }
 
-bool i2cBusy(I2CDevice device, bool *error)
+bool i2cBusy(i2cDevice_e device, bool *error)
 {
     I2C_HandleTypeDef *pHandle = &i2cDevice[device].handle;
 
