@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifdef SOFT_I2C
+#ifdef USE_SOFT_I2C
 
 #include "build/build_config.h"
 
