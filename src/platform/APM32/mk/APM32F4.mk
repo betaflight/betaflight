@@ -191,7 +191,8 @@ MCU_COMMON_SRC = \
         drivers/serial_pinconfig.c \
         APM32/system_apm32f4xx.c \
         common/stm32/ledstrip_ws2811_stm32.c \
-        common/stm32/debug_pin.c
+        common/stm32/debug_pin.c \
+        common/stm32/adc_impl.c
 
 VCP_SRC = \
         APM32/usb/vcp/usbd_cdc_descriptor.c \

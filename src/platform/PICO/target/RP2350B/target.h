@@ -61,6 +61,8 @@
 #define USE_I2C_DEVICE_0
 #define USE_I2C_DEVICE_1
 
+#define USE_ADC
+
 #define USE_VCP
 
 // Enable MSC with SD card SPI backend for RP2350B target
@@ -73,6 +75,7 @@
 #undef USE_TRANSPONDER
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
+
 #undef USE_TIMER
 #undef USE_RCC
 

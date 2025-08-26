@@ -26,13 +26,12 @@
 #ifdef USE_DMA_SPEC
 
 #include "timer_def.h"
-#include "drivers/adc.h"
 #include "drivers/bus_spi.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
-
+#include "platform/adc_impl.h"
 #include "pg/timerio.h"
 
 typedef struct dmaPeripheralMapping_s {

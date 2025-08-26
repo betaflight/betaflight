@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "platform.h"
 
 #include "drivers/io_types.h"

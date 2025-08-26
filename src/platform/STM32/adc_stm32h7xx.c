@@ -272,7 +272,7 @@ static void adcInitCalibrationValues(void)
 // Need this separate from the main adcValue[] array, because channels are numbered
 // by ADC instance order that is different from ADC_xxx numbering.
 
-#define ADC_BUF_LENGTH ADC_CHANNEL_COUNT
+#define ADC_BUF_LENGTH ADC_SOURCE_COUNT
 #define ADC_BUF_BYTES (ADC_BUF_LENGTH * sizeof(uint16_t))
 #define ADC_BUF_CACHE_ALIGN_BYTES  ((ADC_BUF_BYTES + 0x20) & ~0x1f)
 #define ADC_BUF_CACHE_ALIGN_LENGTH (ADC_BUF_CACHE_ALIGN_BYTES / sizeof(uint16_t))
@@ -308,7 +308,7 @@ void adcInit(const adcConfig_t *config)
     adcInitCalibrationValues();
 #endif
 
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         int map;
         int dev;
 
@@ -432,7 +432,7 @@ void adcInit(const adcConfig_t *config)
 
         int rank = 0;
 
-        for (int adcChan = 0; adcChan < ADC_CHANNEL_COUNT; adcChan++) {
+        for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++) {
 
             if (!adcOperatingConfig[adcChan].enabled) {
                 continue;
@@ -541,7 +541,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     SCB_InvalidateDCache_by_Addr((uint32_t*)adcConversionBuffer, ADC_BUF_CACHE_ALIGN_BYTES);
-    for (int i = 0; i < ADC_CHANNEL_INTERNAL_FIRST_ID; i++) {
+    for (int i = 0; i < ADC_SOURCE_INTERNAL_FIRST_ID; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
