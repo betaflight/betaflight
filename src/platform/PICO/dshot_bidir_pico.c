@@ -112,7 +112,7 @@ See https://en.wikipedia.org/wiki/Run-length_limited#GCR:_(0,2)_RLL for more det
 
 bool dshot_program_bidir_init(PIO pio, uint sm, int offset, uint pin)
 {
-    bprintf("dshot_program_bidir_init on pin %d (MOTOR_PIN1 is %s -> %d)",pin, STR(MOTOR1_PIN), IO_TAG(MOTOR1_PIN));
+    bprintf("dshot_program_bidir_init on pin %d",pin);
 #ifdef DSHOT_DEBUG_PIO
     pio_sm_config config = dshot_600_bidir_debug_program_get_default_config(offset);
 #else

@@ -67,7 +67,7 @@ float dshotGetPeriodTiming(void)
 // TODO DSHOT150, 300
 static bool dshot_program_init(PIO pio, uint sm, int offset, uint pin)
 {
-    bprintf("dshot_program_init on pin %d (MOTOR_PIN1 is %s -> %d)",pin, STR(MOTOR1_PIN), IO_TAG(MOTOR1_PIN));
+    bprintf("dshot_program_init on pin %d", pin);
     pio_sm_config config = dshot_600_program_get_default_config(offset);
 
     sm_config_set_set_pins(&config, pin, 1);
