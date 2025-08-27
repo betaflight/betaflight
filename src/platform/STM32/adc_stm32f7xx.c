@@ -207,7 +207,7 @@ void adcInit(const adcConfig_t *config)
     uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
-    memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
+    memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
     if (config->vbat.enabled) {
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
@@ -225,7 +225,7 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
-    ADCDevice device = ADC_CFG_TO_DEV(config->device);
+    adcDevice_e device = ADC_CFG_TO_DEV(config->device);
 
     if (device == ADCINVALID) {
         return;
@@ -234,7 +234,7 @@ void adcInit(const adcConfig_t *config)
     adc = adcHardware[device];
 
     bool adcActive = false;
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         if (adcVerifyPin(adcOperatingConfig[i].tag, device)) {
             adcActive = true;
             IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
@@ -269,7 +269,7 @@ void adcInit(const adcConfig_t *config)
 #endif
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (i = 0; i < ADC_SOURCE_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             ADC_ChannelConfTypeDef sConfig;
 
