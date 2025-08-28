@@ -265,10 +265,5 @@ void adcInternalStartConversion(void)
 {
     //NOOP
 }
-
-uint16_t adcInternalRead(adcSource_e source)
-{
-    return 0;
-}
 #endif // USE_ADC_INTERNAL
 #endif // USE_ADC
