@@ -123,6 +123,9 @@ uint16_t adcGetValue(adcSource_e source)
 #ifdef USE_ADC_INTERNAL
     case ADC_VREFINT:
     case ADC_TEMPSENSOR:
+#if ADC_INTERNAL_VBAT4_ENABLED
+    case ADC_VBAT4:
+#endif
         return adcInternalRead(source);
 #endif
     default:

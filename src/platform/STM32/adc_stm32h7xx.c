@@ -541,7 +541,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     SCB_InvalidateDCache_by_Addr((uint32_t*)adcConversionBuffer, ADC_BUF_CACHE_ALIGN_BYTES);
-    for (int i = 0; i <= ADC_LAST_EXTERNAL; i++) {
+    for (unsigned i = 0; i <= ADC_LAST_EXTERNAL; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -565,6 +565,9 @@ uint16_t adcInternalRead(adcSource_e source)
     switch (source) {
     case ADC_VREFINT:
     case ADC_TEMPSENSOR:
+#if ADC_INTERNAL_VBAT4_ENABLED
+    case ADC_VBAT4:
+#endif
         const int dmaIndex = adcOperatingConfig[source].dmaIndex;
         return adcConversionBuffer[dmaIndex];
     default:
