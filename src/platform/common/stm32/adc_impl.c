@@ -114,10 +114,20 @@ uint16_t adcGetValue(adcSource_e source)
         }
     }
 #endif
+
     if ((unsigned)source >= ADC_SOURCE_COUNT || !adcOperatingConfig[source].enabled) {
         return 0;
     }
-    return adcValues[adcOperatingConfig[source].dmaIndex];
+
+    switch (source) {
+#ifdef USE_ADC_INTERNAL
+    case ADC_VREFINT:
+    case ADC_TEMPSENSOR:
+        return adcInternalRead(source);
+#endif
+    default:
+        return adcValues[adcOperatingConfig[source].dmaIndex];
+    }
 }
 
 #if PLATFORM_TRAIT_ADC_DEVICE

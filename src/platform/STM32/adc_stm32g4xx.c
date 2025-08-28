@@ -484,8 +484,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     // Cache coherency should be maintained by MPU facility
-
-    for (int i = 0; i < ADC_SOURCE_INTERNAL_FIRST_ID; i++) {
+    for (int i = 0; i <= ADC_LAST_EXTERNAL; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -504,28 +503,22 @@ void adcInternalStartConversion(void)
     return;
 }
 
-static uint16_t adcInternalRead(int channel)
+static int adcPrivateVref = -1;
+static int adcPrivateTemp = -1;
+
+uint16_t adcInternalRead(adcSource_e source)
 {
-    int dmaIndex = adcOperatingConfig[channel].dmaIndex;
-
-    return adcConversionBuffer[dmaIndex];
-}
-
-int adcPrivateVref = -1;
-int adcPrivateTemp = -1;
-
-uint16_t adcInternalReadVrefint(void)
-{
-    uint16_t value = adcInternalRead(ADC_VREFINT);
-adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
-    return value;
-}
-
-uint16_t adcInternalReadTempsensor(void)
-{
-    uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
-adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
-    return value;
+    uint16_t value = adcConversionBuffer[adcOperatingConfig[source].dmaIndex];
+    switch (source) {
+    case ADC_VREFINT:
+        adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
+        return value;
+    case ADC_TEMPSENSOR:
+        adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
+        return value;
+    default:
+        return 0;
+    }
 }
 #endif // USE_ADC_INTERNAL
 #endif // USE_ADC

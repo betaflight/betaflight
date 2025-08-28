@@ -256,7 +256,6 @@ uint16_t adcGetValue(adcSource_e source)
 }
 
 #ifdef USE_ADC_INTERNAL
-
 bool adcInternalIsBusy(void)
 {
     return false;
@@ -267,5 +266,9 @@ void adcInternalStartConversion(void)
     //NOOP
 }
 
+uint16_t adcInternalRead(adcSource_e source)
+{
+    return 0;
+}
 #endif // USE_ADC_INTERNAL
 #endif // USE_ADC
