@@ -101,12 +101,9 @@ static void gyroInitFilterNotch1(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter1ApplyFn = (filterVec3ApplyFn *)biquadFilterApply;
+        gyro.notchFilter1ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterInitState(&gyro.notchFilter1.coeffs);
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterCoeffsNotch(&gyro.notchFilter1.coeffs[axis], notchHz, dt, notchQ);
-        }
+        biquadFilterInitArrayNotch(&gyro.notchFilter1, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
     }
 }
 
@@ -117,12 +114,9 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter2ApplyFn = (filterVec3ApplyFn *)biquadFilterApply;
+        gyro.notchFilter2ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterInitState(&gyro.notchFilter2.coeffs);
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterCoeffsNotch(&gyro.notchFilter2.coeffs[axis], notchHz, dt, notchQ);
-        }
+        biquadFilterInitArrayNotch(&gyro.notchFilter2, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
     }
 }
 
@@ -166,14 +160,11 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, float d
         case FILTER_BIQUAD:
             if (lpfHz <= gyroFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterArrayDF1;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyArrayDF1;
 #else
-                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterArray;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyArray;
 #endif
-                biquadFilterInit(&lowpassFilter->biquadFilter.state);
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterCoeffsLPF(&lowpassFilter->biquadFilter.coeffs[axis], lpfHz, dt);
-                }
+                biquadFilterInitArrayLPF(&lowpassFilter->biquadFilter, lpfHz, dt, XYZ_AXIS_COUNT);
                 ret = true;
             }
             break;
