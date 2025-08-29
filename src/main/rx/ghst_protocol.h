@@ -91,6 +91,10 @@ typedef enum {
     GHST_RF_PROTOCOL_SOLID250   = 0x0D   // 13
 } ghstRfProtocol_e;
 
+typedef enum {
+    PACK_FLAGS_Disarmed = 1 << 0,       // general purpose flags (e.g. DISARMED), not necessarily related to battery pack values
+} PACK_FLAGS;
+
 #define GHST_RC_CTR_VAL_12BIT       0x7C0   // servo center for 12 bit values (0x3e0 << 1)
 #define GHST_RC_CTR_VAL_8BIT        0x7C    // servo center for 8 bit values
 
