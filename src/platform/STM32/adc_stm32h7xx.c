@@ -363,7 +363,13 @@ void adcInit(const adcConfig_t *config)
                         continue;
                     }
 
-#ifndef USE_DMA_SPEC
+#ifdef USE_DMA_SPEC
+                    // check that there is a valid spec for this dev
+                    const dmaChannelSpec_t *spec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+                    if (!spec) {
+                        continue;
+                    }
+#else
                     if (!adcDevice[dev].dmaResource) {
                         continue;
                     }
