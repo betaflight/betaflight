@@ -285,13 +285,18 @@ void adcInit(const adcConfig_t *config)
         int map;
         int dev;
 
-        if (i == ADC_TEMPSENSOR) {
+        switch(i) {
+#ifdef USE_ADC_INTERNAL
+            case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ADCDEV_1;
-        } else if (i == ADC_VREFINT) {
+            break;
+        case ADC_VREFINT:
             map = ADC_TAG_MAP_VREFINT;
             dev = ADCDEV_1;
-        } else {
+            break;
+#endif
+        default:
             if (!adcOperatingConfig[i].tag) {
                 continue;
             }
