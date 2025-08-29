@@ -87,7 +87,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .ADCx = ADC4,
         .rccADC = RCC_AHB2(ADC345),
 #if !defined(USE_DMA_SPEC)
-        .dmaResource = (dmaResource_t *)ADC3_DMA_CHANNEL,
+        .dmaResource = (dmaResource_t *)ADC4_DMA_CHANNEL,
         .channel = DMA_REQUEST_ADC4,
 #endif
     },
@@ -408,10 +408,11 @@ void adcInit(const adcConfig_t *config)
 
         // Configure DMA for this ADC peripheral
 
+        dmaIdentifier_e dmaIdentifier;
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
 
-        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
+        dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
         if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }

@@ -257,13 +257,18 @@ void adcInit(const adcConfig_t *config)
         int map;
         int dev;
 
-        if (i == ADC_TEMPSENSOR) {
+        switch(i) {
+#ifdef USE_ADC_INTERNAL
+        case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ADCDEV_1;
-        } else if (i == ADC_VREFINT) {
+            break;
+        case ADC_VREFINT:
             map = ADC_TAG_MAP_VREFINT;
             dev = ADCDEV_1;
-        } else {
+            break;
+#endif
+        default:
             if (!adcOperatingConfig[i].tag) {
                 continue;
             }
@@ -347,7 +352,7 @@ void adcInit(const adcConfig_t *config)
         // Set the oversampling ratio and matching shift
         adc_oversample_ratio_shift_set(adc->ADCx, ADC_OVERSAMPLE_RATIO_64, ADC_OVERSAMPLE_SHIFT_6);
 
-        #ifdef USE_DMA_SPEC
+#ifdef USE_DMA_SPEC
 
         // Setup the DMA channel so that data is automatically and continuously transferred from the ADC output register
         // to the results buffer
@@ -387,7 +392,7 @@ void adcInit(const adcConfig_t *config)
         adc_dma_mode_enable(adc->ADCx, TRUE);
         adc_dma_request_repeat_enable(adc->ADCx, TRUE);
 
-        #endif //end of USE_DMA_SPEC
+#endif //end of USE_DMA_SPEC
 
         // set each channel into the auto sequence for this ADC device
         for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++)

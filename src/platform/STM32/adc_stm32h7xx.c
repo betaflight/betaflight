@@ -308,24 +308,28 @@ void adcInit(const adcConfig_t *config)
     adcInitCalibrationValues();
 #endif
 
-    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
+    for (unsigned i = 0; i < ADC_SOURCE_COUNT; i++) {
         int map;
         int dev;
 
+        switch(i) {
 #ifdef USE_ADC_INTERNAL
-        if (i == ADC_TEMPSENSOR) {
+        case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ffs(adcTagMap[map].devices) - 1;
-        } else if (i == ADC_VREFINT) {
+            break;
+        case ADC_VREFINT:
             map = ADC_TAG_MAP_VREFINT;
             dev = ffs(adcTagMap[map].devices) - 1;
-        } else if (i == ADC_VBAT4) {
+            break;
+#if ADC_INTERNAL_VBAT4_ENABLED
+        case ADC_VBAT4:
             map = ADC_TAG_MAP_VBAT4;
             dev = ffs(adcTagMap[map].devices) - 1;
-        } else {
-#else
-        {
+            break;
 #endif
+#endif
+        default:
             dev = ADC_CFG_TO_DEV(adcOperatingConfig[i].adcDevice);
 
             if (!adcOperatingConfig[i].tag) {
@@ -346,14 +350,17 @@ void adcInit(const adcConfig_t *config)
                 // If the ADC was configured to use a specific device, but that device was not active, then try and find another active instance that works for the pin.
 
                 for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                    if (!adcDevice[dev].ADCx
-#ifndef USE_DMA_SPEC
-                        || !adcDevice[dev].dmaResource
-#endif
-                    ) {
+                    if (!adcDevice[dev].ADCx) {
                         // Instance not activated
                         continue;
                     }
+
+#ifndef USE_DMA_SPEC
+                    if (!adcDevice[dev].dmaResource) {
+                        continue;
+                    }
+#endif
+
                     if (adcTagMap[map].devices & (1 << dev)) {
                         // Found an activated ADC instance for this input pin
                         break;
