@@ -126,6 +126,8 @@ extern int32_t adcVREFINTCAL; // ADC value (12-bit) of band gap with Vref = VREF
 extern int32_t adcTSCAL1;
 extern int32_t adcTSCAL2;
 extern int32_t adcTSSlopeK;
+
+uint16_t adcInternalRead(adcSource_e source);
 #endif
 
 uint32_t adcChannelByTag(ioTag_t ioTag);

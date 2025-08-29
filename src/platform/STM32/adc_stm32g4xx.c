@@ -87,7 +87,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .ADCx = ADC4,
         .rccADC = RCC_AHB2(ADC345),
 #if !defined(USE_DMA_SPEC)
-        .dmaResource = (dmaResource_t *)ADC3_DMA_CHANNEL,
+        .dmaResource = (dmaResource_t *)ADC4_DMA_CHANNEL,
         .channel = DMA_REQUEST_ADC4,
 #endif
     },
@@ -285,13 +285,18 @@ void adcInit(const adcConfig_t *config)
         int map;
         int dev;
 
-        if (i == ADC_TEMPSENSOR) {
+        switch(i) {
+#ifdef USE_ADC_INTERNAL
+        case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ADCDEV_1;
-        } else if (i == ADC_VREFINT) {
+            break;
+        case ADC_VREFINT:
             map = ADC_TAG_MAP_VREFINT;
             dev = ADCDEV_1;
-        } else {
+            break;
+#endif
+        default:
             if (!adcOperatingConfig[i].tag) {
                 continue;
             }
@@ -305,14 +310,17 @@ void adcInit(const adcConfig_t *config)
             // Find an ADC device that can handle this input pin
 
             for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                if (!adcDevice[dev].ADCx
-#ifndef USE_DMA_SPEC
-                     || !adcDevice[dev].dmaResource
-#endif
-                   ) {
+                if (!adcDevice[dev].ADCx) {
                     // Instance not activated
                     continue;
                 }
+
+#ifndef USE_DMA_SPEC
+                if (!adcDevice[dev].dmaResource) {
+                    continue;
+                }
+#endif
+
                 if (adcTagMap[map].devices & (1 << dev)) {
                     // Found an activated ADC instance for this input pin
                     break;
@@ -408,11 +416,16 @@ void adcInit(const adcConfig_t *config)
 
         // Configure DMA for this ADC peripheral
 
+        dmaIdentifier_e dmaIdentifier;
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
 
-        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
-        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+        if (!dmaSpec || !dmaSpec->ref) {
+            return;
+        }
+
+        dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
+        if (!dmaIdentifier || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 
@@ -484,8 +497,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     // Cache coherency should be maintained by MPU facility
-
-    for (int i = 0; i < ADC_SOURCE_INTERNAL_FIRST_ID; i++) {
+    for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -504,28 +516,29 @@ void adcInternalStartConversion(void)
     return;
 }
 
-static uint16_t adcInternalRead(int channel)
+static int adcPrivateVref = -1;
+static int adcPrivateTemp = -1;
+
+uint16_t adcInternalRead(adcSource_e source)
 {
-    int dmaIndex = adcOperatingConfig[channel].dmaIndex;
+    const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+    if (dmaIndex >= ADC_SOURCE_COUNT) {
+        return 0;
+    }
 
-    return adcConversionBuffer[dmaIndex];
-}
-
-int adcPrivateVref = -1;
-int adcPrivateTemp = -1;
-
-uint16_t adcInternalReadVrefint(void)
-{
-    uint16_t value = adcInternalRead(ADC_VREFINT);
-adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
-    return value;
-}
-
-uint16_t adcInternalReadTempsensor(void)
-{
-    uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
-adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
-    return value;
+    uint16_t value = adcConversionBuffer[dmaIndex];
+    switch (source) {
+    case ADC_VREFINT:
+        adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
+        return value;
+    case ADC_TEMPSENSOR:
+        if (adcPrivateVref >= 0) {
+            adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
+        }
+        return value;
+    default:
+        return 0;
+    }
 }
 #endif // USE_ADC_INTERNAL
 #endif // USE_ADC
