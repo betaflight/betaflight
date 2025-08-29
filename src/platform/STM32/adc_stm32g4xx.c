@@ -420,8 +420,12 @@ void adcInit(const adcConfig_t *config)
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
 
+        if (!dmaSpec || !dmaSpec->ref) {
+            return;
+        }
+
         dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
-        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+        if (!dmaIdentifier || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 

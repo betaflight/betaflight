@@ -317,22 +317,25 @@ void adcInit(const adcConfig_t *config)
         case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ffs(adcTagMap[map].devices) - 1;
+            if (dev < 0) { continue; }
             break;
         case ADC_VREFINT:
             map = ADC_TAG_MAP_VREFINT;
             dev = ffs(adcTagMap[map].devices) - 1;
+            if (dev < 0) { continue; }
             break;
 #if ADC_INTERNAL_VBAT4_ENABLED
         case ADC_VBAT4:
             map = ADC_TAG_MAP_VBAT4;
             dev = ffs(adcTagMap[map].devices) - 1;
+            if (dev < 0) { continue; }
             break;
 #endif
 #endif
         default:
             dev = ADC_CFG_TO_DEV(adcOperatingConfig[i].adcDevice);
 
-            if (!adcOperatingConfig[i].tag) {
+            if (dev < 0 || !adcOperatingConfig[i].tag) {
                 continue;
             }
 
