@@ -310,14 +310,17 @@ void adcInit(const adcConfig_t *config)
             // Find an ADC device that can handle this input pin
 
             for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                if (!adcDevice[dev].ADCx
-#ifndef USE_DMA_SPEC
-                     || !adcDevice[dev].dmaResource
-#endif
-                   ) {
+                if (!adcDevice[dev].ADCx) {
                     // Instance not activated
                     continue;
                 }
+
+#ifndef USE_DMA_SPEC
+                if (!adcDevice[dev].dmaResource) {
+                    continue;
+                }
+#endif
+
                 if (adcTagMap[map].devices & (1 << dev)) {
                     // Found an activated ADC instance for this input pin
                     break;
