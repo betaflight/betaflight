@@ -28,7 +28,9 @@
 #include "pg/pg.h"
 #include "fc/rc_modes.h"
 
+#ifndef MAX_CHANNEL_ACTIVATION_CONDITION_COUNT
 #define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  10
+#endif
 
 typedef struct vtxChannelActivationCondition_s {
     uint8_t auxChannelIndex;
