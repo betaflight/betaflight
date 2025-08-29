@@ -312,27 +312,27 @@ void adcInit(const adcConfig_t *config)
         int map;
         int dev;
 
-        switch(i) {
 #ifdef USE_ADC_INTERNAL
-        case ADC_TEMPSENSOR:
-            map = ADC_TAG_MAP_TEMPSENSOR;
-            dev = ffs(adcTagMap[map].devices) - 1;
-            if (dev < 0) { continue; }
-            break;
-        case ADC_VREFINT:
-            map = ADC_TAG_MAP_VREFINT;
-            dev = ffs(adcTagMap[map].devices) - 1;
-            if (dev < 0) { continue; }
-            break;
+        if (i > ADC_LAST_EXTERNAL) {
+            switch(i) {
+            case ADC_TEMPSENSOR:
+                map = ADC_TAG_MAP_TEMPSENSOR;
+                break;
+            case ADC_VREFINT:
+                map = ADC_TAG_MAP_VREFINT;
+                break;
 #if ADC_INTERNAL_VBAT4_ENABLED
-        case ADC_VBAT4:
-            map = ADC_TAG_MAP_VBAT4;
+            case ADC_VBAT4:
+                map = ADC_TAG_MAP_VBAT4;
+                break;
+#endif
+            }
             dev = ffs(adcTagMap[map].devices) - 1;
             if (dev < 0) { continue; }
-            break;
+            adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_810CYCLES_5;
+        }
 #endif
-#endif
-        default:
+        if (i <= ADC_LAST_EXTERNAL) {
             dev = ADC_CFG_TO_DEV(adcOperatingConfig[i].adcDevice);
 
             if (dev < 0 || !adcOperatingConfig[i].tag) {
@@ -343,6 +343,8 @@ void adcInit(const adcConfig_t *config)
             if (map < 0) {
                 continue;
             }
+
+            adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_387CYCLES_5;
 
             // Found a tag map entry for this input pin
             // Find an ADC device that can handle this input pin
@@ -381,7 +383,6 @@ void adcInit(const adcConfig_t *config)
 
         adcOperatingConfig[i].adcDevice = dev;
         adcOperatingConfig[i].adcChannel = adcTagMap[map].channel;
-        adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_810CYCLES_5;
         adcOperatingConfig[i].enabled = true;
 
         adcDevice[dev].channelBits |= (1 << adcTagMap[map].channelOrdinal);
@@ -456,12 +457,12 @@ void adcInit(const adcConfig_t *config)
 
             ADC_ChannelConfTypeDef sConfig;
 
-            sConfig.Channel      = adcOperatingConfig[adcChan].adcChannel; /* Sampled channel number */
-            sConfig.Rank         = adcRegularRankMap[rank++];   /* Rank of sampled channel number ADCx_CHANNEL */
-            sConfig.SamplingTime = ADC_SAMPLETIME_387CYCLES_5;  /* Sampling time (number of clock cycles unit) */
-            sConfig.SingleDiff   = ADC_SINGLE_ENDED;            /* Single-ended input channel */
-            sConfig.OffsetNumber = ADC_OFFSET_NONE;             /* No offset subtraction */
-            sConfig.Offset = 0;                                 /* Parameter discarded because offset correction is disabled */
+            sConfig.Channel      = adcOperatingConfig[adcChan].adcChannel;  /* Sampled channel number */
+            sConfig.Rank         = adcRegularRankMap[rank++];               /* Rank of sampled channel number ADCx_CHANNEL */
+            sConfig.SamplingTime = adcOperatingConfig[adcChan].sampleTime;  /* Sampling time (number of clock cycles unit) */
+            sConfig.SingleDiff   = ADC_SINGLE_ENDED;                        /* Single-ended input channel */
+            sConfig.OffsetNumber = ADC_OFFSET_NONE;                         /* No offset subtraction */
+            sConfig.Offset = 0;                                             /* Parameter discarded because offset correction is disabled */
 
             if (HAL_ADC_ConfigChannel(&adc->ADCHandle, &sConfig) != HAL_OK) {
                 errorHandler();
