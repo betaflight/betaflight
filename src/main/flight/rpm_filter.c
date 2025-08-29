@@ -77,7 +77,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const float dt)
 
     for (int motor = 0; motor < getMotorCount(); motor++) {
         for (int i = 0; i < rpmFilter.numHarmonics; i++) {
-            biquadFilterInitArrayNotchWeighted(&rpmFilter.notch[motor][i], MIN(rpmFilter.minHz * (i+1), rpmFilter.maxHz), rpmFilter.dt, rpmFilter.q, 0.0f, XYZ_AXIS_COUNT);
+            biquadFilterInitNotchWeightedArray(&rpmFilter.notch[motor][i], MIN(rpmFilter.minHz * (i+1), rpmFilter.maxHz), rpmFilter.dt, rpmFilter.q, 0.0f, XYZ_AXIS_COUNT);
         }
     }
 
@@ -121,7 +121,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
             weight *= rpmFilter.weights[harmonicIndex];
 
             // update notch
-            biquadFilterUpdateNotchWeighted(&rpmFilter.notch[motorIndex][harmonicIndex], frequencyHz, correctedLooptime, rpmFilter.q, weight);
+            biquadFilterCoeffsNotchWeighted(&rpmFilter.notch[motorIndex][harmonicIndex].coeffs, frequencyHz, correctedLooptime, rpmFilter.q, weight);
         }
 
         // cycle through all notches on ROLL (takes RPM_FILTER_DURATION_S at max.)

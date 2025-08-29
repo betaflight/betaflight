@@ -155,9 +155,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     if (dTermNotchHz != 0 && pidProfile->dterm_notch_cutoff != 0) {
-        pidRuntime.dtermNotchApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
+        pidRuntime.dtermNotchApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArrayVec3;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
-        biquadFilterInitArrayNotch(&pidRuntime.dtermNotch, dTermNotchHz, pidRuntime.dT, notchQ, XYZ_AXIS_COUNT);
+        biquadFilterInitNotchArray(&pidRuntime.dtermNotch, dTermNotchHz, pidRuntime.dT, notchQ, XYZ_AXIS_COUNT);
     } else {
         pidRuntime.dtermNotchApplyFn = nullFilterVec3Apply;
     }
@@ -180,11 +180,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         case FILTER_BIQUAD:
             if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArrayDF1;
+                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)biquadFilterApplyDF1ArrayVec3;
 #else
-                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
+                pidRuntime.dtermLowpassApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArrayVec3;
 #endif
-                biquadFilterInitArrayLPF(&pidRuntime.dtermLowpass.biquadFilter, dterm_lpf1_init_hz, pidRuntime.dT, XYZ_AXIS_COUNT);
+                biquadFilterInitLPFArray(&pidRuntime.dtermLowpass.biquadFilter, dterm_lpf1_init_hz, pidRuntime.dT, XYZ_AXIS_COUNT);
             } else {
                 pidRuntime.dtermLowpassApplyFn = nullFilterVec3Apply;
             }
@@ -214,8 +214,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             break;
         case FILTER_BIQUAD:
             if (pidProfile->dterm_lpf2_static_hz < pidFrequencyNyquist) {
-                pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
-                biquadFilterInitArrayLPF(&pidRuntime.dtermLowpass2.biquadFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT, XYZ_AXIS_COUNT);
+                pidRuntime.dtermLowpass2ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArrayVec3;
+                biquadFilterInitLPFArray(&pidRuntime.dtermLowpass2.biquadFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT, XYZ_AXIS_COUNT);
             } else {
                 pidRuntime.dtermLowpass2ApplyFn = nullFilterVec3Apply;
             }

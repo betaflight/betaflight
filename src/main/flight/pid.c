@@ -1599,7 +1599,7 @@ void dynLpfDTermUpdate(float throttle)
             pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass.pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             break;
         case DYN_LPF_BIQUAD:
-            biquadFilterUpdateLPF(&pidRuntime.dtermLowpass.biquadFilter, cutoffFreq, pidRuntime.dT);
+            biquadFilterCoeffsLPF(&pidRuntime.dtermLowpass.biquadFilter.coeffs, cutoffFreq, pidRuntime.dT);
             break;
         case DYN_LPF_PT2:
             pt2FilterUpdateCutoff(&pidRuntime.dtermLowpass.pt2Filter, pt2FilterGain(cutoffFreq, pidRuntime.dT));

@@ -545,7 +545,7 @@ static biquadFilterServoCount_t  servoFilter;
 void servosFilterInit(void)
 {
     if (servoConfig()->servo_lowpass_freq) {
-        biquadFilterInitArrayLPF(&servoFilter, servoConfig()->servo_lowpass_freq, targetPidLooptime * 1e-6f, MAX_SUPPORTED_SERVOS);
+        biquadFilterInitLPFArray(&servoFilter, servoConfig()->servo_lowpass_freq, targetPidLooptime * 1e-6f, MAX_SUPPORTED_SERVOS);
     }
 
 }

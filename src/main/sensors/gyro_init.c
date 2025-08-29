@@ -101,9 +101,9 @@ static void gyroInitFilterNotch1(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter1ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
+        gyro.notchFilter1ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArrayVec3;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterInitArrayNotch(&gyro.notchFilter1, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
+        biquadFilterInitNotchArray(&gyro.notchFilter1, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
     }
 }
 
@@ -114,9 +114,9 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz, float
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter2ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArray;
+        gyro.notchFilter2ApplyFn = (filterVec3ApplyFn *)biquadFilterApplyArrayVec3;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
-        biquadFilterInitArrayNotch(&gyro.notchFilter2, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
+        biquadFilterInitNotchArray(&gyro.notchFilter2, notchHz, dt, notchQ, XYZ_AXIS_COUNT);
     }
 }
 
@@ -160,11 +160,11 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, float d
         case FILTER_BIQUAD:
             if (lpfHz <= gyroFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyArrayDF1;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyDF1ArrayVec3;
 #else
-                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyArray;
+                *lowpassFilterApplyFnPtr = (filterVec3ApplyFn *)biquadFilterApplyArrayVec3;
 #endif
-                biquadFilterInitArrayLPF(&lowpassFilter->biquadFilter, lpfHz, dt, XYZ_AXIS_COUNT);
+                biquadFilterInitLPFArray(&lowpassFilter->biquadFilter, lpfHz, dt, XYZ_AXIS_COUNT);
                 ret = true;
             }
             break;
