@@ -274,7 +274,7 @@ void adcInit(const adcConfig_t *config)
 #endif
 
     uint8_t rank = 1;
-    for (i = 0; i <= ADC_LAST_EXTERNAL; i++) {
+    for (i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (!adcOperatingConfig[i].enabled) {
             continue;
         }

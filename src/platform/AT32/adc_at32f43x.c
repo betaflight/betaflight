@@ -425,7 +425,7 @@ void adcInit(const adcConfig_t *config)
 */
 void adcGetChannelValues(void)
 {
-    for (unsigned i = 0; i <= ADC_LAST_EXTERNAL; i++) {
+    for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -458,7 +458,8 @@ uint16_t adcInternalRead(adcSource_e source)
     switch (source) {
     case ADC_VREFINT:
     case ADC_TEMPSENSOR:
-        return adcConversionBuffer[adcOperatingConfig[source].dmaIndex];
+        const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+        return dmaIndex < ARRAYLEN(adcConversionBuffer) ? adcConversionBuffer[dmaIndex] : 0;
     default:
         return 0;
     }

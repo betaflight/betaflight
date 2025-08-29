@@ -287,7 +287,7 @@ void adcInit(const adcConfig_t *config)
 
         switch(i) {
 #ifdef USE_ADC_INTERNAL
-            case ADC_TEMPSENSOR:
+        case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ADCDEV_1;
             break;
@@ -497,7 +497,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     // Cache coherency should be maintained by MPU facility
-    for (unsigned i = 0; i <= ADC_LAST_EXTERNAL; i++) {
+    for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -521,13 +521,20 @@ static int adcPrivateTemp = -1;
 
 uint16_t adcInternalRead(adcSource_e source)
 {
-    uint16_t value = adcConversionBuffer[adcOperatingConfig[source].dmaIndex];
+    const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+    if (dmaIndex >= ADC_SOURCE_COUNT) {
+        return 0;
+    }
+
+    uint16_t value = adcConversionBuffer[dmaIndex];
     switch (source) {
     case ADC_VREFINT:
         adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
         return value;
     case ADC_TEMPSENSOR:
-        adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
+        if (adcPrivateVref >= 0) {
+            adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
+        }
         return value;
     default:
         return 0;

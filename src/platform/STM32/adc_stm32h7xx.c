@@ -309,11 +309,11 @@ void adcInit(const adcConfig_t *config)
 #endif
 
     for (unsigned i = 0; i < ADC_SOURCE_COUNT; i++) {
-        int map;
-        int dev;
+        int map = -1;
+        int dev = -1;
 
 #ifdef USE_ADC_INTERNAL
-        if (i > ADC_LAST_EXTERNAL) {
+        if (i >= ADC_EXTERNAL_COUNT) {
             switch(i) {
             case ADC_TEMPSENSOR:
                 map = ADC_TAG_MAP_TEMPSENSOR;
@@ -326,13 +326,16 @@ void adcInit(const adcConfig_t *config)
                 map = ADC_TAG_MAP_VBAT4;
                 break;
 #endif
+            default:
+                // Unknown internal source; skip to avoid using an uninitialized map
+                continue;
             }
             dev = ffs(adcTagMap[map].devices) - 1;
             if (dev < 0) { continue; }
             adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_810CYCLES_5;
         }
 #endif
-        if (i <= ADC_LAST_EXTERNAL) {
+        if (i < ADC_EXTERNAL_COUNT) {
             dev = ADC_CFG_TO_DEV(adcOperatingConfig[i].adcDevice);
 
             if (dev < 0 || !adcOperatingConfig[i].tag) {
@@ -552,7 +555,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     SCB_InvalidateDCache_by_Addr((uint32_t*)adcConversionBuffer, ADC_BUF_CACHE_ALIGN_BYTES);
-    for (unsigned i = 0; i <= ADC_LAST_EXTERNAL; i++) {
+    for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -579,8 +582,8 @@ uint16_t adcInternalRead(adcSource_e source)
 #if ADC_INTERNAL_VBAT4_ENABLED
     case ADC_VBAT4:
 #endif
-        const int dmaIndex = adcOperatingConfig[source].dmaIndex;
-        return adcConversionBuffer[dmaIndex];
+        const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+        return dmaIndex < ADC_BUF_LENGTH ? adcConversionBuffer[dmaIndex] : 0;
     default:
         return 0;
     }
