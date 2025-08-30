@@ -347,7 +347,7 @@ void i2c_ev_handler(i2cDevice_e device)
 
     timeUs_t timeoutStartUs = 0;
 
-    uint8_t SReg_1 = I2C_STAT0(I2Cx);                                                           // read the status register here
+    uint32_t SReg_1 = I2C_STAT0(I2Cx);                                                           // read the status register here
 
     if (SReg_1 & I2C_STAT0_SBSEND) {                                                            // we just sent a start
         ev_state->index = 0;                                                                    // reset the index
@@ -443,7 +443,7 @@ void i2c_ev_handler(i2cDevice_e device)
             }
         }
         // we must wait for the start to clear, otherwise we get constant BTC
-        timeUs_t timeoutStartUs = microsISR();
+        timeoutStartUs = microsISR();
         while (I2C_CTL0(I2Cx) & I2C_CTL0_START) {                                        // wait for any start to finish sending
             if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
                 break;
