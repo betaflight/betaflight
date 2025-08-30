@@ -26,15 +26,8 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
-#ifndef ADC_INSTANCE
-#if defined(USE_ADC_DEVICE_0)
-#define ADC_INSTANCE                ADC0
-#else
-#define ADC_INSTANCE                ADC1
-#endif
-#endif
-
-typedef enum ADCDevice {
+#if PLATFORM_TRAIT_ADC_DEVICE
+typedef enum {
     ADCINVALID = -1,
 #if defined(USE_ADC_DEVICE_0)
     ADCDEV_0   = 0,
@@ -57,50 +50,34 @@ typedef enum ADCDevice {
     ADCDEV_5,
 #endif
     ADCDEV_COUNT
-} ADCDevice;
-
-#define ADC_CFG_TO_DEV(x) ((x) - 1)
-#define ADC_DEV_TO_CFG(x) ((x) + 1)
+} adcDevice_e;
+#endif
 
 typedef enum {
+    ADC_NONE = -1,
     ADC_BATTERY = 0,
-    ADC_CURRENT = 1,
-    ADC_EXTERNAL1 = 2,
-    ADC_RSSI = 3,
-#if PLATFORM_TRAIT_ADC_INTERNAL
-    // On H7 and G4, internal sensors are treated in the similar fashion as regular ADC inputs
-    ADC_CHANNEL_INTERNAL_FIRST_ID = 4,
-    ADC_TEMPSENSOR = ADC_CHANNEL_INTERNAL_FIRST_ID,
+    ADC_CURRENT,
+    ADC_EXTERNAL1,
+    ADC_RSSI,
+#ifdef USE_ADC_INTERNAL
+    // For certain processors internal sensors are treated in the similar fashion as regular ADC inputs
+    ADC_SOURCE_INTERNAL_FIRST_ID,
+    ADC_TEMPSENSOR = ADC_SOURCE_INTERNAL_FIRST_ID,
     ADC_VREFINT,
 #if ADC_INTERNAL_VBAT4_ENABLED
     ADC_VBAT4,
 #endif
 #endif
-    ADC_CHANNEL_COUNT
-} AdcChannel;
-
-typedef struct adcOperatingConfig_s {
-    ioTag_t tag;
-#if PLATFORM_TRAIT_ADC_DEVICE
-    ADCDevice adcDevice;        // ADCDEV_x for this input
-#endif
-    uint32_t adcChannel;        // Channel number for this input. Note that H7 and G4 HAL requires this to be 32-bit encoded number.
-    uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
-    bool enabled;
-    uint8_t sampleTime;
-} adcOperatingConfig_t;
+    ADC_SOURCE_COUNT
+} adcSource_e;
 
 struct adcConfig_s;
 void adcInit(const struct adcConfig_s *config);
-uint16_t adcGetChannel(uint8_t channel);
+uint16_t adcGetValue(adcSource_e source);
 
 #ifdef USE_ADC_INTERNAL
 bool adcInternalIsBusy(void);
 void adcInternalStartConversion(void);
-uint16_t adcInternalReadVrefint(void);
-uint16_t adcInternalReadTempsensor(void);
 uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue);
 int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue);
 #endif
-
-ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);

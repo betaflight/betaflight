@@ -107,6 +107,12 @@ uint8_t mscStart(void)
     return 0;
 }
 
+
+void mscTask(void)
+{
+    // Nothing to do here
+}
+
 static void USB_DevUserHandler(USBD_INFO_T* usbInfo, uint8_t userStatus)
 {
     UNUSED(usbInfo);

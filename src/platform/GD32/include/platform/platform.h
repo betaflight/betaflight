@@ -71,6 +71,8 @@ typedef struct
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define DMA_TRAIT_CHANNEL       1
 
+#define PLATFORM_TRAIT_ADC_DEVICE 1
+
 #define USE_FAST_DATA
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE

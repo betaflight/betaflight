@@ -131,3 +131,7 @@ extern uint32_t systemUniqueId[3];
 
 #define USE_LATE_TASK_STATISTICS
 
+#ifndef DEFAULT_VOLTAGE_METER_SCALE
+// 100 = 1.00x (100%) scaling; override per target/board to match its VBAT divider
+#define DEFAULT_VOLTAGE_METER_SCALE   100
+#endif

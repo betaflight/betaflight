@@ -402,7 +402,7 @@ void delay(uint32_t) {}
 displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
 mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
 const char *getMcuTypeName(void) { return targetName; }
-uint16_t getCurrentRxRateHz(void) { return 0; }
+float getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }
 }

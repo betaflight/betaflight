@@ -263,6 +263,15 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
 
+// Camera control PWM availability per STM32 family
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
+#endif
+
+#if defined(STM32F405)
+#define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
+#endif
+
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 
 // speed is packed between modebits 4 and 1,
@@ -437,6 +446,9 @@ extern uint8_t _dmaram_end__;
 #define SPI_TRAIT_HANDLE 1
 #endif
 
+#if defined(HAL_QSPI_MODULE_ENABLED)
+#define QSPI_TRAIT_HANDLE 1
+#endif
 #endif
 
 #if defined(STM32F4)
@@ -447,8 +459,6 @@ extern uint8_t _dmaram_end__;
 
 // QUAD SPI
 #if defined(STM32H7)
-#define QUADSPI_TRAIT_AF_PIN 1
-#define QUADSPI_TRAIT_HANDLE 1
 #define MAX_QUADSPI_PIN_SEL 3
 #define PLATFORM_TRAIT_SDIO_INIT 1
 #endif
@@ -467,15 +477,14 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32H7) || defined(STM32G4)
 #define DMA_CHANREQ_STRING "Request"
 
-#define PLATFORM_TRAIT_ADC_INTERNAL 1
 #define ADC_INTERNAL_VBAT4_ENABLED 1
-/* H7 and G4 we need to specify the ADC device for each channel */
-#define PLATFORM_TRAIT_ADC_DEVICE 1
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 #define DMA_STCH_STRING    "Stream"
 #endif
+
+#define PLATFORM_TRAIT_ADC_DEVICE 1
 
 #if defined(STM32F4) || defined(STM32F7)
 #ifndef ADC1_DMA_STREAM

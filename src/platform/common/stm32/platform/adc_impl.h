@@ -112,23 +112,42 @@ typedef struct adcDevice_s {
 #endif
 } adcDevice_t;
 
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC1
+#endif
+
+typedef struct adcOperatingConfig_s {
+    uint32_t adcChannel;        // Channel number for this input. Note that H7 and G4 HAL requires this to be 32-bit encoded number.
+    ioTag_t tag;
+    uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
+    uint8_t sampleTime;
+    bool enabled;
+#if PLATFORM_TRAIT_ADC_DEVICE
+    adcDevice_e adcDevice;      // ADCDEV_x for this input
+#endif
+} adcOperatingConfig_t;
+
+extern adcOperatingConfig_t adcOperatingConfig[ADC_SOURCE_COUNT];
+extern volatile DMA_DATA_ZERO_INIT uint16_t adcValues[ADC_SOURCE_COUNT];
+
+#define ADC_CFG_TO_DEV(x) ((x) - 1)
+#define ADC_DEV_TO_CFG(x) ((x) + 1)
+
+extern const adcDevice_t adcHardware[];
+extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
+
 #ifdef USE_ADC_INTERNAL
-extern int32_t adcVREFINTCAL;      // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
+extern int32_t adcVREFINTCAL; // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
 extern int32_t adcTSCAL1;
 extern int32_t adcTSCAL2;
 extern int32_t adcTSSlopeK;
 #endif
 
-extern const adcDevice_t adcHardware[];
-extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
-extern adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
-extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
-
-uint8_t adcChannelByTag(ioTag_t ioTag);
-#if !defined(SIMULATOR_BUILD)
-ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
+uint32_t adcChannelByTag(ioTag_t ioTag);
+#if PLATFORM_TRAIT_ADC_DEVICE
+adcDevice_e adcDeviceByInstance(const ADC_TypeDef *instance);
+bool adcVerifyPin(ioTag_t tag, adcDevice_e device);
 #endif
-bool adcVerifyPin(ioTag_t tag, ADCDevice device);
 
 // Marshall values in DMA instance/channel based order to adcChannel based order.
 // Required for multi DMA instance implementation

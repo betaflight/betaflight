@@ -64,8 +64,8 @@ typedef enum {
     .flagsShift = 0, \
     .irqN = 0, \
     .userParam = 0, \
-    .owner.owner = 0, \
-    .owner.resourceIndex = 0 \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
     }
 
 #define DMA_IDENTIFIER_TO_CHANNEL(identifier) ((identifier) - DMA_FIRST_HANDLER)

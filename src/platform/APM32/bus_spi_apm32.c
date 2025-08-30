@@ -68,7 +68,7 @@ static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor
     return (ffs(divisor) - 2) << 3;// SPI_CR1_BR_Pos
 }
 
-void spiInitDevice(SPIDevice device)
+void spiInitDevice(spiDevice_e device)
 {
     spiDevice_t *spi = &spiDevice[device];
 

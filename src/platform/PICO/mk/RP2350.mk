@@ -253,7 +253,7 @@ PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_STDIO_USB=1 \
             -DCFG_TUSB_DEBUG=0  \
             -DCFG_TUSB_MCU=OPT_MCU_RP2040  \
-            -DCFG_TUSB_OS=OPT_OS_PICO  \
+            -DCFG_TUSB_OS=OPT_OS_NONE  \
             -DLIB_PICO_FIX_RP2040_USB_DEVICE_ENUMERATION=1 \
             -DPICO_RP2040_USB_DEVICE_UFRAME_FIX=1  \
             -DPICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS=3000 \
@@ -356,8 +356,7 @@ endif
 PICO_STDIO_USB_SRC = \
             rp2_common/pico_stdio_usb/reset_interface.c \
             rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c \
-            rp2_common/pico_bit_ops/bit_ops_aeabi.S \
-            rp2_common/pico_stdio_usb/stdio_usb_descriptors.c
+            rp2_common/pico_bit_ops/bit_ops_aeabi.S
 
 # TODO check
 #    rp2_common/pico_stdio_usb/stdio_usb_descriptors.c \
@@ -393,6 +392,8 @@ MCU_COMMON_SRC = \
             drivers/serial_pinconfig.c \
             drivers/usb_io.c \
             drivers/dshot.c \
+            drivers/adc.c \
+            PICO/adc_pico.c \
             PICO/bus_i2c_pico.c \
             PICO/bus_spi_pico.c \
             PICO/config_flash.c \
@@ -408,8 +409,15 @@ MCU_COMMON_SRC = \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
             PICO/usb/usb_cdc.c \
+            PICO/usb/usb_descriptors.c \
+            PICO/usb/usb_msc_pico.c \
             PICO/multicore.c \
-            PICO/debug_pin.c
+            PICO/debug_pin.c \
+            PICO/light_ws2811strip_pico.c
+
+# USB MSC support sources (TinyUSB backend on PICO)
+MSC_SRC = \
+            drivers/usb_msc_common.c
 
 DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \

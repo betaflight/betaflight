@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#if defined(USE_I2C) && !defined(SOFT_I2C)
+#if defined(USE_I2C) && !defined(USE_SOFT_I2C)
 
 #include "drivers/io.h"
 #include "drivers/time.h"
@@ -37,8 +37,8 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_utils.h"
 
-static void i2c_er_handler(I2CDevice device);
-static void i2c_ev_handler(I2CDevice device);
+static void i2c_er_handler(i2cDevice_e device);
+static void i2c_ev_handler(i2cDevice_e device);
 
 #if defined(GD32F4)
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_OD, GPIO_PUPD_PULLUP)
@@ -141,7 +141,7 @@ void I2C2_EV_IRQHandler(void)
     i2c_ev_handler(I2CDEV_2);
 }
 
- static bool i2cHandleHardwareFailure(I2CDevice device)
+ static bool i2cHandleHardwareFailure(i2cDevice_e device)
  {
      i2cErrorCount++;
      // reinit peripheral + clock out garbage
@@ -149,7 +149,7 @@ void I2C2_EV_IRQHandler(void)
      return false;
  }
 
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
@@ -194,7 +194,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     return true;
 }
 
-bool i2cBusy(I2CDevice device, bool *error)
+bool i2cBusy(i2cDevice_e device, bool *error)
 {
     i2cState_t *state = &i2cDevice[device].state;
 
@@ -204,7 +204,7 @@ bool i2cBusy(I2CDevice device, bool *error)
     return state->busy;
 }
 
-static bool i2cWait(I2CDevice device)
+static bool i2cWait(i2cDevice_e device)
 {
     i2cState_t *state = &(i2cDevice[device].state);
     timeUs_t timeoutStartUs = microsISR();
@@ -218,12 +218,12 @@ static bool i2cWait(I2CDevice device)
     return !(state->error);
 }
 
-bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
+bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 {
     return i2cWriteBuffer(device, addr_, reg_, 1, &data) && i2cWait(device);
 }
 
-bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
 
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
@@ -283,12 +283,12 @@ bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, u
     return true;
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     return i2cReadBuffer(device, addr_, reg_, len, buf) && i2cWait(device);
 }
 
-static void i2c_er_handler(I2CDevice device)
+static void i2c_er_handler(i2cDevice_e device)
 {
     uint32_t I2Cx = (uint32_t )(i2cDevice[device].hardware->reg);
 
@@ -338,7 +338,7 @@ static void i2c_er_handler(I2CDevice device)
     state->busy = 0;
 }
 
-void i2c_ev_handler(I2CDevice device)
+void i2c_ev_handler(i2cDevice_e device)
 {
     uint32_t I2Cx = (uint32_t)(i2cDevice[device].hardware->reg);
 
@@ -479,7 +479,7 @@ void i2c_ev_handler(I2CDevice device)
     }
 }
 
-void i2cInit(I2CDevice device)
+void i2cInit(i2cDevice_e device)
 {
     if (device == I2CINVALID)
         return;

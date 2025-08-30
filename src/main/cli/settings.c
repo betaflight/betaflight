@@ -865,7 +865,6 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR,       VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { RC_SMOOTHING_AUTO_FACTOR_MIN, RC_SMOOTHING_AUTO_FACTOR_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_auto_factor_rpy) },
     { PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { RC_SMOOTHING_AUTO_FACTOR_MIN, RC_SMOOTHING_AUTO_FACTOR_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_auto_factor_throttle) },
     { PARAM_NAME_RC_SMOOTHING_SETPOINT_CUTOFF,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_setpoint_cutoff) },
-    { PARAM_NAME_RC_SMOOTHING_FEEDFORWARD_CUTOFF, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_feedforward_cutoff) },
     { PARAM_NAME_RC_SMOOTHING_THROTTLE_CUTOFF,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_throttle_cutoff) },
     { PARAM_NAME_RC_SMOOTHING_DEBUG_AXIS,         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_SMOOTHING_DEBUG }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_debug_axis) },
 #endif // USE_RC_SMOOTHING_FILTER
@@ -906,7 +905,9 @@ const clivalue_t valueTable[] = {
 
 // PG_ADC_CONFIG
 #if defined(USE_ADC)
+#if PLATFORM_TRAIT_ADC_DEVICE
     { "adc_device",                 VAR_INT8 | HARDWARE_VALUE, .config.minmax = { 0, ADCDEV_COUNT }, PG_ADC_CONFIG, offsetof(adcConfig_t, device) },
+#endif
     { "adc_vrefint_calibration",    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_ADC_CONFIG, offsetof(adcConfig_t, vrefIntCalibration) },
     { "adc_tempsensor_calibration30", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_ADC_CONFIG, offsetof(adcConfig_t, tempSensorCalibration1) },
     { "adc_tempsensor_calibration110", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_ADC_CONFIG, offsetof(adcConfig_t, tempSensorCalibration2) },

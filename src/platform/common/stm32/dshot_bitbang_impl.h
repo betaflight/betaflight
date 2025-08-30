@@ -211,7 +211,7 @@ typedef struct bbPort_s {
     uint32_t outputIrq;
     uint32_t inputIrq;
 #endif
-    resourceOwner_t owner;
+    resourceOwner_t resourceOwner;
 } bbPort_t;
 
 // Per motor output

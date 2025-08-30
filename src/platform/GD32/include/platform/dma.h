@@ -75,8 +75,8 @@ uint32_t dmaGetChannel(const uint8_t channel);
     .flagsShift = f, \
     .irqN = d ## _Channel ## s ## _IRQn, \
     .userParam = 0, \
-    .owner.owner = 0, \
-    .owner.resourceIndex = 0 \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
     }
 
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) FAST_IRQ_HANDLER void DMA ## d ## _Channel ## s ## _IRQHandler(void) {\

@@ -33,3 +33,4 @@ void systemResetToMsc(int timezoneOffsetMinutes);
 void systemResetFromMsc(void);
 void mscSetActive(void);
 void mscActivityLed(void);
+void mscTask(void);

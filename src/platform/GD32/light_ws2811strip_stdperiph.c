@@ -38,7 +38,7 @@
 #include "platform/rcc.h"
 #include "drivers/timer.h"
 
-#include "drivers/light_ws2811strip.h"
+#include "platform/light_ws2811strip_stm32.h"
 
 static IO_t ws2811IO = IO_NONE;
 #if defined(GD32F4)
@@ -74,9 +74,9 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
-bool ws2811LedStripHardwareInit(ioTag_t ioTag)
+bool ws2811LedStripHardwareInit(void)
 {
-    if (!ioTag) {
+    if (!ledStripIoTag) {
         return false;
     }
 
@@ -84,7 +84,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     timer_oc_parameter_struct timer_ocintpara;
     dma_single_data_parameter_struct dma_init_struct;
 
-    const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_LED_STRIP, 0);
+    const timerHardware_t *timerHardware = timerAllocate(ledStripIoTag, OWNER_LED_STRIP, 0);
 
     if (timerHardware == NULL) {
         return false;
@@ -114,7 +114,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
         return false;
     }
 
-    ws2811IO = IOGetByTag(ioTag);
+    ws2811IO = IOGetByTag(ledStripIoTag);
     IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP), timerHardware->alternateFunction);
 
@@ -213,7 +213,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     return true;
 }
 
-void ws2811LedStripDMAEnable(void)
+void ws2811LedStripStartTransfer(void)
 {
     xDMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     timer_counter_value_config((uint32_t)timer, 0);

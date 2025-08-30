@@ -175,7 +175,7 @@ void voltageMeterADCRefresh(void)
         const voltageSensorADCConfig_t *config = voltageSensorADCConfig(i);
 
         uint8_t channel = voltageMeterAdcChannelMap[i];
-        uint16_t rawSample = adcGetChannel(channel);
+        uint16_t rawSample = adcGetValue(channel);
         uint16_t filteredDisplaySample = pt1FilterApply(&state->displayFilter, rawSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.

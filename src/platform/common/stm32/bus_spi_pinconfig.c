@@ -551,7 +551,7 @@ void spiPinConfigure(const spiPinConfig_t *pConfig)
             continue;
         }
 
-        SPIDevice device = hw->device;
+        const spiDevice_e device = hw->device;
         spiDevice_t *pDev = &spiDevice[device];
 
         for (int pindex = 0 ; pindex < MAX_SPI_PIN_SEL ; pindex++) {

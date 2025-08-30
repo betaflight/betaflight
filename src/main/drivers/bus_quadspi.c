@@ -41,7 +41,7 @@
 
 quadSpiDevice_t quadSpiDevice[QUADSPIDEV_COUNT] = { 0 };
 
-QUADSPIDevice quadSpiDeviceByInstance(QUADSPI_TypeDef *instance)
+quadSpiDevice_e quadSpiDeviceByInstance(QUADSPI_TypeDef *instance)
 {
 #ifdef USE_QUADSPI_DEVICE_1
     if (instance == QUADSPI) {
@@ -52,7 +52,7 @@ QUADSPIDevice quadSpiDeviceByInstance(QUADSPI_TypeDef *instance)
     return QUADSPIINVALID;
 }
 
-QUADSPI_TypeDef *quadSpiInstanceByDevice(QUADSPIDevice device)
+QUADSPI_TypeDef *quadSpiInstanceByDevice(quadSpiDevice_e device)
 {
     if (device == QUADSPIINVALID || device >= QUADSPIDEV_COUNT) {
         return NULL;
@@ -61,7 +61,7 @@ QUADSPI_TypeDef *quadSpiInstanceByDevice(QUADSPIDevice device)
     return quadSpiDevice[device].dev;
 }
 
-bool quadSpiInit(QUADSPIDevice device)
+bool quadSpiInit(quadSpiDevice_e device)
 {
     switch (device) {
     case QUADSPIINVALID:
@@ -79,7 +79,7 @@ bool quadSpiInit(QUADSPIDevice device)
 
 uint32_t quadSpiTimeoutUserCallback(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (device == QUADSPIINVALID) {
         return -1;
     }
@@ -89,7 +89,7 @@ uint32_t quadSpiTimeoutUserCallback(QUADSPI_TypeDef *instance)
 
 uint16_t quadSpiGetErrorCounter(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (device == QUADSPIINVALID) {
         return 0;
     }
@@ -98,7 +98,7 @@ uint16_t quadSpiGetErrorCounter(QUADSPI_TypeDef *instance)
 
 void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (device != QUADSPIINVALID) {
         quadSpiDevice[device].errorCount = 0;
     }
@@ -169,7 +169,7 @@ void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)
             continue;
         }
 
-        QUADSPIDevice device = hw->device;
+        quadSpiDevice_e device = hw->device;
         quadSpiDevice_t *pDev = &quadSpiDevice[device];
 
         for (int pindex = 0; pindex < MAX_QUADSPI_PIN_SEL; pindex++) {
