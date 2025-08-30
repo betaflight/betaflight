@@ -159,8 +159,8 @@ static void updateChannelData(void)
     for (i = 0, offset = ibusChannelOffset; i < IBUS_MAX_SLOTS; i++, offset += 2) {
         ibusChannelData[i] = ibus[offset] + ((ibus[offset + 1] & 0x0F) << 8);
     }
-    //latest IBUS recievers are using prviously not used 4 bits on every channel to incresse total channel count
-    for (i = IBUS_MAX_SLOTS, offset = ibusChannelOffset + 1; i < IBUS_MAX_CHANNEL; i++, offset += 6) {
+    //latest IBUS receivers are using previously not used 4 bits on every channel to increase total channel count
+    for (i = IBUS_MAX_SLOTS, offset = ibusChannelOffset + 1; i < IBUS_MAX_CHANNEL && offset + 4 < IBUS_BUFFSIZE; i++, offset += 6) {
         ibusChannelData[i] = ((ibus[offset] & 0xF0) >> 4) | (ibus[offset + 2] & 0xF0) | ((ibus[offset + 4] & 0xF0) << 4);
     }
 }
