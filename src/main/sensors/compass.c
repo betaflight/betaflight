@@ -105,7 +105,6 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 #define MAG_ALIGN ALIGN_DEFAULT
 #endif
     compassConfig->mag_alignment = MAG_ALIGN;
-#if MAG_ALIGN == ALIGN_CUSTOM
 #ifndef MAG_ALIGN_ROLL
 #define MAG_ALIGN_ROLL 0
 #endif
@@ -118,9 +117,6 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_customAlignment.roll = MAG_ALIGN_ROLL;
     compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
     compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
-#else
-    memset(&compassConfig->mag_customAlignment, 0x00, sizeof(compassConfig->mag_customAlignment));
-#endif // MAG_ALIGN == ALIGN_CUSTOM
     compassConfig->mag_hardware = MAG_DEFAULT;
 
 #ifndef MAG_I2C_ADDRESS
