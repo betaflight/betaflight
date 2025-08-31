@@ -101,8 +101,26 @@ static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
-    compassConfig->mag_alignment = ALIGN_DEFAULT;
+#ifndef MAG_ALIGN
+#define MAG_ALIGN ALIGN_DEFAULT
+#endif
+    compassConfig->mag_alignment = MAG_ALIGN;
+#if MAG_ALIGN == ALIGN_CUSTOM
+#ifndef MAG_ALIGN_ROLL
+#define MAG_ALIGN_ROLL 0
+#endif
+#ifndef MAG_ALIGN_PITCH
+#define MAG_ALIGN_PITCH 0
+#endif
+#ifndef MAG_ALIGN_YAW
+#define MAG_ALIGN_YAW 0
+#endif
+    compassConfig->mag_customAlignment.roll = MAG_ALIGN_ROLL;
+    compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
+    compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
+#else
     memset(&compassConfig->mag_customAlignment, 0x00, sizeof(compassConfig->mag_customAlignment));
+#endif // MAG_ALIGN == ALIGN_CUSTOM
     compassConfig->mag_hardware = MAG_DEFAULT;
 
 #ifndef MAG_I2C_ADDRESS
