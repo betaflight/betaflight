@@ -115,10 +115,13 @@ void systemInit(void)
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    if (requestType == BOOTLOADER_REQUEST_FLASH) {
-        systemReset();
-    } else if (requestType == BOOTLOADER_REQUEST_ROM) {
+    switch (requestType) {
+    case BOOTLOADER_REQUEST_ROM:
         rom_reset_usb_boot_extra(-1, 0, false);
+        break;
+    case BOOTLOADER_REQUEST_FLASH:
+    default:
+        systemReset();
     }
 }
 
