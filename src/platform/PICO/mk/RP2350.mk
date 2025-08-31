@@ -405,9 +405,11 @@ MCU_COMMON_SRC = \
             PICO/persistent.c \
             PICO/pwm_pico.c \
             PICO/pwm_beeper_pico.c \
-            PICO/serial_uart_pico.c \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
+            PICO/uart/serial_uart_pico.c \
+            PICO/uart/uart_hw.c \
+            PICO/uart/uart_pio.c \
             PICO/usb/usb_cdc.c \
             PICO/usb/usb_descriptors.c \
             PICO/usb/usb_msc_pico.c \

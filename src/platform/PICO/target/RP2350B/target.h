@@ -44,6 +44,8 @@
 
 #define USE_UART0
 #define USE_UART1
+#define USE_UART2
+#define USE_UART3
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 #define UARTHARDWARE_MAX_PINS 12
