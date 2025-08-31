@@ -181,7 +181,7 @@ static uint8_t rngN(const uint8_t max)
 Requirements:
 1. 0 every n hops
 2. No two repeated channels
-3. Equal occurance of each (or as even as possible) of each channel
+3. Equal occurrence of each (or as even as possible) of each channel
 4. Pseudorandom
 
 Approach:
