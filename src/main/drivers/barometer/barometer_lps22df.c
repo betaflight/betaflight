@@ -282,11 +282,21 @@ bool lps22dfDetect(baroDev_t *baro)
     // Reset the device
     busWriteRegister(dev, LPS22DF_CTRL_REG2, LPS22DF_CTRL_REG2_SWRESET);
 
-    // Enable one-shot ODR and averaging at 16
-    busWriteRegister(dev, LPS22DF_CTRL_REG1, LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_ODR_ONE_SHOT,
+    // Wait for the device to be ready
+    uint8_t lps22df_chip_swreset = 0;
+    busReadRegisterBuffer(dev, LPS22DF_CTRL_REG2, &lps22df_chip_swreset, 1);
+    while (lps22df_chip_swreset & LPS22DF_CTRL_REG2_SWRESET) {}
+
+    // Autoincrement register address when doing block SPI reads and update continuously
+    busWriteRegister(dev, LPS22DF_CTRL_REG2,LPS22DF_CTRL_REG2_EN_LPFP |
+                          LPS22DF_CTRL_REG2_LFPF_CFG |
+                          LPS22DF_CTRL_REG2_BDU);
+
+    // Enable one-shot ODR and averaging at 512
+    busWriteRegister(dev, LPS22DF_CTRL_REG1, LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_ODR_10HZ,
                                                                  LPS22DF_CTRL_REG1_ODR_MASK,
                                                                  LPS22DF_CTRL_REG1_ODR_SHIFT) |
-                                             LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_AVG_16,
+                                             LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_AVG_512,
                                                                  LPS22DF_CTRL_REG1_AVG_MASK,
                                                                  LPS22DF_CTRL_REG1_AVG_SHIFT));
 
@@ -330,9 +340,9 @@ static bool lps22dfGetUT(baroDev_t *baro)
 
 static bool lps22dfStartUP(baroDev_t *baro)
 {
-    // start measurement
-    // Trigger one-shot enable block data update to ensure LSB/MSB are coherent
-    return busWriteRegister(&baro->dev, LPS22DF_CTRL_REG2, LPS22DF_CTRL_REG2_ONESHOT | LPS22DF_CTRL_REG2_BDU);
+    UNUSED(baro);
+    // dummy
+    return true;
 }
 
 static bool lps22dfReadUP(baroDev_t *baro)
