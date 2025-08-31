@@ -35,6 +35,7 @@
 #include "hardware/clocks.h"
 #include "hardware/timer.h"
 #include "hardware/watchdog.h"
+#include "pico/bootrom.h"
 #include "pico/unique_id.h"
 
 ///////////////////////////////////////////////////
@@ -114,8 +115,11 @@ void systemInit(void)
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    UNUSED(requestType);
-    //TODO: implement
+    if (requestType == BOOTLOADER_REQUEST_FLASH) {
+        systemReset();
+    } else if (requestType == BOOTLOADER_REQUEST_ROM) {
+        rom_reset_usb_boot_extra(-1, 0, false);
+    }
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
