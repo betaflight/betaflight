@@ -23,7 +23,7 @@
 static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 {
     vector3_t gyroADCv;
-    int debugAxis = gyro.gyroDebugAxis;
+    int debugAxis = gyro.gyroDebugAxis >= 0 && gyro.gyroDebugAxis < XYZ_AXIS_COUNT ? gyro.gyroDebugAxis : -1;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // DEBUG_GYRO_RAW records the raw value read from the sensor (not zero offset, not scaled)
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_RAW, axis, gyro.rawSensorDev->gyroADCRaw[axis]);
@@ -55,7 +55,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 #endif
 
         // DEBUG_GYRO_SAMPLE(2) Record the post-RPM Filter value for the selected debug axis
-    if (debugAxis < XYZ_AXIS_COUNT) {
+    if (debugAxis >= 0) {
         GYRO_FILTER_AXIS_DEBUG_SET(debugAxis, DEBUG_GYRO_SAMPLE, 2, lrintf(gyroADCv.v[debugAxis]));
     }
         // apply static notch filters and software lowpass filters
@@ -64,13 +64,13 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
     gyro.notchFilter1.generic.apply(&gyro.notchFilter1.generic.filter, gyroADCv.v, gyroADCv.v);
     gyro.notchFilter2.generic.apply(&gyro.notchFilter2.generic.filter, gyroADCv.v, gyroADCv.v);
     gyro.lowpassFilter.generic.apply(&gyro.lowpassFilter.generic.filter, gyroADCv.v, gyroADCv.v);
-    if (debugAxis < XYZ_AXIS_COUNT) {
+    if (debugAxis >= 0) {
         // DEBUG_GYRO_SAMPLE(3) Record the post-static notch and lowpass filter value for the selected debug axis
         GYRO_FILTER_AXIS_DEBUG_SET(debugAxis, DEBUG_GYRO_SAMPLE, 3, lrintf(gyroADCv.v[debugAxis]));
     }
 #ifdef USE_DYN_NOTCH_FILTER
     if (isDynNotchActive()) {
-        if (debugAxis < XYZ_AXIS_COUNT) {
+        if (debugAxis >= 0) {
             GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCv.v[debugAxis]));
             GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 0, lrintf(gyroADCv.v[debugAxis]));
             GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 0, lrintf(gyroADCv.v[debugAxis]));
@@ -79,7 +79,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         dynNotchPush(&gyroADCv);
         dynNotchFilter(&gyroADCv, &gyroADCv);
 
-        if (debugAxis < XYZ_AXIS_COUNT) {
+        if (debugAxis >= 0) {
             GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCv.v[debugAxis]));
             GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 3, lrintf(gyroADCv.v[debugAxis]));
         }
