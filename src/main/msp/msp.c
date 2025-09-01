@@ -640,7 +640,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_FC_VERSION:
-        sbufWriteU8(dst, FC_VERSION_YEAR % 2000); // year since 2000
+        sbufWriteU8(dst, (uint8_t)(FC_VERSION_YEAR - 2000)); // year since 2000
         sbufWriteU8(dst, FC_VERSION_MONTH);
         sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
         sbufWritePString(dst, FC_VERSION_STRING);

@@ -59,3 +59,8 @@ extern const char* const buildTime;  // "HH:MM:SS"
 
 extern const char* const buildKey;
 extern const char* const releaseName;
+
+STATIC_ASSERT(FC_VERSION_YEAR >= 2000 && FC_VERSION_YEAR <= 2255, FC_VERSION_YEAR_range);
+STATIC_ASSERT(FC_VERSION_MONTH >= 1 && FC_VERSION_MONTH <= 12, FC_VERSION_MONTH_range);
+STATIC_ASSERT(FC_VERSION_PATCH_LEVEL <= 255, FC_VERSION_PATCH_LEVEL_range);
+STATIC_ASSERT(sizeof(FC_VERSION_STRING) - 1 <= 255, FC_VERSION_STRING_too_long);
