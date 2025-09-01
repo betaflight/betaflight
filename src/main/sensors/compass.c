@@ -155,7 +155,6 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 #endif
     compassConfig->interruptTag = IO_TAG(MAG_INT_EXTI);
 
-    memset(&compassConfig->magZero, 0x00, sizeof(compassConfig->magZero));
 
     compassConfig->mag_customAlignment.roll = MAG_ALIGN_ROLL;
     compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
