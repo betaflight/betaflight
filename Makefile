@@ -121,11 +121,16 @@ FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
-FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
-FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_YEAR   := $(shell grep " FC_VERSION_YEAR"   src/main/build/version.h | awk '{print $$3}' )
+FC_VER_MONTH  := $(shell grep " FC_VERSION_MONTH"  src/main/build/version.h | awk '{print $$3}' )
+FC_VER_PATCH  := $(shell grep " FC_VERSION_PATCH"  src/main/build/version.h | awk '{print $$3}' )
+FC_VER_SUFFIX := $(shell grep " FC_VERSION_SUFFIX" src/main/build/version.h | awk '{gsub(/"/, "", $$3); print $$3}' )
 
-FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
+FC_VER       := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
+
+ifdef FC_VER_SUFFIX
+FC_VER       := $(FC_VER)-$(FC_VER_SUFFIX)
+endif
 
 # import config handling (must occur after the hydration of hex, exe and uf2 targets)
 include $(MAKE_SCRIPT_DIR)/config.mk
@@ -316,6 +321,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
+              -D'__FC_VERSION__="$(FC_VER)"' \
               $(CONFIG_REVISION_DEFINE) \
               -pipe \
               -MMD -MP \

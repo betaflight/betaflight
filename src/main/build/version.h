@@ -24,11 +24,22 @@
 
 #define FC_FIRMWARE_NAME            "Betaflight"
 #define FC_FIRMWARE_IDENTIFIER      "BTFL"
-#define FC_VERSION_MAJOR            4  // increment when a major release is made (big new feature, etc)
-#define FC_VERSION_MINOR            6  // increment when a minor release is made (small new feature, change etc)
-#define FC_VERSION_PATCH_LEVEL      0  // increment when a bug is fixed
 
-#define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
+// The year the release is made
+#define FC_VERSION_YEAR             2025
+// The month the release is made
+#define FC_VERSION_MONTH            12
+// Increment when a bug-fix release is made (0 for initial YYYY.MM.X release)
+#define FC_VERSION_PATCH_LEVEL      0
+// Optional suffix for pre-releases (alpha, beta, rc1, etc). Empty string for final releases.
+#define FC_VERSION_SUFFIX           "beta"
+
+/* load the version from the makefile if it is defined otherwise default */
+#ifdef __FC_VERSION__
+#define FC_VERSION_STRING __FC_VERSION__
+#else
+#define FC_VERSION_STRING STR(FC_VERSION_YEAR) "." STR(FC_VERSION_MONTH) "." STR(FC_VERSION_PATCH_LEVEL)
+#endif
 
 extern const char* const targetName;
 
