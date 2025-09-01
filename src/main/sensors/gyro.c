@@ -425,21 +425,22 @@ FAST_CODE void gyroUpdate(void)
     }
 
     if (active != 0) {
-        gyro.gyroADC[X] = adcSum[X] / active;
-        gyro.gyroADC[Y] = adcSum[Y] / active;
-        gyro.gyroADC[Z] = adcSum[Z] / active;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            gyro.gyroADC[axis] = adcSum[axis] / active;
+        }
     }
 
     if (gyro.downsampleFilterEnabled) {
         // using gyro lowpass 2 filter for downsampling
-        gyro.sampleSum[X] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[X], gyro.gyroADC[X]);
-        gyro.sampleSum[Y] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Y], gyro.gyroADC[Y]);
-        gyro.sampleSum[Z] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Z], gyro.gyroADC[Z]);
+        // TODO - axis filter now, to match   gyro.lowpassFilter
+        for (int i = 0; i < 3; i++) {
+            gyro.sampleSum[i] = gyro.lowpass2Filter.generic.applyAxis(&gyro.lowpass2Filter.generic.filter, gyro.gyroADC[i], i);
+        }
     } else {
         // using simple averaging for downsampling
-        gyro.sampleSum[X] += gyro.gyroADC[X];
-        gyro.sampleSum[Y] += gyro.gyroADC[Y];
-        gyro.sampleSum[Z] += gyro.gyroADC[Z];
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            gyro.sampleSum[axis] += gyro.gyroADC[axis];
+        }
         gyro.sampleCount++;
     }
 }
@@ -509,9 +510,7 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
 #endif
 
     if (!overflowDetected) {
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            gyroFilteredDownsampled[axis] = pt1FilterApply(&gyro.imuGyroFilter[axis], gyro.gyroADCf[axis]);
-        }
+        pt1FilterApply3(&gyro.imuGyroFilter, gyroFilteredDownsampled, gyro.gyroADCf);
     }
 
 #if !defined(USE_GYRO_OVERFLOW_CHECK) && !defined(USE_YAW_SPIN_RECOVERY)
@@ -591,24 +590,16 @@ void dynLpfGyroUpdate(float throttle)
         const float gyroDt = gyro.targetLooptime * 1e-6f;
         switch (gyro.dynLpfFilter) {
         case DYN_LPF_PT1:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt1FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
-            }
+            pt1FilterCoeffsLPF(&gyro.lowpassFilter.pt1.filter.coeffs, cutoffFreq, gyroDt);
             break;
         case DYN_LPF_BIQUAD:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&gyro.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
-            }
+            biquadFilterCoeffsLPF(&gyro.lowpassFilter.biquad.filter.coeffs, cutoffFreq, gyroDt);
             break;
         case  DYN_LPF_PT2:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt2FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt2FilterState, pt2FilterGain(cutoffFreq, gyroDt));
-            }
+            pt2FilterCoeffsLPF(&gyro.lowpassFilter.pt2.filter.coeffs, cutoffFreq, gyroDt);
             break;
         case DYN_LPF_PT3:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt3FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt3FilterState, pt3FilterGain(cutoffFreq, gyroDt));
-            }
+            pt3FilterCoeffsLPF(&gyro.lowpassFilter.pt3.filter.coeffs, cutoffFreq, gyroDt);
             break;
         }
     }

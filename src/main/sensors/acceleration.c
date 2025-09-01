@@ -84,7 +84,7 @@ static inline void postProcessAccelerometer(void)
         }
 
         if (accelerationRuntime.accLpfCutHz) {
-            acc.accADC.v[axis] = pt2FilterApply(&accelerationRuntime.accFilter[axis], acc.accADC.v[axis]);
+            acc.accADC.v[axis] = pt2FilterApplyAxis3(&accelerationRuntime.accFilter, acc.accADC.v[axis], axis);
         }
 
         // Calculate derivative of acc (jerk)

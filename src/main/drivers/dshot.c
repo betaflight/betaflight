@@ -144,7 +144,7 @@ FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
 
 FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
 
-FAST_DATA_ZERO_INIT static pt1Filter_t motorFreqLpf[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT static FILTER_TYPE(pt1, MAX_SUPPORTED_MOTORS) motorFreqLpf;
 FAST_DATA_ZERO_INIT static float motorFrequencyHz[MAX_SUPPORTED_MOTORS];
 FAST_DATA_ZERO_INIT static float minMotorFrequencyHz;
 FAST_DATA_ZERO_INIT static float erpmToHz;
@@ -186,9 +186,8 @@ void initDshotTelemetry(const timeUs_t looptimeUs)
 #ifdef USE_RPM_FILTER
     if (motorConfig()->dev.useDshotTelemetry) {
         // init LPFs for RPM data
-        for (unsigned i = 0; i < dshotMotorCount; i++) {
-            pt1FilterInit(&motorFreqLpf[i], pt1FilterGain(rpmFilterConfig()->rpm_filter_lpf_hz, looptimeUs * 1e-6f));
-        }
+        FILTER_INIT_KIND_DIM_FN_NAME(pt1, LPF, MAX_SUPPORTED_MOTORS)(&motorFreqLpf, rpmFilterConfig()->rpm_filter_lpf_hz, looptimeUs * 1e-6f);
+        UNUSED(looptimeUs);
     }
 #else
     UNUSED(looptimeUs);
@@ -294,7 +293,7 @@ FAST_CODE_NOINLINE void updateDshotTelemetry(void)
     // update filtered rotation speed of motors for features (e.g. "RPM filter")
     minMotorFrequencyHz = FLT_MAX;
     for (unsigned motor = 0; motor < dshotMotorCount; motor++) {
-        motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], erpmToHz * getDshotErpm(motor));
+        motorFrequencyHz[motor] = FILTER_APPLY_AXIS_FN_NAME(pt1, MAX_SUPPORTED_MOTORS)(&motorFreqLpf, erpmToHz * getDshotErpm(motor), motor);
         minMotorFrequencyHz = MIN(minMotorFrequencyHz, motorFrequencyHz[motor]);
     }
 
