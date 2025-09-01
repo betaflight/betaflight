@@ -11,7 +11,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 | Date  | Event |
 | - | - |
-| 01-10-2025 | Firmware 2025.12.0 Beta phase begins |
+| 01-09-2025 | Firmware 2025.12.0 Beta phase begins |
 | 01-10-2025 | Firmware 2025.12.0 Release Candidate phase begins |
 | 01-12-2025 | Firmware 2025.12.0 Release |
 | 01-04-2026 | Firmware 2026.6.0 Beta phase begins |
