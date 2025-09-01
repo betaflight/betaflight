@@ -111,7 +111,7 @@ void vtxUpdateActivatedChannel(void)
     if (vtxCommonDevice()) {
         static uint8_t lastIndex = -1;
 
-        for (uint8_t index = 0; index < MAX_VTX_CONDITIONS; index++) {
+        for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
             const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
 
             if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)
