@@ -28,11 +28,11 @@
 #include "pg/pg.h"
 #include "fc/rc_modes.h"
 
-#ifndef MAX_VTX_CONDITIONS
-#define MAX_VTX_CONDITIONS  10
+#ifndef MAX_CHANNEL_ACTIVATION_CONDITION_COUNT
+#define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  10
 #endif
 
-STATIC_ASSERT(MAX_VTX_CONDITIONS <= 99, "MAX_VTX_CONDITIONS must be <= 99");
+STATIC_ASSERT(MAX_CHANNEL_ACTIVATION_CONDITION_COUNT <= 99, "MAX_CHANNEL_ACTIVATION_CONDITION_COUNT must be <= 99");
 
 typedef struct vtxChannelActivationCondition_s {
     uint8_t auxChannelIndex;
@@ -43,7 +43,7 @@ typedef struct vtxChannelActivationCondition_s {
 } vtxChannelActivationCondition_t;
 
 typedef struct vtxConfig_s {
-    vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_VTX_CONDITIONS];
+    vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
     uint8_t halfDuplex;
 } vtxConfig_t;
 
