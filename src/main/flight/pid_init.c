@@ -52,8 +52,8 @@
 #ifdef USE_D_MAX
 #define D_MAX_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
 #define D_MAX_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
-#define D_MAX_GAIN_FACTOR 0.00008f
-#define D_MAX_SETPOINT_GAIN_FACTOR 0.000032f // 0.00008f * 40 / 100, independent setpoint advance gain
+#define D_MAX_GYRO_GAIN_FACTOR 0.00008f
+#define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f // same setpoint advance gain as gyro gain for equal rate of change
 #endif
 
 #define ATTITUDE_CUTOFF_HZ 50
@@ -536,7 +536,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
             pidRuntime.dMaxPercent[axis] = 1.0f;
         }
     }
-    pidRuntime.dMaxGyroGain = D_MAX_GAIN_FACTOR * pidProfile->d_max_gain / D_MAX_LOWPASS_HZ;
+    pidRuntime.dMaxGyroGain = D_MAX_GYRO_GAIN_FACTOR * pidProfile->d_max_gain / D_MAX_LOWPASS_HZ;
     pidRuntime.dMaxSetpointGain = D_MAX_SETPOINT_GAIN_FACTOR * pidProfile->d_max_advance / D_MAX_LOWPASS_HZ;
     // lowpass included inversely in gain since stronger lowpass decreases peak effect
 #endif
