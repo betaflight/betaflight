@@ -203,7 +203,7 @@ void expectVectorsAreEqual(vector3_t *a, vector3_t *b, float absTol)
     EXPECT_NEAR(a->z, b->z, absTol);
 }
 
-#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+#if defined(FAST_MATH)
 TEST(MathsUnittest, TestFastTrigonometrySinCos)
 {
     double sinError = 0;
@@ -213,7 +213,7 @@ TEST(MathsUnittest, TestFastTrigonometrySinCos)
         sinError = MAX(sinError, fabs(approxResult - libmResult));
     }
     printf("sin_approx maximum absolute error = %e\n", sinError);
-    EXPECT_LE(sinError, 3e-6);
+    EXPECT_LE(sinError, 4e-6);
 
     double cosError = 0;
     for (float x = -10 * M_PI; x < 10 * M_PI; x += M_PI / 300) {

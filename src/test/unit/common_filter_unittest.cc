@@ -32,34 +32,34 @@ extern "C" {
 TEST(FilterUnittest, TestPt1FilterInit)
 {
     pt1Filter_t filter;
-    pt1FilterInit(&filter, 0.0f);
-    EXPECT_EQ(0, filter.k);
+    pt1FilterInitAlpha(&filter, 0.0f);
+    EXPECT_EQ(0, filter.coeffs.c[0]);
 
-    pt1FilterInit(&filter, 1.0f);
-    EXPECT_EQ(1.0, filter.k);
+    pt1FilterInitAlpha(&filter, 1.0f);
+    EXPECT_EQ(1.0, filter.coeffs.c[0]);
 }
 
 TEST(FilterUnittest, TestPt1FilterGain)
 {
-    EXPECT_FLOAT_EQ(0.999949, pt1FilterGain(100.0f, 31.25f));
+    EXPECT_FLOAT_EQ(0.999949, rcFilterGain(100.0f, 31.25f));
     // handle cases over uint8_t boundary
-    EXPECT_FLOAT_EQ(0.99998301, pt1FilterGain(300.0f, 31.25f));
+    EXPECT_FLOAT_EQ(0.99998301, rcFilterGain(300.0f, 31.25f));
 }
 
 TEST(FilterUnittest, TestPt1FilterApply)
 {
     pt1Filter_t filter;
-    pt1FilterInit(&filter, pt1FilterGain(100.0f, 31.25f));
-    EXPECT_EQ(0, filter.state);
+    pt1FilterInitLPF(&filter, 100.0f, 31.25f);
+    EXPECT_EQ(0, filter.state[0].s[0]);
 
-    pt1FilterApply(&filter, 1800.0f);
-    EXPECT_FLOAT_EQ(1799.9083, filter.state);
+    float y = pt1FilterApply(&filter, 1800.0f);
+    EXPECT_FLOAT_EQ(1799.9083, y);
 
-    pt1FilterApply(&filter, -1800.0f);
-    EXPECT_FLOAT_EQ(-1799.8165, filter.state);
+    y = pt1FilterApply(&filter, -1800.0f);
+    EXPECT_FLOAT_EQ(-1799.8165, y);
 
-    pt1FilterApply(&filter, -200.0f);
-    EXPECT_FLOAT_EQ(-200.08142, filter.state);
+    y = pt1FilterApply(&filter, -200.0f);
+    EXPECT_FLOAT_EQ(-200.08142, y);
 }
 
 TEST(FilterUnittest, TestSlewFilterInit)
