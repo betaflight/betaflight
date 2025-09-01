@@ -161,14 +161,16 @@ void adcInternalStartConversion(void)
     adcInternalConversionInProgress = true;
 }
 
-uint16_t adcInternalReadVrefint(void)
+uint16_t adcInternalRead(adcSource_e source)
 {
-    return adc_inserted_data_read(PERIPH_INT(ADC0), ADC_INSERTED_CHANNEL_1);
-}
-
-uint16_t adcInternalReadTempsensor(void)
-{
-    return adc_inserted_data_read(PERIPH_INT(ADC0), ADC_INSERTED_CHANNEL_0);
+    switch (source) {
+    case ADC_VREFINT:
+        return adc_inserted_data_read(PERIPH_INT(ADC0), ADC_INSERTED_CHANNEL_1);
+    case ADC_TEMPSENSOR:
+        return adc_inserted_data_read(PERIPH_INT(ADC0), ADC_INSERTED_CHANNEL_0);
+    default:
+        return 0;
+    }
 }
 #endif
 
@@ -243,6 +245,9 @@ void adcInit(const adcConfig_t *config)
     // Initialize for injected conversion
     adcInitInternalInjected(config);
 
+    adcOperatingConfig[ADC_VREFINT].enabled = true;
+    adcOperatingConfig[ADC_TEMPSENSOR].enabled = true;
+
     if (!adcActive) {
         return;
     }
@@ -251,7 +256,7 @@ void adcInit(const adcConfig_t *config)
     adcInitDevice((uint32_t)(adc.ADCx), configuredAdcChannels); // Note type conversion.
 
     uint8_t rank = 0;
-    for (i = 0; i < ADC_SOURCE_COUNT; i++) {
+    for (i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (!adcOperatingConfig[i].enabled) {
             continue;
         }
