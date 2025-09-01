@@ -24,7 +24,7 @@
 
 #include "common/time.h"
 #include "common/filter.h"
-
+#include "common/vector.h"
 #include "pg/motor.h"
 #include "pg/rpm_filter.h"
 
@@ -40,11 +40,10 @@ typedef struct rpmFilter_s {
     float q;
 
     float dt;
-    biquadFilterVec3_t notch[MAX_SUPPORTED_MOTORS][RPM_FILTER_HARMONICS_MAX];
-
+    biquadDF1FilterVec3_t notch[MAX_SUPPORTED_MOTORS][RPM_FILTER_HARMONICS_MAX];
 } rpmFilter_t;
 
 void rpmFilterInit(const rpmFilterConfig_t *config, const float dt);
 void rpmFilterUpdate(void);
-float rpmFilterApply(const int axis, float value);
+void rpmFilterApply(vector3_t* out, const vector3_t* in);
 bool isRpmFilterEnabled(void);

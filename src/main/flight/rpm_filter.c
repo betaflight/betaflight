@@ -77,7 +77,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const float dt)
 
     for (int motor = 0; motor < getMotorCount(); motor++) {
         for (int i = 0; i < rpmFilter.numHarmonics; i++) {
-            biquadFilterInitNotch3(&rpmFilter.notch[motor][i], MIN(rpmFilter.minHz * (i+1), rpmFilter.maxHz), rpmFilter.dt, rpmFilter.q);
+            biquadDF1FilterInitNotch3(&rpmFilter.notch[motor][i], MIN(rpmFilter.minHz * (i+1), rpmFilter.maxHz), rpmFilter.dt, rpmFilter.q);
             biquadFilterCoeffsApplyWeight(&rpmFilter.notch[motor][i].coeffs, 0.0f);  // disabled
         }
     }
@@ -134,22 +134,20 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
     }
 }
 
-FAST_CODE float rpmFilterApply(const int axis, float value)
+FAST_CODE void rpmFilterApply(vector3_t* out, const vector3_t* in)
 {
     // Iterate over all notches on axis and apply each one to value.
     // Order of application doesn't matter because biquads are linear time-invariant filters.
+    vector3_t value3 = *in;
     for (int i = 0; i < rpmFilter.numHarmonics; i++) {
-
         if (rpmFilter.weights[i] <= 0.0f) {
             continue;  // skip harmonics which have no effect on filtered output
         }
-
         for (int motor = 0; motor < getMotorCount(); motor++) {
-            value = biquadFilterApplyAxis3(&rpmFilter.notch[motor][i], value, axis);
+            biquadDF1FilterApply3(&rpmFilter.notch[motor][i], value3.v, value3.v);
         }
     }
-
-    return value;
+    *out = value3;
 }
 
 bool isRpmFilterEnabled(void)

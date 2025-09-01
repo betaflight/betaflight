@@ -64,8 +64,8 @@ typedef struct gyroSensor_s {
     gyroCalibration_t calibration;
 } gyroSensor_t;
 
-typedef GENERIC_AXISFILTER_TYPE(3, (null, biquad)) gyroNotchFilter_t;
-typedef GENERIC_AXISFILTER_TYPE(3, LOWPASS_FILTERS) gyroLowpassFilter_t;
+typedef GENERIC_FILTER_TYPE(3, (null, biquad)) gyroNotchFilter_t;
+typedef GENERIC_FILTER_TYPE(3, LOWPASS_FILTERS) gyroLowpassFilter_t;
 
 typedef struct gyro_s {
     uint16_t sampleRateHz;

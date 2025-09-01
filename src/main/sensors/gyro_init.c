@@ -99,12 +99,12 @@ static void gyroInitFilterNotch(gyroNotchFilter_t *notch, uint16_t notchHz, uint
 
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
     if (notchHz != 0 && notchCutoffHz != 0) {
-        notch->biquad.applyAxis = biquadFilterApplyAxis3;
+        notch->biquad.apply = biquadFilterApply3;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         biquadFilterInit3(&notch->biquad.filter);
         biquadFilterCoeffsNotch(&notch->biquad.filter.coeffs, notchHz, dt, notchQ);
     } else {
-        notch->null.applyAxis = nullFilterApplyAxis3;
+        notch->null.apply = nullFilterApply3;
     }
 }
 
@@ -117,18 +117,18 @@ static bool gyroInitLowpassFilterLpf(gyroLowpassFilter_t * lpf, int type, uint16
     if (lpfHz) {
         switch (type) {
         case FILTER_PT1:
-            lpf->pt1.applyAxis = pt1FilterApplyAxis3;
+            lpf->pt1.apply = pt1FilterApply3;
             pt1FilterInit3(&lpf->pt1.filter);
             pt1FilterCoeffsLPF(&lpf->pt1.filter.coeffs, lpfHz, dt);
             return true;
         case FILTER_BIQUAD:
             if (lpfHz <= gyroFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-                lpf->biquadDF1.applyAxis = biquadDF1FilterApplyAxis3;
+                lpf->biquadDF1.apply = biquadDF1FilterApply3;
                 biquadDF1FilterInit3(&lpf->biquadDF1.filter);
                 biquadFilterCoeffsLPF(&lpf->biquadDF1.filter.coeffs, lpfHz, dt);
 #else
-                lpf->biquad.applyAxis = biquadFilterApplyAxis3;
+                lpf->biquad.apply = biquadFilterApply3;
                 biquadFilterInit3(&lpf->biquad.filter);
                 biquadFilterCoeffsLPF(&lpf->biquad.filter.coeffs, lpfHz, dt);
 #endif
@@ -136,19 +136,19 @@ static bool gyroInitLowpassFilterLpf(gyroLowpassFilter_t * lpf, int type, uint16
             }
             break;
         case FILTER_PT2:
-            lpf->pt2.applyAxis = pt2FilterApplyAxis3;
+            lpf->pt2.apply = pt2FilterApply3;
             pt2FilterInit3(&lpf->pt2.filter);
             pt2FilterCoeffsLPF(&lpf->pt2.filter.coeffs, lpfHz, dt);
             return true;
         case FILTER_PT3:
-            lpf->pt3.applyAxis = pt3FilterApplyAxis3;
+            lpf->pt3.apply = pt3FilterApply3;
             pt3FilterInit3(&lpf->pt3.filter);
             pt3FilterCoeffsLPF(&lpf->pt3.filter.coeffs, lpfHz, dt);
             return true;
         }
     }
     // no filter
-    lpf->null.applyAxis = nullFilterApplyAxis3;
+    lpf->null.apply = nullFilterApply3;
     return false;
 }
 

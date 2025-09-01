@@ -432,10 +432,7 @@ FAST_CODE void gyroUpdate(void)
 
     if (gyro.downsampleFilterEnabled) {
         // using gyro lowpass 2 filter for downsampling
-        // TODO - axis filter now, to match   gyro.lowpassFilter
-        for (int i = 0; i < 3; i++) {
-            gyro.sampleSum[i] = gyro.lowpass2Filter.generic.applyAxis(&gyro.lowpass2Filter.generic.filter, gyro.gyroADC[i], i);
-        }
+        gyro.lowpass2Filter.generic.apply(&gyro.lowpass2Filter.generic.filter, gyro.sampleSum, gyro.gyroADC);
     } else {
         // using simple averaging for downsampling
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
