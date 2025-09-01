@@ -536,8 +536,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
             pidRuntime.dMaxPercent[axis] = 1.0f;
         }
     }
-    pidRuntime.dMaxGyroGain = D_MAX_GYRO_GAIN_FACTOR * pidProfile->d_max_gain / D_MAX_LOWPASS_HZ;
-    pidRuntime.dMaxSetpointGain = D_MAX_SETPOINT_GAIN_FACTOR * pidProfile->d_max_advance / D_MAX_LOWPASS_HZ;
+    const float dmaxLpfInv = 1.0f / D_MAX_LOWPASS_HZ;
+    pidRuntime.dMaxGyroGain = D_MAX_GYRO_GAIN_FACTOR * pidProfile->d_max_gain * dmaxLpfInv;
+    pidRuntime.dMaxSetpointGain = D_MAX_SETPOINT_GAIN_FACTOR * pidProfile->d_max_advance * dmaxLpfInv;
     // lowpass included inversely in gain since stronger lowpass decreases peak effect
 #endif
 
