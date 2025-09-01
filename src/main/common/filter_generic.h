@@ -3,7 +3,8 @@
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/tuple/to_seq.hpp>
-
+#include <boost/preprocessor/tuple/elem.hpp>
+#include <boost/preprocessor/control/iif.hpp>
 #include "filter.h"
 #include "filter_magic_h.h"
 
