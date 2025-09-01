@@ -1195,8 +1195,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
     // TODO: create wrapper in filter.h + type safety
     pidRuntime.dtermNotch.generic.apply(&pidRuntime.dtermNotch.generic.filter, gyroRateDterm, gyro.gyroADCf);
-    pidRuntime.dtermLowpass.generic.apply(&pidRuntime.dtermLowpass.generic.filter, gyroRateDterm, gyro.gyroADCf);
-    pidRuntime.dtermLowpass.generic.apply(&pidRuntime.dtermLowpass2.generic.filter, gyroRateDterm, gyro.gyroADCf);
+    pidRuntime.dtermLowpass.generic.apply(&pidRuntime.dtermLowpass.generic.filter, gyroRateDterm , gyroRateDterm);
+    pidRuntime.dtermLowpass2.generic.apply(&pidRuntime.dtermLowpass2.generic.filter, gyroRateDterm, gyroRateDterm);
 
     rotateItermAndAxisError();
 

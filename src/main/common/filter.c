@@ -188,7 +188,7 @@ FAST_CODE void biquadFilterCoeffsApplyWeight(FILTER_COEFFS_TYPE(biquad) *c, floa
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
-FAST_CODE float biquadDF1FilterApply_cs(FILTER_COEFFS_TYPE(biquad) *c, FILTER_STATE_TYPE(biquadDF1) *s, float input)
+FAST_CODE float biquadDF1FilterApply_cs(const FILTER_COEFFS_TYPE(biquad) *c, FILTER_STATE_TYPE(biquadDF1) *s, float input)
 {
     const float result = c->c[biquad_b0] * input
                         + c->c[biquad_b1] * s->s[biquad_x1]
@@ -208,7 +208,7 @@ FAST_CODE float biquadDF1FilterApply_cs(FILTER_COEFFS_TYPE(biquad) *c, FILTER_ST
 }
 
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
-FAST_CODE float biquadFilterApply_cs(FILTER_COEFFS_TYPE(biquad) *c, FILTER_STATE_TYPE(biquad) *s, float input)
+FAST_CODE float biquadFilterApply_cs(const FILTER_COEFFS_TYPE(biquad) *c, FILTER_STATE_TYPE(biquad) *s, float input)
 {
     const float result = c->c[biquad_b0] * input + s->s[biquad_s1];
 

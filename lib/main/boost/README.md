@@ -22,3 +22,6 @@ Notes
 - The build’s include paths add `$(ROOT)/lib`, so these headers take precedence over any system Boost install.
 - This vendoring is for POC convenience and deterministic builds; for upstream, consider depending on a packaged Boost.PP instead.
 
+
+License
+- These headers are distributed under the Boost Software License 1.0.

@@ -147,7 +147,7 @@ typedef float FILTER_APPLY_FN_TYPE0(_name_state)(FILTER_TYPE(_name_state, 1) *fi
 #define PP__ARG_LIST_EACH(r, data, i, elem)   BOOST_PP_COMMA_IF(i) PP__PARAM_NAME(elem)
 #define PP__ARG_LIST(seq)   BOOST_PP_SEQ_FOR_EACH_I(PP__ARG_LIST_EACH, ~, seq)
 
-#define FILTER_COEFS_FN_NAME(_name_coef, _kind) CONCAT3(_name_coef, FilterCoeffs, _kind)
+#define FILTER_COEFFS_FN_NAME(_name_coef, _kind) CONCAT3(_name_coef, FilterCoeffs, _kind)
 #define FILTER_INIT_KIND_FN_NAME(_name_state, _kind) CONCAT3(_name_state, FilterInit, _kind)
 #define FILTER_INIT_KIND_DIM_FN_NAME(_name_state, kind, dim) CONCAT4(_name_state, FilterInit, kind, dim)
 
@@ -158,7 +158,7 @@ typedef float FILTER_APPLY_FN_TYPE0(_name_state)(FILTER_TYPE(_name_state, 1) *fi
         FILTER_TYPE(_state, _dim) *f, PP__PARAM_LIST(_params_seq))                              \
     {                                                                                           \
         FILTER_INIT_FN_NAME(_state, _dim)(f);                                                   \
-        FILTER_COEFS_FN_NAME(_coef, _kind)(&f->coeffs, PP__ARG_LIST(_params_seq));               \
+        FILTER_COEFFS_FN_NAME(_coef, _kind)(&f->coeffs, PP__ARG_LIST(_params_seq));               \
     }
 
 /* drive all dims */
@@ -172,7 +172,7 @@ typedef float FILTER_APPLY_FN_TYPE0(_name_state)(FILTER_TYPE(_name_state, 1) *fi
 
 /* 1D alias + numbered dims */
 #define DEFINE_FILTER_INIT_KIND(_coef, _state, _dim_seq, _kind, _params_seq)                    \
-    void FILTER_COEFS_FN_NAME(_coef, _kind)(                                                   \
+    void FILTER_COEFFS_FN_NAME(_coef, _kind)(                                                   \
         FILTER_COEFFS_TYPE(_coef) *coeffs,                                                      \
         PP__PARAM_LIST(_params_seq));                                                            \
     static void MAYBE_UNUSED                                                                    \
@@ -180,7 +180,7 @@ typedef float FILTER_APPLY_FN_TYPE0(_name_state)(FILTER_TYPE(_name_state, 1) *fi
         FILTER_TYPE(_state, 1) *f, PP__PARAM_LIST(_params_seq))                                 \
     {                                                                                           \
         FILTER_INIT_FN_NAME(_state, 1)(f);                                                      \
-        FILTER_COEFS_FN_NAME(_coef, _kind)(&f->coeffs, PP__ARG_LIST(_params_seq));               \
+        FILTER_COEFFS_FN_NAME(_coef, _kind)(&f->coeffs, PP__ARG_LIST(_params_seq));               \
     }                                                                                           \
     BOOST_PP_SEQ_FOR_EACH(PP__DEFINE_FILTER_INIT_KIND_EACH_P,                                   \
         (_coef, _state, _kind, _params_seq), _dim_seq)                                          \

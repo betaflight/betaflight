@@ -237,10 +237,10 @@ include $(MAKE_SCRIPT_DIR)/openocd.mk
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
 
-# Add top-level lib directory so local third-party headers like
-# Boost.Preprocessor under `lib/boost/...` are found via `#include <boost/...>`
+# Add local third-party headers to include path so `#include <boost/...>` resolves
+# after moving Boost.Preprocessor to `lib/main/boost`.
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(ROOT)/lib
+                   $(ROOT)/lib/main
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)

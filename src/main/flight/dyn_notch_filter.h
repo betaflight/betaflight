@@ -23,6 +23,8 @@
 #include <stdbool.h>
 
 #include "common/time.h"
+#include "common/vector.h"
+
 
 #include "pg/dyn_notch.h"
 
