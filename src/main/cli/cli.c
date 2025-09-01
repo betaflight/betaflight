@@ -2658,7 +2658,7 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
     const char *format = "vtx %u %u %u %u %u %u %u";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     bool equalsDefault = false;
-    for (uint32_t i = 0; i < MAX_VTX_CONDITIONS; i++) {
+    for (uint32_t i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
         const vtxChannelActivationCondition_t *cac = &vtxConfig->vtxChannelActivationConditions[i];
         if (vtxConfigDefault) {
             const vtxChannelActivationCondition_t *cacDefault = &vtxConfigDefault->vtxChannelActivationConditions[i];
@@ -2705,7 +2705,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
 #endif
         ptr = cmdline;
         int i = atoi(ptr++);
-        if (i < MAX_VTX_CONDITIONS) {
+        if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
@@ -2757,7 +2757,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
                 );
             }
         } else {
-            cliShowArgumentRangeError(cmdName, "INDEX", 0, MAX_VTX_CONDITIONS - 1);
+            cliShowArgumentRangeError(cmdName, "INDEX", 0, MAX_CHANNEL_ACTIVATION_CONDITION_COUNT - 1);
         }
     }
 }
