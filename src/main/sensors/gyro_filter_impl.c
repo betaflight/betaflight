@@ -23,7 +23,7 @@
 static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 {
     vector3_t gyroADCv;
-    unsigned debugAxis = gyro.gyroDebugAxis;
+    int debugAxis = gyro.gyroDebugAxis;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // DEBUG_GYRO_RAW records the raw value read from the sensor (not zero offset, not scaled)
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_RAW, axis, gyro.rawSensorDev->gyroADCRaw[axis]);
