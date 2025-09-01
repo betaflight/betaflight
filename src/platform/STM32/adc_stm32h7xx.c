@@ -308,27 +308,37 @@ void adcInit(const adcConfig_t *config)
     adcInitCalibrationValues();
 #endif
 
-    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
-        int map;
-        int dev;
+    for (unsigned i = 0; i < ADC_SOURCE_COUNT; i++) {
+        int map = -1;
+        int dev = -1;
 
 #ifdef USE_ADC_INTERNAL
-        if (i == ADC_TEMPSENSOR) {
-            map = ADC_TAG_MAP_TEMPSENSOR;
-            dev = ffs(adcTagMap[map].devices) - 1;
-        } else if (i == ADC_VREFINT) {
-            map = ADC_TAG_MAP_VREFINT;
-            dev = ffs(adcTagMap[map].devices) - 1;
-        } else if (i == ADC_VBAT4) {
-            map = ADC_TAG_MAP_VBAT4;
-            dev = ffs(adcTagMap[map].devices) - 1;
-        } else {
-#else
-        {
+        if (i >= ADC_EXTERNAL_COUNT) {
+            switch(i) {
+            case ADC_TEMPSENSOR:
+                map = ADC_TAG_MAP_TEMPSENSOR;
+                break;
+            case ADC_VREFINT:
+                map = ADC_TAG_MAP_VREFINT;
+                break;
+#if ADC_INTERNAL_VBAT4_ENABLED
+            case ADC_VBAT4:
+                map = ADC_TAG_MAP_VBAT4;
+                break;
 #endif
+            default:
+                // Unknown internal source; skip to avoid using an uninitialized map
+                continue;
+            }
+            dev = ffs(adcTagMap[map].devices) - 1;
+            if (dev < 0) { continue; }
+            adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_810CYCLES_5;
+        }
+#endif
+        if (i < ADC_EXTERNAL_COUNT) {
             dev = ADC_CFG_TO_DEV(adcOperatingConfig[i].adcDevice);
 
-            if (!adcOperatingConfig[i].tag) {
+            if (dev < 0 || !adcOperatingConfig[i].tag) {
                 continue;
             }
 
@@ -336,6 +346,8 @@ void adcInit(const adcConfig_t *config)
             if (map < 0) {
                 continue;
             }
+
+            adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_387CYCLES_5;
 
             // Found a tag map entry for this input pin
             // Find an ADC device that can handle this input pin
@@ -346,14 +358,23 @@ void adcInit(const adcConfig_t *config)
                 // If the ADC was configured to use a specific device, but that device was not active, then try and find another active instance that works for the pin.
 
                 for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                    if (!adcDevice[dev].ADCx
-#ifndef USE_DMA_SPEC
-                        || !adcDevice[dev].dmaResource
-#endif
-                    ) {
+                    if (!adcDevice[dev].ADCx) {
                         // Instance not activated
                         continue;
                     }
+
+#ifdef USE_DMA_SPEC
+                    // check that there is a valid spec for this dev
+                    const dmaChannelSpec_t *spec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+                    if (!spec) {
+                        continue;
+                    }
+#else
+                    if (!adcDevice[dev].dmaResource) {
+                        continue;
+                    }
+#endif
+
                     if (adcTagMap[map].devices & (1 << dev)) {
                         // Found an activated ADC instance for this input pin
                         break;
@@ -371,7 +392,6 @@ void adcInit(const adcConfig_t *config)
 
         adcOperatingConfig[i].adcDevice = dev;
         adcOperatingConfig[i].adcChannel = adcTagMap[map].channel;
-        adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_810CYCLES_5;
         adcOperatingConfig[i].enabled = true;
 
         adcDevice[dev].channelBits |= (1 << adcTagMap[map].channelOrdinal);
@@ -446,12 +466,12 @@ void adcInit(const adcConfig_t *config)
 
             ADC_ChannelConfTypeDef sConfig;
 
-            sConfig.Channel      = adcOperatingConfig[adcChan].adcChannel; /* Sampled channel number */
-            sConfig.Rank         = adcRegularRankMap[rank++];   /* Rank of sampled channel number ADCx_CHANNEL */
-            sConfig.SamplingTime = ADC_SAMPLETIME_387CYCLES_5;  /* Sampling time (number of clock cycles unit) */
-            sConfig.SingleDiff   = ADC_SINGLE_ENDED;            /* Single-ended input channel */
-            sConfig.OffsetNumber = ADC_OFFSET_NONE;             /* No offset subtraction */
-            sConfig.Offset = 0;                                 /* Parameter discarded because offset correction is disabled */
+            sConfig.Channel      = adcOperatingConfig[adcChan].adcChannel;  /* Sampled channel number */
+            sConfig.Rank         = adcRegularRankMap[rank++];               /* Rank of sampled channel number ADCx_CHANNEL */
+            sConfig.SamplingTime = adcOperatingConfig[adcChan].sampleTime;  /* Sampling time (number of clock cycles unit) */
+            sConfig.SingleDiff   = ADC_SINGLE_ENDED;                        /* Single-ended input channel */
+            sConfig.OffsetNumber = ADC_OFFSET_NONE;                         /* No offset subtraction */
+            sConfig.Offset = 0;                                             /* Parameter discarded because offset correction is disabled */
 
             if (HAL_ADC_ConfigChannel(&adc->ADCHandle, &sConfig) != HAL_OK) {
                 errorHandler();
@@ -541,7 +561,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     SCB_InvalidateDCache_by_Addr((uint32_t*)adcConversionBuffer, ADC_BUF_CACHE_ALIGN_BYTES);
-    for (int i = 0; i < ADC_SOURCE_INTERNAL_FIRST_ID; i++) {
+    for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -560,23 +580,19 @@ void adcInternalStartConversion(void)
     return;
 }
 
-static uint16_t adcInternalRead(int channel)
+uint16_t adcInternalRead(adcSource_e source)
 {
-    int dmaIndex = adcOperatingConfig[channel].dmaIndex;
-
-    return adcConversionBuffer[dmaIndex];
-}
-
-uint16_t adcInternalReadVrefint(void)
-{
-    uint16_t value = adcInternalRead(ADC_VREFINT);
-    return value;
-}
-
-uint16_t adcInternalReadTempsensor(void)
-{
-    uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
-    return value;
+    switch (source) {
+    case ADC_VREFINT:
+    case ADC_TEMPSENSOR:
+#if ADC_INTERNAL_VBAT4_ENABLED
+    case ADC_VBAT4:
+#endif
+        const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+        return dmaIndex < ADC_BUF_LENGTH ? adcConversionBuffer[dmaIndex] : 0;
+    default:
+        return 0;
+    }
 }
 #endif // USE_ADC_INTERNAL
 

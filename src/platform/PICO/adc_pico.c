@@ -252,11 +252,10 @@ uint16_t adcGetValue(adcSource_e source)
     }
 
     const uint8_t dmaIndex = adcOperatingConfig[source].dmaIndex;
-    return adcValues[dmaIndex];
+    return dmaIndex < ARRAYLEN(adcValues) ? adcValues[dmaIndex] : 0;
 }
 
 #ifdef USE_ADC_INTERNAL
-
 bool adcInternalIsBusy(void)
 {
     return false;
@@ -266,6 +265,5 @@ void adcInternalStartConversion(void)
 {
     //NOOP
 }
-
 #endif // USE_ADC_INTERNAL
 #endif // USE_ADC

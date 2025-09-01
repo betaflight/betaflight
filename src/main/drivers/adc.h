@@ -59,16 +59,18 @@ typedef enum {
     ADC_CURRENT,
     ADC_EXTERNAL1,
     ADC_RSSI,
+    ADC_EXTERNAL_COUNT,
 #ifdef USE_ADC_INTERNAL
     // For certain processors internal sensors are treated in the similar fashion as regular ADC inputs
-    ADC_SOURCE_INTERNAL_FIRST_ID,
-    ADC_TEMPSENSOR = ADC_SOURCE_INTERNAL_FIRST_ID,
+    ADC_TEMPSENSOR = ADC_EXTERNAL_COUNT,
     ADC_VREFINT,
 #if ADC_INTERNAL_VBAT4_ENABLED
     ADC_VBAT4,
 #endif
-#endif
     ADC_SOURCE_COUNT
+#else
+    ADC_SOURCE_COUNT = ADC_EXTERNAL_COUNT
+#endif
 } adcSource_e;
 
 struct adcConfig_s;

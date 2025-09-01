@@ -124,10 +124,24 @@ uint16_t adcGetValue(adcSource_e source)
         }
     }
 #endif
+
     if ((unsigned)source >= ADC_SOURCE_COUNT || !adcOperatingConfig[source].enabled) {
         return 0;
     }
-    return adcValues[adcOperatingConfig[source].dmaIndex];
+
+    switch (source) {
+#ifdef USE_ADC_INTERNAL
+    case ADC_VREFINT:
+    case ADC_TEMPSENSOR:
+#if ADC_INTERNAL_VBAT4_ENABLED
+    case ADC_VBAT4:
+#endif
+        return adcInternalRead(source);
+#endif
+    default:
+        const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+        return dmaIndex < ARRAYLEN(adcValues) ? adcValues[dmaIndex] : 0;
+    }
 }
 
 #if PLATFORM_TRAIT_ADC_DEVICE
