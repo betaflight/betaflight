@@ -140,7 +140,11 @@ bool dshot_program_bidir_init(PIO pio, uint sm, int offset, uint pin)
     return PICO_OK == pio_sm_init(pio, sm, offset, &config);
 }
 
+#ifdef PICO_TRACE
+// Verbose tracing for telemetry decode
 #define TELEM_TRACE
+#endif
+
 static uint32_t decodeTelemetryRaw(int ind, const uint32_t first, const uint32_t second)
 {
     // first and second words are lo-endian, with bottom 2 bits = junk (because PIO shifts right 30 data bits). Second word has MSBs.
@@ -162,6 +166,8 @@ static uint32_t decodeTelemetryRaw(int ind, const uint32_t first, const uint32_t
             bprintf(" ===== [%d] motor %d decodeTelemetry %08x %08x", tc, ind, first, second);
         }
         tc++;
+#else
+        UNUSED(ind);
 #endif
         // early return
         return DSHOT_TELEMETRY_INVALID;
@@ -182,8 +188,8 @@ static uint32_t decodeTelemetryRaw(int ind, const uint32_t first, const uint32_t
     uint32_t bits21_save = bits21;
     bits21 ^= bits21 >> 1;
 
-    bool tracesome = false;
 #ifdef TELEM_TRACE
+    bool tracesome = false;
     static uint32_t last1st[4];
     static uint32_t last2nd[4];
     if ((tc % 500000) < 4 && ( last1st[ind] != first || last2nd[ind] != second)) {
@@ -230,9 +236,11 @@ static uint32_t decodeTelemetryRaw(int ind, const uint32_t first, const uint32_t
         return DSHOT_TELEMETRY_INVALID;
     }
 
+#ifdef TELEM_TRACE
     if (tracesome || (tc % 550000 < 4)) {
         bprintf("[%d] dshot telem (incl crc) %x", tc, (uint32_t)gcrDecode);
     }
+#endif
 
     // Discard checksum and return telemetry number.
     return gcrDecode >> 4;
