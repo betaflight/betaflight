@@ -96,7 +96,7 @@ typedef struct flashDevice_s {
 
     flashDeviceIO_t io;
     void (*callback)(uint32_t arg);
-    uint32_t callbackArg;
+    uint32_t bytesWritten;
 } flashDevice_t;
 
 typedef struct flashVTable_s {
