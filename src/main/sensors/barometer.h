@@ -70,3 +70,4 @@ void baroSetGroundLevel(void);
 uint32_t baroUpdate(timeUs_t currentTimeUs);
 bool isBaroReady(void);
 float getBaroAltitude(void);
+int32_t getBaroTemperature(void);
