@@ -510,19 +510,12 @@ endif
 # -Wno-reorder
 
 COMMON_FLAGS = \
-	-g \
-	-Wall \
-	-Wextra \
-	-Werror \
-	-Wno-error=unused-command-line-argument \
-	-ggdb3 \
-	-O0 \
-	-I$(INCLUDE_DIRS)\
+	-g -ggdb3 \
+	-Wall -Wextra  \
+	$(OPTIMIZE) \
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP \
-	-Wno-c99-extensions \
-	-Wno-reorder \
 	-pipe
 
 CC_VERSION = $(shell $(CC) -dumpversion)
