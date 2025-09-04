@@ -21,12 +21,15 @@
 #include "sensor_fusion.h"
 #include "common/maths.h"
 
-#define EPS_REG 0.001f
+//#if GYRO_COUNT > 1
+
+#define EPS_REG 0.00001f
 
 void initVarCov(varCovApprox_t *varCovApprox, float tau, float dt)
 {
     for (int gyro = 0; gyro < GYRO_COUNT; gyro++) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            pt1FilterInit(&varCovApprox->inputHighpass[gyro][axis], pt1FilterGain(20.0f, dt));
             pt1FilterInit(&varCovApprox->average[gyro][axis], pt1FilterGainFromDelay(tau, dt));
             pt1FilterInit(&varCovApprox->variance[gyro][axis], pt1FilterGainFromDelay(tau, dt));
             pt1FilterInit(&varCovApprox->covariance[gyro][axis], pt1FilterGainFromDelay(tau, dt));
@@ -55,8 +58,10 @@ void updateVarCov(varCovApprox_t *varCovApprox, float input[GYRO_COUNT], int gyr
     // here the input is 1 axis of each gyro, aka all the X gyro readings
     float error[GYRO_COUNT];
     for (int gyro = 0; gyro < gyro_count; gyro++) {
-        float mean = pt1FilterApply(&varCovApprox->average[gyro][axis], input[gyro]);
-        error[gyro] = input[gyro] - mean;
+        // first highpass the data to remove artifacts from real movements
+        float highpassed_input = input[gyro] - pt1FilterApply(&varCovApprox->inputHighpass[gyro][axis], input[gyro]);
+        float mean = pt1FilterApply(&varCovApprox->average[gyro][axis], highpassed_input);
+        error[gyro] = highpassed_input - mean;
         float error2 = sq(error[gyro]);
         pt1FilterApply(&varCovApprox->variance[gyro][axis], error2); // variance
     }
@@ -97,7 +102,7 @@ float fuse_approx(const varCovApprox_t *vc, const float *x, int n, int axis)
             }
         }
         if (sigma_eff <= 0.0f) sigma_eff = EPS_REG;
-        float w = 1.0f / sigma_eff;
+        float w = sq(1.0f / sigma_eff);
         sum_w += w;
         mu += w * x[i];
     }
@@ -189,3 +194,5 @@ void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXI
         }
     }
 }
+
+//#endif

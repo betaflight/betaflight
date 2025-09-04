@@ -22,6 +22,14 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
+#include "platform.h"
+
+#if GYRO_COUNT > 1
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
+#pragma message ("GYRO_COUNT = " TOSTRING(GYRO_COUNT))
 
 typedef enum {
     AVERAGING,
@@ -31,6 +39,7 @@ typedef enum {
 } fusionType_e;
 
 typedef struct varCovApprox_s {
+    pt1Filter_t inputHighpass[GYRO_COUNT][XYZ_AXIS_COUNT];
     pt1Filter_t average[GYRO_COUNT][XYZ_AXIS_COUNT];
     pt1Filter_t variance[GYRO_COUNT][XYZ_AXIS_COUNT];
     pt1Filter_t covariance[GYRO_COUNT * (GYRO_COUNT - 1) / 2][XYZ_AXIS_COUNT];
@@ -40,3 +49,5 @@ typedef struct sensorFusion_s {
     varCovApprox_t varCov;
     uint8_t clusterSize;
 } sensorFusion_t;
+
+#endif
