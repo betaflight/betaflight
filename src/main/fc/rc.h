@@ -37,8 +37,8 @@ typedef struct feedforwardData_s {
     float prevSetpointSpeedDelta[XYZ_AXIS_COUNT];
     bool isPrevPacketDuplicate[XYZ_AXIS_COUNT];
     float prevRxInterval[XYZ_AXIS_COUNT];
-    pt1Filter_t filterSetpointSpeed[XYZ_AXIS_COUNT];
-    pt1Filter_t filterSetpointDelta[XYZ_AXIS_COUNT];
+    pt1FilterVec3_t filterSetpointSpeed;
+    pt1FilterVec3_t filterSetpointDelta;
 } feedforwardData_t;
 
 void processRcCommand(void);

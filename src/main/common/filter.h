@@ -22,48 +22,75 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "axis.h"
 
 struct filter_s;
 typedef struct filter_s filter_t;
-typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
-
-typedef enum {
-    FILTER_PT1 = 0,
-    FILTER_BIQUAD,
-    FILTER_PT2,
-    FILTER_PT3,
-} lowpassFilterType_e;
-
-typedef enum {
-    FILTER_LPF,    // 2nd order Butterworth section
-    FILTER_NOTCH,
-    FILTER_BPF,
-} biquadFilterType_e;
+typedef float (filterApplyFn)(filter_t *filter, float input);
+typedef float (filterVec3ApplyFn)(filter_t *filter, float input, int element);
 
 typedef struct pt1Filter_s {
-    float state;
     float k;
+    float state[1];
 } pt1Filter_t;
 
-typedef struct pt2Filter_s {
-    float state;
-    float state1;
+typedef struct pt1FilterVec3_s {
     float k;
+    float state[XYZ_AXIS_COUNT];
+} pt1FilterVec3_t;
+
+typedef struct pt1FilterMotorCount_s {
+    float k;
+    float state[MAX_SUPPORTED_MOTORS];
+} pt1FilterMotorCount_t;
+
+typedef struct pt2Filter_s {
+    float k;
+    float state[2][1];
 } pt2Filter_t;
 
-typedef struct pt3Filter_s {
-    float state;
-    float state1;
-    float state2;
+typedef struct pt2FilterVec3_s {
     float k;
+    float state[2][XYZ_AXIS_COUNT];
+} pt2FilterVec3_t;
+
+typedef struct pt3Filter_s {
+    float k;
+    float state[3][1];
 } pt3Filter_t;
 
-/* this holds the data required to update samples thru a filter */
-typedef struct biquadFilter_s {
+typedef struct pt3FilterVec2_s {
+    float k;
+    float state[3][2];
+} pt3FilterVec2_t;
+
+typedef struct pt3FilterVec3_s {
+    float k;
+    float state[3][XYZ_AXIS_COUNT];
+} pt3FilterVec3_t;
+
+typedef struct biquadFilterCoeffs_s {
     float b0, b1, b2, a1, a2;
+} biquadFilterCoeffs_t;
+
+typedef struct biquadFilterState_s {
     float x1, x2, y1, y2;
-    float weight;
+} biquadFilterState_t;
+
+typedef struct biquadFilter_s {
+    biquadFilterCoeffs_t coeffs;
+    biquadFilterState_t state;
 } biquadFilter_t;
+
+typedef struct biquadFilterVec3_s {
+    biquadFilterCoeffs_t coeffs;
+    biquadFilterState_t state[XYZ_AXIS_COUNT];
+} biquadFilterVec3_t;
+
+typedef struct biquadFilterServoCount_s {
+    biquadFilterCoeffs_t coeffs;
+    biquadFilterState_t state[MAX_SUPPORTED_SERVOS];
+} biquadFilterServoCount_t;
 
 typedef struct phaseComp_s {
     float b0, b1, a1;
@@ -95,35 +122,90 @@ typedef struct meanAccumulator_s {
     int32_t count;
 } meanAccumulator_t;
 
+typedef enum {
+    FILTER_PT1 = 0,
+    FILTER_BIQUAD,
+    FILTER_PT2,
+    FILTER_PT3,
+} lowpassFilterType_e;
+
+typedef union lowpassFilterVec3_u {
+    pt1FilterVec3_t pt1Filter;
+    biquadFilterVec3_t biquadFilter;
+    pt2FilterVec3_t pt2Filter;
+    pt3FilterVec3_t pt3Filter;
+} lowpassFilterVec3_t;
+
 float nullFilterApply(filter_t *filter, float input);
+float nullFilterVec3Apply(filter_t *filter, float input, int element);
 
 float pt1FilterGain(float f_cut, float dT);
 float pt1FilterGainFromDelay(float delay, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
-void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
+void pt1FilterInitArray(void *filter, float k_value, int count);
+void pt1FilterUpdateCutoff(void *filter, float k);
 float pt1FilterApply(pt1Filter_t *filter, float input);
+float pt1FilterApplyArray(void *filter, float input, int element);
 
 float pt2FilterGain(float f_cut, float dT);
 float pt2FilterGainFromDelay(float delay, float dT);
 void pt2FilterInit(pt2Filter_t *filter, float k);
-void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k);
+void pt2FilterInitArray(void *filter, float k_value, int count);
+void pt2FilterUpdateCutoff(void *filter, float k);
 float pt2FilterApply(pt2Filter_t *filter, float input);
+float pt2FilterApplyArray(void *filter, float input, int element);
 
 float pt3FilterGain(float f_cut, float dT);
 float pt3FilterGainFromDelay(float delay, float dT);
 void pt3FilterInit(pt3Filter_t *filter, float k);
-void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k);
+void pt3FilterInitArray(void *filter, float k_value, int count);
+void pt3FilterUpdateCutoff(void *filter, float k);
 float pt3FilterApply(pt3Filter_t *filter, float input);
+float pt3FilterApplyArray(void *filter, float input, int element);
 
 float filterGetNotchQ(float centerFreq, float cutoffFreq);
 
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, float dt);
+void biquadFilterInitNotch(biquadFilter_t *filter, float filterFreq, float dt, float Q);
+void biquadFilterInitNotchWeighted(biquadFilter_t *filter, float filterFreq, float dt, float Q, float weight);
+void biquadFilterCoeffsLPF(biquadFilterCoeffs_t *filter, float filterFreq, float dt);
+void biquadFilterCoeffsNotch(biquadFilterCoeffs_t *filter, float filterFreq, float dt, float q);
+void biquadFilterCoeffsNotchWeighted(biquadFilterCoeffs_t *filter, float filterFreq, float dt, float q, float weight);
+
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
-float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
+
+void biquadFilterInitLPFVec3(biquadFilterVec3_t *filter, float filterFreq, float dt, int size);
+void biquadFilterInitLPFServo(biquadFilterServoCount_t *filter, float filterFreq, float dt, int size);
+#define biquadFilterInitLPFArray(filter, freq, dt, size) _Generic((filter), \
+    biquadFilterVec3_t*:        biquadFilterInitLPFVec3, \
+    biquadFilterServoCount_t*:  biquadFilterInitLPFServo \
+)(filter, freq, dt, size)
+
+void biquadFilterInitNotchVec3(biquadFilterVec3_t *filter, float filterFreq, float dt, float q, int size);
+#define biquadFilterInitNotchArray(filter, freq, dt, q, size) _Generic((filter), \
+    biquadFilterVec3_t*:        biquadFilterInitNotchVec3 \
+)(filter, freq, dt, q, size)
+
+void biquadFilterInitNotchWeightedVec3(biquadFilterVec3_t *filter, float filterFreq, float dt, float q, float weight, int size);
+#define biquadFilterInitNotchWeightedArray(filter, freq, dt, q, weight, size) _Generic((filter), \
+    biquadFilterVec3_t*:        biquadFilterInitNotchWeightedVec3 \
+)(filter, freq, dt, q, weight, size)
+
+float biquadFilterApplyArrayVec3(biquadFilterVec3_t *filter, float input, int element);
+float biquadFilterApplyArrayServo(biquadFilterServoCount_t *filter, float input, int element);
+#define biquadFilterApplyArray(filter, input, element) _Generic((filter), \
+    biquadFilterVec3_t*:        biquadFilterApplyArrayVec3, \
+    biquadFilterServoCount_t*:  biquadFilterApplyArrayServo \
+)(filter, input, element)
+
+float biquadFilterApplyDF1ArrayVec3(biquadFilterVec3_t *filter, float input, int element);
+float biquadFilterApplyDF1ArrayServo(biquadFilterServoCount_t *filter, float input, int element);
+#define biquadFilterApplyDF1Array(filter, input, element) _Generic((filter), \
+    biquadFilterVec3_t*:        biquadFilterApplyDF1ArrayVec3, \
+    biquadFilterServoCount_t*:  biquadFilterApplyDF1ArrayServo \
+)(filter, input, element)
+
 
 void phaseCompInit(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
 void phaseCompUpdate(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
