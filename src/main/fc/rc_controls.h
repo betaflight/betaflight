@@ -26,7 +26,7 @@
 #include "common/filter.h"
 #include "pg/pg.h"
 
-typedef enum rc_alias {
+typedef enum {
     ROLL = 0,
     PITCH,
     YAW,
