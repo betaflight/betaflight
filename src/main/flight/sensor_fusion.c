@@ -21,7 +21,7 @@
 #include "sensor_fusion.h"
 #include "common/maths.h"
 
-//#if GYRO_COUNT > 1
+#if GYRO_COUNT > 1
 
 #define EPS_REG 0.00001f
 
@@ -32,7 +32,12 @@ void initVarCov(varCovApprox_t *varCovApprox, float tau, float dt)
             pt1FilterInit(&varCovApprox->inputHighpass[gyro][axis], pt1FilterGain(20.0f, dt));
             pt1FilterInit(&varCovApprox->average[gyro][axis], pt1FilterGainFromDelay(tau, dt));
             pt1FilterInit(&varCovApprox->variance[gyro][axis], pt1FilterGainFromDelay(tau, dt));
-            pt1FilterInit(&varCovApprox->covariance[gyro][axis], pt1FilterGainFromDelay(tau, dt));
+        }
+    }
+
+    for (int pair = 0; pair < GYRO_COUNT * (GYRO_COUNT - 1) / 2; pair++) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            pt1FilterInit(&varCovApprox->covariance[pair][axis], pt1FilterGainFromDelay(tau, dt));
         }
     }
 }
@@ -74,19 +79,9 @@ void updateVarCov(varCovApprox_t *varCovApprox, float input[GYRO_COUNT], int gyr
     }
 }
 
-float variance(varCovApprox_t *varCovApprox, int gyro, int axis)
-{
-    return varCovApprox->variance[gyro][axis].state;
-}
-
 static inline int covIndex(int i, int j, int n) {
     // i<j assumed
     return i * n - (i * (i + 1)) / 2 + (j - i - 1);
-}
-
-float covariance(varCovApprox_t *varCovApprox, int gyro1, int gyro2, int gyro_count, int axis)
-{
-    return varCovApprox->covariance[covIndex(gyro1, gyro2, gyro_count)][axis].state;
 }
 
 // --- Approximate "inverse variance minus covariances" fusion ---
@@ -112,11 +107,11 @@ float fuse_approx(const varCovApprox_t *vc, const float *x, int n, int axis)
 // --- Simple sensor averaging ---
 float fuse_avg(const float reading[GYRO_COUNT], int gyro_count)
 {
-    float averaged = 0.0f;
+    float sum = 0.0f;
     for (int gyro = 0; gyro < gyro_count; gyro++) {
-        averaged += reading[gyro];
+        sum += reading[gyro];
     }
-    return averaged / gyro_count;
+    return sum / gyro_count;
 }
 
 static void insertion_sort(float *dst, const float *src, int N) {
@@ -167,7 +162,7 @@ float fuse_voting(const float *sensors, int gyro_count, int cluster_size) {
     return sum / (float)cluster_size;
 }
 
-void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXIS_COUNT], int gyro_count, fusionType_e fuse_mode, float fused[XYZ_AXIS_COUNT])
+void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXIS_COUNT], int gyro_count, fusionType_e fuse_mode, int cluster_size, float fused[XYZ_AXIS_COUNT])
 {
     // update variance and covariance for each axis
     float axis_vals[GYRO_COUNT];
@@ -187,7 +182,7 @@ void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXI
                 fused[axis] = fuse_median(axis_vals, gyro_count);
                 break;
             case VOTING:
-                fused[axis] = fuse_voting(axis_vals, gyro_count, fusion->clusterSize);
+                fused[axis] = fuse_voting(axis_vals, gyro_count, cluster_size);
                 break;
             default:
                 fused[axis] = fuse_avg(axis_vals, gyro_count);
@@ -195,4 +190,4 @@ void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXI
     }
 }
 
-//#endif
+#endif

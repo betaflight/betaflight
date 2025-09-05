@@ -131,6 +131,9 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->simplified_gyro_filter = true;
     gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
     gyroConfig->gyro_enabled_bitmask = DEFAULT_GYRO_ENABLED;
+    gyroConfig->fusion_type = NOISE_APPROX;
+    gyroConfig->fusion_tau = 5;
+    gyroConfig->fusion_cluster_size = 2;
 }
 
 static bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
@@ -408,27 +411,31 @@ static FAST_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 FAST_CODE void gyroUpdate(void)
 {
     // ensure that gyroADC don't contain a stale value
-    float adcSum[XYZ_AXIS_COUNT] = {0};
+    float gyro_raw[GYRO_COUNT][XYZ_AXIS_COUNT] = {0};
 
-    float active = 0;
+    int active = 0;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
             gyroUpdateSensor(&gyro.gyroSensor[i]);
             if (isGyroSensorCalibrationComplete(&gyro.gyroSensor[i])) {
-                adcSum[X] += gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale;
-                adcSum[Y] += gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale;
-                adcSum[Z] += gyro.gyroSensor[i].gyroDev.gyroADC.z * gyro.gyroSensor[i].gyroDev.scale;
+                gyro_raw[active][X] += gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale;
+                gyro_raw[active][Y] += gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale;
+                gyro_raw[active][Z] += gyro.gyroSensor[i].gyroDev.gyroADC.z * gyro.gyroSensor[i].gyroDev.scale;
                 active++;
             }
         }
     }
 
-    if (active != 0) {
-        gyro.gyroADC[X] = adcSum[X] / active;
-        gyro.gyroADC[Y] = adcSum[Y] / active;
-        gyro.gyroADC[Z] = adcSum[Z] / active;
+#if GYRO_COUNT > 1
+    if (active > 1) {
+        updateSensorFusion(&gyro.sensorFusion, gyro_raw, active, gyroConfig()->fusion_type, gyroConfig()->fusion_cluster_size, gyro.gyroADC);
     }
+#else
+    gyro.gyroADC[X] = gyro_raw[0][X];
+    gyro.gyroADC[Y] = gyro_raw[0][Y];
+    gyro.gyroADC[Z] = gyro_raw[0][Z];
+#endif
 
     if (gyro.downsampleFilterEnabled) {
         // using gyro lowpass 2 filter for downsampling

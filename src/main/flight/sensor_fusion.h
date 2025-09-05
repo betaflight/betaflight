@@ -24,19 +24,14 @@
 #include "common/filter.h"
 #include "platform.h"
 
-#if GYRO_COUNT > 1
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
-#pragma message ("GYRO_COUNT = " TOSTRING(GYRO_COUNT))
-
 typedef enum {
-    AVERAGING,
+    AVERAGING = 0,
     NOISE_APPROX,
     MEDIAN,
     VOTING,
 } fusionType_e;
+
+#if GYRO_COUNT > 1
 
 typedef struct varCovApprox_s {
     pt1Filter_t inputHighpass[GYRO_COUNT][XYZ_AXIS_COUNT];
@@ -47,7 +42,9 @@ typedef struct varCovApprox_s {
 
 typedef struct sensorFusion_s {
     varCovApprox_t varCov;
-    uint8_t clusterSize;
 } sensorFusion_t;
+
+void initSensorFusion(sensorFusion_t *fusion, float tau, float dt);
+void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXIS_COUNT], int gyro_count, fusionType_e fuse_mode, int cluster_size, float fused[XYZ_AXIS_COUNT]);
 
 #endif

@@ -608,6 +608,15 @@ const char* const lookupTableYawType[] = {
 };
 #endif // USE_WING
 
+#if GYRO_COUNT > 1
+const char* const lookupTableFusionType[] = {
+    "AVERAGING", "NOISE_APPROX", "MEDIAN",
+#if GYRO_COUNT > 2
+    "VOTING",
+#endif
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -741,6 +750,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableTpaSpeedType),
     LOOKUP_TABLE_ENTRY(lookupTableYawType),
 #endif // USE_WING
+#ifdef GYRO_COUNT
+    LOOKUP_TABLE_ENTRY(lookupTableFusionType),
+#endif
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -798,6 +810,14 @@ const clivalue_t valueTable[] = {
 #if GYRO_COUNT > 7
     { "gyro_8_enabled",             VAR_UINT8  | HARDWARE_VALUE | MODE_BITSET, .config.bitpos = 7, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_enabled_bitmask) },
 #endif // GYRO_COUNT
+
+#if GYRO_COUNT > 1
+    { "fusion_type",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FUSION_TYPE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_type) },
+    { "fusion_tau",                 VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_tau) },
+#endif
+#if GYRO_COUNT > 2
+    { "fusion_cluster_size",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  GYRO_COUNT - 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_cluster_size) },
+#endif
 
 #if defined(USE_DYN_NOTCH_FILTER)
     { PARAM_NAME_DYN_NOTCH_COUNT,   VAR_UINT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, DYN_NOTCH_COUNT_MAX }, PG_DYN_NOTCH_CONFIG, offsetof(dynNotchConfig_t, dyn_notch_count) },

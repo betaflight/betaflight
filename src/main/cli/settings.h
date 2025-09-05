@@ -152,6 +152,9 @@ typedef enum {
     TABLE_TPA_SPEED_TYPE,
     TABLE_YAW_TYPE,
 #endif // USE_WING
+#if GYRO_COUNT > 1
+    TABLE_FUSION_TYPE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
