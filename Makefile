@@ -138,6 +138,9 @@ endif
 LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
 
+# import source files
+include $(MAKE_SCRIPT_DIR)/source.mk
+
 #
 # Setup locale
 #
@@ -149,7 +152,7 @@ endif
 ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
     $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
 endif
-INCLUDE_DIRS += $(INCLUDE_DIRS) $(LOCALES_DIR)/$(LOCALE)
+INCLUDE_DIRS += $(LOCALES_DIR)/$(LOCALE)
 
 $(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/en/bf_locale.xml
 	@echo "Creating $(LOCALES_DIR)/untranslated.h" "$(STDOUT)"
@@ -234,8 +237,6 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)
 
 VPATH           := $(VPATH):$(TARGET_DIR)
-
-include $(MAKE_SCRIPT_DIR)/source.mk
 
 ###############################################################################
 # Things that might need changing to use different tools
