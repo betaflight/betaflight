@@ -378,19 +378,18 @@ void rxInit(void)
     }
 
     // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
-    pt1FilterInit(&frameErrFilter, pt1FilterGain(GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US * 1e-6f));
+    pt1FilterInitLPF(&frameErrFilter, GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US * 1e-6f);
 
     // Configurable amount of filtering to remove excessive jumpiness of the values on the osd
     float k = (256.0f - rxConfig()->rssi_smoothing) / 256.0f;
-
-    pt1FilterInit(&rssiFilter, k);
+    pt1FilterInitAlpha(&rssiFilter, k);
 
 #ifdef USE_RX_RSSI_DBM
-    pt1FilterInit(&rssiDbmFilter, k);
+    pt1FilterInitAlpha(&rssiDbmFilter, k);
 #endif //USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
-    pt1FilterInit(&rsnrFilter, k);
+    pt1FilterInitAlpha(&rsnrFilter, k);
 #endif //USE_RX_RSNR
 
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeState.channelCount);
@@ -899,20 +898,20 @@ void updateRSSI(timeUs_t currentTimeUs)
             float k2  = (k * factor) / ((k * factor) - k + 1);
 
             if (rssi != rssiRaw) {
-                pt1FilterUpdateCutoff(&rssiFilter, k2);
+                pt1FilterCoeffsAlpha(&rssiFilter.coeffs, k2);
                 rssi = pt1FilterApply(&rssiFilter, rssiRaw);
             }
 
 #ifdef USE_RX_RSSI_DBM
             if (rssiDbm != rssiDbmRaw) {
-                pt1FilterUpdateCutoff(&rssiDbmFilter, k2);
+                pt1FilterCoeffsAlpha(&rssiDbmFilter.coeffs, k2);
                 rssiDbm = pt1FilterApply(&rssiDbmFilter, rssiDbmRaw);
             }
 #endif //USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
             if (rsnr != rsnrRaw) {
-                pt1FilterUpdateCutoff(&rsnrFilter, k2);
+                pt1FilterCoeffsAlpha(&rsnrFilter.coeffs, k2);
                 rsnr = pt1FilterApply(&rsnrFilter, rsnrRaw);
             }
 #endif //USE_RX_RSNR
