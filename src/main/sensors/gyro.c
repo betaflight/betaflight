@@ -132,8 +132,12 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
     gyroConfig->gyro_enabled_bitmask = DEFAULT_GYRO_ENABLED;
     gyroConfig->fusion_type = NOISE_APPROX;
-    gyroConfig->fusion_tau = 5;
+    gyroConfig->fusion_tau = 10;
     gyroConfig->fusion_cluster_size = 2;
+#ifdef USE_SIMULATE_GYRO_NOISE
+    gyroConfig->noisy_gyro = 1;
+    gyroConfig->noise = 0;
+#endif
 }
 
 static bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
@@ -429,7 +433,8 @@ FAST_CODE void gyroUpdate(void)
 
 #if GYRO_COUNT > 1
     if (active > 1) {
-        updateSensorFusion(&gyro.sensorFusion, gyro_raw, active, gyroConfig()->fusion_type, gyroConfig()->fusion_cluster_size, gyro.gyroADC);
+        updateSensorFusion(&gyro.sensorFusion, gyro_raw, active, gyroConfig()->fusion_type,
+                            gyroConfig()->fusion_cluster_size, gyro.gyroADC, gyro.gyroDebugAxis);
     }
 #else
     gyro.gyroADC[X] = gyro_raw[0][X];

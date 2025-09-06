@@ -813,10 +813,14 @@ const clivalue_t valueTable[] = {
 
 #if GYRO_COUNT > 1
     { "fusion_type",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FUSION_TYPE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_type) },
-    { "fusion_tau",                 VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_tau) },
+    { "fusion_tau",                 VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1,  200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_tau) },
 #endif
 #if GYRO_COUNT > 2
-    { "fusion_cluster_size",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  GYRO_COUNT - 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_cluster_size) },
+    { "fusion_cluster_size",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 2,  GYRO_COUNT - 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, fusion_cluster_size) },
+#endif
+#ifdef USE_SIMULATE_GYRO_NOISE
+    { "noisy_gyro",                 VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  GYRO_COUNT - 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, noisy_gyro) },
+    { "noise",                      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  255 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, noise) },
 #endif
 
 #if defined(USE_DYN_NOTCH_FILTER)

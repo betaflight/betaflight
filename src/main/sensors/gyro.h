@@ -193,6 +193,10 @@ typedef struct gyroConfig_s {
     uint8_t fusion_type;
     uint8_t fusion_tau;
     uint8_t fusion_cluster_size;
+#ifdef USE_SIMULATE_GYRO_NOISE
+    uint8_t noisy_gyro;
+    uint8_t noise;
+#endif
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

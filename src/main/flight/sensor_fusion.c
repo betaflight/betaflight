@@ -20,31 +20,40 @@
 
 #include "sensor_fusion.h"
 #include "common/maths.h"
+#include "build/debug.h"
 
 #if GYRO_COUNT > 1
 
-#define EPS_REG 0.00001f
+#define EPS_REG 0.1f
 
 void initVarCov(varCovApprox_t *varCovApprox, float tau, float dt)
 {
     for (int gyro = 0; gyro < GYRO_COUNT; gyro++) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            pt1FilterInit(&varCovApprox->inputHighpass[gyro][axis], pt1FilterGain(20.0f, dt));
+            pt1FilterInit(&varCovApprox->inputHighpass[gyro][axis], pt1FilterGain(10.0f, dt));
             pt1FilterInit(&varCovApprox->average[gyro][axis], pt1FilterGainFromDelay(tau, dt));
             pt1FilterInit(&varCovApprox->variance[gyro][axis], pt1FilterGainFromDelay(tau, dt));
         }
     }
 
-    for (int pair = 0; pair < GYRO_COUNT * (GYRO_COUNT - 1) / 2; pair++) {
+    for (int pair = 0; pair < (GYRO_COUNT * (GYRO_COUNT - 1)) / 2; pair++) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             pt1FilterInit(&varCovApprox->covariance[pair][axis], pt1FilterGainFromDelay(tau, dt));
         }
     }
 }
 
-void initSensorFusion(sensorFusion_t *fusion, float tau, float dt)
+void initSensorFusion(sensorFusion_t *fusion, float tau, float dt
+#ifdef USE_SIMULATE_GYRO_NOISE
+    , int noisyGyro,float noise
+#endif
+)
 {
     initVarCov(&fusion->varCov, tau, dt);
+#ifdef USE_SIMULATE_GYRO_NOISE
+    fusion->noisyGyro = noisyGyro;
+    fusion->noise = noise;
+#endif
 }
 
 void updateVarCov(varCovApprox_t *varCovApprox, float input[GYRO_COUNT], int gyro_count, int axis)
@@ -85,21 +94,33 @@ static inline int covIndex(int i, int j, int n) {
 }
 
 // --- Approximate "inverse variance minus covariances" fusion ---
-float fuse_approx(const varCovApprox_t *vc, const float *x, int n, int axis)
+float fuse_approx(const varCovApprox_t *vc, const float *axis_vals, int n, int axis, int debug_axis)
 {
     float sum_w = 0.0, mu = 0.0;
+    float w[GYRO_COUNT];
     for (int i = 0; i < n; i++) {
         float sigma_eff = vc->variance[i][axis].state;
         for (int j = 0; j < n; j++) {
             if (i != j) {
                 int idx = (i < j) ? covIndex(i,j,n) : covIndex(j,i,n);
-                sigma_eff -= vc->covariance[idx][axis].state / n;
+                sigma_eff -= vc->covariance[idx][axis].state / (n - 1);
             }
         }
-        if (sigma_eff <= 0.0f) sigma_eff = EPS_REG;
-        float w = sq(1.0f / sigma_eff);
-        sum_w += w;
-        mu += w * x[i];
+
+        if (sigma_eff < EPS_REG) {
+            sigma_eff = EPS_REG;
+        }
+        w[i] = (1.0f / sigma_eff);
+        sum_w += w[i];
+        mu += w[i] * axis_vals[i];
+    }
+
+    if (debugMode == DEBUG_GYRO_FUSION && axis == debug_axis) {
+        for (int i = 0; i < n; i++) {
+            if (i < 4) {
+                DEBUG_SET(DEBUG_GYRO_FUSION, 4 + i, lrintf(1000.0f * w[i]) / sum_w);
+            }
+        }
     }
     return (mu / sum_w);
 }
@@ -162,21 +183,58 @@ float fuse_voting(const float *sensors, int gyro_count, int cluster_size) {
     return sum / (float)cluster_size;
 }
 
-void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXIS_COUNT], int gyro_count, fusionType_e fuse_mode, int cluster_size, float fused[XYZ_AXIS_COUNT])
+#ifdef USE_SIMULATE_GYRO_NOISE
+static uint32_t seed = 0;
+
+// returns 0 <= x < max where max < 256
+static uint8_t rngN(const uint8_t max)
+{
+    const uint32_t m = 2147483648;
+    const uint32_t a = 214013;
+    const uint32_t c = 2531011;
+    seed = (a * seed + c) % m;
+    return (seed >> 16) % max;
+}
+#endif
+
+void updateSensorFusion(
+    sensorFusion_t *fusion,
+    float sensor[GYRO_COUNT][XYZ_AXIS_COUNT],
+    int gyro_count,
+    fusionType_e fuse_mode,
+    int cluster_size,
+    float fused[XYZ_AXIS_COUNT],
+    int debug_axis
+)
 {
     // update variance and covariance for each axis
     float axis_vals[GYRO_COUNT];
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         for (int gyro = 0; gyro < gyro_count; gyro++) {
             axis_vals[gyro] = sensor[gyro][axis];
+#ifdef USE_SIMULATE_GYRO_NOISE
+            if (gyro == fusion->noisyGyro) {
+                float random_num = (((float)rngN(255) - 127) / 255.0f);
+                axis_vals[gyro] += random_num * fusion->noise;
+            }
+#endif
         }
+
+    if (debugMode == DEBUG_GYRO_FUSION && axis == debug_axis) {
+        for (int i = 0; i < gyro_count; i++) {
+            if (i < 4) {
+                DEBUG_SET(DEBUG_GYRO_FUSION, i, lrintf(axis_vals[i]));
+            }
+        }
+    }
+
         switch(fuse_mode) {
             case AVERAGING:
                 fused[axis] = fuse_avg(axis_vals, gyro_count);
                 break;
             case NOISE_APPROX:
                 updateVarCov(&fusion->varCov, axis_vals, gyro_count, axis);
-                fused[axis] = fuse_approx(&fusion->varCov, axis_vals, gyro_count, axis);
+                fused[axis] = fuse_approx(&fusion->varCov, axis_vals, gyro_count, axis, debug_axis);
                 break;
             case MEDIAN:
                 fused[axis] = fuse_median(axis_vals, gyro_count);

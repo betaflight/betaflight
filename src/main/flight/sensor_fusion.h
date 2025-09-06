@@ -37,14 +37,22 @@ typedef struct varCovApprox_s {
     pt1Filter_t inputHighpass[GYRO_COUNT][XYZ_AXIS_COUNT];
     pt1Filter_t average[GYRO_COUNT][XYZ_AXIS_COUNT];
     pt1Filter_t variance[GYRO_COUNT][XYZ_AXIS_COUNT];
-    pt1Filter_t covariance[GYRO_COUNT * (GYRO_COUNT - 1) / 2][XYZ_AXIS_COUNT];
+    pt1Filter_t covariance[(GYRO_COUNT * (GYRO_COUNT - 1)) / 2][XYZ_AXIS_COUNT];
 } varCovApprox_t;
 
 typedef struct sensorFusion_s {
     varCovApprox_t varCov;
+#ifdef USE_SIMULATE_GYRO_NOISE
+    int noisyGyro;
+    float noise;
+#endif
 } sensorFusion_t;
 
-void initSensorFusion(sensorFusion_t *fusion, float tau, float dt);
-void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXIS_COUNT], int gyro_count, fusionType_e fuse_mode, int cluster_size, float fused[XYZ_AXIS_COUNT]);
+void initSensorFusion(sensorFusion_t *fusion, float tau, float dt
+#ifdef USE_SIMULATE_GYRO_NOISE
+    , int noisyGyro, float noise
+#endif
+);
+void updateSensorFusion(sensorFusion_t *fusion, float sensor[GYRO_COUNT][XYZ_AXIS_COUNT], int gyro_count, fusionType_e fuse_mode, int cluster_size, float fused[XYZ_AXIS_COUNT], int debug_axis);
 
 #endif

@@ -265,7 +265,11 @@ void gyroInitFilters(void)
     }
 
 #if GYRO_COUNT > 1
-    initSensorFusion(&gyro.sensorFusion, gyroConfig()->fusion_tau / 100.0f, gyro.targetLooptime * 1e-6f);
+    initSensorFusion(&gyro.sensorFusion, gyroConfig()->fusion_tau / 100.0f, gyro.targetLooptime * 1e-6f
+#ifdef USE_SIMULATE_GYRO_NOISE
+    , gyroConfig()->noisy_gyro, gyroConfig()->noise / 10.0f
+#endif
+    );
 #endif
 }
 
