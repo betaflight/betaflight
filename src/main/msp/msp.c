@@ -2997,14 +2997,19 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gyroConfigMutable()->gyro_enabled_bitmask = sbufReadU8(src);
         // Added in API 1.47
         if (sbufBytesRemaining(src) >= 8 * 7) {
+            /*
+                Skip alignments as these are no longer serviceable by the user.
+
+                The alignment is set by the manufacturer in config.h
+            */
             for (int i = 0; i < 8; i++) {
-                sbufReadU8(src); // skip unused alignment (alignment set in config.h and not user serviceable)
+                sbufReadU8(src); // alignment
             }
 
             for (int i = 0; i < 8; i++) {
-                sbufReadU16(src); // skip unused custom alignment roll
-                sbufReadU16(src); // skip unused custom alignment pitch
-                sbufReadU16(src); // skip unused custom alignment yaw
+                sbufReadU16(src); // roll
+                sbufReadU16(src); // pitch
+                sbufReadU16(src); // yaw
             }
         }
 
