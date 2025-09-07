@@ -177,9 +177,10 @@ endif
 LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
 
+# import source files
+include $(MAKE_SCRIPT_DIR)/source.mk
+
 #
-<<<<<<< HEAD
-=======
 # Setup locale
 #
 LOCALES_DIR		:= $(SRC_DIR)/locales
@@ -190,7 +191,7 @@ endif
 ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
     $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
 endif
-INCLUDE_DIRS += $(INCLUDE_DIRS) $(LOCALES_DIR)/$(LOCALE)
+INCLUDE_DIRS += $(LOCALES_DIR)/$(LOCALE)
 
 $(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/en/bf_locale.xml
 	@echo "Creating $(LOCALES_DIR)/untranslated.h" "$(STDOUT)"
@@ -206,7 +207,6 @@ $(TRANSLATED_SRC): $(TRANSLATED_DEPEND)
 	@echo "DEBUG $(LOCALES_DIR)/$(LOCALE)/bf_locale.h    $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml" "$(STDOUT)"
 
 #
->>>>>>> 6ad593444 (Moved to xml format)
 # Default Tool options - can be overridden in {mcu}.mk files.
 #
 DEBUG_MIXED = no
@@ -293,6 +293,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
+<<<<<<< HEAD
 # import source files
 include $(MAKE_SCRIPT_DIR)/source.mk
 
@@ -332,6 +333,8 @@ $(error Size optimised sources not valid: $(strip $(filter-out $(SRC),$(SIZE_OPT
 endif
 endif
 
+=======
+>>>>>>> 54ec1afad (On to rebase)
 ###############################################################################
 # Things that might need changing to use different tools
 #
