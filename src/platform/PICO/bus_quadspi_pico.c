@@ -186,16 +186,12 @@ bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instr
                                         uint32_t address, uint8_t addressSize)
 {
     UNUSED(instance);
-    // Build header [cmd][addr][dummy]
-    uint8_t hdr[1 + 4 + 1];
+    // Build header [cmd][addr]
+    uint8_t hdr[1 + 4];
     int idx = 0;
     hdr[idx++] = instruction;
     for (int i = (addressSize / 8) - 1; i >= 0; i--) {
         hdr[idx++] = (address >> (i * 8)) & 0xFF;
-    }
-    while (dummyCycles >= QSPI_DUMMY_BITS_PER_BYTE) {
-        hdr[idx++] = 0x00;
-        dummyCycles -= QSPI_DUMMY_BITS_PER_BYTE;
     }
 
     pico_qspi_enter_cmd_mode();
@@ -205,24 +201,27 @@ bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instr
         qmi_timeout_cleanup();
         return false;
     }
+    // Consume dummy cycles (if any)
+    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
+    if (dummyBytes) {
+        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
+            qmi_timeout_cleanup();
+            return false;
+        }
+    }
     qmi_cs1_assert(false);
     qmi_direct_disable();
     pico_qspi_exit_cmd_mode();
     return true;
 }
 
-static int buildHeader(uint8_t *hdr, uint8_t instruction, uint32_t address, uint8_t addressSize, uint8_t dummyCycles)
+static int buildHeader(uint8_t *hdr, uint8_t instruction, uint32_t address, uint8_t addressSize)
 {
     // Build tx: [cmd][addr bytes MSB..LSB][dummy]
     int idx = 0;
     hdr[idx++] = instruction;
     for (int i = (addressSize/8) - 1; i >= 0; i--) {
         hdr[idx++] = (address >> (i*8)) & 0xFF;
-    }
-    // Dummy cycles rounded to bytes
-    while (dummyCycles >= QSPI_DUMMY_BITS_PER_BYTE) {
-        hdr[idx++] = 0x00;
-        dummyCycles -= QSPI_DUMMY_BITS_PER_BYTE;
     }
 
     return idx;
@@ -233,9 +232,9 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
 {
     UNUSED(instance);
     // Build header and perform in one CS window
-    uint8_t hdr[1 + 4 + 1];
+    uint8_t hdr[1 + 4];
 
-    int idx = buildHeader(hdr, instruction, address, addressSize, dummyCycles);
+    int idx = buildHeader(hdr, instruction, address, addressSize);
 
     pico_qspi_enter_cmd_mode();
     qmi_direct_enable();
@@ -243,6 +242,14 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
     if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
         qmi_timeout_cleanup();
         return false;
+    }
+    // Dummy after header (if any)
+    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
+    if (dummyBytes) {
+        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
+            qmi_timeout_cleanup();
+            return false;
+        }
     }
     // Read payload
     if (!qmi_direct_io(NULL, in, length, QSPI_TIMEOUT_MS)) {
@@ -259,9 +266,9 @@ bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
                                      uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
     UNUSED(instance);
-    uint8_t hdr[1 + 4 + 1];
+    uint8_t hdr[1 + 4];
 
-    int idx = buildHeader(hdr, instruction, address, addressSize, dummyCycles);
+    int idx = buildHeader(hdr, instruction, address, addressSize);
 
     pico_qspi_enter_cmd_mode();
     qmi_direct_enable();
@@ -269,6 +276,14 @@ bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
     if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
         qmi_timeout_cleanup();
         return false;
+    }
+    // Dummy after header (if any)
+    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
+    if (dummyBytes) {
+        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
+            qmi_timeout_cleanup();
+            return false;
+        }
     }
     if (out && length > 0) {
         if (!qmi_direct_io(out, NULL, (size_t)length, QSPI_TIMEOUT_MS)) {
