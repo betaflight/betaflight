@@ -750,7 +750,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableTpaSpeedType),
     LOOKUP_TABLE_ENTRY(lookupTableYawType),
 #endif // USE_WING
-#ifdef GYRO_COUNT
+#if GYRO_COUNT > 2
     LOOKUP_TABLE_ENTRY(lookupTableFusionType),
 #endif
 };
