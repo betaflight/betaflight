@@ -395,7 +395,7 @@ MMFLASH_CODE static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const
     w25q128fvState.currentWriteAddress += length;
 }
 
-MMFLASH_CODE static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+MMFLASH_CODE static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
     w25q128fvState.currentWriteAddress = address;
@@ -436,7 +436,7 @@ MMFLASH_CODE static void w25q128fv_pageProgramFinish(flashDevice_t *fdevice)
     UNUSED(fdevice);
 }
 
-MMFLASH_CODE static void w25q128fv_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+MMFLASH_CODE static void w25q128fv_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     w25q128fv_pageProgramBegin(fdevice, address, callback);
     w25q128fv_pageProgramContinue(fdevice, &data, &length, 1);

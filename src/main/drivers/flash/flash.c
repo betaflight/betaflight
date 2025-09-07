@@ -430,7 +430,7 @@ void flashEraseCompletely(void)
 /* The callback, if provided, will receive the totoal number of bytes transfered
  * by each call to flashPageProgramContinue() once the transfer completes.
  */
-MMFLASH_CODE void flashPageProgramBegin(uint32_t address, void (*callback)(uint32_t length))
+MMFLASH_CODE void flashPageProgramBegin(uint32_t address, void (*callback)(uintptr_t arg))
 {
     flashDevice.vTable->pageProgramBegin(&flashDevice, address, callback);
 }
@@ -461,7 +461,7 @@ MMFLASH_CODE void flashPageProgramFinish(void)
     flashDevice.vTable->pageProgramFinish(&flashDevice);
 }
 
-MMFLASH_CODE void flashPageProgram(uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+MMFLASH_CODE void flashPageProgram(uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     flashDevice.vTable->pageProgram(&flashDevice, address, data, length, callback);
 }

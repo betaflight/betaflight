@@ -405,7 +405,7 @@ static void m25p16_eraseCompletelyQspi(flashDevice_t *fdevice)
 }
 #endif
 
-static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
@@ -495,7 +495,7 @@ static void m25p16_pageProgramFinish(flashDevice_t *fdevice)
  * If you want to write multiple buffers (whose sum of sizes is still not more than the page size) then you can
  * break this operation up into one beginProgram call, one or more continueProgram calls, and one finishProgram call.
  */
-static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     m25p16_pageProgramBegin(fdevice, address, callback);
 
@@ -555,7 +555,7 @@ static uint32_t m25p16_pageProgramContinueQspi(flashDevice_t *fdevice, uint8_t c
     return bufferSizes[0];
 }
 
-static void m25p16_pageProgramQspi(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void m25p16_pageProgramQspi(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     m25p16_pageProgramBegin(fdevice, address, callback);
 

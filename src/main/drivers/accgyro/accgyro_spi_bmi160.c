@@ -268,7 +268,7 @@ extiCallbackRec_t bmi160IntCallbackRec;
 // Called in ISR context
 // Gyro read has just completed
 #ifdef USE_DMA
-static busStatus_e bmi160Intcallback(uint32_t arg)
+static busStatus_e bmi160Intcallback(uintptr_t arg)
 {
     gyroDev_t *gyro = (gyroDev_t *)arg;
     int32_t gyroDmaDuration = cmpTimeCycles(getCycleCounter(), gyro->gyroLastEXTI);
