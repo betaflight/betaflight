@@ -1,103 +1,107 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
   <string name="LOCALE" maxLength="2" comment="Current language in short form: en, da, es, fr, nl ...">en</string>
-  <string name="STR_NEW_STRING" maxLength="10" comment="translation of: new string">new string</string>
-  <string name="STR_SECONDS" maxLength="8" comment="translation of: seconds">seconds</string>
-  <string name="STR_VISUAL_BEEP" maxLength="10" comment="translation of:   * * * *">  * * * *</string>
-  <string name="STR_CMS_STARTUP_MENU_TEXT1" maxLength="20" comment="translation of: MENU:THR MID">MENU:THR MID</string>
-  <string name="STR_CMS_STARTUP_MENU_TEXT2" maxLength="20" comment="translation of: + YAW LEFT  ">+ YAW LEFT  </string>
-  <string name="STR_CMS_STARTUP_MENU_TEXT3" maxLength="20" comment="translation of: + PITCH UP  ">+ PITCH UP  </string>
-  <string name="STR_OSD_ARMED" maxLength="10" comment="translation of: ARMED">ARMED</string>
-  <string name="STR_OSD_ARMED_HD" maxLength="20" comment="HD translation of: *** ARMED ***">*** ARMED ***</string>
-  <string name="STR_OSDE_DISARMED" maxLength="15" comment="translation of: DISARMED">DISARMED</string>
-  <string name="STR_OSDE_DISARMED_HD" maxLength="20" comment="HD translation of: *** DISARMED ***">*** DISARMED ***</string>
-  <string name="STR_OSD_STATS" maxLength="15" comment="translation of: --- STATS ---">--- STATS ---</string>
-  <string name="STR_OSD_STATS_HD" maxLength="20" comment="HD translation of: --- STATISTICS ---">--- STATISTICS ---</string>
+  <string name="STR_LOCALE_SETUP" maxLength="9" comment="translation of: Language:">Language:</string>
+  <string name="STR_COMMA" maxLength="1" comment="translation of: Comma string ,">,</string>
+  <string name="STR_PERIOD" maxLength="1" comment="translation of: Period string .">.</string>
+  <string name="STR_THOUSAND" maxLength="1" comment="translation of: Thousand delimiter .">.</string>
+  <string name="STR_SECONDS" maxLength="7" comment="translation of: seconds">seconds</string>
+  <string name="STR_VISUAL_BEEP" maxLength="9" comment="translation of:   * * * *">  * * * *</string>
+  <string name="STR_CMS_STARTUP_MENU_TEXT1" maxLength="12" comment="translation of: MENU:THR MID">MENU:THR MID</string>
+  <string name="STR_CMS_STARTUP_MENU_TEXT2" maxLength="12" comment="translation of: + YAW LEFT  ">+ YAW LEFT  </string>
+  <string name="STR_CMS_STARTUP_MENU_TEXT3" maxLength="12" comment="translation of: + PITCH UP  ">+ PITCH UP  </string>
+  <string name="STR_OSD_ARMED" maxLength="5" comment="translation of: ARMED">ARMED</string>
+  <string name="STR_OSD_ARMED_HD" maxLength="11" comment="HD translation of: *** ARMED ***">** ARMED **</string>
+  <string name="STR_OSDE_DISARMED" maxLength="8" comment="translation of: DISARMED">DISARMED</string>
+  <string name="STR_OSDE_DISARMED_HD" maxLength="14" comment="HD translation of: *** DISARMED ***">** DISARMED **</string>
+  <string name="STR_OSD_STATS" maxLength="13" comment="translation of: --- STATS ---">--- STATS ---</string>
+  <string name="STR_OSD_STATS_HD" maxLength="18" comment="HD translation of: --- STATISTICS ---">--- STATISTICS ---</string>
   <string name="STR_OSD_TIMER_ON_TIME" maxLength="9" comment="translation of: ON TIME  ">ON TIME  </string>
-  <string name="STR_OSD_TIMER_ON_TIME_HD" maxLength="11" comment="HD translation of: ON TIME  ">ON TIME    </string>
+  <string name="STR_OSD_TIMER_ON_TIME_HD" maxLength="14" comment="HD translation of: ON TIME  ">ON TIME    </string>
   <string name="STR_OSD_TIMER_TOTAL_ARM" maxLength="9" comment="translation of: TOTAL ARM">TOTAL ARM</string>
-  <string name="STR_OSD_TIMER_TOTAL_ARM_HD" maxLength="11" comment="HD translation of: TOTAL ARMED">TOTAL ARMED</string>
+  <string name="STR_OSD_TIMER_TOTAL_ARM_HD" maxLength="14" comment="HD translation of: TOTAL ARMED">TOTAL ARMED</string>
   <string name="STR_OSD_TIMER_LAST_ARM" maxLength="9" comment="translation of: LAST ARM ">LAST ARM </string>
-  <string name="STR_OSD_TIMER_LAST_ARM_HD" maxLength="11" comment="HD translation of: LAST ARMED ">LAST ARMED </string>
+  <string name="STR_OSD_TIMER_LAST_ARM_HD" maxLength="14" comment="HD translation of: LAST ARMED ">LAST ARMED </string>
   <string name="STR_OSD_TIMER_ON_ARM" maxLength="9" comment="translation of: ON/ARM   ">ON/ARM   </string>
   <string name="STR_OSD_TIMER_ON_ARM_HD" maxLength="11" comment="HD translation of: ON/ARMED   ">ON/ARMED   </string>
   <string name="STR_OSD_STAT_MAX_ALTITUDE" maxLength="12" comment="translation of: MAX ALTITUDE">MAX ALTITUDE</string>
-  <string name="STR_OSD_STAT_MAX_ALTITUDE_HD" maxLength="16" comment="HD translation of: MAXIMAL ALTITUDE">MAXIMAL ALTITUDE</string>
+  <string name="STR_OSD_STAT_MAX_ALTITUDE_HD" maxLength="17" comment="HD translation of: MAXIMAL ALTITUDE">MAXIMAL ALTITUDE</string>
   <string name="STR_OSD_STAT_MAX_SPEED" maxLength="12" comment="translation of: MAX SPEED   ">MAX SPEED   </string>
-  <string name="STR_OSD_STAT_MAX_SPEED_HD" maxLength="16" comment="HD translation of: MAXIMAL SPEED   ">MAXIMAL SPEED   </string>
+  <string name="STR_OSD_STAT_MAX_SPEED_HD" maxLength="17" comment="HD translation of: MAXIMAL SPEED   ">MAXIMAL SPEED   </string>
   <string name="STR_OSD_STAT_MAX_DISTANCE" maxLength="12" comment="translation of: MAX DISTANCE">MAX DISTANCE</string>
-  <string name="STR_OSD_STAT_MAX_DISTANCE_HD" maxLength="16" comment="HD translation of: MAXIMAL DISTANCE">MAXIMAL DISTANCE</string>
+  <string name="STR_OSD_STAT_MAX_DISTANCE_HD" maxLength="17" comment="HD translation of: MAXIMAL DISTANCE">MAXIMAL DISTANCE</string>
   <string name="STR_OSD_STAT_FLIGHT_DISTANCE" maxLength="15" comment="translation of: FLIGHT DISTANCE">FLIGHT DISTANCE</string>
-  <string name="STR_OSD_STAT_MIN_BATTERY_AVG" maxLength="15" comment="translation of: MIN AVG CELL">MIN AVG CELL</string>
-  <string name="STR_OSD_STAT_MIN_BATTERY" maxLength="15" comment="translation of: MIN BATTERY">MIN BATTERY</string>
-  <string name="STR_OSD_STAT_END_BATTERY_AVG" maxLength="15" comment="translation of: END AVG CELL">END AVG CELL</string>
-  <string name="STR_OSD_STAT_END_BATTERY" maxLength="15" comment="translation of: END BATTERY">END BATTERY</string>
-  <string name="STR_OSD_STAT_BATTERY_AVG" maxLength="15" comment="translation of: AVG BATT CELL">AVG BATT CELL</string>
-  <string name="STR_OSD_STAT_BATTERY" maxLength="15" comment="translation of: BATTERY">BATTERY</string>
-  <string name="STR_OSD_STAT_MIN_RSSI" maxLength="15" comment="translation of: MIN RSSI">MIN RSSI</string>
-  <string name="STR_OSD_STAT_MAX_CURRENT" maxLength="15" comment="translation of: MAX CURRENT">MAX CURRENT</string>
-  <string name="STR_OSD_STAT_MAX_CURRENT_HD" maxLength="15" comment="HD translation of: MAXIMAL CURRENT">MAXIMAL CURRENT</string>
-  <string name="STR_OSD_STAT_USED_MAH" maxLength="15" comment="translation of: USED MAH">USED MAH</string>
+  <string name="STR_OSD_STAT_MIN_BATTERY_AVG" maxLength="12" comment="translation of: MIN AVG CELL">MIN AVG CELL</string>
+  <string name="STR_OSD_STAT_MIN_BATTERY" maxLength="11" comment="translation of: MIN BATTERY">MIN BATTERY</string>
+  <string name="STR_OSD_STAT_END_BATTERY_AVG" maxLength="12" comment="translation of: END AVG CELL">END AVG CELL</string>
+  <string name="STR_OSD_STAT_END_BATTERY" maxLength="11" comment="translation of: END BATTERY">END BATTERY</string>
+  <string name="STR_OSD_STAT_BATTERY_AVG" maxLength="13" comment="translation of: AVG BATT CELL">AVG BATT CELL</string>
+  <string name="STR_OSD_STAT_BATTERY" maxLength="7" comment="translation of: BATTERY">BATTERY</string>
+  <string name="STR_OSD_STAT_MIN_RSSI" maxLength="8" comment="translation of: MIN RSSI">MIN RSSI</string>
+  <string name="STR_OSD_STAT_MAX_CURRENT" maxLength="11" comment="translation of: MAX CURRENT">MAX CURRENT</string>
+  <string name="STR_OSD_STAT_MAX_CURRENT_HD" maxLength="16" comment="HD translation of: MAXIMAL CURRENT">MAXIMAL CURRENT</string>
+  <string name="STR_OSD_STAT_USED_MAH" maxLength="9" comment="translation of: USED MAH">USED MAH</string>
   <string name="STR_OSD_STAT_WATT_HOURS_DRAWN" maxLength="15" comment="translation of: USED WATT HOURS">USED WATT HOURS</string>
-  <string name="STR_OSD_STAT_BLACKBOX" maxLength="15" comment="translation of: BLACKBOX">BLACKBOX</string>
-  <string name="STR_OSD_STAT_BLACKBOX_NUMBER" maxLength="15" comment="translation of: BB LOG NUM">BB LOG NUM</string>
-  <string name="STR_OSD_STAT_BLACKBOX_NUMBER_HD" maxLength="20" comment="HD translation of: BLACKBOX LOG NUMBER">BLACKBOX LOG NUMBER</string>
-  <string name="STR_OSD_STAT_MAX_G_FORCE" maxLength="15" comment="translation of: MAX G-FORCE">MAX G-FORCE</string>
-  <string name="STR_OSD_STAT_MAX_G_FORCE_HD" maxLength="15" comment="HD translation of: MAXIMAL G-FORCE">MAXIMAL G-FORCE</string>
-  <string name="STR_OSD_STAT_MAX_ESC_TEMP" maxLength="15" comment="translation of: MAX ESC TEMP">MAX ESC TEMP</string>
-  <string name="STR_OSD_STAT_MAX_ESC_TEMP_HD" maxLength="16" comment="HD translation of: MAXIMAL ESC TEMP">MAXIMAL ESC TEMP</string>
-  <string name="STR_OSD_STAT_MAX_ESC_RPM" maxLength="15" comment="translation of: MAX ESC RPM">MAX ESC RPM</string>
-  <string name="STR_OSD_STAT_MAX_ESC_RPM_HD" maxLength="15" comment="HD translation of: MAXIMAL ESC RPM">MAXIMAL ESC RPM</string>
-  <string name="STR_OSD_STAT_MIN_LINK_QUALITY" maxLength="15" comment="translation of: MIN LINK">MIN LINK</string>
-  <string name="STR_OSD_STAT_MAX_FFT" maxLength="15" comment="translation of: PEAK FFT">PEAK FFT</string>
-  <string name="STR_OSD_STAT_MAX_FFT_THRT" maxLength="15" comment="translation of: THRT&lt;20%">THRT&lt;20%</string>
-  <string name="STR_OSD_STAT_MIN_RSSI_DBM" maxLength="15" comment="translation of: MIN RSSI DBM">MIN RSSI DBM</string>
-  <string name="STR_OSD_STAT_MIN_RSNR" maxLength="15" comment="translation of: MIN RSNR">MIN RSNR</string>
-  <string name="STR_USE_PERSISTENT_STATS" maxLength="20" comment="translation of: TOTAL FLIGHTS">TOTAL FLIGHTS</string>
-  <string name="STR_OSD_STAT_TOTAL_TIME" maxLength="20" comment="translation of: TOTAL FLIGHT TIME">TOTAL FLIGHT TIME</string>
-  <string name="STR_OSD_STAT_TOTAL_DIST" maxLength="20" comment="translation of: TOTAL DISTANCE">TOTAL DISTANCE</string>
-  <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="15" comment="translation of: &gt; CRASH FLIP &lt;">&gt; CRASH FLIP &lt;</string>
-  <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="20" comment="translation of: CRASH FLIP SWITCH">CRASH FLIP SWITCH</string>
-  <string name="STR_OSDW_BEACON_ON" maxLength="15" comment="translation of:  BEACON ON"> BEACON ON</string>
-  <string name="STR_OSDW_ARM_IN" maxLength="15" comment="translation of: ARM IN">ARM IN</string>
-  <string name="STR_OSDW_ARM_IN_HD" maxLength="15" comment="HD translation of: ARMED IN">ARMED IN</string>
-  <string name="STR_OSDW_FAIL_SAFE" maxLength="15" comment="translation of: FAIL SAFE">FAIL SAFE</string>
-  <string name="STR_OSDW_LAUNCH" maxLength="15" comment="translation of: LAUNCH">LAUNCH</string>
-  <string name="STR_OSDW_RSSI_LOW" maxLength="15" comment="translation of: RSSI LOW">RSSI LOW</string>
-  <string name="STR_OSDW_RSSI_DBM" maxLength="15" comment="translation of: RSSI DBM">RSSI DBM</string>
-  <string name="STR_OSDW_RSNR_LOW" maxLength="15" comment="translation of: RSNR LOW">RSNR LOW</string>
-  <string name="STR_OSDW_LINK_QUALITY" maxLength="15" comment="translation of: LINK QUALITY">LINK QUALITY</string>
-  <string name="STR_OSDW_LAND_NOW" maxLength="15" comment="translation of:  LAND NOW"> LAND NOW</string>
-  <string name="STR_OSDW_RESCUE_NA" maxLength="15" comment="translation of: RESCUE N/A">RESCUE N/A</string>
+  <string name="STR_OSD_STAT_BLACKBOX" maxLength="8" comment="translation of: BLACKBOX">BLACKBOX</string>
+  <string name="STR_OSD_STAT_BLACKBOX_NUMBER" maxLength="10" comment="translation of: BB LOG NUM">BB LOG NUM</string>
+  <string name="STR_OSD_STAT_BLACKBOX_NUMBER_HD" maxLength="15" comment="HD translation of: BLACKBOX LOG NUMBER">BLACKBOX LOG #</string>
+  <string name="STR_OSD_STAT_MAX_G_FORCE" maxLength="11" comment="translation of: MAX G-FORCE">MAX G-FORCE</string>
+  <string name="STR_OSD_STAT_MAX_G_FORCE_HD" maxLength="16" comment="HD translation of: MAXIMAL G-FORCE">MAXIMAL G-FORCE</string>
+  <string name="STR_OSD_STAT_MAX_ESC_TEMP" maxLength="12" comment="translation of: MAX ESC TEMP">MAX ESC TEMP</string>
+  <string name="STR_OSD_STAT_MAX_ESC_TEMP_HD" maxLength="17" comment="HD translation of: MAXIMAL ESC TEMP">MAXIMAL ESC TEMP</string>
+  <string name="STR_OSD_STAT_MAX_ESC_RPM" maxLength="11" comment="translation of: MAX ESC RPM">MAX ESC RPM</string>
+  <string name="STR_OSD_STAT_MAX_ESC_RPM_HD" maxLength="16" comment="HD translation of: MAXIMAL ESC RPM">MAXIMAL ESC RPM</string>
+  <string name="STR_OSD_STAT_MIN_LINK_QUALITY" maxLength="8" comment="translation of: MIN LINK">MIN LINK</string>
+  <string name="STR_OSD_STAT_MAX_FFT" maxLength="8" comment="translation of: PEAK FFT">PEAK FFT</string>
+  <string name="STR_OSD_STAT_MAX_FFT_THRT" maxLength="8" comment="translation of: THRT&lt;20%">THRT&lt;20%</string>
+  <string name="STR_OSD_STAT_MIN_RSSI_DBM" maxLength="12" comment="translation of: MIN RSSI DBM">MIN RSSI DBM</string>
+  <string name="STR_OSD_STAT_MIN_RSNR" maxLength="8" comment="translation of: MIN RSNR">MIN RSNR</string>
+  <string name="STR_USE_PERSISTENT_STATS" maxLength="14" comment="translation of: TOTAL FLIGHTS">TOTAL FLIGHTS</string>
+  <string name="STR_OSD_STAT_TOTAL_TIME" maxLength="17" comment="translation of: TOTAL FLIGHT TIME">TOTAL FLIGHT TIME</string>
+  <string name="STR_OSD_STAT_TOTAL_DIST" maxLength="14" comment="translation of: TOTAL DISTANCE">TOTAL DISTANCE</string>
+  <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="14" comment="translation of: &gt; CRASH FLIP &lt;">&gt; CRASH FLIP &lt;</string>
+  <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="17" comment="translation of: CRASH FLIP SWITCH">CRASH FLIP SWITCH</string>
+  <string name="STR_OSDW_BEACON_ON" maxLength="10" comment="translation of:  BEACON ON"> BEACON ON</string>
+  <string name="STR_OSDW_ARM_IN" maxLength="6" comment="translation of: ARM IN">ARM IN</string>
+  <string name="STR_OSDW_ARM_IN_HD" maxLength="11" comment="HD translation of: ARMED IN">ARMED IN</string>
+  <string name="STR_OSDW_FAIL_SAFE" maxLength="9" comment="translation of: FAIL SAFE">FAIL SAFE</string>
+  <string name="STR_OSDW_LAUNCH" maxLength="6" comment="translation of: LAUNCH">LAUNCH</string>
+  <string name="STR_OSDW_RSSI_LOW" maxLength="8" comment="translation of: RSSI LOW">RSSI LOW</string>
+  <string name="STR_OSDW_RSSI_DBM" maxLength="8" comment="translation of: RSSI DBM">RSSI DBM</string>
+  <string name="STR_OSDW_RSNR_LOW" maxLength="8" comment="translation of: RSNR LOW">RSNR LOW</string>
+  <string name="STR_OSDW_LINK_QUALITY" maxLength="12" comment="translation of: LINK QUALITY">LINK QUALITY</string>
+  <string name="STR_OSDW_LAND_NOW" maxLength="9" comment="translation of:  LAND NOW"> LAND NOW</string>
+  <string name="STR_OSDW_RESCUE_NA" maxLength="10" comment="translation of: RESCUE N/A">RESCUE N/A</string>
   <string name="STR_OSDW_RESCUE_NA_HD" maxLength="20" comment="HD translation of: RESCUE NOT AVAILABLE">RESCUE NOT AVAILABLE</string>
-  <string name="STR_OSDW_RESCUE_OFF" maxLength="15" comment="translation of: RESCUE OFF">RESCUE OFF</string>
-  <string name="STR_OSDW_HEADFREE" maxLength="15" comment="translation of: HEADFREE">HEADFREE</string>
-  <string name="STR_OSDW_CORE" maxLength="15" comment="translation of: CORE">CORE</string>
-  <string name="STR_OSDW_LOW_BATT" maxLength="15" comment="translation of: LOW BATTERY">LOW BATTERY</string>
-  <string name="STR_OSDW_RCSMOOTHING" maxLength="15" comment="translation of: RCSMOOTHING">RCSMOOTHING</string>
-  <string name="STR_OSDW_OVER_CAP" maxLength="15" comment="translation of: OVER CAP">OVER CAP</string>
-  <string name="STR_OSDW_BATT_CONTINUE" maxLength="20" comment="translation of: BATTERY CONTINUE">BATTERY CONTINUE</string>
-  <string name="STR_OSDW_BATT_BELOW_FULL" maxLength="15" comment="translation of: BATT &lt; FULL">BATT &lt; FULL</string>
+  <string name="STR_OSDW_RESCUE_OFF" maxLength="12" comment="translation of: RESCUE OFF">RESCUE OFF</string>
+  <string name="STR_OSDW_HEADFREE" maxLength="8" comment="translation of: HEADFREE">HEADFREE</string>
+  <string name="STR_OSDW_CORE" maxLength="4" comment="translation of: CORE">CORE</string>
+  <string name="STR_OSDW_LOW_BATT" maxLength="11" comment="translation of: LOW BATTERY">LOW BATTERY</string>
+  <string name="STR_OSDW_RCSMOOTHING" maxLength="11" comment="translation of: RCSMOOTHING">RCSMOOTHING</string>
+  <string name="STR_OSDW_OVER_CAP" maxLength="8" comment="translation of: OVER CAP">OVER CAP</string>
+  <string name="STR_OSDW_BATT_CONTINUE" maxLength="16" comment="translation of: BATTERY CONTINUE">BATTERY CONTINUE</string>
+  <string name="STR_OSDW_BATT_BELOW_FULL" maxLength="11" comment="translation of: BATT &lt; FULL">BATT &lt; FULL</string>
   <string name="STR_OSDE_UP" maxLength="1" comment="translation of: U">U</string>
   <string name="STR_OSDE_DOWN" maxLength="1" comment="translation of: D">D</string>
   <string name="STR_OSDE_GPS_DIRECTION" maxLength="4" comment="translation of: NSEW">NSEW</string>
   <string name="STR_OSDE_PILOT_NAME" maxLength="10" comment="translation of: PILOT NAME">PILOT NAME</string>
   <string name="STR_OSDE_RATE" maxLength="5" comment="translation of: RATE_, notice %u follow">RATE_</string>
-  <string name="STR_OSDE_RATE_HD" maxLength="15" comment="HD translation of: RATE_, notice %u follow">RATE_</string>
-  <string name="STR_OSDE_PID" maxLength="5" comment="translation of: PID_, notice %u follow">PID_</string>
-  <string name="STR_OSDE_OID" maxLength="5" comment="translation of: OID_, notice %u follow">OID_</string>
-  <string name="STR_OSDE_FLYMODE_FAILSAFE" maxLength="5" comment="translation of: !FS!">!FS!</string>
-  <string name="STR_OSDE_FLYMODE_RESCUE" maxLength="5" comment="translation of: RESC">RESC</string>
-  <string name="STR_OSDE_FLYMODE_HEAD" maxLength="5" comment="translation of: HEAD">HEAD</string>
-  <string name="STR_OSDE_FLYMODE_ANGL" maxLength="5" comment="translation of: ANGL">ANGL</string>
-  <string name="STR_OSDE_FLYMODE_HOR" maxLength="5" comment="translation of: HOR ">HOR </string>
-  <string name="STR_OSDE_FLYMODE_ATRN" maxLength="5" comment="translation of: ATRN">ATRN</string>
-  <string name="STR_OSDE_FLYMODE_AIR" maxLength="5" comment="translation of: AIR ">AIR </string>
-  <string name="STR_OSDE_FLYMODE_ACRO" maxLength="5" comment="translation of: ACRO">ACRO</string>
-  <string name="STR_OSDE_ELEMENT_PITCH" maxLength="4" comment="translation of: PIT">PIT</string>
-  <string name="STR_OSDE_ELEMENT_ROLL" maxLength="4" comment="translation of: ROL">ROL</string>
-  <string name="STR_OSDE_ELEMENT_YAW" maxLength="4" comment="translation of: YAW">YAW</string>
+  <string name="STR_OSDE_RATE_HD" maxLength="10" comment="HD translation of: RATE_, notice %u follow">RATE_</string>
+  <string name="STR_OSDE_PID" maxLength="4" comment="translation of: PID_, notice %u follow">PID_</string>
+  <string name="STR_OSDE_OID" maxLength="4" comment="translation of: OID_, notice %u follow">OID_</string>
   <string name="STR_OSDE_ANTIGRAVITY" maxLength="2" comment="translation of: AG">AG</string>
-  <string name="STR_OSDE_ANTIGRAVITY_HD" maxLength="6" comment="HD translation of: ANTI G">ANTI G</string>
+  <string name="STR_OSDE_ANTIGRAVITY_HD" maxLength="7" comment="HD translation of: ANTI G">ANTI G</string>
   <string name="STR_OSDE_READY" maxLength="5" comment="translation of: READY">READY</string>
+  <string name="STR_OSDE_READY_HD" maxLength="10" comment="translation of: READY">READY</string>
+  <string name="STR_OSDE_FLYMODE_FAILSAFE" maxLength="4" comment="translation of: !FS!">!FS!</string>
+  <string name="STR_OSDE_FLYMODE_RESCUE" maxLength="4" comment="translation of: RESC">RESC</string>
+  <string name="STR_OSDE_FLYMODE_HEAD" maxLength="4" comment="translation of: HEAD">HEAD</string>
+  <string name="STR_OSDE_FLYMODE_ANGL" maxLength="4" comment="translation of: ANGL">ANGL</string>
+  <string name="STR_OSDE_FLYMODE_HOR" maxLength="4" comment="translation of: HOR ">HOR </string>
+  <string name="STR_OSDE_FLYMODE_ATRN" maxLength="4" comment="translation of: ATRN">ATRN</string>
+  <string name="STR_OSDE_FLYMODE_AIR" maxLength="4" comment="translation of: AIR ">AIR </string>
+  <string name="STR_OSDE_FLYMODE_ACRO" maxLength="4" comment="translation of: ACRO">ACRO</string>
+  <string name="STR_OSDE_ELEMENT_PITCH" maxLength="3" comment="translation of: PIT">PIT</string>
+  <string name="STR_OSDE_ELEMENT_ROLL" maxLength="3" comment="translation of: ROL">ROL</string>
+  <string name="STR_OSDE_ELEMENT_YAW" maxLength="3" comment="translation of: YAW">YAW</string>
 </resources>

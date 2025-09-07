@@ -21,6 +21,11 @@
 
 import os
 import sys
+
+#import defusedxml      // suggested by coderabbitai, but then need to install defusedxml
+# try:
+#   from defusedxml import ElementTree as ET  # safer XML parsing
+# except ImportError:
 import xml.etree.ElementTree as ET
 
 # do this
@@ -45,7 +50,7 @@ def wr_bf_notice_bf(outFile, locale):
     outFile.write("\n\n")
     outFile.write("\tWant to USE_EXTENDED_HD, ie. have #define TXT TR2( \"short\", \"long\"), x, y), \n")
     outFile.write("\twrite string section for TXT with 'short' followed by string section TXT_HD with 'long'\n\n")
-    outFile.write("\tTo generate use 'make xx LOCALE=" + locale + " USE_EXTENDED_HD=1'\n")
+    outFile.write("\tTo generate use 'make xx LOCALE=" + locale + " USE_HD_EXTENDED=1'\n")
     outFile.write("*/\n\n")
 
 def wr_bf_notice_ut(outFile):
@@ -84,26 +89,29 @@ if verbose:
     print(sys.argv[0] + ': GENERATE ' + task + ' >' + locale + '< ' + from_filename + ' to '+ to_filename)
 
 if task == 'BF':
-    fw_to = open(to_filename, 'w')
+    os.makedirs(os.path.dirname(to_filename), exist_ok=True)
+    fw_to = open(to_filename, 'w', encoding='utf-8', newline='\n')
     wr_bf_header(fw_to, bf_header_name)
     wr_bf_notice_bf(fw_to, locale)
 
 if task == 'UT':
-    fw_ut = open(untrans_filename, 'w')
+    os.makedirs(os.path.dirname(untrans_filename), exist_ok=True)
+    fw_ut = open(untrans_filename, 'w', encoding='utf-8', newline='\n')
     wr_bf_header(fw_ut, bf_header_name)
     wr_bf_notice_ut(fw_ut)
 
 prevKey = ""
 prevMessage = prevDescription = ""
+prevError = ""
 
 tree = ET.parse(from_filename)
 root = tree.getroot()
 
 for string_element in root.findall('string'):
     currentKey = string_element.get('name')
-    maxLen = int(string_element.get('maxLength'))
-    description = string_element.get('comment')
-    message = string_element.text
+    maxLen = int(string_element.get('maxLength') or 0)
+    description = string_element.get('comment') or ""
+    message = (string_element.text or "")
 
     if len(message) > maxLen and maxLen > 0:
         errorMess = "ERROR - define " + currentKey + " with maxLength of " + str(maxLen) + " exceed with text: " + message + " / " + str(len(message))
