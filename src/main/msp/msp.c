@@ -2998,26 +2998,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         // Added in API 1.47
         if (sbufBytesRemaining(src) >= 8 * 7) {
             for (int i = 0; i < 8; i++) {
-                const uint8_t alignment = sbufReadU8(src);
-                if (i < GYRO_COUNT) {
-                    gyroDeviceConfigMutable(i)->alignment = alignment;
-                }
+                sbufReadU8(src); // skip unused alignment (alignment set in config.h and not user serviceable)
             }
 
             for (int i = 0; i < 8; i++) {
-                if (i < GYRO_COUNT) {
-                     sensorAlignment_t customAlignment;
-                     for (unsigned j = 0; j < ARRAYLEN(customAlignment.raw); j++) {
-                        customAlignment.raw[j] = (int16_t)sbufReadU16(src);
-                     }
-                     if (i < GYRO_COUNT) {
-                        gyroDeviceConfigMutable(i)->customAlignment = customAlignment;
-                     }
-                } else {
-                    sbufReadU16(src); // skip unused custom alignment roll
-                    sbufReadU16(src); // skip unused custom alignment pitch
-                    sbufReadU16(src); // skip unused custom alignment yaw
-                }
+                sbufReadU16(src); // skip unused custom alignment roll
+                sbufReadU16(src); // skip unused custom alignment pitch
+                sbufReadU16(src); // skip unused custom alignment yaw
             }
         }
 
