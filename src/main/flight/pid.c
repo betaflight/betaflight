@@ -1500,7 +1500,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 #endif
-DEBUG_SET(DEBUG_ANGLE_MODE, axis, lrintf(currentPidSetpoint * 10.0f)); // feedforward amount in degrees
         const float currentPidSetpointBeforeWingAdjust = currentPidSetpoint;
         currentPidSetpoint = wingAdjustSetpoint(currentPidSetpoint, axis);
 
