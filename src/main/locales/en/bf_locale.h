@@ -20,28 +20,28 @@
  */
 
 /*
-	NOTICE !
-	NOTICE !
-	NOTICE, this header file for LOCALE 'en' are generated from en/bf_locale.xml
-	Changes to translation ie. en/bf_locale.h must be done in en/bf_locale.xml
+	NOTICE!
+	NOTICE: this header file for LOCALE 'en' is generated from en/bf_locale.xml
+	Changes to translations (i.e., en/bf_locale.h) must be made in en/bf_locale.xml
 
-	To generate use 'make xx LOCALE=en'
-
-	Want to USE_EXTENDED_HD, ie. have #define TXT TR2( "short", "long"), x, y), 
-	write string section for TXT with 'short' followed by string section TXT_HD with 'long'
-
-	To generate use 'make xx LOCALE=en USE_EXTENDED_HD=1'
+	To enable TR2 (HD extended text), write TXT then TXT_HD and build with USE_HD_EXTENDED=1
+	To build use 'make <target> LOCALE=en'
 */
 
+#pragma once
+
 #define LOCALE                             "en"                                       	// Current language in short form: en, da, es, fr, nl ...
-#define STR_NEW_STRING                     "new string"                               	// translation of: new string
+#define STR_LOCALE_SETUP                   "Language:"                                	// translation of: Language:
+#define STR_COMMA                          ","                                        	// translation of: Comma string ,
+#define STR_PERIOD                         "."                                        	// translation of: Period string .
+#define STR_THOUSAND                       "."                                        	// translation of: Thousand delimiter .
 #define STR_SECONDS                        "seconds"                                  	// translation of: seconds
 #define STR_VISUAL_BEEP                    "  * * * *"                                	// translation of:   * * * *
 #define STR_CMS_STARTUP_MENU_TEXT1         "MENU:THR MID"                             	// translation of: MENU:THR MID
 #define STR_CMS_STARTUP_MENU_TEXT2         "+ YAW LEFT  "                             	// translation of: + YAW LEFT  
 #define STR_CMS_STARTUP_MENU_TEXT3         "+ PITCH UP  "                             	// translation of: + PITCH UP  
-#define STR_OSD_ARMED                      TR2("ARMED", "*** ARMED ***")              	// translation of: ARMED; HD translation of: *** ARMED ***
-#define STR_OSDE_DISARMED                  TR2("DISARMED", "*** DISARMED ***")        	// translation of: DISARMED; HD translation of: *** DISARMED ***
+#define STR_OSD_ARMED                      TR2("ARMED", "** ARMED **")                	// translation of: ARMED; HD translation of: *** ARMED ***
+#define STR_OSDE_DISARMED                  TR2("DISARMED", "** DISARMED **")          	// translation of: DISARMED; HD translation of: *** DISARMED ***
 #define STR_OSD_STATS                      TR2("--- STATS ---", "--- STATISTICS ---") 	// translation of: --- STATS ---; HD translation of: --- STATISTICS ---
 #define STR_OSD_TIMER_ON_TIME              TR2("ON TIME  ", "ON TIME    ")            	// translation of: ON TIME  ; HD translation of: ON TIME  
 #define STR_OSD_TIMER_TOTAL_ARM            TR2("TOTAL ARM", "TOTAL ARMED")            	// translation of: TOTAL ARM; HD translation of: TOTAL ARMED
@@ -62,7 +62,7 @@
 #define STR_OSD_STAT_USED_MAH              "USED MAH"                                 	// translation of: USED MAH
 #define STR_OSD_STAT_WATT_HOURS_DRAWN      "USED WATT HOURS"                          	// translation of: USED WATT HOURS
 #define STR_OSD_STAT_BLACKBOX              "BLACKBOX"                                 	// translation of: BLACKBOX
-#define STR_OSD_STAT_BLACKBOX_NUMBER       TR2("BB LOG NUM", "BLACKBOX LOG NUMBER")   	// translation of: BB LOG NUM; HD translation of: BLACKBOX LOG NUMBER
+#define STR_OSD_STAT_BLACKBOX_NUMBER       TR2("BB LOG NUM", "BLACKBOX LOG #")        	// translation of: BB LOG NUM; HD translation of: BLACKBOX LOG NUMBER
 #define STR_OSD_STAT_MAX_G_FORCE           TR2("MAX G-FORCE", "MAXIMAL G-FORCE")      	// translation of: MAX G-FORCE; HD translation of: MAXIMAL G-FORCE
 #define STR_OSD_STAT_MAX_ESC_TEMP          TR2("MAX ESC TEMP", "MAXIMAL ESC TEMP")    	// translation of: MAX ESC TEMP; HD translation of: MAXIMAL ESC TEMP
 #define STR_OSD_STAT_MAX_ESC_RPM           TR2("MAX ESC RPM", "MAXIMAL ESC RPM")      	// translation of: MAX ESC RPM; HD translation of: MAXIMAL ESC RPM
@@ -74,8 +74,8 @@
 #define STR_USE_PERSISTENT_STATS           "TOTAL FLIGHTS"                            	// translation of: TOTAL FLIGHTS
 #define STR_OSD_STAT_TOTAL_TIME            "TOTAL FLIGHT TIME"                        	// translation of: TOTAL FLIGHT TIME
 #define STR_OSD_STAT_TOTAL_DIST            "TOTAL DISTANCE"                           	// translation of: TOTAL DISTANCE
-#define STR_OSDW_CRASH_FLIP_WARNING        "> CRASH FLIP <"                           	// translation of: > CRASH FLIP <
-#define STR_OSDW_CRASH_FLIP_SWITCH         "CRASH FLIP SWITCH"                        	// translation of: CRASH FLIP SWITCH
+#define STR_OSDW_CRASH_FLIP_WARNING        ">CRASH FLIP<"                             	// translation of: >CRASH FLIP<
+#define STR_OSDW_CRASH_FLIP_SWITCH         "CRASH FLIP SW"                            	// translation of: CRASH FLIP SW
 #define STR_OSDW_BEACON_ON                 " BEACON ON"                               	// translation of:  BEACON ON
 #define STR_OSDW_ARM_IN                    TR2("ARM IN", "ARMED IN")                  	// translation of: ARM IN; HD translation of: ARMED IN
 #define STR_OSDW_FAIL_SAFE                 "FAIL SAFE"                                	// translation of: FAIL SAFE
@@ -90,7 +90,6 @@
 #define STR_OSDW_HEADFREE                  "HEADFREE"                                 	// translation of: HEADFREE
 #define STR_OSDW_CORE                      "CORE"                                     	// translation of: CORE
 #define STR_OSDW_LOW_BATT                  "LOW BATTERY"                              	// translation of: LOW BATTERY
-#define STR_OSDW_RCSMOOTHING               "RCSMOOTHING"                              	// translation of: RCSMOOTHING
 #define STR_OSDW_OVER_CAP                  "OVER CAP"                                 	// translation of: OVER CAP
 #define STR_OSDW_BATT_CONTINUE             "BATTERY CONTINUE"                         	// translation of: BATTERY CONTINUE
 #define STR_OSDW_BATT_BELOW_FULL           "BATT < FULL"                              	// translation of: BATT < FULL
@@ -101,16 +100,20 @@
 #define STR_OSDE_RATE                      TR2("RATE_", "RATE_")                      	// translation of: RATE_, notice %u follow; HD translation of: RATE_, notice %u follow
 #define STR_OSDE_PID                       "PID_"                                     	// translation of: PID_, notice %u follow
 #define STR_OSDE_OID                       "OID_"                                     	// translation of: OID_, notice %u follow
+#define STR_OSDE_ANTIGRAVITY               TR2("AG", "ANTI G")                        	// translation of: AG; HD translation of: ANTI G
+#define STR_OSDE_READY                     TR2("READY", "READY")                      	// translation of: READY; translation of: READY
 #define STR_OSDE_FLYMODE_FAILSAFE          "!FS!"                                     	// translation of: !FS!
 #define STR_OSDE_FLYMODE_RESCUE            "RESC"                                     	// translation of: RESC
 #define STR_OSDE_FLYMODE_HEAD              "HEAD"                                     	// translation of: HEAD
+#define STR_OSDE_FLYMODE_PASS              "PASS"                                     	// translation of: PASS
+#define STR_OSDE_FLYMODE_POSH              "POSH"                                     	// translation of: POSH
+#define STR_OSDE_FLYMODE_ALTH              "ALTH"                                     	// translation of: ALTH
 #define STR_OSDE_FLYMODE_ANGL              "ANGL"                                     	// translation of: ANGL
 #define STR_OSDE_FLYMODE_HOR               "HOR "                                     	// translation of: HOR 
 #define STR_OSDE_FLYMODE_ATRN              "ATRN"                                     	// translation of: ATRN
+#define STR_OSDE_FLYMODE_CHIR              "CHIR"                                     	// translation of: CHIR
 #define STR_OSDE_FLYMODE_AIR               "AIR "                                     	// translation of: AIR 
 #define STR_OSDE_FLYMODE_ACRO              "ACRO"                                     	// translation of: ACRO
 #define STR_OSDE_ELEMENT_PITCH             "PIT"                                      	// translation of: PIT
 #define STR_OSDE_ELEMENT_ROLL              "ROL"                                      	// translation of: ROL
 #define STR_OSDE_ELEMENT_YAW               "YAW"                                      	// translation of: YAW
-#define STR_OSDE_ANTIGRAVITY               TR2("AG", "ANTI G")                        	// translation of: AG; HD translation of: ANTI G
-#define STR_OSDE_READY                     "READY"                                    	// translation of: READY

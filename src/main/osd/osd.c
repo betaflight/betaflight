@@ -1201,13 +1201,8 @@ static timeDelta_t osdShowArmed(void)
     }
     displayWrite(osdDisplayPort, midCol - (strlen(STR_OSD_ARMED) / 2), midRow, DISPLAYPORT_SEVERITY_NORMAL, STR_OSD_ARMED);
 
-<<<<<<< HEAD
     if (isCrashFlipModeActive()) {
-        displayWrite(osdDisplayPort, midCol - (strlen(CRASHFLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_SEVERITY_NORMAL, CRASHFLIP_WARNING);
-=======
-    if (isFlipOverAfterCrashActive()) {
-        displayWrite(osdDisplayPort, midCol - (strlen(STR_OSDW_CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_SEVERITY_NORMAL, STR_OSDW_CRASH_FLIP_WARNING);
->>>>>>> 0a224e7fe (Rebase)
+      displayWrite(osdDisplayPort, midCol - (strlen(STR_OSDW_CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_SEVERITY_NORMAL, STR_OSDW_CRASH_FLIP_WARNING);
     }
 
     return ret;
