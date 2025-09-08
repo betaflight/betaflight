@@ -21,19 +21,32 @@
 
 /*
 	NOTICE !
-	NOTICE !
-	NOTICE, this header file are generated from en/bf_locale.xml
-	Changes to translation ie. en/bf_locale.h must be done in en/bf_locale.xml
+	NOTICE, this header file is generated from en/bf_locale.xml
+	Changes to translation ie. en/bf_locale.h must be made in en/bf_locale.xml
 
-	This files handle defines not yet translated in some LOCALE, makeing possible to compile target
+	This file provides fallback defines for strings not yet translated in a locale, allowing targets to compile.
 */
+
+#pragma once
 
 #ifndef LOCALE
    #define LOCALE                             "en"
 #endif
 
-#ifndef STR_NEW_STRING
-   #define STR_NEW_STRING                     "new string"
+#ifndef STR_LOCALE_SETUP
+   #define STR_LOCALE_SETUP                   "Language:"
+#endif
+
+#ifndef STR_COMMA
+   #define STR_COMMA                          ","
+#endif
+
+#ifndef STR_PERIOD
+   #define STR_PERIOD                         "."
+#endif
+
+#ifndef STR_THOUSAND
+   #define STR_THOUSAND                       "."
 #endif
 
 #ifndef STR_SECONDS
@@ -193,11 +206,11 @@
 #endif
 
 #ifndef STR_OSDW_CRASH_FLIP_WARNING
-   #define STR_OSDW_CRASH_FLIP_WARNING        "> CRASH FLIP <"
+   #define STR_OSDW_CRASH_FLIP_WARNING        ">CRASH FLIP<"
 #endif
 
 #ifndef STR_OSDW_CRASH_FLIP_SWITCH
-   #define STR_OSDW_CRASH_FLIP_SWITCH         "CRASH FLIP SWITCH"
+   #define STR_OSDW_CRASH_FLIP_SWITCH         "CRASH FLIP SW"
 #endif
 
 #ifndef STR_OSDW_BEACON_ON
@@ -256,10 +269,6 @@
    #define STR_OSDW_LOW_BATT                  "LOW BATTERY"
 #endif
 
-#ifndef STR_OSDW_RCSMOOTHING
-   #define STR_OSDW_RCSMOOTHING               "RCSMOOTHING"
-#endif
-
 #ifndef STR_OSDW_OVER_CAP
    #define STR_OSDW_OVER_CAP                  "OVER CAP"
 #endif
@@ -300,6 +309,14 @@
    #define STR_OSDE_OID                       "OID_"
 #endif
 
+#ifndef STR_OSDE_ANTIGRAVITY
+   #define STR_OSDE_ANTIGRAVITY               "AG"
+#endif
+
+#ifndef STR_OSDE_READY
+   #define STR_OSDE_READY                     "READY"
+#endif
+
 #ifndef STR_OSDE_FLYMODE_FAILSAFE
    #define STR_OSDE_FLYMODE_FAILSAFE          "!FS!"
 #endif
@@ -312,6 +329,18 @@
    #define STR_OSDE_FLYMODE_HEAD              "HEAD"
 #endif
 
+#ifndef STR_OSDE_FLYMODE_PASS
+   #define STR_OSDE_FLYMODE_PASS              "PASS"
+#endif
+
+#ifndef STR_OSDE_FLYMODE_POSH
+   #define STR_OSDE_FLYMODE_POSH              "POSH"
+#endif
+
+#ifndef STR_OSDE_FLYMODE_ALTH
+   #define STR_OSDE_FLYMODE_ALTH              "ALTH"
+#endif
+
 #ifndef STR_OSDE_FLYMODE_ANGL
    #define STR_OSDE_FLYMODE_ANGL              "ANGL"
 #endif
@@ -322,6 +351,10 @@
 
 #ifndef STR_OSDE_FLYMODE_ATRN
    #define STR_OSDE_FLYMODE_ATRN              "ATRN"
+#endif
+
+#ifndef STR_OSDE_FLYMODE_CHIR
+   #define STR_OSDE_FLYMODE_CHIR              "CHIR"
 #endif
 
 #ifndef STR_OSDE_FLYMODE_AIR
@@ -342,13 +375,5 @@
 
 #ifndef STR_OSDE_ELEMENT_YAW
    #define STR_OSDE_ELEMENT_YAW               "YAW"
-#endif
-
-#ifndef STR_OSDE_ANTIGRAVITY
-   #define STR_OSDE_ANTIGRAVITY               "AG"
-#endif
-
-#ifndef STR_OSDE_READY
-   #define STR_OSDE_READY                     "READY"
 #endif
 

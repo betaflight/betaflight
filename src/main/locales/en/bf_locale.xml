@@ -59,8 +59,8 @@
   <string name="STR_USE_PERSISTENT_STATS" maxLength="14" comment="translation of: TOTAL FLIGHTS">TOTAL FLIGHTS</string>
   <string name="STR_OSD_STAT_TOTAL_TIME" maxLength="17" comment="translation of: TOTAL FLIGHT TIME">TOTAL FLIGHT TIME</string>
   <string name="STR_OSD_STAT_TOTAL_DIST" maxLength="14" comment="translation of: TOTAL DISTANCE">TOTAL DISTANCE</string>
-  <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="14" comment="translation of: &gt; CRASH FLIP &lt;">&gt; CRASH FLIP &lt;</string>
-  <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="17" comment="translation of: CRASH FLIP SWITCH">CRASH FLIP SWITCH</string>
+  <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="12" comment="translation of: &gt;CRASH FLIP&lt;">&gt;CRASH FLIP&lt;</string>
+  <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="13" comment="translation of: CRASH FLIP SW">CRASH FLIP SW</string>
   <string name="STR_OSDW_BEACON_ON" maxLength="10" comment="translation of:  BEACON ON"> BEACON ON</string>
   <string name="STR_OSDW_ARM_IN" maxLength="6" comment="translation of: ARM IN">ARM IN</string>
   <string name="STR_OSDW_ARM_IN_HD" maxLength="11" comment="HD translation of: ARMED IN">ARMED IN</string>
@@ -77,7 +77,6 @@
   <string name="STR_OSDW_HEADFREE" maxLength="8" comment="translation of: HEADFREE">HEADFREE</string>
   <string name="STR_OSDW_CORE" maxLength="4" comment="translation of: CORE">CORE</string>
   <string name="STR_OSDW_LOW_BATT" maxLength="11" comment="translation of: LOW BATTERY">LOW BATTERY</string>
-  <string name="STR_OSDW_RCSMOOTHING" maxLength="11" comment="translation of: RCSMOOTHING">RCSMOOTHING</string>
   <string name="STR_OSDW_OVER_CAP" maxLength="8" comment="translation of: OVER CAP">OVER CAP</string>
   <string name="STR_OSDW_BATT_CONTINUE" maxLength="16" comment="translation of: BATTERY CONTINUE">BATTERY CONTINUE</string>
   <string name="STR_OSDW_BATT_BELOW_FULL" maxLength="11" comment="translation of: BATT &lt; FULL">BATT &lt; FULL</string>
@@ -96,9 +95,13 @@
   <string name="STR_OSDE_FLYMODE_FAILSAFE" maxLength="4" comment="translation of: !FS!">!FS!</string>
   <string name="STR_OSDE_FLYMODE_RESCUE" maxLength="4" comment="translation of: RESC">RESC</string>
   <string name="STR_OSDE_FLYMODE_HEAD" maxLength="4" comment="translation of: HEAD">HEAD</string>
+  <string name="STR_OSDE_FLYMODE_PASS" maxLength="4" comment="translation of: PASS">PASS</string>
+  <string name="STR_OSDE_FLYMODE_POSH" maxLength="4" comment="translation of: POSH">POSH</string>
+  <string name="STR_OSDE_FLYMODE_ALTH" maxLength="4" comment="translation of: ALTH">ALTH</string>
   <string name="STR_OSDE_FLYMODE_ANGL" maxLength="4" comment="translation of: ANGL">ANGL</string>
   <string name="STR_OSDE_FLYMODE_HOR" maxLength="4" comment="translation of: HOR ">HOR </string>
   <string name="STR_OSDE_FLYMODE_ATRN" maxLength="4" comment="translation of: ATRN">ATRN</string>
+  <string name="STR_OSDE_FLYMODE_CHIR" maxLength="4" comment="translation of: CHIR">CHIR</string>
   <string name="STR_OSDE_FLYMODE_AIR" maxLength="4" comment="translation of: AIR ">AIR </string>
   <string name="STR_OSDE_FLYMODE_ACRO" maxLength="4" comment="translation of: ACRO">ACRO</string>
   <string name="STR_OSDE_ELEMENT_PITCH" maxLength="3" comment="translation of: PIT">PIT</string>
