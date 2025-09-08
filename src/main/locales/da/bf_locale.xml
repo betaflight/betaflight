@@ -50,7 +50,7 @@
   <string name="STR_OSD_STAT_MAX_ESC_TEMP" maxLength="12" comment="translation of: MAX ESC TEMP">MAX ESC TEMP</string>
   <string name="STR_OSD_STAT_MAX_ESC_TEMP_HD" maxLength="17" comment="HD translation of: MAXIMAL ESC TEMP">MAXIMAL ESC TEMP</string>
   <string name="STR_OSD_STAT_MAX_ESC_RPM" maxLength="11" comment="translation of: MAX ESC RPM">MAX ESC RPM</string>
-  <string name="STR_OSD_STAT_MAX_ESC_RPM_HD" maxLength="16" comment="HD translation of: MAXIMAL ESC RPM">MAXIMAL ESV RPM</string>
+  <string name="STR_OSD_STAT_MAX_ESC_RPM_HD" maxLength="16" comment="HD translation of: MAXIMAL ESC RPM">MAXIMAL ESC RPM</string>
   <string name="STR_OSD_STAT_MIN_LINK_QUALITY" maxLength="8" comment="translation of: MIN LINK">MIN LINK</string>
   <string name="STR_OSD_STAT_MAX_FFT" maxLength="8" comment="translation of: PEAK FFT">TOP MAX</string>
   <string name="STR_OSD_STAT_MAX_FFT_THRT" maxLength="8" comment="translation of: THRT&lt;20%">GAS&lt;20%</string>
