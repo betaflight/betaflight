@@ -293,7 +293,6 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
-<<<<<<< HEAD
 # import source files
 include $(MAKE_SCRIPT_DIR)/source.mk
 
@@ -323,6 +322,11 @@ $(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DI
 TRANSLATED_DEPEND := $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
 $(TRANSLATED_SRC): $(TRANSLATED_DEPEND)
 
+=======
+# import source files
+include $(MAKE_SCRIPT_DIR)/source.mk
+
+>>>>>>> f364edf0e (Makefile remaster)
 ifneq ($(TARGET),)
 ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
 $(error Speed optimised sources not valid: $(strip $(filter-out $(SRC),$(SPEED_OPTIMISED_SRC))))
@@ -333,8 +337,6 @@ $(error Size optimised sources not valid: $(strip $(filter-out $(SRC),$(SIZE_OPT
 endif
 endif
 
-=======
->>>>>>> 54ec1afad (On to rebase)
 ###############################################################################
 # Things that might need changing to use different tools
 #
