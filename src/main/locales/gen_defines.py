@@ -32,9 +32,9 @@ import xml.etree.ElementTree as ET
 # generate language specific file from locale/bf_locale.xml to locale/bf_locale.h 
 # also generate fallback if new defines not yet are translated (ie. defined)
 # 
-# syntaks: py gen_defines.py TASK source locale 
-#          TASK: BF ->locale/bf_header.h
-#          TASK: UT ->untranslated.h
+# syntax: py gen_defines.py TASK source locale 
+#         TASK: BF ->locale/bf_header.h
+#         TASK: UT ->untranslated.h
 
 hdKey = "_HD"
 
@@ -44,17 +44,16 @@ def wr_bf_header(outFile, filename):
 
 def wr_bf_notice_bf(outFile, locale):
     outFile.write("/*\n")
-    outFile.write("\tNOTICE !\n\tNOTICE, this header file for LOCALE '" + locale + "' are generated from " + locale + "/bf_locale.xml\n")
-    outFile.write("\tChanges to translation ie. "  + locale + "/bf_locale.h must be done in "  + locale + "/bf_locale.xml\n\n")
-    outFile.write("\tTo enable TR2 (HD extended text), write TXT then TXT_HD and build with USE_HD_EXTENDED=1\n")
-    outFile.write("\tTo build use 'make xx LOCALE=" + locale + "'\n")
+    outFile.write("\tNOTICE!\n\tNOTICE: this header file for LOCALE '" + locale + "' is generated from " + locale + "/bf_locale.xml\n")
+    outFile.write("\tChanges to translations (i.e., "  + locale + "/bf_locale.h) must be made in "  + locale + "/bf_locale.xml\n\n")   outFile.write("\tTo enable TR2 (HD extended text), write TXT then TXT_HD and build with USE_HD_EXTENDED=1\n")
+    outFile.write("\tTo build use 'make <target> LOCALE=" + locale + "'\n")
     outFile.write("*/\n\n")
 
 def wr_bf_notice_ut(outFile):
     outFile.write("/*\n")
-    outFile.write("\tNOTICE !\n\tNOTICE, this header file are generated from en/bf_locale.xml\n")
-    outFile.write("\tChanges to translation ie. en/bf_locale.h must be done in en/bf_locale.xml\n\n")
-    outFile.write("\tThis files handle defines not yet translated in some LOCALE, making it possible to compile target\n")
+    outFile.write("\tNOTICE !\n\tNOTICE, this header file is generated from en/bf_locale.xml\n")
+    outFile.write("\tChanges to translation ie. en/bf_locale.h must be made in en/bf_locale.xml\n\n")
+    outFile.write("\tThis file provides fallback defines for strings not yet translated in a locale, allowing targets to compile.\n")
     outFile.write("*/\n\n")
 
 def wr_define_bf(outFile, id, mes, desc, error):
