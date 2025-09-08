@@ -1825,16 +1825,6 @@ case MSP_NAME:
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectedFlags());
         sbufWriteU8(dst, gyroConfig()->gyro_enabled_bitmask); // deprecates gyro_to_use
-        // Added support for more then two IMUs in MSP API 1.47
-        for (int i = 0; i < 8; i++) {
-            sbufWriteU8(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->alignment : ALIGN_DEFAULT);
-        }
-
-        for (int i = 0; i < 8; i++) {
-            for (unsigned j = 0; j < ARRAYLEN(gyroDeviceConfig(i)->customAlignment.raw); j++) {
-                sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.raw[j] : 0);
-            }
-        }
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
@@ -2995,23 +2985,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
         gyroConfigMutable()->gyro_enabled_bitmask = sbufReadU8(src);
-        // Added in API 1.47
-        if (sbufBytesRemaining(src) >= 8 * 7) {
-            /*
-                Skip alignments as these are no longer serviceable by the user.
-
-                The alignment is set by the manufacturer in config.h
-            */
-            for (int i = 0; i < 8; i++) {
-                sbufReadU8(src); // alignment
-            }
-
-            for (int i = 0; i < 8; i++) {
-                sbufReadU16(src); // roll
-                sbufReadU16(src); // pitch
-                sbufReadU16(src); // yaw
-            }
-        }
 
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
