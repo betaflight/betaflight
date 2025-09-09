@@ -58,7 +58,7 @@ void pgResetFn_flashConfig(flashConfig_t *flashConfig)
     flashConfig->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(FLASH_SPI_INSTANCE));
 #endif
 #if defined(USE_FLASH_QUADSPI) && defined(FLASH_QUADSPI_INSTANCE)
-    flashConfig->quadSpiDevice = QUADSPI_DEV_TO_CFG(quadSpiDeviceByInstance(FLASH_QUADSPI_INSTANCE));
+    flashConfig->quadSpiDevice = QUADSPI_DEV_TO_CFG(quadSpiDeviceByInstance((QUADSPI_TypeDef *)FLASH_QUADSPI_INSTANCE));
 #endif
 #if defined(USE_FLASH_OCTOSPI) && defined(FLASH_OCTOSPI_INSTANCE)
     flashConfig->octoSpiDevice = OCTOSPI_DEV_TO_CFG(octoSpiDeviceByInstance(FLASH_OCTOSPI_INSTANCE));
