@@ -66,6 +66,8 @@
 
 #define USE_SPI_DMA_ENABLE_LATE
 
+#define QUADSPIDEV_COUNT 1
+
 #define USE_VCP
 
 #define USE_UART1
