@@ -4832,13 +4832,14 @@ static void cliStatus(const char *cmdName, char *cmdline)
     }
 #endif
 
-if (buildKey) {
-    cliPrintf("BUILD KEY: %s", buildKey);
-    if (releaseName) {
-        cliPrintf(" (%s)", releaseName);
+    if (buildKey) {
+        cliPrintf("BUILD KEY: %s", buildKey);
+        if (releaseName) {
+            cliPrintf(" (%s)", releaseName);
+        }
+        cliPrintLinefeed();
     }
-    cliPrintLinefeed();
-}
+
     // Uptime and wall clock
     cliPrintLinefeed();
     cliPrintf("System Uptime: %d seconds", millis() / 1000);
