@@ -267,11 +267,9 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
-static const char *const sensorTypeNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "GPS", "GPS+MAG", NULL
+static const char *const sensorTypeNames[SENSOR_INDEX_COUNT] = {
+    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER"
 };
-
-#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_RANGEFINDER)
 
 static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
@@ -2454,7 +2452,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-    cliPrint("SD card: ");
+    cliPrint("SD-CARD: ");
 
     if (sdcardConfig()->mode == SDCARD_MODE_NONE) {
         cliPrintLine("Not configured");
@@ -4707,10 +4705,10 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 
     cliPrintLinef("Configuration: %s, size: %d, max available: %d", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinefeed();
 
     // Devices
-#if defined(USE_SPI) || defined(USE_I2C)
-    cliPrint("Devices detected:");
+    cliPrint("DEVICES DETECTED:");
 #if defined(USE_SPI)
     cliPrintf(" SPI:%d", spiGetRegisteredDeviceCount());
 #if defined(USE_I2C)
@@ -4718,126 +4716,59 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
 #endif
 #if defined(USE_I2C)
-    cliPrintf(" I2C:%d", i2cGetRegisteredDeviceCount());
+    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
+    cliPrintf(" I2C:%d (%d errors)", i2cGetRegisteredDeviceCount(), i2cErrorCounter);
 #endif
     cliPrintLinefeed();
-#endif
 
     // Sensors
-    cliPrint("Gyros detected:");
+    cliPrintf("%s: ", sensorTypeNames[SENSOR_INDEX_GYRO]);
     bool found = false;
     for (unsigned pos = 0; pos < 7; pos++) {
         if (gyroConfig()->gyrosDetected & BIT(pos)) {
             if (found) {
-                cliPrint(",");
+                cliPrint(", ");
             } else {
                 found = true;
             }
-            cliPrintf(" gyro %d", pos + 1);
-        }
-    }
-#ifdef USE_SPI
-    if (!gyroActiveDev()) {
-        cliPrintf(" not active");
-    } else {
-        if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
-            cliPrintf(" locked");
-        }
-        if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-            cliPrintf(" dma");
-        }
-        if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
-            cliPrintf(" shared");
-        }
-    }
+            cliPrintf("(%d)", pos + 1);
+#if defined(USE_SENSOR_NAMES)
+            cliPrintf(" %s", lookupTableGyroHardware[detectedGyros[pos]]);
 #endif
-    cliPrintLinefeed();
+#ifdef USE_SPI
+            if (gyro.gyroSensor[pos].gyroDev.gyroModeSPI != GYRO_EXTI_NO_INT) {
+                cliPrintf(" locked");
+            }
+            if (gyro.gyroSensor[pos].gyroDev.gyroModeSPI == GYRO_EXTI_INT_DMA) {
+                cliPrintf(" dma");
+            }
+            if (spiGetExtDeviceCount(&gyro.gyroSensor[pos].gyroDev.dev) > 1) {
+                cliPrintf(" shared");
+            }
+#endif
+            cliPrintLinefeed();
+        }
+    }
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
-    for (uint32_t i = 0; ; i++) {
-        if (sensorTypeNames[i] == NULL) {
-            break;
-        }
+    for (unsigned i = SENSOR_INDEX_ACC; i < ARRAYLEN(sensorTypeNames); i++) {
         const uint32_t mask = (1 << i);
-        if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
+        if ((detectedSensorsMask & mask)) {
+
             const uint8_t sensorHardwareIndex = detectedSensors[i];
             const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
-            if (i) {
-                cliPrint(", ");
-            }
-            cliPrintf("%s=%s", sensorTypeNames[i], sensorHardware);
+
+            cliPrintf("%s: %s", sensorTypeNames[i], sensorHardware);
 #if defined(USE_ACC)
-            if (mask == SENSOR_ACC && acc.dev.revisionCode) {
+            if (i == SENSOR_INDEX_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
             }
 #endif
+            cliPrintLinefeed();
         }
     }
-    cliPrintLinefeed();
 #endif /* USE_SENSOR_NAMES */
-
-#if defined(USE_OSD)
-    osdDisplayPortDevice_e displayPortDeviceType;
-    displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
-
-    cliPrintLinef("OSD: %s (%u x %u)", lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort ? osdDisplayPort->cols : 0, osdDisplayPort ? osdDisplayPort->rows : 0);
-#endif
-
-if (buildKey) {
-    cliPrintf("BUILD KEY: %s", buildKey);
-    if (releaseName) {
-        cliPrintf(" (%s)", releaseName);
-    }
-    cliPrintLinefeed();
-}
-    // Uptime and wall clock
-
-    cliPrintf("System Uptime: %d seconds", millis() / 1000);
-
-#ifdef USE_RTC_TIME
-    char buf[FORMATTED_DATE_TIME_BUFSIZE];
-    dateTime_t dt;
-    if (rtcGetDateTime(&dt)) {
-        dateTimeFormatLocal(buf, &dt);
-        cliPrintf(", Current Time: %s", buf);
-    }
-#endif
-    cliPrintLinefeed();
-
-    // Run status
-
-    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
-
-    int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
-
-    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
-    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
-            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
-
-    // Battery meter
-
-    cliPrintLinef("Voltage: %d * 0.01V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
-
-    // Other devices and status
-
-#ifdef USE_I2C
-    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
-#else
-    const uint16_t i2cErrorCounter = 0;
-#endif
-    cliPrintLinef("I2C Errors: %d", i2cErrorCounter);
-
-#ifdef USE_SDCARD
-    cliSdInfo(cmdName, "");
-#endif
-
-#ifdef USE_FLASH_CHIP
-    const flashGeometry_t *layout = flashGetGeometry();
-    if (layout->jedecId != 0) {
-        cliPrintLinef("FLASH: JEDEC ID=0x%08x %uM", layout->jedecId, layout->totalSize >> 20);
-    }
-#endif
 
 #ifdef USE_GPS
     cliPrint("GPS: ");
@@ -4879,6 +4810,59 @@ if (buildKey) {
     cliPrintLinefeed();
 #endif // USE_GPS
 
+#if defined(USE_OSD)
+    osdDisplayPortDevice_e displayPortDeviceType;
+    displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
+
+    cliPrintLinef("OSD: %s (%u x %u)", lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort ? osdDisplayPort->cols : 0, osdDisplayPort ? osdDisplayPort->rows : 0);
+#endif
+
+#ifdef USE_SDCARD
+    cliSdInfo(cmdName, "");
+#endif
+
+#ifdef USE_FLASH_CHIP
+    const flashGeometry_t *layout = flashGetGeometry();
+    if (layout->jedecId != 0) {
+        cliPrintLinef("FLASH: JEDEC ID=0x%08x %uM", layout->jedecId, layout->totalSize >> 20);
+    }
+#endif
+
+if (buildKey) {
+    cliPrintf("BUILD KEY: %s", buildKey);
+    if (releaseName) {
+        cliPrintf(" (%s)", releaseName);
+    }
+    cliPrintLinefeed();
+}
+    // Uptime and wall clock
+    cliPrintLinefeed();
+    cliPrintf("System Uptime: %d seconds", millis() / 1000);
+
+#ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    if (rtcGetDateTime(&dt)) {
+        dateTimeFormatLocal(buf, &dt);
+        cliPrintf(", Current Time: %s", buf);
+    }
+#endif
+    cliPrintLinefeed();
+
+    // Run status
+
+    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+
+    int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
+
+    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
+            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
+
+    // Battery meter
+    cliPrintLinef("Voltage: %d * 0.01V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
+
+    // Other status
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {

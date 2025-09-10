@@ -84,7 +84,6 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
     UNUSED(dev);
 
     opticalflowType_e opticalflowHardware = OPTICALFLOW_NONE;
-    requestedSensors[SENSOR_INDEX_OPTICALFLOW] = opticalflowHardwareToUse;
 
     switch (opticalflowHardwareToUse) {
         case OPTICALFLOW_MT:
