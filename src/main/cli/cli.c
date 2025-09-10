@@ -267,9 +267,10 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
-static const char *const sensorTypeNames[SENSOR_INDEX_COUNT] = {
-    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER"
+static const char *const sensorTypeNames[] = {
+    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW"
 };
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_array_length_mismatch);
 
 static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
@@ -4728,7 +4729,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintf("GYRO: ");
 #endif
     bool found = false;
-    for (unsigned pos = 0; pos < 7; pos++) {
+    for (unsigned pos = 0; pos < GYRO_COUNT; pos++) {
         if (gyroConfig()->gyrosDetected & BIT(pos)) {
             if (found) {
                 cliPrint(", ");
