@@ -275,6 +275,7 @@ STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_a
 static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
 };
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareNames), sensorHardwareNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
 
 static const char *configurationStates[] = {
