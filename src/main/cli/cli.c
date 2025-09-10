@@ -4751,8 +4751,12 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrintf(" shared");
             }
 #endif
-            cliPrintLinefeed();
         }
+    }
+    if (!found) {
+        cliPrintLine("None");
+    } else {
+        cliPrintLinefeed();
     }
 
 #if defined(USE_SENSOR_NAMES)
