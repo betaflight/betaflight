@@ -260,6 +260,10 @@ static void mavlinkSendSystemStatus(void)
         // errors_count3 Autopilot-specific errors
         0,
         // errors_count4 Autopilot-specific errors
+        0,
+        // extended parameters, set to zero
+        0,
+        0,
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
@@ -336,7 +340,14 @@ static void mavlinkSendPosition(void)
         // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
         gpsSol.groundCourse * 10,
         // satellites_visible Number of satellites visible. If unknown, set to 255
-        gpsSol.numSat);
+        gpsSol.numSat,
+        // Extended parameters, set to zero
+        0,
+        0,
+        0,
+        0,
+        0,
+        0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
@@ -370,6 +381,7 @@ static void mavlinkSendPosition(void)
         // longitude Longitude (WGS84), expressed as * 1E7
         GPS_home_llh.lon,
         // altitude Altitude(WGS84), expressed as * 1000
+        0,
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
@@ -431,9 +443,9 @@ static void mavlinkSendHUDAndHeartbeat(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-    uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+    uint8_t mavModes = MAV_MODE_MANUAL_DISARMED;
     if (ARMING_FLAG(ARMED))
-        mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
+        mavModes |= MAV_MODE_MANUAL_ARMED;
 
     uint8_t mavSystemType;
     switch (mixerConfig()->mixerMode)
