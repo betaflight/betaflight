@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "platform.h"
+
 typedef enum {
     SENSOR_INDEX_GYRO = 0,
     SENSOR_INDEX_ACC,

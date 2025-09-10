@@ -4722,7 +4722,11 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 
     // Sensors
+#if defined(USE_SENSOR_NAMES)
     cliPrintf("%s: ", sensorTypeNames[SENSOR_INDEX_GYRO]);
+#else
+    cliPrintf("GYRO: ");
+#endif
     bool found = false;
     for (unsigned pos = 0; pos < 7; pos++) {
         if (gyroConfig()->gyrosDetected & BIT(pos)) {
