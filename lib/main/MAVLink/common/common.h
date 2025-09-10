@@ -2810,6 +2810,8 @@ typedef enum HIL_ACTUATOR_CONTROLS_FLAGS
 #endif
 
 // MESSAGE DEFINITIONS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include "./mavlink_msg_sys_status.h"
 #include "./mavlink_msg_system_time.h"
 #include "./mavlink_msg_ping.h"
@@ -3036,9 +3038,11 @@ typedef enum HIL_ACTUATOR_CONTROLS_FLAGS
 #include "./mavlink_msg_open_drone_id_arm_status.h"
 #include "./mavlink_msg_open_drone_id_system_update.h"
 #include "./mavlink_msg_hygrometer_sensor.h"
+#pragma GCC diagnostic pop
 
 // base include
 #include "../standard/standard.h"
+#include "../minimal/minimal.h"
 
 
 #if MAVLINK_COMMON_XML_HASH == MAVLINK_PRIMARY_XML_HASH
