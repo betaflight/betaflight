@@ -305,7 +305,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     const float attitudeK = pt3FilterGain(pidProfile->angle_smoothing_cut, pidRuntime.dT);
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], attitudeK);
     }
 

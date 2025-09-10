@@ -1239,7 +1239,8 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
 
     float magnitude = vector_roll * vector_roll + vector_pitch * vector_pitch;
     float scaler = 1.0f;
-    if (magnitude != 0.0f && vector_z < 1.0f) {
+    float vector_z2 = vector_z * vector_z;
+    if (magnitude > 0.0f && vector_z2 < 0.999f) {
         scaler = 1.0f / sqrtf(magnitude / (1.0f - vector_z * vector_z));
     }
 
@@ -1252,10 +1253,9 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     attitude_setpoint[FD_YAW] = vector_z;
 
     // Calculate feedforward
-    float ff_output[XYZ_AXIS_COUNT];
+    float ff_output[XYZ_AXIS_COUNT] = { 0.0f, 0.0f, 0.0f };
     calculateAttitudeFeedforward(attitude_setpoint, ff_output);
-    // TODO add some filtering to this later
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         ff_output[axis] = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], ff_output[axis]);
     }
 
@@ -1269,16 +1269,7 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
 
         float pterm = pidRuntime.angleGain * error;
 
-//        // TODO calculate Dterm which is the derivative of error (faster) or the negative derivative of gyro (smoother) times a scaler
-//        float derivative = error_vector[axis] - previous_error_or_measurement[axis];
-//        // only keep one previous_error_or_measurement, remove the one you are not using
-//        pid->previous_error_or_measurement[axis] = gravity_vector[axis];
-//        pid->previous_error_or_measurement[axis] = error;
-//
-//        float dterm = pid->kd * derivative;
-
         // pidsum is the addition of all the pid terms
-//        float pidsum = pterm + dterm;
         float pidsum = pterm + ff_output[axis];
         newSetpoint[axis] = pidsum; // attitude pid pidsum becomes the setpoint into to the rate pid controller
     }
@@ -1306,7 +1297,7 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            newSetpoint[axis] = currentPidSetpoint[axis] * (1.0f - horizonLevelStrength) + newSetpoint[axis] * horizonLevelStrength;
+            currentPidSetpoint[axis] = currentPidSetpoint[axis] * (1.0f - horizonLevelStrength) + newSetpoint[axis] * horizonLevelStrength;
         }
     }
 }
