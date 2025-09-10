@@ -105,7 +105,10 @@ static const uint8_t mavRates[] = {
 static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-static uint32_t lastMavlinkMessage = 0;
+static uint32_t lastMavlinkMessageTime = 0;
+
+static uint8_t txbuff_free = 100;
+static bool txbuff_valid = false;
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
@@ -546,6 +549,39 @@ static void processMAVLinkTelemetry(void)
     }
 }
 
+// Get RADIO_STATUS data
+static void handleIncoming_RADIO_STATUS(void)
+{
+    mavlink_message_t mavRecvMsg;
+    mavlink_radio_status_t msg;
+    mavlink_msg_radio_status_decode(&mavRecvMsg, &msg);
+    txbuff_valid = true;
+    txbuff_free = msg.txbuf;
+}
+
+// Get incoming telemetry data
+static bool processMAVLinkIncomingTelemetry(void)
+{
+    mavlink_message_t mavRecvMsg;
+    mavlink_status_t mavRecvStatus;
+    while (serialRxBytesWaiting(mavlinkPort) > 0) {
+        // Limit handling to one message per cycle
+        char c = serialRead(mavlinkPort);
+        uint8_t result = mavlink_parse_char(0, c, &mavRecvMsg, &mavRecvStatus);
+        if (result == MAVLINK_FRAMING_OK) {
+            switch (mavRecvMsg.msgid) {
+                case MAVLINK_MSG_ID_RADIO_STATUS:
+                    handleIncoming_RADIO_STATUS();
+                    return false;
+                default:
+                    return false;
+            }
+        }
+    }
+
+    return false;
+}
+
 void handleMAVLinkTelemetry(void)
 {
     if (!mavlinkTelemetryEnabled) {
@@ -556,10 +592,22 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
-    uint32_t now = micros();
-    if ((now - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
+    bool shouldSendTelemetry = false;
+    if (telemetryConfig()->mavlink_min_txbuff > 0) {
+        processMAVLinkIncomingTelemetry();
+    }
+
+    uint32_t currentTimeUs = micros();
+    if (txbuff_valid) {
+        // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
+        shouldSendTelemetry = txbuff_free >= telemetryConfig()->mavlink_min_txbuff;
+    } else {
+        shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
+    }
+
+    if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
-        lastMavlinkMessage = now;
+        lastMavlinkMessageTime = currentTimeUs;
     }
 }
 
