@@ -261,8 +261,10 @@ void uartReconfigure_hw(uartPort_t *s)
 #else
     UNUSED(achievedBaudrate);
 #endif
-    // TODO make use of s->port.options
-    uart_set_format(uartInstance, 8, 1, UART_PARITY_NONE);
+    // TODO make further use of s->port.options
+    const bool twoStop = s->port.options & SERIAL_STOPBITS_2;
+    const bool evenParity = s->port.options & SERIAL_PARITY_EVEN;
+    uart_set_format(uartInstance, 8, twoStop ? 2 : 1, evenParity ? UART_PARITY_EVEN : UART_PARITY_NONE);
     uart_set_fifo_enabled(uartInstance, true);
     uartConfigureExternalPinInversion(s);
     uart_set_hw_flow(uartInstance, false, false);
