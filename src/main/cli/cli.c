@@ -4672,7 +4672,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf("MCU %s Clock=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
+    cliPrintf("MCU %s CLK=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
 
 #if PLATFORM_TRAIT_CONFIG_HSE
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
@@ -4700,13 +4700,13 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // Stack and config sizes and usages
 
-    cliPrintf("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
+    cliPrintf("STACK: %d (0x%x)", stackTotalSize(), stackHighMem());
 #ifdef USE_STACK_CHECK
-    cliPrintf(", Stack used: %d", stackUsedSize());
+    cliPrintf(" / %d", stackUsedSize());
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("Configuration: %s, size: %d, max available: %d", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinef("CONFIG: %s (%d / %d)", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
     cliPrintLinefeed();
 
     // Devices
@@ -4741,6 +4741,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
             cliPrintf(" %s", lookupTableGyroHardware[detectedGyros[pos]]);
 #endif
+            if (gyro.gyroEnabledBitmask & BIT(pos)) {
+                cliPrintf(" enabled");
+            }
 #ifdef USE_SPI
             if (gyro.gyroSensor[pos].gyroDev.gyroModeSPI != GYRO_EXTI_NO_INT) {
                 cliPrintf(" locked");
@@ -4763,7 +4766,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
     for (unsigned i = SENSOR_INDEX_ACC; i < ARRAYLEN(sensorTypeNames); i++) {
-        const uint32_t mask = (1 << i);
+        const uint32_t mask = (1U << i);
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
@@ -4824,7 +4827,12 @@ static void cliStatus(const char *cmdName, char *cmdline)
     osdDisplayPortDevice_e displayPortDeviceType;
     displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
 
-    cliPrintLinef("OSD: %s (%u x %u)", lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort ? osdDisplayPort->cols : 0, osdDisplayPort ? osdDisplayPort->rows : 0);
+    cliPrintf("OSD: %s ", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
+    if (!osdDisplayPort) {
+        cliPrintLine("NOT ENABLED");
+    } else {
+        cliPrintLinef("(%u x %u)", osdDisplayPort->cols, osdDisplayPort->rows);
+    }
 #endif
 
 #ifdef USE_SDCARD
@@ -4839,6 +4847,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
 
     if (buildKey) {
+        cliPrintLinefeed();
         cliPrintf("BUILD KEY: %s", buildKey);
         if (releaseName) {
             cliPrintf(" (%s)", releaseName);
