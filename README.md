@@ -1,20 +1,50 @@
 ![Betaflight](https://raw.githubusercontent.com/betaflight/.github/main/profile/images/bf_logo.svg#gh-light-mode-only)
 ![Betaflight](https://raw.githubusercontent.com/betaflight/.github/main/profile/images/bf_logo_dark.svg#gh-dark-mode-only)
 
-[![Latest version](https://img.shields.io/github/v/release/betaflight/betaflight)](https://github.com/betaflight/betaflight/releases) [![Build](https://img.shields.io/github/actions/workflow/status/betaflight/betaflight/nightly.yml?branch=master)](https://github.com/betaflight/betaflight/actions/workflows/nightly.yml) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Join us on Discord!](https://img.shields.io/discord/868013470023548938)](https://discord.gg/n4E6ak4u3c)
+[![Latest version](https://img.shields.io/github/v/release/betaflight/betaflight)](https://github.com/betaflight/betaflight/releases) [![Build](https://img.shields.io/github/actions/workflow/status/betaflight/betaflight/push.yml?branch=master)](https://github.com/betaflight/betaflight/actions/workflows/push.yml) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Join us on Discord!](https://img.shields.io/discord/868013470023548938)](https://discord.gg/n4E6ak4u3c)
 
-Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
-
-This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
+Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft. Betaflight focuses on flight performance, leading-edge feature additions, and wide target support.
 
 ## Events
 
 | Date  | Event |
 | - | - |
-| 28-04-2024 | Firmware 4.5 Release |
+| 01-09-2025 | Firmware 2025.12.0 Beta phase begins |
+| 01-10-2025 | Firmware 2025.12.0 Release Candidate phase begins |
+| 01-12-2025 | Firmware 2025.12.0 Release |
+| 01-04-2026 | Firmware 2026.6.0 Beta phase begins |
+| 01-05-2026 | Firmware 2026.6.0 Release Candidate phase begins |
+| 01-06-2026 | Firmware 2026.6.0 Release |
 
 
 ## News
+
+### 📣 Announcement: New Versioning Scheme & Release Cadence 📣
+
+To create a more predictable release schedule, we're moving to a new versioning system and development cycle, starting with the next release.
+
+**New Format**: `YYYY.M.PATCH` (e.g., `2025.12.0`)
+
+**Release Cadence**: Two major releases per year.
+
+**Target Months**: June and December.
+
+This means the successor to our current `4.x` series will be Betaflight `2025.12.0`, followed by Betaflight `2026.6.0`. We will also align the Betaflight App and Firmware to the same `YYYY.M.PATCH` releases (and cadence).
+
+**Our New Release Cycle**
+
+To support this schedule, our development phases will be structured as follows:
+
+**Alpha**: For new feature development. Alpha builds for the next version will be available shortly after a stable release is published.
+
+**Beta**: A one-month feature freeze for bug fixes only, and existing pull requests currently being reviewed, starting approximately two months before a release.
+
+**Release Candidate (RC)**: A one-month period for final stabilization and testing before the official release.
+
+⚠️ **Important Note for the `2025.12.0` Release** ⚠️
+
+For this first cycle, due to the timing since the last release, we are extending the RC period to two months. The Release Candidate phase will begin in October and run through November.
+
 
 ### Requirements for the submission of new and updated targets
 
