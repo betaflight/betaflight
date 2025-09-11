@@ -308,10 +308,6 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
         uartPioDetailsPtr->rxPin = rxPin;
         uartPioDetailsPtr->sm_rx = pio_sm_rx;
         uartPioDetailsPtr->rx_intr_bit = rxnemptybit[pio_sm_rx];
-
-        // Arrange GPIO including pullup for RX, assign PIO SM pins, FIFO, clock, enable SM
-        bprintf("\nserial_uart pio init RX program on pin %d, sm %d", rxPin, pio_sm_rx);
-        uart_rx_program_init(uartPio, pio_sm_rx, rxProgram_offset, rxPin, baudRate);
     }
 
     bprintf("serialUART_pio (requested) baudrate %d", baudRate);
@@ -351,6 +347,7 @@ void uartReconfigure_pio(uartPort_t *s)
     pio_set_irqn_source_enabled(uartPio, irqn_index, irqSourceTX, false);
 
     // (re)init program, with baud rate
+    // Arrange GPIO including pullup for RX, assign PIO SM pins, FIFO, clock, enable SM
     uart_rx_program_init(uartPio, sm_rx, rxProgram_offset, uartPioDetailsPtr->rxPin, s->port.baudRate);
     uart_tx_program_init(uartPio, sm_tx, txProgram_offset, uartPioDetailsPtr->txPin, s->port.baudRate);
 
