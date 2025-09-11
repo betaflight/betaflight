@@ -67,6 +67,18 @@ serialType_e serialType(serialPortIdentifier_e identifier)
         return SERIALTYPE_SOFTSERIAL;
     }
 #endif
+#ifdef USE_PIOUART
+    if (identifier >= SERIAL_PORT_PIOUART_FIRST
+        && identifier < SERIAL_PORT_PIOUART_FIRST + SERIAL_PIOUART_MAX) {
+        const unsigned idx = identifier - SERIAL_PORT_PIOUART_FIRST;
+        if (BIT(idx) & SERIAL_PIOUART_MASK) {
+            return SERIALTYPE_PIOUART;
+        } else {
+            // no other type in this range
+            return SERIALTYPE_INVALID;
+        }
+    }
+#endif
     return SERIALTYPE_INVALID;
 }
 
@@ -75,10 +87,12 @@ static const struct SerialTypeInfo {
     serialPortIdentifier_e firstId;
     int8_t resourceOffset;
 } serialTypeMap[] = {
+    // Same order as in serialType_e enum.
     [SERIALTYPE_USB_VCP] = { OWNER_FREE /* no owner*/, SERIAL_PORT_USB_VCP, -1 },
     [SERIALTYPE_UART] = { OWNER_SERIAL_TX, SERIAL_PORT_UART_FIRST, RESOURCE_UART_OFFSET },
     [SERIALTYPE_LPUART] = { OWNER_LPUART_TX, SERIAL_PORT_LPUART_FIRST, RESOURCE_LPUART_OFFSET },
     [SERIALTYPE_SOFTSERIAL] = { OWNER_SOFTSERIAL_TX, SERIAL_PORT_SOFTSERIAL_FIRST, RESOURCE_SOFTSERIAL_OFFSET },
+    [SERIALTYPE_PIOUART] = { OWNER_PIOUART_TX, SERIAL_PORT_PIOUART_FIRST, RESOURCE_PIOUART_OFFSET },
 };
 
 STATIC_ASSERT(ARRAYLEN(serialTypeMap) == SERIALTYPE_COUNT, "type table mismatch");

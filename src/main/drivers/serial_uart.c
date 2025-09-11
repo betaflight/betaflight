@@ -106,6 +106,46 @@ UART_BUFFERS(10);
 UART_BUFFERS(Lp1);  // TODO - maybe some other naming scheme ?
 #endif
 
+#ifdef USE_PIOUART0
+UART_BUFFERS(Pio0); // -> uartPio0RxBuffer etc.
+#endif
+
+#ifdef USE_PIOUART1
+UART_BUFFERS(Pio1);
+#endif
+
+#ifdef USE_PIOUART2
+UART_BUFFERS(Pio2);
+#endif
+
+#ifdef USE_PIOUART3
+UART_BUFFERS(Pio3);
+#endif
+
+#ifdef USE_PIOUART4
+UART_BUFFERS(Pio4);
+#endif
+
+#ifdef USE_PIOUART5
+UART_BUFFERS(Pio5);
+#endif
+
+#ifdef USE_PIOUART6
+UART_BUFFERS(Pio6);
+#endif
+
+#ifdef USE_PIOUART7
+UART_BUFFERS(Pio7);
+#endif
+
+#ifdef USE_PIOUART8
+UART_BUFFERS(Pio8);
+#endif
+
+#ifdef USE_PIOUART9
+UART_BUFFERS(Pio9);
+#endif
+
 #undef UART_BUFFERS
 
 // store only devices configured for target (USE_UARTx)
@@ -183,8 +223,62 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     return UARTDEV_INVALID;
 }
 
+FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[PIOUARTDEV_COUNT];
+
+uartDevice_t *pioUartDeviceFromIdentifier(serialPortIdentifier_e identifier)
+{
+#define _R(id, dev) [id - SERIAL_PORT_PIOUART_FIRST] = &pioUartDevice[dev]
+    static uartDevice_t *pioUartMap[] = {
+#ifdef USE_PIOUART0
+        _R(SERIAL_PORT_PIOUART0, PIOUARTDEV_0),
+#endif
+#ifdef USE_PIOUART1
+        _R(SERIAL_PORT_PIOUART1, PIOUARTDEV_1),
+#endif
+#ifdef USE_PIOUART2
+        _R(SERIAL_PORT_PIOUART2, PIOUARTDEV_2),
+#endif
+#ifdef USE_PIOUART3
+        _R(SERIAL_PORT_PIOUART3, PIOUARTDEV_3),
+#endif
+#ifdef USE_PIOUART4
+        _R(SERIAL_PORT_PIOUART4, PIOUARTDEV_4),
+#endif
+#ifdef USE_PIOUART5
+        _R(SERIAL_PORT_PIOUART5, PIOUARTDEV_5),
+#endif
+#ifdef USE_PIOUART6
+        _R(SERIAL_PORT_PIOUART6, PIOUARTDEV_6),
+#endif
+#ifdef USE_PIOUART7
+        _R(SERIAL_PORT_PIOUART7, PIOUARTDEV_7),
+#endif
+#ifdef USE_PIOUART8
+        _R(SERIAL_PORT_PIOUART8, PIOUARTDEV_8),
+#endif
+#ifdef USE_PIOUART9
+        _R(SERIAL_PORT_PIOUART9, PIOUARTDEV_9),
+#endif
+    };
+#undef _R
+
+    int offset = identifier - SERIAL_PORT_PIOUART_FIRST;
+    if (offset >= 0 && offset < (int)ARRAYLEN(pioUartMap)) {
+        return pioUartMap[offset];
+    }
+
+    return NULL;
+}
+
 uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e identifier)
 {
+    if (identifier >= SERIAL_PORT_PIOUART_FIRST ) {
+        uartDevice_t *device = pioUartDeviceFromIdentifier(identifier);
+        if (device != NULL) {
+            return device;
+        }
+    }
+
     const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(identifier);
     return deviceIdx != UARTDEV_INVALID ? &uartDevice[deviceIdx] : NULL;
 }

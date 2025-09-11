@@ -35,16 +35,35 @@
 #include "uart_tx.pio.h"
 #include "uart_rx.pio.h"
 
-#define PIO_IRQ_INDEX(irqn) (irqn == PIO_IRQ_NUM(uartPio, 0) ? 0 : 1)
+// The PIO block for software UARTs PIOUART0, PIOUART1
+static const PIO uartPio = PIO_INSTANCE(PIO_UART_INDEX);
 
-// Store for details, catering for UART2, UART3
-pioDetails_t uartPioDetails[2];
+#define PIO_IRQ_INDEX(irqn) ((irqn) == PIO_IRQ_NUM(uartPio, 0) ? 0 : 1)
+
+typedef struct pioDetails_s {
+    irq_num_t irqn;
+    io_rw_32 *enableReg;
+    io_ro_32 *statusReg;
+    int rxPin;
+    int txPin;
+    uint16_t sm_rx; // sm number for rx (0..3)
+    uint16_t sm_tx; // sm number for tx (0..3)
+    uint32_t rx_intr_bit; // bit to check on interrupt enable and status registers for rx not empty
+    uint32_t tx_intr_bit; // bit to check on interrupt enable and status registers for tx not full
+} pioDetails_t;
+
+#if SERIAL_PIOUART_MAX > 2
+#error USE_PIOUARTn only currently supported for n=0,1
+#endif
+
+// Store for details, catering for PIOUART0, PIOUART1
+static pioDetails_t uartPioDetails[2];
+
+#define UART_PIO_DETAILS_IDX(id) ((id) - SERIAL_PORT_PIOUART_FIRST)
+#define UART_PIO_DETAILS_PTR(id) (&uartPioDetails[UART_PIO_DETAILS_IDX(id)])
 
 // Base for PIO pin counts (0 or 16)
-int uartPioBase;
-
-// The PIO block for software UARTs UART2, UART3
-static const PIO uartPio = UART_PIO_INSTANCE;
+static int uartPioBase;
 
 static int txProgram_offset = -1;
 static int rxProgram_offset = -1;
@@ -63,6 +82,88 @@ static const uint32_t txnfullbit[4] = {
     PIO_INTR_SM2_TXNFULL_BITS,
     PIO_INTR_SM3_TXNFULL_BITS,
 };
+
+// PIO-based UARTs. For now, hardwired to PIOUARTs 0,1 on PIO number UART_PIO_INDEX.
+const pioUartHardware_t pioUartHardware[PIOUARTDEV_COUNT] = {
+#ifdef USE_PIOUART0
+    {
+        .identifier = SERIAL_PORT_PIOUART0,
+        .irqn = PIO_IRQ_NUM(uartPio, 0),
+        .txBuffer = uartPio0TxBuffer,
+        .rxBuffer = uartPio0RxBuffer,
+        .txBufferSize = sizeof(uartPio0TxBuffer),
+        .rxBufferSize = sizeof(uartPio0RxBuffer),
+    },
+#endif
+
+#ifdef USE_PIOUART1
+    {
+        .identifier = SERIAL_PORT_PIOUART1,
+        .irqn = PIO_IRQ_NUM(uartPio, 1),
+        .txBuffer = uartPio1TxBuffer,
+        .rxBuffer = uartPio1RxBuffer,
+        .txBufferSize = sizeof(uartPio1TxBuffer),
+        .rxBufferSize = sizeof(uartPio1RxBuffer),
+    },
+#endif
+};
+
+static uartPinDef_t makePinDef(ioTag_t tag)
+{
+    uartPinDef_t ret = { .pin = tag };
+    return ret;
+}
+
+void uartPinConfigure_pio(const serialPinConfig_t *pSerialPinConfig)
+{
+    // software UART by PIO
+    int pinIndexMin = 48;
+    int pinIndexMax = -1;
+    uartPioBase = 0;
+    for (const pioUartHardware_t* hardware = pioUartHardware; hardware < ARRAYEND(pioUartHardware); hardware++) {
+        const serialPortIdentifier_e identifier = hardware->identifier;
+        uartDevice_t* uartdev = uartDeviceFromIdentifier(identifier);
+        const int resourceIndex = serialResourceIndex(identifier);
+        const ioTag_t cfgRx = pSerialPinConfig->ioTagRx[resourceIndex];
+        const ioTag_t cfgTx = pSerialPinConfig->ioTagTx[resourceIndex];
+        bprintf("pico uartPinConfigure pio at %p dev = %p,  tags rx 0x%x, tx 0x%x", hardware, uartdev, cfgRx, cfgTx);
+        if (!cfgRx && !cfgTx) {
+            continue;
+        }
+
+        // On a single PIO block, we are restricted either to pins 0-31 or pins 16-47.
+        pinIndexMin = cfgRx && (DEFIO_TAG_PIN(cfgRx) < pinIndexMin) ? DEFIO_TAG_PIN(cfgRx) : pinIndexMin;
+        pinIndexMax = cfgRx && (DEFIO_TAG_PIN(cfgRx) > pinIndexMax) ? DEFIO_TAG_PIN(cfgRx) : pinIndexMax;
+        pinIndexMin = cfgTx && (DEFIO_TAG_PIN(cfgTx) < pinIndexMin) ? DEFIO_TAG_PIN(cfgTx) : pinIndexMin;
+        pinIndexMax = cfgTx && (DEFIO_TAG_PIN(cfgTx) > pinIndexMax) ? DEFIO_TAG_PIN(cfgTx) : pinIndexMax;
+        if (pinIndexMax >= 32) {
+            if (pinIndexMin < 16) {
+                bprintf("* Not configuring PIOUART with identifier %d (PIO can't span pins min %d max %d)",
+                        identifier, pinIndexMin, pinIndexMax);
+                continue;
+            } else {
+                uartPioBase = 16;
+            }
+        }
+
+        if (cfgRx) {
+            uartdev->rx = makePinDef(cfgRx);
+        }
+
+        if (cfgTx) {
+            uartdev->tx = makePinDef(cfgTx);
+        }
+
+        if (uartdev->rx.pin || uartdev->tx.pin ) {
+            bprintf("uartdev %p setting hardware to %p which has txbuffer %p", uartdev, hardware, hardware->txBuffer);
+            uartdev->hardware = (uartHardware_t *)hardware; // Sneak in pointer to pioUartHardware_t as a pointer to uartHardware_t
+        } else {
+            bprintf("** uartPinConfigure_pio no compatible rx or tx pin for this PIO UART");
+        }
+    }
+
+    bprintf("pico uartPinConfigure pio%d pin min, max = %d, %d; setting gpio base to %d", PIO_NUM(uartPio), pinIndexMin, pinIndexMax, uartPioBase);
+}
 
 static bool ensurePioProgram(PIO pio, const pio_program_t *program, bool isTx)
 {
@@ -84,6 +185,7 @@ static bool ensurePioProgram(PIO pio, const pio_program_t *program, bool isTx)
     }
 }
 
+#if SERIAL_PIOUART_COUNT > 0
 static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
 {
     io_rw_32 *enableRegPtr = pioDetailsPtr->enableReg;
@@ -132,21 +234,26 @@ static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
         }
     }
 }
+#endif
 
-static void on_uart2(void)
+static void on_pioUART0(void)
 {
-///    bprintf("\n\n on_uart2");
-    uartPioIrqHandler(&uartDevice[UARTDEV_2].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_UART2));
+///    bprintf("\n\n on_pioUART0");
+#ifdef USE_PIOUART0
+    uartPioIrqHandler(&pioUartDevice[PIOUARTDEV_0].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_PIOUART0));
+#endif
 }
 
-static void on_uart3(void)
+static void on_pioUART1(void)
 {
-///    bprintf("\n\n\n\non_uart3");
-    uartPioIrqHandler(&uartDevice[UARTDEV_3].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_UART3));
+///    bprintf("\n\n\n\non_pioUART1");
+#ifdef USE_PIOUART1
+    uartPioIrqHandler(&pioUartDevice[PIOUARTDEV_1].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_PIOUART1));
+#endif
 }
 
-bool serialUART_pio(uint32_t baudRate, portMode_e mode, portOptions_e options,
-                    const uartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO)
+bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptions_e options,
+                    const pioUartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO)
 {
     // Set up details for state machine, will be finalised in uartReconfigure.
     if (options != 0) {
@@ -214,11 +321,18 @@ bool serialUART_pio(uint32_t baudRate, portMode_e mode, portOptions_e options,
 //    uart_set_format(uartInstance, 8, 1, UART_PARITY_NONE);
 
     bprintf("id %d, going to set exclusive handler for irqn %d", hardware->identifier, hardware->irqn);
-    irq_set_exclusive_handler(hardware->irqn, hardware->identifier == SERIAL_PORT_UART2 ? on_uart2 : on_uart3);
+    irq_set_exclusive_handler(hardware->irqn, hardware->identifier == SERIAL_PORT_PIOUART0 ? on_pioUART0 : on_pioUART1);
     irq_set_enabled(hardware->irqn, true);
 
     // Don't enable pio irq yet, wait until a call to uartReconfigure...
     // (with current code in serial_uart.c, this prevents irq callback before rxCallback has been set)
+
+    s->port.rxBuffer = hardware->rxBuffer;
+    s->port.txBuffer = hardware->txBuffer;
+    bprintf("uartport %p port %p txbuffer %p from hardware %p",
+            s, &s->port, s->port.txBuffer, hardware);
+    s->port.rxBufferSize = hardware->rxBufferSize;
+    s->port.txBufferSize = hardware->txBufferSize;
     return true;
 }
 
@@ -253,6 +367,7 @@ void uartEnableTxInterrupt_pio(uartPort_t *uartPort)
     pioDetails_t *pioDetailsPtr = UART_PIO_DETAILS_PTR(uartPort->port.identifier);
     pio_interrupt_source_t irqSourceTX = pio_get_tx_fifo_not_full_interrupt_source(pioDetailsPtr->sm_tx);
     int irqn_index = PIO_IRQ_INDEX(pioDetailsPtr->irqn);
+    // bprintf("uartEnableTxInterrupt_pio %p irqn_index %d, %p", uartPio, irqn_index, irqSourceTX);
     pio_set_irqn_source_enabled(uartPio, irqn_index, irqSourceTX, true);
 }
  

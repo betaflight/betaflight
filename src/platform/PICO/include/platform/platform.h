@@ -51,8 +51,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define ADC_TypeDef          void*
 
-#define USART_TypeDef        void
-#define UART_INST(uart)      ((uart_inst_t *)uart)
+#define USART_TypeDef        uart_inst_t
+#define UART_INST(uart)      (uart)
 
 #define TIM_OCInitTypeDef    void*
 #define TIM_ICInitTypeDef    void*
@@ -117,6 +117,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 
 #define SERIAL_UART_FIRST_INDEX     0
+#define SERIAL_PIOUART_FIRST_INDEX  0
 
 extern uint32_t systemUniqueId[3];
 
@@ -138,18 +139,4 @@ extern uint32_t systemUniqueId[3];
 // 100 = 1.00x (100%) scaling; override per target/board to match its VBAT divider
 #define DEFAULT_VOLTAGE_METER_SCALE   100
 #endif
-
-// 0, 1 or 2 for pio0, pio1, pio2
-// maybe these more dynamic,
-// or move these to PICO/*/target.h
-// or configurable in config.h
-// Four state machines (sm) per pio block
-// pio0 -> dshot for motors 1,2,3,4
-// pio1 -> UART2, UART3
-// pio2 -> LED STRIP
-#define PIO_DSHOT_INDEX    0
-#define PIO_UART_INDEX     1
-#define PIO_LEDSTRIP_INDEX 2
-
-
 
