@@ -71,6 +71,7 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
+#include "build/debug.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
@@ -592,17 +593,22 @@ void handleMAVLinkTelemetry(void)
     }
 
     bool shouldSendTelemetry = false;
-    if (telemetryConfig()->mavlink_min_txbuff > 0) {
+    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
+
+    if (mavlink_min_txbuff > 0) {
         processMAVLinkIncomingTelemetry();
     }
 
     uint32_t currentTimeUs = micros();
     if (txbuff_valid) {
         // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
-        shouldSendTelemetry = txbuff_free >= telemetryConfig()->mavlink_min_txbuff;
+        shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, mavlink_min_txbuff);
     } else {
         shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
     }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);
 
     if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
