@@ -4672,7 +4672,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf("MCU %s CLK=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
+    cliPrintf("MCU: %s CLK: %dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
 
 #if PLATFORM_TRAIT_CONFIG_HSE
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
@@ -4700,13 +4700,13 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // Stack and config sizes and usages
 
-    cliPrintf("STACK: %d (0x%x)", stackTotalSize(), stackHighMem());
+    cliPrintf("STACK: %db (0x%x)", stackTotalSize(), stackHighMem());
 #ifdef USE_STACK_CHECK
-    cliPrintf(" / %d", stackUsedSize());
+    cliPrintf(" / %db", stackUsedSize());
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("CONFIG: %s (%d / %d)", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinef("CONFIG: %s (%db / %db)", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
     cliPrintLinefeed();
 
     // Devices
@@ -4828,11 +4828,10 @@ static void cliStatus(const char *cmdName, char *cmdline)
     displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
 
     cliPrintf("OSD: %s ", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
-    if (!osdDisplayPort) {
-        cliPrintLine("NOT ENABLED");
-    } else {
-        cliPrintLinef("(%u x %u)", osdDisplayPort->cols, osdDisplayPort->rows);
+    if (osdDisplayPort) {
+        cliPrintf("(%u x %u)", osdDisplayPort->cols, osdDisplayPort->rows);
     }
+    cliPrintLinefeed();
 #endif
 
 #ifdef USE_SDCARD
