@@ -202,8 +202,8 @@ static void on_uart1(void)
 bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptions_e options,
                    const uartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO)
 {
-    UNUSED(options); // TODO ?
-    UNUSED(mode); // TODO ?
+    UNUSED(options);
+    UNUSED(mode);
 
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1

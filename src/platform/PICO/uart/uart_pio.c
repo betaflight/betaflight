@@ -261,7 +261,9 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
         return false;
     }
 
-    UNUSED(mode); // TODO ?
+    // mode and baudrate are captured on the uartPort in uartOpen, and can be addressed in uartReconfigure
+    UNUSED(mode);
+    UNUSED(baudRate);
 
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier); // rx is always +1
@@ -310,8 +312,6 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
         uartPioDetailsPtr->rx_intr_bit = rxnemptybit[pio_sm_rx];
     }
 
-    bprintf("serialUART_pio (requested) baudrate %d", baudRate);
-
     // TODO implement - use options here...
 //    uart_set_hw_flow(uartInstance, false, false);
 //    uart_set_format(uartInstance, 8, 1, UART_PARITY_NONE);
@@ -348,6 +348,8 @@ void uartReconfigure_pio(uartPort_t *s)
 
     // (re)init program, with baud rate
     // Arrange GPIO including pullup for RX, assign PIO SM pins, FIFO, clock, enable SM
+    bprintf("uartReconfigure_pio init rx, tx programs, pins %d, %d, (requested) baudrate %d",
+            uartPioDetailsPtr->rxPin, uartPioDetailsPtr->txPin, s->port.baudRate);
     uart_rx_program_init(uartPio, sm_rx, rxProgram_offset, uartPioDetailsPtr->rxPin, s->port.baudRate);
     uart_tx_program_init(uartPio, sm_tx, txProgram_offset, uartPioDetailsPtr->txPin, s->port.baudRate);
 

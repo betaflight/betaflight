@@ -86,7 +86,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     }
 
     s->port.vTable = uartVTable;
-    s->port.baudRate = baudRate;
     return s;
 }
 
