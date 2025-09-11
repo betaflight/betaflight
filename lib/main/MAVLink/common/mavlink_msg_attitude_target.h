@@ -80,7 +80,7 @@ static inline uint16_t mavlink_msg_attitude_target_pack(uint8_t system_id, uint8
     _mav_put_float(buf, 32, thrust);
     _mav_put_uint8_t(buf, 36, type_mask);
     _mav_put_float_array(buf, 4, q, 4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
 #else
     mavlink_attitude_target_t packet;
     packet.time_boot_ms = time_boot_ms;
@@ -89,8 +89,8 @@ static inline uint16_t mavlink_msg_attitude_target_pack(uint8_t system_id, uint8
     packet.body_yaw_rate = body_yaw_rate;
     packet.thrust = thrust;
     packet.type_mask = type_mask;
-    mav_array_assign_float(packet.q, q, 4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
+    mav_array_memcpy(packet.q, q, sizeof(float) * 4);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ATTITUDE_TARGET;
@@ -125,7 +125,7 @@ static inline uint16_t mavlink_msg_attitude_target_pack_status(uint8_t system_id
     _mav_put_float(buf, 32, thrust);
     _mav_put_uint8_t(buf, 36, type_mask);
     _mav_put_float_array(buf, 4, q, 4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
 #else
     mavlink_attitude_target_t packet;
     packet.time_boot_ms = time_boot_ms;
@@ -134,8 +134,8 @@ static inline uint16_t mavlink_msg_attitude_target_pack_status(uint8_t system_id
     packet.body_yaw_rate = body_yaw_rate;
     packet.thrust = thrust;
     packet.type_mask = type_mask;
-    mav_array_memcpy(packet.q, q, sizeof(float)*4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
+    mav_array_memcpy(packet.q, q, sizeof(float) * 4);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ATTITUDE_TARGET;
@@ -174,7 +174,7 @@ static inline uint16_t mavlink_msg_attitude_target_pack_chan(uint8_t system_id, 
     _mav_put_float(buf, 32, thrust);
     _mav_put_uint8_t(buf, 36, type_mask);
     _mav_put_float_array(buf, 4, q, 4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
 #else
     mavlink_attitude_target_t packet;
     packet.time_boot_ms = time_boot_ms;
@@ -183,8 +183,8 @@ static inline uint16_t mavlink_msg_attitude_target_pack_chan(uint8_t system_id, 
     packet.body_yaw_rate = body_yaw_rate;
     packet.thrust = thrust;
     packet.type_mask = type_mask;
-    mav_array_assign_float(packet.q, q, 4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
+    mav_array_memcpy(packet.q, q, sizeof(float) * 4);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ATTITUDE_TARGET;
@@ -266,7 +266,7 @@ static inline void mavlink_msg_attitude_target_send(mavlink_channel_t chan, uint
     packet.body_yaw_rate = body_yaw_rate;
     packet.thrust = thrust;
     packet.type_mask = type_mask;
-    mav_array_assign_float(packet.q, q, 4);
+    mav_array_memcpy(packet.q, q, sizeof(float) * 4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ATTITUDE_TARGET, (const char *)&packet, MAVLINK_MSG_ID_ATTITUDE_TARGET_MIN_LEN, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN, MAVLINK_MSG_ID_ATTITUDE_TARGET_CRC);
 #endif
 }
@@ -411,8 +411,8 @@ static inline void mavlink_msg_attitude_target_decode(const mavlink_message_t* m
     attitude_target->thrust = mavlink_msg_attitude_target_get_thrust(msg);
     attitude_target->type_mask = mavlink_msg_attitude_target_get_type_mask(msg);
 #else
-        uint8_t len = msg->len < MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN? msg->len : MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN;
-        memset(attitude_target, 0, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
+    uint8_t len = msg->len < MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN? msg->len : MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN;
+    memset(attitude_target, 0, MAVLINK_MSG_ID_ATTITUDE_TARGET_LEN);
     memcpy(attitude_target, _MAV_PAYLOAD(msg), len);
 #endif
 }

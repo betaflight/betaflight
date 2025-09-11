@@ -4,6 +4,7 @@
 #define MAVLINK_MSG_ID_CAMERA_INFORMATION 259
 
 
+MAVPACKED(
 typedef struct __mavlink_camera_information_t {
  uint32_t time_boot_ms; /*< [ms] Timestamp (time since system boot).*/
  uint32_t firmware_version; /*<  Version of the camera firmware, encoded as: `(Dev & 0xff) << 24 \| (Patch & 0xff) << 16 \| (Minor & 0xff) << 8 \| (Major & 0xff)`. Use 0 if not known.*/
@@ -20,7 +21,7 @@ typedef struct __mavlink_camera_information_t {
  char cam_definition_uri[140]; /*<  Camera definition URI (if any, otherwise only basic functions will be available). HTTP- (http://) and MAVLink FTP- (mavlinkftp://) formatted URIs are allowed (and both must be supported by any GCS that implements the Camera Protocol). The definition file may be xz compressed, which will be indicated by the file extension .xml.xz (a GCS that implements the protocol must support decompressing the file). The string needs to be zero terminated.  Use a zero-length string if not known.*/
  uint8_t gimbal_device_id; /*<  Gimbal id of a gimbal associated with this camera. This is the component id of the gimbal device, or 1-6 for non mavlink gimbals. Use 0 if no gimbal is associated with the camera.*/
  uint8_t camera_device_id; /*<  Camera id of a non-MAVLink camera attached to an autopilot (1-6).  0 if the component is a MAVLink camera (with its own component id).*/
-} mavlink_camera_information_t;
+}) mavlink_camera_information_t;
 
 #define MAVLINK_MSG_ID_CAMERA_INFORMATION_LEN 237
 #define MAVLINK_MSG_ID_CAMERA_INFORMATION_MIN_LEN 235

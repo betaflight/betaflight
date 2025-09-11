@@ -60,13 +60,13 @@ static inline uint16_t mavlink_msg_actuator_control_target_pack(uint8_t system_i
     _mav_put_uint64_t(buf, 0, time_usec);
     _mav_put_uint8_t(buf, 40, group_mlx);
     _mav_put_float_array(buf, 8, controls, 8);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
 #else
     mavlink_actuator_control_target_t packet;
     packet.time_usec = time_usec;
     packet.group_mlx = group_mlx;
-    mav_array_assign_float(packet.controls, controls, 8);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
+    mav_array_memcpy(packet.controls, controls, sizeof(float) * 8);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET;
@@ -93,13 +93,13 @@ static inline uint16_t mavlink_msg_actuator_control_target_pack_status(uint8_t s
     _mav_put_uint64_t(buf, 0, time_usec);
     _mav_put_uint8_t(buf, 40, group_mlx);
     _mav_put_float_array(buf, 8, controls, 8);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
 #else
     mavlink_actuator_control_target_t packet;
     packet.time_usec = time_usec;
     packet.group_mlx = group_mlx;
-    mav_array_memcpy(packet.controls, controls, sizeof(float)*8);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
+    mav_array_memcpy(packet.controls, controls, sizeof(float) * 8);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET;
@@ -130,13 +130,13 @@ static inline uint16_t mavlink_msg_actuator_control_target_pack_chan(uint8_t sys
     _mav_put_uint64_t(buf, 0, time_usec);
     _mav_put_uint8_t(buf, 40, group_mlx);
     _mav_put_float_array(buf, 8, controls, 8);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
 #else
     mavlink_actuator_control_target_t packet;
     packet.time_usec = time_usec;
     packet.group_mlx = group_mlx;
-    mav_array_assign_float(packet.controls, controls, 8);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
+    mav_array_memcpy(packet.controls, controls, sizeof(float) * 8);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET;
@@ -206,7 +206,7 @@ static inline void mavlink_msg_actuator_control_target_send(mavlink_channel_t ch
     mavlink_actuator_control_target_t packet;
     packet.time_usec = time_usec;
     packet.group_mlx = group_mlx;
-    mav_array_assign_float(packet.controls, controls, 8);
+    mav_array_memcpy(packet.controls, controls, sizeof(float) * 8);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET, (const char *)&packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_MIN_LEN, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_CRC);
 #endif
 }
@@ -245,7 +245,7 @@ static inline void mavlink_msg_actuator_control_target_send_buf(mavlink_message_
     mavlink_actuator_control_target_t *packet = (mavlink_actuator_control_target_t *)msgbuf;
     packet->time_usec = time_usec;
     packet->group_mlx = group_mlx;
-    mav_array_assign_float(packet->controls, controls, 8);
+    mav_array_memcpy(packet.controls, controls, sizeof(float) * 8);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET, (const char *)packet, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_MIN_LEN, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_CRC);
 #endif
 }
@@ -299,8 +299,8 @@ static inline void mavlink_msg_actuator_control_target_decode(const mavlink_mess
     mavlink_msg_actuator_control_target_get_controls(msg, actuator_control_target->controls);
     actuator_control_target->group_mlx = mavlink_msg_actuator_control_target_get_group_mlx(msg);
 #else
-        uint8_t len = msg->len < MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN? msg->len : MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN;
-        memset(actuator_control_target, 0, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
+    uint8_t len = msg->len < MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN? msg->len : MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN;
+    memset(actuator_control_target, 0, MAVLINK_MSG_ID_ACTUATOR_CONTROL_TARGET_LEN);
     memcpy(actuator_control_target, _MAV_PAYLOAD(msg), len);
 #endif
 }

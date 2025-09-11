@@ -541,7 +541,7 @@ static inline int8_t mavlink_msg_battery_status_get_battery_remaining(const mavl
  */
 static inline int32_t mavlink_msg_battery_status_get_time_remaining(const mavlink_message_t* msg)
 {
-    return _MAV_RETURN_int32_t(msg,  36);
+    return msg->len >= 40 ? _MAV_RETURN_int32_t(msg,  36) : 0;
 }
 
 /**
@@ -551,7 +551,7 @@ static inline int32_t mavlink_msg_battery_status_get_time_remaining(const mavlin
  */
 static inline uint8_t mavlink_msg_battery_status_get_charge_state(const mavlink_message_t* msg)
 {
-    return _MAV_RETURN_uint8_t(msg,  40);
+    return msg->len >= 41 ? _MAV_RETURN_uint8_t(msg,  40) : 0;
 }
 
 /**
@@ -561,7 +561,7 @@ static inline uint8_t mavlink_msg_battery_status_get_charge_state(const mavlink_
  */
 static inline uint16_t mavlink_msg_battery_status_get_voltages_ext(const mavlink_message_t* msg, uint16_t *voltages_ext)
 {
-    return _MAV_RETURN_uint16_t_array(msg, voltages_ext, 4,  41);
+    return msg->len >= 49 ? _MAV_RETURN_uint16_t_array(msg, voltages_ext, 4,  41) : 0;
 }
 
 /**
@@ -571,7 +571,7 @@ static inline uint16_t mavlink_msg_battery_status_get_voltages_ext(const mavlink
  */
 static inline uint8_t mavlink_msg_battery_status_get_mode(const mavlink_message_t* msg)
 {
-    return _MAV_RETURN_uint8_t(msg,  49);
+    return msg->len >= 50 ? _MAV_RETURN_uint8_t(msg,  49) : 0;
 }
 
 /**
@@ -581,7 +581,7 @@ static inline uint8_t mavlink_msg_battery_status_get_mode(const mavlink_message_
  */
 static inline uint32_t mavlink_msg_battery_status_get_fault_bitmask(const mavlink_message_t* msg)
 {
-    return _MAV_RETURN_uint32_t(msg,  50);
+    return msg->len >= 54 ? _MAV_RETURN_uint32_t(msg,  50) : 0;
 }
 
 /**
@@ -602,14 +602,16 @@ static inline void mavlink_msg_battery_status_decode(const mavlink_message_t* ms
     battery_status->battery_function = mavlink_msg_battery_status_get_battery_function(msg);
     battery_status->type = mavlink_msg_battery_status_get_type(msg);
     battery_status->battery_remaining = mavlink_msg_battery_status_get_battery_remaining(msg);
+
+    // Only access extension fields if message is long enough
     battery_status->time_remaining = mavlink_msg_battery_status_get_time_remaining(msg);
     battery_status->charge_state = mavlink_msg_battery_status_get_charge_state(msg);
     mavlink_msg_battery_status_get_voltages_ext(msg, battery_status->voltages_ext);
     battery_status->mode = mavlink_msg_battery_status_get_mode(msg);
     battery_status->fault_bitmask = mavlink_msg_battery_status_get_fault_bitmask(msg);
 #else
-        uint8_t len = msg->len < MAVLINK_MSG_ID_BATTERY_STATUS_LEN? msg->len : MAVLINK_MSG_ID_BATTERY_STATUS_LEN;
-        memset(battery_status, 0, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
+    uint8_t len = msg->len < MAVLINK_MSG_ID_BATTERY_STATUS_LEN? msg->len : MAVLINK_MSG_ID_BATTERY_STATUS_LEN;
+    memset(battery_status, 0, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
     memcpy(battery_status, _MAV_PAYLOAD(msg), len);
 #endif
 }
