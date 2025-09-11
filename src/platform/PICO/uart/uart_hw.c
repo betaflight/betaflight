@@ -168,7 +168,7 @@ static void uartIrqHandler_hw(uartPort_t *s)
             if (s->port.rxCallback) {
                 s->port.rxCallback(ch, s->port.rxCallbackData);
             } else {
-                bprintf("RX %x -> buffer",ch);
+                // bprintf("RX %x -> buffer",ch);
                 s->port.rxBuffer[s->port.rxBufferHead] = ch;
                 s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
             }
