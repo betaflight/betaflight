@@ -107,6 +107,8 @@ static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
 static uint32_t lastMavlinkMessageTime = 0;
 
+static mavlink_message_t mavRecvMsg;
+static mavlink_status_t mavRecvStatus;
 static uint8_t txbuff_free = 100;
 static bool txbuff_valid = false;
 
@@ -552,7 +554,6 @@ static void processMAVLinkTelemetry(void)
 // Get RADIO_STATUS data
 static void handleIncoming_RADIO_STATUS(void)
 {
-    mavlink_message_t mavRecvMsg;
     mavlink_radio_status_t msg;
     mavlink_msg_radio_status_decode(&mavRecvMsg, &msg);
     txbuff_valid = true;
@@ -562,8 +563,6 @@ static void handleIncoming_RADIO_STATUS(void)
 // Get incoming telemetry data
 static bool processMAVLinkIncomingTelemetry(void)
 {
-    mavlink_message_t mavRecvMsg;
-    mavlink_status_t mavRecvStatus;
     while (serialRxBytesWaiting(mavlinkPort) > 0) {
         // Limit handling to one message per cycle
         char c = serialRead(mavlinkPort);
