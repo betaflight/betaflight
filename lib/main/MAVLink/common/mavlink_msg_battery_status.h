@@ -131,8 +131,8 @@ static inline uint16_t mavlink_msg_battery_status_pack(uint8_t system_id, uint8_
     packet.charge_state = charge_state;
     packet.mode = mode;
     packet.fault_bitmask = fault_bitmask;
-    mav_array_assign_uint16_t(packet.voltages, voltages, 10);
-    mav_array_assign_uint16_t(packet.voltages_ext, voltages_ext, 4);
+    mav_array_memcpy(packet.voltages, voltages, sizeof(uint16_t) * 10);
+    mav_array_memcpy(packet.voltages_ext, voltages_ext, sizeof(uint16_t) * 4);
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
 #endif
 
@@ -197,9 +197,9 @@ static inline uint16_t mavlink_msg_battery_status_pack_status(uint8_t system_id,
     packet.charge_state = charge_state;
     packet.mode = mode;
     packet.fault_bitmask = fault_bitmask;
-    mav_array_memcpy(packet.voltages, voltages, sizeof(uint16_t)*10);
-    mav_array_memcpy(packet.voltages_ext, voltages_ext, sizeof(uint16_t)*4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
+    mav_array_memcpy(packet.voltages, voltages, sizeof(uint16_t) * 10);
+    mav_array_memcpy(packet.voltages_ext, voltages_ext, sizeof(uint16_t) * 4);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_BATTERY_STATUS;
@@ -267,9 +267,9 @@ static inline uint16_t mavlink_msg_battery_status_pack_chan(uint8_t system_id, u
     packet.charge_state = charge_state;
     packet.mode = mode;
     packet.fault_bitmask = fault_bitmask;
-    mav_array_assign_uint16_t(packet.voltages, voltages, 10);
-    mav_array_assign_uint16_t(packet.voltages_ext, voltages_ext, 4);
-        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
+    mav_array_memcpy(packet.voltages, voltages, sizeof(uint16_t) * 10);
+    mav_array_memcpy(packet.voltages_ext, voltages_ext, sizeof(uint16_t) * 4);
+    memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
 #endif
 
     msg->msgid = MAVLINK_MSG_ID_BATTERY_STATUS;
@@ -371,8 +371,8 @@ static inline void mavlink_msg_battery_status_send(mavlink_channel_t chan, uint8
     packet.charge_state = charge_state;
     packet.mode = mode;
     packet.fault_bitmask = fault_bitmask;
-    mav_array_assign_uint16_t(packet.voltages, voltages, 10);
-    mav_array_assign_uint16_t(packet.voltages_ext, voltages_ext, 4);
+    mav_array_memcpy(packet.voltages, voltages, sizeof(uint16_t) * 10);
+    mav_array_memcpy(packet.voltages_ext, voltages_ext, sizeof(uint16_t) * 4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_BATTERY_STATUS, (const char *)&packet, MAVLINK_MSG_ID_BATTERY_STATUS_MIN_LEN, MAVLINK_MSG_ID_BATTERY_STATUS_LEN, MAVLINK_MSG_ID_BATTERY_STATUS_CRC);
 #endif
 }
@@ -432,8 +432,8 @@ static inline void mavlink_msg_battery_status_send_buf(mavlink_message_t *msgbuf
     packet->charge_state = charge_state;
     packet->mode = mode;
     packet->fault_bitmask = fault_bitmask;
-    mav_array_assign_uint16_t(packet->voltages, voltages, 10);
-    mav_array_assign_uint16_t(packet->voltages_ext, voltages_ext, 4);
+    mav_array_memcpy(packet.voltages, voltages, sizeof(uint16_t) * 10);
+    mav_array_memcpy(packet.voltages_ext, voltages_ext, sizeof(uint16_t) * 4);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_BATTERY_STATUS, (const char *)packet, MAVLINK_MSG_ID_BATTERY_STATUS_MIN_LEN, MAVLINK_MSG_ID_BATTERY_STATUS_LEN, MAVLINK_MSG_ID_BATTERY_STATUS_CRC);
 #endif
 }
@@ -593,6 +593,7 @@ static inline uint32_t mavlink_msg_battery_status_get_fault_bitmask(const mavlin
 static inline void mavlink_msg_battery_status_decode(const mavlink_message_t* msg, mavlink_battery_status_t* battery_status)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
+    memset(battery_status, 0, MAVLINK_MSG_ID_BATTERY_STATUS_LEN);
     battery_status->current_consumed = mavlink_msg_battery_status_get_current_consumed(msg);
     battery_status->energy_consumed = mavlink_msg_battery_status_get_energy_consumed(msg);
     battery_status->temperature = mavlink_msg_battery_status_get_temperature(msg);

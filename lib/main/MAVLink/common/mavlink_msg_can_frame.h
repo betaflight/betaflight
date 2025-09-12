@@ -83,7 +83,7 @@ static inline uint16_t mavlink_msg_can_frame_pack(uint8_t system_id, uint8_t com
     packet.target_component = target_component;
     packet.bus = bus;
     packet.len = len;
-    mav_array_memcpy(packet.data, data, MAVLINK_MSG_ID_CAN_FRAME_LEN);
+    mav_array_memcpy(packet.data, data, MAVLINK_MSG_CAN_FRAME_FIELD_DATA_LEN);
     memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CAN_FRAME_LEN);
 #endif
 
@@ -171,7 +171,7 @@ static inline uint16_t mavlink_msg_can_frame_pack_chan(uint8_t system_id, uint8_
     packet.target_component = target_component;
     packet.bus = bus;
     packet.len = len;
-    mav_array_memcpy(packet.data, data, MAVLINK_MSG_ID_CAN_FRAME_LEN);
+    mav_array_memcpy(packet.data, data, MAVLINK_MSG_CAN_FRAME_FIELD_DATA_LEN);
     memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CAN_FRAME_LEN);
 #endif
 
@@ -251,7 +251,7 @@ static inline void mavlink_msg_can_frame_send(mavlink_channel_t chan, uint8_t ta
     packet.target_component = target_component;
     packet.bus = bus;
     packet.len = len;
-    mav_array_memcpy(packet.data, data, MAVLINK_MSG_ID_CAN_FRAME_LEN);
+    mav_array_memcpy(packet.data, data, MAVLINK_MSG_CAN_FRAME_FIELD_DATA_LEN);
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CAN_FRAME, (const char *)&packet, MAVLINK_MSG_ID_CAN_FRAME_MIN_LEN, MAVLINK_MSG_ID_CAN_FRAME_LEN, MAVLINK_MSG_ID_CAN_FRAME_CRC);
 #endif
 }
