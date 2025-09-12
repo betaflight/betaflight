@@ -570,7 +570,7 @@ static bool processMAVLinkIncomingTelemetry(void)
         uint8_t result = mavlink_parse_char(0, c, &mavRecvMsg, &mavRecvStatus);
         if (result == MAVLINK_FRAMING_OK) {
             switch (mavRecvMsg.msgid) {
-                case MAVLINK_MSG_ID_RADIO_STATUS:
+            case MAVLINK_MSG_ID_RADIO_STATUS:
                     handleIncoming_RADIO_STATUS();
                     return false;
                 default:
