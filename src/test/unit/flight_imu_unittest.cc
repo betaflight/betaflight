@@ -46,6 +46,8 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/position.h"
+    #include "flight/kalman_filter_1d.h"
+    #include "flight/altitude.h"
 
     #include "io/gps.h"
 
@@ -68,6 +70,36 @@ extern "C" {
                              const float dcmKpGain);
     float imuCalcMagErr(void);
     float imuCalcCourseErr(float courseOverGround);
+    void kf_init(KalmanFilter *kf, float initialValue, float initialVariance, float processVariance){
+        UNUSED(kf);
+        UNUSED(initialValue);
+        UNUSED(initialVariance);
+        UNUSED(processVariance);
+    }
+    void kf_update_variance(KalmanFilter *kf) {
+        UNUSED(kf);
+    }
+    void kf_update(KalmanFilter *kf, SensorMeasurement sensorMeas) {
+       UNUSED(sensorMeas);
+       UNUSED(kf);
+    }
+    void updateBaroVariance(SensorMeasurement * sensorMeas, float baroNonZeroedAlt) {
+        UNUSED(sensorMeas);
+        UNUSED(baroNonZeroedAlt);
+    }
+    void altSensorFusionInit(void) {
+
+    }
+    bool altSensorFusionUpdate(void) {
+        return true;
+    }
+    void updateBaroStateCallback(void) {
+
+    }
+    altitudeState_t * getAltitudeState(void) {
+        return nullptr;
+    }
+
     extern quaternion_t q;
     extern matrix33_t rMat;
     extern bool attitudeIsEstablished;
