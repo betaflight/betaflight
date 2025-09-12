@@ -116,7 +116,8 @@ static inline void uart_rx_program_init(PIO pio, uint sm, uint offset, uint pin,
     sm_config_set_jmp_pin(&c, pin); // for JMP
     // Shift to right, autopush disabled
     sm_config_set_in_shift(&c, true, false, 32);
-    //    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX); // don't join because might use TX and RX (differs from pico-examples)
+    // Deeper FIFO as we're not doing any TX
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
     // SM transmits 1 bit per 8 execution cycles.
     float div = (float)clock_get_hz(clk_sys) / (8 * baud);
     sm_config_set_clkdiv(&c, div);

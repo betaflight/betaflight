@@ -64,7 +64,8 @@ static inline void uart_tx_program_init(PIO pio, uint sm, uint offset, uint pin_
     // assert constant values (start/stop bit)
     sm_config_set_out_pins(&c, pin_tx, 1);
     sm_config_set_sideset_pins(&c, pin_tx);
-    //    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX); // don't join because might use TX and RX (differs from pico-examples)
+    // We only need TX, so get an 8-deep FIFO!
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
     // SM transmits 1 bit per 8 execution cycles.
     float div = (float)clock_get_hz(clk_sys) / (8 * baud);
     sm_config_set_clkdiv(&c, div);
