@@ -25,7 +25,7 @@
 
 #include "filter_magic_h.h"
 
-#define DEFAULT_FILTER_DIMS (1)(2)(3)(4)(8)
+#define DEFAULT_FILTER_DIMS (1)(2)(3)(4)(8)(12)
 
 #ifdef __cplusplus
 // C++ does not like zzero-size arrays
