@@ -46,6 +46,7 @@ enum rcc_reg {
     RCC_APB11,
     RCC_APB12,
     RCC_AHB1,
+    RCC_AHB3, // the hardware does not have an AHB3 bus but QSPI and FSMC uses AHB3 RCCs
 #elif defined(AT32F4)
     RCC_AHB1,
     RCC_AHB2,
@@ -92,6 +93,7 @@ enum rcc_reg {
 #define RCC_APB12(periph) RCC_ENCODE(RCC_APB12, RCC_APB1ENR2_ ## periph ## EN)
 #define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCC_AHB1ENR_ ## periph ## EN)
 #define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, RCC_AHB2ENR_ ## periph ## EN)
+#define RCC_AHB3(periph) RCC_ENCODE(RCC_AHB3, RCC_AHB3ENR_ ## periph ## EN)
 #elif defined(STM32F7)
 #define RCC_AHB(periph) RCC_ENCODE(RCC_AHB, RCC_AHBENR_ ## periph ## EN)
 #define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, RCC_APB2ENR_ ## periph ## EN)
