@@ -83,8 +83,8 @@ typedef struct telemetryConfig_s {
     uint8_t pidValuesAsTelemetry;
     uint8_t report_cell_voltage;
     uint8_t flysky_sensors[IBUS_SENSOR_COUNT];
-    uint32_t disabledSensors; // bit flags
     uint16_t mavlink_mah_as_heading_divisor;
+    uint32_t disabledSensors; // bit flags
     uint8_t mavlink_min_txbuff; // min TX buffer space to send mavlink telemetry data 0...100%, the checking is off by default = 0
 } telemetryConfig_t;
 

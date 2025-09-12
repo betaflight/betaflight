@@ -571,10 +571,10 @@ static bool processMAVLinkIncomingTelemetry(void)
         if (result == MAVLINK_FRAMING_OK) {
             switch (mavRecvMsg.msgid) {
             case MAVLINK_MSG_ID_RADIO_STATUS:
-                    handleIncoming_RADIO_STATUS();
-                    return false;
-                default:
-                    return false;
+                handleIncoming_RADIO_STATUS();
+                return false;
+            default:
+                return false;
             }
         }
     }
