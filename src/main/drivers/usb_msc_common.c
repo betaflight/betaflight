@@ -96,10 +96,12 @@ void mscActivityLed(void)
     static timeMs_t nextToggleMs = 0;
     const timeMs_t nowMs = millis();
 
+    // Turn off LED if no activity in last ACTIVITY_LED_PERIOD_MS
     if (cmpTimeMs(nowMs, lastActiveTimeMs) > ACTIVITY_LED_PERIOD_MS) {
         LED0_OFF;
         nextToggleMs = 0;
     } else if (cmpTimeMs(nowMs, nextToggleMs) > 0) {
+        // Otherwise toggle the LED every ACTIVITY_LED_PERIOD_MS
         LED0_TOGGLE;
         nextToggleMs = nowMs + ACTIVITY_LED_PERIOD_MS;
     }
@@ -127,6 +129,8 @@ void mscWaitForButton(void)
     delay(DEBOUNCE_TIME_MS);
     while (true) {
         mscTask();
+        // Ensure a service window exists for interrupts
+        asm("NOP");
         if (mscCheckButton()) {
             systemResetFromMsc();
         }
