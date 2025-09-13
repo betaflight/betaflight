@@ -445,6 +445,7 @@ CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
 CLEAN_ARTIFACTS += $(TARGET_UF2)
+CLEAN_ARTIFACTS += $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
