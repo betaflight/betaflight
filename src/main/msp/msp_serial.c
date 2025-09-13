@@ -70,7 +70,8 @@ void mspSerialAllocatePorts(void)
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
         } else if (serialType(portConfig->identifier) == SERIALTYPE_UART
-                   || serialType(portConfig->identifier) == SERIALTYPE_LPUART) {
+                   || serialType(portConfig->identifier) == SERIALTYPE_LPUART
+                   || serialType(portConfig->identifier) == SERIALTYPE_PIOUART) {
             // TODO: SERIAL_CHECK_TX is broken on F7, disable it until it is fixed
 #if !defined(STM32F7) || defined(USE_F7_CHECK_TX)
             options |= SERIAL_CHECK_TX;

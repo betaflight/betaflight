@@ -142,7 +142,7 @@ bool ws2811LedStripHardwareInit(void)
 
     // This will find a free pio and state machine for our program and load it for us
     // TODO somehow configure which PIO block to use for LED STRIP? pio2 for now.
-    const PIO pio = pio2;
+    const PIO pio = PIO_INSTANCE(PIO_LEDSTRIP_INDEX);
 
     int pinIndex = DEFIO_TAG_PIN(ledStripIoTag);
     if (pinIndex >= 32) {
