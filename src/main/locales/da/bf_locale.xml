@@ -6,7 +6,6 @@
   <string name="STR_PERIOD" maxLength="1" comment="translation of: Period string .">.</string>
   <string name="STR_THOUSAND" maxLength="1" comment="translation of: Thousand delimiter .">.</string>
   <string name="STR_SECONDS" maxLength="7" comment="translation of: seconds">sekund</string>
-  <string name="STR_VISUAL_BEEP" maxLength="9" comment="translation of:   * * * *">  * * * *</string>
   <string name="STR_CMS_STARTUP_MENU_TEXT1" maxLength="12" comment="translation of: MENU:THR MID">MENU:GAS MID</string>
   <string name="STR_CMS_STARTUP_MENU_TEXT2" maxLength="12" comment="translation of: + YAW LEFT  ">+ SIDE VENST</string>
   <string name="STR_CMS_STARTUP_MENU_TEXT3" maxLength="12" comment="translation of: + PITCH UP  ">+ HOEJDE OP</string>
@@ -71,15 +70,19 @@
   <string name="STR_OSDW_RSNR_LOW" maxLength="8" comment="translation of: RSNR LOW">RSNR LAV</string>
   <string name="STR_OSDW_LINK_QUALITY" maxLength="12" comment="translation of: LINK QUALITY">LINK KVALI</string>
   <string name="STR_OSDW_LAND_NOW" maxLength="9" comment="translation of:  LAND NOW"> LAND NU</string>
+  <string name="STR_OSDW_CPU_OVERLOAD" maxLength="12" comment="translation of: CPU OVERLOAD">CPU BELASTET</string>
   <string name="STR_OSDW_RESCUE_NA" maxLength="10" comment="translation of: RESCUE N/A">FEJLSIK NA</string>
   <string name="STR_OSDW_RESCUE_NA_HD" maxLength="20" comment="HD translation of: RESCUE NOT AVAILABLE">FEJLSIKR IKKE MULIG</string>
   <string name="STR_OSDW_RESCUE_OFF" maxLength="12" comment="translation of: RESCUE OFF">FEJLSIKR FRA</string>
+  <string name="STR_OSDW_POSHOLD_FAIL" maxLength="12" comment="translation of: POSHOLD FAIL">POSHOLD FEJL</string>
   <string name="STR_OSDW_HEADFREE" maxLength="8" comment="translation of: HEADFREE">HEADFREE</string>
   <string name="STR_OSDW_CORE" maxLength="4" comment="translation of: CORE">CORE</string>
   <string name="STR_OSDW_LOW_BATT" maxLength="11" comment="translation of: LOW BATTERY">BATTERI LAV</string>
   <string name="STR_OSDW_OVER_CAP" maxLength="8" comment="translation of: OVER CAP">OVER CAP</string>
   <string name="STR_OSDW_BATT_CONTINUE" maxLength="16" comment="translation of: BATTERY CONTINUE">BATT FORTSAET</string>
   <string name="STR_OSDW_BATT_BELOW_FULL" maxLength="11" comment="translation of: BATT &lt; FULL">BATT &lt; FULD</string>
+  <string name="STR_OSDW_VISUAL_BEEP" maxLength="9" comment="translation of:   * * * *">  * * * *</string>
+  <string name="STR_OSDW_CHIRP_EXC_FINISHED" maxLength="18" comment="translation of: CHIRP EXC FINISHED">CHIRP EXC SLUT</string>
   <string name="STR_OSDE_UP" maxLength="1" comment="translation of: U">O</string>
   <string name="STR_OSDE_DOWN" maxLength="1" comment="translation of: D">N</string>
   <string name="STR_OSDE_GPS_DIRECTION" maxLength="4" comment="translation of: NSEW">NSEV</string>
@@ -107,4 +110,9 @@
   <string name="STR_OSDE_ELEMENT_PITCH" maxLength="3" comment="translation of: PIT">PIT</string>
   <string name="STR_OSDE_ELEMENT_ROLL" maxLength="3" comment="translation of: ROL">ROL</string>
   <string name="STR_OSDE_ELEMENT_YAW" maxLength="3" comment="translation of: YAW">YAW</string>
+  <string name="STR_OSDE_RPM_LIMIT_ON" maxLength="12" comment="translation of: RPM LIMIT ON">RPM MAX TIL</string>
+  <string name="STR_OSDE_RPM_LIMIT_OFF" maxLength="13" comment="translation of: RPM LIMIT OFF">RPM MAX FRA</string>
+  <string name="STR_OSDE_POLES" maxLength="5" comment="translation of: POLES">POLER</string>
+  <string name="STR_OSDE_THR_LIMIT" maxLength="9" comment="translation of: THR LIMIT">GAS MAX</string>
+  <string name="STR_OSDE_MOTOR_LIMIT" maxLength="11" comment="translation of: MOTOR LIMIT">MOTOR MAX</string>
 </resources>

@@ -53,10 +53,6 @@
    #define STR_SECONDS                        "seconds"
 #endif
 
-#ifndef STR_VISUAL_BEEP
-   #define STR_VISUAL_BEEP                    "  * * * *"
-#endif
-
 #ifndef STR_CMS_STARTUP_MENU_TEXT1
    #define STR_CMS_STARTUP_MENU_TEXT1         "MENU:THR MID"
 #endif
@@ -249,12 +245,20 @@
    #define STR_OSDW_LAND_NOW                  " LAND NOW"
 #endif
 
+#ifndef STR_OSDW_CPU_OVERLOAD
+   #define STR_OSDW_CPU_OVERLOAD              "CPU OVERLOAD"
+#endif
+
 #ifndef STR_OSDW_RESCUE_NA
    #define STR_OSDW_RESCUE_NA                 "RESCUE N/A"
 #endif
 
 #ifndef STR_OSDW_RESCUE_OFF
    #define STR_OSDW_RESCUE_OFF                "RESCUE OFF"
+#endif
+
+#ifndef STR_OSDW_POSHOLD_FAIL
+   #define STR_OSDW_POSHOLD_FAIL              "POSHOLD FAIL"
 #endif
 
 #ifndef STR_OSDW_HEADFREE
@@ -279,6 +283,14 @@
 
 #ifndef STR_OSDW_BATT_BELOW_FULL
    #define STR_OSDW_BATT_BELOW_FULL           "BATT < FULL"
+#endif
+
+#ifndef STR_OSDW_VISUAL_BEEP
+   #define STR_OSDW_VISUAL_BEEP               "  * * * *"
+#endif
+
+#ifndef STR_OSDW_CHIRP_EXC_FINISHED
+   #define STR_OSDW_CHIRP_EXC_FINISHED        "CHIRP EXC FINISHED"
 #endif
 
 #ifndef STR_OSDE_UP
@@ -375,5 +387,25 @@
 
 #ifndef STR_OSDE_ELEMENT_YAW
    #define STR_OSDE_ELEMENT_YAW               "YAW"
+#endif
+
+#ifndef STR_OSDE_RPM_LIMIT_ON
+   #define STR_OSDE_RPM_LIMIT_ON              "RPM LIMIT ON"
+#endif
+
+#ifndef STR_OSDE_RPM_LIMIT_OFF
+   #define STR_OSDE_RPM_LIMIT_OFF             "RPM LIMIT OFF"
+#endif
+
+#ifndef STR_OSDE_POLES
+   #define STR_OSDE_POLES                     "POLES"
+#endif
+
+#ifndef STR_OSDE_THR_LIMIT
+   #define STR_OSDE_THR_LIMIT                 "THR LIMIT"
+#endif
+
+#ifndef STR_OSDE_MOTOR_LIMIT
+   #define STR_OSDE_MOTOR_LIMIT               "MOTOR LIMIT"
 #endif
 
