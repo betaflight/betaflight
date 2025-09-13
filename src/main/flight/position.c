@@ -65,12 +65,10 @@ void positionInit(void)
     const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
 
     const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
-    const float altitudeGain = pt2FilterGain(altitudeCutoffHz, sampleTimeS);
-    pt2FilterInit(&altitudeLpf, altitudeGain);
+    pt2FilterInitLPF(&altitudeLpf, altitudeCutoffHz, sampleTimeS);
 
     const float altitudeDerivativeCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
-    const float altitudeDerivativeGain = pt2FilterGain(altitudeDerivativeCutoffHz, sampleTimeS);
-    pt2FilterInit(&altitudeDerivativeLpf, altitudeDerivativeGain);
+    pt2FilterInitLPF(&altitudeDerivativeLpf, altitudeDerivativeCutoffHz, sampleTimeS);
 }
 
 typedef enum {
