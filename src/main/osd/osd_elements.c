@@ -994,7 +994,7 @@ static void osdElementDebug2(osdElementParms_t *element)
 static void osdElementDisarmed(osdElementParms_t *element)
 {
     if (!ARMING_FLAG(ARMED)) {
-        tfp_sprintf(element->buff, STR_OSDE_DISARMED);
+        tfp_sprintf(element->buff, "%s", STR_OSDE_DISARMED);
     }
 }
 
@@ -2346,9 +2346,9 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
         {
             const bool rpmLimitActive = mixerConfig()->rpm_limit > 0 && isMotorProtocolBidirDshot();
             if (rpmLimitActive) {
-                len = tfp_sprintf(buff, "RPM LIMIT ON  %d", mixerConfig()->rpm_limit_value);
+                len = tfp_sprintf(buff, "%s %d", STR_OSDE_RPM_LIMIT_ON, mixerConfig()->rpm_limit_value);
             } else {
-                len = tfp_sprintf(buff, "%s", "RPM LIMIT OFF");
+                len = tfp_sprintf(buff, "%s", STR_OSDE_RPM_LIMIT_OFF);
             }
             displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
 
@@ -2361,7 +2361,7 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
         break;
 
     case POLES:
-        len = tfp_sprintf(buff, "KV %d   POLES %d", motorConfig()->kv, motorConfig()->motorPoleCount);
+        len = tfp_sprintf(buff, "KV %d   %s %d", motorConfig()->kv, STR_OSDE_POLES, motorConfig()->motorPoleCount);
         displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
 
         specState = MIXER;
@@ -2376,7 +2376,7 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
 
     case THR:
 #endif // #USE_RPM_LIMIT
-        len = tfp_sprintf(buff, "THR LIMIT %s", lookupTableThrottleLimitType[currentControlRateProfile->throttle_limit_type]);
+        len = tfp_sprintf(buff, "%s %s", STR_OSDE_THR_LIMIT, lookupTableThrottleLimitType[currentControlRateProfile->throttle_limit_type]);
         if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
             len = tfp_sprintf(buff, "%s %d", buff, currentControlRateProfile->throttle_limit_percent);
         }
@@ -2386,7 +2386,7 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
         break;
 
     case MOTOR:
-        len = tfp_sprintf(buff, "MOTOR LIMIT %d", currentPidProfile->motor_output_limit);
+        len = tfp_sprintf(buff, "%s %d", STR_OSDE_MOTOR_LIMIT, currentPidProfile->motor_output_limit);
         displayWrite(osdDisplayPort, midCol - (len / 2), currentRow++, DISPLAYPORT_SEVERITY_NORMAL, buff);
 
         specState = BAT;

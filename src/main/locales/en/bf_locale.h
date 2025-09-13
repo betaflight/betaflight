@@ -36,7 +36,6 @@
 #define STR_PERIOD                         "."                                        	// translation of: Period string .
 #define STR_THOUSAND                       "."                                        	// translation of: Thousand delimiter .
 #define STR_SECONDS                        "seconds"                                  	// translation of: seconds
-#define STR_VISUAL_BEEP                    "  * * * *"                                	// translation of:   * * * *
 #define STR_CMS_STARTUP_MENU_TEXT1         "MENU:THR MID"                             	// translation of: MENU:THR MID
 #define STR_CMS_STARTUP_MENU_TEXT2         "+ YAW LEFT  "                             	// translation of: + YAW LEFT  
 #define STR_CMS_STARTUP_MENU_TEXT3         "+ PITCH UP  "                             	// translation of: + PITCH UP  
@@ -85,14 +84,18 @@
 #define STR_OSDW_RSNR_LOW                  "RSNR LOW"                                 	// translation of: RSNR LOW
 #define STR_OSDW_LINK_QUALITY              "LINK QUALITY"                             	// translation of: LINK QUALITY
 #define STR_OSDW_LAND_NOW                  " LAND NOW"                                	// translation of:  LAND NOW
+#define STR_OSDW_CPU_OVERLOAD              "CPU OVERLOAD"                             	// translation of: CPU OVERLOAD
 #define STR_OSDW_RESCUE_NA                 TR2("RESCUE N/A", "RESCUE NOT AVAILABLE")  	// translation of: RESCUE N/A; HD translation of: RESCUE NOT AVAILABLE
 #define STR_OSDW_RESCUE_OFF                "RESCUE OFF"                               	// translation of: RESCUE OFF
+#define STR_OSDW_POSHOLD_FAIL              "POSHOLD FAIL"                             	// translation of: POSHOLD FAIL
 #define STR_OSDW_HEADFREE                  "HEADFREE"                                 	// translation of: HEADFREE
 #define STR_OSDW_CORE                      "CORE"                                     	// translation of: CORE
 #define STR_OSDW_LOW_BATT                  "LOW BATTERY"                              	// translation of: LOW BATTERY
 #define STR_OSDW_OVER_CAP                  "OVER CAP"                                 	// translation of: OVER CAP
 #define STR_OSDW_BATT_CONTINUE             "BATTERY CONTINUE"                         	// translation of: BATTERY CONTINUE
 #define STR_OSDW_BATT_BELOW_FULL           "BATT < FULL"                              	// translation of: BATT < FULL
+#define STR_OSDW_VISUAL_BEEP               "  * * * *"                                	// translation of:   * * * *
+#define STR_OSDW_CHIRP_EXC_FINISHED        "CHIRP EXC FINISHED"                       	// translation of: CHIRP EXC FINISHED
 #define STR_OSDE_UP                        "U"                                        	// translation of: U
 #define STR_OSDE_DOWN                      "D"                                        	// translation of: D
 #define STR_OSDE_GPS_DIRECTION             "NSEW"                                     	// translation of: NSEW
@@ -117,3 +120,8 @@
 #define STR_OSDE_ELEMENT_PITCH             "PIT"                                      	// translation of: PIT
 #define STR_OSDE_ELEMENT_ROLL              "ROL"                                      	// translation of: ROL
 #define STR_OSDE_ELEMENT_YAW               "YAW"                                      	// translation of: YAW
+#define STR_OSDE_RPM_LIMIT_ON              "RPM LIMIT ON"                             	// translation of: RPM LIMIT ON
+#define STR_OSDE_RPM_LIMIT_OFF             "RPM LIMIT OFF"                            	// translation of: RPM LIMIT OFF
+#define STR_OSDE_POLES                     "POLES"                                    	// translation of: POLES
+#define STR_OSDE_THR_LIMIT                 "THR LIMIT"                                	// translation of: THR LIMIT
+#define STR_OSDE_MOTOR_LIMIT               "MOTOR LIMIT"                              	// translation of: MOTOR LIMIT

@@ -31,12 +31,11 @@
 #pragma once
 
 #define LOCALE                             "da"                                       	// Current language in short form: en, da, es, fr, nl ...
-#define STR_LOCALE_SETUP                   "Sprog:"                                   	// translation of: Language:
+#define STR_LANGUAGE                       "Sprog:"                                   	// translation of: Language:
 #define STR_COMMA                          ","                                        	// translation of: Comma string ,
 #define STR_PERIOD                         "."                                        	// translation of: Period string .
 #define STR_THOUSAND                       "."                                        	// translation of: Thousand delimiter .
 #define STR_SECONDS                        "sekund"                                   	// translation of: seconds
-#define STR_VISUAL_BEEP                    "  * * * *"                                	// translation of:   * * * *
 #define STR_CMS_STARTUP_MENU_TEXT1         "MENU:GAS MID"                             	// translation of: MENU:THR MID
 #define STR_CMS_STARTUP_MENU_TEXT2         "+ SIDE VENST"                             	// translation of: + YAW LEFT  
 #define STR_CMS_STARTUP_MENU_TEXT3         "+ HOEJDE OP"                              	// translation of: + PITCH UP  
@@ -85,14 +84,18 @@
 #define STR_OSDW_RSNR_LOW                  "RSNR LAV"                                 	// translation of: RSNR LOW
 #define STR_OSDW_LINK_QUALITY              "LINK KVALI"                               	// translation of: LINK QUALITY
 #define STR_OSDW_LAND_NOW                  " LAND NU"                                 	// translation of:  LAND NOW
+#define STR_OSDW_CPU_OVERLOAD              "CPU BELASTET"                             	// translation of: CPU OVERLOAD
 #define STR_OSDW_RESCUE_NA                 TR2("FEJLSIK NA", "FEJLSIKR IKKE MULIG")   	// translation of: RESCUE N/A; HD translation of: RESCUE NOT AVAILABLE
 #define STR_OSDW_RESCUE_OFF                "FEJLSIKR FRA"                             	// translation of: RESCUE OFF
+#define STR_OSDW_POSHOLD_FAIL              "POSHOLD FEJL"                             	// translation of: POSHOLD FAIL
 #define STR_OSDW_HEADFREE                  "HEADFREE"                                 	// translation of: HEADFREE
 #define STR_OSDW_CORE                      "CORE"                                     	// translation of: CORE
 #define STR_OSDW_LOW_BATT                  "BATTERI LAV"                              	// translation of: LOW BATTERY
 #define STR_OSDW_OVER_CAP                  "OVER CAP"                                 	// translation of: OVER CAP
 #define STR_OSDW_BATT_CONTINUE             "BATT FORTSAET"                            	// translation of: BATTERY CONTINUE
 #define STR_OSDW_BATT_BELOW_FULL           "BATT < FULD"                              	// translation of: BATT < FULL
+#define STR_OSDW_VISUAL_BEEP               "  * * * *"                                	// translation of:   * * * *
+#define STR_OSDW_CHIRP_EXC_FINISHED        "CHIRP EXC SLUT"                           	// translation of: CHIRP EXC FINISHED
 #define STR_OSDE_UP                        "O"                                        	// translation of: U
 #define STR_OSDE_DOWN                      "N"                                        	// translation of: D
 #define STR_OSDE_GPS_DIRECTION             "NSEV"                                     	// translation of: NSEW
@@ -117,3 +120,8 @@
 #define STR_OSDE_ELEMENT_PITCH             "PIT"                                      	// translation of: PIT
 #define STR_OSDE_ELEMENT_ROLL              "ROL"                                      	// translation of: ROL
 #define STR_OSDE_ELEMENT_YAW               "YAW"                                      	// translation of: YAW
+#define STR_OSDE_RPM_LIMIT_ON              "RPM MAX TIL"                              	// translation of: RPM LIMIT ON
+#define STR_OSDE_RPM_LIMIT_OFF             "RPM MAX FRA"                              	// translation of: RPM LIMIT OFF
+#define STR_OSDE_POLES                     "POLER"                                    	// translation of: POLES
+#define STR_OSDE_THR_LIMIT                 "GAS MAX"                                  	// translation of: THR LIMIT
+#define STR_OSDE_MOTOR_LIMIT               "MOTOR MAX"                                	// translation of: MOTOR LIMIT

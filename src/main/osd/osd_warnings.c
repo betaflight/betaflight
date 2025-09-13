@@ -403,7 +403,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *blinking = true;
         return;
     }
-  
+
     // Show warning if mah consumed is over the configured limit
     if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && osdConfig()->cap_alarm > 0 && getMAhDrawn() >= osdConfig()->cap_alarm) {
         tfp_sprintf(warningText, "%s", STR_OSDW_OVER_CAP);
@@ -431,7 +431,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
     // Visual beeper
     if (osdWarnGetState(OSD_WARNING_VISUAL_BEEPER) && osdGetVisualBeeperState()) {
-        tfp_sprintf(warningText, "%s", STR_VISUAL_BEEP);
+        tfp_sprintf(warningText, "%s", STR_OSDW_VISUAL_BEEP);
         *displayAttr = DISPLAYPORT_SEVERITY_INFO;
         osdSetVisualBeeperState(false);
         return;
