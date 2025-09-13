@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "platform.h"
+
 typedef enum {
     SENSOR_INDEX_GYRO = 0,
     SENSOR_INDEX_ACC,
@@ -30,8 +32,8 @@ typedef enum {
     SENSOR_INDEX_COUNT
 } sensorIndex_e;
 
-extern uint8_t requestedSensors[SENSOR_INDEX_COUNT];
 extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
+extern uint8_t detectedGyros[GYRO_COUNT];
 
 typedef struct int16_flightDynamicsTrims_s {
     int16_t roll;
