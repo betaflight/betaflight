@@ -185,7 +185,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 #else
         dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DR;
 #endif
-        dmaInitRx->Priority = LL_DMA_PRIORITY_LOW;
+        dmaInitRx->Priority = LL_DMA_PRIORITY_MEDIUM;
         dmaInitRx->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
         dmaInitRx->PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
     }
