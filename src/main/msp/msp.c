@@ -1825,16 +1825,6 @@ case MSP_NAME:
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectedFlags());
         sbufWriteU8(dst, gyroConfig()->gyro_enabled_bitmask); // deprecates gyro_to_use
-        // Added support for more then two IMUs in MSP API 1.47
-        for (int i = 0; i < 8; i++) {
-            sbufWriteU8(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->alignment : ALIGN_DEFAULT);
-        }
-
-        for (int i = 0; i < 8; i++) {
-            for (unsigned j = 0; j < ARRAYLEN(gyroDeviceConfig(i)->customAlignment.raw); j++) {
-                sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.raw[j] : 0);
-            }
-        }
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
@@ -2995,31 +2985,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
         gyroConfigMutable()->gyro_enabled_bitmask = sbufReadU8(src);
-        // Added in API 1.47
-        if (sbufBytesRemaining(src) >= 8 * 7) {
-            for (int i = 0; i < 8; i++) {
-                const uint8_t alignment = sbufReadU8(src);
-                if (i < GYRO_COUNT) {
-                    gyroDeviceConfigMutable(i)->alignment = alignment;
-                }
-            }
-
-            for (int i = 0; i < 8; i++) {
-                if (i < GYRO_COUNT) {
-                     sensorAlignment_t customAlignment;
-                     for (unsigned j = 0; j < ARRAYLEN(customAlignment.raw); j++) {
-                        customAlignment.raw[j] = (int16_t)sbufReadU16(src);
-                     }
-                     if (i < GYRO_COUNT) {
-                        gyroDeviceConfigMutable(i)->customAlignment = customAlignment;
-                     }
-                } else {
-                    sbufReadU16(src); // skip unused custom alignment roll
-                    sbufReadU16(src); // skip unused custom alignment pitch
-                    sbufReadU16(src); // skip unused custom alignment yaw
-                }
-            }
-        }
 
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
