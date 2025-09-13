@@ -130,6 +130,7 @@ typedef enum {
 #ifdef USE_FLASH_TEST_PRBS
     DEBUG_FLASH_TEST_PRBS,
 #endif // USE_FLASH_TEST_PRBS
+    DEBUG_MAVLINK_TELEMETRY,
     DEBUG_COUNT
 } debugType_e;
 
