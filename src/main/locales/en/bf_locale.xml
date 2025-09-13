@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
   <string name="LOCALE" maxLength="2" comment="Current language in short form: en, da, es, fr, nl ...">en</string>
-  <string name="STR_LOCALE_SETUP" maxLength="9" comment="translation of: Language:">Language:</string>
+  <string name="STR_LANGUAGE" maxLength="9" comment="translation of: Language:">Language:</string>
   <string name="STR_COMMA" maxLength="1" comment="translation of: Comma string ,">,</string>
   <string name="STR_PERIOD" maxLength="1" comment="translation of: Period string .">.</string>
   <string name="STR_THOUSAND" maxLength="1" comment="translation of: Thousand delimiter .">.</string>

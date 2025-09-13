@@ -4880,7 +4880,7 @@ if (buildKey) {
     cliPrintLinefeed();
 #endif // USE_GPS
 
-    cliPrintLinef("Language: %s %s", STR_LOCALE, STR_NEW_STRING);
+    cliPrintLinef("%s: %s", STR_LANGUAGE, LOCALE);
 
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();

@@ -33,8 +33,8 @@
    #define LOCALE                             "en"
 #endif
 
-#ifndef STR_LOCALE_SETUP
-   #define STR_LOCALE_SETUP                   "Language:"
+#ifndef STR_LANGUAGE
+   #define STR_LANGUAGE                       "Language:"
 #endif
 
 #ifndef STR_COMMA
