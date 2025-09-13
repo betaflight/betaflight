@@ -31,7 +31,7 @@
 #pragma once
 
 #define LOCALE                             "en"                                       	// Current language in short form: en, da, es, fr, nl ...
-#define STR_LOCALE_SETUP                   "Language:"                                	// translation of: Language:
+#define STR_LANGUAGE                       "Language:"                                	// translation of: Language:
 #define STR_COMMA                          ","                                        	// translation of: Comma string ,
 #define STR_PERIOD                         "."                                        	// translation of: Period string .
 #define STR_THOUSAND                       "."                                        	// translation of: Thousand delimiter .
