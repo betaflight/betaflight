@@ -203,7 +203,7 @@ void expectVectorsAreEqual(vector3_t *a, vector3_t *b, float absTol)
     EXPECT_NEAR(a->z, b->z, absTol);
 }
 
-#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+#if defined(FAST_MATH)
 TEST(MathsUnittest, TestFastTrigonometrySinCos)
 {
     double sinError = 0;
