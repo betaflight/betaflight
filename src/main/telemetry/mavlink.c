@@ -382,11 +382,11 @@ static void mavlinkSendPosition(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 
     mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
-        // latitude Latitude (WGS84), expressed as * 1E7
+        // Latitude (WGS84), expressed as * 1E7
         GPS_home_llh.lat,
-        // longitude Longitude (WGS84), expressed as * 1E7
+        // Longitude (WGS84), expressed as * 1E7
         GPS_home_llh.lon,
-        // altitude Altitude(WGS84), expressed as * 1000
+        // Altitude(WGS84), expressed as * 1000
         0,
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
