@@ -272,6 +272,10 @@ $(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DI
 	@echo "Creating $(LOCALES_DIR)/$(LOCALE)/bf_locale.h" "$(STDOUT)"
 	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py BF $(LOCALES_DIR) $(LOCALE) $< $@
 
+# Dependicies translation
+TRANSLATED_DEPEND := $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
+$(TRANSLATED_SRC): $(TRANSLATED_DEPEND)
+
 ifneq ($(TARGET),)
 ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
 $(error Speed optimised sources not valid: $(strip $(filter-out $(SRC),$(SPEED_OPTIMISED_SRC))))
