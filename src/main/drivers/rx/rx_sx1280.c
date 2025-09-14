@@ -83,7 +83,8 @@ FAST_CODE_PREF static bool sx1280PollBusy(void)
         if ((micros() - startTime) > SX1280_BUSY_TIMEOUT_US) {
             return false;
         } else {
-            __asm__("nop");
+            // Ensure a service window exists for interrupts
+            __NOP();
         }
     }
     return true;
