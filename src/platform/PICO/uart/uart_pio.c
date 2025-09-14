@@ -198,14 +198,14 @@ static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
         if (rxCallback) {
             void *rxCallbackData = s->port.rxCallbackData;
             while (!pio_sm_is_rx_fifo_empty(uartPio, sm_rx)) {
-                const uint8_t ch = *rxfifo_shift >> 24;
+                const uint8_t ch = *rxfifo_shift >> 24; // left aligned, 8 bits
                 rxCallback(ch, rxCallbackData);
             }
         } else {
             volatile uint8_t *rxBuffer = s->port.rxBuffer;
             uint32_t rxBufferSize = s->port.rxBufferSize;
             while (!pio_sm_is_rx_fifo_empty(uartPio, sm_rx)) {
-                const uint8_t ch = *rxfifo_shift >> 24;
+                const uint8_t ch = *rxfifo_shift >> 24; // left aligned, 8 bits
                 rxBuffer[s->port.rxBufferHead] = ch;
                 s->port.rxBufferHead = (s->port.rxBufferHead + 1) % rxBufferSize;
             }
