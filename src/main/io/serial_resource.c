@@ -68,15 +68,9 @@ serialType_e serialType(serialPortIdentifier_e identifier)
     }
 #endif
 #ifdef USE_PIOUART
-    if (identifier >= SERIAL_PORT_PIOUART_FIRST
-        && identifier < SERIAL_PORT_PIOUART_FIRST + SERIAL_PIOUART_MAX) {
-        const unsigned idx = identifier - SERIAL_PORT_PIOUART_FIRST;
-        if (BIT(idx) & SERIAL_PIOUART_MASK) {
-            return SERIALTYPE_PIOUART;
-        } else {
-            // no other type in this range
-            return SERIALTYPE_INVALID;
-        }
+    if (identifier >= SERIAL_PORT_PIOUART_FIRST && identifier < SERIAL_PORT_PIOUART_FIRST + SERIAL_PIOUART_COUNT) {
+        // piouarts always start from 0, without holes.
+        return SERIALTYPE_PIOUART;
     }
 #endif
     return SERIALTYPE_INVALID;

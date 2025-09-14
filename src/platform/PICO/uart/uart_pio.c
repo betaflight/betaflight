@@ -33,6 +33,9 @@
 
 #include "serial_uart_pico.h"
 
+// PIOUARTs are used in order, starting from PIOUART0
+STATIC_ASSERT(SERIAL_PIOUART_COUNT == SERIAL_PIOUART_MAX, should_be_enforced_PIOUART_COUNT_IS_PIOUART_MAX);
+
 // The PIO block for software UARTs PIOUART0, PIOUART1
 static const PIO uartPio = PIO_INSTANCE(PIO_UART_INDEX);
 
@@ -50,12 +53,12 @@ typedef struct pioDetails_s {
     uint32_t tx_intr_bit; // bit to check on interrupt enable and status registers for tx not full
 } pioDetails_t;
 
-#if SERIAL_PIOUART_MAX > 2
+#if SERIAL_PIOUART_COUNT > 2
 #error USE_PIOUARTn only currently supported for n=0,1
 #endif
 
-// Store for details, catering for PIOUART0, PIOUART1
-static pioDetails_t uartPioDetails[2];
+// Store for details, catering (currently) for PIOUART0, PIOUART1
+static pioDetails_t uartPioDetails[SERIAL_PIOUART_COUNT];
 
 #define UART_PIO_DETAILS_IDX(id) ((id) - SERIAL_PORT_PIOUART_FIRST)
 #define UART_PIO_DETAILS_PTR(id) (&uartPioDetails[UART_PIO_DETAILS_IDX(id)])
@@ -82,7 +85,7 @@ static const uint32_t txnfullbit[4] = {
 };
 
 // PIO-based UARTs. For now, hardwired to PIOUARTs 0,1 on PIO number UART_PIO_INDEX.
-const pioUartHardware_t pioUartHardware[PIOUARTDEV_COUNT] = {
+const pioUartHardware_t pioUartHardware[SERIAL_PIOUART_COUNT] = {
 #ifdef USE_PIOUART0
     {
         .identifier = SERIAL_PORT_PIOUART0,
@@ -238,7 +241,7 @@ static void on_pioUART0(void)
 {
 ///    bprintf("\n\n on_pioUART0");
 #ifdef USE_PIOUART0
-    uartPioIrqHandler(&pioUartDevice[PIOUARTDEV_0].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_PIOUART0));
+    uartPioIrqHandler(&pioUartDevice[0].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_PIOUART0));
 #endif
 }
 
@@ -246,7 +249,7 @@ static void on_pioUART1(void)
 {
 ///    bprintf("\n\n\n\non_pioUART1");
 #ifdef USE_PIOUART1
-    uartPioIrqHandler(&pioUartDevice[PIOUARTDEV_1].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_PIOUART1));
+    uartPioIrqHandler(&pioUartDevice[1].port, UART_PIO_DETAILS_PTR(SERIAL_PORT_PIOUART1));
 #endif
 }
 

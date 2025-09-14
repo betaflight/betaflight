@@ -223,48 +223,14 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     return UARTDEV_INVALID;
 }
 
-FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[PIOUARTDEV_COUNT];
+FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT];
 
 uartDevice_t *pioUartDeviceFromIdentifier(serialPortIdentifier_e identifier)
 {
-#define _R(id, dev) [id - SERIAL_PORT_PIOUART_FIRST] = &pioUartDevice[dev]
-    static uartDevice_t *pioUartMap[] = {
-#ifdef USE_PIOUART0
-        _R(SERIAL_PORT_PIOUART0, PIOUARTDEV_0),
-#endif
-#ifdef USE_PIOUART1
-        _R(SERIAL_PORT_PIOUART1, PIOUARTDEV_1),
-#endif
-#ifdef USE_PIOUART2
-        _R(SERIAL_PORT_PIOUART2, PIOUARTDEV_2),
-#endif
-#ifdef USE_PIOUART3
-        _R(SERIAL_PORT_PIOUART3, PIOUARTDEV_3),
-#endif
-#ifdef USE_PIOUART4
-        _R(SERIAL_PORT_PIOUART4, PIOUARTDEV_4),
-#endif
-#ifdef USE_PIOUART5
-        _R(SERIAL_PORT_PIOUART5, PIOUARTDEV_5),
-#endif
-#ifdef USE_PIOUART6
-        _R(SERIAL_PORT_PIOUART6, PIOUARTDEV_6),
-#endif
-#ifdef USE_PIOUART7
-        _R(SERIAL_PORT_PIOUART7, PIOUARTDEV_7),
-#endif
-#ifdef USE_PIOUART8
-        _R(SERIAL_PORT_PIOUART8, PIOUARTDEV_8),
-#endif
-#ifdef USE_PIOUART9
-        _R(SERIAL_PORT_PIOUART9, PIOUARTDEV_9),
-#endif
-    };
-#undef _R
-
+    // PIOUART devices must be used in order continuously from PIOUART0 (i.e. USE_PIOUART0 then USE_PIOUART1 ...)
     int offset = identifier - SERIAL_PORT_PIOUART_FIRST;
-    if (offset >= 0 && offset < (int)ARRAYLEN(pioUartMap)) {
-        return pioUartMap[offset];
+    if (offset >= 0 && offset < SERIAL_PIOUART_COUNT) {
+        return &pioUartDevice[offset];
     }
 
     return NULL;

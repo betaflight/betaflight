@@ -94,41 +94,6 @@ typedef enum {
     UARTDEV_COUNT
 } uartDeviceIdx_e;
 
-// compressed index of PIOUART. Direct index into pioUartDevice[]
-typedef enum {
-#ifdef USE_PIOUART0
-    PIOUARTDEV_0,
-#endif
-#ifdef USE_PIOUART1
-    PIOUARTDEV_1,
-#endif
-#ifdef USE_PIOUART2
-    PIOUARTDEV_2,
-#endif
-#ifdef USE_PIOUART3
-    PIOUARTDEV_3,
-#endif
-#ifdef USE_PIOUART4
-    PIOUARTDEV_4,
-#endif
-#ifdef USE_PIOUART5
-    PIOUARTDEV_5,
-#endif
-#ifdef USE_PIOUART6
-    PIOUARTDEV_6,
-#endif
-#ifdef USE_PIOUART7
-    PIOUARTDEV_7,
-#endif
-#ifdef USE_PIOUART8
-    PIOUARTDEV_8,
-#endif
-#ifdef USE_PIOUART9
-    PIOUARTDEV_9,
-#endif
-    PIOUARTDEV_COUNT
-} pioUartDeviceIdx_e;
-
 typedef struct uartPinDef_s {
     ioTag_t pin;
 #if UART_TRAIT_AF_PIN
@@ -202,7 +167,7 @@ typedef struct uartDevice_s {
 } uartDevice_t;
 
 extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;
-extern uartDevice_t pioUartDevice[PIOUARTDEV_COUNT];  // indexed by pioUartDeviceIdx_e;
+extern uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT]; // used continuously in order, 0..SERIAL_PIOUART_COUNT-1
 
 uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier);
 uartDevice_t* uartDeviceFromIdentifier(serialPortIdentifier_e identifier);
