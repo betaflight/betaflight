@@ -85,7 +85,7 @@
   <string name="STR_OSDW_CHIRP_EXC_FINISHED" maxLength="18" comment="translation of: CHIRP EXC FINISHED">CHIRP EXC FINISHED</string>
   <string name="STR_OSDE_UP" maxLength="1" comment="translation of: U">U</string>
   <string name="STR_OSDE_DOWN" maxLength="1" comment="translation of: D">D</string>
-  <string name="STR_OSDE_GPS_DIRECTION" maxLength="4" comment="translation of: NSEW">NSEW</string>
+  <string name="STR_OSDE_GPS_DIRECTION" maxLength="4" comment="translation of EXACTLY 4 chars in order: N S E W">NSEW</string>
   <string name="STR_OSDE_PILOT_NAME" maxLength="10" comment="translation of: PILOT NAME">PILOT NAME</string>
   <string name="STR_OSDE_RATE" maxLength="5" comment="translation of: RATE_, notice %u follow">RATE_</string>
   <string name="STR_OSDE_RATE_HD" maxLength="10" comment="HD translation of: RATE_, notice %u follow">RATE_</string>
