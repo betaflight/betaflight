@@ -98,7 +98,7 @@
 #define STR_OSDW_CHIRP_EXC_FINISHED        "CHIRP EXC FINISHED"                       	// translation of: CHIRP EXC FINISHED
 #define STR_OSDE_UP                        "U"                                        	// translation of: U
 #define STR_OSDE_DOWN                      "D"                                        	// translation of: D
-#define STR_OSDE_GPS_DIRECTION             "NSEW"                                     	// translation of: NSEW
+#define STR_OSDE_GPS_DIRECTION             "NSEW"                                     	// translation of EXACTLY 4 chars in order: N S E W
 #define STR_OSDE_PILOT_NAME                "PILOT NAME"                               	// translation of: PILOT NAME
 #define STR_OSDE_RATE                      TR2("RATE_", "RATE_")                      	// translation of: RATE_, notice %u follow; HD translation of: RATE_, notice %u follow
 #define STR_OSDE_PID                       "PID_"                                     	// translation of: PID_, notice %u follow

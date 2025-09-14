@@ -385,6 +385,7 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
     case OSD_ELEMENT_TYPE_3: // degree, minutes, seconds style. ddd^mm'ss.00"W
         {
             const char *trailingSymbols = STR_OSDE_GPS_DIRECTION;   // NSEW
+            const size_t dirLen = strlen(trailingSymbols);
             char trailingSymbol;
             *buff++ = leadingSymbol;
 
@@ -393,10 +394,10 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
             const int seconds = fractionalMinutes * 60 / GPS_DEGREES_DIVIDER;
             const int tenthSeconds = (fractionalMinutes * 60 % GPS_DEGREES_DIVIDER) * 10 / GPS_DEGREES_DIVIDER;
 
-            if (coordinateType == GPS_LONGITUDE) {
-                trailingSymbol = (gpsValue < 0) ? trailingSymbols[3] : trailingSymbols[2];  // W : E
+            if (coordinateType == GPS_LONGITUDE) {                  // Guarded if localization less than 4 char
+                trailingSymbol = (gpsValue < 0) ? (dirLen >= 4 ? trailingSymbols[3] : 'W') : (dirLen >= 3 ? trailingSymbols[2] : 'E');
             } else {
-                trailingSymbol = (gpsValue < 0) ? trailingSymbols[1] : trailingSymbols[0];  // S : N
+                trailingSymbol = (gpsValue < 0) ? (dirLen >= 2 ? trailingSymbols[1] : 'S') : (dirLen >= 1 ? trailingSymbols[0] : 'N');
             }
             tfp_sprintf(buff, "%u%c%02u%c%02u.%u%c%c", degreesPart, SYM_GPS_DEGREE, minutes, SYM_GPS_MINUTE, seconds, tenthSeconds, SYM_GPS_SECOND, trailingSymbol);
             break;
@@ -793,21 +794,21 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
 static void osdElementUpDownReference(osdElementParms_t *element)
 {
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
-    const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; //transforum the up vector to the body frame
+    const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; // transforum the up vector to the body frame
 
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
-        float psiB; // psi from body frame to zenith/nadir
-        const char *symbol[2] = {STR_OSDE_UP, STR_OSDE_DOWN}; // character buffer
+        float psiB;   // psi from body frame to zenith/nadir
+        const char *symbol[2] = {STR_OSDE_UP, STR_OSDE_DOWN}; // localized up/down tokens
         int direction;
 
-        if (attitude.values.pitch > 0.0f){ //nose down
+        if (attitude.values.pitch > 0.0f){   // nose down
             thetaB = -earthUpinBodyFrame[2]; // get pitch w/re to nadir (use small angle approx for sine)
-            psiB = -earthUpinBodyFrame[1]; // calculate the yaw w/re to nadir (use small angle approx for sine)
+            psiB = -earthUpinBodyFrame[1];   // calculate the yaw w/re to nadir (use small angle approx for sine)
             direction = DOWN;
         } else { // nose up
             thetaB = earthUpinBodyFrame[2]; // get pitch w/re to zenith (use small angle approx for sine)
-            psiB = earthUpinBodyFrame[1]; // calculate the yaw w/re to zenith (use small angle approx for sine)
+            psiB = earthUpinBodyFrame[1];   // calculate the yaw w/re to zenith (use small angle approx for sine)
             direction = UP;
         }
         element->elemOffsetX = lrintf(scaleRangef(psiB, -M_PIf / 4, M_PIf / 4, -14, 14));
