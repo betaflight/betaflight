@@ -39,12 +39,13 @@ All <type><n>_(RX|TX)_PINS are normalized too:
  - if port is not enable, both will be undefined, possibly with warning
   - pass -DWARN_UNUSED_SERIAL_PORT to compiler to check pin defined without corresponding port being enabled.
 
-Generated on 2025-09-08
+Generated on 2025-09-14
 
 Configuration used:
 {   'LPUART': {'depends': {'UART'}, 'ids': [1]},
     'PIOUART': {   'depends': {'UART'},
                    'first_index': True,
+                   'force_continuous': True,
                    'ids': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
     'SOFTSERIAL': {   'force_continuous': True,
                       'ids': [1, 2],
@@ -539,6 +540,10 @@ Configuration used:
 #define SERIAL_PIOUART_COUNT (SERIAL_PIOUART0_USED + SERIAL_PIOUART1_USED + SERIAL_PIOUART2_USED + SERIAL_PIOUART3_USED + SERIAL_PIOUART4_USED + SERIAL_PIOUART5_USED + SERIAL_PIOUART6_USED + SERIAL_PIOUART7_USED + SERIAL_PIOUART8_USED + SERIAL_PIOUART9_USED)
 // 0 if no port is defined
 #define SERIAL_PIOUART_MAX (SERIAL_PIOUART_MASK ? LOG2(SERIAL_PIOUART_MASK) + 1 : 0)
+
+#if SERIAL_PIOUART_COUNT != SERIAL_PIOUART_MAX
+# error PIOUART ports must start with PIOUART0 and be continuous
+#endif
 
 // Normalize PIOUART TX/RX
 #if SERIAL_PIOUART0_USED && !defined(PIOUART0_RX_PIN)

@@ -97,7 +97,11 @@ Configuration used:
 {%   if cfg.force_continuous %}
 
 #if SERIAL_{{cfg.typ}}_COUNT != SERIAL_{{cfg.typ}}_MAX
+{%     if cfg.first_index %}
+# error {{cfg.typ}} ports must start with {{cfg.typ}}0 and be continuous
+{%     else %}
 # error {{cfg.typ}} ports must start with {{cfg.typ}}1 and be continuous
+{%     endif %}
 #endif
 {%   endif %}
 {#   backward compatibility, code did set USE_INVERTER this way. It must be done before normalizing to NONE #}
