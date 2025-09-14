@@ -32,8 +32,6 @@
 #include "hardware/pio.h"
 
 #include "serial_uart_pico.h"
-#include "uart_tx.pio.h"
-#include "uart_rx.pio.h"
 
 // The PIO block for software UARTs PIOUART0, PIOUART1
 static const PIO uartPio = PIO_INSTANCE(PIO_UART_INDEX);

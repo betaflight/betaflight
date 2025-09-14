@@ -30,15 +30,25 @@ typedef struct pioUartHardware_s {
     uint16_t rxBufferSize;
 } pioUartHardware_t;
 
+// uart_pio.c
 void uartPinConfigure_pio(const serialPinConfig_t *pSerialPinConfig);
 bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptions_e options,
                     const pioUartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO);
 void uartReconfigure_pio(uartPort_t *s);
 void uartEnableTxInterrupt_pio(uartPort_t *uartPort);
 
-
+// uart_hw.c
 void uartPinConfigure_hw(const serialPinConfig_t *pSerialPinConfig);
 bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptions_e options,
                    const uartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO);
 void uartReconfigure_hw(uartPort_t *s);
 void uartEnableTxInterrupt_hw(uartPort_t *uartPort);
+
+// uart_rx_program.c
+extern struct pio_program uart_rx_program;
+void uart_rx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud);
+
+// uart_tx_program.c
+extern struct pio_program uart_tx_program;
+void uart_tx_program_init(PIO pio, uint sm, uint offset, uint pin, uint baud);
+
