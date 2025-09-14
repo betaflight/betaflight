@@ -193,19 +193,19 @@ static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
         uint sm_rx = pioDetailsPtr->sm_rx;
 
         // 8-bit read from the uppermost byte of the FIFO, as data is left-justified
-        io_rw_8 *rxfifo_shift = (io_rw_8*)&uartPio->rxf[sm_rx] + 3;
+        io_ro_32 *rxfifo_shift = &uartPio->rxf[sm_rx];
         serialReceiveCallbackPtr rxCallback = s->port.rxCallback;
         if (rxCallback) {
             void *rxCallbackData = s->port.rxCallbackData;
             while (!pio_sm_is_rx_fifo_empty(uartPio, sm_rx)) {
-                const uint8_t ch = (uint8_t)*rxfifo_shift;
+                const uint8_t ch = *rxfifo_shift >> 24;
                 rxCallback(ch, rxCallbackData);
             }
         } else {
             volatile uint8_t *rxBuffer = s->port.rxBuffer;
             uint32_t rxBufferSize = s->port.rxBufferSize;
             while (!pio_sm_is_rx_fifo_empty(uartPio, sm_rx)) {
-                const uint8_t ch = (uint8_t)*rxfifo_shift;
+                const uint8_t ch = *rxfifo_shift >> 24;
                 rxBuffer[s->port.rxBufferHead] = ch;
                 s->port.rxBufferHead = (s->port.rxBufferHead + 1) % rxBufferSize;
             }
