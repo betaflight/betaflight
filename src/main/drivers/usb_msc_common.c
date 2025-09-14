@@ -130,7 +130,7 @@ void mscWaitForButton(void)
     while (true) {
         mscTask();
         // Ensure a service window exists for interrupts
-        asm("NOP");
+        __NOP();
         if (mscCheckButton()) {
             systemResetFromMsc();
         }
