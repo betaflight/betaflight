@@ -98,7 +98,12 @@ Configuration used:
 
 #if SERIAL_{{cfg.typ}}_COUNT != SERIAL_{{cfg.typ}}_MAX
 {%     if cfg.first_index %}
+#if SERIAL_{{cfg.typ}}_FIRST_INDEX == 0
 # error {{cfg.typ}} ports must start with {{cfg.typ}}0 and be continuous
+#else
+{# suppose first index is either 0 or 1 #}
+# error {{cfg.typ}} ports must start with {{cfg.typ}}1 and be continuous
+#endif
 {%     else %}
 # error {{cfg.typ}} ports must start with {{cfg.typ}}1 and be continuous
 {%     endif %}

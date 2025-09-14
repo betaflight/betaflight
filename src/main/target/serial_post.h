@@ -542,7 +542,11 @@ Configuration used:
 #define SERIAL_PIOUART_MAX (SERIAL_PIOUART_MASK ? LOG2(SERIAL_PIOUART_MASK) + 1 : 0)
 
 #if SERIAL_PIOUART_COUNT != SERIAL_PIOUART_MAX
+#if SERIAL_PIOUART_FIRST_INDEX == 0
 # error PIOUART ports must start with PIOUART0 and be continuous
+#else
+# error PIOUART ports must start with PIOUART1 and be continuous
+#endif
 #endif
 
 // Normalize PIOUART TX/RX
@@ -812,7 +816,7 @@ Configuration used:
 #define SERIAL_VCP_MAX (SERIAL_VCP_MASK ? LOG2(SERIAL_VCP_MASK) + 1 : 0)
 
 // normalize USE_x after all ports are enumerated (x_COUNT of dependencies must be available)
-#if !defined(USE_UART) && (SERIAL_UART_COUNT || SERIAL_LPUART_COUNT || SERIAL_PIOUART_COUNT)
+#if !defined(USE_UART) && (SERIAL_UART_COUNT || SERIAL_PIOUART_COUNT || SERIAL_LPUART_COUNT)
 # define USE_UART
 #endif
 #if !defined(USE_LPUART) && (SERIAL_LPUART_COUNT)
