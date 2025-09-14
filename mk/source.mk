@@ -274,6 +274,7 @@ COMMON_SRC = \
             telemetry/ibus.c \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
+            locales/localisation.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
@@ -281,6 +282,13 @@ COMMON_SRC = \
             io/vtx_control.c \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
+
+TRANSLATED_SRC = \
+            osd/osd.c \
+            osd/osd_elements.c \
+            osd/osd_warnings.c \
+            cli/cli.c \
+            locales/localisation.c
 
 ifneq ($(SIMULATOR_BUILD),yes)
 

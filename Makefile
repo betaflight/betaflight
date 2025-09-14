@@ -247,7 +247,34 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
+# import source files
 include $(MAKE_SCRIPT_DIR)/source.mk
+
+#
+# Setup locale
+#
+LOCALES_DIR		:= $(SRC_DIR)/locales
+# Accept locales that have either bf_locale.xml or a pre-generated bf_locale.h
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(LOCALES_DIR)/*/bf_locale.xml)))))
+ifeq ($(LOCALE),)
+LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+INCLUDE_DIRS += $(LOCALES_DIR)/$(LOCALE)
+
+$(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/en/bf_locale.xml
+	@echo "Creating $(LOCALES_DIR)/untranslated.h" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py UT $(LOCALES_DIR) en $< $@
+
+$(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml
+	@echo "Creating $(LOCALES_DIR)/$(LOCALE)/bf_locale.h" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py BF $(LOCALES_DIR) $(LOCALE) $< $@
+
+# Dependicies translation
+TRANSLATED_DEPEND := $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
+$(TRANSLATED_SRC): $(TRANSLATED_DEPEND)
 
 ifneq ($(TARGET),)
 ifneq ($(filter-out $(SRC),$(SPEED_OPTIMISED_SRC)),)
@@ -418,6 +445,7 @@ CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
 CLEAN_ARTIFACTS += $(TARGET_UF2)
+CLEAN_ARTIFACTS += $(LOCALES_DIR)/untranslated.h $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
