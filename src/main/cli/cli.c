@@ -2485,7 +2485,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 
     cliWriteBytes((uint8_t*)metadata->productName, sizeof(metadata->productName));
 
-    cliPrint("'\r\n" "Filesystem: ");
+    cliPrint(" FS: ");
 
     switch (afatfs_getFilesystemState()) {
     case AFATFS_FILESYSTEM_STATE_READY:
@@ -4672,7 +4672,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf("MCU: %s CLK: %dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
+    cliPrintf("MCU: %s CLK=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
 
 #if PLATFORM_TRAIT_CONFIG_HSE
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
@@ -4693,7 +4693,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #ifdef USE_ADC_INTERNAL
     uint16_t vrefintMv = getVrefMv();
     int16_t coretemp = getCoreTemperatureCelsius();
-    cliPrintLinef(", Vref=%d.%2dV, Core temp=%ddegC", vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
+    cliPrintLinef(", Vref=%d.%02dV, Core temp=%ddegC", vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
 #else
     cliPrintLinefeed();
 #endif
@@ -4712,14 +4712,14 @@ static void cliStatus(const char *cmdName, char *cmdline)
     // Devices
     cliPrint("DEVICES DETECTED:");
 #if defined(USE_SPI)
-    cliPrintf(" SPI:%d", spiGetRegisteredDeviceCount());
+    cliPrintf(" SPI=%d", spiGetRegisteredDeviceCount());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
 #endif
 #if defined(USE_I2C)
     const uint16_t i2cErrorCounter = i2cGetErrorCounter();
-    cliPrintf(" I2C:%d (%d errors)", i2cGetRegisteredDeviceCount(), i2cErrorCounter);
+    cliPrintf(" I2C=%d (%d errors)", i2cGetRegisteredDeviceCount(), i2cErrorCounter);
 #endif
     cliPrintLinefeed();
 
@@ -4879,7 +4879,8 @@ static void cliStatus(const char *cmdName, char *cmdline)
             constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
 
     // Battery meter
-    cliPrintLinef("Voltage: %d * 0.01V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
+    const uint16_t v01 = getBatteryVoltage();
+    cliPrintLinef("Voltage: %d.%02dV (%dS battery - %s)", v01 / 100, v01 % 100, getBatteryCellCount(), getBatteryStateString());
 
     // Other status
     cliPrint("Arming disable flags:");
