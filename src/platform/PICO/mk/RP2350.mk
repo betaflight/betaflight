@@ -240,6 +240,8 @@ SYS_INCLUDE_DIRS += \
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp
 ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
+# work around memcpy alignment issue
+ARCH_FLAGS      += -fno-builtin-memcpy
 
 # Automatically treating constants as single-precision breaks pico-sdk (-Werror=double-promotion)
 # We should go through BF code and explicitly declare constants as single rather than double as required,
