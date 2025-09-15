@@ -120,7 +120,7 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 #ifdef USE_SPI_GYRO
 // Called in ISR context
 // Gyro read has just completed
-busStatus_e mpuIntCallback(uint32_t arg)
+busStatus_e mpuIntCallback(uintptr_t arg)
 {
     gyroDev_t *gyro = (gyroDev_t *)arg;
     int32_t gyroDmaDuration = cmpTimeCycles(getCycleCounter(), gyro->gyroLastEXTI);
@@ -277,7 +277,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
 #ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
-                gyro->dev.callbackArg = (uint32_t)gyro;
+                gyro->dev.callbackArg = (uintptr_t)gyro;
                 gyro->dev.txBuf[0] = gyro->accDataReg | 0x80;
                 gyro->segments[0].len = gyro->gyroDataReg - gyro->accDataReg + sizeof(uint8_t) + 3 * sizeof(int16_t);
                 gyro->segments[0].callback = mpuIntCallback;
@@ -373,7 +373,7 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #ifdef USE_GYRO_SPI_ICM20649
     icm20649SpiDetect,
 #endif
-#if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)  
+#if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
     icm456xxSpiDetect,
 #endif
 #ifdef USE_GYRO_L3GD20
