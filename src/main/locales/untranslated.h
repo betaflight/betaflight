@@ -22,9 +22,9 @@
 /*
 	NOTICE !
 	NOTICE, this header file is generated from en/bf_locale.xml
-	Changes to translation ie. en/bf_locale.h must be made in en/bf_locale.xml
+	Changes to locale ie. en/bf_locale.h must be made in en/bf_locale.xml
 
-	This file provides fallback defines for strings not yet translated in a locale, allowing targets to compile.
+	This file provides fallback defines for strings not yet defined in a locale, allowing targets to compile.
 */
 
 #pragma once
@@ -46,7 +46,7 @@
 #endif
 
 #ifndef STR_THOUSAND
-   #define STR_THOUSAND                       "."
+   #define STR_THOUSAND                       ","
 #endif
 
 #ifndef STR_SECONDS
