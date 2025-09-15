@@ -410,7 +410,6 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
             case ICM_45605_SPI:
                 gyroHardware = GYRO_ICM45605;
                 break;
-            
             default:
                 gyroHardware = GYRO_NONE;
                 break;
@@ -560,7 +559,7 @@ bool gyroInit(void)
     }
     // always scan gyro_enabled_bitmask
     gyrosToScan |= gyroConfig()->gyro_enabled_bitmask;
-    
+
     // Ensure we scan all configured gyros on boards with multiple gyros
     // This fixes the issue where if the first gyro was previously detected but is now missing,
     // we still attempt to detect other gyros that may be present
@@ -573,12 +572,14 @@ bool gyroInit(void)
     gyro.gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
+        detectedGyros[i] = GYRO_NONE;
         // Only attempt to detect a gyro if it's enabled or we're doing an auto-scan
         if (gyrosToScan & GYRO_MASK(i)) {
             if (gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
                 // If we detected a gyro, make sure it's in the enabled bitmask
                 // This ensures that during first boot, all detected gyros are enabled
                 gyroDetectedFlags |= GYRO_MASK(i);
+                detectedGyros[i] = gyro.gyroSensor[i].gyroDev.gyroHardware;
             }
         }
     }
