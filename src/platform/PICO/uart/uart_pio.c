@@ -21,8 +21,6 @@
 
 #include "platform.h"
 
-#ifdef USE_UART
-
 #include "drivers/io.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -32,6 +30,8 @@
 #include "hardware/pio.h"
 
 #include "serial_uart_pico.h"
+
+#if SERIAL_PIOUART_COUNT > 0
 
 // PIOUARTs are used in order, starting from PIOUART0
 STATIC_ASSERT(SERIAL_PIOUART_COUNT == SERIAL_PIOUART_MAX, should_be_enforced_PIOUART_COUNT_IS_PIOUART_MAX);
@@ -186,7 +186,6 @@ static bool ensurePioProgram(PIO pio, const pio_program_t *program, bool isTx)
     }
 }
 
-#if SERIAL_PIOUART_COUNT > 0
 static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
 {
     io_rw_32 *enableRegPtr = pioDetailsPtr->enableReg;
@@ -235,7 +234,6 @@ static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
         }
     }
 }
-#endif
 
 static void on_pioUART0(void)
 {
@@ -370,5 +368,36 @@ void uartEnableTxInterrupt_pio(uartPort_t *uartPort)
     // bprintf("uartEnableTxInterrupt_pio %p irqn_index %d, %p", uartPio, irqn_index, irqSourceTX);
     pio_set_irqn_source_enabled(uartPio, irqn_index, irqSourceTX, true);
 }
- 
-#endif
+
+#else
+
+void uartPinConfigure_pio(const serialPinConfig_t *pSerialPinConfig)
+{
+    UNUSED(pSerialPinConfig);
+}
+
+bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptions_e options,
+                    const pioUartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO)
+{
+    UNUSED(s);
+    UNUSED(baudRate);
+    UNUSED(mode);
+    UNUSED(options);
+    UNUSED(hardware);
+    UNUSED(identifier);
+    UNUSED(txIO);
+    UNUSED(rxIO);
+    return false;
+}
+
+void uartReconfigure_pio(uartPort_t *s)
+{
+    UNUSED(s);
+}
+
+void uartEnableTxInterrupt_pio(uartPort_t *uartPort)
+{
+    UNUSED(uartPort);
+}
+
+#endif // #if SERIAL_PIOUART_COUNT > 0
