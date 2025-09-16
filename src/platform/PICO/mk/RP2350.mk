@@ -116,7 +116,7 @@ TINYUSB_SRC += \
             $(TINY_USB_SRC_DIR)/class/audio/audio_device.c
 
 # pico_float
-PICO_FLOAT_SRC  = \
+PICO_LIB_SRC  += \
             rp2_common/pico_float/float_common_m33.S \
             rp2_common/pico_float/float_conv32_vfp.S \
             rp2_common/pico_float/float_math.c \
@@ -165,8 +165,8 @@ PICO_FLOAT_LD_FLAGS = \
             -Wl,--wrap=tanhf \
             -Wl,--wrap=truncf
 
-#pico_double
-PICO_DOUBLE_SRC = \
+# pico_double
+PICO_LIB_SRC += \
             rp2_common/pico_double/double_aeabi_dcp.S \
             rp2_common/pico_double/double_conv_m33.S \
             rp2_common/pico_double/double_fma_dcp.S \
@@ -554,9 +554,7 @@ DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \
             $(STDPERIPH_SRC) \
             $(TINYUSB_SRC) \
-            $(PICO_TRACE_SRC) \
-            $(PICO_FLOAT_SRC) \
-            $(PICO_DOUBLE_SRC)
+            $(PICO_TRACE_SRC)
 
 # Add a target-specific definition for PICO_LIB_TARGETS in order
 # to remove -flto=auto for pico-sdk file compilation
