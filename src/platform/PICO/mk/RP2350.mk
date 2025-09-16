@@ -83,7 +83,6 @@ PICO_LIB_SRC = \
             rp2_common/pico_divider/divider_compiler.c \
             rp2_common/pico_double/double_math.c \
             rp2_common/pico_flash/flash.c \
-            rp2_common/pico_float/float_math.c \
             rp2_common/hardware_divider/divider.c \
             rp2_common/hardware_vreg/vreg.c \
             rp2_common/hardware_xip_cache/xip_cache.c \
@@ -116,6 +115,126 @@ TINYUSB_SRC += \
             $(TINY_USB_SRC_DIR)/class/usbtmc/usbtmc_device.c \
             $(TINY_USB_SRC_DIR)/class/audio/audio_device.c
 
+# pico_float
+PICO_FLOAT_SRC  = \
+            rp2_common/pico_float/float_common_m33.S \
+            rp2_common/pico_float/float_conv32_vfp.S \
+            rp2_common/pico_float/float_math.c \
+            rp2_common/pico_float/float_sci_m33_vfp.S
+
+PICO_FLOAT_LD_FLAGS = \
+            -Wl,--wrap=__aeabi_f2lz \
+            -Wl,--wrap=__aeabi_f2ulz \
+            -Wl,--wrap=__aeabi_l2f \
+            -Wl,--wrap=__aeabi_ul2f \
+            -Wl,--wrap=acosf \
+            -Wl,--wrap=acoshf \
+            -Wl,--wrap=asinf \
+            -Wl,--wrap=asinhf \
+            -Wl,--wrap=atan2f \
+            -Wl,--wrap=atanf \
+            -Wl,--wrap=atanhf \
+            -Wl,--wrap=cbrtf \
+            -Wl,--wrap=ceilf \
+            -Wl,--wrap=copysignf \
+            -Wl,--wrap=cosf \
+            -Wl,--wrap=coshf \
+            -Wl,--wrap=dremf \
+            -Wl,--wrap=exp10f \
+            -Wl,--wrap=exp2f \
+            -Wl,--wrap=expf \
+            -Wl,--wrap=expm1f \
+            -Wl,--wrap=floorf \
+            -Wl,--wrap=fmaf \
+            -Wl,--wrap=fmodf \
+            -Wl,--wrap=hypotf \
+            -Wl,--wrap=ldexpf \
+            -Wl,--wrap=log10f \
+            -Wl,--wrap=log1pf \
+            -Wl,--wrap=log2f \
+            -Wl,--wrap=logf \
+            -Wl,--wrap=powf \
+            -Wl,--wrap=powintf \
+            -Wl,--wrap=remainderf \
+            -Wl,--wrap=remquof \
+            -Wl,--wrap=roundf \
+            -Wl,--wrap=sincosf \
+            -Wl,--wrap=sinf \
+            -Wl,--wrap=sinhf \
+            -Wl,--wrap=tanf \
+            -Wl,--wrap=tanhf \
+            -Wl,--wrap=truncf
+
+#pico_double
+PICO_DOUBLE_SRC = \
+            rp2_common/pico_double/double_aeabi_dcp.S \
+            rp2_common/pico_double/double_conv_m33.S \
+            rp2_common/pico_double/double_fma_dcp.S \
+            rp2_common/pico_double/double_math.c \
+            rp2_common/pico_double/double_sci_m33.S
+
+PICO_DOUBLE_LD_FLAGS = \
+            -Wl,--wrap=__aeabi_cdcmpeq \
+            -Wl,--wrap=__aeabi_cdcmple \
+            -Wl,--wrap=__aeabi_cdrcmple \
+            -Wl,--wrap=__aeabi_d2f \
+            -Wl,--wrap=__aeabi_d2iz \
+            -Wl,--wrap=__aeabi_d2lz \
+            -Wl,--wrap=__aeabi_d2uiz \
+            -Wl,--wrap=__aeabi_d2ulz \
+            -Wl,--wrap=__aeabi_dadd \
+            -Wl,--wrap=__aeabi_dcmpeq \
+            -Wl,--wrap=__aeabi_dcmpge \
+            -Wl,--wrap=__aeabi_dcmpgt \
+            -Wl,--wrap=__aeabi_dcmple \
+            -Wl,--wrap=__aeabi_dcmplt \
+            -Wl,--wrap=__aeabi_dcmpun \
+            -Wl,--wrap=__aeabi_ddiv \
+            -Wl,--wrap=__aeabi_dmul \
+            -Wl,--wrap=__aeabi_drsub \
+            -Wl,--wrap=__aeabi_dsub \
+            -Wl,--wrap=__aeabi_i2d \
+            -Wl,--wrap=__aeabi_l2d \
+            -Wl,--wrap=__aeabi_ui2d \
+            -Wl,--wrap=__aeabi_ul2d \
+            -Wl,--wrap=acos \
+            -Wl,--wrap=acosh \
+            -Wl,--wrap=asin \
+            -Wl,--wrap=asinh \
+            -Wl,--wrap=atan \
+            -Wl,--wrap=atan2 \
+            -Wl,--wrap=atanh \
+            -Wl,--wrap=cbrt \
+            -Wl,--wrap=ceil \
+            -Wl,--wrap=copysign \
+            -Wl,--wrap=cos \
+            -Wl,--wrap=cosh \
+            -Wl,--wrap=drem \
+            -Wl,--wrap=exp \
+            -Wl,--wrap=exp10 \
+            -Wl,--wrap=exp2 \
+            -Wl,--wrap=expm1 \
+            -Wl,--wrap=floor \
+            -Wl,--wrap=fma \
+            -Wl,--wrap=fmod \
+            -Wl,--wrap=hypot \
+            -Wl,--wrap=ldexp \
+            -Wl,--wrap=log \
+            -Wl,--wrap=log10 \
+            -Wl,--wrap=log1p \
+            -Wl,--wrap=log2 \
+            -Wl,--wrap=pow \
+            -Wl,--wrap=powint \
+            -Wl,--wrap=remainder \
+            -Wl,--wrap=remquo \
+            -Wl,--wrap=round \
+            -Wl,--wrap=sin \
+            -Wl,--wrap=sincos \
+            -Wl,--wrap=sinh \
+            -Wl,--wrap=sqrt \
+            -Wl,--wrap=tan \
+            -Wl,--wrap=tanh \
+            -Wl,--wrap=trunc
 
 VPATH := $(VPATH):$(STDPERIPH_DIR)
 
@@ -216,6 +335,7 @@ SYS_INCLUDE_DIRS = \
             $(SDK_DIR)/rp2_common/hardware_pwm/include \
             $(SDK_DIR)/rp2_common/pico_stdio_semihosting/include \
             $(SDK_DIR)/rp2_common/pico_float/include \
+            $(SDK_DIR)/rp2_common/pico_double/include \
             $(SDK_DIR)/rp2_common/hardware_resets/include \
             $(SDK_DIR)/rp2_common/pico_cxx_options/include \
             $(SDK_DIR)/rp2_common/pico_stdlib/include \
@@ -271,7 +391,7 @@ PICO_STDIO_LD_FLAGS  = \
             -Wl,--wrap=putchar \
             -Wl,--wrap=getchar
 
-EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS)
+EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS)
 
 ifdef RP2350_TARGET
 
@@ -434,7 +554,9 @@ DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \
             $(STDPERIPH_SRC) \
             $(TINYUSB_SRC) \
-            $(PICO_TRACE_SRC)
+            $(PICO_TRACE_SRC) \
+            $(PICO_FLOAT_SRC) \
+            $(PICO_DOUBLE_SRC)
 
 # Add a target-specific definition for PICO_LIB_TARGETS in order
 # to remove -flto=auto for pico-sdk file compilation
