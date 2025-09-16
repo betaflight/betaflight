@@ -160,8 +160,6 @@ typedef struct uartDevice_s {
     const uartHardware_t *hardware;
     uartPinDef_t rx;
     uartPinDef_t tx;
-    volatile uint8_t *rxBuffer;
-    volatile uint8_t *txBuffer;
 #if UART_TRAIT_PINSWAP
     bool pinSwap;
 #endif
@@ -169,6 +167,7 @@ typedef struct uartDevice_s {
 } uartDevice_t;
 
 extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;
+extern uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT]; // used continuously in order, 0..SERIAL_PIOUART_COUNT-1
 
 uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier);
 uartDevice_t* uartDeviceFromIdentifier(serialPortIdentifier_e identifier);
@@ -246,6 +245,46 @@ UART_BUFFERS_EXTERN(10);
 
 #ifdef USE_LPUART1
 UART_BUFFERS_EXTERN(Lp1);
+#endif
+
+#ifdef USE_PIOUART0
+UART_BUFFERS_EXTERN(Pio0);
+#endif
+
+#ifdef USE_PIOUART1
+UART_BUFFERS_EXTERN(Pio1);
+#endif
+
+#ifdef USE_PIOUART2
+UART_BUFFERS_EXTERN(Pio2);
+#endif
+
+#ifdef USE_PIOUART3
+UART_BUFFERS_EXTERN(Pio3);
+#endif
+
+#ifdef USE_PIOUART4
+UART_BUFFERS_EXTERN(Pio4);
+#endif
+
+#ifdef USE_PIOUART5
+UART_BUFFERS_EXTERN(Pio5);
+#endif
+
+#ifdef USE_PIOUART6
+UART_BUFFERS_EXTERN(Pio6);
+#endif
+
+#ifdef USE_PIOUART7
+UART_BUFFERS_EXTERN(Pio7);
+#endif
+
+#ifdef USE_PIOUART8
+UART_BUFFERS_EXTERN(Pio8);
+#endif
+
+#ifdef USE_PIOUART9
+UART_BUFFERS_EXTERN(Pio9);
 #endif
 
 #undef UART_BUFFERS_EXTERN
