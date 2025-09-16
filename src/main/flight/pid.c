@@ -1426,7 +1426,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 dMaxMultiplier = pt2FilterApply(&pidRuntime.dMaxLowpass[axis], dMaxMultiplier);
                 // limit the gain to the fraction that DMax is greater than Min
                 dMaxMultiplier = MIN(dMaxMultiplier, pidRuntime.dMaxPercent[axis]);
-                if (debugMode == DEBUG_D_MAX && axis == gyroConfig()->gyro_filter_debug_axis) {
+                if (debugMode == DEBUG_D_MAX && axis == gyro.gyroDebugAxis) {
                     DEBUG_SET(DEBUG_D_MAX, 0, lrintf(dMaxGyroFactor * 100));
                     DEBUG_SET(DEBUG_D_MAX, 1, lrintf(dMaxSetpointFactor * 100));
                     DEBUG_SET(DEBUG_D_MAX, 2, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMaxMultiplier * 10 / DTERM_SCALE)); // effective Kd after Dmax boost
