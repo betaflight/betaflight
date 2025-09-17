@@ -50,7 +50,7 @@
 #if !defined(CONFIG_STREAMER_BUFFER_SIZE)
 #define CONFIG_STREAMER_BUFFER_SIZE sizeof(CONFIG_BUFFER_TYPE)
 typedef uint64_t config_streamer_buffer_align_type_t;
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) 
 #define CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits
 typedef uint64_t config_streamer_buffer_align_type_t;
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)

@@ -84,7 +84,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
 
 adcDevice_t adcDevice[ADCDEV_COUNT];
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_3
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_2
@@ -101,7 +101,7 @@ const adcTagMap_t adcTagMap[] = {
 #define ADC_TAG_MAP_TEMPSENSOR 1
 #define ADC_TAG_MAP_VBAT4      2
 
-#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) // RM0468 Rev 2 Table 240. ADC interconnection
+#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)  || defined(STM32H735xx) // RM0468 Rev 2 Table 240. ADC interconnection
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    18 }, // 18 VREFINT
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 17 }, // 17 VSENSE
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VBAT,       16 }, // 16 VBAT/4
