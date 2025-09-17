@@ -39,7 +39,7 @@ All <type><n>_(RX|TX)_PINS are normalized too:
  - if port is not enable, both will be undefined, possibly with warning
   - pass -DWARN_UNUSED_SERIAL_PORT to compiler to check pin defined without corresponding port being enabled.
 
-Generated on 2025-09-14
+Generated on 2025-09-16
 
 Configuration used:
 {   'LPUART': {'depends': {'UART'}, 'ids': [1]},
@@ -470,6 +470,76 @@ Configuration used:
 # undef LPUART1_TX_PIN
 #endif
 
+/****                                SOFTSERIAL                                 *****/
+
+#if defined(USE_SOFTSERIAL)
+// USE_SOFTSERIAL enables all SOFTSERIAL ports
+# if !defined(USE_SOFTSERIAL1)
+#  define USE_SOFTSERIAL1
+# endif
+# if !defined(USE_SOFTSERIAL2)
+#  define USE_SOFTSERIAL2
+# endif
+#endif
+
+#if defined(USE_SOFTSERIAL1)
+# define SERIAL_SOFTSERIAL1_USED 1
+#else
+# define SERIAL_SOFTSERIAL1_USED 0
+#endif
+#if defined(USE_SOFTSERIAL2)
+# define SERIAL_SOFTSERIAL2_USED 1
+#else
+# define SERIAL_SOFTSERIAL2_USED 0
+#endif
+
+#define SERIAL_SOFTSERIAL_MASK ((SERIAL_SOFTSERIAL1_USED * BIT(1 - 1)) | (SERIAL_SOFTSERIAL2_USED * BIT(2 - 1)))
+#define SERIAL_SOFTSERIAL_COUNT (SERIAL_SOFTSERIAL1_USED + SERIAL_SOFTSERIAL2_USED)
+// 0 if no port is defined
+#define SERIAL_SOFTSERIAL_MAX (SERIAL_SOFTSERIAL_MASK ? LOG2(SERIAL_SOFTSERIAL_MASK) + 1 : 0)
+
+#if SERIAL_SOFTSERIAL_COUNT != SERIAL_SOFTSERIAL_MAX
+# error SOFTSERIAL ports must start with SOFTSERIAL1 and be continuous
+#endif
+
+// Normalize SOFTSERIAL TX/RX
+#if SERIAL_SOFTSERIAL1_USED && !defined(SOFTSERIAL1_RX_PIN)
+# define SOFTSERIAL1_RX_PIN NONE
+#endif
+#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL1_USED && defined(SOFTSERIAL1_RX_PIN)
+# warning "SOFTSERIAL1_RX_PIN is defined but SOFTSERIAL1 is not enabled"
+#endif
+#if !SERIAL_SOFTSERIAL1_USED &&  defined(SOFTSERIAL1_RX_PIN)
+# undef SOFTSERIAL1_RX_PIN
+#endif
+#if SERIAL_SOFTSERIAL1_USED && !defined(SOFTSERIAL1_TX_PIN)
+# define SOFTSERIAL1_TX_PIN NONE
+#endif
+#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL1_USED && defined(SOFTSERIAL1_TX_PIN)
+# warning "SOFTSERIAL1_TX_PIN is defined but SOFTSERIAL1 is not enabled"
+#endif
+#if !SERIAL_SOFTSERIAL1_USED &&  defined(SOFTSERIAL1_TX_PIN)
+# undef SOFTSERIAL1_TX_PIN
+#endif
+#if SERIAL_SOFTSERIAL2_USED && !defined(SOFTSERIAL2_RX_PIN)
+# define SOFTSERIAL2_RX_PIN NONE
+#endif
+#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL2_USED && defined(SOFTSERIAL2_RX_PIN)
+# warning "SOFTSERIAL2_RX_PIN is defined but SOFTSERIAL2 is not enabled"
+#endif
+#if !SERIAL_SOFTSERIAL2_USED &&  defined(SOFTSERIAL2_RX_PIN)
+# undef SOFTSERIAL2_RX_PIN
+#endif
+#if SERIAL_SOFTSERIAL2_USED && !defined(SOFTSERIAL2_TX_PIN)
+# define SOFTSERIAL2_TX_PIN NONE
+#endif
+#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL2_USED && defined(SOFTSERIAL2_TX_PIN)
+# warning "SOFTSERIAL2_TX_PIN is defined but SOFTSERIAL2 is not enabled"
+#endif
+#if !SERIAL_SOFTSERIAL2_USED &&  defined(SOFTSERIAL2_TX_PIN)
+# undef SOFTSERIAL2_TX_PIN
+#endif
+
 /****                                PIOUART                                 *****/
 
 // normalize SERIAL_PIOUART_FIRST_INDEX
@@ -731,76 +801,6 @@ Configuration used:
 # undef PIOUART9_TX_PIN
 #endif
 
-/****                                SOFTSERIAL                                 *****/
-
-#if defined(USE_SOFTSERIAL)
-// USE_SOFTSERIAL enables all SOFTSERIAL ports
-# if !defined(USE_SOFTSERIAL1)
-#  define USE_SOFTSERIAL1
-# endif
-# if !defined(USE_SOFTSERIAL2)
-#  define USE_SOFTSERIAL2
-# endif
-#endif
-
-#if defined(USE_SOFTSERIAL1)
-# define SERIAL_SOFTSERIAL1_USED 1
-#else
-# define SERIAL_SOFTSERIAL1_USED 0
-#endif
-#if defined(USE_SOFTSERIAL2)
-# define SERIAL_SOFTSERIAL2_USED 1
-#else
-# define SERIAL_SOFTSERIAL2_USED 0
-#endif
-
-#define SERIAL_SOFTSERIAL_MASK ((SERIAL_SOFTSERIAL1_USED * BIT(1 - 1)) | (SERIAL_SOFTSERIAL2_USED * BIT(2 - 1)))
-#define SERIAL_SOFTSERIAL_COUNT (SERIAL_SOFTSERIAL1_USED + SERIAL_SOFTSERIAL2_USED)
-// 0 if no port is defined
-#define SERIAL_SOFTSERIAL_MAX (SERIAL_SOFTSERIAL_MASK ? LOG2(SERIAL_SOFTSERIAL_MASK) + 1 : 0)
-
-#if SERIAL_SOFTSERIAL_COUNT != SERIAL_SOFTSERIAL_MAX
-# error SOFTSERIAL ports must start with SOFTSERIAL1 and be continuous
-#endif
-
-// Normalize SOFTSERIAL TX/RX
-#if SERIAL_SOFTSERIAL1_USED && !defined(SOFTSERIAL1_RX_PIN)
-# define SOFTSERIAL1_RX_PIN NONE
-#endif
-#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL1_USED && defined(SOFTSERIAL1_RX_PIN)
-# warning "SOFTSERIAL1_RX_PIN is defined but SOFTSERIAL1 is not enabled"
-#endif
-#if !SERIAL_SOFTSERIAL1_USED &&  defined(SOFTSERIAL1_RX_PIN)
-# undef SOFTSERIAL1_RX_PIN
-#endif
-#if SERIAL_SOFTSERIAL1_USED && !defined(SOFTSERIAL1_TX_PIN)
-# define SOFTSERIAL1_TX_PIN NONE
-#endif
-#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL1_USED && defined(SOFTSERIAL1_TX_PIN)
-# warning "SOFTSERIAL1_TX_PIN is defined but SOFTSERIAL1 is not enabled"
-#endif
-#if !SERIAL_SOFTSERIAL1_USED &&  defined(SOFTSERIAL1_TX_PIN)
-# undef SOFTSERIAL1_TX_PIN
-#endif
-#if SERIAL_SOFTSERIAL2_USED && !defined(SOFTSERIAL2_RX_PIN)
-# define SOFTSERIAL2_RX_PIN NONE
-#endif
-#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL2_USED && defined(SOFTSERIAL2_RX_PIN)
-# warning "SOFTSERIAL2_RX_PIN is defined but SOFTSERIAL2 is not enabled"
-#endif
-#if !SERIAL_SOFTSERIAL2_USED &&  defined(SOFTSERIAL2_RX_PIN)
-# undef SOFTSERIAL2_RX_PIN
-#endif
-#if SERIAL_SOFTSERIAL2_USED && !defined(SOFTSERIAL2_TX_PIN)
-# define SOFTSERIAL2_TX_PIN NONE
-#endif
-#if defined(WARN_UNUSED_SERIAL_PORT) && !SERIAL_SOFTSERIAL2_USED && defined(SOFTSERIAL2_TX_PIN)
-# warning "SOFTSERIAL2_TX_PIN is defined but SOFTSERIAL2 is not enabled"
-#endif
-#if !SERIAL_SOFTSERIAL2_USED &&  defined(SOFTSERIAL2_TX_PIN)
-# undef SOFTSERIAL2_TX_PIN
-#endif
-
 /****                                VCP                                 *****/
 
 #if defined(USE_VCP)
@@ -816,17 +816,17 @@ Configuration used:
 #define SERIAL_VCP_MAX (SERIAL_VCP_MASK ? LOG2(SERIAL_VCP_MASK) + 1 : 0)
 
 // normalize USE_x after all ports are enumerated (x_COUNT of dependencies must be available)
-#if !defined(USE_UART) && (SERIAL_UART_COUNT || SERIAL_PIOUART_COUNT || SERIAL_LPUART_COUNT)
+#if !defined(USE_UART) && (SERIAL_UART_COUNT || SERIAL_LPUART_COUNT || SERIAL_PIOUART_COUNT)
 # define USE_UART
 #endif
 #if !defined(USE_LPUART) && (SERIAL_LPUART_COUNT)
 # define USE_LPUART
 #endif
-#if !defined(USE_PIOUART) && (SERIAL_PIOUART_COUNT)
-# define USE_PIOUART
-#endif
 #if !defined(USE_SOFTSERIAL) && (SERIAL_SOFTSERIAL_COUNT)
 # define USE_SOFTSERIAL
+#endif
+#if !defined(USE_PIOUART) && (SERIAL_PIOUART_COUNT)
+# define USE_PIOUART
 #endif
 #if !defined(USE_VCP) && (SERIAL_VCP_COUNT)
 # define USE_VCP

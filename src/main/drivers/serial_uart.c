@@ -223,26 +223,29 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     return UARTDEV_INVALID;
 }
 
+#if SERIAL_PIOUART_COUNT > 0
 FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT];
+#endif
 
 uartDevice_t *pioUartDeviceFromIdentifier(serialPortIdentifier_e identifier)
 {
     // PIOUART devices must be used in order continuously from PIOUART0 (i.e. USE_PIOUART0 then USE_PIOUART1 ...)
+#if SERIAL_PIOUART_COUNT > 0
     int offset = identifier - SERIAL_PORT_PIOUART_FIRST;
     if (offset >= 0 && offset < SERIAL_PIOUART_COUNT) {
         return &pioUartDevice[offset];
     }
+#else
+    UNUSED(identifier);
+#endif
 
     return NULL;
 }
 
 uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e identifier)
 {
-    if (identifier >= SERIAL_PORT_PIOUART_FIRST ) {
-        uartDevice_t *device = pioUartDeviceFromIdentifier(identifier);
-        if (device != NULL) {
-            return device;
-        }
+    if (serialType(identifier) == SERIALTYPE_PIOUART) {
+        return pioUartDeviceFromIdentifier(identifier);
     }
 
     const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(identifier);
