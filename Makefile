@@ -126,14 +126,14 @@ ifneq ($(RESULT),0)
 CCACHE :=
 endif
 
-# Tool names
-CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
-CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
-CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
-OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
-OBJDUMP     := $(ARM_SDK_PREFIX)objdump
-READELF     := $(ARM_SDK_PREFIX)readelf
-SIZE        := $(ARM_SDK_PREFIX)size
+# Tool names (defer prefix resolution for per-platform overrides like SITL)
+CROSS_CC     = $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CROSS_CXX    = $(CCACHE) $(ARM_SDK_PREFIX)g++
+CROSS_GDB    = $(ARM_SDK_PREFIX)gdb
+OBJCOPY      = $(ARM_SDK_PREFIX)objcopy
+OBJDUMP      = $(ARM_SDK_PREFIX)objdump
+READELF      = $(ARM_SDK_PREFIX)readelf
+SIZE         = $(ARM_SDK_PREFIX)size
 DFUSE-PACK  := src/utils/dfuse-pack.py
 
 # Preprocessor helpers (generic .h parsing)
