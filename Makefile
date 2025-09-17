@@ -300,7 +300,7 @@ PP_VERSION       := $(call pp_dump,src/main/build/version.h)
 FC_VER_YEAR   := $(call pp_def_value,$(PP_VERSION),FC_VERSION_YEAR)
 FC_VER_MONTH  := $(call pp_def_value,$(PP_VERSION),FC_VERSION_MONTH)
 FC_VER_PATCH  := $(call pp_def_value,$(PP_VERSION),FC_VERSION_PATCH_LEVEL)
-FC_VER_SUFFIX := $(call pp_def_value_nq,$(PP_VERSION),FC_VERSION_SUFFIX)
+FC_VER_SUFFIX := $(call pp_def_value_str,$(PP_VERSION),FC_VERSION_SUFFIX)
 
 FC_VER        := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
 

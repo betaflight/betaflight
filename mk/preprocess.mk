@@ -38,9 +38,17 @@ pp_dump = $(strip $(shell \
 _pp_get_define =  $(strip $(filter $(_pp_hash)define|$2|%,$1))
 # Extract RHS (still '|' escaped)
 _pp_def_raw    = $(patsubst $(_pp_hash)define|$2|%,%,$(call _pp_get_define,$1,$2))
+
 # Remove surrounding quotes (but not interior ones); $1 is '|' escaped
 _pp_unquote    = $(patsubst "%",%,$1)
 
+# Collapse escaped whitespace between adjacent quotes: '"|"' -> '""' and
+# remove adjacent quote pairs inside the string: '""' -> '' (joins tokens like "A" "B" -> "AB")
+_pp_strip_inner_qq = $(subst "",, $(subst "|","",$1))
+
 # Public helpers: parse from cached dump and return unescaped values
 pp_def_value      = $(subst |, ,$(call _pp_def_raw,$1,$2))
-pp_def_value_nq   = $(subst |, ,$(call _pp_unquote,$(call _pp_def_raw,$1,$2)))
+
+# Extract C string content: merges adjacent quoted tokens and strips outer quotes.
+# Handles both '"A" "B"' and '"A""B"' forms; restores whitespace from '|'.
+pp_def_value_str  = $(subst |, ,$(call _pp_unquote,$(call _pp_strip_inner_qq,$(call _pp_def_raw,$1,$2))))
