@@ -31,7 +31,7 @@
 #define FC_VERSION_YEAR             2025
 // The month the release is made
 #define FC_VERSION_MONTH            12
-// Increment when a bug-fix release is made (0 for initial YYYY.MM.X release)
+// Increment when a bug-fix release is made (0 for initial YYYY.M.X release)
 #define FC_VERSION_PATCH_LEVEL      0
 // Optional suffix for pre-releases (alpha, beta, rc1, etc). Empty string for final releases.
 #define FC_VERSION_SUFFIX           "beta"
