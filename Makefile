@@ -121,10 +121,10 @@ FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-FC_VER_YEAR   := $(shell grep "define FC_VERSION_YEAR "        src/main/build/version.h | awk '{print $$3}' )
-FC_VER_MONTH  := $(shell grep "define FC_VERSION_MONTH "       src/main/build/version.h | awk '{print $$3}' )
-FC_VER_PATCH  := $(shell grep "define FC_VERSION_PATCH_LEVEL " src/main/build/version.h | awk '{print $$3}' )
-FC_VER_SUFFIX := $(shell grep "define FC_VERSION_SUFFIX "      src/main/build/version.h | awk '{gsub(/"/,""); print $$3}')
+FC_VER_YEAR   := $(shell sed -nE 's/^.define[[:space:]]+FC_VERSION_YEAR[[:space:]]+([0-9]+).*/\1/p'         src/main/build/version.h)
+FC_VER_MONTH  := $(shell sed -nE 's/^.define[[:space:]]+FC_VERSION_MONTH[[:space:]]+([0-9]+).*/\1/p'        src/main/build/version.h)
+FC_VER_PATCH  := $(shell sed -nE 's/^.define[[:space:]]+FC_VERSION_PATCH_LEVEL[[:space:]]+([0-9]+).*/\1/p'  src/main/build/version.h)
+FC_VER_SUFFIX := $(shell sed -nE 's/^.define[[:space:]]+FC_VERSION_SUFFIX[[:space:]]+"([^"]*)".*/\1/p'      src/main/build/version.h)
 
 FC_VER       := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
 
