@@ -240,6 +240,8 @@ SYS_INCLUDE_DIRS += \
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp
 ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
+# work around memcpy alignment issue
+ARCH_FLAGS      += -fno-builtin-memcpy
 
 # Automatically treating constants as single-precision breaks pico-sdk (-Werror=double-promotion)
 # We should go through BF code and explicitly declare constants as single rather than double as required,
@@ -406,9 +408,13 @@ MCU_COMMON_SRC = \
             PICO/persistent.c \
             PICO/pwm_pico.c \
             PICO/pwm_beeper_pico.c \
-            PICO/serial_uart_pico.c \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
+            PICO/uart/serial_uart_pico.c \
+            PICO/uart/uart_hw.c \
+            PICO/uart/uart_pio.c \
+            PICO/uart/uart_rx_program.c \
+            PICO/uart/uart_tx_program.c \
             PICO/usb/usb_cdc.c \
             PICO/usb/usb_descriptors.c \
             PICO/usb/usb_msc_pico.c \

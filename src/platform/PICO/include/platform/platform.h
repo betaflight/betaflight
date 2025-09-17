@@ -25,10 +25,11 @@
 
 #include "pico.h"
 #include "pico/stdlib.h"
-#include "hardware/i2c.h"
-#include "hardware/spi.h"
 #include "hardware/dma.h"
 #include "hardware/flash.h"
+#include "hardware/i2c.h"
+#include "hardware/spi.h"
+#include "hardware/uart.h"
 
 #define NVIC_PriorityGroup_2         0x500
 #define PLATFORM_NO_LIBC             0
@@ -50,7 +51,10 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_InitTypeDef      dma_channel_config
 
 #define ADC_TypeDef          void*
+
 #define USART_TypeDef        uart_inst_t
+#define UART_INST(uart)      (uart)
+
 #define TIM_OCInitTypeDef    void*
 #define TIM_ICInitTypeDef    void*
 //#define TIM_OCStructInit
@@ -117,6 +121,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 
 #define SERIAL_UART_FIRST_INDEX     0
+#define SERIAL_PIOUART_FIRST_INDEX  0
 
 extern uint32_t systemUniqueId[3];
 

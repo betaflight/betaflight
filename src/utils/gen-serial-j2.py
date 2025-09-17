@@ -16,6 +16,11 @@ serials = {
                "depends": {"UART"},
 #               "inverter": True,   # TODO: old code compatibility only, disabled
                },
+    "PIOUART": {"ids": list(range(0, 9 + 1)),
+               "depends": {"UART"},
+                "first_index": True,   # support configurable first index for this port
+                "force_continuous": True,
+                },
     "SOFTSERIAL": {"ids": list(range(1, 2 + 1)),
                    "use_enables_all": True,
                    "force_continuous": True,
