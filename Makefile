@@ -115,6 +115,9 @@ include $(MAKE_SCRIPT_DIR)/$(OSFAMILY).mk
 # include the tools makefile
 include $(MAKE_SCRIPT_DIR)/tools.mk
 
+# Preprocessor helpers (generic .h parsing)
+include $(MAKE_SCRIPT_DIR)/preprocess.mk
+
 # Search path for sources
 VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(PLATFORM_DIR)
 FATFS_DIR        = $(ROOT)/lib/main/FatFS
@@ -284,38 +287,30 @@ CC_SPEED_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_SPEED_OPTIMISAT
 CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATION))
 CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION))
 
-# One shot dump of all macros from version.h; replace whitespace with |
-# version is used in CFLAGS, but CROSS_CC is used for version.h parsing
-PP_DUMP_ESC := $(shell $(CROSS_CC) $(CPPFLAGS) \
-    $(addprefix -D,$(OPTIONS)) \
-    $(addprefix -I,$(INCLUDE_DIRS)) \
-    $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
-	-E -dM -xc /dev/null \
-  	-include src/main/build/version.h \
-  	| sed 's/[ \t]/|/g')
 
-HASH := $(shell printf '#')
+# Extract version macros from the version header
+# pp_dump uses CROSS_CC at expansion time; compute the dump here after CROSS_CC
+# FC version is injected into CFLAGS, so compute it before finalizing CFLAGS
+PP_VERSION       := $(call pp_dump,src/main/build/version.h)
 
-# Find full "#define NAME value" line (escaped as #define|NAME|value|with||multiple||spaces)
-pp_get_define = $(strip $(filter $(HASH)define|$1|%,$(PP_DUMP_ESC)))
-# Extract RHS (still '|' escaped)
-pp_def_raw    = $(patsubst $(HASH)define|$1|%,%,$(call pp_get_define,$1))
-# Remove surrounding quotes (but not interior ones); $1 is | escaped
-pp_unquote    = $(patsubst "%",%,$1)
-# Public helpers
-pp_def_value      = $(subst |, ,$(call pp_def_raw,$1))
-pp_def_value_nq   = $(subst |, ,$(call pp_unquote,$(call pp_def_raw,$1)))
+FC_VER_YEAR   := $(call pp_def_value,$(PP_VERSION),FC_VERSION_YEAR)
+FC_VER_MONTH  := $(call pp_def_value,$(PP_VERSION),FC_VERSION_MONTH)
+FC_VER_PATCH  := $(call pp_def_value,$(PP_VERSION),FC_VERSION_PATCH_LEVEL)
+FC_VER_SUFFIX := $(call pp_def_value_nq,$(PP_VERSION),FC_VERSION_SUFFIX)
 
-FC_VER_YEAR   := $(call pp_def_value,FC_VERSION_YEAR)
-FC_VER_MONTH  := $(call pp_def_value,FC_VERSION_MONTH)
-FC_VER_PATCH  := $(call pp_def_value,FC_VERSION_PATCH_LEVEL)
-FC_VER_SUFFIX := $(call pp_def_value_nq,FC_VERSION_SUFFIX)
-
-FC_VER       := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
+FC_VER        := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
 
 ifneq ($(strip $(FC_VER_SUFFIX)),)
-FC_VER       := $(FC_VER)-$(FC_VER_SUFFIX)
+FC_VER        := $(FC_VER)-$(FC_VER_SUFFIX)
 endif
+
+.PHONY: print-version
+print-version:
+	@echo FC_VER_YEAR=$(FC_VER_YEAR)
+	@echo FC_VER_MONTH=$(FC_VER_MONTH)
+	@echo FC_VER_PATCH=$(FC_VER_PATCH)
+	@echo FC_VER_SUFFIX=$(FC_VER_SUFFIX)
+	@echo FC_VER=$(FC_VER)
 
 
 #
