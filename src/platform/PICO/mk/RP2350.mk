@@ -64,7 +64,6 @@ PICO_LIB_SRC = \
             common/hardware_claim/claim.c \
             common/pico_sync/critical_section.c \
             rp2_common/hardware_sync/sync.c \
-            rp2_common/pico_bootrom/bootrom.c \
             rp2_common/pico_runtime_init/runtime_init.c \
             rp2_common/pico_runtime_init/runtime_init_clocks.c \
             rp2_common/pico_runtime_init/runtime_init_stack_guard.c \
@@ -81,7 +80,6 @@ PICO_LIB_SRC = \
             rp2_common/pico_bootrom/bootrom.c \
             rp2_common/pico_bootrom/bootrom_lock.c \
             rp2_common/pico_divider/divider_compiler.c \
-            rp2_common/pico_double/double_math.c \
             rp2_common/pico_flash/flash.c \
             rp2_common/hardware_divider/divider.c \
             rp2_common/hardware_vreg/vreg.c \
@@ -89,7 +87,8 @@ PICO_LIB_SRC = \
             rp2_common/pico_standard_binary_info/standard_binary_info.c \
             rp2_common/pico_clib_interface/newlib_interface.c \
             rp2_common/pico_malloc/malloc.c \
-            rp2_common/pico_stdlib/stdlib.c
+            rp2_common/pico_stdlib/stdlib.c \
+            rp2_common/pico_bit_ops/bit_ops_aeabi.S
 
 TINY_USB_SRC_DIR = $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
 TINYUSB_SRC := \
@@ -335,7 +334,6 @@ SYS_INCLUDE_DIRS = \
             $(SDK_DIR)/rp2_common/hardware_pwm/include \
             $(SDK_DIR)/rp2_common/pico_stdio_semihosting/include \
             $(SDK_DIR)/rp2_common/pico_float/include \
-            $(SDK_DIR)/rp2_common/pico_double/include \
             $(SDK_DIR)/rp2_common/hardware_resets/include \
             $(SDK_DIR)/rp2_common/pico_cxx_options/include \
             $(SDK_DIR)/rp2_common/pico_stdlib/include \
@@ -363,11 +361,6 @@ ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
 # work around memcpy alignment issue
 ARCH_FLAGS      += -fno-builtin-memcpy
 
-# Automatically treating constants as single-precision breaks pico-sdk (-Werror=double-promotion)
-# We should go through BF code and explicitly declare constants as single rather than double as required,
-# rather than relying on this flag.
-# ARCH_FLAGS      += -fsingle-precision-constant
-
 PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_PRINTF=1 \
             -DLIB_PICO_PRINTF_PICO=1  \
@@ -391,7 +384,10 @@ PICO_STDIO_LD_FLAGS  = \
             -Wl,--wrap=putchar \
             -Wl,--wrap=getchar
 
-EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS)
+PICO_BIT_OPS_LD_FLAGS = \
+            -Wl,--wrap=__ctzdi2
+
+EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS)
 
 ifdef RP2350_TARGET
 
@@ -477,8 +473,7 @@ endif
 
 PICO_STDIO_USB_SRC = \
             rp2_common/pico_stdio_usb/reset_interface.c \
-            rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c \
-            rp2_common/pico_bit_ops/bit_ops_aeabi.S
+            rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c
 
 # TODO check
 #    rp2_common/pico_stdio_usb/stdio_usb_descriptors.c \
