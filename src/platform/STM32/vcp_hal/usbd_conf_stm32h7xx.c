@@ -76,7 +76,7 @@ PCD_HandleTypeDef hpcd;
                        PCD BSP Routines
  *******************************************************************************/
 
-#if defined(USE_USB_FS) && !(defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx))
+#if defined(USE_USB_FS) && !(defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx))
 void OTG_FS_IRQHandler(void)
 #else
 void OTG_HS_IRQHandler(void)
