@@ -167,7 +167,9 @@ typedef struct uartDevice_s {
 } uartDevice_t;
 
 extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;
+#if SERIAL_PIOUART_COUNT > 0
 extern uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT]; // used continuously in order, 0..SERIAL_PIOUART_COUNT-1
+#endif
 
 uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier);
 uartDevice_t* uartDeviceFromIdentifier(serialPortIdentifier_e identifier);
