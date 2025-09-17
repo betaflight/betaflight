@@ -39,7 +39,7 @@ _pp_get_define =  $(strip $(filter $(_pp_hash)define|$2|%,$1))
 # Extract RHS (still '|' escaped)
 _pp_def_raw    = $(patsubst $(_pp_hash)define|$2|%,%,$(call _pp_get_define,$1,$2))
 # Remove surrounding quotes (but not interior ones); $1 is '|' escaped
-_pp_unquote    = $(patsubst \"%\",%,$1)
+_pp_unquote    = $(patsubst "%",%,$1)
 
 # Public helpers: parse from cached dump and return unescaped values
 pp_def_value      = $(subst |, ,$(call _pp_def_raw,$1,$2))
