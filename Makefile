@@ -121,38 +121,6 @@ FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-# One shot dump of all macros from version.h; replace whitespace with |
-PP_DUMP_ESC := $(shell $(CC) $(CPPFLAGS) \
-    $(addprefix -D,$(OPTIONS)) \
-    $(addprefix -I,$(INCLUDE_DIRS)) \
-    $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
-	-E -dM -xc /dev/null \
-  	-include src/main/build/version.h \
-  	| sed 's/[ \t]/|/g')
-
-HASH := $(shell printf '#')
-
-# Find full "#define NAME value" line (escaped to #define|NAME|value)
-pp_get_define = $(strip $(filter $(HASH)define|$1|%,$(PP_DUMP_ESC)))
-# Extract RHS (still '|' escaped)
-pp_def_raw    = $(patsubst $(HASH)define|$1|%,%,$(call get_define,$1))
-# Remove surrounding quotes (but not interior ones) while still escaped
-pp_unquote    = $(if $(filter "%",$1),$(patsubst "%",%,$1),$1)
-# Public helpers
-pp_def_value      = $(subst |, ,$(call pp_def_raw,$1))
-pp_def_value_nq   = $(subst |, ,$(call pp_unquote,$(call pp_def_raw,$1)))
-
-FC_VER_YEAR   := $(call pp_def_value,FC_VERSION_YEAR)
-FC_VER_MONTH  := $(call pp_def_value,FC_VERSION_MONTH)
-FC_VER_PATCH  := $(call pp_def_value,FC_VERSION_PATCH_LEVEL)
-FC_VER_SUFFIX := $(call pp_def_value_nq,FC_VERSION_SUFFIX)
-
-FC_VER       := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
-
-ifdef FC_VER_SUFFIX
-FC_VER       := $(FC_VER)-$(FC_VER_SUFFIX)
-endif
-
 # import config handling (must occur after the hydration of hex, exe and uf2 targets)
 include $(MAKE_SCRIPT_DIR)/config.mk
 
@@ -315,6 +283,40 @@ CC_DEFAULT_OPTIMISATION := $(filter-out $(CFLAGS_DISABLED), $(CC_DEFAULT_OPTIMIS
 CC_SPEED_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_SPEED_OPTIMISATION))
 CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATION))
 CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION))
+
+# One shot dump of all macros from version.h; replace whitespace with |
+# version is used in CFLAGS, but CROSS_CC is used for version.h parsing
+PP_DUMP_ESC := $(shell $(CROSS_CC) $(CPPFLAGS) \
+    $(addprefix -D,$(OPTIONS)) \
+    $(addprefix -I,$(INCLUDE_DIRS)) \
+    $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
+	-E -dM -xc /dev/null \
+  	-include src/main/build/version.h \
+  	| sed 's/[ \t]/|/g')
+
+HASH := $(shell printf '#')
+
+# Find full "#define NAME value" line (escaped as #define|NAME|value|with||multiple||spaces)
+pp_get_define = $(strip $(filter $(HASH)define|$1|%,$(PP_DUMP_ESC)))
+# Extract RHS (still '|' escaped)
+pp_def_raw    = $(patsubst $(HASH)define|$1|%,%,$(call pp_get_define,$1))
+# Remove surrounding quotes (but not interior ones); $1 is | escaped
+pp_unquote    = $(patsubst "%",%,$1)
+# Public helpers
+pp_def_value      = $(subst |, ,$(call pp_def_raw,$1))
+pp_def_value_nq   = $(subst |, ,$(call pp_unquote,$(call pp_def_raw,$1)))
+
+FC_VER_YEAR   := $(call pp_def_value,FC_VERSION_YEAR)
+FC_VER_MONTH  := $(call pp_def_value,FC_VERSION_MONTH)
+FC_VER_PATCH  := $(call pp_def_value,FC_VERSION_PATCH_LEVEL)
+FC_VER_SUFFIX := $(call pp_def_value_nq,FC_VERSION_SUFFIX)
+
+FC_VER       := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
+
+ifneq ($(strip $(FC_VER_SUFFIX)),)
+FC_VER       := $(FC_VER)-$(FC_VER_SUFFIX)
+endif
+
 
 #
 # Added after GCC version update, remove once the warnings have been fixed
