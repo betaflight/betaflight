@@ -115,6 +115,27 @@ include $(MAKE_SCRIPT_DIR)/$(OSFAMILY).mk
 # include the tools makefile
 include $(MAKE_SCRIPT_DIR)/tools.mk
 
+# -----------------------------------------------------------------------------
+# Tool discovery (need CROSS_CC available before config handling)
+# -----------------------------------------------------------------------------
+
+# Find out if ccache is installed on the system
+CCACHE := ccache
+RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
+ifneq ($(RESULT),0)
+CCACHE :=
+endif
+
+# Tool names
+CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
+CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
+OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
+OBJDUMP     := $(ARM_SDK_PREFIX)objdump
+READELF     := $(ARM_SDK_PREFIX)readelf
+SIZE        := $(ARM_SDK_PREFIX)size
+DFUSE-PACK  := src/utils/dfuse-pack.py
+
 # Preprocessor helpers (generic .h parsing)
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
 
@@ -124,7 +145,7 @@ FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-# import config handling (must occur after the hydration of hex, exe and uf2 targets)
+# import config handling (must occur after tool discovery and hydration)
 include $(MAKE_SCRIPT_DIR)/config.mk
 
 # default xtal value
@@ -254,23 +275,6 @@ endif
 ###############################################################################
 # Things that might need changing to use different tools
 #
-
-# Find out if ccache is installed on the system
-CCACHE := ccache
-RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
-ifneq ($(RESULT),0)
-CCACHE :=
-endif
-
-# Tool names
-CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
-CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
-CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
-OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
-OBJDUMP     := $(ARM_SDK_PREFIX)objdump
-READELF     := $(ARM_SDK_PREFIX)readelf
-SIZE        := $(ARM_SDK_PREFIX)size
-DFUSE-PACK  := src/utils/dfuse-pack.py
 
 #
 # Tool options.
