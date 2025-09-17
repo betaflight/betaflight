@@ -1526,7 +1526,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
 
 #ifdef USE_WING
-    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control 
+    // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control
     // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
     bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
 #endif // USE_WING
