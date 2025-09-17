@@ -95,7 +95,7 @@ void OTG_HS1_WKUP_IRQHandler(void)
     /* Select PLL as SYSCLK */
     MODIFY_REG(RCM->CFG, RCM_CFG_SCLKSEL, RCM_SYSCLKSOURCE_PLLCLK);
 
-    while (__DAL_RCM_GET_SYSCLK_SOURCE() != RCM_CFG_SCLKSEL_PLL)
+    while (__DAL_RCM_GET_SYSCLK_SOURCE() != RCM_SYSCLKSOURCE_STATUS_PLLCLK)
     {}
 
     /* ungate PHY clock */

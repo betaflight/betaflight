@@ -119,6 +119,9 @@ static const char * const ownerNames[] = {
     [OWNER_LPUART_TX] = "LPUART_TX",
     [OWNER_LPUART_RX] = "LPUART_RX",
     "GYRO_CLKIN",
+    [OWNER_PIOUART_TX] = "PIOUART_TX",
+    [OWNER_PIOUART_RX] = "PIOUART_RX",
+    // Keep in sync with resourceOwner_e.
 };
 
 STATIC_ASSERT(ARRAYLEN(ownerNames) == OWNER_TOTAL_COUNT, owner_names_array_count_not_equal_to_enum_total);
