@@ -121,10 +121,31 @@ FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-FC_VER_YEAR   := $(shell awk '/^[[:space:]]*.?define[[:space:]]+FC_VERSION_YEAR[[:space:]]+/  {print $$3}' src/main/build/version.h)
-FC_VER_MONTH  := $(shell awk '/^[[:space:]]*.?define[[:space:]]+FC_VERSION_MONTH[[:space:]]+/ {print $$3}' src/main/build/version.h)
-FC_VER_PATCH  := $(shell awk '/^[[:space:]]*.?define[[:space:]]+FC_VERSION_PATCH_LEVEL[[:space:]]+/ {print $$3}' src/main/build/version.h)
-FC_VER_SUFFIX := $(shell awk '/^[[:space:]]*.?define[[:space:]]+FC_VERSION_SUFFIX[[:space:]]+/ {gsub(/"/,""); print $$3}' src/main/build/version.h)
+# One shot dump of all macros from version.h; replace whitespace with |
+PP_DUMP_ESC := $(shell $(CC) $(CPPFLAGS) \
+    $(addprefix -D,$(OPTIONS)) \
+    $(addprefix -I,$(INCLUDE_DIRS)) \
+    $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
+	-E -dM -xc /dev/null \
+  	-include src/main/build/version.h \
+  	| sed 's/[ \t]/|/g')
+
+HASH := $(shell printf '#')
+
+# Find full "#define NAME value" line (escaped to #define|NAME|value)
+pp_get_define = $(strip $(filter $(HASH)define|$1|%,$(PP_DUMP_ESC)))
+# Extract RHS (still '|' escaped)
+pp_def_raw    = $(patsubst $(HASH)define|$1|%,%,$(call get_define,$1))
+# Remove surrounding quotes (but not interior ones) while still escaped
+pp_unquote    = $(if $(filter "%",$1),$(patsubst "%",%,$1),$1)
+# Public helpers
+pp_def_value      = $(subst |, ,$(call pp_def_raw,$1))
+pp_def_value_nq   = $(subst |, ,$(call pp_unquote,$(call pp_def_raw,$1)))
+
+FC_VER_YEAR   := $(call pp_def_value,FC_VERSION_YEAR)
+FC_VER_MONTH  := $(call pp_def_value,FC_VERSION_MONTH)
+FC_VER_PATCH  := $(call pp_def_value,FC_VERSION_PATCH_LEVEL)
+FC_VER_SUFFIX := $(call pp_def_value_nq,FC_VERSION_SUFFIX)
 
 FC_VER       := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
 
