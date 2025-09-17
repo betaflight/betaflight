@@ -601,7 +601,7 @@ FAST_CODE void scheduler(void)
                 // 10ths % of tasks late in last second
                 DEBUG_SET(DEBUG_TIMING_ACCURACY, 4, lateTaskPercentage);
 
-                float gyroCyclesStdDev = sqrt(devSquared/gyroCyclesCount);
+                float gyroCyclesStdDev = sqrtf(devSquared/gyroCyclesCount);
                 int32_t gyroCyclesStdDev100thus = clockCyclesTo100thMicros((int32_t)gyroCyclesStdDev);
                 DEBUG_SET(DEBUG_TIMING_ACCURACY, 7, gyroCyclesStdDev100thus);
                 DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 7, gyroCyclesStdDev100thus);
