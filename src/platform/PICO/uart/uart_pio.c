@@ -370,5 +370,5 @@ void uartEnableTxInterrupt_pio(uartPort_t *uartPort)
     // bprintf("uartEnableTxInterrupt_pio %p irqn_index %d, %p", uartPio, irqn_index, irqSourceTX);
     pio_set_irqn_source_enabled(uartPio, irqn_index, irqSourceTX, true);
 }
- 
+
 #endif

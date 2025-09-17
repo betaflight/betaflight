@@ -243,7 +243,7 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     case RCC_APB12:
         __HAL_RCC_RESET(APB1, 2, mask, NewState);
         break;
-    
+
     case RCC_AHB3:
         __HAL_RCC_RESET(AHB3, NOSUFFIX, mask, NewState);
         break;
