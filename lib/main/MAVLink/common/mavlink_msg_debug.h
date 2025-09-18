@@ -289,7 +289,7 @@ static inline uint8_t mavlink_msg_debug_get_ind(const mavlink_message_t* msg)
 /**
  * @brief Get field value from debug message
  *
- * @return  DEBUG value
+ * @return DEBUG value
  */
 static inline float mavlink_msg_debug_get_value(const mavlink_message_t* msg)
 {
