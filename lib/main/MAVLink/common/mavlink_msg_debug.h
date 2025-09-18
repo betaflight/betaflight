@@ -279,7 +279,7 @@ static inline uint32_t mavlink_msg_debug_get_time_boot_ms(const mavlink_message_
 /**
  * @brief Get field ind from debug message
  *
- * @return  index of debug variable
+ * @return index of debug variable
  */
 static inline uint8_t mavlink_msg_debug_get_ind(const mavlink_message_t* msg)
 {
