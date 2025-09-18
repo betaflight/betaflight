@@ -20,7 +20,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "SH56"
+#define TARGET_BOARD_IDENTIFIER "H563"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32H563"
 
