@@ -114,8 +114,9 @@ static void ghstFramePackTelemetry(sbuf_t *dst)
     sbufWriteU8(dst, 0x00);                                     // Rx Voltage, units of 100mV (not passed from BF, added in Ghost Rx)
 
     uint8_t packFlags = 0;
-    if(!ARMING_FLAG(ARMED))                                     // inverted to be backwards compatible
+    if(!ARMING_FLAG(ARMED)){                                    // inverted to be backwards compatible
         packFlags |= PACK_FLAGS_Disarmed;
+    }
     sbufWriteU8(dst, packFlags);                                // flags
     sbufWriteU8(dst, 0x00);                                     // tbd2
     sbufWriteU8(dst, 0x00);                                     // tbd3
