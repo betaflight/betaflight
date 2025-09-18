@@ -39,5 +39,5 @@ _pp_unquote    = $(subst $(_pp_quote),,$(subst " ",,$1))
 # Expanded value; empty if macro is not defined
 pp_def_value      = $(call _pp_expand_guarded_raw,$1,$2)
 
-# String values: collapse C string concatenation (" " -> ""), remove quotes and spaces
+# String values: collapse C string concatenation (" " -> ""), remove quotes
 pp_def_value_str  = $(call _pp_unquote,$(call _pp_expand_guarded_raw,$1,$2))
