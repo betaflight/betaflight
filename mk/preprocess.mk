@@ -22,7 +22,7 @@ _pp_expand_raw = $(strip $(shell \
 
 # Expand only if the macro NAME is defined in header $1; otherwise yield empty
 _pp_expand_guarded_raw = $(strip $(shell \
-  printf '#ifdef %s\n%s\n#endif\n' "$2" "$2" | \
+  printf '#if defined(%s)\n%s\n#endif\n' "$2" "$2" | \
   $(CROSS_CC) $(CPPFLAGS) \
     $(addprefix -D,$(OPTIONS)) \
     $(addprefix -I,$(INCLUDE_DIRS)) \
@@ -32,11 +32,11 @@ _pp_expand_guarded_raw = $(strip $(shell \
 ))
 
 # Concatenate adjacent strings (C rules) and remove quotes
-# Preprocessor already merges whitespace between tokens
+# Preprocessor already merged whitespace between tokens
 _pp_quote :="
 _pp_unquote    = $(subst $(_pp_quote),,$(subst " ",,$1))
 
-# Expanded value (remove all spaces)
+# Expanded value; empty if macro is not defined
 pp_def_value      = $(call _pp_expand_guarded_raw,$1,$2)
 
 # String values: collapse C string concatenation (" " -> ""), remove quotes and spaces
