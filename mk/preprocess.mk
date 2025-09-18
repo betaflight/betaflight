@@ -2,13 +2,12 @@
 # Generic preprocessor macro expansion helpers
 #
 # Public interface (pp_*):
-#   pp_def_value(<header.h>, EXPR)       -> expanded EXPR with whitespace removed
-#   pp_def_value_str(<header.h>, EXPR)   -> expanded EXPR, quotes + whitespace removed
+#   pp_def_value(<header.h>, EXPR)       -> expanded EXPR
+#   pp_def_value_str(<header.h>, EXPR)   -> expanded EXPR containing string, unquoting it
 #
 # Notes:
 # - Uses $(CROSS_CC) -E with -imacros to include only the given header's macros.
-# - Removes all spaces and tabs from the expansion to keep values filename-safe.
-# - For string expressions, also strips the surrounding quotes.
+# - value_str: merge adjacent strings and remove quotes ("a""b" "B C" -> abB C)
 ###############################################################################
 
 _pp_expand_raw = $(strip $(shell \
@@ -22,8 +21,8 @@ _pp_expand_raw = $(strip $(shell \
 ))
 
 
-# concatenate adjacent string (C rules), then remote remaining quotes
-# preprocessor alredy merged whitespace between tokens
+# Concatenate adjacent strings (C rules) and remove quotes
+# Preprocessor already merges whitespace between tokens
 _pp_quote :="
 _pp_unquote    = $(subst $_pp_quote,,$(subst " ",,$1))
 
