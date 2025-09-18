@@ -76,7 +76,6 @@ PICO_LIB_SRC = \
             common/hardware_claim/claim.c \
             common/pico_sync/critical_section.c \
             rp2_common/hardware_sync/sync.c \
-            rp2_common/pico_bootrom/bootrom.c \
             rp2_common/pico_runtime_init/runtime_init.c \
             rp2_common/pico_runtime_init/runtime_init_clocks.c \
             rp2_common/pico_runtime_init/runtime_init_stack_guard.c \
@@ -93,16 +92,15 @@ PICO_LIB_SRC = \
             rp2_common/pico_bootrom/bootrom.c \
             rp2_common/pico_bootrom/bootrom_lock.c \
             rp2_common/pico_divider/divider_compiler.c \
-            rp2_common/pico_double/double_math.c \
             rp2_common/pico_flash/flash.c \
-            rp2_common/pico_float/float_math.c \
             rp2_common/hardware_divider/divider.c \
             rp2_common/hardware_vreg/vreg.c \
             rp2_common/hardware_xip_cache/xip_cache.c \
             rp2_common/pico_standard_binary_info/standard_binary_info.c \
             rp2_common/pico_clib_interface/newlib_interface.c \
             rp2_common/pico_malloc/malloc.c \
-            rp2_common/pico_stdlib/stdlib.c
+            rp2_common/pico_stdlib/stdlib.c \
+            rp2_common/pico_bit_ops/bit_ops_aeabi.S
 
 TINY_USB_SRC_DIR = $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
 TINYUSB_SRC := \
@@ -128,6 +126,130 @@ TINYUSB_SRC += \
             $(TINY_USB_SRC_DIR)/class/usbtmc/usbtmc_device.c \
             $(TINY_USB_SRC_DIR)/class/audio/audio_device.c
 
+# pico_float
+PICO_LIB_SRC  += \
+            rp2_common/pico_float/float_common_m33.S \
+            rp2_common/pico_float/float_conv32_vfp.S \
+            rp2_common/pico_float/float_math.c \
+            rp2_common/pico_float/float_sci_m33_vfp.S
+
+PICO_FLOAT_WRAP_FNS = \
+            __aeabi_f2lz \
+            __aeabi_f2ulz \
+            __aeabi_l2f \
+            __aeabi_ul2f \
+            acosf \
+            acoshf \
+            asinf \
+            asinhf \
+            atan2f \
+            atanf \
+            atanhf \
+            cbrtf \
+            ceilf \
+            copysignf \
+            cosf \
+            coshf \
+            dremf \
+            exp10f \
+            exp2f \
+            expf \
+            expm1f \
+            floorf \
+            fmaf \
+            fmodf \
+            hypotf \
+            ldexpf \
+            log10f \
+            log1pf \
+            log2f \
+            logf \
+            powf \
+            powintf \
+            remainderf \
+            remquof \
+            roundf \
+            sincosf \
+            sinf \
+            sinhf \
+            tanf \
+            tanhf \
+            truncf
+
+PICO_FLOAT_LD_FLAGS = $(foreach fn, $(PICO_FLOAT_WRAP_FNS), -Wl,--wrap=$(fn))
+
+# pico_double
+PICO_LIB_SRC += \
+            rp2_common/pico_double/double_aeabi_dcp.S \
+            rp2_common/pico_double/double_conv_m33.S \
+            rp2_common/pico_double/double_fma_dcp.S \
+            rp2_common/pico_double/double_math.c \
+            rp2_common/pico_double/double_sci_m33.S
+
+PICO_DOUBLE_WRAP_FNS = \
+            __aeabi_cdcmpeq \
+            __aeabi_cdcmple \
+            __aeabi_cdrcmple \
+            __aeabi_d2f \
+            __aeabi_d2iz \
+            __aeabi_d2lz \
+            __aeabi_d2uiz \
+            __aeabi_d2ulz \
+            __aeabi_dadd \
+            __aeabi_dcmpeq \
+            __aeabi_dcmpge \
+            __aeabi_dcmpgt \
+            __aeabi_dcmple \
+            __aeabi_dcmplt \
+            __aeabi_dcmpun \
+            __aeabi_ddiv \
+            __aeabi_dmul \
+            __aeabi_drsub \
+            __aeabi_dsub \
+            __aeabi_i2d \
+            __aeabi_l2d \
+            __aeabi_ui2d \
+            __aeabi_ul2d \
+            acos \
+            acosh \
+            asin \
+            asinh \
+            atan \
+            atan2 \
+            atanh \
+            cbrt \
+            ceil \
+            copysign \
+            cos \
+            cosh \
+            drem \
+            exp \
+            exp10 \
+            exp2 \
+            expm1 \
+            floor \
+            fma \
+            fmod \
+            hypot \
+            ldexp \
+            log \
+            log10 \
+            log1p \
+            log2 \
+            pow \
+            powint \
+            remainder \
+            remquo \
+            round \
+            sin \
+            sincos \
+            sinh \
+            sqrt \
+            tan \
+            tanh \
+            trunc
+
+PICO_DOUBLE_LD_FLAGS = $(foreach fn, $(PICO_DOUBLE_WRAP_FNS), -Wl,--wrap=$(fn))
 
 VPATH := $(VPATH):$(STDPERIPH_DIR)
 
@@ -250,8 +372,10 @@ SYS_INCLUDE_DIRS += \
             $(SDK_DIR)/rp2350/boot_stage2/include
 
 #Flags
-ARCH_FLAGS      = -fno-builtin-memcpy -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp
 ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
+# work around memcpy alignment issue
+ARCH_FLAGS      += -fno-builtin-memcpy
 
 PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_PRINTF=1 \
@@ -266,17 +390,22 @@ PICO_STDIO_USB_FLAGS = \
             -DPICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS=3000 \
             -DLIB_PICO_UNIQUEID=1
 
-PICO_STDIO_LD_FLAGS  = \
-            -Wl,--wrap=sprintf \
-            -Wl,--wrap=snprintf \
-            -Wl,--wrap=vsnprintf \
-            -Wl,--wrap=printf \
-            -Wl,--wrap=vprintf \
-            -Wl,--wrap=puts \
-            -Wl,--wrap=putchar \
-            -Wl,--wrap=getchar
+PICO_STDIO_WRAP_FNS  = \
+            sprintf \
+            snprintf \
+            vsnprintf \
+            printf \
+            vprintf \
+            puts \
+            putchar \
+            getchar
 
-EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS)
+PICO_STDIO_LD_FLAGS = $(foreach fn, $(PICO_STDIO_WRAP_FNS), -Wl,--wrap=$(fn))
+
+PICO_BIT_OPS_LD_FLAGS = \
+            -Wl,--wrap=__ctzdi2
+
+EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS)
 
 ifdef RP2350_TARGET
 
@@ -362,8 +491,7 @@ endif
 
 PICO_STDIO_USB_SRC = \
             rp2_common/pico_stdio_usb/reset_interface.c \
-            rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c \
-            rp2_common/pico_bit_ops/bit_ops_aeabi.S
+            rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c
 
 # TODO check
 #    rp2_common/pico_stdio_usb/stdio_usb_descriptors.c \
@@ -403,6 +531,7 @@ MCU_COMMON_SRC = \
             PICO/adc_pico.c \
             PICO/bus_i2c_pico.c \
             PICO/bus_spi_pico.c \
+            PICO/bus_quadspi_pico.c \
             PICO/config_flash.c \
             PICO/debug_pico.c \
             PICO/dma_pico.c \
@@ -413,9 +542,13 @@ MCU_COMMON_SRC = \
             PICO/persistent.c \
             PICO/pwm_pico.c \
             PICO/pwm_beeper_pico.c \
-            PICO/serial_uart_pico.c \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
+            PICO/uart/serial_uart_pico.c \
+            PICO/uart/uart_hw.c \
+            PICO/uart/uart_pio.c \
+            PICO/uart/uart_rx_program.c \
+            PICO/uart/uart_tx_program.c \
             PICO/usb/usb_cdc.c \
             PICO/usb/usb_descriptors.c \
             PICO/usb/usb_msc_pico.c \
@@ -425,7 +558,11 @@ MCU_COMMON_SRC = \
 
 # USB MSC support sources (TinyUSB backend on PICO)
 MSC_SRC = \
-            drivers/usb_msc_common.c
+            drivers/usb_msc_common.c \
+            msc/usbd_storage.c \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c
 
 DEVICE_STDPERIPH_SRC := \
             $(PICO_LIB_SRC) \

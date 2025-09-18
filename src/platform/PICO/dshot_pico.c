@@ -302,9 +302,9 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     }
 
     bprintf("dshot pio%d pin min, max = %d, %d; setting gpio base to %d", PIO_NUM(dshotPio), pinIndexMin, pinIndexMax, pioBase);
-    // The GPIO base must be set before adding the program.        
+    // The GPIO base must be set before adding the program.
     pio_set_gpio_base(dshotPio, pioBase);
-    
+
     // Use one program for all motors.
     // NB the PIO block is limited to 32 instructions (shared across 4 state machines)
     int offset;
@@ -333,7 +333,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         bprintf("dshot init sideset pin %d", sidePin);
     }
 #endif
-    
+
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCountProvisional; motorIndex++) {
         outgoingPacket[motorIndex] = -1;
         int pinIndex = DEFIO_TAG_PIN(motorConfig->ioTags[motorIndex]);

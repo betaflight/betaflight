@@ -191,14 +191,16 @@ void adcInternalStartConversion(void)
     adcInternalConversionInProgress = true;
 }
 
-uint16_t adcInternalReadVrefint(void)
+uint16_t adcInternalRead(adcSource_e source)
 {
-    return HAL_ADCEx_InjectedGetValue(adcInternalHandle, ADC_INJECTED_RANK_1);
-}
-
-uint16_t adcInternalReadTempsensor(void)
-{
-    return HAL_ADCEx_InjectedGetValue(adcInternalHandle, ADC_INJECTED_RANK_2);
+    switch (source) {
+    case ADC_VREFINT:
+        return HAL_ADCEx_InjectedGetValue(adcInternalHandle, ADC_INJECTED_RANK_1);
+    case ADC_TEMPSENSOR:
+        return HAL_ADCEx_InjectedGetValue(adcInternalHandle, ADC_INJECTED_RANK_2);
+    default:
+        return 0;
+    }
 }
 #endif
 
@@ -266,22 +268,26 @@ void adcInit(const adcConfig_t *config)
     } else {
         adcInitInternalInjected(&adc);
     }
+
+    adcOperatingConfig[ADC_VREFINT].enabled = true;
+    adcOperatingConfig[ADC_TEMPSENSOR].enabled = true;
 #endif
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_SOURCE_COUNT; i++) {
-        if (adcOperatingConfig[i].enabled) {
-            ADC_ChannelConfTypeDef sConfig;
+    for (i = 0; i < ADC_EXTERNAL_COUNT; i++) {
+        if (!adcOperatingConfig[i].enabled) {
+            continue;
+        }
+        ADC_ChannelConfTypeDef sConfig;
 
-            sConfig.Channel      = adcOperatingConfig[i].adcChannel;
-            sConfig.Rank         = rank++;
-            sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
-            sConfig.Offset       = 0;
+        sConfig.Channel      = adcOperatingConfig[i].adcChannel;
+        sConfig.Rank         = rank++;
+        sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
+        sConfig.Offset       = 0;
 
-            if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
-            {
-                /* Channel Configuration Error */
-            }
+        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
+        {
+            /* Channel Configuration Error */
         }
     }
 

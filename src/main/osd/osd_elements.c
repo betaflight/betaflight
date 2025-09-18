@@ -50,7 +50,7 @@
 
     Add the mapping for the element ID to the background drawing function to the
     osdElementBackgroundFunction array.
-    
+
     You should also add a corresponding entry to the file: cms_menu_osd.c
 
     Accelerometer reqirement:

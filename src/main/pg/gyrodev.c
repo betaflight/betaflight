@@ -301,6 +301,6 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     // I2C gyros appear as a sole gyro in single gyro boards.
 #if defined(USE_I2C_GYRO) && !(GYRO_COUNT > 1)
     devconf[0].i2cBus = I2C_DEV_TO_CFG(I2CINVALID); // XXX Not required?
-    gyroResetI2cDeviceConfig(&devconf[0], I2C_DEVICE, IO_TAG(GYRO_1_EXTI_PIN), GYRO_1_ALIGN, customAlignment1);
+    gyroResetI2cDeviceConfig(&devconf[0], I2C_DEVICE, IO_TAG(GYRO_1_EXTI_PIN), GYRO_1_ALIGN, GYRO_1_CUSTOM_ALIGN);
 #endif
 }

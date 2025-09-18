@@ -39,8 +39,8 @@
 
 #ifdef USE_QUADSPI
 
-#if !defined(STM32H7)
-#error Quad SPI unsupported on this MCU
+#if !(defined(STM32H7) || defined(STM32G4) || defined(PICO))
+#error Quad SPI unsupported on this MCU/platform
 #endif
 
 #define QUADSPI_IO_AF_BK_IO_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
@@ -63,7 +63,9 @@ typedef enum {
     QUADSPIDEV_1   = 0,
 } quadSpiDevice_e;
 
-#define QUADSPIDEV_COUNT 1
+#ifndef QUADSPIDEV_COUNT
+#define QUADSPIDEV_COUNT 0
+#endif
 
 // Macros to convert between CLI bus number and spiDevice_e.
 #define QUADSPI_CFG_TO_DEV(x)   ((x) - 1)

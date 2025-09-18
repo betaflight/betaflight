@@ -8,7 +8,7 @@
 ;  or could have effectively dynamic based on contents of x register if spare, which can be
 ; set with pio_sm_exec_wait_blocking
 ; For >4 motors, could configure pin with disable, config set, enable, [but run out of time in gyro loop? might need another PIO for more SMs]
-; 
+;
 
 ; presumably BF writes dshot async, at max of ~10k/sec or so (typical aiming for 8k loop for gyro)
 ; dshot frame takes approx. 0.1ms dshot150 or dshot300_bidir

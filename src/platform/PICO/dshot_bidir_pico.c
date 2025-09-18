@@ -60,15 +60,15 @@ typedef struct picoDshotTelemetryBuffer_s {
 // 1st bit of return frame is always 0, "idle" is 1, so after ~25 us could start waiting for transition
 // to 0 - when we finish the out frame, we set pin to input (pindirs 0). Will that respect a previous
 // pullup setting?
-// see https://forums.raspberrypi.com/viewtopic.php?t=311659 
+// see https://forums.raspberrypi.com/viewtopic.php?t=311659
 
 /*
 comment on syncing (?) for return frame
 https://github.com/betaflight/betaflight/pull/8554
 ledvinap commented on Jul 16, 2019
 A side note: I didn't analyze it too far, but is seems that 1.5x oversampling (1.5 synchronous samples per bit period) should be enough to handle NRZ protocol including clock drift...
-    
-joelucid commented on Jul 17, 2019 • 
+
+joelucid commented on Jul 17, 2019 •
 Let me specify the new rpm telemetry protocol here for you @sskaug, and others:
 
 Dshot bidir uses inverted signal levels (idle is 1). FC to ESC uses dshot frames but the lowest 4 bits hold the complement of the other nibbles xor'd together (normal dshot does not complement the xor sum). The ESC detects based on the inversion that telemetry packets have to be sent.
@@ -97,7 +97,7 @@ b -> 0b
 c -> 1e
 d -> 0d
 e -> 0e
-f -> 0f 
+f -> 0f
 This creates a 20 bit value which has no more than two consecutive zeros. This value is mapped to a new 21 bit value by starting with a bit value of 0 and changing the bit value in the next bit if the current bit in the incoming value is a 1, but repeating the previous bit value otherwise. Example:
 
 1 0 1 1 1 0 0 1 1 0 would become 0 1 1 0 1 0 0 0 1 0 0.
@@ -275,7 +275,7 @@ bool dshotTelemetryWait(void)
                dshotdecodetelemetry unsuccessfully
             and, if necessary, keep calling dshotdecodetelemetry (up to a timeout) until telemetry received
         }
-        
+
   I think telemetryPending tracks when we are safe to transmit
   and telemetryWait is for debugging, telling us if we had to wait
   (but no code looks at the return value of this function)
