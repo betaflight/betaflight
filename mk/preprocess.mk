@@ -24,7 +24,7 @@ _pp_expand_raw = $(strip $(shell \
 # Concatenate adjacent strings (C rules) and remove quotes
 # Preprocessor already merges whitespace between tokens
 _pp_quote :="
-_pp_unquote    = $(subst $_pp_quote,,$(subst " ",,$1))
+_pp_unquote    = $(subst $(_pp_quote),,$(subst " ",,$1))
 
 # Expanded value (remove all spaces)
 pp_def_value      = $(call _pp_expand_raw,$1,$2)

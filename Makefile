@@ -701,7 +701,7 @@ $(DIRECTORIES):
 ## version           : print firmware version
 .PHONY: version
 version:
-	@echo $(FC_VER)
+	@echo '$(FC_VER)'
 
 ## help              : print this help message and exit
 help: Makefile mk/tools.mk
