@@ -309,8 +309,8 @@ static inline void mavlink_msg_debug_decode(const mavlink_message_t* msg, mavlin
     debug->value = mavlink_msg_debug_get_value(msg);
     debug->ind = mavlink_msg_debug_get_ind(msg);
 #else
-        uint8_t len = msg->len < MAVLINK_MSG_ID_DEBUG_LEN? msg->len : MAVLINK_MSG_ID_DEBUG_LEN;
-        memset(debug, 0, MAVLINK_MSG_ID_DEBUG_LEN);
+    uint8_t len = msg->len < MAVLINK_MSG_ID_DEBUG_LEN? msg->len : MAVLINK_MSG_ID_DEBUG_LEN;
+    memset(debug, 0, MAVLINK_MSG_ID_DEBUG_LEN);
     memcpy(debug, _MAV_PAYLOAD(msg), len);
 #endif
 }
