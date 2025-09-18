@@ -292,28 +292,15 @@ CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATI
 CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION))
 
 
-# Extract version macros from the version header
-# pp_dump uses CROSS_CC at expansion time; compute the dump here after CROSS_CC
-# FC version is injected into CFLAGS, so compute it before finalizing CFLAGS
-PP_VERSION       := $(call pp_dump,src/main/build/version.h)
+# Extract version from the version header
+# Expand FC_VERSION_STRING via the preprocessor; compute before finalizing CFLAGS
+FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_STRING)
 
-FC_VER_YEAR   := $(call pp_def_value,$(PP_VERSION),FC_VERSION_YEAR)
-FC_VER_MONTH  := $(call pp_def_value,$(PP_VERSION),FC_VERSION_MONTH)
-FC_VER_PATCH  := $(call pp_def_value,$(PP_VERSION),FC_VERSION_PATCH_LEVEL)
-FC_VER_SUFFIX := $(call pp_def_value_str,$(PP_VERSION),FC_VERSION_SUFFIX)
-
-FC_VER        := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
-
-ifneq ($(strip $(FC_VER_SUFFIX)),)
-FC_VER        := $(FC_VER)-$(FC_VER_SUFFIX)
-endif
+$(info $(call _pp_expand_raw,src/main/build/version.h,FC_VERSION_STRING))
+$(info $(call _pp_unquote,$(call pp_def_value,src/main/build/version.h,FC_VERSION_STRING)))
 
 .PHONY: print-version
 print-version:
-	@echo FC_VER_YEAR=$(FC_VER_YEAR)
-	@echo FC_VER_MONTH=$(FC_VER_MONTH)
-	@echo FC_VER_PATCH=$(FC_VER_PATCH)
-	@echo FC_VER_SUFFIX=$(FC_VER_SUFFIX)
 	@echo FC_VER=$(FC_VER)
 
 

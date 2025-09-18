@@ -34,23 +34,21 @@ CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
 
-# Preprocess once and extract constants from $(CONFIG_HEADER_FILE)
-PP_CONFIG := $(call pp_dump,$(CONFIG_HEADER_FILE))
-
+# Extract constants from $(CONFIG_HEADER_FILE) via preprocessor expansion
 # Oscillator frequency (MHz) -> Hz
-HSE_VALUE_MHZ := $(call pp_def_value,$(PP_CONFIG),SYSTEM_HSE_MHZ)
+HSE_VALUE_MHZ := $(call pp_def_value,$(CONFIG_HEADER_FILE),SYSTEM_HSE_MHZ)
 ifneq ($(strip $(HSE_VALUE_MHZ)),)
 HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
 endif
 
 # MCU target from config header
-TARGET        := $(call pp_def_value,$(PP_CONFIG),FC_TARGET_MCU)
+TARGET        := $(call pp_def_value,$(CONFIG_HEADER_FILE),FC_TARGET_MCU)
 ifeq ($(strip $(TARGET)),)
 $(error No TARGET identified. Is the $(CONFIG_HEADER_FILE) valid for $(CONFIG)?)
 endif
 
 # Optional EXST address adjustment
-EXST_ADJUST_VMA := $(call pp_def_value,$(PP_CONFIG),FC_VMA_ADDRESS)
+EXST_ADJUST_VMA := $(call pp_def_value,$(CONFIG_HEADER_FILE),FC_VMA_ADDRESS)
 ifneq ($(strip $(EXST_ADJUST_VMA)),)
 EXST = yes
 endif

@@ -33,15 +33,24 @@
 #define FC_VERSION_MONTH            12
 // Increment when a bug-fix release is made (0 for initial YYYY.MM.X release)
 #define FC_VERSION_PATCH_LEVEL      0
-// Optional suffix for pre-releases (alpha, beta, rc1, etc). Empty string for final releases.
-#define FC_VERSION_SUFFIX           "beta"
+// Optional suffix for pre-releases (alpha, beta, rc1, etc). Use empty value (not "") for final releases
+#define FC_VERSION_SUFFIX "beta"
 
-/* load the version from the makefile if it is defined otherwise default */
-#ifdef __FC_VERSION__
-#define FC_VERSION_STRING __FC_VERSION__
+// Prepend "-" to non-empty suffix
+//  Minimal helper: only tests two cases — empty vs a single string literal
+#define FC_PP_HAS_COMMA(...) FC_PP_HAS_COMMA_I(__VA_ARGS__, 1, 0)
+#define FC_PP_HAS_COMMA_I(_0,_1,_2,...) _2
+#define FC_PP_TRIGGER_PARENTHESIS_(...) ,
+#define FC_PP_IS_EMPTY_SIMPLE(...) FC_PP_HAS_COMMA(FC_PP_TRIGGER_PARENTHESIS_ __VA_ARGS__ (/*empty*/))
+//  Generate FC_VERSION_SUFFIX_STR
+#if FC_PP_IS_EMPTY_SIMPLE(FC_VERSION_SUFFIX)
+# define FC_VERSION_SUFFIX_STR ""
 #else
-#define FC_VERSION_STRING STR(FC_VERSION_YEAR) "." STR(FC_VERSION_MONTH) "." STR(FC_VERSION_PATCH_LEVEL)
+# define FC_VERSION_SUFFIX_STR "-" FC_VERSION_SUFFIX
 #endif
+// Build the version string from components and suffix
+// this value also used as version string in Makefile
+#define FC_VERSION_STRING STR(FC_VERSION_YEAR) "." STR(FC_VERSION_MONTH) "." STR(FC_VERSION_PATCH_LEVEL) FC_VERSION_SUFFIX_STR
 
 extern const char* const targetName;
 
