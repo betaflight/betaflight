@@ -296,11 +296,6 @@ CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION
 # Expand FC_VERSION_STRING via the preprocessor; compute before finalizing CFLAGS
 FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_STRING)
 
-.PHONY: print-version
-print-version:
-	@echo FC_VER=$(FC_VER)
-
-
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
@@ -704,6 +699,7 @@ $(DIRECTORIES):
 	mkdir -p $@
 
 ## version           : print firmware version
+.PHONY: version
 version:
 	@echo $(FC_VER)
 
