@@ -296,9 +296,6 @@ CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION
 # Expand FC_VERSION_STRING via the preprocessor; compute before finalizing CFLAGS
 FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_STRING)
 
-$(info $(call _pp_expand_raw,src/main/build/version.h,FC_VERSION_STRING))
-$(info $(call _pp_unquote,$(call pp_def_value,src/main/build/version.h,FC_VERSION_STRING)))
-
 .PHONY: print-version
 print-version:
 	@echo FC_VER=$(FC_VER)
