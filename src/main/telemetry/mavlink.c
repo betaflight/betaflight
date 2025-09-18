@@ -388,6 +388,7 @@ static void mavlinkSendPosition(void)
         GPS_home_llh.lon,
         // Altitude(WGS84), expressed as * 1000
         0,
+        // Timestamp, unused
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
