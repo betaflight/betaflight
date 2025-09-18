@@ -214,7 +214,7 @@ static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 
     // Enable circular DMA.
     // ADC3 of H72X and H73X has a special way of doing this.
-#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
     if (adcdev->ADCx == ADC3) {
         hadc->Init.DMAContinuousRequests = ENABLE;
     } else
@@ -252,7 +252,7 @@ static int adcFindTagMapEntry(ioTag_t tag)
 
 // H743, H735, H750 and H7A3 seems to use 16-bit precision value,
 // while H723, H725 and H730 seems to use 12-bit precision value.
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) 
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define VREFINT_CAL_SHIFT 4
 #elif defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
 #define VREFINT_CAL_SHIFT 0
