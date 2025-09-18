@@ -34,18 +34,22 @@ CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
 
-HSE_VALUE_MHZ := $(shell sed -E -n "/^[[:space:]]*\#[[:space:]]*define[[:space:]]+SYSTEM_HSE_MHZ[[:space:]]+([0-9]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
-ifneq ($(HSE_VALUE_MHZ),)
+# Extract constants from $(CONFIG_HEADER_FILE) via preprocessor expansion
+# Oscillator frequency (MHz) -> Hz
+HSE_VALUE_MHZ := $(call pp_def_value,$(CONFIG_HEADER_FILE),SYSTEM_HSE_MHZ)
+ifneq ($(strip $(HSE_VALUE_MHZ)),)
 HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
 endif
 
-TARGET        := $(shell sed -E -n "/^[[:space:]]*\#[[:space:]]*define[[:space:]]+FC_TARGET_MCU[[:space:]]+([[:alnum:]_]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
-ifeq ($(TARGET),)
+# MCU target from config header
+TARGET        := $(call pp_def_value,$(CONFIG_HEADER_FILE),FC_TARGET_MCU)
+ifeq ($(strip $(TARGET)),)
 $(error No TARGET identified. Is the $(CONFIG_HEADER_FILE) valid for $(CONFIG)?)
 endif
 
-EXST_ADJUST_VMA := $(shell sed -E -n "/^[[:space:]]*\#[[:space:]]*define[[:space:]]+FC_VMA_ADDRESS[[:space:]]+((0[xX])?[[:xdigit:]]+).*/s//\1/p" $(CONFIG_HEADER_FILE))
-ifneq ($(EXST_ADJUST_VMA),)
+# Optional EXST address adjustment
+EXST_ADJUST_VMA := $(call pp_def_value,$(CONFIG_HEADER_FILE),FC_VMA_ADDRESS)
+ifneq ($(strip $(EXST_ADJUST_VMA)),)
 EXST = yes
 endif
 
