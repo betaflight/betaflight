@@ -606,6 +606,7 @@ void handleMAVLinkTelemetry(void)
         shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
         if (shouldSendTelemetry) {
             txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
+        }
         DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);
         DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, mavlink_min_txbuff);
     } else {
