@@ -604,6 +604,8 @@ void handleMAVLinkTelemetry(void)
     if (txbuff_valid) {
         // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
         shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
+        if (shouldSendTelemetry) {
+            txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
         DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);
         DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, mavlink_min_txbuff);
     } else {
