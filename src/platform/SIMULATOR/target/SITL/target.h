@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "common/utils.h"
 
@@ -159,6 +160,8 @@
 // belows are internal stuff
 
 extern uint32_t SystemCoreClock;
+
+bool usbCableIsInserted(void);
 
 typedef enum
 {
