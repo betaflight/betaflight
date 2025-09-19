@@ -36,7 +36,7 @@
 #include "drivers/bus_octospi.h"
 #include "drivers/bus_octospi_impl.h"
 
-#if !(defined(STM32H730xx) || defined(STM32H723xx)) || defined(STM32H735xx)
+#if !(defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx))
 #error MCU not supported.
 #endif
 
