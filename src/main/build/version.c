@@ -26,6 +26,8 @@ const char * const targetName = __TARGET__;
 const char * const shortGitRevision = __REVISION__;
 #if defined(__CONFIG_REVISION__)
 const char * const shortConfigGitRevision = __CONFIG_REVISION__;
+#else
+const char * const shortConfigGitRevision = "";
 #endif
 const char * const buildDate = __DATE__;
 const char * const buildTime = __TIME__;
