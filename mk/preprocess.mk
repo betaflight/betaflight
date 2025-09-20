@@ -25,7 +25,7 @@ _pp_expand_raw = $(strip $(shell \
 _pp_hash = \#
 
 _pp_expand_guarded_raw = $(strip $(shell \
-	printf '%sif defined(%s)\n%s\n%sendif\n' "$(_pp_hash)" "$2" "$2" "$(_pp_hash)" | \
+  printf '%sif defined(%s)\n%s\n%sendif\n' "$(_pp_hash)" "$2" "$2" "$(_pp_hash)" | \
   $(CROSS_CC) $(CPPFLAGS) \
     $(addprefix -D,$(OPTIONS)) \
     $(addprefix -I,$(INCLUDE_DIRS)) \
