@@ -21,9 +21,11 @@ _pp_expand_raw = $(strip $(shell \
 ))
 
 # Expand only if the macro NAME is defined in header $1; otherwise yield empty
+# _pp_hash stores a literal '#', keeping guard emission portable across shells.
+_pp_hash = \#
 
 _pp_expand_guarded_raw = $(strip $(shell \
-  printf '%bif defined(%s)\n%s\n%bendif\n' "\043" "$2" "$2" "\043" | \
+	printf '%sif defined(%s)\n%s\n%sendif\n' "$(_pp_hash)" "$2" "$2" "$(_pp_hash)" | \
   $(CROSS_CC) $(CPPFLAGS) \
     $(addprefix -D,$(OPTIONS)) \
     $(addprefix -I,$(INCLUDE_DIRS)) \
