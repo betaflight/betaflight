@@ -21,8 +21,9 @@ _pp_expand_raw = $(strip $(shell \
 ))
 
 # Expand only if the macro NAME is defined in header $1; otherwise yield empty
+
 _pp_expand_guarded_raw = $(strip $(shell \
-  printf '#if defined(%s)\n%s\n#endif\n' "$2" "$2" | \
+  printf '%bif defined(%s)\n%s\n%bendif\n' "\043" "$2" "$2" "\043" | \
   $(CROSS_CC) $(CPPFLAGS) \
     $(addprefix -D,$(OPTIONS)) \
     $(addprefix -I,$(INCLUDE_DIRS)) \
