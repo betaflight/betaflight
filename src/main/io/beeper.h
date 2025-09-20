@@ -26,7 +26,7 @@
 #define BEEPER_GET_FLAG(mode) (1U << ((mode) - 1))
 
 #ifdef USE_DSHOT
-#define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events
+#define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate DShot beacon and arming/disarming events
                                              // to prevent interference with motor direction commands
 #define DSHOT_BEACON_MODE_INTERVAL_US     450000  // at least 450ms between successive DShot beacon iterations to allow time for ESC to play tone
 #endif
@@ -95,7 +95,7 @@ STATIC_ASSERT(BEEPER_ALL < sizeof(uint32_t) * 8, "BEEPER bits exhausted");
     | BEEPER_GET_FLAG(BEEPER_RX_LOST) \
     )
 
-// record theese modes as arming beep (for dshot)
+// record these modes as arming beep (for DShot)
 #define BEEPER_ARMING_MODES (                   \
     BEEPER_GET_FLAG(BEEPER_ARMING)              \
     | BEEPER_GET_FLAG(BEEPER_ARMING_GPS_FIX)    \
@@ -118,4 +118,6 @@ uint32_t beeperModeMaskForTableIndex(int idx);
 const char *beeperNameForTableIndex(int idx);
 int beeperTableEntryCount(void);
 bool isBeeperOn(void);
+#ifdef USE_DSHOT
 timeUs_t getLastDshotBeaconCommandTimeUs(void);
+#endif

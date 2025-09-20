@@ -422,7 +422,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     // Drive ESC beacons whenever the RX link is lost and USB is disconnected
 #ifdef USE_DSHOT
-    const timeDelta_t dShotBeaconInterval = DSHOT_BEACON_MODE_INTERVAL_US;
+    static const timeDelta_t dShotBeaconInterval = DSHOT_BEACON_MODE_INTERVAL_US;
 
     bool dshotBeaconRequested = false;
 
@@ -446,7 +446,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
             && !isTryingToArm()) {
             if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
-                // at least 500ms between DShot beacons to allow time for the sound to fully complete
+                // at least 450ms between DShot beacons to allow time for the sound to fully complete
                 // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
                 dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
