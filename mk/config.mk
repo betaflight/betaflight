@@ -29,9 +29,11 @@ TARGET_FLAGS += -DUSE_CONFIG_SOURCE
 endif
 
 CONFIG_REVISION := norevision
+ifneq ($(wildcard $(CONFIG_DIR)/.git/),)
 ifeq ($(shell git -C $(CONFIG_DIR) diff --shortstat),)
 CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
+endif
 endif
 
 # Extract constants from $(CONFIG_HEADER_FILE) via preprocessor expansion
