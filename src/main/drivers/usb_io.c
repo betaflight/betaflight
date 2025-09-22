@@ -29,10 +29,7 @@
 #include "drivers/time.h"
 #include "usb_io.h"
 
-#if defined(USE_VCP)
 #include "drivers/serial_usb_vcp.h"
-#endif
-
 #ifdef USE_USB_DETECT
 static IO_t usbDetectPin;
 #endif
