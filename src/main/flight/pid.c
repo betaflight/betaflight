@@ -1241,7 +1241,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif // USE_CHIRP
 
     // ----------PID controller----------
-    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+    for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
 #ifdef USE_CHIRP
         float currentChirp = 0.0f;
@@ -1426,12 +1426,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 dMaxMultiplier = pt2FilterApply(&pidRuntime.dMaxLowpass[axis], dMaxMultiplier);
                 // limit the gain to the fraction that DMax is greater than Min
                 dMaxMultiplier = MIN(dMaxMultiplier, pidRuntime.dMaxPercent[axis]);
-                if (axis == FD_ROLL) {
+                if (debugMode == DEBUG_D_MAX && axis == gyro.gyroDebugAxis) {
                     DEBUG_SET(DEBUG_D_MAX, 0, lrintf(dMaxGyroFactor * 100));
                     DEBUG_SET(DEBUG_D_MAX, 1, lrintf(dMaxSetpointFactor * 100));
-                    DEBUG_SET(DEBUG_D_MAX, 2, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMaxMultiplier * 10 / DTERM_SCALE)); // actual D
-                } else if (axis == FD_PITCH) {
-                    DEBUG_SET(DEBUG_D_MAX, 3, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMaxMultiplier * 10 / DTERM_SCALE));
+                    DEBUG_SET(DEBUG_D_MAX, 2, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMaxMultiplier * 10 / DTERM_SCALE)); // effective Kd after Dmax boost
+                    DEBUG_SET(DEBUG_D_MAX, 3, lrintf(dMaxMultiplier * 100));
                 }
             }
 
