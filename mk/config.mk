@@ -4,6 +4,10 @@ CONFIGS_REPO_URL ?= https://github.com/betaflight/config
 CONFIGS_SUBMODULE_DIR := src/config
 BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
 
+ifneq ($(words $(CONFIG_DIR)),1)
+$(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
+endif
+
 ifneq ($(filter-out %_sdk %_install test% %_clean clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
 ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
 $(error `$(CONFIG_DIR)` not found. Have you hydrated configuration using: 'make configs'?)
@@ -30,7 +34,7 @@ endif
 
 CONFIG_REVISION := norevision
 ifeq ($(shell git -C "$(CONFIG_DIR)" rev-parse --is-inside-work-tree 2>/dev/null),true)
-ifeq ($(strip $(shell git -C "$(CONFIG_DIR)" status --porcelain 2>/dev/null)),)
+ifeq ($(strip $(shell git -C "$(CONFIG_DIR)" status --porcelain -uno 2>/dev/null)),)
 CONFIG_REVISION := $(shell git -C "$(CONFIG_DIR)" rev-parse --short=7 HEAD 2>/dev/null)
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
@@ -69,7 +73,7 @@ ifeq ($(shell realpath "$(CONFIG_DIR)"),$(shell realpath "$(CONFIGS_SUBMODULE_DI
 else
 ifeq ($(wildcard $(CONFIG_DIR)),)
 	@echo "Hydrating clone for configs: $(CONFIG_DIR)"
-	$(V1) git clone $(CONFIGS_REPO_URL) "$(CONFIG_DIR)"
+	$(V1) git clone --depth=1 $(CONFIGS_REPO_URL) "$(CONFIG_DIR)"
 else
 	$(V1) git -C "$(CONFIG_DIR)" pull --ff-only origin
 endif
