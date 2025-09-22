@@ -31,7 +31,7 @@ endif
 CONFIG_REVISION := norevision
 ifeq ($(shell git -C "$(CONFIG_DIR)" rev-parse --is-inside-work-tree 2>/dev/null),true)
 ifeq ($(strip $(shell git -C "$(CONFIG_DIR)" status --porcelain 2>/dev/null)),)
-CONFIG_REVISION := $(shell git -C "$(CONFIG_DIR)" rev-parse --short=12 HEAD 2>/dev/null)
+CONFIG_REVISION := $(shell git -C "$(CONFIG_DIR)" rev-parse --short=7 HEAD 2>/dev/null)
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
 endif
