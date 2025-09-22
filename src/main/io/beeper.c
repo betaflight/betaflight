@@ -420,7 +420,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
-    // Drive ESC beacons whenever the RX link is lost and USB is disconnected
+    // Drive ESC beacons when requested:
+    //  - RX link lost while USB is disconnected (field retrieval), or
+    //  - RX_SET via AUX with an active RX link (user-triggered beacon)
 #ifdef USE_DSHOT
     static const timeDelta_t dshotBeaconIntervalUs = DSHOT_BEACON_MODE_INTERVAL_US;
 
@@ -459,8 +461,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
         lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
     }
 #endif
+    // Note: DShot beacon handling above must run even if no beeper sequence is active.
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
+        schedulerIgnoreTaskExecTime();
         return;
     }
 
