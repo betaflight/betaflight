@@ -428,16 +428,19 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     bool dshotBeaconRequested = false;
 
+    const bool rxUp = failsafeIsReceivingRxData();
+    const bool usbIn = usbCableIsInserted();
+
     if (!areMotorsRunning()) {
         // Failsafe-triggered beacon when the RX link is lost and USB is disconnected
-        if (!failsafeIsReceivingRxData()
-            && !usbCableIsInserted()
+        if (!rxUp
+            && !usbIn
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
             dshotBeaconRequested = true;
         }
 
         // User-triggered beacon when the RX link is active and the AUX switch is engaged
-        if (failsafeIsReceivingRxData()
+        if (rxUp
             && IS_RC_MODE_ACTIVE(BOXBEEPERON)
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)) ) {
             dshotBeaconRequested = true;
