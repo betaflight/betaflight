@@ -445,7 +445,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     if (dshotBeaconRequested) {
         if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
             && !isTryingToArm()) {
-            if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
+            if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dshotBeaconIntervalUs) {
                 // at least 450ms between DShot beacons to allow time for the sound to fully complete
                 // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
@@ -453,10 +453,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
             }
         } else {
             // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
-            lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
+            lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
         }
     } else {
-        lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
+        lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
     }
 #endif
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
