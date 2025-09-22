@@ -28,6 +28,8 @@
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
 #endif
 
+#define DMA_ARCH_TYPE DMA_Stream_TypeDef
+
 typedef enum {
     DMA_NONE = 0,
     DMA_FIRST_HANDLER = 1,

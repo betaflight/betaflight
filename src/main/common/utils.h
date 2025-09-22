@@ -73,6 +73,8 @@
 #ifdef BIT
 #undef BIT
 #define BIT(x) (1 << (x))
+#else
+#define BIT(x) (1 << (x))
 #endif
 
 /*
