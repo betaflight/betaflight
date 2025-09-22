@@ -136,7 +136,7 @@ static void dshotUpdateComplete(void)
 {
     // If there is a dshot command loaded up, time it correctly with motor update
     if (!dshotCommandQueueEmpty()) {
-        if (!dshotCommandOutputIsEnabled(dshotMotorCount)) { // affects dshot command queue
+        if (!dshotCommandOutputIsEnabled(dshotMotorCount)) { // Are we ok to proceed? (This function affects the dshot command queue)
             return;
         }
     }

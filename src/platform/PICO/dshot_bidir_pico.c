@@ -320,7 +320,7 @@ bool dshotDecodeTelemetry(void)
 #ifdef PICO_TRACE
             static int notelem;
             if ((notelem % 250000) < 4) {
-                bprintf("NOTELEM [%d] dshot motor %d, sm at pc-offset = %d, rx:%d, tx:%d",
+                bprintf("NO TELEM [%d] dshot motor %d, sm at pc-offset = %d, rx:%d, tx:%d",
                         notelem,
                         motorIndex,
                         pio_sm_get_pc(motor->pio, motor->pio_sm) - motor->offset,
@@ -333,12 +333,20 @@ bool dshotDecodeTelemetry(void)
             continue;
         }
 
+        // Note: we don't deal nicely with stacking up a sample but then receiving the first of a pair
+        // of words. Problem goes away if we update the PIO to return a single word. (We don't expect to
+        // stack up, because we call decodeTelemetry before each write/updateComplete.)
+        if (fifo_words > 2) {
+            // FIFO has more than one telemetry item's worth - maybe we missed decoding somehow
+            bprintf("*** fifo_words: %d", fifo_words);
+            while (fifo_words > 2) {
+                (void)pio_sm_get(motor->pio, motor->pio_sm); // discard
+                fifo_words = pio_sm_get_rx_fifo_level(motor->pio, motor->pio_sm);
+            }
+        }
+
         const uint32_t rawOne = pio_sm_get_blocking(motor->pio, motor->pio_sm) & ~3u; // bottom 2 bits are junk
         const uint32_t rawTwo = pio_sm_get_blocking(motor->pio, motor->pio_sm) & ~3u; // bottom 2 bits are junk
-        if (fifo_words > 2) {
-            // TODO drain fifo?
-            bprintf("*** fifo_words: %d", fifo_words);
-        }
 
         uint32_t rawValue = decodeTelemetryRaw(motorIndex, rawOne, rawTwo);
 
