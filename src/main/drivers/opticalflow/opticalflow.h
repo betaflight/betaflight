@@ -45,7 +45,7 @@ typedef struct opticalflowDev_s {
     unsigned delayMs;
     int16_t minRangeCm;
     uint8_t minQualityThreshold;
-    
+
     opflowOpInitFunc  *init;
     opflowOpUpdateFunc *update;
     opflowOpReadFunc  *read;

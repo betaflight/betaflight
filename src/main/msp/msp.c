@@ -1382,10 +1382,10 @@ case MSP_NAME:
 
         // added in 1.43
         sbufWriteU8(dst, currentControlRateProfile->rates_type);
-        
+
         // added in 1.47
         sbufWriteU8(dst, currentControlRateProfile->thrHover8);
-        
+
         break;
 
     case MSP_PID:

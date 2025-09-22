@@ -151,20 +151,20 @@ bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinder
     dev->init   = &mtOpticalflowInit;
     dev->update = &mtOpticalflowUpdate;
     dev->read   = &mtOpticalflowGetData;
-    
+
     return true;
 }
 
 void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr) {
     const mtRangefinderData_t * latestRangefinderData = getMTRangefinderData();
-    
+
     const mtOpticalflowDataMessage_t * pkt = (const mtOpticalflowDataMessage_t *)bufferPtr;
-    
+
     opticalflowSensorData.timeStampUs = micros();
-    opticalflowSensorData.flowRate.x  = (float)pkt->motionX / 1000.0f; 
+    opticalflowSensorData.flowRate.x  = (float)pkt->motionX / 1000.0f;
     opticalflowSensorData.flowRate.y  = (float)pkt->motionY / 1000.0f;
     opticalflowSensorData.quality     = pkt->quality * 100 / 255;
-    
+
     if (latestRangefinderData->distanceMm < MT_OPTICALFLOW_MIN_RANGE) {
         opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
     } else if (cmp32(micros(), latestRangefinderData->timestampUs) > (5000 * deviceConf->delayMs)) {   // 5 updates missing
