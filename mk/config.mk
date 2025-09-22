@@ -62,16 +62,16 @@ endif #config
 
 .PHONY: configs
 configs:
-ifeq ($(shell realpath $(CONFIG_DIR)),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
+ifeq ($(shell realpath "$(CONFIG_DIR)"),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
 	@echo "Updating config submodule: $(CONFIGS_SUBMODULE_DIR)"
 	$(V1) git submodule update --init -- $(CONFIGS_SUBMODULE_DIR) || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
 	@echo "Submodule update succeeded."
 else
 ifeq ($(wildcard $(CONFIG_DIR)),)
 	@echo "Hydrating clone for configs: $(CONFIG_DIR)"
-	$(V1) git clone $(CONFIGS_REPO_URL) $(CONFIG_DIR)
+	$(V1) git clone $(CONFIGS_REPO_URL) "$(CONFIG_DIR)"
 else
-	$(V1) git -C $(CONFIG_DIR) pull origin
+	$(V1) git -C "$(CONFIG_DIR)" pull --ff-only origin
 endif
 endif
 
