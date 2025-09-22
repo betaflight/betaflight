@@ -84,7 +84,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
 
 adcDevice_t adcDevice[ADCDEV_COUNT];
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_3
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_2
@@ -101,7 +101,7 @@ const adcTagMap_t adcTagMap[] = {
 #define ADC_TAG_MAP_TEMPSENSOR 1
 #define ADC_TAG_MAP_VBAT4      2
 
-#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) // RM0468 Rev 2 Table 240. ADC interconnection
+#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)  || defined(STM32H735xx) // RM0468 Rev 2 Table 240. ADC interconnection
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    18 }, // 18 VREFINT
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 17 }, // 17 VSENSE
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VBAT,       16 }, // 16 VBAT/4
@@ -213,8 +213,8 @@ static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     hadc->Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE; // Don't care
 
     // Enable circular DMA.
-    // ADC3 of H72X and H73X has a special way of doing this.
-#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+    // ADC3 of H72X and H73X has a special way of doing this (does not work on H735).
+#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) 
     if (adcdev->ADCx == ADC3) {
         hadc->Init.DMAContinuousRequests = ENABLE;
     } else
@@ -250,11 +250,11 @@ static int adcFindTagMapEntry(ioTag_t tag)
     return -1;
 }
 
-// H743, H750 and H7A3 seems to use 16-bit precision value,
+// H743, H735, H750 and H7A3 seems to use 16-bit precision value,
 // while H723, H725 and H730 seems to use 12-bit precision value.
 #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define VREFINT_CAL_SHIFT 4
-#elif defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#elif defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
 #define VREFINT_CAL_SHIFT 0
 #else
 #error Unknown MCU
