@@ -484,6 +484,62 @@ const spiHardware_t spiHardware[] = {
         .dmaIrqHandler = DMA1_ST7_HANDLER,
     },
 #endif
+#ifdef GD32F4
+    {
+        .device = SPIDEV_0,
+        .reg = (void *)SPI0,
+        .sckPins = {
+            { DEFIO_TAG_E(PA5) },
+            { DEFIO_TAG_E(PB3) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PA6) },
+            { DEFIO_TAG_E(PB4) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PA7) },
+            { DEFIO_TAG_E(PB5) },
+        },
+        .af = GPIO_AF_5,
+        .rcc = RCC_APB2(SPI0),
+    },
+    {
+        .device = SPIDEV_1,
+        .reg = (void *)SPI1,
+        .sckPins = {
+            { DEFIO_TAG_E(PB10) },
+            { DEFIO_TAG_E(PB13) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB14) },
+            { DEFIO_TAG_E(PC2) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB15) },
+            { DEFIO_TAG_E(PC3) },
+        },
+        .af = GPIO_AF_5,
+        .rcc = RCC_APB1(SPI1),
+    },
+    {
+        .device = SPIDEV_2,
+        .reg = (void *)SPI2,
+        .sckPins = {
+            { DEFIO_TAG_E(PB3) },
+            { DEFIO_TAG_E(PC10) },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB4) },
+            { DEFIO_TAG_E(PC11) },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB5) },
+            { DEFIO_TAG_E(PC12) },
+        },
+        .af = GPIO_AF_6,
+        .rcc = RCC_APB1(SPI2),
+    },
+#endif
 };
 
 void spiPinConfigure(const spiPinConfig_t *pConfig)
