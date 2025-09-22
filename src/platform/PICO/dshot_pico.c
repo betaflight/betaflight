@@ -110,15 +110,15 @@ static float getPeriodTiming(void)
 // 1st bit of return frame is always 0, "idle" is 1, so after ~25 us could start waiting for transition
 // to 0 - when we finish the out frame, we set pin to input (pindirs 0). Will that respect a previous
 // pullup setting?
-// see https://forums.raspberrypi.com/viewtopic.php?t=311659 
+// see https://forums.raspberrypi.com/viewtopic.php?t=311659
 
 /*
 comment on syncing (?) for return frame
 https://github.com/betaflight/betaflight/pull/8554
 ledvinap commented on Jul 16, 2019
 A side note: I didn't analyze it too far, but is seems that 1.5x oversampling (1.5 synchronous samples per bit period) should be enough to handle NRZ protocol including clock drift...
-    
-joelucid commented on Jul 17, 2019 • 
+
+joelucid commented on Jul 17, 2019 •
 Let me specify the new rpm telemetry protocol here for you @sskaug, and others:
 
 Dshot bidir uses inverted signal levels (idle is 1). FC to ESC uses dshot frames but the lowest 4 bits hold the complement of the other nibbles xor'd together (normal dshot does not complement the xor sum). The ESC detects based on the inversion that telemetry packets have to be sent.
@@ -147,7 +147,7 @@ b -> 0b
 c -> 1e
 d -> 0d
 e -> 0e
-f -> 0f 
+f -> 0f
 This creates a 20 bit value which has no more than two consecutive zeros. This value is mapped to a new 21 bit value by starting with a bit value of 0 and changing the bit value in the next bit if the current bit in the incoming value is a 1, but repeating the previous bit value otherwise. Example:
 
 1 0 1 1 1 0 0 1 1 0 would become 0 1 1 0 1 0 0 0 1 0 0.
@@ -176,16 +176,16 @@ static const uint16_t dshot_bidir_PIO_instructions[] = {
     0xee00, // 11: set    pins, 0                [14]      // 0 bit to output. Inverted Dshot => 0 for 15, 1 for 25
     0xf401, // 12: set    pins, 1                [20]
     0x0004, // 13: jmp    4
-    0xe055, // 14: set    y, 21                            // after end of output frame, wait ~30us for start of input which should be transition to 0 
+    0xe055, // 14: set    y, 21                            // after end of output frame, wait ~30us for start of input which should be transition to 0
     0x1f8f, // 15: jmp    y--, 15                [31]      // wait 32*21 = 672 cycles = 16.8 bit periods ~ 28us at DSHOT600 rate
     0xe080, // 16: set    pindirs, 0
     0xe05f, // 17: set    y, 31
     0xa142, // 18: nop                           [1]
     0x0076, // 19: jmp    !y, 22
     0x0095, // 20: jmp    y--, 21                             // TODO dead code?
-    0x00d2, // 21: jmp    pin, 18                             // TODO dead code?                          
+    0x00d2, // 21: jmp    pin, 18                             // TODO dead code?
     0xe05e, // 22: set    y, 30
-    0x4901, // 23: in     pins, 1                [9]          
+    0x4901, // 23: in     pins, 1                [9]
     0x0097, // 24: jmp    y--, 23                               // retrive 31 bits? every 11 cycles (in bits are at 40*4/5 = 32 cycles for dshot600)
     0x4801, // 25: in     pins, 1                [8]            // retrieve 32nd bit TODO we want 21 (or 20 given leading 0) - are we ~3x sampling?
 ////////////    0x8020, // 26: push   block
@@ -305,8 +305,8 @@ static void dshot_program_init(PIO pio, uint sm, int offset, uint pin)
 TODO what actually finally fixed this? was it removing gpio_set_dir (unlikely) or
     the whole IOConfigGPIO (which needs rethinking)?
     TODO is Dshot writing async? (what about telemetry?)
-*/  
-    
+*/
+
 
 #ifdef USE_DSHOT_TELEMETRY
 static uint32_t decodeTelemetry(const uint32_t first, const uint32_t second)
@@ -430,7 +430,7 @@ static void dshotWriteInt(uint8_t motorIndex, uint16_t value)
     // for testing, can be convenient to block, not lose any writes
     pio_sm_put_blocking(motor->pio, motor->pio_sm, packet);
 ////    pio_sm_put(motor->pio, motor->pio_sm, packet);
-#else    
+#else
     pio_sm_put(motor->pio, motor->pio_sm, packet);
 #endif
 }
@@ -575,7 +575,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
 #ifdef TEST_DSHOT_ETC
     pio_set_gpio_base(pio, 16);
 #endif
-    
+
     // Use one program for all motors.
     // NB the PIO block is limited to 32 instructions (shared across 4 state machines)
 #ifdef USE_DSHOT_TELEMETRY
@@ -615,7 +615,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         // uint8_t iocfg = 0;
         // IOConfigGPIO(io, iocfg); // TODO: don't need this? assigned and dir in program init
-        
+
 #ifdef USE_DSHOT_TELEMETRY
         dshot_program_bidir_init(pio, pio_sm, dshotMotors[motorIndex].offset, pinIndex);
 #else

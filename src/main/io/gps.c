@@ -442,7 +442,8 @@ void gpsInit(void)
     }
 #endif
     if (serialType(gpsPortConfig->identifier) == SERIALTYPE_UART
-        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART) {
+        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART
+        || serialType(gpsPortConfig->identifier) == SERIALTYPE_PIOUART) {
         // TODO: SERIAL_CHECK_TX is broken on F7, disable it until it is fixed
 #if !defined(STM32F7) || defined(USE_F7_CHECK_TX)
         options |= SERIAL_CHECK_TX;

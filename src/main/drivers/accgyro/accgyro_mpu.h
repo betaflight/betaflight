@@ -244,4 +244,4 @@ struct accDev_s;
 bool mpuAccRead(struct accDev_s *acc);
 bool mpuAccReadSPI(struct accDev_s *acc);
 
-busStatus_e mpuIntCallback(uint32_t arg);
+busStatus_e mpuIntCallback(uintptr_t arg);

@@ -115,24 +115,37 @@ include $(MAKE_SCRIPT_DIR)/$(OSFAMILY).mk
 # include the tools makefile
 include $(MAKE_SCRIPT_DIR)/tools.mk
 
+# -----------------------------------------------------------------------------
+# Tool discovery (need CROSS_CC available before config handling)
+# -----------------------------------------------------------------------------
+
+# Find out if ccache is installed on the system
+CCACHE := ccache
+RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
+ifneq ($(RESULT),0)
+CCACHE :=
+endif
+
+# Tool names (defer prefix resolution for per-platform overrides like SITL)
+CROSS_CC     = $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CROSS_CXX    = $(CCACHE) $(ARM_SDK_PREFIX)g++
+CROSS_GDB    = $(ARM_SDK_PREFIX)gdb
+OBJCOPY      = $(ARM_SDK_PREFIX)objcopy
+OBJDUMP      = $(ARM_SDK_PREFIX)objdump
+READELF      = $(ARM_SDK_PREFIX)readelf
+SIZE         = $(ARM_SDK_PREFIX)size
+DFUSE-PACK  := src/utils/dfuse-pack.py
+
+# Preprocessor helpers (generic .h parsing)
+include $(MAKE_SCRIPT_DIR)/preprocess.mk
+
 # Search path for sources
 VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(PLATFORM_DIR)
 FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-FC_VER_YEAR   := $(shell awk '/^[[:space:]]*#define[[:space:]]+FC_VERSION_YEAR[[:space:]]+/  {print $$3}' src/main/build/version.h)
-FC_VER_MONTH  := $(shell awk '/^[[:space:]]*#define[[:space:]]+FC_VERSION_MONTH[[:space:]]+/ {print $$3}' src/main/build/version.h)
-FC_VER_PATCH  := $(shell awk '/^[[:space:]]*#define[[:space:]]+FC_VERSION_PATCH_LEVEL[[:space:]]+/ {print $$3}' src/main/build/version.h)
-FC_VER_SUFFIX := $(shell awk '/^[[:space:]]*#define[[:space:]]+FC_VERSION_SUFFIX[[:space:]]+/ {gsub(/"/,""); print $$3}' src/main/build/version.h)
-
-FC_VER       := $(FC_VER_YEAR).$(FC_VER_MONTH).$(FC_VER_PATCH)
-
-ifdef FC_VER_SUFFIX
-FC_VER       := $(FC_VER)-$(FC_VER_SUFFIX)
-endif
-
-# import config handling (must occur after the hydration of hex, exe and uf2 targets)
+# import config handling (must occur after tool discovery and hydration)
 include $(MAKE_SCRIPT_DIR)/config.mk
 
 # default xtal value
@@ -263,23 +276,6 @@ endif
 # Things that might need changing to use different tools
 #
 
-# Find out if ccache is installed on the system
-CCACHE := ccache
-RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
-ifneq ($(RESULT),0)
-CCACHE :=
-endif
-
-# Tool names
-CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
-CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
-CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
-OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
-OBJDUMP     := $(ARM_SDK_PREFIX)objdump
-READELF     := $(ARM_SDK_PREFIX)readelf
-SIZE        := $(ARM_SDK_PREFIX)size
-DFUSE-PACK  := src/utils/dfuse-pack.py
-
 #
 # Tool options.
 #
@@ -294,6 +290,11 @@ CC_DEFAULT_OPTIMISATION := $(filter-out $(CFLAGS_DISABLED), $(CC_DEFAULT_OPTIMIS
 CC_SPEED_OPTIMISATION   := $(filter-out $(CFLAGS_DISABLED), $(CC_SPEED_OPTIMISATION))
 CC_SIZE_OPTIMISATION    := $(filter-out $(CFLAGS_DISABLED), $(CC_SIZE_OPTIMISATION))
 CC_NO_OPTIMISATION      := $(filter-out $(CFLAGS_DISABLED), $(CC_NO_OPTIMISATION))
+
+
+# Extract version from the version header
+# Expand FC_VERSION_STRING via the preprocessor; compute before finalizing CFLAGS
+FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_STRING)
 
 #
 # Added after GCC version update, remove once the warnings have been fixed
@@ -698,8 +699,9 @@ $(DIRECTORIES):
 	mkdir -p $@
 
 ## version           : print firmware version
+.PHONY: version
 version:
-	@echo $(FC_VER)
+	@echo '$(FC_VER)'
 
 ## help              : print this help message and exit
 help: Makefile mk/tools.mk

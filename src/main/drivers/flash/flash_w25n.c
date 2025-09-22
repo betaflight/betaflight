@@ -537,7 +537,7 @@ bool bufferDirty = false;
 
 // Called in ISR context
 // Check if the status was busy and if so repeat the poll
-static busStatus_e w25n_callbackReady(uint32_t arg)
+static busStatus_e w25n_callbackReady(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
     extDevice_t *dev = fdevice->io.handle.dev;
@@ -557,7 +557,7 @@ static busStatus_e w25n_callbackReady(uint32_t arg)
 #ifdef USE_QUADSPI
 bool isProgramming = false;
 
-static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
 
@@ -627,7 +627,7 @@ static void w25n_pageProgramFinish(flashDevice_t *fdevice)
     }
 }
 #else
-static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
@@ -638,7 +638,7 @@ static uint32_t currentPage = UINT32_MAX;
 
 // Called in ISR context
 // A write enable has just been issued
-static busStatus_e w25n_callbackWriteEnable(uint32_t arg)
+static busStatus_e w25n_callbackWriteEnable(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
@@ -650,14 +650,14 @@ static busStatus_e w25n_callbackWriteEnable(uint32_t arg)
 
 // Called in ISR context
 // Write operation has just completed
-static busStatus_e w25n_callbackWriteComplete(uint32_t arg)
+static busStatus_e w25n_callbackWriteComplete(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
-    fdevice->currentWriteAddress += fdevice->callbackArg;
+    fdevice->currentWriteAddress += fdevice->bytesWritten;
     // Call transfer completion callback
     if (fdevice->callback) {
-        fdevice->callback(fdevice->callbackArg);
+        fdevice->callback(fdevice->bytesWritten);
     }
 
     return BUS_READY;
@@ -758,7 +758,7 @@ static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const *
         programSegment++;
     }
 
-    fdevice->callbackArg = bufferSizes[0];
+    fdevice->bytesWritten = bufferSizes[0];
 
     spiSequence(fdevice->io.handle.dev, programSegment);
 
@@ -768,7 +768,7 @@ static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const *
         spiWait(fdevice->io.handle.dev);
     }
 
-    return fdevice->callbackArg;
+    return fdevice->bytesWritten;
 }
 
 static void w25n_pageProgramFinish(flashDevice_t *fdevice)
@@ -793,7 +793,7 @@ static void w25n_pageProgramFinish(flashDevice_t *fdevice)
  * break this operation up into one beginProgram call, one or more continueProgram calls, and one finishProgram call.
  */
 
-static void w25n_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void w25n_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     w25n_pageProgramBegin(fdevice, address, callback);
     w25n_pageProgramContinue(fdevice, &data, &length, 1);
@@ -1010,7 +1010,7 @@ typedef volatile struct cb_context_s {
 
 // Called in ISR context
 // Read of BBLUT entry has just completed
-static busStatus_e w25n_readBBLUTCallback(uint32_t arg)
+static busStatus_e w25n_readBBLUTCallback(uintptr_t arg)
 {
     cb_context_t *cb_context = (cb_context_t *)arg;
     flashDevice_t *fdevice = cb_context->fdevice;
@@ -1029,11 +1029,10 @@ static busStatus_e w25n_readBBLUTCallback(uint32_t arg)
 
 LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 {
-    cb_context_t cb_context;
-    uint8_t in[4];
+    UNUSED(bblut);
+    UNUSED(lutsize);
 
-    cb_context.fdevice = fdevice;
-    fdevice->callbackArg = (uint32_t)&cb_context;
+    uint8_t in[4];
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
@@ -1042,10 +1041,6 @@ LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t
 
         cmd[0] = W25N_INSTRUCTION_READ_BBM_LUT;
         cmd[1] = 0;
-
-        cb_context.bblut = &bblut[0];
-        cb_context.lutsize = lutsize;
-        cb_context.lutindex = 0;
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
