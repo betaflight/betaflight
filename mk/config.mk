@@ -29,9 +29,9 @@ TARGET_FLAGS += -DUSE_CONFIG_SOURCE
 endif
 
 CONFIG_REVISION := norevision
-ifneq ($(wildcard $(CONFIG_DIR)/.git/),)
-ifeq ($(shell git -C $(CONFIG_DIR) diff --shortstat),)
-CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
+ifeq ($(shell git -C "$(CONFIG_DIR)" rev-parse --is-inside-work-tree 2>/dev/null),true)
+ifeq ($(strip $(shell git -C "$(CONFIG_DIR)" status --porcelain 2>/dev/null)),)
+CONFIG_REVISION := $(shell git -C "$(CONFIG_DIR)" rev-parse --short=12 HEAD 2>/dev/null)
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 endif
 endif
