@@ -459,7 +459,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
         lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
     }
 #endif
-
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
         return;
