@@ -1,8 +1,8 @@
 
 CONFIGS_REPO_URL ?= https://github.com/betaflight/config
 # handle only this directory as config submodule
-CONFIGS_SUBMODULE_DIR = src/config
-BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
+CONFIGS_SUBMODULE_DIR := src/config
+BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
 
 ifneq ($(filter-out %_sdk %_install test% %_clean clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
 ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
@@ -62,9 +62,9 @@ endif #config
 
 .PHONY: configs
 configs:
-ifeq ($(shell realpath "$(CONFIG_DIR)"),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
+ifeq ($(shell realpath "$(CONFIG_DIR)"),$(shell realpath "$(CONFIGS_SUBMODULE_DIR)"))
 	@echo "Updating config submodule: $(CONFIGS_SUBMODULE_DIR)"
-	$(V1) git submodule update --init -- $(CONFIGS_SUBMODULE_DIR) || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
+	$(V1) git submodule update --init -- "$(CONFIGS_SUBMODULE_DIR)" || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
 	@echo "Submodule update succeeded."
 else
 ifeq ($(wildcard $(CONFIG_DIR)),)
