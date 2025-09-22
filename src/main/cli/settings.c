@@ -1457,6 +1457,8 @@ const clivalue_t valueTable[] = {
     // Set to 10 to show a tenth of your capacity drawn.
     // Set to $size_of_battery to get a percentage of battery used.
     { "mavlink_mah_as_heading_divisor", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 30000 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_mah_as_heading_divisor) },
+    // mavlink telemetry flow control to prevent TX buffers overflow
+    { "mavlink_min_txbuff", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_min_txbuff) },
 #endif
 #ifdef USE_TELEMETRY_SENSORS_DISABLED_DETAILS
     { "telemetry_disabled_voltage",         VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_VOLTAGE),         PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},
@@ -1857,8 +1859,6 @@ const clivalue_t valueTable[] = {
     { "gyro_" STR(N) "_i2cBus",        VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2CDEV_COUNT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, i2cBus) },\
     /* i2c addr */                                                                 \
     { "gyro_" STR(N) "_i2c_address",   VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, I2C_ADDR7_MAX }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, i2cAddress) },\
-    /* align lookup */                                                             \
-    { "gyro_" STR(N) "_sensor_align", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, alignment) },\
     /* custom roll/pitch/yaw */                                                    \
     { "gyro_" STR(N) "_align_roll",   VAR_INT16 | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, customAlignment.roll) },\
     { "gyro_" STR(N) "_align_pitch",  VAR_INT16 | HARDWARE_VALUE, .config.minmax = { -3600, 3600 }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, IDX, customAlignment.pitch) },\

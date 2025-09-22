@@ -23,15 +23,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
- 
+
 #include "platform.h"
- 
+
 #if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
- 
+
 #include "common/axis.h"
 #include "common/utils.h"
 #include "build/debug.h"
- 
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
@@ -44,11 +44,11 @@
 #include "drivers/system.h"
 
 #include "fc/runtime_config.h"
- 
+
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"
 
-/* 
+/*
 reference: https://github.com/tdk-invn-oss/motion.mcu.icm45686.driver
 Datasheet: https://invensense.tdk.com/wp-content/uploads/documentation/DS-000577_ICM-45686.pdf
 Datasheet: https://invensense.tdk.com/wp-content/uploads/documentation/DS-000576_ICM-45605.pdf
@@ -63,7 +63,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
      +------+     +--------------+    +-------------+    +--------------+    +------------------+
      | ADC  |---->| Anti-Alias   |--->| Interpolator|--->|     LPF      |--->| Sensor Registers |---> UI Interface
      |      |     | Filter (AAF) |    |             | +->| & ODR Select |    |                  |
-     +--|---+     +--------------+    +-------------+ |  +--------------+    +------------------+ 
+     +--|---+     +--------------+    +-------------+ |  +--------------+    +------------------+
         |                                             |
         |           Low-Power Mode                    |
         |         +--------------+                    |
@@ -76,10 +76,10 @@ Note: Now implemented only UI Interface with Low-Noise Mode
      | ADC  | --------> | Notch Filter | --->  | HPF  | --->  | LPF  | ---> | Sensor Registers | ---> AUX1 Interface
      |      |           |              |       |      |       |      |      |                  |
      +------+           +--------------+       +------+       +------+      +------------------+
- 
+
  The AUX1 interface default configuration can be checked by read only register IOC_PAD_SCENARIO through host interface.
  By default, AUX1 interface is enabled, and default interface for AUX1 is SPI3W or I3CSM.
- 
+
  In Low-Noise Mode, the ADC output is sent through an Anti-Alias Filter (AAF). The AAF is an FIR filter with fixed
  coefficients (not user configurable). The AAF can be enabled or disabled by the user using GYRO_SRC_CTRL and
  ACCEL_SRC_CTRL.
@@ -92,7 +92,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
  The notch filter is followed by an HPF on the AUX1 signal path. HPF cut-off frequency can be selected using
  GYRO_OIS_HPFBW_SEL and ACCEL_OIS_HPFBW_SEL. HPF can be bypassed using GYRO_OIS_HPF1_BYP and
  ACCEL_OIS_HPF1_BYP.
- 
+
  The HPF is followed by LPF on the AUX1 signal path. The AUX1 LPF BW is set by register bit field
  GYRO_OIS_LPF1BW_SEL and ACCEL_OIS_LPF1BW_SEL for gyroscope and accelerometer respectively. This is
  followed by Full Scale Range (FSR) selection based on user configurable settings for register fields
@@ -102,7 +102,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_REG_BANK_SEL                   0x75
 #define ICM456XX_BANK_0                         0x00
 #define ICM456XX_BANK_1                         0x01
- 
+
 // Register map Bank 0
 #define ICM456XX_WHO_AM_REGISTER                0x72
 #define ICM456XX_REG_MISC2                      0x7F
@@ -121,7 +121,7 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE    (0 << 1)
 #define ICM456XX_SREG_DATA_ENDIAN_SEL_BIG       (1 << 1) // not working set SREG_CTRL regiser
 
-// MGMT0 - 0x10 - Gyro 
+// MGMT0 - 0x10 - Gyro
 #define ICM456XX_GYRO_MODE_OFF                  (0x00 << 2)
 #define ICM456XX_GYRO_MODE_STANDBY              (0x01 << 2)
 #define ICM456XX_GYRO_MODE_LP                   (0x02 << 2)  // Low Power Mode
@@ -283,7 +283,7 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
     case GYRO_HARDWARE_LPF_EXPERIMENTAL:
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4;
-#endif           
+#endif
     default:
         return ICM456XX_GYRO_UI_LPFBW_BYPASS;
     }
@@ -335,7 +335,7 @@ static inline void icm456xx_enableAAFandInterpolator(const extDevice_t *dev, uin
 static bool icm456xx_configureLPF(const extDevice_t *dev, uint16_t reg, uint8_t lpfDiv)
 {
     if (lpfDiv > 0x07) {
-        return false; 
+        return false;
     }
 
     return icm456xx_write_ireg(dev, reg, lpfDiv & 0x07);
@@ -349,7 +349,7 @@ static void icm456xx_enableSensors(const extDevice_t *dev, bool enable)
 
     spiWriteReg(dev, ICM456XX_PWR_MGMT0, value);
 }
- 
+
 void icm456xxAccInit(accDev_t *acc)
 {
     const extDevice_t *dev = &acc->gyro->dev;
@@ -384,7 +384,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(dev, spiCalculateDivider(ICM456XX_MAX_SPI_CLK_HZ));
 
     mpuGyroInit(gyro);
-    
+
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     icm456xx_enableSensors(dev, true);
@@ -412,9 +412,9 @@ void icm456xxGyroInit(gyroDev_t *gyro)
                                             ICM456XX_INT1_POLARITY_ACTIVE_HIGH);
 
     spiWriteReg(dev, ICM456XX_INT1_CONFIG0, ICM456XX_INT1_STATUS_EN_DRDY);
-    
+
 }
- 
+
 uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 {
     uint8_t icmDetected = MPU_NONE;
@@ -442,7 +442,7 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
         case ICM45686_WHO_AM_I_CONST:
             icmDetected = ICM_45686_SPI;
             break;
-        case ICM45605_WHO_AM_I_CONST:    
+        case ICM45605_WHO_AM_I_CONST:
             icmDetected = ICM_45605_SPI;
             break;
         default:
@@ -463,7 +463,7 @@ bool icm456xxAccReadSPI(accDev_t *acc)
     case GYRO_EXTI_NO_INT:
     {
 #ifdef USE_DMA
-        if (spiUseDMA(&acc->gyro->dev)) {      
+        if (spiUseDMA(&acc->gyro->dev)) {
             acc->gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;
 
             busSegment_t segments[] = {
@@ -478,7 +478,7 @@ bool icm456xxAccReadSPI(accDev_t *acc)
             // Wait for completion
             spiWait(&acc->gyro->dev);
 
-        } else 
+        } else
 #endif
         {
            // Interrupts are present, but no DMA. Non-DMA read
@@ -487,11 +487,11 @@ bool icm456xxAccReadSPI(accDev_t *acc)
            if (!ack) {
                return false;
            }
-   
+
            acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
            acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
            acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
-           
+
         }
         break;
     }
@@ -513,9 +513,9 @@ bool icm456xxAccReadSPI(accDev_t *acc)
         break;
     }
 
-    return true;    
+    return true;
 }
- 
+
 bool icm456xxSpiAccDetect(accDev_t *acc)
 {
     switch (acc->mpuDetectionResult.sensor) {
@@ -542,7 +542,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         gyro->gyroDmaMaxDuration = 0; // INT gyroscope always calls that data is ready. We can read immediately
 #ifdef USE_DMA
         if (spiUseDMA(&gyro->dev)) {
-            gyro->dev.callbackArg = (uint32_t)gyro;
+            gyro->dev.callbackArg = (uintptr_t)gyro;
             gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
             gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;
             gyro->segments[0].callback = mpuIntCallback;
@@ -622,8 +622,8 @@ bool icm456xxSpiGyroDetect(gyroDev_t *gyro)
     default:
         return false;
     }
-    
+
     return true;
 }
- 
+
 #endif // USE_ACCGYRO_ICM45686 || USE_ACCGYRO_ICM45605

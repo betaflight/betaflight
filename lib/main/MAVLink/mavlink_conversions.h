@@ -1,5 +1,6 @@
-#ifndef  _MAVLINK_CONVERSIONS_H_
-#define  _MAVLINK_CONVERSIONS_H_
+#pragma once
+
+#ifndef MAVLINK_NO_CONVERSION_HELPERS
 
 /* enable math defines on Windows */
 #ifdef _MSC_VER
@@ -9,7 +10,9 @@
 #endif
 #include <math.h>
 
-#define MAVLINK_EPS (0.001f)
+#ifndef M_PI_2
+    #define M_PI_2 ((float)asin(1))
+#endif
 
 /**
  * @file mavlink_conversions.h
@@ -35,10 +38,10 @@
  */
 MAVLINK_HELPER void mavlink_quaternion_to_dcm(const float quaternion[4], float dcm[3][3])
 {
-    double a = quaternion[0];
-    double b = quaternion[1];
-    double c = quaternion[2];
-    double d = quaternion[3];
+    double a = (double)quaternion[0];
+    double b = (double)quaternion[1];
+    double c = (double)quaternion[2];
+    double d = (double)quaternion[3];
     double aSq = a * a;
     double bSq = b * b;
     double cSq = c * c;
@@ -68,12 +71,12 @@ MAVLINK_HELPER void mavlink_dcm_to_euler(const float dcm[3][3], float* roll, flo
     float phi, theta, psi;
     theta = asinf(-dcm[2][0]);
 
-    if (fabsf(theta - M_PIf / 2.0f) < MAVLINK_EPS) {
+    if (fabsf(theta - (float)M_PI_2) < 1.0e-3f) {
         phi = 0.0f;
         psi = (atan2f(dcm[1][2] - dcm[0][1],
                 dcm[0][2] + dcm[1][1]) + phi);
 
-    } else if (fabsf(theta + M_PIf / 2.0f) < MAVLINK_EPS) {
+    } else if (fabsf(theta + (float)M_PI_2) < 1.0e-3f) {
         phi = 0.0f;
         psi = atan2f(dcm[1][2] - dcm[0][1],
                   dcm[0][2] + dcm[1][1] - phi);
@@ -115,12 +118,12 @@ MAVLINK_HELPER void mavlink_quaternion_to_euler(const float quaternion[4], float
  */
 MAVLINK_HELPER void mavlink_euler_to_quaternion(float roll, float pitch, float yaw, float quaternion[4])
 {
-    float cosPhi_2 = cos_approx(roll / 2);
-    float sinPhi_2 = sin_approx(roll / 2);
-    float cosTheta_2 = cos_approx(pitch / 2);
-    float sinTheta_2 = sin_approx(pitch / 2);
-    float cosPsi_2 = cos_approx(yaw / 2);
-    float sinPsi_2 = sin_approx(yaw / 2);
+    float cosPhi_2 = cosf(roll / 2);
+    float sinPhi_2 = sinf(roll / 2);
+    float cosTheta_2 = cosf(pitch / 2);
+    float sinTheta_2 = sinf(pitch / 2);
+    float cosPsi_2 = cosf(yaw / 2);
+    float sinPsi_2 = sinf(yaw / 2);
     quaternion[0] = (cosPhi_2 * cosTheta_2 * cosPsi_2 +
             sinPhi_2 * sinTheta_2 * sinPsi_2);
     quaternion[1] = (sinPhi_2 * cosTheta_2 * cosPsi_2 -
@@ -186,12 +189,12 @@ MAVLINK_HELPER void mavlink_dcm_to_quaternion(const float dcm[3][3], float quate
  */
 MAVLINK_HELPER void mavlink_euler_to_dcm(float roll, float pitch, float yaw, float dcm[3][3])
 {
-    float cosPhi = cos_approx(roll);
-    float sinPhi = sin_approx(roll);
-    float cosThe = cos_approx(pitch);
-    float sinThe = sin_approx(pitch);
-    float cosPsi = cos_approx(yaw);
-    float sinPsi = sin_approx(yaw);
+    float cosPhi = cosf(roll);
+    float sinPhi = sinf(roll);
+    float cosThe = cosf(pitch);
+    float sinThe = sinf(pitch);
+    float cosPsi = cosf(yaw);
+    float sinPsi = sinf(yaw);
 
     dcm[0][0] = cosThe * cosPsi;
     dcm[0][1] = -cosPhi * sinPsi + sinPhi * sinThe * cosPsi;
@@ -206,4 +209,4 @@ MAVLINK_HELPER void mavlink_euler_to_dcm(float roll, float pitch, float yaw, flo
     dcm[2][2] = cosPhi * cosThe;
 }
 
-#endif
+#endif // MAVLINK_NO_CONVERSION_HELPERS

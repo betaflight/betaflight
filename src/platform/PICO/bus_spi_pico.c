@@ -170,7 +170,7 @@ static void spiSetClockFromSpeed(spi_inst_t *spi, uint16_t speed)
 }
 
 /*
-  
+
 enum spi_cpha_t { SPI_CPHA_0 = 0, SPI_CPHA_1 = 1 }
 Enumeration of SPI CPHA (clock phase) values.
 
@@ -408,7 +408,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     dma_start_channel_mask(channelMask);
 #endif
 }
-    
+
 // DMA transfer setup and start
 void spiSequenceStart(const extDevice_t *dev)
 {
@@ -422,7 +422,7 @@ void spiSequenceStart(const extDevice_t *dev)
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
     bus->initSegment = true;
-    
+
     // Switch bus speed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
         spiSetClockFromSpeed(SPI_INST(instance), dev->busType_u.spi.speed);

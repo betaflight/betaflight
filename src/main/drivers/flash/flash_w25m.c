@@ -199,7 +199,7 @@ static void w25m_eraseCompletely(flashDevice_t *fdevice)
 static uint32_t currentWriteAddress;
 static int currentWriteDie;
 
-static void w25m_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25m_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     currentWriteDie = address / dieSize;
     w25m_dieSelect(fdevice->io.handle.dev, currentWriteDie);
@@ -221,7 +221,7 @@ static void w25m_pageProgramFinish(flashDevice_t *fdevice)
     dieDevice[currentWriteDie].vTable->pageProgramFinish(&dieDevice[currentWriteDie]);
 }
 
-static void w25m_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void w25m_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     w25m_pageProgramBegin(fdevice, address, callback);
 

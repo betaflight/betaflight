@@ -71,6 +71,7 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
+#include "build/debug.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
@@ -105,7 +106,12 @@ static const uint8_t mavRates[] = {
 static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-static uint32_t lastMavlinkMessage = 0;
+static uint32_t lastMavlinkMessageTime = 0;
+
+static mavlink_message_t mavRecvMsg;
+static mavlink_status_t mavRecvStatus;
+static uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
+static bool txbuff_valid = false;
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
@@ -260,6 +266,10 @@ static void mavlinkSendSystemStatus(void)
         // errors_count3 Autopilot-specific errors
         0,
         // errors_count4 Autopilot-specific errors
+        0,
+        // extended parameters, set to zero
+        0,
+        0,
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
@@ -336,7 +346,14 @@ static void mavlinkSendPosition(void)
         // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
         gpsSol.groundCourse * 10,
         // satellites_visible Number of satellites visible. If unknown, set to 255
-        gpsSol.numSat);
+        gpsSol.numSat,
+        // Extended parameters, set to zero
+        0,
+        0,
+        0,
+        0,
+        0,
+        0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
@@ -365,11 +382,13 @@ static void mavlinkSendPosition(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 
     mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
-        // latitude Latitude (WGS84), expressed as * 1E7
+        // Latitude (WGS84), expressed as * 1E7
         GPS_home_llh.lat,
-        // longitude Longitude (WGS84), expressed as * 1E7
+        // Longitude (WGS84), expressed as * 1E7
         GPS_home_llh.lon,
-        // altitude Altitude(WGS84), expressed as * 1000
+        // Altitude(WGS84), expressed as * 1000
+        0,
+        // Timestamp, unused
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
@@ -431,9 +450,9 @@ static void mavlinkSendHUDAndHeartbeat(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-    uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+    uint8_t mavModes = MAV_MODE_MANUAL_DISARMED;
     if (ARMING_FLAG(ARMED))
-        mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
+        mavModes |= MAV_MODE_MANUAL_ARMED;
 
     uint8_t mavSystemType;
     switch (mixerConfig()->mixerMode)
@@ -534,6 +553,36 @@ static void processMAVLinkTelemetry(void)
     }
 }
 
+// Get RADIO_STATUS data
+static void handleIncoming_RADIO_STATUS(void)
+{
+    mavlink_radio_status_t msg;
+    mavlink_msg_radio_status_decode(&mavRecvMsg, &msg);
+    txbuff_valid = true;
+    txbuff_free = msg.txbuf;
+}
+
+// Get incoming telemetry data
+static bool processMAVLinkIncomingTelemetry(void)
+{
+    while (serialRxBytesWaiting(mavlinkPort) > 0) {
+        // Limit handling to one message per cycle
+        char c = serialRead(mavlinkPort);
+        uint8_t result = mavlink_parse_char(0, c, &mavRecvMsg, &mavRecvStatus);
+        if (result == MAVLINK_FRAMING_OK) {
+            switch (mavRecvMsg.msgid) {
+            case MAVLINK_MSG_ID_RADIO_STATUS:
+                handleIncoming_RADIO_STATUS();
+                return false;
+            default:
+                return false;
+            }
+        }
+    }
+
+    return false;
+}
+
 void handleMAVLinkTelemetry(void)
 {
     if (!mavlinkTelemetryEnabled) {
@@ -544,10 +593,30 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
-    uint32_t now = micros();
-    if ((now - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
+    bool shouldSendTelemetry = false;
+    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
+
+    if (mavlink_min_txbuff > 0) {
+        processMAVLinkIncomingTelemetry();
+    }
+
+    uint32_t currentTimeUs = micros();
+    if (txbuff_valid) {
+        // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
+        shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
+        if (shouldSendTelemetry) {
+            txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
+        }
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, mavlink_min_txbuff);
+    } else {
+        shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
+    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);
+
+    if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
-        lastMavlinkMessage = now;
+        lastMavlinkMessageTime = currentTimeUs;
     }
 }
 

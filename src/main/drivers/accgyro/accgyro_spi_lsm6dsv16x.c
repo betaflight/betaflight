@@ -1025,7 +1025,7 @@ static bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
 #ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
-                gyro->dev.callbackArg = (uint32_t)gyro;
+                gyro->dev.callbackArg = (uintptr_t)gyro;
                 gyro->dev.txBuf[0] = LSM6DSV_OUTX_L_G | 0x80;
                 // Read three words of gyro data immediately followed by three bytes of acc data
                 gyro->segments[0].len = sizeof(uint8_t) + 6 * sizeof(int16_t);

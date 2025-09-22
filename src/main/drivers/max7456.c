@@ -612,7 +612,7 @@ bool max7456ReInitIfRequired(bool forceStallCheck)
 }
 
 // Called in ISR context
-static busStatus_e max7456_callbackReady(uint32_t arg)
+static busStatus_e max7456_callbackReady(uintptr_t arg)
 {
     UNUSED(arg);
 
