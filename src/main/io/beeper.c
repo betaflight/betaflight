@@ -460,8 +460,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
             // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
             lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
         }
-    } else {
-        lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
     }
 #endif
     // Note: DShot beacon handling above must run even if no beeper sequence is active.
