@@ -28,7 +28,7 @@
 
 #define DYN_NOTCH_COUNT_MAX 7
 
-void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs);
+void dynNotchInit(const dynNotchConfig_t *config, const float dt);
 void dynNotchPush(const int axis, const float sample);
 void dynNotchUpdate(void);
 float dynNotchFilter(const int axis, float value);

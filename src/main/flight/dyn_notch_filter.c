@@ -124,7 +124,7 @@ typedef struct dynNotch_s {
     int maxCenterFreq;
     float centerFreq[XYZ_AXIS_COUNT][DYN_NOTCH_COUNT_MAX];
 
-    timeUs_t looptimeUs;
+    float dt;
     biquadFilter_t notch[XYZ_AXIS_COUNT][DYN_NOTCH_COUNT_MAX];
 
 } dynNotch_t;
@@ -153,10 +153,10 @@ static FAST_DATA_ZERO_INIT int     sdftEndBin;
 static FAST_DATA_ZERO_INIT float   sdftNoiseThreshold;
 static FAST_DATA_ZERO_INIT float   pt1LooptimeS;
 
-void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs)
+void dynNotchInit(const dynNotchConfig_t *config, const float dt)
 {
-    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
-    const float looprateHz = 1.0f / targetLooptimeUs * 1e6f;
+    // dynNotchUpdate() is running at looprateHz (which is the PID looprate)
+    const float looprateHz = 1.0f / dt;
     const float nyquistHz = looprateHz / 2.0f;
 
     // Disable dynamic notch if dynNotchUpdate() would run at less than 2kHz
@@ -171,7 +171,7 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     dynNotch.maxHz = MAX(dynNotch.minHz, config->dyn_notch_max_hz);
     dynNotch.maxHz = MIN(dynNotch.maxHz, nyquistHz); // Ensure to not go above the nyquist limit
     dynNotch.count = config->dyn_notch_count;
-    dynNotch.looptimeUs = targetLooptimeUs;
+    dynNotch.dt = dt;
     dynNotch.maxCenterFreq = 0;
 
     sampleCount = MAX(1, nyquistHz / dynNotch.maxHz); // maxHz = 600 & looprateHz = 8000 -> sampleCount = 6
@@ -198,7 +198,7 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
         for (int p = 0; p < dynNotch.count; p++) {
             // any init value is fine, but evenly spreading centerFreqs across frequency range makes notches stick to peaks quicker
             dynNotch.centerFreq[axis][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
-            biquadFilterInit(&dynNotch.notch[axis][p], dynNotch.centerFreq[axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
+            biquadFilterInitNotch(&dynNotch.notch[axis][p], dynNotch.centerFreq[axis][p], dynNotch.dt, dynNotch.q);
         }
     }
 }
@@ -390,7 +390,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             for (int p = 0; p < dynNotch.count; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
                 if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
-                    biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
+                    biquadFilterCoeffsNotch(&dynNotch.notch[state.axis][p].coeffs, dynNotch.centerFreq[state.axis][p], dynNotch.dt, dynNotch.q);
                 }
             }
 
