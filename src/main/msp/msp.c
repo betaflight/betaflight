@@ -2113,6 +2113,14 @@ case MSP_NAME:
 #endif
         break;
 
+    case MSP2_GYRO_SENSOR_ACTIVE:
+#ifdef USE_GYRO
+        sbufWriteU8(dst, GYRO_COUNT);
+        for (unsigned i = 0; i < GYRO_COUNT; i++) {
+            sbufWriteU8(dst, detectedGyros[i]);
+        }
+#endif
+        break;
 #if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG: {
         const vtxDevice_t *vtxDevice = vtxCommonDevice();

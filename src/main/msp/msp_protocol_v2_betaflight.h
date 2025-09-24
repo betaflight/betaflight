@@ -31,6 +31,7 @@
 #define MSP2_SENSOR_CONFIG_ACTIVE           0x300A
 #define MSP2_SENSOR_OPTICALFLOW             0x300B
 #define MSP2_MCU_INFO                       0x300C
+#define MSP2_GYRO_SENSOR_ACTIVE             0x300D
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
