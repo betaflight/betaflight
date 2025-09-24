@@ -25,6 +25,7 @@
 #include "common/axis.h"
 #include "common/chirp.h"
 #include "common/filter.h"
+#include "common/filter_generic.h"
 #include "common/pwl.h"
 #include "common/time.h"
 
@@ -358,13 +359,6 @@ typedef struct pidAxisData_s {
     float Sum;
 } pidAxisData_t;
 
-typedef union dtermLowpass_u {
-    pt1Filter_t pt1Filter;
-    biquadFilter_t biquadFilter;
-    pt2Filter_t pt2Filter;
-    pt3Filter_t pt3Filter;
-} dtermLowpass_t;
-
 typedef struct pidCoefficient_s {
     float Kp;
     float Ki;
@@ -387,14 +381,10 @@ typedef struct pidRuntime_s {
     float pidFrequency;
     bool pidStabilisationEnabled;
     float previousPidSetpoint[XYZ_AXIS_COUNT];
-    filterApplyFnPtr dtermNotchApplyFn;
-    biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
-    filterApplyFnPtr dtermLowpassApplyFn;
-    dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
-    filterApplyFnPtr dtermLowpass2ApplyFn;
-    dtermLowpass_t dtermLowpass2[XYZ_AXIS_COUNT];
-    filterApplyFnPtr ptermYawLowpassApplyFn;
-    pt1Filter_t ptermYawLowpass;
+    GENERIC_FILTER_TYPE(3, (null, biquad)) dtermNotch;
+    GENERIC_FILTER_TYPE(3, LOWPASS_FILTERS) dtermLowpass;
+    GENERIC_FILTER_TYPE(3, LOWPASS_FILTERS) dtermLowpass2;
+    GENERIC_FILTER_TYPE(1, (null, pt1)) ptermYawLowpass;
     bool antiGravityEnabled;
     pt2Filter_t antiGravityLpf;
     float antiGravityOsdCutoff;
@@ -437,7 +427,7 @@ typedef struct pidRuntime_s {
     float landingDisarmThreshold;
 
 #ifdef USE_ITERM_RELAX
-    pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
+    pt1FilterVec3_t windupLpf;
     uint8_t itermRelax;
     uint8_t itermRelaxType;
     uint8_t itermRelaxCutoff;
@@ -448,13 +438,13 @@ typedef struct pidRuntime_s {
     float acGain;
     float acLimit;
     float acErrorLimit;
-    pt1Filter_t acLpf[XYZ_AXIS_COUNT];
+    pt1FilterVec3_t acLpf;
     float oldSetpointCorrection[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_D_MAX
-    pt2Filter_t dMaxRange[XYZ_AXIS_COUNT];
-    pt2Filter_t dMaxLowpass[XYZ_AXIS_COUNT];
+    pt2FilterVec3_t dMaxRange;
+    pt2FilterVec3_t dMaxLowpass;
     float dMaxPercent[XYZ_AXIS_COUNT];
     uint8_t dMax[XYZ_AXIS_COUNT];
     float dMaxGyroGain;
@@ -514,11 +504,11 @@ typedef struct pidRuntime_s {
     float feedforwardYawHoldGain;
     float feedforwardYawHoldTime;
     bool feedforwardInterpolate; // Whether to interpolate an FF value for duplicate/identical data values
-    pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
+    pt3FilterVec3_t angleFeedforwardPt3;
 #endif
 
 #ifdef USE_ACC
-    pt3Filter_t attitudeFilter[RP_AXIS_COUNT];  // Only for ROLL and PITCH
+    pt3FilterVec2_t attitudeFilter;  // Only for ROLL and PITCH
     pt1Filter_t horizonSmoothingPt1;
     uint16_t horizonDelayMs;
     float angleYawSetpoint;
