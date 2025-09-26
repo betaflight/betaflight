@@ -552,3 +552,9 @@ extern uint8_t _dmaram_end__;
 // Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
 #define RAM_CODE                   __attribute__((section(".ram_code")))
 #endif
+
+
+// The SERIALRX_MAVLINK provider can not work without TELEMETRY_MAVLINK
+#if defined(USE_SERIALRX_MAVLINK) && !defined(USE_TELEMETRY_MAVLINK)
+#define USE_TELEMETRY_MAVLINK
+#endif
