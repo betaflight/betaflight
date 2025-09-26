@@ -79,7 +79,7 @@ static bool qmc5883pInit(magDev_t *magDev)
     bool ack = true;
 
     // Step 1: Write special XYZ sign configuration value to register 0x29
-    ack = ack && busWriteRegister(dev, QMC5883P_REG_DATA_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG);
+    ack = ack && busWriteRegister(dev, QMC5883P_REG_XYZ_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG);
     if (!ack) {
         // I2C write failed during XYZ sign configuration
         return false;
