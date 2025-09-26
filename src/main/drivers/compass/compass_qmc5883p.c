@@ -148,7 +148,8 @@ static bool qmc5883pRead(magDev_t *magDev, int16_t *magData)
                 state = STATE_DATA_READ;
                 return false;
             } else if (status & QMC5883P_STATUS_DATA_OVERRUN) {
-                // Data overrun: read the hidden unlock register (0x29) to clear the condition
+                // Data overrun detected: read the hidden unlock register (0x29)
+                // This clears/unsticks the data path on QMC5883P
                 if (!busReadRegisterBufferStart(dev, QMC5883P_REG_XYZ_UNLOCK, buf, 1)) {
                     state = STATE_WAIT_DRDY;
                     return false;
