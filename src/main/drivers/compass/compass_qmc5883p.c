@@ -108,46 +108,64 @@ static bool qmc5883pInit(magDev_t *magDev)
 static bool qmc5883pRead(magDev_t *magDev, int16_t *magData)
 {
     static uint8_t buf[6];
-    static uint8_t status = 0; // request status on first read
+    static uint8_t status = 0;
     static enum {
         STATE_WAIT_DRDY,
-        STATE_READ,
+        STATE_STATUS_READ,
+        STATE_DATA_READ,
+        STATE_UNLOCK_READ,
     } state = STATE_WAIT_DRDY;
 
     extDevice_t *dev = &magDev->dev;
 
-    switch (state) {
+    // Do not start a new transaction if the bus is still busy
+    if (busBusy(dev)) {
+        return false;
+    }
+
+    switch (state)
+    {
         default:
         case STATE_WAIT_DRDY:
-            if (status & QMC5883P_STATUS_DATA_READY) {
-                // New data is available, start reading 6 bytes from register 0x01
-                if (!busReadRegisterBufferStart(dev, QMC5883P_REG_DATA_OUTPUT_X, buf, sizeof(buf))) {
-                    // I2C read start failed, reset state and try again next cycle
-                    state = STATE_WAIT_DRDY;
-                    status = 0; // force status read next
-                    return false;
-                }
-                state = STATE_READ;
-            } else if (status & QMC5883P_STATUS_DATA_OVERRUN) {
-                // Data overrun detected, read unlock register (similar to QMC5883L)
-                // Read the Z MSB register to unlock the data registers
-                if (!busReadRegisterBufferStart(dev, QMC5883P_REG_DATA_UNLOCK, buf + sizeof(buf) - 1, 1)) {
-                    // I2C unlock read failed, reset status and try again next cycle
-                    status = 0;
-                    return false;
-                }
-                status = 0;   // force status read next
-            } else {
-                // Read status register to check for data ready - status will be untouched if read fails
-                if (!busReadRegisterBufferStart(dev, QMC5883P_REG_STATUS, &status, sizeof(status))) {
-                    // I2C status read failed, maintain current status and try again next cycle
-                    // Don't reset status here to avoid infinite retry loops
-                    return false;
-                }
+            // Start async read of STATUS
+            if (!busReadRegisterBufferStart(dev, QMC5883P_REG_STATUS, &status, sizeof(status))) {
+                return false;
             }
+            state = STATE_STATUS_READ;
             return false;
 
-        case STATE_READ:
+        case STATE_STATUS_READ:
+            // Wait for STATUS to complete, then decide next action
+            if (!busReadRegisterBufferFinish(dev)) {
+                return false;
+            }
+            if (status & QMC5883P_STATUS_DATA_READY) {
+                // Start async read of 6 data bytes (X/Y/Z LSB/MSB)
+                if (!busReadRegisterBufferStart(dev, QMC5883P_REG_DATA_OUTPUT_X, buf, sizeof(buf))) {
+                    state = STATE_WAIT_DRDY;
+                    return false;
+                }
+                state = STATE_DATA_READ;
+                return false;
+            } else if (status & QMC5883P_STATUS_DATA_OVERRUN) {
+                // Data overrun: read the hidden unlock register (0x29) to clear the condition
+                if (!busReadRegisterBufferStart(dev, QMC5883P_REG_XYZ_UNLOCK, buf, 1)) {
+                    state = STATE_WAIT_DRDY;
+                    return false;
+                }
+                state = STATE_UNLOCK_READ;
+                return false;
+            } else {
+                // Neither DRDY nor OVERRUN set; poll again next cycle
+                state = STATE_WAIT_DRDY;
+                return false;
+            }
+
+        case STATE_DATA_READ:
+            // Wait for data read to complete, then parse
+            if (!busReadRegisterBufferFinish(dev)) {
+                return false;
+            }
             // Process 6 bytes of magnetic data (X, Y, Z as 16-bit little-endian values)
             // QMC5883P data format: X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
             int16_t rawX = (int16_t)(buf[1] << 8 | buf[0]);  // X-axis: bytes 0-1
@@ -161,7 +179,6 @@ static bool qmc5883pRead(magDev_t *magDev, int16_t *magData)
                 (rawX == -1 && rawY == -1 && rawZ == -1)) {
                 // Likely data corruption, reset state and retry next cycle
                 state = STATE_WAIT_DRDY;
-                status = 0;
                 return false;
             }
 
@@ -175,7 +192,6 @@ static bool qmc5883pRead(magDev_t *magDev, int16_t *magData)
                     // Data appears stuck, likely sensor or communication issue
                     // Reset state and force status read to recover
                     state = STATE_WAIT_DRDY;
-                    status = 0;
                     stuckCount = 0;
                     return false;
                 }
@@ -197,11 +213,15 @@ static bool qmc5883pRead(magDev_t *magDev, int16_t *magData)
             magData[Z] = rawZ;
 
             state = STATE_WAIT_DRDY;
-
-            // Indicate that new data is required
-            status = 0;
-
             return true;
+
+        case STATE_UNLOCK_READ:
+            // Finish the 0x29 read used to clear overrun
+            if (!busReadRegisterBufferFinish(dev)) {
+                return false;
+            }
+            state = STATE_WAIT_DRDY;
+            return false;
     }
 
     return false;
