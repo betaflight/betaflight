@@ -449,6 +449,11 @@
 
 #endif // defined(USE_SERIALRX_CRSF)
 
+// The SERIALRX_MAVLINK provider can not work without TELEMETRY_MAVLINK
+#if defined(USE_SERIALRX_MAVLINK) && !defined(USE_TELEMETRY_MAVLINK)
+#define USE_TELEMETRY_MAVLINK
+#endif
+
 // USE_RACE_PRO feature pack
 #ifdef USE_RACE_PRO
 

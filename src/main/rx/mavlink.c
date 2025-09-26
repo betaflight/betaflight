@@ -41,16 +41,16 @@ void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
     if (msg->chan6_raw != 0 && msg->chan6_raw != UINT16_MAX) mavlinkChannelData[5] = msg->chan6_raw;
     if (msg->chan7_raw != 0 && msg->chan7_raw != UINT16_MAX) mavlinkChannelData[6] = msg->chan7_raw;
     if (msg->chan8_raw != 0 && msg->chan8_raw != UINT16_MAX) mavlinkChannelData[7] = msg->chan8_raw;
-    if (msg->chan9_raw != 0 && msg->chan9_raw < UINT16_MAX - 1) mavlinkChannelData[8] = msg->chan9_raw;
-    if (msg->chan10_raw != 0 && msg->chan10_raw < UINT16_MAX - 1) mavlinkChannelData[9] = msg->chan10_raw;
-    if (msg->chan11_raw != 0 && msg->chan11_raw < UINT16_MAX - 1) mavlinkChannelData[10] = msg->chan11_raw;
-    if (msg->chan12_raw != 0 && msg->chan12_raw < UINT16_MAX - 1) mavlinkChannelData[11] = msg->chan12_raw;
-    if (msg->chan13_raw != 0 && msg->chan13_raw < UINT16_MAX - 1) mavlinkChannelData[12] = msg->chan13_raw;
-    if (msg->chan14_raw != 0 && msg->chan14_raw < UINT16_MAX - 1) mavlinkChannelData[13] = msg->chan14_raw;
-    if (msg->chan15_raw != 0 && msg->chan15_raw < UINT16_MAX - 1) mavlinkChannelData[14] = msg->chan15_raw;
-    if (msg->chan16_raw != 0 && msg->chan16_raw < UINT16_MAX - 1) mavlinkChannelData[15] = msg->chan16_raw;
-    if (msg->chan17_raw != 0 && msg->chan17_raw < UINT16_MAX - 1) mavlinkChannelData[16] = msg->chan17_raw;
-    if (msg->chan18_raw != 0 && msg->chan18_raw < UINT16_MAX - 1) mavlinkChannelData[17] = msg->chan18_raw;
+    if (msg->chan9_raw != 0 && msg->chan9_raw != UINT16_MAX) mavlinkChannelData[8] = msg->chan9_raw;
+    if (msg->chan10_raw != 0 && msg->chan10_raw != UINT16_MAX) mavlinkChannelData[9] = msg->chan10_raw;
+    if (msg->chan11_raw != 0 && msg->chan11_raw != UINT16_MAX) mavlinkChannelData[10] = msg->chan11_raw;
+    if (msg->chan12_raw != 0 && msg->chan12_raw != UINT16_MAX) mavlinkChannelData[11] = msg->chan12_raw;
+    if (msg->chan13_raw != 0 && msg->chan13_raw != UINT16_MAX) mavlinkChannelData[12] = msg->chan13_raw;
+    if (msg->chan14_raw != 0 && msg->chan14_raw != UINT16_MAX) mavlinkChannelData[13] = msg->chan14_raw;
+    if (msg->chan15_raw != 0 && msg->chan15_raw != UINT16_MAX) mavlinkChannelData[14] = msg->chan15_raw;
+    if (msg->chan16_raw != 0 && msg->chan16_raw != UINT16_MAX) mavlinkChannelData[15] = msg->chan16_raw;
+    if (msg->chan17_raw != 0 && msg->chan17_raw != UINT16_MAX) mavlinkChannelData[16] = msg->chan17_raw;
+    if (msg->chan18_raw != 0 && msg->chan18_raw != UINT16_MAX) mavlinkChannelData[17] = msg->chan18_raw;
     frameReceived = true;
 }
 
@@ -72,7 +72,6 @@ static float mavlinkReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t ch
 
 bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxConfig);
     frameReceived = false;
 
     rxRuntimeState->channelData = mavlinkChannelData;
@@ -81,7 +80,7 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcFrameStatusFn = mavlinkFrameStatus;
 
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; ++i) {
-        mavlinkChannelData[i] = (16 * PWM_RANGE_MIDDLE) / 10 - 1408;
+        mavlinkChannelData[i] = rxConfig->midrc;;
     }
 
     return true;
