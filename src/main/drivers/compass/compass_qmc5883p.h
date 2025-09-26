@@ -77,7 +77,8 @@
 #define QMC5883P_REG_DATA_UNLOCK       QMC5883P_REG_DATA_OUTPUT_Z_MSB
 
 // Special configuration values
-#define QMC5883P_XYZ_SIGN_CONFIG       0x29
+#define QMC5883P_REG_DATA_UNLOCK       0x29
+#define QMC5883P_XYZ_SIGN_CONFIG       0x06
 
 // Default configuration for Betaflight
 #define QMC5883P_DEFAULT_CONF1         (QMC5883P_MODE_CONTINUOUS | QMC5883P_ODR_100HZ | QMC5883P_RNG_8G | QMC5883P_OSR1_8)
