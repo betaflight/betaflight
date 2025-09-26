@@ -558,7 +558,9 @@ static void processMAVLinkTelemetry(void)
 static bool handleIncoming_RC_CHANNELS_OVERRIDE(void) {
     mavlink_rc_channels_override_t msg;
     mavlink_msg_rc_channels_override_decode(&mavRecvMsg, &msg);
+#ifdef USE_SERIALRX_MAVLINK
     mavlinkRxHandleMessage(&msg);
+#endif
     return true;
 }
 
