@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "drivers/io_types.h"
+#include "drivers/sensor.h"
 
 #ifdef USE_MAG_QMC5883P
 
