@@ -312,6 +312,7 @@ static const char * const lookupTableSerialRX[] = {
     "SRXL2",
     "GHST",
     "SPEK1024",
+    "MAVLINK",
 };
 #endif
 
