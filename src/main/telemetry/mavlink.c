@@ -61,6 +61,7 @@
 #include "io/ledstrip.h"
 
 #include "rx/rx.h"
+#include "rx/mavlink.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -553,6 +554,14 @@ static void processMAVLinkTelemetry(void)
     }
 }
 
+
+static bool handleIncoming_RC_CHANNELS_OVERRIDE(void) {
+    mavlink_rc_channels_override_t msg;
+    mavlink_msg_rc_channels_override_decode(&mavRecvMsg, &msg);
+    mavlinkRxHandleMessage(&msg);
+    return true;
+}
+
 // Get RADIO_STATUS data
 static void handleIncoming_RADIO_STATUS(void)
 {
@@ -571,6 +580,9 @@ static bool processMAVLinkIncomingTelemetry(void)
         uint8_t result = mavlink_parse_char(0, c, &mavRecvMsg, &mavRecvStatus);
         if (result == MAVLINK_FRAMING_OK) {
             switch (mavRecvMsg.msgid) {
+            case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:
+                handleIncoming_RC_CHANNELS_OVERRIDE();
+                return false;
             case MAVLINK_MSG_ID_RADIO_STATUS:
                 handleIncoming_RADIO_STATUS();
                 return false;
