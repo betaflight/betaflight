@@ -220,7 +220,7 @@
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
-
+#define USE_SERIALRX_MAVLINK    // MAVLink protocol for serial RX
 #endif // USE_SERIALRX
 
 #if defined(USE_TELEMETRY)
@@ -231,6 +231,7 @@
 #define USE_TELEMETRY_MAVLINK
 #define USE_TELEMETRY_HOTT
 #define USE_TELEMETRY_LTM
+#define USE_TELEMETRY_MAVLINK
 
 #endif // USE_TELEMETRY
 
