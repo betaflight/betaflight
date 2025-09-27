@@ -44,6 +44,7 @@
 #define BUILD_OPTION_SERIALRX_SUMD              4106
 #define BUILD_OPTION_SERIALRX_SUMH              4107
 #define BUILD_OPTION_SERIALRX_XBUS              4108
+#define BUILD_OPTION_SERIALRX_MAVLINK           4109
 // Telemetry Protocols
 #define BUILD_OPTION_TELEMETRY_FRSKY_HUB        12301
 #define BUILD_OPTION_TELEMETRY_HOTT             12302
