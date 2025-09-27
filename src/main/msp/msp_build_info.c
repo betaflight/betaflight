@@ -162,6 +162,7 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
         BUILD_OPTION_VTX,
 #endif
 #ifdef USE_WING
+        BUILD_OPTION_SERVOS,
         BUILD_OPTION_WING,
 #endif
 #ifdef USE_BRUSHED
