@@ -4999,7 +4999,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     rcSmoothingFilter_t *rcSmoothingData = getRcSmoothingData();
     cliPrint("# RC Smoothing Type: ");
     if (rxConfig()->rc_smoothing) {
-        cliPrintLine("FILTER");
+        cliPrintLine("ON");
         if (rcSmoothingAutoCalculate()) {
             cliPrint("# Detected Rx frequency: ");
             if (getRxRateValid()) {
