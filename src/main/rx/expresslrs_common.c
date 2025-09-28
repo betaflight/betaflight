@@ -213,7 +213,7 @@ void fhssGenSequence(const uint32_t uidSeed, const elrsFreqDomain_e dom)
         // if it's not the sync channel
         if (i % fhssConfig->freqCount != 0) {
             uint8_t offset = (i / fhssConfig->freqCount) * fhssConfig->freqCount; // offset to start of current block
-            uint8_t rand = 1 + rngN(MAX(fhssConfig->freqCount - 1, 1)); // 1..(freqCount-1), avoids 0
+            uint8_t rand = rngN(fhssConfig->freqCount - 1) + 1; // random number between 1 and numFreqs
 
             // switch this entry and another random entry in the same block
             uint8_t temp = fhssSequence[i];
