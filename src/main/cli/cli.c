@@ -4997,7 +4997,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     rcSmoothingFilter_t *rcSmoothingData = getRcSmoothingData();
-    cliPrint("# RC Smoothing Type: ");
+    cliPrint("# RC Smoothing: ");
     if (rxConfig()->rc_smoothing) {
         cliPrintLine("ON");
         if (rcSmoothingAutoCalculate()) {
