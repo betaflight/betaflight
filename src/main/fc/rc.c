@@ -421,7 +421,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
         }
     }
 
-    if (rxConfig()->rc_smoothing_mode) {
+    if (rxConfig()->rc_smoothing) {
         // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
         for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
             float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
@@ -929,8 +929,8 @@ void initRcProcessing(void)
     rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting;
     rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
 
-    if (rxConfig()->rc_smoothing_mode) {
-        // shouldRecalculateCutoffs is handled here so that rc_smoothing_mode overwrites other settings
+    if (rxConfig()->rc_smoothing) {
+        // shouldRecalculateCutoffs is handled here so that rc_smoothing overwrites other settings
         rcSmoothingData.shouldRecalculateCutoffs = rcSmoothingAutoCalculate();
         rcSmoothingSetFilterCutoffs(&rcSmoothingData);
     }

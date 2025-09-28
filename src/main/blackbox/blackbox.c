@@ -1753,7 +1753,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
 #ifdef USE_RC_SMOOTHING_FILTER
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RC_SMOOTHING, "%d",                      rxConfig()->rc_smoothing_mode);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RC_SMOOTHING, "%d",                      rxConfig()->rc_smoothing);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR, "%d",          rxConfig()->rc_smoothing_auto_factor_rpy);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE, "%d", rxConfig()->rc_smoothing_auto_factor_throttle);
 

@@ -1634,7 +1634,7 @@ case MSP_NAME:
 #endif
         // Added in MSP API 1.44
 #if defined(USE_RC_SMOOTHING_FILTER)
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_mode);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing);
 #else
         sbufWriteU8(dst, 0);
 #endif
@@ -3812,7 +3812,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 1) {
             // Added in MSP API 1.44
 #if defined(USE_RC_SMOOTHING_FILTER)
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_mode, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing, sbufReadU8(src));
 #else
             sbufReadU8(src);
 #endif
