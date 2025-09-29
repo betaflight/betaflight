@@ -421,37 +421,20 @@ static FAST_CODE void processRcSmoothingFilter(void)
         }
     }
 
-    if (rxConfig()->rc_smoothing) {
-        // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
-        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-            float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
-            *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
-        }
+    // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
+    for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+        float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
+        *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
+    }
 
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            // Feedforward smoothing
-            feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
-            // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
-            const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
-            if (smoothRcDeflection && axis < FD_YAW) {
-                rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
-            } else {
-                rcDeflectionSmoothed[axis] = rcDeflection[axis];
-            }
-        }
-    } else {
-        // RC smoothing is disabled, use direct values
-        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-            if (i == THROTTLE) {
-                rcCommand[i] = rxDataToSmooth[i];
-            } else {
-                setpointRate[i] = rxDataToSmooth[i];
-            }
-        }
-
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            // No feedforward smoothing when RC smoothing is disabled
-            feedforwardSmoothed[axis] = feedforwardRaw[axis];
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        // Feedforward smoothing
+        feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
+        // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
+        const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
+        if (smoothRcDeflection && axis < FD_YAW) {
+            rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
+        } else {
             rcDeflectionSmoothed[axis] = rcDeflection[axis];
         }
     }
@@ -723,7 +706,23 @@ FAST_CODE void processRcCommand(void)
     }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-    processRcSmoothingFilter();
+    if (rxConfig()->rc_smoothing) {
+        processRcSmoothingFilter();
+    } else {
+        // RC smoothing disabled - copy raw values directly
+        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+            if (i == THROTTLE) {
+                // rcCommand[THROTTLE] is already set correctly, no need to modify
+            } else {
+                setpointRate[i] = rawSetpoint[i];
+            }
+        }
+        // Copy feedforward and deflection values directly
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            feedforwardSmoothed[axis] = feedforwardRaw[axis];
+            rcDeflectionSmoothed[axis] = rcDeflection[axis];
+        }
+    }
 #endif
 
     isRxDataNew = false;
