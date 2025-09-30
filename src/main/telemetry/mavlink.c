@@ -610,9 +610,8 @@ void handleMAVLinkTelemetry(void)
     bool shouldSendTelemetry = false;
     uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
 
-    if (mavlink_min_txbuff > 0) {
-        processMAVLinkIncomingTelemetry();
-    }
+    // Should read incoming data anyway, else the RC data will loss
+    processMAVLinkIncomingTelemetry();
 
     uint32_t currentTimeUs = micros();
     if (txbuff_valid) {
