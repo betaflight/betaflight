@@ -409,21 +409,35 @@ static FAST_CODE void processRcSmoothingFilter(void)
         }
     }
 
-    if (!rxConfig()->rc_smoothing) { return; }
+    if (rxConfig()->rc_smoothing) {
+        // Apply smoothing filters when RC smoothing is enabled
+        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+            float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
+            *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
+        }
 
-    // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
-    for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-        float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
-        *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
-    }
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
+            // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
+            const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
+            if (smoothRcDeflection && axis < FD_YAW) {
+                rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
+            } else {
+                rcDeflectionSmoothed[axis] = rcDeflection[axis];
+            }
+        }
+    } else {
+        // When RC smoothing is disabled, use raw values directly
+        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+            if (i == THROTTLE) {
+                rcCommand[i] = rxDataToSmooth[i];
+            } else {
+                setpointRate[i] = rxDataToSmooth[i];
+            }
+        }
 
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
-        // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
-        const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
-        if (smoothRcDeflection && axis < FD_YAW) {
-            rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
-        } else {
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            feedforwardSmoothed[axis] = feedforwardRaw[axis];
             rcDeflectionSmoothed[axis] = rcDeflection[axis];
         }
     }
