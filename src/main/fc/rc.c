@@ -417,7 +417,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
         // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
-        rcDeflectionSmoothed[axis] = FLIGHT_MODE(HORIZON_MODE)
+        rcDeflectionSmoothed[axis] = FLIGHT_MODE(HORIZON_MODE) && axis < FD_YAW
             ? pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis])
             : rcDeflection[axis];
     }
