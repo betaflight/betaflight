@@ -22,6 +22,6 @@
 #define MAVLINK_COMM_NUM_BUFFERS 1
 #pragma GCC diagnostic pop
 
-struct mavlink_rc_channels_override_t;
-void mavlinkRxHandleMessage(const struct mavlink_rc_channels_override_t *msg);
+#include "common/mavlink.h"
+void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg);
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);

@@ -33,7 +33,7 @@ static uint16_t mavlinkChannelData[MAVLINK_CHANNEL_COUNT];
 static bool frameReceived;
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
-    const uint16_t *channelsPtr = &msg->chan1_raw;
+    const uint16_t *channelsPtr = (uint16_t*)&msg->chan1_raw;
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
         if (channelsPtr[i] != 0 && channelsPtr[i] != UINT16_MAX) {
             mavlinkChannelData[0] = channelsPtr[i];
