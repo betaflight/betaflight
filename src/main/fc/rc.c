@@ -408,6 +408,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
     }
 
     if (!rxConfig()->rc_smoothing) return;
+
     // Apply smoothing filters when RC smoothing is enabled
     for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
         float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
