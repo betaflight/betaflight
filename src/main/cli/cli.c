@@ -4997,31 +4997,21 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     rcSmoothingFilter_t *rcSmoothingData = getRcSmoothingData();
+    cliPrint("# Detected Rx frequency: ");
     if (getRxRateValid()) {
-        cliPrint("# Detected Rx frequency: ");
         cliPrintLinef("%dHz", lrintf(getCurrentRxRateHz()));
     } else {
         cliPrintLine("NO SIGNAL");
     }
-
     cliPrint("# RC Smoothing: ");
-    if (rxConfig()->rc_smoothing) {
-        cliPrintLine("ON");
-        cliPrintf("# Active setpoint and FF cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
-        if (rcSmoothingData->setpointCutoffSetting) {
-            cliPrintLine("(manual)");
-        } else {
-            cliPrintLine("(auto)");
-        }
-        cliPrintf("# Active throttle cutoff: %dhz ", rcSmoothingData->throttleCutoffFrequency);
-        if (rcSmoothingData->throttleCutoffSetting) {
-            cliPrintLine("(manual)");
-        } else {
-            cliPrintLine("(auto)");
-        }
-    } else {
+    if (!rxConfig()->rc_smoothing) {
         cliPrintLine("OFF");
+        return;
     }
+    cliPrintf("# Active setpoint and FF cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
+    cliPrintLine(rcSmoothingData->setpointCutoffSetting ? "(manual)" : "(auto)");
+    cliPrintf("# Active throttle cutoff: %dhz ", rcSmoothingData->throttleCutoffFrequency);
+    cliPrintLine(rcSmoothingData->throttleCutoffSetting ? "(manual)" : "(auto)");
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
