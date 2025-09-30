@@ -17,11 +17,12 @@
 
 #pragma once
 
+#define MAVLINK_COMM_NUM_BUFFERS 1
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
-#define MAVLINK_COMM_NUM_BUFFERS 1
+#include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
-#include "common/mavlink.h"
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg);
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);
