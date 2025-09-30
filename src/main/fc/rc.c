@@ -103,8 +103,9 @@ float getFeedforward(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
     return rxConfig()->rc_smoothing ? feedforwardSmoothed[axis] : feedforwardRaw[axis];
-#endif
+#else
     return feedforwardRaw[axis];
+#endif
 }
 #endif // USE_FEEDFORWARD
 #ifdef USE_RC_SMOOTHING_FILTER
