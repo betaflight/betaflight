@@ -365,7 +365,11 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
     if (autoThrottleSmoothing) {
         float throttleCutoffFrequency = MAX(minCutoffHz, smoothedRxRateHz * smoothingData->autoSmoothnessFactorThrottle);
         smoothingData->throttleCutoffFrequency = throttleCutoffFrequency;
+        
+        // Update throttle filter with its own cutoff
         const float pt3K_Thr = pt3FilterGain(throttleCutoffFrequency, dT);
+        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3K_Thr);
+        
         for (int i = FD_ROLL; i <= FD_PITCH; i++) {
             pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K_Thr);
         }
