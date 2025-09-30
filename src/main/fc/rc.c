@@ -418,7 +418,6 @@ static FAST_CODE void processRcSmoothingFilter(void)
     }
 
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        // No feedforward smoothing when RC smoothing is disabled
         feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
         // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
         const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
