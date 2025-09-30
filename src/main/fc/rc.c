@@ -640,7 +640,9 @@ FAST_CODE void processRcCommand(void)
             updateFeedforwardFilters(&pidRuntime);
 #endif
 #ifdef USE_RC_SMOOTHING_FILTER
-            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+            if (rxConfig()->rc_smoothing) {
+                rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+            }
 #endif
         }
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -698,23 +700,7 @@ FAST_CODE void processRcCommand(void)
     }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-    if (rxConfig()->rc_smoothing) {
-        processRcSmoothingFilter();
-    } else {
-        // RC smoothing disabled - copy raw values directly
-        for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-            if (i == THROTTLE) {
-                // rcCommand[THROTTLE] is already set correctly, no need to modify
-            } else {
-                setpointRate[i] = rawSetpoint[i];
-            }
-        }
-        // Copy feedforward and deflection values directly
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            feedforwardSmoothed[axis] = feedforwardRaw[axis];
-            rcDeflectionSmoothed[axis] = rcDeflection[axis];
-        }
-    }
+    processRcSmoothingFilter();
 #endif
 
     isRxDataNew = false;
