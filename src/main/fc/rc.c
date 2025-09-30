@@ -343,36 +343,40 @@ bool getRxRateValid(void)
 // the auto-calculated cutoff frequency based on detected rx frame rate.
 static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
 {
-    // in auto mode, calculate the RC smoothing cutoff from the smoothed Rx link frequency
-    const bool autoSetpointSmoothing = smoothingData->setpointCutoffSetting == 0;
-    const bool autoThrottleSmoothing = smoothingData->throttleCutoffSetting == 0;
-
+    // Calculate RC smoothing cutoffs from either manual settings or auto-calculated from Rx link frequency
     const float minCutoffHz = 15.0f; // don't let any RC smoothing filter cutoff go below 15Hz
     const float dT = targetPidLooptime * 1e-6f;
 
-    if (autoSetpointSmoothing) {
-        float setpointCutoffFrequency = MAX(minCutoffHz, smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint);
-
-        smoothingData->setpointCutoffFrequency = setpointCutoffFrequency;
-
-        const float pt3K_SP = pt3FilterGain(setpointCutoffFrequency, dT);
-        for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K_SP);
-            pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K_SP);
-        }
-        // Update RC deflection filters with setpoint cutoff
-        for (int i = FD_ROLL; i <= FD_PITCH; i++) {
-            pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K_SP);
-        }
+    // Calculate setpoint cutoff (auto if setting is 0, otherwise use manual value)
+    float setpointCutoffFrequency = smoothingData->setpointCutoffSetting;
+    if (smoothingData->setpointCutoffSetting == 0) {
+        setpointCutoffFrequency = MAX(minCutoffHz, smoothedRxRateHz * smoothingData->autoSmoothnessFactorSetpoint);
     }
+    smoothingData->setpointCutoffFrequency = setpointCutoffFrequency;
 
-    if (autoThrottleSmoothing) {
-        float throttleCutoffFrequency = MAX(minCutoffHz, smoothedRxRateHz * smoothingData->autoSmoothnessFactorThrottle);
-        smoothingData->throttleCutoffFrequency = throttleCutoffFrequency;
-        
-        // Update throttle filter with its own cutoff
-        const float pt3K_Thr = pt3FilterGain(throttleCutoffFrequency, dT);
-        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3K_Thr);
+    // Calculate throttle cutoff (auto if setting is 0, otherwise use manual value)  
+    float throttleCutoffFrequency = smoothingData->throttleCutoffSetting;
+    if (smoothingData->throttleCutoffSetting == 0) {
+        throttleCutoffFrequency = MAX(minCutoffHz, smoothedRxRateHz * smoothingData->autoSmoothnessFactorThrottle);
+    }
+    smoothingData->throttleCutoffFrequency = throttleCutoffFrequency;
+
+    // Always update all filters with their respective cutoffs
+    const float pt3K_SP = pt3FilterGain(setpointCutoffFrequency, dT);
+    const float pt3K_Thr = pt3FilterGain(throttleCutoffFrequency, dT);
+
+    // Update setpoint and feedforward filters
+    for (int i = FD_ROLL; i <= FD_YAW; i++) {
+        pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K_SP);
+        pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K_SP);
+    }
+    
+    // Update throttle filter with its own cutoff
+    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3K_Thr);
+    
+    // Update RC deflection filters with setpoint cutoff
+    for (int i = FD_ROLL; i <= FD_PITCH; i++) {
+        pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K_SP);
     }
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->setpointCutoffFrequency);
