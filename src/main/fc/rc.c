@@ -419,15 +419,12 @@ static FAST_CODE void processRcSmoothingFilter(void)
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
             feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
             // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
-            const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE);
-            if (smoothRcDeflection && axis < FD_YAW) {
-                rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
-            } else {
-                rcDeflectionSmoothed[axis] = rcDeflection[axis];
-            }
+            rcDeflectionSmoothed[axis] = FLIGHT_MODE(HORIZON_MODE)
+                ? pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis])
+                : rcDeflection[axis];
         }
     } else {
-        // When RC smoothing is disabled, use raw values directly
+        // Use raw values directly
         for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
             if (i == THROTTLE) {
                 rcCommand[i] = rxDataToSmooth[i];
