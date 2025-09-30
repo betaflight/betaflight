@@ -360,6 +360,10 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
             pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K_SP);
             pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K_SP);
         }
+        // Update RC deflection filters with setpoint cutoff
+        for (int i = FD_ROLL; i <= FD_PITCH; i++) {
+            pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K_SP);
+        }
     }
 
     if (autoThrottleSmoothing) {
@@ -369,10 +373,6 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         // Update throttle filter with its own cutoff
         const float pt3K_Thr = pt3FilterGain(throttleCutoffFrequency, dT);
         pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3K_Thr);
-        
-        for (int i = FD_ROLL; i <= FD_PITCH; i++) {
-            pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K_Thr);
-        }
     }
 
     DEBUG_SET(DEBUG_RC_SMOOTHING, 2, smoothingData->setpointCutoffFrequency);
