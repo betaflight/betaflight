@@ -5008,9 +5008,9 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
 
     if (!rxConfig()->rc_smoothing) return;
 
-    cliPrintf("# Active setpoint and FF cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
+    cliPrintf("# Active setpoint and FF cutoff: %dHz ", lrintf(rcSmoothingData->setpointCutoffFrequency));
     cliPrintLine(rcSmoothingData->setpointCutoffSetting ? "(manual)" : "(auto)");
-    cliPrintf("# Active throttle cutoff: %dhz ", rcSmoothingData->throttleCutoffFrequency);
+    cliPrintf("# Active throttle cutoff: %dHz ", lrintf(rcSmoothingData->throttleCutoffFrequency));
     cliPrintLine(rcSmoothingData->throttleCutoffSetting ? "(manual)" : "(auto)");
 }
 #endif // USE_RC_SMOOTHING_FILTER
