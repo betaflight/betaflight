@@ -426,11 +426,8 @@ static FAST_CODE void processRcSmoothingFilter(void)
     } else {
         // Use raw values directly
         for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
-            if (i == THROTTLE) {
-                rcCommand[i] = rxDataToSmooth[i];
-            } else {
-                setpointRate[i] = rxDataToSmooth[i];
-            }
+            float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
+            *dst = rxDataToSmooth[i];
         }
 
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
