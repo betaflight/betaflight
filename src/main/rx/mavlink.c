@@ -36,7 +36,7 @@ void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
     const uint16_t *channelsPtr = (uint16_t*)&msg->chan1_raw;
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
         if (channelsPtr[i] != 0 && channelsPtr[i] != UINT16_MAX) {
-            mavlinkChannelData[0] = channelsPtr[i];
+            mavlinkChannelData[i] = channelsPtr[i];
         }
     }
     frameReceived = true;
