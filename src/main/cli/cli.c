@@ -5010,6 +5010,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     }
     cliPrintLine("ON");
     cliPrintf("# Active setpoint and FF cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
+    cliPrintLinefeed();
     cliPrintLine(rcSmoothingData->setpointCutoffSetting ? "(manual)" : "(auto)");
     cliPrintf("# Active throttle cutoff: %dhz ", rcSmoothingData->throttleCutoffFrequency);
     cliPrintLine(rcSmoothingData->throttleCutoffSetting ? "(manual)" : "(auto)");
