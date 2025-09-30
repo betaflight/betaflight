@@ -5006,7 +5006,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     cliPrint("# RC Smoothing: ");
     cliPrintLine(rxConfig()->rc_smoothing ? "ON" : "OFF");
 
-    if (!rxConfig()->rc_smoothing) { return; }
+    if (!rxConfig()->rc_smoothing) return;
 
     cliPrintf("# Active setpoint and FF cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
     cliPrintLine(rcSmoothingData->setpointCutoffSetting ? "(manual)" : "(auto)");
