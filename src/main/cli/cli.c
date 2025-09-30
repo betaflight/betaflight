@@ -5004,11 +5004,10 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
         cliPrintLine("NO SIGNAL");
     }
     cliPrint("# RC Smoothing: ");
-    if (!rxConfig()->rc_smoothing) {
-        cliPrintLine("OFF");
-        return;
-    }
-    cliPrintLine("ON");
+    cliPrintLine(rxConfig()->rc_smoothing ? "ON" : "OFF");
+
+    if (!rxConfig()->rc_smoothing) { return; }
+
     cliPrintf("# Active setpoint and FF cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
     cliPrintLine(rcSmoothingData->setpointCutoffSetting ? "(manual)" : "(auto)");
     cliPrintf("# Active throttle cutoff: %dhz ", rcSmoothingData->throttleCutoffFrequency);
