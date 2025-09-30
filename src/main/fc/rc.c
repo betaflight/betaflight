@@ -102,11 +102,7 @@ static pt1Filter_t feedforwardYawHoldLpf;
 float getFeedforward(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
-    if (rxConfig()->rc_smoothing) {
-        return feedforwardSmoothed[axis];
-    } else {
-        return feedforwardRaw[axis];
-    }
+    return rxConfig()->rc_smoothing ? feedforwardSmoothed[axis] : feedforwardRaw[axis];
 #endif
     return feedforwardRaw[axis];
 }
@@ -119,11 +115,7 @@ static float rcDeflectionSmoothed[3];
 float getSetpointRate(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
-    if (rxConfig()->rc_smoothing) {
-        return setpointRate[axis];
-    } else {
-        return rawSetpoint[axis];
-    }
+    return rxConfig()->rc_smoothing ? setpointRate[axis] : rawSetpoint[axis];
 #else
     return rawSetpoint[axis];
 #endif
@@ -138,11 +130,7 @@ float getMaxRcRate(int axis)
 float getRcDeflection(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
-    if (rxConfig()->rc_smoothing) {
-        return rcDeflectionSmoothed[axis];
-    } else {
-        return rcDeflection[axis];
-    }
+    return rxConfig()->rc_smoothing ? rcDeflectionSmoothed[axis] : rcDeflection[axis];
 #else
     return rcDeflection[axis];
 #endif
