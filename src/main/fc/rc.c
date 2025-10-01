@@ -892,10 +892,6 @@ void initRcProcessing(void)
 
     rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting; //initialise to user's cutoff setting, but if 0, will be replaced with auto values from rcSmoothingSetFilterCutoffs()
     rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
-    
-    // Initialize filter gains immediately to avoid transient zero-output on first frames
-    // This handles both manual cutoff settings and auto cutoffs (when setting == 0)
-    rcSmoothingSetFilterCutoffs(&rcSmoothingData);
 #endif
 
 #ifdef USE_FEEDFORWARD
