@@ -81,7 +81,7 @@
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
-#define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
+#define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_RXTX
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
@@ -109,10 +109,12 @@ static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
 static uint32_t lastMavlinkMessageTime = 0;
 
+#ifdef USE_SERIALRX_MAVLINK
 static mavlink_message_t mavRecvMsg;
 static mavlink_status_t mavRecvStatus;
 static uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
 static bool txbuff_valid = false;
+#endif
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
@@ -171,11 +173,16 @@ void configureMAVLinkTelemetryPort(void)
         return;
     }
 
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
+    baudRate_e baudRateIndex;
+#ifndef USE_SERIALRX_MAVLINK
+    baudRateIndex = portConfig->telemetry_baudrateIndex;
     if (baudRateIndex == BAUD_AUTO) {
         // default rate for minimOSD
         baudRateIndex = BAUD_57600;
     }
+#else
+    baudRateIndex = BAUD_460800;    // The ELRS TX is used 460800 rate for MAVLink duplex mode
+#endif
 
     mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
 
@@ -554,13 +561,11 @@ static void processMAVLinkTelemetry(void)
     }
 }
 
-
+#ifdef USE_SERIALRX_MAVLINK
 static bool handleIncoming_RC_CHANNELS_OVERRIDE(void) {
     mavlink_rc_channels_override_t msg;
     mavlink_msg_rc_channels_override_decode(&mavRecvMsg, &msg);
-#ifdef USE_SERIALRX_MAVLINK
     mavlinkRxHandleMessage(&msg);
-#endif
     return true;
 }
 
@@ -596,6 +601,7 @@ static bool processMAVLinkIncomingTelemetry(void)
 
     return false;
 }
+#endif
 
 void handleMAVLinkTelemetry(void)
 {
@@ -608,12 +614,12 @@ void handleMAVLinkTelemetry(void)
     }
 
     bool shouldSendTelemetry = false;
-    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
+    uint32_t currentTimeUs = micros();
 
-    // Should read incoming data anyway, else the RC data will loss
+#ifdef USE_SERIALRX_MAVLINK
+    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
     processMAVLinkIncomingTelemetry();
 
-    uint32_t currentTimeUs = micros();
     if (txbuff_valid) {
         // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
         shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
@@ -626,6 +632,9 @@ void handleMAVLinkTelemetry(void)
         shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
     }
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);
+#else
+    shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
+#endif
 
     if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
