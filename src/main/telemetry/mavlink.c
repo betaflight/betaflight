@@ -181,7 +181,7 @@ void configureMAVLinkTelemetryPort(void)
         baudRateIndex = BAUD_57600;
     }
 #else
-    baudRateIndex = BAUD_460800;    // The ELRS TX is used 460800 rate for MAVLink duplex mode
+    baudRateIndex = BAUD_460800;    // The ELRS TX is used 460800 rate for MAVLink duplex mode, but the BF has 115200 restriction for telemetries uart
 #endif
 
     mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
@@ -576,6 +576,7 @@ static void handleIncoming_RADIO_STATUS(void)
     mavlink_msg_radio_status_decode(&mavRecvMsg, &msg);
     txbuff_valid = true;
     txbuff_free = msg.txbuf;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free); // Last known TX buffer free space
 }
 
 // Get incoming telemetry data
@@ -626,8 +627,7 @@ void handleMAVLinkTelemetry(void)
         if (shouldSendTelemetry) {
             txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
         }
-        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free);
-        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, mavlink_min_txbuff);
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
     } else {
         shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
     }
