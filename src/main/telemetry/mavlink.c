@@ -618,6 +618,13 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
+    // Debug to get actual telemetry frequency
+    static int32_t telemetriesTicks;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, telemetriesTicks);
+    if (telemetriesTicks++ > 50) {
+        telemetriesTicks = 0;
+    }
+
     bool shouldSendTelemetry = false;
     uint32_t currentTimeUs = micros();
 
@@ -628,10 +635,10 @@ void handleMAVLinkTelemetry(void)
     if (txbuff_valid) {
         // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
         shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
         if (shouldSendTelemetry) {
             txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
         }
-        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
     } else {
         shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
     }
