@@ -88,7 +88,7 @@ enum {
 #ifdef USE_FEEDFORWARD
 static feedforwardData_t feedforwardData;
 
-static float feedforward[3];
+static float feedforwardSmoothed[3];
 static float feedforwardRaw[3];
 static uint16_t feedforwardAveraging;
 typedef struct laggedMovingAverageCombined_s {
@@ -101,7 +101,11 @@ static pt1Filter_t feedforwardYawHoldLpf;
 
 float getFeedforward(int axis)
 {
-    return feedforward[axis];
+#ifdef USE_RC_SMOOTHING_FILTER
+    return rxConfig()->rc_smoothing ? feedforwardSmoothed[axis] : feedforwardRaw[axis];
+#else
+    return feedforwardRaw[axis];
+#endif
 }
 #endif // USE_FEEDFORWARD
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -412,7 +416,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
         *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
     }
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        feedforward[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
+        feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
         // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
         rcDeflectionSmoothed[axis] = FLIGHT_MODE(HORIZON_MODE) && axis < FD_YAW
             ? pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis])
@@ -669,8 +673,6 @@ FAST_CODE void processRcCommand(void)
 
 #ifdef USE_FEEDFORWARD
             calculateFeedforward(&pidRuntime, axis);
-            // Copy raw feedforward to final output - will be overridden by RC smoothing if enabled
-            feedforward[axis] = feedforwardRaw[axis];
 #endif // USE_FEEDFORWARD
 
 		    // log the smoothed Rx Rate from non-outliers, this will not show the steps every three valid packets
@@ -901,7 +903,7 @@ void initRcProcessing(void)
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         maxRcRate[i] = applyRates(i, 1.0f, 1.0f);
 #ifdef USE_FEEDFORWARD
-        feedforward[i] = 0.0f;
+        feedforwardSmoothed[i] = 0.0f;
         feedforwardRaw[i] = 0.0f;
         if (feedforwardAveraging) {
             laggedMovingAverageInit(&feedforwardDeltaAvg[i].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[i].buf[0]);
