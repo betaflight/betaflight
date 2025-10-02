@@ -33,7 +33,6 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
-#include "drivers/usb_io.h"
 
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
@@ -428,20 +427,18 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     bool dshotBeaconRequested = false;
 
-    const bool rxUp = failsafeIsReceivingRxData();
-    const bool usbIn = usbCableIsInserted();
-
     if (!areMotorsRunning()) {
-        // Failsafe-triggered beacon when the RX link is lost and USB is disconnected
-        if (!rxUp
-            && !usbIn
+        const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
+
+        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
+        if (activeMode == BEEPER_RX_LOST
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
             dshotBeaconRequested = true;
         }
 
-        // User-triggered beacon when the RX link is active and the AUX switch is engaged
-        if (rxUp
-            && IS_RC_MODE_ACTIVE(BOXBEEPERON)
+        // Allow user-triggered beacon via AUX switch while the RX link is healthy.
+        if (IS_RC_MODE_ACTIVE(BOXBEEPERON)
+            && failsafeIsReceivingRxData()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)) ) {
             dshotBeaconRequested = true;
         }
