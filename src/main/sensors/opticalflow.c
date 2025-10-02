@@ -75,7 +75,7 @@ PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
 static opticalflow_t opticalflow;
 float cosRotAngle = 1.0f;
 float sinRotAngle = 0.0f;
-static pt2Filter_t xFlowLpf, yFlowLpf;
+static pt2FilterVec2_t flowLpf;
 
 // ======================================================================
 // =================== Opticalflow Main Functions =======================
@@ -128,10 +128,7 @@ bool opticalflowInit(void) {
     //low pass filter
     if (opticalflowConfig()->flow_lpf != 0) {
         const float flowCutoffHz = (float)opticalflowConfig()->flow_lpf / 100.0f;
-        const float flowGain     = pt2FilterGain(flowCutoffHz, opticalflow.dev.delayMs / 1000.0f);
-
-        pt2FilterInit(&xFlowLpf, flowGain);
-        pt2FilterInit(&yFlowLpf, flowGain);
+        pt2FilterInitLPF2(&flowLpf, flowCutoffHz, opticalflow.dev.delayMs / 1000.0f);
     }
     return true;
 }
@@ -176,13 +173,13 @@ static void applySensorRotation(vector2_t * dst, vector2_t * src) {
     dst->y = src->x * sinRotAngle + src->y * cosRotAngle;
 }
 
-static void applyLPF(vector2_t * flowRates) {
+static void applyLPF(vector2_t * flowRates)
+{
     if (opticalflowConfig()->flow_lpf == 0) {
         return;
     }
 
-    flowRates->x = pt2FilterApply(&xFlowLpf, flowRates->x);
-    flowRates->y = pt2FilterApply(&yFlowLpf, flowRates->y);
+    pt2FilterApply2(&flowLpf, flowRates->v, flowRates->v);
 }
 
 LOCAL_UNUSED_FUNCTION static const opticalflow_t * getLatestFlowOpticalflowData(void) {

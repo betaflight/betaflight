@@ -74,31 +74,33 @@ typedef enum {
 typedef struct autopilotState_s {
     gpsLocation_t targetLocation;       // active / current target
     float sanityCheckDistance;
-    float upsampleLpfGain;              // for the Body Frame upsample filter for pitch and roll
+    pt3FilterCoeffs_t upsampleLpfGain;  // for the Body Frame upsample filter for pitch and roll
     float vaLpfCutoff;                  // velocity + acceleration lowpass filter cutoff
     bool sticksActive;
     float maxAngle;
     vector2_t pidSumBF;                 // pid output, updated on each GPS update, rotated to body frame
-    pt3Filter_t upsampleLpfBF[RP_AXIS_COUNT];    // upsampling filter
+    pt3FilterVec2_t upsampleLpfBF;      // upsampling filter
     efPidAxis_t efAxis[EF_AXIS_COUNT];
 } autopilotState_t;
 
 static autopilotState_t ap = {
     .sanityCheckDistance = 1000.0f,
-    .upsampleLpfGain = 1.0f,
+    .upsampleLpfGain = {{1.0f}},
     .vaLpfCutoff = 1.0f,
     .sticksActive = false,
 };
 
 float autopilotAngle[RP_AXIS_COUNT];
 
-static void resetEFAxisFilters(efPidAxis_t* efAxis, const float vaGain)
+static void resetEFAxisFilters(efPidAxis_t* efAxis, const pt1FilterCoeffs_t* vaGain)
 {
-    pt1FilterInit(&efAxis->velocityLpf, vaGain);
-    pt1FilterInit(&efAxis->accelerationLpf, vaGain);
+    pt1FilterInit1(&efAxis->velocityLpf);
+    pt1FilterUpdateCoeffs(&efAxis->velocityLpf, vaGain);
+    pt1FilterInit1(&efAxis->accelerationLpf);
+    pt1FilterUpdateCoeffs(&efAxis->accelerationLpf, vaGain);
 }
 
-static void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
+static void resetEFAxisParams(efPidAxis_t *efAxis, const pt1FilterCoeffs_t* vaGain)
 {
     // at start only
     resetEFAxisFilters(efAxis, vaGain);
@@ -108,9 +110,8 @@ static void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
 
 static void resetUpsampleFilters(void)
 {
-    for (unsigned i = 0; i < ARRAYLEN(ap.upsampleLpfBF); i++) {
-        pt3FilterInit(&ap.upsampleLpfBF[i], ap.upsampleLpfGain);
-    }
+    pt3FilterInit2(&ap.upsampleLpfBF);
+    pt3FilterUpdateCoeffs2(&ap.upsampleLpfBF, &ap.upsampleLpfGain);
 }
 
 // get sanity distance based on speed
@@ -129,10 +130,10 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
     ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
         // clear anything stored in the filter at first call
-        resetEFAxisParams(&ap.efAxis[i], 1.0f);
+        resetEFAxisParams(&ap.efAxis[i], &(pt1FilterCoeffs_t){{1.0f}});
     }
     const float taskInterval = 1.0f / taskRateHz;
-    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval); // 5Hz; normally at 100Hz task rate
+    pt3FilterCoeffsLPF(&ap.upsampleLpfGain, UPSAMPLING_CUTOFF_HZ, taskInterval); // 5Hz; normally at 100Hz task rate
     resetUpsampleFilters(); // clear accumlator from previous iterations
 }
 
@@ -150,13 +151,15 @@ void autopilotInit(void)
     positionPidCoeffs.Kd = cfg->positionD * POSITION_D_SCALE;
     positionPidCoeffs.Kf = cfg->positionA * POSITION_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gains; location isn't used at this point.
-    ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
+    pt3FilterCoeffsLPF(&ap.upsampleLpfGain, UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
     resetUpsampleFilters();
     // Initialise PT1 filters for velocity and acceleration in earth frame axes
     ap.vaLpfCutoff = cfg->positionCutoff * 0.01f;
-    const float vaGain = pt1FilterGain(ap.vaLpfCutoff,  0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
+
+    pt1FilterCoeffs_t vaGain;
+    pt1FilterCoeffsLPF(&vaGain, 1, 0.1f); // assume 10Hz GPS connection at start; value is overwritten before first filter use
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
-        resetEFAxisFilters(&ap.efAxis[i], vaGain);
+        resetEFAxisFilters(&ap.efAxis[i], &vaGain);
     }
 }
 
@@ -256,8 +259,9 @@ bool positionControl(void)
         }
 
         // update filters according to current GPS update rate
-        const float vaGain = pt1FilterGain(ap.vaLpfCutoff, gpsDataInterval);
-        const float iTermLeakGain = 1.0f - pt1FilterGainFromDelay(2.5f, gpsDataInterval);   // 2.5s time constant
+        pt1FilterCoeffs_t vaGain;
+        pt1FilterCoeffsLPF(&vaGain, ap.vaLpfCutoff, gpsDataInterval);
+        const float iTermLeakGain = 1.0f - rcFilterGainFromDelay(2.5f, gpsDataInterval);   // 2.5s time constant
         vector2_t pidSum = { 0 };       // P+I in loop, D+A added after the axis loop (after limiting it)
         vector2_t pidDA;                // D+A
 
@@ -281,7 +285,7 @@ bool positionControl(void)
 
             const float velocity = (axisDistance - efAxis->previousDistance) * gpsDataFreq; // cm/s
             efAxis->previousDistance = axisDistance;
-            pt1FilterUpdateCutoff(&efAxis->velocityLpf, vaGain);
+            pt1FilterUpdateCoeffs1(&efAxis->velocityLpf, &vaGain);
             const float velocityFiltered = pt1FilterApply(&efAxis->velocityLpf, velocity);
             float pidD = velocityFiltered * positionPidCoeffs.Kd;
 
@@ -289,7 +293,7 @@ bool positionControl(void)
             float acceleration = (velocityFiltered - efAxis->previousVelocity) * gpsDataFreq;
             efAxis->previousVelocity = velocityFiltered;
             // apply second filter to acceleration (acc is filtered twice)
-            pt1FilterUpdateCutoff(&efAxis->accelerationLpf, vaGain);
+            pt1FilterUpdateCoeffs1(&efAxis->accelerationLpf, &vaGain);
             const float accelerationFiltered = pt1FilterApply(&efAxis->accelerationLpf, acceleration);
             const float pidA = accelerationFiltered * positionPidCoeffs.Kf;
 
@@ -367,10 +371,8 @@ bool positionControl(void)
     }
 
     // Final output to pid.c Angle Mode at 100Hz with PT3 upsampling
-    for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
-        // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
-        autopilotAngle[i] = pt3FilterApply(&ap.upsampleLpfBF[i], ap.pidSumBF.v[i]);
-    }
+    // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
+    pt3FilterApply2(&ap.upsampleLpfBF, autopilotAngle, ap.pidSumBF.v);
 
     if (debugAxis < 2) {
         // this is different from @ctzsnooze version

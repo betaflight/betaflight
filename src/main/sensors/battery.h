@@ -37,7 +37,7 @@
 
 #define MAX_AUTO_DETECT_CELL_COUNT 8
 
-#define GET_BATTERY_LPF_FREQUENCY(period) (1 / (period / 10.0f))
+#define GET_BATTERY_LPF_FREQUENCY(period) (1 / ((period) / 10.0f))
 
 enum {
     AUTO_PROFILE_CELL_COUNT_STAY = 0, // Stay on this profile irrespective of the detected cell count. Use this profile if no other profile matches (default, i.e. auto profile switching is off)

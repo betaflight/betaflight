@@ -23,15 +23,17 @@
 #include <stdbool.h>
 
 #include "common/time.h"
+#include "common/vector.h"
+
 
 #include "pg/dyn_notch.h"
 
 #define DYN_NOTCH_COUNT_MAX 7
 
-void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs);
-void dynNotchPush(const int axis, const float sample);
+void dynNotchInit(const dynNotchConfig_t *config, const float dt);
+void dynNotchPush(const vector3_t *sample);
 void dynNotchUpdate(void);
-float dynNotchFilter(const int axis, float value);
+void dynNotchFilter(vector3_t* dst, const vector3_t* src);
 bool isDynNotchActive(void);
 int getMaxFFT(void);
 void resetMaxFFT(void);

@@ -2428,7 +2428,7 @@ void osdElementsInit(bool backgroundLayerFlag)
 {
     backgroundLayerSupported = backgroundLayerFlag;
     activeOsdElementCount = 0;
-    pt1FilterInit(&batteryEfficiencyFilt, pt1FilterGain(EFFICIENCY_CUTOFF_HZ, 1.0f / osdConfig()->framerate_hz));
+    pt1FilterInitLPF(&batteryEfficiencyFilt, EFFICIENCY_CUTOFF_HZ, 1.0f / osdConfig()->framerate_hz);
 }
 
 void osdSyncBlink(timeUs_t currentTimeUs)

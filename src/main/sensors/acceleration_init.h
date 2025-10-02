@@ -30,7 +30,7 @@
 
 typedef struct accelerationRuntime_s {
     uint16_t accLpfCutHz;
-    pt2Filter_t accFilter[XYZ_AXIS_COUNT];
+    pt2FilterVec3_t accFilter;
     flightDynamicsTrims_t *accelerationTrims;
     uint16_t calibratingA;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 } accelerationRuntime_t;

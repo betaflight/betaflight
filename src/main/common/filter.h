@@ -23,52 +23,52 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct filter_s;
-typedef struct filter_s filter_t;
-typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
+#include "filter_magic_h.h"
 
-typedef enum {
-    FILTER_PT1 = 0,
-    FILTER_BIQUAD,
-    FILTER_PT2,
-    FILTER_PT3,
-} lowpassFilterType_e;
+#define DEFAULT_FILTER_DIMS (1)(2)(3)(4)(8)(12)
 
-typedef enum {
-    FILTER_LPF,    // 2nd order Butterworth section
-    FILTER_NOTCH,
-    FILTER_BPF,
-} biquadFilterType_e;
+#ifdef __cplusplus
+// C++ does not like zzero-size arrays
+DECLARE_FILTER(null, 1, 1, DEFAULT_FILTER_DIMS);
+#else
+DECLARE_FILTER(null, 0, 0, DEFAULT_FILTER_DIMS);
+#endif
 
-typedef struct pt1Filter_s {
-    float state;
-    float k;
-} pt1Filter_t;
+float rcFilterGain(float f_cut, float dT);
+float rcFilterGainFromDelay(float delay, float dT);
 
-typedef struct pt2Filter_s {
-    float state;
-    float state1;
-    float k;
-} pt2Filter_t;
+DECLARE_FILTER(pt1, 1, 1, DEFAULT_FILTER_DIMS);
+DECLARE_FILTER(pt2, 1, 2, DEFAULT_FILTER_DIMS);
+DECLARE_FILTER(pt3, 1, 3, DEFAULT_FILTER_DIMS);
 
-typedef struct pt3Filter_s {
-    float state;
-    float state1;
-    float state2;
-    float k;
-} pt3Filter_t;
+DEFINE_FILTER_INIT_KIND(pt1, pt1, DEFAULT_FILTER_DIMS, LPF, ((float, f_cut))((float, dT)));
+DEFINE_FILTER_INIT_KIND(pt1, pt1, DEFAULT_FILTER_DIMS, Delay, ((float, f_cut))((float, dT)));
+DEFINE_FILTER_INIT_KIND(pt1, pt1, DEFAULT_FILTER_DIMS, Alpha, ((float, alpha)));
+DEFINE_FILTER_INIT_KIND(pt2, pt2, DEFAULT_FILTER_DIMS, LPF, ((float, f_cut))((float, dT)));
+DEFINE_FILTER_INIT_KIND(pt2, pt2, DEFAULT_FILTER_DIMS, Delay, ((float, f_cut))((float, dT)));
+DEFINE_FILTER_INIT_KIND(pt3, pt3, DEFAULT_FILTER_DIMS, LPF, ((float, f_cut))((float, dT)));
+DEFINE_FILTER_INIT_KIND(pt3, pt3, DEFAULT_FILTER_DIMS, Delay, ((float, f_cut))((float, dT)));
 
-/* this holds the data required to update samples thru a filter */
-typedef struct biquadFilter_s {
-    float b0, b1, b2, a1, a2;
-    float x1, x2, y1, y2;
-    float weight;
-} biquadFilter_t;
+enum biquad_coef_e {biquad_b0, biquad_b1, biquad_b2, biquad_a1, biquad_a2};
+enum biquad_state_df1_e {biquad_x1, biquad_x2, biquad_y1, biquad_y2};
+enum biquad_state_df2_e {biquad_s1, biquad_s2};
+DECLARE_FILTER(biquad, 5, 2, DEFAULT_FILTER_DIMS);
+DECLARE_FILTER_2(biquad, biquadDF1, 5, 4, DEFAULT_FILTER_DIMS);
 
-typedef struct phaseComp_s {
-    float b0, b1, a1;
-    float x1, y1;
-} phaseComp_t;
+float filterGetNotchQ(float centerFreq, float cutoffFreq);
+void biquadFilterCoeffsApplyWeight(FILTER_COEFFS_TYPE(biquad) *dst, float weight);
+
+DEFINE_FILTER_INIT_KIND(biquad, biquad, DEFAULT_FILTER_DIMS, LPF, ((float, filterFreq))((float, dT)));
+DEFINE_FILTER_INIT_KIND(biquad, biquad, DEFAULT_FILTER_DIMS, Notch, ((float, filterFreq))((float, dT))((float, q)));
+DEFINE_FILTER_INIT_KIND(biquad, biquadDF1, DEFAULT_FILTER_DIMS, LPF, ((float, filterFreq))((float, dT)));
+DEFINE_FILTER_INIT_KIND(biquad, biquadDF1, DEFAULT_FILTER_DIMS, Notch, ((float, filterFreq))((float, dT))((float, q)));
+
+enum phaseComp_coef_e {phaseComp_b0, phaseComp_b1, phaseComp_a1};
+enum phaseComp_state_e {phaseComp_x1, phaseComp_y1};
+DECLARE_FILTER(phaseComp, 3, 2, (1));
+void phaseCompFilterCoeffsCenPh(FILTER_COEFFS_TYPE(phaseComp) *dst, const float centerFreqHz, const float centerPhaseDeg, const float dT);
+DEFINE_FILTER_INIT_KIND(phaseComp, phaseComp, (1), CenPh, ((float, centerFreqHz))((float, centerPhaseDeg))((float, dT)));
+
 
 typedef struct slewFilter_s {
     float state;
@@ -95,39 +95,14 @@ typedef struct meanAccumulator_s {
     int32_t count;
 } meanAccumulator_t;
 
-float nullFilterApply(filter_t *filter, float input);
+typedef enum {
+    FILTER_PT1 = 0,
+    FILTER_BIQUAD,
+    FILTER_PT2,
+    FILTER_PT3,
+} lowpassFilterType_e;
 
-float pt1FilterGain(float f_cut, float dT);
-float pt1FilterGainFromDelay(float delay, float dT);
-void pt1FilterInit(pt1Filter_t *filter, float k);
-void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
-float pt1FilterApply(pt1Filter_t *filter, float input);
-
-float pt2FilterGain(float f_cut, float dT);
-float pt2FilterGainFromDelay(float delay, float dT);
-void pt2FilterInit(pt2Filter_t *filter, float k);
-void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k);
-float pt2FilterApply(pt2Filter_t *filter, float input);
-
-float pt3FilterGain(float f_cut, float dT);
-float pt3FilterGainFromDelay(float delay, float dT);
-void pt3FilterInit(pt3Filter_t *filter, float k);
-void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k);
-float pt3FilterApply(pt3Filter_t *filter, float input);
-
-float filterGetNotchQ(float centerFreq, float cutoffFreq);
-
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
-float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
-float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
-float biquadFilterApply(biquadFilter_t *filter, float input);
-
-void phaseCompInit(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
-void phaseCompUpdate(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
-float phaseCompApply(phaseComp_t *filter, const float input);
+#define LOWPASS_FILTERS (null, pt1, biquad, pt2, pt3, biquadDF1)
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);

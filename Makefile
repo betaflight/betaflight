@@ -255,6 +255,11 @@ include $(MAKE_SCRIPT_DIR)/openocd.mk
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
 
+# Add local third-party headers to include path so `#include <boost/...>` resolves
+# after moving Boost.Preprocessor to `lib/main/boost`.
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(ROOT)/lib/main
+
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)
 
@@ -324,8 +329,9 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__REVISION__="$(REVISION)"' \
               -D'__FC_VERSION__="$(FC_VER)"' \
               $(CONFIG_REVISION_DEFINE) \
-              -pipe \
               -MMD -MP \
+              -save-temps=obj \
+              -Wno-implicit-fallthrough \
               $(EXTRA_FLAGS)
 
 CFLAGS     := $(filter-out $(CFLAGS_DISABLED), $(CFLAGS))

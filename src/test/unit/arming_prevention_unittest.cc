@@ -1141,6 +1141,7 @@ extern "C" {
 
     float sin_approx(float) {return 0.0f;}
     float cos_approx(float) {return 1.0f;}
+    void sincosf_approx(float, float *, float *) {}
     float atan2_approx(float, float) {return 0.0f;}
 
     void getRcDeflectionAbs(void) {}

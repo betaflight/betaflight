@@ -597,32 +597,6 @@ extern "C" {
         return true;
     }
 
-    float pt1FilterGain(float f_cut, float dT)
-    {
-        UNUSED(f_cut);
-        UNUSED(dT);
-        return 0.0;
-    }
-
-    void pt1FilterInit(pt1Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-
-    void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-
-    float pt1FilterApply(pt1Filter_t *filter, float input)
-    {
-        UNUSED(filter);
-        UNUSED(input);
-        return 0.0;
-    }
-
     bool isUpright(void) { return true; }
 
     float getMotorOutputLow(void) { return 1000.0; }

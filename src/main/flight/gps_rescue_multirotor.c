@@ -133,15 +133,13 @@ rescueState_s rescueState;
 
 void gpsRescueInit(void)
 {
-    float cutoffHz, gain;
+    float cutoffHz;
     cutoffHz = gpsRescueConfig()->pitchCutoffHz / 100.0f;
     rescueState.intent.velocityPidCutoff = cutoffHz;
     rescueState.intent.velocityPidCutoffModifier = 1.0f;
-    gain = pt1FilterGain(cutoffHz, 1.0f);
-    pt1FilterInit(&velocityDLpf, gain);
+    pt1FilterInitLPF(&velocityDLpf, cutoffHz, 1.0f);
     cutoffHz *= 4.0f;
-    gain = pt3FilterGain(cutoffHz, taskIntervalSeconds);
-    pt3FilterInit(&velocityUpsampleLpf, gain);
+    pt3FilterInitLPF(&velocityUpsampleLpf, cutoffHz, taskIntervalSeconds);
 }
 
 static void rescueStart(void)
@@ -298,8 +296,7 @@ static void rescueAttainPosition(bool newGpsData)
         // smooth the D steps
         const float cutoffHz = rescueState.intent.velocityPidCutoff * rescueState.intent.velocityPidCutoffModifier;
         // note that this cutoff is increased up to 2x as we get closer to landing point in descend()
-        const float gain = pt1FilterGain(cutoffHz, rescueState.sensor.gpsDataIntervalSeconds);
-        pt1FilterUpdateCutoff(&velocityDLpf, gain);
+        pt1FilterCoeffsLPF(&velocityDLpf.coeffs, cutoffHz, rescueState.sensor.gpsDataIntervalSeconds);
         velocityD = pt1FilterApply(&velocityDLpf, velocityD);
 
         pitchAdjustment = velocityP + velocityI + velocityD;
