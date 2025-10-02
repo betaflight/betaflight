@@ -74,9 +74,6 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_SERIALRX_XBUS
         BUILD_OPTION_SERIALRX_XBUS,
 #endif
-#ifdef USE_SERIALRX_MAVLINK
-        BUILD_OPTION_SERIALRX_MAVLINK,
-#endif
 #ifdef USE_TELEMETRY_FRSKY_HUB
         BUILD_OPTION_TELEMETRY_FRSKY_HUB,
 #endif
