@@ -33,6 +33,7 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/usb_io.h"
 
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
@@ -429,9 +430,11 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     if (!areMotorsRunning()) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
+        const bool usbIn = usbCableIsInserted();
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
         if (activeMode == BEEPER_RX_LOST
+            && !usbIn
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
             dshotBeaconRequested = true;
         }
