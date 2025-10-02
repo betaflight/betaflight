@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get install -y libblocksruntime-dev clang-15
+        run: sudo apt-get install -y libblocksruntime-dev clang-18
 
       - name: Run sanity checks
         run: make EXTRA_FLAGS=-Werror checks
