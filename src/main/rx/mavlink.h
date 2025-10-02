@@ -20,8 +20,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 #define MAVLINK_COMM_NUM_BUFFERS 1
-#include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
-void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg);
+struct mavlink_rc_channels_override_t;
+void mavlinkRxHandleMessage(const struct mavlink_rc_channels_override_t *msg);
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);

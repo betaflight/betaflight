@@ -33,24 +33,12 @@ static uint16_t mavlinkChannelData[MAVLINK_CHANNEL_COUNT];
 static bool frameReceived;
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
-    if (msg->chan1_raw != 0 && msg->chan1_raw != UINT16_MAX) mavlinkChannelData[0] = msg->chan1_raw;
-    if (msg->chan2_raw != 0 && msg->chan2_raw != UINT16_MAX) mavlinkChannelData[1] = msg->chan2_raw;
-    if (msg->chan3_raw != 0 && msg->chan3_raw != UINT16_MAX) mavlinkChannelData[2] = msg->chan3_raw;
-    if (msg->chan4_raw != 0 && msg->chan4_raw != UINT16_MAX) mavlinkChannelData[3] = msg->chan4_raw;
-    if (msg->chan5_raw != 0 && msg->chan5_raw != UINT16_MAX) mavlinkChannelData[4] = msg->chan5_raw;
-    if (msg->chan6_raw != 0 && msg->chan6_raw != UINT16_MAX) mavlinkChannelData[5] = msg->chan6_raw;
-    if (msg->chan7_raw != 0 && msg->chan7_raw != UINT16_MAX) mavlinkChannelData[6] = msg->chan7_raw;
-    if (msg->chan8_raw != 0 && msg->chan8_raw != UINT16_MAX) mavlinkChannelData[7] = msg->chan8_raw;
-    if (msg->chan9_raw != 0 && msg->chan9_raw != UINT16_MAX) mavlinkChannelData[8] = msg->chan9_raw;
-    if (msg->chan10_raw != 0 && msg->chan10_raw != UINT16_MAX) mavlinkChannelData[9] = msg->chan10_raw;
-    if (msg->chan11_raw != 0 && msg->chan11_raw != UINT16_MAX) mavlinkChannelData[10] = msg->chan11_raw;
-    if (msg->chan12_raw != 0 && msg->chan12_raw != UINT16_MAX) mavlinkChannelData[11] = msg->chan12_raw;
-    if (msg->chan13_raw != 0 && msg->chan13_raw != UINT16_MAX) mavlinkChannelData[12] = msg->chan13_raw;
-    if (msg->chan14_raw != 0 && msg->chan14_raw != UINT16_MAX) mavlinkChannelData[13] = msg->chan14_raw;
-    if (msg->chan15_raw != 0 && msg->chan15_raw != UINT16_MAX) mavlinkChannelData[14] = msg->chan15_raw;
-    if (msg->chan16_raw != 0 && msg->chan16_raw != UINT16_MAX) mavlinkChannelData[15] = msg->chan16_raw;
-    if (msg->chan17_raw != 0 && msg->chan17_raw != UINT16_MAX) mavlinkChannelData[16] = msg->chan17_raw;
-    if (msg->chan18_raw != 0 && msg->chan18_raw != UINT16_MAX) mavlinkChannelData[17] = msg->chan18_raw;
+    const uint16_t *channelsPtr = &msg->chan1_raw;
+    for (int i = 0; i < MAVLINK_CHANNEL_COUNT; i++) {
+        if (channelsPtr[i] != 0 && channelsPtr[i] != UINT16_MAX) {
+            mavlinkChannelData[0] = channelsPtr[i];
+        }
+    }
     frameReceived = true;
 }
 
