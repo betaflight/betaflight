@@ -64,9 +64,7 @@ bool usbCableIsInserted(void)
 #endif
 
 #if defined(USE_VCP)
-    if (!result) {
-        result = usbVcpIsConnected() != 0;
-    }
+    result = result || usbVcpIsConnected() != 0;
 #endif
 
     return result;
