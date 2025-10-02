@@ -52,7 +52,6 @@ void resetYawAxis(void);
 void initRcProcessing(void);
 bool isMotorsReversed(void);
 rcSmoothingFilter_t *getRcSmoothingData(void);
-bool rcSmoothingAutoCalculate(void);
 
 float getMaxRcRate(int axis);
 float getFeedforward(int axis);
