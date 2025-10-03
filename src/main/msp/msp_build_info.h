@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/4.6.0
- * Input hash   : f612c38bb1cde0c284a8e23af1eb2049
+ * Source       : https://build.betaflight.com/api/options/2025.12
+ * Input hash   : 6a57c50d7938349a1e8363e85d6741dc
  */
 
 #pragma once
@@ -37,6 +37,7 @@
 #define BUILD_OPTION_SERIALRX_GHST              4099
 #define BUILD_OPTION_SERIALRX_IBUS              4100
 #define BUILD_OPTION_SERIALRX_JETIEXBUS         4101
+#define BUILD_OPTION_SERIALRX_MAVLINK           4109
 #define BUILD_OPTION_RX_PPM                     4102
 #define BUILD_OPTION_SERIALRX_SBUS              4103
 #define BUILD_OPTION_SERIALRX_SPEKTRUM          4104
