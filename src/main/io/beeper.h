@@ -118,7 +118,4 @@ uint32_t beeperModeMaskForTableIndex(int idx);
 const char *beeperNameForTableIndex(int idx);
 int beeperTableEntryCount(void);
 bool isBeeperOn(void);
-
-#ifdef USE_DSHOT
 timeUs_t getLastDshotBeaconCommandTimeUs(void);
-#endif
