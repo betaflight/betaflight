@@ -629,10 +629,10 @@ void handleMAVLinkTelemetry(void)
     uint32_t currentTimeUs = micros();
 
 #ifdef USE_SERIALRX_MAVLINK
-    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
     processMAVLinkIncomingTelemetry();
 
-    if (txbuff_valid) {
+    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
+    if (mavlink_min_txbuff > 0 && txbuff_valid) {
         // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
         shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
         DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
