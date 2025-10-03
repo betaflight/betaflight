@@ -35,8 +35,8 @@
 #include "drivers/time.h"
 #include "drivers/usb_io.h"
 
-#include "flight/mixer.h"
 #include "flight/failsafe.h"
+#include "flight/mixer.h"
 
 #include "config/config.h"
 #include "fc/core.h"
