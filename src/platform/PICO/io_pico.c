@@ -51,7 +51,7 @@ void IOInitGlobal(void)
 #endif
 #endif
 
-    // Some boards (e.g. Laurel) require a pin to be held low in order to generate a 5V / 9V
+    // Some boards (e.g. Hellbender) require a pin to be held low in order to generate a 5V / 9V
     // power supply from the main battery.
     // (TODO: should we manage a list of pins that we want to send low or high?)
 #ifdef PICO_BEC_5V_ENABLE_PIN
