@@ -39,6 +39,7 @@
 #include "drivers/serial_tcp.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/usb_io.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_output_impl.h"
 #include "drivers/light_led.h"
@@ -775,6 +776,11 @@ IO_t IOGetByTag(ioTag_t tag)
 {
     UNUSED(tag);
     return NULL;
+}
+
+bool usbCableIsInserted(void)
+{
+    return false;
 }
 
 const mcuTypeInfo_t *getMcuTypeInfo(void)
