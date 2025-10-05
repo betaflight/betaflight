@@ -33,7 +33,9 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/usb_io.h"
 
+#include "flight/failsafe.h"
 #include "flight/mixer.h"
 
 #include "config/config.h"
@@ -418,8 +420,52 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
+    // Drive ESC beacons when requested:
+    //  - RX link lost while USB is disconnected (field retrieval), or
+    //  - RX_SET via AUX with an active RX link (user-triggered beacon)
+#ifdef USE_DSHOT
+    static const timeDelta_t dshotBeaconIntervalUs = DSHOT_BEACON_MODE_INTERVAL_US;
+
+    bool dshotBeaconRequested = false;
+
+    if (!areMotorsRunning()) {
+        const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
+        const bool usbIn = usbCableIsInserted();
+
+        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
+        if (activeMode == BEEPER_RX_LOST
+            && !usbIn
+            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
+            dshotBeaconRequested = true;
+        }
+
+        // Allow user-triggered beacon via AUX switch while the RX link is healthy.
+        if (IS_RC_MODE_ACTIVE(BOXBEEPERON)
+            && failsafeIsReceivingRxData()
+            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)) ) {
+            dshotBeaconRequested = true;
+        }
+    }
+
+    if (dshotBeaconRequested) {
+        if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
+            && !isTryingToArm()) {
+            if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dshotBeaconIntervalUs) {
+                // at least 450ms between DShot beacons to allow time for the sound to fully complete
+                // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
+                lastDshotBeaconCommandTimeUs = currentTimeUs;
+                dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
+            }
+        } else {
+            // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
+            lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
+        }
+    }
+#endif
+    // Note: DShot beacon handling above must run even if no beeper sequence is active.
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
+        schedulerIgnoreTaskExecTime();
         return;
     }
 
@@ -427,28 +473,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
         schedulerIgnoreTaskExecTime();
         return;
     }
-
-#ifdef USE_DSHOT
-    if (!areMotorsRunning()
-        && (DSHOT_BEACON_ALLOWED_MODES & BEEPER_GET_FLAG(currentBeeperEntry->mode))
-        && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(currentBeeperEntry->mode)) ) {
-        const timeDelta_t dShotBeaconInterval = (currentBeeperEntry->mode == BEEPER_RX_SET)
-            ? DSHOT_BEACON_MODE_INTERVAL_US
-            : DSHOT_BEACON_RXLOSS_INTERVAL_US;
-        if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
-            && !isTryingToArm() ) {
-            if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
-                // at least 500ms between DShot beacons to allow time for the sound to fully complete
-                // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
-                lastDshotBeaconCommandTimeUs = currentTimeUs;
-                dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
-            }
-        } else {
-            // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
-            lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
-        }
-    }
-#endif
 
     bool visualBeep = false;
     switch (beeperSequenceAdvance(currentTimeUs)) {

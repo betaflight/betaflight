@@ -26,6 +26,7 @@
 #ifdef USE_VCP
 
 #include "drivers/io.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/time.h"
 #include "usb_io.h"
 
@@ -60,6 +61,10 @@ bool usbCableIsInserted(void)
     if (usbDetectPin) {
         result = IORead(usbDetectPin) != 0;
     }
+#endif
+
+#if defined(USE_VCP)
+    result = result || usbVcpIsConnected() != 0;
 #endif
 
     return result;
