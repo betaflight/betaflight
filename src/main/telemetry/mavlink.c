@@ -89,6 +89,8 @@
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
+#define MAVLINK_SYSTEM_ID 1
+#define MAVLINK_COMPONENT_ID MAV_COMP_ID_AUTOPILOT1
 extern uint16_t rssi; // FIXME dependency on mw.c
 
 static serialPort_t *mavlinkPort = NULL;
@@ -248,7 +250,7 @@ static void mavlinkSendSystemStatus(void)
         batteryRemaining = isBatteryVoltageConfigured() ? calculateBatteryPercentageRemaining() : batteryRemaining;
     }
 
-    mavlink_msg_sys_status_pack(0, 200, &mavMsg,
+    mavlink_msg_sys_status_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present.
         //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure,
         // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
@@ -290,7 +292,7 @@ static void mavlinkSendSystemStatus(void)
 static void mavlinkSendRCChannelsAndRSSI(void)
 {
     uint16_t msgLength;
-    mavlink_msg_rc_channels_raw_pack(0, 200, &mavMsg,
+    mavlink_msg_rc_channels_raw_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_boot_ms Timestamp (milliseconds since system boot)
         millis(),
         // port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
@@ -338,7 +340,7 @@ static void mavlinkSendPosition(void)
         }
     }
 
-    mavlink_msg_gps_raw_int_pack(0, 200, &mavMsg,
+    mavlink_msg_gps_raw_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
         micros(),
         // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
@@ -370,7 +372,7 @@ static void mavlinkSendPosition(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 
     // Global position
-    mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
+    mavlink_msg_global_position_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
         micros(),
         // lat Latitude in 1E7 degrees
@@ -393,7 +395,7 @@ static void mavlinkSendPosition(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-    mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
+    mavlink_msg_gps_global_origin_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // Latitude (WGS84), expressed as * 1E7
         GPS_home_llh.lat,
         // Longitude (WGS84), expressed as * 1E7
@@ -410,7 +412,7 @@ static void mavlinkSendPosition(void)
 static void mavlinkSendAttitude(void)
 {
     uint16_t msgLength;
-    mavlink_msg_attitude_pack(0, 200, &mavMsg,
+    mavlink_msg_attitude_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_boot_ms Timestamp (milliseconds since system boot)
         millis(),
         // roll Roll angle (rad)
@@ -446,7 +448,7 @@ static void mavlinkSendHUDAndHeartbeat(void)
 
     mavAltitude = getEstimatedAltitudeCm() / 100.0f;
 
-    mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
+    mavlink_msg_vfr_hud_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // airspeed Current airspeed in m/s
         mavAirSpeed,
         // groundspeed Current ground speed in m/s
@@ -524,7 +526,7 @@ static void mavlinkSendHUDAndHeartbeat(void)
         mavSystemState = MAV_STATE_STANDBY;
     }
 
-    mavlink_msg_heartbeat_pack(0, 200, &mavMsg,
+    mavlink_msg_heartbeat_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
         mavSystemType,
         // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
@@ -633,7 +635,7 @@ void handleMAVLinkTelemetry(void)
 
     uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
     if (mavlink_min_txbuff > 0 && txbuff_valid) {
-        // Use mavlink telemetry flow control if available to prevent overflow of TX buffer
+        // Use mavlink telemetry flow control, if it is available, to prevent overflow of TX buffer
         shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
         DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
         if (shouldSendTelemetry) {
