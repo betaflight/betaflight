@@ -1361,7 +1361,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
             portConfig.gps_baudrateIndex = baudRateIndex;
             break;
         case 2:
-            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
+            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_460800) {
                 continue;
             }
             portConfig.telemetry_baudrateIndex = baudRateIndex;
