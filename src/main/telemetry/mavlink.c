@@ -90,6 +90,7 @@
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
 #define MAVLINK_SYSTEM_ID 1
+
 extern uint16_t rssi; // FIXME dependency on mw.c
 
 static serialPort_t *mavlinkPort = NULL;
@@ -119,6 +120,9 @@ static mavlink_message_t mavRecvMsg;
 static mavlink_status_t mavRecvStatus;
 static uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
 static bool txbuff_valid = false;
+static uint32_t heartBrakeCounter;
+static uint32_t attitudeCounter;
+static uint32_t statusCounter;
 #endif
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
@@ -286,6 +290,10 @@ static void mavlinkSendSystemStatus(void)
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+    statusCounter++;
+    if (statusCounter > 50) {
+        statusCounter = 0;
+    }
 }
 
 static void mavlinkSendRCChannelsAndRSSI(void)
@@ -428,6 +436,10 @@ static void mavlinkSendAttitude(void)
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+    attitudeCounter++;
+    if (attitudeCounter > 50) {
+        attitudeCounter = 0;
+    }
 }
 
 static void mavlinkSendHUDAndHeartbeat(void)
@@ -538,6 +550,10 @@ static void mavlinkSendHUDAndHeartbeat(void)
         mavSystemState);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+    heartBrakeCounter++;
+    if (heartBrakeCounter > 50){
+        heartBrakeCounter = 0;
+    }
 }
 
 static void processMAVLinkTelemetry(void)
@@ -640,6 +656,9 @@ void handleMAVLinkTelemetry(void)
         if (shouldSendTelemetry) {
             txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
         }
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, heartBrakeCounter);
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, attitudeCounter);
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, statusCounter);
     } else {
         shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY);
     }
