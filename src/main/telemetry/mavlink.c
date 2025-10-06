@@ -563,8 +563,6 @@ static void mavlinkSendBatteryStatus(void)
         } else {
             voltages[0] = getBatteryVoltage() * 10;
         }
-    } else {
-        voltages[0] = 0;
     }
 
     // Battery amperage in centiamps (cA), -1 if not available
