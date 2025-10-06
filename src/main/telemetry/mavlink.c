@@ -560,12 +560,10 @@ static void mavlinkSendBatteryStatus(void)
                     voltagesExt[cell - MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN] = getBatteryAverageCellVoltage() * 10;
                 }
             }
-        }
-        else {
+        } else {
             voltages[0] = getBatteryVoltage() * 10;
         }
-    }
-    else {
+    } else {
         voltages[0] = 0;
     }
 
