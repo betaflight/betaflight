@@ -105,7 +105,8 @@ static const uint8_t mavRates[] = {
     [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
     [MAV_DATA_STREAM_POSITION] = 2, //2Hz
     [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10 //2Hz
+    [MAV_DATA_STREAM_EXTRA2] = 10, //10Hz
+    [MAV_DATA_STREAM_EXTRA3] = 2, //2Hz
 };
 
 #define MAXSTREAMS ARRAYLEN(mavRates)
@@ -541,6 +542,71 @@ static void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+static void mavlinkSendBatteryStatus(void)
+{
+    uint16_t msgLength;
+
+    // Battery voltage: use total pack voltage or individual cell voltages
+    uint16_t voltages[10];
+    for (int i = 0; i < 10; i++) {
+        voltages[i] = UINT16_MAX; // Mark unused cells
+    }
+
+    // Put total battery voltage in cell 0 (in mV)
+    if (isBatteryVoltageConfigured()) {
+        voltages[0] = getBatteryVoltage() * 10; // Convert from 0.01V to mV
+    } else {
+        voltages[0] = 0;
+    }
+
+    // Battery current in centiamps (cA), -1 if not available
+    int16_t currentBattery = -1;
+    if (isAmperageConfigured()) {
+        currentBattery = getAmperage(); // Already in cA (0.01A)
+    }
+
+    // mAh consumed, -1 if not available
+    int32_t currentConsumed = -1;
+    if (isAmperageConfigured()) {
+        currentConsumed = getMAhDrawn(); // This is the key field for "Capa"
+    }
+
+    // Battery percentage remaining
+    int8_t batteryRemaining = -1;
+    if (isBatteryVoltageConfigured()) {
+        batteryRemaining = calculateBatteryPercentageRemaining();
+    }
+
+    // Temperature: INT16_MAX if unknown
+    int16_t temperature = INT16_MAX;
+
+    // Extended cell voltages (cells 11-14): set to 0 for unused
+    uint16_t voltagesExt[4] = {0, 0, 0, 0};
+
+    mavlink_msg_battery_status_pack(
+        MAVLINK_SYSTEM_ID,
+        MAVLINK_COMPONENT_ID,
+        &mavMsg,
+        0,                    // id: Battery ID (0 = main battery)
+        0,                    // battery_function: 0 = MAV_BATTERY_FUNCTION_UNKNOWN
+        0,                    // type: 0 = MAV_BATTERY_TYPE_UNKNOWN (could use MAV_BATTERY_TYPE_LIPO = 1)
+        temperature,          // temperature: INT16_MAX = unknown
+        voltages,             // voltages[10]: Cell voltages in mV
+        currentBattery,       // current_battery: Current in cA
+        currentConsumed,      // current_consumed: mAh drawn (CRITICAL for "Capa")
+        -1,                   // energy_consumed: -1 = not available (could calculate from Wh if needed)
+        batteryRemaining,     // battery_remaining: Percentage 0-100
+        0,                    // time_remaining: 0 = not calculated
+        MAV_BATTERY_CHARGE_STATE_UNDEFINED, // charge_state: 0 = MAV_BATTERY_CHARGE_STATE_UNDEFINED
+        voltagesExt,          // voltages_ext[4]: Cells 11-14, not used
+        0,                    // mode: 0 = normal
+        0                     // fault_bitmask: 0 = no faults
+    );
+
+    msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
 static void processMAVLinkTelemetry(void)
 {
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
@@ -564,6 +630,10 @@ static void processMAVLinkTelemetry(void)
 
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
         mavlinkSendHUDAndHeartbeat();
+    }
+
+    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA3)) {
+        mavlinkSendBatteryStatus();
     }
 }
 
