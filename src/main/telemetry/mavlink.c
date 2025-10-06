@@ -559,7 +559,7 @@ static void mavlinkSendBatteryStatus(void)
         voltages[0] = 0;
     }
 
-    // Battery current in centiamps (cA), -1 if not available
+    // Battery current in centiamps, -1 if not available
     int16_t currentBattery = -1;
     if (isAmperageConfigured()) {
         currentBattery = getAmperage(); // Already in cA (0.01A)
