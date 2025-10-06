@@ -108,6 +108,7 @@ STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
             break;
         case MAVLINK_MSG_ID_RADIO_STATUS:
             handleIncoming_RADIO_STATUS();
+            break;
         }
     }
 }
