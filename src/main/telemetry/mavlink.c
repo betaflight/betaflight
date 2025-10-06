@@ -552,7 +552,7 @@ static void mavlinkSendBatteryStatus(void)
     memset(voltagesExt, 0, sizeof(voltagesExt));
     if (isBatteryVoltageConfigured()) {
         uint8_t batteryCellCount = getBatteryCellCount();
-        if (batteryCellCount > 0 && telemetryConfig()->report_cell_voltage == true) {
+        if (batteryCellCount > 0 && telemetryConfig()->report_cell_voltage) {
             for (int cell=0; cell < batteryCellCount && cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN + MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN; cell++) {
                 if (cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN) {
                     voltages[cell] = getBatteryAverageCellVoltage() * 10;
