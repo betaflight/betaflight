@@ -559,16 +559,16 @@ static void mavlinkSendBatteryStatus(void)
         voltages[0] = 0;
     }
 
-    // Battery current in centiamps, -1 if not available
-    int16_t currentBattery = -1;
+    // Battery amperage in centiamps (cA), -1 if not available
+    int16_t batteryAmperage = -1;
     if (isAmperageConfigured()) {
-        currentBattery = getAmperage(); // Already in cA (0.01A)
+        batteryAmperage = getAmperage(); // Already in cA (0.01A)
     }
 
     // mAh consumed, -1 if not available
-    int32_t currentConsumed = -1;
+    int32_t amperageConsumed = -1;
     if (isAmperageConfigured()) {
-        currentConsumed = getMAhDrawn(); // This is the key field for "Capa"
+        amperageConsumed = getMAhDrawn(); // This is the key field for "Capa"
     }
 
     // Battery percentage remaining
@@ -592,8 +592,8 @@ static void mavlinkSendBatteryStatus(void)
         0,                    // type: 0 = MAV_BATTERY_TYPE_UNKNOWN (could use MAV_BATTERY_TYPE_LIPO = 1)
         temperature,          // temperature: INT16_MAX = unknown
         voltages,             // voltages[10]: Cell voltages in mV
-        currentBattery,       // current_battery: Current in cA
-        currentConsumed,      // current_consumed: mAh drawn (CRITICAL for "Capa")
+        batteryAmperage,       // current_battery: Current in cA
+        amperageConsumed,      // current_consumed: mAh drawn (CRITICAL for "Capa")
         -1,                   // energy_consumed: -1 = not available (could calculate from Wh if needed)
         batteryRemaining,     // battery_remaining: Percentage 0-100
         0,                    // time_remaining: 0 = not calculated
