@@ -116,7 +116,7 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     frameReceived = false;
     for (int i = 0; i < MAVLINK_CHANNEL_COUNT; ++i) {
-        mavlinkChannelData[i] = rxConfig->midrc;;
+        mavlinkChannelData[i] = rxConfig->midrc;
     }
 
     rxRuntimeState->channelData = mavlinkChannelData;
