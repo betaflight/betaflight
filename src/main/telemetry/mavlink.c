@@ -546,16 +546,26 @@ static void mavlinkSendBatteryStatus(void)
 {
     uint16_t msgLength;
 
-    // Battery voltage: use total pack voltage or individual cell voltages
-    uint16_t voltages[10];
-    for (int i = 0; i < 10; i++) {
-        voltages[i] = UINT16_MAX; // Mark unused cells
-    }
-
-    // Put total battery voltage in cell 0 (in mV)
+    uint16_t voltages[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN];
+    uint16_t voltagesExt[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN];
+    memset(voltages, UINT16_MAX, sizeof(voltages));
+    memset(voltagesExt, 0, sizeof(voltagesExt));
     if (isBatteryVoltageConfigured()) {
-        voltages[0] = getBatteryVoltage() * 10; // Convert from 0.01V to mV
-    } else {
+        uint8_t batteryCellCount = getBatteryCellCount();
+        if (batteryCellCount > 0 && telemetryConfig()->report_cell_voltage == true) {
+            for (int cell=0; cell < batteryCellCount && cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN + MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN; cell++) {
+                if (cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN) {
+                    voltages[cell] = getBatteryAverageCellVoltage() * 10;
+                } else {
+                    voltagesExt[cell - MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN] = getBatteryAverageCellVoltage() * 10;
+                }
+            }
+        }
+        else {
+            voltages[0] = getBatteryVoltage() * 10;
+        }
+    }
+    else {
         voltages[0] = 0;
     }
 
@@ -580,9 +590,6 @@ static void mavlinkSendBatteryStatus(void)
     // Temperature: INT16_MAX if unknown
     int16_t temperature = INT16_MAX;
 
-    // Extended cell voltages (cells 11-14): set to 0 for unused
-    uint16_t voltagesExt[4] = {0, 0, 0, 0};
-
     mavlink_msg_battery_status_pack(
         MAVLINK_SYSTEM_ID,
         MAVLINK_COMPONENT_ID,
@@ -592,8 +599,8 @@ static void mavlinkSendBatteryStatus(void)
         0,                    // type: 0 = MAV_BATTERY_TYPE_UNKNOWN (could use MAV_BATTERY_TYPE_LIPO = 1)
         temperature,          // temperature: INT16_MAX = unknown
         voltages,             // voltages[10]: Cell voltages in mV
-        batteryAmperage,       // current_battery: Current in cA
-        amperageConsumed,      // current_consumed: mAh drawn (CRITICAL for "Capa")
+        batteryAmperage,      // current_battery: Current in cA
+        amperageConsumed,     // current_consumed: mAh drawn (CRITICAL for "Capa")
         -1,                   // energy_consumed: -1 = not available (could calculate from Wh if needed)
         batteryRemaining,     // battery_remaining: Percentage 0-100
         0,                    // time_remaining: 0 = not calculated
