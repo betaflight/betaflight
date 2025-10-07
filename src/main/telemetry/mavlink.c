@@ -93,6 +93,7 @@ static const serialPortConfig_t *portConfig;
 
 static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
+static uint32_t lastMavlinkMessageTime = 0;
 
 /* MAVLink datastream rates in Hz */
 static const uint8_t mavRates[] = {
@@ -557,21 +558,22 @@ void handleMAVLinkTelemetry(void)
     }
 
     bool shouldSendTelemetry = false;
+    uint32_t now = micros();
 #ifdef USE_SERIALRX_MAVLINK
     if (isValidMavlinkTxBuffer()) {
         shouldSendTelemetry = shouldSendMavlinkTelemetry();
+    } else if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
+        shouldSendTelemetry = true;
     }
 #else
-    static uint32_t lastMavlinkMessageTime = 0;
-    uint32_t now = micros();
     if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
         shouldSendTelemetry = true;
-        lastMavlinkMessageTime = now;
     }
 #endif
 
     if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
+        lastMavlinkMessageTime = now;
     }
 }
 
