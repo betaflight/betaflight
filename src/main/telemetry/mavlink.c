@@ -548,7 +548,7 @@ static void mavlinkSendBatteryStatus(void)
 
     uint16_t voltages[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN];
     uint16_t voltagesExt[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN];
-    memset(voltages, UINT16_MAX, sizeof(voltages));
+    memset(voltages, 0xff, sizeof(voltages));
     memset(voltagesExt, 0, sizeof(voltagesExt));
     if (isBatteryVoltageConfigured()) {
         uint8_t batteryCellCount = getBatteryCellCount();
