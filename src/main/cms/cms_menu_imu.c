@@ -570,7 +570,7 @@ static const void *cmsx_angleSettingsOnExit(displayPort_t *pDisp, const OSD_Entr
 static const OSD_Entry cmsx_menuAngleSettingsEntries[] = {
     { "-- ANGLE SETTINGS --", OME_Label, NULL, pidProfileIndexString },
 
-    { "ATT USE QS",      OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_att_use_quicksilver,        0,      2,   1  }    },
+    { "ATT USE QS",      OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_att_use_quicksilver,        1, lookupTableOffOn } },
     { "QS LEVEL MODE",   OME_TAB,    NULL, &(OSD_TAB_t)    { &csmx_qsLevelMode,                1, lookupTableOffOn } },
     { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     0,    200,   1  }    },
     { "ANGLE FF",        OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFF,                    0,    200,   1  }    },

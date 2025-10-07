@@ -1183,13 +1183,10 @@ void calculateAttitudeFeedforward(float *attitude_setpoint, float *ff_output)
         // The body frame angular velocity is approximately:
         // ω_body ≈ R^T * ω_inertial, where R is the rotation matrix
         // For small angles and our specific case, we can use a simplified transformation
-        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            ff_output[i] = omega_inertial[i] * pidRuntime.angleFeedforwardGain;
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            ff_output[axis] = omega_inertial[axis] * pidRuntime.angleFeedforwardGain;
+            DEBUG_SET(DEBUG_ANGLE_MODE, 3 + axis, lrintf(ff_output[axis] * 1000.0f));
         }
-
-        DEBUG_SET(DEBUG_ANGLE_MODE, 4, lrintf(ff_output[FD_ROLL] * 1000.0f));
-        DEBUG_SET(DEBUG_ANGLE_MODE, 5, lrintf(ff_output[FD_PITCH] * 1000.0f));
-        DEBUG_SET(DEBUG_ANGLE_MODE, 6, lrintf(ff_output[FD_YAW] * 1000.0f));
     }
 
     g_sp_prev[FD_ROLL] = attitude_setpoint[FD_ROLL];
@@ -1299,6 +1296,8 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             currentPidSetpoint[axis] = newSetpoint[axis];
         }
+        DEBUG_SET(DEBUG_ANGLE_MODE, 6, lrintf(currentPidSetpoint[FD_ROLL]));
+        DEBUG_SET(DEBUG_ANGLE_MODE, 7, lrintf(currentPidSetpoint[FD_PITCH]));
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
