@@ -562,11 +562,11 @@ void handleMAVLinkTelemetry(void)
         shouldSendTelemetry = shouldSendMavlinkTelemetry();
     }
 #else
-	static uint32_t lastMavlinkMessageTime = 0;
+    static uint32_t lastMavlinkMessageTime = 0;
     uint32_t now = micros();
     if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
         shouldSendTelemetry = true;
-		lastMavlinkMessageTime = now;
+        lastMavlinkMessageTime = now;
     }
 #endif
 
