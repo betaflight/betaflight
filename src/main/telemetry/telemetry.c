@@ -149,7 +149,8 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const Seri
         serialrxProvider == SERIALRX_SUMH ||
         serialrxProvider == SERIALRX_XBUS_MODE_B ||
         serialrxProvider == SERIALRX_XBUS_MODE_B_RJ01 ||
-        serialrxProvider == SERIALRX_IBUS)) {
+        serialrxProvider == SERIALRX_IBUS ||
+        serialrxProvider == SERIALRX_MAVLINK)) {
 
         return true;
     }

@@ -30,6 +30,10 @@
 #include "rx/rx.h"
 #include "rx/mavlink.h"
 
+#ifdef USE_TELEMETRY
+#include "telemetry/telemetry.h"
+#endif
+
 #include "drivers/time.h"
 
 #include "build/debug.h"
@@ -139,6 +143,7 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         MODE_RXTX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
     );
+    telemetrySharedPort = serialPort;
 
     return serialPort != NULL;
 }
