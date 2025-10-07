@@ -559,17 +559,11 @@ void handleMAVLinkTelemetry(void)
 
     bool shouldSendTelemetry = false;
     uint32_t now = micros();
-#ifdef USE_SERIALRX_MAVLINK
     if (isValidMavlinkTxBuffer()) {
         shouldSendTelemetry = shouldSendMavlinkTelemetry();
     } else if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
         shouldSendTelemetry = true;
     }
-#else
-    if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
-        shouldSendTelemetry = true;
-    }
-#endif
 
     if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
