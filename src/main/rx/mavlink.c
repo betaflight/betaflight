@@ -24,6 +24,7 @@
 #ifdef USE_SERIALRX_MAVLINK
 
 #include "common/utils.h"
+#include "common/maths.h"
 
 #include "io/serial.h"
 
@@ -148,4 +149,25 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     return serialPort != NULL;
 }
 
+bool isValidMavlinkTxBuffer (void) {
+    return txbuff_valid;
+}
+
+bool shouldSendMavlinkTelemetry(void) {
+    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
+    bool shouldSendTelemetry = false;
+
+    if (txbuff_valid) {
+        shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
+        if (shouldSendTelemetry) {
+            txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
+        }
+    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);
+
+    return shouldSendTelemetry;
+}
+
 #endif
+

@@ -557,8 +557,17 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
+    bool shouldSendTelemetry = false;
     uint32_t now = micros();
-    if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
+    if (isValidMavlinkTxBuffer()) {
+        shouldSendTelemetry = shouldSendMavlinkTelemetry();
+    } else {
+        if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
+            shouldSendTelemetry = true;
+        }
+    }
+
+    if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
         lastMavlinkMessageTime = now;
     }
