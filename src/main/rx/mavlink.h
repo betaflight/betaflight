@@ -26,5 +26,10 @@
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg);
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);
+#if defined(USE_SERIALRX_MAVLINK)
 bool isValidMavlinkTxBuffer (void);
 bool shouldSendMavlinkTelemetry(void);
+#else
+static inline bool isValidMavlinkTxBuffer(void) { return false; }
+static inline bool shouldSendMavlinkTelemetry(void) { return false; }
+#endif

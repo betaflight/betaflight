@@ -108,7 +108,6 @@ static const uint8_t mavRates[] = {
 static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-static uint32_t lastMavlinkMessageTime = 0;
 
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
@@ -558,18 +557,21 @@ void handleMAVLinkTelemetry(void)
     }
 
     bool shouldSendTelemetry = false;
-    uint32_t now = micros();
+#ifdef USE_SERIALRX_MAVLINK
     if (isValidMavlinkTxBuffer()) {
         shouldSendTelemetry = shouldSendMavlinkTelemetry();
-    } else {
-        if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
-            shouldSendTelemetry = true;
-        }
     }
+#else
+	static uint32_t lastMavlinkMessageTime = 0;
+    uint32_t now = micros();
+    if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
+        shouldSendTelemetry = true;
+		lastMavlinkMessageTime = now;
+    }
+#endif
 
     if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
-        lastMavlinkMessageTime = now;
     }
 }
 

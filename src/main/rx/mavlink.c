@@ -55,8 +55,8 @@ static serialPort_t *serialPort = NULL;
 
 static mavlink_message_t mavRecvMsg;
 static mavlink_status_t mavRecvStatus;
-static uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
-static bool txbuff_valid = false;
+static volatile uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
+static volatile bool txbuff_valid = false;
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
     const uint16_t *channelsPtr = (uint16_t*)&msg->chan1_raw;
@@ -144,7 +144,9 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         MODE_RXTX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
     );
+#ifdef USE_TELEMETRY_MAVLINK
     telemetrySharedPort = serialPort;
+#endif
 
     return serialPort != NULL;
 }
