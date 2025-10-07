@@ -172,13 +172,15 @@ bool shouldSendMavlinkTelemetry(void) {
     bool shouldSendTelemetry = false;
 
     if (txbuff_valid) {
-        shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
-        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
-        if (shouldSendTelemetry) {
-            ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        uint8_t txbuff_free_snapshot = 0;
+        ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+            txbuff_free_snapshot = txbuff_free;
+            if (txbuff_free_snapshot >= mavlink_min_txbuff) {
                 txbuff_free -= mavlink_min_txbuff;
+                shouldSendTelemetry = true;
             }
         }
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free_snapshot); // Estimated TX buffer free space
     }
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);
 
