@@ -164,7 +164,11 @@ bool isValidMavlinkTxBuffer (void) {
 }
 
 bool shouldSendMavlinkTelemetry(void) {
+#ifdef USE_TELEMETRY
     uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
+#else
+    uint8_t mavlink_min_txbuff = 20; // default threshold
+#endif
     bool shouldSendTelemetry = false;
 
     if (txbuff_valid) {
