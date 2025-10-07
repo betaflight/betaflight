@@ -36,8 +36,10 @@
 #endif
 
 #include "drivers/time.h"
+#include "drivers/nvic.h"
 
 #include "build/debug.h"
+#include "build/atomic.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
@@ -169,7 +171,9 @@ bool shouldSendMavlinkTelemetry(void) {
         shouldSendTelemetry = txbuff_free >= mavlink_min_txbuff;
         DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, txbuff_free); // Estimated TX buffer free space
         if (shouldSendTelemetry) {
-            txbuff_free = MAX(0, txbuff_free - mavlink_min_txbuff);
+            ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+                txbuff_free -= mavlink_min_txbuff;
+            }
         }
     }
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 0, shouldSendTelemetry ? 1 : 0);
