@@ -138,17 +138,16 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
-    if (baudRateIndex == BAUD_AUTO) {
+    if (baudRateIndex == BAUD_AUTO || (portConfig->functionMask & FUNCTION_TELEMETRY_MAVLINK) == 0) {
         // default rate for ELRS TX module
         baudRateIndex = MAVLINK_BAUD_RATE_INDEX;
     }
 
-    const uint32_t baudRate = baudRates[baudRateIndex];
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         mavlinkDataReceive,
         rxRuntimeState,
-        baudRate,
+        baudRates[baudRateIndex],
         MODE_RXTX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
     );
