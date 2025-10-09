@@ -164,15 +164,17 @@ bool isValidMavlinkTxBuffer (void) {
 }
 
 bool shouldSendMavlinkTelemetry(void) {
-    uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
+    const uint8_t mavlink_txbuff_margin =  telemetryConfig()->mavlink_txbuff_margin,
+                  mavlink_txbuff_change = telemetryConfig()->mavlink_txbuff_change,
+                  mavlink_txbuff_min = mavlink_txbuff_margin + mavlink_txbuff_change;
     bool shouldSendTelemetry = false;
 
     if (txbuff_valid) {
         uint8_t txbuff_free_snapshot = 0;
         ATOMIC_BLOCK(NVIC_PRIO_MAX) {
             txbuff_free_snapshot = txbuff_free;
-            if (txbuff_free_snapshot >= mavlink_min_txbuff) {
-                txbuff_free -= mavlink_min_txbuff;
+            if (txbuff_free_snapshot >= mavlink_txbuff_min) {
+                txbuff_free -= mavlink_txbuff_change;
                 shouldSendTelemetry = true;
             }
         }
