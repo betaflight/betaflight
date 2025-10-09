@@ -139,11 +139,14 @@ SPI_IO_CS_HIGH_CFG (as defined)
     }
 
     uint16_t ioPin = IO_Pin(io);
-    bprintf("pico IOConfigGPIO pin %d for %d (0=in, 1=out)",ioPin, cfg);
-    if (gpio_get_function(ioPin) != GPIO_FUNC_NULL && gpio_get_function(ioPin) != GPIO_FUNC_SIO) {
-        bprintf("Warning: not redefining gpio function type from %d to SIO\n",gpio_get_function(ioPin));
-    } else {
+    bprintf("pico IOConfigGPIO gpio %d for 0x%02x (0=in, 1=out)",ioPin, cfg);
+
+    gpio_function_t currentFunction = gpio_get_function(ioPin);
+    if (currentFunction == GPIO_FUNC_NULL) {
+        // Select GPIO_FUNC_SIO, set direction to input, clear output value (set to low)
         gpio_init(ioPin);
+    } else if (currentFunction != GPIO_FUNC_SIO) {
+        bprintf("Warning: not redefining gpio function type from %d to SIO\n", currentFunction);
     }
 
     gpio_set_dir(ioPin, (cfg & 0x01)); // 0 = in, 1 = out
