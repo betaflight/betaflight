@@ -53,11 +53,11 @@ For the `2025.12` release, due to the timing since the last release, we are exte
 
 The following new requirements for pull requests adding new targets or modifying existing targets are put in place from now on:
 
-1. Read the [hardware specification](https://betaflight.com/docs/development/manufacturer/manufacturer-design-guidelines)
+1. Read the [hardware specification](https://www.betaflight.com/docs/development/manufacturer/manufacturer-design-guidelines)
 
 2. No new F3 based targets will be accepted;
 
-3. For any new target that is to be added, only a Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default needs to be submitted. See the [instructions](https://betaflight.com/docs/manufacturer/creating-an-unified-target) for how to create a Unified Target configuration. If there is no Unified Target for the MCU type of the new target (see instructions above), then a 'legacy' format target definition into `src/main/target/` has to be submitted as well;
+3. For any new target that is to be added, only a Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default needs to be submitted. See the [instructions](https://www.betaflight.com/docs/manufacturer/creating-an-unified-target) for how to create a Unified Target configuration. If there is no Unified Target for the MCU type of the new target (see instructions above), then a 'legacy' format target definition into `src/main/target/` has to be submitted as well;
 
 4. For changes to existing targets, the change needs to be applied to the Unified Target config in https://github.com/betaflight/unified-targets/tree/master/configs/default. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted. If there is no Unified Target for the MCU type of the new target (see instructions above), then an update to the 'legacy' format target definition in `src/main/target/` has to be submitted alongside the update to the Unified Target configuration.
 
@@ -90,18 +90,12 @@ See: https://betaflight.com/docs/wiki
 
 ## Support and Developers Channel
 
-There's a dedicated Discord server here:
-
-https://discord.gg/n4E6ak4u3c
-
-We also have a Facebook Group. Join us to get a place to talk about Betaflight, ask configuration questions, or just hang out with fellow pilots.
+There's a dedicated [Discord server](https://discord.gg/n4E6ak4u3c) for help, support and general community.
 
 
 ## Betaflight Application
 
-To configure Betaflight you should use the Betaflight App which can be found here:
-
-https://app.betaflight.com
+To configure Betaflight you should use the [Betaflight App](https://app.betaflight.com). It is a progressive web app, so should always be the latest version.
 
 
 ## Contributing
@@ -130,7 +124,7 @@ If you want to contribute financially on an ongoing basis, you should consider b
 ## Developers
 
 Contribution of bugfixes and new features is encouraged. Please be aware that we have a thorough review process for pull requests, and be prepared to explain what you want to achieve with your pull request.
-Before starting to write code, please read our [development guidelines](https://betaflight.com/docs/development) and [coding style definition](https://betaflight.com/docs/development/CodingStyle).
+Before starting to write code, please read our [development guidelines](https://www.betaflight.com/docs/development) and [coding style definition](https://www.betaflight.com/docs/development/CodingStyle).
 
 GitHub actions are used to run automatic builds
 
@@ -152,7 +146,7 @@ If you encounter any hardware issues with your flight controller or another comp
 
 ## Betaflight Releases
 
-https://github.com/betaflight/betaflight/releases
+You can find our release [here](https://github.com/betaflight/betaflight/releases) on Github and we also have more detailed [release notes](https://www.betaflight.com/docs/category/release-notes) at [betaflight.com](https://www.betaflight.com).
 
 
 ## Open Source / Contributors
