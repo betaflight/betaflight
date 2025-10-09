@@ -158,16 +158,13 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     return serialPort != NULL;
 }
 
+#ifdef USE_TELEMETRY_MAVLINK
 bool isValidMavlinkTxBuffer (void) {
     return txbuff_valid;
 }
 
 bool shouldSendMavlinkTelemetry(void) {
-#ifdef USE_TELEMETRY
     uint8_t mavlink_min_txbuff = telemetryConfig()->mavlink_min_txbuff;
-#else
-    uint8_t mavlink_min_txbuff = 20; // default threshold
-#endif
     bool shouldSendTelemetry = false;
 
     if (txbuff_valid) {
@@ -185,6 +182,7 @@ bool shouldSendMavlinkTelemetry(void) {
 
     return shouldSendTelemetry;
 }
+#endif
 
 #endif
 
