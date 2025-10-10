@@ -68,7 +68,7 @@ const char *   vtxTableBandNames[VTX_TABLE_MAX_BANDS + 1] = {
         "FATSHARK",
         "RACEBAND",
 };
-char           vtxTableBandLetters[VTX_TABLE_MAX_BANDS + 1] = "-ABEFR";
+char           vtxTableBandLetters[VTX_TABLE_MAX_BANDS + 1] = { '-', 'A', 'B', 'E', 'F', 'R' };
 const char *   vtxTableChannelNames[VTX_TABLE_MAX_CHANNELS + 1] = {
         "-", "1", "2", "3", "4", "5", "6", "7", "8",
 };
