@@ -65,7 +65,7 @@ extern int            vtxTableBandCount;
 extern int            vtxTableChannelCount;
 extern uint16_t       vtxTableFrequency[VTX_TABLE_MAX_BANDS][VTX_TABLE_MAX_CHANNELS];
 extern const char    *vtxTableBandNames[VTX_TABLE_MAX_BANDS + 1];
-extern char           vtxTableBandLetters[VTX_TABLE_MAX_BANDS + 1];
+extern NONSTRING char vtxTableBandLetters[VTX_TABLE_MAX_BANDS + 1];
 extern const char    *vtxTableChannelNames[VTX_TABLE_MAX_CHANNELS + 1];
 extern bool           vtxTableIsFactoryBand[VTX_TABLE_MAX_BANDS];
 extern int            vtxTablePowerLevels;
