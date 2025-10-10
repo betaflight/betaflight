@@ -26,6 +26,9 @@
 
 #include "drivers/vtx_common.h"
 
+/* Utilities and attribute macros (e.g. NONSTRING) */
+#include "common/utils.h"
+
 #ifdef USE_VTX_TABLE
 #define VTX_TABLE_MAX_BANDS             8 // Maximum number of bands
 #define VTX_TABLE_MAX_CHANNELS          8 // Maximum number of channels per band
