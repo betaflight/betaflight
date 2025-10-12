@@ -73,6 +73,8 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
 
+#include "build/debug.h"
+
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
 #pragma GCC diagnostic push
@@ -548,6 +550,12 @@ static void processMAVLinkTelemetry(void)
 
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
         mavlinkSendHUDAndHeartbeat();
+        // Higher frequency packet transmit counter to debug actual data rate
+        static uint32_t transmitCounter = 0;
+        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter++);
+        if (transmitCounter == 100) {
+            transmitCounter = 0;
+        }
     }
 }
 

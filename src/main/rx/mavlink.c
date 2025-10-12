@@ -39,7 +39,6 @@
 #include "drivers/nvic.h"
 
 #include "build/debug.h"
-#include "build/atomic.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
