@@ -103,7 +103,8 @@ static const uint8_t mavRates[] = {
     [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
     [MAV_DATA_STREAM_POSITION] = 2, //2Hz
     [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10 //2Hz
+    [MAV_DATA_STREAM_EXTRA2] = 10, //10Hz
+    [MAV_DATA_STREAM_EXTRA3] = 2, //2Hz
 };
 
 #define MAXSTREAMS ARRAYLEN(mavRates)
@@ -523,6 +524,74 @@ static void mavlinkSendHUDAndHeartbeat(void)
         mavCustomMode,
         // system_status System status flag, see MAV_STATE ENUM
         mavSystemState);
+    msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkSendBatteryStatus(void)
+{
+    uint16_t msgLength;
+
+    uint16_t voltages[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN];
+    uint16_t voltagesExt[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN];
+    memset(voltages, 0xff, sizeof(voltages));
+    memset(voltagesExt, 0, sizeof(voltagesExt));
+    if (isBatteryVoltageConfigured()) {
+        uint8_t batteryCellCount = getBatteryCellCount();
+        if (batteryCellCount > 0 && telemetryConfig()->report_cell_voltage) {
+            for (int cell=0; cell < batteryCellCount && cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN + MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN; cell++) {
+                if (cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN) {
+                    voltages[cell] = getBatteryAverageCellVoltage() * 10;
+                } else {
+                    voltagesExt[cell - MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN] = getBatteryAverageCellVoltage() * 10;
+                }
+            }
+        } else {
+            voltages[0] = getBatteryVoltage() * 10;
+        }
+    }
+
+    // Battery amperage in centiamps (cA), -1 if not available
+    int16_t batteryAmperage = -1;
+    if (isAmperageConfigured()) {
+        batteryAmperage = getAmperage(); // Already in cA (0.01A)
+    }
+
+    // mAh consumed, -1 if not available
+    int32_t amperageConsumed = -1;
+    if (isAmperageConfigured()) {
+        amperageConsumed = getMAhDrawn(); // This is the key field for "Capa"
+    }
+
+    // Battery percentage remaining
+    int8_t batteryRemaining = -1;
+    if (isBatteryVoltageConfigured()) {
+        batteryRemaining = calculateBatteryPercentageRemaining();
+    }
+
+    // Temperature: INT16_MAX if unknown
+    int16_t temperature = INT16_MAX;
+
+    mavlink_msg_battery_status_pack(
+        MAVLINK_SYSTEM_ID,
+        MAVLINK_COMPONENT_ID,
+        &mavMsg,
+        0,                    // id: Battery ID (0 = main battery)
+        0,                    // battery_function: 0 = MAV_BATTERY_FUNCTION_UNKNOWN
+        0,                    // type: 0 = MAV_BATTERY_TYPE_UNKNOWN (could use MAV_BATTERY_TYPE_LIPO = 1)
+        temperature,          // temperature: INT16_MAX = unknown
+        voltages,             // voltages[10]: Cell voltages in mV
+        batteryAmperage,      // current_battery: Current in cA
+        amperageConsumed,     // current_consumed: mAh drawn (CRITICAL for "Capa")
+        -1,                   // energy_consumed: -1 = not available (could calculate from Wh if needed)
+        batteryRemaining,     // battery_remaining: Percentage 0-100
+        0,                    // time_remaining: 0 = not calculated
+        MAV_BATTERY_CHARGE_STATE_UNDEFINED, // charge_state: 0 = MAV_BATTERY_CHARGE_STATE_UNDEFINED
+        voltagesExt,          // voltages_ext[4]: Cells 11-14, not used
+        0,                    // mode: 0 = normal
+        0                     // fault_bitmask: 0 = no faults
+    );
+
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
