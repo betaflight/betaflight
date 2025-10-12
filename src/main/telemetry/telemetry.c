@@ -80,8 +80,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     },
     .disabledSensors = ESC_SENSOR_ALL | SENSOR_CAP_USED,
     .mavlink_mah_as_heading_divisor = 0,
-    .mavlink_txbuff_change = 5,
-    .mavlink_txbuff_margin = 5,
+    .mavlink_min_txbuff = 35,
 );
 
 void telemetryInit(void)
