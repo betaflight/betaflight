@@ -626,6 +626,10 @@ static void processMAVLinkTelemetry(void)
             transmitCounter = 0;
         }
     }
+
+    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA3)) {
+        mavlinkSendBatteryStatus();
+    }
 }
 
 void handleMAVLinkTelemetry(void)
