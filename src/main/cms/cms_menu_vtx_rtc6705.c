@@ -45,6 +45,11 @@ static uint8_t cmsx_vtxChannel;
 static uint8_t cmsx_vtxPower;
 static uint8_t cmsx_vtxPit;
 
+#ifdef CMS_SKIP_EMPTY_VTX_TABLE_ENTRIES
+static uint8_t lastVtxBand;
+static uint8_t lastVtxChannel;
+#endif
+
 static OSD_TAB_t entryVtxBand;
 static OSD_TAB_t entryVtxChannel;
 static OSD_TAB_t entryVtxPower;
@@ -59,6 +64,12 @@ static void cmsx_Vtx_ConfigRead(void)
 {
     vtxCommonGetBandAndChannel(vtxCommonDevice(), &cmsx_vtxBand, &cmsx_vtxChannel);
     vtxCommonGetPowerIndex(vtxCommonDevice(), &cmsx_vtxPower);
+
+#ifdef CMS_SKIP_EMPTY_VTX_TABLE_ENTRIES
+    lastVtxBand = cmsx_vtxBand;
+    lastVtxChannel = cmsx_vtxChannel;
+#endif
+
     unsigned status;
     if (vtxCommonGetStatus(vtxCommonDevice(), &status)) {
         cmsx_vtxPit = status & VTX_STATUS_PIT_MODE ? 2 : 1;
@@ -117,6 +128,24 @@ static const void *cmsx_Vtx_onBandChange(displayPort_t *pDisp, const void *self)
     if (cmsx_vtxBand == 0) {
         cmsx_vtxBand = 1;
     }
+#ifdef CMS_SKIP_EMPTY_VTX_TABLE_ENTRIES
+    if (vtxCommonLookupFrequency(vtxCommonDevice(), cmsx_vtxBand, cmsx_vtxChannel) == 0) {
+        bool foundInNewBand = false;
+        for (uint8_t channel = 1; channel <= VTX_TABLE_MAX_CHANNELS; channel++) {
+            if (vtxCommonLookupFrequency(vtxCommonDevice(), cmsx_vtxBand, channel) != 0) {
+                cmsx_vtxChannel = channel;
+                foundInNewBand = true;
+                break;
+            }
+        }
+        if (!foundInNewBand) {
+            cmsx_vtxBand = lastVtxBand;
+            cmsx_vtxChannel = lastVtxChannel;
+        }
+    }
+    lastVtxBand = cmsx_vtxBand;
+    lastVtxChannel = cmsx_vtxChannel;
+#endif
     return NULL;
 }
 
@@ -127,6 +156,30 @@ static const void *cmsx_Vtx_onChanChange(displayPort_t *pDisp, const void *self)
     if (cmsx_vtxChannel == 0) {
         cmsx_vtxChannel = 1;
     }
+#ifdef CMS_SKIP_EMPTY_VTX_TABLE_ENTRIES
+    if (vtxCommonLookupFrequency(vtxCommonDevice(), cmsx_vtxBand, cmsx_vtxChannel) == 0) {
+        const int8_t direction = (cmsx_vtxChannel > lastVtxChannel) ? 1 : -1;
+        uint8_t searchChannel = lastVtxChannel;
+        bool foundInDirection = false;
+
+        while (true) {
+            searchChannel += direction;
+            if (searchChannel < 1 || searchChannel > VTX_TABLE_MAX_CHANNELS) {
+                break;
+            }
+            if (vtxCommonLookupFrequency(vtxCommonDevice(), cmsx_vtxBand, searchChannel) != 0) {
+                cmsx_vtxChannel = searchChannel;
+                foundInDirection = true;
+                break;
+            }
+        }
+        if (!foundInDirection) {
+            cmsx_vtxChannel = lastVtxChannel;
+        }
+    }
+    lastVtxBand = cmsx_vtxBand;
+    lastVtxChannel = cmsx_vtxChannel;
+#endif
     return NULL;
 }
 
