@@ -204,7 +204,6 @@ const spiHardware_t spiHardware[] = {
             { DEFIO_TAG_E(PB10), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PB13), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PD3), GPIO_AF5_SPI2 },
-            { DEFIO_TAG_E(PI1), GPIO_AF5_SPI2 },
         },
         .misoPins = {
             { DEFIO_TAG_E(PB14), GPIO_AF5_SPI2 },
