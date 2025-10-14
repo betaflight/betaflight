@@ -208,17 +208,13 @@ const spiHardware_t spiHardware[] = {
         .misoPins = {
             { DEFIO_TAG_E(PB14), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC2), GPIO_AF5_SPI2 },
-#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H743xx) || defined(STM32H750xx)
             { DEFIO_TAG_E(PI2), GPIO_AF5_SPI2 },
-#endif
         },
         .mosiPins = {
             { DEFIO_TAG_E(PB15), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC1), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC3), GPIO_AF5_SPI2 },
-#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H743xx) || defined(STM32H750xx)
             { DEFIO_TAG_E(PI3), GPIO_AF5_SPI2 },
-#endif
         },
         .rcc = RCC_APB1L(SPI2),
         //.dmaIrqHandler = DMA1_ST4_HANDLER,
