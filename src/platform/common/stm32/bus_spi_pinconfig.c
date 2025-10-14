@@ -37,10 +37,6 @@
 
 #include "pg/bus_spi.h"
 
-#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H743xx) || defined(STM32H750xx)
-#define HAS_PORTI
-#endif
-
 const spiHardware_t spiHardware[] = {
 #ifdef STM32F4
     {
@@ -212,7 +208,7 @@ const spiHardware_t spiHardware[] = {
         .misoPins = {
             { DEFIO_TAG_E(PB14), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC2), GPIO_AF5_SPI2 },
-#ifdef HAS_PORTI
+#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H743xx) || defined(STM32H750xx)
             { DEFIO_TAG_E(PI2), GPIO_AF5_SPI2 },
 #endif
         },
@@ -220,7 +216,7 @@ const spiHardware_t spiHardware[] = {
             { DEFIO_TAG_E(PB15), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC1), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC3), GPIO_AF5_SPI2 },
-#ifdef HAS_PORTI
+#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H743xx) || defined(STM32H750xx)
             { DEFIO_TAG_E(PI3), GPIO_AF5_SPI2 },
 #endif
         },
