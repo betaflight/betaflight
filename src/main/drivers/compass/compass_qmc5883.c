@@ -44,6 +44,7 @@
 #define QMC5883L_MAG_I2C_ADDRESS        0x0D
 
 // Registers
+#define QMC5883L_REG_RESET              0x0B
 #define QMC5883L_REG_CONF1              0x09
 #define QMC5883L_REG_CONF2              0x0A
 
@@ -190,7 +191,7 @@ static bool qmc5883Init(magDev_t *magDev)
 
     // For L variant, apply reset sequence and configure CONF1
     if (desc->variant == QMC_VARIANT_L) {
-        ack = ack && busWriteRegister(dev, 0x0B, 0x01);
+        ack = ack && busWriteRegister(dev, QMC5883L_REG_RESET, 0x01);
         ack = ack && busWriteRegister(dev, QMC5883L_REG_CONF1, QMC5883L_MODE_CONTINUOUS | QMC5883L_ODR_200HZ | QMC5883L_OSR_512 | QMC5883L_RNG_8G);
     } else {
         // P variant default confs are expected to be written by detect path, but ensure magOdrHz is set
@@ -238,6 +239,7 @@ static bool qmc5883Read(magDev_t *magDev, int16_t *magData)
             return false;
 
         case STATE_READ:
+        {
             // Data format is LSB, MSB pairs for both variants
             int16_t rawX = (int16_t)(buf[1] << 8 | buf[0]);
             int16_t rawY = (int16_t)(buf[3] << 8 | buf[2]);
@@ -279,6 +281,7 @@ static bool qmc5883Read(magDev_t *magDev, int16_t *magData)
             state = STATE_WAIT_DRDY;
             status = 0;
             return true;
+        }
     }
 
     return false;
