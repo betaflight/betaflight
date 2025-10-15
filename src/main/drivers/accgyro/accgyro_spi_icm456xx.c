@@ -355,6 +355,7 @@ void icm456xxAccInit(accDev_t *acc)
     const extDevice_t *dev = &acc->gyro->dev;
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    delay(1); // Ensure the bank switch is settled
 
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
@@ -423,6 +424,7 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     uint32_t waited_us = 0;
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    delay(1); // Ensure the bank switch is settled
 
     // Soft reset
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
