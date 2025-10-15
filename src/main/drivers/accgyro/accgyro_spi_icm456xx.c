@@ -386,6 +386,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    delay(1); // Ensure the bank switch is settled
 
     icm456xx_enableSensors(dev, true);
 
