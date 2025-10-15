@@ -176,9 +176,7 @@ static const qmc_descriptor_t qmc5883p_desc = {
     .default_odr_hz = 100,
 };
 
-// Unified init function for both variants. Per-variant specifics (like additional unlock writes)
-// are handled in detect functions which may perform extra writes before assigning this init.
-static bool qmc5883InitUnified(magDev_t *magDev)
+static bool qmc5883Init(magDev_t *magDev)
 {
     bool ack = true;
     extDevice_t *dev = &magDev->dev;
@@ -207,8 +205,7 @@ static bool qmc5883InitUnified(magDev_t *magDev)
     return true;
 }
 
-// Unified read function: handles state machine for both variants using descriptor
-static bool qmc5883ReadUnified(magDev_t *magDev, int16_t *magData)
+static bool qmc5883Read(magDev_t *magDev, int16_t *magData)
 {
     static uint8_t buf[6];
     static uint8_t status = 0; // request status on first read
@@ -310,10 +307,10 @@ bool qmc5883lDetect(magDev_t *magDev)
             return false;
         }
 
-        // Attach descriptor and unified functions
+        // Attach descriptor and functions
         dev->callbackArg = (uintptr_t)&qmc5883l_desc;
-        magDev->init = qmc5883InitUnified;
-        magDev->read = qmc5883ReadUnified;
+        magDev->init = qmc5883Init;
+        magDev->read = qmc5883Read;
         return true;
     }
 
@@ -351,10 +348,10 @@ bool qmc5883pDetect(magDev_t *magDev)
         return false;
     }
 
-    // Attach descriptor and unified functions
+    // Attach descriptor and functions
     dev->callbackArg = (uintptr_t)&qmc5883p_desc;
-    magDev->init = qmc5883InitUnified;
-    magDev->read = qmc5883ReadUnified;
+    magDev->init = qmc5883Init;
+    magDev->read = qmc5883Read;
     return true;
 }
 
