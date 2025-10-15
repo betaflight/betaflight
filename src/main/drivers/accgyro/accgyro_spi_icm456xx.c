@@ -103,6 +103,8 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_BANK_0                         0x00
 #define ICM456XX_BANK_1                         0x01
 
+#define MINIMUM_WAIT_TIME_GAP                   4 // See section 14.3 of the datasheet
+
 // Register map Bank 0
 #define ICM456XX_WHO_AM_REGISTER                0x72
 #define ICM456XX_REG_MISC2                      0x7F
@@ -355,7 +357,7 @@ void icm456xxAccInit(accDev_t *acc)
     const extDevice_t *dev = &acc->gyro->dev;
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-    delay(1); // Ensure the bank switch is settled
+    delay(MINIMUM_WAIT_TIME_GAP); // Ensure the bank switch is settled
 
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
@@ -387,7 +389,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-    delay(1); // Ensure the bank switch is settled
+    delay(MINIMUM_WAIT_TIME_GAP); // Ensure the bank switch is settled
 
     icm456xx_enableSensors(dev, true);
 
@@ -424,7 +426,7 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     uint32_t waited_us = 0;
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-    delay(1); // Ensure the bank switch is settled
+    delay(MINIMUM_WAIT_TIME_GAP); // Ensure the bank switch is settled
 
     // Soft reset
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
