@@ -99,10 +99,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
  GYRO_AUX1_FS_SEL and ACCEL_AUX1_FS_SEL. AUX1 output is fixed at 6.4kHz ODR.
 */
 
-#define ICM456XX_REG_BANK_SEL                   0x75
-#define ICM456XX_BANK_0                         0x00
-#define ICM456XX_BANK_1                         0x01
-
 // Register map Bank 0
 #define ICM456XX_WHO_AM_REGISTER                0x72
 #define ICM456XX_REG_MISC2                      0x7F
@@ -354,8 +350,6 @@ void icm456xxAccInit(accDev_t *acc)
 {
     const extDevice_t *dev = &acc->gyro->dev;
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
@@ -384,8 +378,6 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(dev, spiCalculateDivider(ICM456XX_MAX_SPI_CLK_HZ));
 
     mpuGyroInit(gyro);
-
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     icm456xx_enableSensors(dev, true);
 
@@ -420,8 +412,6 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
-
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     // Soft reset
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
