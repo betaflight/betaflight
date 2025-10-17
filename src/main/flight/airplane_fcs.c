@@ -191,7 +191,7 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
 
     // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
-    float liftCoef;
+    float liftCoef = 0.0f;
     bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef);
     bool isLimitAoA = false;
     if (isValidLiftCoef) {

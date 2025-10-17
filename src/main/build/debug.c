@@ -128,5 +128,4 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     [DEBUG_FLASH_TEST_PRBS] = "FLASH_TEST_PRBS",
     [DEBUG_MAVLINK_TELEMETRY] = "MAVLINK_TELEMETRY",
     [DEBUG_AFCS] = "AFCS",
->>>>>>> e4c09603a (added AFCS_DEBUG for airplane flight control system)
 };
