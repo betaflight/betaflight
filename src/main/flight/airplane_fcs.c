@@ -19,9 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #ifdef USE_AIRPLANE_FCS
 
-#include "platform.h"
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 #include "sensors/acceleration.h"
