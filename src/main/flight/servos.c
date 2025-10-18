@@ -427,6 +427,10 @@ void servoMixer(void)
         input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
         input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
+    } else if (FLIGHT_MODE(AIRPLANE_FCS_MODE)) {
+        input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum;
+        input[INPUT_STABILIZED_PITCH] = pidData[FD_PITCH].Sum;
+        input[INPUT_STABILIZED_YAW] = pidData[FD_YAW].Sum;
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
         input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;
