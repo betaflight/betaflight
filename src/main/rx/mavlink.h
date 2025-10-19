@@ -18,6 +18,8 @@
 #pragma once
 
 #define MAVLINK_COMM_NUM_BUFFERS 1
+#define RSSI_DBM_MIN (-130)
+#define RSSI_DBM_MAX 0
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"

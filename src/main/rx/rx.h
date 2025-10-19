@@ -157,6 +157,7 @@ typedef enum {
     RSSI_SOURCE_MSP,
     RSSI_SOURCE_FRAME_ERRORS,
     RSSI_SOURCE_RX_PROTOCOL_CRSF,
+    RSSI_SOURCE_RX_PROTOCOL_MAVLINK,
 } rssiSource_e;
 
 extern rssiSource_e rssiSource;
@@ -165,6 +166,7 @@ typedef enum {
     LQ_SOURCE_NONE = 0,
     LQ_SOURCE_RX_PROTOCOL_CRSF,
     LQ_SOURCE_RX_PROTOCOL_GHST,
+    LQ_SOURCE_RX_PROTOCOL_MAVLINK,
 } linkQualitySource_e;
 
 extern linkQualitySource_e linkQualitySource;
