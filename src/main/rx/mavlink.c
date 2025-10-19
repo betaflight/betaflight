@@ -98,10 +98,10 @@ static void mavlinkParseRxStats(const mavlink_radio_status_t *msg)
 {
     const int16_t rssiDbm = -msg->remrssi;
     const uint16_t rssiPercentScaled = scaleRange(rssiDbm, RSSI_DBM_MIN, RSSI_DBM_MAX, 0, RSSI_MAX_VALUE);
-    setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+    setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_MAVLINK);
 
 #ifdef USE_RX_RSSI_DBM
-    setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+    setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_MAVLINK);
 #endif
 
 #ifdef USE_RX_RSNR
