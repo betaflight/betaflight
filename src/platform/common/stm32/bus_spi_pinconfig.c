@@ -180,6 +180,7 @@ const spiHardware_t spiHardware[] = {
         .sckPins = {
             { DEFIO_TAG_E(PA5), GPIO_AF5_SPI1 },
             { DEFIO_TAG_E(PB3), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PG11), GPIO_AF5_SPI1 },
         },
         .misoPins = {
             { DEFIO_TAG_E(PA6), GPIO_AF5_SPI1 },
@@ -207,11 +208,13 @@ const spiHardware_t spiHardware[] = {
         .misoPins = {
             { DEFIO_TAG_E(PB14), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC2), GPIO_AF5_SPI2 },
+            { DEFIO_TAG_E(PI2), GPIO_AF5_SPI2 },
         },
         .mosiPins = {
             { DEFIO_TAG_E(PB15), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC1), GPIO_AF5_SPI2 },
             { DEFIO_TAG_E(PC3), GPIO_AF5_SPI2 },
+            { DEFIO_TAG_E(PI3), GPIO_AF5_SPI2 },
         },
         .rcc = RCC_APB1L(SPI2),
         //.dmaIrqHandler = DMA1_ST4_HANDLER,
@@ -259,11 +262,14 @@ const spiHardware_t spiHardware[] = {
         .reg = SPI5,
         .sckPins = {
             { DEFIO_TAG_E(PF7), GPIO_AF5_SPI5 },
+            { DEFIO_TAG_E(PH6), GPIO_AF5_SPI5 },
         },
         .misoPins = {
             { DEFIO_TAG_E(PF8), GPIO_AF5_SPI5 },
+            { DEFIO_TAG_E(PH7), GPIO_AF5_SPI5 },
         },
         .mosiPins = {
+            { DEFIO_TAG_E(PF9), GPIO_AF5_SPI5 },
             { DEFIO_TAG_E(PF11), GPIO_AF5_SPI5 },
         },
         .rcc = RCC_APB2(SPI5),
@@ -275,14 +281,17 @@ const spiHardware_t spiHardware[] = {
         .sckPins = {
             { DEFIO_TAG_E(PA5), GPIO_AF8_SPI6 },
             { DEFIO_TAG_E(PB3), GPIO_AF8_SPI6 },
+            { DEFIO_TAG_E(PG13), GPIO_AF5_SPI6 },
         },
         .misoPins = {
             { DEFIO_TAG_E(PA6), GPIO_AF8_SPI6 },
             { DEFIO_TAG_E(PB4), GPIO_AF8_SPI6 },
+            { DEFIO_TAG_E(PG12), GPIO_AF5_SPI6 },
         },
         .mosiPins = {
             { DEFIO_TAG_E(PA7), GPIO_AF8_SPI6 },
             { DEFIO_TAG_E(PB5), GPIO_AF8_SPI6 },
+            { DEFIO_TAG_E(PG14), GPIO_AF5_SPI6 },
         },
         .rcc = RCC_APB4(SPI6),
         //.dmaIrqHandler = DMA2_ST1_HANDLER,
