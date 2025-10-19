@@ -86,11 +86,32 @@ static float mavlinkReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t ch
     return mavlinkChannelData[channel];
 }
 
-static bool handleIncoming_RC_CHANNELS_OVERRIDE(void) {
+static bool handleIncoming_RC_CHANNELS_OVERRIDE(void)
+{
     mavlink_rc_channels_override_t msg;
     mavlink_msg_rc_channels_override_decode(&mavRecvMsg, &msg);
     mavlinkRxHandleMessage(&msg);
     return true;
+}
+
+static void mavlinkParseRxStats(const mavlink_radio_status_t *msg)
+{
+    const int16_t rssiDbm = -msg->remrssi;
+    const uint16_t rssiPercentScaled = scaleRange(rssiDbm, RSSI_DBM_MIN, RSSI_DBM_MAX, 0, RSSI_MAX_VALUE);
+    setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+
+#ifdef USE_RX_RSSI_DBM
+    setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+#endif
+
+#ifdef USE_RX_RSNR
+    setRsnr(msg->noise);
+#endif
+
+#ifdef USE_RX_LINK_QUALITY_INFO
+    const uint16_t linkqualityValue = scaleRange(msg->rssi, 0, 255, 0, 100);
+    setLinkQualityDirect(linkqualityValue);
+#endif
 }
 
 // Get RADIO_STATUS data
@@ -100,6 +121,9 @@ static void handleIncoming_RADIO_STATUS(void)
     mavlink_msg_radio_status_decode(&mavRecvMsg, &msg);
     txbuff_valid = true;
     txbuff_free = msg.txbuf;
+
+    mavlinkParseRxStats(&msg);
+
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 1, txbuff_free); // Last known TX buffer free space
 }
 
