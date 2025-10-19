@@ -18,13 +18,13 @@
 #pragma once
 
 #define MAVLINK_COMM_NUM_BUFFERS 1
+#define RSSI_DBM_MIN (-130)
+#define RSSI_DBM_MAX 0
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
-#define RSSI_DBM_MIN (-130)
-#define RSSI_DBM_MAX 0
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg);
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);
