@@ -109,8 +109,10 @@ static void mavlinkParseRxStats(const mavlink_radio_status_t *msg)
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    const uint16_t linkqualityValue = scaleRange(msg->rssi, 0, 255, 0, 100);
-    setLinkQualityDirect(linkqualityValue);
+    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_MAVLINK) {
+        const uint16_t linkqualityValue = scaleRange(msg->rssi, 0, 255, 0, 100);
+        setLinkQualityDirect(linkqualityValue);
+    }
 #endif
 }
 
@@ -175,8 +177,18 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         MODE_RXTX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
     );
+
 #ifdef USE_TELEMETRY_MAVLINK
     telemetrySharedPort = serialPort;
+#endif
+
+    if (rssiSource == RSSI_SOURCE_NONE) {
+        rssiSource = RSSI_SOURCE_RX_PROTOCOL_MAVLINK;
+    }
+#ifdef USE_RX_LINK_QUALITY_INFO
+    if (linkQualitySource == LQ_SOURCE_NONE) {
+        linkQualitySource = LQ_SOURCE_RX_PROTOCOL_MAVLINK;
+    }
 #endif
 
     return serialPort != NULL;
