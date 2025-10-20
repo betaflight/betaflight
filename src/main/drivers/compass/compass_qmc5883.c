@@ -254,6 +254,7 @@ static bool qmc5883Read(magDev_t *magDev, int16_t *magData)
 
                 static int16_t lastX = 0, lastY = 0, lastZ = 0;
                 static uint8_t stuckCount = 0;
+
                 if (rawX == lastX && rawY == lastY && rawZ == lastZ) {
                     stuckCount++;
                     if (stuckCount > 10) {
@@ -264,19 +265,15 @@ static bool qmc5883Read(magDev_t *magDev, int16_t *magData)
                 } else {
                     stuckCount = 0;
                 }
+
                 lastX = rawX;
                 lastY = rawY;
                 lastZ = rawZ;
-
-                magData[X] = rawX;
-                magData[Y] = rawY;
-                magData[Z] = rawZ;
-            } else {
-                // QMC5883L: original implementation simply read raw values and returned
-                magData[X] = rawX;
-                magData[Y] = rawY;
-                magData[Z] = rawZ;
             }
+
+            magData[X] = rawX;
+            magData[Y] = rawY;
+            magData[Z] = rawZ;
 
             state = STATE_WAIT_DRDY;
             status = 0;
