@@ -302,7 +302,7 @@ bool qmc5883lDetect(magDev_t *magDev)
 
     uint8_t sig = 0;
     bool ack = busReadRegisterBuffer(dev, QMC5883L_REG_ID, &sig, 1);
-    if (ack && sig == QMC5883_ID_VAL) {
+    if (ack && sig == QMC5883L_ID_VAL) {
         // Should be in standby mode after soft reset and sensor is really present
         // Reading ChipID of 0xFF alone is not sufficient to be sure the QMC is present
         ack = busReadRegisterBuffer(dev, QMC5883L_REG_CONF1, &sig, 1);
