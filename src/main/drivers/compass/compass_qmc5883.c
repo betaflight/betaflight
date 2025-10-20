@@ -344,10 +344,13 @@ bool qmc5883pDetect(magDev_t *magDev)
     }
 
     // For P variant we perform the special unlock/config writes here (retaining original behavior)
-    ack = acc && busWriteRegister(dev, QMC5883P_REG_XYZ_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG);
-    ack = acc && busWriteRegister(dev, QMC5883P_REG_CONF1, QMC5883P_DEFAULT_CONF1);
-    ack = acc && busWriteRegister(dev, QMC5883P_REG_CONF2, QMC5883P_DEFAULT_CONF2);
-    if (!ack) {
+    if (!busWriteRegister(dev, QMC5883P_REG_XYZ_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG)) {
+        return false;
+    }
+    if (!busWriteRegister(dev, QMC5883P_REG_CONF1, QMC5883P_DEFAULT_CONF1)) {
+        return false;
+    }
+    if (!busWriteRegister(dev, QMC5883P_REG_CONF2, QMC5883P_DEFAULT_CONF2)) {
         return false;
     }
 
