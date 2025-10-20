@@ -76,7 +76,7 @@
 #define QMC5883L_REG_STATUS_DOR         0x04
 
 #define QMC5883L_REG_ID                 0x0D
-#define QMC5883_ID_VAL                  0xFF
+#define QMC5883L_ID_VAL                 0xFF
 
 // QMC5883P I2C Address
 #define QMC5883P_I2C_ADDRESS            0x2C
