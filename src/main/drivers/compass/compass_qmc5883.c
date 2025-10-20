@@ -287,7 +287,7 @@ static bool qmc5883Read(magDev_t *magDev, int16_t *magData)
     return false;
 }
 
-bool qmc5883lDetect(magDev_t *magDev)
+static bool qmc5883lDetect(magDev_t *magDev)
 {
 
     extDevice_t *dev = &magDev->dev;
@@ -320,7 +320,7 @@ bool qmc5883lDetect(magDev_t *magDev)
     return false;
 }
 
-bool qmc5883pDetect(magDev_t *magDev)
+static bool qmc5883pDetect(magDev_t *magDev)
 {
     extDevice_t *dev = &magDev->dev;
 
@@ -361,11 +361,21 @@ bool qmc5883pDetect(magDev_t *magDev)
     return true;
 }
 
+static void resetI2CAddress(magDev_t *magDev)
+{
+    extDevice_t *dev = &magDev->dev;
+    if (dev->bus->busType == BUS_TYPE_I2C) {
+        dev->busType_u.i2c.address = 0; // ensure probe sets its default
+    }
+}
+
 bool qmc5883Detect(magDev_t *magDev)
 {
+    resetI2CAddress(magDev);
     if (qmc5883lDetect(magDev)) {
         return true;
     }
+    resetI2CAddress(magDev);
     if (qmc5883pDetect(magDev)) {
         return true;
     }
