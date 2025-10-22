@@ -274,26 +274,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
 
-// Add APEX control registers (Bank 0)
-#define ICM456XX_APEX_CONFIG0                   0x56  // Bank 4
-#define ICM456XX_EDMP_APEX_EN1                  0x2A  // Bank 0 (EDMP_ENABLE bit)
-
-// Disable APEX/EDMP features
-static void icm456xx_disableApex(const extDevice_t *dev)
-{
-    // Disable EDMP in Bank 0
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
-    spiWriteReg(dev, ICM456XX_EDMP_APEX_EN1, 0x00);  // Clear EDMP_ENABLE
-    
-    // Disable APEX features in Bank 4
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_4);
-    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
-    spiWriteReg(dev, ICM456XX_APEX_CONFIG0, 0x00);   // Disable all APEX
-    
-    // Return to Bank 0
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-}
 
 static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
@@ -441,31 +421,44 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
 }
 
+static bool icm456xx_forceLittleEndian(const extDevice_t *dev)
+{
+    // SREG_CTRL is in IPREG_TOP1 @ 0xA267; bit1 = 0 -> Little Endian
+    // Datasheet §15: default is Little Endian; we enforce it explicitly for certainty.
+    // Keep sensors off while changing global format.
+    const uint8_t pwr0 = spiReadRegMsk(dev, ICM456XX_PWR_MGMT0);
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00); // both accel/gyro off
+    const bool ok = icm456xx_write_ireg(dev, (uint16_t)0xA267, (uint8_t)ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE);
+    // restore previous power state
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, pwr0);
+    return ok;
+}
+
 uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 {
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    // Stay in User Bank 0 (REG_MISC2 / WHO_AM_I live here per datasheet)
+    // NOTE: REG_BANK_SEL is not documented for ICM-45686; avoid switching banks.
+    // spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0); // no-op on 45686
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_4); // Switch to Bank 4
-    // Soft reset
+    // Soft reset (User Bank 0)
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
-
-    // Wait for reset to complete (bit 1 of REG_MISC2 becomes 0)
     while ((spiReadRegMsk(dev, ICM456XX_REG_MISC2) & ICM456XX_SOFT_RESET) != 0) {
         delayMicroseconds(10);
         waited_us += 10;
-
         if (waited_us >= ICM456XX_RESET_TIMEOUT_US) {
             return MPU_NONE;
         }
     }
 
-    icm456xx_disableApex(dev);                  // Disable APEX/EDMP features
-    spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00); // Clean power state
+    // Ensure known power state, then force Little Endian for predictable reads
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00);
+    (void)icm456xx_forceLittleEndian(dev);
 
+    // Detect via WHO_AM_I (User Bank 0)
     do {
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
         switch (whoAmI) {
@@ -479,11 +472,9 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
             icmDetected = MPU_NONE;
             break;
         }
-
     } while (icmDetected == MPU_NONE && attemptsRemaining--);
 
     return icmDetected;
-
 }
 
 bool icm456xxAccReadSPI(accDev_t *acc)
