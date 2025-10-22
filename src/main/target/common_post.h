@@ -317,7 +317,7 @@
 #undef USE_CRSF_V3
 #endif
 
-#if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF)
+#if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF) && !defined(USE_SERIALRX_MAVLINK)
 #undef USE_RX_RSSI_DBM
 #endif
 
