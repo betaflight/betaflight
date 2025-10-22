@@ -267,6 +267,28 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
 
+// Add Bank 4 definition
+#define ICM456XX_BANK_4                         0x04
+
+// Add APEX control registers (Bank 0)
+#define ICM456XX_APEX_CONFIG0                   0x56  // Bank 4
+#define ICM456XX_EDMP_APEX_EN1                  0x2A  // Bank 0 (EDMP_ENABLE bit)
+
+// Disable APEX/EDMP features
+static void icm456xx_disableApex(const extDevice_t *dev)
+{
+    // Disable EDMP in Bank 0
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    spiWriteReg(dev, ICM456XX_EDMP_APEX_EN1, 0x00);  // Clear EDMP_ENABLE
+    
+    // Disable APEX features in Bank 4
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_4);
+    spiWriteReg(dev, ICM456XX_APEX_CONFIG0, 0x00);   // Disable all APEX
+    
+    // Return to Bank 0
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+}
+
 static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
     switch (hardwareLpf) {
@@ -413,6 +435,7 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
 
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
     // Soft reset
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
 
@@ -425,6 +448,9 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
             return MPU_NONE;
         }
     }
+
+    icm456xx_disableApex(dev);                  // Disable APEX/EDMP features
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00); // Clean power state
 
     do {
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
