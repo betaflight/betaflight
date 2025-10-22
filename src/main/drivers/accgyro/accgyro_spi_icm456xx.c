@@ -101,10 +101,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 
 #define ICM456XX_REG_BANK_SEL                   0x75
 #define ICM456XX_BANK_0                         0x00
-#define ICM456XX_BANK_1                         0x01
-#define ICM456XX_BANK_4                         0x04
-
-#define ICM456XX_BANK_SWITCH_GAP_US             4
 
 // Register map Bank 0
 #define ICM456XX_WHO_AM_REGISTER                0x72
@@ -357,9 +353,6 @@ void icm456xxAccInit(accDev_t *acc)
 {
     const extDevice_t *dev = &acc->gyro->dev;
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
-
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
@@ -388,9 +381,6 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(dev, spiCalculateDivider(ICM456XX_MAX_SPI_CLK_HZ));
 
     mpuGyroInit(gyro);
-
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
 
     icm456xx_enableSensors(dev, true);
 
