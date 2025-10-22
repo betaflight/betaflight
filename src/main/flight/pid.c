@@ -273,7 +273,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
 #ifdef USE_AIRPLANE_FCS
         .afcs_stick_gain = { 100, 100, 100 },  // Percent control output
         .afcs_damping_gain = { 20, 30, 50 },   // percent control range addition by 1 degree per second angle rate * 1000
-        .afcs_pitch_damping_filter_freq = 160, // pitch damping filter cut freq 1.6Hz (Tf=0.1s) 
+        .afcs_pitch_damping_filter_freq = 160, // pitch damping filter cut freq 1.6Hz (Tf=0.1s)
         .afcs_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *100
         .afcs_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq 0.05Hz (Tf=3s)
         .afcs_yaw_stability_gain = 0,          // percent control by 1g Y accel change *100
@@ -1267,9 +1267,22 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_AIRPLANE_FCS
     bool isAFCS = isFixedWing() && FLIGHT_MODE(AIRPLANE_FCS_MODE);
     if (isAFCS) {
+        const bool afcsUnsafe =
+            !pidRuntime.pidStabilisationEnabled ||
+            gyroOverflowDetected() ||
+            (isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE));
+        if (afcsUnsafe) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+                pidData[axis].P = pidData[axis].I = pidData[axis].D = 0;
+                pidData[axis].F = pidData[axis].S = 0;
+                pidData[axis].Sum = 0;
+            }
+            pidRuntime.isReadyAFCS = false;
+            return;
+        }
         afcsUpdate(pidProfile);
-        return;         // The airplanes FCS do not need PID controller
-    } else if (pidRuntime.isReadyAFCS) {      // Clear the all PID values after AFCS work
+        return; // AFCS replaces PID controller
+     } else if (pidRuntime.isReadyAFCS) {      // Clear the all PID values after AFCS work
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             pidData[axis].P = 0;
             pidData[axis].I = 0;
