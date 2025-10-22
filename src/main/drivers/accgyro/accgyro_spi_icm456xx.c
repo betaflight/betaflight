@@ -104,6 +104,8 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_BANK_1                         0x01
 #define ICM456XX_BANK_4                         0x04
 
+#define ICM456XX_BANK_SWITCH_GAP_US             4
+
 // Register map Bank 0
 #define ICM456XX_WHO_AM_REGISTER                0x72
 #define ICM456XX_REG_MISC2                      0x7F
@@ -281,10 +283,12 @@ static void icm456xx_disableApex(const extDevice_t *dev)
 {
     // Disable EDMP in Bank 0
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
     spiWriteReg(dev, ICM456XX_EDMP_APEX_EN1, 0x00);  // Clear EDMP_ENABLE
     
     // Disable APEX features in Bank 4
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_4);
+    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
     spiWriteReg(dev, ICM456XX_APEX_CONFIG0, 0x00);   // Disable all APEX
     
     // Return to Bank 0
@@ -375,6 +379,7 @@ void icm456xxAccInit(accDev_t *acc)
     const extDevice_t *dev = &acc->gyro->dev;
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
 
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
@@ -406,6 +411,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    delayMicroseconds(ICM456XX_BANK_SWITCH_GAP_US);
 
     icm456xx_enableSensors(dev, true);
 
