@@ -374,6 +374,8 @@ void icm456xxAccInit(accDev_t *acc)
 {
     const extDevice_t *dev = &acc->gyro->dev;
 
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
@@ -402,6 +404,8 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(dev, spiCalculateDivider(ICM456XX_MAX_SPI_CLK_HZ));
 
     mpuGyroInit(gyro);
+
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     icm456xx_enableSensors(dev, true);
 
@@ -436,6 +440,8 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
+
+    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
 
     spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_4); // Switch to Bank 4
     // Soft reset
