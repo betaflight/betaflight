@@ -96,6 +96,8 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
 
         DEBUG_SET(DEBUG_AFCS, 0, lrintf(accelReq * 10.0f));
         DEBUG_SET(DEBUG_AFCS, 1, lrintf(accelDelta * 10.0f));
+    } else {
+        pidData[FD_PITCH].I = 0.0f;
     }
 }
 
@@ -178,7 +180,8 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
 
     // Pitch channel
     pidData[FD_PITCH].I /= 10.0f;   //restore % last value
-    float pitchPilotCtrl = getSetpointRate(FD_PITCH) / getMaxRcRate(FD_PITCH) * pidProfile->afcs_stick_gain[FD_PITCH];
+    const float maxRcRatePitch = fmaxf(getMaxRcRate(FD_PITCH), 1.0f);
+    float pitchPilotCtrl = getSetpointRate(FD_PITCH) / maxRcRatePitch * pidProfile->afcs_stick_gain[FD_PITCH];
     float gyroPitch = gyro.gyroADCf[FD_PITCH];
     if (pidProfile->afcs_pitch_damping_filter_freq != 0) {
         float gyroPitchLow = pt1FilterApply(&pidRuntime.afcsPitchDampingLowpass, gyroPitch);
@@ -212,7 +215,8 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     pidData[FD_PITCH].I *= 10.0f;  // Store *10 value
 
     // Roll channel
-    float rollPilotCtrl = getSetpointRate(FD_ROLL) / getMaxRcRate(FD_ROLL) * (pidProfile->afcs_stick_gain[FD_ROLL]);
+    const float maxRcRateRoll = fmaxf(getMaxRcRate(FD_ROLL), 1.0f);
+    float rollPilotCtrl = getSetpointRate(FD_ROLL) / maxRcRateRoll * (pidProfile->afcs_stick_gain[FD_ROLL]);
     float rollDampingCtrl = -1.0f * gyro.gyroADCf[FD_ROLL] * (pidProfile->afcs_damping_gain[FD_ROLL] * 0.001f);
     pidData[FD_ROLL].Sum = rollPilotCtrl + rollDampingCtrl;
     pidData[FD_ROLL].Sum = constrainf(pidData[FD_ROLL].Sum, -100.0f, 100.0f) / 100.0f * 500.0f;
@@ -222,7 +226,8 @@ void FAST_CODE afcsUpdate(const pidProfile_t *pidProfile)
     pidData[FD_ROLL].D = 10.0f * rollDampingCtrl;
 
     // Yaw channel
-    float yawPilotCtrl = getSetpointRate(FD_YAW) / getMaxRcRate(FD_YAW) * (pidProfile->afcs_stick_gain[FD_YAW]);
+    const float maxRcRateYaw = fmaxf(getMaxRcRate(FD_YAW), 1.0f);
+    float yawPilotCtrl = getSetpointRate(FD_YAW) / maxRcRateYaw * (pidProfile->afcs_stick_gain[FD_YAW]);
     float gyroYaw = gyro.gyroADCf[FD_YAW];
     if (pidProfile->afcs_yaw_damping_filter_freq != 0) {
         float gyroYawLow = pt1FilterApply(&pidRuntime.afcsYawDampingLowpass, gyroYaw);
