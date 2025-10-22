@@ -29,6 +29,7 @@
 #include "sensors/gyro.h"
 #include "io/gps.h"
 #include <math.h>
+#include "common/maths.h"
 #include "build/debug.h"
 
 void afcsInit(const pidProfile_t *pidProfile)
