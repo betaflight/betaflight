@@ -345,11 +345,11 @@ typedef struct pidProfile_s {
     uint16_t psas_yaw_stability_gain;           // percent control by 1g Y accel change *100
     uint16_t psas_wing_load;                    // wing load (mass / WingArea) g/decimeter^2 * 10. 
     uint16_t psas_air_density;                  // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
-    uint8_t psas_lift_c_limit;                  // Limit aerodinamics lift force coefficient value *10
+    uint8_t psas_lift_c_limit;                  // Limit aerodynamics lift force coefficient value *10
     uint16_t psas_aoa_limiter_gain;             // elevator speed for 0.1 lift force coef difference in %/sec *10
     uint8_t psas_aoa_limiter_filter_freq;       // aoa limiter lift coef filter cut freq Hz * 10
     uint8_t psas_aoa_limiter_forecast_time;      // aoa limiter lift coef forecast time, s *10
-    uint16_t psas_servo_time;                   // minimal time of servo movement from neutrale to maximum, ms
+    uint16_t psas_servo_time;                   // minimal time of servo movement from neutral to maximum, ms
     uint8_t psas_roll_yaw_clift_start;          // Aerodynamics lift force coef to start yaw control for roll rotation  *10
     uint8_t psas_roll_yaw_clift_stop;           // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
     uint8_t psas_roll_to_yaw_link;               // The maximal yaw control value to support roll rotation, % *10
