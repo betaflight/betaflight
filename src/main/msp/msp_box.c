@@ -371,7 +371,7 @@ void initActiveBoxIds(void)
     BME(BOXCHIRP);
 #endif
 
-#if defined(USE_AIRPLANE_FCS)
+#if defined(USE_AIRPLANE_SAS)
     BME(BOXAIRPLANEFCS);
 #endif
 

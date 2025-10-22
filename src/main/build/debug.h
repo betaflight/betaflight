@@ -132,7 +132,7 @@ typedef enum {
     DEBUG_OPTICALFLOW_POS,
     DEBUG_POSITION_SOURCE,
     DEBUG_AUTOPILOT_PID,
-    DEBUG_AFCS,
+    DEBUG_PSAS,
     DEBUG_COUNT
 } debugType_e;
 
