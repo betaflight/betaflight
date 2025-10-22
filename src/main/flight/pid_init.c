@@ -47,8 +47,8 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#ifdef USE_AIRPLANE_FCS
-#include "airplane_fcs.h"
+#ifdef USE_AIRPLANE_SAS
+#include "airplane_sas.h"
 #endif
 
 #include "pid_init.h"
@@ -391,8 +391,8 @@ void pidInit(const pidProfile_t *pidProfile)
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif
-#ifdef USE_AIRPLANE_FCS
-    afcsInit(pidProfile);
+#ifdef USE_AIRPLANE_SAS
+    psasInit(pidProfile);
 #endif
 }
 

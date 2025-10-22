@@ -64,8 +64,8 @@
 
 #include "pid.h"
 
-#ifdef USE_AIRPLANE_FCS
-#include "airplane_fcs.h"
+#ifdef USE_AIRPLANE_SAS
+#include "airplane_sas.h"
 #endif
 typedef enum {
     LEVEL_MODE_OFF = 0,
@@ -270,26 +270,26 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
-#ifdef USE_AIRPLANE_FCS
-        .afcs_stick_gain = { 100, 100, 100 },  // Percent control output
-        .afcs_damping_gain = { 20, 30, 50 },   // percent control range addition by 1 degree per second angle rate * 1000
-        .afcs_pitch_damping_filter_freq = 160, // pitch damping filter cut freq 1.6Hz (Tf=0.1s)
-        .afcs_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *100
-        .afcs_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq 0.05Hz (Tf=3s)
-        .afcs_yaw_stability_gain = 0,          // percent control by 1g Y accel change *100
-        .afcs_pitch_accel_i_gain = 250,        // elevator speed for 1g Z accel difference in %/sec *10
-        .afcs_pitch_accel_max = 80,            // maximal positive Z accel value *10
-        .afcs_pitch_accel_min = 60,            // maximal negative Z accel value *10
-        .afcs_wing_load = 560,                 // wing load (mass / WingArea) g/decimeter^2 * 10. The g/decimeter^2 units is more comfortable for perception, than kg/m^2, i think
-        .afcs_air_density = 1225,              // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
-        .afcs_lift_c_limit = 15,               // Limit aerodinamics lift force coefficient value *10
-        .afcs_aoa_limiter_gain = 250,          // elevator speed for 0.1 lift force coef difference in %/sec *10
-        .afcs_aoa_limiter_filter_freq = 30,    // aoa limiter lift coef filter cut freq 3Hz * 10
-        .afcs_aoa_limiter_forecast_time = 10,   // aoa limiter lift coef forecast time, 1s  *10
-        .afcs_servo_time = 90,                 // minimal time of servo movement from neutrale to maximum, ms
-        .afcs_roll_yaw_clift_start = 8,        // Aerodynamics lift force coef to start yaw control for roll rotation  *10
-        .afcs_roll_yaw_clift_stop = 15,        // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
-        .afcs_roll_to_yaw_link = 0,            // The maximal yaw control value to support roll rotation, % *10
+#ifdef USE_AIRPLANE_SAS
+        .psas_stick_gain = { 100, 100, 100 },  // Percent control output
+        .psas_damping_gain = { 20, 30, 50 },   // percent control range addition by 1 degree per second angle rate * 1000
+        .psas_pitch_damping_filter_freq = 160, // pitch damping filter cut freq 1.6Hz (Tf=0.1s)
+        .psas_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *100
+        .psas_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq 0.05Hz (Tf=3s)
+        .psas_yaw_stability_gain = 0,          // percent control by 1g Y accel change *100
+        .psas_pitch_accel_i_gain = 250,        // elevator speed for 1g Z accel difference in %/sec *10
+        .psas_pitch_accel_max = 80,            // maximal positive Z accel value *10
+        .psas_pitch_accel_min = 60,            // maximal negative Z accel value *10
+        .psas_wing_load = 560,                 // wing load (mass / WingArea) g/decimeter^2 * 10. The g/decimeter^2 units is more comfortable for perception, than kg/m^2, i think
+        .psas_air_density = 1225,              // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
+        .psas_lift_c_limit = 15,               // Limit aerodinamics lift force coefficient value *10
+        .psas_aoa_limiter_gain = 250,          // elevator speed for 0.1 lift force coef difference in %/sec *10
+        .psas_aoa_limiter_filter_freq = 30,    // aoa limiter lift coef filter cut freq 3Hz * 10
+        .psas_aoa_limiter_forecast_time = 10,   // aoa limiter lift coef forecast time, 1s  *10
+        .psas_servo_time = 90,                 // minimal time of servo movement from neutrale to maximum, ms
+        .psas_roll_yaw_clift_start = 8,        // Aerodynamics lift force coef to start yaw control for roll rotation  *10
+        .psas_roll_yaw_clift_stop = 15,        // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
+        .psas_roll_to_yaw_link = 0,            // The maximal yaw control value to support roll rotation, % *10
 #endif
     );
 }
@@ -1264,25 +1264,25 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #endif // USE_CHIRP
 
-#ifdef USE_AIRPLANE_FCS
-    bool isAFCS = isFixedWing() && FLIGHT_MODE(AIRPLANE_FCS_MODE);
-    if (isAFCS) {
-        const bool afcsUnsafe =
+#ifdef USE_AIRPLANE_SAS
+    bool isPSAS = isFixedWing() && FLIGHT_MODE(AIRPLANE_SAS_MODE);
+    if (isPSAS) {
+        const bool psasUnsafe =
             !pidRuntime.pidStabilisationEnabled ||
             gyroOverflowDetected() ||
             (isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE));
-        if (afcsUnsafe) {
+        if (psasUnsafe) {
             for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
                 pidData[axis].P = pidData[axis].I = pidData[axis].D = 0;
                 pidData[axis].F = pidData[axis].S = 0;
                 pidData[axis].Sum = 0;
             }
-            pidRuntime.isReadyAFCS = false;
+            pidRuntime.isReadyPSAS = false;
             return;
         }
-        afcsUpdate(pidProfile);
-        return; // AFCS replaces PID controller
-     } else if (pidRuntime.isReadyAFCS) {      // Clear the all PID values after AFCS work
+        psasUpdate(pidProfile);
+        return; // PSAS replaces PID controller
+     } else if (pidRuntime.isReadyPSAS) {      // Clear the all PID values after PSAS work
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             pidData[axis].P = 0;
             pidData[axis].I = 0;
@@ -1291,7 +1291,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].S = 0;
             pidData[axis].Sum = 0;
         }
-        pidRuntime.isReadyAFCS = false;
+        pidRuntime.isReadyPSAS = false;
     }
 #endif
 

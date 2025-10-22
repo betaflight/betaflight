@@ -1134,11 +1134,11 @@ void processRxModes(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
-#ifdef USE_AIRPLANE_FCS
+#ifdef USE_AIRPLANE_SAS
     if (IS_RC_MODE_ACTIVE(BOXAIRPLANEFCS)) {
-        ENABLE_FLIGHT_MODE(AIRPLANE_FCS_MODE);
+        ENABLE_FLIGHT_MODE(AIRPLANE_SAS_MODE);
     } else {
-        DISABLE_FLIGHT_MODE(AIRPLANE_FCS_MODE);
+        DISABLE_FLIGHT_MODE(AIRPLANE_SAS_MODE);
     }
 #endif
     if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE) {

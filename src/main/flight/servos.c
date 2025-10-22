@@ -427,7 +427,7 @@ void servoMixer(void)
         input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
         input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
-    } else if (FLIGHT_MODE(AIRPLANE_FCS_MODE)) {
+    } else if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
         input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum;
         input[INPUT_STABILIZED_PITCH] = pidData[FD_PITCH].Sum;
         input[INPUT_STABILIZED_YAW] = pidData[FD_YAW].Sum;
