@@ -274,7 +274,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
 
-
 static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
     switch (hardwareLpf) {
@@ -423,13 +422,12 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
 static bool icm456xx_forceLittleEndian(const extDevice_t *dev)
 {
-    // SREG_CTRL is in IPREG_TOP1 @ 0xA267; bit1 = 0 -> Little Endian
+    // // SREG_CTRL is in IPREG_TOP1; bit1 = 0 -> Little Endian
     // Datasheet §15: default is Little Endian; we enforce it explicitly for certainty.
     // Keep sensors off while changing global format.
     const uint8_t pwr0 = spiReadRegMsk(dev, ICM456XX_PWR_MGMT0);
     spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00); // both accel/gyro off
-    const bool ok = icm456xx_write_ireg(dev, (uint16_t)0xA267, (uint8_t)ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE);
-    // restore previous power state
+    const bool ok = icm456xx_write_ireg(dev, ICM456XX_RA_SREG_CTRL, ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE);
     spiWriteReg(dev, ICM456XX_PWR_MGMT0, pwr0);
     return ok;
 }
@@ -456,7 +454,10 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 
     // Ensure known power state, then force Little Endian for predictable reads
     spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00);
-    (void)icm456xx_forceLittleEndian(dev);
+
+    if (!icm456xx_forceLittleEndian(dev)) {
+        // Continue anyway; device defaults to Little Endian
+    }
 
     // Detect via WHO_AM_I (User Bank 0)
     do {
