@@ -109,7 +109,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
     float liftCoefF = pt1FilterApply(&pidRuntime.afcsLiftCoefLowpass, liftCoef);
     float liftCoefVelocity = (liftCoefF - liftCoefLast) / pidRuntime.dT;
     liftCoefLast = liftCoefF;
-    float liftCoefForcastChange = liftCoefVelocity * (pidProfile->afcs_aoa_limiter_forcast_time * 0.1f);
+    float liftCoefForecastChange = liftCoefVelocity * (pidProfile->afcs_aoa_limiter_forecast_time * 0.1f);
 
     if (pidProfile->afcs_aoa_limiter_gain != 0) {
         const float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
@@ -119,8 +119,8 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
               servoVelocity = 0.0f;
         if (liftCoefF > 0.0f) {
             liftCoefDiff = liftCoefF - limitLiftC;
-            if (liftCoefForcastChange > 0.0f) {
-                liftCoefDiff += liftCoefForcastChange;
+            if (liftCoefForecastChange > 0.0f) {
+                liftCoefDiff += liftCoefForecastChange;
             }
             if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
@@ -130,8 +130,8 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
             }
         } else {
             liftCoefDiff = liftCoefF + limitLiftC;
-            if (liftCoefForcastChange < 0.0f) {
-                liftCoefDiff += liftCoefForcastChange;
+            if (liftCoefForecastChange < 0.0f) {
+                liftCoefDiff += liftCoefForecastChange;
             }
             if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;

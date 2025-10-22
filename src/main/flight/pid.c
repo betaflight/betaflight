@@ -285,7 +285,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .afcs_lift_c_limit = 15,               // Limit aerodinamics lift force coefficient value *10
         .afcs_aoa_limiter_gain = 250,          // elevator speed for 0.1 lift force coef difference in %/sec *10
         .afcs_aoa_limiter_filter_freq = 30,    // aoa limiter lift coef filter cut freq 3Hz * 10
-        .afcs_aoa_limiter_forcast_time = 10,   // aoa limiter lift coef forcast time, 1s  *10
+        .afcs_aoa_limiter_forecast_time = 10,   // aoa limiter lift coef forecast time, 1s  *10
         .afcs_servo_time = 90,                 // minimal time of servo movement from neutrale to maximum, ms
         .afcs_roll_yaw_clift_start = 8,        // Aerodynamics lift force coef to start yaw control for roll rotation  *10
         .afcs_roll_yaw_clift_stop = 15,        // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
