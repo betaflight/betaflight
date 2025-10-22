@@ -451,7 +451,7 @@ SPEED_OPTIMISED_SRC += \
             flight/mixer.c \
             flight/pid.c \
             flight/rpm_filter.c \
-            flight/airplane_fcs.c \
+            flight/airplane_sas.c \
             rx/ibus.c \
             rx/rc_stats.c \
             rx/rx.c \
