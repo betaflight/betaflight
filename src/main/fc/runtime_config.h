@@ -114,7 +114,7 @@ extern uint16_t flightModeFlags;
    [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
    [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \
    [BOXGPSRESCUE]   = LOG2(GPS_RESCUE_MODE),             \
-   [BOXAIRPLANEFCS] = LOG2(AIRPLANE_SAS_MODE),                \
+   [BOXAIRPLANESAS] = LOG2(AIRPLANE_SAS_MODE),                \
 }                                                        \
 /**/
 
