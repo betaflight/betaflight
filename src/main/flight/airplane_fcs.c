@@ -47,13 +47,13 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
     *liftCoef = 0.0f;
     if (ARMING_FLAG(ARMED) && gpsSol.numSat > 5) {
         const float limitLiftC = 0.1f * pidProfile->afcs_lift_c_limit;
-        const float speedThreshold = 2.5f;    //gps speed thresold
+        const float speedThreshold = 2.5f;    // GPS speed threshold (m/s)
         float speed = 0.01f * gpsSol.speed3d;
         if (speed > speedThreshold) {
             const float airSpeedPressure = (0.001f * pidProfile->afcs_air_density) * sq(speed) / 2.0f;
             *liftCoef = accelZ * (0.01f * pidProfile->afcs_wing_load) * G_ACCELERATION / airSpeedPressure;
 
-            // Enable AoA limiter after 3s flight with good lift coef. It prevents issues during plane launch
+            // Enable AoA limiter after ~3s of stable lift to avoid triggering during launch
             if (isLiftCoefValid == false) {
                 if (*liftCoef < limitLiftC && *liftCoef > -limitLiftC) {
                     validLiftCoefTime += pidRuntime.dT;
