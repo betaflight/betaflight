@@ -97,7 +97,10 @@ static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
 static uint32_t lastMavlinkMessageTime = 0;
 
-/* MAVLink datastream rates in Hz */
+/*
+   There are not real Hz rates. There are TELEMETRY_MAVLINK_MAXRATE divisors.
+   The N value means to send packet every 50/N ticks of successful telemetries task call.
+*/
 static uint8_t mavRates[] = {
     [MAV_DATA_STREAM_EXTENDED_STATUS] = 2,  // 2Hz
     [MAV_DATA_STREAM_RC_CHANNELS] = 1,      // 1Hz
@@ -648,6 +651,13 @@ void handleMAVLinkTelemetry(void)
 {
     if (!mavlinkTelemetryEnabled || !mavlinkPort) {
         return;
+    }
+
+    // DEBUG to define common telemetry frequency call
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter++);
+    if (transmitCounter == 100) {
+        transmitCounter = 0;
     }
 
     bool shouldSendTelemetry = false;
