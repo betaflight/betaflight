@@ -98,13 +98,13 @@ static portSharing_e mavlinkPortSharing;
 static uint32_t lastMavlinkMessageTime = 0;
 
 /* MAVLink datastream rates in Hz */
-static const uint8_t mavRates[] = {
-    [MAV_DATA_STREAM_EXTENDED_STATUS] = 2, //2Hz
-    [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
-    [MAV_DATA_STREAM_POSITION] = 2, //2Hz
-    [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA3] = 2, //2Hz
+static uint8_t mavRates[] = {
+    [MAV_DATA_STREAM_EXTENDED_STATUS] = 2,  // 2Hz
+    [MAV_DATA_STREAM_RC_CHANNELS] = 1,      // 1Hz
+    [MAV_DATA_STREAM_POSITION] = 2,         // 2Hz
+    [MAV_DATA_STREAM_EXTRA1] = 2,           // 2Hz
+    [MAV_DATA_STREAM_EXTRA2] = 2,           // 2Hz, HEARTBEATs are important
+    [MAV_DATA_STREAM_EXTRA3] = 1,           // 1Hz
 };
 
 #define MAXSTREAMS ARRAYLEN(mavRates)
@@ -186,6 +186,16 @@ void configureMAVLinkTelemetryPort(void)
     mavlinkTelemetryEnabled = true;
 }
 
+static void configureMAVLinkStreamRates(void)
+{
+    mavRates[MAV_DATA_STREAM_EXTENDED_STATUS] = telemetryConfig()->mavlink_extended_status_rate;
+    mavRates[MAV_DATA_STREAM_RC_CHANNELS] = telemetryConfig()->mavlink_rc_channels_rate;
+    mavRates[MAV_DATA_STREAM_POSITION] = telemetryConfig()->mavlink_position_rate;
+    mavRates[MAV_DATA_STREAM_EXTRA1] = telemetryConfig()->mavlink_extra1_rate;
+    mavRates[MAV_DATA_STREAM_EXTRA2] = telemetryConfig()->mavlink_extra2_rate;
+    mavRates[MAV_DATA_STREAM_EXTRA3] = telemetryConfig()->mavlink_extra3_rate;
+}
+
 void checkMAVLinkTelemetryState(void)
 {
     if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
@@ -200,10 +210,12 @@ void checkMAVLinkTelemetryState(void)
             return;
         }
 
-        if (newTelemetryEnabledValue)
+        if (newTelemetryEnabledValue) {
             configureMAVLinkTelemetryPort();
-        else
+            configureMAVLinkStreamRates();
+        } else {
             freeMAVLinkTelemetryPort();
+        }
     }
 }
 
