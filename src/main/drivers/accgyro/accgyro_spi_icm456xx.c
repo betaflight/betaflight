@@ -101,7 +101,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 
 #define ICM456XX_REG_BANK_SEL                   0x75
 #define ICM456XX_BANK_0                         0x00
-#define ICM456XX_BANK_1                         0x01
 
 // Register map Bank 0
 #define ICM456XX_WHO_AM_REGISTER                0x72
@@ -354,8 +353,6 @@ void icm456xxAccInit(accDev_t *acc)
 {
     const extDevice_t *dev = &acc->gyro->dev;
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
@@ -385,8 +382,6 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     mpuGyroInit(gyro);
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
-
     icm456xx_enableSensors(dev, true);
 
     // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro
@@ -415,27 +410,46 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
 }
 
+static bool icm456xx_forceLittleEndian(const extDevice_t *dev)
+{
+    // // SREG_CTRL is in IPREG_TOP1; bit1 = 0 -> Little Endian
+    // Datasheet §15: default is Little Endian; we enforce it explicitly for certainty.
+    // Keep sensors off while changing global format.
+    const uint8_t pwr0 = spiReadRegMsk(dev, ICM456XX_PWR_MGMT0);
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00); // both accel/gyro off
+    const bool ok = icm456xx_write_ireg(dev, ICM456XX_RA_SREG_CTRL, ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE);
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, pwr0);
+    return ok;
+}
+
 uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 {
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    // Stay in User Bank 0 (REG_MISC2 / WHO_AM_I live here per datasheet)
+    // NOTE: REG_BANK_SEL is not documented for ICM-45686; avoid switching banks.
+    // spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0); // no-op on 45686
 
-    // Soft reset
+    // Soft reset (User Bank 0)
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
-
-    // Wait for reset to complete (bit 1 of REG_MISC2 becomes 0)
     while ((spiReadRegMsk(dev, ICM456XX_REG_MISC2) & ICM456XX_SOFT_RESET) != 0) {
         delayMicroseconds(10);
         waited_us += 10;
-
         if (waited_us >= ICM456XX_RESET_TIMEOUT_US) {
             return MPU_NONE;
         }
     }
 
+    // Ensure known power state, then force Little Endian for predictable reads
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00);
+
+    if (!icm456xx_forceLittleEndian(dev)) {
+        // Continue anyway; device defaults to Little Endian
+    }
+
+    // Detect via WHO_AM_I (User Bank 0)
     do {
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
         switch (whoAmI) {
@@ -449,11 +463,9 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
             icmDetected = MPU_NONE;
             break;
         }
-
     } while (icmDetected == MPU_NONE && attemptsRemaining--);
 
     return icmDetected;
-
 }
 
 bool icm456xxAccReadSPI(accDev_t *acc)
