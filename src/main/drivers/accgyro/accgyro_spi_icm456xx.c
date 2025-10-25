@@ -363,14 +363,14 @@ void icm456xxAccInit(accDev_t *acc)
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
-        delay(15); // Allow accelerometer configuration to settle
+        delay(10); // Per datasheet: 10ms minimum startup time for accelerometer to stabilize after configuration
         break;
     case ICM_45605_SPI:
     default:
         acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
-        delay(15); // Allow accelerometer configuration to settle
+        delay(10); // Per datasheet: 10ms minimum startup time for accelerometer to stabilize after configuration
         break;
     }
 
@@ -409,7 +409,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
         gyro->gyroSampleRateHz = 6400;
         spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-        delay(15); // Allow gyroscope configuration to settle (datasheet: 35ms gyro startup time)
+        delay(35); // Per datasheet: 35ms minimum startup time for gyroscope to stabilize after configuration
         break;
     }
 
