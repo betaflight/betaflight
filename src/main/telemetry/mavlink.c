@@ -558,13 +558,15 @@ static mavlinkTelemetryStream_t mavTelemetryStreams[] = {
         .updateTime = 0,
         .streamFunc = mavlinkSendRCChannelsAndRSSI,
     },
-#ifdef USE_GPS
     [MAV_DATA_STREAM_POSITION] = {
         .rate = 2,  // 2Hz
         .updateTime = 0,
+#ifdef USE_GPS
         .streamFunc = mavlinkSendPosition,
-    },
+#else
+        .streamFunc = NULL,
 #endif
+    },
     [MAV_DATA_STREAM_EXTRA1] = {
         .rate = 2,  // 2Hz
         .updateTime = 0,
@@ -587,7 +589,9 @@ static void configureMAVLinkStreamRates(void)
 {
     mavTelemetryStreams[MAV_DATA_STREAM_EXTENDED_STATUS].rate = telemetryConfig()->mavlink_extended_status_rate;
     mavTelemetryStreams[MAV_DATA_STREAM_RC_CHANNELS].rate = telemetryConfig()->mavlink_rc_channels_rate;
+#ifdef USE_GPS
     mavTelemetryStreams[MAV_DATA_STREAM_POSITION].rate = telemetryConfig()->mavlink_position_rate;
+#endif
     mavTelemetryStreams[MAV_DATA_STREAM_EXTRA1].rate = telemetryConfig()->mavlink_extra1_rate;
     mavTelemetryStreams[MAV_DATA_STREAM_EXTRA2].rate = telemetryConfig()->mavlink_extra2_rate;
     mavTelemetryStreams[MAV_DATA_STREAM_EXTRA3].rate = telemetryConfig()->mavlink_extra3_rate;
