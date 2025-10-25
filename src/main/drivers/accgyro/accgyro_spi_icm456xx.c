@@ -99,11 +99,12 @@ Note: Now implemented only UI Interface with Low-Noise Mode
  GYRO_AUX1_FS_SEL and ACCEL_AUX1_FS_SEL. AUX1 output is fixed at 6.4kHz ODR.
 */
 
-#define ICM456XX_REG_BANK_SEL                   0x75
-#define ICM456XX_BANK_0                         0x00
-#define ICM456XX_BANK_1                         0x01
+// NOTE: ICM-45686 does NOT have a bank select register like ICM-426xx
+// The ICM-45686 uses Indirect Register (IREG) access for internal registers
+// Register 0x75 is RESERVED/UNDEFINED in the ICM-45686 datasheet
+// DO NOT use bank switching on this device
 
-// Register map Bank 0
+// Register map User Bank 0 (UI Interface)
 #define ICM456XX_WHO_AM_REGISTER                0x72
 #define ICM456XX_REG_MISC2                      0x7F
 #define ICM456XX_INT1_CONFIG0                   0x16
@@ -354,19 +355,22 @@ void icm456xxAccInit(accDev_t *acc)
 {
     const extDevice_t *dev = &acc->gyro->dev;
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    // ICM-45686 does not use bank switching (register 0x75 is reserved)
+    // Configure accelerometer directly
 
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
+        delay(15); // Allow accelerometer configuration to settle
         break;
     case ICM_45605_SPI:
     default:
         acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
+        delay(15); // Allow accelerometer configuration to settle
         break;
     }
 
@@ -385,9 +389,11 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     mpuGyroInit(gyro);
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    // ICM-45686 does not use bank switching (register 0x75 is reserved)
+    // Enable sensors directly
 
     icm456xx_enableSensors(dev, true);
+    delay(1); // Allow sensors to power on and stabilize
 
     // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro
     icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true);
@@ -403,6 +409,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
         gyro->gyroSampleRateHz = 6400;
         spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
+        delay(15); // Allow gyroscope configuration to settle (datasheet: 35ms gyro startup time)
         break;
     }
 
@@ -421,7 +428,8 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
 
-    spiWriteReg(dev, ICM456XX_REG_BANK_SEL, ICM456XX_BANK_0);
+    // ICM-45686 does not use bank switching (register 0x75 is reserved)
+    // Perform soft reset directly
 
     // Soft reset
     spiWriteReg(dev, ICM456XX_REG_MISC2, ICM456XX_SOFT_RESET);
@@ -435,6 +443,10 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
             return MPU_NONE;
         }
     }
+
+    // Initialize power management to a known state after reset
+    // This ensures sensors are off and ready for proper initialization
+    spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00);
 
     do {
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
