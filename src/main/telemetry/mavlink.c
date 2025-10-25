@@ -97,47 +97,8 @@ static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
 static uint32_t lastMavlinkMessageTime = 0;
 
-/*
-   There are not real Hz rates. There are TELEMETRY_MAVLINK_MAXRATE divisors.
-   The N value means to send packet every 50/N ticks of successful telemetries task call.
-*/
-static uint8_t mavRates[] = {
-    [MAV_DATA_STREAM_EXTENDED_STATUS] = 2,  // 2Hz
-    [MAV_DATA_STREAM_RC_CHANNELS] = 1,      // 1Hz
-    [MAV_DATA_STREAM_POSITION] = 2,         // 2Hz
-    [MAV_DATA_STREAM_EXTRA1] = 2,           // 2Hz
-    [MAV_DATA_STREAM_EXTRA2] = 2,           // 2Hz, HEARTBEATs are important
-    [MAV_DATA_STREAM_EXTRA3] = 1,           // 1Hz
-};
-
-#define MAXSTREAMS ARRAYLEN(mavRates)
-
-static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-
-
-static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
-{
-    uint8_t rate = (uint8_t) mavRates[streamNum];
-    if (rate == 0) {
-        return 0;
-    }
-
-    if (mavTicks[streamNum] == 0) {
-        // we're triggering now, setup the next trigger point
-        if (rate > TELEMETRY_MAVLINK_MAXRATE) {
-            rate = TELEMETRY_MAVLINK_MAXRATE;
-        }
-
-        mavTicks[streamNum] = (TELEMETRY_MAVLINK_MAXRATE / rate);
-        return 1;
-    }
-
-    // count down at TASK_RATE_HZ
-    mavTicks[streamNum]--;
-    return 0;
-}
 
 static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)
 {
@@ -187,39 +148,6 @@ void configureMAVLinkTelemetryPort(void)
     }
 
     mavlinkTelemetryEnabled = true;
-}
-
-static void configureMAVLinkStreamRates(void)
-{
-    mavRates[MAV_DATA_STREAM_EXTENDED_STATUS] = telemetryConfig()->mavlink_extended_status_rate;
-    mavRates[MAV_DATA_STREAM_RC_CHANNELS] = telemetryConfig()->mavlink_rc_channels_rate;
-    mavRates[MAV_DATA_STREAM_POSITION] = telemetryConfig()->mavlink_position_rate;
-    mavRates[MAV_DATA_STREAM_EXTRA1] = telemetryConfig()->mavlink_extra1_rate;
-    mavRates[MAV_DATA_STREAM_EXTRA2] = telemetryConfig()->mavlink_extra2_rate;
-    mavRates[MAV_DATA_STREAM_EXTRA3] = telemetryConfig()->mavlink_extra3_rate;
-}
-
-void checkMAVLinkTelemetryState(void)
-{
-    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
-        if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
-            mavlinkPort = telemetrySharedPort;
-            mavlinkTelemetryEnabled = true;
-        }
-    } else {
-        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
-
-        if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
-            return;
-        }
-
-        if (newTelemetryEnabledValue) {
-            configureMAVLinkTelemetryPort();
-            configureMAVLinkStreamRates();
-        } else {
-            freeMAVLinkTelemetryPort();
-        }
-    }
 }
 
 static void mavlinkSendSystemStatus(void)
@@ -541,6 +469,13 @@ static void mavlinkSendHUDAndHeartbeat(void)
         mavSystemState);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Higher frequency packet transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter++);
+    if (transmitCounter == 100) {
+        transmitCounter = 0;
+    }
 }
 
 static void mavlinkSendBatteryStatus(void)
@@ -611,39 +546,87 @@ static void mavlinkSendBatteryStatus(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+/* MAVLink telemetry data streams */
+static mavlinkTelemetryStream_t mavTelemetryStreams[] = {
+    [MAV_DATA_STREAM_EXTENDED_STATUS] = {
+        .rate = 2,  // 2Hz
+        .updateTime = 0,
+        .streamFunc = mavlinkSendSystemStatus,
+    },
+    [MAV_DATA_STREAM_RC_CHANNELS] = {
+        .rate = 1,  // 1Hz
+        .updateTime = 0,
+        .streamFunc = mavlinkSendRCChannelsAndRSSI,
+    },
+#ifdef USE_GPS
+    [MAV_DATA_STREAM_POSITION] = {
+        .rate = 2,  // 2Hz
+        .updateTime = 0,
+        .streamFunc = mavlinkSendPosition,
+    },
+#endif
+    [MAV_DATA_STREAM_EXTRA1] = {
+        .rate = 2,  // 2Hz
+        .updateTime = 0,
+        .streamFunc = mavlinkSendAttitude,
+    },
+    [MAV_DATA_STREAM_EXTRA2] = {
+        .rate = 2,  // 2Hz
+        .updateTime = 0,
+        .streamFunc = mavlinkSendHUDAndHeartbeat,
+    },
+    [MAV_DATA_STREAM_EXTRA3] = {
+        .rate = 1,  // 1Hz
+        .updateTime = 0,
+        .streamFunc = mavlinkSendBatteryStatus,
+    }
+};
+#define TELEMETRIES_STREAM_COUNT ARRAYLEN(mavTelemetryStreams)
+
+static void configureMAVLinkStreamRates(void)
+{
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTENDED_STATUS].rate = telemetryConfig()->mavlink_extended_status_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_RC_CHANNELS].rate = telemetryConfig()->mavlink_rc_channels_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_POSITION].rate = telemetryConfig()->mavlink_position_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTRA1].rate = telemetryConfig()->mavlink_extra1_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTRA2].rate = telemetryConfig()->mavlink_extra2_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTRA3].rate = telemetryConfig()->mavlink_extra3_rate;
+}
+
 static void processMAVLinkTelemetry(void)
 {
-    // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
-        mavlinkSendSystemStatus();
-    }
-
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_RC_CHANNELS)) {
-        mavlinkSendRCChannelsAndRSSI();
-    }
-
-#ifdef USE_GPS
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
-        mavlinkSendPosition();
-    }
-#endif
-
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA1)) {
-        mavlinkSendAttitude();
-    }
-
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
-        mavlinkSendHUDAndHeartbeat();
-        // Higher frequency packet transmit counter to debug actual data rate
-        static uint32_t transmitCounter = 0;
-        DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter++);
-        if (transmitCounter == 100) {
-            transmitCounter = 0;
+    timeMs_t currentTimeMs = millis();
+    for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
+        if (mavTelemetryStreams[i].rate != 0 && mavTelemetryStreams[i].streamFunc != NULL) {
+            if (currentTimeMs >= mavTelemetryStreams[i].updateTime) {
+                mavTelemetryStreams[i].streamFunc();
+                mavTelemetryStreams[i].updateTime = currentTimeMs + (timeMs_t)(1000 / mavTelemetryStreams[i].rate);
+            }
         }
     }
+}
 
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA3)) {
-        mavlinkSendBatteryStatus();
+void checkMAVLinkTelemetryState(void)
+{
+    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+        if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
+            mavlinkPort = telemetrySharedPort;
+            mavlinkTelemetryEnabled = true;
+            configureMAVLinkStreamRates();
+        }
+    } else {
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
+
+        if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
+            return;
+        }
+
+        if (newTelemetryEnabledValue) {
+            configureMAVLinkTelemetryPort();
+            configureMAVLinkStreamRates();
+        } else {
+            freeMAVLinkTelemetryPort();
+        }
     }
 }
 
@@ -651,13 +634,6 @@ void handleMAVLinkTelemetry(void)
 {
     if (!mavlinkTelemetryEnabled || !mavlinkPort) {
         return;
-    }
-
-    // DEBUG to define common telemetry frequency call
-    static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter++);
-    if (transmitCounter == 100) {
-        transmitCounter = 0;
     }
 
     bool shouldSendTelemetry = false;
