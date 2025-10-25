@@ -47,7 +47,7 @@
 
 #include "mixer_init.h"
 
-PG_REGISTER_WITH_RESET_FN(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 2);
 
 void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
 {
@@ -59,6 +59,7 @@ void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
 #else
     mixerConfig->crashflip_rate = 0;
 #endif
+    mixerConfig->crashflip_auto_rearm = false;
     mixerConfig->mixer_type = MIXER_LEGACY;
 #ifdef USE_RPM_LIMIT
     mixerConfig->rpm_limit = false;
