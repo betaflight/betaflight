@@ -645,7 +645,7 @@ void checkMAVLinkTelemetryState(void)
             timeMs_t nowMs = millis();
             for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
                 const uint8_t rate = mavTelemetryStreams[i].rate;
-                mavTelemetryStreams[i].updateTime = (rate > 0) ? nowMs + (timeMs_t)(1000 / rate) : 0;
+                mavTelemetryStreams[i].updateTime = (rate > 0) ? nowMs + (timeMs_t)(1000 / rate) + 3 * i : 0;
             }
         }
     } else {
