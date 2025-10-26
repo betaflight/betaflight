@@ -217,6 +217,13 @@ static void mavlinkSendSystemStatus(void)
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter++);
+    if (transmitCounter == 100) {
+        transmitCounter = 0;
+    }
 }
 
 static void mavlinkSendRCChannelsAndRSSI(void)
@@ -247,6 +254,13 @@ static void mavlinkSendRCChannelsAndRSSI(void)
         scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 254));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter++);
+    if (transmitCounter == 100) {
+        transmitCounter = 0;
+    }
 }
 
 #if defined(USE_GPS)
@@ -336,6 +350,13 @@ static void mavlinkSendPosition(void)
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter++);
+    if (transmitCounter == 100) {
+        transmitCounter = 0;
+    }
 }
 #endif
 
@@ -359,6 +380,13 @@ static void mavlinkSendAttitude(void)
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter++);
+    if (transmitCounter == 100) {
+        transmitCounter = 0;
+    }
 }
 
 static void mavlinkSendHUDAndHeartbeat(void)
@@ -470,7 +498,7 @@ static void mavlinkSendHUDAndHeartbeat(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-    // Higher frequency packet transmit counter to debug actual data rate
+    // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter++);
     if (transmitCounter == 100) {
@@ -544,6 +572,13 @@ static void mavlinkSendBatteryStatus(void)
 
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter++);
+    if (transmitCounter == 100) {
+        transmitCounter = 0;
+    }
 }
 
 /* MAVLink telemetry data streams */
