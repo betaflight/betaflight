@@ -220,7 +220,7 @@ static void mavlinkSendSystemStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -255,7 +255,7 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -349,7 +349,7 @@ static void mavlinkSendPosition(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);
     transmitCounter = (transmitCounter + 1) % 100;
 }
 #endif
@@ -492,7 +492,7 @@ static void mavlinkSendHUDAndHeartbeat(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
@@ -565,7 +565,7 @@ static void mavlinkSendBatteryStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);
     transmitCounter = (transmitCounter + 1) % 100;
 }
 
