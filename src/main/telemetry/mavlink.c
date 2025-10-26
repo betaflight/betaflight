@@ -641,6 +641,12 @@ void checkMAVLinkTelemetryState(void)
             mavlinkPort = telemetrySharedPort;
             mavlinkTelemetryEnabled = true;
             configureMAVLinkStreamRates();
+            // Seed timers to avoid burst on enable
+            timeMs_t nowMs = millis();
+            for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
+                const uint8_t rate = mavTelemetryStreams[i].rate;
+                mavTelemetryStreams[i].updateTime = (rate > 0) ? nowMs + (timeMs_t)(1000 / rate) : 0;
+            }
         }
     } else {
         bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
@@ -654,10 +660,6 @@ void checkMAVLinkTelemetryState(void)
             configureMAVLinkStreamRates();
         } else {
             freeMAVLinkTelemetryPort();
-            // Reset stream timers to prevent burst on re-enable
-            for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
-                mavTelemetryStreams[i].updateTime = 0;
-            }
         }
     }
 }
