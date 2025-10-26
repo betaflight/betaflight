@@ -220,10 +220,8 @@ static void mavlinkSendSystemStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter++);
-    if (transmitCounter == 100) {
-        transmitCounter = 0;
-    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 static void mavlinkSendRCChannelsAndRSSI(void)
@@ -257,10 +255,8 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter++);
-    if (transmitCounter == 100) {
-        transmitCounter = 0;
-    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 #if defined(USE_GPS)
@@ -353,10 +349,8 @@ static void mavlinkSendPosition(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter++);
-    if (transmitCounter == 100) {
-        transmitCounter = 0;
-    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 #endif
 
@@ -383,10 +377,8 @@ static void mavlinkSendAttitude(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter++);
-    if (transmitCounter == 100) {
-        transmitCounter = 0;
-    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 static void mavlinkSendHUDAndHeartbeat(void)
@@ -500,10 +492,8 @@ static void mavlinkSendHUDAndHeartbeat(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter++);
-    if (transmitCounter == 100) {
-        transmitCounter = 0;
-    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 static void mavlinkSendBatteryStatus(void)
@@ -575,10 +565,8 @@ static void mavlinkSendBatteryStatus(void)
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
-    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter++);
-    if (transmitCounter == 100) {
-        transmitCounter = 0;
-    }
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 /* MAVLink telemetry data streams */
