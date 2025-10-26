@@ -631,6 +631,10 @@ void checkMAVLinkTelemetryState(void)
             configureMAVLinkStreamRates();
         } else {
             freeMAVLinkTelemetryPort();
+            // Reset stream timers to prevent burst on re-enable
+            for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
+                mavTelemetryStreams[i].updateTime = 0;
+            }
         }
     }
 }
