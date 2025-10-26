@@ -547,19 +547,20 @@ static void mavlinkSendBatteryStatus(void)
 }
 
 /* MAVLink telemetry data streams */
+// The initialization rates value is zero, because its are installed from CLI settings
 static mavlinkTelemetryStream_t mavTelemetryStreams[] = {
     [MAV_DATA_STREAM_EXTENDED_STATUS] = {
-        .rate = 2,  // 2Hz
+        .rate = 0,
         .updateTime = 0,
         .streamFunc = mavlinkSendSystemStatus,
     },
     [MAV_DATA_STREAM_RC_CHANNELS] = {
-        .rate = 1,  // 1Hz
+        .rate = 0,
         .updateTime = 0,
         .streamFunc = mavlinkSendRCChannelsAndRSSI,
     },
     [MAV_DATA_STREAM_POSITION] = {
-        .rate = 2,  // 2Hz
+        .rate = 0,
         .updateTime = 0,
 #ifdef USE_GPS
         .streamFunc = mavlinkSendPosition,
@@ -568,17 +569,17 @@ static mavlinkTelemetryStream_t mavTelemetryStreams[] = {
 #endif
     },
     [MAV_DATA_STREAM_EXTRA1] = {
-        .rate = 2,  // 2Hz
+        .rate = 0,
         .updateTime = 0,
         .streamFunc = mavlinkSendAttitude,
     },
     [MAV_DATA_STREAM_EXTRA2] = {
-        .rate = 2,  // 2Hz
+        .rate = 0,
         .updateTime = 0,
         .streamFunc = mavlinkSendHUDAndHeartbeat,
     },
     [MAV_DATA_STREAM_EXTRA3] = {
-        .rate = 1,  // 1Hz
+        .rate = 0,
         .updateTime = 0,
         .streamFunc = mavlinkSendBatteryStatus,
     }
