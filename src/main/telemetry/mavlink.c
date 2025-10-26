@@ -570,7 +570,7 @@ static void mavlinkSendBatteryStatus(void)
 }
 
 /* MAVLink telemetry data streams */
-// The initialization rates value is zero, because its are installed from CLI settings
+// The initialization rates value is zero, because they are installed from CLI settings
 static mavlinkTelemetryStream_t mavTelemetryStreams[] = {
     [MAV_DATA_STREAM_EXTENDED_STATUS] = {
         .rate = 0,
