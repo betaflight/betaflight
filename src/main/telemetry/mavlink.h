@@ -33,4 +33,4 @@ typedef struct mavlinkTelemetryStream_s {
     uint8_t rate;
     timeMs_t updateTime;
     void (*const streamFunc)(void);
-}mavlinkTelemetryStream_t;
+} mavlinkTelemetryStream_t;
