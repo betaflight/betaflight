@@ -505,37 +505,10 @@ bool icm456xxAccReadSPI(accDev_t *acc)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-#ifdef USE_DMA
-        if (spiUseDMA(&acc->gyro->dev)) {
-            acc->gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;
-
-            busSegment_t segments[] = {
-                    {.u.buffers = {NULL, NULL}, ICM456XX_SPI_BUFFER_SIZE, true, NULL},
-                    {.u.link    = {NULL, NULL}, 0, true, NULL},
-            };
-            memset(&acc->gyro->dev.txBuf[1], 0xFF, 6);
-            segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
-            segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
-            spiSequence(&acc->gyro->dev, &segments[0]);
-
-            // Wait for completion
-            spiWait(&acc->gyro->dev);
-
-        } else
-#endif
-        {
-           // Interrupts are present, but no DMA. Non-DMA read
-           uint8_t raw[ICM456XX_DATA_LENGTH];
-           const bool ack = spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
-           if (!ack) {
-               return false;
-           }
-
-           acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-           acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-           acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
-
-        }
+        // Reuse latest combined transfer (done by gyro path) to extract accel (bytes 1–6)
+        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
+        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
+        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
         break;
     }
 
