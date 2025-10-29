@@ -115,12 +115,15 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_ACCEL_CONFIG0                  0x1B
 #define ICM456XX_PWR_MGMT0                      0x10
 
-// Register map IPREG_TOP1
-#define ICM456XX_RA_SREG_CTRL                   0xA267 // To access register in IPREG_TOP1, add base address 0xA200 + offset
+// Register map IPREG_TOP1 (for future use)
+// Note: SREG_CTRL register provides endian selection capability. 
+// Currently not utilized as UI interface reads are in device's native endianness.
+// Kept as reference for potential future optimization.
+#define ICM456XX_RA_SREG_CTRL                   0xA267 // To access: 0xA200 + 0x67
 
-// SREG_CTRL - 0x67
-#define ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE    (0 << 1)
-#define ICM456XX_SREG_DATA_ENDIAN_SEL_BIG       (1 << 1) // not working set SREG_CTRL regiser
+// SREG_CTRL - 0x67 (bits 1:0 select data endianness)
+#define ICM456XX_SREG_DATA_ENDIAN_SEL_LITTLE    (0 << 1) // Little endian (native)
+#define ICM456XX_SREG_DATA_ENDIAN_SEL_BIG       (1 << 1) // Big endian (requires IREG write)
 
 // MGMT0 - 0x10 - Gyro
 #define ICM456XX_GYRO_MODE_OFF                  (0x00 << 2)
@@ -269,6 +272,12 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 
 #define ICM456XX_BIT_IREG_DONE                  (1 << 0)
 
+// Startup timing constants (DS-000577 Table 9-6)
+#define ICM456XX_ACCEL_STARTUP_TIME_MS          10  // Min accel startup from OFF/STANDBY/LP
+#define ICM456XX_GYRO_STARTUP_TIME_MS           35  // Min gyro startup from OFF/STANDBY/LP
+#define ICM456XX_SENSOR_ENABLE_DELAY_MS         1   // Allow sensors to power on and stabilize
+#define ICM456XX_IREG_TIMEOUT_US                5000 // IREG operation timeout (5ms max)
+
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
 
@@ -314,8 +323,8 @@ static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t va
     spiWriteReg(dev, ICM456XX_REG_IREG_ADDR_7_0, lsb);
     spiWriteReg(dev, ICM456XX_REG_IREG_DATA, value);
 
-    // Check IREG_DONE (bit 0 of REG_MISC2 = 0x7F)
-    for (int i = 0; i < 100; i++) {
+    // Check IREG_DONE (bit 0 of REG_MISC2 = 0x7F) with elapsed-time tracking
+    for (uint32_t waited_us = 0; waited_us < ICM456XX_IREG_TIMEOUT_US; waited_us += 10) {
         const uint8_t misc2 = spiReadRegMsk(dev, ICM456XX_REG_MISC2);
         if (misc2 & ICM456XX_BIT_IREG_DONE) {
             return true;
@@ -326,11 +335,11 @@ static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t va
     return false; // timeout
 }
 
-static inline void icm456xx_enableAAFandInterpolator(const extDevice_t *dev, uint16_t reg, bool enableAAF, bool enableInterp)
+static bool icm456xx_enableAAFandInterpolator(const extDevice_t *dev, uint16_t reg, bool enableAAF, bool enableInterp)
 {
     const uint8_t value = (enableAAF ? ICM456XX_SRC_CTRL_AAF_ENABLE_BIT : 0)
                         | (enableInterp ? ICM456XX_SRC_CTRL_INTERP_ENABLE_BIT : 0);
-    icm456xx_write_ireg(dev, reg, value);
+    return icm456xx_write_ireg(dev, reg, value);
 }
 
 static bool icm456xx_configureLPF(const extDevice_t *dev, uint16_t reg, uint8_t lpfDiv)
@@ -363,22 +372,27 @@ void icm456xxAccInit(accDev_t *acc)
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
-        delay(10); // Per datasheet: 10ms minimum startup time for accelerometer to stabilize after configuration
+        delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
     case ICM_45605_SPI:
     default:
         acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
-        delay(10); // Per datasheet: 10ms minimum startup time for accelerometer to stabilize after configuration
+        delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
     }
 
-    // Enable Anti-Alias (AAF) Filter and Interpolator for Accel
-    icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true);
+    // Enable Anti-Alias (AAF) Filter and Interpolator for Accel (Section 7.2 of datasheet)
+    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true)) {
+        DEBUG_PRINTF("ACC: AAF/Interpolator IREG write failed\r\n");
+    }
 
-    // Set the Accel UI LPF bandwidth cut-off
-    icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8);
+    // Set the Accel UI LPF bandwidth cut-off (Section 7.3 of datasheet)
+    if (!icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8)) {
+        DEBUG_PRINTF("ACC: LPF configuration failed, falling back to BYPASS\r\n");
+        icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_BYPASS);
+    }
 }
 
 void icm456xxGyroInit(gyroDev_t *gyro)
@@ -393,13 +407,18 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     // Enable sensors directly
 
     icm456xx_enableSensors(dev, true);
-    delay(1); // Allow sensors to power on and stabilize
+    delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to power on and stabilize
 
-    // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro
-    icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true);
+    // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro (Section 7.2 of datasheet)
+    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true)) {
+        DEBUG_PRINTF("GYRO: AAF/Interpolator IREG write failed\r\n");
+    }
 
-    // Set the Gyro UI LPF bandwidth cut-off
-    icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf));
+    // Set the Gyro UI LPF bandwidth cut-off (Section 7.3 of datasheet)
+    if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf))) {
+        DEBUG_PRINTF("GYRO: LPF configuration failed, falling back to BYPASS\r\n");
+        icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_BYPASS);
+    }
 
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
@@ -409,7 +428,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
         gyro->gyroSampleRateHz = 6400;
         spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-        delay(35); // Per datasheet: 35ms minimum startup time for gyroscope to stabilize after configuration
+        delay(ICM456XX_GYRO_STARTUP_TIME_MS); // Per datasheet Table 9-6: 35ms minimum startup time
         break;
     }
 
