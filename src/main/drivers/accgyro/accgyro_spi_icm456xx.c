@@ -416,7 +416,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     // ICM-45686 does not use bank switching (register 0x75 is reserved)
     // Enable both accelerometer and gyroscope sensors
-    
+
     icm456xx_enableSensors(dev, true);
     delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to power on and stabilize
 
@@ -580,7 +580,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INIT:
     {
         // Initialise the tx buffer to all 0xff
-        memset(gyro->dev.txBuf, 0xff, ICM456XX_SPI_BUFFER_SIZE);
+        memset(gyro->dev.txBuf, 0xff, ICM456XX_COMBINED_SPI_BUFFER_SIZE);
 
         gyro->gyroDmaMaxDuration = 0; // INT gyroscope always calls that data is ready. We can read immediately
 #ifdef USE_DMA
