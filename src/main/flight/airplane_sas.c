@@ -86,6 +86,8 @@ static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float 
         float servoVelocity = accelDelta * (pidProfile->psas_pitch_accel_i_gain * 0.1f);
         servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
         pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
+        pidData[FD_PITCH].Sum += accelDelta * pidProfile->psas_pitch_accel_p_gain * 0.1f;
+        pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
 
         // limit integrator output
         float output = pidData[FD_PITCH].Sum + pidData[FD_PITCH].I;
@@ -203,6 +205,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     if (isValidLiftCoef) {
         isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef);
     }
+
     if (isLimitAoA == false) {
         updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
     }
