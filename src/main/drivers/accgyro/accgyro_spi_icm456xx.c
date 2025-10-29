@@ -384,13 +384,12 @@ void icm456xxAccInit(accDev_t *acc)
     }
 
     // Enable Anti-Alias (AAF) Filter and Interpolator for Accel (Section 7.2 of datasheet)
-    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true)) {
-        DEBUG_PRINTF("ACC: AAF/Interpolator IREG write failed\r\n");
-    }
+    // If AAF/Interpolator IREG write fails, sensor may not operate optimally
+    icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true);
 
     // Set the Accel UI LPF bandwidth cut-off (Section 7.3 of datasheet)
     if (!icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8)) {
-        DEBUG_PRINTF("ACC: LPF configuration failed, falling back to BYPASS\r\n");
+        // If LPF configuration fails, fallback to BYPASS
         icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_BYPASS);
     }
 }
@@ -410,13 +409,12 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to power on and stabilize
 
     // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro (Section 7.2 of datasheet)
-    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true)) {
-        DEBUG_PRINTF("GYRO: AAF/Interpolator IREG write failed\r\n");
-    }
+    // If AAF/Interpolator IREG write fails, sensor may not operate optimally
+    icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true);
 
     // Set the Gyro UI LPF bandwidth cut-off (Section 7.3 of datasheet)
     if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf))) {
-        DEBUG_PRINTF("GYRO: LPF configuration failed, falling back to BYPASS\r\n");
+        // If LPF configuration fails, fallback to BYPASS
         icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_BYPASS);
     }
 
