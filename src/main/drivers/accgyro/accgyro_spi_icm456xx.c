@@ -281,6 +281,10 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
 
+// Combined read constants for accel+gyro data (12 bytes total sensor data)
+#define ICM456XX_COMBINED_DATA_LENGTH           12  // 6 bytes accel + 6 bytes gyro
+#define ICM456XX_COMBINED_SPI_BUFFER_SIZE       (1 + ICM456XX_COMBINED_DATA_LENGTH) // 13 bytes total
+
 static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
     switch (hardwareLpf) {
@@ -372,7 +376,8 @@ void icm456xxAccInit(accDev_t *acc)
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
-        // Enable accelerometer in Low Noise mode before startup delay
+        // Enable accelerometer in Low Noise mode before startup delay (required for stable readings)
+        // Note: This will be overwritten by gyro init when both sensors are enabled
         spiWriteReg(dev, ICM456XX_PWR_MGMT0, ICM456XX_ACCEL_MODE_LN);
         delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
@@ -381,7 +386,8 @@ void icm456xxAccInit(accDev_t *acc)
         acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
-        // Enable accelerometer in Low Noise mode before startup delay
+        // Enable accelerometer in Low Noise mode before startup delay (required for stable readings)
+        // Note: This will be overwritten by gyro init when both sensors are enabled
         spiWriteReg(dev, ICM456XX_PWR_MGMT0, ICM456XX_ACCEL_MODE_LN);
         delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
@@ -581,7 +587,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         if (spiUseDMA(&gyro->dev)) {
             gyro->dev.callbackArg = (uintptr_t)gyro;
             gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read both accel (0x00-0x05) and gyro (0x06-0x0B) data
-            gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;
+            gyro->segments[0].len = ICM456XX_COMBINED_SPI_BUFFER_SIZE;  // 13 bytes: 1 register + 12 data bytes
             gyro->segments[0].callback = mpuIntCallback;
             gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
             gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
@@ -611,10 +617,10 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read both accel and gyro data
 
         busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, ICM456XX_SPI_BUFFER_SIZE, true, NULL},
+                {.u.buffers = {NULL, NULL}, ICM456XX_COMBINED_SPI_BUFFER_SIZE, true, NULL},  // 13 bytes: 1 register + 12 data bytes
                 {.u.link = {NULL, NULL}, 0, true, NULL},
         };
-        memset(&gyro->dev.txBuf[1], 0xFF, 6);
+        memset(&gyro->dev.txBuf[1], 0xFF, ICM456XX_COMBINED_DATA_LENGTH);  // Fill 12 bytes for combined accel+gyro data
         segments[0].u.buffers.txData = gyro->dev.txBuf;
         segments[0].u.buffers.rxData = gyro->dev.rxBuf;
 
