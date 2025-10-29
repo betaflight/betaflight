@@ -281,6 +281,7 @@
 #define PARAM_NAME_PSAS_PITCH_DAMPING_GAIN "psas_pitch_damping_gain"
 #define PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ "psas_pitch_damping_filter_freq"
 #define PARAM_NAME_PSAS_PITCH_STABILITY_GAIN "psas_pitch_stability_gain"
+#define PARAM_NAME_PSAS_PITCH_ACCEL_P_GAIN "psas_pitch_accel_p_gain"
 #define PARAM_NAME_PSAS_PITCH_ACCEL_I_GAIN "psas_pitch_accel_i_gain"
 #define PARAM_NAME_PSAS_PITCH_ACCEL_MAX "psas_pitch_accel_max"
 #define PARAM_NAME_PSAS_PITCH_ACCEL_MIN "psas_pitch_accel_min"
