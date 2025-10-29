@@ -415,8 +415,8 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
 
     // ICM-45686 does not use bank switching (register 0x75 is reserved)
-    // Enable sensors directly
-
+    // Enable both accelerometer and gyroscope sensors
+    
     icm456xx_enableSensors(dev, true);
     delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to power on and stabilize
 
