@@ -539,7 +539,7 @@ bool icm456xxAccReadSPI(accDev_t *acc)
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
 
-        // This data was read from the gyro, which is the same SPI device as the acc
+        // Combined DMA read provides both accel and gyro data; accel data is at bytes 1-6
         acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
         acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
         acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
@@ -580,7 +580,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
 #ifdef USE_DMA
         if (spiUseDMA(&gyro->dev)) {
             gyro->dev.callbackArg = (uintptr_t)gyro;
-            gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
+            gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read both accel (0x00-0x05) and gyro (0x06-0x0B) data
             gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;
             gyro->segments[0].callback = mpuIntCallback;
             gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
@@ -608,7 +608,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
 
     case GYRO_EXTI_NO_INT:
     {
-        gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
+        gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read both accel and gyro data
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, ICM456XX_SPI_BUFFER_SIZE, true, NULL},
@@ -623,9 +623,9 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         // Wait for completion
         spiWait(&gyro->dev);
 
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
+        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[8] << 8) | gyro->dev.rxBuf[7]);   // Gyro X at bytes 7-8
+        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[10] << 8) | gyro->dev.rxBuf[9]);  // Gyro Y at bytes 9-10
+        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[12] << 8) | gyro->dev.rxBuf[11]); // Gyro Z at bytes 11-12
         break;
     }
 
@@ -634,9 +634,9 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
 
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
+        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[8] << 8) | gyro->dev.rxBuf[7]);   // Gyro X at bytes 7-8
+        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[10] << 8) | gyro->dev.rxBuf[9]);  // Gyro Y at bytes 9-10
+        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[12] << 8) | gyro->dev.rxBuf[11]); // Gyro Z at bytes 11-12
         break;
     }
 
