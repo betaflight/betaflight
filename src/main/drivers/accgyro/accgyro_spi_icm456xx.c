@@ -372,6 +372,8 @@ void icm456xxAccInit(accDev_t *acc)
         acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
+        // Enable accelerometer in Low Noise mode before startup delay
+        spiWriteReg(dev, ICM456XX_PWR_MGMT0, ICM456XX_ACCEL_MODE_LN);
         delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
     case ICM_45605_SPI:
@@ -379,6 +381,8 @@ void icm456xxAccInit(accDev_t *acc)
         acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
         acc->gyro->accSampleRateHz = 1600;
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
+        // Enable accelerometer in Low Noise mode before startup delay
+        spiWriteReg(dev, ICM456XX_PWR_MGMT0, ICM456XX_ACCEL_MODE_LN);
         delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
     }
