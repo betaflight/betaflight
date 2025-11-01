@@ -20,9 +20,17 @@
 
 #pragma once
 
+#include "common/time.h"
+
 void initMAVLinkTelemetry(void);
 void handleMAVLinkTelemetry(void);
 void checkMAVLinkTelemetryState(void);
 
 void freeMAVLinkTelemetryPort(void);
 void configureMAVLinkTelemetryPort(void);
+
+typedef struct mavlinkTelemetryStream_s {
+    uint8_t rate;
+    timeMs_t updateTime;
+    void (*const streamFunc)(void);
+} mavlinkTelemetryStream_t;
