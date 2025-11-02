@@ -514,14 +514,19 @@ bool icm456xxAccReadSPI(accDev_t *acc)
         break;
         
     default:
+    {
         // Non-DMA modes: perform separate accel read (little endian)
         uint8_t raw[ICM456XX_DATA_LENGTH];
-        spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+        const bool ack = spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+        if (!ack) {
+            return false;
+        }
         // Extract little endian data (LSB at raw[0], MSB at raw[1])
         acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
         acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
         acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
         break;
+    }
     }
     return true;
 }
