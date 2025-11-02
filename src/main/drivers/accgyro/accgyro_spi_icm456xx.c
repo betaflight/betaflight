@@ -495,34 +495,15 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 
 bool icm456xxAccReadSPI(accDev_t *acc)
 {
-    switch (acc->gyro->gyroModeSPI) {
-    case GYRO_EXTI_INT:
-    case GYRO_EXTI_NO_INT:
-    {
-        // Reuse latest combined transfer (done by gyro path) to extract accel (bytes 1–6)
-        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
-        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
-        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
-        break;
+    uint8_t raw[ICM456XX_DATA_LENGTH];
+    const bool ack = spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+    if (!ack) {
+        return false;
     }
 
-
-    case GYRO_EXTI_INT_DMA:
-    {
-        // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
-        // up an old value.
-
-        // Combined DMA read provides both accel and gyro data; accel data is at bytes 1-6
-        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
-        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
-        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
-        break;
-    }
-
-    default:
-        break;
-    }
-
+    acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
+    acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
+    acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
     return true;
 }
 
@@ -546,15 +527,15 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
     {
-        // Initialise the full combined transfer (1 cmd + 12 data) to 0xFF
-        memset(gyro->dev.txBuf, 0xff, ICM456XX_COMBINED_SPI_BUFFER_SIZE);
+        // Initialise the transfer buffer to 0xFF
+        memset(gyro->dev.txBuf, 0xff, ICM456XX_SPI_BUFFER_SIZE);
 
         gyro->gyroDmaMaxDuration = 0; // INT gyroscope always calls that data is ready. We can read immediately
 #ifdef USE_DMA
         if (spiUseDMA(&gyro->dev)) {
             gyro->dev.callbackArg = (uintptr_t)gyro;
-            gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read both accel (0x00-0x05) and gyro (0x06-0x0B) data
-            gyro->segments[0].len = ICM456XX_COMBINED_SPI_BUFFER_SIZE;  // 13 bytes: 1 register + 12 data bytes
+            gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;  // Read gyro data only
+            gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;  // 7 bytes: 1 register + 6 data bytes
             gyro->segments[0].callback = mpuIntCallback;
             gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
             gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
@@ -581,59 +562,42 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
 
     case GYRO_EXTI_INT:
     {
-        // Interrupt-driven non-DMA mode: blocking combined accel+gyro read
-        gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read both accel and gyro data
+        // Interrupt-driven non-DMA mode: read gyro data only
+        uint8_t raw[ICM456XX_DATA_LENGTH];
+        const bool ack = spiReadRegMskBufRB(&gyro->dev, ICM456XX_GYRO_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+        if (!ack) {
+            return false;
+        }
 
-        busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, ICM456XX_COMBINED_SPI_BUFFER_SIZE, true, NULL},  // 13 bytes: 1 register + 12 data bytes
-                {.u.link = {NULL, NULL}, 0, true, NULL},
-        };
-        memset(&gyro->dev.txBuf[1], 0xFF, ICM456XX_COMBINED_DATA_LENGTH);  // Fill 12 bytes for combined accel+gyro data
-        segments[0].u.buffers.txData = gyro->dev.txBuf;
-        segments[0].u.buffers.rxData = gyro->dev.rxBuf;
-
-        spiSequence(&gyro->dev, &segments[0]);
-
-        // Wait for completion
-        spiWait(&gyro->dev);
-
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[8] << 8) | gyro->dev.rxBuf[7]);   // Gyro X at bytes 7-8
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[10] << 8) | gyro->dev.rxBuf[9]);  // Gyro Y at bytes 9-10
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[12] << 8) | gyro->dev.rxBuf[11]); // Gyro Z at bytes 11-12
+        gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
+        gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
+        gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
         break;
     }
 
     case GYRO_EXTI_NO_INT:
     {
-        gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read both accel and gyro data
+        // Non-interrupt mode: read gyro data only
+        uint8_t raw[ICM456XX_DATA_LENGTH];
+        const bool ack = spiReadRegMskBufRB(&gyro->dev, ICM456XX_GYRO_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+        if (!ack) {
+            return false;
+        }
 
-        busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, ICM456XX_COMBINED_SPI_BUFFER_SIZE, true, NULL},  // 13 bytes: 1 register + 12 data bytes
-                {.u.link = {NULL, NULL}, 0, true, NULL},
-        };
-        memset(&gyro->dev.txBuf[1], 0xFF, ICM456XX_COMBINED_DATA_LENGTH);  // Fill 12 bytes for combined accel+gyro data
-        segments[0].u.buffers.txData = gyro->dev.txBuf;
-        segments[0].u.buffers.rxData = gyro->dev.rxBuf;
-
-        spiSequence(&gyro->dev, &segments[0]);
-
-        // Wait for completion
-        spiWait(&gyro->dev);
-
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[8] << 8) | gyro->dev.rxBuf[7]);   // Gyro X at bytes 7-8
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[10] << 8) | gyro->dev.rxBuf[9]);  // Gyro Y at bytes 9-10
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[12] << 8) | gyro->dev.rxBuf[11]); // Gyro Z at bytes 11-12
+        gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
+        gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
+        gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
         break;
     }
 
     case GYRO_EXTI_INT_DMA:
     {
-
+        // DMA mode: read gyro data only
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[8] << 8) | gyro->dev.rxBuf[7]);   // Gyro X at bytes 7-8
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[10] << 8) | gyro->dev.rxBuf[9]);  // Gyro Y at bytes 9-10
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[12] << 8) | gyro->dev.rxBuf[11]); // Gyro Z at bytes 11-12
+        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
+        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
+        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
         break;
     }
 
