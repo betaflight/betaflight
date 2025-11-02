@@ -398,6 +398,10 @@ void icm456xxAccInit(accDev_t *acc)
         // If LPF configuration fails, fallback to BYPASS
         icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_BYPASS);
     }
+
+    // Set up register addresses for combined DMA reads
+    // Accel and gyro data are contiguous: accel at 0x00, gyro at 0x06
+    acc->gyro->accDataReg = ICM456XX_ACCEL_DATA_X1_UI;  // 0x00
 }
 
 void icm456xxGyroInit(gyroDev_t *gyro)
@@ -445,6 +449,11 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     spiWriteReg(dev, ICM456XX_INT1_CONFIG0, ICM456XX_INT1_STATUS_EN_DRDY);
 
+    // Set up register addresses for combined DMA reads
+    // ICM456xx data is contiguous: accel at 0x00, gyro at 0x06
+    gyro->accDataReg = ICM456XX_ACCEL_DATA_X1_UI;  // 0x00
+    gyro->gyroDataReg = ICM456XX_GYRO_DATA_X1_UI;  // 0x06
+    gyro->gyroDmaMaxDuration = 0;  // Data ready interrupt ensures timely reads
 }
 
 uint8_t icm456xxSpiDetect(const extDevice_t *dev)
@@ -495,15 +504,25 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 
 bool icm456xxAccReadSPI(accDev_t *acc)
 {
-    uint8_t raw[ICM456XX_DATA_LENGTH];
-    const bool ack = spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
-    if (!ack) {
-        return false;
+    switch (acc->gyro->gyroModeSPI) {
+    case GYRO_EXTI_INT_DMA:
+        // DMA mode: accel data was read as part of combined read
+        // Extract accel data from rxBuf (little endian, LSB first)
+        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
+        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
+        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
+        break;
+        
+    default:
+        // Non-DMA modes: perform separate accel read (little endian)
+        uint8_t raw[ICM456XX_DATA_LENGTH];
+        spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+        // Extract little endian data (LSB at raw[0], MSB at raw[1])
+        acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
+        acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
+        acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+        break;
     }
-
-    acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-    acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-    acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
     return true;
 }
 
@@ -528,14 +547,20 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INIT:
     {
         // Initialise the transfer buffer to 0xFF
-        memset(gyro->dev.txBuf, 0xff, ICM456XX_SPI_BUFFER_SIZE);
+        memset(gyro->dev.txBuf, 0xff, ICM456XX_COMBINED_SPI_BUFFER_SIZE);
 
-        gyro->gyroDmaMaxDuration = 0; // INT gyroscope always calls that data is ready. We can read immediately
+        gyro->gyroDmaMaxDuration = 0;
 #ifdef USE_DMA
         if (spiUseDMA(&gyro->dev)) {
             gyro->dev.callbackArg = (uintptr_t)gyro;
-            gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;  // Read gyro data only
-            gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;  // 7 bytes: 1 register + 6 data bytes
+            // COMBINED READ: Start from accel register (0x00), read accel+gyro (13 bytes total)
+            // ICM456xx uses little endian format (native), so NO byte swap needed
+            // Buffer layout after read:
+            //   rxBuf[0]   = dummy byte (register echo)
+            //   rxBuf[1-6] = accel X,Y,Z (little endian, 6 bytes)
+            //   rxBuf[7-12]= gyro X,Y,Z (little endian, 6 bytes)
+            gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read from accel register
+            gyro->segments[0].len = ICM456XX_COMBINED_SPI_BUFFER_SIZE;  // 13 bytes: 1 reg + 12 data
             gyro->segments[0].callback = mpuIntCallback;
             gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
             gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
@@ -592,12 +617,21 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
 
     case GYRO_EXTI_INT_DMA:
     {
-        // DMA mode: read gyro data only
-        // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
-        // up an old value.
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
+        // DMA mode: Combined read was performed from accel register
+        // ICM456xx data is LITTLE ENDIAN (no byte swap needed)
+        // Buffer layout:
+        //   rxBuf[0]   = dummy
+        //   rxBuf[1-2] = accel X (LSB, MSB)
+        //   rxBuf[3-4] = accel Y
+        //   rxBuf[5-6] = accel Z
+        //   rxBuf[7-8] = gyro X (LSB, MSB)
+        //   rxBuf[9-10]= gyro Y
+        //   rxBuf[11-12]= gyro Z
+        
+        // Extract gyro data (little endian format, LSB first)
+        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[8] << 8) | gyro->dev.rxBuf[7]);
+        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[10] << 8) | gyro->dev.rxBuf[9]);
+        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[12] << 8) | gyro->dev.rxBuf[11]);
         break;
     }
 
