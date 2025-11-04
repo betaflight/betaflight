@@ -481,6 +481,7 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
     // Initialize power management to a known state after reset
     // This ensures sensors are off and ready for proper initialization
     spiWriteReg(dev, ICM456XX_PWR_MGMT0, 0x00);
+    delay(1);  // Allow power management state to stabilize
 
     do {
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM456XX_WHO_AM_REGISTER);
