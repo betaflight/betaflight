@@ -961,8 +961,8 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
                 LSM6DSV_ENCODE_BITS(LSM6DSV_HAODR_MODE1,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_MASK,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_SHIFT));
-    // Enable 16G sensitivity
-    // Set the LPF1 filter bandwidth
+
+    // Enable 16G full-scale range and set accelerometer LPF2 bandwidth
     spiWriteReg(dev, LSM6DSV_CTRL8,
     			LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_BW_4,
                                     LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_MASK,
