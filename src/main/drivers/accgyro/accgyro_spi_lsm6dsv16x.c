@@ -864,7 +864,7 @@ uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
     return MPU_NONE;
 }
 
-void lsm6dsv16xAccInit(accDev_t *acc)
+static void lsm6dsv16xAccInit(accDev_t *acc)
 {
     // ±16G mode
     acc->acc_1G = 512 * 4;
@@ -932,7 +932,7 @@ bool lsm6dsv16xSpiAccDetect(accDev_t *acc)
     return true;
 }
 
-void lsm6dsv16xGyroInit(gyroDev_t *gyro)
+static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 {
     const extDevice_t *dev = &gyro->dev;
     // Set default LPF1 filter bandwidth to be as close as possible to MPU6000's 250Hz cutoff
@@ -1016,7 +1016,7 @@ void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
 }
 
-bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
+static bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
 {
     int16_t *gyroData = (int16_t *)gyro->dev.rxBuf;
     switch (gyro->gyroModeSPI) {
@@ -1031,7 +1031,7 @@ bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
         gyro->gyroDmaMaxDuration = 5;
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
             if (spiUseDMA(&gyro->dev)) {
-                gyro->dev.callbackArg = (uint32_t)gyro;
+                gyro->dev.callbackArg = (uintptr_t)gyro;
                 gyro->dev.txBuf[0] = LSM6DSV_OUTX_L_G | 0x80;
                 // Read three words of gyro data immediately followed by three bytes of acc data
                 gyro->segments[0].len = sizeof(uint8_t) + 6 * sizeof(int16_t);
