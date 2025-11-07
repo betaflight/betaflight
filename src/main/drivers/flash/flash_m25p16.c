@@ -133,7 +133,7 @@ struct {
     // Cypress S25FL128L
     // Datasheet: https://www.cypress.com/file/316171/download
     { 0x016018, 133, 50, 256, 256 },
-	// Cypress S25FL128S
+    // Cypress S25FL128S
     // Datasheet: https://www.infineon.com/row/public/documents/10/49/infineon-s25fl128s-s25fl256s-128-mb-16-mb-256-mb-32-mb-fl-s-flash-spi-multi-io-3-v-datasheet-en.pdf
     { 0x012018, 104, 50, 256, 256 },
     // BergMicro W25Q32
