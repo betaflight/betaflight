@@ -144,12 +144,12 @@ USBD_STORAGE_cb_TypeDef USBD_MSC_MICRO_SD_SPI_fops =
 *******************************************************************************/
 static int8_t STORAGE_Init (uint8_t lun)
 {
-	UNUSED(lun);
-	LED0_OFF;
-	sdcard_init(sdcardConfig());
-	while (sdcard_poll() == 0);
+    UNUSED(lun);
+    LED0_OFF;
+    sdcard_init(sdcardConfig());
+    while (sdcard_poll() == 0);
     mscSetActive();
-	return 0;
+    return 0;
 }
 
 /*******************************************************************************
@@ -165,10 +165,10 @@ static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint16_t *b
 static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint32_t *block_size)
 #endif
 {
-	UNUSED(lun);
-	*block_num = sdcard_getMetadata()->numBlocks;
-	*block_size = 512;
-	return (0);
+    UNUSED(lun);
+    *block_num = sdcard_getMetadata()->numBlocks;
+    *block_size = 512;
+    return (0);
 }
 
 /*******************************************************************************
@@ -180,12 +180,12 @@ static int8_t STORAGE_GetCapacity (uint8_t lun, uint32_t *block_num, uint32_t *b
 *******************************************************************************/
 static int8_t  STORAGE_IsReady (uint8_t lun)
 {
-	UNUSED(lun);
-	int8_t ret = -1;
-	if (sdcard_poll()) {
+    UNUSED(lun);
+    int8_t ret = -1;
+    if (sdcard_poll()) {
         ret = 0;
-	}
-	return ret;
+    }
+    return ret;
 }
 
 /*******************************************************************************
@@ -213,13 +213,13 @@ static int8_t STORAGE_Read (uint8_t lun,
                  uint32_t blk_addr,
                  uint16_t blk_len)
 {
-	UNUSED(lun);
-	for (int i = 0; i < blk_len; i++) {
-		while (sdcard_readBlock(blk_addr + i, buf + (512 * i), NULL, 0) == 0);
-		while (sdcard_poll() == 0);
-	}
+    UNUSED(lun);
+    for (int i = 0; i < blk_len; i++) {
+        while (sdcard_readBlock(blk_addr + i, buf + (512 * i), NULL, 0) == 0);
+        while (sdcard_poll() == 0);
+    }
     mscSetActive();
-	return 0;
+    return 0;
 }
 /*******************************************************************************
 * Function Name  : Write_Memory
@@ -233,15 +233,15 @@ static int8_t STORAGE_Write (uint8_t lun,
                   uint32_t blk_addr,
                   uint16_t blk_len)
 {
-	UNUSED(lun);
-	for (int i = 0; i < blk_len; i++) {
-		while (sdcard_writeBlock(blk_addr + i, buf + (i * 512), NULL, 0) != SDCARD_OPERATION_IN_PROGRESS) {
-			sdcard_poll();
-		}
-		while (sdcard_poll() == 0);
-	}
+    UNUSED(lun);
+    for (int i = 0; i < blk_len; i++) {
+        while (sdcard_writeBlock(blk_addr + i, buf + (i * 512), NULL, 0) != SDCARD_OPERATION_IN_PROGRESS) {
+            sdcard_poll();
+        }
+        while (sdcard_poll() == 0);
+    }
     mscSetActive();
-	return 0;
+    return 0;
 }
 /*******************************************************************************
 * Function Name  : Write_Memory
