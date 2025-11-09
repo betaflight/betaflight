@@ -373,17 +373,13 @@ void icm456xxAccInit(accDev_t *acc)
 
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
-        acc->acc_1G = 1024; // 32g scale = 1024 LSB/g
+        acc->acc_1G = 2048; // 16g scale
         acc->gyro->accSampleRateHz = 1600;
-        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
-        delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
     case ICM_45605_SPI:
     default:
-        acc->acc_1G = 2048; // 16g scale = 2048 LSB/g
+        acc->acc_1G = 2048; // 16g scale
         acc->gyro->accSampleRateHz = 1600;
-        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
-        delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
         break;
     }
 
@@ -417,6 +413,17 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     icm456xx_enableSensors(dev, true);
     delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to power on and stabilize
+
+    // Configure accelerometer full-scale range (16g mode)
+    switch (gyro->mpuDetectionResult.sensor) {
+    case ICM_45686_SPI:
+    case ICM_45605_SPI:
+        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
+        delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
+        break;
+    default:
+        break;
+    }
 
     // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro (Section 7.2 of datasheet)
     if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true)) {
