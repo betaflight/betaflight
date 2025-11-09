@@ -1,0 +1,55 @@
+name: Build Betaflight SITL
+
+# Триггеры: запускать workflow вручную через веб-интерфейс
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Используем Ubuntu как среду сборки (наиболее стабильная для этого проекта)
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Клонируем репозиторий
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive # Важно: Betaflight использует подмодули
+
+    # 2. Устанавливаем зависимости, необходимые для сборки
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential zip
+
+    # 3. Устанавливаем arm-none-eabi-gcc (необходим для некоторых этапов, как мы выяснили ранее)
+    #    Используем подход make arm_sdk_install, чтобы всё было согласовано
+    - name: Install ARM Toolchain
+      run: |
+        make arm_sdk_install
+
+    # 4. Запускаем гидратацию конфигураций
+    - name: Hydrate Configs
+      run: |
+        make configs
+
+    # 5. Собираем SITL
+    #    Используем make, как и раньше, но теперь в стабильной среде
+    #    Убираем -j, чтобы избежать потенциальных проблем с ресурсами в CI
+    - name: Build SITL
+      run: |
+        make target=SITL
+
+    # 6. (Опционально) Проверим, был ли создан исполняемый файл
+    - name: Check for SITL binary
+      run: |
+        ls -la betaflight_SITL*
+
+    # 7. Загружаем исполняемый файл как артефакт
+    #    Это позволяет скачать его позже
+    - name: Upload SITL Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: betaflight-sitl-executable
+        path: betaflight_SITL* # Загружаем все файлы, начинающиеся с betaflight_SITL
+        if-no-files-found: error # Ошибка, если файл не найден
