@@ -31,4 +31,5 @@ typedef enum {
 
 extern uint8_t systemState;
 
+void earlyInit(void);
 void init(void);

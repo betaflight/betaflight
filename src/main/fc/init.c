@@ -185,6 +185,13 @@ void targetPreInit(void);
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
+static enum {
+    FLASH_INIT_ATTEMPTED                = (1 << 0),
+    SD_INIT_ATTEMPTED                   = (1 << 1),
+    SPI_BUSSES_INIT_ATTEMPTED           = (1 << 2),
+    QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED = (1 << 3),
+} initFlags = 0;
+
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
@@ -262,13 +269,11 @@ static void sdCardAndFSInit(void)
 }
 #endif
 
-void init(void)
+void earlyInit(void)
 {
 #if SERIAL_PORT_COUNT > 0
     printfSerialInit();
 #endif
-
-    systemInit();
 
     // Initialize task data as soon as possible. Has to be done before tasksInit(),
     // and any init code that may try to modify task behaviour before tasksInit().
@@ -285,14 +290,6 @@ void init(void)
 #if defined(USE_CONFIG_TARGET_PREINIT)
     configTargetPreInit();
 #endif
-
-    enum {
-        FLASH_INIT_ATTEMPTED                = (1 << 0),
-        SD_INIT_ATTEMPTED                   = (1 << 1),
-        SPI_BUSSES_INIT_ATTEMPTED           = (1 << 2),
-        QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED = (1 << 3),
-    };
-    uint8_t initFlags = 0;
 
 #ifdef CONFIG_IN_SDCARD
 
@@ -425,7 +422,10 @@ void init(void)
 #if !defined(SIMULATOR_BUILD)
     EXTIInit();
 #endif
+}
 
+void init(void)
+{
 #if defined(USE_BUTTONS)
 
     buttonsInit();

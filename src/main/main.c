@@ -23,9 +23,15 @@
 
 #include "platform.h"
 
+#include "drivers/system.h"
+
 #include "fc/init.h"
 
+#include "platform/multicore.h"
+
 #include "scheduler/scheduler.h"
+
+#include "usb/usb_cdc.h"
 
 void run(void);
 
@@ -37,9 +43,35 @@ int main(int argc, char * argv[])
     UNUSED(argc);
     UNUSED(argv);
 #endif
-    init();
 
+    // Do basic system initialisation including multicore support if applicable
+    systemInit();
+
+    // Perform early initialisation prior to USB
+#ifdef USE_MULTICORE
+    multicoreExecuteBlocking(earlyInit);
+#else
+    earlyInit();
+#endif
+
+    // initialise the USB CDC interface using core 0 all USB code, including
+    // interrupts, must run on core 0
+    cdc_usb_init();
+
+    // Now perform the main initialisation
+#ifdef USE_MULTICORE
+    multicoreExecuteBlocking(init);
+#else
+    init();
+#endif
+
+    // Launch the scheduler
     run();
+
+    // Enter a loop waking on any event/interrupt
+    while (true) {
+        __wfe();
+    }
 
     return 0;
 }
