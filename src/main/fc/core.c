@@ -349,7 +349,8 @@ void updateArmingStatus(void)
         // - and it was active,
         // - and the quad did not flip successfully, or we don't have that information
         // require an arm-disarm cycle by blocking tryArm()
-        if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && !crashFlipSuccessful()) {
+        if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) &&
+            (!mixerConfig()->crashflip_auto_rearm || !crashFlipSuccessful())) {
             crashFlipModeActive = false;
             // stay disarmed (motor direction normal), and block arming (require a disarm/rearm cycle)
             setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
