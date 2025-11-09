@@ -146,10 +146,10 @@ void quadSpiInitBusDMA(busDevice_t *bus)
     // Allocate descriptors so dmaSetHandler knows the channel numbers
     (void)dmaAllocate(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaTx->channel), OWNER_QUADSPI_BK1IO0, 1);
     (void)dmaAllocate(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), OWNER_QUADSPI_BK1IO1, 1);
-    // Register handlers
-    dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaTx->channel), quadSpiIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
-    dma_channel_set_irq0_enabled(bus->dmaTx->channel, true);
+    // Register and enable handler
+    dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), quadSpiIrqHandler, NVIC_PRIO_SPI_DMA, 0);
+    dma_channel_set_irq0_enabled(bus->dmaRx->channel, true);
 }
 
 static void quadSpiInternalInitStream(busDevice_t *bus, uint8_t *txData, uint8_t *rxData)
@@ -193,7 +193,7 @@ static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
 
     // Use the correct callback argument
-    dmaTx->userParam = (uint32_t)dev;
+    dmaRx->userParam = (uint32_t)dev;
 
     quadSpiInternalInitStream(bus, segment->u.buffers.txData, segment->u.buffers.rxData);
 
