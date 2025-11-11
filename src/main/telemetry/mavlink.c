@@ -624,7 +624,7 @@ static void configureMAVLinkStreamRates(void)
     timeMs_t nowMs = millis();
     for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
         const uint8_t rate = mavTelemetryStreams[i].rate;
-        // Phase offset (3*i) staggers transmissions across ~18ms to reduce TX buffer spikes
+        // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
         mavTelemetryStreams[i].updateTime = (rate > 0) ? nowMs + (timeMs_t)(1000 / rate) + 3 * i : 0;
     }
 }
