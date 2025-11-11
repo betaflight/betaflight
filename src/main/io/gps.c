@@ -2161,10 +2161,6 @@ typedef enum {
 static ubxFrameParseState_e ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
 static uint16_t ubxFrameParsePayloadCounter;
 
-// SCEDEBUG To help debug which message is slow to process
-// static uint8_t lastUbxRcvMsgClass;
-// static uint8_t lastUbxRcvMsgID;
-
 // Combines message class & ID for a single value to switch on.
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
 
