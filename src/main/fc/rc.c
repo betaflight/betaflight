@@ -322,7 +322,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal)
     DEBUG_SET(DEBUG_RX_TIMING, 6, rxGetLinkQualityPercent());    // raw link quality value
 #endif
     DEBUG_SET(DEBUG_RX_TIMING, 7, isRxReceivingSignal());        // flag to initiate RXLOSS signal and Stage 1 values
-	DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(currentRxRateHz));
+    DEBUG_SET(DEBUG_RC_SMOOTHING, 0, lrintf(currentRxRateHz));
 }
 
 // currently only used in the CLI
@@ -365,10 +365,10 @@ static FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *
         pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3K_SP);
         pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3K_SP);
     }
-    
+
     // Update throttle filter with its own cutoff
     pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[THROTTLE], pt3K_Thr);
-    
+
     // Update RC deflection filters with setpoint cutoff
     for (int i = FD_ROLL; i <= FD_PITCH; i++) {
         pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3K_SP);
@@ -520,8 +520,8 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
         pt1FilterUpdateCutoff(&feedforwardYawHoldLpf, gain);
         const float setpointLpfYaw = pt1FilterApply(&feedforwardYawHoldLpf, setpoint);
         const float feedforwardYawHold = pid->feedforwardYawHoldGain * (setpoint - setpointLpfYaw);
-		DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));         // basic yaw ff without hold
-		DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHold * 0.01f));  // with yaw ff hold element
+        DEBUG_SET(DEBUG_FEEDFORWARD, 6, lrintf(feedforward * 0.01f));         // basic yaw ff without hold
+        DEBUG_SET(DEBUG_FEEDFORWARD, 7, lrintf(feedforwardYawHold * 0.01f));  // with yaw ff hold element
         feedforward += feedforwardYawHold;
     }
 
@@ -617,7 +617,7 @@ bool shouldUpdateSmoothing(void)
 
 FAST_CODE void processRcCommand(void)
 {
-	bool updateSmoothing = false;
+    bool updateSmoothing = false;
     if (isRxDataNew) {
         updateSmoothing = shouldUpdateSmoothing();
 
@@ -675,10 +675,10 @@ FAST_CODE void processRcCommand(void)
             calculateFeedforward(&pidRuntime, axis);
 #endif // USE_FEEDFORWARD
 
-		    // log the smoothed Rx Rate from non-outliers, this will not show the steps every three valid packets
-		    DEBUG_SET(DEBUG_RX_TIMING, 5, lrintf(smoothedRxRateHz));
-		    DEBUG_SET(DEBUG_RC_SMOOTHING, 5, lrintf(smoothedRxRateHz)); // all smoothed values
-		    DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, lrintf(smoothedRxRateHz));
+            // log the smoothed Rx Rate from non-outliers, this will not show the steps every three valid packets
+            DEBUG_SET(DEBUG_RX_TIMING, 5, lrintf(smoothedRxRateHz));
+            DEBUG_SET(DEBUG_RC_SMOOTHING, 5, lrintf(smoothedRxRateHz)); // all smoothed values
+            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, lrintf(smoothedRxRateHz));
         }
         // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {

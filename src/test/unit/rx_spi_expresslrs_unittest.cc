@@ -223,12 +223,12 @@ TEST(RxSpiExpressLrsUnitTest, TestInitUnbound)
     EXPECT_EQ(0, receiver.lastValidPacketMs);
 
     const uint32_t initialFrequencies[7] = {
-        FREQ_HZ_TO_REG_VAL_900(434420000), 
-        FREQ_HZ_TO_REG_VAL_900(922100000), 
-        FREQ_HZ_TO_REG_VAL_900(434450000), 
+        FREQ_HZ_TO_REG_VAL_900(434420000),
+        FREQ_HZ_TO_REG_VAL_900(922100000),
+        FREQ_HZ_TO_REG_VAL_900(434450000),
         FREQ_HZ_TO_REG_VAL_900(867783300),
         FREQ_HZ_TO_REG_VAL_900(866949900),
-        FREQ_HZ_TO_REG_VAL_900(916100000), 
+        FREQ_HZ_TO_REG_VAL_900(916100000),
         FREQ_HZ_TO_REG_VAL_24(2441400000)
     };
 
@@ -279,7 +279,7 @@ TEST(RxSpiExpressLrsUnitTest, TestInitBound)
     const uint8_t validUID[6] = {0, 0, 1, 2, 3, 4};
     receiver = empty;
     memcpy(rxExpressLrsSpiConfigMutable()->UID, validUID, 6);
-    
+
     // check mod params
     for (int i = 0; i < ELRS_RATE_MAX_900; i++) {
         receiver = empty;
@@ -433,7 +433,7 @@ extern "C" {
     void sx1280TransmitData(const uint8_t *, const uint8_t ) {}
     void sx1280ReceiveData(uint8_t *, const uint8_t ) {}
     void sx1280SetFrequencyReg(const uint32_t ) {}
-    void sx1280GetLastPacketStats(int8_t *rssi, int8_t *snr) 
+    void sx1280GetLastPacketStats(int8_t *rssi, int8_t *snr)
     {
         *rssi = 0;
         *snr = 0;
@@ -454,7 +454,7 @@ extern "C" {
     void sx127xTransmitData(const uint8_t *, const uint8_t ) {}
     void sx127xReceiveData(uint8_t *, const uint8_t ) {}
     void sx127xSetFrequencyReg(const uint32_t ) {}
-    void sx127xGetLastPacketStats(int8_t *rssi, int8_t *snr) 
+    void sx127xGetLastPacketStats(int8_t *rssi, int8_t *snr)
     {
         *rssi = 0;
         *snr = 0;
