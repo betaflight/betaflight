@@ -29,7 +29,6 @@
 #include "accgyro_spi_lsm6dsv16x.h"
 
 #include "sensors/gyro.h"
-#include "drivers/time.h"
 
 /* See datasheet
  *
