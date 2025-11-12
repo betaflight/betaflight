@@ -339,9 +339,9 @@ static void mavlinkSendPosition(void)
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.altCm * 10,
         // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
+        gpsSol.dop.hdop,
         // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
+        gpsSol.dop.vdop,
         // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
         gpsSol.groundSpeed,
         // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
@@ -371,11 +371,11 @@ static void mavlinkSendPosition(void)
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
         getEstimatedAltitudeCm() * 10,
         // Ground X Speed (Latitude), expressed as m/s * 100
-        0,
+        gpsSol.velned.velN,
         // Ground Y Speed (Longitude), expressed as m/s * 100
-        0,
+        gpsSol.velned.velE,
         // Ground Z Speed (Altitude), expressed as m/s * 100
-        0,
+        gpsSol.velned.velD,
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn()
     );
@@ -388,9 +388,9 @@ static void mavlinkSendPosition(void)
         // Longitude (WGS84), expressed as * 1E7
         GPS_home_llh.lon,
         // Altitude(WGS84), expressed as * 1000
-        0,
-        // Timestamp, unused
-        0);
+        GPS_home_llh.altCm * 10,
+        // Timestamp
+        micros());
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
