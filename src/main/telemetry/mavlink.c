@@ -348,12 +348,17 @@ static void mavlinkSendPosition(void)
         gpsSol.groundCourse * 10,
         // satellites_visible Number of satellites visible. If unknown, set to 255
         gpsSol.numSat,
-        // Extended parameters, set to zero
+        // Altitude [mm] (above WGS84, EGM96 ellipsoid). Positive for up.
+        gpsSol.llh.altCm * 10,
+        // h_acc [mm] Position uncertainty
+        gpsSol.acc.hAcc,
+        // v_acc [mm] Altitude uncertainty
+        gpsSol.acc.vAcc,
+        // vel_acc [mm/s] Speed uncertainty
+        gpsSol.acc.sAcc,
+        // [degE5] Heading / track uncertainty - Unused
         0,
-        0,
-        0,
-        0,
-        0,
+        //Yaw in earth frame from north. Use 0 if this GPS does not provide yaw - Unused
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
