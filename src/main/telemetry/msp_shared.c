@@ -292,11 +292,11 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
             if (size >= 0xff) {
                 // Sending Jumbo-frame
                 sbufWriteU8(payloadBuf, 0xff);
-                sbufWriteU8(payloadBuf, responsePacket.cmd); 
+                sbufWriteU8(payloadBuf, responsePacket.cmd);
                 sbufWriteU16(payloadBuf, (uint16_t)size);
             } else {
                 sbufWriteU8(payloadBuf, size);
-                sbufWriteU8(payloadBuf, responsePacket.cmd); 
+                sbufWriteU8(payloadBuf, responsePacket.cmd);
             }
         } else { // MSPv2
             sbufWriteU8 (payloadBuf, responsePacket.flags);  // MSPv2 flags
