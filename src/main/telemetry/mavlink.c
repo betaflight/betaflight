@@ -357,7 +357,7 @@ static void mavlinkSendPosition(void)
         // vel_acc [mm/s] Speed uncertainty
         gpsSol.acc.sAcc,
         // [degE5] Heading / track uncertainty - Unused
-        0,
+        UINT32_MAX,
         //Yaw in earth frame from north. Use 0 if this GPS does not provide yaw - Unused
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
