@@ -278,7 +278,7 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
     sbuf_t *payloadBuf = sbufInit(&payloadBufStruct, payloadArray, payloadArray + payloadSizeMax);
 
     // detect first reply packet
-    if (!headerSent) {  
+    if (!headerSent) {
         // this is the first frame of the response packet. Add proper header and size.
         // header
         uint8_t status = MSP_STATUS_START_MASK | (seq++ & MSP_STATUS_SEQUENCE_MASK) | (lastRequestVersion << MSP_STATUS_VERSION_SHIFT);
@@ -292,11 +292,11 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
             if (size >= 0xff) {
                 // Sending Jumbo-frame
                 sbufWriteU8(payloadBuf, 0xff);
-                sbufWriteU8(payloadBuf, responsePacket.cmd);
+                sbufWriteU8(payloadBuf, responsePacket.cmd); 
                 sbufWriteU16(payloadBuf, (uint16_t)size);
             } else {
                 sbufWriteU8(payloadBuf, size);
-                sbufWriteU8(payloadBuf, responsePacket.cmd);
+                sbufWriteU8(payloadBuf, responsePacket.cmd); 
             }
         } else { // MSPv2
             sbufWriteU8 (payloadBuf, responsePacket.flags);  // MSPv2 flags
@@ -309,7 +309,7 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
     }
 
     const int inputRemainder = sbufBytesRemaining(&responsePacket.buf);// size might be bigger than 0xff
-    const int chunkRemainder = sbufBytesRemaining(payloadBuf);// free space remainder for current chunk
+    const int chunkRemainder = sbufBytesRemaining(payloadBuf); // free space remainder for current chunk
 
     if (inputRemainder >= chunkRemainder) {
         // partial send
@@ -321,10 +321,10 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
     // last/only chunk
     sbufWriteData(payloadBuf, responsePacket.buf.ptr, inputRemainder);
     sbufAdvance(&responsePacket.buf, inputRemainder);
-    sbufSwitchToReader(&responsePacket.buf, responseBuffer);   // for CRC calculation
+    sbufSwitchToReader(&responsePacket.buf, responseBuffer);// for CRC calculation
 
     responseFn(payloadArray, payloadBuf->ptr - payloadArray);
-    headerSent = false;               // <-- added: reset for the next response
+    headerSent = false; // reset for the next response
     return false;
 }
 
