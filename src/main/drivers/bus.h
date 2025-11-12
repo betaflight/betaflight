@@ -54,7 +54,7 @@ typedef struct busDevice_s {
             bool leadingEdge;
         } spi;
         struct busI2C_s {
-            I2CDevice device;
+            i2cDevice_e device;
         } i2c;
         struct busMpuSlave_s {
             struct extDevice_s *master;
@@ -109,7 +109,7 @@ typedef struct extDevice_s {
     // Per device buffer reference if needed
     uint8_t *txBuf, *rxBuf;
     // Connected devices on the same bus may support different speeds
-    uint32_t callbackArg;
+    uintptr_t callbackArg;
 } extDevice_t;
 
 /* Each SPI access may comprise multiple parts, for example, wait/write enable/write/data each of which
@@ -135,7 +135,7 @@ typedef struct busSegment_s {
     } u;
     int len;
     bool negateCS; // Should CS be negated at the end of this segment
-    busStatus_e (*callback)(uint32_t arg);
+    busStatus_e (*callback)(uintptr_t arg);
 } busSegment_t;
 
 #ifdef TARGET_BUS_INIT

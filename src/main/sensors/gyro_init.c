@@ -468,7 +468,6 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
             case ICM_45605_SPI:
                 gyroHardware = GYRO_ICM45605;
                 break;
-            
             default:
                 gyroHardware = GYRO_NONE;
                 break;
@@ -591,7 +590,7 @@ bool gyroInit(void)
 #endif
 
     gyro.gyroDebugMode = DEBUG_NONE;
-    gyro.useDualGyroDebugging = false;
+    gyro.useMultiGyroDebugging = false;
     gyro.gyroHasOverflowProtection = true;
 
     switch (debugMode) {
@@ -603,10 +602,10 @@ bool gyroInit(void)
     case DEBUG_GYRO_SAMPLE:
         gyro.gyroDebugMode = debugMode;
         break;
-    case DEBUG_DUAL_GYRO_DIFF:
-    case DEBUG_DUAL_GYRO_RAW:
-    case DEBUG_DUAL_GYRO_SCALED:
-        gyro.useDualGyroDebugging = true;
+    case DEBUG_MULTI_GYRO_DIFF:
+    case DEBUG_MULTI_GYRO_RAW:
+    case DEBUG_MULTI_GYRO_SCALED:
+        gyro.useMultiGyroDebugging = true;
         break;
     }
 
@@ -619,20 +618,38 @@ bool gyroInit(void)
     // always scan gyro_enabled_bitmask
     gyrosToScan |= gyroConfig()->gyro_enabled_bitmask;
 
+    // Ensure we scan all configured gyros on boards with multiple gyros
+    // This fixes the issue where if the first gyro was previously detected but is now missing,
+    // we still attempt to detect other gyros that may be present
+    for (int i = 0; i < GYRO_COUNT; i++) {
+        if (gyroDeviceConfig(i)->busType != BUS_TYPE_NONE) {
+            gyrosToScan |= GYRO_MASK(i);
+        }
+    }
+
     gyro.gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
+        detectedGyros[i] = GYRO_NONE;
         // Only attempt to detect a gyro if it's enabled or we're doing an auto-scan
         if (gyrosToScan & GYRO_MASK(i)) {
             if (gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
                 // If we detected a gyro, make sure it's in the enabled bitmask
                 // This ensures that during first boot, all detected gyros are enabled
                 gyroDetectedFlags |= GYRO_MASK(i);
+                detectedGyros[i] = gyro.gyroSensor[i].gyroDev.gyroHardware;
             }
         }
     }
 
     if (gyroDetectedFlags == 0) {
+        // No gyros detected at all - this is a critical failure
+        // Set minimal safe defaults to prevent lockups
+        gyro.sampleRateHz = 1000;  // Safe default to prevent division by zero
+        gyro.accSampleRateHz = 1000;
+        gyro.scale = 1.0f;
+        gyro.rawSensorDev = NULL;
+        detectedSensors[SENSOR_INDEX_GYRO] = GYRO_NONE;
         return false;
     }
 
@@ -644,6 +661,12 @@ bool gyroInit(void)
 
     // check if all enabled sensors are detected
     gyro.gyroEnabledBitmask = gyroDetectedFlags & gyroConfig()->gyro_enabled_bitmask;
+
+    // If no gyros are enabled but some are detected, enable at least the first detected gyro
+    // This prevents lockups when configuration is inconsistent
+    if (gyro.gyroEnabledBitmask == 0 && gyroDetectedFlags != 0) {
+        gyro.gyroEnabledBitmask = gyroDetectedFlags & -gyroDetectedFlags;
+    }
 
     if (gyroConfigMutable()->gyro_enabled_bitmask != gyro.gyroEnabledBitmask) {
         gyroConfigMutable()->gyro_enabled_bitmask = gyro.gyroEnabledBitmask;

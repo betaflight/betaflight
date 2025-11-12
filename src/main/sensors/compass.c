@@ -46,7 +46,7 @@
 #include "drivers/compass/compass_lis2mdl.h"
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
-#include "drivers/compass/compass_qmc5883l.h"
+#include "drivers/compass/compass_qmc5883.h"
 #include "drivers/compass/compass_ist8310.h"
 
 #include "drivers/io.h"
@@ -99,15 +99,27 @@ PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 4);
 // default compass read interval, for those with no specified ODR, will be TASK_COMPASS_RATE_HZ
 static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
-void pgResetFn_compassConfig(compassConfig_t *compassConfig)
-{
-    compassConfig->mag_alignment = ALIGN_DEFAULT;
-    memset(&compassConfig->mag_customAlignment, 0x00, sizeof(compassConfig->mag_customAlignment));
-    compassConfig->mag_hardware = MAG_DEFAULT;
+#ifndef MAG_ALIGN
+#define MAG_ALIGN ALIGN_DEFAULT
+#endif
+#ifndef MAG_ALIGN_ROLL
+#define MAG_ALIGN_ROLL 0
+#endif
+#ifndef MAG_ALIGN_PITCH
+#define MAG_ALIGN_PITCH 0
+#endif
+#ifndef MAG_ALIGN_YAW
+#define MAG_ALIGN_YAW 0
+#endif
 
 #ifndef MAG_I2C_ADDRESS
 #define MAG_I2C_ADDRESS 0
 #endif
+
+void pgResetFn_compassConfig(compassConfig_t *compassConfig)
+{
+    compassConfig->mag_alignment = MAG_ALIGN;
+    compassConfig->mag_hardware = MAG_DEFAULT;
 
 // Generate a reasonable default for backward compatibility
 // Strategy is
@@ -142,6 +154,11 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_csn = IO_TAG_NONE;
 #endif
     compassConfig->interruptTag = IO_TAG(MAG_INT_EXTI);
+
+
+    compassConfig->mag_customAlignment.roll = MAG_ALIGN_ROLL;
+    compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
+    compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
@@ -158,11 +175,7 @@ void compassPreInit(void)
 #if !defined(SIMULATOR_BUILD)
 static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 {
-#ifdef MAG_ALIGN
     *alignment = MAG_ALIGN;
-#else
-    *alignment = ALIGN_DEFAULT;
-#endif
 
     magSensor_e magHardware = MAG_NONE;
 
@@ -294,7 +307,7 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
-        if (qmc5883lDetect(magDev)) {
+        if (qmc5883Detect(magDev)) {
             magHardware = MAG_QMC5883;
             break;
         }

@@ -67,7 +67,7 @@ static void spiSetDivisorBRreg(spi_type *instance, uint16_t divisor)
 #undef BR_BITS
 }
 
-void spiInitDevice(SPIDevice device)
+void spiInitDevice(spiDevice_e device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
 
@@ -121,7 +121,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         dmaInitRx->direction = DMA_DIR_PERIPHERAL_TO_MEMORY;
         dmaInitRx->loop_mode_enable = FALSE;
         dmaInitRx->peripheral_base_addr = (uint32_t)&bus->busType_u.spi.instance->dt;
-        dmaInitRx->priority = DMA_PRIORITY_LOW;
+        dmaInitRx->priority = DMA_PRIORITY_MEDIUM;
         dmaInitRx->peripheral_inc_enable = FALSE;
         dmaInitRx->peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
 
@@ -156,23 +156,11 @@ bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txData, ui
     return true;
 }
 
-void spiInternalInitStream(const extDevice_t *dev, bool preInit)
+void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment)
 {
     STATIC_DMA_DATA_AUTO uint8_t dummyTxByte = 0xff;
     STATIC_DMA_DATA_AUTO uint8_t dummyRxByte;
     busDevice_t *bus = dev->bus;
-
-    volatile busSegment_t *segment = bus->curSegment;
-
-    if (preInit) {
-        // Prepare the init structure for the next segment to reduce inter-segment interval
-        segment++;
-        if(segment->len == 0) {
-            // There's no following segment
-            return;
-        }
-    }
-
     int len = segment->len;
 
     uint8_t *txData = segment->u.buffers.txData;

@@ -442,7 +442,8 @@ void gpsInit(void)
     }
 #endif
     if (serialType(gpsPortConfig->identifier) == SERIALTYPE_UART
-        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART) {
+        || serialType(gpsPortConfig->identifier) == SERIALTYPE_LPUART
+        || serialType(gpsPortConfig->identifier) == SERIALTYPE_PIOUART) {
         // TODO: SERIAL_CHECK_TX is broken on F7, disable it until it is fixed
 #if !defined(STM32F7) || defined(USE_F7_CHECK_TX)
         options |= SERIAL_CHECK_TX;
@@ -2160,10 +2161,6 @@ typedef enum {
 static ubxFrameParseState_e ubxFrameParseState = UBX_PARSE_PREAMBLE_SYNC_1;
 static uint16_t ubxFrameParsePayloadCounter;
 
-// SCEDEBUG To help debug which message is slow to process
-// static uint8_t lastUbxRcvMsgClass;
-// static uint8_t lastUbxRcvMsgID;
-
 // Combines message class & ID for a single value to switch on.
 #define CLSMSG(cls, msg) (((cls) << 8) | (msg))
 
@@ -2257,9 +2254,13 @@ static bool UBLOX_parse_gps(void)
         gpsSol.acc.hAcc = ubxRcvMsgPayload.ubxNavPvt.hAcc;
         gpsSol.acc.vAcc = ubxRcvMsgPayload.ubxNavPvt.vAcc;
         gpsSol.acc.sAcc = ubxRcvMsgPayload.ubxNavPvt.sAcc;
-        gpsSol.speed3d = (uint16_t) sqrtf(powf(ubxRcvMsgPayload.ubxNavPvt.gSpeed / 10, 2.0f) + powf(ubxRcvMsgPayload.ubxNavPvt.velD / 10, 2.0f));
-        gpsSol.groundSpeed = ubxRcvMsgPayload.ubxNavPvt.gSpeed / 10;    // cm/s
-        gpsSol.groundCourse = (uint16_t) (ubxRcvMsgPayload.ubxNavPvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        // gSpeed & velD are in mm/s (int32_t), gpsSol.speed3d in cm/s (uint16_t)
+        float gs = (float)ubxRcvMsgPayload.ubxNavPvt.gSpeed;
+        float vd = (float)ubxRcvMsgPayload.ubxNavPvt.velD;
+        gpsSol.speed3d = (uint16_t)(sqrtf(sq(gs) + sq(vd)) * 0.1f);     // mm/s → cm/s
+        // Update 2D ground speed (mm/s → cm/s) for NAV-PVT when NAV-VELNED is disabled
+        gpsSol.groundSpeed = (uint16_t)(ubxRcvMsgPayload.ubxNavPvt.gSpeed / 10);    // cm/s
+        gpsSol.groundCourse = (uint16_t)(ubxRcvMsgPayload.ubxNavPvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         gpsSol.dop.pdop = ubxRcvMsgPayload.ubxNavPvt.pDOP;
         ubxHaveNewSpeed = true;
 #ifdef USE_RTC_TIME

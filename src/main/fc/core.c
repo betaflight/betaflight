@@ -349,7 +349,8 @@ void updateArmingStatus(void)
         // - and it was active,
         // - and the quad did not flip successfully, or we don't have that information
         // require an arm-disarm cycle by blocking tryArm()
-        if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) && !crashFlipSuccessful()) {
+        if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) &&
+            (!mixerConfig()->crashflip_auto_rearm || !crashFlipSuccessful())) {
             crashFlipModeActive = false;
             // stay disarmed (motor direction normal), and block arming (require a disarm/rearm cycle)
             setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
@@ -532,7 +533,9 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-        if (cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs()) < DSHOT_BEACON_GUARD_DELAY_US) {
+        // Handle timer wraparound by checking if the time difference is reasonable
+        timeDelta_t beaconTimeDiff = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
+        if (beaconTimeDiff < DSHOT_BEACON_GUARD_DELAY_US && beaconTimeDiff >= 0) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
                 if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
@@ -1165,12 +1168,6 @@ void processRxModes(timeUs_t currentTimeUs)
 #ifdef USE_ACRO_TRAINER
     pidSetAcroTrainerState(IS_RC_MODE_ACTIVE(BOXACROTRAINER) && sensors(SENSOR_ACC));
 #endif // USE_ACRO_TRAINER
-
-#ifdef USE_RC_SMOOTHING_FILTER
-    if (ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete() && rxConfig()->rc_smoothing_mode) {
-        beeper(BEEPER_RC_SMOOTHING_INIT_FAIL);
-    }
-#endif
 
     pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
 }

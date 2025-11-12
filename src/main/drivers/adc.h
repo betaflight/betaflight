@@ -22,28 +22,12 @@
 
 #include <stdbool.h>
 
+#include "platform.h"
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
-#ifndef ADC_INSTANCE
-#define ADC_INSTANCE                ADC1
-#endif
-
-#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
-#ifndef ADC1_DMA_STREAM
-#define ADC1_DMA_STREAM DMA2_Stream4 // ST0 or ST4
-#endif
-
-#ifndef ADC2_DMA_STREAM
-#define ADC2_DMA_STREAM DMA2_Stream3 // ST2 or ST3
-#endif
-
-#ifndef ADC3_DMA_STREAM
-#define ADC3_DMA_STREAM DMA2_Stream0 // ST0 or ST1
-#endif
-#endif
-
-typedef enum ADCDevice {
+#if PLATFORM_TRAIT_ADC_DEVICE
+typedef enum {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
 #if defined(ADC2)
@@ -59,60 +43,36 @@ typedef enum ADCDevice {
     ADCDEV_5,
 #endif
     ADCDEV_COUNT
-} ADCDevice;
-
-#define ADC_CFG_TO_DEV(x) ((x) - 1)
-#define ADC_DEV_TO_CFG(x) ((x) + 1)
+} adcDevice_e;
+#endif
 
 typedef enum {
+    ADC_NONE = -1,
     ADC_BATTERY = 0,
-    ADC_CURRENT = 1,
-    ADC_EXTERNAL1 = 2,
-    ADC_RSSI = 3,
-#if defined(STM32H7) || defined(STM32G4)
-    // On H7 and G4, internal sensors are treated in the similar fashion as regular ADC inputs
-    ADC_CHANNEL_INTERNAL_FIRST_ID = 4,
-
-    ADC_TEMPSENSOR = 4,
-    ADC_VREFINT = 5,
-    ADC_VBAT4 = 6,
-#elif defined(AT32F435)
-    ADC_CHANNEL_INTERNAL_FIRST_ID = 4,
-
-    ADC_TEMPSENSOR = 4,
-    ADC_VREFINT = 5,
-    // ADC_VBAT4 = 6,
-
+    ADC_CURRENT,
+    ADC_EXTERNAL1,
+    ADC_RSSI,
+    ADC_EXTERNAL_COUNT,
+#ifdef USE_ADC_INTERNAL
+    // For certain processors internal sensors are treated in the similar fashion as regular ADC inputs
+    ADC_TEMPSENSOR = ADC_EXTERNAL_COUNT,
+    ADC_VREFINT,
+#if ADC_INTERNAL_VBAT4_ENABLED
+    ADC_VBAT4,
 #endif
-    ADC_CHANNEL_COUNT
-} AdcChannel;
-
-typedef struct adcOperatingConfig_s {
-    ioTag_t tag;
-#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
-    ADCDevice adcDevice;        // ADCDEV_x for this input
-    uint32_t adcChannel;        // Channel number for this input. Note that H7 and G4 HAL requires this to be 32-bit encoded number.
+    ADC_SOURCE_COUNT
 #else
-    uint8_t adcChannel;         // ADCy_INxx channel number for this input (XXX May be consolidated with uint32_t case)
+    ADC_SOURCE_COUNT = ADC_EXTERNAL_COUNT
 #endif
-    uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
-    bool enabled;
-    uint8_t sampleTime;
-} adcOperatingConfig_t;
+} adcSource_e;
 
 struct adcConfig_s;
 void adcInit(const struct adcConfig_s *config);
-uint16_t adcGetChannel(uint8_t channel);
+uint16_t adcGetValue(adcSource_e source);
 
 #ifdef USE_ADC_INTERNAL
 bool adcInternalIsBusy(void);
 void adcInternalStartConversion(void);
-uint16_t adcInternalReadVrefint(void);
-uint16_t adcInternalReadTempsensor(void);
 uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue);
 int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue);
-#endif
-
-#if !defined(SIMULATOR_BUILD)
-ADCDevice adcDeviceByInstance(const ADC_TypeDef *instance);
 #endif

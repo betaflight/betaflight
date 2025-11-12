@@ -53,7 +53,6 @@ PG_SRC = \
 COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
-            build/debug_pin.c \
             build/version.c \
             main.c \
             common/bitarray.c \
@@ -201,6 +200,7 @@ COMMON_SRC = \
             rx/sumh.c \
             rx/xbus.c \
             rx/fport.c \
+            rx/mavlink.c \
             rx/msp_override.c \
             sensors/acceleration.c \
             sensors/acceleration_init.c \
@@ -324,7 +324,7 @@ COMMON_SRC += \
             drivers/compass/compass_lis2mdl.c \
             drivers/compass/compass_lis3mdl.c \
             drivers/compass/compass_mpu925x_ak8963.c \
-            drivers/compass/compass_qmc5883l.c \
+            drivers/compass/compass_qmc5883.c \
             drivers/compass/compass_virtual.c \
             drivers/max7456.c \
             drivers/vtx_rtc6705.c \
@@ -391,7 +391,7 @@ SIZE_OPTIMISED_SRC += \
             drivers/compass/compass_ak8963.c \
             drivers/compass/compass_ak8975.c \
             drivers/compass/compass_hmc5883l.c \
-            drivers/compass/compass_qmc5883l.c \
+            drivers/compass/compass_qmc5883.c \
             drivers/compass/compass_lis2mdl.c \
             drivers/compass/compass_lis3mdl.c \
             drivers/compass/compass_ist8310.c \

@@ -19,7 +19,10 @@ jobs:
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
       - name: Cache build toolchain
         uses: actions/cache@v4
@@ -31,6 +34,10 @@ jobs:
       - name: Download and install toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make arm_sdk_install
+
+      - name: Build pico tool and install
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make picotool_install
 
       - name: Hydrate configuration
         id: get-config
@@ -49,7 +56,9 @@ jobs:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
       - name: Fetch toolchain from cache
         uses: actions/cache@v4
@@ -74,17 +83,20 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: obj/*.hex
+          path: |
+            obj/*.hex
+            obj/*.uf2
+            obj/*_${{ matrix.target }}*
           retention-days: 60
 
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dependencies
-        run: sudo apt-get install -y libblocksruntime-dev clang-15
+        run: sudo apt-get install -y libblocksruntime-dev clang-18
 
       - name: Run sanity checks
         run: make EXTRA_FLAGS=-Werror checks

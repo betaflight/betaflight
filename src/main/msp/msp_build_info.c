@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/4.6.0
- * Input hash   : 5da6ff60951a04dc9a29ea0758aae1df
+ * Source       : https://build.betaflight.com/api/options/2025.12
+ * Input hash   : 6a57c50d7938349a1e8363e85d6741dc
  */
 
 #include <stdint.h>
@@ -52,6 +52,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #endif
 #ifdef USE_SERIALRX_JETIEXBUS
         BUILD_OPTION_SERIALRX_JETIEXBUS,
+#endif
+#ifdef USE_SERIALRX_MAVLINK
+        BUILD_OPTION_SERIALRX_MAVLINK,
 #endif
 #ifdef USE_RX_PPM
         BUILD_OPTION_RX_PPM,
@@ -109,6 +112,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #endif
 #ifdef USE_CAMERA_CONTROL
         BUILD_OPTION_CAMERA_CONTROL,
+#endif
+#ifdef USE_CHIRP
+        BUILD_OPTION_CHIRP,
 #endif
 #ifdef USE_DASHBOARD
         BUILD_OPTION_DASHBOARD,

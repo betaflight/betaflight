@@ -25,7 +25,7 @@
 #ifdef USE_DMA_SPEC
 
 #include "timer_def.h"
-#include "drivers/adc.h"
+#include "platform/adc_impl.h"
 #include "drivers/bus_spi.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/serial.h"
@@ -59,7 +59,7 @@ typedef struct dmaTimerMapping_s {
 #define REQMAP_SGL(periph) { DMA_PERIPH_ ## periph, 0, DMA_REQUEST_ ## periph }
 #define REQMAP(periph, device) { DMA_PERIPH_ ## periph, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device }
 #define REQMAP_DIR(periph, device, dir) { DMA_PERIPH_ ## periph ## _ ## dir, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device ## _ ## dir }
-#define REQMAP_TIMUP(periph, timno) { DMA_PERIPH_TIMUP, timno - 1, DMA_REQUEST_ ## TIM ## timno ## _UP }
+#define REQMAP_TIMUP(periph, timno) { DMA_PERIPH_TIMUP, TIMER_INDEX(timno), DMA_REQUEST_ ## TIM ## timno ## _UP }
 
 // Resolve UART/USART mess
 #define DMA_REQUEST_UART1_RX DMA_REQUEST_USART1_RX
@@ -166,6 +166,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     REQMAP_TIM(TIM4, CH1),
     REQMAP_TIM(TIM4, CH2),
     REQMAP_TIM(TIM4, CH3),
+    REQMAP_TIM(TIM4, CH4),
     REQMAP_TIM(TIM5, CH1),
     REQMAP_TIM(TIM5, CH2),
     REQMAP_TIM(TIM5, CH3),
@@ -215,7 +216,7 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define REQMAP_SGL(periph) { DMA_PERIPH_ ## periph, 0, DMA_REQUEST_ ## periph }
 #define REQMAP(periph, device) { DMA_PERIPH_ ## periph, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device }
 #define REQMAP_DIR(periph, device, dir) { DMA_PERIPH_ ## periph ## _ ## dir, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device ## _ ## dir }
-#define REQMAP_TIMUP(periph, timno) { DMA_PERIPH_TIMUP, timno - 1, DMA_REQUEST_ ## TIM ## timno ## _UP }
+#define REQMAP_TIMUP(periph, timno) { DMA_PERIPH_TIMUP, TIMER_INDEX(timno), DMA_REQUEST_ ## TIM ## timno ## _UP }
 
 // Resolve UART/USART mess
 #define DMA_REQUEST_UART1_RX DMA_REQUEST_USART1_RX
@@ -240,6 +241,8 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define DMA_REQUEST_SPI4_SDI DMA_REQUEST_SPI4_RX
 #define DMA_REQUEST_SPI5_SDO DMA_REQUEST_SPI5_TX
 #define DMA_REQUEST_SPI5_SDI DMA_REQUEST_SPI5_RX
+#define DMA_REQUEST_SPI6_SDO BDMA_REQUEST_SPI6_TX
+#define DMA_REQUEST_SPI6_SDI BDMA_REQUEST_SPI6_RX
 
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_SPI
@@ -253,14 +256,14 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(SPI, 4, SDI),
     REQMAP_DIR(SPI, 5, SDO), // Not available in smaller packages
     REQMAP_DIR(SPI, 5, SDI), // ditto
-    // REQMAP_DIR(SPI, 6, SDO), // SPI6 is on BDMA (todo)
-    // REQMAP_DIR(SPI, 6, SDO), // ditto
+    REQMAP_DIR(SPI, 6, SDO), // SPI6 is on BDMA
+    REQMAP_DIR(SPI, 6, SDI), // ditto
 #endif // USE_SPI
 
 #ifdef USE_ADC
     REQMAP(ADC, 1),
     REQMAP(ADC, 2),
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
     REQMAP(ADC, 3),
 #endif
 #endif

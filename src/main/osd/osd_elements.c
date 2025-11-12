@@ -50,7 +50,7 @@
 
     Add the mapping for the element ID to the background drawing function to the
     osdElementBackgroundFunction array.
-    
+
     You should also add a corresponding entry to the file: cms_menu_osd.c
 
     Accelerometer reqirement:
@@ -312,7 +312,6 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
 }
 #endif
 
-#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
 int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 {
     switch (osdConfig()->units) {
@@ -322,7 +321,7 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
         return tempInDegreesCelcius;
     }
 }
-#endif
+
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
     static const struct {
@@ -668,7 +667,7 @@ MAYBE_UNUSED static char osdGetVarioToSelectedUnitSymbol(void)
     }
 }
 
-#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR)
+#if defined(USE_ADC_INTERNAL) || defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 char osdGetTemperatureSymbolForSelectedUnit(void)
 {
     switch (osdConfig()->units) {
@@ -1332,6 +1331,9 @@ static void osdElementLinkQuality(osdElementParms_t *element)
         const uint8_t osdRfMode = rxGetRfMode();
         tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
     } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
+        osdLinkQuality = rxGetLinkQuality();
+        tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
+    } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_MAVLINK) {
         osdLinkQuality = rxGetLinkQuality();
         tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
     } else { // 0-9

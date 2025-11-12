@@ -69,6 +69,10 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define READ_REG(REG)         ((REG))
 #define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
 
+#define ADC_INTERNAL_VBAT4_ENABLED 0
+
+/* AT32F4 we need to specify the ADC device for each channel */
+#define PLATFORM_TRAIT_ADC_DEVICE 1
 #endif
 
 #define USE_USB_MSC

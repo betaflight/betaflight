@@ -36,7 +36,7 @@
 #include "drivers/bus_octospi.h"
 #include "drivers/bus_octospi_impl.h"
 
-#if !(defined(STM32H730xx) || defined(STM32H723xx))
+#if !(defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx))
 #error MCU not supported.
 #endif
 
@@ -417,7 +417,7 @@ octoSpiMemoryMappedModeConfigurationRegisterBackup_t ospiMMMCRBackups[OCTOSPI_IN
 
 static void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
-    OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
+    octoSpiDevice_e device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
         return;
     }
@@ -437,7 +437,7 @@ static void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance
 
 static MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
-    OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
+    octoSpiDevice_e device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
         return;
     }
@@ -822,11 +822,11 @@ MMFLASH_CODE_NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *i
     return status == SUCCESS;
 }
 
-void octoSpiInitDevice(OCTOSPIDevice device)
+void octoSpiInitDevice(octoSpiDevice_e device)
 {
     octoSpiDevice_t *octoSpi = &(octoSpiDevice[device]);
 
-#if defined(STM32H730xx) || defined(STM32H723xx)
+#if defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx)
     if (isMemoryMappedModeEnabledOnBoot()) {
         // Bootloader has already configured the IO, clocks and peripherals.
         octoSpiBackupMemoryMappedModeConfiguration(octoSpi->dev);

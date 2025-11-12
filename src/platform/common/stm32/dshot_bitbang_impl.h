@@ -128,10 +128,10 @@ typedef struct bbPacer_s {
 #ifdef AT32F435
 
 typedef struct tmr_base_init_s {
-	uint32_t TIM_Prescaler;
-	uint32_t TIM_ClockDivision;
-	uint32_t TIM_CounterMode;
-	uint32_t TIM_Period;
+    uint32_t TIM_Prescaler;
+    uint32_t TIM_ClockDivision;
+    uint32_t TIM_CounterMode;
+    uint32_t TIM_Period;
 } tmr_base_init_type;
 
 #endif
@@ -202,7 +202,7 @@ typedef struct bbPort_s {
     uint32_t outputIrq;
     uint32_t inputIrq;
 #endif
-    resourceOwner_t owner;
+    resourceOwner_t resourceOwner;
 } bbPort_t;
 
 // Per motor output

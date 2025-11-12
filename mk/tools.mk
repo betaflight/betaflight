@@ -8,6 +8,8 @@
 #
 # Release date: July 04, 2024
 #
+# PICO SDK Version: 2.X - July 03, 2025
+#
 ###############################################################
 
 ##############################
@@ -275,7 +277,7 @@ zip_clean:
 
 ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
   ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
-else ifeq (,$(filter %_install test% clean% %-print checks help configs, $(MAKECMDGOALS)))
+else ifeq (,$(filter %_sdk %_install test% clean% %-print checks help configs, $(MAKECMDGOALS)))
   GCC_VERSION = $(shell arm-none-eabi-gcc -dumpversion)
   ifeq ($(GCC_VERSION),)
     $(error **ERROR** arm-none-eabi-gcc not in the PATH. Run 'make arm_sdk_install' to install automatically in the tools folder of this repo)
