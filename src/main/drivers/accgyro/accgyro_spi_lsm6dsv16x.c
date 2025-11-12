@@ -951,7 +951,7 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     while (spiReadRegMsk(dev, LSM6DSV_CTRL3) & LSM6DSV_CTRL3_SW_RESET) {}
     // Autoincrement register address when doing block SPI reads and update continuously
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC | LSM6DSV_CTRL3_BDU);      /*BDU bit need to be set*/
-	
+
 	// Select high-accuracy ODR mode 1 before leaving power-off mode
     spiWriteReg(dev, LSM6DSV_HAODR_CFG,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_HAODR_MODE1,
