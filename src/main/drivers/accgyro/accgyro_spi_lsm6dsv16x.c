@@ -1039,7 +1039,7 @@ static bool lsm6dsv16xGyroReadSPI(gyroDev_t *gyro)
                 gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
-            } else 
+            } else
 #endif
             {
                 // Interrupts are present, but no DMA
