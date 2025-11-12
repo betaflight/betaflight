@@ -139,7 +139,7 @@ static void pwmDshotSetDirectionInput(
     }
 
     timer_auto_reload_shadow_enable((uint32_t)timer);
-    TIMER_CAR((uint32_t)timer) = 0xffffffff;
+    TIMER_CAR((uint32_t)timer) = 0xffff;
   
     timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);  
 
@@ -180,7 +180,11 @@ void pwmCompleteDshotMotorUpdate(void)
         } else
 #endif
         {
-            timer_counter_value_config((uint32_t)(dmaMotorTimers[i].timer), 0);
+
+            timer_auto_reload_shadow_disable((uint32_t)(dmaMotorTimers[i].timer));
+            TIMER_CAR((uint32_t)(dmaMotorTimers[i].timer)) = dmaMotorTimers[i].outputPeriod;
+            timer_auto_reload_shadow_enable((uint32_t)(dmaMotorTimers[i].timer));
+            timer_event_software_generate((uint32_t)(dmaMotorTimers[i].timer), TIMER_EVENT_SRC_UPG);
             timer_dma_enable((uint32_t)(dmaMotorTimers[i].timer), dmaMotorTimers[i].timerDmaSources);
             dmaMotorTimers[i].timerDmaSources = 0;
         }

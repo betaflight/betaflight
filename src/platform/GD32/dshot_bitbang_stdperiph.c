@@ -197,7 +197,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     // Reinitialize pacer timer for input
 
-    TIMER_CNT((uint32_t)(bbPort->timhw->tim)) = 0;
+    timer_event_software_generate((uint32_t)(bbPort->timhw->tim), TIMER_EVENT_SRC_UPG);
     TIMER_CAR((uint32_t)(bbPort->timhw->tim)) = bbPort->inputARR;
 
     bbDMA_Cmd(bbPort, ENABLE);
@@ -221,7 +221,7 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
     dmainit->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
     dmainit->periph_inc = DMA_PERIPH_INCREASE_DISABLE;
     dmainit->memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-    dmainit->critical_value = DMA_FIFO_STATUS_1_WORD;
+    dmainit->critical_value = DMA_FIFO_STATUS_NODATA;
     dmainit->memory_burst_width = DMA_MEMORY_BURST_SINGLE;
     dmainit->periph_burst_width = DMA_PERIPH_BURST_SINGLE;
 

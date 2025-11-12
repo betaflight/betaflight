@@ -202,10 +202,10 @@ static bool writeFontCharacter(displayPort_t *displayPort, uint16_t addr, const 
 
 static bool checkReady(displayPort_t *displayPort, bool rescan)
 {
+    UNUSED(rescan);
     if (
         !displayPort ||
-        displayPort->deviceType != DISPLAYPORT_DEVICE_TYPE_MSP ||
-        !rescan
+        displayPort->deviceType != DISPLAYPORT_DEVICE_TYPE_MSP
     ) {
         return false;
     }

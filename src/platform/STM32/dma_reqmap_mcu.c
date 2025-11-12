@@ -241,6 +241,8 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define DMA_REQUEST_SPI4_SDI DMA_REQUEST_SPI4_RX
 #define DMA_REQUEST_SPI5_SDO DMA_REQUEST_SPI5_TX
 #define DMA_REQUEST_SPI5_SDI DMA_REQUEST_SPI5_RX
+#define DMA_REQUEST_SPI6_SDO BDMA_REQUEST_SPI6_TX
+#define DMA_REQUEST_SPI6_SDI BDMA_REQUEST_SPI6_RX
 
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_SPI
@@ -254,14 +256,14 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(SPI, 4, SDI),
     REQMAP_DIR(SPI, 5, SDO), // Not available in smaller packages
     REQMAP_DIR(SPI, 5, SDI), // ditto
-    // REQMAP_DIR(SPI, 6, SDO), // SPI6 is on BDMA (todo)
-    // REQMAP_DIR(SPI, 6, SDO), // ditto
+    REQMAP_DIR(SPI, 6, SDO), // SPI6 is on BDMA
+    REQMAP_DIR(SPI, 6, SDI), // ditto
 #endif // USE_SPI
 
 #ifdef USE_ADC
     REQMAP(ADC, 1),
     REQMAP(ADC, 2),
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
     REQMAP(ADC, 3),
 #endif
 #endif

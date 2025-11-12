@@ -36,7 +36,7 @@
 #include "drivers/bus_octospi.h"
 #include "drivers/bus_octospi_impl.h"
 
-#if !(defined(STM32H730xx) || defined(STM32H723xx))
+#if !(defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx))
 #error MCU not supported.
 #endif
 
@@ -826,7 +826,7 @@ void octoSpiInitDevice(octoSpiDevice_e device)
 {
     octoSpiDevice_t *octoSpi = &(octoSpiDevice[device]);
 
-#if defined(STM32H730xx) || defined(STM32H723xx)
+#if defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx)
     if (isMemoryMappedModeEnabledOnBoot()) {
         // Bootloader has already configured the IO, clocks and peripherals.
         octoSpiBackupMemoryMappedModeConfiguration(octoSpi->dev);

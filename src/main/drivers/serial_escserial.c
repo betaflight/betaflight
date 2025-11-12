@@ -641,9 +641,9 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
 
     if (mode != PROTOCOL_KISSALL) {
 
-    	if (escSerialConfig()->ioTag == IO_TAG_NONE) {
-    	    return NULL;
-    	}
+        if (escSerialConfig()->ioTag == IO_TAG_NONE) {
+            return NULL;
+        }
 
         const ioTag_t tag = motorConfig->ioTags[output];
         const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, 0);
@@ -674,9 +674,9 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
         escSerial->txTimerHandle = timerFindTimerHandle(escSerial->txTimerHardware->tim);
 #endif
 
-    	// Workaround to ensure that the timerHandle is configured before use, timer will be reconfigured to a different frequency below
-    	// this prevents a null-pointer dereference in __HAL_TIM_CLEAR_FLAG called by timerChClearCCFlag and similar accesses of timerHandle without the Instance being configured first.
-    	timerConfigure(escSerial->txTimerHardware, 0xffff, 1);
+        // Workaround to ensure that the timerHandle is configured before use, timer will be reconfigured to a different frequency below
+        // this prevents a null-pointer dereference in __HAL_TIM_CLEAR_FLAG called by timerChClearCCFlag and similar accesses of timerHandle without the Instance being configured first.
+        timerConfigure(escSerial->txTimerHardware, 0xffff, 1);
     }
 
     escSerial->mode = mode;

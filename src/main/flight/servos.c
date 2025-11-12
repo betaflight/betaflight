@@ -77,6 +77,18 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
 #ifdef SERVO4_PIN
     servoConfig->dev.ioTags[3] = IO_TAG(SERVO4_PIN);
 #endif
+#ifdef SERVO5_PIN
+    servoConfig->dev.ioTags[4] = IO_TAG(SERVO5_PIN);
+#endif
+#ifdef SERVO6_PIN
+    servoConfig->dev.ioTags[5] = IO_TAG(SERVO6_PIN);
+#endif
+#ifdef SERVO7_PIN
+    servoConfig->dev.ioTags[6] = IO_TAG(SERVO7_PIN);
+#endif
+#ifdef SERVO8_PIN
+    servoConfig->dev.ioTags[7] = IO_TAG(SERVO8_PIN);
+#endif
 }
 
 PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
