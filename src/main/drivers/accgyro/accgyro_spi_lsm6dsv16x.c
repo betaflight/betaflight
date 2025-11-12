@@ -952,7 +952,7 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     // Autoincrement register address when doing block SPI reads and update continuously
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC | LSM6DSV_CTRL3_BDU);      /*BDU bit need to be set*/
 
-	// Select high-accuracy ODR mode 1 before leaving power-off mode
+    // Select high-accuracy ODR mode 1 before leaving power-off mode
     spiWriteReg(dev, LSM6DSV_HAODR_CFG,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_HAODR_MODE1,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_MASK,
@@ -960,13 +960,13 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 
     // Enable 16G full-scale range and set accelerometer LPF2 bandwidth
     spiWriteReg(dev, LSM6DSV_CTRL8,
-    			LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_BW_4,
+                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_BW_4,
                                     LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_MASK,
                                     LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_SHIFT) |
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_16G,
                                     LSM6DSV_CTRL8_FS_XL_MASK,
                                     LSM6DSV_CTRL8_FS_XL_SHIFT));
-	// Enable 2000 deg/s sensitivity and selected LPF1 filter setting
+    // Enable 2000 deg/s sensitivity and selected LPF1 filter setting
     // Set the LPF1 filter bandwidth
     spiWriteReg(dev, LSM6DSV_CTRL6,
                 LSM6DSV_ENCODE_BITS(lsm6dsv16xLPF1BandwidthOptions[gyroConfig()->gyro_hardware_lpf],
@@ -997,7 +997,7 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
     // Enable the gyro digital LPF1 filter
     spiWriteReg(dev, LSM6DSV_CTRL7, LSM6DSV_CTRL7_LPF1_G_EN);
 
-	// Enable the acc digital LPF2 filter
+    // Enable the acc digital LPF2 filter
     spiWriteReg(dev, LSM6DSV_CTRL9, LSM6DSV_CTRL9_LPF2_XL_EN);
 
     // Generate pulse on interrupt line, not requiring a read to clear
