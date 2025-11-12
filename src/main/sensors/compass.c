@@ -46,7 +46,7 @@
 #include "drivers/compass/compass_lis2mdl.h"
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
-#include "drivers/compass/compass_qmc5883l.h"
+#include "drivers/compass/compass_qmc5883.h"
 #include "drivers/compass/compass_ist8310.h"
 
 #include "drivers/io.h"
@@ -307,7 +307,7 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
-        if (qmc5883lDetect(magDev)) {
+        if (qmc5883Detect(magDev)) {
             magHardware = MAG_QMC5883;
             break;
         }
