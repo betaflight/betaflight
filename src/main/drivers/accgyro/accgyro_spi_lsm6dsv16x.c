@@ -946,7 +946,7 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 
     spiSetClkDivisor(dev, spiCalculateDivider(LSM6DSV16X_MAX_SPI_CLK_HZ));
 
-     // Perform a software reset
+    // Perform a software reset
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_SW_RESET);
 
     // Wait for the device to be ready
