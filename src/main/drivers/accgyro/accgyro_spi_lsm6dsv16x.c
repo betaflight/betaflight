@@ -849,8 +849,6 @@
 #define LSM6DSV_FIFO_DATA_OUT_Z_L           0x7D
 #define LSM6DSV_FIFO_DATA_OUT_Z_H           0x7E
 
-#define LSM6DSV16X_READY                    0
-
 #define LSM6DSK320X_WHO_AM_I_CONST          (0x75)
 
 uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
