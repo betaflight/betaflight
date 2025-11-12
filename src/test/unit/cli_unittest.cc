@@ -75,6 +75,7 @@ extern "C" {
     const char * const buildKey = NULL;
     const char * const releaseName = NULL;
 
+    gyro_t gyro;
 
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
@@ -402,7 +403,7 @@ void delay(uint32_t) {}
 displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
 mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
 const char *getMcuTypeName(void) { return targetName; }
-uint16_t getCurrentRxRateHz(void) { return 0; }
+float getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }
 }

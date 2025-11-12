@@ -61,7 +61,7 @@
 #include "drivers/sensor.h"
 
 #include "drivers/adc.h"
-#include "drivers/adc_impl.h"
+#include "platform/adc_impl.h"
 
 #include "pg/adc.h"
 
@@ -119,7 +119,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PC5,  ADC_DEVICES_12,   ADC_CHANNEL_15,  15 },
 };
 
-static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_CHANNEL_COUNT];
+static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_SOURCE_COUNT];
 
 /**
  * Initialise the specified ADC to read multiple channels in repeat mode
@@ -163,14 +163,14 @@ static int adcFindTagMapEntry(const ioTag_t tag)
 /**
  * Setup the scaling offsets and factors used in adc.c
  * @see src/main/drivers/adc.c
- * @see src/main/drivers/adc_impl.h
+ * @see src/platform/common/stm32/platform/adc_impl.h
  *
  * There are a number of global calibration/scaling factors used in src/main/drivers/adc.c that need to
  * be set to appropriate values if we want to re-use existing code, e.g. adcInternalComputeTemperature
  * (the alternative would be to duplicate the code into ST and AT specific versions).
  * This is made a little confusing since the implementation based on ST datasheets approaches the calculation with
  * different formula and express the scaling factors in different units compared to the AT datasheets.
- * The constants are defined in src/main/drivers/adc_impl.h. It seems clearest to use the units from
+ * The constants are defined in src/platform/common/stm32/platform/adc_impl.h. It seems clearest to use the units from
  * the datasheet when defining those values, so here we have to convert to what's expected in
  * adcInternalComputeTemperature.
 */
@@ -253,17 +253,22 @@ void adcInit(const adcConfig_t *config)
 
     // loop over all possible channels and build the adcOperatingConfig to represent
     // the set of enabled channels
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         int map;
         int dev;
 
-        if (i == ADC_TEMPSENSOR) {
+        switch(i) {
+#ifdef USE_ADC_INTERNAL
+        case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ADCDEV_1;
-        } else if (i == ADC_VREFINT) {
+            break;
+        case ADC_VREFINT:
             map = ADC_TAG_MAP_VREFINT;
             dev = ADCDEV_1;
-        } else {
+            break;
+#endif
+        default:
             if (!adcOperatingConfig[i].tag) {
                 continue;
             }
@@ -347,7 +352,7 @@ void adcInit(const adcConfig_t *config)
         // Set the oversampling ratio and matching shift
         adc_oversample_ratio_shift_set(adc->ADCx, ADC_OVERSAMPLE_RATIO_64, ADC_OVERSAMPLE_SHIFT_6);
 
-        #ifdef USE_DMA_SPEC
+#ifdef USE_DMA_SPEC
 
         // Setup the DMA channel so that data is automatically and continuously transferred from the ADC output register
         // to the results buffer
@@ -358,7 +363,7 @@ void adcInit(const adcConfig_t *config)
         }
 
         dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
-        if ( ! dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev)) ) {
+        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 
@@ -387,10 +392,10 @@ void adcInit(const adcConfig_t *config)
         adc_dma_mode_enable(adc->ADCx, TRUE);
         adc_dma_request_repeat_enable(adc->ADCx, TRUE);
 
-        #endif //end of USE_DMA_SPEC
+#endif //end of USE_DMA_SPEC
 
         // set each channel into the auto sequence for this ADC device
-        for (int adcChan = 0; adcChan < ADC_CHANNEL_COUNT; adcChan++)
+        for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++)
         {
             // only add enabled channels for the current dev (can be simplified if we drop the pretense at handling adc2 and 3)
             if (adcOperatingConfig[adcChan].enabled && adcOperatingConfig[adcChan].adcDevice == dev)
@@ -420,7 +425,7 @@ void adcInit(const adcConfig_t *config)
 */
 void adcGetChannelValues(void)
 {
-    for (int i = 0; i < ADC_CHANNEL_INTERNAL_FIRST_ID; i++) {
+    for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -446,42 +451,18 @@ void adcInternalStartConversion(void)
 }
 
 /**
- * Reads a given channel from the DMA buffer
+ * Reads a given internal channel from the DMA buffer
 */
-static uint16_t adcInternalRead(int channel)
+uint16_t adcInternalRead(adcSource_e source)
 {
-    const int dmaIndex = adcOperatingConfig[channel].dmaIndex;
-    return adcConversionBuffer[dmaIndex];
-}
-
-/**
- * Read the internal Vref and return raw value
- *
- * The internal Vref is 1.2V and can be used to calculate the external Vref+
- * External Vref+ determines the scale for the raw ADC readings but since it
- * is often directly connected to Vdd (approx 3.3V) it isn't accurately controlled.
- * Calculating the actual value of Vref+ by using measurements of the known 1.2V
- * internal reference can improve overall accuracy.
- *
- * @return the raw ADC reading for the internal voltage reference
- * @see adcInternalCompensateVref in src/main/drivers/adc.c
-*/
-uint16_t adcInternalReadVrefint(void)
-{
-    const uint16_t value = adcInternalRead(ADC_VREFINT);
-
-    return value;
-}
-
-/**
- * Read the internal temperature sensor
- *
- * @return the raw ADC reading
-*/
-uint16_t adcInternalReadTempsensor(void)
-{
-    const uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
-    return value;
+    switch (source) {
+    case ADC_VREFINT:
+    case ADC_TEMPSENSOR:
+        const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+        return dmaIndex < ARRAYLEN(adcConversionBuffer) ? adcConversionBuffer[dmaIndex] : 0;
+    default:
+        return 0;
+    }
 }
 
 #endif // USE_ADC_INTERNAL

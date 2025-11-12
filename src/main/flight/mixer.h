@@ -35,7 +35,7 @@
 #define QUAD_MOTOR_COUNT 4
 
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
-typedef enum mixerMode
+typedef enum
 {
     MIXER_TRI = 1,
     MIXER_QUADP = 2,
@@ -66,7 +66,7 @@ typedef enum mixerMode
     MIXER_OCTOX8P = 27
 } mixerMode_e;
 
-typedef enum mixerType
+typedef enum
 {
     MIXER_LEGACY = 0,
     MIXER_LINEAR = 1,
@@ -96,6 +96,7 @@ typedef struct mixerConfig_s {
     bool yaw_motors_reversed;
     uint8_t crashflip_motor_percent;
     uint8_t crashflip_rate;
+    bool crashflip_auto_rearm;
     uint8_t mixer_type;
 #ifdef USE_RPM_LIMIT
     bool rpm_limit;

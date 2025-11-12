@@ -150,6 +150,27 @@ FAST_DATA_ZERO_INIT static float minMotorFrequencyHz;
 FAST_DATA_ZERO_INIT static float erpmToHz;
 FAST_DATA_ZERO_INIT static float dshotRpmAverage;
 FAST_DATA_ZERO_INIT static float dshotRpm[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT static bool edtAlwaysDecode;
+
+// Lookup table for extended telemetry type decoding
+// Only contains extended telemetry types, eRPM is handled by conditional logic
+static const dshotTelemetryType_t extendedTelemetryLookup[8] = {
+    DSHOT_TELEMETRY_TYPE_eRPM,
+    // Temperature range (in degree Celsius, just like Blheli_32 and KISS)
+    DSHOT_TELEMETRY_TYPE_TEMPERATURE,
+    // Voltage range (0-63,75V step 0,25V)
+    DSHOT_TELEMETRY_TYPE_VOLTAGE,
+    // Current range (0-255A step 1A)
+    DSHOT_TELEMETRY_TYPE_CURRENT,
+    // Debug 1 value
+    DSHOT_TELEMETRY_TYPE_DEBUG1,
+    // Debug 2 value
+    DSHOT_TELEMETRY_TYPE_DEBUG2,
+    // Debug 3 value
+    DSHOT_TELEMETRY_TYPE_DEBUG3,
+    // State / events
+    DSHOT_TELEMETRY_TYPE_STATE_EVENTS,
+};
 
 void initDshotTelemetry(const timeUs_t looptimeUs)
 {
@@ -160,6 +181,7 @@ void initDshotTelemetry(const timeUs_t looptimeUs)
 
     // erpmToHz is used by bidir dshot and ESC telemetry
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE / (motorConfig()->motorPoleCount / 2.0f);
+    edtAlwaysDecode = motorConfig()->dev.useDshotEdt == DSHOT_EDT_FORCE;
 
 #ifdef USE_RPM_FILTER
     if (motorConfig()->dev.useDshotTelemetry) {
@@ -193,93 +215,29 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
-    const unsigned motorCount = dshotMotorCount;
+    bool isEdtEnabled = edtAlwaysDecode || (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
 
-    if (dshotTelemetryState.motorState[motorIndex].telemetryTypes == DSHOT_NORMAL_TELEMETRY_MASK) {   /* Check DSHOT_TELEMETRY_TYPE_eRPM mask */
-        // Decode eRPM telemetry
+    // https://github.com/bird-sanctuary/extended-dshot-telemetry
+    // Extract telemetry type field and check for eRPM conditions in one operation
+    unsigned telemetryType = (value & 0x0f00) >> 8;  // 3 bits type + telemetry marker
+    bool isErpm = !isEdtEnabled || (telemetryType & 0x01) || (telemetryType == 0);
+
+    if (isErpm) {
         *pDecoded = dshot_decode_eRPM_telemetry_value(value);
+        *pType = DSHOT_TELEMETRY_TYPE_eRPM;
 
         // Update debug buffer
-        if (motorIndex < motorCount && motorIndex < DEBUG16_VALUE_COUNT) {
+        if (motorIndex < dshotMotorCount && motorIndex < DEBUG16_VALUE_COUNT) {
             DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
         }
-
-        // Set telemetry type
-        *pType = DSHOT_TELEMETRY_TYPE_eRPM;
     } else {
-        // Decode Extended DSHOT telemetry
-        switch (value & 0x0f00) {
-
-        case 0x0200:
-            // Temperature range (in degree Celsius, just like Blheli_32 and KISS)
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_TEMPERATURE;
-            break;
-
-        case 0x0400:
-            // Voltage range (0-63,75V step 0,25V)
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_VOLTAGE;
-            break;
-
-        case 0x0600:
-            // Current range (0-255A step 1A)
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_CURRENT;
-            break;
-
-        case 0x0800:
-            // Debug 1 value
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_DEBUG1;
-            break;
-
-        case 0x0A00:
-            // Debug 2 value
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_DEBUG2;
-            break;
-
-        case 0x0C00:
-            // Debug 3 value
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_DEBUG3;
-            break;
-
-        case 0x0E00:
-            // State / events
-            *pDecoded = value & 0x00ff;
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
-            break;
-
-        default:
-            // Decode as eRPM
-            *pDecoded = dshot_decode_eRPM_telemetry_value(value);
-
-            // Update debug buffer
-            if (motorIndex < motorCount && motorIndex < DEBUG16_VALUE_COUNT) {
-                DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
-            }
-
-            // Set telemetry type
-            *pType = DSHOT_TELEMETRY_TYPE_eRPM;
-            break;
-
+        // Use lookup table for extended telemetry types
+        unsigned typeIndex = telemetryType >> 1;  // drop tag bit containing zero
+        if (typeIndex < ARRAYLEN(extendedTelemetryLookup)) {
+            *pType = extendedTelemetryLookup[typeIndex];
         }
+        // Extract data field
+        *pDecoded = value & 0x00ff;
     }
 }
 
@@ -391,6 +349,28 @@ bool isDshotTelemetryActive(void)
 void dshotCleanTelemetryData(void)
 {
     memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
+}
+
+bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
+    // Check if DShot telemetry is active for this motor
+    if (!isDshotMotorTelemetryActive(motorIndex)) {
+        return false;
+    }
+
+    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
+
+    dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
+
+    const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+
+    // Extract telemetry data if available
+    dest->temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ?
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
+
+    dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ?
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
+
+    return true;
 }
 
 #endif // USE_DSHOT_TELEMETRY

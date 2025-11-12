@@ -63,7 +63,7 @@ void chirpResetSignals(chirp_t *chirp)
 bool chirpUpdate(chirp_t *chirp)
 {
     if (chirp->isFinished) {
-        
+
         return false;
 
     } else if (chirp->count == chirp->N) {
@@ -82,7 +82,7 @@ bool chirpUpdate(chirp_t *chirp)
 
         // use cosine so that the angle will oscillate around 0 (integral of gyro)
         chirp->exc = cos_approx(chirp->sinarg);
-        
+
         // frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
         if (chirp->fchirp < 1.0f) {
             chirp->exc = chirp->fchirp * chirp->exc;

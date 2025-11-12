@@ -42,7 +42,7 @@
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
- 
+
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"
 
@@ -202,8 +202,8 @@
 #define ICM40609_ACCEL_UI_FILT_BW_ODR_DIV16  (5 << 4)
 #define ICM40609_ACCEL_UI_FILT_BW_ODR_DIV20  (6 << 4)
 #define ICM40609_ACCEL_UI_FILT_BW_ODR_DIV40  (7 << 4)
-#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR   (14 << 4) // Bit[7:4] - Low Latency 
-#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR (15 << 4) // Bit[7:4] - Low Latency 
+#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR   (14 << 4) // Bit[7:4] - Low Latency
+#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR (15 << 4) // Bit[7:4] - Low Latency
 
 // REG_GYRO_ACCEL_CONFIG0 - 0x52 bits [3:0]
 #define ICM40609_GYRO_UI_FILT_BW_ODR_DIV2    (0 << 0)
@@ -345,7 +345,7 @@ static const ICM40609_AafProfile aafProfiles[ICM40609_AAF_PROFILE_COUNT] = {
  * Note:
  *  Delay is independent of UI_FILT_BW when ODR = 8000Hz.
  *  5.4 UI FILTER BLOCK TDK ICM-40609D Datasheet Rev 1.2 (2023)
- * 
+ *
  *  Filter order (standard DSP behavior):
  *  1st order -6 dB/octave
  *  2nd order -12 dB/octave
@@ -431,11 +431,11 @@ static void icm40609GetAafParams(uint16_t targetHz, ICM40609_AafProfile* res)
     while (i < ICM40609_AAF_PROFILE_COUNT && targetHz >  aafProfiles[i].hz) {
          i++;
     }
-    if (i < ICM40609_AAF_PROFILE_COUNT) {  
+    if (i < ICM40609_AAF_PROFILE_COUNT) {
         *res = aafProfiles[i];
     } else {
         // not found - Requested frequency is higher than max available
-        *res = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1]; 
+        *res = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1];
     }
 }
 
@@ -447,7 +447,7 @@ static void icm40609SetAccelAafByHz(const extDevice_t *dev, bool aafEnable, uint
         ICM40609_AafProfile aafProfile;
 
         icm40609GetAafParams(targetHz, &aafProfile);
-    
+
         uint8_t reg03 = spiReadRegMsk(dev, ICM40609_REG_ACCEL_CONFIG_STATIC2);
 
         reg03 &= ~ICM40609_ACCEL_AAF_DIS; // Clear ACCEL_AAF_DIS to enable AAF
@@ -519,7 +519,7 @@ static void icm40609SetGyroHPF(const extDevice_t *dev, bool hpfEnable, icm40609H
 static void icm40609SetGyroNotch(const extDevice_t *dev, bool notchEnable, icm40609GyroNfBw_e bwSel, float fdesiredKhz)
 {
     if (fdesiredKhz < 1.0f || fdesiredKhz > 3.0f) {
-        return; // (1kHz to 3kHz) Operating the notch filter outside this range is not supported. 
+        return; // (1kHz to 3kHz) Operating the notch filter outside this range is not supported.
     }
 
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_1);
@@ -645,7 +645,7 @@ void icm40609AccInit(accDev_t *acc)
 {
     acc->acc_1G = 2048; // 16g scale
     acc->gyro->accSampleRateHz = 1000;
-    
+
 }
 
 void icm40609GyroInit(gyroDev_t *gyro)
@@ -675,8 +675,8 @@ void icm40609GyroInit(gyroDev_t *gyro)
     icm40609SetGyroDec2M2(dev, true);
 
     // Set filter bandwidth: Low Latency
-    spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0, 
-                    ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR | 
+    spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0,
+                    ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR |
                     ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR);
 
     uint16_t gyroHWLpf; // Anti-Alias Filter (AAF) in Hz
@@ -705,15 +705,15 @@ void icm40609GyroInit(gyroDev_t *gyro)
     icm40609SetGyroNotch(dev, true, ICM40609_GYRO_NF_BW_1449HZ, 1.5f);
 
     icm40609SetGyroHPF(dev, true, ICM40609_HPF_BW_1, ICM40609_HPF_ORDER_1ST);
-                  
+
     // Enable interrupt
     spiWriteReg(dev, ICM40609_REG_INT_SOURCE0, ICM40609_UI_DRDY_INT1_EN);
 
     // Set INT1 to pulse mode, push-pull, active high
-    spiWriteReg(dev, ICM40609_REG_INT_CONFIG, 
-        ICM40609_INT1_MODE_PULSED | 
-        ICM40609_INT1_DRIVE_PUSH_PULL | 
-        ICM40609_INT1_POLARITY_ACTIVE_HIGH); 
+    spiWriteReg(dev, ICM40609_REG_INT_CONFIG,
+        ICM40609_INT1_MODE_PULSED |
+        ICM40609_INT1_DRIVE_PUSH_PULL |
+        ICM40609_INT1_POLARITY_ACTIVE_HIGH);
 
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG0, ICM40609_UI_DRDY_INT_CLEAR_STATUS); // auto clear after read
 

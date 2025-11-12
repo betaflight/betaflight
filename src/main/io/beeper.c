@@ -33,7 +33,9 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/usb_io.h"
 
+#include "flight/failsafe.h"
 #include "flight/mixer.h"
 
 #include "config/config.h"
@@ -173,11 +175,6 @@ static const uint8_t beep_camCloseBeep[] = {
     10, 8, 5, BEEPER_COMMAND_STOP
 };
 
-// RC Smoothing filter not initialized - 3 short + 1 long
-static const uint8_t beep_rcSmoothingInitFail[] = {
-    10, 10, 10, 10, 10, 10, 50, 25, BEEPER_COMMAND_STOP
-};
-
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS * 2 + 1];
 
@@ -225,7 +222,7 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  12, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
     { BEEPER_ENTRY(BEEPER_READY_BEEP,            13, beep_readyBeep,       "READY_BEEP") },
     { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME This entry must not be called directly.
-    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         15, beep_disarmRepeatBeep, "DISARM_REPEAT") },
+    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         15, beep_disarmRepeatBeep,"DISARM_REPEAT") },
     { BEEPER_ENTRY(BEEPER_ARMED,                 16, beep_armedBeep,       "ARMED") },
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           17, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   18, NULL,                 "ON_USB") },
@@ -233,8 +230,7 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_CRASHFLIP_MODE,        20, beep_2longerBeeps,    "CRASHFLIP") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   21, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  22, beep_camCloseBeep,    "CAM_CONNECTION_CLOSE") },
-    { BEEPER_ENTRY(BEEPER_RC_SMOOTHING_INIT_FAIL,23, beep_rcSmoothingInitFail, "RC_SMOOTHING_INIT_FAIL") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   24, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   23, NULL,                 "ALL") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -424,8 +420,52 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
+    // Drive ESC beacons when requested:
+    //  - RX link lost while USB is disconnected (field retrieval), or
+    //  - RX_SET via AUX with an active RX link (user-triggered beacon)
+#ifdef USE_DSHOT
+    static const timeDelta_t dshotBeaconIntervalUs = DSHOT_BEACON_MODE_INTERVAL_US;
+
+    bool dshotBeaconRequested = false;
+
+    if (!areMotorsRunning()) {
+        const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
+        const bool usbIn = usbCableIsInserted();
+
+        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
+        if (activeMode == BEEPER_RX_LOST
+            && !usbIn
+            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
+            dshotBeaconRequested = true;
+        }
+
+        // Allow user-triggered beacon via AUX switch while the RX link is healthy.
+        if (IS_RC_MODE_ACTIVE(BOXBEEPERON)
+            && failsafeIsReceivingRxData()
+            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)) ) {
+            dshotBeaconRequested = true;
+        }
+    }
+
+    if (dshotBeaconRequested) {
+        if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
+            && !isTryingToArm()) {
+            if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dshotBeaconIntervalUs) {
+                // at least 450ms between DShot beacons to allow time for the sound to fully complete
+                // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
+                lastDshotBeaconCommandTimeUs = currentTimeUs;
+                dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
+            }
+        } else {
+            // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
+            lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
+        }
+    }
+#endif
+    // Note: DShot beacon handling above must run even if no beeper sequence is active.
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
+        schedulerIgnoreTaskExecTime();
         return;
     }
 
@@ -433,28 +473,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
         schedulerIgnoreTaskExecTime();
         return;
     }
-
-#ifdef USE_DSHOT
-    if (!areMotorsRunning()
-        && (DSHOT_BEACON_ALLOWED_MODES & BEEPER_GET_FLAG(currentBeeperEntry->mode))
-        && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(currentBeeperEntry->mode)) ) {
-        const timeDelta_t dShotBeaconInterval = (currentBeeperEntry->mode == BEEPER_RX_SET)
-            ? DSHOT_BEACON_MODE_INTERVAL_US
-            : DSHOT_BEACON_RXLOSS_INTERVAL_US;
-        if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US
-            && !isTryingToArm() ) {
-            if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
-                // at least 500ms between DShot beacons to allow time for the sound to fully complete
-                // the DShot Beacon tone duration is determined by the ESC, and should not exceed 250ms
-                lastDshotBeaconCommandTimeUs = currentTimeUs;
-                dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
-            }
-        } else {
-            // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
-            lastDshotBeaconCommandTimeUs = currentTimeUs - dShotBeaconInterval;
-        }
-    }
-#endif
 
     bool visualBeep = false;
     switch (beeperSequenceAdvance(currentTimeUs)) {

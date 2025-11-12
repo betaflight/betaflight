@@ -17,7 +17,10 @@ MCU_COMMON_SRC += \
             STM32/pwm_output_hw.c \
             common/stm32/pwm_output_dshot_shared.c \
             common/stm32/pwm_output_beeper.c \
-            common/stm32/dshot_bitbang_shared.c
+            common/stm32/dshot_bitbang_shared.c \
+            common/stm32/ledstrip_ws2811_stm32.c \
+            common/stm32/debug_pin.c \
+            common/stm32/adc_impl.c
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_spi_config.c \

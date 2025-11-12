@@ -268,14 +268,14 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
 static const char *const sensorTypeNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "GPS", "GPS+MAG", NULL
+    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW"
 };
-
-#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_RANGEFINDER)
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_array_length_mismatch);
 
 static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
 };
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareNames), sensorHardwareNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
 
 static const char *configurationStates[] = {
@@ -1361,7 +1361,7 @@ static void cliSerial(const char *cmdName, char *cmdline)
             portConfig.gps_baudrateIndex = baudRateIndex;
             break;
         case 2:
-            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
+            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_460800) {
                 continue;
             }
             portConfig.telemetry_baudrateIndex = baudRateIndex;
@@ -2454,7 +2454,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-    cliPrint("SD card: ");
+    cliPrint("SD-CARD: ");
 
     if (sdcardConfig()->mode == SDCARD_MODE_NONE) {
         cliPrintLine("Not configured");
@@ -2485,7 +2485,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 
     cliWriteBytes((uint8_t*)metadata->productName, sizeof(metadata->productName));
 
-    cliPrint("'\r\n" "Filesystem: ");
+    cliPrint(" FS: ");
 
     switch (afatfs_getFilesystemState()) {
     case AFATFS_FILESYSTEM_STATE_READY:
@@ -4672,7 +4672,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf("MCU %s Clock=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
+    cliPrintf("MCU: %s CLK=%dMHz", getMcuTypeName(), (SystemCoreClock / 1000000));
 
 #if PLATFORM_TRAIT_CONFIG_HSE
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
@@ -4693,147 +4693,95 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #ifdef USE_ADC_INTERNAL
     uint16_t vrefintMv = getVrefMv();
     int16_t coretemp = getCoreTemperatureCelsius();
-    cliPrintLinef(", Vref=%d.%2dV, Core temp=%ddegC", vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
+    cliPrintLinef(", Vref=%d.%02dV, Core temp=%ddegC", vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
 #else
     cliPrintLinefeed();
 #endif
 
     // Stack and config sizes and usages
 
-    cliPrintf("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
+    cliPrintf("STACK: %db (0x%x)", stackTotalSize(), stackHighMem());
 #ifdef USE_STACK_CHECK
-    cliPrintf(", Stack used: %d", stackUsedSize());
+    cliPrintf(" / %db", stackUsedSize());
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("Configuration: %s, size: %d, max available: %d", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinef("CONFIG: %s (%db / %db)", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinefeed();
 
     // Devices
-#if defined(USE_SPI) || defined(USE_I2C)
-    cliPrint("Devices detected:");
+    cliPrint("DEVICES DETECTED:");
 #if defined(USE_SPI)
-    cliPrintf(" SPI:%d", spiGetRegisteredDeviceCount());
+    cliPrintf(" SPI=%d", spiGetRegisteredDeviceCount());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
 #endif
 #if defined(USE_I2C)
-    cliPrintf(" I2C:%d", i2cGetRegisteredDeviceCount());
+    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
+    cliPrintf(" I2C=%d (%d errors)", i2cGetRegisteredDeviceCount(), i2cErrorCounter);
 #endif
     cliPrintLinefeed();
-#endif
 
     // Sensors
-    cliPrint("Gyros detected:");
+#if defined(USE_SENSOR_NAMES)
+    cliPrintf("%s: ", sensorTypeNames[SENSOR_INDEX_GYRO]);
+#else
+    cliPrintf("GYRO: ");
+#endif
     bool found = false;
-    for (unsigned pos = 0; pos < 7; pos++) {
+    for (unsigned pos = 0; pos < GYRO_COUNT; pos++) {
         if (gyroConfig()->gyrosDetected & BIT(pos)) {
             if (found) {
-                cliPrint(",");
+                cliPrint(", ");
             } else {
                 found = true;
             }
-            cliPrintf(" gyro %d", pos + 1);
+            cliPrintf("(%d)", pos + 1);
+#if defined(USE_SENSOR_NAMES)
+            cliPrintf(" %s", lookupTableGyroHardware[detectedGyros[pos]]);
+#endif
+            if (gyro.gyroEnabledBitmask & BIT(pos)) {
+                cliPrintf(" enabled");
+            }
+#ifdef USE_SPI
+            if (gyro.gyroSensor[pos].gyroDev.gyroModeSPI != GYRO_EXTI_NO_INT) {
+                cliPrintf(" locked");
+            }
+            if (gyro.gyroSensor[pos].gyroDev.gyroModeSPI == GYRO_EXTI_INT_DMA) {
+                cliPrintf(" dma");
+            }
+            if (spiGetExtDeviceCount(&gyro.gyroSensor[pos].gyroDev.dev) > 1) {
+                cliPrintf(" shared");
+            }
+#endif
         }
     }
-#ifdef USE_SPI
-    if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
-        cliPrintf(" locked");
+    if (!found) {
+        cliPrintLine("None");
+    } else {
+        cliPrintLinefeed();
     }
-    if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        cliPrintf(" dma");
-    }
-    if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
-        cliPrintf(" shared");
-    }
-#endif
-    cliPrintLinefeed();
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
-    for (uint32_t i = 0; ; i++) {
-        if (sensorTypeNames[i] == NULL) {
-            break;
-        }
-        const uint32_t mask = (1 << i);
-        if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
+    for (unsigned i = SENSOR_INDEX_ACC; i < ARRAYLEN(sensorTypeNames); i++) {
+        const uint32_t mask = (1U << i);
+        if ((detectedSensorsMask & mask)) {
+
             const uint8_t sensorHardwareIndex = detectedSensors[i];
             const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
-            if (i) {
-                cliPrint(", ");
-            }
-            cliPrintf("%s=%s", sensorTypeNames[i], sensorHardware);
+
+            cliPrintf("%s: %s", sensorTypeNames[i], sensorHardware);
 #if defined(USE_ACC)
-            if (mask == SENSOR_ACC && acc.dev.revisionCode) {
+            if (i == SENSOR_INDEX_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
             }
 #endif
+            cliPrintLinefeed();
         }
     }
-    cliPrintLinefeed();
 #endif /* USE_SENSOR_NAMES */
-
-#if defined(USE_OSD)
-    osdDisplayPortDevice_e displayPortDeviceType;
-    displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
-
-    cliPrintLinef("OSD: %s (%u x %u)", lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort->cols, osdDisplayPort->rows);
-#endif
-
-if (buildKey) {
-    cliPrintf("BUILD KEY: %s", buildKey);
-    if (releaseName) {
-        cliPrintf(" (%s)", releaseName);
-    }
-    cliPrintLinefeed();
-}
-    // Uptime and wall clock
-
-    cliPrintf("System Uptime: %d seconds", millis() / 1000);
-
-#ifdef USE_RTC_TIME
-    char buf[FORMATTED_DATE_TIME_BUFSIZE];
-    dateTime_t dt;
-    if (rtcGetDateTime(&dt)) {
-        dateTimeFormatLocal(buf, &dt);
-        cliPrintf(", Current Time: %s", buf);
-    }
-#endif
-    cliPrintLinefeed();
-
-    // Run status
-
-    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
-
-    int rxRate = getRxRateValid() ? getCurrentRxRateHz() : 0;
-
-    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
-    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
-            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
-
-    // Battery meter
-
-    cliPrintLinef("Voltage: %d * 0.01V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
-
-    // Other devices and status
-
-#ifdef USE_I2C
-    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
-#else
-    const uint16_t i2cErrorCounter = 0;
-#endif
-    cliPrintLinef("I2C Errors: %d", i2cErrorCounter);
-
-#ifdef USE_SDCARD
-    cliSdInfo(cmdName, "");
-#endif
-
-#ifdef USE_FLASH_CHIP
-    const flashGeometry_t *layout = flashGetGeometry();
-    if (layout->jedecId != 0) {
-        cliPrintLinef("FLASH: JEDEC ID=0x%08x %uM", layout->jedecId, layout->totalSize >> 20);
-    }
-#endif
 
 #ifdef USE_GPS
     cliPrint("GPS: ");
@@ -4875,6 +4823,66 @@ if (buildKey) {
     cliPrintLinefeed();
 #endif // USE_GPS
 
+#if defined(USE_OSD)
+    osdDisplayPortDevice_e displayPortDeviceType;
+    displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
+
+    cliPrintf("OSD: %s ", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
+    if (osdDisplayPort) {
+        cliPrintf("(%u x %u)", osdDisplayPort->cols, osdDisplayPort->rows);
+    }
+    cliPrintLinefeed();
+#endif
+
+#ifdef USE_SDCARD
+    cliSdInfo(cmdName, "");
+#endif
+
+#ifdef USE_FLASH_CHIP
+    const flashGeometry_t *layout = flashGetGeometry();
+    if (layout->jedecId != 0) {
+        cliPrintLinef("FLASH: JEDEC ID=0x%08x %uM", layout->jedecId, layout->totalSize >> 20);
+    }
+#endif
+
+    if (buildKey) {
+        cliPrintLinefeed();
+        cliPrintf("BUILD KEY: %s", buildKey);
+        if (releaseName) {
+            cliPrintf(" (%s)", releaseName);
+        }
+        cliPrintLinefeed();
+    }
+
+    // Uptime and wall clock
+    cliPrintLinefeed();
+    cliPrintf("System Uptime: %d seconds", millis() / 1000);
+
+#ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    if (rtcGetDateTime(&dt)) {
+        dateTimeFormatLocal(buf, &dt);
+        cliPrintf(", Current Time: %s", buf);
+    }
+#endif
+    cliPrintLinefeed();
+
+    // Run status
+
+    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+
+    int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
+
+    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
+            constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
+
+    // Battery meter
+    const uint16_t v01 = getBatteryVoltage();
+    cliPrintLinef("Voltage: %d.%02dV (%dS battery - %s)", v01 / 100, v01 % 100, getBatteryCellCount(), getBatteryStateString());
+
+    // Other status
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
@@ -4989,38 +4997,21 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     rcSmoothingFilter_t *rcSmoothingData = getRcSmoothingData();
-    cliPrint("# RC Smoothing Type: ");
-    if (rxConfig()->rc_smoothing_mode) {
-        cliPrintLine("FILTER");
-        if (rcSmoothingAutoCalculate()) {
-            cliPrint("# Detected Rx frequency: ");
-            if (getRxRateValid()) {
-                cliPrintLinef("%dHz", lrintf(rcSmoothingData->smoothedRxRateHz));
-            } else {
-                cliPrintLine("NO SIGNAL");
-            }
-        }
-        cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
-        if (rcSmoothingData->setpointCutoffSetting) {
-            cliPrintLine("(manual)");
-        } else {
-            cliPrintLine("(auto)");
-        }
-        cliPrintf("# Active FF cutoff: %dhz ", rcSmoothingData->feedforwardCutoffFrequency);
-        if (rcSmoothingData->feedforwardCutoffSetting) {
-            cliPrintLine("(manual)");
-        } else {
-            cliPrintLine("(auto)");
-        }
-        cliPrintf("# Active throttle cutoff: %dhz ", rcSmoothingData->throttleCutoffFrequency);
-        if (rcSmoothingData->throttleCutoffSetting) {
-            cliPrintLine("(manual)");
-        } else {
-            cliPrintLine("(auto)");
-        }
+    cliPrint("# Detected Rx frequency: ");
+    if (getRxRateValid()) {
+        cliPrintLinef("%dHz", lrintf(getCurrentRxRateHz()));
     } else {
-        cliPrintLine("OFF");
+        cliPrintLine("NO SIGNAL");
     }
+    cliPrint("# RC Smoothing: ");
+    cliPrintLine(rxConfig()->rc_smoothing ? "ON" : "OFF");
+
+    if (!rxConfig()->rc_smoothing) return;
+
+    cliPrintf("# Active setpoint and FF cutoff: %dHz ", rcSmoothingData->setpointCutoffFrequency);
+    cliPrintLine(rcSmoothingData->setpointCutoffSetting ? "(manual)" : "(auto)");
+    cliPrintf("# Active throttle cutoff: %dHz ", rcSmoothingData->throttleCutoffFrequency);
+    cliPrintLine(rcSmoothingData->throttleCutoffSetting ? "(manual)" : "(auto)");
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
@@ -5086,6 +5077,10 @@ const cliResourceValue_t resourceTable[] = {
 #if defined(USE_LPUART)
     DEFA( OWNER_LPUART_TX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT ),
     DEFA( OWNER_LPUART_RX,     PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_LPUART_OFFSET], RESOURCE_LPUART_COUNT ),
+#endif
+#if defined(USE_PIOUART)
+    DEFA( OWNER_PIOUART_TX,    PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagTx[RESOURCE_PIOUART_OFFSET], RESOURCE_PIOUART_COUNT ),
+    DEFA( OWNER_PIOUART_RX,    PG_SERIAL_PIN_CONFIG, serialPinConfig_t, ioTagRx[RESOURCE_PIOUART_OFFSET], RESOURCE_PIOUART_COUNT ),
 #endif
 #ifdef USE_I2C
     DEFW( OWNER_I2C_SCL,       PG_I2C_CONFIG, i2cConfig_t, ioTagScl, I2CDEV_COUNT ),
@@ -5206,7 +5201,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
-        const char* owner = ownerNames[resourceTable[i].owner];
+        const char* owner = getOwnerName(resourceTable[i].owner);
         const pgRegistry_t* pg = pgFind(resourceTable[i].pgn);
         const void *currentConfig;
         const void *defaultConfig;
@@ -5245,7 +5240,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 
 static void printResourceOwner(uint8_t owner, uint8_t index)
 {
-    cliPrintf("%s", ownerNames[resourceTable[owner].owner]);
+    cliPrintf("%s", getOwnerName(resourceTable[owner].owner));
 
     if (resourceTable[owner].maxIndex > 0) {
         cliPrintf(" %d", RESOURCE_INDEX(index));
@@ -5327,10 +5322,10 @@ static void showDma(void)
         const resourceOwner_t *owner = dmaGetOwner(i);
 
         cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
-        if (owner->resourceIndex > 0) {
-            cliPrintLinef(" %s %d", ownerNames[owner->owner], owner->resourceIndex);
+        if (owner->index > 0) {
+            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
         } else {
-            cliPrintLinef(" %s", ownerNames[owner->owner]);
+            cliPrintLinef(" %s", getOwnerName(owner->owner));
         }
     }
 }
@@ -5415,6 +5410,35 @@ static void optToString(int optval, char *buf)
     }
 }
 
+static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
+{
+    if (entry->peripheral == DMA_PERIPH_TIMUP) {
+        const int dispNum = timerGetNumberByIndex(index);
+        if (!(TIM_N(dispNum) & entry->presenceMask)) {
+            return -1;
+        }
+        return dispNum;
+    }
+    return DMA_OPT_UI_INDEX(index);
+}
+
+static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
+{
+    if (dispNum < 0) {
+        return -1;
+    }
+
+    if (entry->peripheral == DMA_PERIPH_TIMUP) {
+        if (!(entry->presenceMask & TIM_N(dispNum))) {
+            return -1;
+        }
+        return timerGetIndexByNumber(dispNum);
+    }
+
+    const int index = dispNum - 1;
+    return (index < 0 ||  index >= entry->maxIndex) ? -1 : index;
+}
+
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
 {
     // We compute number to display for different peripherals in advance.
@@ -5422,12 +5446,9 @@ static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const 
     // Note that using timerGetNumberByIndex is not a generic solution,
     // but we are lucky that TIMUP is the only peripheral with non-contiguous numbering.
 
-    int uiIndex;
-
-    if (entry->presenceMask) {
-        uiIndex = timerGetNumberByIndex(index);
-    } else {
-        uiIndex = DMA_OPT_UI_INDEX(index);
+    int uiIndex = getDmaOptDisplayNumber(entry, index);
+    if (uiIndex == -1) {
+        return;
     }
 
     if (dmaopt != DMA_OPT_UNUSED) {
@@ -5637,8 +5658,8 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
     const timerHardware_t *timer = NULL;
     pch = strtok_r(NULL, " ", &saveptr);
     if (entry) {
-        index = pch ? (atoi(pch) - 1) : -1;
-        if (index < 0 || index >= entry->maxIndex || (entry->presenceMask != MASK_IGNORED && !(entry->presenceMask & BIT(index + 1)))) {
+        index = displayNumberToDmaOptIndex(entry, pch ? atoi(pch) : -1);
+        if (index == -1) {
             cliPrintErrorLinef(cmdName, "BAD INDEX: '%s'", pch ? pch : "");
             return;
         }
@@ -5703,7 +5724,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
 
             if (entry) {
                 if (!dmaGetChannelSpecByPeripheral(entry->peripheral, index, optval)) {
-                    cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, DMA_OPT_UI_INDEX(index), pch);
+                    cliPrintErrorLinef(cmdName, "INVALID DMA OPTION FOR %s %d: '%s'", entry->device, getDmaOptDisplayNumber(entry, index), pch);
 
                     return;
                 }
@@ -5726,7 +5747,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             if (entry) {
                 *optaddr = optval;
 
-                cliPrintLinef("# dma %s %d: changed from %s to %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString, optvalString);
+                cliPrintLinef("# dma %s %d: changed from %s to %s", entry->device, getDmaOptDisplayNumber(entry, index), orgvalString, optvalString);
             } else {
 #if defined(USE_TIMER_MGMT)
                 timerIoConfig->dmaopt = optval;
@@ -5736,7 +5757,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
             }
         } else {
             if (entry) {
-                cliPrintLinef("# dma %s %d: no change: %s", entry->device, DMA_OPT_UI_INDEX(index), orgvalString);
+                cliPrintLinef("# dma %s %d: no change: %s", entry->device, getDmaOptDisplayNumber(entry, index), orgvalString);
             } else {
                 cliPrintLinef("# dma %c%02d: no change: %s", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),orgvalString);
             }
@@ -5758,7 +5779,9 @@ static void cliDma(const char *cmdName, char* cmdline)
 #if defined(USE_DMA_SPEC)
     cliDmaopt(cmdName, cmdline);
 #else
-    cliShowParseError(cmdName);
+    UNUSED(cmdName);
+    // the only option is show, so make that the default behaviour
+    showDma();
 #endif
 }
 #endif
@@ -5913,10 +5936,10 @@ static void showTimers(void)
                     cliPrintLinefeed();
                 }
 
-                if (timerOwner->resourceIndex > 0) {
-                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner], timerOwner->resourceIndex);
+                if (timerOwner->index > 0) {
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->index);
                 } else {
-                    cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner]);
+                    cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner));
                 }
             }
         }
@@ -6074,7 +6097,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 #endif
         for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
-            owner = ownerNames[ioRecs[i].owner];
+            owner = getOwnerName(ioRecs[i].owner);
 
             cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
@@ -6103,7 +6126,7 @@ static void cliResource(const char *cmdName, char *cmdline)
             return;
         }
 
-        const char *resourceName = ownerNames[resourceTable[resourceIndex].owner];
+        const char *resourceName = getOwnerName(resourceTable[resourceIndex].owner);
         if (strcasecmp(pch, resourceName) == 0) {
             break;
         }
@@ -6158,7 +6181,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         if (tag) {
             tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
         }
-        cliPrintLinef("# resource %s %d %s", ownerNames[resourceTable[resourceIndex].owner], RESOURCE_INDEX(index), tag ? ioName : "NONE");
+        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), RESOURCE_INDEX(index), tag ? ioName : "NONE");
     }
 }
 #endif

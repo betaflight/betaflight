@@ -100,4 +100,8 @@ uint8_t mscStart(void)
     return 0;
 }
 
+void mscTask(void)
+{
+    // Nothing to do here
+}
 #endif

@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_I2C) && !defined(SOFT_I2C)
+#if defined(USE_I2C) && !defined(USE_SOFT_I2C)
 
 #include "common/utils.h"
 
@@ -73,7 +73,7 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(i2cConfig_t, I2CDEV_COUNT, i2cConfig, PG_I2C_CON
 #endif
 
 typedef struct i2cDefaultConfig_s {
-    I2CDevice device;
+    i2cDevice_e device;
     ioTag_t ioTagScl, ioTagSda;
     bool pullUp;
     uint16_t clockSpeed;
@@ -99,11 +99,11 @@ static const i2cDefaultConfig_t i2cDefaultConfig[] = {
 
 void pgResetFn_i2cConfig(i2cConfig_t *i2cConfig)
 {
-    memset(i2cConfig, 0, sizeof(*i2cConfig));
+    memset(i2cConfig, 0, sizeof(*i2cConfig) * I2CDEV_COUNT);
 
     for (size_t index = 0 ; index < ARRAYLEN(i2cDefaultConfig) ; index++) {
         const i2cDefaultConfig_t *defconf = &i2cDefaultConfig[index];
-        int device = defconf->device;
+        const i2cDevice_e device = defconf->device;
         i2cConfig[device].ioTagScl = defconf->ioTagScl;
         i2cConfig[device].ioTagSda = defconf->ioTagSda;
         i2cConfig[device].pullUp = defconf->pullUp;

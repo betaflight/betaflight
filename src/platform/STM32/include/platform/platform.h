@@ -46,7 +46,7 @@
 #define STM32G4
 #endif
 
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "system_stm32h7xx.h"
@@ -263,6 +263,15 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
 
+// Camera control PWM availability per STM32 family
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
+#endif
+
+#if defined(STM32F405)
+#define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
+#endif
+
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 
 // speed is packed between modebits 4 and 1,
@@ -312,7 +321,7 @@ extern uint8_t _dmaram_end__;
 
 #endif
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
@@ -437,6 +446,9 @@ extern uint8_t _dmaram_end__;
 #define SPI_TRAIT_HANDLE 1
 #endif
 
+#if defined(HAL_QSPI_MODULE_ENABLED)
+#define QSPI_TRAIT_HANDLE 1
+#endif
 #endif
 
 #if defined(STM32F4)
@@ -447,9 +459,11 @@ extern uint8_t _dmaram_end__;
 
 // QUAD SPI
 #if defined(STM32H7)
-#define QUADSPI_TRAIT_AF_PIN 1
-#define QUADSPI_TRAIT_HANDLE 1
 #define MAX_QUADSPI_PIN_SEL 3
+#define PLATFORM_TRAIT_SDIO_INIT 1
+#endif
+#if defined(STM32G4)
+#define MAX_QUADSPI_PIN_SEL 4
 #define PLATFORM_TRAIT_SDIO_INIT 1
 #endif
 
@@ -466,8 +480,76 @@ extern uint8_t _dmaram_end__;
 
 #if defined(STM32H7) || defined(STM32G4)
 #define DMA_CHANREQ_STRING "Request"
+
+#define ADC_INTERNAL_VBAT4_ENABLED 1
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 #define DMA_STCH_STRING    "Stream"
 #endif
+
+#define PLATFORM_TRAIT_ADC_DEVICE 1
+
+#if defined(STM32F4) || defined(STM32F7)
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA2_Stream4
+// ST0 or ST4
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA2_Stream3
+// ST2 or ST3
+#endif
+
+#ifndef ADC3_DMA_STREAM
+#define ADC3_DMA_STREAM DMA2_Stream0
+// ST0 or ST1
+#endif
+#endif
+
+#ifdef USE_ITCM_RAM
+#if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
+#define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
+#else
+#define FAST_CODE                   __attribute__((section(".tcm_code")))
+#endif
+// If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
+// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM but if FAST_CODE_PREF is not
+// defined for the target, FAST_CODE_PREF will become an alias to FAST_CODE (in the common post
+// header file), and functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
+
+#define FAST_CODE_NOINLINE          NOINLINE
+#endif // USE_ITCM_RAM
+
+// noting this is not used anywhere in the codebase at the moment
+#ifdef USE_CCM_CODE
+#define CCM_CODE                    __attribute__((section(".ccm_code")))
+#endif
+
+#ifdef USE_FAST_DATA
+#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
+#endif // USE_FAST_DATA
+
+#if defined(USE_EXST) && !defined(RAMBASED)
+#define USE_FLASH_BOOT_LOADER
+#endif
+
+#if defined(USE_FLASH_MEMORY_MAPPED)
+#if !defined(USE_RAM_CODE)
+#define USE_RAM_CODE
+#endif
+
+#define MMFLASH_CODE RAM_CODE
+#define MMFLASH_CODE_NOINLINE RAM_CODE NOINLINE
+
+#define MMFLASH_DATA FAST_DATA
+#define MMFLASH_DATA_ZERO_INIT FAST_DATA_ZERO_INIT
+#endif
+
+#ifdef USE_RAM_CODE
+// RAM_CODE for methods that need to be in RAM, but don't need to be in the fastest type of memory.
+// Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
+#define RAM_CODE                   __attribute__((section(".ram_code")))
+#endif
+

@@ -474,18 +474,18 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (gyro.useDualGyroDebugging) {
+    if (gyro.useMultiGyroDebugging) {
         int debugIndex = 0;
 
         for (int i = 0; i < GYRO_COUNT; i++) {
             if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
-                DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[X]);
-                DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[Y]);
-                DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale));
-                DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale));
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 0 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[X]);
+                DEBUG_SET(DEBUG_MULTI_GYRO_RAW, 1 + debugIndex, gyro.gyroSensor[i].gyroDev.gyroADCRaw[Y]);
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 0 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale));
+                DEBUG_SET(DEBUG_MULTI_GYRO_SCALED, 1 + debugIndex, lrintf(gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale));
                 // grab the difference between each gyro and the fused gyro output, gyro.gyroADCf (it hasn't had filters applied yet)
-                DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[0]));
-                DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[1]));
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 0 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.x * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[0]));
+                DEBUG_SET(DEBUG_MULTI_GYRO_DIFF, 1 + debugIndex, lrintf((gyro.gyroSensor[i].gyroDev.gyroADC.y * gyro.gyroSensor[i].gyroDev.scale) - gyro.gyroADCf[1]));
 
                 debugIndex += 2;
                 if (debugIndex >= 8) {

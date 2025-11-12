@@ -43,15 +43,15 @@ void IOInitGlobal(void)
     }
 
 #ifdef PICO_TRACE
-#ifdef PICO_DEFAULT_UART_TX_PIN
-    ioRecs[PICO_DEFAULT_UART_TX_PIN].owner = OWNER_SYSTEM;
+#ifdef PICO_TRACE_TX_GPIO
+    ioRecs[PICO_TRACE_TX_GPIO].owner = OWNER_SYSTEM;
 #endif
-#ifdef PICO_DEFAULT_UART_RX_PIN
-    ioRecs[PICO_DEFAULT_UART_RX_PIN].owner = OWNER_SYSTEM;
+#ifdef PICO_TRACE_RX_GPIO
+    ioRecs[PICO_TRACE_RX_GPIO].owner = OWNER_SYSTEM;
 #endif
 #endif
 
-    // Some boards (e.g. Laurel) require a pin to be held low in order to generate a 5V / 9V
+    // Some boards (e.g. Hellbender) require a pin to be held low in order to generate a 5V / 9V
     // power supply from the main battery.
     // (TODO: should we manage a list of pins that we want to send low or high?)
 #ifdef PICO_BEC_5V_ENABLE_PIN
@@ -59,6 +59,7 @@ void IOInitGlobal(void)
     gpio_init(pin5);
     gpio_set_dir(pin5, 1);
     gpio_put(pin5, 0);
+    bprintf("5V enable pin: %d set low", pin5);
     ioRecs[pin5].owner = OWNER_SYSTEM;
 #endif
 
@@ -67,6 +68,7 @@ void IOInitGlobal(void)
     gpio_init(pin9);
     gpio_set_dir(pin9, 1);
     gpio_put(pin9, 0);
+    bprintf("9V enable pin: %d set low", pin9);
     ioRecs[pin9].owner = OWNER_SYSTEM;
 #endif
 }
@@ -137,10 +139,18 @@ SPI_IO_CS_HIGH_CFG (as defined)
     }
 
     uint16_t ioPin = IO_Pin(io);
-    if (gpio_get_function(ioPin) == GPIO_FUNC_NULL) {
+    bprintf("pico IOConfigGPIO gpio %d for 0x%02x (0=in, 1=out)",ioPin, cfg);
+
+    gpio_function_t currentFunction = gpio_get_function(ioPin);
+    if (currentFunction == GPIO_FUNC_NULL) {
+        // Select GPIO_FUNC_SIO, set direction to input, clear output value (set to low)
         gpio_init(ioPin);
+    } else if (currentFunction != GPIO_FUNC_SIO) {
+        bprintf("Warning: not redefining gpio function type from %d to SIO\n", currentFunction);
     }
+
     gpio_set_dir(ioPin, (cfg & 0x01)); // 0 = in, 1 = out
+    gpio_set_pulls(ioPin, (cfg >> 5) & GPIO_PULLUP, (cfg >> 5) & GPIO_PULLDOWN);
 }
 
 IO_t IOGetByTag(ioTag_t tag)

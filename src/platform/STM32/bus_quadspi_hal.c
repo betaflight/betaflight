@@ -36,10 +36,224 @@
 #include "platform/rcc.h"
 
 #include "pg/bus_quadspi.h"
+#include "drivers/bus_quadspi_impl.h"
+// Provide platform-specific hardware table for STM32
+const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
+#ifdef STM32H7
+    {
+        .device = QUADSPIDEV_1,
+        .reg = QUADSPI,
+        .clkPins = {
+            { DEFIO_TAG_E(PB2),  GPIO_AF9_QUADSPI },
+        },
+        .bk1IO0Pins = {
+            { DEFIO_TAG_E(PC9),  GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PD11), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF8),  GPIO_AF10_QUADSPI },
+        },
+        .bk1IO1Pins = {
+            { DEFIO_TAG_E(PC10), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PD12), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF9),  GPIO_AF10_QUADSPI },
+        },
+        .bk1IO2Pins = {
+            { DEFIO_TAG_E(PE2),  GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF7),  GPIO_AF9_QUADSPI },
+        },
+        .bk1IO3Pins = {
+            { DEFIO_TAG_E(PA1),  GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PD13), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF6),  GPIO_AF9_QUADSPI },
+        },
+        .bk1CSPins = {
+            { DEFIO_TAG_E(PB6),  GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PB10), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PG6),  GPIO_AF10_QUADSPI },
+        },
+        .bk2IO0Pins = {
+            { DEFIO_TAG_E(PE7),  GPIO_AF10_QUADSPI },
+            //{ DEFIO_TAG_E(PH7),  GPIO_AF9_QUADSPI }, // FIXME regenerate io_def_generated with support for GPIO 'H'
+        },
+        .bk2IO1Pins = {
+            { DEFIO_TAG_E(PE8),  GPIO_AF10_QUADSPI },
+            //{ DEFIO_TAG_E(PH3),  GPIO_AF9_QUADSPI }, // FIXME regenerate io_def_generated with support for GPIO 'H'
+        },
+        .bk2IO2Pins = {
+            { DEFIO_TAG_E(PE9),  GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PG9),  GPIO_AF9_QUADSPI },
+        },
+        .bk2IO3Pins = {
+            { DEFIO_TAG_E(PE10),  GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PG14),  GPIO_AF9_QUADSPI },
+        },
+        .bk2CSPins = {
+            { DEFIO_TAG_E(PC11),  GPIO_AF9_QUADSPI },
+        },
+        .rcc = RCC_AHB3(QSPI),
+    },
+#endif
+#ifdef STM32G4
+    {
+        .device = QUADSPIDEV_1,
+        .reg = QUADSPI,
+        .clkPins = {
+            { DEFIO_TAG_E(PA3), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PB10), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PE10), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PF10), GPIO_AF10_QUADSPI },
+        },
+        .bk1IO0Pins = {
+            { DEFIO_TAG_E(PB1), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PE12), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PF8), GPIO_AF10_QUADSPI },
+        },
+        .bk1IO1Pins = {
+            { DEFIO_TAG_E(PB0), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PE13), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PF9), GPIO_AF10_QUADSPI },
+        },
+        .bk1IO2Pins = {
+            { DEFIO_TAG_E(PA7), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PE14), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PF7), GPIO_AF10_QUADSPI },
+        },
+        .bk1IO3Pins = {
+            { DEFIO_TAG_E(PA6), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PE15), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PF6), GPIO_AF10_QUADSPI },
+        },
+        .bk1CSPins = {
+            { DEFIO_TAG_E(PA2), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PB11), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PE11), GPIO_AF10_QUADSPI },
+        },
+        .bk2IO0Pins = {
+            { DEFIO_TAG_E(PC1), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PD4), GPIO_AF10_QUADSPI },
+        },
+        .bk2IO1Pins = {
+            { DEFIO_TAG_E(PB2), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PC2), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PD5), GPIO_AF10_QUADSPI },
+        },
+        .bk2IO2Pins = {
+            { DEFIO_TAG_E(PC3), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PD6), GPIO_AF10_QUADSPI },
+        },
+        .bk2IO3Pins = {
+            { DEFIO_TAG_E(PC4), GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PD7), GPIO_AF10_QUADSPI },
+        },
+        .bk2CSPins = {
+            { DEFIO_TAG_E(PD3), GPIO_AF10_QUADSPI },
+        },
+        .rcc = RCC_AHB3(QSPI),
+    },
+#endif
+};
+
+// Provide platform-specific pin configuration for STM32
+void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)
+{
+    for (size_t hwindex = 0; hwindex < ARRAYLEN(quadSpiHardware); hwindex++) {
+        const quadSpiHardware_t *hw = &quadSpiHardware[hwindex];
+
+        if (!hw->reg) {
+            continue;
+        }
+
+        quadSpiDevice_e device = hw->device;
+        quadSpiDevice_t *pDev = &quadSpiDevice[device];
+
+        for (int pindex = 0; pindex < MAX_QUADSPI_PIN_SEL; pindex++) {
+            if (pConfig[device].ioTagClk == hw->clkPins[pindex].pin) {
+                pDev->clk = hw->clkPins[pindex].pin;
+                pDev->clkAF = hw->clkPins[pindex].af;
+            }
+            //
+            // BK1
+            //
+            if (pConfig[device].ioTagBK1IO0 == hw->bk1IO0Pins[pindex].pin) {
+                pDev->bk1IO0 = hw->bk1IO0Pins[pindex].pin;
+                pDev->bk1IO0AF = hw->bk1IO0Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK1IO1 == hw->bk1IO1Pins[pindex].pin) {
+                pDev->bk1IO1 = hw->bk1IO1Pins[pindex].pin;
+                pDev->bk1IO1AF = hw->bk1IO1Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK1IO2 == hw->bk1IO2Pins[pindex].pin) {
+                pDev->bk1IO2 = hw->bk1IO2Pins[pindex].pin;
+                pDev->bk1IO2AF = hw->bk1IO2Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK1IO3 == hw->bk1IO3Pins[pindex].pin) {
+                pDev->bk1IO3 = hw->bk1IO3Pins[pindex].pin;
+                pDev->bk1IO3AF = hw->bk1IO3Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK1CS == hw->bk1CSPins[pindex].pin) {
+                pDev->bk1CS = hw->bk1CSPins[pindex].pin;
+                pDev->bk1CSAF = hw->bk1CSPins[pindex].af;
+            }
+            //
+            // BK2
+            //
+            if (pConfig[device].ioTagBK2IO0 == hw->bk2IO0Pins[pindex].pin) {
+                pDev->bk2IO0 = hw->bk2IO0Pins[pindex].pin;
+                pDev->bk2IO0AF = hw->bk2IO0Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK2IO1 == hw->bk2IO1Pins[pindex].pin) {
+                pDev->bk2IO1 = hw->bk2IO1Pins[pindex].pin;
+                pDev->bk2IO1AF = hw->bk2IO1Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK2IO2 == hw->bk2IO2Pins[pindex].pin) {
+                pDev->bk2IO2 = hw->bk2IO2Pins[pindex].pin;
+                pDev->bk2IO2AF = hw->bk2IO2Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK2IO3 == hw->bk2IO3Pins[pindex].pin) {
+                pDev->bk2IO3 = hw->bk2IO3Pins[pindex].pin;
+                pDev->bk2IO3AF = hw->bk2IO3Pins[pindex].af;
+            }
+            if (pConfig[device].ioTagBK2CS == hw->bk2CSPins[pindex].pin) {
+                pDev->bk2CS = hw->bk2CSPins[pindex].pin;
+                pDev->bk2CSAF = hw->bk2CSPins[pindex].af;
+            }
+        }
+
+        if ((quadSpiConfig(device)->csFlags & QUADSPI_BK1_CS_MASK) == QUADSPI_BK1_CS_SOFTWARE) {
+            pDev->bk1CS = pConfig[device].ioTagBK1CS;
+        }
+        if ((quadSpiConfig(device)->csFlags & QUADSPI_BK2_CS_MASK) == QUADSPI_BK2_CS_SOFTWARE) {
+            pDev->bk2CS = pConfig[device].ioTagBK2CS;
+        }
+
+        bool haveResources = true;
+        haveResources = haveResources && pDev->clk;
+
+        bool needBK1 = (pConfig[device].mode == QUADSPI_MODE_DUAL_FLASH) || (pConfig[device].mode == QUADSPI_MODE_BK1_ONLY);
+        if (needBK1) {
+            bool haveBK1Resources = pDev->bk1IO0 && pDev->bk1IO1 && pDev->bk1IO2 && pDev->bk1IO3 && pDev->bk1CS;
+            haveResources = haveResources && haveBK1Resources;
+        }
+
+        bool needBK2 = (pConfig[device].mode == QUADSPI_MODE_DUAL_FLASH) || (pConfig[device].mode == QUADSPI_MODE_BK2_ONLY);
+        if (needBK2) {
+            bool haveBK2Resources = pDev->bk2IO0 && pDev->bk2IO1 && pDev->bk2IO2 && pDev->bk2IO3;
+            haveResources = haveResources && haveBK2Resources;
+        }
+
+        if ((needBK1 && !pDev->bk1CS) || (needBK2 && ((quadSpiConfig(device)->csFlags & QUADSPI_BK2_CS_MASK) && !pDev->bk2CS))) {
+            continue;
+        }
+
+        if (haveResources) {
+            pDev->dev = hw->reg;
+            pDev->rcc = hw->rcc;
+        }
+    }
+}
 
 static void Error_Handler(void) { while (1); }
 
-void quadSpiInitDevice(QUADSPIDevice device)
+void quadSpiInitDevice(quadSpiDevice_e device)
 {
     quadSpiDevice_t *quadSpi = &(quadSpiDevice[device]);
 
@@ -60,10 +274,8 @@ void quadSpiInitDevice(QUADSPIDevice device)
     IOInit(IOGetByTag(quadSpi->bk2IO3), OWNER_QUADSPI_BK2IO3, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(quadSpi->bk2CS), OWNER_QUADSPI_BK2CS, RESOURCE_INDEX(device));
 
-#if defined(STM32H7)
-    // clock is only on AF9
-    // IO and CS lines are on AF9 and AF10
-    IOConfigGPIOAF(IOGetByTag(quadSpi->clk), QUADSPI_IO_AF_CLK_CFG, GPIO_AF9_QUADSPI);
+#if defined(STM32H7) || defined(STM32G4)
+    IOConfigGPIOAF(IOGetByTag(quadSpi->clk), QUADSPI_IO_AF_CLK_CFG, quadSpi->clkAF);
     IOConfigGPIOAF(IOGetByTag(quadSpi->bk1IO0), QUADSPI_IO_AF_BK_IO_CFG, quadSpi->bk1IO0AF);
     IOConfigGPIOAF(IOGetByTag(quadSpi->bk1IO1), QUADSPI_IO_AF_BK_IO_CFG, quadSpi->bk1IO1AF);
     IOConfigGPIOAF(IOGetByTag(quadSpi->bk1IO2), QUADSPI_IO_AF_BK_IO_CFG, quadSpi->bk1IO2AF);
@@ -136,7 +348,7 @@ static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
  */
 LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if(quadSpiDevice[device].hquadSpi.State == HAL_QSPI_STATE_BUSY)
         return true;
     else
@@ -147,7 +359,7 @@ LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 
 static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 
     IO_t bk1CS = IOGetByTag(quadSpiDevice[device].bk1CS);
     IO_t bk2CS = IOGetByTag(quadSpiDevice[device].bk2CS);
@@ -176,7 +388,7 @@ static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
 
 static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 
     IO_t bk1CS = IOGetByTag(quadSpiDevice[device].bk1CS);
     IO_t bk2CS = IOGetByTag(quadSpiDevice[device].bk2CS);
@@ -205,7 +417,7 @@ static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
 
 bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -248,7 +460,7 @@ bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
 
 bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -286,7 +498,7 @@ bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t
 
 bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -324,7 +536,7 @@ bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
 
 bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -363,7 +575,7 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
 
 bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -401,7 +613,7 @@ bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruct
 }
 bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -441,7 +653,7 @@ bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
 
 bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -481,7 +693,7 @@ bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruc
 
 bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -516,7 +728,7 @@ bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instr
 
 bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -554,7 +766,7 @@ bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
 
 void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)
 {
-    QUADSPIDevice device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (HAL_QSPI_DeInit(&quadSpiDevice[device].hquadSpi) != HAL_OK)
     {
         Error_Handler();

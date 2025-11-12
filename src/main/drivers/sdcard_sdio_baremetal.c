@@ -586,13 +586,13 @@ static sdcardOperationStatus_e sdcardSdio_beginWriteBlocks(uint32_t blockIndex, 
 static bool sdcardSdio_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
     if (sdcard.state != SDCARD_STATE_READY) {
-		if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
-			if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
-				return false;
-			}
-		} else {
-			return false;
-		}
+        if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
+            if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
 #ifdef SDCARD_PROFILING

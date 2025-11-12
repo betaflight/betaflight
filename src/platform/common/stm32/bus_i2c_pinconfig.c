@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_I2C) && !defined(SOFT_I2C)
+#if defined(USE_I2C) && !defined(USE_SOFT_I2C)
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -48,7 +48,7 @@ void i2cPinConfigure(const i2cConfig_t *i2cConfig)
             continue;
         }
 
-        I2CDevice device = hardware->device;
+        const i2cDevice_e device = hardware->device;
         i2cDevice_t *pDev = &i2cDevice[device];
 
         memset(pDev, 0, sizeof(*pDev));

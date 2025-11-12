@@ -71,6 +71,7 @@
 #include "rx/rx_spi.h"
 #include "rx/targetcustomserial.h"
 #include "rx/msp_override.h"
+#include "rx/mavlink.h"
 
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
@@ -265,6 +266,11 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 #ifdef USE_SERIALRX_FPORT
     case SERIALRX_FPORT:
         enabled = fportRxInit(rxConfig, rxRuntimeState);
+        break;
+#endif
+#ifdef USE_SERIALRX_MAVLINK
+    case SERIALRX_MAVLINK:
+        enabled = mavlinkRxInit(rxConfig, rxRuntimeState);
         break;
 #endif
     default:
@@ -865,7 +871,7 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     }
     rssiUpdateAt = currentTimeUs + RSSI_UPDATE_INTERVAL;
 
-    const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
+    const uint16_t adcRssiSample = adcGetValue(ADC_RSSI);
     uint16_t rssiValue = adcRssiSample / RSSI_ADC_DIVISOR;
 
     setRssi(rssiValue, RSSI_SOURCE_ADC);

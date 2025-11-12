@@ -150,6 +150,18 @@
 
 #if defined(APM32F4)
 
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA2_Stream4
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA2_Stream3
+#endif
+
+#ifndef ADC3_DMA_STREAM
+#define ADC3_DMA_STREAM DMA2_Stream0
+#endif
+
 //speed is packed inside modebits 5 and 2,
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
@@ -191,6 +203,7 @@
 #define UART_RX_BUFFER_ATTRIBUTE /* NONE */
 
 #define PLATFORM_TRAIT_RCC 1
+#define PLATFORM_TRAIT_ADC_DEVICE 1
 #define UART_TRAIT_AF_PORT 1
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define I2C_TRAIT_AF_PIN 1
@@ -211,4 +224,10 @@
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 
 #define DMA_STCH_STRING    "Stream"
+
 #endif
+
+#ifdef USE_FAST_DATA
+#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
+#endif // USE_FAST_DATA
