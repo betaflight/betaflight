@@ -291,13 +291,13 @@ static void mavlinkSendPosition(void)
         gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.altCm * 10,
-        // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
+        // eph GPS HDOP horizontal dilution of position (unitless * 100). If unknown, set to: UINT16_MAX
         gpsSol.dop.hdop,
-        // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
+        // epv GPS VDOP vertical dilution of position (unitless * 100). If unknown, set to: UINT16_MAX
         gpsSol.dop.vdop,
-        // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
+        // vel GPS ground speed (m/s * 100). If unknown, set to: UINT16_MAX
         gpsSol.groundSpeed,
-        // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
+        // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
         gpsSol.groundCourse * 10,
         // satellites_visible Number of satellites visible. If unknown, set to 255
         gpsSol.numSat,
