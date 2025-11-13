@@ -19,10 +19,14 @@ jobs:
         repository: Stefanbrnnr/config
         path: config
 
-    - name: Install Toolchain
+    - name: Install Required Packages
       run: |
         sudo apt update
-        sudo apt install -y gcc-arm-none-eabi binutils-arm-none-eabi make python3
+        sudo apt install -y python3 ninja-build
+
+    - name: Install Betaflight ARM Toolchain (correct version)
+      run: |
+        make arm_sdk_install
 
     - name: Build Firmware
       run: |
