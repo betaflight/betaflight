@@ -1,8 +1,6 @@
 name: Build Betaflight Custom Target
 
 on:
-  push:
-    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
@@ -10,60 +8,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # --------------------------
-    # CHECKOUT BETAFLIGHT FIRMWARE
-    # --------------------------
     - name: Checkout Betaflight Firmware Repo (Fork)
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: false
 
-    # --------------------------
-    # CHECKOUT YOUR CONFIG REPO
-    # --------------------------
-    - name: Checkout Custom Config Repo
+    - name: Checkout Custom Config Repo into src/config
       uses: actions/checkout@v4
       with:
         repository: Stefanbrnnr/config
-        path: config
+        path: src/config
 
-    # --------------------------
-    # INSTALL DEPENDENCIES
-    # --------------------------
     - name: Install Build Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build python3
+        sudo apt-get install -y python3 ninja-build
 
-    # --------------------------
-    # INSTALL ARM TOOLCHAIN
-    # --------------------------
-    - name: Install Betaflight ARM Toolchain (Correct Version)
-      run: |
-        make arm_sdk_install
+    - name: Install ARM Toolchain
+      run: make arm_sdk_install
 
-    # --------------------------
-    # HYDRATE CONFIGURATIONS
-    # (imports your config/ into src/config/)
-    # --------------------------
     - name: Hydrate Configurations
-      run: |
-        make config_dir=config configs
+      run: make configs
 
-    # --------------------------
-    # BUILD YOUR CUSTOM TARGET
-    # STM32H743 = MCU target
-    # CONFIG=BRENNER_H7 = your board name
-    # --------------------------
-    - name: Build Firmware
-      run: |
-        make config_dir=config STM32H743 CONFIG=BRENNER_H7
+    - name: Build BRENNER_H7 Target
+      run: make BRENNER_H7
 
-    # --------------------------
-    # UPLOAD RESULT
-    # --------------------------
     - name: Upload Firmware Artifact
       uses: actions/upload-artifact@v4
       with:
         name: BRENNER_H7-firmware
-        path: ./obj/
+        path: obj/
