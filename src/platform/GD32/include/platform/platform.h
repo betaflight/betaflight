@@ -105,10 +105,6 @@ typedef struct DMA_Channel_TypeDef DMA_Channel_TypeDef;
 typedef struct SPI_TypeDef         SPI_TypeDef;
 typedef struct ADC_TypeDef         ADC_TypeDef;
 typedef struct USART_TypeDef       USART_TypeDef;
-typedef struct TIM_Cmd             TIM_Cmd;
-typedef struct TIM_CtrlPWMOutputs  TIM_CtrlPWMOutputs;
-typedef struct TIM_TimeBaseInit    TIM_TimeBaseInit;
-typedef struct TIM_ARRPreloadConfig TIM_ARRPreloadConfig;
 typedef struct EXTI_TypeDef         EXTI_TypeDef;
 typedef struct EXTI_InitTypeDef     EXTI_InitTypeDef;
 #define DMA_InitTypeDef            dma_general_config_struct
