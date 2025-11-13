@@ -3665,11 +3665,11 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
 static void cliPrintGyroRegisters(uint8_t whichSensor)
 {
+#if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
     // ICM-456xx uses different register addresses than MPU/ICM-426xx sensors
     // Register 0x75 (MPU_RA_WHO_AM_I) is RESERVED on ICM-456xx
     const mpuDetectionResult_t *mpuDetection = gyroMpuDetectionResult();
     
-#if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
     if (mpuDetection->sensor == ICM_45686_SPI || mpuDetection->sensor == ICM_45605_SPI) {
         // ICM-456xx register addresses (from DS-000577 datasheet)
         cliPrintLinef("# WHO_AM_I      0x%X (0x72)", gyroReadRegister(whichSensor, 0x72));  // Should be 0xE9 or 0xE5
