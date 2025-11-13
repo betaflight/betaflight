@@ -222,10 +222,10 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #endif
 
 #if defined(GD32F4)
-#if defined(GD32F425)
-#define SPIDEV_COUNT 3
-#elif defined(GD32F460)
+#if defined(GD32F460)
 #define SPIDEV_COUNT 5
+#else
+#define SPIDEV_COUNT 3
 #endif
 #else
 #define SPIDEV_COUNT 4
@@ -255,7 +255,6 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define UART_REG_TXD(base) (USART_DATA((uint32_t)base))
 #endif
 
-#define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
 
 // Select UART prefix according to UART_DEV
