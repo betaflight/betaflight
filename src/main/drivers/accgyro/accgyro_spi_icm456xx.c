@@ -588,8 +588,12 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         // Provide a small initial DMA duration estimate for EXTI sync heuristics
         gyro->gyroDmaMaxDuration = 5;
 
-        // Only enable EXTI-driven DMA once we have confirmed interrupts are firing
-        if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
+        // Check EXTI status to determine appropriate mode
+        if (gyro->detectedEXTI == 0) {
+            // No interrupts detected at all: operate without EXTI to guarantee fresh samples
+            gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
+        } else if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
+            // Sufficient interrupts confirmed: enable EXTI-driven DMA
 #ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
                 gyro->dev.callbackArg = (uintptr_t)gyro;
@@ -607,12 +611,12 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
             } else
 #endif
             {
-                // Interrupts are present, but no DMA
+                // Interrupts confirmed, but no DMA available
                 gyro->gyroModeSPI = GYRO_EXTI_INT;
             }
         } else {
-            // EXTI not confirmed yet: operate without EXTI to guarantee fresh samples
-            gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
+            // Interrupts detected but below threshold: stay in interrupt mode while counting
+            gyro->gyroModeSPI = GYRO_EXTI_INT;
         }
 
         break;
