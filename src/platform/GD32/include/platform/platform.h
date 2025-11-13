@@ -21,7 +21,7 @@
 
 #pragma once
 
-#if defined(GD32F405) || defined(GD32F407) || defined(GD32F425) || defined(GD32F427) || defined(GD32F450) || defined(GD32F460) || defined(GD32F470)
+#if defined(GD32F460)
 
 #include "gd32f4xx.h"
 
@@ -224,8 +224,6 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #if defined(GD32F4)
 #if defined(GD32F460)
 #define SPIDEV_COUNT 6
-#else
-#define SPIDEV_COUNT 3
 #endif
 #else
 #define SPIDEV_COUNT 4
