@@ -255,7 +255,7 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(SPI, 5, SDO), // Not available in smaller packages
     REQMAP_DIR(SPI, 5, SDI), // ditto
     // REQMAP_DIR(SPI, 6, SDO), // SPI6 is on BDMA (todo)
-    // REQMAP_DIR(SPI, 6, SDO), // ditto
+    // REQMAP_DIR(SPI, 6, SDI), // ditto
 #endif // USE_SPI
 
 #ifdef USE_ADC
