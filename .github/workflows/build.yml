@@ -2,7 +2,7 @@ name: Build Betaflight Custom Target
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: Checkout Firmware Repo (your betaflight fork)
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Checkout Config Repo (your target definitions)
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: Stefanbrnnr/config
         path: config
@@ -29,7 +29,7 @@ jobs:
         make config_dir=config BRENNER_H7
 
     - name: Upload Firmware Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: BRENNER_H7-firmware
         path: obj/
