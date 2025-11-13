@@ -61,19 +61,17 @@ typedef struct
 
 #define PLATFORM_TRAIT_ADC_DEVICE 1
 
-#define SPI_TRAIT_AF_PORT        1
-#define SPI_TRAIT_AF_PIN         1
-#define I2C_TRAIT_STATE          1
-#define I2C_TRAIT_AF_PIN         1
-#define I2CDEV_COUNT             3
-#define PLATFORM_TRAIT_RCC       1
-#define UART_TRAIT_AF_PORT       1
-#define UART_TRAIT_AF_PIN        1
-#define UART_TRAIT_PINSWAP       1
-#define SERIAL_TRAIT_PIN_CONFIG  1
-#define DMA_TRAIT_CHANNEL        1
-
-#define PLATFORM_TRAIT_ADC_DEVICE 1
+#define SPI_TRAIT_AF_PORT         1
+#define SPI_TRAIT_AF_PIN          1
+#define I2C_TRAIT_STATE           1
+#define I2C_TRAIT_AF_PIN          1
+#define I2CDEV_COUNT              3
+#define PLATFORM_TRAIT_RCC        1
+#define UART_TRAIT_AF_PORT        1
+#define UART_TRAIT_AF_PIN         1
+#define UART_TRAIT_PINSWAP        1
+#define SERIAL_TRAIT_PIN_CONFIG   1
+#define DMA_TRAIT_CHANNEL         1
 
 #define USE_FAST_DATA
 #define USE_RPM_FILTER
