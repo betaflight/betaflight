@@ -28,6 +28,10 @@ jobs:
       run: |
         make arm_sdk_install
 
+    - name: Hydrate Configurations (important!)
+      run: |
+        make config_dir=config configs
+
     - name: Build Firmware
       run: |
         make config_dir=config BRENNER_H7
