@@ -223,7 +223,7 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 
 #if defined(GD32F4)
 #if defined(GD32F460)
-#define SPIDEV_COUNT 5
+#define SPIDEV_COUNT 6
 #else
 #define SPIDEV_COUNT 3
 #endif
