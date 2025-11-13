@@ -292,7 +292,8 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 // {
 //     switch (hardwareLpf) {
 //     case GYRO_HARDWARE_LPF_NORMAL:
-//         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32;
+//         // Default to 800 Hz (ODR/8) for lowest latency by default on ICM456xx
+//         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
 //     case GYRO_HARDWARE_LPF_OPTION_1:
 //         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
 //     case GYRO_HARDWARE_LPF_OPTION_2:
@@ -381,7 +382,7 @@ void icm456xxAccInit(accDev_t *acc)
         break;
     case ICM_45605_SPI:
     default:
-        acc->acc_1G = 1024; // 32g scale (32768 / 32g = 1024 LSB/g)
+        acc->acc_1G = 2048; // 16g scale (32768 / 16g = 2048 LSB/g) - ICM-45605 max is ±16g
         acc->gyro->accSampleRateHz = 1600;
         break;
     }
@@ -413,7 +414,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, false, false);
     }
 
-    // Set the Gyro UI LPF bandwidth cut-off to 800 Hz (ODR/8)
+    // Configure Gyro UI LPF to 800 Hz (ODR/8 for 6.4 kHz ODR)
     if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8)) {
         // If LPF configuration fails, fallback to BYPASS
         icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_BYPASS);
@@ -443,11 +444,15 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         break;
     }
 
-    // Step 4: Configure accelerometer full-scale range and ODR (32g mode per PX4/ArduPilot)
+    // Step 4: Configure accelerometer full-scale range and ODR
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
-    case ICM_45605_SPI:
+        // ICM-45686 supports ±32g
         spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
+        break;
+    case ICM_45605_SPI:
+        // ICM-45605 max is ±16g
+        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
         break;
     default:
         break;
