@@ -104,6 +104,9 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 // Register 0x75 is RESERVED/UNDEFINED in the ICM-45686 datasheet
 // DO NOT use bank switching on this device
 
+// Need to see at least this many interrupts during initialisation to confirm EXTI connectivity
+#define GYRO_EXTI_DETECT_THRESHOLD 1000
+
 // Register map User Bank 0 (UI Interface)
 #define ICM456XX_WHO_AM_REGISTER                0x72
 #define ICM456XX_REG_MISC2                      0x7F
@@ -285,23 +288,23 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_COMBINED_DATA_LENGTH           12  // 6 bytes accel + 6 bytes gyro
 #define ICM456XX_COMBINED_SPI_BUFFER_SIZE       (1 + ICM456XX_COMBINED_DATA_LENGTH) // 13 bytes total
 
-static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
-{
-    switch (hardwareLpf) {
-    case GYRO_HARDWARE_LPF_NORMAL:
-        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32;
-    case GYRO_HARDWARE_LPF_OPTION_1:
-        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
-    case GYRO_HARDWARE_LPF_OPTION_2:
-        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
-#ifdef USE_GYRO_DLPF_EXPERIMENTAL
-    case GYRO_HARDWARE_LPF_EXPERIMENTAL:
-        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4;
-#endif
-    default:
-        return ICM456XX_GYRO_UI_LPFBW_BYPASS;
-    }
-}
+// static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
+// {
+//     switch (hardwareLpf) {
+//     case GYRO_HARDWARE_LPF_NORMAL:
+//         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32;
+//     case GYRO_HARDWARE_LPF_OPTION_1:
+//         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
+//     case GYRO_HARDWARE_LPF_OPTION_2:
+//         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
+// #ifdef USE_GYRO_DLPF_EXPERIMENTAL
+//     case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+//         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4;
+// #endif
+//     default:
+//         return ICM456XX_GYRO_UI_LPFBW_BYPASS;
+//     }
+// }
 
 /**
  * @brief This function follows the IREG WRITE procedure (Section 14.1-14.4 of the datasheet)
@@ -316,8 +319,9 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
  */
 static bool icm456xx_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
 {
+    // IREG writes should not be performed while armed to avoid disrupting flight
     if (ARMING_FLAG(ARMED)) {
-        return false; // IREG write not allowed when armed
+        return false;
     }
 
     const uint8_t msb = (reg >> 8) & 0xFF;
@@ -366,33 +370,20 @@ static void icm456xx_enableSensors(const extDevice_t *dev, bool enable)
 
 void icm456xxAccInit(accDev_t *acc)
 {
-    const extDevice_t *dev = &acc->gyro->dev;
-
     // ICM-45686 does not use bank switching (register 0x75 is reserved)
-    // Configure accelerometer directly
+    // Accelerometer configuration is done in icm456xxGyroInit()
+    // This function only sets the scale factor and sample rate
 
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
-        acc->acc_1G = 2048; // 16g scale
+        acc->acc_1G = 1024; // 32g scale (32768 / 32g = 1024 LSB/g)
         acc->gyro->accSampleRateHz = 1600;
         break;
     case ICM_45605_SPI:
     default:
-        acc->acc_1G = 2048; // 16g scale
+        acc->acc_1G = 1024; // 32g scale (32768 / 32g = 1024 LSB/g)
         acc->gyro->accSampleRateHz = 1600;
         break;
-    }
-
-    // Enable Anti-Alias (AAF) Filter and Interpolator for Accel (Section 7.2 of datasheet)
-    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, true)) {
-        // AAF/Interpolator initialization failed, fallback to disabled state
-        icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, false, false);
-    }
-
-    // Set the Accel UI LPF bandwidth cut-off (Section 7.3 of datasheet)
-    if (!icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8)) {
-        // If LPF configuration fails, fallback to BYPASS
-        icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_BYPASS);
     }
 
     // Set up register addresses for combined DMA reads
@@ -409,34 +400,38 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
 
     // ICM-45686 does not use bank switching (register 0x75 is reserved)
-    // Enable both accelerometer and gyroscope sensors
-
+    // Step 1: Enable sensors FIRST in Low-Noise mode (required for IREG and ODR/FS writes)
     icm456xx_enableSensors(dev, true);
-    delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to power on and stabilize
+    delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to enter Low-Noise mode
 
-    // Configure accelerometer full-scale range (16g mode)
-    switch (gyro->mpuDetectionResult.sensor) {
-    case ICM_45686_SPI:
-    case ICM_45605_SPI:
-        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_16G | ICM456XX_ACCEL_ODR_1K6_LN);
-        delay(ICM456XX_ACCEL_STARTUP_TIME_MS); // Per datasheet Table 9-6: 10ms minimum startup time
-        break;
-    default:
-        break;
-    }
-
-    // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro (Section 7.2 of datasheet)
+    // Step 2: Configure IREG features FIRST (AAF, LPF) - requires sensors to be ON but BEFORE ODR/FS config
+    // This prevents IREG operations from interfering with ODR/FS settings
+    
+    // Enable Anti-Alias (AAF) Filter and Interpolator for Gyro for stable timing
     if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, true, true)) {
         // AAF/Interpolator initialization failed, fallback to disabled state
         icm456xx_enableAAFandInterpolator(dev, ICM456XX_GYRO_SRC_CTRL_IREG_ADDR, false, false);
     }
 
-    // Set the Gyro UI LPF bandwidth cut-off (Section 7.3 of datasheet)
-    if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf))) {
+    // Set the Gyro UI LPF bandwidth cut-off to 800 Hz (ODR/8)
+    if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8)) {
         // If LPF configuration fails, fallback to BYPASS
         icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_BYPASS);
     }
 
+    // Enable Anti-Alias (AAF) Filter for Accel; disable Interpolator to reduce latency
+    if (!icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, true, false)) {
+        // AAF/Interpolator initialization failed, fallback to disabled state
+        icm456xx_enableAAFandInterpolator(dev, ICM456XX_ACCEL_SRC_CTRL_IREG_ADDR, false, false);
+    }
+
+    // Set the Accel UI LPF bandwidth cut-off (Section 7.3 of datasheet)
+    if (!icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8)) {
+        // If LPF configuration fails, fallback to BYPASS
+        icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_BYPASS);
+    }
+
+    // Step 3: Configure gyro full-scale range and ODR (after IREG setup)
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
     case ICM_45605_SPI:
@@ -445,12 +440,29 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
         gyro->gyroSampleRateHz = 6400;
         spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | ICM456XX_GYRO_ODR_6K4_LN);
-        delay(ICM456XX_GYRO_STARTUP_TIME_MS); // Per datasheet Table 9-6: 35ms minimum startup time
         break;
     }
 
+    // Step 4: Configure accelerometer full-scale range and ODR (32g mode per PX4/ArduPilot)
+    switch (gyro->mpuDetectionResult.sensor) {
+    case ICM_45686_SPI:
+    case ICM_45605_SPI:
+        spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, ICM456XX_ACCEL_FS_SEL_32G | ICM456XX_ACCEL_ODR_1K6_LN);
+        break;
+    default:
+        break;
+    }
+
+    // Step 5: Re-enable sensors after ODR/FS configuration to ensure data path starts
+    // Per ICM-456xx datasheet, ODR changes may require sensor restart
+    icm456xx_enableSensors(dev, false);
+    delay(1);
+    icm456xx_enableSensors(dev, true);
+    delay(ICM456XX_GYRO_STARTUP_TIME_MS); // Allow full gyro startup time (35ms)
+
     gyro->gyroShortPeriod = clockMicrosToCycles(HZ_TO_US(gyro->gyroSampleRateHz));
 
+    // Step 6: Configure interrupt pin (pulsed, active-high, push-pull)
     spiWriteReg(dev, ICM456XX_INT1_CONFIG2, ICM456XX_INT1_MODE_PULSED | ICM456XX_INT1_DRIVE_CIRCUIT_PP |
                                             ICM456XX_INT1_POLARITY_ACTIVE_HIGH);
 
@@ -514,11 +526,17 @@ bool icm456xxAccReadSPI(accDev_t *acc)
 {
     switch (acc->gyro->gyroModeSPI) {
     case GYRO_EXTI_INT_DMA:
-        // DMA mode: accel data was read as part of combined read
-        // Extract accel data from rxBuf (little endian, LSB first)
-        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
-        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
-        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
+        // DMA mode: gyro-only transfer in this driver; perform a direct accel read
+        {
+            uint8_t raw[ICM456XX_DATA_LENGTH];
+            const bool ack = spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+            if (!ack) {
+                return false;
+            }
+            acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
+            acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
+            acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+        }
         break;
         
     default:
@@ -560,39 +578,36 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INIT:
     {
         // Initialise the transfer buffer to 0xFF
-        memset(gyro->dev.txBuf, 0xff, ICM456XX_COMBINED_SPI_BUFFER_SIZE);
+        memset(gyro->dev.txBuf, 0xff, ICM456XX_SPI_BUFFER_SIZE);
 
-        gyro->gyroDmaMaxDuration = 0;
+        // Provide a small initial DMA duration estimate for EXTI sync heuristics
+        gyro->gyroDmaMaxDuration = 5;
+
+        // Only enable EXTI-driven DMA once we have confirmed interrupts are firing
+        if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
 #ifdef USE_DMA
-        if (spiUseDMA(&gyro->dev)) {
-            gyro->dev.callbackArg = (uintptr_t)gyro;
-            // COMBINED READ: Start from accel register (0x00), read accel+gyro (13 bytes total)
-            // ICM456xx uses little endian format (native), so NO byte swap needed
-            // Buffer layout after read:
-            //   rxBuf[0]   = dummy byte (register echo)
-            //   rxBuf[1-6] = accel X,Y,Z (little endian, 6 bytes)
-            //   rxBuf[7-12]= gyro X,Y,Z (little endian, 6 bytes)
-            gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;  // Read from accel register
-            gyro->segments[0].len = ICM456XX_COMBINED_SPI_BUFFER_SIZE;  // 13 bytes: 1 reg + 12 data
-            gyro->segments[0].callback = mpuIntCallback;
-            gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
-            gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
-            gyro->segments[0].negateCS = true;
-            gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
-        } else
+            if (spiUseDMA(&gyro->dev)) {
+                gyro->dev.callbackArg = (uintptr_t)gyro;
+                // GYRO-ONLY READ: Start from gyro register (0x06), read gyro (7 bytes total including reg)
+                // Buffer layout after read:
+                //   rxBuf[0]   = dummy byte (register echo)
+                //   rxBuf[1-6] = gyro X,Y,Z (little endian, 6 bytes)
+                gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;  // Read from gyro register
+                gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;  // 7 bytes: 1 reg + 6 data
+                gyro->segments[0].callback = mpuIntCallback;
+                gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
+                gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
+                gyro->segments[0].negateCS = true;
+                gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
+            } else
 #endif
-        {
-            // Interrupts are present, but no DMA. Non-DMA read
-            uint8_t raw[ICM456XX_DATA_LENGTH];
-            const bool ack = spiReadRegMskBufRB(&gyro->dev, ICM456XX_GYRO_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
-            if (!ack) {
-                return false;
+            {
+                // Interrupts are present, but no DMA
+                gyro->gyroModeSPI = GYRO_EXTI_INT;
             }
-
-            gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-            gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-            gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
-            gyro->gyroModeSPI = GYRO_EXTI_INT;
+        } else {
+            // EXTI not confirmed yet: operate without EXTI to guarantee fresh samples
+            gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
         }
 
         break;
@@ -610,12 +625,14 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
         gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
         gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+
+        // Pulsed mode: no need to read INT1_STATUS0 here
         break;
     }
 
     case GYRO_EXTI_NO_INT:
     {
-        // Non-interrupt mode: read gyro data only
+        // Non-interrupt mode: read gyro data each call
         uint8_t raw[ICM456XX_DATA_LENGTH];
         const bool ack = spiReadRegMskBufRB(&gyro->dev, ICM456XX_GYRO_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
         if (!ack) {
@@ -625,26 +642,27 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
         gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
         gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+
+        // Pulsed mode: no need to read INT1_STATUS0 here
         break;
     }
 
     case GYRO_EXTI_INT_DMA:
     {
-        // DMA mode: Combined read was performed from accel register
+        // DMA mode: Gyro-only read was performed from gyro register (0x06)
         // ICM456xx data is LITTLE ENDIAN (no byte swap needed)
         // Buffer layout:
         //   rxBuf[0]   = dummy
-        //   rxBuf[1-2] = accel X (LSB, MSB)
-        //   rxBuf[3-4] = accel Y
-        //   rxBuf[5-6] = accel Z
-        //   rxBuf[7-8] = gyro X (LSB, MSB)
-        //   rxBuf[9-10]= gyro Y
-        //   rxBuf[11-12]= gyro Z
-        
+        //   rxBuf[1-2] = gyro X (LSB, MSB)
+        //   rxBuf[3-4] = gyro Y
+        //   rxBuf[5-6] = gyro Z
+
         // Extract gyro data (little endian format, LSB first)
-        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[8] << 8) | gyro->dev.rxBuf[7]);
-        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[10] << 8) | gyro->dev.rxBuf[9]);
-        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[12] << 8) | gyro->dev.rxBuf[11]);
+        gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
+        gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
+        gyro->gyroADCRaw[Z] = (int16_t)((gyro->dev.rxBuf[6] << 8) | gyro->dev.rxBuf[5]);
+
+        // Pulsed mode: no need to read INT1_STATUS0 here
         break;
     }
 
