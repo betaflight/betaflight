@@ -1,1 +1,0 @@
-void bstInit(int);
