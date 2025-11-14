@@ -280,16 +280,41 @@ static bool accNeedsCalibration(void)
 
 void updateArmingStatus(void)
 {
-    if (ARMING_FLAG(ARMED)) {
-        LED0_ON;
-    } else {
+    static bool isArmingDisabledCrashFlip = false;
+
+if (ARMING_FLAG(ARMED)) {
+    LED0_ON;
+
+#ifdef USE_DSHOT
+// --- handle crashFlip behaviours while armed ---
+if (crashFlipModeActive) {
+    if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+        // Pilot has reverted the crash flip switch while armed
+        crashFlipModeActive = false;
+
+        if (mixerConfig()->crashflip_auto_rearm) {
+            // Auto re-arm enabled
+            setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+            // After reversing the switch, motors are normal, pilot can fly
+        } else {
+            // Auto re-arm not enabled (manual mode)
+            disarm(DISARM_REASON_SWITCH);               // Stop motors and restore spin direction
+            setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // Block tryArm() until manual cycle
+            isArmingDisabledCrashFlip = true;
+        }
+    }
+}
+#endif // USE_DSHOT
+} else { // arming switch on, but not yet armed; currently DISARMED
+      // identify things that should delay, or prevent, arming, then arm
+
         // Check if the power on arming grace time has elapsed
         if ((getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME) && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000)
 #ifdef USE_DSHOT
-            // We also need to prevent arming until it's possible to send DSHOT commands.
-            // Otherwise if the initial arming is in crash-flip the motor direction commands
-            // might not be sent.
-            && (!isMotorProtocolDshot() || dshotStreamingCommandsAreEnabled())
+    //prevent arming until it is possible to send DSHOT commands.
+    // Otherwise if the initial arming is in crash-flip the motor direction commands
+    // might not be sent.
+    && (!isMotorProtocolDshot() || dshotStreamingCommandsAreEnabled())
 #endif
         ) {
             // If so, unset the grace time arming disable flag
@@ -313,6 +338,17 @@ void updateArmingStatus(void)
 
             hadRx = haveRx;
         }
+
+#ifdef USE_DSHOT
+    // CrashFlip revert handling while DISARMED
+    if (isArmingDisabledCrashFlip) {
+        if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+            // Pilot manually disarmed by turning theARM switch OFF)
+            isArmingDisabledCrashFlip = false;
+            unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
+        }
+    }
+#endif // USE_DSHOT
 
         if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
             setArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
@@ -342,21 +378,6 @@ void updateArmingStatus(void)
             setArmingDisabled(ARMING_DISABLED_ANGLE);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
-        }
-
-        // if, while the arm switch is enabled:
-        // - the user switches off crashflip,
-        // - and it was active,
-        // - and the quad did not flip successfully, or we don't have that information
-        // require an arm-disarm cycle by blocking tryArm()
-        if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP) &&
-            (!mixerConfig()->crashflip_auto_rearm || !crashFlipSuccessful())) {
-            crashFlipModeActive = false;
-            // stay disarmed (motor direction normal), and block arming (require a disarm/rearm cycle)
-            setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
-        } else {
-            // allow arming
-            unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
         }
 
 #if defined(USE_LATE_TASK_STATISTICS)
@@ -471,11 +492,13 @@ void updateArmingStatus(void)
 
 void disarm(flightLogDisarmReason_e reason)
 {
-    if (ARMING_FLAG(ARMED)) {
+    
+if (ARMING_FLAG(ARMED)) {
         if (!crashFlipModeActive) {
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
-        }
-        DISABLE_ARMING_FLAG(ARMED);
+
+        }           
+        DISABLE_ARMING_FLAG(ARMED); // disarm now
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
@@ -509,7 +532,7 @@ void disarm(flightLogDisarmReason_e reason)
         setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
 #endif
 
-        // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
+        // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play its beep pattern instead
         if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
             beeper(BEEPER_DISARMING);      // emit disarm tone
         }
@@ -522,25 +545,25 @@ void tryArm(void)
         gyroStartCalibration(true);
     }
 
-    // runs each loop while arming switches are engaged
+
     updateArmingStatus();
+    // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed, 
+
 
     if (!isArmingDisabled()) {
         if (ARMING_FLAG(ARMED)) {
             return;
+            // don't allow arming if there are active armingDisabled flags or already armed
         }
-
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-        // Handle timer wraparound by checking if the time difference is reasonable
+        // Handle DShot factors that should delay arming
         timeDelta_t beaconTimeDiff = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
         if (beaconTimeDiff < DSHOT_BEACON_GUARD_DELAY_US && beaconTimeDiff >= 0) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
-                if (IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-                    tryingToArm = ARMING_DELAYED_CRASHFLIP;
 #ifdef USE_LAUNCH_CONTROL
-                } else if (canUseLaunchControl()) {
+                if (canUseLaunchControl()) {
                     tryingToArm = ARMING_DELAYED_LAUNCH_CONTROL;
 #endif
                 } else {
@@ -560,12 +583,10 @@ void tryArm(void)
                 }
             }
 #endif
-            // choose crashflip outcome on arming
-            // consider only the switch position
-            crashFlipModeActive = IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
 
+            crashFlipModeActive = IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
             setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-        }
+    }
 #endif // USE_DSHOT
 
 #ifdef USE_LAUNCH_CONTROL
@@ -582,7 +603,7 @@ void tryArm(void)
 #ifdef USE_RPM_LIMIT
         mixerResetRpmLimiter();
 #endif
-        ENABLE_ARMING_FLAG(ARMED);
+        ENABLE_ARMING_FLAG(ARMED);  // ***ARM NOW ***
 
 #ifdef USE_RC_STATS
         NotifyRcStatsArming();
@@ -931,7 +952,7 @@ void processRxModes(timeUs_t currentTimeUs)
     // mixTable constrains motor commands, so checking  throttleStatus is enough
     const timeUs_t autoDisarmDelayUs = armingConfig()->auto_disarm_delay * 1e6f;
     if (ARMING_FLAG(ARMED)
-        && featureIsEnabled(FEATURE_MOTOR_STOP)
+        && featureIsEnabled(FEATURE_MOTOR_STOP) // enable auto-disarm if motor_stop is enabled
         && !isFixedWing()
         && !featureIsEnabled(FEATURE_3D)
         && !isAirmodeEnabled()
@@ -987,12 +1008,7 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #ifdef USE_DSHOT
     if (crashFlipModeActive) {
-        // Enable beep warning when the crashflip mode is active
         beeper(BEEPER_CRASHFLIP_MODE);
-        if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-            // permit the option of staying disarmed if the crashflip switch is set to off while armed
-            disarm(DISARM_REASON_SWITCH);
-        }
     }
 #endif
 
