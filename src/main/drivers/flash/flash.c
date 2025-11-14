@@ -211,10 +211,10 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
         bool status = false;
         switch (phase) {
         case TRY_1LINE:
-            status = quadSpiReceive1LINE(hqspi, FLASH_INSTRUCTION_RDID, 0, readIdResponse, 4);
+            status = quadSpiReceive111(hqspi, FLASH_INSTRUCTION_RDID, 0, 0, 0, readIdResponse, 4);
             break;
         case TRY_4LINE:
-            status = quadSpiReceive4LINES(hqspi, FLASH_INSTRUCTION_RDID, 2, readIdResponse, 3);
+            status = quadSpiReceive444(hqspi, FLASH_INSTRUCTION_RDID, 2, 0, 0, readIdResponse, 3);
             break;
         default:
             break;

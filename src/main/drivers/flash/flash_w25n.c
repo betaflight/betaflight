@@ -171,8 +171,7 @@ static void w25n_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
     }
 #ifdef USE_QUADSPI
     else if (io->mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
-        quadSpiTransmit1LINE(quadSpi, command, 0, NULL, 0);
+        quadSpiTransmit111(io->handle.quadSpi, command, 0, 0, 0, NULL, 0);
     }
 #endif
 }
@@ -198,7 +197,7 @@ static void w25n_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t comm
     else if (io->mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-        quadSpiInstructionWithAddress1LINE(quadSpi, command, 0, pageAddress & 0xffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8);
+        quadSpiTransmit111(quadSpi, command, 0, pageAddress & 0xffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8, NULL, 0);
     }
 #endif
 }
@@ -232,7 +231,7 @@ static uint8_t w25n_readRegister(flashDeviceIO_t *io, uint8_t reg)
         QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
         uint8_t in[W25N_STATUS_REGISTER_SIZE / 8];
-        quadSpiReceiveWithAddress1LINE(quadSpi, W25N_INSTRUCTION_READ_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, in, sizeof(in));
+        quadSpiReceive111(quadSpi, W25N_INSTRUCTION_READ_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, in, sizeof(in));
 
         return in[0];
     }
@@ -263,7 +262,7 @@ static void w25n_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data)
    else if (io->mode == FLASHIO_QUADSPI) {
        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-       quadSpiTransmitWithAddress1LINE(quadSpi, W25N_INSTRUCTION_WRITE_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, &data, 1);
+       quadSpiTransmit111(quadSpi, W25N_INSTRUCTION_WRITE_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, &data, 1);
    }
 #endif
 }
@@ -452,7 +451,7 @@ static void w25n_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddress,
    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-       quadSpiTransmitWithAddress1LINE(quadSpi, W25N_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+       quadSpiTransmit111(quadSpi, W25N_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
     }
 #endif
 
@@ -483,7 +482,7 @@ static void w25n_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t columnAd
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-        quadSpiTransmitWithAddress1LINE(quadSpi, W25N_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+        quadSpiTransmit111(quadSpi, W25N_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
      }
 #endif
 
@@ -898,8 +897,8 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-        //quadSpiReceiveWithAddress1LINE(quadSpi, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
-        quadSpiReceiveWithAddress4LINES(quadSpi, W25N_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        //quadSpiReceive111(quadSpi, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceive114(quadSpi, W25N_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
     }
 #endif
 
@@ -967,7 +966,7 @@ LOCAL_UNUSED_FUNCTION static int w25n_readExtensionBytes(flashDevice_t *fdevice,
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-        quadSpiReceiveWithAddress1LINE(quadSpi, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceive111(quadSpi, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
     }
 #endif
 
@@ -1061,7 +1060,7 @@ LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t
         // thus, we have to read the entire BBLUT in one go and process the result.
 
         uint8_t bblutBuffer[W25N_BBLUT_TABLE_ENTRY_COUNT * W25N_BBLUT_TABLE_ENTRY_SIZE];
-        quadSpiReceive1LINE(quadSpi, W25N_INSTRUCTION_READ_BBM_LUT, 8, bblutBuffer, sizeof(bblutBuffer));
+        quadSpiReceive111(quadSpi, W25N_INSTRUCTION_READ_BBM_LUT, 8, 0, 0, bblutBuffer, sizeof(bblutBuffer));
 
         for (int i = 0, offset = 0 ; i < lutsize ; i++, offset += 4) {
             if (i < W25N_BBLUT_TABLE_ENTRY_COUNT) {
@@ -1100,7 +1099,7 @@ LOCAL_UNUSED_FUNCTION static void w25n_writeBBLUT(flashDevice_t *fdevice, uint16
         QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
         uint8_t data[4] = { lba >> 8, lba, pba >> 8, pba };
-        quadSpiInstructionWithData1LINE(quadSpi, W25N_INSTRUCTION_BB_MANAGEMENT, 0, data, sizeof(data));
+        quadSpiTransmit111(quadSpi, W25N_INSTRUCTION_BB_MANAGEMENT, 0, 0, 0, data, sizeof(data));
     }
 #endif
 
