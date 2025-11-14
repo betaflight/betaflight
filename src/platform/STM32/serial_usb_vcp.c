@@ -63,6 +63,9 @@ USBD_HandleTypeDef USBD_Device;
 #define USB_TIMEOUT  50
 
 static vcpPort_t vcpPort = {0};
+#ifdef USE_USB_CDC_DEBUG
+static bool usbVcpInitialized = false;  // Guard to prevent reinit in debug mode
+#endif
 
 static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
@@ -217,6 +220,16 @@ static const struct serialPortVTable usbVTable[] = {
 
 serialPort_t *usbVcpOpen(void)
 {
+#ifdef USE_USB_CDC_DEBUG
+    // USB CDC Debug mode: Prevent reinitialization - USB already set up in init.c
+    if (usbVcpInitialized) {
+        vcpPort_t *s = &vcpPort;
+        s->port.vTable = usbVTable;
+        return &s->port;
+    }
+    usbVcpInitialized = true;
+#endif
+    
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
 
@@ -274,6 +287,14 @@ serialPort_t *usbVcpOpen(void)
     vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
     return &s->port;
+}
+
+void usbVcpMarkInitialized(void)
+{
+#ifdef USE_USB_CDC_DEBUG
+    usbVcpInitialized = true;
+    vcpPort.port.vTable = usbVTable;
+#endif
 }
 
 uint32_t usbVcpGetBaudRate(serialPort_t *instance)
