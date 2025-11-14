@@ -292,14 +292,17 @@ static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
     switch (hardwareLpf) {
     case GYRO_HARDWARE_LPF_NORMAL:
-        // Default to 800 Hz (ODR/8) for lowest latency by default on ICM456xx
-        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
-    case GYRO_HARDWARE_LPF_OPTION_1:
+        // ODR/16 = 400 Hz, comparable to ~258 Hz AAF on ICM426xx
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_16;
+    case GYRO_HARDWARE_LPF_OPTION_1:
+        // ODR/32 = 200 Hz for cleaner filtering
+        return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_32;
     case GYRO_HARDWARE_LPF_OPTION_2:
+        // ODR/8 = 800 Hz for lowest latency
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_8;
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
     case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+        // ODR/4 = 1600 Hz for minimal filtering
         return ICM456XX_GYRO_UI_LPFBW_ODR_DIV_4;
 #endif
     default:
@@ -527,7 +530,7 @@ bool icm456xxAccReadSPI(accDev_t *acc)
     // Extract little endian data (LSB at raw[0], MSB at raw[1])
     acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
     acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-    acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4])
+    acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
     return true;
 }
 
