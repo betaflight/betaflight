@@ -63,7 +63,17 @@ bool altLimitWarn(void)
 static void altLimitUpdate(void)
 {
     float altimeter = 0;
+    if (!baroIsCalibrated()) {
+        // skip limit check until barometer has finished calibration
+        return;
+    }
     altimeter = getAltitudeCm() / 100.0f;
+
+    // Optionally, verify altitude is nonzero to detect stale sensor
+    if (altimeter == 0.0f) {
+        return;
+    }
+
     if (altimeter < (altLimit.ceiling - altLimit.transition)) {
         altLimit.mode = 0;
         altLimit.throttle_factor = 1.0f;
