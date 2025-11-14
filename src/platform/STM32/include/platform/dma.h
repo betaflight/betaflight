@@ -112,12 +112,41 @@ typedef enum {
                                                                     handler(&dmaDescriptors[index]); \
                                                             }
 
-#define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? d->dma->HISR & (flag << (d->flagsShift - 32)): d->dma->LISR & (flag << d->flagsShift))
+// Helper to remap DMA stream flags to BDMA channel flags
+#define BDMA_FLAG_REMAP(flag) \
+    (((flag) & DMA_IT_TCIF ? 0x02U : 0U) | \
+     ((flag) & DMA_IT_HTIF ? 0x04U : 0U) | \
+     ((flag) & DMA_IT_TEIF ? 0x08U : 0U) | \
+     ((flag) & DMA_IT_FEIF ? 0x01U : 0U))
+
+// Remap DMA stream flags to BDMA channel flags
+#define BDMA_FLAG_BIT(flag) \
+    (((flag) == DMA_IT_TCIF) ? 0x02U : \
+     ((flag) == DMA_IT_HTIF) ? 0x04U : \
+     ((flag) == DMA_IT_TEIF) ? 0x08U : \
+     ((flag) == DMA_IT_FEIF) ? 0x01U : 0U)
+
+#define DMA_CLEAR_FLAG(d, flag) \
+    do { \
+        if (IS_BDMA_INSTANCE((d)->ref)) { \
+            BDMA->IFCR = (BDMA_FLAG_BIT(flag) << (d)->flagsShift); \
+        } else if ((d)->flagsShift > 31) { \
+            (d)->dma->HIFCR = ((flag) << ((d)->flagsShift - 32)); \
+        } else { \
+            (d)->dma->LIFCR = ((flag) << (d)->flagsShift); \
+        } \
+    } while(0)
+
+#define DMA_GET_FLAG_STATUS(d, flag) \
+    (IS_BDMA_INSTANCE((d)->ref) ? \
+        (BDMA->ISR & (BDMA_FLAG_BIT(flag) << (d)->flagsShift)) : \
+        ((d)->flagsShift > 31 ? \
+            ((d)->dma->HISR & ((flag) << ((d)->flagsShift - 32))) : \
+            ((d)->dma->LISR & ((flag) << (d)->flagsShift))))
 
 // BDMA flag handling
-#define BDMA_CLEAR_FLAG(d, flag) BDMA->IFCR = (flag << d->flagsShift)
-#define BDMA_GET_FLAG_STATUS(d, flag) (BDMA->ISR & (flag << d->flagsShift))
+#define BDMA_CLEAR_FLAG(d, flag) BDMA->IFCR = (BDMA_FLAG_BIT(flag) << (d)->flagsShift)
+#define BDMA_GET_FLAG_STATUS(d, flag) (BDMA->ISR & (BDMA_FLAG_BIT(flag) << (d)->flagsShift))
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)
