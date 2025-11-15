@@ -48,6 +48,7 @@
  */
 #pragma once
 
+#include "flash.h"
 #include "drivers/bus.h"
 #include "drivers/dma.h"
 

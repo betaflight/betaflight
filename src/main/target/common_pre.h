@@ -149,6 +149,7 @@
 #define USE_FLASH_W25M02G    // 2Gb (1Gb x 2 stacked) NAND flash support
 #define USE_FLASH_W25Q128FV  // 16MB Winbond 25Q128
 #define USE_FLASH_PY25Q128HA // 16MB PUYA SEMI 25Q128
+#define USE_FLASH_ZD25WQ     // 16Mb Zetta ZD25WQ16C
 #endif // USE_EXST
 
 #endif // USE_FLASH

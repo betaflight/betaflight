@@ -34,6 +34,7 @@
 #include "drivers/flash/flash_w25n.h"
 #include "drivers/flash/flash_w25q128fv.h"
 #include "drivers/flash/flash_w25m.h"
+#include "drivers/flash/flash_zd25wq.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_octospi.h"
@@ -193,8 +194,23 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 {
     bool detected = false;
 
-    enum { TRY_1LINE = 0, TRY_4LINE, BAIL};
-    int phase = TRY_1LINE;
+    enum {
+        TRY_START = 0,
+#ifdef USE_FLASH_ZD25WQ
+        // ZD25WQ stores config flags in NVM
+        // if the flash is in left in 44 (QPI) mode but we try a 1LINE identify
+        // it sometimes decide to become a worthless piece of sand and never wakes up
+        // so for this one try 44 first.
+        TRY_444,
+#endif
+        TRY_111,
+        TRY_444_2DUMMY,
+#ifndef USE_FLASH_ZD25WQ
+        TRY_444,
+#endif
+        BAIL
+    };
+    int phase = TRY_START + 1;
 
     QUADSPI_TypeDef *hqspi = quadSpiInstanceByDevice(QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice));
 
@@ -210,10 +226,13 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
         bool status = false;
         switch (phase) {
-        case TRY_1LINE:
+        case TRY_111:
             status = quadSpiReceive111(hqspi, FLASH_INSTRUCTION_RDID, 0, 0, 0, readIdResponse, 4);
             break;
-        case TRY_4LINE:
+        case TRY_444:
+            status = quadSpiReceive444(hqspi, FLASH_INSTRUCTION_RDID, 0, 0, 0, readIdResponse, 3);
+            break;
+        case TRY_444_2DUMMY:
             status = quadSpiReceive444(hqspi, FLASH_INSTRUCTION_RDID, 2, 0, 0, readIdResponse, 3);
             break;
         default:
@@ -240,6 +259,12 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
 #ifdef USE_FLASH_M25P16
                 if (!detected && m25p16_identify(&flashDevice, jedecID)) {
+                    detected = true;
+                }
+#endif
+
+#ifdef USE_FLASH_ZD25WQ
+                if (!detected && zd25wq_identify(&flashDevice, jedecID, phase == TRY_444)) {
                     detected = true;
                 }
 #endif
