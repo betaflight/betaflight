@@ -271,13 +271,14 @@ bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t
 bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
 {
     static uint8_t seq = 0;
+    static bool headerSent = false;   
 
     uint8_t payloadArray[payloadSizeMax];
     sbuf_t payloadBufStruct;
     sbuf_t *payloadBuf = sbufInit(&payloadBufStruct, payloadArray, payloadArray + payloadSizeMax);
 
     // detect first reply packet
-    if (responsePacket.buf.ptr == responseBuffer) {
+    if (!headerSent) {
         // this is the first frame of the response packet. Add proper header and size.
         // header
         uint8_t status = MSP_STATUS_START_MASK | (seq++ & MSP_STATUS_SEQUENCE_MASK) | (lastRequestVersion << MSP_STATUS_VERSION_SHIFT);
@@ -302,6 +303,7 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
             sbufWriteU16(payloadBuf, responsePacket.cmd);    // command is 16 bit in MSPv2
             sbufWriteU16(payloadBuf, (uint16_t)size);        // size is 16 bit in MSPv2
         }
+        headerSent = true;  
     } else {
         sbufWriteU8(payloadBuf, (seq++ & MSP_STATUS_SEQUENCE_MASK) | (lastRequestVersion << MSP_STATUS_VERSION_SHIFT)); // header without 'start' flag
     }
@@ -322,6 +324,7 @@ bool sendMspReply(const uint8_t payloadSizeMax, mspResponseFnPtr responseFn)
     sbufSwitchToReader(&responsePacket.buf, responseBuffer);// for CRC calculation
 
     responseFn(payloadArray, payloadBuf->ptr - payloadArray);
+    headerSent = false; // reset for the next response
     return false;
 }
 
