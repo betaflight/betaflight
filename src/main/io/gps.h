@@ -238,10 +238,18 @@ typedef struct gpsAccuracy_s {
     uint32_t sAcc;                  // speed accuracy in mm/s
 } gpsAccuracy_t;
 
+/* Only available on U-blox protocol */
+typedef struct gpsVelned_s {
+    int16_t velN; // north velocity, cm/s
+    int16_t velE; // east velocity, cm/s
+    int16_t velD; // down velocity, cm/s
+} gpsVelned_t;
+
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
     gpsAccuracy_t acc;
+    gpsVelned_t velned;
     uint16_t speed3d;               // speed in cm/s
     uint16_t groundSpeed;           // speed in cm/s
     uint16_t groundCourse;          // degrees * 10
