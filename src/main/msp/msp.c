@@ -1326,6 +1326,18 @@ case MSP_NAME:
         sbufWriteU16(dst, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         break;
 
+    case MSP_ATTITUDE_QUATERNION: {
+        // write x,y,z of IMU quaternion
+        const float q_scale = 0x7FFF;  // Scale to int16 by value 0x7FFF = 2^15 - 1 (-1 <= x,y,z <= 1)
+        const uint16_t offset = 32768;  // 0x8000
+        // Write all four components
+        sbufWriteU16(dst, (uint16_t)(lrintf(imuAttitudeQuaternion.w * q_scale) + offset));
+        sbufWriteU16(dst, (uint16_t)(lrintf(imuAttitudeQuaternion.x * q_scale) + offset));
+        sbufWriteU16(dst, (uint16_t)(lrintf(imuAttitudeQuaternion.y * q_scale) + offset));
+        sbufWriteU16(dst, (uint16_t)(lrintf(imuAttitudeQuaternion.z * q_scale) + offset));
+        break;
+    }
+
     case MSP_ALTITUDE:
         sbufWriteU32(dst, getEstimatedAltitudeCm());
 #ifdef USE_VARIO
