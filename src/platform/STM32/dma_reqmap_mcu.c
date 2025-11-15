@@ -256,7 +256,7 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(SPI, 4, SDI),
     REQMAP_DIR(SPI, 5, SDO), // Not available in smaller packages
     REQMAP_DIR(SPI, 5, SDI), // ditto
-    REQMAP_DIR(SPI, 6, SDO), // SPI6 is on BDMA
+    REQMAP_DIR(SPI, 6, SDO), // SPI6 uses BDMA
     REQMAP_DIR(SPI, 6, SDI), // ditto
 #endif // USE_SPI
 
@@ -371,6 +371,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
 #undef REQMAP_TIM
 
 #define DMA(d, s) { DMA_CODE(d, s, 0), (dmaResource_t *)DMA ## d ## _Stream ## s, 0 }
+#define BDMA_CH(c) { DMA_CODE(3, c, 0), (dmaResource_t *)BDMA_Channel ## c, 0 }
 
 static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
     DMA(1, 0),
@@ -389,9 +390,18 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
     DMA(2, 5),
     DMA(2, 6),
     DMA(2, 7),
+    BDMA_CH(0),
+    BDMA_CH(1),
+    BDMA_CH(2),
+    BDMA_CH(3),
+    BDMA_CH(4),
+    BDMA_CH(5),
+    BDMA_CH(6),
+    BDMA_CH(7),
 };
 
 #undef DMA
+#undef BDMA_CH
 
 #elif defined(STM32F4) || defined(STM32F7)
 

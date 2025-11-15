@@ -21,10 +21,18 @@
 #pragma once
 
 #include "stm32h7xx.h"
+#include "stm32h7xx_ll_bdma.h"
 #include "common/utils.h"
 
 // XXX Followings are straight copy of stm32f7xx_ll_ex.h.
 // XXX Consider consolidation when LL-DShot is stable.
+
+// Helper to detect if a DMA resource is actually BDMA
+#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#define IS_BDMA_INSTANCE(dma) ((uint32_t)(dma) >= CD_AHB2PERIPH_BASE)
+#else
+#define IS_BDMA_INSTANCE(dma) ((uint32_t)(dma) >= D3_AHB1PERIPH_BASE)
+#endif
 
 #define DMA_STREAM_MASK 0xFFU
 
@@ -49,45 +57,96 @@ __STATIC_INLINE uint32_t LL_EX_DMA_Stream_to_Stream(DMA_Stream_TypeDef *DMAx_Str
 
 __STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Stream_TypeDef *DMAx_Streamy, LL_DMA_InitTypeDef *DMA_InitStruct)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
-    const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
-
-    return LL_DMA_Init(DMA, Stream, DMA_InitStruct);
+    if (IS_BDMA_INSTANCE(DMAx_Streamy)) {
+        // This is actually a BDMA channel
+        const uint32_t channel = ((uint32_t)DMAx_Streamy - BDMA_Channel0_BASE) / (BDMA_Channel1_BASE - BDMA_Channel0_BASE);
+        
+        // Convert LL_DMA_InitTypeDef to LL_BDMA_InitTypeDef
+        LL_BDMA_InitTypeDef bdmaInit = {
+            .PeriphOrM2MSrcAddress = DMA_InitStruct->PeriphOrM2MSrcAddress,
+            .MemoryOrM2MDstAddress = DMA_InitStruct->MemoryOrM2MDstAddress,
+            .Direction = DMA_InitStruct->Direction,
+            .Mode = DMA_InitStruct->Mode,
+            .PeriphOrM2MSrcIncMode = DMA_InitStruct->PeriphOrM2MSrcIncMode,
+            .MemoryOrM2MDstIncMode = DMA_InitStruct->MemoryOrM2MDstIncMode,
+            .PeriphOrM2MSrcDataSize = DMA_InitStruct->PeriphOrM2MSrcDataSize,
+            .MemoryOrM2MDstDataSize = DMA_InitStruct->MemoryOrM2MDstDataSize,
+            .NbData = DMA_InitStruct->NbData,
+            .PeriphRequest = DMA_InitStruct->PeriphRequest,
+            .Priority = DMA_InitStruct->Priority,
+        };
+        
+        return LL_BDMA_Init(BDMA, 1U << channel, &bdmaInit);
+    } else {
+        // Regular DMA stream
+        DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
+        const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
+        return LL_DMA_Init(DMA, Stream, DMA_InitStruct);
+    }
 }
 
 __STATIC_INLINE uint32_t LL_EX_DMA_DeInit(DMA_Stream_TypeDef *DMAx_Streamy)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
-    const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
-
-    return LL_DMA_DeInit(DMA, Stream);
+    if (IS_BDMA_INSTANCE(DMAx_Streamy)) {
+        const uint32_t channel = ((uint32_t)DMAx_Streamy - BDMA_Channel0_BASE) / (BDMA_Channel1_BASE - BDMA_Channel0_BASE);
+        return LL_BDMA_DeInit(BDMA, 1U << channel);
+    } else {
+        DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
+        const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
+        return LL_DMA_DeInit(DMA, Stream);
+    }
 }
 
 __STATIC_INLINE void LL_EX_DMA_EnableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
-    SET_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
+    if (IS_BDMA_INSTANCE(DMAx_Streamy)) {
+        const uint32_t channel = ((uint32_t)DMAx_Streamy - BDMA_Channel0_BASE) / (BDMA_Channel1_BASE - BDMA_Channel0_BASE);
+        LL_BDMA_EnableChannel(BDMA, 1U << channel);
+    } else {
+        SET_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
+    }
 }
 
 __STATIC_INLINE void LL_EX_DMA_DisableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
-    CLEAR_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
+    if (IS_BDMA_INSTANCE(DMAx_Streamy)) {
+        const uint32_t channel = ((uint32_t)DMAx_Streamy - BDMA_Channel0_BASE) / (BDMA_Channel1_BASE - BDMA_Channel0_BASE);
+        LL_BDMA_DisableChannel(BDMA, 1U << channel);
+    } else {
+        CLEAR_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
+    }
 }
 
 __STATIC_INLINE void LL_EX_DMA_EnableIT_TC(DMA_Stream_TypeDef *DMAx_Streamy)
 {
-    SET_BIT(DMAx_Streamy->CR, DMA_SxCR_TCIE);
+    if (IS_BDMA_INSTANCE(DMAx_Streamy)) {
+        const uint32_t channel = ((uint32_t)DMAx_Streamy - BDMA_Channel0_BASE) / (BDMA_Channel1_BASE - BDMA_Channel0_BASE);
+        LL_BDMA_EnableIT_TC(BDMA, 1U << channel);
+    } else {
+        SET_BIT(DMAx_Streamy->CR, DMA_SxCR_TCIE);
+    }
 }
 
 __STATIC_INLINE void LL_EX_DMA_SetDataLength(DMA_Stream_TypeDef* DMAx_Streamy, uint32_t NbData)
 {
-    MODIFY_REG(DMAx_Streamy->NDTR, DMA_SxNDT, NbData);
+    if (IS_BDMA_INSTANCE(DMAx_Streamy)) {
+        const uint32_t channel = ((uint32_t)DMAx_Streamy - BDMA_Channel0_BASE) / (BDMA_Channel1_BASE - BDMA_Channel0_BASE);
+        LL_BDMA_SetDataLength(BDMA, 1U << channel, NbData);
+    } else {
+        MODIFY_REG(DMAx_Streamy->NDTR, DMA_SxNDT, NbData);
+    }
 }
 
 __STATIC_INLINE uint32_t LL_EX_DMA_GetDataLength(DMA_Stream_TypeDef* DMAx_Streamy)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
-    const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
-    return LL_DMA_GetDataLength(DMA, Stream);
+    if (IS_BDMA_INSTANCE(DMAx_Streamy)) {
+        const uint32_t channel = ((uint32_t)DMAx_Streamy - BDMA_Channel0_BASE) / (BDMA_Channel1_BASE - BDMA_Channel0_BASE);
+        return LL_BDMA_GetDataLength(BDMA, 1U << channel);
+    } else {
+        DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
+        const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
+        return LL_DMA_GetDataLength(DMA, Stream);
+    }
 }
 
 __STATIC_INLINE void LL_EX_TIM_EnableIT(TIM_TypeDef *TIMx, uint32_t Sources)
