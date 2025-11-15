@@ -139,6 +139,9 @@ struct {
     // BergMicro W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xE04016, 133, 50, 1024, 16 },
+    // XMC XM25QH256B
+    // Datasheet: https://www.xmcwh.com/uploads/499/XM25QU256B.pdf
+    { 0x206019, 166, 80, 8192, 16 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };
