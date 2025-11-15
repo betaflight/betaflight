@@ -34,6 +34,11 @@
  * 2LINE uses D0, D1 (bidirectional).
  * 4LINE uses D0..D3 (bidirectional)
  *
+ * Each message (transmit or receive) has 3 parts: INSTRUCTION [ADDRESS] [DATA].
+ *
+ * The defined quadSpi[Transmit|Receive][111|114|444] define how many lines are used for each
+ * message.
+ *
  * See ST Micros' AN4760 "Quad-SPI (QSPI) interface on STM32 microcontrollers"
  */
 
@@ -42,6 +47,18 @@
 #if !(defined(STM32H7) || defined(STM32G4) || defined(PICO))
 #error Quad SPI unsupported on this MCU/platform
 #endif
+
+typedef enum {
+    QUADSPI_WIDTH_1_LINE = 1,
+    QUADSPI_WIDTH_2_LINES = 2,
+    QUADSPI_WIDTH_4_LINES = 4
+} QUADSPI_BusWidth;
+
+typedef struct QUADSPI_Widths {
+    QUADSPI_BusWidth Instruction;
+    QUADSPI_BusWidth Address;
+    QUADSPI_BusWidth Data;
+} QUADSPI_Widths;
 
 #define QUADSPI_IO_AF_BK_IO_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define QUADSPI_IO_AF_CLK_CFG             IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
@@ -107,18 +124,13 @@ void quadSpiPreInit(void);
 bool quadSpiInit(quadSpiDevice_e device);
 void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor);
 
-bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
-bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
-bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
+bool quadSpiTransmit111(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+bool quadSpiTransmit114(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+bool quadSpiTransmit444(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
 
-bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
-
-bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
-bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
-bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
-bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
-
-bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
+bool quadSpiReceive111(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool quadSpiReceive114(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool quadSpiReceive444(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
 
 //bool quadSpiIsBusBusy(SPI_TypeDef *instance);
 

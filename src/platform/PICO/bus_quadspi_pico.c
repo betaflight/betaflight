@@ -116,105 +116,6 @@ static inline bool qmi_direct_io(const uint8_t *tx, uint8_t *rx, size_t count, u
     return true;
 }
 
-bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
-{
-    UNUSED(instance);
-    UNUSED(dummyCycles);
-    uint8_t txbuf[1 + 0];
-    txbuf[0] = instruction;
-
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    // Send instruction
-    if (!qmi_direct_io(txbuf, NULL, 1, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Send payload (no readback)
-    if (out && length > 0) {
-        if (!qmi_direct_io(out, NULL, (size_t)length, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
-        }
-    }
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
-    return true;
-}
-
-bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
-{
-    UNUSED(instance);
-    uint8_t txbuf[1];
-    txbuf[0] = instruction;
-
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    // Send instruction
-    if (!qmi_direct_io(txbuf, NULL, 1, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Consume dummy cycles as bytes
-    // Convert the number of dummy cycles into a number of bytes to transfer
-    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
-    if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Read response by clocking out zeros
-    if (!qmi_direct_io(NULL, in, length, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
-    return true;
-}
-
-bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
-{
-    return quadSpiTransmit1LINE(instance, instruction, dummyCycles, out, length);
-}
-
-bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
-                                        uint32_t address, uint8_t addressSize)
-{
-    UNUSED(instance);
-    // Build header [cmd][addr]
-    uint8_t hdr[1 + 4];
-    int idx = 0;
-    hdr[idx++] = instruction;
-    for (int i = (addressSize / 8) - 1; i >= 0; i--) {
-        hdr[idx++] = (address >> (i * 8)) & 0xFF;
-    }
-
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Consume dummy cycles (if any)
-    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
-    if (dummyBytes) {
-        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
-        }
-    }
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
-    return true;
-}
-
 static int buildHeader(uint8_t *hdr, uint8_t instruction, uint32_t address, uint8_t addressSize)
 {
     // Build tx: [cmd][addr bytes MSB..LSB][dummy]
@@ -227,23 +128,20 @@ static int buildHeader(uint8_t *hdr, uint8_t instruction, uint32_t address, uint
     return idx;
 }
 
-bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
-                                    uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+bool quadSpiTransmit(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    UNUSED(instance);
-    // Build header and perform in one CS window
     uint8_t hdr[1 + 4];
-
-    int idx = buildHeader(hdr, instruction, address, addressSize);
+    int headerSize = buildHeader(hdr, instruction, address, addressSize);
 
     pico_qspi_enter_cmd_mode();
     qmi_direct_enable();
     qmi_cs1_assert(true);
-    if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
+
+    if (!qmi_direct_io(hdr, NULL, (size_t)headerSize, QSPI_TIMEOUT_MS)) {
         qmi_timeout_cleanup();
         return false;
     }
-    // Dummy after header (if any)
+
     uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
     if (dummyBytes) {
         if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
@@ -251,71 +149,91 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
             return false;
         }
     }
-    // Read payload
-    if (!qmi_direct_io(NULL, in, length, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
-    return true;
-}
 
-bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
-                                     uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
-{
-    UNUSED(instance);
-    uint8_t hdr[1 + 4];
-
-    int idx = buildHeader(hdr, instruction, address, addressSize);
-
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Dummy after header (if any)
-    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
-    if (dummyBytes) {
-        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
-        }
-    }
     if (out && length > 0) {
         if (!qmi_direct_io(out, NULL, (size_t)length, QSPI_TIMEOUT_MS)) {
             qmi_timeout_cleanup();
             return false;
         }
     }
+
     qmi_cs1_assert(false);
     qmi_direct_disable();
     pico_qspi_exit_cmd_mode();
     return true;
 }
 
-// 4LINE operations are not truly available via ROM command mode on QMI; emulate using 1LINE for now.
-bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+bool quadSpiReceive(uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    uint8_t instr = (instruction == 0x6B) ? 0x0B : instruction; // fast quad->fast serial
-    return quadSpiReceive1LINE(instance, instr, dummyCycles, in, length);
+    uint8_t hdr[1 + 4];
+    int headerSize = buildHeader(hdr, instruction, address, addressSize);
+
+    pico_qspi_enter_cmd_mode();
+    qmi_direct_enable();
+    qmi_cs1_assert(true);
+
+    if (!qmi_direct_io(hdr, NULL, (size_t)headerSize, QSPI_TIMEOUT_MS)) {
+        qmi_timeout_cleanup();
+        return false;
+    }
+
+    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
+    if (dummyBytes) {
+        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
+            qmi_timeout_cleanup();
+            return false;
+        }
+    }
+
+    if (!qmi_direct_io(NULL, in, length, QSPI_TIMEOUT_MS)) {
+        qmi_timeout_cleanup();
+        return false;
+    }
+
+    qmi_cs1_assert(false);
+    qmi_direct_disable();
+    pico_qspi_exit_cmd_mode();
+    return true;
 }
 
-bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
-                                     uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+bool quadSpiTransmit111(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    uint8_t instr = (instruction == 0x6B) ? 0x0B : instruction; // map to serial fast read
-    return quadSpiReceiveWithAddress1LINE(instance, instr, dummyCycles, address, addressSize, in, length);
+    UNUSED(instance);
+    return quadSpiTransmit(instruction, dummyCycles, address, addressSize, out, length);
 }
 
-bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
-                                      uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+bool quadSpiTransmit114(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
+    UNUSED(instance);
     uint8_t instr = (instruction == 0x32) ? 0x02 : instruction; // quad page prog -> serial page prog
-    return quadSpiTransmitWithAddress1LINE(instance, instr, dummyCycles, address, addressSize, out, length);
+    return quadSpiTransmit(instr, dummyCycles, address, addressSize, out, length);
+}
+
+bool quadSpiTransmit444(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+{
+    UNUSED(instance);
+    uint8_t instr = (instruction == 0x32) ? 0x02 : instruction; // quad page prog -> serial page prog
+    return quadSpiTransmit(instr, dummyCycles, address, addressSize, out, length);
+}
+
+bool quadSpiReceive111(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+{
+    UNUSED(instance);
+    return quadSpiReceive(instruction, dummyCycles, address, addressSize, in, length);
+}
+
+bool quadSpiReceive114(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+{
+    UNUSED(instance);
+    uint8_t instr = (instruction == 0x6B) ? 0x0B : instruction; // fast quad->fast serial
+    return quadSpiReceive(instr, dummyCycles, address, addressSize, in, length);
+}
+
+bool quadSpiReceive444(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+{
+    UNUSED(instance);
+    uint8_t instr = (instruction == 0x6B) ? 0x0B : instruction; // fast quad->fast serial
+    return quadSpiReceive(instr, dummyCycles, address, addressSize, in, length);
 }
 
 void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)

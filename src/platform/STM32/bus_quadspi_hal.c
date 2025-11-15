@@ -339,8 +339,11 @@ static const uint32_t quadSpi_addressSizeMap[] = {
 
 static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
 {
-    // TODO addressSize + 7) / 8)
-    return quadSpi_addressSizeMap[((addressSize + 1) / 8) - 1]; // rounds to nearest QSPI_ADDRESS_* value that will hold the address.
+    if (!addressSize)
+        return 0;
+    else
+        // rounds to nearest QSPI_ADDRESS_* value that will hold the address.
+        return quadSpi_addressSizeMap[((addressSize + 7) / 8) - 1]; 
 }
 
 /**
@@ -415,13 +418,48 @@ static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
     }
 }
 
-bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+bool quadSpiTransmit(QUADSPI_TypeDef *instance, QUADSPI_Widths widths, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
+    uint32_t instrMode, addressMode, dataMode;
+    switch (widths.Instruction) {
+        case QUADSPI_WIDTH_1_LINE:
+            instrMode = QSPI_INSTRUCTION_1_LINE;
+            break;
+        case QUADSPI_WIDTH_2_LINES:
+            instrMode = QSPI_INSTRUCTION_2_LINES;
+            break;
+        case QUADSPI_WIDTH_4_LINES:
+            instrMode = QSPI_INSTRUCTION_4_LINES;
+            break;
+    }
+    switch (widths.Address) {
+        case QUADSPI_WIDTH_1_LINE:
+            addressMode = QSPI_ADDRESS_1_LINE;
+            break;
+        case QUADSPI_WIDTH_2_LINES:
+            addressMode = QSPI_ADDRESS_2_LINES;
+            break;
+        case QUADSPI_WIDTH_4_LINES:
+            addressMode = QSPI_ADDRESS_4_LINES;
+            break;
+    }
+    switch (widths.Data) {
+        case QUADSPI_WIDTH_1_LINE:
+            dataMode = QSPI_DATA_1_LINE;
+            break;
+        case QUADSPI_WIDTH_2_LINES:
+            dataMode = QSPI_DATA_2_LINES;
+            break;
+        case QUADSPI_WIDTH_4_LINES:
+            dataMode = QSPI_DATA_4_LINES;
+            break;
+    }
+   
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
+    cmd.InstructionMode   = instrMode;
     cmd.AddressMode       = QSPI_ADDRESS_NONE;
     cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
     cmd.DataMode          = QSPI_DATA_NONE;
@@ -431,11 +469,14 @@ bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
     cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
 
     cmd.Instruction       = instruction;
+    cmd.Address           = address;
+    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
     cmd.NbData            = length;
 
-    if (out) {
-        cmd.DataMode          = QSPI_DATA_1_LINE;
-    }
+    if (addressSize)
+        cmd.AddressMode = addressMode;
+    if (out)
+        cmd.DataMode = dataMode;
 
     quadSpiSelectDevice(instance);
 
@@ -458,23 +499,63 @@ bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
     return true;
 }
 
-bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+bool quadSpiReceive(QUADSPI_TypeDef *instance, QUADSPI_Widths widths, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
+    uint32_t instrMode, addressMode, dataMode;
+    switch (widths.Instruction) {
+        case QUADSPI_WIDTH_1_LINE:
+            instrMode = QSPI_INSTRUCTION_1_LINE;
+            break;
+        case QUADSPI_WIDTH_2_LINES:
+            instrMode = QSPI_INSTRUCTION_2_LINES;
+            break;
+        case QUADSPI_WIDTH_4_LINES:
+            instrMode = QSPI_INSTRUCTION_4_LINES;
+            break;
+    }
+    switch (widths.Address) {
+        case QUADSPI_WIDTH_1_LINE:
+            addressMode = QSPI_ADDRESS_1_LINE;
+            break;
+        case QUADSPI_WIDTH_2_LINES:
+            addressMode = QSPI_ADDRESS_2_LINES;
+            break;
+        case QUADSPI_WIDTH_4_LINES:
+            addressMode = QSPI_ADDRESS_4_LINES;
+            break;
+    }
+    switch (widths.Data) {
+        case QUADSPI_WIDTH_1_LINE:
+            dataMode = QSPI_DATA_1_LINE;
+            break;
+        case QUADSPI_WIDTH_2_LINES:
+            dataMode = QSPI_DATA_2_LINES;
+            break;
+        case QUADSPI_WIDTH_4_LINES:
+            dataMode = QSPI_DATA_4_LINES;
+            break;
+    }
+
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
+    cmd.InstructionMode   = instrMode;
     cmd.AddressMode       = QSPI_ADDRESS_NONE;
     cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_1_LINE;
+    cmd.DataMode          = dataMode;
     cmd.DummyCycles       = dummyCycles;
     cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
     cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
     cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
 
     cmd.Instruction       = instruction;
+    cmd.Address           = address;
+    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
     cmd.NbData            = length;
+
+    if (addressSize)
+        cmd.AddressMode = addressMode;
 
     quadSpiSelectDevice(instance);
 
@@ -496,272 +577,40 @@ bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t
     return true;
 }
 
-bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+bool quadSpiTransmit111(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    HAL_StatusTypeDef status;
-
-    QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_4_LINES;
-    cmd.AddressMode       = QSPI_ADDRESS_NONE;
-    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_4_LINES;
-    cmd.DummyCycles       = dummyCycles;
-    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
-    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-    cmd.Instruction       = instruction;
-    cmd.NbData            = length;
-
-    quadSpiSelectDevice(instance);
-
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout = (status != HAL_OK);
-    if (!timeout) {
-        status = HAL_QSPI_Receive(&quadSpiDevice[device].hquadSpi, in, QUADSPI_DEFAULT_TIMEOUT);
-
-        timeout = (status != HAL_OK);
-    }
-
-    quadSpiDeselectDevice(instance);
-
-    if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
-        return false;
-    }
-
-    return true;
+    struct QUADSPI_Widths widths = { QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_1_LINE};
+    return quadSpiTransmit(instance, widths, instruction, dummyCycles, address, addressSize, out, length);
 }
 
-bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+bool quadSpiTransmit114(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    HAL_StatusTypeDef status;
-
-    QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
-    cmd.AddressMode       = QSPI_ADDRESS_1_LINE;
-    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_1_LINE;
-    cmd.DummyCycles       = dummyCycles;
-    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
-    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-    cmd.Instruction       = instruction;
-    cmd.Address           = address;
-    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
-    cmd.NbData            = length;
-
-    quadSpiSelectDevice(instance);
-
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout = (status != HAL_OK);
-    if (!timeout) {
-        status = HAL_QSPI_Receive(&quadSpiDevice[device].hquadSpi, in, QUADSPI_DEFAULT_TIMEOUT);
-        timeout = (status != HAL_OK);
-    }
-
-    quadSpiDeselectDevice(instance);
-
-    if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
-        return false;
-    }
-
-    return true;
+    struct QUADSPI_Widths widths = { QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_4_LINES};
+    return quadSpiTransmit(instance, widths, instruction, dummyCycles, address, addressSize, out, length);
 }
 
-bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+bool quadSpiTransmit444(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    HAL_StatusTypeDef status;
-
-    QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
-    cmd.AddressMode       = QSPI_ADDRESS_1_LINE;
-    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_4_LINES;
-    cmd.DummyCycles       = dummyCycles;
-    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
-    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-    cmd.Instruction       = instruction;
-    cmd.Address           = address;
-    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
-    cmd.NbData            = length;
-
-    quadSpiSelectDevice(instance);
-
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout = (status != HAL_OK);
-    if (!timeout) {
-        status = HAL_QSPI_Receive(&quadSpiDevice[device].hquadSpi, in, QUADSPI_DEFAULT_TIMEOUT);
-        timeout = (status != HAL_OK);
-    }
-
-    quadSpiDeselectDevice(instance);
-
-    if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
-        return false;
-    }
-
-    return true;
-}
-bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
-{
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    HAL_StatusTypeDef status;
-
-    QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
-    cmd.AddressMode       = QSPI_ADDRESS_1_LINE;
-    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_1_LINE;
-    cmd.DummyCycles       = dummyCycles;
-    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
-    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-    cmd.Instruction       = instruction;
-    cmd.Address           = address;
-    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
-    cmd.NbData            = length;
-
-    quadSpiSelectDevice(instance);
-
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout = (status != HAL_OK);
-
-    if (!timeout) {
-        status = HAL_QSPI_Transmit(&quadSpiDevice[device].hquadSpi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
-        timeout = (status != HAL_OK);
-    }
-
-    quadSpiDeselectDevice(instance);
-
-    if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
-        return false;
-    }
-
-    return true;
+    struct QUADSPI_Widths widths = { QUADSPI_WIDTH_4_LINES, QUADSPI_WIDTH_4_LINES, QUADSPI_WIDTH_4_LINES};
+    return quadSpiTransmit(instance, widths, instruction, dummyCycles, address, addressSize, out, length);
 }
 
-bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+bool quadSpiReceive111(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    HAL_StatusTypeDef status;
-
-    QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
-    cmd.AddressMode       = QSPI_ADDRESS_1_LINE;
-    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_4_LINES;
-    cmd.DummyCycles       = dummyCycles;
-    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
-    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-    cmd.Instruction       = instruction;
-    cmd.Address           = address;
-    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
-    cmd.NbData            = length;
-
-    quadSpiSelectDevice(instance);
-
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout = (status != HAL_OK);
-
-    if (!timeout) {
-        status = HAL_QSPI_Transmit(&quadSpiDevice[device].hquadSpi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
-        timeout = (status != HAL_OK);
-    }
-
-    quadSpiDeselectDevice(instance);
-
-    if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
-        return false;
-    }
-
-    return true;
+    struct QUADSPI_Widths widths = { QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_1_LINE};
+    return quadSpiReceive(instance, widths, instruction, dummyCycles, address, addressSize, in, length);
 }
 
-bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
+bool quadSpiReceive114(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    HAL_StatusTypeDef status;
-
-    QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
-    cmd.AddressMode       = QSPI_ADDRESS_1_LINE;
-    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_NONE;
-    cmd.DummyCycles       = dummyCycles;
-    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
-    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-    cmd.Instruction       = instruction;
-    cmd.Address           = address;
-    cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
-    cmd.NbData            = 0;
-
-    quadSpiSelectDevice(instance);
-
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout = (status != HAL_OK);
-
-    quadSpiDeselectDevice(instance);
-
-    if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
-        return false;
-    }
-
-    return true;
+    struct QUADSPI_Widths widths = { QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_1_LINE, QUADSPI_WIDTH_4_LINES};
+    return quadSpiReceive(instance, widths, instruction, dummyCycles, address, addressSize, in, length);
 }
 
-bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+bool quadSpiReceive444(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    HAL_StatusTypeDef status;
-
-    QSPI_CommandTypeDef cmd;
-    cmd.InstructionMode   = QSPI_INSTRUCTION_1_LINE;
-    cmd.AddressMode       = QSPI_ADDRESS_NONE;
-    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-    cmd.DataMode          = QSPI_DATA_1_LINE;
-    cmd.DummyCycles       = dummyCycles;
-    cmd.DdrMode           = QSPI_DDR_MODE_DISABLE;
-    cmd.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-    cmd.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-    cmd.Instruction       = instruction;
-    cmd.NbData            = length;
-
-    quadSpiSelectDevice(instance);
-
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
-    bool timeout =(status != HAL_OK);
-
-    if (!timeout) {
-        status = HAL_QSPI_Transmit(&quadSpiDevice[device].hquadSpi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
-        timeout = (status != HAL_OK);
-    }
-
-    quadSpiDeselectDevice(instance);
-
-    if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
-        return false;
-    }
-
-    return true;
+    struct QUADSPI_Widths widths = { QUADSPI_WIDTH_4_LINES, QUADSPI_WIDTH_4_LINES, QUADSPI_WIDTH_4_LINES};
+    return quadSpiReceive(instance, widths, instruction, dummyCycles, address, addressSize, in, length);
 }
 
 void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)
