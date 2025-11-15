@@ -30,6 +30,7 @@ typedef enum {
     BUS_TYPE_NONE = 0,
     BUS_TYPE_I2C,
     BUS_TYPE_SPI,
+    BUS_TYPE_QSPI,
     BUS_TYPE_MPU_SLAVE, // Slave I2C on SPI master
     BUS_TYPE_GYRO_AUTO,  // Only used by acc/gyro bus auto detection code
 } busType_e;
@@ -53,6 +54,13 @@ typedef struct busDevice_s {
             uint16_t speed;
             bool leadingEdge;
         } spi;
+#ifdef USE_QUADSPI
+        struct busQSpi_s {
+            QUADSPI_TypeDef *instance;
+            uint16_t speed;
+            bool leadingEdge;
+        } qspi;
+#endif
         struct busI2C_s {
             i2cDevice_e device;
         } i2c;

@@ -31,6 +31,8 @@
 #include "platform/rcc_types.h"
 #endif
 
+#define BUS_QSPI_FREE   0x0
+
 typedef struct quadSpiPinDef_s {
     ioTag_t pin;
 #if SPI_TRAIT_AF_PIN

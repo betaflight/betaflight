@@ -639,6 +639,9 @@ void flashfsClose(void)
 
         break;
     }
+
+    // Each log is expected to start on a 2K boundary
+    flashfsSetTailAddress((tailAddress + 2047) & ~(2047));
 }
 
 /**
