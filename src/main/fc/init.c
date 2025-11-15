@@ -77,6 +77,15 @@
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_io.h"
+#ifdef USE_VCP
+#include "drivers/serial_usb_vcp.h"
+#include "drivers/usb_cdc_debug.h"
+#ifdef USE_USB_CDC_DEBUG
+#include "vcp_hal/usbd_cdc_interface.h"
+#include "usbd_cdc.h"
+#include "usbd_desc.h"
+#endif
+#endif
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
@@ -652,6 +661,53 @@ void init(void)
 #endif
 
     initBoardAlignment(boardAlignment());
+
+#if defined(USE_VCP) && defined(USE_USB_CDC_DEBUG)
+    // USB CDC Debug mode: Initialize USB early for raw debug output (fc-hwtest style)
+#ifdef STM32H7
+    // Step 1: Enable USB voltage detector (critical for STM32H7)
+    HAL_PWREx_EnableUSBVoltageDetector();
+    delay(50);
+#endif
+    
+    // Step 2: Initialize USB pins
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
+    
+    // Step 3: Generate disconnect pulse to reset USB
+    usbGenerateDisconnectPulse();
+    delay(50);
+    
+    // Step 4: Initialize USB Device Library
+    if (USBD_Init(&USBD_Device, &VCP_Desc, 0) != USBD_OK) {
+        // Failed to init USB
+    }
+    
+    // Step 5: Register CDC class
+    if (USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS) != USBD_OK) {
+        // Failed to register class
+    }
+    
+    // Step 6: Register CDC interface
+    if (USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops) != USBD_OK) {
+        // Failed to register interface
+    }
+    
+    // Step 7: Start USB device
+    if (USBD_Start(&USBD_Device) != USBD_OK) {
+        // Failed to start
+    }
+    
+    // Step 8: Wait for USB to enumerate and become ready
+    delay(5000);
+    
+    // Step 9: Mark USB as initialized to prevent reinit from usbVcpOpen()
+    usbVcpMarkInitialized();
+    
+    // Step 10: Send test message to verify USB CDC is working
+    usbCdcPrintf("\r\n\r\n=== USB CDC DEBUG INIT ===\r\n");
+    delay(100);
+#endif
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, notify and don't arm.
