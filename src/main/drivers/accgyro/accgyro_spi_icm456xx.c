@@ -522,17 +522,55 @@ uint8_t icm456xxSpiDetect(const extDevice_t *dev)
 
 bool icm456xxAccReadSPI(accDev_t *acc)
 {
-    // Read accelerometer data (little endian format)
-    uint8_t raw[ICM456XX_DATA_LENGTH];
-    const bool ack = spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
-    if (!ack) {
+    switch (acc->gyro->gyroModeSPI) {
+    case GYRO_EXTI_INT:
+    case GYRO_EXTI_NO_INT:
+    {
+#ifdef USE_DMA
+        if (spiUseDMA(&acc->gyro->dev)) {
+            acc->gyro->dev.txBuf[0] = ICM456XX_ACCEL_DATA_X1_UI | 0x80;
+            busSegment_t segments[] = {
+                {.u.buffers = {NULL, NULL}, ICM456XX_SPI_BUFFER_SIZE, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
+            };
+            memset(&acc->gyro->dev.txBuf[1], 0xFF, 6);
+            segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
+            segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
+            spiSequence(&acc->gyro->dev, &segments[0]);
+            spiWait(&acc->gyro->dev);
+            // Extract from rxBuf[1-6]
+            acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
+            acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
+            acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
+        } else
+#endif
+        {
+            // Non-DMA fallback (current implementation)
+            uint8_t raw[ICM456XX_DATA_LENGTH];
+            const bool ack = spiReadRegMskBufRB(&acc->gyro->dev, ICM456XX_ACCEL_DATA_X1_UI, raw, ICM456XX_DATA_LENGTH);
+            if (!ack) {
+                return false;
+            }
+            acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
+            acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
+            acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+        }
+        break;
+    }
+    
+    case GYRO_EXTI_INT_DMA:
+    {
+        // In DMA mode, gyro reads combined buffer; extract accel portion
+        acc->ADCRaw[X] = (int16_t)((acc->gyro->dev.rxBuf[2] << 8) | acc->gyro->dev.rxBuf[1]);
+        acc->ADCRaw[Y] = (int16_t)((acc->gyro->dev.rxBuf[4] << 8) | acc->gyro->dev.rxBuf[3]);
+        acc->ADCRaw[Z] = (int16_t)((acc->gyro->dev.rxBuf[6] << 8) | acc->gyro->dev.rxBuf[5]);
+        break;
+    }
+    
+    default:
         return false;
     }
-
-    // Extract little endian data (LSB at raw[0], MSB at raw[1])
-    acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
-    acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
-    acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
+    
     return true;
 }
 
