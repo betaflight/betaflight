@@ -104,9 +104,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 // Register 0x75 is RESERVED/UNDEFINED in the ICM-45686 datasheet
 // DO NOT use bank switching on this device
 
-// Need to see at least this many interrupts during initialisation to confirm EXTI connectivity
-#define GYRO_EXTI_DETECT_THRESHOLD 1000
-
 // Register map User Bank 0 (UI Interface)
 #define ICM456XX_WHO_AM_REGISTER                0x72
 #define ICM456XX_REG_MISC2                      0x7F
@@ -284,9 +281,6 @@ Note: Now implemented only UI Interface with Low-Noise Mode
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
 
-// Combined read constants for accel+gyro data (12 bytes total sensor data)
-#define ICM456XX_COMBINED_DATA_LENGTH           12  // 6 bytes accel + 6 bytes gyro
-#define ICM456XX_COMBINED_SPI_BUFFER_SIZE       (1 + ICM456XX_COMBINED_DATA_LENGTH) // 13 bytes total
 #define ICM456XX_DATA_LENGTH                    6  // 3 axes * 2 bytes per axis
 #define ICM456XX_SPI_BUFFER_SIZE                (1 + ICM456XX_DATA_LENGTH) // 1 byte register + 6 bytes data
 
