@@ -413,8 +413,12 @@ MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevic
     STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { W25Q128FV_INSTRUCTION_READ_STATUS1_REG};
     STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
     STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { W25Q128FV_INSTRUCTION_WRITE_ENABLE };
-    STATIC_DMA_DATA_AUTO uint8_t pageProgram[1 + 3] = { W25Q128FV_INSTRUCTION_PAGE_PROGRAM };
 
+#ifdef USE_FLASH_WRITES_USING_4LINES
+    STATIC_DMA_DATA_AUTO uint8_t pageProgram[1 + 3] = { W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM };
+#else
+    STATIC_DMA_DATA_AUTO uint8_t pageProgram[1 + 3] = { W25Q128FV_INSTRUCTION_PAGE_PROGRAM };
+#endif
     static busSegment_t segments[] = {
         {.u.buffers = {readStatus, readyStatus}, .len = sizeof(readStatus), .negateCS = true, w25q128fv_callbackReady},
         {.u.buffers = {writeEnable, NULL}, .len = sizeof(writeEnable), .negateCS = true, w25q128fv_callbackWriteEnable},
@@ -434,7 +438,11 @@ MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevic
 
     // Patch the data segments
     segments[DATA1].u.buffers.txData = (uint8_t *)buffers[0];
+#ifdef USE_FLASH_WRITES_USING_4LINES
+    segments[DATA1].len = bufferSizes[0] | BUS_SEGMENT_LEN_WIDTH_X4;
+#else
     segments[DATA1].len = bufferSizes[0];
+#endif
     fdevice->bytesWritten = bufferSizes[0];
 
     /* As the DATA2 segment may be used as the terminating segment, the rxData and txData may be overwritten
@@ -454,8 +462,11 @@ MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevic
         segments[DATA1].negateCS = false;
         segments[DATA1].callback = NULL;
         segments[DATA2].u.buffers.txData = (uint8_t *)buffers[1];
+#ifdef USE_FLASH_WRITES_USING_4LINES
+        segments[DATA2].len = bufferSizes[1] | BUS_SEGMENT_LEN_WIDTH_X4;
+#else
         segments[DATA2].len = bufferSizes[1];
-        fdevice->bytesWritten += bufferSizes[1];
+#endif
         segments[DATA2].negateCS = true;
         segments[DATA2].callback = w25q128fv_callbackWriteComplete;
     } else {
